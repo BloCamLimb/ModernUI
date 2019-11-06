@@ -1,19 +1,12 @@
 package icyllis.modernui.client.module;
 
 import icyllis.modernui.api.module.IModernModule;
-import icyllis.modernui.api.module.IModuleTracker;
+import icyllis.modernui.api.widget.IWidgetProvider;
 
 public class TestMainModule implements IModernModule {
 
-    private IModuleTracker tracker;
-
     @Override
-    public void initTrack(IModuleTracker tracker) {
-        this.tracker = tracker;
-    }
-
-    @Override
-    public IModuleTracker getTracker() {
-        return tracker;
+    public void createGUIElements(IWidgetProvider provider) {
+        provider.createText().setValue("2");
     }
 }

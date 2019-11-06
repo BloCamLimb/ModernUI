@@ -6,11 +6,11 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
-public class ModernScreen<T extends Screen & IModernScreen> extends Screen {
+public class MasterModernScreen<T extends Screen & IModernScreen> extends Screen {
 
     private T screen;
 
-    public ModernScreen(T screen) {
+    public MasterModernScreen(T screen) {
         super(screen.getTitle());
         this.screen = screen;
     }

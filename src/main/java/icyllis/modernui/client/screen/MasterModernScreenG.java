@@ -8,11 +8,11 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
-public class ModernContainerScreen<T extends ContainerScreen & IModernScreen, G extends Container> extends ContainerScreen<G> {
+public class MasterModernScreenG<T extends ContainerScreen & IModernScreen, G extends Container> extends ContainerScreen<G> {
 
     private T screen;
 
-    public ModernContainerScreen(T screen, G container) {
+    public MasterModernScreenG(T screen, G container) {
         super(container, Minecraft.getInstance().player.inventory, screen.getTitle());
         this.screen = screen;
     }

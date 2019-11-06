@@ -1,8 +1,8 @@
 package icyllis.modernui.core.subscriber;
 
 import icyllis.modernui.api.module.IModernScreen;
-import icyllis.modernui.client.screen.ModernContainerScreen;
-import icyllis.modernui.client.screen.ModernScreen;
+import icyllis.modernui.client.screen.MasterModernScreenG;
+import icyllis.modernui.client.screen.MasterModernScreen;
 import net.minecraft.client.gui.IHasContainer;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.inventory.ContainerScreen;
@@ -29,9 +29,9 @@ public class ClientEventHandler {
     public static void onGuiOpen(GuiOpenEvent event) {
         if(event.getGui() instanceof IModernScreen) {
             if(event.getGui() instanceof IHasContainer) {
-                event.setGui(new ModernContainerScreen<>((ContainerScreen & IModernScreen) event.getGui(), ((ContainerScreen) event.getGui()).getContainer()));
+                event.setGui(new MasterModernScreenG<>((ContainerScreen & IModernScreen) event.getGui(), ((ContainerScreen) event.getGui()).getContainer()));
             } else {
-                event.setGui(new ModernScreen<>((Screen & IModernScreen) event.getGui()));
+                event.setGui(new MasterModernScreen<>((Screen & IModernScreen) event.getGui()));
             }
         }
     }
