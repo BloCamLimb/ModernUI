@@ -1,9 +1,9 @@
 package icyllis.modernui.client.element;
 
 import icyllis.modernui.api.internal.IDrawer;
-import icyllis.modernui.api.widget.IWidgetText;
+import icyllis.modernui.api.content.IText;
 
-public class UIText implements IWidgetText, IDrawer {
+public class UIText implements IText, IDrawer {
 
     private String text;
 
