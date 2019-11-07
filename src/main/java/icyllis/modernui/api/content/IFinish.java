@@ -1,4 +1,4 @@
-package icyllis.modernui.api.internal;
+package icyllis.modernui.api.content;
 
 public interface IFinish {
 

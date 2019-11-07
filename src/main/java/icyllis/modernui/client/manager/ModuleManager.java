@@ -19,12 +19,12 @@ public class ModuleManager implements IModuleManager {
     }
 
     @Override
-    public void draw() {
-        modules.forEach(IMasterModule::draw);
+    public void receiveModule(IMasterModule masterModule) {
+        modules.add(masterModule);
     }
 
     @Override
-    public void insertModule(IMasterModule masterModule) {
-        modules.add(masterModule);
+    public void draw() {
+        modules.forEach(IMasterModule::draw);
     }
 }

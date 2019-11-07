@@ -1,6 +1,6 @@
 package icyllis.modernui.api.module;
 
-import icyllis.modernui.api.internal.ICoordinate;
+import icyllis.modernui.api.content.ICoordinate;
 
 public interface ICoordinateProvider {
 
