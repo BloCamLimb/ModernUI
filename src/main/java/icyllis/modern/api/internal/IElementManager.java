@@ -1,9 +1,8 @@
 package icyllis.modern.api.internal;
 
 import icyllis.modern.api.module.IElementBuilder;
-import icyllis.modern.api.module.IPositionFixer;
 
-public interface IElementManager extends IElementBuilder, IPositionFixer {
+public interface IElementManager extends IElementBuilder {
 
     void draw();
 

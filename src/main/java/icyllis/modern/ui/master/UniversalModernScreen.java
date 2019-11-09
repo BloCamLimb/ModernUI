@@ -7,6 +7,8 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
+import javax.annotation.Nonnull;
+
 @OnlyIn(Dist.CLIENT)
 public final class UniversalModernScreen extends Screen {
 
@@ -19,8 +21,17 @@ public final class UniversalModernScreen extends Screen {
 
     @Override
     protected void init() {
-        manager.init(font, width, height);
-        manager.build();
+        manager.build(font, width, height);
+    }
+
+    @Override
+    public void resize(@Nonnull Minecraft minecraft, int width, int height) {
+        manager.resize(width, height);
+    }
+
+    @Override
+    public void mouseMoved(double xPos, double p_212927_3_) {
+
     }
 
     @Override

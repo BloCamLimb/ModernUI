@@ -5,14 +5,9 @@ import net.minecraft.client.gui.FontRenderer;
 
 public interface IModuleManager extends IModuleInjector {
 
-    /**
-     * Called after injecting modules
-     */
-    void build();
-
     void draw();
 
-    void init(FontRenderer fontRenderer, int width, int height);
+    void build(FontRenderer fontRenderer, int width, int height);
 
     void resize(int width, int height);
 

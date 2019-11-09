@@ -1,10 +1,10 @@
 package icyllis.modern.ui.element;
 
+import icyllis.modern.api.basic.IDraw;
 import icyllis.modern.api.basic.IElement;
 import icyllis.modern.api.basic.IFontDraw;
 import icyllis.modern.api.element.ITextLineTracker;
 import icyllis.modern.api.internal.IElementManager;
-import icyllis.modern.api.module.IPositionFixer;
 import net.minecraft.client.gui.FontRenderer;
 
 import java.util.ArrayList;
@@ -13,21 +13,25 @@ import java.util.List;
 public class ElementManager implements IElementManager {
 
     private FontRenderer fontRenderer;
-    private int width, height;
-    private int positionFixerIndex = -1;
 
     private List<IElement> elements = new ArrayList<>();
+    private List<IDraw> draws = new ArrayList<>();
     private List<IFontDraw> fontDraws = new ArrayList<>();
 
-    public ElementManager(FontRenderer fontRenderer, int w, int h) {
+    public ElementManager(FontRenderer fontRenderer) {
         this.fontRenderer = fontRenderer;
-        width = w;
-        height = h;
+    }
+
+    @Override
+    public void defaultBackground() {
+        UIBackground u = new UIBackground();
+        elements.add(u);
+        draws.add(u);
     }
 
     @Override
     public ITextLineTracker newTextLine() {
-        UIText u = new UIText();
+        UITextLine u = new UITextLine();
         elements.add(u);
         fontDraws.add(u);
         return u;
@@ -35,21 +39,12 @@ public class ElementManager implements IElementManager {
 
     @Override
     public void draw() {
-        fontDraws.iterator().forEachRemaining(e -> e.draw(fontRenderer));
+        draws.forEach(IDraw::draw);
+        fontDraws.forEach(e -> e.draw(fontRenderer));
     }
 
     @Override
     public void resize(int width, int height) {
-        this.width = width;
-        this.height = height;
-    }
-
-    @Override
-    public IPositionFixer setNext(int count, int x, int y) {
-        int p = positionFixerIndex += count;
-        if(p < elements.size()) {
-            elements.get(p).setPosition(width / 2 + x, height / 2 + y);
-        }
-        return this;
+        elements.forEach(e -> e.resize(fontRenderer, width, height));
     }
 }

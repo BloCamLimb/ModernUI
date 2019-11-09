@@ -1,8 +1,6 @@
-package icyllis.modern.api.tracker;
+package icyllis.modern.api.module;
 
-import icyllis.modern.api.basic.IEnd;
-
-public interface IModuleTracker extends IEnd {
+public interface IModuleTracker {
 
     /**
      * Trigger this module when first opening
