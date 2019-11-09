@@ -13,7 +13,7 @@ apply plugin: 'eclipse'
 apply plugin: 'maven-publish'
 
 version = '1.14.4-1.0.0-1'
-group = 'icyllis.modernui'
+group = 'icyllis.modern'
 archivesBaseName = 'ModernUI'
 
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
@@ -32,7 +32,7 @@ minecraft {
             property 'forge.logging.console.level', 'debug'
 
             mods {
-                modernui {
+                modern {
                     source sourceSets.main
                 }
             }
@@ -48,7 +48,7 @@ minecraft {
             property 'forge.logging.console.level', 'debug'
 
             mods {
-                modernui {
+                modern {
                     source sourceSets.main
                 }
             }
@@ -63,10 +63,10 @@ minecraft {
             // Recommended logging level for the console
             property 'forge.logging.console.level', 'debug'
 
-            args '--mod', 'modernui', '--all', '--output', file('src/generated/resources/')
+            args '--mod', 'modern', '--all', '--output', file('src/generated/resources/')
 
             mods {
-                modernui {
+                modern {
                     source sourceSets.main
                 }
             }
