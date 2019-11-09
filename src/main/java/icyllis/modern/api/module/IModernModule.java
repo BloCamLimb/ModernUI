@@ -1,7 +1,5 @@
 package icyllis.modern.api.module;
 
-import icyllis.modern.api.tracker.IModuleTracker;
-
 /**
  * A Module includes all elements also their position, texture, animation etc
  * You can consider this as a full part or a tab. That is, in the general case
@@ -18,10 +16,4 @@ public interface IModernModule {
      */
     void createElements(IElementBuilder builder);
 
-    /**
-     * Set positions for your elements or widgets
-     *
-     * @param fixer Position Fixer
-     */
-    void fixPositions(IPositionFixer fixer);
 }

@@ -3,7 +3,8 @@ package icyllis.modern.ui.master;
 import icyllis.modern.api.internal.IMasterModule;
 import icyllis.modern.api.internal.IModuleManager;
 import icyllis.modern.api.module.IModernModule;
-import icyllis.modern.api.tracker.IModuleTracker;
+import icyllis.modern.api.module.IModuleTracker;
+import icyllis.modern.core.ModernUI;
 import net.minecraft.client.gui.FontRenderer;
 
 import java.util.ArrayList;
@@ -11,10 +12,7 @@ import java.util.List;
 
 public class GlobalModuleManager implements IModuleManager {
 
-    public static final GlobalModuleManager INSTANCE = new GlobalModuleManager();
-
-    private FontRenderer fontRenderer;
-    private int width, height;
+    static final GlobalModuleManager INSTANCE = new GlobalModuleManager();
 
     private List<IMasterModule> modules = new ArrayList<>();
 
@@ -26,8 +24,8 @@ public class GlobalModuleManager implements IModuleManager {
     }
 
     @Override
-    public void build() {
-        modules.stream().filter(m -> m.trigger(-1)).findFirst().ifPresent(m -> m.bake(fontRenderer, width, height));
+    public void build(FontRenderer fontRenderer, int width, int height) {
+        modules.forEach(m -> m.bake(fontRenderer, width, height));
     }
 
     @Override
@@ -36,15 +34,8 @@ public class GlobalModuleManager implements IModuleManager {
     }
 
     @Override
-    public void init(FontRenderer fontRenderer, int width, int height) {
-        this.fontRenderer = fontRenderer;
-        resize(width, height);
-    }
-
-    @Override
     public void resize(int width, int height) {
-        this.width = width;
-        this.height = height;
+        modules.forEach(m -> m.resize(width, height));
     }
 
     @Override
