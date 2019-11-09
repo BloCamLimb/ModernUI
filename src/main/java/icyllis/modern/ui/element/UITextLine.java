@@ -1,11 +1,13 @@
 package icyllis.modern.ui.element;
 
-import icyllis.modern.api.basic.IFontDraw;
-import icyllis.modern.api.element.ITextLine;
+import icyllis.modern.api.basic.IDraw;
+import icyllis.modern.api.basic.IResize;
 import icyllis.modern.api.element.ITextLineTracker;
 import net.minecraft.client.gui.FontRenderer;
 
-public class UITextLine implements ITextLine, ITextLineTracker, IFontDraw {
+public class UITextLine implements ITextLineTracker, IResize, IDraw {
+
+    private FontRenderer fontRenderer;
 
     private float bx, by;
     private float x, y;
@@ -13,8 +15,12 @@ public class UITextLine implements ITextLine, ITextLineTracker, IFontDraw {
     private boolean shadowed, centered;
     private String t;
 
+    public UITextLine(FontRenderer fontRenderer) {
+        this.fontRenderer = fontRenderer;
+    }
+
     @Override
-    public void draw(FontRenderer fontRenderer) {
+    public void draw() {
         if(shadowed)
             fontRenderer.drawStringWithShadow(t, x, y, color);
         else
@@ -43,7 +49,7 @@ public class UITextLine implements ITextLine, ITextLineTracker, IFontDraw {
     }
 
     @Override
-    public void resize(FontRenderer fontRenderer, int width, int height) {
+    public void resize(int width, int height) {
         y = height / 2f + by;
         if(centered) {
             int wid = fontRenderer.getStringWidth(t);

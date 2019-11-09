@@ -1,28 +1,27 @@
 package icyllis.modern.ui.master;
 
-import icyllis.modern.api.internal.IElementManager;
+import icyllis.modern.api.internal.IMasterManager;
 import icyllis.modern.api.internal.IMasterModule;
 import icyllis.modern.api.module.IModernModule;
 import icyllis.modern.api.module.IModuleTracker;
-import icyllis.modern.ui.element.ElementManager;
 import net.minecraft.client.gui.FontRenderer;
 
-public final class MasterModule implements IMasterModule, IModuleTracker {
+public class MasterModule implements IMasterModule, IModuleTracker {
 
     private IModernModule rawModule;
 
     private int trigger = 0;
     private boolean triggered = false;
 
-    private IElementManager elementManager;
+    private IMasterManager elementManager;
 
     MasterModule(IModernModule rawModule) {
         this.rawModule = rawModule;
     }
 
     @Override
-    public void bake(FontRenderer fontRenderer, int width, int height) {
-        elementManager = new ElementManager(fontRenderer);
+    public void build(FontRenderer fontRenderer, int width, int height) {
+        elementManager = new MasterModuleManager(fontRenderer);
         rawModule.createElements(elementManager);
         resize(width, height);
         rawModule = null;
