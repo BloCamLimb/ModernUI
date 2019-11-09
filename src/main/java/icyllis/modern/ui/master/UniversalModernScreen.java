@@ -1,6 +1,6 @@
 package icyllis.modern.ui.master;
 
-import icyllis.modern.api.internal.IModuleManager;
+import icyllis.modern.api.internal.IGlobalManager;
 import icyllis.modern.api.module.IModernScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
@@ -12,7 +12,7 @@ import javax.annotation.Nonnull;
 @OnlyIn(Dist.CLIENT)
 public final class UniversalModernScreen extends Screen {
 
-    private IModuleManager manager = GlobalModuleManager.INSTANCE;
+    private IGlobalManager manager = GlobalModuleManager.INSTANCE;
 
     public UniversalModernScreen(IModernScreen injector) {
         super(injector.getTitle());

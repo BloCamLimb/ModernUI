@@ -1,11 +1,10 @@
 package icyllis.modern.ui.element;
 
 import icyllis.modern.api.basic.IDraw;
-import icyllis.modern.api.basic.IElement;
+import icyllis.modern.api.basic.IResize;
 import icyllis.modern.ui.master.DrawTools;
-import net.minecraft.client.gui.FontRenderer;
 
-public class UIBackground implements IElement, IDraw {
+public class UIBackground implements IResize, IDraw {
 
     private int width, height;
 
@@ -15,7 +14,7 @@ public class UIBackground implements IElement, IDraw {
     }
 
     @Override
-    public void resize(FontRenderer fontRenderer, int width, int height) {
+    public void resize(int width, int height) {
         this.width = width;
         this.height = height;
     }

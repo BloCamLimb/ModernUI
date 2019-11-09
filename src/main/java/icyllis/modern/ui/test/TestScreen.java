@@ -11,8 +11,7 @@ public class TestScreen implements IModernScreen {
 
     @Override
     public void injectModules(IModuleInjector provider) {
-        provider.injectModule(new TestMainModule())
-                .setMain();
+        provider.injectModule(new TestMainModule()).setMain();
     }
 
     @Override

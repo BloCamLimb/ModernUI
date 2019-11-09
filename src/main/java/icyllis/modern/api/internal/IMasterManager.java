@@ -2,7 +2,7 @@ package icyllis.modern.api.internal;
 
 import icyllis.modern.api.module.IElementBuilder;
 
-public interface IElementManager extends IElementBuilder {
+public interface IMasterManager extends IElementBuilder {
 
     void draw();
 

@@ -1,5 +1,7 @@
 package icyllis.modern.core.subscriber;
 
+import icyllis.modern.ui.master.GlobalAnimationManager;
+import icyllis.modern.ui.master.GlobalModuleManager;
 import icyllis.modern.ui.master.UniversalModernScreen;
 import icyllis.modern.ui.test.TestScreen;
 import net.minecraft.client.Minecraft;
@@ -19,7 +21,7 @@ public class ClientEventHandler {
     @SubscribeEvent
     public static void onRenderTick(TickEvent.RenderTickEvent event) {
         if(event.phase == TickEvent.Phase.START) {
-
+            GlobalAnimationManager.INSTANCE.tick(event.renderTickTime);
         }
     }
 
@@ -37,6 +39,7 @@ public class ClientEventHandler {
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if(event.phase == TickEvent.Phase.START) {
+            GlobalAnimationManager.INSTANCE.tick();
             Minecraft mc = Minecraft.getInstance();
             Screen gui = mc.currentScreen;
             if(gui == null || !gui.isPauseScreen())

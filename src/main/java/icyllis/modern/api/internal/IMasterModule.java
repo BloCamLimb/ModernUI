@@ -6,7 +6,7 @@ public interface IMasterModule {
 
     void draw();
 
-    void bake(FontRenderer fontRenderer, int width, int height);
+    void build(FontRenderer fontRenderer, int width, int height);
 
     void resize(int width, int height);
 
