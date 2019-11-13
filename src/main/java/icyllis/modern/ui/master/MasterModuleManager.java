@@ -34,6 +34,7 @@ public class MasterModuleManager implements IMasterManager {
         UITextLine u = new UITextLine(fontRenderer);
         resizes.add(u);
         draws.add(u);
+
         return u;
     }
 

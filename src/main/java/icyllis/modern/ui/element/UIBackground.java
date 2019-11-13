@@ -10,7 +10,7 @@ public class UIBackground implements IResize, IDraw {
 
     @Override
     public void draw() {
-        DrawTools.fillGradient(0, 0, width, height, -1072689136, -804253680, 0);
+        DrawTools.fillGradient(0, 0, width, height, 0xc0101010, 0xd0101010, 0);
     }
 
     @Override

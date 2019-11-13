@@ -9,10 +9,10 @@ public class TestMainModule implements IModernModule {
     public void createElements(IElementBuilder builder) {
         builder.defaultBackground();
         builder.newTextLine()
-                .setText("Hello everyone, this is direwolf20")
+                .setText("Snownee likes to eat lemons")
                 .setPosition(0, -60, true);
         builder.newTextLine()
-                .setText("\u83ab\u6495\u0070\u0073\u672c\u5f53\u4e0a\u624b")
+                .setText("\u6cdb\u94f6\u6cb3\u683c\u96f7\u79d1\u6280\u6709\u9650\u516c\u53f8")
                 .setPosition(0, -40, true);
     }
 
