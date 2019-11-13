@@ -12,7 +12,6 @@ public class ModernUI {
     public static final String MODID = "modernui";
 
     public static Logger logger = LogManager.getLogger("ModernUI");
-    public static Marker marker = MarkerManager.getMarker("Main");
 
     public ModernUI() {
 
