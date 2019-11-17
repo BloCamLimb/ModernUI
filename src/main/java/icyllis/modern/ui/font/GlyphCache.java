@@ -3,6 +3,7 @@ package icyllis.modern.ui.font;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.mojang.blaze3d.platform.GlStateManager;
+import icyllis.modern.core.ModernUI;
 import net.minecraft.client.renderer.GLAllocation;
 import org.lwjgl.opengl.GL11;
 
@@ -59,7 +60,7 @@ public class GlyphCache {
     /**
      * The point size at which every OpenType font is rendered.
      */
-    private int fontSize = 18;
+    private float fontSize = 18;
 
     /**
      * If true, then enble anti-aliasing when rendering the font glyph
@@ -232,11 +233,13 @@ public class GlyphCache {
      *
      * @param size the new point size
      */
-    void setDefaultFont(int size, boolean antiAlias) {
+    void setDefaultFont(float size, boolean antiAlias) {
         usedFonts.clear();
         //usedFonts.add(new Font(name, Font.PLAIN, 72)); //size 1 > 72
         try {
-            usedFonts.add(Font.createFont(Font.TRUETYPE_FONT, getClass().getResourceAsStream("/assets/modernui/font/biliw.otf")));
+            Font f = Font.createFont(Font.TRUETYPE_FONT, getClass().getResourceAsStream("/assets/modernui/font/biliw.otf"));
+            usedFonts.add(f);
+            ModernUI.logger.info(StringRenderer.MARKER, "{} has been loaded", f.getName());
         } catch (FontFormatException | IOException e) {
             e.printStackTrace();
         }

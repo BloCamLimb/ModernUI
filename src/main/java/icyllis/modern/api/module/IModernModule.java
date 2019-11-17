@@ -1,5 +1,7 @@
 package icyllis.modern.api.module;
 
+import icyllis.modern.api.internal.IElementBuilder;
+
 /**
  * A Module includes all elements also their position, texture, animation etc
  * You can consider this as a full part or a tab. That is, in the general case

@@ -16,7 +16,7 @@ public final class UniversalModernScreen extends Screen {
 
     public UniversalModernScreen(IModernScreen injector) {
         super(injector.getTitle());
-        injector.injectModules(manager);
+        injector.createModules(manager);
     }
 
     @Override

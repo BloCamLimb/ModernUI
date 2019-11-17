@@ -16,7 +16,7 @@ public class GlobalModuleManager implements IGlobalManager {
     private List<IMasterModule> modules = new ArrayList<>();
 
     @Override
-    public IModuleTracker injectModule(IModernModule module) {
+    public IModuleTracker receiveModule(IModernModule module) {
         MasterModule masterModule = new MasterModule(module);
         modules.add(masterModule);
         return masterModule;

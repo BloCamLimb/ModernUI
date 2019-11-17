@@ -1,38 +1,36 @@
 package icyllis.modern.ui.master;
 
-import icyllis.modern.core.ModernUI;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.model.animation.Animation;
 
 @OnlyIn(Dist.CLIENT)
 public class GlobalAnimationManager {
 
     public static final GlobalAnimationManager INSTANCE = new GlobalAnimationManager();
 
-    private int tickCycle = 0;
-    private float timer = 0; // 0~20 every second
-    private double sin = 0; // sine wave Ω=10
+    private int cycle = 0;
+    private float time = 0; // 0~20 every second
+    private float sin = 0; // sine wave Ω=10
 
     public GlobalAnimationManager() {
 
     }
 
     public void tick() {
-        tickCycle++;
-        tickCycle %= 20;
+        cycle++;
+        cycle %= 20;
     }
 
     public void tick(float partialTick) {
-        timer = tickCycle + partialTick;
-        sin = Math.sin(timer * Math.PI);
+        time = cycle + partialTick;
+        sin = (float) Math.sin(time * Math.PI);
     }
 
-    public float getTimer() {
-        return timer;
+    public float time() {
+        return time;
     }
 
-    public double getSin() {
+    public float sin() {
         return sin;
     }
 }

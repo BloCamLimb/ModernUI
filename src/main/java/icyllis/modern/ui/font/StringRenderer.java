@@ -1,9 +1,13 @@
 package icyllis.modern.ui.font;
 
 import com.mojang.blaze3d.platform.GlStateManager;
+import icyllis.modern.core.ModernUI;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraftforge.client.event.ModelBakeEvent;
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.opengl.GL11;
 
 import java.awt.*;
@@ -13,9 +17,11 @@ public class StringRenderer {
     public static final StringRenderer DEFAULT_FONT_RENDERER;
     static {
         StringCache cache1 = new StringCache();
-        cache1.setDefaultFont(16, true);
+        cache1.setDefaultFont(12.5f, true);
         DEFAULT_FONT_RENDERER = new StringRenderer(cache1);
     }
+
+    public static Marker MARKER = MarkerManager.getMarker("FONT");
 
     /**
      * Vertical adjustment (in pixels * 2) to string position because Minecraft uses top of string instead of baseline
@@ -52,6 +58,10 @@ public class StringRenderer {
         return cache;
     }
 
+    public void init() {
+
+    }
+
     /**
      * Render a single-line string to the screen using the current OpenGL color. The (x,y) coordinates are of the uppet-left
      * corner of the string's bounding box, rather than the baseline position as is typical with fonts. This function will also
@@ -60,14 +70,13 @@ public class StringRenderer {
      * @param str          the string being rendered; it can contain color codes
      * @param startX       the x coordinate to draw at
      * @param startY       the y coordinate to draw at
-     * @param shadowFlag   if true, color codes are replaces by a darker version used for drop shadows
      * @return the total advance (horizontal distance) of this string
      */
     //todo Add optional NumericShaper to replace ASCII digits with locale specific ones
     //todo Add support for the "k" code which randomly replaces letters on each render (used on
     //todo Pre-sort by texture to minimize binds; can store colors per glyph in string cache
     //todo Optimize the underline/strikethrough drawing to draw a single line for each run
-    public int renderString(String str, float startX, float startY, int color, boolean shadowFlag) {
+    public float renderString(String str, float startX, float startY, int color) {
         /* Check for invalid arguments */
         if (str == null || str.isEmpty()) {
             return 0;
@@ -184,7 +193,7 @@ public class StringRenderer {
                 Glyph glyph = entry.glyphs[glyphIndex];
 
                 /* The strike/underlines are drawn beyond the glyph's width to include the extra space between glyphs */
-                int glyphSpace = glyph.advance - glyph.texture.width;
+                float glyphSpace = glyph.advance - glyph.texture.width;
 
                 int a = color >> 24 & 0xff;
                 int r = color >> 16 & 0xff;
@@ -237,7 +246,7 @@ public class StringRenderer {
      * @return the width in pixels (divided by 2; this matches the scaled coordinate system used by GUIs in Minecraft)
      */
     @SuppressWarnings("unused")
-    public int getStringWidth(String str) {
+    public float getStringWidth(String str) {
         /* Check for invalid arguments */
         if (str == null || str.isEmpty()) {
             return 0;
@@ -279,7 +288,8 @@ public class StringRenderer {
         int wsIndex = -1;
 
         /* Add up the individual advance of each glyph until it exceeds the specified width */
-        int advance = 0, index = 0;
+        float advance = 0;
+        int index = 0;
         while (index < glyphs.length && advance <= width) {
             /* Keep track of spaces if breakAtSpaces it set */
             if (breakAtSpaces) {
@@ -292,7 +302,7 @@ public class StringRenderer {
                 }
             }
 
-            int nextAdvance = advance + glyphs[index].advance;
+            float nextAdvance = advance + glyphs[index].advance;
             if (nextAdvance <= width) {
                 advance = nextAdvance;
                 index++;
