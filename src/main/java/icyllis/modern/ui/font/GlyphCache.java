@@ -239,7 +239,7 @@ public class GlyphCache {
         try {
             Font f = Font.createFont(Font.TRUETYPE_FONT, getClass().getResourceAsStream("/assets/modernui/font/biliw.otf"));
             usedFonts.add(f);
-            ModernUI.logger.info(StringRenderer.MARKER, "{} has been loaded", f.getName());
+            ModernUI.logger.info(ModernUI.MARKER, "{} has been loaded", f.getName());
         } catch (FontFormatException | IOException e) {
             e.printStackTrace();
         }

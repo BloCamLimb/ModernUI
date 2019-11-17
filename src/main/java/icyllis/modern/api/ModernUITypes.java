@@ -6,4 +6,8 @@ import java.lang.annotation.*;
 @Target(ElementType.TYPE)
 public @interface ModernUITypes {
 
+    interface Type {
+
+        int getId();
+    }
 }

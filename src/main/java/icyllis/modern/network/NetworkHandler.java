@@ -1,12 +1,10 @@
 package icyllis.modern.network;
 
-import icyllis.modern.api.internal.IScreenContainerProvider;
+import icyllis.modern.api.internal.IContainerProvider;
 import icyllis.modern.api.internal.INetworkHandler;
 import icyllis.modern.core.ModernUI;
-import io.netty.buffer.Unpooled;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.container.Container;
-import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.MinecraftForge;
@@ -15,7 +13,7 @@ import net.minecraftforge.fml.network.NetworkDirection;
 import net.minecraftforge.fml.network.NetworkRegistry;
 import net.minecraftforge.fml.network.simple.SimpleChannel;
 
-import java.util.function.Consumer;
+import static icyllis.modern.network.PlayMessages.*;
 
 public enum NetworkHandler implements INetworkHandler {
     INSTANCE;
@@ -32,7 +30,7 @@ public enum NetworkHandler implements INetworkHandler {
 
     public void registerMessages() {
         int index = 0;
-        CHANNEL.registerMessage(index++, STCMessages.OpenContainerMessage.class, STCMessages.OpenContainerMessage::encode, STCMessages.OpenContainerMessage::decode, STCMessages.OpenContainerMessage::handle);
+        CHANNEL.messageBuilder(OpenContainer.class, index).encoder(OpenContainer::encode).decoder(OpenContainer::decode).consumer(OpenContainer::handle).add();
     }
 
     public <M> void sendToServer(M message) {
@@ -44,39 +42,22 @@ public enum NetworkHandler implements INetworkHandler {
     }
 
     @Override
-    public void openGUI(ServerPlayerEntity serverPlayer, IScreenContainerProvider containerProvider) {
-        openGUI(serverPlayer, containerProvider, buf -> buf.writeBoolean(false));
+    public void openGUI(ServerPlayerEntity serverPlayer, IContainerProvider containerProvider) {
+        openGUI(serverPlayer, containerProvider, null);
     }
 
-    @Override
-    public void openGUI(ServerPlayerEntity serverPlayer, IScreenContainerProvider containerProvider, BlockPos blockPos) {
-        openGUI(serverPlayer, containerProvider, buf -> {
-            buf.writeBoolean(true);
-            buf.writeBlockPos(blockPos);
-        });
-    }
-
-    public void openGUI(ServerPlayerEntity serverPlayer, IScreenContainerProvider containerProvider, Consumer<PacketBuffer> extraDataWriter) {
+    public void openGUI(ServerPlayerEntity serverPlayer, IContainerProvider containerProvider, BlockPos blockPos) {
         if(serverPlayer.world.isRemote) {
             return;
         }
-        serverPlayer.closeContainer();
-        serverPlayer.getNextWindowId();
-        int openContainerId = serverPlayer.currentWindowId;
-        PacketBuffer extraData = new PacketBuffer(Unpooled.buffer());
-        extraDataWriter.accept(extraData);
-        extraData.readerIndex(0);
-
-        PacketBuffer output = new PacketBuffer(Unpooled.buffer());
-        output.writeVarInt(extraData.readableBytes());
-        output.writeBytes(extraData);
-
-        if (output.readableBytes() > 32600 || output.readableBytes() < 1) {
-            throw new IllegalArgumentException("Invalid PacketBuffer for openGui, found "+ output.readableBytes()+ " bytes");
+        if(serverPlayer.container != serverPlayer.openContainer) {
+            serverPlayer.closeContainer();
         }
-        Container c = containerProvider.createMenu(openContainerId, serverPlayer.inventory, serverPlayer);
+        serverPlayer.getNextWindowId();
+        int windowId = serverPlayer.currentWindowId;
+        Container c = containerProvider.createContainer(windowId, serverPlayer.inventory, serverPlayer);
         if(c != null) {
-            STCMessages.OpenContainerMessage msg = new STCMessages.OpenContainerMessage(containerProvider.getScreenType().getId(), openContainerId, containerProvider.getDisplayName(), output);
+            OpenContainer msg = new OpenContainer(containerProvider.getScreenType().getId(), windowId, blockPos != null, blockPos);
             sendTo(msg, serverPlayer);
             serverPlayer.openContainer = c;
             serverPlayer.openContainer.addListener(serverPlayer);

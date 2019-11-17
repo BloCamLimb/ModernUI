@@ -11,7 +11,7 @@ public interface INetworkHandler {
      * @param serverPlayer Player on server side
      * @param containerProvider Container provider
      */
-    void openGUI(ServerPlayerEntity serverPlayer, IScreenContainerProvider containerProvider);
+    void openGUI(ServerPlayerEntity serverPlayer, IContainerProvider containerProvider);
 
     /**
      * Open a container both on server and client side and open a screen on client side.
@@ -20,5 +20,5 @@ public interface INetworkHandler {
      * @param containerProvider Container provider
      * @param blockPos Block pos to get TileEntity
      */
-    void openGUI(ServerPlayerEntity serverPlayer, IScreenContainerProvider containerProvider, BlockPos blockPos);
+    void openGUI(ServerPlayerEntity serverPlayer, IContainerProvider containerProvider, BlockPos blockPos);
 }

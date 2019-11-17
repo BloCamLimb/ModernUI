@@ -21,8 +21,6 @@ public class StringRenderer {
         DEFAULT_FONT_RENDERER = new StringRenderer(cache1);
     }
 
-    public static Marker MARKER = MarkerManager.getMarker("FONT");
-
     /**
      * Vertical adjustment (in pixels * 2) to string position because Minecraft uses top of string instead of baseline
      */

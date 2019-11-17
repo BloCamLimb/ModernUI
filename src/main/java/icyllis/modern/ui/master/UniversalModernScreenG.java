@@ -11,8 +11,8 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public final class UniversalModernScreenG<G extends Container> extends ContainerScreen<G> {
 
-    public UniversalModernScreenG(IModernScreen injector, G container, ITextComponent name) {
-        super(container, Minecraft.getInstance().player.inventory, name);
+    public UniversalModernScreenG(IModernScreen injector, G container) {
+        super(container, Minecraft.getInstance().player.inventory, injector.getTitle());
     }
 
     @Override

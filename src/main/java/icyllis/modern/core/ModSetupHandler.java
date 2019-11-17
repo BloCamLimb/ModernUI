@@ -7,6 +7,7 @@ import icyllis.modern.ui.test.TestScreen;
 import net.minecraft.inventory.container.ContainerType;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.common.extensions.IForgeContainerType;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -18,8 +19,6 @@ import org.apache.logging.log4j.MarkerManager;
 @SuppressWarnings("unused")
 @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ModSetupHandler {
-
-    private static final Marker MARKER = MarkerManager.getMarker("SETUP");
 
     @SubscribeEvent
     public static void setupCommon(FMLCommonSetupEvent event) {
@@ -37,7 +36,7 @@ public class ModSetupHandler {
 
         @SubscribeEvent
         public static void registerContainers(RegistryEvent.Register<ContainerType<?>> event) {
-            ModernUIAPI.INSTANCE.screen().registerContainerScreen(RegistryScreens.TEST_CONTAINER, TestContainer::new, TestScreen::new);
+            ModernUIAPI.INSTANCE.screen().registerContainerScreen(RegistryScreens.TEST_CONTAINER_SCREEN, TestContainer::new, TestScreen::new);
         }
     }
 
