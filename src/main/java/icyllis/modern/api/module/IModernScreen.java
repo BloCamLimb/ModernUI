@@ -1,5 +1,6 @@
 package icyllis.modern.api.module;
 
+import icyllis.modern.api.internal.IModuleReceiver;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 
@@ -14,9 +15,9 @@ public interface IModernScreen {
      * Inject your custom modules in Modern UI
      * If there's a module injected, make sure at least one is main
      *
-     * @param provider ModernUI module provider
+     * @param receiver ModernUI module receiver
      */
-    void injectModules(IModuleInjector provider);
+    void createModules(IModuleReceiver receiver);
 
     /**
      * Override this for non-container screen

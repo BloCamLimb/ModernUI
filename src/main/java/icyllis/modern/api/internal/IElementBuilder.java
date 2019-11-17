@@ -1,4 +1,4 @@
-package icyllis.modern.api.module;
+package icyllis.modern.api.internal;
 
 import icyllis.modern.api.element.ITextLineTracker;
 

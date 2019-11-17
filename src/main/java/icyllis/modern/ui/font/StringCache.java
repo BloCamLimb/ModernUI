@@ -1,5 +1,7 @@
 package icyllis.modern.ui.font;
 
+import icyllis.modern.core.ModernUI;
+
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.lang.ref.WeakReference;
@@ -176,7 +178,7 @@ public class StringCache {
         /**
          * The total horizontal advance (i.e. width) for this string in pixels.
          */
-        public int advance;
+        public float advance;
 
         /**
          * Array of fully layed out glyphs for the string. Sorted by logical order of characters (i.e. glyph.stringIndex)
@@ -261,7 +263,7 @@ public class StringCache {
      * @param fontSize  the new point size
      * @param antiAlias turn on anti aliasing
      */
-    public void setDefaultFont(int fontSize, boolean antiAlias) {
+    public void setDefaultFont(float fontSize, boolean antiAlias) {
         /* Change the font in the glyph cache and clear the string cache so all strings have to be re-layed out and re-rendered */
         glyphCache.setDefaultFont(fontSize, antiAlias);
         antiAliasEnabled = antiAlias;
@@ -494,8 +496,8 @@ public class StringCache {
      * @param limit     the (offset + length) at which to stop performing the layout
      * @return the total advance (horizontal distance) of this string
      */
-    private int layoutBidiString(List<Glyph> glyphList, char[] text, int start, int limit, ColorCode[] colors) {
-        int advance = 0;
+    private float layoutBidiString(List<Glyph> glyphList, char[] text, int start, int limit, ColorCode[] colors) {
+        float advance = 0;
 
         /* Avoid performing full bidirectional analysis if text has no "strong" right-to-left characters */
         if (Bidi.requiresBidi(text, start, limit)) {
@@ -544,7 +546,7 @@ public class StringCache {
         }
     }
 
-    private int layoutStyle(List<Glyph> glyphList, char[] text, int start, int limit, int layoutFlags, int advance, ColorCode[] colors) {
+    private float layoutStyle(List<Glyph> glyphList, char[] text, int start, int limit, int layoutFlags, float advance, ColorCode[] colors) {
         int currentFontStyle = Font.PLAIN;
 
         /* Find ColorCode object with stripIndex <= start; that will have the font style in effect at the beginning of this text run */
@@ -608,7 +610,7 @@ public class StringCache {
      * TODO Correctly handling RTL font selection requires scanning the sctring from RTL as well.
      * TODO Use bitmap fonts as a fallback if no OpenType font could be found
      */
-    private int layoutString(List<Glyph> glyphList, char[] text, int start, int limit, int layoutFlags, int advance, int style) {
+    private float layoutString(List<Glyph> glyphList, char[] text, int start, int limit, int layoutFlags, float advance, int style) {
         /*
          * Convert all digits in the string to a '0' before layout to ensure that any glyphs replaced on the fly will all have
          * the same positions. Under Windows, Java's "SansSerif" logical font uses the "Arial" font for digits, in which the "1"
@@ -664,7 +666,7 @@ public class StringCache {
      * @return the advance (horizontal distance) of this string plus the advance passed in as an argument
      * @todo need to ajust position of all glyphs if digits are present, by assuming every digit should be 0 in length
      */
-    private int layoutFont(List<Glyph> glyphList, char[] text, int start, int limit, int layoutFlags, int advance, Font font) {
+    private float layoutFont(List<Glyph> glyphList, char[] text, int start, int limit, int layoutFlags, float advance, Font font) {
         /*
          * Ensure that all glyphs used by the string are pre-rendered and cached in the texture. Only safe to do so from the
          * main thread because cacheGlyphs() can crash LWJGL if it makes OpenGL calls from any other thread. In this case,
@@ -707,7 +709,7 @@ public class StringCache {
         }
 
         /* Compute the advance position of the last glyph (or only glyph) since it can't be done by the above loop */
-        advance += (int) vector.getGlyphPosition(numGlyphs).getX();
+        advance += vector.getGlyphPosition(numGlyphs).getX();
         if (glyph != null) {
             glyph.advance = advance - glyph.x;
         }

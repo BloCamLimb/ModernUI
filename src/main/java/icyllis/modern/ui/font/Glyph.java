@@ -15,7 +15,7 @@ public class Glyph implements Comparable<Glyph> {
     int y;
 
     /** Glyph's horizontal advance (in pixels) used for strikethrough and underline effects */
-    int advance;
+    float advance;
 
     /**
      * Allows arrays of Glyph objects to be sorted. Performs numeric comparison on stringIndex.

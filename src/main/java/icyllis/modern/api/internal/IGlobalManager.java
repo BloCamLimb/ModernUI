@@ -1,9 +1,8 @@
 package icyllis.modern.api.internal;
 
-import icyllis.modern.api.module.IModuleInjector;
 import net.minecraft.client.gui.FontRenderer;
 
-public interface IGlobalManager extends IModuleInjector {
+public interface IGlobalManager extends IModuleReceiver {
 
     void draw();
 
