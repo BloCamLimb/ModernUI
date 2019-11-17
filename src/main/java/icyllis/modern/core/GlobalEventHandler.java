@@ -25,7 +25,7 @@ public class GlobalEventHandler {
     @SubscribeEvent
     public static void rightClickItem(PlayerInteractEvent.RightClickItem event) {
         if(!event.getPlayer().getEntityWorld().isRemote && event.getItemStack().getItem().equals(Items.DIAMOND)) {
-            ModernUIAPI.INSTANCE.network().openGUI((ServerPlayerEntity) event.getPlayer(), new ContainerHolder(), new BlockPos(2,3,3));
+            ModernUIAPI.INSTANCE.network().openGUI((ServerPlayerEntity) event.getPlayer(), new ContainerHolder(), new BlockPos(-155,82,-121));
         }
     }
 
@@ -54,7 +54,7 @@ public class GlobalEventHandler {
                 Screen gui = mc.currentScreen;
                 if(gui == null || !gui.isPauseScreen())
                     if(gui == null && mc.gameSettings.keyBindDrop.isPressed()) {
-                        ModernUIAPI.INSTANCE.screen().openScreen(RegistryScreens.TEST_CONTAINER);
+                        ModernUIAPI.INSTANCE.screen().openScreen(RegistryScreens.TEST_CONTAINER_SCREEN);
                     }
             }
         }

@@ -17,7 +17,7 @@ public class ModernUI {
 
     public ModernUI() {
         ModernUI.logger.info(MARKER, "{} has been initialized", ModernUIAPI.INSTANCE.getDeclaringClass().getSimpleName());
-        ScreenManager.INSTANCE.injectModernScreen();
+        ScreenManager.INSTANCE.generateUITypes();
     }
 
 }

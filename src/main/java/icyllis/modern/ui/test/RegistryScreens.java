@@ -1,10 +1,11 @@
 package icyllis.modern.ui.test;
 
 import icyllis.modern.api.ModernUITypes;
-import icyllis.modern.api.internal.IScreenType;
+
+import static icyllis.modern.api.ModernUITypes.*;
 
 @ModernUITypes
 public class RegistryScreens {
 
-    public static IScreenType TEST_CONTAINER;
+    public static final Type TEST_CONTAINER_SCREEN = null;
 }

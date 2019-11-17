@@ -24,7 +24,7 @@ public class UITextLine implements ITextLineTracker, IResize, IDraw {
 
     public UITextLine(FontRenderer fontRenderer) {
         this.fontRenderer = fontRenderer;
-        tt = () -> Minecraft.getInstance().world.getWorld().getGameTime();
+        tt = () -> Minecraft.getInstance().world.getWorld().getDayTime();
     }
 
     @Override

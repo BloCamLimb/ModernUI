@@ -20,7 +20,7 @@ public interface IModernScreen {
     void createModules(IModuleReceiver receiver);
 
     /**
-     * Override this for non-container screen
+     * Override this for screen without container
      */
     default ITextComponent getTitle() {
         return EMPTY_TITLE;
