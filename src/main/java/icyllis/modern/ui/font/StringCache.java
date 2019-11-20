@@ -1,3 +1,23 @@
+/*
+ * Modern UI.
+ * Copyright (C) 2019 BloCamLimb. All rights reserved.
+ *
+ * Modern UI is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * Modern UI is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with Modern UI; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
+ * USA
+ */
+
 package icyllis.modern.ui.font;
 
 import icyllis.modern.core.ModernUI;
@@ -11,7 +31,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.WeakHashMap;
 
-public class StringCache {
+class StringCache {
 
     /**
      * Reference to the unicode.FontRenderer class. Needed for creating GlyphVectors and retrieving glyph texture coordinates.
@@ -46,7 +66,7 @@ public class StringCache {
      * The 4 element array is index by the font style (combination of Font.PLAIN, Font.BOLD, and Font.ITALIC), and each of the
      * nested elements is index by the digit value 0-9.
      */
-    Glyph[][] digitGlyphs = new Glyph[4][];
+    GlyphCache.Glyph[][] digitGlyphs = new GlyphCache.Glyph[4][];
 
     /**
      * True if digitGlyphs[] has been assigned and cacheString() can begin replacing all digits with '0' in the string.
@@ -183,7 +203,7 @@ public class StringCache {
         /**
          * Array of fully layed out glyphs for the string. Sorted by logical order of characters (i.e. glyph.stringIndex)
          */
-        public Glyph[] glyphs;
+        public GlyphCache.Glyph[] glyphs;
 
         /**
          * Array of color code locations from the original string
@@ -320,6 +340,7 @@ public class StringCache {
 
         /* If string is not cached (or not on main thread) then layout the string */
         if (entry == null) {
+            ModernUI.logger.info("new entry");
             /* layoutGlyphVector() requires a char[] so create it here and pass it around to avoid duplication later on */
             char[] text = str.toCharArray();
 
@@ -328,11 +349,11 @@ public class StringCache {
             int length = stripColorCodes(entry, str, text);
 
             /* Layout the entire string, splitting it up by color codes and the Unicode bidirectional algorithm */
-            List<Glyph> glyphList = new ArrayList<>();
+            List<GlyphCache.Glyph> glyphList = new ArrayList<>();
             entry.advance = layoutBidiString(glyphList, text, 0, length, entry.colors);
 
             /* Convert the accumulated Glyph list to an array for efficient storage */
-            entry.glyphs = new Glyph[glyphList.size()];
+            entry.glyphs = new GlyphCache.Glyph[glyphList.size()];
             entry.glyphs = glyphList.toArray(entry.glyphs);
 
             /*
@@ -344,7 +365,7 @@ public class StringCache {
             /* Do some post-processing on each Glyph object */
             int colorIndex = 0, shift = 0;
             for (int glyphIndex = 0; glyphIndex < entry.glyphs.length; glyphIndex++) {
-                Glyph glyph = entry.glyphs[glyphIndex];
+                GlyphCache.Glyph glyph = entry.glyphs[glyphIndex];
 
                 /*
                  * Adjust the string index for each glyph to point into the original string with unstripped color codes. The while
@@ -496,7 +517,7 @@ public class StringCache {
      * @param limit     the (offset + length) at which to stop performing the layout
      * @return the total advance (horizontal distance) of this string
      */
-    private float layoutBidiString(List<Glyph> glyphList, char[] text, int start, int limit, ColorCode[] colors) {
+    private float layoutBidiString(List<GlyphCache.Glyph> glyphList, char[] text, int start, int limit, ColorCode[] colors) {
         float advance = 0;
 
         /* Avoid performing full bidirectional analysis if text has no "strong" right-to-left characters */
@@ -546,7 +567,7 @@ public class StringCache {
         }
     }
 
-    private float layoutStyle(List<Glyph> glyphList, char[] text, int start, int limit, int layoutFlags, float advance, ColorCode[] colors) {
+    private float layoutStyle(List<GlyphCache.Glyph> glyphList, char[] text, int start, int limit, int layoutFlags, float advance, ColorCode[] colors) {
         int currentFontStyle = Font.PLAIN;
 
         /* Find ColorCode object with stripIndex <= start; that will have the font style in effect at the beginning of this text run */
@@ -610,7 +631,7 @@ public class StringCache {
      * TODO Correctly handling RTL font selection requires scanning the sctring from RTL as well.
      * TODO Use bitmap fonts as a fallback if no OpenType font could be found
      */
-    private float layoutString(List<Glyph> glyphList, char[] text, int start, int limit, int layoutFlags, float advance, int style) {
+    private float layoutString(List<GlyphCache.Glyph> glyphList, char[] text, int start, int limit, int layoutFlags, float advance, int style) {
         /*
          * Convert all digits in the string to a '0' before layout to ensure that any glyphs replaced on the fly will all have
          * the same positions. Under Windows, Java's "SansSerif" logical font uses the "Arial" font for digits, in which the "1"
@@ -666,7 +687,7 @@ public class StringCache {
      * @return the advance (horizontal distance) of this string plus the advance passed in as an argument
      * @todo need to ajust position of all glyphs if digits are present, by assuming every digit should be 0 in length
      */
-    private float layoutFont(List<Glyph> glyphList, char[] text, int start, int limit, int layoutFlags, float advance, Font font) {
+    private float layoutFont(List<GlyphCache.Glyph> glyphList, char[] text, int start, int limit, int layoutFlags, float advance, Font font) {
         /*
          * Ensure that all glyphs used by the string are pre-rendered and cached in the texture. Only safe to do so from the
          * main thread because cacheGlyphs() can crash LWJGL if it makes OpenGL calls from any other thread. In this case,
@@ -686,7 +707,7 @@ public class StringCache {
          * string is layed out, this field will be adjusted on every Glyph object to correctly index the original unstripped
          * string.
          */
-        Glyph glyph = null;
+        GlyphCache.Glyph glyph = null;
         int numGlyphs = vector.getNumGlyphs();
         for (int index = 0; index < numGlyphs; index++) {
             Point position = vector.getGlyphPixelBounds(index, null, advance, 0).getLocation();
@@ -700,7 +721,7 @@ public class StringCache {
              * Allocate a new glyph object and add to the glyphList. The glyph.stringIndex here is really like stripIndex but
              * it will be corrected later to account for the color codes that have been stripped out.
              */
-            glyph = new Glyph();
+            glyph = new GlyphCache.Glyph();
             glyph.stringIndex = start + vector.getGlyphCharIndex(index);
             glyph.texture = glyphCache.lookupGlyph(font, vector.getGlyphCode(index));
             glyph.x = position.x;

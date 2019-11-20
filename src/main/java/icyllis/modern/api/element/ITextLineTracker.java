@@ -1,26 +1,14 @@
 package icyllis.modern.api.element;
 
+import java.util.function.Supplier;
+
 public interface ITextLineTracker {
 
-    default ITextLineTracker setText(String text) {
-        return setText(text, false);
-    }
+    ITextLineTracker text(Supplier<String> text);
 
-    ITextLineTracker setText(String text, boolean shadow);
+    ITextLineTracker pos(float x, float y);
 
-    default ITextLineTracker setPosition(int x, int y) {
-        return setPosition(x, y, false);
-    }
+    ITextLineTracker pos(float x, float y, boolean center);
 
-    default ITextLineTracker setPosition(int x, int y, boolean center) {
-        return setPosition((float) x, (float) y, center);
-    }
-
-    default ITextLineTracker setPosition(float x, float y) {
-        return setPosition(x, y, false);
-    }
-
-    ITextLineTracker setPosition(float x, float y, boolean center);
-
-    ITextLineTracker setColor(int color);
+    ITextLineTracker color(int color);
 }

@@ -23,8 +23,8 @@ public class GlobalModuleManager implements IGlobalManager {
     }
 
     @Override
-    public void build(FontRenderer fontRenderer, int width, int height) {
-        modules.forEach(m -> m.build(fontRenderer, width, height));
+    public void build(int width, int height) {
+        modules.forEach(m -> m.build(width, height));
     }
 
     @Override

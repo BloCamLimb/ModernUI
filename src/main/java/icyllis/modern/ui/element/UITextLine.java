@@ -3,48 +3,46 @@ package icyllis.modern.ui.element;
 import icyllis.modern.api.basic.IDraw;
 import icyllis.modern.api.basic.IResize;
 import icyllis.modern.api.element.ITextLineTracker;
-import icyllis.modern.core.ModernUI;
-import icyllis.modern.ui.font.StringRenderer;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
+import icyllis.modern.ui.font.TrueTypeRenderer;
 
 import java.util.function.Supplier;
 
 public class UITextLine implements ITextLineTracker, IResize, IDraw {
 
-    private FontRenderer fontRenderer;
-    private StringRenderer renderer = StringRenderer.DEFAULT_FONT_RENDERER;
+    private TrueTypeRenderer renderer = TrueTypeRenderer.DEFAULT_FONT_RENDERER;
 
     private float bx, by;
     private float x, y;
     private int color = -1;
-    private boolean shadowed, centered;
-    private String t;
-    private Supplier<Long> tt;
-
-    public UITextLine(FontRenderer fontRenderer) {
-        this.fontRenderer = fontRenderer;
-        tt = () -> Minecraft.getInstance().world.getWorld().getDayTime();
-    }
+    private boolean centered;
+    private Supplier<String> text;
 
     @Override
     public void draw() {
-        if(shadowed)
-            fontRenderer.drawStringWithShadow(t, x, y, color);
-        else {
-            renderer.renderString(t + tt.get(), x, y, 0xfff91020);
+        String bakedText = text.get();
+        float rx = x;
+        if(centered) {
+            rx = x - renderer.getStringWidth(bakedText) / 2;
         }
+        renderer.renderString(bakedText, rx, y, color);
     }
 
     @Override
-    public ITextLineTracker setText(String text, boolean shadow) {
-        t = text;
-        shadowed = shadow;
+    public ITextLineTracker text(Supplier<String> text) {
+        this.text = text;
         return this;
     }
 
     @Override
-    public ITextLineTracker setPosition(float x, float y, boolean center) {
+    public ITextLineTracker pos(float x, float y) {
+        bx = x;
+        by = y;
+        centered = false;
+        return this;
+    }
+
+    @Override
+    public ITextLineTracker pos(float x, float y, boolean center) {
         bx = x;
         by = y;
         centered = center;
@@ -52,19 +50,14 @@ public class UITextLine implements ITextLineTracker, IResize, IDraw {
     }
 
     @Override
-    public ITextLineTracker setColor(int color) {
+    public ITextLineTracker color(int color) {
         this.color = color;
         return this;
     }
 
     @Override
     public void resize(int width, int height) {
+        x = width / 2f + bx;
         y = height / 2f + by;
-        if(centered) {
-            float wid = renderer.getStringWidth(t);
-            x = (width - wid) / 2f + bx;
-        } else {
-            x = width / 2f + bx;
-        }
     }
 }

@@ -1,6 +1,7 @@
 package icyllis.modern.api.module;
 
 import icyllis.modern.api.internal.IModuleReceiver;
+import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 
@@ -8,8 +9,6 @@ import net.minecraft.util.text.StringTextComponent;
  * Implements this to create your modern screen
  */
 public interface IModernScreen {
-
-    ITextComponent EMPTY_TITLE = new StringTextComponent("");
 
     /**
      * Inject your custom modules in Modern UI
@@ -20,9 +19,11 @@ public interface IModernScreen {
     void createModules(IModuleReceiver receiver);
 
     /**
-     * Override this for screen without container
+     * Called before create modules
+     *
+     * @param extraData A copy from container extra data
      */
-    default ITextComponent getTitle() {
-        return EMPTY_TITLE;
-    }
+    void updateFromNetwork(PacketBuffer extraData);
+
+    ITextComponent getTitle();
 }

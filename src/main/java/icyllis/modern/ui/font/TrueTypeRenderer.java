@@ -1,24 +1,44 @@
+/*
+ * Modern UI.
+ * Copyright (C) 2019 BloCamLimb. All rights reserved.
+ *
+ * Modern UI is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * Modern UI is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with Modern UI; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
+ * USA
+ */
+
 package icyllis.modern.ui.font;
 
 import com.mojang.blaze3d.platform.GlStateManager;
-import icyllis.modern.core.ModernUI;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraftforge.client.event.ModelBakeEvent;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.opengl.GL11;
 
 import java.awt.*;
 
-public class StringRenderer {
+public class TrueTypeRenderer {
 
-    public static final StringRenderer DEFAULT_FONT_RENDERER;
+    public static final TrueTypeRenderer DEFAULT_FONT_RENDERER;
+    private static final FontRenderer VANILLA_FONT_RENDERER;
     static {
         StringCache cache1 = new StringCache();
         cache1.setDefaultFont(12.5f, true);
-        DEFAULT_FONT_RENDERER = new StringRenderer(cache1);
+        DEFAULT_FONT_RENDERER = new TrueTypeRenderer(cache1);
+        VANILLA_FONT_RENDERER = Minecraft.getInstance().fontRenderer;
     }
 
     /**
@@ -48,12 +68,8 @@ public class StringRenderer {
 
     private final StringCache cache;
 
-    StringRenderer(StringCache cache) {
+    private TrueTypeRenderer(StringCache cache) {
         this.cache = cache;
-    }
-
-    StringCache getCache() {
-        return cache;
     }
 
     public void init() {
@@ -128,7 +144,7 @@ public class StringRenderer {
             }
 
             /* Select the current glyph's texture information and horizontal layout position within this string */
-            Glyph glyph = entry.glyphs[glyphIndex];
+            GlyphCache.Glyph glyph = entry.glyphs[glyphIndex];
             GlyphCache.Entry texture = glyph.texture;
             int glyphX = glyph.x;
 
@@ -188,7 +204,7 @@ public class StringRenderer {
                 }
 
                 /* Select the current glyph within this string for its layout position */
-                Glyph glyph = entry.glyphs[glyphIndex];
+                GlyphCache.Glyph glyph = entry.glyphs[glyphIndex];
 
                 /* The strike/underlines are drawn beyond the glyph's width to include the extra space between glyphs */
                 float glyphSpace = glyph.advance - glyph.texture.width;
@@ -280,7 +296,7 @@ public class StringRenderer {
             width += width;
 
         /* The glyph array for a string is sorted by the string's logical character position */
-        Glyph[] glyphs = cache.cacheString(str).glyphs;
+        GlyphCache.Glyph[] glyphs = cache.cacheString(str).glyphs;
 
         /* Index of the last whitespace found in the string; used if breakAtSpaces is true */
         int wsIndex = -1;
