@@ -1,6 +1,6 @@
 package icyllis.modern.api.internal;
 
-import icyllis.modern.api.ModernUITypes;
+import icyllis.modern.api.module.ModernUIType;
 import icyllis.modern.api.module.IModernScreen;
 import icyllis.modern.core.ScreenManager;
 import net.minecraft.inventory.container.Container;
@@ -19,7 +19,7 @@ public interface IScreenManager {
      * @param screen Modern screen to display
      */
     @OnlyIn(Dist.CLIENT)
-    void registerScreen(ModernUITypes.Type type, Supplier<IModernScreen> screen);
+    void registerScreen(ModernUIType type, Supplier<IModernScreen> screen);
 
     /**
      * Register a screen with container
@@ -29,7 +29,7 @@ public interface IScreenManager {
      * @param screen Modern screen to display
      */
     @OnlyIn(Dist.CLIENT)
-    <M extends Container, T extends TileEntity> void registerContainerScreen(ModernUITypes.Type type, ScreenManager.IContainerFactory<M, T> factory, Supplier<IModernScreen> screen);
+    <M extends Container, T extends TileEntity> void registerContainerScreen(ModernUIType type, ScreenManager.IContainerFactory<M> factory, Supplier<IModernScreen> screen);
 
     /**
      * Open a screen on client side.
@@ -37,5 +37,5 @@ public interface IScreenManager {
      * @param type Screen reference
      */
     @OnlyIn(Dist.CLIENT)
-    void openScreen(ModernUITypes.Type type);
+    void openScreen(ModernUIType type);
 }

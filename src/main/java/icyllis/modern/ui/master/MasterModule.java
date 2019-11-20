@@ -20,8 +20,8 @@ public class MasterModule implements IMasterModule, IModuleTracker {
     }
 
     @Override
-    public void build(FontRenderer fontRenderer, int width, int height) {
-        elementManager = new MasterModuleManager(fontRenderer);
+    public void build(int width, int height) {
+        elementManager = new MasterModuleManager();
         rawModule.createElements(elementManager);
         resize(width, height);
         rawModule = null;

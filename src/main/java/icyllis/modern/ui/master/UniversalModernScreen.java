@@ -21,7 +21,7 @@ public final class UniversalModernScreen extends Screen {
 
     @Override
     protected void init() {
-        manager.build(font, width, height);
+        manager.build(width, height);
     }
 
     @Override

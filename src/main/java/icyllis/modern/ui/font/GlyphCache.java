@@ -1,3 +1,23 @@
+/*
+ * Modern UI.
+ * Copyright (C) 2019 BloCamLimb. All rights reserved.
+ *
+ * Modern UI is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * Modern UI is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with Modern UI; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
+ * USA
+ */
+
 package icyllis.modern.ui.font;
 
 import com.google.common.collect.Lists;
@@ -21,7 +41,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-public class GlyphCache {
+class GlyphCache {
 
     /**
      * The width in pixels of every texture used for caching pre-rendered glyph images. Used by GlyphCache when calculating
@@ -296,7 +316,7 @@ public class GlyphCache {
             Font font = iterator.next();
             if (font.canDisplayUpTo(text, start, limit) != start) {
                 /* If found, add this font to the usedFonts list so it can be looked up faster next time */
-                System.out.println("BetterFonts loading font \"" + font.getFontName() + "\"");
+                ModernUI.logger.info(ModernUI.MARKER, "{} has been loaded", font.getName());
                 usedFonts.add(font);
 
                 /* Return a font instance of the proper point size and style; allFonts has only 1pt sized plain style fonts */
@@ -599,5 +619,34 @@ public class GlyphCache {
         imageBuffer.clear();
         imageBuffer.put(imageData);
         imageBuffer.flip();
+    }
+
+    static class Glyph implements Comparable<Glyph> {
+
+        /** The index into the original string (i.e. with color codes) for the character that generated this glyph. */
+        int stringIndex;
+
+        /** Texture ID and position/size of the glyph's pre-rendered image within the cache texture. */
+        Entry texture;
+
+        /** Glyph's horizontal position (in pixels) relative to the entire string's baseline */
+        int x;
+
+        /** Glyph's vertical position (in pixels) relative to the entire string's baseline */
+        int y;
+
+        /** Glyph's horizontal advance (in pixels) used for strikethrough and underline effects */
+        float advance;
+
+        /**
+         * Allows arrays of Glyph objects to be sorted. Performs numeric comparison on stringIndex.
+         *
+         * @param o the other Glyph object being compared with this one
+         * @return either -1, 0, or 1 if this < other, this == other, or this > other
+         */
+        @Override
+        public int compareTo(Glyph o) {
+            return Integer.compare(stringIndex, o.stringIndex);
+        }
     }
 }

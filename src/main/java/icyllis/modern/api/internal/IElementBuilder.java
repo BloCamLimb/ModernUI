@@ -6,5 +6,5 @@ public interface IElementBuilder {
 
     void defaultBackground();
 
-    ITextLineTracker newTextLine();
+    ITextLineTracker textLine();
 }

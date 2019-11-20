@@ -14,7 +14,7 @@ public interface IModernModule {
     /**
      * Add your elements and set their properties
      *
-     * @param builder Element Builder
+     * @param builder Element builder
      */
     void createElements(IElementBuilder builder);
 

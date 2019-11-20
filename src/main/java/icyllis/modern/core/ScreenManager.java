@@ -1,6 +1,7 @@
 package icyllis.modern.core;
 
-import icyllis.modern.api.ModernUITypes;
+import icyllis.modern.api.ModernUIInject;
+import icyllis.modern.api.module.ModernUIType;
 import icyllis.modern.api.internal.IScreenManager;
 import icyllis.modern.api.module.IModernScreen;
 import icyllis.modern.ui.master.UniversalModernScreen;
@@ -8,6 +9,7 @@ import icyllis.modern.ui.master.UniversalModernScreenG;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.container.Container;
+import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.client.CCloseWindowPacket;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
@@ -15,11 +17,8 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.forgespi.language.ModFileScanData;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
 import org.objectweb.asm.Type;
 
-import javax.annotation.Nullable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Collection;
@@ -31,52 +30,48 @@ import java.util.stream.Collectors;
 public enum ScreenManager implements IScreenManager {
     INSTANCE;
 
-    private final Marker MARKER = MarkerManager.getMarker("SCREEN");
-
     private final Map<Integer, IContainerFactory> CONTAINERS = new HashMap<>();
     private final Map<Integer, Supplier<IModernScreen>> SCREENS = new HashMap<>();
     private int registryId = 0;
 
-    @SuppressWarnings("unchecked")
     @OnlyIn(Dist.CLIENT)
-    public void openContainerScreen(int id, int windowId, BlockPos pos) {
+    public void openContainerScreen(int id, int windowId, PacketBuffer extraData) {
         if (SCREENS.containsKey(id) && CONTAINERS.containsKey(id)) {
             IModernScreen screen = SCREENS.get(id).get();
             IContainerFactory factory = CONTAINERS.get(id);
-            try {
-                Container container = factory.create(windowId, Minecraft.getInstance().player.inventory, pos == null ? null : Minecraft.getInstance().world.getTileEntity(pos));
-                Minecraft.getInstance().player.openContainer = container;
-                Minecraft.getInstance().displayGuiScreen(new UniversalModernScreenG<>(screen, container));
-            } catch (final ClassCastException e) {
-                Minecraft.getInstance().player.connection.sendPacket(new CCloseWindowPacket(windowId));
-                ModernUI.logger.warn(MARKER, "Failed to open container screen. Tile entity at {} can't be cast to target container constructor", pos, e);
-            }
+            PacketBuffer copied = new PacketBuffer(extraData.copy());
+            Container container = factory.create(windowId, Minecraft.getInstance().player.inventory, extraData);
+            screen.updateFromNetwork(copied);
+            Minecraft.getInstance().player.openContainer = container;
+            Minecraft.getInstance().displayGuiScreen(new UniversalModernScreenG<>(screen, container));
+        } else {
+            Minecraft.getInstance().player.connection.sendPacket(new CCloseWindowPacket(windowId));
         }
     }
 
     @OnlyIn(Dist.CLIENT)
     @Override
-    public void registerScreen(ModernUITypes.Type type, Supplier<IModernScreen> screen) {
+    public void registerScreen(ModernUIType type, Supplier<IModernScreen> screen) {
         SCREENS.put(type.getId(), screen);
     }
 
     @OnlyIn(Dist.CLIENT)
     @Override
-    public <M extends Container, T extends TileEntity> void registerContainerScreen(ModernUITypes.Type type, IContainerFactory<M, T> factory, Supplier<IModernScreen> screen) {
+    public <M extends Container, T extends TileEntity> void registerContainerScreen(ModernUIType type, IContainerFactory<M> factory, Supplier<IModernScreen> screen) {
         registerScreen(type, screen);
         CONTAINERS.put(type.getId(), factory);
     }
 
     @OnlyIn(Dist.CLIENT)
     @Override
-    public void openScreen(ModernUITypes.Type type) {
+    public void openScreen(ModernUIType type) {
         if (SCREENS.containsKey(type.getId())) {
             Minecraft.getInstance().displayGuiScreen(new UniversalModernScreen(SCREENS.get(type.getId()).get()));
         }
     }
 
     public void generateUITypes() {
-        Type INJECT = Type.getType(ModernUITypes.class);
+        Type INJECT = Type.getType(ModernUIInject.class);
         ModList.get().getAllScanData().stream()
                 .map(ModFileScanData::getAnnotations)
                 .flatMap(Collection::stream)
@@ -96,22 +91,22 @@ public enum ScreenManager implements IScreenManager {
                     f.set(null, new ScreenType(registryId++));
                     modifiers.setInt(f, f.getModifiers() & ~Modifier.FINAL);
                 } catch (IllegalAccessException | NoSuchFieldException e) {
-                    throw new IllegalAccessException("UI type field must be public");
+                    throw new RuntimeException("UI type field must be public", e);
                 }
             }
-        } catch (ClassNotFoundException | IllegalAccessException e) {
+        } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
 
     @OnlyIn(Dist.CLIENT)
     @FunctionalInterface
-    public interface IContainerFactory<T extends Container, G extends TileEntity> {
+    public interface IContainerFactory<T extends Container> {
 
-        T create(int windowId, PlayerInventory playerInventory, @Nullable G tileEntity);
+        T create(int windowId, PlayerInventory playerInventory, PacketBuffer extraData);
     }
 
-    public static class ScreenType implements ModernUITypes.Type {
+    public static class ScreenType implements ModernUIType {
 
         private final int id;
 

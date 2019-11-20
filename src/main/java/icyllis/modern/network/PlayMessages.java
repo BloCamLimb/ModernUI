@@ -9,39 +9,32 @@ import net.minecraftforge.fml.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-class PlayMessages {
+public class PlayMessages {
 
-    static class OpenContainer {
+    public static class OpenContainer {
 
-        final int id;
-        final int windowId;
-        final boolean hasPos;
-        final BlockPos pos;
+        private final int id;
+        private final int windowId;
+        private final PacketBuffer additionalData;
 
-        OpenContainer(int id, int windowId, boolean hasPos, BlockPos pos) {
+        public OpenContainer(int id, int windowId, PacketBuffer additionalData) {
             this.id = id;
             this.windowId = windowId;
-            this.hasPos = hasPos;
-            this.pos = pos;
+            this.additionalData = additionalData;
         }
 
-        static void encode(OpenContainer msg, PacketBuffer buf) {
+        public static void encode(OpenContainer msg, PacketBuffer buf) {
             buf.writeVarInt(msg.id);
             buf.writeVarInt(msg.windowId);
-            buf.writeBoolean(msg.hasPos);
-            if(msg.hasPos) {
-                buf.writeBlockPos(msg.pos);
-            }
+            buf.writeByteArray(msg.additionalData.readByteArray());
         }
 
-        static OpenContainer decode(PacketBuffer buf) {
-            int id = buf.readVarInt(), windowId = buf.readVarInt();
-            boolean hasPos = buf.readBoolean();
-            return new OpenContainer(id, windowId, hasPos, hasPos ? buf.readBlockPos() : null);
+        public static OpenContainer decode(PacketBuffer buf) {
+            return new OpenContainer(buf.readVarInt(), buf.readVarInt(), new PacketBuffer(Unpooled.wrappedBuffer(buf.readByteArray(32600))));
         }
 
-        static boolean handle(OpenContainer msg, Supplier<NetworkEvent.Context> ctx) {
-            ctx.get().enqueueWork(() -> ScreenManager.INSTANCE.openContainerScreen(msg.id, msg.windowId, msg.pos));
+        public static boolean handle(OpenContainer msg, Supplier<NetworkEvent.Context> ctx) {
+            ctx.get().enqueueWork(() -> ScreenManager.INSTANCE.openContainerScreen(msg.id, msg.windowId, msg.additionalData));
             return true;
         }
     }

@@ -2,6 +2,7 @@ package icyllis.modern.core;
 
 import icyllis.modern.api.ModernUIAPI;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.network.NetworkHooks;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;

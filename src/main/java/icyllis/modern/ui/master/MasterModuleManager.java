@@ -13,13 +13,11 @@ import java.util.List;
 
 public class MasterModuleManager implements IMasterManager {
 
-    private FontRenderer fontRenderer;
-
     private List<IResize> resizes = new ArrayList<>();
     private List<IDraw> draws = new ArrayList<>();
 
-    public MasterModuleManager(FontRenderer fontRenderer) {
-        this.fontRenderer = fontRenderer;
+    public MasterModuleManager() {
+
     }
 
     @Override
@@ -30,8 +28,8 @@ public class MasterModuleManager implements IMasterManager {
     }
 
     @Override
-    public ITextLineTracker newTextLine() {
-        UITextLine u = new UITextLine(fontRenderer);
+    public ITextLineTracker textLine() {
+        UITextLine u = new UITextLine();
         resizes.add(u);
         draws.add(u);
 
