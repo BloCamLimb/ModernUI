@@ -1,10 +1,9 @@
 package icyllis.modern.ui.element;
 
-import icyllis.modern.api.basic.IDraw;
-import icyllis.modern.api.basic.IResize;
+import icyllis.modern.api.element.IElement;
 import icyllis.modern.ui.master.DrawTools;
 
-public class UIBackground implements IResize, IDraw {
+public class UIBackground implements IElement {
 
     private int width, height;
 

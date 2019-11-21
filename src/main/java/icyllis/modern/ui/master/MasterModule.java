@@ -1,10 +1,10 @@
 package icyllis.modern.ui.master;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import icyllis.modern.api.internal.IMasterManager;
 import icyllis.modern.api.internal.IMasterModule;
 import icyllis.modern.api.module.IModernModule;
 import icyllis.modern.api.module.IModuleTracker;
-import net.minecraft.client.gui.FontRenderer;
 
 public class MasterModule implements IMasterModule, IModuleTracker {
 
@@ -13,7 +13,7 @@ public class MasterModule implements IMasterModule, IModuleTracker {
     private int trigger = 0;
     private boolean triggered = false;
 
-    private IMasterManager elementManager;
+    private IMasterManager manager;
 
     MasterModule(IModernModule rawModule) {
         this.rawModule = rawModule;
@@ -21,8 +21,8 @@ public class MasterModule implements IMasterModule, IModuleTracker {
 
     @Override
     public void build(int width, int height) {
-        elementManager = new MasterModuleManager();
-        rawModule.createElements(elementManager);
+        manager = new MasterModuleManager();
+        rawModule.createElements(manager);
         resize(width, height);
         rawModule = null;
         triggered = true;
@@ -31,7 +31,7 @@ public class MasterModule implements IMasterModule, IModuleTracker {
     @Override
     public void draw() {
         if(triggered)
-            elementManager.draw();
+            manager.draw();
     }
 
     @Override
@@ -42,7 +42,7 @@ public class MasterModule implements IMasterModule, IModuleTracker {
 
     @Override
     public void resize(int width, int height) {
-        elementManager.resize(width, height);
+        manager.resize(width, height);
     }
 
     @Override

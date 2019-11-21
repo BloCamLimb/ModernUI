@@ -34,4 +34,27 @@ public class DrawTools {
         GlStateManager.enableAlphaTest();
         GlStateManager.enableTexture();
     }
+
+    public static void blit(float x, float y, float u, float v, float width, float height) {
+        blitToScale(x, y, 0, u, v, width, height);
+    }
+
+    public static void blit(float x, float y, float z, float u, float v, float width, float height) {
+        blitToScale(x, y, z, u, v, width, height);
+    }
+
+    private static void blitToScale(float x, float y, float z, float textureX, float textureY, float width, float height) {
+        blitRender(x, x + width, y, y + height, z, textureX / 256.0, (textureX + width) / 256.0, textureY / 256.0, (textureY + height) / 256.0);
+    }
+
+    private static void blitRender(double x1, double x2, double y1, double y2, double z, double textureX1, double textureX2, double textureY1, double textureY2) {
+        Tessellator tessellator = Tessellator.getInstance();
+        BufferBuilder bufferbuilder = tessellator.getBuffer();
+        bufferbuilder.begin(7, DefaultVertexFormats.POSITION_TEX);
+        bufferbuilder.pos(x1, y2, z).tex(textureX1, textureY2).endVertex();
+        bufferbuilder.pos(x2, y2, z).tex(textureX2, textureY2).endVertex();
+        bufferbuilder.pos(x2, y1, z).tex(textureX2, textureY1).endVertex();
+        bufferbuilder.pos(x1, y1, z).tex(textureX1, textureY1).endVertex();
+        tessellator.draw();
+    }
 }
