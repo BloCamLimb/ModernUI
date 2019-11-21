@@ -1,13 +1,12 @@
 package icyllis.modern.ui.element;
 
-import icyllis.modern.api.basic.IDraw;
-import icyllis.modern.api.basic.IResize;
+import icyllis.modern.api.element.IElement;
 import icyllis.modern.api.element.ITextLineTracker;
 import icyllis.modern.ui.font.TrueTypeRenderer;
 
 import java.util.function.Supplier;
 
-public class UITextLine implements ITextLineTracker, IResize, IDraw {
+public class UITextLine implements ITextLineTracker, IElement {
 
     private TrueTypeRenderer renderer = TrueTypeRenderer.DEFAULT_FONT_RENDERER;
 
