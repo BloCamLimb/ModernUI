@@ -23,7 +23,7 @@ public interface IModernScreen {
      *
      * @param extraData A copy from container extra data
      */
-    void updateFromNetwork(PacketBuffer extraData);
+    void updateData(PacketBuffer extraData);
 
     ITextComponent getTitle();
 }

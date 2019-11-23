@@ -81,12 +81,10 @@ public enum NetworkHandler implements INetworkHandler {
 
         Container c = containerProvider.createContainer(windowId, serverPlayer.inventory, serverPlayer);
 
-        if(c != null) {
-            OpenContainer msg = new OpenContainer(containerProvider.getUIType().getId(), windowId, output);
-            sendTo(msg, serverPlayer);
-            serverPlayer.openContainer = c;
-            serverPlayer.openContainer.addListener(serverPlayer);
-            MinecraftForge.EVENT_BUS.post(new PlayerContainerEvent.Open(serverPlayer, c));
-        }
+        OpenContainer msg = new OpenContainer(containerProvider.getUIType().getId(), windowId, output);
+        sendTo(msg, serverPlayer);
+        serverPlayer.openContainer = c;
+        serverPlayer.openContainer.addListener(serverPlayer);
+        MinecraftForge.EVENT_BUS.post(new PlayerContainerEvent.Open(serverPlayer, c));
     }
 }

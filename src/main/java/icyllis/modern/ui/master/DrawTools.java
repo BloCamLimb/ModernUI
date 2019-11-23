@@ -39,7 +39,7 @@ public class DrawTools {
         blitToScale(x, y, 0, u, v, width, height);
     }
 
-    public static void blit(float x, float y, float z, float u, float v, float width, float height) {
+    public static void blitWithZ(float x, float y, float z, float u, float v, float width, float height) {
         blitToScale(x, y, z, u, v, width, height);
     }
 

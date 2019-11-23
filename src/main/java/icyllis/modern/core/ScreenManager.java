@@ -12,7 +12,6 @@ import net.minecraft.inventory.container.Container;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.client.CCloseWindowPacket;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.ModList;
@@ -41,7 +40,7 @@ public enum ScreenManager implements IScreenManager {
             IContainerFactory factory = CONTAINERS.get(id);
             PacketBuffer copied = new PacketBuffer(extraData.copy());
             Container container = factory.create(windowId, Minecraft.getInstance().player.inventory, extraData);
-            screen.updateFromNetwork(copied);
+            screen.updateData(copied);
             Minecraft.getInstance().player.openContainer = container;
             Minecraft.getInstance().displayGuiScreen(new UniversalModernScreenG<>(screen, container));
         } else {
@@ -51,23 +50,15 @@ public enum ScreenManager implements IScreenManager {
 
     @OnlyIn(Dist.CLIENT)
     @Override
-    public void registerScreen(ModernUIType type, Supplier<IModernScreen> screen) {
-        SCREENS.put(type.getId(), screen);
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    @Override
     public <M extends Container, T extends TileEntity> void registerContainerScreen(ModernUIType type, IContainerFactory<M> factory, Supplier<IModernScreen> screen) {
-        registerScreen(type, screen);
+        SCREENS.put(type.getId(), screen);
         CONTAINERS.put(type.getId(), factory);
     }
 
     @OnlyIn(Dist.CLIENT)
     @Override
-    public void openScreen(ModernUIType type) {
-        if (SCREENS.containsKey(type.getId())) {
-            Minecraft.getInstance().displayGuiScreen(new UniversalModernScreen(SCREENS.get(type.getId()).get()));
-        }
+    public void openScreen(Supplier<IModernScreen> screenSupplier) {
+        Minecraft.getInstance().displayGuiScreen(new UniversalModernScreen(screenSupplier.get()));
     }
 
     public void generateUITypes() {

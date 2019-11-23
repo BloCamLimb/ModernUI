@@ -28,7 +28,9 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import org.lwjgl.opengl.GL11;
 
-import java.awt.*;
+import java.awt.Font;
+import java.util.ArrayList;
+import java.util.List;
 
 public class TrueTypeRenderer {
 
@@ -283,17 +285,14 @@ public class TrueTypeRenderer {
      * @param breakAtSpaces set to prefer breaking line at spaces than in the middle of a word
      * @return the number of characters from str that will fit inside width
      */
-    private int sizeString(String str, int width, boolean breakAtSpaces) {
+    private int sizeString(String str, float width, boolean breakAtSpaces) {
         /* Check for invalid arguments */
         if (str == null || str.isEmpty()) {
             return 0;
         }
 
         /* Convert the width from GUI coordinate system to pixels */
-        if (width >= Integer.MAX_VALUE / 2)
-            width = Integer.MAX_VALUE;
-        else
-            width += width;
+        width += width;
 
         /* The glyph array for a string is sorted by the string's logical character position */
         GlyphCache.Glyph[] glyphs = cache.cacheString(str).glyphs;
@@ -355,7 +354,7 @@ public class TrueTypeRenderer {
      * @return the trimmed and optionally reversed string
      */
     @SuppressWarnings("unused")
-    public String trimStringToWidth(String str, int width, boolean reverse) {
+    public String trimStringToWidth(String str, float width, boolean reverse) {
         if (reverse)
             str = new StringBuilder(str).reverse().toString();
 

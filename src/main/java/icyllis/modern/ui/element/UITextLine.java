@@ -2,13 +2,15 @@ package icyllis.modern.ui.element;
 
 import icyllis.modern.api.element.IElement;
 import icyllis.modern.api.element.ITextLineTracker;
+import icyllis.modern.ui.font.EmojiStringRenderer;
 import icyllis.modern.ui.font.TrueTypeRenderer;
 
 import java.util.function.Supplier;
 
 public class UITextLine implements ITextLineTracker, IElement {
 
-    private TrueTypeRenderer renderer = TrueTypeRenderer.DEFAULT_FONT_RENDERER;
+    //private TrueTypeRenderer renderer = TrueTypeRenderer.DEFAULT_FONT_RENDERER;
+    private EmojiStringRenderer r = EmojiStringRenderer.INSTANCE;
 
     private float bx, by;
     private float x, y;
@@ -20,10 +22,11 @@ public class UITextLine implements ITextLineTracker, IElement {
     public void draw() {
         String bakedText = text.get();
         float rx = x;
-        if(centered) {
+        /*if(centered) {
             rx = x - renderer.getStringWidth(bakedText) / 2;
-        }
-        renderer.renderString(bakedText, rx, y, color);
+        }*/
+        //renderer.renderString(bakedText, rx, y, color);
+        r.renderStringWithEmoji(bakedText, rx, y, color);
     }
 
     @Override

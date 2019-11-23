@@ -243,7 +243,7 @@ class GlyphCache {
 
         /* Use Java's logical font as the default initial font if user does not override it in some configuration file */
         java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().preferLocaleFonts();
-        usedFonts.add(new Font(Font.SANS_SERIF, Font.PLAIN, 72)); //size 1 > 72
+        //usedFonts.add(new Font(Font.SANS_SERIF, Font.PLAIN, 72)); //size 1 > 72
     }
 
     /**

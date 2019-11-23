@@ -17,7 +17,7 @@ public class TestScreen implements IModernScreen {
     }
 
     @Override
-    public void updateFromNetwork(PacketBuffer extraData) {
+    public void updateData(PacketBuffer extraData) {
         //ModernUI.logger.info(extraData.readBlockPos());
     }
 

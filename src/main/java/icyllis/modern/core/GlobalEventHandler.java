@@ -15,11 +15,13 @@ import net.minecraft.item.Items;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerContainerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.client.gui.GuiAccessDenied;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -56,13 +58,13 @@ public class GlobalEventHandler {
         public static void onClientTick(TickEvent.ClientTickEvent event) {
             if(event.phase == TickEvent.Phase.START) {
                 GlobalAnimationManager.INSTANCE.tick();
-                Minecraft mc = Minecraft.getInstance();
-                Screen gui = mc.currentScreen;
-                if(gui == null || !gui.isPauseScreen())
-                    if(gui == null && mc.gameSettings.keyBindDrop.isPressed()) {
-                        ModernUIAPI.INSTANCE.screen().openScreen(RegistryScreens.TEST_CONTAINER_SCREEN);
-                    }
             }
+        }
+
+        @SubscribeEvent
+        public static void onGuiOpen(GuiOpenEvent event) {
+            if(event.getGui() != null)
+                ModernUI.logger.info(event.getGui().getClass().getSimpleName());
         }
     }
 
