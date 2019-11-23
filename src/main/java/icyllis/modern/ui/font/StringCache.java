@@ -273,7 +273,7 @@ class StringCache {
         glyphCache = new GlyphCache();
 
         /* Pre-cache the ASCII digits to allow for fast glyph substitution */
-        cacheDightGlyphs();
+        //cacheDightGlyphs();
     }
 
     /**
@@ -340,7 +340,7 @@ class StringCache {
 
         /* If string is not cached (or not on main thread) then layout the string */
         if (entry == null) {
-            ModernUI.logger.info("new entry");
+            ModernUI.logger.info("new entry for {}", str);
             /* layoutGlyphVector() requires a char[] so create it here and pass it around to avoid duplication later on */
             char[] text = str.toCharArray();
 

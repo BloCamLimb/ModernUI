@@ -13,15 +13,6 @@ import java.util.function.Supplier;
 public interface IScreenManager {
 
     /**
-     * Register a screen
-     *
-     * @param type Screen reference
-     * @param screen Modern screen to display
-     */
-    @OnlyIn(Dist.CLIENT)
-    void registerScreen(ModernUIType type, Supplier<IModernScreen> screen);
-
-    /**
      * Register a screen with container
      *
      * @param type Screen reference
@@ -34,8 +25,8 @@ public interface IScreenManager {
     /**
      * Open a screen on client side.
      *
-     * @param type Screen reference
+     * @param screenSupplier Screen
      */
     @OnlyIn(Dist.CLIENT)
-    void openScreen(ModernUIType type);
+    void openScreen(Supplier<IModernScreen> screenSupplier);
 }
