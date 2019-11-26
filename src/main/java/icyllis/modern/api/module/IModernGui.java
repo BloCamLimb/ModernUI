@@ -8,7 +8,7 @@ import net.minecraft.util.text.StringTextComponent;
 /**
  * Implements this to create your modern screen
  */
-public interface IModernScreen {
+public interface IModernGui {
 
     /**
      * Inject your custom modules in Modern UI

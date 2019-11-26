@@ -23,7 +23,7 @@ package icyllis.modern.ui.font;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.mojang.blaze3d.platform.GlStateManager;
-import icyllis.modern.core.ModernUI;
+import icyllis.modern.system.ModernUI;
 import net.minecraft.client.renderer.GLAllocation;
 import org.lwjgl.opengl.GL11;
 
@@ -259,7 +259,7 @@ class GlyphCache {
         try {
             Font f = Font.createFont(Font.TRUETYPE_FONT, getClass().getResourceAsStream("/assets/modernui/font/biliw.otf"));
             usedFonts.add(f);
-            ModernUI.logger.info(ModernUI.MARKER, "{} has been loaded", f.getName());
+            ModernUI.LOGGER.info(ModernUI.MARKER, "{} has been loaded", f.getName());
         } catch (FontFormatException | IOException e) {
             e.printStackTrace();
         }
@@ -316,7 +316,7 @@ class GlyphCache {
             Font font = iterator.next();
             if (font.canDisplayUpTo(text, start, limit) != start) {
                 /* If found, add this font to the usedFonts list so it can be looked up faster next time */
-                ModernUI.logger.info(ModernUI.MARKER, "{} has been loaded", font.getName());
+                ModernUI.LOGGER.info(ModernUI.MARKER, "{} has been loaded", font.getName());
                 usedFonts.add(font);
 
                 /* Return a font instance of the proper point size and style; allFonts has only 1pt sized plain style fonts */

@@ -2,7 +2,7 @@ package icyllis.modern.ui.element;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import icyllis.modern.api.element.IElement;
-import icyllis.modern.api.element.ITextureTracker;
+import icyllis.modern.api.element.ITextureST;
 import icyllis.modern.ui.master.DrawTools;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureManager;
@@ -10,7 +10,7 @@ import net.minecraft.util.ResourceLocation;
 
 import java.util.function.Supplier;
 
-public class UITexture implements ITextureTracker, IElement {
+public class UITexture implements ITextureST, IElement {
 
     private TextureManager textureManager;
     private ResourceLocation res;
@@ -37,34 +37,34 @@ public class UITexture implements ITextureTracker, IElement {
     }
 
     @Override
-    public ITextureTracker tex(ResourceLocation texture) {
+    public ITextureST tex(ResourceLocation texture) {
         res = texture;
         return this;
     }
 
     @Override
-    public ITextureTracker pos(float x, float y) {
+    public ITextureST pos(float x, float y) {
         bx = x;
         by = y;
         return this;
     }
 
     @Override
-    public ITextureTracker uv(float x, float y) {
-        u = x;
-        v = y;
+    public ITextureST uv(float u, float v) {
+        this.u = u;
+        this.v = v;
         return this;
     }
 
     @Override
-    public ITextureTracker size(float x, float y) {
-        w = x;
-        h = y;
+    public ITextureST size(float w, float h) {
+        this.w = w;
+        this.h = h;
         return this;
     }
 
     @Override
-    public ITextureTracker color(Supplier<Integer> color) {
+    public ITextureST color(Supplier<Integer> color) {
         this.color = () -> {
           float f = (color.get() >> 16 & 0xff) / 255.0f;
           float f1 = (color.get() >> 8 & 0xff) / 255.0f;

@@ -1,8 +1,7 @@
-package icyllis.modern.network;
+package icyllis.modern.system;
 
 import icyllis.modern.api.internal.IContainerProvider;
-import icyllis.modern.api.internal.INetworkHandler;
-import icyllis.modern.core.ModernUI;
+import icyllis.modern.api.global.INetworkHandler;
 import io.netty.buffer.Unpooled;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.container.Container;
@@ -17,7 +16,7 @@ import net.minecraftforge.fml.network.simple.SimpleChannel;
 
 import java.util.function.Consumer;
 
-import static icyllis.modern.network.PlayMessages.*;
+import static icyllis.modern.system.PlayMessages.*;
 
 public enum NetworkHandler implements INetworkHandler {
     INSTANCE;
@@ -81,7 +80,7 @@ public enum NetworkHandler implements INetworkHandler {
 
         Container c = containerProvider.createContainer(windowId, serverPlayer.inventory, serverPlayer);
 
-        OpenContainer msg = new OpenContainer(containerProvider.getUIType().getId(), windowId, output);
+        OpenContainer msg = new OpenContainer(containerProvider.getGui(), windowId, output);
         sendTo(msg, serverPlayer);
         serverPlayer.openContainer = c;
         serverPlayer.openContainer.addListener(serverPlayer);

@@ -28,9 +28,7 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import org.lwjgl.opengl.GL11;
 
-import java.awt.Font;
-import java.util.ArrayList;
-import java.util.List;
+import java.awt.*;
 
 public class TrueTypeRenderer {
 

@@ -1,7 +1,8 @@
 package icyllis.modern.ui.master;
 
 import icyllis.modern.api.internal.IGlobalManager;
-import icyllis.modern.api.module.IModernScreen;
+import icyllis.modern.api.module.IModernGui;
+import icyllis.modern.system.ModernUI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraftforge.api.distmarker.Dist;
@@ -14,7 +15,7 @@ public final class UniversalModernScreen extends Screen {
 
     private IGlobalManager manager = GlobalModuleManager.INSTANCE;
 
-    public UniversalModernScreen(IModernScreen injector) {
+    public UniversalModernScreen(IModernGui injector) {
         super(injector.getTitle());
         injector.createModules(manager);
     }
@@ -48,4 +49,5 @@ public final class UniversalModernScreen extends Screen {
     public void removed() {
         manager.clear();
     }
+
 }

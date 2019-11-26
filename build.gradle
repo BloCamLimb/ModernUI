@@ -19,7 +19,9 @@ archivesBaseName = 'ModernUI'
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
 
 minecraft {
-    mappings channel: 'snapshot', version: '20191102-1.14.3'
+    mappings channel: 'snapshot', version: '20191126-1.14.3'
+
+    accessTransformer(file('src/main/resources/META-INF/access_transformer.cfg'))
 
     runs {
         client {

@@ -1,13 +1,12 @@
 package icyllis.modern.ui.element;
 
 import icyllis.modern.api.element.IElement;
-import icyllis.modern.api.element.ITextLineTracker;
+import icyllis.modern.api.element.ITextLineST;
 import icyllis.modern.ui.font.EmojiStringRenderer;
-import icyllis.modern.ui.font.TrueTypeRenderer;
 
 import java.util.function.Supplier;
 
-public class UITextLine implements ITextLineTracker, IElement {
+public class UITextLine implements ITextLineST, IElement {
 
     //private TrueTypeRenderer renderer = TrueTypeRenderer.DEFAULT_FONT_RENDERER;
     private EmojiStringRenderer r = EmojiStringRenderer.INSTANCE;
@@ -30,13 +29,13 @@ public class UITextLine implements ITextLineTracker, IElement {
     }
 
     @Override
-    public ITextLineTracker text(Supplier<String> text) {
+    public ITextLineST text(Supplier<String> text) {
         this.text = text;
         return this;
     }
 
     @Override
-    public ITextLineTracker pos(float x, float y) {
+    public ITextLineST pos(float x, float y) {
         bx = x;
         by = y;
         centered = false;
@@ -44,7 +43,7 @@ public class UITextLine implements ITextLineTracker, IElement {
     }
 
     @Override
-    public ITextLineTracker pos(float x, float y, boolean center) {
+    public ITextLineST pos(float x, float y, boolean center) {
         bx = x;
         by = y;
         centered = center;
@@ -52,7 +51,7 @@ public class UITextLine implements ITextLineTracker, IElement {
     }
 
     @Override
-    public ITextLineTracker color(int color) {
+    public ITextLineST color(int color) {
         this.color = color;
         return this;
     }
