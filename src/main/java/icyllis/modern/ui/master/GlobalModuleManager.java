@@ -1,43 +1,39 @@
 package icyllis.modern.ui.master;
 
-import icyllis.modern.api.internal.IMasterModule;
-import icyllis.modern.api.internal.IGlobalManager;
+import icyllis.modern.api.internal.IModuleReceiver;
 import icyllis.modern.api.module.IModernModule;
-import icyllis.modern.api.module.IModuleTracker;
-import net.minecraft.client.gui.FontRenderer;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class GlobalModuleManager implements IGlobalManager {
+public class GlobalModuleManager implements IModuleReceiver {
 
     static final GlobalModuleManager INSTANCE = new GlobalModuleManager();
 
-    private List<IMasterModule> modules = new ArrayList<>();
+    private List<MasterModule> modules = new ArrayList<>();
+    private MasterModule currentModule;
 
     @Override
-    public IModuleTracker receiveModule(IModernModule module) {
+    public void addModule(IModernModule module) {
         MasterModule masterModule = new MasterModule(module);
         modules.add(masterModule);
-        return masterModule;
+        if (modules.size() == 1) {
+            currentModule = masterModule;
+        }
     }
 
-    @Override
-    public void build(int width, int height) {
-        modules.forEach(m -> m.build(width, height));
+    public void build(IMasterScreen master, int width, int height) {
+        modules.forEach(m -> m.build(master, width, height));
     }
 
-    @Override
     public void draw() {
-        modules.forEach(IMasterModule::draw);
+       currentModule.draw();
     }
 
-    @Override
     public void resize(int width, int height) {
         modules.forEach(m -> m.resize(width, height));
     }
 
-    @Override
     public void clear() {
         modules.clear();
     }

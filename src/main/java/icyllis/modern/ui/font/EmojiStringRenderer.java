@@ -66,7 +66,7 @@ public class EmojiStringRenderer {
         if (entry == null) {
             entry = cache(str, startX, startY);
         }
-        entry.text.forEach(t -> TTF.renderString(t.str, t.x, t.y, color));
+        entry.text.forEach(t -> TTF.drawString(t.str, t.x, t.y, color, 255, 0));
         TEX.bindTexture(EMOJI);
         entry.emoji.forEach(e -> DrawTools.blit(e.x, e.y, e.u, e.v, TEX_WID, TEX_WID));
     }

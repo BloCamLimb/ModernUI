@@ -2,30 +2,24 @@ package icyllis.modern.ui.element;
 
 import icyllis.modern.api.element.IElement;
 import icyllis.modern.api.element.ITextLineST;
-import icyllis.modern.ui.font.EmojiStringRenderer;
+import icyllis.modern.ui.font.TrueTypeRenderer;
 
 import java.util.function.Supplier;
 
 public class UITextLine implements ITextLineST, IElement {
 
-    //private TrueTypeRenderer renderer = TrueTypeRenderer.DEFAULT_FONT_RENDERER;
-    private EmojiStringRenderer r = EmojiStringRenderer.INSTANCE;
+    private TrueTypeRenderer renderer = TrueTypeRenderer.DEFAULT_FONT_RENDERER;
 
     private float bx, by;
     private float x, y;
-    private int color = -1;
-    private boolean centered;
+    private int color = 0xffffff;
+    private int alpha = 0xff;
+    private float align;
     private Supplier<String> text;
 
     @Override
     public void draw() {
-        String bakedText = text.get();
-        float rx = x;
-        /*if(centered) {
-            rx = x - renderer.getStringWidth(bakedText) / 2;
-        }*/
-        //renderer.renderString(bakedText, rx, y, color);
-        r.renderStringWithEmoji(bakedText, rx, y, color);
+        renderer.drawString(text.get(), x, y, color, alpha, align);
     }
 
     @Override
@@ -38,15 +32,12 @@ public class UITextLine implements ITextLineST, IElement {
     public ITextLineST pos(float x, float y) {
         bx = x;
         by = y;
-        centered = false;
         return this;
     }
 
     @Override
-    public ITextLineST pos(float x, float y, boolean center) {
-        bx = x;
-        by = y;
-        centered = center;
+    public ITextLineST align(float align) {
+        this.align = align;
         return this;
     }
 

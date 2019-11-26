@@ -12,10 +12,10 @@ import java.util.function.Supplier;
 
 public class UITexture implements ITextureST, IElement {
 
-    private TextureManager textureManager;
-    private ResourceLocation res;
-    private Runnable color;
-    private float bx, by, x, y, u, v, w, h;
+    protected TextureManager textureManager;
+    protected ResourceLocation res;
+    protected Runnable color;
+    protected float bx, by, x, y, u, v, w, h;
 
     public UITexture() {
         textureManager = Minecraft.getInstance().textureManager;

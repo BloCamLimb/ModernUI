@@ -90,7 +90,7 @@ public class TrueTypeRenderer {
     //todo Add support for the "k" code which randomly replaces letters on each render (used on
     //todo Pre-sort by texture to minimize binds; can store colors per glyph in string cache
     //todo Optimize the underline/strikethrough drawing to draw a single line for each run
-    public float renderString(String str, float startX, float startY, int color) {
+    public float drawString(String str, float startX, float startY, int color, int alpha, float align) {
         /* Check for invalid arguments */
         if (str == null || str.isEmpty()) {
             return 0;
@@ -124,6 +124,7 @@ public class TrueTypeRenderer {
             GlStateManager.enableBlend();
             GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         }
+        startX = startX - entry.advance * align;
 
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder buffer = tessellator.getBuffer();
@@ -168,7 +169,6 @@ public class TrueTypeRenderer {
             float y1 = startY + (glyph.y) / 2.0F;
             float y2 = startY + (glyph.y + texture.height) / 2.0F;
 
-            int a = color >> 24 & 0xff;
             int r = color >> 16 & 0xff;
             int g = color >> 8 & 0xff;
             int b = color & 0xff;
@@ -176,10 +176,10 @@ public class TrueTypeRenderer {
             buffer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
             GlStateManager.bindTexture(texture.textureName);
 
-            buffer.pos(x1, y1, 0).tex(texture.u1, texture.v1).color(r, g, b, a).endVertex();
-            buffer.pos(x1, y2, 0).tex(texture.u1, texture.v2).color(r, g, b, a).endVertex();
-            buffer.pos(x2, y2, 0).tex(texture.u2, texture.v2).color(r, g, b, a).endVertex();
-            buffer.pos(x2, y1, 0).tex(texture.u2, texture.v1).color(r, g, b, a).endVertex();
+            buffer.pos(x1, y1, 0).tex(texture.u1, texture.v1).color(r, g, b, alpha).endVertex();
+            buffer.pos(x1, y2, 0).tex(texture.u1, texture.v2).color(r, g, b, alpha).endVertex();
+            buffer.pos(x2, y2, 0).tex(texture.u2, texture.v2).color(r, g, b, alpha).endVertex();
+            buffer.pos(x2, y1, 0).tex(texture.u2, texture.v1).color(r, g, b, alpha).endVertex();
 
             tessellator.draw();
         }
@@ -209,7 +209,6 @@ public class TrueTypeRenderer {
                 /* The strike/underlines are drawn beyond the glyph's width to include the extra space between glyphs */
                 float glyphSpace = glyph.advance - glyph.texture.width;
 
-                int a = color >> 24 & 0xff;
                 int r = color >> 16 & 0xff;
                 int g = color >> 8 & 0xff;
                 int b = color & 0xff;
@@ -217,29 +216,13 @@ public class TrueTypeRenderer {
                 /* Draw underline under glyph if the style is enabled */
                 if ((renderStyle & StringCache.ColorCode.UNDERLINE) != 0) {
                     /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
-                    float x1 = startX + (glyph.x - glyphSpace) / 2.0F;
-                    float x2 = startX + (glyph.x + glyph.advance) / 2.0F;
-                    float y1 = startY + (UNDERLINE_OFFSET) / 2.0F;
-                    float y2 = startY + (UNDERLINE_OFFSET + UNDERLINE_THICKNESS) / 2.0F;
-
-                    buffer.pos(x1, y1, 0).color(r, g, b, a).endVertex();
-                    buffer.pos(x1, y2, 0).color(r, g, b, a).endVertex();
-                    buffer.pos(x2, y2, 0).color(r, g, b, a).endVertex();
-                    buffer.pos(x2, y1, 0).color(r, g, b, a).endVertex();
+                    drawI1(startX, startY, buffer, glyph, glyphSpace, alpha, r, g, b, UNDERLINE_OFFSET, UNDERLINE_THICKNESS);
                 }
 
                 /* Draw strikethrough in the middle of glyph if the style is enabled */
                 if ((renderStyle & StringCache.ColorCode.STRIKETHROUGH) != 0) {
                     /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
-                    float x1 = startX + (glyph.x - glyphSpace) / 2.0F;
-                    float x2 = startX + (glyph.x + glyph.advance) / 2.0F;
-                    float y1 = startY + (STRIKETHROUGH_OFFSET) / 2.0F;
-                    float y2 = startY + (STRIKETHROUGH_OFFSET + STRIKETHROUGH_THICKNESS) / 2.0F;
-
-                    buffer.pos(x1, y1, 0).color(r, g, b, a).endVertex();
-                    buffer.pos(x1, y2, 0).color(r, g, b, a).endVertex();
-                    buffer.pos(x2, y2, 0).color(r, g, b, a).endVertex();
-                    buffer.pos(x2, y1, 0).color(r, g, b, a).endVertex();
+                    drawI1(startX, startY, buffer, glyph, glyphSpace, alpha, r, g, b, STRIKETHROUGH_OFFSET, STRIKETHROUGH_THICKNESS);
                 }
             }
 
@@ -251,6 +234,18 @@ public class TrueTypeRenderer {
 
         /* Return total horizontal advance (slightly wider than the bounding box, but close enough for centering strings) */
         return entry.advance / 2;
+    }
+
+    private void drawI1(float startX, float startY, BufferBuilder buffer, GlyphCache.Glyph glyph, float glyphSpace, int a, int r, int g, int b, int underlineOffset, int underlineThickness) {
+        float x1 = startX + (glyph.x - glyphSpace) / 2.0F;
+        float x2 = startX + (glyph.x + glyph.advance) / 2.0F;
+        float y1 = startY + (underlineOffset) / 2.0F;
+        float y2 = startY + (underlineOffset + underlineThickness) / 2.0F;
+
+        buffer.pos(x1, y1, 0).color(r, g, b, a).endVertex();
+        buffer.pos(x1, y2, 0).color(r, g, b, a).endVertex();
+        buffer.pos(x2, y2, 0).color(r, g, b, a).endVertex();
+        buffer.pos(x2, y1, 0).color(r, g, b, a).endVertex();
     }
 
     /**

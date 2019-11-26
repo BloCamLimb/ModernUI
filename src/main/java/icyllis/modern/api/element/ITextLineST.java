@@ -8,7 +8,12 @@ public interface ITextLineST {
 
     ITextLineST pos(float x, float y);
 
-    ITextLineST pos(float x, float y, boolean center);
+    /**
+     * Text alignment: 0 = left, 0.25 = center, 0.5 = right
+     * @param align see above
+     * @return ST
+     */
+    ITextLineST align(float align);
 
     ITextLineST color(int color);
 }
