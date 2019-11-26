@@ -1,21 +1,20 @@
 package icyllis.modern.ui.master;
 
-import icyllis.modern.api.internal.IGlobalManager;
 import icyllis.modern.api.module.IModernGui;
 import icyllis.modern.system.ModernUI;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.inventory.ContainerScreen;
 import net.minecraft.inventory.container.Container;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
 
 @OnlyIn(Dist.CLIENT)
-public final class UniversalModernScreenG<G extends Container> extends ContainerScreen<G> {
+public final class UniversalModernScreenG<G extends Container> extends ContainerScreen<G> implements IMasterScreen {
 
-    private IGlobalManager manager = GlobalModuleManager.INSTANCE;
+    private GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
 
     public UniversalModernScreenG(IModernGui injector, G container) {
         super(container, Minecraft.getInstance().player.inventory, injector.getTitle());
@@ -25,7 +24,7 @@ public final class UniversalModernScreenG<G extends Container> extends Container
     @Override
     protected void init() {
         super.init();
-        manager.build(width, height);
+        manager.build(this, width, height);
     }
 
     @Override
@@ -37,6 +36,11 @@ public final class UniversalModernScreenG<G extends Container> extends Container
     @Override
     protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY) {
 
+    }
+
+    @Override
+    public void addChild(IGuiEventListener eventListener) {
+        children.add(eventListener);
     }
 
     @Override
@@ -62,7 +66,7 @@ public final class UniversalModernScreenG<G extends Container> extends Container
 
     @Override
     public void mouseMoved(double p_212927_1_, double p_212927_3_) {
-        //ModernUI.LOGGER.info("{} {}", p_212927_1_, p_212927_3_);
+        children.forEach(e -> e.mouseMoved(p_212927_1_, p_212927_3_));
     }
 
     @Override

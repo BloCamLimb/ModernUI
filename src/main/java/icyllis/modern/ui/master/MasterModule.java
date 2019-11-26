@@ -1,57 +1,38 @@
 package icyllis.modern.ui.master;
 
-import com.mojang.blaze3d.platform.GlStateManager;
-import icyllis.modern.api.internal.IMasterManager;
-import icyllis.modern.api.internal.IMasterModule;
+import icyllis.modern.api.element.IElement;
 import icyllis.modern.api.module.IModernModule;
-import icyllis.modern.api.module.IModuleTracker;
 
-public class MasterModule implements IMasterModule, IModuleTracker {
+import java.util.ArrayList;
+import java.util.List;
 
-    private IModernModule rawModule;
+public class MasterModule {
 
-    private int trigger = 0;
-    private boolean triggered = false;
+    private IModernModule raw;
 
-    private IMasterManager manager;
+    private List<IElement> elements = new ArrayList<>();
 
-    MasterModule(IModernModule rawModule) {
-        this.rawModule = rawModule;
+    MasterModule(IModernModule raw) {
+        this.raw = raw;
     }
 
-    @Override
-    public void build(int width, int height) {
-        manager = new MasterModuleManager();
-        rawModule.createElements(manager);
+    public void build(IMasterScreen master, int width, int height) {
+        GlobalElementBuilder.INSTANCE.setReceiver(this, master);
+        raw.createElements(GlobalElementBuilder.INSTANCE);
         resize(width, height);
-        rawModule = null;
-        triggered = true;
+        raw = null;
     }
 
-    @Override
     public void draw() {
-        if(triggered)
-            manager.draw();
+        elements.forEach(IElement::draw);
     }
 
-    @Override
-    public IModuleTracker setTrigger(int id) {
-        trigger = id;
-        return this;
-    }
-
-    @Override
     public void resize(int width, int height) {
-        manager.resize(width, height);
+        elements.forEach(e -> e.resize(width, height));
     }
 
-    @Override
-    public boolean trigger(int id) {
-        return trigger == id;
+    public void add(IElement e) {
+        elements.add(e);
     }
 
-    @Override
-    public boolean triggered() {
-        return triggered;
-    }
 }

@@ -12,7 +12,7 @@ public class GuiTest implements IModernGui {
 
     @Override
     public void createModules(IModuleReceiver receiver) {
-        receiver.receiveModule(new ModuleTest()).setMain();
+        receiver.addModule(new ModuleTest());
     }
 
     @Override

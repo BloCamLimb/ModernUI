@@ -1,9 +1,8 @@
 package icyllis.modern.ui.master;
 
-import icyllis.modern.api.internal.IGlobalManager;
 import icyllis.modern.api.module.IModernGui;
-import icyllis.modern.system.ModernUI;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -11,9 +10,9 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import javax.annotation.Nonnull;
 
 @OnlyIn(Dist.CLIENT)
-public final class UniversalModernScreen extends Screen {
+public final class UniversalModernScreen extends Screen implements IMasterScreen {
 
-    private IGlobalManager manager = GlobalModuleManager.INSTANCE;
+    private GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
 
     public UniversalModernScreen(IModernGui injector) {
         super(injector.getTitle());
@@ -22,7 +21,7 @@ public final class UniversalModernScreen extends Screen {
 
     @Override
     protected void init() {
-        manager.build(width, height);
+        manager.build(this, width, height);
     }
 
     @Override
@@ -33,6 +32,11 @@ public final class UniversalModernScreen extends Screen {
     @Override
     public void mouseMoved(double xPos, double p_212927_3_) {
 
+    }
+
+    @Override
+    public void addChild(IGuiEventListener eventListener) {
+        children.add(eventListener);
     }
 
     @Override
