@@ -1,6 +1,6 @@
 package icyllis.modern.ui.font;
 
-import icyllis.modern.core.ModernUI;
+import icyllis.modern.system.ModernUI;
 import icyllis.modern.ui.master.DrawTools;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureManager;
@@ -13,15 +13,16 @@ import java.util.WeakHashMap;
 public class EmojiStringRenderer {
 
     public static final EmojiStringRenderer INSTANCE = new EmojiStringRenderer();
-    private static final TrueTypeRenderer TTF;
-    private static final TextureManager TEX;
 
-    static {
+    private final TrueTypeRenderer TTF;
+    private final TextureManager TEX;
+    {
         TTF = TrueTypeRenderer.DEFAULT_FONT_RENDERER;
         TEX = Minecraft.getInstance().textureManager;
     }
 
-    private static final ResourceLocation EMOJI1 = new ResourceLocation(ModernUI.MODID, "textures/gui/emoji1.png");
+    private final ResourceLocation EMOJI = new ResourceLocation(ModernUI.MODID, "gui/emoji.png");
+    private final float TEX_WID = 11.5f;
 
     private WeakHashMap<String, EmojiText> MAPS = new WeakHashMap<>();
 
@@ -66,8 +67,8 @@ public class EmojiStringRenderer {
             entry = cache(str, startX, startY);
         }
         entry.text.forEach(t -> TTF.renderString(t.str, t.x, t.y, color));
-        TEX.bindTexture(EMOJI1);
-        entry.emoji.forEach(e -> DrawTools.blit(e.x, e.y, e.u, e.v, 11.5f, 11.5f));
+        TEX.bindTexture(EMOJI);
+        entry.emoji.forEach(e -> DrawTools.blit(e.x, e.y, e.u, e.v, TEX_WID, TEX_WID));
     }
 
     private EmojiText cache(String str, float startX, float startY) {
@@ -79,13 +80,13 @@ public class EmojiStringRenderer {
             if (str.charAt(next + 5) == ':') {
                 String s2 = str.substring(next + 1, next + 5);
                 try {
-                    int code2 = Integer.parseInt(s2, 16);
+                    int code2 = Integer.parseInt(s2, 0x10);
                     String s3 = str.substring(start, Math.min(next, str.length()));
                     text.add(new Text(s3, startX + totalWidth, startY));
                     float wi = TTF.getStringWidth(s3);
                     totalWidth += wi;
-                    Emoji e = new Emoji(startX + totalWidth, startY - 2, (code2 >> 8) * 11.5f, code2 * 11.5f);
-                    totalWidth += 11.5f;
+                    Emoji e = new Emoji(startX + totalWidth, startY - 1, (code2 >> 8) * TEX_WID, (code2 & 0xff) * TEX_WID);
+                    totalWidth += TEX_WID;
                     emoji.add(e);
                     start = next + 5;
                 } catch (final NumberFormatException e) {

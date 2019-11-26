@@ -1,13 +1,13 @@
 package icyllis.modern.api.internal;
 
-import icyllis.modern.api.element.ITextLineTracker;
-import icyllis.modern.api.element.ITextureTracker;
+import icyllis.modern.api.element.ITextLineST;
+import icyllis.modern.api.element.ITextureST;
 
 public interface IElementBuilder {
 
     void defaultBackground();
 
-    ITextLineTracker textLine();
+    ITextLineST textLine();
 
-    ITextureTracker texture();
+    ITextureST texture();
 }

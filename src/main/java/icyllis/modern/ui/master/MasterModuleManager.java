@@ -1,8 +1,8 @@
 package icyllis.modern.ui.master;
 
 import icyllis.modern.api.element.IElement;
-import icyllis.modern.api.element.ITextLineTracker;
-import icyllis.modern.api.element.ITextureTracker;
+import icyllis.modern.api.element.ITextLineST;
+import icyllis.modern.api.element.ITextureST;
 import icyllis.modern.api.internal.IMasterManager;
 import icyllis.modern.ui.element.UIBackground;
 import icyllis.modern.ui.element.UITextLine;
@@ -26,14 +26,14 @@ public class MasterModuleManager implements IMasterManager {
     }
 
     @Override
-    public ITextLineTracker textLine() {
+    public ITextLineST textLine() {
         UITextLine u = new UITextLine();
         elements.add(u);
         return u;
     }
 
     @Override
-    public ITextureTracker texture() {
+    public ITextureST texture() {
         UITexture u = new UITexture();
         elements.add(u);
         return u;

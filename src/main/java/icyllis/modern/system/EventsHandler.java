@@ -1,39 +1,35 @@
-package icyllis.modern.core;
+package icyllis.modern.system;
 
-import icyllis.modern.api.ModernUIAPI;
+import icyllis.modern.api.ModernUIApi;
 import icyllis.modern.ui.font.TrueTypeRenderer;
 import icyllis.modern.ui.master.GlobalAnimationManager;
 import icyllis.modern.ui.test.ContainerProvider;
-import icyllis.modern.ui.test.RegistryScreens;
-import icyllis.modern.ui.test.TestContainer;
-import icyllis.modern.ui.test.TestScreen;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screen.ReadBookScreen;
-import net.minecraft.client.gui.screen.Screen;
+import icyllis.modern.ui.test.GuiTest;
+import icyllis.modern.ui.test.UILibs;
+import icyllis.modern.ui.test.ContainerTest;
+import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.Items;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.GuiOpenEvent;
-import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerContainerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.client.gui.GuiAccessDenied;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 
 @SuppressWarnings("unused")
 @Mod.EventBusSubscriber
-public class GlobalEventHandler {
+public class EventsHandler {
 
     @SubscribeEvent
     public static void rightClickItem(PlayerInteractEvent.RightClickItem event) {
         if(!event.getPlayer().getEntityWorld().isRemote && event.getItemStack().getItem().equals(Items.DIAMOND)) {
-            ModernUIAPI.INSTANCE.network().openGUI((ServerPlayerEntity) event.getPlayer(), new ContainerProvider(), new BlockPos(-155,82,-121));
+            ModernUIApi.INSTANCE.network().openGUI((ServerPlayerEntity) event.getPlayer(), new ContainerProvider(), new BlockPos(-155,82,-121));
         }
     }
 
@@ -63,8 +59,8 @@ public class GlobalEventHandler {
 
         @SubscribeEvent
         public static void onGuiOpen(GuiOpenEvent event) {
-            if(event.getGui() != null)
-                ModernUI.logger.info(event.getGui().getClass().getSimpleName());
+            if(event.getGui() instanceof ChatScreen)
+                ModernUI.LOGGER.info(event.getGui().getClass().getSimpleName());
         }
     }
 
@@ -84,7 +80,7 @@ public class GlobalEventHandler {
 
         @SubscribeEvent
         public static void setupClient(FMLClientSetupEvent event) {
-            ModernUIAPI.INSTANCE.screen().registerContainerScreen(RegistryScreens.TEST_CONTAINER_SCREEN, TestContainer::new, TestScreen::new);
+            ModernUIApi.INSTANCE.gui().registerContainerGui(UILibs.TEST_CONTAINER_SCREEN, ContainerTest::new, GuiTest::new);
         }
     }
 }
