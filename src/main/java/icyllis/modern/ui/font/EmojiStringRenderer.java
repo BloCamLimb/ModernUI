@@ -10,14 +10,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.WeakHashMap;
 
-public class EmojiStringRenderer {
+public class EmojiStringRenderer implements IFontRenderer {
 
     public static final EmojiStringRenderer INSTANCE = new EmojiStringRenderer();
 
-    private final TrueTypeRenderer TTF;
+    private final IFontRenderer FONT;
     private final TextureManager TEX;
     {
-        TTF = TrueTypeRenderer.DEFAULT_FONT_RENDERER;
+        FONT = StringRenderer.STRING_RENDERER;
         TEX = Minecraft.getInstance().textureManager;
     }
 
@@ -25,6 +25,33 @@ public class EmojiStringRenderer {
     private final float TEX_WID = 11.5f;
 
     private WeakHashMap<String, EmojiText> MAPS = new WeakHashMap<>();
+
+    @Override
+    public float drawString(String str, float startX, float startY, int color, int alpha, float align) {
+        EmojiText entry = MAPS.get(str);
+        if (entry == null) {
+            entry = cache(str, startX, startY);
+        }
+        entry.text.forEach(t -> FONT.drawString(t.str, t.x, t.y, color, 255, 0));
+        TEX.bindTexture(EMOJI);
+        entry.emoji.forEach(e -> DrawTools.blit(e.x, e.y, e.u, e.v, TEX_WID, TEX_WID));
+        return 0;
+    }
+
+    @Override
+    public float getStringWidth(String str) {
+        return 0;
+    }
+
+    @Override
+    public int sizeStringToWidth(String str, float width) {
+        return 0;
+    }
+
+    @Override
+    public String trimStringToWidth(String str, float width, boolean reverse) {
+        return null;
+    }
 
     private static class EmojiText {
 
@@ -61,16 +88,6 @@ public class EmojiStringRenderer {
         }
     }
 
-    public void renderStringWithEmoji(String str, float startX, float startY, int color) {
-        EmojiText entry = MAPS.get(str);
-        if (entry == null) {
-            entry = cache(str, startX, startY);
-        }
-        entry.text.forEach(t -> TTF.drawString(t.str, t.x, t.y, color, 255, 0));
-        TEX.bindTexture(EMOJI);
-        entry.emoji.forEach(e -> DrawTools.blit(e.x, e.y, e.u, e.v, TEX_WID, TEX_WID));
-    }
-
     private EmojiText cache(String str, float startX, float startY) {
         int start = 0, next;
         List<Text> text = new ArrayList<>();
@@ -83,7 +100,7 @@ public class EmojiStringRenderer {
                     int code2 = Integer.parseInt(s2, 0x10);
                     String s3 = str.substring(start, Math.min(next, str.length()));
                     text.add(new Text(s3, startX + totalWidth, startY));
-                    float wi = TTF.getStringWidth(s3);
+                    float wi = FONT.getStringWidth(s3);
                     totalWidth += wi;
                     Emoji e = new Emoji(startX + totalWidth, startY - 1, (code2 >> 8) * TEX_WID, (code2 & 0xff) * TEX_WID);
                     totalWidth += TEX_WID;

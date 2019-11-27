@@ -10,6 +10,7 @@ buildscript {
 }
 apply plugin: 'net.minecraftforge.gradle'
 apply plugin: 'eclipse'
+apply plugin: 'java-library'
 apply plugin: 'maven-publish'
 
 version = '1.14.4-1.0.0-1'

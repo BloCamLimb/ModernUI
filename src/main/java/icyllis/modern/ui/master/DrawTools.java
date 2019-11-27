@@ -7,6 +7,27 @@ import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 
 public class DrawTools {
 
+    public static void fill(float x, float y, float w, float h, int color) {
+        float f3 = (float)(color >> 24 & 255) / 255.0F;
+        float f = (float)(color >> 16 & 255) / 255.0F;
+        float f1 = (float)(color >> 8 & 255) / 255.0F;
+        float f2 = (float)(color & 255) / 255.0F;
+        Tessellator tessellator = Tessellator.getInstance();
+        BufferBuilder bufferbuilder = tessellator.getBuffer();
+        GlStateManager.enableBlend();
+        GlStateManager.disableTexture();
+        GlStateManager.blendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+        GlStateManager.color4f(f, f1, f2, f3);
+        bufferbuilder.begin(7, DefaultVertexFormats.POSITION);
+        bufferbuilder.pos(x, h, 0.0D).endVertex();
+        bufferbuilder.pos(w, h, 0.0D).endVertex();
+        bufferbuilder.pos(w, y, 0.0D).endVertex();
+        bufferbuilder.pos(x, y, 0.0D).endVertex();
+        tessellator.draw();
+        GlStateManager.enableTexture();
+        GlStateManager.disableBlend();
+    }
+
     public static void fillGradient(float x, float y, float width, float height, int startColor, int endColor, float zLevel) {
         float f = (float)(startColor >> 24 & 255) / 255.0F;
         float f1 = (float)(startColor >> 16 & 255) / 255.0F;

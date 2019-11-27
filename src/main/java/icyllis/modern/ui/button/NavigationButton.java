@@ -3,7 +3,6 @@ package icyllis.modern.ui.button;
 import icyllis.modern.api.element.INavigationST;
 import icyllis.modern.api.element.ITextureST;
 import icyllis.modern.ui.element.UIButton;
-import icyllis.modern.ui.element.UITexture;
 import icyllis.modern.ui.element.UITextureButton;
 
 import java.util.function.Consumer;
@@ -40,10 +39,5 @@ public class NavigationButton extends UIButton<INavigationST> implements INaviga
     public void resize(int width, int height) {
         super.resize(width, height);
         texture.resize(width, height);
-    }
-
-    @Override
-    protected void onMouseHoverChanged() {
-
     }
 }

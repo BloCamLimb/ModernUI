@@ -1,9 +1,6 @@
 package icyllis.modern.ui.element;
 
-import icyllis.modern.api.element.IButtonST;
-import icyllis.modern.api.element.IElement;
-import icyllis.modern.api.element.ITextLineST;
-import icyllis.modern.system.ModernUI;
+import icyllis.modern.api.element.*;
 import net.minecraft.client.gui.IGuiEventListener;
 
 import java.util.function.Consumer;
@@ -11,9 +8,17 @@ import java.util.function.Consumer;
 @SuppressWarnings("unchecked")
 public abstract class UIButton<T extends IButtonST> implements IElement, IButtonST<T>, IGuiEventListener {
 
-    private float bx, by, x, y, w, h, alpha;
+    /** original xy, render xy, width height, alpha(0-1F) **/
+    protected float bx, by, x, y, w, h, alpha;
+
+    /** is mouse hovered on this **/
     protected boolean mouseHovered;
-    protected UITextLine textLine;
+
+    /** is this visible, is cursor focused on this **/
+    protected boolean visible, focused;
+
+    /** text to show something **/
+    protected UITextLine textLine = UITextLine.DEFAULT;
 
     @Override
     public void draw() {
@@ -45,14 +50,40 @@ public abstract class UIButton<T extends IButtonST> implements IElement, IButton
     @Override
     public void mouseMoved(double mouseX, double mouseY) {
         boolean b = mouseHovered;
-        mouseHovered = mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + h;
+        mouseHovered = isMouseInRange(mouseX, mouseY);
         if (b != mouseHovered) {
             onMouseHoverChanged();
         }
     }
 
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        if (visible && mouseButton == 0 && mouseHovered) {
+            onClick(mouseX, mouseY);
+        }
+        return mouseHovered;
+    }
+
+    protected void onClick(double mouseX, double mouseY) {
+
+    }
+
+    protected boolean isMouseInRange(double mouseX, double mouseY) {
+        return mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + h;
+    }
+
     protected void onMouseHoverChanged() {
 
+    }
+
+    protected void onFocusChanged(boolean focused) {
+
+    }
+
+    @Override
+    public boolean changeFocus(boolean p_changeFocus_1_) {
+        focused = !focused;
+        return focused;
     }
 
     @Override

@@ -2,13 +2,16 @@ package icyllis.modern.ui.element;
 
 import icyllis.modern.api.element.IElement;
 import icyllis.modern.api.element.ITextLineST;
-import icyllis.modern.ui.font.TrueTypeRenderer;
+import icyllis.modern.ui.font.EmojiStringRenderer;
+import icyllis.modern.ui.font.IFontRenderer;
+import icyllis.modern.ui.font.StringRenderer;
 
 import java.util.function.Supplier;
 
 public class UITextLine implements ITextLineST, IElement {
 
-    private TrueTypeRenderer renderer = TrueTypeRenderer.DEFAULT_FONT_RENDERER;
+    static final UITextLine DEFAULT = new UITextLine();
+    private IFontRenderer renderer = StringRenderer.STRING_RENDERER;
 
     private float bx, by;
     private float x, y;
@@ -16,6 +19,10 @@ public class UITextLine implements ITextLineST, IElement {
     private int alpha = 0xff;
     private float align;
     private Supplier<String> text;
+
+    public void setEmojiRenderer() {
+        renderer = EmojiStringRenderer.INSTANCE;
+    }
 
     @Override
     public void draw() {
