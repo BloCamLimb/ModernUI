@@ -4,6 +4,7 @@ import icyllis.modern.api.element.INavigationST;
 import icyllis.modern.api.element.ITextLineST;
 import icyllis.modern.api.element.ITextureST;
 import icyllis.modern.api.internal.IElementBuilder;
+import icyllis.modern.ui.button.InputBox;
 import icyllis.modern.ui.button.NavigationButton;
 import icyllis.modern.ui.element.UIBackground;
 import icyllis.modern.ui.element.UITextLine;
@@ -47,5 +48,12 @@ public class GlobalElementBuilder implements IElementBuilder {
         receiver.add(b);
         master.addChild(b);
         return b;
+    }
+
+    @Override
+    public void input() {
+        InputBox u = new InputBox();
+        receiver.add(u);
+        master.addChild(u);
     }
 }

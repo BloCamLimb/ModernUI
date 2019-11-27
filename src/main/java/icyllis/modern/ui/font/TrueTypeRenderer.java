@@ -21,8 +21,6 @@
 package icyllis.modern.ui.font;
 
 import com.mojang.blaze3d.platform.GlStateManager;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
@@ -30,15 +28,13 @@ import org.lwjgl.opengl.GL11;
 
 import java.awt.*;
 
-public class TrueTypeRenderer {
+public class TrueTypeRenderer implements IFontRenderer {
 
-    public static final TrueTypeRenderer DEFAULT_FONT_RENDERER;
-    private static final FontRenderer VANILLA_FONT_RENDERER;
+    public static final TrueTypeRenderer INSTANCE;
     static {
         StringCache cache1 = new StringCache();
-        cache1.setDefaultFont(12.5f, true);
-        DEFAULT_FONT_RENDERER = new TrueTypeRenderer(cache1);
-        VANILLA_FONT_RENDERER = Minecraft.getInstance().fontRenderer;
+        cache1.setDefaultFont(13.3f, true);
+        INSTANCE = new TrueTypeRenderer(cache1);
     }
 
     /**
@@ -90,6 +86,7 @@ public class TrueTypeRenderer {
     //todo Add support for the "k" code which randomly replaces letters on each render (used on
     //todo Pre-sort by texture to minimize binds; can store colors per glyph in string cache
     //todo Optimize the underline/strikethrough drawing to draw a single line for each run
+    @Override
     public float drawString(String str, float startX, float startY, int color, int alpha, float align) {
         /* Check for invalid arguments */
         if (str == null || str.isEmpty()) {
@@ -255,6 +252,7 @@ public class TrueTypeRenderer {
      * @return the width in pixels (divided by 2; this matches the scaled coordinate system used by GUIs in Minecraft)
      */
     @SuppressWarnings("unused")
+    @Override
     public float getStringWidth(String str) {
         /* Check for invalid arguments */
         if (str == null || str.isEmpty()) {
@@ -334,7 +332,8 @@ public class TrueTypeRenderer {
      * @return the number of characters from str that will fit inside width
      */
     @SuppressWarnings("unused")
-    public int sizeStringToWidth(String str, int width) {
+    @Override
+    public int sizeStringToWidth(String str, float width) {
         return sizeString(str, width, true);
     }
 
@@ -347,6 +346,7 @@ public class TrueTypeRenderer {
      * @return the trimmed and optionally reversed string
      */
     @SuppressWarnings("unused")
+    @Override
     public String trimStringToWidth(String str, float width, boolean reverse) {
         if (reverse)
             str = new StringBuilder(str).reverse().toString();

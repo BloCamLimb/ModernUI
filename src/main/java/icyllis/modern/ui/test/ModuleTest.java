@@ -36,7 +36,7 @@ public class ModuleTest implements IModernModule {
                 .text(() -> ":0210::0911: likes to eat :0311:")
                 .pos(-50, -60);
         builder.textLine()
-                .text(() -> "\u6709:000e:\u8bf4:090f:\uff0c\u786e\u5b9e")
+                .text(() -> "\u6709:000e:\u8bf4:090f:\uff0c\u786e\u5b9e\u9178")
                 .pos(-50, -40);
         for (int i = 0; i < 7; i++) {
             int f = i;
@@ -49,6 +49,7 @@ public class ModuleTest implements IModernModule {
                 .tex(e -> e.tex(BUTTON).uv(112, 0).pos(60, -99).size(16, 16))
                 .pos(60, -99).size(16, 16)
                 .text(e -> e.text(() -> "Create New Network").align(0.25f).pos(68, -109)).to(7);
+        builder.input();
         /*builder.textLine()
                 .text(() -> "World partial ticks: " + df.format(Minecraft.getInstance().getRenderPartialTicks()))
                 .pos(0, -20, true);*/

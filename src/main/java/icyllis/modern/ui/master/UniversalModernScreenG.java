@@ -59,20 +59,7 @@ public final class UniversalModernScreenG<G extends Container> extends Container
     }
 
     @Override
-    public boolean changeFocus(boolean p_changeFocus_1_) {
-        ModernUI.LOGGER.info("chang foc");
-        return false;
-    }
-
-    @Override
     public void mouseMoved(double p_212927_1_, double p_212927_3_) {
         children.forEach(e -> e.mouseMoved(p_212927_1_, p_212927_3_));
-    }
-
-    @Override
-    public boolean keyPressed(int p_keyPressed_1_, int p_keyPressed_2_, int p_keyPressed_3_) {
-        ModernUI.LOGGER.info("{} {} {}", p_keyPressed_1_, p_keyPressed_2_, p_keyPressed_3_);
-
-        return super.keyPressed(p_keyPressed_1_, p_keyPressed_2_, p_keyPressed_3_);
     }
 }

@@ -46,7 +46,7 @@ public class EventsHandler {
         public static void onRenderTick(TickEvent.RenderTickEvent event) {
             if(event.phase == TickEvent.Phase.START) {
                 GlobalAnimationManager.INSTANCE.tick(event.renderTickTime);
-                TrueTypeRenderer.DEFAULT_FONT_RENDERER.init();
+                TrueTypeRenderer.INSTANCE.init();
             }
         }
 

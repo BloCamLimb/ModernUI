@@ -13,4 +13,6 @@ public interface IElementBuilder {
     ITextureST texture();
 
     INavigationST navigation();
+
+    void input();
 }
