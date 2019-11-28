@@ -4,6 +4,7 @@ import icyllis.modern.system.ModernUI;
 import icyllis.modern.ui.element.UIButton;
 import icyllis.modern.ui.font.EmojiStringRenderer;
 import icyllis.modern.ui.font.IFontRenderer;
+import icyllis.modern.ui.font.StringRenderer;
 import icyllis.modern.ui.master.DrawTools;
 import net.minecraft.util.SharedConstants;
 import net.minecraft.util.math.MathHelper;
@@ -16,6 +17,7 @@ import java.util.function.Predicate;
 public class ChatInputBox extends UIButton {
 
     private final IFontRenderer renderer = EmojiStringRenderer.INSTANCE;
+    private final IFontRenderer sizer = StringRenderer.STRING_RENDERER;
 
     private int timer;
 
@@ -35,10 +37,9 @@ public class ChatInputBox extends UIButton {
 
     @Override
     public void draw() {
-        DrawTools.fill(x, y, x + w, y + h, 0x80000000);
+        DrawTools.fill(x - 1, y, x + w + 2, y + h, 0x80000000);
         String line1 = renderer.trimStringToWidth(text, w, false);
-        renderer.drawString(line1, x, y, 0xdddddd, 0xff, 0);
-        renderer.drawString(":000e: eat :000e:", x + 20, y, 0xdddddd, 0xff, 0);
+        renderer.drawString(line1, x, y + 1.5f, 0xdddddd, 0xff, 0);
 
         if(timer < 10) {
 
@@ -53,7 +54,7 @@ public class ChatInputBox extends UIButton {
     @Override
     public void resize(int width, int height) {
         y = height - 14;
-        w = width - 6;
+        w = width - 8;
     }
 
     @Override
