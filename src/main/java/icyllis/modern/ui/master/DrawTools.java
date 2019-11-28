@@ -7,7 +7,7 @@ import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 
 public class DrawTools {
 
-    public static void fill(float x, float y, float w, float h, int color) {
+    public static void fill(float x1, float y1, float x2, float y2, int color) {
         float f3 = (float)(color >> 24 & 255) / 255.0F;
         float f = (float)(color >> 16 & 255) / 255.0F;
         float f1 = (float)(color >> 8 & 255) / 255.0F;
@@ -19,10 +19,10 @@ public class DrawTools {
         GlStateManager.blendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
         GlStateManager.color4f(f, f1, f2, f3);
         bufferbuilder.begin(7, DefaultVertexFormats.POSITION);
-        bufferbuilder.pos(x, h, 0.0D).endVertex();
-        bufferbuilder.pos(w, h, 0.0D).endVertex();
-        bufferbuilder.pos(w, y, 0.0D).endVertex();
-        bufferbuilder.pos(x, y, 0.0D).endVertex();
+        bufferbuilder.pos(x1, y2, 0.0D).endVertex();
+        bufferbuilder.pos(x2, y2, 0.0D).endVertex();
+        bufferbuilder.pos(x2, y1, 0.0D).endVertex();
+        bufferbuilder.pos(x1, y1, 0.0D).endVertex();
         tessellator.draw();
         GlStateManager.enableTexture();
         GlStateManager.disableBlend();

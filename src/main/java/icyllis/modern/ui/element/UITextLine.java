@@ -2,7 +2,6 @@ package icyllis.modern.ui.element;
 
 import icyllis.modern.api.element.IElement;
 import icyllis.modern.api.element.ITextLineST;
-import icyllis.modern.ui.font.EmojiStringRenderer;
 import icyllis.modern.ui.font.IFontRenderer;
 import icyllis.modern.ui.font.StringRenderer;
 
@@ -19,10 +18,6 @@ public class UITextLine implements ITextLineST, IElement {
     private int alpha = 0xff;
     private float align;
     private Supplier<String> text;
-
-    public void setEmojiRenderer() {
-        renderer = EmojiStringRenderer.INSTANCE;
-    }
 
     @Override
     public void draw() {
