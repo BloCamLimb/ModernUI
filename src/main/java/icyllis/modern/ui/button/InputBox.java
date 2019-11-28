@@ -90,7 +90,7 @@ public class InputBox extends UIButton {
      */
     public void writeText(String textToWrite) {
         String result = "";
-        String filtered = SharedConstants.filterAllowedCharacters(textToWrite);
+        String filter = SharedConstants.filterAllowedCharacters(textToWrite);
         int i = Math.min(this.cursorPosition, this.selectionEnd);
         int j = Math.max(this.cursorPosition, this.selectionEnd);
         int canWriteCount = this.maxStringLength - this.text.length() - (i - j);
@@ -100,19 +100,19 @@ public class InputBox extends UIButton {
         }
 
         int l;
-        if (canWriteCount < filtered.length()) {
-            result = result + filtered.substring(0, canWriteCount); // ignore excess part
+        if (canWriteCount < filter.length()) {
+            result = result + filter.substring(0, canWriteCount); // ignore excess part
             l = canWriteCount;
         } else {
-            result = result + filtered;
-            l = filtered.length();
+            result = result + filter;
+            l = filter.length();
         }
 
         if (!this.text.isEmpty() && j < this.text.length()) { // write text that after cursor
             result = result + this.text.substring(j);
         }
         
-        if (filter.test(result)) { // if result is legal
+        if (this.filter.test(result)) { // if result is legal
             this.text = result;
             setCursorPos(i + l);
             setSelectionPos(cursorPosition);

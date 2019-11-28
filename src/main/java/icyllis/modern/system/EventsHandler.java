@@ -7,6 +7,8 @@ import icyllis.modern.ui.test.ContainerProvider;
 import icyllis.modern.ui.test.GuiTest;
 import icyllis.modern.ui.test.UILibs;
 import icyllis.modern.ui.test.ContainerTest;
+import icyllis.modern.vanilla.GuiChatBar;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.Items;
@@ -54,6 +56,9 @@ public class EventsHandler {
         public static void onClientTick(TickEvent.ClientTickEvent event) {
             if(event.phase == TickEvent.Phase.START) {
                 GlobalAnimationManager.INSTANCE.tick();
+                if (Minecraft.getInstance().gameSettings.keyBindDrop.isPressed()) {
+                    Minecraft.getInstance().displayGuiScreen(new GuiChatBar());
+                }
             }
         }
 
