@@ -36,7 +36,7 @@ public class ModuleTest implements IModernModule {
                 .text(() -> ":0210::0911: likes to eat :0311: :000e::090f::0f12:")
                 .pos(-50, -60);
         builder.textLine()
-                .text(() -> "\u6709:000e:\u8bf4:090f:\uff0c\u786e\u5b9e\u9178")
+                .text(() -> "\u6709:000e:\u8bf4:090f:\uff0c\u786e\u5b9e\u9178\ua9ff")
                 .pos(-50, -40);
         for (int i = 0; i < 7; i++) {
             int f = i;

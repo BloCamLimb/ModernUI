@@ -64,8 +64,10 @@ public class EventsHandler {
 
         @SubscribeEvent
         public static void onGuiOpen(GuiOpenEvent event) {
-            if(event.getGui() instanceof ChatScreen)
-                ModernUI.LOGGER.info(event.getGui().getClass().getSimpleName());
+            if(event.getGui() instanceof ChatScreen) {
+
+            }
+                //ModernUI.LOGGER.info(event.getGui().getClass().getSimpleName());
         }
     }
 

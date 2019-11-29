@@ -269,6 +269,10 @@ class GlyphCache {
         setRenderingHints();
     }
 
+    public void clear() {
+        glyphCache.clear();
+    }
+
     /**
      * Given a single OpenType font, perform full text layout and create a new GlyphVector for a string.
      *
@@ -410,7 +414,7 @@ class GlyphCache {
                 vectorBounds = vector.getPixelBounds(fontRenderContext, 0, 0);
 
                 /* Enlage the stringImage if it is too small to store the entire rendered string */
-                if (stringImage == null || vectorBounds.width > stringImage.getWidth() || vectorBounds.height > stringImage.getHeight()) {
+                if (vectorBounds.width > stringImage.getWidth() || vectorBounds.height > stringImage.getHeight()) {
                     int width = Math.max(vectorBounds.width, stringImage.getWidth());
                     int height = Math.max(vectorBounds.height, stringImage.getHeight());
                     allocateStringImage(width, height);

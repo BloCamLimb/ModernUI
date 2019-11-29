@@ -33,7 +33,7 @@ public class TrueTypeRenderer implements IFontRenderer {
     public static final TrueTypeRenderer INSTANCE;
     static {
         StringCache cache1 = new StringCache();
-        cache1.setDefaultFont(13f, true);
+        cache1.setDefaultFont(14.f, true);
         INSTANCE = new TrueTypeRenderer(cache1);
     }
 
@@ -70,6 +70,10 @@ public class TrueTypeRenderer implements IFontRenderer {
 
     public void init() {
 
+    }
+
+    public void clear() {
+        cache.clear();
     }
 
     /**
