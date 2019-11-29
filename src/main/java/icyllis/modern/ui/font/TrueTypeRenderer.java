@@ -334,7 +334,7 @@ public class TrueTypeRenderer implements IFontRenderer {
     @SuppressWarnings("unused")
     @Override
     public int sizeStringToWidth(String str, float width) {
-        return sizeString(str, width, true);
+        return sizeString(str, width, false);
     }
 
     /**
@@ -351,7 +351,7 @@ public class TrueTypeRenderer implements IFontRenderer {
         if (reverse)
             str = new StringBuilder(str).reverse().toString();
 
-        int length = sizeString(str, width, true);
+        int length = sizeString(str, width, false);
         str = str.substring(0, length);
 
         if (reverse) {
