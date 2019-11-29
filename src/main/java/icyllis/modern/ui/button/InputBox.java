@@ -11,7 +11,7 @@ import java.util.function.Predicate;
 
 public class InputBox extends UIButton {
 
-    private static final Predicate<String> digitFilter = s -> s.matches("[0-9]+"),
+    public static final Predicate<String> digitFilter = s -> s.matches("[0-9]+"),
             hexFilter = s -> s.matches("(?i)[0-9a-f]+");
 
     protected IFontRenderer renderer = StringRenderer.STRING_RENDERER;

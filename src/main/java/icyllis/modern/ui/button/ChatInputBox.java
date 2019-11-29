@@ -12,6 +12,7 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.util.SharedConstants;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.text.TextFormatting;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.function.Predicate;
@@ -39,7 +40,7 @@ public class ChatInputBox extends UIButton {
     private boolean isDoubleLined = false;
 
     /** full text **/
-    private String text = "";
+    private String text = "\u0090000e\u0090";
 
     /** for blacklist **/
     private Predicate<String> filter = s -> true;
@@ -65,8 +66,8 @@ public class ChatInputBox extends UIButton {
                     DrawTools.fill(le, y + 0.5f, ri, y + 11.5f, 0x8097def0);
                 } else {
                     if(right > firstLength) {
-                        DrawTools.fill(le, y - 11.5f, x + w, y - 0.5f, 0x8097def0);
-                        DrawTools.fill(x, y + 0.5f, ri, y + 11.5f, 0x8097def0);
+                        DrawTools.fill(ri, y - 11.5f, x + w, y - 0.5f, 0x8097def0);
+                        DrawTools.fill(x, y + 0.5f, le, y + 11.5f, 0x8097def0);
                     } else {
                         DrawTools.fill(le, y - 11.5f, ri, y - 0.5f, 0x8097def0);
                     }
@@ -114,28 +115,89 @@ public class ChatInputBox extends UIButton {
     }
 
     @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        if(mouseButton == 0 && isMouseInRange(mouseX, mouseY)) {
+            float dx = (float) (mouseX - x);
+            double dy = mouseY - y;
+            if(isDoubleLined) {
+                if(dy > 0 && dy < 12) {
+                    setCursorSafety(firstLength + renderer.sizeStringToWidth(text.substring(firstLength), dx));
+                } else if(dy < 0 && dy > -12) {
+                    setCursorSafety(renderer.sizeStringToWidth(text, dx));
+                }
+            } else {
+                if(dy > 0 && dy < 12) {
+                    setCursorSafety(renderer.sizeStringToWidth(text, dx));
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    protected boolean isMouseInRange(double mouseX, double mouseY) {
+        return mouseX >= x && mouseX <= x + w && mouseY >= y + (isDoubleLined ? -12 : 0) && mouseY <= y + 12;
+    }
+
+    @Override
     public boolean keyPressed(int key, int scanCode, int modifier) {
         this.shiftDown = Screen.hasShiftDown();
         if (Screen.isSelectAll(key)) {
-            setCursorSafety(0);
-            setSelectorToEnd();
+            this.setCursorSafety(0);
+            this.setSelectorToEnd();
             return true;
         } else if (Screen.isCopy(key)) {
             Minecraft.getInstance().keyboardListener.setClipboardString(getSelectedText());
             return true;
         } else if (Screen.isPaste(key)) {
-            writeText(Minecraft.getInstance().keyboardListener.getClipboardString());
+            this.writeText(Minecraft.getInstance().keyboardListener.getClipboardString());
             return true;
         } else if (Screen.isCut(key)) {
             Minecraft.getInstance().keyboardListener.setClipboardString(getSelectedText());
-            writeText("");
+            this.writeText("");
             return true;
         } else {
             switch (key) {
                 case GLFW.GLFW_KEY_BACKSPACE:
-                    shiftDown = false;
-                    delete(-1);
-                    shiftDown = Screen.hasShiftDown();
+                    this.shiftDown = false;
+                    this.delete(false);
+                    this.shiftDown = Screen.hasShiftDown();
+                    return true;
+                case GLFW.GLFW_KEY_DELETE:
+                    this.shiftDown = false;
+                    this.delete(true);
+                    this.shiftDown = Screen.hasShiftDown();
+                    return true;
+                case GLFW.GLFW_KEY_RIGHT:
+                    if(Screen.hasControlDown()) {
+                        this.setCursorSafety(text.length());
+                    } else {
+                        this.moveCursor(true);
+                    }
+                    return true;
+                case GLFW.GLFW_KEY_LEFT:
+                    if(Screen.hasControlDown()) {
+                        this.setCursorSafety(0);
+                    } else {
+                        this.moveCursor(false);
+                    }
+                    return true;
+                case GLFW.GLFW_KEY_DOWN:
+                    if(isDoubleLined && cursor <= firstLength) {
+                        setCursorSafety(renderer.sizeStringToWidth(text, renderer.getStringWidth(text.substring(0, cursor)) + w));
+                    }
+                    return true;
+                case GLFW.GLFW_KEY_UP:
+                    if(isDoubleLined & cursor > firstLength) {
+                        setCursorSafety(renderer.sizeStringToWidth(text, renderer.getStringWidth(text.substring(firstLength))));
+                    }
+                    return true;
+                case GLFW.GLFW_KEY_HOME:
+                    this.setCursorSafety(0);
+                    return true;
+                case GLFW.GLFW_KEY_END:
+                    this.setCursorSafety(text.length());
                     return true;
             }
         }
@@ -167,7 +229,7 @@ public class ChatInputBox extends UIButton {
             result = result + this.text.substring(right);
 
         if (this.filter.test(result)) {
-            int line1s = renderer.sizeStringToWidth(result, w);
+            int line1s = renderer.sizeStringToWidth(result, w - 0.5f);
             if(result.length() > line1s) {
                 this.firstLength = line1s;
                 float line1width = renderer.getStringWidth(result.substring(0, line1s));
@@ -179,6 +241,7 @@ public class ChatInputBox extends UIButton {
                 this.isDoubleLined = false;
             }
             this.setCursorSafety(left + toWrite.length()); // don't worry, it's safe
+            this.setSelector();
         }
     }
 
@@ -192,13 +255,43 @@ public class ChatInputBox extends UIButton {
     }
 
     private void setCursorSafety(int pos) {
-        int checked = MathHelper.clamp(pos, 0, this.text.length());
-        this.selector = this.cursor = checked;
+        this.cursor = MathHelper.clamp(pos, 0, this.text.length());
         if (cursor > 0) {
-            selectorX = cursorX = x + (cursor > firstLength ? renderer.getStringWidth(text.substring(firstLength, cursor)) : renderer.getStringWidth(text.substring(0, cursor)));
+            cursorX = x + (cursor > firstLength
+                    ? renderer.getStringWidth(text.substring(firstLength, cursor))
+                    : renderer.getStringWidth(text.substring(0, cursor)));
         } else {
-            selectorX = cursorX = x;
+            cursorX = x;
         }
+        if(!shiftDown) {
+            this.selector = cursor;
+            this.selectorX = cursorX;
+        }
+    }
+
+    /**
+     * Needed when no matter if shift pressed
+     */
+    private void setSelector() {
+        this.selector = cursor;
+        this.selectorX = cursorX;
+    }
+
+    private void moveCursor(boolean reverse) {
+        if(reverse) {
+            if(text.length() >= cursor + 6 && text.codePointAt(cursor) == '\u0090') {
+                setCursorSafety(cursor + 6);
+            } else {
+                setCursorSafety(cursor + 1);
+            }
+        } else {
+            if(cursor >= 6 && text.length() >= 6 && text.codePointAt(cursor - 1) == '\u0090') {
+                setCursorSafety(cursor - 6);
+            } else {
+                setCursorSafety(cursor - 1);
+            }
+        }
+        timer = 0;
     }
 
     private String getSelectedText() {
@@ -207,7 +300,81 @@ public class ChatInputBox extends UIButton {
         return text.substring(left, right);
     }
 
-    private void delete(int amount) {
+    private void delete(boolean reverse) {
+        if(Screen.hasControlDown()) {
+            deleteWords(reverse);
+        } else {
+            deleteFromCursor(reverse);
+        }
+    }
 
+    private void deleteWords(boolean reverse) {
+        if (this.text.isEmpty()) {
+            return;
+        }
+        String result = "";
+        if (reverse) {
+            result = text.substring(0, cursor);
+            if(filter.test(result)) {
+                this.text = result;
+                if (isDoubleLined && text.length() <= firstLength) {
+                    this.firstLength = text.length();
+                    this.isDoubleLined = false;
+                }
+            }
+        } else {
+            if (cursor < text.length()) {
+                result = text.substring(cursor);
+            }
+            if(filter.test(result)) {
+                this.text = result;
+                if(isDoubleLined && text.length() <= firstLength) {
+                    this.firstLength = text.length();
+                    this.isDoubleLined = false;
+                }
+                setCursorSafety(text.length() - cursor);
+            }
+        }
+
+    }
+
+    private void deleteFromCursor(boolean reverse) {
+        if (this.text.isEmpty()) {
+            return;
+        }
+        if(cursor != selector) {
+            writeText("");
+        } else {
+            int left = reverse ? cursor : cursor - 1;
+            int right = reverse ? cursor + 1 : cursor;
+            int multi = 1;
+            String result = "";
+            if(left >= 0) {
+                if(!reverse && cursor >= 6 && text.length() >= 6 && text.codePointAt(left) == '\u0090') {
+                    result = text.substring(0, left - 5);
+                    multi = 6;
+                } else {
+                    result = text.substring(0, left);
+                }
+            }
+            if(right < text.length()) {
+                if(reverse && text.length() >= cursor + 6 && text.codePointAt(cursor) == '\u0090') {
+                    result = text.substring(right + 5);
+                    multi = 6;
+                } else {
+                    result = result + text.substring(right);
+                }
+            }
+            if(filter.test(result)) {
+                this.text = result;
+                if(isDoubleLined && text.length() <= firstLength) {
+                    this.firstLength = text.length();
+                    this.isDoubleLined = false;
+                }
+                if(!reverse) {
+                    setCursorSafety(cursor - multi);
+                }
+            }
+        }
     }
 }
