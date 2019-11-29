@@ -9,13 +9,13 @@ import java.util.function.Consumer;
 public abstract class UIButton<T extends IButtonBuilder> implements IElement, IButtonBuilder<T>, IGuiEventListener {
 
     /** original xy, render xy, width height, alpha(0-1F) **/
-    protected float bx, by, x, y, w, h, alpha;
+    protected float bx, by, x, y, w, h, alpha = 1.0f;
 
     /** is mouse hovered on this **/
     protected boolean mouseHovered;
 
     /** is this visible, is cursor focused on this **/
-    protected boolean visible, focused;
+    protected boolean visible = true, focused = false;
 
     /** text to show something **/
     protected UITextLine textLine = UITextLine.DEFAULT;

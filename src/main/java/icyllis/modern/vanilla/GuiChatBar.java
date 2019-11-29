@@ -27,7 +27,7 @@ public class GuiChatBar extends Screen {
 
     @Override
     protected void init() {
-        inputBox = new ChatInputBox(4, 0, 0, 12);
+        inputBox = new ChatInputBox();
         inputBox.resize(width, height);
         children.add(inputBox);
         setFocusedDefault(inputBox);
