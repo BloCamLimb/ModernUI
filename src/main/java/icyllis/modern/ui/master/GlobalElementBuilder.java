@@ -1,8 +1,8 @@
 package icyllis.modern.ui.master;
 
-import icyllis.modern.api.element.INavigationST;
-import icyllis.modern.api.element.ITextLineST;
-import icyllis.modern.api.element.ITextureST;
+import icyllis.modern.api.element.INavigationBuilder;
+import icyllis.modern.api.element.ITextLineBuilder;
+import icyllis.modern.api.element.ITextureBuilder;
 import icyllis.modern.api.internal.IElementBuilder;
 import icyllis.modern.ui.button.InputBox;
 import icyllis.modern.ui.button.NavigationButton;
@@ -29,21 +29,21 @@ public class GlobalElementBuilder implements IElementBuilder {
     }
 
     @Override
-    public ITextLineST textLine() {
+    public ITextLineBuilder textLine() {
         UITextLine u = new UITextLine();
         receiver.add(u);
         return u;
     }
 
     @Override
-    public ITextureST texture() {
+    public ITextureBuilder texture() {
         UITexture u = new UITexture();
         receiver.add(u);
         return u;
     }
 
     @Override
-    public INavigationST navigation() {
+    public INavigationBuilder navigation() {
         NavigationButton b = new NavigationButton();
         receiver.add(b);
         master.addChild(b);

@@ -6,7 +6,7 @@ import net.minecraft.client.gui.IGuiEventListener;
 import java.util.function.Consumer;
 
 @SuppressWarnings("unchecked")
-public abstract class UIButton<T extends IButtonST> implements IElement, IButtonST<T>, IGuiEventListener {
+public abstract class UIButton<T extends IButtonBuilder> implements IElement, IButtonBuilder<T>, IGuiEventListener {
 
     /** original xy, render xy, width height, alpha(0-1F) **/
     protected float bx, by, x, y, w, h, alpha;
@@ -26,7 +26,7 @@ public abstract class UIButton<T extends IButtonST> implements IElement, IButton
     }
 
     @Override
-    public T text(Consumer<ITextLineST> consumer) {
+    public T text(Consumer<ITextLineBuilder> consumer) {
         UITextLine u = new UITextLine();
         consumer.accept(u);
         textLine = u;

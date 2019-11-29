@@ -1,10 +1,13 @@
 package icyllis.modern.ui.font;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import icyllis.modern.system.ModernUI;
 import icyllis.modern.ui.master.DrawTools;
+import icyllis.modern.ui.master.GlobalElementBuilder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.util.ResourceLocation;
+import org.lwjgl.opengl.GL11;
 
 import java.util.*;
 
@@ -22,8 +25,10 @@ public class EmojiStringRenderer implements IFontRenderer {
     private final ResourceLocation EMOJI = new ResourceLocation(ModernUI.MODID, "gui/emoji.png");
     private final float TEX_WID = 11.5f;
 
+    private SizeKey lookKey = new SizeKey();
+
     private WeakHashMap<String, EmojiText> MAPS = new WeakHashMap<>();
-    private WeakHashMap<String, Integer> SIZES = new WeakHashMap<>();
+    private WeakHashMap<SizeKey, Integer> SIZES = new WeakHashMap<>();
 
     @Override
     public float drawString(String str, float startX, float startY, int color, int alpha, float align) {
@@ -32,14 +37,27 @@ public class EmojiStringRenderer implements IFontRenderer {
             entry = cache(str);
         }
         entry.text.forEach(t -> FONT.drawString(t.str, startX + t.x, startY, color, 255, 0));
+        GlStateManager.color3f(0.867f, 0.867f, 0.867f);
+        GlStateManager.enableBlend();
+        GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         TEX.bindTexture(EMOJI);
-        entry.emoji.forEach(e -> DrawTools.blit(startX + e.x, startY + e.y, e.u, e.v, TEX_WID, TEX_WID));
-        return 0;
+        entry.emoji.forEach(e -> DrawTools.blit(startX + e.x, startY - 1, e.u, e.v, TEX_WID, TEX_WID));
+        return 0; // unsupported
     }
 
     @Override
     public float getStringWidth(String str) {
-        return 0;
+        EmojiText entry = MAPS.get(str);
+        if (entry == null) {
+            entry = cache(str);
+        }
+        float lastT = entry.text.size() > 0 ? entry.text.get(entry.text.size() - 1).x : 0;
+        float lastE = entry.emoji.size() > 0 ? entry.emoji.get(entry.emoji.size() - 1).x : -1;
+        if(lastT > lastE) {
+            return lastT + FONT.getStringWidth(entry.text.get(entry.text.size() - 1).str);
+        } else {
+            return lastE + 11.5f;
+        }
     }
 
     @Override
@@ -48,12 +66,14 @@ public class EmojiStringRenderer implements IFontRenderer {
             return 0;
         }
         int r = 0;
-        if(!SIZES.containsKey(str)) {
+        lookKey.str = str;
+        lookKey.w = (int) width;
+        if(!SIZES.containsKey(lookKey)) {
             EmojiText entry = MAPS.get(str);
             if (entry == null) {
                 entry = cache(str);
             }
-            float lastT = -2000;
+            float lastT = 0;
             int lastTC = -1;
             for (Text t : entry.text) {
                 if (t.x <= width) {
@@ -62,7 +82,7 @@ public class EmojiStringRenderer implements IFontRenderer {
                 } else
                     break;
             }
-            float lastE = -2000;
+            float lastE = -1;
             int lastEC = 0;
             for (Emoji e : entry.emoji) {
                 if (e.x <= width) {
@@ -71,9 +91,9 @@ public class EmojiStringRenderer implements IFontRenderer {
                 } else
                     break;
             }
-            String extra = "";
+            int extra = 0;
             if (lastT > lastE) {
-                extra = FONT.trimStringToWidth(entry.text.get(lastTC).str, width - lastT, false);
+                extra = FONT.sizeStringToWidth(entry.text.get(lastTC).str, width - lastT);
                 for (int i = 0; i < lastTC; i++) {
                     r += entry.text.get(i).str.length();
                 }
@@ -85,20 +105,75 @@ public class EmojiStringRenderer implements IFontRenderer {
                     lastEC--;
                 }
             }
-            r += extra.length();
+            r += extra;
             r += lastEC * 6;
-            SIZES.put(str, r);
+            SIZES.put(lookKey, r);
             return r;
         } else {
-            return SIZES.get(str);
+            return SIZES.get(lookKey);
         }
     }
 
     @Override
     public String trimStringToWidth(String str, float width, boolean reverse) {
         int length = sizeStringToWidth(str, width);
-        str = str.substring(0, Math.min(length, str.length()));
+        str = str.substring(0, length);
         return str;
+    }
+
+    private static class SizeKey {
+
+        String str = "";
+        int w = 0;
+
+        @Override
+        public int hashCode() {
+            int code = 0, length = str.length();
+
+            for (int index = 0; index < length; index++) {
+                char c = str.charAt(index);
+                code = (code * 31) + c;
+            }
+            code = (code * 31) + w;
+            return code;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == null) {
+                return false;
+            }
+            if(obj instanceof SizeKey) {
+                SizeKey key = (SizeKey) obj;
+                String other = key.str;
+                int length = str.length();
+
+                if (length != other.length()) {
+                    return false;
+                }
+                if (key.w != w) {
+                    return false;
+                }
+
+                for (int index = 0; index < length; index++) {
+                    char c1 = str.charAt(index);
+                    char c2 = other.charAt(index);
+
+                    if (c1 != c2) {
+                        return false;
+                    }
+
+                }
+                return true;
+            }
+
+            return false;
+        }
+
+        @Override
+        public String toString() {
+            return str;
+        }
     }
 
     private static class EmojiText {
@@ -125,11 +200,10 @@ public class EmojiStringRenderer implements IFontRenderer {
 
     private static class Emoji {
 
-        float x, y, u, v;
+        float x, u, v;
 
-        Emoji(float x, float y, float u, float v) {
+        Emoji(float x, float u, float v) {
             this.x = x;
-            this.y = y;
             this.u = u;
             this.v = v;
         }
@@ -149,15 +223,20 @@ public class EmojiStringRenderer implements IFontRenderer {
                     String s2 = str.substring(next + 1, next + 5);
                     try {
                         int code2 = Integer.parseInt(s2, 0x10);
-                        String s3 = str.substring(start, Math.min(next, str.length()));
-                        text.add(new Text(s3, totalWidth));
-                        float wi = FONT.getStringWidth(s3);
-                        totalWidth += wi;
-                        Emoji e = new Emoji(totalWidth, -1, (code2 >> 8) * TEX_WID, (code2 & 0xff) * TEX_WID);
-                        totalWidth += TEX_WID;
-                        emoji.add(e);
-                        start = next + 5;
-                        lastFound = start + 1;
+                        int code3 = code2 >> 8;
+                        int code4 = code2 & 0xff;
+                        if(code3 > 0x15 || code4 > 0x15) {
+                            start = next + 1;
+                        } else {
+                            String s3 = str.substring(start, Math.min(next, str.length()));
+                            text.add(new Text(s3, totalWidth));
+                            float wi = FONT.getStringWidth(s3);
+                            totalWidth += wi;
+                            Emoji e = new Emoji(totalWidth, code3 * TEX_WID, code4 * TEX_WID);
+                            totalWidth += TEX_WID;
+                            emoji.add(e);
+                            lastFound = start = next + 6;
+                        }
                     } catch (final NumberFormatException e) {
                         start = next + 1;
                     }

@@ -1,18 +1,18 @@
 package icyllis.modern.api.internal;
 
-import icyllis.modern.api.element.INavigationST;
-import icyllis.modern.api.element.ITextLineST;
-import icyllis.modern.api.element.ITextureST;
+import icyllis.modern.api.element.INavigationBuilder;
+import icyllis.modern.api.element.ITextLineBuilder;
+import icyllis.modern.api.element.ITextureBuilder;
 
 public interface IElementBuilder {
 
     void defaultBackground();
 
-    ITextLineST textLine();
+    ITextLineBuilder textLine();
 
-    ITextureST texture();
+    ITextureBuilder texture();
 
-    INavigationST navigation();
+    INavigationBuilder navigation();
 
     void input();
 }

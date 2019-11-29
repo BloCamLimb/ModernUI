@@ -20,6 +20,8 @@
 
 package icyllis.modern.ui.font;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import icyllis.modern.system.ModernUI;
 
 import java.awt.*;
@@ -30,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.WeakHashMap;
+import java.util.concurrent.TimeUnit;
 
 class StringCache {
 
@@ -93,7 +96,7 @@ class StringCache {
      * be all hashed together into the same entry. The renderString() method will then substitute the correct digit glyph on
      * the fly. This special digit handling gives a significant speedup on the F3 debug screen.
      */
-    static private class Key {
+    private static class Key {
         /**
          * A copy of the String which this Key is indexing. A copy is used to avoid creating a strong reference to the original
          * passed into renderString(). When the original String is no longer needed by Minecraft, it will be garbage collected
@@ -337,7 +340,7 @@ class StringCache {
             /* If this string is already in the cache, simply return the cached Entry object */
             entry = stringCache.get(lookupKey);
         }
-
+        //ModernUI.LOGGER.info("cache size {}", stringCache.size());
         /* If string is not cached (or not on main thread) then layout the string */
         if (entry == null) {
             //ModernUI.LOGGER.info("new entry for {}", str);
@@ -405,7 +408,7 @@ class StringCache {
              */
             Key oldKey = entry.keyRef.get();
             if (oldKey != null) {
-                weakRefCache.put(str, oldKey);
+                //weakRefCache.put(str, oldKey);
             }
             lookupKey.str = null;
         }

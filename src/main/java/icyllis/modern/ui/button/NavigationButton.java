@@ -1,7 +1,7 @@
 package icyllis.modern.ui.button;
 
-import icyllis.modern.api.element.INavigationST;
-import icyllis.modern.api.element.ITextureST;
+import icyllis.modern.api.element.INavigationBuilder;
+import icyllis.modern.api.element.ITextureBuilder;
 import icyllis.modern.ui.element.UIButton;
 import icyllis.modern.ui.element.UITextureButton;
 
@@ -10,7 +10,7 @@ import java.util.function.Consumer;
 /**
  * Only way to switch module
  */
-public class NavigationButton extends UIButton<INavigationST> implements INavigationST {
+public class NavigationButton extends UIButton<INavigationBuilder> implements INavigationBuilder {
 
     private UITextureButton texture;
 
@@ -23,12 +23,12 @@ public class NavigationButton extends UIButton<INavigationST> implements INaviga
     }
 
     @Override
-    public INavigationST to(int id) {
+    public INavigationBuilder to(int id) {
         return this;
     }
 
     @Override
-    public INavigationST tex(Consumer<ITextureST> consumer) {
+    public INavigationBuilder tex(Consumer<ITextureBuilder> consumer) {
         UITextureButton u = new UITextureButton();
         consumer.accept(u);
         texture = u;

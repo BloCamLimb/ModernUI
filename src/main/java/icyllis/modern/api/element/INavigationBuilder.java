@@ -2,14 +2,14 @@ package icyllis.modern.api.element;
 
 import java.util.function.Consumer;
 
-public interface INavigationST extends IButtonST<INavigationST> {
+public interface INavigationBuilder extends IButtonBuilder<INavigationBuilder> {
 
     /**
      * Which module should the button go
      * @param id module index
      * @return ST
      */
-    INavigationST to(int id);
+    INavigationBuilder to(int id);
 
-    INavigationST tex(Consumer<ITextureST> consumer);
+    INavigationBuilder tex(Consumer<ITextureBuilder> consumer);
 }
