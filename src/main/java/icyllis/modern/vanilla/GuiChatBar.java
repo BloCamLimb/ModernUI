@@ -3,6 +3,7 @@ package icyllis.modern.vanilla;
 import icyllis.modern.ui.button.ChatInputBox;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.util.text.StringTextComponent;
 
 import javax.annotation.Nonnull;
@@ -27,6 +28,7 @@ public class GuiChatBar extends Screen {
 
     @Override
     protected void init() {
+        Minecraft.getInstance().keyboardListener.enableRepeatEvents(true);
         inputBox = new ChatInputBox();
         inputBox.resize(width, height);
         children.add(inputBox);
@@ -41,8 +43,8 @@ public class GuiChatBar extends Screen {
     }
 
     @Override
-    public boolean keyPressed(int p_keyPressed_1_, int p_keyPressed_2_, int p_keyPressed_3_) {
-        return super.keyPressed(p_keyPressed_1_, p_keyPressed_2_, p_keyPressed_3_);
+    public void removed() {
+        Minecraft.getInstance().keyboardListener.enableRepeatEvents(false);
     }
 
     @Override

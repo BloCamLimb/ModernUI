@@ -28,7 +28,6 @@ public class EmojiStringRenderer implements IFontRenderer {
     private SizeKey lookKey = new SizeKey();
 
     private WeakHashMap<String, EmojiText> MAPS = new WeakHashMap<>();
-    private WeakHashMap<SizeKey, Integer> SIZES = new WeakHashMap<>();
 
     @Override
     public float drawString(String str, float startX, float startY, int color, int alpha, float align) {
@@ -66,52 +65,45 @@ public class EmojiStringRenderer implements IFontRenderer {
             return 0;
         }
         int r = 0;
-        lookKey.str = str;
-        lookKey.w = (int) width;
-        if(!SIZES.containsKey(lookKey)) {
-            EmojiText entry = MAPS.get(str);
-            if (entry == null) {
-                entry = cache(str);
-            }
-            float lastT = 0;
-            int lastTC = -1;
-            for (Text t : entry.text) {
-                if (t.x <= width) {
-                    lastT = t.x;
-                    lastTC++;
-                } else
-                    break;
-            }
-            float lastE = -1;
-            int lastEC = 0;
-            for (Emoji e : entry.emoji) {
-                if (e.x <= width) {
-                    lastE = e.x;
-                    lastEC++;
-                } else
-                    break;
-            }
-            int extra = 0;
-            if (lastT > lastE) {
-                extra = FONT.sizeStringToWidth(entry.text.get(lastTC).str, width - lastT);
-                for (int i = 0; i < lastTC; i++) {
-                    r += entry.text.get(i).str.length();
-                }
-            } else {
-                for (int i = 0; i < lastTC + 1; i++) {
-                    r += entry.text.get(i).str.length();
-                }
-                if(width - lastE < TEX_WID) {
-                    lastEC--;
-                }
-            }
-            r += extra;
-            r += lastEC * 6;
-            SIZES.put(lookKey, r);
-            return r;
-        } else {
-            return SIZES.get(lookKey);
+        EmojiText entry = MAPS.get(str);
+        if (entry == null) {
+            entry = cache(str);
         }
+        float lastT = 0;
+        int lastTC = -1;
+        for (Text t : entry.text) {
+            if (t.x <= width) {
+                lastT = t.x;
+                lastTC++;
+            } else
+                break;
+        }
+        float lastE = -1;
+        int lastEC = 0;
+        for (Emoji e : entry.emoji) {
+            if (e.x <= width) {
+                lastE = e.x;
+                lastEC++;
+            } else
+                break;
+        }
+        int extra = 0;
+        if (lastT > lastE) {
+            extra = FONT.sizeStringToWidth(entry.text.get(lastTC).str, width - lastT); // FIXME
+            for (int i = 0; i < lastTC; i++) {
+                r += entry.text.get(i).str.length();
+            }
+        } else {
+            for (int i = 0; i < lastTC + 1; i++) {
+                r += entry.text.get(i).str.length();
+            }
+            if(width - lastE < TEX_WID) {
+                lastEC--;
+            }
+        }
+        r += extra;
+        r += lastEC * 6;
+        return r;
     }
 
     @Override
@@ -214,18 +206,18 @@ public class EmojiStringRenderer implements IFontRenderer {
         List<Text> text = new ArrayList<>();
         List<Emoji> emoji = new ArrayList<>();
         float totalWidth = 0;
-        if (str.length() < 6 || str.indexOf(':') == -1) {
+        if (str.length() < 6 || str.indexOf('\u0090') == -1) {
             text.add(new Text(str, totalWidth));
         } else {
             int lastFound = 0;
-            while ((next = str.indexOf(':', start)) != -1 && next + 5 < str.length()) {
-                if (str.charAt(next + 5) == ':') {
+            while ((next = str.indexOf('\u0090', start)) != -1 && next + 5 < str.length()) {
+                if (str.charAt(next + 5) == '\u0090') {
                     String s2 = str.substring(next + 1, next + 5);
                     try {
                         int code2 = Integer.parseInt(s2, 0x10);
                         int code3 = code2 >> 8;
                         int code4 = code2 & 0xff;
-                        if(code3 > 0x15 || code4 > 0x15) {
+                        if(false /*code3 > 0x15 || code4 > 0x15*/) {
                             start = next + 1;
                         } else {
                             String s3 = str.substring(start, Math.min(next, str.length()));
