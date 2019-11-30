@@ -3,7 +3,7 @@ package icyllis.modern.ui.button;
 import icyllis.modern.api.element.INavigationBuilder;
 import icyllis.modern.api.element.ITextureBuilder;
 import icyllis.modern.ui.element.UIButton;
-import icyllis.modern.ui.element.UITextureButton;
+import icyllis.modern.ui.element.UITexture;
 
 import java.util.function.Consumer;
 
@@ -12,7 +12,7 @@ import java.util.function.Consumer;
  */
 public class NavigationButton extends UIButton<INavigationBuilder> implements INavigationBuilder {
 
-    private UITextureButton texture;
+    private UITexture texture;
 
     @Override
     public void draw() {
@@ -29,7 +29,7 @@ public class NavigationButton extends UIButton<INavigationBuilder> implements IN
 
     @Override
     public INavigationBuilder tex(Consumer<ITextureBuilder> consumer) {
-        UITextureButton u = new UITextureButton();
+        UITexture u = new UITexture();
         consumer.accept(u);
         texture = u;
         return this;

@@ -30,6 +30,13 @@ public class UITexture implements ITextureBuilder, IElement {
         DrawTools.blit(x, y, u, v, w, h);
     }
 
+    public void draw(boolean hover) {
+        GlStateManager.enableBlend();
+        color.run();
+        textureManager.bindTexture(res);
+        DrawTools.blit(x, y, u, hover ? v + h : v, w, h);
+    }
+
     @Override
     public void resize(int width, int height) {
         x = width / 2f + bx;

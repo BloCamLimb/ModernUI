@@ -3,7 +3,6 @@ package icyllis.modern.ui.font;
 import com.mojang.blaze3d.platform.GlStateManager;
 import icyllis.modern.system.ModernUI;
 import icyllis.modern.ui.master.DrawTools;
-import icyllis.modern.ui.master.GlobalElementBuilder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.util.ResourceLocation;
@@ -22,7 +21,7 @@ public class EmojiStringRenderer implements IFontRenderer {
         TEX = Minecraft.getInstance().textureManager;
     }
 
-    private final ResourceLocation EMOJI = new ResourceLocation(ModernUI.MODID, "gui/emoji.png");
+    public static final ResourceLocation EMOJI = new ResourceLocation(ModernUI.MODID, "gui/emoji.png");
     private final float TEX_WID = 11.5f;
 
     private SizeKey lookKey = new SizeKey();
@@ -89,7 +88,7 @@ public class EmojiStringRenderer implements IFontRenderer {
         }
         int extra = 0;
         if (lastT > lastE) {
-            extra = FONT.sizeStringToWidth(entry.text.get(lastTC).str, width - lastT); // FIXME
+            extra = FONT.sizeStringToWidth(entry.text.get(lastTC).str, width - Math.max(lastT, lastEC * 11.5f));
             for (int i = 0; i < lastTC; i++) {
                 r += entry.text.get(i).str.length();
             }
@@ -190,11 +189,11 @@ public class EmojiStringRenderer implements IFontRenderer {
         }
     }
 
-    private static class Emoji {
+    public static class Emoji {
 
-        float x, u, v;
+        public float x, u, v;
 
-        Emoji(float x, float u, float v) {
+        public Emoji(float x, float u, float v) {
             this.x = x;
             this.u = u;
             this.v = v;

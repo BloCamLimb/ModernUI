@@ -1,13 +1,13 @@
 package icyllis.modern.system;
 
 import icyllis.modern.api.ModernUIApi;
+import icyllis.modern.impl.chat.GuiChat;
 import icyllis.modern.ui.font.TrueTypeRenderer;
 import icyllis.modern.ui.master.GlobalAnimationManager;
 import icyllis.modern.ui.test.ContainerProvider;
 import icyllis.modern.ui.test.GuiTest;
 import icyllis.modern.ui.test.UILibs;
 import icyllis.modern.ui.test.ContainerTest;
-import icyllis.modern.vanilla.GuiChatBar;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraft.entity.player.ServerPlayerEntity;
@@ -16,8 +16,10 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.GuiOpenEvent;
+import net.minecraftforge.event.ServerChatEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerContainerEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -57,7 +59,7 @@ public class EventsHandler {
             if(event.phase == TickEvent.Phase.START) {
                 GlobalAnimationManager.INSTANCE.tick();
                 if (Minecraft.getInstance().gameSettings.keyBindDrop.isPressed()) {
-                    Minecraft.getInstance().displayGuiScreen(new GuiChatBar());
+                    Minecraft.getInstance().displayGuiScreen(new GuiChat());
                 }
             }
         }

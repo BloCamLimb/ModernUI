@@ -24,6 +24,7 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.util.text.TextFormatting;
 import org.lwjgl.opengl.GL11;
 
 import java.awt.*;
@@ -63,6 +64,11 @@ public class TrueTypeRenderer implements IFontRenderer {
     private static final int STRIKETHROUGH_THICKNESS = 2;
 
     private final StringCache cache;
+
+    /**
+     * {@link TextFormatting#values()}
+     */
+    private final int[] formattedColorTable = new int[]{0, 170, 43520, 43690, 11141120, 11141290, 16755200, 11184810, 5592405, 5592575, 5635925, 5636095, 16733525, 16733695, 16777045, 16777215};
 
     private TrueTypeRenderer(StringCache cache) {
         this.cache = cache;
@@ -141,6 +147,7 @@ public class TrueTypeRenderer implements IFontRenderer {
              * in which case only the last such color code takes effect.
              */
             while (colorIndex < entry.colors.length && entry.glyphs[glyphIndex].stringIndex >= entry.colors[colorIndex].stringIndex) {
+                color = formattedColorTable[entry.colors[colorIndex].colorCode];
                 fontStyle = entry.colors[colorIndex].fontStyle;
                 colorIndex++;
             }

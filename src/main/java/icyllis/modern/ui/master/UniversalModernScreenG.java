@@ -1,7 +1,6 @@
 package icyllis.modern.ui.master;
 
 import icyllis.modern.api.module.IModernGui;
-import icyllis.modern.system.ModernUI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.inventory.ContainerScreen;

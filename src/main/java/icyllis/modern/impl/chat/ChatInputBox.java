@@ -1,26 +1,40 @@
-package icyllis.modern.ui.button;
+/*
+ * Modern UI.
+ * Copyright (C) 2019 BloCamLimb. All rights reserved.
+ *
+ * Modern UI is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Modern UI is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ */
 
-import icyllis.modern.system.ModernUI;
+package icyllis.modern.impl.chat;
+
 import icyllis.modern.ui.element.UIButton;
 import icyllis.modern.ui.font.EmojiStringRenderer;
 import icyllis.modern.ui.font.IFontRenderer;
-import icyllis.modern.ui.font.StringRenderer;
-import icyllis.modern.ui.font.TrueTypeRenderer;
 import icyllis.modern.ui.master.DrawTools;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.util.SharedConstants;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.text.TextFormatting;
 import org.lwjgl.glfw.GLFW;
 
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
  * Double lined, intended for chat bar
  */
-public class ChatInputBox extends UIButton {
+public final class ChatInputBox extends UIButton {
 
     private final IFontRenderer renderer = EmojiStringRenderer.INSTANCE;
 
@@ -47,7 +61,7 @@ public class ChatInputBox extends UIButton {
 
     private boolean shiftDown = false;
 
-    public ChatInputBox() {
+    ChatInputBox() {
         selectorX = cursorX = x = 4;
         focused = true;
     }
@@ -66,8 +80,13 @@ public class ChatInputBox extends UIButton {
                     DrawTools.fill(le, y + 0.5f, ri, y + 11.5f, 0x8097def0);
                 } else {
                     if(right > firstLength) {
-                        DrawTools.fill(ri, y - 11.5f, x + w, y - 0.5f, 0x8097def0);
-                        DrawTools.fill(x, y + 0.5f, le, y + 11.5f, 0x8097def0);
+                        if(cursor < selector) {
+                            DrawTools.fill(cursorX, y - 11.5f, x + w, y - 0.5f, 0x8097def0);
+                            DrawTools.fill(x, y + 0.5f, selectorX, y + 11.5f, 0x8097def0);
+                        } else {
+                            DrawTools.fill(selectorX, y - 11.5f, x + w, y - 0.5f, 0x8097def0);
+                            DrawTools.fill(x, y + 0.5f, cursorX, y + 11.5f, 0x8097def0);
+                        }
                     } else {
                         DrawTools.fill(le, y - 11.5f, ri, y - 0.5f, 0x8097def0);
                     }
@@ -95,7 +114,7 @@ public class ChatInputBox extends UIButton {
 
     }
 
-    public void tick() {
+    void tick() {
         timer++;
         timer %= 20;
     }
@@ -111,13 +130,13 @@ public class ChatInputBox extends UIButton {
 
     @Override
     public void mouseMoved(double mouseX, double mouseY) {
-
+        // override superclass
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if(mouseButton == 0 && isMouseInRange(mouseX, mouseY)) {
-            float dx = (float) (mouseX - x);
+            float dx = (float) (mouseX - x) + 1.0f;
             double dy = mouseY - y;
             if(isDoubleLined) {
                 if(dy > 0 && dy < 12) {
@@ -190,7 +209,7 @@ public class ChatInputBox extends UIButton {
                     return true;
                 case GLFW.GLFW_KEY_UP:
                     if(isDoubleLined & cursor > firstLength) {
-                        setCursorSafety(renderer.sizeStringToWidth(text, renderer.getStringWidth(text.substring(firstLength))));
+                        setCursorSafety(renderer.sizeStringToWidth(text, renderer.getStringWidth(text.substring(firstLength, cursor)) + 1.0f));
                     }
                     return true;
                 case GLFW.GLFW_KEY_HOME:
@@ -213,7 +232,11 @@ public class ChatInputBox extends UIButton {
         return false;
     }
 
-    private void writeText(String textToWrite) {
+    public boolean isCursorInDoubled() {
+        return isDoubleLined && cursor <= firstLength;
+    }
+
+    public void writeText(String textToWrite) {
         String result = "";
         String toWrite = SharedConstants.filterAllowedCharacters(textToWrite);
 
@@ -240,8 +263,8 @@ public class ChatInputBox extends UIButton {
                 this.text = result;
                 this.isDoubleLined = false;
             }
-            this.setCursorSafety(left + toWrite.length()); // don't worry, it's safe
-            this.setSelector();
+            this.setCursorSafety(left + toWrite.length()); // trimmed, but don't worry, it's safe
+            this.setSelector(); // needed with shift pressed
         }
     }
 
@@ -270,7 +293,7 @@ public class ChatInputBox extends UIButton {
     }
 
     /**
-     * Needed when no matter if shift pressed
+     * Needed when no matter if pressed shift
      */
     private void setSelector() {
         this.selector = cursor;
