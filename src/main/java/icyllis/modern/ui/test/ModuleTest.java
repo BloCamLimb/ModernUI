@@ -3,13 +3,8 @@ package icyllis.modern.ui.test;
 import icyllis.modern.api.module.IModernModule;
 import icyllis.modern.api.internal.IElementBuilder;
 import icyllis.modern.system.ModernUI;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screen.ChatScreen;
-import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.resource.ISelectiveResourceReloadListener;
-
-import java.text.DecimalFormat;
+import net.minecraft.util.text.TextFormatting;
 
 public class ModuleTest implements IModernModule {
 
@@ -33,10 +28,10 @@ public class ModuleTest implements IModernModule {
                 .size(256, 256)
                 .color(() -> 0xeedc82);
         builder.textLine()
-                .text(() -> ":0210::0911: likes to eat :0311: :000e::090f::0f12:")
+                .text(() -> TextFormatting.AQUA + ":0210::0911: likes to eat :0311: :000e::090f::0f12:")
                 .pos(-50, -60);
         builder.textLine()
-                .text(() -> "\u6709:000e:\u8bf4:090f:\uff0c\u786e\u5b9e\u9178\ua9ff")
+                .text(() -> "\u6709:000e:\u8bf4:090f:\uff0c\u786e\u5b9e\u9178")
                 .pos(-50, -40);
         for (int i = 0; i < 7; i++) {
             int f = i;

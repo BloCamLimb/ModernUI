@@ -20,10 +20,6 @@
 
 package icyllis.modern.ui.font;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import icyllis.modern.system.ModernUI;
-
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.lang.ref.WeakReference;
@@ -32,7 +28,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.WeakHashMap;
-import java.util.concurrent.TimeUnit;
 
 class StringCache {
 
@@ -247,6 +242,11 @@ class StringCache {
          * Combination of Font.PLAIN, Font.BOLD, and Font.ITALIC specifying font specific syles
          */
         public byte fontStyle;
+
+        /**
+         * The numeric color code (i.e. index into the colorCode[] array); -1 to reset default color
+         */
+        public byte colorCode;
 
         /**
          * Combination of UNDERLINE and STRIKETHROUGH flags specifying effects performed by renderString()
@@ -487,6 +487,7 @@ class StringCache {
                 /* Otherwise, must be a color code or some other unsupported code */
                 default:
                     if (code >= 0) {
+                        colorCode = (byte) code;
                         fontStyle = Font.PLAIN; // This may be a bug in Minecraft's original FontRenderer
                         renderStyle = 0; // This may be a bug in Minecraft's original FontRenderer
                     }
@@ -497,6 +498,7 @@ class StringCache {
             ColorCode entry = new ColorCode();
             entry.stringIndex = next;
             entry.stripIndex = next - shift;
+            entry.colorCode = colorCode;
             entry.fontStyle = fontStyle;
             entry.renderStyle = renderStyle;
             colorList.add(entry);
