@@ -28,7 +28,7 @@ public class ModuleTest implements IModernModule {
                 .size(256, 256)
                 .color(() -> 0xeedc82);
         builder.textLine()
-                .text(() -> TextFormatting.AQUA + ":0210::0911: likes to eat :0311: :000e::090f::0f12:")
+                .text(() -> TextFormatting.AQUA + ":0210::0911: likes to eat :0311: \u0090000e\u0090\u0090090f\u0090\u00900f12\u0090")
                 .pos(-50, -60);
         builder.textLine()
                 .text(() -> "\u6709:000e:\u8bf4:090f:\uff0c\u786e\u5b9e\u9178")

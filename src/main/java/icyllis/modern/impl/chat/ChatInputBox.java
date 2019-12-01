@@ -54,10 +54,12 @@ public final class ChatInputBox extends UIButton {
     private boolean isDoubleLined = false;
 
     /** full text **/
-    private String text = "\u0090000e\u0090";
+    private String text = "\u256a000e\u256a";
 
     /** for blacklist **/
     private Predicate<String> filter = s -> true;
+
+    private Consumer<Boolean> onLineChanged = b -> {};
 
     private boolean shiftDown = false;
 
@@ -232,8 +234,8 @@ public final class ChatInputBox extends UIButton {
         return false;
     }
 
-    public boolean isCursorInDoubled() {
-        return isDoubleLined && cursor <= firstLength;
+    public void setOnLineChanged(Consumer<Boolean> s) {
+        onLineChanged = s;
     }
 
     public void writeText(String textToWrite) {
@@ -258,10 +260,12 @@ public final class ChatInputBox extends UIButton {
                 float line1width = renderer.getStringWidth(result.substring(0, line1s));
                 this.text = renderer.trimStringToWidth(result, line1width + w, false);
                 this.isDoubleLined = true;
+                onLineChanged.accept(true);
             } else {
                 this.firstLength = line1s;
                 this.text = result;
                 this.isDoubleLined = false;
+                onLineChanged.accept(false);
             }
             this.setCursorSafety(left + toWrite.length()); // trimmed, but don't worry, it's safe
             this.setSelector(); // needed with shift pressed
@@ -302,13 +306,13 @@ public final class ChatInputBox extends UIButton {
 
     private void moveCursor(boolean reverse) {
         if(reverse) {
-            if(text.length() >= cursor + 6 && text.codePointAt(cursor) == '\u0090') {
+            if(text.length() >= cursor + 6 && text.codePointAt(cursor) == '\u256a') {
                 setCursorSafety(cursor + 6);
             } else {
                 setCursorSafety(cursor + 1);
             }
         } else {
-            if(cursor >= 6 && text.length() >= 6 && text.codePointAt(cursor - 1) == '\u0090') {
+            if(cursor >= 6 && text.length() >= 6 && text.codePointAt(cursor - 1) == '\u256a') {
                 setCursorSafety(cursor - 6);
             } else {
                 setCursorSafety(cursor - 1);
@@ -343,6 +347,7 @@ public final class ChatInputBox extends UIButton {
                 if (isDoubleLined && text.length() <= firstLength) {
                     this.firstLength = text.length();
                     this.isDoubleLined = false;
+                    onLineChanged.accept(false);
                 }
             }
         } else {
@@ -354,6 +359,7 @@ public final class ChatInputBox extends UIButton {
                 if(isDoubleLined && text.length() <= firstLength) {
                     this.firstLength = text.length();
                     this.isDoubleLined = false;
+                    onLineChanged.accept(false);
                 }
                 setCursorSafety(text.length() - cursor);
             }
@@ -373,7 +379,7 @@ public final class ChatInputBox extends UIButton {
             int multi = 1;
             String result = "";
             if(left >= 0) {
-                if(!reverse && cursor >= 6 && text.length() >= 6 && text.codePointAt(left) == '\u0090') {
+                if(!reverse && cursor >= 6 && text.length() >= 6 && text.codePointAt(left) == '\u256a') {
                     result = text.substring(0, left - 5);
                     multi = 6;
                 } else {
@@ -381,7 +387,7 @@ public final class ChatInputBox extends UIButton {
                 }
             }
             if(right < text.length()) {
-                if(reverse && text.length() >= cursor + 6 && text.codePointAt(cursor) == '\u0090') {
+                if(reverse && text.length() >= cursor + 6 && text.codePointAt(cursor) == '\u256a') {
                     result = text.substring(right + 5);
                     multi = 6;
                 } else {
@@ -393,6 +399,7 @@ public final class ChatInputBox extends UIButton {
                 if(isDoubleLined && text.length() <= firstLength) {
                     this.firstLength = text.length();
                     this.isDoubleLined = false;
+                    onLineChanged.accept(false);
                 }
                 if(!reverse) {
                     setCursorSafety(cursor - multi);
