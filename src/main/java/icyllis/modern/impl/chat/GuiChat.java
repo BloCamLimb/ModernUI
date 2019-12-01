@@ -18,7 +18,6 @@
 
 package icyllis.modern.impl.chat;
 
-import icyllis.modern.system.ModernUI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.text.StringTextComponent;
@@ -30,9 +29,8 @@ import javax.annotation.Nonnull;
 @OnlyIn(Dist.CLIENT)
 public final class GuiChat extends Screen {
 
-    private int controlTimer = 0;
     private ChatInputBox inputBox;
-    private EmojiTab emojiTab = new EmojiTab();
+    private EmojiTab emojiTab;
 
     public GuiChat() {
         super(new StringTextComponent("Chat"));
@@ -41,15 +39,12 @@ public final class GuiChat extends Screen {
     @Override
     public void render(int mouseX, int mouseY, float partialTicks) {
         inputBox.draw();
-        emojiTab.draw();
+        emojiTab.draw(mouseX, mouseY);
     }
 
     @Override
     public void tick() {
         inputBox.tick();
-        if(controlTimer > 0) {
-            --controlTimer;
-        }
     }
 
     @Override
@@ -59,7 +54,9 @@ public final class GuiChat extends Screen {
         inputBox.resize(width, height);
         children.add(inputBox);
         setFocusedDefault(inputBox);
-        emojiTab.open();
+        emojiTab = new EmojiTab(inputBox);
+        emojiTab.resize(width, height);
+        inputBox.setOnLineChanged(emojiTab::setDoubleLine);
     }
 
     @Override
@@ -67,6 +64,7 @@ public final class GuiChat extends Screen {
         this.width = width;
         this.height = height;
         inputBox.resize(width, height);
+        emojiTab.resize(width, height);
     }
 
     @Override
@@ -76,14 +74,22 @@ public final class GuiChat extends Screen {
 
     @Override
     public boolean keyPressed(int p_keyPressed_1_, int p_keyPressed_2_, int p_keyPressed_3_) {
-        if(Screen.hasControlDown()) {
-            if(Screen.hasControlDown() && controlTimer > 0) {
-                ModernUI.LOGGER.info("double con");
-            } else {
-                controlTimer = 6;
-            }
-        }
         return super.keyPressed(p_keyPressed_1_, p_keyPressed_2_, p_keyPressed_3_);
+    }
+
+    @Override
+    public void mouseMoved(double xPos, double yPos) {
+        emojiTab.mouseMoved(xPos, yPos);
+    }
+
+    @Override
+    public boolean mouseClicked(double p_mouseClicked_1_, double p_mouseClicked_3_, int p_mouseClicked_5_) {
+        return emojiTab.mouseClicked(p_mouseClicked_1_, p_mouseClicked_3_, p_mouseClicked_5_);
+    }
+
+    @Override
+    public boolean mouseScrolled(double p_mouseScrolled_1_, double p_mouseScrolled_3_, double p_mouseScrolled_5_) {
+        return emojiTab.mouseScrolled(p_mouseScrolled_1_, p_mouseScrolled_3_, p_mouseScrolled_5_);
     }
 
     @Override

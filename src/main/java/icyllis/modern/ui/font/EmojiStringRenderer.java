@@ -191,9 +191,9 @@ public class EmojiStringRenderer implements IFontRenderer {
 
     public static class Emoji {
 
-        public float x, u, v;
+        float x, u, v;
 
-        public Emoji(float x, float u, float v) {
+        Emoji(float x, float u, float v) {
             this.x = x;
             this.u = u;
             this.v = v;
@@ -205,29 +205,25 @@ public class EmojiStringRenderer implements IFontRenderer {
         List<Text> text = new ArrayList<>();
         List<Emoji> emoji = new ArrayList<>();
         float totalWidth = 0;
-        if (str.length() < 6 || str.indexOf('\u0090') == -1) {
+        if (str.length() < 6 || str.indexOf('\u256a') == -1) {
             text.add(new Text(str, totalWidth));
         } else {
             int lastFound = 0;
-            while ((next = str.indexOf('\u0090', start)) != -1 && next + 5 < str.length()) {
-                if (str.charAt(next + 5) == '\u0090') {
+            while ((next = str.indexOf('\u256a', start)) != -1 && next + 5 < str.length()) {
+                if (str.charAt(next + 5) == '\u256a') {
                     String s2 = str.substring(next + 1, next + 5);
                     try {
                         int code2 = Integer.parseInt(s2, 0x10);
                         int code3 = code2 >> 8;
                         int code4 = code2 & 0xff;
-                        if(false /*code3 > 0x15 || code4 > 0x15*/) {
-                            start = next + 1;
-                        } else {
-                            String s3 = str.substring(start, Math.min(next, str.length()));
-                            text.add(new Text(s3, totalWidth));
-                            float wi = FONT.getStringWidth(s3);
-                            totalWidth += wi;
-                            Emoji e = new Emoji(totalWidth, code3 * TEX_WID, code4 * TEX_WID);
-                            totalWidth += TEX_WID;
-                            emoji.add(e);
-                            lastFound = start = next + 6;
-                        }
+                        String s3 = str.substring(start, Math.min(next, str.length()));
+                        text.add(new Text(s3, totalWidth));
+                        float wi = FONT.getStringWidth(s3);
+                        totalWidth += wi;
+                        Emoji e = new Emoji(totalWidth, code3 * TEX_WID, code4 * TEX_WID);
+                        totalWidth += TEX_WID;
+                        emoji.add(e);
+                        lastFound = start = next + 6;
                     } catch (final NumberFormatException e) {
                         start = next + 1;
                     }
