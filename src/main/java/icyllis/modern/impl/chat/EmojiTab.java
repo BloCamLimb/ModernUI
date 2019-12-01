@@ -179,6 +179,7 @@ public final class EmojiTab implements IGuiEventListener {
             }
             if(mouseX >= 5 && mouseX <= 12 && mouseY >= y - 12 && mouseY <= y - 2) {
                 showMode = 2;
+                selPage = 0;
                 return true;
             }
             if(showMode == 2) {
@@ -197,16 +198,18 @@ public final class EmojiTab implements IGuiEventListener {
     }
 
     @Override
-    public boolean mouseScrolled(double p_mouseScrolled_1_, double p_mouseScrolled_3_, double p_mouseScrolled_5_) {
-        if(p_mouseScrolled_5_ == -1) {
-            if((selPage + 1) * 72 > cachedEmoji.size()) {
-                return false;
+    public boolean mouseScrolled(double mouseX, double mouseY, double scroll) {
+        if(showMode == 2 && mouseX >= 2 && mouseX <= selX2 && mouseY <= hisY2 && mouseY >= selY1) {
+            if (scroll == -1) {
+                if ((selPage + 1) * 72 > cachedEmoji.size()) {
+                    return false;
+                }
+                ++selPage;
+                return true;
+            } else if (scroll == 1) {
+                selPage = Math.max(0, --selPage);
+                return true;
             }
-            ++selPage;
-            return true;
-        } else if (p_mouseScrolled_5_ == 1) {
-            selPage = Math.max(0, --selPage);
-            return true;
         }
         return false;
     }
