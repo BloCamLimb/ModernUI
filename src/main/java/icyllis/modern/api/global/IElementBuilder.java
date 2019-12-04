@@ -1,4 +1,4 @@
-package icyllis.modern.api.internal;
+package icyllis.modern.api.global;
 
 import icyllis.modern.api.element.INavigationBuilder;
 import icyllis.modern.api.element.ITextLineBuilder;

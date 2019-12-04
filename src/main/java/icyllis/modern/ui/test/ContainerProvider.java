@@ -1,6 +1,6 @@
 package icyllis.modern.ui.test;
 
-import icyllis.modern.api.internal.IContainerProvider;
+import icyllis.modern.api.module.IContainerProvider;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.container.Container;

@@ -1,6 +1,6 @@
 package icyllis.modern.system;
 
-import icyllis.modern.api.internal.IContainerProvider;
+import icyllis.modern.api.module.IContainerProvider;
 import icyllis.modern.api.global.INetworkHandler;
 import io.netty.buffer.Unpooled;
 import net.minecraft.entity.player.ServerPlayerEntity;

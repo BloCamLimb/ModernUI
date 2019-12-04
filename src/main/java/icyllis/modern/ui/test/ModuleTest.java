@@ -1,12 +1,12 @@
 package icyllis.modern.ui.test;
 
-import icyllis.modern.api.module.IModernModule;
-import icyllis.modern.api.internal.IElementBuilder;
+import icyllis.modern.api.module.IGuiModule;
+import icyllis.modern.api.global.IElementBuilder;
 import icyllis.modern.system.ModernUI;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.TextFormatting;
 
-public class ModuleTest implements IModernModule {
+public class ModuleTest implements IGuiModule {
 
     public static final ResourceLocation BACKGROUND = new ResourceLocation(ModernUI.MODID, "gui/gui_default_background.png");
     public static final ResourceLocation FRAME = new ResourceLocation(ModernUI.MODID, "gui/gui_default_frame.png");
@@ -28,23 +28,22 @@ public class ModuleTest implements IModernModule {
                 .size(256, 256)
                 .color(() -> 0xeedc82);
         builder.textLine()
-                .text(() -> TextFormatting.AQUA + ":0210::0911: likes to eat :0311: \u0090000e\u0090\u0090090f\u0090\u00900f12\u0090")
+                .text(() -> TextFormatting.AQUA + "likes to eat")
                 .pos(-50, -60);
         builder.textLine()
-                .text(() -> "\u6709:000e:\u8bf4:090f:\uff0c\u786e\u5b9e\u9178")
+                .text(() -> "\u6709\u8bf4\uff0c\u786e\u5b9e\u9178")
                 .pos(-50, -40);
         for (int i = 0; i < 7; i++) {
             int f = i;
             builder.navigation()
-                    .tex(e -> e.tex(BUTTON).uv(16 * f, 0).pos(18 * f -76, -99).size(16, 16))
-                    .pos(18 * f -76, -99).size(16, 16)
-                    .text(e -> e.text(() -> "Home").align(0.25f).pos(18 * f -68, -109)).to(i);
+                    .tex(e -> e.tex(BUTTON).uv(16 * f, 0).pos(18 * f - 76, -99).size(16, 16))
+                    .pos(18 * f - 76, -99).size(16, 16)
+                    .text(e -> e.text(() -> "\u6709\u8bf4").align(0.25f).pos(18 * f - 68, -109)).to(i);
         }
         builder.navigation()
                 .tex(e -> e.tex(BUTTON).uv(112, 0).pos(60, -99).size(16, 16))
                 .pos(60, -99).size(16, 16)
                 .text(e -> e.text(() -> "Create New Network").align(0.25f).pos(68, -109)).to(7);
-        builder.input();
         /*builder.textLine()
                 .text(() -> "World partial ticks: " + df.format(Minecraft.getInstance().getRenderPartialTicks()))
                 .pos(0, -20, true);*/

@@ -19,9 +19,11 @@
 package icyllis.modern.impl.chat;
 
 import com.mojang.blaze3d.platform.GlStateManager;
-import icyllis.modern.system.ModernUI;
+import com.mojang.datafixers.util.Pair;
+import icyllis.modern.system.HistoryRecorder;
 import icyllis.modern.system.ReferenceLibrary;
 import icyllis.modern.ui.font.EmojiStringRenderer;
+import icyllis.modern.ui.font.StringRenderer;
 import icyllis.modern.ui.master.DrawTools;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
@@ -30,23 +32,22 @@ import org.lwjgl.opengl.GL11;
 
 import java.util.List;
 
-public final class EmojiTab implements IGuiEventListener {
+public class EmojiTab implements IGuiEventListener {
 
     private int y, screenWidth, screenHeight, showMode = 0;
     private int hisY1, hisX2 = 70, hisY2;
     private int selY1, selX2 = 161, selPage = 0;
     private boolean isDoubleLined = false;
-    private int hoverEmoji = -1;
+    private Pair<String, Integer> hoverEmoji;
     private ChatInputBox inputBox;
 
-    private List<Integer> cachedEmoji;
+    private List<Pair<String, Integer>> cachedEmoji;
 
     private final TextureManager TEX = Minecraft.getInstance().textureManager;
 
     EmojiTab(ChatInputBox inputBox) {
         this.inputBox = inputBox;
-        cachedEmoji = EmojiFinder.findEmoji("s");
-        ModernUI.LOGGER.info(cachedEmoji.size());
+        cachedEmoji = HistoryRecorder.findEmoji("");
     }
 
     public void draw(int mouseX, int mouseY) {
@@ -70,17 +71,16 @@ public final class EmojiTab implements IGuiEventListener {
             for(int y = 0; y < 3; y++) {
                 for(int x = 0; x < 5; x++) {
                     int index = y * 5 + x;
-                    if(index >= EmojiFinder.getHistory().size()) {
+                    if(index >= HistoryRecorder.getEmojiHistory().size()) {
                         break CYCLE;
                     }
                     int rx = 4 + x * 13;
                     int ry = hisY1 + 2 + y * 13;
-                    int code = EmojiFinder.getHistory().get(index);
-                    anyFound = isAnyFound(mouseX, mouseY, anyFound, rx, ry, code);
+                    anyFound = isAnyFound(mouseX, mouseY, anyFound, rx, ry, HistoryRecorder.getEmojiHistory().get(index));
                 }
             }
             if(!anyFound) {
-                hoverEmoji = -1;
+                hoverEmoji = null;
             }
         } else if (showMode == 2) {
             DrawTools.fill(2, selY1, selX2, hisY2, 0x80000000);
@@ -97,12 +97,11 @@ public final class EmojiTab implements IGuiEventListener {
                     }
                     int rx = 4 + x * 13;
                     int ry = this.selY1 + 2 + y * 13;
-                    int code = cachedEmoji.get(index);
-                    anyFound = isAnyFound(mouseX, mouseY, anyFound, rx, ry, code);
+                    anyFound = isAnyFound(mouseX, mouseY, anyFound, rx, ry, cachedEmoji.get(index));
                 }
             }
             if(!anyFound) {
-                hoverEmoji = -1;
+                hoverEmoji = null;
             }
         }
 
@@ -122,16 +121,20 @@ public final class EmojiTab implements IGuiEventListener {
         GlStateManager.enableAlphaTest();
     }
 
-    private boolean isAnyFound(int mouseX, int mouseY, boolean anyFound, int rx, int ry, int code) {
+    private boolean isAnyFound(int mouseX, int mouseY, boolean anyFound, int rx, int ry, Pair<String, Integer> emoji) {
+        int code = emoji.getSecond();
+        String name = emoji.getFirst();
         if(!anyFound && mouseX > rx && mouseX < rx + 12 && mouseY > ry && mouseY < ry + 12) {
             GlStateManager.disableBlend();
             GlStateManager.enableBlend();
             GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
             DrawTools.fill(rx, ry, rx + 11.5f, ry + 11.5f, 0x40d0d0d0);
+            StringRenderer.STRING_RENDERER.drawString(name, 18, y - 11, 0xffffff, 0xff, 0);
             GlStateManager.disableBlend();
             GlStateManager.enableBlend();
-            hoverEmoji = code;
+            hoverEmoji = emoji;
             anyFound = true;
+            TEX.bindTexture(EmojiStringRenderer.EMOJI);
         }
         int code3 = code >> 8;
         int code4 = code & 0xff;
@@ -171,9 +174,9 @@ public final class EmojiTab implements IGuiEventListener {
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if(mouseButton == 0) {
             if(showMode == 1) {
-                if(hoverEmoji != -1) {
-                    inputBox.writeText("\u256a" + Integer.toHexString(hoverEmoji | 0x10000).substring(1) + "\u256a");
-                    EmojiFinder.addToHistory(hoverEmoji);
+                if(hoverEmoji != null) {
+                    inputBox.writeText("\u256a" + Integer.toHexString(hoverEmoji.getSecond() | 0x10000).substring(1) + "\u256a");
+                    HistoryRecorder.addToEmojiHistory(hoverEmoji);
                     return true;
                 }
             }
@@ -183,9 +186,9 @@ public final class EmojiTab implements IGuiEventListener {
                 return true;
             }
             if(showMode == 2) {
-                if(hoverEmoji != -1) {
-                    inputBox.writeText("\u256a" + Integer.toHexString(hoverEmoji | 0x10000).substring(1) + "\u256a");
-                    EmojiFinder.addToHistory(hoverEmoji);
+                if(hoverEmoji != null) {
+                    inputBox.writeText("\u256a" + Integer.toHexString(hoverEmoji.getSecond() | 0x10000).substring(1) + "\u256a");
+                    HistoryRecorder.addToEmojiHistory(hoverEmoji);
                     return true;
                 }
                 if(mouseX < 2 || mouseX > selX2 || mouseY > hisY2 || mouseY < selY1) {
