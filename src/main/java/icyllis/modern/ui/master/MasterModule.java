@@ -1,18 +1,18 @@
 package icyllis.modern.ui.master;
 
 import icyllis.modern.api.element.IElement;
-import icyllis.modern.api.module.IModernModule;
+import icyllis.modern.api.module.IGuiModule;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class MasterModule {
 
-    private IModernModule raw;
+    private IGuiModule raw;
 
     private List<IElement> elements = new ArrayList<>();
 
-    MasterModule(IModernModule raw) {
+    MasterModule(IGuiModule raw) {
         this.raw = raw;
     }
 

@@ -1,23 +1,22 @@
 package icyllis.modern.ui.test;
 
-import icyllis.modern.api.module.IModernGui;
-import icyllis.modern.api.internal.IModuleReceiver;
+import icyllis.modern.api.module.IGuiScreen;
+import icyllis.modern.api.global.IModuleList;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 
-public class GuiTest implements IModernGui {
+public class GuiTest implements IGuiScreen {
 
     private static final ITextComponent TEST_TITLE = new StringTextComponent("Test Screen");
 
-    @Override
-    public void createModules(IModuleReceiver receiver) {
-        receiver.addModule(new ModuleTest());
+    public GuiTest(PacketBuffer buffer) {
+
     }
 
     @Override
-    public void updateData(PacketBuffer extraData) {
-        //ModernUI.logger.info(extraData.readBlockPos());
+    public void addModules(IModuleList list) {
+        list.add(new ModuleTest());
     }
 
     @Override

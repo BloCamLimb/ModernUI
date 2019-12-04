@@ -69,7 +69,6 @@ public class EventsHandler {
             if(event.getGui() instanceof ChatScreen) {
 
             }
-                //ModernUI.LOGGER.info(event.getGui().getClass().getSimpleName());
         }
     }
 
@@ -90,6 +89,7 @@ public class EventsHandler {
         @SubscribeEvent
         public static void setupClient(FMLClientSetupEvent event) {
             ModernUIApi.INSTANCE.gui().registerContainerGui(UILibs.TEST_CONTAINER_SCREEN, ContainerTest::new, GuiTest::new);
+            HistoryRecorder.gEmojiPair();
         }
     }
 }

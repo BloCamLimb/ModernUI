@@ -143,12 +143,15 @@ public final class ChatInputBox extends UIButton {
             if(isDoubleLined) {
                 if(dy > 0 && dy < 12) {
                     setCursorSafety(firstLength + renderer.sizeStringToWidth(text.substring(firstLength), dx));
+                    setSelector();
                 } else if(dy < 0 && dy > -12) {
                     setCursorSafety(renderer.sizeStringToWidth(text, dx));
+                    setSelector();
                 }
             } else {
                 if(dy > 0 && dy < 12) {
                     setCursorSafety(renderer.sizeStringToWidth(text, dx));
+                    setSelector();
                 }
             }
             return true;
@@ -234,7 +237,7 @@ public final class ChatInputBox extends UIButton {
         return false;
     }
 
-    public void setOnLineChanged(Consumer<Boolean> s) {
+    public void setLineChanged(Consumer<Boolean> s) {
         onLineChanged = s;
     }
 

@@ -1,6 +1,6 @@
 package icyllis.modern.ui.master;
 
-import icyllis.modern.api.module.IModernGui;
+import icyllis.modern.api.module.IGuiScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.Screen;
@@ -14,9 +14,9 @@ public final class UniversalModernScreen extends Screen implements IMasterScreen
 
     private GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
 
-    public UniversalModernScreen(IModernGui injector) {
+    public UniversalModernScreen(IGuiScreen injector) {
         super(injector.getTitle());
-        injector.createModules(manager);
+        injector.addModules(manager);
     }
 
     @Override

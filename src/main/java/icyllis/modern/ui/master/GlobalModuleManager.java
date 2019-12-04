@@ -1,12 +1,12 @@
 package icyllis.modern.ui.master;
 
-import icyllis.modern.api.internal.IModuleReceiver;
-import icyllis.modern.api.module.IModernModule;
+import icyllis.modern.api.global.IModuleList;
+import icyllis.modern.api.module.IGuiModule;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class GlobalModuleManager implements IModuleReceiver {
+public class GlobalModuleManager implements IModuleList {
 
     static final GlobalModuleManager INSTANCE = new GlobalModuleManager();
 
@@ -14,7 +14,7 @@ public class GlobalModuleManager implements IModuleReceiver {
     private MasterModule currentModule;
 
     @Override
-    public void addModule(IModernModule module) {
+    public void add(IGuiModule module) {
         MasterModule masterModule = new MasterModule(module);
         modules.add(masterModule);
         if (modules.size() == 1) {

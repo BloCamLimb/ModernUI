@@ -56,7 +56,7 @@ public final class GuiChat extends Screen {
         setFocusedDefault(inputBox);
         emojiTab = new EmojiTab(inputBox);
         emojiTab.resize(width, height);
-        inputBox.setOnLineChanged(emojiTab::setDoubleLine);
+        inputBox.setLineChanged(emojiTab::setDoubleLine);
     }
 
     @Override
@@ -84,7 +84,11 @@ public final class GuiChat extends Screen {
 
     @Override
     public boolean mouseClicked(double p_mouseClicked_1_, double p_mouseClicked_3_, int p_mouseClicked_5_) {
-        return emojiTab.mouseClicked(p_mouseClicked_1_, p_mouseClicked_3_, p_mouseClicked_5_);
+        if(emojiTab.mouseClicked(p_mouseClicked_1_, p_mouseClicked_3_, p_mouseClicked_5_)) {
+            return true;
+        } else {
+            return super.mouseClicked(p_mouseClicked_1_, p_mouseClicked_3_, p_mouseClicked_5_);
+        }
     }
 
     @Override

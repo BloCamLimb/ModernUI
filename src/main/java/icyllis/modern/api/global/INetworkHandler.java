@@ -1,6 +1,6 @@
 package icyllis.modern.api.global;
 
-import icyllis.modern.api.internal.IContainerProvider;
+import icyllis.modern.api.module.IContainerProvider;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.math.BlockPos;

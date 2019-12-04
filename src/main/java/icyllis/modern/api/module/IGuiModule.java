@@ -1,6 +1,6 @@
 package icyllis.modern.api.module;
 
-import icyllis.modern.api.internal.IElementBuilder;
+import icyllis.modern.api.global.IElementBuilder;
 
 /**
  * A Module includes all elements also their position, texture, animation etc
@@ -8,7 +8,7 @@ import icyllis.modern.api.internal.IElementBuilder;
  * there's only one module showing on your screen. But a screen can integrated
  * with more than one module and you can switch between each other
  */
-public interface IModernModule {
+public interface IGuiModule {
 
     /**
      * Add your elements and set their properties
