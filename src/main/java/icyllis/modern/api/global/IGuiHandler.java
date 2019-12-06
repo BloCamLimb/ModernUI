@@ -11,7 +11,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 @OnlyIn(Dist.CLIENT)
-public interface IGuiManager {
+public interface IGuiHandler {
 
     /**
      * Register a gui with container

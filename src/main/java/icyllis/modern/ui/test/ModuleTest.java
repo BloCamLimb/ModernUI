@@ -20,28 +20,44 @@ public class ModuleTest implements IGuiModule {
                 .tex(BACKGROUND)
                 .pos(-128, -128)
                 .uv(0, 0)
-                .size(256, 256);
+                .size(256, 256)
+                .alphaAnimation(a -> a.translate(-1f).fixedTiming(4f));
         builder.texture()
                 .tex(FRAME)
                 .pos(-128, -128)
                 .uv(0, 0)
                 .size(256, 256)
-                .color(() -> 0xeedc82);
+                .color(() -> 0xeedc82)
+                .alphaAnimation(a -> a.translate(-1f).fixedTiming(4f));
         builder.textLine()
-                .text(() -> TextFormatting.AQUA + "likes to eat")
+                .text(() -> TextFormatting.AQUA + "snownee likes to eat lemon")
                 .pos(-50, -60);
-        builder.textLine()
-                .text(() -> "\u6709\u8bf4\uff0c\u786e\u5b9e\u9178")
-                .pos(-50, -40);
         for (int i = 0; i < 7; i++) {
             int f = i;
             builder.navigation()
-                    .tex(e -> e.tex(BUTTON).uv(16 * f, 0).pos(18 * f - 76, -99).size(16, 16))
-                    .pos(18 * f - 76, -99).size(16, 16)
-                    .text(e -> e.text(() -> "\u6709\u8bf4").align(0.25f).pos(18 * f - 68, -109)).to(i);
+                    .tex(e -> e
+                            .tex(BUTTON)
+                            .uv(16 * f, 0)
+                            .pos(18 * f - 76, -99)
+                            .size(16, 16)
+                            .alphaAnimation(a -> a
+                                    .delay(f * 0.7f)
+                                    .translate(-1f)
+                                    .fixedTiming(2f)
+                            )
+                    )
+                    .pos(18 * f - 76, -99)
+                    .size(16, 16)
+                    .text(e -> e
+                            .text(() -> "\u6709\u8bf4")
+                            .align(0.25f)
+                            .pos(18 * f - 68, -109)
+                    )
+                    .to(i);
         }
         builder.navigation()
-                .tex(e -> e.tex(BUTTON).uv(112, 0).pos(60, -99).size(16, 16))
+                .tex(e -> e.tex(BUTTON).uv(112, 0).pos(60, -99).size(16, 16)
+                .alphaAnimation(a -> a.delay(5f).translate(-1f).fixedTiming(2f)))
                 .pos(60, -99).size(16, 16)
                 .text(e -> e.text(() -> "Create New Network").align(0.25f).pos(68, -109)).to(7);
         /*builder.textLine()

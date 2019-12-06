@@ -1,6 +1,5 @@
 package icyllis.modern.ui.element;
 
-import icyllis.modern.api.element.IElement;
 import icyllis.modern.api.element.ITextLineBuilder;
 import icyllis.modern.ui.font.IFontRenderer;
 import icyllis.modern.ui.font.StringRenderer;

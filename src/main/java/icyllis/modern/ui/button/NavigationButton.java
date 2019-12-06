@@ -21,23 +21,23 @@ public class NavigationButton extends UIButton<INavigationBuilder> implements IN
 
     private UITexture texture;
 
+    public NavigationButton() {
+
+    }
+
     @Override
     public void draw() {
         GlStateManager.color4f(1.0f, 1.0f, 1.0f, 1.0f);
         GlStateManager.pushMatrix();
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-        GlStateManager.scaled(0.8, 0.8, 1);
         if (mouseHovered) {
             textLine.draw();
         }
-        GlStateManager.scaled(1/0.8, 1/0.8, 1);
         texture.draw(mouseHovered);
         GlStateManager.popMatrix();
     }
 
     @Override
-    public INavigationBuilder to(int id) {
+    public INavigationBuilder to(int index) {
         return this;
     }
 

@@ -19,12 +19,12 @@
 package icyllis.modern.impl.chat;
 
 import com.mojang.blaze3d.platform.GlStateManager;
-import com.mojang.datafixers.util.Pair;
 import icyllis.modern.system.HistoryRecorder;
 import icyllis.modern.system.ReferenceLibrary;
 import icyllis.modern.ui.font.EmojiStringRenderer;
 import icyllis.modern.ui.font.StringRenderer;
 import icyllis.modern.ui.master.DrawTools;
+import javafx.util.Pair;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.renderer.texture.TextureManager;
@@ -122,8 +122,8 @@ public class EmojiTab implements IGuiEventListener {
     }
 
     private boolean isAnyFound(int mouseX, int mouseY, boolean anyFound, int rx, int ry, Pair<String, Integer> emoji) {
-        int code = emoji.getSecond();
-        String name = emoji.getFirst();
+        int code = emoji.getValue();
+        String name = emoji.getKey();
         if(!anyFound && mouseX > rx && mouseX < rx + 12 && mouseY > ry && mouseY < ry + 12) {
             GlStateManager.disableBlend();
             GlStateManager.enableBlend();
@@ -175,7 +175,7 @@ public class EmojiTab implements IGuiEventListener {
         if(mouseButton == 0) {
             if(showMode == 1) {
                 if(hoverEmoji != null) {
-                    inputBox.writeText("\u256a" + Integer.toHexString(hoverEmoji.getSecond() | 0x10000).substring(1) + "\u256a");
+                    inputBox.writeText("\u256a" + Integer.toHexString(hoverEmoji.getValue() | 0x10000).substring(1) + "\u256a");
                     HistoryRecorder.addToEmojiHistory(hoverEmoji);
                     return true;
                 }
@@ -187,7 +187,7 @@ public class EmojiTab implements IGuiEventListener {
             }
             if(showMode == 2) {
                 if(hoverEmoji != null) {
-                    inputBox.writeText("\u256a" + Integer.toHexString(hoverEmoji.getSecond() | 0x10000).substring(1) + "\u256a");
+                    inputBox.writeText("\u256a" + Integer.toHexString(hoverEmoji.getValue() | 0x10000).substring(1) + "\u256a");
                     HistoryRecorder.addToEmojiHistory(hoverEmoji);
                     return true;
                 }

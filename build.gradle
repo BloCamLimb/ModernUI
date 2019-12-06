@@ -78,10 +78,8 @@ minecraft {
 }
 
 repositories {
-    maven {
-        // location of the maven that hosts JEI files
-        name = "Progwml6 maven"
-        url = "https://dvs1.progwml6.com/files/maven/"
+    flatDir {
+        dirs 'lib'
     }
 }
 
@@ -91,6 +89,7 @@ dependencies {
     //compileOnly files("libs/jei-1.14.4-6.0.0.13.jar")
 
     //runtimeOnly fg.deobf("mezz.jei:jei-1.14.4:${jei_version}")
+    runtimeOnly fg.deobf("malte0811.nbtedit:NBTEdit:0.8.2")
 }
 
 jar {

@@ -19,6 +19,7 @@
 package icyllis.modern.impl.chat;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screen.IngameMenuScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;

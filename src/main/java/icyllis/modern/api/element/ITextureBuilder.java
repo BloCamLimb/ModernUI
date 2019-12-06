@@ -1,7 +1,9 @@
 package icyllis.modern.api.element;
 
+import icyllis.modern.api.animation.IAlphaAnimation;
 import net.minecraft.util.ResourceLocation;
 
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public interface ITextureBuilder {
@@ -15,4 +17,6 @@ public interface ITextureBuilder {
     ITextureBuilder size(float w, float h);
 
     ITextureBuilder color(Supplier<Integer> color);
+
+    ITextureBuilder alphaAnimation(Consumer<IAlphaAnimation> a);
 }

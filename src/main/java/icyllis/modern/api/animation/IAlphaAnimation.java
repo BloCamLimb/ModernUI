@@ -16,35 +16,13 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modern.impl.chat;
+package icyllis.modern.api.animation;
 
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.network.play.client.CChatMessagePacket;
+public interface IAlphaAnimation {
 
-/**
- * Lengthened message
- */
-public final class ChatMessage extends CChatMessagePacket {
+    IAlphaAnimation translate(float t);
 
-    private String message;
+    IAlphaAnimation delay(float t);
 
-    public ChatMessage() {
-    }
-
-    public ChatMessage(String message) {
-        if(message.length() > 512) {
-            message = message.substring(0, 512);
-        }
-        this.message = message;
-    }
-
-    @Override
-    public void readPacketData(PacketBuffer buffer) {
-        message = buffer.readString(512);
-    }
-
-    @Override
-    public void writePacketData(PacketBuffer buffer) {
-        buffer.writeString(message);
-    }
+    IAlphaAnimation fixedTiming(float t);
 }
