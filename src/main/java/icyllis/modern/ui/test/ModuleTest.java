@@ -14,22 +14,29 @@ public class ModuleTest implements IGuiModule {
 
     @Override
     public void createElements(IElementBuilder builder) {
-        //DecimalFormat df = new DecimalFormat("0.00");
         builder.defaultBackground();
         builder.texture()
                 .tex(BACKGROUND)
                 .pos(-128, -128)
                 .uv(0, 0)
                 .size(256, 256)
-                .alphaAnimation(a -> a.translate(-1f).fixedTiming(4f));
+                .toAnimated()
+                .alpha(a -> a
+                        .translate(-1f)
+                        .fixedTiming(4f)
+                );
         builder.texture()
                 .tex(FRAME)
                 .pos(-128, -128)
                 .uv(0, 0)
                 .size(256, 256)
                 .color(() -> 0xeedc82)
-                .alphaAnimation(a -> a.translate(-1f).fixedTiming(4f));
-        builder.textLine()
+                .toAnimated()
+                .alpha(a -> a
+                        .translate(-1f)
+                        .fixedTiming(4f)
+                );
+        builder.varText()
                 .text(() -> TextFormatting.AQUA + "snownee likes to eat lemon")
                 .pos(-50, -60);
         for (int i = 0; i < 7; i++) {
@@ -40,7 +47,8 @@ public class ModuleTest implements IGuiModule {
                             .uv(16 * f, 0)
                             .pos(18 * f - 76, -99)
                             .size(16, 16)
-                            .alphaAnimation(a -> a
+                            .toAnimated()
+                            .alpha(a -> a
                                     .delay(f * 0.7f)
                                     .translate(-1f)
                                     .fixedTiming(2f)
@@ -56,14 +64,29 @@ public class ModuleTest implements IGuiModule {
                     .to(i);
         }
         builder.navigation()
-                .tex(e -> e.tex(BUTTON).uv(112, 0).pos(60, -99).size(16, 16)
-                .alphaAnimation(a -> a.delay(5f).translate(-1f).fixedTiming(2f)))
-                .pos(60, -99).size(16, 16)
-                .text(e -> e.text(() -> "Create New Network").align(0.25f).pos(68, -109)).to(7);
-        /*builder.textLine()
-                .text(() -> "World partial ticks: " + df.format(Minecraft.getInstance().getRenderPartialTicks()))
-                .pos(0, -20, true);*/
-
+                .tex(e -> e
+                        .tex(BUTTON)
+                        .uv(112, 0)
+                        .pos(60, -99)
+                        .size(16, 16)
+                        .toAnimated()
+                        .alpha(a -> a
+                                .delay(5f)
+                                .translate(-1f)
+                                .fixedTiming(2f)
+                        )
+                )
+                .pos(60, -99)
+                .size(16, 16)
+                .text(e -> e
+                        .text(() -> "Create New Network")
+                        .align(0.25f)
+                        .pos(68, -109)
+                )
+                .to(7);
+        builder.constText()
+                .text("INFORMATION")
+                .align(0.25f);
     }
 
 }

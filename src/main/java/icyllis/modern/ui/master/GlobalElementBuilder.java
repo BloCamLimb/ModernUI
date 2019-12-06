@@ -1,13 +1,15 @@
 package icyllis.modern.ui.master;
 
+import icyllis.modern.api.element.IConstTextBuilder;
 import icyllis.modern.api.element.INavigationBuilder;
-import icyllis.modern.api.element.ITextLineBuilder;
+import icyllis.modern.api.element.IVarTextBuilder;
 import icyllis.modern.api.element.ITextureBuilder;
 import icyllis.modern.api.global.IElementBuilder;
 import icyllis.modern.ui.button.InputBox;
 import icyllis.modern.ui.button.NavigationButton;
 import icyllis.modern.ui.element.UIBackground;
-import icyllis.modern.ui.element.UITextLine;
+import icyllis.modern.ui.element.UIConstText;
+import icyllis.modern.ui.element.UIVarText;
 import icyllis.modern.ui.element.UITexture;
 
 public class GlobalElementBuilder implements IElementBuilder {
@@ -29,8 +31,15 @@ public class GlobalElementBuilder implements IElementBuilder {
     }
 
     @Override
-    public ITextLineBuilder textLine() {
-        UITextLine u = new UITextLine();
+    public IVarTextBuilder varText() {
+        UIVarText u = new UIVarText();
+        receiver.add(u);
+        return u;
+    }
+
+    @Override
+    public IConstTextBuilder constText() {
+        UIConstText u = new UIConstText();
         receiver.add(u);
         return u;
     }

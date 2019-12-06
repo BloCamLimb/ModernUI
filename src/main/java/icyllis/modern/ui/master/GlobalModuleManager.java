@@ -1,5 +1,6 @@
 package icyllis.modern.ui.master;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import icyllis.modern.api.global.IModuleList;
 import icyllis.modern.api.module.IGuiModule;
 import org.lwjgl.opengl.GL11;
@@ -29,6 +30,8 @@ public class GlobalModuleManager implements IModuleList {
     }
 
     public void draw() {
+        GlStateManager.enableBlend();
+        GlStateManager.enableAlphaTest();
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
         currentModule.draw();
