@@ -2,6 +2,7 @@ package icyllis.modern.ui.element;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import icyllis.modern.api.animation.IAlphaAnimation;
+import icyllis.modern.api.element.ITextureAnimator;
 import icyllis.modern.api.element.ITextureBuilder;
 import icyllis.modern.ui.animation.AlphaAnimation;
 import icyllis.modern.ui.master.DrawTools;
@@ -13,7 +14,7 @@ import net.minecraft.util.ResourceLocation;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class UITexture implements ITextureBuilder, IElement {
+public class UITexture implements ITextureBuilder, ITextureAnimator, IElement {
 
     protected TextureManager textureManager;
     protected ResourceLocation res;
@@ -30,16 +31,12 @@ public class UITexture implements ITextureBuilder, IElement {
 
     @Override
     public void draw() {
-        GlStateManager.enableBlend();
-        GlStateManager.enableAlphaTest();
         runColor();
         textureManager.bindTexture(res);
         DrawTools.blit(x, y, u, v, w, h);
     }
 
     public void draw(boolean hover) {
-        GlStateManager.enableBlend();
-        GlStateManager.enableAlphaTest();
         runColor();
         textureManager.bindTexture(res);
         DrawTools.blit(x, y, u, hover ? v + h : v, w, h);
@@ -93,7 +90,12 @@ public class UITexture implements ITextureBuilder, IElement {
     }
 
     @Override
-    public ITextureBuilder alphaAnimation(Consumer<IAlphaAnimation> a) {
+    public ITextureAnimator toAnimated() {
+        return this;
+    }
+
+    @Override
+    public ITextureAnimator alpha(Consumer<IAlphaAnimation> a) {
         AlphaAnimation i = GlobalAnimationManager.INSTANCE.newAlpha(alpha.get());
         a.accept(i);
         alpha = i;

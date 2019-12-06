@@ -18,7 +18,7 @@ public abstract class UIButton<T extends IButtonBuilder> implements IElement, IB
     protected boolean visible = true, focused = false;
 
     /** text to show something **/
-    protected UITextLine textLine = UITextLine.DEFAULT;
+    protected UIVarText textLine = UIVarText.DEFAULT;
 
     @Override
     public void draw() {
@@ -26,8 +26,8 @@ public abstract class UIButton<T extends IButtonBuilder> implements IElement, IB
     }
 
     @Override
-    public T text(Consumer<ITextLineBuilder> consumer) {
-        UITextLine u = new UITextLine();
+    public T text(Consumer<IVarTextBuilder> consumer) {
+        UIVarText u = new UIVarText();
         consumer.accept(u);
         textLine = u;
         return (T) this;

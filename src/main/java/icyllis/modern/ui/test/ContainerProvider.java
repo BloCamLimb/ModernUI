@@ -7,8 +7,11 @@ import net.minecraft.inventory.container.Container;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ResourceLocation;
 
+import javax.annotation.Nonnull;
+
 public class ContainerProvider implements IContainerProvider {
 
+    @Nonnull
     @Override
     public Container createContainer(int windowId, PlayerInventory playerInventory, PlayerEntity playerEntity) {
         return new ContainerTest(windowId, playerInventory, (TileEntity) null);

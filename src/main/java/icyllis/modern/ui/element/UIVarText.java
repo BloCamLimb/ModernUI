@@ -1,14 +1,14 @@
 package icyllis.modern.ui.element;
 
-import icyllis.modern.api.element.ITextLineBuilder;
+import icyllis.modern.api.element.IVarTextBuilder;
 import icyllis.modern.ui.font.IFontRenderer;
 import icyllis.modern.ui.font.StringRenderer;
 
 import java.util.function.Supplier;
 
-public class UITextLine implements ITextLineBuilder, IElement {
+public class UIVarText implements IVarTextBuilder, IElement {
 
-    static final UITextLine DEFAULT = new UITextLine();
+    static final UIVarText DEFAULT = new UIVarText();
     private IFontRenderer renderer = StringRenderer.STRING_RENDERER;
 
     private float bx, by;
@@ -18,32 +18,36 @@ public class UITextLine implements ITextLineBuilder, IElement {
     private float align;
     private Supplier<String> text;
 
+    public UIVarText() {
+        text = () -> "";
+    }
+
     @Override
     public void draw() {
         renderer.drawString(text.get(), x, y, color, alpha, align);
     }
 
     @Override
-    public ITextLineBuilder text(Supplier<String> text) {
+    public IVarTextBuilder text(Supplier<String> text) {
         this.text = text;
         return this;
     }
 
     @Override
-    public ITextLineBuilder pos(float x, float y) {
+    public IVarTextBuilder pos(float x, float y) {
         bx = x;
         by = y;
         return this;
     }
 
     @Override
-    public ITextLineBuilder align(float align) {
+    public IVarTextBuilder align(float align) {
         this.align = align;
         return this;
     }
 
     @Override
-    public ITextLineBuilder color(int color) {
+    public IVarTextBuilder color(int color) {
         this.color = color;
         return this;
     }

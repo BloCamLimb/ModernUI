@@ -4,7 +4,7 @@ import java.util.function.Consumer;
 
 public interface IButtonBuilder<T extends IButtonBuilder> {
 
-    T text(Consumer<ITextLineBuilder> consumer);
+    T text(Consumer<IVarTextBuilder> consumer);
 
     T pos(float x, float y);
 
