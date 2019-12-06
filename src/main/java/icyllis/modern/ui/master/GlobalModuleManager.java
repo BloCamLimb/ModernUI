@@ -2,6 +2,7 @@ package icyllis.modern.ui.master;
 
 import icyllis.modern.api.global.IModuleList;
 import icyllis.modern.api.module.IGuiModule;
+import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,11 +24,14 @@ public class GlobalModuleManager implements IModuleList {
     }
 
     public void build(IMasterScreen master, int width, int height) {
+        GlobalAnimationManager.INSTANCE.resetTimer();
         modules.forEach(m -> m.build(master, width, height));
     }
 
     public void draw() {
-       currentModule.draw();
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+        currentModule.draw();
     }
 
     public void resize(int width, int height) {

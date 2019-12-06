@@ -1,6 +1,6 @@
 package icyllis.modern.ui.master;
 
-import icyllis.modern.api.element.IElement;
+import icyllis.modern.ui.element.IElement;
 import icyllis.modern.api.module.IGuiModule;
 
 import java.util.ArrayList;

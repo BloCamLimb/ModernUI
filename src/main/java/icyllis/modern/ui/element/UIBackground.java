@@ -1,6 +1,5 @@
 package icyllis.modern.ui.element;
 
-import icyllis.modern.api.element.IElement;
 import icyllis.modern.ui.master.DrawTools;
 
 public class UIBackground implements IElement {

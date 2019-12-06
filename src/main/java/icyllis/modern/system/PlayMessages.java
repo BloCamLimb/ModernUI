@@ -32,7 +32,7 @@ public class PlayMessages {
         }
 
         public static boolean handle(OpenContainer msg, Supplier<NetworkEvent.Context> ctx) {
-            ctx.get().enqueueWork(() -> GuiManager.INSTANCE.openContainerScreen(msg.id, msg.windowId, msg.additionalData));
+            ctx.get().enqueueWork(() -> GuiHandler.INSTANCE.openContainerScreen(msg.id, msg.windowId, msg.additionalData));
             return true;
         }
     }

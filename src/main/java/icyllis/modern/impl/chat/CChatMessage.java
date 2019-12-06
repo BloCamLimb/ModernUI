@@ -18,15 +18,33 @@
 
 package icyllis.modern.impl.chat;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.NewChatGui;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraft.network.PacketBuffer;
+import net.minecraft.network.play.client.CChatMessagePacket;
 
-@OnlyIn(Dist.CLIENT)
-public final class IngameChatGui extends NewChatGui {
+/**
+ * Lengthened message
+ */
+public final class CChatMessage extends CChatMessagePacket {
 
-    public IngameChatGui() {
-        super(Minecraft.getInstance());
+    private String message;
+
+    public CChatMessage() {
+    }
+
+    public CChatMessage(String message) {
+        if(message.length() > 512) {
+            message = message.substring(0, 512);
+        }
+        this.message = message;
+    }
+
+    @Override
+    public void readPacketData(PacketBuffer buffer) {
+        message = buffer.readString(512);
+    }
+
+    @Override
+    public void writePacketData(PacketBuffer buffer) {
+        buffer.writeString(message);
     }
 }

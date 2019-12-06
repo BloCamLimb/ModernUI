@@ -18,8 +18,8 @@
 
 package icyllis.modern.system;
 
-import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.Object2IntArrayMap;
+import javafx.util.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +36,7 @@ public class HistoryRecorder {
      * @return emoji code collection
      */
     public static List<Pair<String, Integer>> findEmoji(String keyword) {
-        return EMOJI_MAP.object2IntEntrySet().stream().filter(e -> e.getKey().contains(keyword)).map(e -> Pair.of(e.getKey(), e.getIntValue())).collect(Collectors.toList());
+        return EMOJI_MAP.object2IntEntrySet().stream().filter(e -> e.getKey().contains(keyword)).map(e -> new Pair<>(e.getKey(), e.getIntValue())).collect(Collectors.toList());
     }
 
     public synchronized static void addToEmojiHistory(Pair<String, Integer> emoji) {

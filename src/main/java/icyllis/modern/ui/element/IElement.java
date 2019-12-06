@@ -1,5 +1,8 @@
-package icyllis.modern.api.element;
+package icyllis.modern.ui.element;
 
+/**
+ * Internal interface
+ */
 public interface IElement {
 
     void draw();

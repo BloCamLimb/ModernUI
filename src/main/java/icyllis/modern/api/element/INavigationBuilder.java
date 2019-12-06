@@ -6,10 +6,10 @@ public interface INavigationBuilder extends IButtonBuilder<INavigationBuilder> {
 
     /**
      * Which module should the button go
-     * @param id module index
+     * @param index module index
      * @return ST
      */
-    INavigationBuilder to(int id);
+    INavigationBuilder to(int index);
 
     INavigationBuilder tex(Consumer<ITextureBuilder> consumer);
 }
