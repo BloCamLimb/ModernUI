@@ -20,7 +20,7 @@ public class ModuleTest implements IGuiModule {
                 .pos(-128, -128)
                 .uv(0, 0)
                 .size(256, 256)
-                .toAnimated()
+                .animated()
                 .alpha(a -> a
                         .translate(-1f)
                         .fixedTiming(4f)
@@ -31,14 +31,20 @@ public class ModuleTest implements IGuiModule {
                 .uv(0, 0)
                 .size(256, 256)
                 .color(() -> 0xeedc82)
-                .toAnimated()
+                .animated()
                 .alpha(a -> a
                         .translate(-1f)
                         .fixedTiming(4f)
                 );
-        builder.varText()
-                .text(() -> TextFormatting.AQUA + "snownee likes to eat lemon")
-                .pos(-50, -60);
+        builder.constText()
+                .text(TextFormatting.AQUA + "Please select a network")
+                .pos(0, -73)
+                .align(0.25f)
+                .animated()
+                .alpha(a -> a
+                        .translate(-1)
+                        .fixedTiming(4)
+                );
         for (int i = 0; i < 7; i++) {
             int f = i;
             builder.navigation()
@@ -47,7 +53,7 @@ public class ModuleTest implements IGuiModule {
                             .uv(16 * f, 0)
                             .pos(18 * f - 76, -99)
                             .size(16, 16)
-                            .toAnimated()
+                            .animated()
                             .alpha(a -> a
                                     .delay(f * 0.7f)
                                     .translate(-1f)
@@ -69,7 +75,7 @@ public class ModuleTest implements IGuiModule {
                         .uv(112, 0)
                         .pos(60, -99)
                         .size(16, 16)
-                        .toAnimated()
+                        .animated()
                         .alpha(a -> a
                                 .delay(5f)
                                 .translate(-1f)
@@ -86,7 +92,26 @@ public class ModuleTest implements IGuiModule {
                 .to(7);
         builder.constText()
                 .text("INFORMATION")
-                .align(0.25f);
+                .pos(-68, -58)
+                .scale(() -> 0.8f)
+                .style()
+                .animated()
+                .alpha(a -> a
+                        .delay(2)
+                        .translate(-1)
+                        .fixedTiming(4)
+                );
+        builder.constText()
+                .text("CONNECTION")
+                .pos(-68, 0)
+                .scale(() -> 0.8f)
+                .style()
+                .animated()
+                .alpha(a -> a
+                        .delay(4f)
+                        .translate(-1)
+                        .fixedTiming(4)
+                );
     }
 
 }

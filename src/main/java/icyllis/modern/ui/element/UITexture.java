@@ -31,12 +31,14 @@ public class UITexture implements ITextureBuilder, ITextureAnimator, IElement {
 
     @Override
     public void draw() {
+        GlStateManager.enableBlend();
         runColor();
         textureManager.bindTexture(res);
         DrawTools.blit(x, y, u, v, w, h);
     }
 
     public void draw(boolean hover) {
+        GlStateManager.enableBlend();
         runColor();
         textureManager.bindTexture(res);
         DrawTools.blit(x, y, u, hover ? v + h : v, w, h);
@@ -90,7 +92,7 @@ public class UITexture implements ITextureBuilder, ITextureAnimator, IElement {
     }
 
     @Override
-    public ITextureAnimator toAnimated() {
+    public ITextureAnimator animated() {
         return this;
     }
 
