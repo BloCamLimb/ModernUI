@@ -18,25 +18,11 @@
 
 package icyllis.modern.api.element;
 
-import java.util.function.Supplier;
+import icyllis.modern.api.animation.IAlphaAnimation;
 
-public interface IConstTextBuilder {
+import java.util.function.Consumer;
 
-    IConstTextBuilder text(String c);
+public interface IConstTextAnimator {
 
-    IConstTextBuilder pos(float x, float y);
-
-    /**
-     * Text alignment: 0 = left, 0.25 = center, 0.5 = right
-     * @param align align
-     */
-    IConstTextBuilder align(float align);
-
-    IConstTextBuilder color(Supplier<Integer> color);
-
-    IConstTextBuilder scale(Supplier<Float> scale);
-
-    IConstTextBuilder style();
-
-    IConstTextAnimator animated();
+    IConstTextAnimator alpha(Consumer<IAlphaAnimation> a);
 }

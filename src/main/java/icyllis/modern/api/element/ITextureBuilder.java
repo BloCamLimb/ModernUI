@@ -18,5 +18,5 @@ public interface ITextureBuilder {
 
     ITextureBuilder color(Supplier<Integer> color);
 
-    ITextureAnimator toAnimated();
+    ITextureAnimator animated();
 }

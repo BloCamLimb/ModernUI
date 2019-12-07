@@ -259,7 +259,7 @@ class GlyphCache {
         try {
             Font f = Font.createFont(Font.TRUETYPE_FONT, getClass().getResourceAsStream("/assets/modernui/font/unix.ttf"));
             usedFonts.add(f);
-            ModernUI.LOGGER.info(ModernUI.MARKER, "{} has been loaded", f.getName());
+            //ModernUI.LOGGER.info(ModernUI.MARKER, "{} has been loaded", f.getName());
         } catch (FontFormatException | IOException e) {
             e.printStackTrace();
         }

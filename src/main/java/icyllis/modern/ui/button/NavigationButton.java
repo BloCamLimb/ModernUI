@@ -27,8 +27,10 @@ public class NavigationButton extends UIButton<INavigationBuilder> implements IN
 
     @Override
     public void draw() {
-        GlStateManager.color4f(1.0f, 1.0f, 1.0f, 1.0f);
         GlStateManager.pushMatrix();
+        GlStateManager.enableBlend();
+        GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+        GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
         if (mouseHovered) {
             textLine.draw();
         }
