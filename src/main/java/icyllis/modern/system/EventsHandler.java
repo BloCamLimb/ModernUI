@@ -3,6 +3,7 @@ package icyllis.modern.system;
 import icyllis.modern.api.ModernUIApi;
 import icyllis.modern.api.global.IGuiHandler;
 import icyllis.modern.impl.chat.GuiChat;
+import icyllis.modern.ui.blur.BlurHandler;
 import icyllis.modern.ui.font.TrueTypeRenderer;
 import icyllis.modern.ui.master.GlobalAnimationManager;
 import icyllis.modern.ui.test.ContainerProvider;
@@ -11,8 +12,10 @@ import icyllis.modern.ui.test.UILibs;
 import icyllis.modern.ui.test.ContainerTest;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.IngameMenuScreen;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.Items;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -50,6 +53,8 @@ public class EventsHandler {
             if(event.phase == TickEvent.Phase.START) {
                 GlobalAnimationManager.INSTANCE.renderTick(event.renderTickTime);
                 TrueTypeRenderer.INSTANCE.init();
+            } else {
+                BlurHandler.INSTANCE.tick();
             }
         }
 
@@ -63,11 +68,14 @@ public class EventsHandler {
             }
         }
 
+        @SuppressWarnings("UnclearExpression")
         @SubscribeEvent
         public static void onGuiOpen(GuiOpenEvent event) {
+            GlobalAnimationManager.INSTANCE.resetTimer();
             if(event.getGui() instanceof IngameMenuScreen) {
                 boolean fullMenu = ((IngameMenuScreen) event.getGui()).isFullMenu;
             }
+            BlurHandler.INSTANCE.blur(event.getGui() != null);
         }
     }
 

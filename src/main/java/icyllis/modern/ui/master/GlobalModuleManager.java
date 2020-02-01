@@ -25,7 +25,6 @@ public class GlobalModuleManager implements IModuleList {
     }
 
     public void build(IMasterScreen master, int width, int height) {
-        GlobalAnimationManager.INSTANCE.resetTimer();
         modules.forEach(m -> m.build(master, width, height));
     }
 

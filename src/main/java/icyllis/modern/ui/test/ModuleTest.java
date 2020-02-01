@@ -1,5 +1,6 @@
 package icyllis.modern.ui.test;
 
+import com.google.gson.Gson;
 import icyllis.modern.api.module.IGuiModule;
 import icyllis.modern.api.global.IElementBuilder;
 import icyllis.modern.system.ModernUI;
@@ -43,7 +44,7 @@ public class ModuleTest implements IGuiModule {
                 .animated()
                 .alpha(a -> a
                         .translate(-1)
-                        .fixedTiming(4)
+                        .fixedTiming(16.0f)
                 );
         for (int i = 0; i < 7; i++) {
             int f = i;
@@ -112,6 +113,7 @@ public class ModuleTest implements IGuiModule {
                         .translate(-1)
                         .fixedTiming(4)
                 );
+
     }
 
 }
