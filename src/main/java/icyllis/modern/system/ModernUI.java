@@ -1,6 +1,7 @@
 package icyllis.modern.system;
 
 import icyllis.modern.api.ModernUIApi;
+import icyllis.modern.ui.blur.BlurHandler;
 import net.minecraftforge.fml.common.Mod;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -17,6 +18,7 @@ public class ModernUI {
 
     public ModernUI() {
         ModernUI.LOGGER.info(MARKER, "{} has been initialized", ModernUIApi.INSTANCE.getDeclaringClass().getSimpleName());
+        ModernUI.LOGGER.info(MARKER, "{} has been initialized", BlurHandler.INSTANCE.getDeclaringClass().getSimpleName());
     }
 
 }
