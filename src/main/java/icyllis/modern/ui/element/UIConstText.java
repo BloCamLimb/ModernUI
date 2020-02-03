@@ -19,6 +19,7 @@
 package icyllis.modern.ui.element;
 
 import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modern.api.animation.IAlphaAnimation;
 import icyllis.modern.api.element.IConstTextAnimator;
 import icyllis.modern.api.element.IConstTextBuilder;
@@ -29,6 +30,7 @@ import icyllis.modern.ui.font.StringRenderer;
 import icyllis.modern.ui.master.DrawTools;
 import icyllis.modern.ui.master.GlobalAnimationManager;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.renderer.texture.TextureManager;
 import org.lwjgl.opengl.GL11;
 
@@ -64,20 +66,20 @@ public class UIConstText implements IConstTextBuilder, IConstTextAnimator, IElem
 
     @Override
     public void draw() {
-        GlStateManager.pushMatrix();
+        RenderSystem.pushMatrix();
         GlStateManager.enableBlend();
-        GlStateManager.color4f(1.0f, 1.0f, 1.0f, 1.0f);
+        RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
         GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
         GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
         float s = scale.get();
         if(s < 1) {
-            GlStateManager.scalef(s, s, 1);
+            RenderSystem.scalef(s, s, 1);
             renderer.drawString(text, x / s, y / s, color.get(), (int) (alpha.get() * 0xff), align / s);
         } else {
             renderer.drawString(text, x, y, color.get(), (int) (alpha.get() * 0xff), align);
         }
         deco.accept(s);
-        GlStateManager.popMatrix();
+        RenderSystem.popMatrix();
     }
 
     @Override
@@ -121,10 +123,9 @@ public class UIConstText implements IConstTextBuilder, IConstTextAnimator, IElem
     @Override
     public IConstTextBuilder style() {
         deco = sc -> {
-            GlStateManager.disableAlphaTest();
-            GlStateManager.color4f(120/255f, 190/255f, 230/255f, alpha.get());
+            RenderSystem.color4f(120/255f, 190/255f, 230/255f, alpha.get());
             float s = sc * 0.5f;
-            GlStateManager.scalef(0.5f, 0.5f, 1);
+            RenderSystem.scalef(0.5f, 0.5f, 1);
             textureManager.bindTexture(ReferenceLibrary.BUTTON);
             float x = this.x - length * align * 2;
             DrawTools.blit((x - 8) / s, (y + 0.5f) / s, 0, 8, 16, 16);

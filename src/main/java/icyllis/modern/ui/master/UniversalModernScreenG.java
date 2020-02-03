@@ -1,6 +1,6 @@
 package icyllis.modern.ui.master;
 
-import icyllis.modern.api.module.IGuiScreen;
+import icyllis.modern.api.global.IModuleFactory;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.inventory.ContainerScreen;
@@ -9,15 +9,17 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nonnull;
+import java.util.function.Consumer;
 
 @OnlyIn(Dist.CLIENT)
 public final class UniversalModernScreenG<G extends Container> extends ContainerScreen<G> implements IMasterScreen {
 
     private GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
 
-    public UniversalModernScreenG(IGuiScreen injector, G container) {
-        super(container, Minecraft.getInstance().player.inventory, injector.getTitle());
-        injector.addModules(manager);
+    @SuppressWarnings("ConstantConditions")
+    public UniversalModernScreenG(Consumer<IModuleFactory> factory, G container) {
+        super(container, Minecraft.getInstance().player.inventory, UniversalModernScreen.EMPTY_TITLE);
+        factory.accept(manager);
     }
 
     @Override

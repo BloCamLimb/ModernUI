@@ -1,6 +1,7 @@
 package icyllis.modern.ui.element;
 
 import icyllis.modern.api.element.IVarTextBuilder;
+import icyllis.modern.system.ModernUI;
 import icyllis.modern.ui.font.IFontRenderer;
 import icyllis.modern.ui.font.StringRenderer;
 

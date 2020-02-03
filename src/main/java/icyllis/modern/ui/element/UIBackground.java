@@ -8,7 +8,7 @@ public final class UIBackground implements IElement {
 
     @Override
     public void draw() {
-        DrawTools.fillGradient(0, 0, width, height, 0x75000000, 0x75000000, 0);
+        DrawTools.fillRectWithColor(0, 0, width, height, 0x75000000);
     }
 
     @Override

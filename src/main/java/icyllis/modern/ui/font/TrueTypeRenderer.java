@@ -21,6 +21,7 @@
 package icyllis.modern.ui.font;
 
 import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
@@ -117,7 +118,7 @@ public class TrueTypeRenderer implements IFontRenderer {
          * array), however GuiEditSign of all things depends on having the current color set to white when it renders its
          * "Edit sign message:" text. Otherwise, the sign which is rendered underneath would look too dark.
          */
-        GlStateManager.color3f((color >> 16 & 0xff) / 255F, (color >> 8 & 0xff) / 255F, (color & 0xff) / 255F);
+        RenderSystem.color3f((color >> 16 & 0xff) / 255F, (color >> 8 & 0xff) / 255F, (color & 0xff) / 255F);
 
         /*
          * Enable GL_BLEND in case the font is drawn anti-aliased because Minecraft itself only enables blending for chat text
@@ -181,13 +182,13 @@ public class TrueTypeRenderer implements IFontRenderer {
             int g = color >> 8 & 0xff;
             int b = color & 0xff;
 
-            buffer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
+            buffer.begin(7, DefaultVertexFormats.POSITION_COLOR_TEX);
             GlStateManager.bindTexture(texture.textureName);
 
-            buffer.pos(x1, y1, 0).tex(texture.u1, texture.v1).color(r, g, b, alpha).endVertex();
-            buffer.pos(x1, y2, 0).tex(texture.u1, texture.v2).color(r, g, b, alpha).endVertex();
-            buffer.pos(x2, y2, 0).tex(texture.u2, texture.v2).color(r, g, b, alpha).endVertex();
-            buffer.pos(x2, y1, 0).tex(texture.u2, texture.v1).color(r, g, b, alpha).endVertex();
+            buffer.pos(x1, y1, 0).color(r, g, b, alpha).tex(texture.u1, texture.v1).endVertex();
+            buffer.pos(x1, y2, 0).color(r, g, b, alpha).tex(texture.u1, texture.v2).endVertex();
+            buffer.pos(x2, y2, 0).color(r, g, b, alpha).tex(texture.u2, texture.v2).endVertex();
+            buffer.pos(x2, y1, 0).color(r, g, b, alpha).tex(texture.u2, texture.v1).endVertex();
 
             tessellator.draw();
         }

@@ -1,20 +1,17 @@
 package icyllis.modern.ui.test;
 
-import com.google.gson.Gson;
-import icyllis.modern.api.module.IGuiModule;
 import icyllis.modern.api.global.IElementBuilder;
 import icyllis.modern.system.ModernUI;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.TextFormatting;
 
-public class ModuleTest implements IGuiModule {
+public class ModuleTest {
 
     public static final ResourceLocation BACKGROUND = new ResourceLocation(ModernUI.MODID, "gui/gui_default_background.png");
     public static final ResourceLocation FRAME = new ResourceLocation(ModernUI.MODID, "gui/gui_default_frame.png");
     public static final ResourceLocation BUTTON = new ResourceLocation(ModernUI.MODID, "gui/gui_button.png");
 
-    @Override
-    public void createElements(IElementBuilder builder) {
+    public void create(IElementBuilder builder) {
         builder.defaultBackground();
         builder.texture()
                 .tex(BACKGROUND)
@@ -64,7 +61,7 @@ public class ModuleTest implements IGuiModule {
                     .pos(18 * f - 76, -99)
                     .size(16, 16)
                     .text(e -> e
-                            .text(() -> "\u6709\u8bf4")
+                            .text(() -> "Network Connections")
                             .align(0.25f)
                             .pos(18 * f - 68, -109)
                     )

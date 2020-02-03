@@ -1,7 +1,13 @@
 package icyllis.modern.ui.font;
 
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modern.system.ModernUI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.client.gui.INestedGuiEventHandler;
+import net.minecraft.util.ResourceLocation;
+import org.lwjgl.opengl.GL11;
 
 public class VanillaFontRenderer implements IFontRenderer {
 
@@ -9,6 +15,7 @@ public class VanillaFontRenderer implements IFontRenderer {
     private final FontRenderer FONT;
     {
         FONT = Minecraft.getInstance().fontRenderer;
+        //FONT = Minecraft.getInstance().getFontResourceManager().getFontRenderer(new ResourceLocation(ModernUI.MODID, "unix"));
     }
 
     @Override

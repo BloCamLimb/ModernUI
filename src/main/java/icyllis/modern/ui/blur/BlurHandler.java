@@ -33,69 +33,75 @@ import net.minecraft.resources.ResourcePackList;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 
+import javax.annotation.Nonnull;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 
+@OnlyIn(Dist.CLIENT)
 public enum BlurHandler {
     INSTANCE;
+
+    private final ResourceLocation BLUR = new ResourceLocation("shaders/post/fade_in_blur.json");
 
     private DummyResourcePack sp = new DummyResourcePack();
 
     private Field shaders;
 
-    private boolean initializing;
+    private boolean changingProgress;
 
     BlurHandler() {
         shaders = ObfuscationReflectionHelper.findField(ShaderGroup.class, "field_148031_d");
-        DistExecutor.runWhenOn(Dist.CLIENT, () -> this::addShaderPack);
+        DistExecutor.runWhenOn(Dist.CLIENT, () -> this::loadResourcePack);
     }
 
-    public void addShaderPack() {
+    private void loadResourcePack() {
         ResourcePackList<ClientResourcePackInfo> rps = ObfuscationReflectionHelper.getPrivateValue(Minecraft.class, Minecraft.getInstance(), "field_110448_aq");
-        rps.addPackFinder(new IPackFinder() {
-            @SuppressWarnings({"unchecked", "deprecation"})
-            @Override
-            public <T extends ResourcePackInfo> void addPackInfosToMap(Map<String, T> nameToPackMap, ResourcePackInfo.IFactory<T> packInfoFactory) {
-                T pack = (T) new ClientResourcePackInfo(ModernUI.MODID + "_blur", true, () -> sp, new StringTextComponent(sp.getName()), new StringTextComponent(""),
-                        PackCompatibility.COMPATIBLE, ResourcePackInfo.Priority.BOTTOM, true, null);
-                nameToPackMap.put(ModernUI.MODID + "_blur", pack);
-            }
-        });
+        if(rps != null)
+            rps.addPackFinder(new IPackFinder() {
+                @SuppressWarnings({"unchecked", "deprecation"})
+                @Override
+                public <T extends ResourcePackInfo> void addPackInfosToMap(@Nonnull Map<String, T> nameToPackMap, @Nonnull ResourcePackInfo.IFactory<T> packInfoFactory) {
+                    T pack = (T) new ClientResourcePackInfo(ModernUI.MODID + "_blur", true, () -> sp, new StringTextComponent(sp.getName()), new StringTextComponent(""),
+                            PackCompatibility.COMPATIBLE, ResourcePackInfo.Priority.BOTTOM, true, null);
+                    nameToPackMap.put(ModernUI.MODID + "_blur", pack);
+                }
+            });
     }
 
     public void blur(boolean hasGui) {
         if (Minecraft.getInstance().world != null) {
             GameRenderer gr = Minecraft.getInstance().gameRenderer;
-            if(gr.getShaderGroup() == null && hasGui) {
-                gr.loadShader(new ResourceLocation("shaders/post/fade_in_blur.json"));
-                initializing = true;
-            } else if(gr.getShaderGroup() != null && !hasGui) {
+            if (gr.getShaderGroup() == null && hasGui) {
+                gr.loadShader(BLUR);
+                changingProgress = true;
+            } else if (!hasGui) {
                 gr.stopUseShader();
-                initializing = false;
+                changingProgress = false;
             }
         }
     }
 
     public void tick() {
-        if(initializing) {
+        if(changingProgress) {
             float p = Math.min(GlobalAnimationManager.INSTANCE.time(), 4.0f);
             this.updateUniform("Progress", p);
-            if(p == 4.0f) {
-                initializing = false;
+            if(p >= 4.0f) {
+                changingProgress = false;
             }
         }
     }
 
+    @SuppressWarnings({"unchecked"})
     private void updateUniform(String name, float value) {
         ShaderGroup sg = Minecraft.getInstance().gameRenderer.getShaderGroup();
         if(sg == null)
             return;
         try {
-            @SuppressWarnings("unchecked")
             List<Shader> shaders = (List<Shader>) this.shaders.get(sg);
             for (Shader s : shaders) {
                 ShaderDefault u = s.getShaderManager().getShaderUniform(name);

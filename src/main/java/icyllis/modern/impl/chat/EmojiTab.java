@@ -19,6 +19,7 @@
 package icyllis.modern.impl.chat;
 
 import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modern.system.HistoryRecorder;
 import icyllis.modern.system.ReferenceLibrary;
 import icyllis.modern.ui.font.EmojiStringRenderer;
@@ -51,18 +52,18 @@ public class EmojiTab implements IGuiEventListener {
     }
 
     public void draw(int mouseX, int mouseY) {
-        GlStateManager.disableAlphaTest();
+        RenderSystem.disableAlphaTest();
         GlStateManager.enableBlend();
         GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 
         TEX.bindTexture(ReferenceLibrary.BUTTON);
         if(showMode == 0) {
-            GlStateManager.color3f(0.6f, 0.6f, 0.6f);
+            RenderSystem.color3f(0.6f, 0.6f, 0.6f);
         }
         DrawTools.blit(5, y - 10, 0, 0, 8, 8);
 
         if(showMode == 1) {
-            DrawTools.fill(2, hisY1, hisX2, hisY2, 0x80000000);
+            DrawTools.fillRectWithColor(2, hisY1, hisX2, hisY2, 0x80000000);
             GlStateManager.disableBlend();
             GlStateManager.enableBlend();
             TEX.bindTexture(EmojiStringRenderer.EMOJI);
@@ -83,7 +84,7 @@ public class EmojiTab implements IGuiEventListener {
                 hoverEmoji = null;
             }
         } else if (showMode == 2) {
-            DrawTools.fill(2, selY1, selX2, hisY2, 0x80000000);
+            DrawTools.fillRectWithColor(2, selY1, selX2, hisY2, 0x80000000);
             GlStateManager.disableBlend();
             GlStateManager.enableBlend();
             TEX.bindTexture(EmojiStringRenderer.EMOJI);
@@ -118,7 +119,7 @@ public class EmojiTab implements IGuiEventListener {
                 DrawTools.blit(20 + x * 12, 20 + y * 12, x * 11.5f, y * 11.5f, 11.5f, 11.5f);
             }
         }*/
-        GlStateManager.enableAlphaTest();
+        RenderSystem.enableAlphaTest();
     }
 
     private boolean isAnyFound(int mouseX, int mouseY, boolean anyFound, int rx, int ry, Pair<String, Integer> emoji) {
@@ -128,7 +129,7 @@ public class EmojiTab implements IGuiEventListener {
             GlStateManager.disableBlend();
             GlStateManager.enableBlend();
             GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-            DrawTools.fill(rx, ry, rx + 11.5f, ry + 11.5f, 0x40d0d0d0);
+            DrawTools.fillRectWithColor(rx, ry, rx + 11.5f, ry + 11.5f, 0x40d0d0d0);
             StringRenderer.STRING_RENDERER.drawString(name, 18, y - 11, 0xffffff, 0xff, 0);
             GlStateManager.disableBlend();
             GlStateManager.enableBlend();
@@ -139,7 +140,7 @@ public class EmojiTab implements IGuiEventListener {
         int code3 = code >> 8;
         int code4 = code & 0xff;
         GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-        GlStateManager.color3f(0.867f, 0.867f, 0.867f);
+        RenderSystem.color3f(0.867f, 0.867f, 0.867f);
         DrawTools.blit(rx, ry, code3 * 11.5f, code4 * 11.5f, 11.5f, 11.5f);
         return anyFound;
     }
