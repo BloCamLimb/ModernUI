@@ -1,26 +1,30 @@
 package icyllis.modern.ui.master;
 
+import icyllis.modern.api.global.IElementBuilder;
 import icyllis.modern.ui.element.IElement;
-import icyllis.modern.api.module.IGuiModule;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
+/**
+ * Baked gui module
+ */
 public class MasterModule {
 
-    private IGuiModule raw;
+    private Consumer<IElementBuilder> rawModule;
 
     private List<IElement> elements = new ArrayList<>();
 
-    MasterModule(IGuiModule raw) {
-        this.raw = raw;
+    MasterModule(Consumer<IElementBuilder> rawModule) {
+        this.rawModule = rawModule;
     }
 
     public void build(IMasterScreen master, int width, int height) {
         GlobalElementBuilder.INSTANCE.setReceiver(this, master);
-        raw.createElements(GlobalElementBuilder.INSTANCE);
+        rawModule.accept(GlobalElementBuilder.INSTANCE);
         resize(width, height);
-        raw = null;
+        rawModule = null;
     }
 
     public void draw() {

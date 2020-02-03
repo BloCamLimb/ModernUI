@@ -1,7 +1,7 @@
 package icyllis.modern.api;
 
-import icyllis.modern.api.global.INetworkHandler;
-import icyllis.modern.api.global.IGuiHandler;
+import icyllis.modern.api.handler.INetworkHandler;
+import icyllis.modern.api.handler.IGuiHandler;
 
 public enum ModernUIApi {
     INSTANCE;
@@ -21,11 +21,11 @@ public enum ModernUIApi {
         }
     }
 
-    public INetworkHandler network() {
+    public INetworkHandler getNetworkHandler() {
         return network;
     }
 
-    public IGuiHandler gui() {
+    public IGuiHandler getGuiHandler() {
         return gui;
     }
 

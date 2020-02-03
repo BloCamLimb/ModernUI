@@ -1,22 +1,26 @@
 package icyllis.modern.ui.master;
 
-import icyllis.modern.api.module.IGuiScreen;
+import icyllis.modern.api.global.IModuleFactory;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nonnull;
+import java.util.function.Consumer;
 
 @OnlyIn(Dist.CLIENT)
 public final class UniversalModernScreen extends Screen implements IMasterScreen {
 
+    static final StringTextComponent EMPTY_TITLE = new StringTextComponent("");
+
     private GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
 
-    public UniversalModernScreen(IGuiScreen injector) {
-        super(injector.getTitle());
-        injector.addModules(manager);
+    public UniversalModernScreen(Consumer<IModuleFactory> factory) {
+        super(EMPTY_TITLE);
+        factory.accept(manager);
     }
 
     @Override

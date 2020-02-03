@@ -1,31 +1,23 @@
 package icyllis.modern.ui.master;
 
 import com.mojang.blaze3d.platform.GlStateManager;
-import icyllis.modern.api.global.IModuleList;
-import icyllis.modern.api.module.IGuiModule;
-import org.lwjgl.opengl.GL11;
+import icyllis.modern.api.global.IElementBuilder;
+import icyllis.modern.api.global.IModuleFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
-public class GlobalModuleManager implements IModuleList {
+public class GlobalModuleManager implements IModuleFactory {
 
     static final GlobalModuleManager INSTANCE = new GlobalModuleManager();
 
-    private List<MasterModule> modules = new ArrayList<>();
+    private List<MasterModule> allModules = new ArrayList<>();
+
     private MasterModule currentModule;
 
-    @Override
-    public void add(IGuiModule module) {
-        MasterModule masterModule = new MasterModule(module);
-        modules.add(masterModule);
-        if (modules.size() == 1) {
-            currentModule = masterModule;
-        }
-    }
-
     public void build(IMasterScreen master, int width, int height) {
-        modules.forEach(m -> m.build(master, width, height));
+        allModules.forEach(m -> m.build(master, width, height));
     }
 
     public void draw() {
@@ -34,10 +26,20 @@ public class GlobalModuleManager implements IModuleList {
     }
 
     public void resize(int width, int height) {
-        modules.forEach(m -> m.resize(width, height));
+        allModules.forEach(m -> m.resize(width, height));
     }
 
     public void clear() {
-        modules.clear();
+        allModules.clear();
+    }
+
+    @Override
+    public IModuleFactory add(Consumer<IElementBuilder> module) {
+        MasterModule masterModule = new MasterModule(module);
+        allModules.add(masterModule);
+        if (allModules.size() == 1) {
+            currentModule = masterModule;
+        }
+        return this;
     }
 }

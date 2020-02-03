@@ -11,10 +11,13 @@ import icyllis.modern.ui.element.UIBackground;
 import icyllis.modern.ui.element.UIConstText;
 import icyllis.modern.ui.element.UIVarText;
 import icyllis.modern.ui.element.UITexture;
+import net.minecraft.network.PacketBuffer;
 
 public class GlobalElementBuilder implements IElementBuilder {
 
     public static final GlobalElementBuilder INSTANCE = new GlobalElementBuilder();
+
+    private PacketBuffer extraData;
 
     private MasterModule receiver;
     private IMasterScreen master;
@@ -22,6 +25,15 @@ public class GlobalElementBuilder implements IElementBuilder {
     public void setReceiver(MasterModule receiver, IMasterScreen master) {
         this.receiver = receiver;
         this.master = master;
+    }
+
+    public void setExtraData(PacketBuffer extraData) {
+        this.extraData = extraData;
+    }
+
+    @Override
+    public PacketBuffer getExtraData() {
+        return extraData;
     }
 
     @Override

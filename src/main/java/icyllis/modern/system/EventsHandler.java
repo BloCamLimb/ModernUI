@@ -1,21 +1,16 @@
 package icyllis.modern.system;
 
 import icyllis.modern.api.ModernUIApi;
-import icyllis.modern.api.global.IGuiHandler;
+import icyllis.modern.api.handler.IGuiHandler;
 import icyllis.modern.impl.chat.GuiChat;
 import icyllis.modern.ui.blur.BlurHandler;
 import icyllis.modern.ui.font.TrueTypeRenderer;
 import icyllis.modern.ui.master.GlobalAnimationManager;
-import icyllis.modern.ui.test.ContainerProvider;
-import icyllis.modern.ui.test.GuiTest;
-import icyllis.modern.ui.test.UILibs;
-import icyllis.modern.ui.test.ContainerTest;
+import icyllis.modern.ui.test.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.IngameMenuScreen;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.Items;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -35,7 +30,7 @@ public class EventsHandler {
     @SubscribeEvent
     public static void rightClickItem(PlayerInteractEvent.RightClickItem event) {
         if(!event.getPlayer().getEntityWorld().isRemote && event.getItemStack().getItem().equals(Items.DIAMOND)) {
-            ModernUIApi.INSTANCE.network().openGUI((ServerPlayerEntity) event.getPlayer(), new ContainerProvider(), new BlockPos(-155,82,-121));
+            ModernUIApi.INSTANCE.getNetworkHandler().openGUI((ServerPlayerEntity) event.getPlayer(), new ContainerProvider(), new BlockPos(-155,82,-121));
         }
     }
 
@@ -71,11 +66,12 @@ public class EventsHandler {
         @SuppressWarnings("UnclearExpression")
         @SubscribeEvent
         public static void onGuiOpen(GuiOpenEvent event) {
+            boolean hasGui = event.getGui() != null;
             GlobalAnimationManager.INSTANCE.resetTimer();
             if(event.getGui() instanceof IngameMenuScreen) {
                 boolean fullMenu = ((IngameMenuScreen) event.getGui()).isFullMenu;
             }
-            BlurHandler.INSTANCE.blur(event.getGui() != null);
+            BlurHandler.INSTANCE.blur(hasGui);
         }
     }
 
@@ -95,8 +91,8 @@ public class EventsHandler {
 
         @SubscribeEvent
         public static void setupClient(FMLClientSetupEvent event) {
-            IGuiHandler guiHandler = ModernUIApi.INSTANCE.gui();
-            guiHandler.registerContainerGui(UILibs.TEST_CONTAINER_SCREEN, ContainerTest::new, GuiTest::new);
+            IGuiHandler guiHandler = ModernUIApi.INSTANCE.getGuiHandler();
+            guiHandler.registerContainerGui(UILibs.TEST_CONTAINER_SCREEN, ContainerTest::new, l -> l.add(new ModuleTest()::create));
             HistoryRecorder.gEmojiPair();
         }
     }

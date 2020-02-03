@@ -1,6 +1,7 @@
 package icyllis.modern.ui.font;
 
 import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modern.system.ModernUI;
 import icyllis.modern.ui.master.DrawTools;
 import net.minecraft.client.Minecraft;
@@ -35,7 +36,7 @@ public class EmojiStringRenderer implements IFontRenderer {
             entry = cache(str);
         }
         entry.text.forEach(t -> FONT.drawString(t.str, startX + t.x, startY, color, 255, 0));
-        GlStateManager.color3f(0.867f, 0.867f, 0.867f);
+        RenderSystem.color3f(0.867f, 0.867f, 0.867f);
         GlStateManager.enableBlend();
         GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         TEX.bindTexture(EMOJI);

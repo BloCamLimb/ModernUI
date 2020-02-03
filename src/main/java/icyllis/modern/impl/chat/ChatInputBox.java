@@ -72,45 +72,45 @@ public final class ChatInputBox extends UIButton {
     public void draw() {
 
         if(isDoubleLined) {
-            DrawTools.fill(x - 2, y - 12, x + w + 2, y + 12, 0x80000000);
+            DrawTools.fillRectWithColor(x - 2, y - 12, x + w + 2, y + 12, 0x80000000);
             if (cursor != selector) {
                 int left = Math.min(this.cursor, this.selector);
                 int right = Math.max(this.cursor, this.selector);
                 float le = Math.min(this.cursorX, this.selectorX);
                 float ri = Math.max(this.cursorX, this.selectorX);
                 if(left > firstLength) {
-                    DrawTools.fill(le, y + 0.5f, ri, y + 11.5f, 0x8097def0);
+                    DrawTools.fillRectWithColor(le, y + 0.5f, ri, y + 11.5f, 0x8097def0);
                 } else {
                     if(right > firstLength) {
                         if(cursor < selector) {
-                            DrawTools.fill(cursorX, y - 11.5f, x + w, y - 0.5f, 0x8097def0);
-                            DrawTools.fill(x, y + 0.5f, selectorX, y + 11.5f, 0x8097def0);
+                            DrawTools.fillRectWithColor(cursorX, y - 11.5f, x + w, y - 0.5f, 0x8097def0);
+                            DrawTools.fillRectWithColor(x, y + 0.5f, selectorX, y + 11.5f, 0x8097def0);
                         } else {
-                            DrawTools.fill(selectorX, y - 11.5f, x + w, y - 0.5f, 0x8097def0);
-                            DrawTools.fill(x, y + 0.5f, cursorX, y + 11.5f, 0x8097def0);
+                            DrawTools.fillRectWithColor(selectorX, y - 11.5f, x + w, y - 0.5f, 0x8097def0);
+                            DrawTools.fillRectWithColor(x, y + 0.5f, cursorX, y + 11.5f, 0x8097def0);
                         }
                     } else {
-                        DrawTools.fill(le, y - 11.5f, ri, y - 0.5f, 0x8097def0);
+                        DrawTools.fillRectWithColor(le, y - 11.5f, ri, y - 0.5f, 0x8097def0);
                     }
                 }
             }
             renderer.drawString(text.substring(0, firstLength), x, y - 10.5f, 0xdddddd, 0xff, 0);
             renderer.drawString(text.substring(firstLength), x, y + 1.5f, 0xdddddd, 0xff, 0);
         } else {
-            DrawTools.fill(x - 2, y, x + w + 2, y + 12, 0x80000000);
+            DrawTools.fillRectWithColor(x - 2, y, x + w + 2, y + 12, 0x80000000);
             if (cursor != selector) {
                 float le = Math.min(this.cursorX, this.selectorX);
                 float ri = Math.max(this.cursorX, this.selectorX);
-                DrawTools.fill(le, y + 0.5f, ri, y + 11.5f, 0x8097def0);
+                DrawTools.fillRectWithColor(le, y + 0.5f, ri, y + 11.5f, 0x8097def0);
             }
             renderer.drawString(text, x, y + 1.5f, 0xdddddd, 0xff, 0);
         }
 
         if (timer < 10) {
             if(isDoubleLined) {
-                DrawTools.fill(cursorX, cursor > firstLength ? y + 0.5f : y - 11.5f, cursorX + 0.5f, cursor > firstLength ? y + 11.5f : y - 0.5f, 0xffdddddd);
+                DrawTools.fillRectWithColor(cursorX, cursor > firstLength ? y + 0.5f : y - 11.5f, cursorX + 0.5f, cursor > firstLength ? y + 11.5f : y - 0.5f, 0xffdddddd);
             } else {
-                DrawTools.fill(cursorX, y + 0.5f, cursorX + 0.5f, y + 11.5f, 0xffdddddd);
+                DrawTools.fillRectWithColor(cursorX, y + 0.5f, cursorX + 0.5f, y + 11.5f, 0xffdddddd);
             }
         }
 

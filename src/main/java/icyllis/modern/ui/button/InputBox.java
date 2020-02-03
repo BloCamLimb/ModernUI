@@ -36,8 +36,8 @@ public class InputBox extends UIButton {
     public void draw() {
         if (visible) {
             if (true) {
-                DrawTools.fill(this.x - 1, this.y - 1, this.x + this.w + 1, this.y + this.h + 1, -6250336);
-                DrawTools.fill(this.x, this.y, this.x + this.w, this.y + this.h, -16777216);
+                DrawTools.fillRectWithColor(this.x - 1, this.y - 1, this.x + this.w + 1, this.y + this.h + 1, -6250336);
+                DrawTools.fillRectWithColor(this.x, this.y, this.x + this.w, this.y + this.h, -16777216);
             }
 
             int i = 14737632;

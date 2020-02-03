@@ -26,9 +26,12 @@ import net.minecraft.resources.data.IMetadataSectionSerializer;
 import net.minecraft.resources.data.PackMetadataSection;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.StringTextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.fml.loading.moddiscovery.ModFile;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -39,20 +42,23 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.function.Predicate;
 
+@OnlyIn(Dist.CLIENT)
 public class DummyResourcePack implements IResourcePack {
 
-    private final ModFile mf = FMLLoader.getLoadingModList().getModFileById(ModernUI.MODID).getFile();
+    private final ModFile MF = FMLLoader.getLoadingModList().getModFileById(ModernUI.MODID).getFile();
 
+    @Nonnull
     @Override
     public InputStream getRootResourceStream(String fileName) throws IOException {
-        return Files.newInputStream(mf.findResource("assets/minecraft/" + fileName));
+        return Files.newInputStream(MF.findResource("assets/" + ModernUI.MODID + "/" + fileName));
     }
 
+    @Nonnull
     @Override
     public InputStream getResourceStream(ResourcePackType type, ResourceLocation location) throws IOException {
         if (type == ResourcePackType.CLIENT_RESOURCES && location.getNamespace().equals("minecraft") && location.getPath().startsWith("shaders/")) {
             try {
-                return Files.newInputStream(mf.findResource(location.getPath()));
+                return Files.newInputStream(MF.findResource("assets/" + ModernUI.MODID + "/" + location.getPath()));
             } catch (IOException ignored) {
 
             }
@@ -60,8 +66,9 @@ public class DummyResourcePack implements IResourcePack {
         throw new FileNotFoundException(location.toString());
     }
 
+    @Nonnull
     @Override
-    public Collection<ResourceLocation> getAllResourceLocations(ResourcePackType type, String pathIn, int maxDepth, Predicate<String> filter) {
+    public Collection<ResourceLocation> getAllResourceLocations(ResourcePackType type, String namespaceIn, String pathIn, int maxDepthIn, Predicate<String> filterIn) {
         return Collections.emptyList();
     }
 
@@ -70,14 +77,16 @@ public class DummyResourcePack implements IResourcePack {
         return type == ResourcePackType.CLIENT_RESOURCES
                 && location.getNamespace().equals("minecraft")
                 && location.getPath().startsWith("shaders/")
-                && Files.exists(mf.findResource(location.getPath()));
+                && Files.exists(MF.findResource("assets/" + ModernUI.MODID + "/" + location.getPath()));
     }
 
+    @Nonnull
     @Override
     public Set<String> getResourceNamespaces(ResourcePackType type) {
         return type == ResourcePackType.CLIENT_RESOURCES ? ImmutableSet.of("minecraft") : Collections.emptySet();
     }
 
+    @SuppressWarnings("unchecked")
     @Nullable
     @Override
     public <T> T getMetadata(IMetadataSectionSerializer<T> deserializer) {
@@ -87,9 +96,10 @@ public class DummyResourcePack implements IResourcePack {
         return null;
     }
 
+    @Nonnull
     @Override
     public String getName() {
-        return "";
+        return "ModernUI-BlurPack";
     }
 
     @Override
