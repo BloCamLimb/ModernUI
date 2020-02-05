@@ -2,7 +2,10 @@ package icyllis.modern.ui.element;
 
 import icyllis.modern.ui.master.DrawTools;
 
-public final class UIBackground implements IElement {
+/**
+ * Commonly used
+ */
+public final class UIBackground extends UIElement {
 
     private int width, height;
 

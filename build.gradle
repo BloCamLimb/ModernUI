@@ -28,9 +28,6 @@ minecraft {
         client {
             workingDirectory project.file('run')
 
-            // Recommended logging data for a userdev environment
-            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
-
             // Recommended logging level for the console
             property 'forge.logging.console.level', 'debug'
 
@@ -44,9 +41,6 @@ minecraft {
         server {
             workingDirectory project.file('run')
 
-            // Recommended logging data for a userdev environment
-            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
-
             // Recommended logging level for the console
             property 'forge.logging.console.level', 'debug'
 
@@ -59,9 +53,6 @@ minecraft {
 
         data {
             workingDirectory project.file('run')
-
-            // Recommended logging data for a userdev environment
-            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
 
             // Recommended logging level for the console
             property 'forge.logging.console.level', 'debug'
@@ -97,6 +88,25 @@ dependencies {
     runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}")
 
     //runtimeOnly fg.deobf("malte0811.nbtedit:NBTEdit:0.8.2")
+}
+
+processResources {
+    // this will ensure that this task is redone when the versions change.
+    inputs.property 'version', project.version
+    inputs.property 'mcversion', minecraft_version
+
+    // replace stuff in mcmod.info, nothing else
+    from(sourceSets.main.resources.srcDirs) {
+        include 'META_INF/mods.toml'
+
+        // replace version and mcversion
+        expand 'version':project.version, 'mcversion': minecraft_version
+    }
+
+    // copy everything else except the mods.toml
+    from(sourceSets.main.resources.srcDirs) {
+        exclude 'META_INF/mods.toml'
+    }
 }
 
 jar {

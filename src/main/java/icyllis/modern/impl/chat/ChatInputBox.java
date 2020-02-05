@@ -18,6 +18,7 @@
 
 package icyllis.modern.impl.chat;
 
+import icyllis.modern.api.element.IButtonBuilder;
 import icyllis.modern.ui.element.UIButton;
 import icyllis.modern.ui.font.EmojiStringRenderer;
 import icyllis.modern.ui.font.IFontRenderer;
@@ -34,7 +35,7 @@ import java.util.function.Predicate;
 /**
  * Double lined, intended for chat bar
  */
-public final class ChatInputBox extends UIButton {
+public final class ChatInputBox extends UIButton<IButtonBuilder> {
 
     private final IFontRenderer renderer = EmojiStringRenderer.INSTANCE;
 
@@ -64,13 +65,14 @@ public final class ChatInputBox extends UIButton {
     private boolean shiftDown = false;
 
     ChatInputBox() {
-        selectorX = cursorX = x = 4;
+        selectorX = cursorX = 4;
+        renderX = () -> 4f;
         focused = true;
     }
 
     @Override
     public void draw() {
-
+        float x = renderX.get(), y = renderY.get(), w = sizeW.get(), h = sizeH.get();
         if(isDoubleLined) {
             DrawTools.fillRectWithColor(x - 2, y - 12, x + w + 2, y + 12, 0x80000000);
             if (cursor != selector) {
@@ -123,8 +125,8 @@ public final class ChatInputBox extends UIButton {
 
     @Override
     public void resize(int width, int height) {
-        y = height - 14;
-        w = width - 8;
+        renderY = () -> (float) height - 14;
+        sizeW = () -> (float) width - 8;
         String r = text;
         text = "";
         writeText(r);
@@ -137,6 +139,7 @@ public final class ChatInputBox extends UIButton {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        float x = renderX.get(), y = renderY.get();
         if(mouseButton == 0 && isMouseInRange(mouseX, mouseY)) {
             float dx = (float) (mouseX - x) + 1.0f;
             double dy = mouseY - y;
@@ -161,6 +164,7 @@ public final class ChatInputBox extends UIButton {
 
     @Override
     protected boolean isMouseInRange(double mouseX, double mouseY) {
+        float x = renderX.get(), y = renderY.get(), w = sizeW.get();
         return mouseX >= x && mouseX <= x + w && mouseY >= y + (isDoubleLined ? -12 : 0) && mouseY <= y + 12;
     }
 
@@ -208,6 +212,7 @@ public final class ChatInputBox extends UIButton {
                     }
                     return true;
                 case GLFW.GLFW_KEY_DOWN:
+                    float w = sizeW.get();
                     if(isDoubleLined && cursor <= firstLength) {
                         setCursorSafety(renderer.sizeStringToWidth(text, renderer.getStringWidth(text.substring(0, cursor)) + w));
                     }
@@ -242,6 +247,7 @@ public final class ChatInputBox extends UIButton {
     }
 
     public void writeText(String textToWrite) {
+        float x = renderX.get(), w = sizeW.get();
         String result = "";
         String toWrite = SharedConstants.filterAllowedCharacters(textToWrite);
 
@@ -276,6 +282,7 @@ public final class ChatInputBox extends UIButton {
     }
 
     private void setSelectorToEnd() {
+        float x = renderX.get();
         selector = text.length();
         if(isDoubleLined) {
             selectorX = x + renderer.getStringWidth(text.substring(firstLength));
@@ -285,6 +292,7 @@ public final class ChatInputBox extends UIButton {
     }
 
     private void setCursorSafety(int pos) {
+        float x = renderX.get();
         this.cursor = MathHelper.clamp(pos, 0, this.text.length());
         if (cursor > 0) {
             cursorX = x + (cursor > firstLength

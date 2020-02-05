@@ -9,6 +9,7 @@ import net.minecraft.util.math.MathHelper;
 
 import java.util.function.Predicate;
 
+@Deprecated
 public class InputBox extends UIButton {
 
     public static final Predicate<String> digitFilter = s -> s.matches("[0-9]+"),
@@ -17,16 +18,13 @@ public class InputBox extends UIButton {
     protected IFontRenderer renderer = StringRenderer.STRING_RENDERER;
 
     /** if can focus and write things**/
-    protected boolean enabled, canLoseFocus;
+    /*protected boolean enabled, canLoseFocus;
     protected int maxStringLength = 32;
     protected int cursorPosition, selectionEnd, lineScrollOffset;
     private Predicate<String> filter = s -> true;
     protected String text = "";
 
     public InputBox() {
-        w = 300;
-        h = 20;
-        alpha = 1;
         enabled = true;
         canLoseFocus = true;
         visible = true;
@@ -71,23 +69,23 @@ public class InputBox extends UIButton {
             }
 
             if (flag1) {
-                /*if (flag2) {
+                *//*if (flag2) {
                     AbstractGui.fill(k1, i1 - 1, k1 + 1, i1 + 1 + 9, -3092272);
                 } else {
                     this.fontRenderer.drawStringWithShadow("_", (float)k1, (float)i1, i);
-                }*/
+                }*//*
             }
 
-            /*if (k != j) {
+            *//*if (k != j) {
                 int l1 = l + this.fontRenderer.getStringWidth(s.substring(0, k));
                 this.drawSelectionBox(k1, i1 - 1, l1 - 1, i1 + 1 + 9);
-            }*/
+            }*//*
         }
     }
 
-    /**
+    *//**
      * Adds the given text after the cursor, or replaces the currently selected text if there is a selection.
-     */
+     *//*
     public void writeText(String textToWrite) {
         String result = "";
         String filter = SharedConstants.filterAllowedCharacters(textToWrite);
@@ -119,10 +117,10 @@ public class InputBox extends UIButton {
         }
     }
 
-    /**
+    *//**
      * Sets the position of the selection anchor (the selection anchor and the cursor position mark the edges of the
      * selection). If the anchor is set beyond the bounds of the current text, it will be put back inside.
-     */
+     *//*
     public void setSelectionPos(int position) {
         int i = this.text.length();
         this.selectionEnd = MathHelper.clamp(position, 0, i);
@@ -181,5 +179,5 @@ public class InputBox extends UIButton {
             return true;
         }
         return false;
-    }
+    }*/
 }

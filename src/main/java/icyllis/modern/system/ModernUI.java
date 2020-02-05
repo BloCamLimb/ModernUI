@@ -1,7 +1,12 @@
 package icyllis.modern.system;
 
+import cpw.mods.modlauncher.api.ITransformationService;
+import cpw.mods.modlauncher.api.ITransformer;
 import icyllis.modern.api.ModernUIApi;
 import icyllis.modern.ui.blur.BlurHandler;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screen.IngameMenuScreen;
+import net.minecraft.data.SNBTToNBTConverter;
 import net.minecraftforge.fml.common.Mod;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

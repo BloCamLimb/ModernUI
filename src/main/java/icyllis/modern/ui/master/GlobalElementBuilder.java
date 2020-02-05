@@ -1,17 +1,21 @@
 package icyllis.modern.ui.master;
 
-import icyllis.modern.api.element.IConstTextBuilder;
+import icyllis.modern.api.element.IColorBuilder;
 import icyllis.modern.api.element.INavigationBuilder;
-import icyllis.modern.api.element.IVarTextBuilder;
+import icyllis.modern.api.element.ITextBuilder;
 import icyllis.modern.api.element.ITextureBuilder;
 import icyllis.modern.api.global.IElementBuilder;
 import icyllis.modern.ui.button.InputBox;
 import icyllis.modern.ui.button.NavigationButton;
 import icyllis.modern.ui.element.UIBackground;
-import icyllis.modern.ui.element.UIConstText;
-import icyllis.modern.ui.element.UIVarText;
+import icyllis.modern.ui.element.UIColorRect;
+import icyllis.modern.ui.element.UIText;
 import icyllis.modern.ui.element.UITexture;
 import net.minecraft.network.PacketBuffer;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Future;
 
 public class GlobalElementBuilder implements IElementBuilder {
 
@@ -39,42 +43,42 @@ public class GlobalElementBuilder implements IElementBuilder {
     @Override
     public void defaultBackground() {
         UIBackground u = new UIBackground();
-        receiver.add(u);
+        receiver.addElement(u);
     }
 
     @Override
-    public IVarTextBuilder varText() {
-        UIVarText u = new UIVarText();
-        receiver.add(u);
-        return u;
-    }
-
-    @Override
-    public IConstTextBuilder constText() {
-        UIConstText u = new UIConstText();
-        receiver.add(u);
+    public ITextBuilder text() {
+        UIText u = new UIText();
+        receiver.addElement(u);
         return u;
     }
 
     @Override
     public ITextureBuilder texture() {
         UITexture u = new UITexture();
-        receiver.add(u);
+        receiver.addElement(u);
         return u;
     }
 
     @Override
     public INavigationBuilder navigation() {
         NavigationButton b = new NavigationButton();
-        receiver.add(b);
+        receiver.addElement(b);
         master.addChild(b);
         return b;
     }
 
     @Override
+    public IColorBuilder colorRect() {
+        UIColorRect u = new UIColorRect();
+        receiver.addElement(u);
+        return u;
+    }
+
+    @Override
     public void input() {
         InputBox u = new InputBox();
-        receiver.add(u);
+        receiver.addElement(u);
         master.addChild(u);
     }
 }

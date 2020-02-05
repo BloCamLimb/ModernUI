@@ -72,6 +72,7 @@ public class EventsHandler {
                 boolean fullMenu = ((IngameMenuScreen) event.getGui()).isFullMenu;
             }
             BlurHandler.INSTANCE.blur(hasGui);
+            ModernUI.LOGGER.debug("Open GUI {}", hasGui ? event.getGui().getClass().getSimpleName() : "null");
         }
     }
 

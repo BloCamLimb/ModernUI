@@ -16,27 +16,12 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modern.api.element;
+package icyllis.modern.api.animation;
 
-import java.util.function.Supplier;
-
-public interface IConstTextBuilder {
-
-    IConstTextBuilder text(String c);
-
-    IConstTextBuilder pos(float x, float y);
-
-    /**
-     * Text alignment: 0 = left, 0.25 = center, 0.5 = right
-     * @param align align
-     */
-    IConstTextBuilder align(float align);
-
-    IConstTextBuilder color(Supplier<Integer> color);
-
-    IConstTextBuilder scale(Supplier<Float> scale);
-
-    IConstTextBuilder style();
-
-    IConstTextAnimator animated();
+public enum MotionType {
+    UNIFORM,
+    SINE, // 0 ~ π/2
+    COSINE, // 0 ~ π/2
+    SINE_EXTENDED, // -π/4 ~ π/2
+    COSINE_EXTENDED; // -π/4 ~ π/2
 }

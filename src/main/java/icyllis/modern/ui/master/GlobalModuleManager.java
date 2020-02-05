@@ -31,6 +31,7 @@ public class GlobalModuleManager implements IModuleFactory {
 
     public void clear() {
         allModules.clear();
+        GlobalAnimationManager.INSTANCE.clearAll();
     }
 
     @Override

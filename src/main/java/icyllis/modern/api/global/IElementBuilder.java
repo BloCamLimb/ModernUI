@@ -1,10 +1,10 @@
 package icyllis.modern.api.global;
 
-import icyllis.modern.api.element.IConstTextBuilder;
-import icyllis.modern.api.element.INavigationBuilder;
-import icyllis.modern.api.element.IVarTextBuilder;
-import icyllis.modern.api.element.ITextureBuilder;
+import icyllis.modern.api.animation.IAnimationBuilder;
+import icyllis.modern.api.element.*;
 import net.minecraft.network.PacketBuffer;
+
+import java.util.function.Consumer;
 
 public interface IElementBuilder {
 
@@ -12,13 +12,13 @@ public interface IElementBuilder {
 
     void defaultBackground();
 
-    IVarTextBuilder varText();
-
-    IConstTextBuilder constText();
+    ITextBuilder text();
 
     ITextureBuilder texture();
 
     INavigationBuilder navigation();
+
+    IColorBuilder colorRect();
 
     void input();
 }

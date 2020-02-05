@@ -15,9 +15,9 @@ public class ModuleTest {
         builder.defaultBackground();
         builder.texture()
                 .tex(BACKGROUND)
-                .pos(-128, -128)
+                .setRelPos(-128, -128)
                 .uv(0, 0)
-                .size(256, 256)
+                .setSize(256, 256)
                 .animated()
                 .alpha(a -> a
                         .translate(-1f)
@@ -25,18 +25,18 @@ public class ModuleTest {
                 );
         builder.texture()
                 .tex(FRAME)
-                .pos(-128, -128)
+                .setRelPos(-128, -128)
                 .uv(0, 0)
-                .size(256, 256)
+                .setSize(256, 256)
                 .color(() -> 0xeedc82)
                 .animated()
                 .alpha(a -> a
                         .translate(-1f)
                         .fixedTiming(4f)
                 );
-        builder.constText()
-                .text(TextFormatting.AQUA + "Please select a network")
-                .pos(0, -73)
+        builder.text()
+                .text(() -> TextFormatting.AQUA + "Please select a network")
+                .setRelPos(0, -73)
                 .align(0.25f)
                 .animated()
                 .alpha(a -> a
@@ -49,8 +49,8 @@ public class ModuleTest {
                     .tex(e -> e
                             .tex(BUTTON)
                             .uv(16 * f, 0)
-                            .pos(18 * f - 76, -99)
-                            .size(16, 16)
+                            .setRelPos(18 * f - 76, -99)
+                            .setSize(16, 16)
                             .animated()
                             .alpha(a -> a
                                     .delay(f * 0.7f)
@@ -58,12 +58,12 @@ public class ModuleTest {
                                     .fixedTiming(2f)
                             )
                     )
-                    .pos(18 * f - 76, -99)
-                    .size(16, 16)
+                    .setRelPos(18 * f - 76, -99)
+                    .setSize(16, 16)
                     .text(e -> e
                             .text(() -> "Network Connections")
                             .align(0.25f)
-                            .pos(18 * f - 68, -109)
+                            .setRelPos(18 * f - 68, -109)
                     )
                     .to(i);
         }
@@ -71,8 +71,8 @@ public class ModuleTest {
                 .tex(e -> e
                         .tex(BUTTON)
                         .uv(112, 0)
-                        .pos(60, -99)
-                        .size(16, 16)
+                        .setRelPos(60, -99)
+                        .setSize(16, 16)
                         .animated()
                         .alpha(a -> a
                                 .delay(5f)
@@ -80,17 +80,17 @@ public class ModuleTest {
                                 .fixedTiming(2f)
                         )
                 )
-                .pos(60, -99)
-                .size(16, 16)
+                .setRelPos(60, -99)
+                .setSize(16, 16)
                 .text(e -> e
                         .text(() -> "Create New Network")
                         .align(0.25f)
-                        .pos(68, -109)
+                        .setRelPos(68, -109)
                 )
                 .to(7);
-        builder.constText()
-                .text("INFORMATION")
-                .pos(-68, -58)
+        builder.text()
+                .text(() -> "INFORMATION")
+                .setRelPos(-68, -58)
                 .scale(() -> 0.8f)
                 .style()
                 .animated()
@@ -99,9 +99,9 @@ public class ModuleTest {
                         .translate(-1)
                         .fixedTiming(4)
                 );
-        builder.constText()
-                .text("CONNECTION")
-                .pos(-68, 0)
+        builder.text()
+                .text(() -> "CONNECTION")
+                .setRelPos(-68, 0)
                 .scale(() -> 0.8f)
                 .style()
                 .animated()
