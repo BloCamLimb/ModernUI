@@ -12,6 +12,10 @@ public class DrawTools {
         float r = (float)(color >> 16 & 255) / 255.0F;
         float g = (float)(color >> 8 & 255) / 255.0F;
         float b = (float)(color & 255) / 255.0F;
+        fillRectWithColor(left, top, right, bottom, r, g, b, a);
+    }
+
+    public static void fillRectWithColor(float left, float top, float right, float bottom, float r, float g, float b, float a) {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferbuilder = tessellator.getBuffer();
         RenderSystem.enableBlend();

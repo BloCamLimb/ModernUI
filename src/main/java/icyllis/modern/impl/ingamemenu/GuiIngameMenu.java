@@ -16,14 +16,16 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modern.ui.animation;
+package icyllis.modern.impl.ingamemenu;
 
-/**
- * Internal interface
- */
-public interface IAnimation {
+import icyllis.modern.ui.master.UniversalModernScreen;
 
-    void update(float currentTime);
+public final class GuiIngameMenu extends UniversalModernScreen {
 
-    boolean isFinish();
+    public GuiIngameMenu(boolean isFullMenu) {
+        super(l -> {
+            ModulesIngameMenu m = new ModulesIngameMenu();
+            l.add(m::createDefault);
+        });
+    }
 }

@@ -1,26 +1,28 @@
 package icyllis.modern.ui.master;
 
-import icyllis.modern.api.animation.IAlphaAnimation;
+import icyllis.modern.api.animation.IAnimationBuilder;
 import icyllis.modern.ui.animation.AlphaAnimation;
-import icyllis.modern.ui.animation.IAnimation;
+import icyllis.modern.ui.animation.UniversalAnimation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 @OnlyIn(Dist.CLIENT)
 public class GlobalAnimationManager {
 
     public static final GlobalAnimationManager INSTANCE = new GlobalAnimationManager();
 
-    public final List<IAnimation> animations = new ArrayList<>();
+    private final List<UniversalAnimation> animations = new ArrayList<>();
+    private List<Runnable> animationBuilders = new ArrayList<>();
 
     private int timer = 0;
-    private float time = 0; // 0~20 every second
-    private float sin = 0; // sine wave Ω=10
+    private float time = 0; // unit ticks
 
-    public GlobalAnimationManager() {
+    private GlobalAnimationManager() {
 
     }
 
@@ -30,9 +32,8 @@ public class GlobalAnimationManager {
 
     public void renderTick(float partialTick) {
         time = timer + partialTick;
-        sin = (float) Math.sin(time * Math.PI);
         animations.forEach(a -> a.update(time));
-        animations.removeIf(IAnimation::isFinish);
+        animations.removeIf(UniversalAnimation::isFinish);
     }
 
     public void resetTimer() {
@@ -40,17 +41,28 @@ public class GlobalAnimationManager {
         timer = 0;
     }
 
-    public AlphaAnimation newAlpha(float st) {
-        AlphaAnimation a = new AlphaAnimation(st);
+    public UniversalAnimation create(Consumer<IAnimationBuilder> consumer, float init) {
+        UniversalAnimation a = new UniversalAnimation(time, init);
+        consumer.accept(a);
         animations.add(a);
         return a;
     }
 
-    public float time() {
-        return time;
+    public void scheduleAnimationBuild(Runnable r) {
+        animationBuilders.add(r);
     }
 
-    public float sin() {
-        return sin;
+    void buildAnimations() {
+        animationBuilders.forEach(Runnable::run);
+        animationBuilders.clear();
+    }
+
+    void clearAll() {
+        animations.clear();
+        animationBuilders.clear();
+    }
+
+    public float time() {
+        return time;
     }
 }

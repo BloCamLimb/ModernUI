@@ -22,7 +22,8 @@ import icyllis.modern.api.animation.IAlphaAnimation;
 
 import java.util.function.Supplier;
 
-public class AlphaAnimation implements IAnimation, IAlphaAnimation, Supplier<Float> {
+@Deprecated
+public class AlphaAnimation implements IAlphaAnimation, Supplier<Float> {
 
     /** final **/
     private final float targetAlpha;
@@ -58,7 +59,6 @@ public class AlphaAnimation implements IAnimation, IAlphaAnimation, Supplier<Flo
         return this;
     }
 
-    @Override
     public void update(float currentTime) {
         if(pre) {
             if(currentTime >= startTime) {
@@ -75,7 +75,6 @@ public class AlphaAnimation implements IAnimation, IAlphaAnimation, Supplier<Flo
         }
     }
 
-    @Override
     public boolean isFinish() {
         return finish;
     }

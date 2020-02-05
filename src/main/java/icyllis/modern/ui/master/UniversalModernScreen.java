@@ -1,6 +1,7 @@
 package icyllis.modern.ui.master;
 
 import icyllis.modern.api.global.IModuleFactory;
+import icyllis.modern.system.ModernUI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.Screen;
@@ -12,7 +13,7 @@ import javax.annotation.Nonnull;
 import java.util.function.Consumer;
 
 @OnlyIn(Dist.CLIENT)
-public final class UniversalModernScreen extends Screen implements IMasterScreen {
+public class UniversalModernScreen extends Screen implements IMasterScreen {
 
     static final StringTextComponent EMPTY_TITLE = new StringTextComponent("");
 

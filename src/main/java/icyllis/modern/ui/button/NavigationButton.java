@@ -1,6 +1,7 @@
 package icyllis.modern.ui.button;
 
 import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modern.api.element.INavigationBuilder;
 import icyllis.modern.api.element.ITextureBuilder;
 import icyllis.modern.ui.element.UIButton;
@@ -27,7 +28,7 @@ public class NavigationButton extends UIButton<INavigationBuilder> implements IN
 
     @Override
     public void draw() {
-        GlStateManager.pushMatrix();
+        RenderSystem.pushMatrix();
         GlStateManager.enableBlend();
         GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
         GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
@@ -35,7 +36,7 @@ public class NavigationButton extends UIButton<INavigationBuilder> implements IN
             textLine.draw();
         }
         texture.draw(mouseHovered);
-        GlStateManager.popMatrix();
+        RenderSystem.popMatrix();
     }
 
     @Override

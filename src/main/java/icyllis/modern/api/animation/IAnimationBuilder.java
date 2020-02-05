@@ -16,13 +16,17 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modern.api.element;
+package icyllis.modern.api.animation;
 
-import icyllis.modern.api.animation.IAlphaAnimation;
+public interface IAnimationBuilder {
 
-import java.util.function.Consumer;
+    IAnimationBuilder setTarget(float target);
 
-public interface IConstTextAnimator {
+    IAnimationBuilder setTranslate(float translate);
 
-    IConstTextAnimator alpha(Consumer<IAlphaAnimation> a);
+    IAnimationBuilder setDelay(float delay);
+
+    IAnimationBuilder setTiming(float timing);
+
+    IAnimationBuilder setMotion(MotionType type);
 }

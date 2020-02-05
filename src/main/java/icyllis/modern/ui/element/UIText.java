@@ -21,8 +21,8 @@ package icyllis.modern.ui.element;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modern.api.animation.IAlphaAnimation;
-import icyllis.modern.api.element.IConstTextAnimator;
-import icyllis.modern.api.element.IConstTextBuilder;
+import icyllis.modern.api.element.ITextAnimator;
+import icyllis.modern.api.element.ITextBuilder;
 import icyllis.modern.system.ReferenceLibrary;
 import icyllis.modern.ui.animation.AlphaAnimation;
 import icyllis.modern.ui.font.IFontRenderer;
@@ -30,34 +30,30 @@ import icyllis.modern.ui.font.StringRenderer;
 import icyllis.modern.ui.master.DrawTools;
 import icyllis.modern.ui.master.GlobalAnimationManager;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.renderer.texture.TextureManager;
 import org.lwjgl.opengl.GL11;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class UIConstText implements IConstTextBuilder, IConstTextAnimator, IElement {
+public class UIText extends UIElement<ITextBuilder> implements ITextBuilder, ITextAnimator {
 
     private IFontRenderer renderer;
     private TextureManager textureManager;
 
-    private float bx, by;
-    private float x, y;
     private float align;
-    private String text;
+    private Supplier<String> text;
     private float length;
 
     private Supplier<Integer> color;
-    private Supplier<Float> alpha;
     private Supplier<Float> scale;
 
     private Consumer<Float> deco;
 
-    public UIConstText() {
+    public UIText() {
         renderer = StringRenderer.STRING_RENDERER;
         textureManager = Minecraft.getInstance().textureManager;
-        text = "";
+        text = () -> "";
         color = () -> 0xffffff;
         alpha = () -> 1.0f;
         scale = () -> 1.0f;
@@ -71,10 +67,12 @@ public class UIConstText implements IConstTextBuilder, IConstTextAnimator, IElem
         RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
         GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
         GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+        float x = renderX.get(), y = renderY.get();
+        String text = this.text.get();
         float s = scale.get();
         if(s < 1) {
             RenderSystem.scalef(s, s, 1);
-            renderer.drawString(text, x / s, y / s, color.get(), (int) (alpha.get() * 0xff), align / s);
+            renderer.drawString(text,  x / s, y / s, color.get(), (int) (alpha.get() * 0xff), align / s);
         } else {
             renderer.drawString(text, x, y, color.get(), (int) (alpha.get() * 0xff), align);
         }
@@ -83,46 +81,33 @@ public class UIConstText implements IConstTextBuilder, IConstTextAnimator, IElem
     }
 
     @Override
-    public void resize(int width, int height) {
-        x = width / 2f + bx;
-        y = height / 2f + by;
-    }
-
-    @Override
-    public IConstTextBuilder text(String c) {
-        text = c;
-        length = renderer.getStringWidth(c);
+    public ITextBuilder text(Supplier<String> text) {
+        this.text = text;
+        length = renderer.getStringWidth(text.get());
         return this;
     }
 
     @Override
-    public IConstTextBuilder pos(float x, float y) {
-        bx = x;
-        by = y;
-        return this;
-    }
-
-    @Override
-    public IConstTextBuilder align(float align) {
+    public ITextBuilder align(float align) {
         this.align = align;
         return this;
     }
 
     @Override
-    public IConstTextBuilder color(Supplier<Integer> color) {
+    public ITextBuilder color(Supplier<Integer> color) {
         this.color = color;
         return this;
     }
 
     @Override
-    public IConstTextBuilder scale(Supplier<Float> scale) {
+    public ITextBuilder scale(Supplier<Float> scale) {
         this.scale = scale;
         return this;
     }
 
     @Override
-    public IConstTextBuilder style() {
-        deco = sc -> {
+    public ITextBuilder style() {
+        /*deco = sc -> {
             RenderSystem.color4f(120/255f, 190/255f, 230/255f, alpha.get());
             float s = sc * 0.5f;
             RenderSystem.scalef(0.5f, 0.5f, 1);
@@ -130,20 +115,18 @@ public class UIConstText implements IConstTextBuilder, IConstTextAnimator, IElem
             float x = this.x - length * align * 2;
             DrawTools.blit((x - 8) / s, (y + 0.5f) / s, 0, 8, 16, 16);
             DrawTools.blit((x + length * sc + 1) / s, (y + 0.5f) / s, 0, 8, 16, 16);
-        };
+        };*/
         return this;
     }
 
     @Override
-    public IConstTextAnimator animated() {
+    public ITextAnimator animated() {
         return this;
     }
 
     @Override
-    public IConstTextAnimator alpha(Consumer<IAlphaAnimation> a) {
-        AlphaAnimation i = GlobalAnimationManager.INSTANCE.newAlpha(alpha.get());
-        a.accept(i);
-        alpha = i;
+    public ITextAnimator alpha(Consumer<IAlphaAnimation> a) {
+
         return this;
     }
 }

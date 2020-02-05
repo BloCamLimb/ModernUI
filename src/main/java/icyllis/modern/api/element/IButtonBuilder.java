@@ -2,11 +2,7 @@ package icyllis.modern.api.element;
 
 import java.util.function.Consumer;
 
-public interface IButtonBuilder<T extends IButtonBuilder> {
+public interface IButtonBuilder<T extends IButtonBuilder> extends IBaseBuilder<T> {
 
-    T text(Consumer<IVarTextBuilder> consumer);
-
-    T pos(float x, float y);
-
-    T size(float w, float h);
+    T text(Consumer<ITextBuilder> consumer);
 }

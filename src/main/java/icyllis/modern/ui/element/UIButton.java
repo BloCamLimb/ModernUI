@@ -6,10 +6,7 @@ import net.minecraft.client.gui.IGuiEventListener;
 import java.util.function.Consumer;
 
 @SuppressWarnings("unchecked")
-public abstract class UIButton<T extends IButtonBuilder> implements IElement, IButtonBuilder<T>, IGuiEventListener {
-
-    /** original xy, render xy, width height, alpha(0-1F) **/
-    protected float bx, by, x, y, w, h, alpha = 1.0f;
+public abstract class UIButton<T extends IButtonBuilder> extends UIElement<T> implements IButtonBuilder<T>, IGuiEventListener {
 
     /** is mouse hovered on this **/
     protected boolean mouseHovered;
@@ -18,7 +15,7 @@ public abstract class UIButton<T extends IButtonBuilder> implements IElement, IB
     protected boolean visible = true, focused = false;
 
     /** text to show something **/
-    protected UIVarText textLine = UIVarText.DEFAULT;
+    protected UIText textLine = new UIText();
 
     @Override
     public void draw() {
@@ -26,24 +23,10 @@ public abstract class UIButton<T extends IButtonBuilder> implements IElement, IB
     }
 
     @Override
-    public T text(Consumer<IVarTextBuilder> consumer) {
-        UIVarText u = new UIVarText();
+    public T text(Consumer<ITextBuilder> consumer) {
+        UIText u = new UIText();
         consumer.accept(u);
         textLine = u;
-        return (T) this;
-    }
-
-    @Override
-    public T pos(float x, float y) {
-        bx = x;
-        by = y;
-        return (T) this;
-    }
-
-    @Override
-    public T size(float w, float h) {
-        this.w = w;
-        this.h = h;
         return (T) this;
     }
 
@@ -69,7 +52,7 @@ public abstract class UIButton<T extends IButtonBuilder> implements IElement, IB
     }
 
     protected boolean isMouseInRange(double mouseX, double mouseY) {
-        return mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + h;
+        return mouseX >= renderX.get() && mouseX <= renderY.get() + sizeW.get() && mouseY >= renderY.get() && mouseY <= renderY.get() + sizeH.get();
     }
 
     protected void onMouseHoverChanged() {
@@ -84,12 +67,5 @@ public abstract class UIButton<T extends IButtonBuilder> implements IElement, IB
     public boolean changeFocus(boolean p_changeFocus_1_) {
         focused = !focused;
         return focused;
-    }
-
-    @Override
-    public void resize(int width, int height) {
-        x = width / 2f + bx;
-        y = height / 2f + by;
-        textLine.resize(width, height);
     }
 }

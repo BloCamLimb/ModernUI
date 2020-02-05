@@ -1,7 +1,7 @@
 package icyllis.modern.ui.master;
 
 import icyllis.modern.api.global.IElementBuilder;
-import icyllis.modern.ui.element.IElement;
+import icyllis.modern.ui.element.UIElement;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +14,7 @@ public class MasterModule {
 
     private Consumer<IElementBuilder> rawModule;
 
-    private List<IElement> elements = new ArrayList<>();
+    private List<UIElement> elements = new ArrayList<>();
 
     MasterModule(Consumer<IElementBuilder> rawModule) {
         this.rawModule = rawModule;
@@ -24,18 +24,19 @@ public class MasterModule {
         GlobalElementBuilder.INSTANCE.setReceiver(this, master);
         rawModule.accept(GlobalElementBuilder.INSTANCE);
         resize(width, height);
+        GlobalAnimationManager.INSTANCE.buildAnimations();
         rawModule = null;
     }
 
     public void draw() {
-        elements.forEach(IElement::draw);
+        elements.forEach(UIElement::draw);
     }
 
     public void resize(int width, int height) {
         elements.forEach(e -> e.resize(width, height));
     }
 
-    public void add(IElement e) {
+    public void addElement(UIElement e) {
         elements.add(e);
     }
 
