@@ -18,11 +18,5 @@
 
 package icyllis.modern.api.element;
 
-import icyllis.modern.api.animation.IAlphaAnimation;
-
-import java.util.function.Consumer;
-
-public interface ITextureAnimator {
-
-    ITextureAnimator alpha(Consumer<IAlphaAnimation> a);
+public interface IBaseGetter {
 }

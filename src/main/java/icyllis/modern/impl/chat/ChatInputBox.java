@@ -66,53 +66,52 @@ public final class ChatInputBox extends UIButton<IButtonBuilder> {
 
     ChatInputBox() {
         selectorX = cursorX = 4;
-        renderX = () -> 4f;
+        renderX = 4f;
         focused = true;
     }
 
     @Override
     public void draw() {
-        float x = renderX.get(), y = renderY.get(), w = sizeW.get(), h = sizeH.get();
         if(isDoubleLined) {
-            DrawTools.fillRectWithColor(x - 2, y - 12, x + w + 2, y + 12, 0x80000000);
+            DrawTools.fillRectWithColor(renderX - 2, renderY - 12, renderX + sizeW + 2, renderY + 12, 0x80000000);
             if (cursor != selector) {
                 int left = Math.min(this.cursor, this.selector);
                 int right = Math.max(this.cursor, this.selector);
                 float le = Math.min(this.cursorX, this.selectorX);
                 float ri = Math.max(this.cursorX, this.selectorX);
                 if(left > firstLength) {
-                    DrawTools.fillRectWithColor(le, y + 0.5f, ri, y + 11.5f, 0x8097def0);
+                    DrawTools.fillRectWithColor(le, renderY + 0.5f, ri, renderY + 11.5f, 0x8097def0);
                 } else {
                     if(right > firstLength) {
                         if(cursor < selector) {
-                            DrawTools.fillRectWithColor(cursorX, y - 11.5f, x + w, y - 0.5f, 0x8097def0);
-                            DrawTools.fillRectWithColor(x, y + 0.5f, selectorX, y + 11.5f, 0x8097def0);
+                            DrawTools.fillRectWithColor(cursorX, renderY - 11.5f, renderX + sizeW, renderY - 0.5f, 0x8097def0);
+                            DrawTools.fillRectWithColor(renderX, renderY + 0.5f, selectorX, renderY + 11.5f, 0x8097def0);
                         } else {
-                            DrawTools.fillRectWithColor(selectorX, y - 11.5f, x + w, y - 0.5f, 0x8097def0);
-                            DrawTools.fillRectWithColor(x, y + 0.5f, cursorX, y + 11.5f, 0x8097def0);
+                            DrawTools.fillRectWithColor(selectorX, renderY - 11.5f, renderX + sizeW, renderY - 0.5f, 0x8097def0);
+                            DrawTools.fillRectWithColor(renderX, renderY + 0.5f, cursorX, renderY + 11.5f, 0x8097def0);
                         }
                     } else {
-                        DrawTools.fillRectWithColor(le, y - 11.5f, ri, y - 0.5f, 0x8097def0);
+                        DrawTools.fillRectWithColor(le, renderY - 11.5f, ri, renderY - 0.5f, 0x8097def0);
                     }
                 }
             }
-            renderer.drawString(text.substring(0, firstLength), x, y - 10.5f, 0xdddddd, 0xff, 0);
-            renderer.drawString(text.substring(firstLength), x, y + 1.5f, 0xdddddd, 0xff, 0);
+            renderer.drawString(text.substring(0, firstLength), renderX, renderY - 10.5f, 0xdddddd, 0xff, 0);
+            renderer.drawString(text.substring(firstLength), renderX, renderY + 1.5f, 0xdddddd, 0xff, 0);
         } else {
-            DrawTools.fillRectWithColor(x - 2, y, x + w + 2, y + 12, 0x80000000);
+            DrawTools.fillRectWithColor(renderX - 2, renderY, renderX + sizeW + 2, renderY + 12, 0x80000000);
             if (cursor != selector) {
                 float le = Math.min(this.cursorX, this.selectorX);
                 float ri = Math.max(this.cursorX, this.selectorX);
-                DrawTools.fillRectWithColor(le, y + 0.5f, ri, y + 11.5f, 0x8097def0);
+                DrawTools.fillRectWithColor(le, renderY + 0.5f, ri, renderY + 11.5f, 0x8097def0);
             }
-            renderer.drawString(text, x, y + 1.5f, 0xdddddd, 0xff, 0);
+            renderer.drawString(text, renderX, renderY + 1.5f, 0xdddddd, 0xff, 0);
         }
 
         if (timer < 10) {
             if(isDoubleLined) {
-                DrawTools.fillRectWithColor(cursorX, cursor > firstLength ? y + 0.5f : y - 11.5f, cursorX + 0.5f, cursor > firstLength ? y + 11.5f : y - 0.5f, 0xffdddddd);
+                DrawTools.fillRectWithColor(cursorX, cursor > firstLength ? renderY + 0.5f : renderY - 11.5f, cursorX + 0.5f, cursor > firstLength ? renderY + 11.5f : renderY - 0.5f, 0xffdddddd);
             } else {
-                DrawTools.fillRectWithColor(cursorX, y + 0.5f, cursorX + 0.5f, y + 11.5f, 0xffdddddd);
+                DrawTools.fillRectWithColor(cursorX, renderY + 0.5f, cursorX + 0.5f, renderY + 11.5f, 0xffdddddd);
             }
         }
 
@@ -125,8 +124,8 @@ public final class ChatInputBox extends UIButton<IButtonBuilder> {
 
     @Override
     public void resize(int width, int height) {
-        renderY = () -> (float) height - 14;
-        sizeW = () -> (float) width - 8;
+        renderY = height - 14;
+        sizeW = width - 8;
         String r = text;
         text = "";
         writeText(r);
@@ -139,10 +138,9 @@ public final class ChatInputBox extends UIButton<IButtonBuilder> {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        float x = renderX.get(), y = renderY.get();
         if(mouseButton == 0 && isMouseInRange(mouseX, mouseY)) {
-            float dx = (float) (mouseX - x) + 1.0f;
-            double dy = mouseY - y;
+            float dx = (float) (mouseX - renderX) + 1.0f;
+            double dy = mouseY - renderY;
             if(isDoubleLined) {
                 if(dy > 0 && dy < 12) {
                     setCursorSafety(firstLength + renderer.sizeStringToWidth(text.substring(firstLength), dx));
@@ -164,8 +162,7 @@ public final class ChatInputBox extends UIButton<IButtonBuilder> {
 
     @Override
     protected boolean isMouseInRange(double mouseX, double mouseY) {
-        float x = renderX.get(), y = renderY.get(), w = sizeW.get();
-        return mouseX >= x && mouseX <= x + w && mouseY >= y + (isDoubleLined ? -12 : 0) && mouseY <= y + 12;
+        return mouseX >= renderX && mouseX <= renderX + sizeW && mouseY >= renderY + (isDoubleLined ? -12 : 0) && mouseY <= renderY + 12;
     }
 
     @Override
@@ -212,9 +209,8 @@ public final class ChatInputBox extends UIButton<IButtonBuilder> {
                     }
                     return true;
                 case GLFW.GLFW_KEY_DOWN:
-                    float w = sizeW.get();
                     if(isDoubleLined && cursor <= firstLength) {
-                        setCursorSafety(renderer.sizeStringToWidth(text, renderer.getStringWidth(text.substring(0, cursor)) + w));
+                        setCursorSafety(renderer.sizeStringToWidth(text, renderer.getStringWidth(text.substring(0, cursor)) + sizeW));
                     }
                     return true;
                 case GLFW.GLFW_KEY_UP:
@@ -247,7 +243,6 @@ public final class ChatInputBox extends UIButton<IButtonBuilder> {
     }
 
     public void writeText(String textToWrite) {
-        float x = renderX.get(), w = sizeW.get();
         String result = "";
         String toWrite = SharedConstants.filterAllowedCharacters(textToWrite);
 
@@ -263,11 +258,11 @@ public final class ChatInputBox extends UIButton<IButtonBuilder> {
             result = result + this.text.substring(right);
 
         if (this.filter.test(result)) {
-            int line1s = renderer.sizeStringToWidth(result, w - 0.5f);
+            int line1s = renderer.sizeStringToWidth(result, sizeW - 0.5f);
             if(result.length() > line1s) {
                 this.firstLength = line1s;
                 float line1width = renderer.getStringWidth(result.substring(0, line1s));
-                this.text = renderer.trimStringToWidth(result, line1width + w, false);
+                this.text = renderer.trimStringToWidth(result, line1width + sizeW, false);
                 this.isDoubleLined = true;
                 onLineChanged.accept(true);
             } else {
@@ -282,24 +277,22 @@ public final class ChatInputBox extends UIButton<IButtonBuilder> {
     }
 
     private void setSelectorToEnd() {
-        float x = renderX.get();
         selector = text.length();
         if(isDoubleLined) {
-            selectorX = x + renderer.getStringWidth(text.substring(firstLength));
+            selectorX = renderX + renderer.getStringWidth(text.substring(firstLength));
         } else {
-            selectorX = x + renderer.getStringWidth(text);
+            selectorX = renderX + renderer.getStringWidth(text);
         }
     }
 
     private void setCursorSafety(int pos) {
-        float x = renderX.get();
         this.cursor = MathHelper.clamp(pos, 0, this.text.length());
         if (cursor > 0) {
-            cursorX = x + (cursor > firstLength
+            cursorX = renderX + (cursor > firstLength
                     ? renderer.getStringWidth(text.substring(firstLength, cursor))
                     : renderer.getStringWidth(text.substring(0, cursor)));
         } else {
-            cursorX = x;
+            cursorX = renderX;
         }
         if(!shiftDown) {
             this.selector = cursor;

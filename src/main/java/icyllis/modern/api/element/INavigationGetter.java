@@ -16,34 +16,9 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modern.api.animation;
+package icyllis.modern.api.element;
 
-public interface IAnimationBuilder {
+public interface INavigationGetter extends IBaseGetter {
 
-    /**
-     * Set the init value
-     * @param init init
-     * @return builder
-     */
-    IAnimationBuilder setInit(float init);
-
-    /**
-     * Set the target value
-     * @param target target
-     * @return builder
-     */
-    IAnimationBuilder setTarget(float target);
-
-    /**
-     * Set the change related to init value
-     * @param translate translate
-     * @return builder
-     */
-    IAnimationBuilder setTranslate(float translate);
-
-    IAnimationBuilder setDelay(float delay);
-
-    IAnimationBuilder setTiming(float timing);
-
-    IAnimationBuilder setMotion(MotionType type);
+    ITextureBuilder getTexture();
 }
