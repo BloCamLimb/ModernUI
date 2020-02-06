@@ -5,11 +5,15 @@ import java.util.function.Consumer;
 public interface INavigationBuilder extends IButtonBuilder<INavigationBuilder> {
 
     /**
-     * Which module should the button go
-     * @param index module index
-     * @return ST
+     * Which module should the button is/go
+     * @param id module id
+     * @return builder
      */
-    INavigationBuilder to(int index);
+    INavigationBuilder setTarget(int id);
 
-    INavigationBuilder tex(Consumer<ITextureBuilder> consumer);
+    INavigationBuilder setTexture(Consumer<ITextureBuilder> consumer);
+
+    INavigationBuilder onMouseHoverOn(Consumer<INavigationGetter> consumer);
+
+    INavigationBuilder onMouseHoverOff(Consumer<INavigationGetter> consumer);
 }

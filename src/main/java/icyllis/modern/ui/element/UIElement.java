@@ -34,12 +34,12 @@ public abstract class UIElement<T extends IBaseBuilder> implements IBaseBuilder<
     /**
      * Logical X/Y/W/H
      */
-    protected Supplier<Float> renderX, renderY, sizeW, sizeH;
+    public float renderX, renderY, sizeW, sizeH;
 
-    protected Supplier<Float> alpha;
+    protected float alpha = 1.0f;
 
-    public UIElement() {
-        alpha = () -> 1.0f;
+    UIElement() {
+
     }
 
     public abstract void draw();
@@ -49,10 +49,10 @@ public abstract class UIElement<T extends IBaseBuilder> implements IBaseBuilder<
         float y = GWtBY.apply(height);
         float w = GWtBW.apply(width);
         float h = GWtBH.apply(height);
-        renderX = () -> x;
-        renderY = () -> y;
-        sizeW = () -> w;
-        sizeH = () -> h;
+        renderX = x;
+        renderY = y;
+        sizeW = w;
+        sizeH = h;
     }
 
     @Override
@@ -92,7 +92,7 @@ public abstract class UIElement<T extends IBaseBuilder> implements IBaseBuilder<
 
     @Override
     public T setAlpha(float a) {
-        alpha = () -> a;
+        alpha = a;
         return (T) this;
     }
 }

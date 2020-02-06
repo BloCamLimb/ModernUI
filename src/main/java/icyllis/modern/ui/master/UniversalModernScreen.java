@@ -40,6 +40,11 @@ public class UniversalModernScreen extends Screen implements IMasterScreen {
     }
 
     @Override
+    public void onClose() {
+        super.onClose();
+    }
+
+    @Override
     public void addChild(IGuiEventListener eventListener) {
         children.add(eventListener);
     }

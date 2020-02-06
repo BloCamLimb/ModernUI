@@ -16,13 +16,31 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modern.api.element;
+package icyllis.modern.ui.button;
 
-import icyllis.modern.api.animation.IAlphaAnimation;
+import icyllis.modern.api.element.IBaseGetter;
 
 import java.util.function.Consumer;
 
-public interface ITextAnimator {
+public class InternalEvent<T extends IBaseGetter> {
 
-    ITextAnimator alpha(Consumer<IAlphaAnimation> a);
+    public static int MOUSE_HOVER_ON = 1;
+    public static int MOUSE_HOVER_OFF = 2;
+
+    private final int id;
+
+    private final Consumer<T> consumer;
+
+    public InternalEvent(int id, Consumer<T> consumer) {
+        this.id = id;
+        this.consumer = consumer;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void run(T t) {
+        consumer.accept(t);
+    }
 }

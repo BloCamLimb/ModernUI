@@ -13,10 +13,6 @@ import icyllis.modern.ui.element.UIText;
 import icyllis.modern.ui.element.UITexture;
 import net.minecraft.network.PacketBuffer;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Future;
-
 public class GlobalElementBuilder implements IElementBuilder {
 
     public static final GlobalElementBuilder INSTANCE = new GlobalElementBuilder();

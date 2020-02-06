@@ -12,7 +12,10 @@ public interface ITextureBuilder extends IBaseBuilder<ITextureBuilder> {
 
     ITextureBuilder uv(float u, float v);
 
-    ITextureBuilder color(Supplier<Integer> color);
+    ITextureBuilder setTint(int rgb);
 
-    ITextureAnimator animated();
+    /**
+     * Faster than the upper one
+     */
+    ITextureBuilder setTint(float r, float g, float b);
 }

@@ -15,7 +15,7 @@ public abstract class UIButton<T extends IButtonBuilder> extends UIElement<T> im
     protected boolean visible = true, focused = false;
 
     /** text to show something **/
-    protected UIText textLine = new UIText();
+    protected UIText textLine = UIText.DEFAULT;
 
     @Override
     public void draw() {
@@ -52,7 +52,7 @@ public abstract class UIButton<T extends IButtonBuilder> extends UIElement<T> im
     }
 
     protected boolean isMouseInRange(double mouseX, double mouseY) {
-        return mouseX >= renderX.get() && mouseX <= renderY.get() + sizeW.get() && mouseY >= renderY.get() && mouseY <= renderY.get() + sizeH.get();
+        return mouseX >= renderX && mouseX <= renderX + sizeW && mouseY >= renderY && mouseY <= renderY + sizeH;
     }
 
     protected void onMouseHoverChanged() {
@@ -61,6 +61,12 @@ public abstract class UIButton<T extends IButtonBuilder> extends UIElement<T> im
 
     protected void onFocusChanged(boolean focused) {
 
+    }
+
+    @Override
+    public void resize(int width, int height) {
+        super.resize(width, height);
+        textLine.resize(width, height);
     }
 
     @Override

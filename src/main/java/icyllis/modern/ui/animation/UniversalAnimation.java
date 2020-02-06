@@ -21,23 +21,25 @@ package icyllis.modern.ui.animation;
 import icyllis.modern.api.animation.IAnimationBuilder;
 import icyllis.modern.api.animation.MotionType;
 
-import java.util.function.Supplier;
+import java.util.function.Consumer;
 
-public class UniversalAnimation implements Supplier<Float>, IAnimationBuilder {
+public class UniversalAnimation implements IAnimationBuilder {
 
-    private float value;
+    protected float value;
 
-    private final float initValue;
+    protected float initValue;
 
-    private float targetValue, startTime, fixedTiming = 1.0f;
+    protected float targetValue, startTime, fixedTiming;
 
-    private MotionType motionType = MotionType.UNIFORM;
+    protected MotionType motionType = MotionType.UNIFORM;
 
-    private boolean finish = false;
+    protected boolean finish = false;
 
-    public UniversalAnimation(float startTime, float init) {
+    private Consumer<Float> receiver;
+
+    public UniversalAnimation(float startTime, Consumer<Float> receiver) {
         this.startTime = startTime;
-        initValue = targetValue = init;
+        this.receiver = receiver;
     }
 
     public void update(float currentTime) {
@@ -52,6 +54,7 @@ public class UniversalAnimation implements Supplier<Float>, IAnimationBuilder {
                 updateSine(currentTime);
                 break;
         }
+        receiver.accept(value);
     }
 
     private void updateUniform(float currentTime) {
@@ -79,8 +82,9 @@ public class UniversalAnimation implements Supplier<Float>, IAnimationBuilder {
     }
 
     @Override
-    public Float get() {
-        return value;
+    public IAnimationBuilder setInit(float init) {
+        initValue = init;
+        return this;
     }
 
     @Override

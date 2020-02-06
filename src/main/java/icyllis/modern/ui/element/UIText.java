@@ -21,14 +21,9 @@ package icyllis.modern.ui.element;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modern.api.animation.IAlphaAnimation;
-import icyllis.modern.api.element.ITextAnimator;
 import icyllis.modern.api.element.ITextBuilder;
-import icyllis.modern.system.ReferenceLibrary;
-import icyllis.modern.ui.animation.AlphaAnimation;
 import icyllis.modern.ui.font.IFontRenderer;
 import icyllis.modern.ui.font.StringRenderer;
-import icyllis.modern.ui.master.DrawTools;
-import icyllis.modern.ui.master.GlobalAnimationManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureManager;
 import org.lwjgl.opengl.GL11;
@@ -36,7 +31,9 @@ import org.lwjgl.opengl.GL11;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class UIText extends UIElement<ITextBuilder> implements ITextBuilder, ITextAnimator {
+public class UIText extends UIElement<ITextBuilder> implements ITextBuilder {
+
+    public static final UIText DEFAULT = new UIText();
 
     private IFontRenderer renderer;
     private TextureManager textureManager;
@@ -55,9 +52,10 @@ public class UIText extends UIElement<ITextBuilder> implements ITextBuilder, ITe
         textureManager = Minecraft.getInstance().textureManager;
         text = () -> "";
         color = () -> 0xffffff;
-        alpha = () -> 1.0f;
         scale = () -> 1.0f;
         deco = s -> {};
+        GWtBW = s -> 0f;
+        GWtBH = s -> 0f;
     }
 
     @Override
@@ -67,14 +65,13 @@ public class UIText extends UIElement<ITextBuilder> implements ITextBuilder, ITe
         RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
         GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
         GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-        float x = renderX.get(), y = renderY.get();
         String text = this.text.get();
         float s = scale.get();
         if(s < 1) {
             RenderSystem.scalef(s, s, 1);
-            renderer.drawString(text,  x / s, y / s, color.get(), (int) (alpha.get() * 0xff), align / s);
+            renderer.drawString(text,  renderX / s, renderY / s, color.get(), (int) (alpha * 0xff), align / s);
         } else {
-            renderer.drawString(text, x, y, color.get(), (int) (alpha.get() * 0xff), align);
+            renderer.drawString(text, renderX, renderY, color.get(), (int) (alpha * 0xff), align);
         }
         deco.accept(s);
         RenderSystem.popMatrix();
@@ -116,17 +113,6 @@ public class UIText extends UIElement<ITextBuilder> implements ITextBuilder, ITe
             DrawTools.blit((x - 8) / s, (y + 0.5f) / s, 0, 8, 16, 16);
             DrawTools.blit((x + length * sc + 1) / s, (y + 0.5f) / s, 0, 8, 16, 16);
         };*/
-        return this;
-    }
-
-    @Override
-    public ITextAnimator animated() {
-        return this;
-    }
-
-    @Override
-    public ITextAnimator alpha(Consumer<IAlphaAnimation> a) {
-
         return this;
     }
 }

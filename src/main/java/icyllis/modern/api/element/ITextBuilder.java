@@ -35,6 +35,4 @@ public interface ITextBuilder extends IBaseBuilder<ITextBuilder> {
     ITextBuilder scale(Supplier<Float> scale);
 
     ITextBuilder style();
-
-    ITextAnimator animated();
 }

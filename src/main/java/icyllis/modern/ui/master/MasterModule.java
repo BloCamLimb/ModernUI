@@ -24,7 +24,6 @@ public class MasterModule {
         GlobalElementBuilder.INSTANCE.setReceiver(this, master);
         rawModule.accept(GlobalElementBuilder.INSTANCE);
         resize(width, height);
-        GlobalAnimationManager.INSTANCE.buildAnimations();
         rawModule = null;
     }
 

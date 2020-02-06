@@ -17,46 +17,25 @@ public class ModuleTest {
                 .tex(BACKGROUND)
                 .setRelPos(-128, -128)
                 .uv(0, 0)
-                .setSize(256, 256)
-                .animated()
-                .alpha(a -> a
-                        .translate(-1f)
-                        .fixedTiming(4f)
-                );
+                .setSize(256, 256);
         builder.texture()
                 .tex(FRAME)
                 .setRelPos(-128, -128)
                 .uv(0, 0)
                 .setSize(256, 256)
-                .color(() -> 0xeedc82)
-                .animated()
-                .alpha(a -> a
-                        .translate(-1f)
-                        .fixedTiming(4f)
-                );
+                .setTint(0xeedc82);
         builder.text()
                 .text(() -> TextFormatting.AQUA + "Please select a network")
                 .setRelPos(0, -73)
-                .align(0.25f)
-                .animated()
-                .alpha(a -> a
-                        .translate(-1)
-                        .fixedTiming(16.0f)
-                );
+                .align(0.25f);
         for (int i = 0; i < 7; i++) {
             int f = i;
             builder.navigation()
-                    .tex(e -> e
+                    .setTexture(e -> e
                             .tex(BUTTON)
                             .uv(16 * f, 0)
                             .setRelPos(18 * f - 76, -99)
                             .setSize(16, 16)
-                            .animated()
-                            .alpha(a -> a
-                                    .delay(f * 0.7f)
-                                    .translate(-1f)
-                                    .fixedTiming(2f)
-                            )
                     )
                     .setRelPos(18 * f - 76, -99)
                     .setSize(16, 16)
@@ -65,51 +44,34 @@ public class ModuleTest {
                             .align(0.25f)
                             .setRelPos(18 * f - 68, -109)
                     )
-                    .to(i);
+                    .setTarget(i);
         }
         builder.navigation()
-                .tex(e -> e
+                .setTexture(e -> e
                         .tex(BUTTON)
                         .uv(112, 0)
                         .setRelPos(60, -99)
                         .setSize(16, 16)
-                        .animated()
-                        .alpha(a -> a
-                                .delay(5f)
-                                .translate(-1f)
-                                .fixedTiming(2f)
-                        )
                 )
                 .setRelPos(60, -99)
                 .setSize(16, 16)
+                .onMouseHoverOn(g -> g.getTexture().uv(112, 16))
                 .text(e -> e
                         .text(() -> "Create New Network")
                         .align(0.25f)
                         .setRelPos(68, -109)
                 )
-                .to(7);
+                .setTarget(7);
         builder.text()
                 .text(() -> "INFORMATION")
                 .setRelPos(-68, -58)
                 .scale(() -> 0.8f)
-                .style()
-                .animated()
-                .alpha(a -> a
-                        .delay(2)
-                        .translate(-1)
-                        .fixedTiming(4)
-                );
+                .style();
         builder.text()
                 .text(() -> "CONNECTION")
                 .setRelPos(-68, 0)
                 .scale(() -> 0.8f)
-                .style()
-                .animated()
-                .alpha(a -> a
-                        .delay(4f)
-                        .translate(-1)
-                        .fixedTiming(4)
-                );
+                .style();
 
     }
 

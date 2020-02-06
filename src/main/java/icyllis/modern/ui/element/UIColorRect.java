@@ -18,19 +18,17 @@
 
 package icyllis.modern.ui.element;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modern.api.animation.IAnimationBuilder;
 import icyllis.modern.api.element.IColorBuilder;
-import icyllis.modern.ui.animation.UniversalAnimation;
 import icyllis.modern.ui.master.DrawTools;
 import icyllis.modern.ui.master.GlobalAnimationManager;
-import icyllis.modern.ui.master.GlobalElementBuilder;
 
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 public class UIColorRect extends UIElement<IColorBuilder> implements IColorBuilder {
 
-    private Supplier<Float> colorR, colorG, colorB;
+    private float colorR, colorG, colorB;
 
     public UIColorRect() {
 
@@ -38,37 +36,36 @@ public class UIColorRect extends UIElement<IColorBuilder> implements IColorBuild
 
     @Override
     public void draw() {
-        float x = renderX.get();
-        float y = renderY.get();
-        DrawTools.fillRectWithColor(x, y, x + sizeW.get(), y + sizeH.get(), colorR.get(), colorG.get(), colorB.get(), alpha.get());
+        RenderSystem.enableAlphaTest();
+        DrawTools.fillRectWithColor(renderX, renderY, renderX + sizeW, renderY + sizeH, colorR, colorG, colorB, alpha);
     }
 
     @Override
     public IColorBuilder setColor(int rgb) {
-        float r = (float)(rgb >> 16 & 255) / 255.0F;
-        float g = (float)(rgb >> 8 & 255) / 255.0F;
-        float b = (float)(rgb & 255) / 255.0F;
-        colorR = () -> r;
-        colorG = () -> g;
-        colorB = () -> b;
+        float r = (rgb >> 16 & 255) / 255.0f;
+        float g = (rgb >> 8 & 255) / 255.0f;
+        float b = (rgb & 255) / 255.0f;
+        colorR = r;
+        colorG = g;
+        colorB = b;
         return this;
     }
 
     @Override
     public IColorBuilder applyToX(Consumer<IAnimationBuilder> animation) {
-        GlobalAnimationManager.INSTANCE.scheduleAnimationBuild(() -> renderX = GlobalAnimationManager.INSTANCE.create(animation, renderX.get()));
+        GlobalAnimationManager.INSTANCE.create(animation, a -> renderX = a);
         return this;
     }
 
     @Override
     public IColorBuilder applyToA(Consumer<IAnimationBuilder> animation) {
-        GlobalAnimationManager.INSTANCE.scheduleAnimationBuild(() -> alpha = GlobalAnimationManager.INSTANCE.create(animation, alpha.get()));
+        GlobalAnimationManager.INSTANCE.create(animation, a -> alpha = a);
         return this;
     }
 
     @Override
     public IColorBuilder applyToW(Consumer<IAnimationBuilder> animation) {
-        GlobalAnimationManager.INSTANCE.scheduleAnimationBuild(() -> sizeW = GlobalAnimationManager.INSTANCE.create(animation, sizeW.get()));
+        GlobalAnimationManager.INSTANCE.create(animation, a -> sizeW = a);
         return this;
     }
 }
