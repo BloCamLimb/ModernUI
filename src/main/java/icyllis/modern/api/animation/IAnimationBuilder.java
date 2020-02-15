@@ -18,6 +18,8 @@
 
 package icyllis.modern.api.animation;
 
+import java.util.function.Function;
+
 public interface IAnimationBuilder {
 
     /**
@@ -35,15 +37,37 @@ public interface IAnimationBuilder {
     IAnimationBuilder setTarget(float target);
 
     /**
-     * Set the change related to init value
-     * @param translate translate
+     * Set the init value, ONLY for position or size if needed
+     * @param init given game window width/height
      * @return builder
      */
-    IAnimationBuilder setTranslate(float translate);
+    IAnimationBuilder setInit(Function<Integer, Float> init);
 
+    /**
+     * Set the target value, ONLY for position or size if needed
+     * @param target given game window width/height
+     * @return builder
+     */
+    IAnimationBuilder setTarget(Function<Integer, Float> target);
+
+    /**
+     * Delay animation start after being created
+     * @param delay partial ticks (20.0 = 1s)
+     * @return builder
+     */
     IAnimationBuilder setDelay(float delay);
 
+    /**
+     * Set animation duration
+     * @param timing partial ticks (20.0 = 1s)
+     * @return builder
+     */
     IAnimationBuilder setTiming(float timing);
 
+    /**
+     * Set motion type. Default is Uniform
+     * @param type type
+     * @return builder
+     */
     IAnimationBuilder setMotion(MotionType type);
 }

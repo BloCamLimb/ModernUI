@@ -23,7 +23,7 @@ import java.util.function.Function;
 public interface IBaseBuilder<T extends IBaseBuilder> {
 
     /**
-     * Set element absolute position
+     * Set element absolute position. (0,0) will be top left corner
      * @param x x position
      * @param y y position
      * @return builder
@@ -31,12 +31,12 @@ public interface IBaseBuilder<T extends IBaseBuilder> {
     T setAbsPos(float x, float y);
 
     /**
-     * Set element absolute position
+     * Set element relative position to given window size.
      * @param x given game window width, return x position
      * @param y given game window height, return y position
      * @return builder
      */
-    T setAbsPos(Function<Integer, Float> x, Function<Integer, Float> y);
+    T setRelPos(Function<Integer, Float> x, Function<Integer, Float> y);
 
     /**
      * Set element relative position to window center. (0,0) will be at crosshair
@@ -63,7 +63,8 @@ public interface IBaseBuilder<T extends IBaseBuilder> {
     T setSize(Function<Integer, Float> w, Function<Integer, Float> h);
 
     /**
-     * Set initial alpha value, default is 1.0f
+     * Set initial constant alpha value, default is 1.0f.
+     * You don't need this method if you create animation for alpha.
      * @param a alpha
      * @return builder
      */

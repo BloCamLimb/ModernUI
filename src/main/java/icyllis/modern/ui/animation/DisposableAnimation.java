@@ -22,12 +22,15 @@ import icyllis.modern.api.animation.IAnimationBuilder;
 import icyllis.modern.api.animation.MotionType;
 
 import java.util.function.Consumer;
+import java.util.function.Function;
 
-public class UniversalAnimation implements IAnimationBuilder {
+public class DisposableAnimation implements IAnimationBuilder {
 
     protected float value;
 
     protected float initValue;
+
+    protected Function<Integer, Float> GWtBI, GWtBT;
 
     protected float targetValue, startTime, fixedTiming;
 
@@ -37,7 +40,7 @@ public class UniversalAnimation implements IAnimationBuilder {
 
     private Consumer<Float> receiver;
 
-    public UniversalAnimation(float startTime, Consumer<Float> receiver) {
+    public DisposableAnimation(float startTime, Consumer<Float> receiver) {
         this.startTime = startTime;
         this.receiver = receiver;
     }
@@ -84,18 +87,26 @@ public class UniversalAnimation implements IAnimationBuilder {
     @Override
     public IAnimationBuilder setInit(float init) {
         initValue = init;
+        GWtBI = s -> init;
         return this;
     }
 
     @Override
     public IAnimationBuilder setTarget(float target) {
         targetValue = target;
+        GWtBT = s -> target;
         return this;
     }
 
     @Override
-    public IAnimationBuilder setTranslate(float translate) {
-        targetValue = initValue + translate;
+    public IAnimationBuilder setInit(Function<Integer, Float> init) {
+        GWtBI = init;
+        return this;
+    }
+
+    @Override
+    public IAnimationBuilder setTarget(Function<Integer, Float> target) {
+        GWtBT = target;
         return this;
     }
 

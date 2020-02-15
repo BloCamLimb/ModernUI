@@ -14,7 +14,7 @@ void main() {
     vec4 blurred = vec4(0.0);
 
     float aa = 0.0;
-    float pr = floor(1.5 * Progress);
+    float pr = floor(2.0 * Progress);
 
     for(float r = -pr; r <= pr; r += 1.0) {
         vec4 sample0 = texture2D(DiffuseSampler, texCoord + oneTexel * r * BlurDir);

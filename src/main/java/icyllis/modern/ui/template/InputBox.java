@@ -1,11 +1,8 @@
-package icyllis.modern.ui.button;
+package icyllis.modern.ui.template;
 
 import icyllis.modern.ui.element.UIButton;
 import icyllis.modern.ui.font.IFontRenderer;
 import icyllis.modern.ui.font.StringRenderer;
-import icyllis.modern.ui.master.DrawTools;
-import net.minecraft.util.SharedConstants;
-import net.minecraft.util.math.MathHelper;
 
 import java.util.function.Predicate;
 

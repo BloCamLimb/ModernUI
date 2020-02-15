@@ -16,9 +16,10 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modern.api.element;
+package icyllis.modern.ui.element;
 
-public interface INavigationGetter extends IBaseGetter {
-
-    ITextureBuilder getTexture();
+/**
+ * Universal
+ */
+public class Widget {
 }

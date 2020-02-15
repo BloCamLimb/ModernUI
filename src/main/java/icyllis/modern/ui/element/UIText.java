@@ -45,15 +45,12 @@ public class UIText extends UIElement<ITextBuilder> implements ITextBuilder {
     private Supplier<Integer> color;
     private Supplier<Float> scale;
 
-    private Consumer<Float> deco;
-
     public UIText() {
         renderer = StringRenderer.STRING_RENDERER;
         textureManager = Minecraft.getInstance().textureManager;
         text = () -> "";
         color = () -> 0xffffff;
         scale = () -> 1.0f;
-        deco = s -> {};
         GWtBW = s -> 0f;
         GWtBH = s -> 0f;
     }
@@ -73,7 +70,6 @@ public class UIText extends UIElement<ITextBuilder> implements ITextBuilder {
         } else {
             renderer.drawString(text, renderX, renderY, color.get(), (int) (alpha * 0xff), align);
         }
-        deco.accept(s);
         RenderSystem.popMatrix();
     }
 

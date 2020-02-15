@@ -22,6 +22,6 @@ public enum MotionType {
     UNIFORM,
     SINE, // 0 ~ π/2
     COSINE, // 0 ~ π/2
-    SINE_EXTENDED, // fast cosine to sine
-    COSINE_EXTENDED; // fast sine to cosine
+    SINE_EXTENDED, // fast cosine to normal sine
+    COSINE_EXTENDED; // fast sine to normal cosine
 }

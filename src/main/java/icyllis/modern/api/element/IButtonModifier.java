@@ -16,31 +16,9 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modern.ui.button;
+package icyllis.modern.api.element;
 
-import icyllis.modern.api.element.IBaseGetter;
+public interface IButtonModifier extends IBaseModifier {
 
-import java.util.function.Consumer;
 
-public class InternalEvent<T extends IBaseGetter> {
-
-    public static int MOUSE_HOVER_ON = 1;
-    public static int MOUSE_HOVER_OFF = 2;
-
-    private final int id;
-
-    private final Consumer<T> consumer;
-
-    public InternalEvent(int id, Consumer<T> consumer) {
-        this.id = id;
-        this.consumer = consumer;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void run(T t) {
-        consumer.accept(t);
-    }
 }

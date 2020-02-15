@@ -2,7 +2,9 @@ package icyllis.modern.api.element;
 
 import java.util.function.Consumer;
 
-public interface IButtonBuilder<T extends IButtonBuilder> extends IBaseBuilder<T> {
+public interface IButtonBuilder extends IBaseBuilder<IButtonBuilder> {
 
-    T text(Consumer<ITextBuilder> consumer);
+    IButtonBuilder onMouseHoverOn(Consumer<IButtonModifier> consumer);
+
+    IButtonBuilder onMouseHoverOff(Consumer<IButtonModifier> consumer);
 }

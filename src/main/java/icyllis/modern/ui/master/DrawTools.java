@@ -8,10 +8,10 @@ import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 public class DrawTools {
 
     public static void fillRectWithColor(float left, float top, float right, float bottom, int color) {
-        float a = (float)(color >> 24 & 255) / 255.0F;
-        float r = (float)(color >> 16 & 255) / 255.0F;
-        float g = (float)(color >> 8 & 255) / 255.0F;
-        float b = (float)(color & 255) / 255.0F;
+        float a = (float) (color >> 24 & 255) / 255.0F;
+        float r = (float) (color >> 16 & 255) / 255.0F;
+        float g = (float) (color >> 8 & 255) / 255.0F;
+        float b = (float) (color & 255) / 255.0F;
         fillRectWithColor(left, top, right, bottom, r, g, b, a);
     }
 

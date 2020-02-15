@@ -16,9 +16,26 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modern.ui.button;
+package icyllis.modern.ui.template;
 
-import icyllis.modern.ui.element.UIButton;
+import icyllis.modern.ui.element.UIElement;
+import icyllis.modern.ui.master.DrawTools;
 
-public class NormalButton extends UIButton {
+/**
+ * Commonly used
+ */
+public final class EBackground extends UIElement<INullBuilder> {
+
+    private int width, height;
+
+    @Override
+    public void draw() {
+        DrawTools.fillRectWithColor(0, 0, width, height, 0x75000000);
+    }
+
+    @Override
+    public void resize(int width, int height) {
+        this.width = width;
+        this.height = height;
+    }
 }

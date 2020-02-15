@@ -16,16 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modern.impl.ingamemenu;
+package icyllis.modern.api.element;
 
-import icyllis.modern.ui.master.UniversalModernScreen;
-
-public final class GuiIngameMenu extends UniversalModernScreen {
-
-    public GuiIngameMenu(boolean isFullMenu) {
-        super(l -> {
-            ModulesIngameMenu m = new ModulesIngameMenu();
-            l.add(m::createDefault);
-        });
-    }
+public interface IBaseModifier {
 }

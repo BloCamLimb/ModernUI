@@ -20,11 +20,14 @@ package icyllis.modern.system;
 
 import it.unimi.dsi.fastutil.objects.Object2IntArrayMap;
 import javafx.util.Pair;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@OnlyIn(Dist.CLIENT)
 public class HistoryRecorder {
 
     private static final Object2IntArrayMap<String> EMOJI_MAP = new Object2IntArrayMap<>();

@@ -1,12 +1,8 @@
 package icyllis.modern.system;
 
-import cpw.mods.modlauncher.api.ITransformationService;
-import cpw.mods.modlauncher.api.ITransformer;
-import icyllis.modern.api.ModernUIApi;
 import icyllis.modern.ui.blur.BlurHandler;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screen.IngameMenuScreen;
-import net.minecraft.data.SNBTToNBTConverter;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,8 +18,7 @@ public class ModernUI {
     public static final Marker MARKER = MarkerManager.getMarker("MAIN");
 
     public ModernUI() {
-        ModernUI.LOGGER.info(MARKER, "{} has been initialized", ModernUIApi.INSTANCE.getDeclaringClass().getSimpleName());
-        ModernUI.LOGGER.info(MARKER, "{} has been initialized", BlurHandler.INSTANCE.getDeclaringClass().getSimpleName());
+        DistExecutor.runWhenOn(Dist.CLIENT, () -> () -> ModernUI.LOGGER.info(MARKER, "{} has been initialized", BlurHandler.INSTANCE.getDeclaringClass().getSimpleName()));
     }
 
 }

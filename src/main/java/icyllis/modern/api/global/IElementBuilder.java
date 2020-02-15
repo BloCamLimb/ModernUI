@@ -16,8 +16,6 @@ public interface IElementBuilder {
 
     ITextureBuilder texture();
 
-    INavigationBuilder navigation();
-
     IColorBuilder colorRect();
 
     void input();

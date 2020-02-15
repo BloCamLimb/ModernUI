@@ -56,7 +56,7 @@ public enum BlurHandler {
 
     BlurHandler() {
         shaders = ObfuscationReflectionHelper.findField(ShaderGroup.class, "field_148031_d");
-        DistExecutor.runWhenOn(Dist.CLIENT, () -> this::loadResourcePack);
+        this.loadResourcePack();
     }
 
     private void loadResourcePack() {

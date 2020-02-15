@@ -22,6 +22,8 @@ import cpw.mods.modlauncher.api.IEnvironment;
 import cpw.mods.modlauncher.api.ITransformationService;
 import cpw.mods.modlauncher.api.ITransformer;
 import icyllis.modern.system.ModernUI;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -55,7 +57,9 @@ public class TransformationService implements ITransformationService {
     @Override
     public List<ITransformer> transformers() {
         List<ITransformer> list = new ArrayList<>();
-        list.add(new ScreenTransformer());
+        DistExecutor.runWhenOn(Dist.CLIENT, () -> () -> {
+            list.add(new ScreenTransformer());
+        });
         return list;
     }
 }

@@ -26,17 +26,16 @@ import icyllis.modern.ui.master.GlobalAnimationManager;
 
 import java.util.function.Consumer;
 
-public class UIColorRect extends UIElement<IColorBuilder> implements IColorBuilder {
+public class UIRectangle extends UIElement<IColorBuilder> implements IColorBuilder {
 
     private float colorR, colorG, colorB;
 
-    public UIColorRect() {
+    public UIRectangle() {
 
     }
 
     @Override
     public void draw() {
-        RenderSystem.enableAlphaTest();
         DrawTools.fillRectWithColor(renderX, renderY, renderX + sizeW, renderY + sizeH, colorR, colorG, colorB, alpha);
     }
 
