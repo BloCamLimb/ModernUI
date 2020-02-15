@@ -1,25 +1,10 @@
-package icyllis.modern.ui.button;
-
-import com.mojang.blaze3d.platform.GlStateManager;
-import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modern.api.element.INavigationBuilder;
-import icyllis.modern.api.element.INavigationGetter;
-import icyllis.modern.api.element.ITextureBuilder;
-import icyllis.modern.system.ModernUI;
-import icyllis.modern.ui.element.UIButton;
-import icyllis.modern.ui.element.UITexture;
-import org.lwjgl.opengl.GL11;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
+package icyllis.modern.ui.template;
 
 /**
  * A button to switch module
  */
-public class NavigationButton extends UIButton<INavigationBuilder> implements INavigationBuilder, INavigationGetter {
-
-    private List<InternalEvent<INavigationGetter>> events = new ArrayList<>();
+@Deprecated
+public class NavigationButton { /*extends UIButton<INavigationBuilder, INavigationModifier> implements INavigationBuilder, INavigationModifier {
 
     private UITexture texture;
 
@@ -55,13 +40,13 @@ public class NavigationButton extends UIButton<INavigationBuilder> implements IN
     }
 
     @Override
-    public INavigationBuilder onMouseHoverOn(Consumer<INavigationGetter> consumer) {
+    public INavigationBuilder onMouseHoverOn(Consumer<INavigationModifier> consumer) {
         events.add(new InternalEvent<>(InternalEvent.MOUSE_HOVER_ON, consumer));
         return this;
     }
 
     @Override
-    public INavigationBuilder onMouseHoverOff(Consumer<INavigationGetter> consumer) {
+    public INavigationBuilder onMouseHoverOff(Consumer<INavigationModifier> consumer) {
         events.add(new InternalEvent<>(InternalEvent.MOUSE_HOVER_OFF, consumer));
         return this;
     }
@@ -85,5 +70,5 @@ public class NavigationButton extends UIButton<INavigationBuilder> implements IN
     @Override
     public ITextureBuilder getTexture() {
         return texture;
-    }
+    }*/
 }

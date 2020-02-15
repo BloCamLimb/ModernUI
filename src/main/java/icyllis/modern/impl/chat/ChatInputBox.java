@@ -18,7 +18,6 @@
 
 package icyllis.modern.impl.chat;
 
-import icyllis.modern.api.element.IButtonBuilder;
 import icyllis.modern.ui.element.UIButton;
 import icyllis.modern.ui.font.EmojiStringRenderer;
 import icyllis.modern.ui.font.IFontRenderer;
@@ -35,7 +34,7 @@ import java.util.function.Predicate;
 /**
  * Double lined, intended for chat bar
  */
-public final class ChatInputBox extends UIButton<IButtonBuilder> {
+public final class ChatInputBox extends UIButton {
 
     private final IFontRenderer renderer = EmojiStringRenderer.INSTANCE;
 
@@ -214,7 +213,7 @@ public final class ChatInputBox extends UIButton<IButtonBuilder> {
                     }
                     return true;
                 case GLFW.GLFW_KEY_UP:
-                    if(isDoubleLined & cursor > firstLength) {
+                    if(isDoubleLined && cursor > firstLength) {
                         setCursorSafety(renderer.sizeStringToWidth(text, renderer.getStringWidth(text.substring(firstLength, cursor)) + 1.0f));
                     }
                     return true;

@@ -16,7 +16,10 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modern.api.element;
+package icyllis.modern.ui.template;
 
-public interface IBaseGetter {
+import icyllis.modern.api.element.IBaseBuilder;
+
+public interface INullBuilder extends IBaseBuilder<INullBuilder> {
+
 }

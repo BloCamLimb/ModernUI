@@ -21,10 +21,9 @@ package icyllis.modern.ui.element;
 import icyllis.modern.api.element.IBaseBuilder;
 
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 @SuppressWarnings("unchecked")
-public abstract class UIElement<T extends IBaseBuilder> implements IBaseBuilder<T> {
+public abstract class UIElement<T extends IBaseBuilder<T>> implements IBaseBuilder<T> {
 
     /**
      * Game Window to Base X/Y/W/H
@@ -38,7 +37,7 @@ public abstract class UIElement<T extends IBaseBuilder> implements IBaseBuilder<
 
     protected float alpha = 1.0f;
 
-    UIElement() {
+    public UIElement() {
 
     }
 
@@ -63,7 +62,7 @@ public abstract class UIElement<T extends IBaseBuilder> implements IBaseBuilder<
     }
 
     @Override
-    public T setAbsPos(Function<Integer, Float> x, Function<Integer, Float> y) {
+    public T setRelPos(Function<Integer, Float> x, Function<Integer, Float> y) {
         GWtBX = x;
         GWtBY = y;
         return (T) this;

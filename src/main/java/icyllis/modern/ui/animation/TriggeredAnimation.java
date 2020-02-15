@@ -23,12 +23,12 @@ import java.util.function.Consumer;
 /**
  * Returnable, Real-time
  */
-public class StatusAnimation extends UniversalAnimation {
+public class TriggeredAnimation extends DisposableAnimation {
 
     private boolean running = false;
     private boolean status = false;
 
-    public StatusAnimation(Consumer<Float> receiver) {
+    public TriggeredAnimation(Consumer<Float> receiver) {
         super(Integer.MAX_VALUE, receiver);
     }
 

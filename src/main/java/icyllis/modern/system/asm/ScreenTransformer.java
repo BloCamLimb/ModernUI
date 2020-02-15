@@ -21,7 +21,10 @@ package icyllis.modern.system.asm;
 import cpw.mods.modlauncher.api.ITransformer;
 import cpw.mods.modlauncher.api.ITransformerVotingContext;
 import cpw.mods.modlauncher.api.TransformerVoteResult;
+import icyllis.modern.system.ModernUI;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.config.ModConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,6 +41,7 @@ import static org.objectweb.asm.Opcodes.NEW;
 /**
  * Transform all new instance for vanilla screens
  */
+@OnlyIn(Dist.CLIENT)
 public class ScreenTransformer implements ITransformer<MethodNode> {
 
     private static Logger LOGGER = LogManager.getLogger();
@@ -52,11 +56,11 @@ public class ScreenTransformer implements ITransformer<MethodNode> {
         while (iterator.hasNext()) {
             inst = iterator.next();
             if (inst.getOpcode() == NEW) {
-                cast = new TypeInsnNode(NEW, "icyllis/modern/impl/ingamemenu/GuiIngameMenu");
+                cast = new TypeInsnNode(NEW, "icyllis/modern/impl/GuiIngameMenu");
                 list.set(inst, cast);
             }
             if (inst.getOpcode() == INVOKESPECIAL) {
-                cast = new MethodInsnNode(INVOKESPECIAL, "icyllis/modern/impl/ingamemenu/GuiIngameMenu", "<init>", "(Z)V", false);
+                cast = new MethodInsnNode(INVOKESPECIAL, "icyllis/modern/impl/GuiIngameMenu", "<init>", "(Z)V", false);
                 list.set(inst, cast);
             }
         }

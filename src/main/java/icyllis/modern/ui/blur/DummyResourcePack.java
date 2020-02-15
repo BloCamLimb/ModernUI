@@ -49,13 +49,13 @@ public class DummyResourcePack implements IResourcePack {
 
     @Nonnull
     @Override
-    public InputStream getRootResourceStream(String fileName) throws IOException {
+    public InputStream getRootResourceStream(@Nonnull String fileName) throws IOException {
         return Files.newInputStream(MF.findResource("assets/" + ModernUI.MODID + "/" + fileName));
     }
 
     @Nonnull
     @Override
-    public InputStream getResourceStream(ResourcePackType type, ResourceLocation location) throws IOException {
+    public InputStream getResourceStream(@Nonnull ResourcePackType type, @Nonnull ResourceLocation location) throws IOException {
         if (type == ResourcePackType.CLIENT_RESOURCES && location.getNamespace().equals("minecraft") && location.getPath().startsWith("shaders/")) {
             try {
                 return Files.newInputStream(MF.findResource("assets/" + ModernUI.MODID + "/" + location.getPath()));
@@ -68,12 +68,12 @@ public class DummyResourcePack implements IResourcePack {
 
     @Nonnull
     @Override
-    public Collection<ResourceLocation> getAllResourceLocations(ResourcePackType type, String namespaceIn, String pathIn, int maxDepthIn, Predicate<String> filterIn) {
+    public Collection<ResourceLocation> getAllResourceLocations(@Nonnull ResourcePackType type, @Nonnull String namespaceIn, @Nonnull String pathIn, int maxDepthIn, @Nonnull Predicate<String> filterIn) {
         return Collections.emptyList();
     }
 
     @Override
-    public boolean resourceExists(ResourcePackType type, ResourceLocation location) {
+    public boolean resourceExists(@Nonnull ResourcePackType type, @Nonnull ResourceLocation location) {
         return type == ResourcePackType.CLIENT_RESOURCES
                 && location.getNamespace().equals("minecraft")
                 && location.getPath().startsWith("shaders/")
@@ -82,7 +82,7 @@ public class DummyResourcePack implements IResourcePack {
 
     @Nonnull
     @Override
-    public Set<String> getResourceNamespaces(ResourcePackType type) {
+    public Set<String> getResourceNamespaces(@Nonnull ResourcePackType type) {
         return type == ResourcePackType.CLIENT_RESOURCES ? ImmutableSet.of("minecraft") : Collections.emptySet();
     }
 

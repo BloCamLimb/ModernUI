@@ -2,38 +2,35 @@ package icyllis.modern.ui.element;
 
 import icyllis.modern.api.element.*;
 import net.minecraft.client.gui.IGuiEventListener;
+import net.minecraft.util.math.shapes.VoxelShape;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
-@SuppressWarnings("unchecked")
-public abstract class UIButton<T extends IButtonBuilder> extends UIElement<T> implements IButtonBuilder<T>, IGuiEventListener {
+/**
+ * Button is an advanced element that can be interacted with mouse and keyboard and trigger something
+ * Generally used in widget with other element
+ */
+public class UIButton extends UIElement<IButtonBuilder> implements IButtonBuilder, IButtonModifier, IGuiEventListener {
 
-    /** is mouse hovered on this **/
+    /** whether mouse hovered on this **/
     protected boolean mouseHovered;
 
-    /** is this visible, is cursor focused on this **/
+    /** whether cursor focused on this **/
     protected boolean visible = true, focused = false;
 
-    /** text to show something **/
-    protected UIText textLine = UIText.DEFAULT;
+    protected List<Event<IButtonModifier>> events = new ArrayList<>();
 
     @Override
     public void draw() {
-
-    }
-
-    @Override
-    public T text(Consumer<ITextBuilder> consumer) {
-        UIText u = new UIText();
-        consumer.accept(u);
-        textLine = u;
-        return (T) this;
+        // NOTHING TO RENDER
     }
 
     @Override
     public void mouseMoved(double mouseX, double mouseY) {
         boolean b = mouseHovered;
-        mouseHovered = isMouseInRange(mouseX, mouseY);
+        this.mouseHovered = isMouseInRange(mouseX, mouseY);
         if (b != mouseHovered) {
             onMouseHoverChanged();
         }
@@ -56,22 +53,60 @@ public abstract class UIButton<T extends IButtonBuilder> extends UIElement<T> im
     }
 
     protected void onMouseHoverChanged() {
-
+        if (mouseHovered) {
+            events.stream().filter(e -> e.getId() == Event.MOUSE_HOVER_ON).forEach(a -> a.run(this));
+        } else {
+            events.stream().filter(e -> e.getId() == Event.MOUSE_HOVER_OFF).forEach(a -> a.run(this));
+        }
     }
 
-    protected void onFocusChanged(boolean focused) {
+    protected void onFocusChanged() {
 
     }
 
     @Override
     public void resize(int width, int height) {
         super.resize(width, height);
-        textLine.resize(width, height);
     }
 
     @Override
     public boolean changeFocus(boolean p_changeFocus_1_) {
         focused = !focused;
         return focused;
+    }
+
+    @Override
+    public IButtonBuilder onMouseHoverOn(Consumer<IButtonModifier> consumer) {
+        events.add(new Event<>(Event.MOUSE_HOVER_ON, consumer));
+        return this;
+    }
+
+    @Override
+    public IButtonBuilder onMouseHoverOff(Consumer<IButtonModifier> consumer) {
+        events.add(new Event<>(Event.MOUSE_HOVER_OFF, consumer));
+        return this;
+    }
+
+    public static final class Event<T extends IBaseModifier> {
+
+        public static int MOUSE_HOVER_ON = 1;
+        public static int MOUSE_HOVER_OFF = 2;
+
+        private final int id;
+
+        private final Consumer<T> consumer;
+
+        public Event(int id, Consumer<T> consumer) {
+            this.id = id;
+            this.consumer = consumer;
+        }
+
+        public int getId() {
+            return id;
+        }
+
+        public void run(T t) {
+            consumer.accept(t);
+        }
     }
 }

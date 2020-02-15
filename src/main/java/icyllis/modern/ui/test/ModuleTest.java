@@ -28,7 +28,7 @@ public class ModuleTest {
                 .text(() -> TextFormatting.AQUA + "Please select a network")
                 .setRelPos(0, -73)
                 .align(0.25f);
-        for (int i = 0; i < 7; i++) {
+        /*for (int i = 0; i < 7; i++) {
             int f = i;
             builder.navigation()
                     .setTexture(e -> e
@@ -61,7 +61,7 @@ public class ModuleTest {
                         .align(0.25f)
                         .setRelPos(68, -109)
                 )
-                .setTarget(7);
+                .setTarget(7);*/
         builder.text()
                 .text(() -> "INFORMATION")
                 .setRelPos(-68, -58)

@@ -1,7 +1,7 @@
 package icyllis.modern.ui.master;
 
 import icyllis.modern.api.animation.IAnimationBuilder;
-import icyllis.modern.ui.animation.UniversalAnimation;
+import icyllis.modern.ui.animation.DisposableAnimation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -14,7 +14,7 @@ public class GlobalAnimationManager {
 
     public static final GlobalAnimationManager INSTANCE = new GlobalAnimationManager();
 
-    private final List<UniversalAnimation> animations = new ArrayList<>();
+    private final List<DisposableAnimation> animations = new ArrayList<>();
 
     private int timer = 0;
     private float time = 0; // unit ticks
@@ -30,7 +30,7 @@ public class GlobalAnimationManager {
     public void renderTick(float partialTick) {
         time = timer + partialTick;
         animations.forEach(a -> a.update(time));
-        animations.removeIf(UniversalAnimation::isFinish);
+        animations.removeIf(DisposableAnimation::isFinish);
     }
 
     public void resetTimer() {
@@ -38,8 +38,8 @@ public class GlobalAnimationManager {
         timer = 0;
     }
 
-    public UniversalAnimation create(Consumer<IAnimationBuilder> builder, Consumer<Float> receiver) {
-        UniversalAnimation a = new UniversalAnimation(time, receiver);
+    public DisposableAnimation create(Consumer<IAnimationBuilder> builder, Consumer<Float> receiver) {
+        DisposableAnimation a = new DisposableAnimation(time, receiver);
         builder.accept(a);
         animations.add(a);
         return a;

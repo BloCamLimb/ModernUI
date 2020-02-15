@@ -13,6 +13,7 @@ import net.minecraftforge.event.entity.player.PlayerContainerEvent;
 import net.minecraftforge.fml.network.NetworkDirection;
 import net.minecraftforge.fml.network.NetworkRegistry;
 import net.minecraftforge.fml.network.simple.SimpleChannel;
+import org.apache.commons.codec.digest.DigestUtils;
 
 import java.util.function.Consumer;
 
@@ -21,11 +22,13 @@ import static icyllis.modern.system.PlayMessages.*;
 public enum NetworkHandler implements INetworkHandler {
     INSTANCE;
 
+    private final String protocol = "mui-net-1-1";
+
     private SimpleChannel CHANNEL = NetworkRegistry.ChannelBuilder
-            .named(new ResourceLocation(ModernUI.MODID, "network"))
-            .networkProtocolVersion(() -> "1")
-            .clientAcceptedVersions(s -> true)
-            .serverAcceptedVersions(s -> true)
+            .named(new ResourceLocation(ModernUI.MODID, "mui-net-1"))
+            .networkProtocolVersion(() -> protocol)
+            .clientAcceptedVersions(protocol::equals)
+            .serverAcceptedVersions(protocol::equals)
             .simpleChannel();
     {
         registerMessages();

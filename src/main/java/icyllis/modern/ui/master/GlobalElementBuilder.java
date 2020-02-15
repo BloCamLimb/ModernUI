@@ -1,14 +1,12 @@
 package icyllis.modern.ui.master;
 
 import icyllis.modern.api.element.IColorBuilder;
-import icyllis.modern.api.element.INavigationBuilder;
 import icyllis.modern.api.element.ITextBuilder;
 import icyllis.modern.api.element.ITextureBuilder;
 import icyllis.modern.api.global.IElementBuilder;
-import icyllis.modern.ui.button.InputBox;
-import icyllis.modern.ui.button.NavigationButton;
-import icyllis.modern.ui.element.UIBackground;
-import icyllis.modern.ui.element.UIColorRect;
+import icyllis.modern.ui.element.UIRectangle;
+import icyllis.modern.ui.template.InputBox;
+import icyllis.modern.ui.template.EBackground;
 import icyllis.modern.ui.element.UIText;
 import icyllis.modern.ui.element.UITexture;
 import net.minecraft.network.PacketBuffer;
@@ -38,7 +36,7 @@ public class GlobalElementBuilder implements IElementBuilder {
 
     @Override
     public void defaultBackground() {
-        UIBackground u = new UIBackground();
+        EBackground u = new EBackground();
         receiver.addElement(u);
     }
 
@@ -57,16 +55,8 @@ public class GlobalElementBuilder implements IElementBuilder {
     }
 
     @Override
-    public INavigationBuilder navigation() {
-        NavigationButton b = new NavigationButton();
-        receiver.addElement(b);
-        master.addChild(b);
-        return b;
-    }
-
-    @Override
     public IColorBuilder colorRect() {
-        UIColorRect u = new UIColorRect();
+        UIRectangle u = new UIRectangle();
         receiver.addElement(u);
         return u;
     }
