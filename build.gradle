@@ -14,7 +14,7 @@ apply plugin: 'java-library'
 apply plugin: 'maven-publish'
 
 version = '${minecraft_version}-${mod_version}-2'
-group = 'icyllis.modern'
+group = 'icyllis.modernui'
 archivesBaseName = 'ModernUI'
 
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
@@ -32,7 +32,7 @@ minecraft {
             property 'forge.logging.console.level', 'debug'
 
             mods {
-                modern {
+                modernui {
                     source sourceSets.main
                 }
             }
@@ -45,7 +45,7 @@ minecraft {
             property 'forge.logging.console.level', 'debug'
 
             mods {
-                modern {
+                modernui {
                     source sourceSets.main
                 }
             }
@@ -60,7 +60,7 @@ minecraft {
             args '--mod', 'modern', '--all', '--output', file('src/generated/resources/')
 
             mods {
-                modern {
+                modernui {
                     source sourceSets.main
                 }
             }
@@ -71,7 +71,7 @@ minecraft {
 repositories {
     flatDir {
         // local libs
-        dirs 'lib'
+        dirs 'libs'
     }
     maven {
         // location of the maven that hosts JEI files
