@@ -1,6 +1,6 @@
 package icyllis.modernui.gui.element;
 
-import icyllis.modernui.api.element.*;
+import icyllis.modernui.api.builder.IEventListenerInitializer;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.gui.IGuiEventListener;
 
@@ -13,14 +13,14 @@ import java.util.function.Function;
  * An advanced element that can be interacted with mouse and keyboard and trigger something
  * Generally used in widget with other element
  */
-public class EventListener implements IEventListenerBuilder, IGuiEventListener {
+public class EventListener<T> implements IEventListenerInitializer, IGuiEventListener {
 
-    private final Widget widget;
+    private final T host;
 
-    protected Function<Integer, Float> GWtBX, GWtBY;
+    protected Function<Integer, Float> fakeX, fakeY;
 
     /** whether mouse hovered on this **/
-    protected boolean mouseHovered;
+    protected boolean mouseHovered = false;
 
     /** whether cursor focused on this **/
     protected boolean available = true, focused = false;
@@ -32,21 +32,21 @@ public class EventListener implements IEventListenerBuilder, IGuiEventListener {
 
     protected double clockwise, flare;
 
-    protected List<iEvent> events = new ArrayList<>();
+    protected List<iEvent<T>> events = new ArrayList<>();
 
-    public EventListener(Widget widget) {
-        this.widget = widget;
+    public EventListener(T widget) {
+        this.host = widget;
     }
 
     @Override
-    public IEventListenerBuilder setPos(Function<Integer, Float> x, Function<Integer, Float> y) {
-        GWtBX = x;
-        GWtBY = y;
+    public IEventListenerInitializer setPos(Function<Integer, Float> x, Function<Integer, Float> y) {
+        fakeX = x;
+        fakeY = y;
         return this;
     }
 
     @Override
-    public IEventListenerBuilder setRectShape(float width, float height) {
+    public IEventListenerInitializer setRectShape(float width, float height) {
         shape = 0;
         this.width = width;
         this.height = height;
@@ -54,14 +54,14 @@ public class EventListener implements IEventListenerBuilder, IGuiEventListener {
     }
 
     @Override
-    public IEventListenerBuilder setCircleShape(float radius) {
+    public IEventListenerInitializer setCircleShape(float radius) {
         shape = 1;
         this.radius = radius;
         return this;
     }
 
     @Override
-    public IEventListenerBuilder setSectorShape(float radius, float clockwise, float flare) {
+    public IEventListenerInitializer setSectorShape(float radius, float clockwise, float flare) {
         shape = 2;
         this.radius = radius;
         this.clockwise = Math.tan(clockwise);
@@ -70,8 +70,8 @@ public class EventListener implements IEventListenerBuilder, IGuiEventListener {
     }
 
     public void resize(int width, int height) {
-        float x = GWtBX.apply(width);
-        float y = GWtBY.apply(height);
+        float x = fakeX.apply(width);
+        float y = fakeY.apply(height);
         this.x = x;
         this.y = y;
     }
@@ -120,29 +120,29 @@ public class EventListener implements IEventListenerBuilder, IGuiEventListener {
 
     protected void onHoveredChanged() {
         if (mouseHovered) {
-            events.stream().filter(e -> e.id() == iEvent.MOUSE_HOVER_ON).forEach(a -> a.run(widget));
+            events.stream().filter(e -> e.id() == iEvent.MOUSE_HOVER_ON).forEach(a -> a.run(host));
         } else {
-            events.stream().filter(e -> e.id() == iEvent.MOUSE_HOVER_OFF).forEach(a -> a.run(widget));
+            events.stream().filter(e -> e.id() == iEvent.MOUSE_HOVER_OFF).forEach(a -> a.run(host));
         }
     }
 
     protected void onLeftClick() {
-        events.stream().filter(e -> e.id == iEvent.LEFT_CLICK).forEach(a -> a.run(widget));
+        events.stream().filter(e -> e.id == iEvent.LEFT_CLICK).forEach(a -> a.run(host));
     }
 
-    public void addHoverOn(Consumer<IWidgetModifier> consumer) {
-        events.add(new iEvent(iEvent.MOUSE_HOVER_ON, consumer));
+    public void addHoverOn(Consumer<T> consumer) {
+        events.add(new iEvent<>(iEvent.MOUSE_HOVER_ON, consumer));
     }
 
-    public void addHoverOff(Consumer<IWidgetModifier> consumer) {
-        events.add(new iEvent(iEvent.MOUSE_HOVER_OFF, consumer));
+    public void addHoverOff(Consumer<T> consumer) {
+        events.add(new iEvent<>(iEvent.MOUSE_HOVER_OFF, consumer));
     }
 
-    public void addLeftClick(Consumer<IWidgetModifier> consumer) {
-        events.add(new iEvent(iEvent.LEFT_CLICK, consumer));
+    public void addLeftClick(Consumer<T> consumer) {
+        events.add(new iEvent<>(iEvent.LEFT_CLICK, consumer));
     }
 
-    private static final class iEvent {
+    private static final class iEvent<T> {
 
         public static int MOUSE_HOVER_ON = 1;
         public static int MOUSE_HOVER_OFF = 2;
@@ -151,9 +151,9 @@ public class EventListener implements IEventListenerBuilder, IGuiEventListener {
 
         private final int id;
 
-        private final Consumer<IWidgetModifier> consumer;
+        private final Consumer<T> consumer;
 
-        public iEvent(int id, Consumer<IWidgetModifier> consumer) {
+        public iEvent(int id, Consumer<T> consumer) {
             this.id = id;
             this.consumer = consumer;
         }
@@ -162,7 +162,7 @@ public class EventListener implements IEventListenerBuilder, IGuiEventListener {
             return id;
         }
 
-        public void run(IWidgetModifier t) {
+        public void run(T t) {
             consumer.accept(t);
         }
     }

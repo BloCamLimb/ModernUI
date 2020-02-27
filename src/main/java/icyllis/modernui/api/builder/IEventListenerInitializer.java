@@ -16,9 +16,17 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.api.element;
+package icyllis.modernui.api.builder;
 
-public interface IWidgetModifier {
+import java.util.function.Function;
 
-    ITextureBuilder getTexture();
+public interface IEventListenerInitializer {
+
+    IEventListenerInitializer setPos(Function<Integer, Float> x, Function<Integer, Float> y);
+
+    IEventListenerInitializer setRectShape(float width, float height);
+
+    IEventListenerInitializer setCircleShape(float radius);
+
+    IEventListenerInitializer setSectorShape(float radius, float clockwise, float flare);
 }

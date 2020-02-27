@@ -81,14 +81,12 @@ public class EventsHandler {
 
         @SubscribeEvent
         public static void setupCommon(FMLCommonSetupEvent event) {
-            ModernUI.LOGGER.info(MARKER, "{} has been initialized", ModernUI_API.class.getSimpleName());
+            ModernUI.LOGGER.info(MARKER, "{} has been initialized", ModernUI_API.INSTANCE.getDeclaringClass().getSimpleName());
         }
 
         @OnlyIn(Dist.CLIENT)
         @SubscribeEvent
         public static void setupClient(FMLClientSetupEvent event) {
-            ModernUI.LOGGER.info(MARKER, "{} has been initialized", BlurHandler.class.getSimpleName());
-
             IGuiHandler guiHandler = ModernUI_API.INSTANCE.getGuiHandler();
             guiHandler.registerContainerGui(UILibs.TEST_CONTAINER_SCREEN, ContainerTest::new, l -> l.add(new ModuleTest()::create));
             HistoryRecorder.gEmojiPair();

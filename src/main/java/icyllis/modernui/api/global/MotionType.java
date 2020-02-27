@@ -16,17 +16,12 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.api.element;
+package icyllis.modernui.api.global;
 
-import java.util.function.Function;
-
-public interface IEventListenerBuilder {
-
-    IEventListenerBuilder setPos(Function<Integer, Float> x, Function<Integer, Float> y);
-
-    IEventListenerBuilder setRectShape(float width, float height);
-
-    IEventListenerBuilder setCircleShape(float radius);
-
-    IEventListenerBuilder setSectorShape(float radius, float clockwise, float flare);
+public enum MotionType {
+    UNIFORM,
+    SINE, /** 0 ~ π/2 **/
+    COSINE, // 0 ~ π/2 **unimplemented
+    SINE_EXTENDED, // fast cosine to normal sine **unimplemented
+    COSINE_EXTENDED; // fast sine to normal cosine **unimplemented
 }

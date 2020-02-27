@@ -16,9 +16,9 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.api.element;
+package icyllis.modernui.api.builder;
 
-import icyllis.modernui.api.animation.IAnimationBuilder;
+import icyllis.modernui.gui.element.Rectangle;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -35,8 +35,8 @@ public interface IRectangleBuilder {
 
     /**
      * Set element relative position to given window size.
-     * @param x given game window width, return x position
-     * @param y given game window height, return y position
+     * @param x x position
+     * @param y x position
      * @return builder
      */
     IRectangleBuilder setPos(Function<Integer, Float> x, Function<Integer, Float> y);
@@ -57,7 +57,16 @@ public interface IRectangleBuilder {
     IRectangleBuilder setColor(int rgb);
 
     /**
-     * Set element size
+     * Set color for rectangle in float
+     * @param r red
+     * @param g green
+     * @param b blue
+     * @return builder
+     */
+    IRectangleBuilder setColor(float r, float g, float b);
+
+    /**
+     * Set element size (relativity undefined)
      * @param w element width
      * @param h element height
      * @return builder
@@ -65,16 +74,14 @@ public interface IRectangleBuilder {
     IRectangleBuilder setSize(float w, float h);
 
     /**
-     * Set element size
-     * @param w given game window width, return element width
-     * @param h given game window height, return element height
+     * Set element size relative to given window size.
+     * @param w element width
+     * @param h element height
      * @return builder
      */
     IRectangleBuilder setSize(Function<Integer, Float> w, Function<Integer, Float> h);
 
-    IRectangleBuilder applyToX(Consumer<IAnimationBuilder> animation);
+    void buildToPool();
 
-    IRectangleBuilder applyToA(Consumer<IAnimationBuilder> animation);
-
-    IRectangleBuilder applyToW(Consumer<IAnimationBuilder> animation);
+    void buildToPool(Consumer<Rectangle> consumer);
 }

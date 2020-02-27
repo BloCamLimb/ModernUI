@@ -20,15 +20,13 @@ package icyllis.modernui.gui.element;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.api.element.IRectangleBuilder;
-import icyllis.modernui.api.element.ITextLineBuilder;
+import icyllis.modernui.api.builder.ITextLineBuilder;
 import icyllis.modernui.gui.font.IFontRenderer;
 import icyllis.modernui.gui.font.StringRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureManager;
 import org.lwjgl.opengl.GL11;
 
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class TextLine extends Base implements ITextLineBuilder {
@@ -50,6 +48,7 @@ public class TextLine extends Base implements ITextLineBuilder {
         text = () -> "";
         color = () -> 0xffffff;
         scale = () -> 1.0f;
+        fakeX = fakeY = w -> 0f;
     }
 
     @Override
@@ -71,16 +70,9 @@ public class TextLine extends Base implements ITextLineBuilder {
     }
 
     @Override
-    public ITextLineBuilder setPos(Function<Integer, Float> x, Function<Integer, Float> y) {
-        GWtBX = x;
-        GWtBY = y;
-        return this;
-    }
-
-    @Override
     public ITextLineBuilder setPos(float x, float y) {
-        GWtBX = w -> w / 2f + x;
-        GWtBY = h -> h / 2f + y;
+        fakeX = w -> x;
+        fakeY = h -> y;
         return this;
     }
 

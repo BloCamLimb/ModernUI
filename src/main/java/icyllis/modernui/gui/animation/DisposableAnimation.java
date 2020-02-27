@@ -18,8 +18,9 @@
 
 package icyllis.modernui.gui.animation;
 
-import icyllis.modernui.api.animation.IAnimationBuilder;
-import icyllis.modernui.api.animation.MotionType;
+import icyllis.modernui.api.global.IAnimationBuilder;
+import icyllis.modernui.api.global.MotionType;
+import icyllis.modernui.system.ModernUI;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -28,21 +29,24 @@ public class DisposableAnimation implements IAnimationBuilder {
 
     protected float value;
 
-    protected float initValue;
+    protected Function<Integer, Float> fakeInitValue, fakeTargetValue;
 
-    protected Function<Integer, Float> GWtBI, GWtBT;
-
-    protected float targetValue, startTime, fixedTiming;
+    protected float initValue, targetValue, startTime, fixedTiming;
 
     protected MotionType motionType = MotionType.UNIFORM;
 
+    protected boolean isVertical = false;
+
     protected boolean finish = false;
 
-    private Consumer<Float> receiver;
+    protected Consumer<Float> receiver;
 
-    public DisposableAnimation(float startTime, Consumer<Float> receiver) {
+    protected Consumer<Function<Integer, Float>> relativeReceiver;
+
+    public DisposableAnimation(float startTime, Consumer<Float> receiver, Consumer<Function<Integer, Float>> relativeReceiver) {
         this.startTime = startTime;
         this.receiver = receiver;
+        this.relativeReceiver = relativeReceiver;
     }
 
     public void update(float currentTime) {
@@ -50,26 +54,36 @@ public class DisposableAnimation implements IAnimationBuilder {
             return;
         }
         switch (motionType) {
-            case UNIFORM:
-                updateUniform(currentTime);
-                break;
             case SINE:
                 updateSine(currentTime);
                 break;
+            default:
+                updateUniform(currentTime);
         }
         receiver.accept(value);
     }
 
-    private void updateUniform(float currentTime) {
+    public void resize(int width, int height) {
+        if (isVertical) {
+            value = initValue = fakeInitValue.apply(height);
+            targetValue = fakeTargetValue.apply(height);
+        } else {
+            value = initValue = fakeInitValue.apply(width);
+            targetValue = fakeTargetValue.apply(width);
+        }
+    }
+
+    protected void updateUniform(float currentTime) {
         float d = currentTime - startTime;
         value = initValue + (targetValue - initValue) * (d / fixedTiming);
         if (value >= targetValue) {
             value = targetValue;
             finish = true;
+            relativeReceiver.accept(fakeTargetValue);
         }
     }
 
-    private void updateSine(float currentTime) {
+    protected void updateSine(float currentTime) {
         float d = currentTime - startTime;
         float p = d / fixedTiming;
         float sin = (float) Math.sin(p * Math.PI / 2f);
@@ -77,6 +91,7 @@ public class DisposableAnimation implements IAnimationBuilder {
         if (p >= 1) {
             value = targetValue;
             finish = true;
+            relativeReceiver.accept(fakeTargetValue);
         }
     }
 
@@ -86,27 +101,26 @@ public class DisposableAnimation implements IAnimationBuilder {
 
     @Override
     public IAnimationBuilder setInit(float init) {
-        initValue = init;
-        GWtBI = s -> init;
-        return this;
-    }
-
-    @Override
-    public IAnimationBuilder setTarget(float target) {
-        targetValue = target;
-        GWtBT = s -> target;
+        fakeInitValue = q -> init;
         return this;
     }
 
     @Override
     public IAnimationBuilder setInit(Function<Integer, Float> init) {
-        GWtBI = init;
+        fakeInitValue = init;
         return this;
     }
 
     @Override
-    public IAnimationBuilder setTarget(Function<Integer, Float> target) {
-        GWtBT = target;
+    public IAnimationBuilder setTarget(float target) {
+        fakeTargetValue = q -> target;
+        return this;
+    }
+
+    @Override
+    public IAnimationBuilder setTarget(Function<Integer, Float> target, boolean isVertical) {
+        fakeTargetValue = target;
+        this.isVertical = isVertical;
         return this;
     }
 

@@ -16,9 +16,8 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.api.element;
+package icyllis.modernui.api.builder;
 
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 public interface ITextLineBuilder {
@@ -32,16 +31,7 @@ public interface ITextLineBuilder {
     ITextLineBuilder setPos(float x, float y);
 
     /**
-     * Set element relative position to given window size.
-     * @param x given game window width, return x position
-     * @param y given game window height, return y position
-     * @return builder
-     */
-    ITextLineBuilder setPos(Function<Integer, Float> x, Function<Integer, Float> y);
-
-    /**
      * Set initial constant alpha value, default is 1.0f.
-     * You don't need this method if you create animation for alpha.
      * @param a alpha
      * @return builder
      */

@@ -1,6 +1,9 @@
 package icyllis.modernui.api.global;
 
-import icyllis.modernui.api.element.*;
+import icyllis.modernui.api.builder.IRectangleBuilder;
+import icyllis.modernui.api.builder.ITextLineBuilder;
+import icyllis.modernui.api.builder.ITextureBuilder;
+import icyllis.modernui.api.template.*;
 import net.minecraft.network.PacketBuffer;
 
 public interface IElementBuilder {
@@ -13,7 +16,7 @@ public interface IElementBuilder {
 
     ITextLineBuilder textLine();
 
-    IWidgetBuilder widget();
+    IButtonT1 buttonT1();
 
-    void defaultBackground();
+    IBackground defaultBackground();
 }

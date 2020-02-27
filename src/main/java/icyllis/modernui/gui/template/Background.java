@@ -18,24 +18,33 @@
 
 package icyllis.modernui.gui.template;
 
-import icyllis.modernui.gui.element.Base;
+import icyllis.modernui.api.template.IBackground;
+import icyllis.modernui.gui.element.IBase;
 import icyllis.modernui.gui.master.DrawTools;
+import icyllis.modernui.gui.master.GlobalAnimationManager;
 
 /**
  * Commonly used
  */
-public final class EBackground extends Base {
+public final class Background implements IBase, IBackground {
+
+    private float alpha = 0.45f;
 
     private int width, height;
 
     @Override
     public void draw() {
-        DrawTools.fillRectWithColor(0, 0, width, height, 0x75000000);
+        DrawTools.fillRectWithColor(0, 0, width, height, 0, 0, 0, alpha);
     }
 
     @Override
     public void resize(int width, int height) {
         this.width = width;
         this.height = height;
+    }
+
+    @Override
+    public void alphaAnimation(float init, float time) {
+        GlobalAnimationManager.INSTANCE.create(a -> a.setInit(init).setTarget(alpha).setTiming(time), r -> alpha = r);
     }
 }

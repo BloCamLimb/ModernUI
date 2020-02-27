@@ -21,6 +21,7 @@ package icyllis.modernui.system.asm;
 import cpw.mods.modlauncher.api.ITransformer;
 import cpw.mods.modlauncher.api.ITransformerVotingContext;
 import cpw.mods.modlauncher.api.TransformerVoteResult;
+import icyllis.modernui.system.ModernUI;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.logging.log4j.LogManager;
@@ -41,12 +42,10 @@ import static org.objectweb.asm.Opcodes.NEW;
 @OnlyIn(Dist.CLIENT)
 public class ScreenTransformer implements ITransformer<MethodNode> {
 
-    private static Logger LOGGER = LogManager.getLogger();
-
     @Nonnull
     @Override
     public MethodNode transform(@Nonnull MethodNode node, @Nonnull ITransformerVotingContext context) {
-        LOGGER.debug("Transforming net.minecraft.client.Minecraft#displayInGameMenu");
+        ModernUI.LOGGER.debug("Transforming net.minecraft.client.Minecraft#displayInGameMenu");
         InsnList list = node.instructions;
         Iterator<AbstractInsnNode> iterator = list.iterator();
         AbstractInsnNode inst, cast;

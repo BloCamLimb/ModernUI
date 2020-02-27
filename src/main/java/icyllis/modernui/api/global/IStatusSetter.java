@@ -16,12 +16,9 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.api.animation;
+package icyllis.modernui.api.global;
 
-public enum MotionType {
-    UNIFORM,
-    SINE, // 0 ~ π/2
-    COSINE, // 0 ~ π/2
-    SINE_EXTENDED, // fast cosine to normal sine
-    COSINE_EXTENDED; // fast sine to normal cosine
+public interface IStatusSetter {
+
+    void setStatus(boolean b);
 }
