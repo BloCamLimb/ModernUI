@@ -1,7 +1,7 @@
 package icyllis.modernui.gui.master;
 
 import icyllis.modernui.api.global.IElementBuilder;
-import icyllis.modernui.gui.element.Base;
+import icyllis.modernui.gui.element.IBase;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +14,7 @@ public class MasterModule {
 
     private Consumer<IElementBuilder> rawModule;
 
-    private List<Base> elements = new ArrayList<>();
+    private List<IBase> elements = new ArrayList<>();
 
     MasterModule(Consumer<IElementBuilder> rawModule) {
         this.rawModule = rawModule;
@@ -28,14 +28,14 @@ public class MasterModule {
     }
 
     public void draw() {
-        elements.forEach(Base::draw);
+        elements.forEach(IBase::draw);
     }
 
     public void resize(int width, int height) {
         elements.forEach(e -> e.resize(width, height));
     }
 
-    public void addElement(Base e) {
+    public void addElement(IBase e) {
         elements.add(e);
     }
 

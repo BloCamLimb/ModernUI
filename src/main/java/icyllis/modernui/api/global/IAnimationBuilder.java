@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.api.animation;
+package icyllis.modernui.api.global;
 
 import java.util.function.Function;
 
@@ -30,6 +30,13 @@ public interface IAnimationBuilder {
     IAnimationBuilder setInit(float init);
 
     /**
+     * Set the init value
+     * @param init init
+     * @return builder
+     */
+    IAnimationBuilder setInit(Function<Integer, Float> init);
+
+    /**
      * Set the target value
      * @param target target
      * @return builder
@@ -37,18 +44,12 @@ public interface IAnimationBuilder {
     IAnimationBuilder setTarget(float target);
 
     /**
-     * Set the init value, ONLY for position or size if needed
-     * @param init given game window width/height
+     * Set the target value
+     * @param target target
+     * @param isVertical same with init value
      * @return builder
      */
-    IAnimationBuilder setInit(Function<Integer, Float> init);
-
-    /**
-     * Set the target value, ONLY for position or size if needed
-     * @param target given game window width/height
-     * @return builder
-     */
-    IAnimationBuilder setTarget(Function<Integer, Float> target);
+    IAnimationBuilder setTarget(Function<Integer, Float> target, boolean isVertical);
 
     /**
      * Delay animation start after being created

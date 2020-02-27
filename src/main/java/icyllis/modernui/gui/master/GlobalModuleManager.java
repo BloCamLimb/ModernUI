@@ -27,11 +27,12 @@ public class GlobalModuleManager implements IModuleFactory {
 
     public void resize(int width, int height) {
         allModules.forEach(m -> m.resize(width, height));
+        GlobalAnimationManager.INSTANCE.resize(width, height);
     }
 
     public void clear() {
         allModules.clear();
-        GlobalAnimationManager.INSTANCE.clearAll();
+        GlobalAnimationManager.INSTANCE.clear();
     }
 
     @Override

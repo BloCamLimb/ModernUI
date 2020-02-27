@@ -18,22 +18,9 @@
 
 package icyllis.modernui.gui.element;
 
-import java.util.function.Function;
+public interface IBase {
 
-public abstract class Base implements IBase {
+    void draw();
 
-    public Function<Integer, Float> fakeX, fakeY;
-
-    /**
-     * Logical X/Y/W/H
-     */
-    public float renderX, renderY;
-
-    public float alpha = 1.0f;
-
-    @Override
-    public void resize(int width, int height) {
-        renderX = fakeX.apply(width);
-        renderY = fakeY.apply(height);
-    }
+    void resize(int width, int height);
 }

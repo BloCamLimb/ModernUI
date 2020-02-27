@@ -18,103 +18,29 @@
 
 package icyllis.modernui.gui.element;
 
-import icyllis.modernui.api.element.*;
-import icyllis.modernui.system.ModernUI;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
-
-import java.util.function.Consumer;
-
 /**
  * Universal
  */
-public class Widget extends Base implements IWidgetBuilder, IWidgetModifier {
+public class Widget<T> implements IBase {
 
-    private static Marker MARKER = MarkerManager.getMarker("WIDGET");
+    public EventListener<T> listener;
 
-    public EventListener listener = new EventListener(this);;
+    public Widget() {
 
-    private TextLine constText = TextLine.DEFAULT, hoverText = TextLine.DEFAULT;
+    }
 
-    private Texture2D texture;
+    protected void setListener(T t) {
+        listener = new EventListener<>(t);
+    }
 
     @Override
     public void draw() {
-        texture.draw();
-        constText.draw();
-        hoverText.draw();
+
     }
 
     @Override
     public void resize(int width, int height) {
         listener.resize(width, height);
-        texture.resize(width, height);
-        constText.resize(width, height);
-        hoverText.resize(width, height);
     }
 
-    @Override
-    public IWidgetBuilder createConstTextLine(Consumer<ITextLineBuilder> builderConsumer) {
-        TextLine t = new TextLine();
-        builderConsumer.accept(t);
-        constText = t;
-        return this;
-    }
-
-    @Override
-    public IWidgetBuilder createHoverTextLine(Consumer<ITextLineBuilder> builderConsumer) {
-        TextLine t = new TextLine();
-        builderConsumer.accept(t);
-        hoverText = t;
-        return this;
-    }
-
-    @Override
-    public IWidgetBuilder createTexture(Consumer<ITextureBuilder> builderConsumer) {
-        Texture2D t = new Texture2D();
-        builderConsumer.accept(t);
-        texture = t;
-        return this;
-    }
-
-    @Override
-    public IWidgetBuilder initEventListener(Consumer<IEventListenerBuilder> builderConsumer) {
-        builderConsumer.accept(listener);
-        return this;
-    }
-
-    @Override
-    public IWidgetBuilder onHoverOn(Consumer<IWidgetModifier> consumer) {
-        if (listener == null) {
-            ModernUI.LOGGER.error(MARKER, "EventListener was not created");
-        } else {
-            listener.addHoverOn(consumer);
-        }
-        return this;
-    }
-
-    @Override
-    public IWidgetBuilder onHoverOff(Consumer<IWidgetModifier> consumer) {
-        if (listener == null) {
-            ModernUI.LOGGER.error(MARKER, "EventListener was not created");
-        } else {
-            listener.addHoverOff(consumer);
-        }
-        return this;
-    }
-
-    @Override
-    public IWidgetBuilder onLeftClick(Consumer<IWidgetModifier> consumer) {
-        if (listener == null) {
-            ModernUI.LOGGER.error(MARKER, "EventListener was not created");
-        } else {
-            listener.addLeftClick(consumer);
-        }
-        return this;
-    }
-
-    @Override
-    public ITextureBuilder getTexture() {
-        return texture;
-    }
 }

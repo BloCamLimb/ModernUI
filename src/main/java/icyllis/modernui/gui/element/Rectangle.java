@@ -18,24 +18,30 @@
 
 package icyllis.modernui.gui.element;
 
-import icyllis.modernui.api.animation.IAnimationBuilder;
-import icyllis.modernui.api.element.IRectangleBuilder;
 import icyllis.modernui.gui.master.DrawTools;
-import icyllis.modernui.gui.master.GlobalAnimationManager;
 
-import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class Rectangle extends Base implements IRectangleBuilder {
+public class Rectangle extends Base {
 
-    protected Function<Integer, Float> GWtBW, GWtBH;
+    public Function<Integer, Float> fakeW, fakeH;
 
-    protected float sizeW, sizeH;
+    /**
+     * Logical size
+     */
+    public float sizeW, sizeH;
 
-    private float colorR, colorG, colorB;
+    public float colorR, colorG, colorB;
 
-    public Rectangle() {
-
+    public Rectangle(Function<Integer, Float> x, Function<Integer, Float> y, Function<Integer, Float> w, Function<Integer, Float> h, float r, float g, float b, float a) {
+        this.fakeX = x;
+        this.fakeY = y;
+        this.fakeW = w;
+        this.fakeH = h;
+        this.colorR = r;
+        this.colorG = g;
+        this.colorB = b;
+        this.alpha = a;
     }
 
     @Override
@@ -44,74 +50,10 @@ public class Rectangle extends Base implements IRectangleBuilder {
     }
 
     @Override
-    public IRectangleBuilder setPos(Function<Integer, Float> x, Function<Integer, Float> y) {
-        GWtBX = x;
-        GWtBY = y;
-        return this;
-    }
-
-    @Override
-    public IRectangleBuilder setPos(float x, float y) {
-        GWtBX = w -> w / 2f + x;
-        GWtBY = h -> h / 2f + y;
-        return this;
-    }
-
-    @Override
-    public IRectangleBuilder setAlpha(float a) {
-        alpha = a;
-        return this;
-    }
-
-    @Override
     public void resize(int width, int height) {
         super.resize(width, height);
-        float w = GWtBW.apply(width);
-        float h = GWtBH.apply(height);
-        sizeW = w;
-        sizeH = h;
+        sizeW = fakeW.apply(width);
+        sizeH = fakeH.apply(height);
     }
 
-    @Override
-    public IRectangleBuilder setColor(int rgb) {
-        float r = (rgb >> 16 & 255) / 255.0f;
-        float g = (rgb >> 8 & 255) / 255.0f;
-        float b = (rgb & 255) / 255.0f;
-        colorR = r;
-        colorG = g;
-        colorB = b;
-        return this;
-    }
-
-    @Override
-    public IRectangleBuilder setSize(float w, float h) {
-        GWtBW = g -> w;
-        GWtBH = g -> h;
-        return this;
-    }
-
-    @Override
-    public IRectangleBuilder setSize(Function<Integer, Float> w, Function<Integer, Float> h) {
-        GWtBW = w;
-        GWtBH = h;
-        return this;
-    }
-
-    @Override
-    public IRectangleBuilder applyToX(Consumer<IAnimationBuilder> animation) {
-        GlobalAnimationManager.INSTANCE.create(animation, a -> renderX = a);
-        return this;
-    }
-
-    @Override
-    public IRectangleBuilder applyToA(Consumer<IAnimationBuilder> animation) {
-        GlobalAnimationManager.INSTANCE.create(animation, a -> alpha = a);
-        return this;
-    }
-
-    @Override
-    public IRectangleBuilder applyToW(Consumer<IAnimationBuilder> animation) {
-        GlobalAnimationManager.INSTANCE.create(animation, a -> sizeW = a);
-        return this;
-    }
 }

@@ -16,13 +16,9 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.api.animation;
+package icyllis.modernui.api.template;
 
-public interface IAlphaAnimation {
+public interface IBackground {
 
-    IAlphaAnimation translate(float t);
-
-    IAlphaAnimation delay(float t);
-
-    IAlphaAnimation fixedTiming(float t);
+    void alphaAnimation(float init, float time);
 }

@@ -18,8 +18,9 @@
 
 package icyllis.modernui.impl;
 
-import icyllis.modernui.api.animation.MotionType;
+import icyllis.modernui.api.global.MotionType;
 import icyllis.modernui.api.global.IElementBuilder;
+import icyllis.modernui.gui.master.GlobalAnimationManager;
 import icyllis.modernui.gui.master.UniversalModernScreen;
 import icyllis.modernui.system.ReferenceLibrary;
 import net.minecraft.client.Minecraft;
@@ -44,19 +45,26 @@ public final class GuiIngameMenu extends UniversalModernScreen {
     private static class Modules {
 
         void createDefault(IElementBuilder builder) {
+            builder.defaultBackground()
+                    .alphaAnimation(0, 4);
             builder.rectangle()
-                    .setColor(0x000000)
-                    .setPos(w -> 0f, h -> 0f)
-                    .setSize(Float::valueOf, Float::valueOf)
-                    .applyToA(a -> a.setTarget(0.3f).setTiming(4));
-            builder.rectangle()
-                    .setColor(0x000000)
+                    .setColor(0, 0, 0)
                     .setAlpha(0.5f)
                     .setPos(w -> 0f, h -> 0f)
                     .setSize(w -> 0f, Float::valueOf)
-                    .applyToW(a -> a.setTarget(32).setTiming(3).setMotion(MotionType.SINE));
-            builder.widget()
+                    .buildToPool(t ->
+                            GlobalAnimationManager.INSTANCE.create(a -> a
+                                    .setInit(0)
+                                    .setTarget(32)
+                                    .setTiming(4)
+                                    .setMotion(MotionType.SINE),
+                                    r -> t.sizeW = r,
+                                    rs -> t.fakeW = rs
+                            )
+                    );
+            builder.buttonT1()
                     .createTexture(a -> a
+                            .setAlpha(0)
                             .setPos(w -> 8f, h -> h - 28f)
                             .setTexture(ReferenceLibrary.ICONS)
                             .setUV(160, 0)
@@ -66,10 +74,11 @@ public final class GuiIngameMenu extends UniversalModernScreen {
                     .initEventListener(a -> a
                             .setPos(w -> 8f, h -> h - 28f)
                             .setRectShape(16, 16))
-                    .onHoverOn(q -> q.getTexture().setTint(1.0f, 1.0f, 1.0f))
-                    .onHoverOff(q -> q.getTexture().setTint(0.5f, 0.5f, 0.5f))
-                    .onLeftClick(w -> {
+                    .onLeftClick(() -> {
                         Minecraft minecraft = Minecraft.getInstance();
+                        if (minecraft.world == null) {
+                            return;
+                        }
                         boolean flag = minecraft.isIntegratedServerRunning();
                         boolean flag1 = minecraft.isConnectedToRealms();
                         minecraft.world.sendQuittingDisconnectingPacket();
