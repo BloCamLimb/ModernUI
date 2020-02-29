@@ -3,6 +3,7 @@ package icyllis.modernui.api.template;
 import icyllis.modernui.api.builder.IEventListenerInitializer;
 import icyllis.modernui.api.builder.ITextLineBuilder;
 import icyllis.modernui.api.builder.ITextureBuilder;
+import icyllis.modernui.gui.element.IBase;
 
 import java.util.function.Consumer;
 
@@ -15,4 +16,6 @@ public interface IButtonT1 {
     IButtonT1 initEventListener(Consumer<IEventListenerInitializer> builderConsumer);
 
     IButtonT1 onLeftClick(Runnable runnable);
+
+    void buildToPool(Consumer<IBase> pool);
 }

@@ -257,7 +257,7 @@ class GlyphCache {
         usedFonts.clear();
         //usedFonts.add(new Font(name, Font.PLAIN, 72)); //size 1 > 72
         try {
-            Font f = Font.createFont(Font.TRUETYPE_FONT, getClass().getResourceAsStream("/assets/modernui/font/unix.ttf"));
+            Font f = Font.createFont(Font.TRUETYPE_FONT, getClass().getResourceAsStream("/assets/modernui/font/unix.otf"));
             usedFonts.add(f);
             //ModernUI.LOGGER.info(ModernUI.MARKER, "{} has been loaded", f.getName());
         } catch (FontFormatException | IOException e) {

@@ -8,35 +8,22 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * Baked gui module
+ * Used to build gui elements step by step
  */
 public class MasterModule {
 
-    private Consumer<IElementBuilder> rawModule;
+    private Consumer<IElementBuilder> builder;
 
-    private List<IBase> elements = new ArrayList<>();
+    public final int id;
 
-    MasterModule(Consumer<IElementBuilder> rawModule) {
-        this.rawModule = rawModule;
+    MasterModule(Consumer<IElementBuilder> builder, int id) {
+        this.builder = builder;
+        this.id = id;
     }
 
-    public void build(IMasterScreen master, int width, int height) {
-        GlobalElementBuilder.INSTANCE.setReceiver(this, master);
-        rawModule.accept(GlobalElementBuilder.INSTANCE);
-        resize(width, height);
-        rawModule = null;
-    }
-
-    public void draw() {
-        elements.forEach(IBase::draw);
-    }
-
-    public void resize(int width, int height) {
-        elements.forEach(e -> e.resize(width, height));
-    }
-
-    public void addElement(IBase e) {
-        elements.add(e);
+    public void build() {
+        builder.accept(GlobalElementBuilder.INSTANCE);
+        builder = b -> {};
     }
 
 }

@@ -18,6 +18,7 @@
 
 package icyllis.modernui.api.builder;
 
+import icyllis.modernui.gui.element.IBase;
 import icyllis.modernui.gui.element.Texture2D;
 import net.minecraft.util.ResourceLocation;
 
@@ -27,86 +28,37 @@ import java.util.function.Function;
 public interface ITextureBuilder {
 
     /**
-     * Set element relative position to window center. (0,0) will be at crosshair
-     * @param x x position
-     * @param y y position
-     * @return builder
-     */
-    ITextureBuilder setPos(float x, float y);
-
-    /**
      * Set element relative position to given window size.
+     * Set element size.
+     * Set texture location.
+     * Set texture position.
+     * Set tint color in hex.
+     * Set element scaling.
      * @param x x position
      * @param y x position
-     * @return builder
-     */
-    ITextureBuilder setPos(Function<Integer, Float> x, Function<Integer, Float> y);
-
-    /**
-     * Set initial constant alpha value, default is 1.0f.
-     * You don't need this method if you create animation for alpha.
-     * @param a alpha
-     * @return builder
-     */
-    ITextureBuilder setAlpha(float a);
-
-    /**
-     * Set element size (relativity undefined)
      * @param w element width
      * @param h element height
-     * @return builder
-     */
-    ITextureBuilder setSize(float w, float h);
-
-    /**
-     * Set element size relative to given window size.
-     * @param w element width
-     * @param h element height
-     * @return builder
-     */
-    ITextureBuilder setSize(Function<Integer, Float> w, Function<Integer, Float> h);
-
-    /**
-     * Set texture location
      * @param texture texture
-     * @return builder
-     */
-    ITextureBuilder setTexture(ResourceLocation texture);
-
-    /**
-     * Set texture position to start render
-     * @param u horizontal
-     * @param v vertical
-     * @return builder
-     */
-    ITextureBuilder setUV(float u, float v);
-
-    /**
-     * Set tint for texture
-     * @param rgb rgb in hex
-     * @return builder
-     */
-    ITextureBuilder setTint(int rgb);
-
-    /**
-     * Set tint for texture
-     * @param r red
-     * @param g green
-     * @param b blue
-     * @return builder
-     */
-    ITextureBuilder setTint(float r, float g, float b);
-
-    /**
-     * Set scale for rendering
+     * @param u texture x
+     * @param v texture y
+     * @param tintRGBA tint color
      * @param scale scale
      * @return builder
      */
-    ITextureBuilder setScale(float scale);
+    ITextureBuilder init(Function<Integer, Float> x, Function<Integer, Float> y, float w, float h, ResourceLocation texture, float u, float v, int tintRGBA, float scale);
 
-    void buildToPool();
+    /**
+     * Build this element to pool
+     */
+    void buildToPool(Consumer<IBase> pool);
 
-    void buildToPool(Consumer<Texture2D> consumer);
+    /**
+     * Build this element to pool with modifiers
+     */
+    void buildToPool(Consumer<IBase> pool, Consumer<Texture2D> consumer);
 
+    /**
+     * Return build instance
+     */
     Texture2D buildForMe();
 }

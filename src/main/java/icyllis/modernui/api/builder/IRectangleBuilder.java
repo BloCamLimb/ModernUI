@@ -18,6 +18,7 @@
 
 package icyllis.modernui.api.builder;
 
+import icyllis.modernui.gui.element.IBase;
 import icyllis.modernui.gui.element.Rectangle;
 
 import java.util.function.Consumer;
@@ -26,62 +27,25 @@ import java.util.function.Function;
 public interface IRectangleBuilder {
 
     /**
-     * Set element relative position to window center. (0,0) will be at crosshair
-     * @param x x position
-     * @param y y position
-     * @return builder
-     */
-    IRectangleBuilder setPos(float x, float y);
-
-    /**
      * Set element relative position to given window size.
+     * Set element size relative to given window size.
+     * Set color(RGBA) for rectangle in hex.
      * @param x x position
      * @param y x position
-     * @return builder
-     */
-    IRectangleBuilder setPos(Function<Integer, Float> x, Function<Integer, Float> y);
-
-    /**
-     * Set initial constant alpha value, default is 1.0f.
-     * You don't need this method if you create animation for alpha.
-     * @param a alpha
-     * @return builder
-     */
-    IRectangleBuilder setAlpha(float a);
-
-    /**
-     * Set color for rectangle in hex code
-     * @param rgb RGB
-     * @return builder
-     */
-    IRectangleBuilder setColor(int rgb);
-
-    /**
-     * Set color for rectangle in float
-     * @param r red
-     * @param g green
-     * @param b blue
-     * @return builder
-     */
-    IRectangleBuilder setColor(float r, float g, float b);
-
-    /**
-     * Set element size (relativity undefined)
      * @param w element width
      * @param h element height
+     * @param RGBA color
      * @return builder
      */
-    IRectangleBuilder setSize(float w, float h);
+    IRectangleBuilder init(Function<Integer, Float> x, Function<Integer, Float> y, Function<Integer, Float> w, Function<Integer, Float> h, int RGBA);
 
     /**
-     * Set element size relative to given window size.
-     * @param w element width
-     * @param h element height
-     * @return builder
+     * Build this element to pool
      */
-    IRectangleBuilder setSize(Function<Integer, Float> w, Function<Integer, Float> h);
+    void buildToPool(Consumer<IBase> pool);
 
-    void buildToPool();
-
-    void buildToPool(Consumer<Rectangle> consumer);
+    /**
+     * Build this element to pool with modifiers
+     */
+    void buildToPool(Consumer<IBase> pool, Consumer<Rectangle> consumer);
 }

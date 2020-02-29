@@ -72,7 +72,7 @@ public class EventsHandler {
             if (hasGui != current)
                 GlobalAnimationManager.INSTANCE.resetTimer();
             BlurHandler.INSTANCE.blur(hasGui);
-            //ModernUI.LOGGER.debug("Open GUI {}", hasGui ? event.getGui().getClass().getSimpleName() : "null");
+            ModernUI.LOGGER.debug("Open GUI {}", hasGui ? event.getGui().getClass().getSimpleName() : "null");
         }
     }
 
@@ -90,7 +90,7 @@ public class EventsHandler {
         @SubscribeEvent
         public static void setupClient(FMLClientSetupEvent event) {
             IGuiHandler guiHandler = ModernUI_API.INSTANCE.getGuiHandler();
-            guiHandler.registerContainerGui(UILibs.TEST_CONTAINER_SCREEN, ContainerTest::new, l -> l.add(new ModuleTest()::create));
+            guiHandler.registerContainerGui(UILibs.TEST_CONTAINER_SCREEN, ContainerTest::new, l -> l.add(new ModuleTest()::create, 0));
             HistoryRecorder.gEmojiPair();
         }
 

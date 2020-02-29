@@ -23,5 +23,5 @@ import java.util.function.Consumer;
 @FunctionalInterface
 public interface IModuleFactory {
 
-    IModuleFactory add(Consumer<IElementBuilder> module);
+    IModuleFactory add(Consumer<IElementBuilder> module, int id);
 }

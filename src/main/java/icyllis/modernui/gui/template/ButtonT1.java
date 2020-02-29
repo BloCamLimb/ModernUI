@@ -22,11 +22,13 @@ import icyllis.modernui.api.template.IButtonT1;
 import icyllis.modernui.api.builder.IEventListenerInitializer;
 import icyllis.modernui.api.builder.ITextLineBuilder;
 import icyllis.modernui.api.builder.ITextureBuilder;
+import icyllis.modernui.gui.element.IBase;
 import icyllis.modernui.gui.element.TextLine;
 import icyllis.modernui.gui.element.Texture2D;
 import icyllis.modernui.gui.element.Widget;
 import icyllis.modernui.gui.master.GlobalAnimationManager;
 import icyllis.modernui.gui.master.GlobalElementBuilder;
+import icyllis.modernui.system.ModernUI;
 
 import java.util.function.Consumer;
 
@@ -94,5 +96,10 @@ public class ButtonT1 extends Widget<Object> implements IButtonT1 {
     public IButtonT1 onLeftClick(Runnable runnable) {
         listener.addLeftClick(s -> runnable.run());
         return this;
+    }
+
+    @Override
+    public void buildToPool(Consumer<IBase> pool) {
+        pool.accept(this);
     }
 }

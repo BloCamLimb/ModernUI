@@ -13,7 +13,7 @@ public class ModuleTest {
 
     public void create(IElementBuilder builder) {
         builder.defaultBackground();
-        builder.texture()
+        /*builder.texture()
                 .setTexture(BACKGROUND)
                 .setPos(-128, -128)
                 .setUV(0, 0)
@@ -29,7 +29,7 @@ public class ModuleTest {
         builder.textLine()
                 .text(() -> TextFormatting.AQUA + "Please select a network")
                 .setPos(0, -73)
-                .align(0.25f);
+                .align(0.25f);*/
         /*for (int i = 0; i < 7; i++) {
             int f = i;
             builder.navigation()
