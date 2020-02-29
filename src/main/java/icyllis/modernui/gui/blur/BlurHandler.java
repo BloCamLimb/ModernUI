@@ -65,7 +65,7 @@ public enum BlurHandler {
                 @SuppressWarnings({"unchecked", "deprecation"})
                 @Override
                 public <T extends ResourcePackInfo> void addPackInfosToMap(@Nonnull Map<String, T> nameToPackMap, @Nonnull ResourcePackInfo.IFactory<T> packInfoFactory) {
-                    T pack = (T) new ClientResourcePackInfo(ModernUI.MODID + "_blur", true, () -> sp, new StringTextComponent(sp.getName()), new StringTextComponent(""),
+                    T pack = (T) new ClientResourcePackInfo(ModernUI.MODID + "_blur", true, () -> sp, new StringTextComponent(sp.getName()), new StringTextComponent("Add blur shader to vanilla directory"),
                             PackCompatibility.COMPATIBLE, ResourcePackInfo.Priority.BOTTOM, true, null);
                     nameToPackMap.put(ModernUI.MODID + "_blur", pack);
                 }

@@ -1,47 +1,69 @@
 package icyllis.modernui.gui.master;
 
-import com.mojang.blaze3d.platform.GlStateManager;
 import icyllis.modernui.api.global.IElementBuilder;
 import icyllis.modernui.api.global.IModuleFactory;
+import icyllis.modernui.gui.element.IPool;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class GlobalModuleManager implements IModuleFactory {
 
     static final GlobalModuleManager INSTANCE = new GlobalModuleManager();
 
-    private List<MasterModule> allModules = new ArrayList<>();
+    @Nullable
+    public IModernScreen master;
 
-    private MasterModule currentModule;
+    private List<MasterModule> modules = new ArrayList<>();
 
-    public void build(IMasterScreen master, int width, int height) {
-        allModules.forEach(m -> m.build(master, width, height));
+    private List<IPool> pools = new ArrayList<>();
+
+    private List<IPool> activePools = new ArrayList<>();
+
+    private int width, height;
+
+    public void build(IModernScreen master, int width, int height) {
+        this.master = master;
+        this.width = width;
+        this.height = height;
+        GlobalElementBuilder.INSTANCE.setMaster(master);
+        this.switchModule(0);
+    }
+
+    public void switchModule(int id) {
+        modules.stream().filter(m -> m.id == id).findFirst().ifPresent(MasterModule::build);
+        activePools.removeIf(c -> !c.test(id));
+        activePools.addAll(pools.stream().filter(c -> c.test(id)).collect(Collectors.toCollection(ArrayList::new)));
+        activePools.forEach(e -> e.resize(width, height));
     }
 
     public void draw() {
-        GlStateManager.enableBlend();
-        currentModule.draw();
+        activePools.forEach(IPool::draw);
     }
 
     public void resize(int width, int height) {
-        allModules.forEach(m -> m.resize(width, height));
+        activePools.forEach(e -> e.resize(width, height));
         GlobalAnimationManager.INSTANCE.resize(width, height);
     }
 
     public void clear() {
-        allModules.clear();
+        modules.clear();
+        pools.clear();
+        activePools.clear();
+        master = null;
         GlobalAnimationManager.INSTANCE.clear();
     }
 
+    public void add(IPool component) {
+        pools.add(component);
+    }
+
     @Override
-    public IModuleFactory add(Consumer<IElementBuilder> module) {
-        MasterModule masterModule = new MasterModule(module);
-        allModules.add(masterModule);
-        if (allModules.size() == 1) {
-            currentModule = masterModule;
-        }
+    public IModuleFactory add(Consumer<IElementBuilder> module, int id) {
+        modules.add(new MasterModule(module, id));
         return this;
     }
 }

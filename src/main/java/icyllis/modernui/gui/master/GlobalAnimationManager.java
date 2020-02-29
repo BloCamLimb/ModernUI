@@ -16,8 +16,8 @@ public class GlobalAnimationManager {
 
     public static final GlobalAnimationManager INSTANCE = new GlobalAnimationManager();
 
-    private final List<DisposableAnimation> animations = new ArrayList<>();
-    private final List<HighStatusAnimation> triggeredAnimations = new ArrayList<>();
+    private final List<DisposableAnimation> dAnimations = new ArrayList<>();
+    private final List<HighStatusAnimation> hsAnimations = new ArrayList<>();
 
     private int timer = 0;
     private float time = 0; // unit ticks
@@ -30,13 +30,13 @@ public class GlobalAnimationManager {
 
     public void clientTick() {
         timer++;
-        animations.removeIf(DisposableAnimation::isFinish);
+        dAnimations.removeIf(DisposableAnimation::isFinish);
     }
 
     public void renderTick(float partialTick) {
         time = timer + partialTick;
-        animations.forEach(a -> a.update(time));
-        triggeredAnimations.forEach(a -> a.update(time));
+        dAnimations.forEach(a -> a.update(time));
+        hsAnimations.forEach(a -> a.update(time));
     }
 
     public void resetTimer() {
@@ -52,7 +52,7 @@ public class GlobalAnimationManager {
         DisposableAnimation a = new DisposableAnimation(time, receiver, relativeReceiver);
         builder.accept(a);
         a.resize(width, height);
-        animations.add(a);
+        dAnimations.add(a);
     }
 
     public Consumer<Boolean> createHS(Consumer<IAnimationBuilder> builder, Consumer<Float> receiver) {
@@ -63,20 +63,20 @@ public class GlobalAnimationManager {
         HighStatusAnimation a = new HighStatusAnimation(receiver, relativeReceiver);
         builder.accept(a);
         a.resize(width, height);
-        triggeredAnimations.add(a);
+        hsAnimations.add(a);
         return a;
     }
 
     public void resize(int width, int height) {
         this.width = width;
         this.height = height;
-        animations.forEach(e -> e.resize(width, height));
-        triggeredAnimations.forEach(e -> e.resize(width, height));
+        dAnimations.forEach(e -> e.resize(width, height));
+        hsAnimations.forEach(e -> e.resize(width, height));
     }
 
     void clear() {
-        animations.clear();
-        triggeredAnimations.clear();
+        dAnimations.clear();
+        hsAnimations.clear();
     }
 
     public float time() {

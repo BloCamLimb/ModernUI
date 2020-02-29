@@ -12,7 +12,7 @@ import javax.annotation.Nonnull;
 import java.util.function.Consumer;
 
 @OnlyIn(Dist.CLIENT)
-public class UniversalModernScreenG<G extends Container> extends ContainerScreen<G> implements IMasterScreen {
+public class UniversalModernScreenG<G extends Container> extends ContainerScreen<G> implements IModernScreen {
 
     private GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
 

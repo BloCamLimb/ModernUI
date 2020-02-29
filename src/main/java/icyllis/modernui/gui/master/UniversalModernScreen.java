@@ -12,7 +12,7 @@ import javax.annotation.Nonnull;
 import java.util.function.Consumer;
 
 @OnlyIn(Dist.CLIENT)
-public class UniversalModernScreen extends Screen implements IMasterScreen {
+public class UniversalModernScreen extends Screen implements IModernScreen {
 
     static final StringTextComponent EMPTY_TITLE = new StringTextComponent("");
 

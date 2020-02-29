@@ -99,7 +99,7 @@ public class DummyResourcePack implements IResourcePack {
     @Nonnull
     @Override
     public String getName() {
-        return "ModernUI-BlurPack";
+        return "ModernUI Blur Shader";
     }
 
     @Override
