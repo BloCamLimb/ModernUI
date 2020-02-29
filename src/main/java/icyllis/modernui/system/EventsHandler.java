@@ -68,7 +68,9 @@ public class EventsHandler {
         @SubscribeEvent
         public static void onGuiOpen(GuiOpenEvent event) {
             boolean hasGui = event.getGui() != null;
-            GlobalAnimationManager.INSTANCE.resetTimer();
+            boolean current = Minecraft.getInstance().currentScreen != null;
+            if (hasGui != current)
+                GlobalAnimationManager.INSTANCE.resetTimer();
             BlurHandler.INSTANCE.blur(hasGui);
             //ModernUI.LOGGER.debug("Open GUI {}", hasGui ? event.getGui().getClass().getSimpleName() : "null");
         }

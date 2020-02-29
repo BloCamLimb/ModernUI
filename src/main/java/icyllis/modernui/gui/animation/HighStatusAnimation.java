@@ -18,12 +18,10 @@
 
 package icyllis.modernui.gui.animation;
 
-import icyllis.modernui.api.global.IStatusSetter;
-
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class HighStatusAnimation extends DisposableAnimation implements IStatusSetter {
+public class HighStatusAnimation extends DisposableAnimation implements Consumer<Boolean> {
 
     private boolean running = false;
     private boolean status = false;
@@ -75,21 +73,6 @@ public class HighStatusAnimation extends DisposableAnimation implements IStatusS
     }
 
     @Override
-    public void setStatus(boolean b) {
-        if (!status && b) {
-            running = true;
-            status = true;
-        } else if (status && !b) {
-            if (running) {
-                finishSwitch = true;
-            } else {
-                running = true;
-                status = false;
-            }
-        }
-    }
-
-    @Override
     protected void updateUniform(float currentTime) {
         if (status)
             super.updateUniform(currentTime);
@@ -123,5 +106,20 @@ public class HighStatusAnimation extends DisposableAnimation implements IStatusS
     @Override
     public boolean isFinish() {
         return false;
+    }
+
+    @Override
+    public void accept(Boolean aBoolean) {
+        if (!status && aBoolean) {
+            running = true;
+            status = true;
+        } else if (status && !aBoolean) {
+            if (running) {
+                finishSwitch = true;
+            } else {
+                running = true;
+                status = false;
+            }
+        }
     }
 }
