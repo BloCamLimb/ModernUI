@@ -17,13 +17,15 @@ public class ModuleTest {
                 .setTexture(BACKGROUND)
                 .setPos(-128, -128)
                 .setUV(0, 0)
-                .setSize(256, 256);
+                .setSize(256, 256)
+                .buildToPool();
         builder.texture()
                 .setTexture(FRAME)
                 .setPos(-128, -128)
                 .setUV(0, 0)
                 .setSize(256, 256)
-                .setTint(0xeedc82);
+                .setTint(0xeedc82)
+                .buildToPool();
         builder.textLine()
                 .text(() -> TextFormatting.AQUA + "Please select a network")
                 .setPos(0, -73)

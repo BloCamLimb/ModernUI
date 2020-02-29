@@ -169,7 +169,8 @@ public class GlobalElementBuilder implements IElementBuilder {
 
         private TextureBuilder reset() {
             fakeX = fakeY = fakeW = fakeH = Float::valueOf;
-            u = v = s = r = g = b = a = 1.0f;
+            u = v = 0;
+            s = r = g = b = a = 1.0f;
             res = null;
             return this;
         }

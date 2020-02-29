@@ -57,9 +57,7 @@ public class TransformationService implements ITransformationService {
     @Override
     public List<ITransformer> transformers() {
         List<ITransformer> list = new ArrayList<>();
-        DistExecutor.runWhenOn(Dist.CLIENT, () -> () -> {
-            list.add(new ScreenTransformer());
-        });
+        DistExecutor.runWhenOn(Dist.CLIENT, () -> () -> list.add(new ModernUITransformer()));
         return list;
     }
 }

@@ -1,7 +1,6 @@
 package icyllis.modernui.gui.master;
 
 import icyllis.modernui.api.global.IAnimationBuilder;
-import icyllis.modernui.api.global.IStatusSetter;
 import icyllis.modernui.gui.animation.DisposableAnimation;
 import icyllis.modernui.gui.animation.HighStatusAnimation;
 import net.minecraftforge.api.distmarker.Dist;
@@ -56,11 +55,11 @@ public class GlobalAnimationManager {
         animations.add(a);
     }
 
-    public IStatusSetter createHS(Consumer<IAnimationBuilder> builder, Consumer<Float> receiver) {
+    public Consumer<Boolean> createHS(Consumer<IAnimationBuilder> builder, Consumer<Float> receiver) {
         return createHS(builder, receiver, rs -> {});
     }
 
-    public IStatusSetter createHS(Consumer<IAnimationBuilder> builder, Consumer<Float> receiver, Consumer<Function<Integer, Float>> relativeReceiver) {
+    public Consumer<Boolean> createHS(Consumer<IAnimationBuilder> builder, Consumer<Float> receiver, Consumer<Function<Integer, Float>> relativeReceiver) {
         HighStatusAnimation a = new HighStatusAnimation(receiver, relativeReceiver);
         builder.accept(a);
         a.resize(width, height);

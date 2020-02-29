@@ -23,9 +23,6 @@ import icyllis.modernui.gui.element.IBase;
 import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.gui.master.GlobalAnimationManager;
 
-/**
- * Commonly used
- */
 public final class Background implements IBase, IBackground {
 
     private float alpha = 0.45f;
