@@ -49,12 +49,12 @@ public class EmojiStringRenderer implements IFontRenderer {
     private WeakHashMap<String, EmojiText> MAPS = new WeakHashMap<>();
 
     @Override
-    public float drawString(String str, float startX, float startY, int color, int alpha, float align) {
+    public float drawString(String str, float startX, float startY, float r, float g, float b, float a, float align) {
         EmojiText entry = MAPS.get(str);
         if (entry == null) {
             entry = cache(str);
         }
-        entry.text.forEach(t -> FONT.drawString(t.str, startX + t.x, startY, color, 255, 0));
+        entry.text.forEach(t -> FONT.drawString(t.str, startX + t.x, startY, r, g, b, a, align));
         RenderSystem.color3f(0.867f, 0.867f, 0.867f);
         GlStateManager.enableBlend();
         GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);

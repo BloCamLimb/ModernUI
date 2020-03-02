@@ -24,5 +24,9 @@ public interface IElementBuilder {
 
     IButtonT1 buttonT1();
 
+    IButtonT1B buttonT1B();
+
+    IButtonT2 buttonT2();
+
     IBackground defaultBackground();
 }

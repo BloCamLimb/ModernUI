@@ -25,7 +25,7 @@ import net.minecraft.util.math.BlockPos;
 
 import java.util.function.Consumer;
 
-public interface INetworkHandler {
+public interface INetworkManager {
 
     /**
      * Open a container both on server and client side and open a screen on client side.

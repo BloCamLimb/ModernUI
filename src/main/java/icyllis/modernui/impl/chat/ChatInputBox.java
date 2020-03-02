@@ -94,8 +94,8 @@ public final class ChatInputBox extends EventListener {
                     }
                 }
             }
-            renderer.drawString(text.substring(0, firstLength), x, y - 10.5f, 0xdddddd, 0xff, 0);
-            renderer.drawString(text.substring(firstLength), x, y + 1.5f, 0xdddddd, 0xff, 0);
+            renderer.drawString(text.substring(0, firstLength), x, y - 10.5f, 0.88f, 0.88f, 0.88f, 1.0f, 0);
+            renderer.drawString(text.substring(firstLength), x, y + 1.5f, 0.88f, 0.88f, 0.88f, 1.0f, 0);
         } else {
             DrawTools.fillRectWithColor(x - 2, y, x + sizeW + 2, y + 12, 0x80000000);
             if (cursor != selector) {
@@ -103,7 +103,7 @@ public final class ChatInputBox extends EventListener {
                 float ri = Math.max(this.cursorX, this.selectorX);
                 DrawTools.fillRectWithColor(le, y + 0.5f, ri, y + 11.5f, 0x8097def0);
             }
-            renderer.drawString(text, x, y + 1.5f, 0xdddddd, 0xff, 0);
+            renderer.drawString(text, x, y + 1.5f, 0.88f, 0.88f, 0.88f, 1.0f, 0);
         }
 
         if (timer < 10) {

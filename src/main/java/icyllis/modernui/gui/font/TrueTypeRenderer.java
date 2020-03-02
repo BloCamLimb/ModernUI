@@ -91,6 +91,10 @@ public class TrueTypeRenderer implements IFontRenderer {
      * @param str          the string being rendered; it can contain color codes
      * @param startX       the x coordinate to draw at
      * @param startY       the y coordinate to draw at
+     * @param r
+     * @param g
+     * @param b
+     * @param a
      * @return the total advance (horizontal distance) of this string
      */
     //todo Add optional NumericShaper to replace ASCII digits with locale specific ones
@@ -98,7 +102,7 @@ public class TrueTypeRenderer implements IFontRenderer {
     //todo Pre-sort by texture to minimize binds; can store colors per glyph in string cache
     //todo Optimize the underline/strikethrough drawing to draw a single line for each run
     @Override
-    public float drawString(String str, float startX, float startY, int color, int alpha, float align) {
+    public float drawString(String str, float startX, float startY, float r, float g, float b, float a, float align) {
         /* Check for invalid arguments */
         if (str == null || str.isEmpty()) {
             return 0;
@@ -118,7 +122,15 @@ public class TrueTypeRenderer implements IFontRenderer {
          * array), however GuiEditSign of all things depends on having the current color set to white when it renders its
          * "Edit sign message:" text. Otherwise, the sign which is rendered underneath would look too dark.
          */
-        RenderSystem.color3f((color >> 16 & 0xff) / 255F, (color >> 8 & 0xff) / 255F, (color & 0xff) / 255F);
+        RenderSystem.color3f(r, g, b);
+
+        int red = (int) (r * 0xff);
+        int green = (int) (g * 0xff);
+        int blue = (int) (b * 0xff);
+
+        int alpha = (int) (a * 255);
+
+        int color = red << 16 | green << 8 | blue;
 
         /*
          * Enable GL_BLEND in case the font is drawn anti-aliased because Minecraft itself only enables blending for chat text
@@ -178,17 +190,17 @@ public class TrueTypeRenderer implements IFontRenderer {
             float y1 = startY + (glyph.y) / 2.0F;
             float y2 = startY + (glyph.y + texture.height) / 2.0F;
 
-            int r = color >> 16 & 0xff;
-            int g = color >> 8 & 0xff;
-            int b = color & 0xff;
-
             buffer.begin(7, DefaultVertexFormats.POSITION_COLOR_TEX);
             GlStateManager.bindTexture(texture.textureName);
 
-            buffer.pos(x1, y1, 0).color(r, g, b, alpha).tex(texture.u1, texture.v1).endVertex();
-            buffer.pos(x1, y2, 0).color(r, g, b, alpha).tex(texture.u1, texture.v2).endVertex();
-            buffer.pos(x2, y2, 0).color(r, g, b, alpha).tex(texture.u2, texture.v2).endVertex();
-            buffer.pos(x2, y1, 0).color(r, g, b, alpha).tex(texture.u2, texture.v1).endVertex();
+            red = color >> 16 & 255;
+            green = color >> 8 & 255;
+            blue = color & 255;
+
+            buffer.pos(x1, y1, 0).color(red, green, blue, alpha).tex(texture.u1, texture.v1).endVertex();
+            buffer.pos(x1, y2, 0).color(red, green, blue, alpha).tex(texture.u1, texture.v2).endVertex();
+            buffer.pos(x2, y2, 0).color(red, green, blue, alpha).tex(texture.u2, texture.v2).endVertex();
+            buffer.pos(x2, y1, 0).color(red, green, blue, alpha).tex(texture.u2, texture.v1).endVertex();
 
             tessellator.draw();
         }
@@ -218,20 +230,16 @@ public class TrueTypeRenderer implements IFontRenderer {
                 /* The strike/underlines are drawn beyond the glyph's width to include the extra space between glyphs */
                 float glyphSpace = glyph.advance - glyph.texture.width;
 
-                int r = color >> 16 & 0xff;
-                int g = color >> 8 & 0xff;
-                int b = color & 0xff;
-
                 /* Draw underline under glyph if the style is enabled */
                 if ((renderStyle & StringCache.ColorCode.UNDERLINE) != 0) {
                     /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
-                    drawI1(startX, startY, buffer, glyph, glyphSpace, alpha, r, g, b, UNDERLINE_OFFSET, UNDERLINE_THICKNESS);
+                    drawI1(startX, startY, buffer, glyph, glyphSpace, alpha, red, green, blue, UNDERLINE_OFFSET, UNDERLINE_THICKNESS);
                 }
 
                 /* Draw strikethrough in the middle of glyph if the style is enabled */
                 if ((renderStyle & StringCache.ColorCode.STRIKETHROUGH) != 0) {
                     /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
-                    drawI1(startX, startY, buffer, glyph, glyphSpace, alpha, r, g, b, STRIKETHROUGH_OFFSET, STRIKETHROUGH_THICKNESS);
+                    drawI1(startX, startY, buffer, glyph, glyphSpace, alpha, red, green, blue, STRIKETHROUGH_OFFSET, STRIKETHROUGH_THICKNESS);
                 }
             }
 

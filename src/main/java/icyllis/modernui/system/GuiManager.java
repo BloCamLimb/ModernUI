@@ -1,7 +1,7 @@
 package icyllis.modernui.system;
 
 import icyllis.modernui.api.global.IContainerFactory;
-import icyllis.modernui.api.handler.IGuiHandler;
+import icyllis.modernui.api.handler.IGuiManager;
 import icyllis.modernui.api.global.IModuleFactory;
 import icyllis.modernui.gui.master.GlobalElementBuilder;
 import icyllis.modernui.gui.master.UniversalModernScreen;
@@ -19,7 +19,7 @@ import java.util.*;
 import java.util.function.Consumer;
 
 @OnlyIn(Dist.CLIENT)
-public enum GuiHandler implements IGuiHandler {
+public enum GuiManager implements IGuiManager {
     INSTANCE;
 
     /*private final Map<ResourceLocation, IContainerFactory> CONTAINERS = new HashMap<>();

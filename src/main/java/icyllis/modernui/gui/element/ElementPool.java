@@ -23,13 +23,13 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.IntPredicate;
 
-public class Pool implements Consumer<IBase>, IPool {
+public class ElementPool implements Consumer<IBase>, IPool {
 
     private List<IBase> elements = new ArrayList<>();
 
     private IntPredicate availability;
 
-    public Pool(IntPredicate availability) {
+    public ElementPool(IntPredicate availability) {
         this.availability = availability;
     }
 

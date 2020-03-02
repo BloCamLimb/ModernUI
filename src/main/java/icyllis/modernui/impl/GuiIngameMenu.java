@@ -18,14 +18,19 @@
 
 package icyllis.modernui.impl;
 
+import icyllis.modernui.api.ModernUI_API;
 import icyllis.modernui.api.global.IElementBuilder;
 import icyllis.modernui.api.global.MotionType;
+import icyllis.modernui.api.handler.IModuleManager;
 import icyllis.modernui.gui.master.GlobalAnimationManager;
 import icyllis.modernui.gui.master.UniversalModernScreen;
+import icyllis.modernui.impl.menu.SettingsModule;
 import icyllis.modernui.system.ReferenceLibrary;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.advancements.AdvancementsScreen;
-import net.minecraft.client.gui.screen.*;
+import net.minecraft.client.gui.screen.DirtMessageScreen;
+import net.minecraft.client.gui.screen.MainMenuScreen;
+import net.minecraft.client.gui.screen.MultiplayerScreen;
 import net.minecraft.realms.RealmsBridge;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -37,7 +42,9 @@ public final class GuiIngameMenu extends UniversalModernScreen {
     public GuiIngameMenu(boolean isFullMenu) {
         super(l -> {
             Modules m = new Modules();
-            l.add(m::createDefault, 0);
+            SettingsModule m2 = new SettingsModule();
+            l.add(m::createDefault, 0)
+            .add(m2::buildGeneralSettings, 30);
         });
     }
 
@@ -45,6 +52,7 @@ public final class GuiIngameMenu extends UniversalModernScreen {
 
         void createDefault(IElementBuilder builder) {
             Minecraft minecraft = Minecraft.getInstance();
+            IModuleManager manager = ModernUI_API.INSTANCE.getModuleManager();
             /*builder.defaultBackground()
                     .alphaAnimation(0, 4);*/
             //ModernUI.LOGGER.debug("Gui Scale Factor: {}", Minecraft.getInstance().getMainWindow().getGuiScaleFactor());
@@ -91,18 +99,18 @@ public final class GuiIngameMenu extends UniversalModernScreen {
                         .initEventListener(a -> a
                                 .setPos(w -> 8f, h -> h * 0.75f - 20 - h / 32f)
                                 .setRectShape(16, 16))
-                        .onLeftClick(() -> {})
+                        .onLeftClick(() -> ModernUI_API.INSTANCE.getModuleManager().switchModule(0))
                         .buildToPool(pool);
-                builder.buttonT1()
+                /*builder.buttonT1()
                         .createTexture(a -> a
                                 .init(w -> 8f, h -> h * 0.75f, 32, 32, ReferenceLibrary.ICONS, 0, 0, 0x00808080, 0.5f))
                         .initEventListener(a -> a
                                 .setPos(w -> 8f, h -> h * 0.75f)
                                 .setRectShape(16, 16))
-                        .onLeftClick(() -> {
-                            if (Minecraft.getInstance().currentScreen != null)
-                                Minecraft.getInstance().displayGuiScreen(new OptionsScreen(Minecraft.getInstance().currentScreen, Minecraft.getInstance().gameSettings));
-                        })
+                        .onLeftClick(() -> ModernUI_API.INSTANCE.getModuleManager().switchModule(30))
+                        .buildToPool(pool);*/
+                builder.buttonT1B()
+                        .init(w -> 8f, h -> h * 0.75f, 32, 32, ReferenceLibrary.ICONS, 0, 0, 0.5f, i -> i / 30 == 1, 30)
                         .buildToPool(pool);
                 builder.buttonT1()
                         .createTexture(a -> a

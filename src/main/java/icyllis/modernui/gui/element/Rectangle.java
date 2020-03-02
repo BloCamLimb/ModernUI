@@ -18,11 +18,13 @@
 
 package icyllis.modernui.gui.element;
 
+import icyllis.modernui.api.builder.IRectangleBuilder;
 import icyllis.modernui.gui.master.DrawTools;
 
+import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class Rectangle extends Base {
+public class Rectangle extends Base implements IRectangleBuilder {
 
     public Function<Integer, Float> fakeW, fakeH;
 
@@ -33,15 +35,8 @@ public class Rectangle extends Base {
 
     public float colorR, colorG, colorB;
 
-    public Rectangle(Function<Integer, Float> x, Function<Integer, Float> y, Function<Integer, Float> w, Function<Integer, Float> h, float r, float g, float b, float a) {
-        this.fakeX = x;
-        this.fakeY = y;
-        this.fakeW = w;
-        this.fakeH = h;
-        this.colorR = r;
-        this.colorG = g;
-        this.colorB = b;
-        this.alpha = a;
+    public Rectangle() {
+
     }
 
     @Override
@@ -56,4 +51,27 @@ public class Rectangle extends Base {
         sizeH = fakeH.apply(height);
     }
 
+    @Override
+    public IRectangleBuilder init(Function<Integer, Float> x, Function<Integer, Float> y, Function<Integer, Float> w, Function<Integer, Float> h, int RGBA) {
+        this.fakeX = x;
+        this.fakeY = y;
+        this.fakeW = w;
+        this.fakeH = h;
+        this.alpha = (RGBA >> 24 & 255) / 255.0f;
+        this.colorR = (RGBA >> 16 & 255) / 255.0f;
+        this.colorG = (RGBA >> 8 & 255) / 255.0f;
+        this.colorB = (RGBA & 255) / 255.0f;
+        return this;
+    }
+
+    @Override
+    public void buildToPool(Consumer<IBase> pool) {
+        pool.accept(this);
+    }
+
+    @Override
+    public void buildToPool(Consumer<IBase> pool, Consumer<Rectangle> consumer) {
+        pool.accept(this);
+        consumer.accept(this);
+    }
 }

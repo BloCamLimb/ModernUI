@@ -2,17 +2,22 @@ package icyllis.modernui.gui.master;
 
 import icyllis.modernui.api.global.IElementBuilder;
 import icyllis.modernui.api.global.IModuleFactory;
+import icyllis.modernui.api.handler.IModuleManager;
 import icyllis.modernui.gui.element.IPool;
+import icyllis.modernui.system.ModernUI;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 import java.util.stream.Collectors;
 
-public class GlobalModuleManager implements IModuleFactory {
+public class GlobalModuleManager implements IModuleFactory, IModuleManager {
 
-    static final GlobalModuleManager INSTANCE = new GlobalModuleManager();
+    public static final GlobalModuleManager INSTANCE = new GlobalModuleManager();
 
     @Nullable
     public IModernScreen master;
@@ -21,7 +26,9 @@ public class GlobalModuleManager implements IModuleFactory {
 
     private List<IPool> pools = new ArrayList<>();
 
-    private List<IPool> activePools = new ArrayList<>();
+    private Set<IPool> activePools = new HashSet<>();
+
+    private List<IntConsumer> moduleEvents = new ArrayList<>();
 
     private int width, height;
 
@@ -31,13 +38,20 @@ public class GlobalModuleManager implements IModuleFactory {
         this.height = height;
         GlobalElementBuilder.INSTANCE.setMaster(master);
         this.switchModule(0);
+        GlobalAnimationManager.INSTANCE.resize(width, height);
     }
-
+    @Override
     public void switchModule(int id) {
         modules.stream().filter(m -> m.id == id).findFirst().ifPresent(MasterModule::build);
+        moduleEvents.forEach(e -> e.accept(id));
         activePools.removeIf(c -> !c.test(id));
         activePools.addAll(pools.stream().filter(c -> c.test(id)).collect(Collectors.toCollection(ArrayList::new)));
         activePools.forEach(e -> e.resize(width, height));
+    }
+
+    @Override
+    public void addModuleSwitchEvent(IntConsumer event) {
+        moduleEvents.add(event);
     }
 
     public void draw() {
@@ -45,6 +59,8 @@ public class GlobalModuleManager implements IModuleFactory {
     }
 
     public void resize(int width, int height) {
+        this.width = width;
+        this.height = height;
         activePools.forEach(e -> e.resize(width, height));
         GlobalAnimationManager.INSTANCE.resize(width, height);
     }
@@ -53,6 +69,7 @@ public class GlobalModuleManager implements IModuleFactory {
         modules.clear();
         pools.clear();
         activePools.clear();
+        moduleEvents.clear();
         master = null;
         GlobalAnimationManager.INSTANCE.clear();
     }

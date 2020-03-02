@@ -1,7 +1,7 @@
 package icyllis.modernui.system;
 
 import icyllis.modernui.api.ModernUI_API;
-import icyllis.modernui.api.handler.IGuiHandler;
+import icyllis.modernui.api.handler.IGuiManager;
 import icyllis.modernui.impl.chat.GuiChat;
 import icyllis.modernui.gui.blur.BlurHandler;
 import icyllis.modernui.gui.font.TrueTypeRenderer;
@@ -31,7 +31,7 @@ public class EventsHandler {
     @SubscribeEvent
     public static void rightClickItem(PlayerInteractEvent.RightClickItem event) {
         if(!event.getPlayer().getEntityWorld().isRemote && event.getItemStack().getItem().equals(Items.DIAMOND)) {
-            ModernUI_API.INSTANCE.getNetworkHandler().openGUI((ServerPlayerEntity) event.getPlayer(), new ContainerProvider(), new BlockPos(-155,82,-121));
+            ModernUI_API.INSTANCE.getNetworkManager().openGUI((ServerPlayerEntity) event.getPlayer(), new ContainerProvider(), new BlockPos(-155,82,-121));
         }
     }
 
@@ -83,13 +83,13 @@ public class EventsHandler {
 
         @SubscribeEvent
         public static void setupCommon(FMLCommonSetupEvent event) {
-            ModernUI.LOGGER.info(MARKER, "{} has been initialized", ModernUI_API.INSTANCE.getDeclaringClass().getSimpleName());
+
         }
 
         @OnlyIn(Dist.CLIENT)
         @SubscribeEvent
         public static void setupClient(FMLClientSetupEvent event) {
-            IGuiHandler guiHandler = ModernUI_API.INSTANCE.getGuiHandler();
+            IGuiManager guiHandler = ModernUI_API.INSTANCE.getGuiManager();
             guiHandler.registerContainerGui(UILibs.TEST_CONTAINER_SCREEN, ContainerTest::new, l -> l.add(new ModuleTest()::create, 0));
             HistoryRecorder.gEmojiPair();
         }

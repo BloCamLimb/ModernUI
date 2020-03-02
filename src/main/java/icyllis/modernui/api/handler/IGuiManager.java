@@ -28,7 +28,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import java.util.function.Consumer;
 
 @OnlyIn(Dist.CLIENT)
-public interface IGuiHandler {
+public interface IGuiManager {
 
     /**
      * Register a gui with container

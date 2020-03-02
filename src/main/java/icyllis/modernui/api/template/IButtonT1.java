@@ -4,8 +4,11 @@ import icyllis.modernui.api.builder.IEventListenerInitializer;
 import icyllis.modernui.api.builder.ITextLineBuilder;
 import icyllis.modernui.api.builder.ITextureBuilder;
 import icyllis.modernui.gui.element.IBase;
+import net.minecraft.util.ResourceLocation;
 
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.IntPredicate;
 
 public interface IButtonT1 {
 

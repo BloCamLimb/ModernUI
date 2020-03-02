@@ -26,12 +26,14 @@ public interface IFontRenderer {
      * @param str unformatted text
      * @param startX x pos
      * @param startY y pos
-     * @param color rgb hex (eg 0xffffff)
-     * @param alpha int (0x00-0xff)
+     * @param r red
+     * @param g green
+     * @param b blue
+     * @param a alpha
      * @param align 0-left 0.25-center 0.5-right
      * @return formatted text width
      */
-    float drawString(String str, float startX, float startY, int color, int alpha, float align);
+    float drawString(String str, float startX, float startY, float r, float g, float b, float a, float align);
 
     /**
      * Get string width

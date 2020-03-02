@@ -34,7 +34,7 @@ import java.util.function.Consumer;
 
 public class ButtonT1 extends Widget<Object> implements IButtonT1 {
 
-    private Texture2D texture;
+    protected Texture2D texture;
 
     private TextLine hoverText = TextLine.DEFAULT;
 
@@ -46,14 +46,14 @@ public class ButtonT1 extends Widget<Object> implements IButtonT1 {
     public void draw() {
         super.draw();
         texture.draw();
-        hoverText.draw();
+        //hoverText.draw();
     }
 
     @Override
     public void resize(int width, int height) {
         super.resize(width, height);
         texture.resize(width, height);
-        hoverText.resize(width, height);
+        //hoverText.resize(width, height);
     }
 
     @Override
@@ -66,8 +66,8 @@ public class ButtonT1 extends Widget<Object> implements IButtonT1 {
 
     @Override
     public IButtonT1 createTexture(Consumer<ITextureBuilder> builderConsumer) {
-        builderConsumer.accept(GlobalElementBuilder.INSTANCE.texture());
-        texture = GlobalElementBuilder.TextureBuilder.INSTANCE.buildForMe();
+        texture = GlobalElementBuilder.INSTANCE.texture().buildForMe();
+        builderConsumer.accept(texture);
         GlobalAnimationManager.INSTANCE
                 .create(a -> a
                         .setInit(0)

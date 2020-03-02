@@ -1,7 +1,7 @@
 package icyllis.modernui.system;
 
 import icyllis.modernui.api.global.IContainerProvider;
-import icyllis.modernui.api.handler.INetworkHandler;
+import icyllis.modernui.api.handler.INetworkManager;
 import io.netty.buffer.Unpooled;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.container.Container;
@@ -18,7 +18,7 @@ import java.util.function.Consumer;
 
 import static icyllis.modernui.system.PlayMessages.*;
 
-public enum NetworkHandler implements INetworkHandler {
+public enum NetworkManager implements INetworkManager {
     INSTANCE;
 
     private final String protocol = "mui-net-1-1";

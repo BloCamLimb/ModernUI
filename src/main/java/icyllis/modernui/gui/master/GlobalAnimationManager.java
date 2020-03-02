@@ -51,7 +51,7 @@ public class GlobalAnimationManager {
     public void create(Consumer<IAnimationBuilder> builder, Consumer<Float> receiver, Consumer<Function<Integer, Float>> relativeReceiver) {
         DisposableAnimation a = new DisposableAnimation(time, receiver, relativeReceiver);
         builder.accept(a);
-        a.resize(width, height);
+        a.buildResize(width, height);
         dAnimations.add(a);
     }
 
@@ -62,7 +62,7 @@ public class GlobalAnimationManager {
     public Consumer<Boolean> createHS(Consumer<IAnimationBuilder> builder, Consumer<Float> receiver, Consumer<Function<Integer, Float>> relativeReceiver) {
         HighStatusAnimation a = new HighStatusAnimation(receiver, relativeReceiver);
         builder.accept(a);
-        a.resize(width, height);
+        a.buildResize(width, height);
         hsAnimations.add(a);
         return a;
     }

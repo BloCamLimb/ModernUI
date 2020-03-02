@@ -18,14 +18,23 @@
 
 package icyllis.modernui.system;
 
+import icyllis.modernui.api.ModernUI_API;
+import icyllis.modernui.api.handler.IGuiManager;
+import icyllis.modernui.api.handler.IModuleManager;
+import icyllis.modernui.api.handler.INetworkManager;
 import icyllis.modernui.gui.blur.BlurHandler;
+import icyllis.modernui.gui.master.GlobalModuleManager;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+
+import java.lang.reflect.Field;
 
 @Mod(ModernUI.MODID)
 public class ModernUI {
@@ -36,7 +45,23 @@ public class ModernUI {
     public static final Marker MARKER = MarkerManager.getMarker("MAIN");
 
     public ModernUI() {
-        DistExecutor.runWhenOn(Dist.CLIENT, () -> () -> ModernUI.LOGGER.info(MARKER, "{} has been initialized", BlurHandler.INSTANCE.getDeclaringClass().getSimpleName()));
+        try {
+            Class<?> apiClass = Class.forName("icyllis.modernui.api.ModernUI_API");
+            Field f = apiClass.getDeclaredField("network");
+            f.setAccessible(true);
+            f.set(ModernUI_API.INSTANCE, NetworkManager.INSTANCE);
+            if (FMLEnvironment.dist == Dist.CLIENT) {
+                f = apiClass.getDeclaredField("gui");
+                f.setAccessible(true);
+                f.set(ModernUI_API.INSTANCE, GuiManager.INSTANCE);
+                f = apiClass.getDeclaredField("module");
+                f.setAccessible(true);
+                f.set(ModernUI_API.INSTANCE, GlobalModuleManager.INSTANCE);
+                ModernUI.LOGGER.debug(MARKER, "{} has been initialized", BlurHandler.INSTANCE.getDeclaringClass().getSimpleName()); // call constructor methods
+            }
+        } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException | ClassCastException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }
