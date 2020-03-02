@@ -18,36 +18,24 @@
 
 package icyllis.modernui.api.builder;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 public interface ITextLineBuilder {
 
     /**
-     * Set element relative position to window center. (0,0) will be at crosshair
+     * Set relative position to window size.
+     * Set text content.
+     * Set text alignment: 0 = left, 0.25 = center, 0.5 = right
+     * Set text color in hex
+     * Set scaling.
      * @param x x position
      * @param y y position
+     * @param text text
+     * @param align text align
+     * @param RGBA color
+     * @param scale scale
      * @return builder
      */
-    ITextLineBuilder setPos(float x, float y);
-
-    /**
-     * Set initial constant alpha value, default is 1.0f.
-     * @param a alpha
-     * @return builder
-     */
-    ITextLineBuilder setAlpha(float a);
-
-    ITextLineBuilder text(Supplier<String> text);
-
-    /**
-     * Text alignment: 0 = left, 0.25 = center, 0.5 = right
-     * @param align align
-     */
-    ITextLineBuilder align(float align);
-
-    ITextLineBuilder color(Supplier<Integer> color);
-
-    ITextLineBuilder scale(Supplier<Float> scale);
-
-    ITextLineBuilder style();
+    ITextLineBuilder init(Function<Integer, Float> x, Function<Integer, Float> y, Supplier<String> text, float align, int RGBA, float scale);
 }

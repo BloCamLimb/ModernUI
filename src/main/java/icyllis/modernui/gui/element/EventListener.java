@@ -1,13 +1,13 @@
 package icyllis.modernui.gui.element;
 
 import icyllis.modernui.api.builder.IEventListenerInitializer;
-import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.gui.IGuiEventListener;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntConsumer;
 
 /**
  * An advanced element that can be interacted with mouse and keyboard and trigger something
@@ -120,14 +120,14 @@ public class EventListener<T> implements IEventListenerInitializer, IGuiEventLis
 
     protected void onHoveredChanged() {
         if (mouseHovered) {
-            events.stream().filter(e -> e.id() == iEvent.MOUSE_HOVER_ON).forEach(a -> a.run(host));
+            events.stream().filter(e -> e.id == iEvent.MOUSE_HOVER_ON).forEach(a -> a.accept(host));
         } else {
-            events.stream().filter(e -> e.id() == iEvent.MOUSE_HOVER_OFF).forEach(a -> a.run(host));
+            events.stream().filter(e -> e.id == iEvent.MOUSE_HOVER_OFF).forEach(a -> a.accept(host));
         }
     }
 
     protected void onLeftClick() {
-        events.stream().filter(e -> e.id == iEvent.LEFT_CLICK).forEach(a -> a.run(host));
+        events.stream().filter(e -> e.id == iEvent.LEFT_CLICK).forEach(a -> a.accept(host));
     }
 
     public void addHoverOn(Consumer<T> consumer) {
@@ -149,7 +149,7 @@ public class EventListener<T> implements IEventListenerInitializer, IGuiEventLis
         public static int LEFT_CLICK = 3;
         public static int RIGHT_CLICK = 4;
 
-        private final int id;
+        public final int id;
 
         private final Consumer<T> consumer;
 
@@ -158,11 +158,7 @@ public class EventListener<T> implements IEventListenerInitializer, IGuiEventLis
             this.consumer = consumer;
         }
 
-        public int id() {
-            return id;
-        }
-
-        public void run(T t) {
+        public void accept(T t) {
             consumer.accept(t);
         }
     }

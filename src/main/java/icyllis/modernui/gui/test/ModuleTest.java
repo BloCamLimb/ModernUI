@@ -64,16 +64,6 @@ public class ModuleTest {
                         .setRelPos(68, -109)
                 )
                 .setTarget(7);*/
-        builder.textLine()
-                .text(() -> "INFORMATION")
-                .setPos(-68, -58)
-                .scale(() -> 0.8f)
-                .style();
-        builder.textLine()
-                .text(() -> "CONNECTION")
-                .setPos(-68, 0)
-                .scale(() -> 0.8f)
-                .style();
 
     }
 

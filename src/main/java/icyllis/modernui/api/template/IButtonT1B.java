@@ -16,32 +16,18 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.element;
+package icyllis.modernui.api.template;
 
-/**
- * Universal
- * @param <T> Event listener consumer class
- */
-public class Widget<T> implements IBase {
+import icyllis.modernui.gui.element.IBase;
+import net.minecraft.util.ResourceLocation;
 
-    public EventListener<T> listener;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.IntPredicate;
 
-    public Widget() {
+public interface IButtonT1B {
 
-    }
+    IButtonT1B init(Function<Integer, Float> x, Function<Integer, Float> y, float w, float h, ResourceLocation texture, float u, float v, float scale, IntPredicate availability, int leader);
 
-    protected void setListener(T t) {
-        listener = new EventListener<>(t);
-    }
-
-    @Override
-    public void draw() {
-
-    }
-
-    @Override
-    public void resize(int width, int height) {
-        listener.resize(width, height);
-    }
-
+    void buildToPool(Consumer<IBase> pool);
 }

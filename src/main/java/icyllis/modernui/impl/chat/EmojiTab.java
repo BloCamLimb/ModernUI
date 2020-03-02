@@ -130,7 +130,7 @@ public class EmojiTab implements IGuiEventListener {
             GlStateManager.enableBlend();
             GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
             DrawTools.fillRectWithColor(rx, ry, rx + 11.5f, ry + 11.5f, 0x40d0d0d0);
-            StringRenderer.STRING_RENDERER.drawString(name, 18, y - 11, 0xffffff, 0xff, 0);
+            StringRenderer.STRING_RENDERER.drawString(name, 18, y - 11, 0.88f, 0.88f, 0.88f, 1,0);
             GlStateManager.disableBlend();
             GlStateManager.enableBlend();
             hoverEmoji = emoji;

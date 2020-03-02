@@ -1,39 +1,34 @@
 package icyllis.modernui.api;
 
-import icyllis.modernui.api.handler.INetworkHandler;
-import icyllis.modernui.api.handler.IGuiHandler;
-import icyllis.modernui.system.ModernUI;
+import icyllis.modernui.api.handler.IModuleManager;
+import icyllis.modernui.api.handler.INetworkManager;
+import icyllis.modernui.api.handler.IGuiManager;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 
 public enum ModernUI_API {
     INSTANCE;
 
-    private INetworkHandler network;
+    private INetworkManager network;
 
-    private IGuiHandler gui;
+    private IGuiManager gui;
 
-    {
-        try {
-            Class<?> ac = Class.forName("icyllis.modernui.system.NetworkHandler");
-            network = (INetworkHandler) ac.getField("INSTANCE").get(ac);
-            if (FMLEnvironment.dist == Dist.CLIENT) {
-                ac = Class.forName("icyllis.modernui.system.GuiHandler");
-                gui = (IGuiHandler) ac.getField("INSTANCE").get(ac);
-            }
-        } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException | ClassCastException e) {
-            throw new RuntimeException(e);
-        }
-    }
+    private IModuleManager module;
 
-    public INetworkHandler getNetworkHandler() {
+    public INetworkManager getNetworkManager() {
         return network;
     }
 
     @OnlyIn(Dist.CLIENT)
-    public IGuiHandler getGuiHandler() {
+    public IGuiManager getGuiManager() {
         return gui;
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public IModuleManager getModuleManager() {
+        return module;
     }
 
 }

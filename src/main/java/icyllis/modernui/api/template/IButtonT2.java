@@ -16,32 +16,16 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.element;
+package icyllis.modernui.api.template;
 
-/**
- * Universal
- * @param <T> Event listener consumer class
- */
-public class Widget<T> implements IBase {
+import icyllis.modernui.gui.element.IBase;
 
-    public EventListener<T> listener;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
-    public Widget() {
+public interface IButtonT2 {
 
-    }
+    IButtonT2 init(Function<Integer, Float> x, Function<Integer, Float> y, String text);
 
-    protected void setListener(T t) {
-        listener = new EventListener<>(t);
-    }
-
-    @Override
-    public void draw() {
-
-    }
-
-    @Override
-    public void resize(int width, int height) {
-        listener.resize(width, height);
-    }
-
+    void buildToPool(Consumer<IBase> pool);
 }

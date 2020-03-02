@@ -65,12 +65,17 @@ public class DisposableAnimation implements IAnimationBuilder {
 
     public void resize(int width, int height) {
         if (isVertical) {
-            value = initValue = fakeInitValue.apply(height);
+            initValue = fakeInitValue.apply(height);
             targetValue = fakeTargetValue.apply(height);
         } else {
-            value = initValue = fakeInitValue.apply(width);
+            initValue = fakeInitValue.apply(width);
             targetValue = fakeTargetValue.apply(width);
         }
+    }
+
+    public void buildResize(int width, int height) {
+        resize(width, height);
+        value = initValue;
     }
 
     protected void updateUniform(float currentTime) {
