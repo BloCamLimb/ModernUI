@@ -73,8 +73,6 @@ public class ModernButton extends Base implements IElement {
         RenderSystem.color4f(brightness, brightness, brightness, opacity);
         RenderSystem.scalef(scale, scale, scale);
         textureManager.bindTexture(res);
-        GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
-        GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
         DrawTools.blit(x / scale, y / scale, u, v, sizeW, sizeH);
         RenderSystem.popMatrix();
     }
