@@ -78,10 +78,12 @@ public class DisposableUniAnimation implements IAnimation {
         value = initValue + (targetValue - initValue) * p;
         if (p >= 1) {
             value = targetValue;
+            receiver.accept(value);
             onFinish.run();
             discard = true;
+        } else {
+            receiver.accept(value);
         }
-        receiver.accept(value);
     }
 
     @Override

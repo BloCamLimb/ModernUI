@@ -62,7 +62,7 @@ public class EventsHandler {
             if (hasGui != current)
                 GlobalModuleManager.INSTANCE.resetTicks();
             BlurHandler.INSTANCE.blur(hasGui);
-            ModernUI.LOGGER.debug("Open GUI {}", hasGui ? event.getGui().getClass().getSimpleName() : "null");
+            //ModernUI.LOGGER.debug("Open GUI {}", hasGui ? event.getGui().getClass().getSimpleName() : "null");
         }
     }
 

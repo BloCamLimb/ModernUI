@@ -93,12 +93,12 @@ public class GlobalModuleManager implements IModuleFactory, IModuleManager {
 
     public void clientTick() {
         ticks++;
-        animations.removeIf(IAnimation::shouldRemove);
         pools.forEach(e -> e.tick(ticks));
     }
 
     public void renderTick(float partialTick) {
         floatingPointTicks = ticks + partialTick;
+        animations.removeIf(IAnimation::shouldRemove);
     }
 
     public void resetTicks() {
