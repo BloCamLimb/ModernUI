@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.api.handler;
+package icyllis.modernui.api.manager;
 
 import icyllis.modernui.api.global.IContainerProvider;
 import net.minecraft.entity.player.ServerPlayerEntity;

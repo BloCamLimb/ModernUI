@@ -18,22 +18,19 @@
 
 package icyllis.modernui.gui.animation;
 
-import icyllis.modernui.api.global.IAnimationBuilder;
-import icyllis.modernui.api.global.MotionType;
-import icyllis.modernui.system.ModernUI;
+import icyllis.modernui.api.animation.IAnimation;
+import icyllis.modernui.gui.master.GlobalModuleManager;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class DisposableAnimation implements IAnimationBuilder {
+public class DisposableAnimation implements IAnimation {
 
     protected float value;
 
     protected Function<Integer, Float> fakeInitValue, fakeTargetValue;
 
-    protected float initValue, targetValue, startTime, fixedTiming;
-
-    protected MotionType motionType = MotionType.UNIFORM;
+    protected float initValue, targetValue, startTime = GlobalModuleManager.INSTANCE.getAnimationTime(), fixedTiming;
 
     protected boolean isVertical = false;
 
@@ -44,7 +41,6 @@ public class DisposableAnimation implements IAnimationBuilder {
     protected Consumer<Function<Integer, Float>> relativeReceiver;
 
     public DisposableAnimation(float startTime, Consumer<Float> receiver, Consumer<Function<Integer, Float>> relativeReceiver) {
-        this.startTime = startTime;
         this.receiver = receiver;
         this.relativeReceiver = relativeReceiver;
     }
@@ -53,13 +49,7 @@ public class DisposableAnimation implements IAnimationBuilder {
         if (currentTime <= startTime) {
             return;
         }
-        switch (motionType) {
-            case SINE:
-                updateSine(currentTime);
-                break;
-            default:
-                updateUniform(currentTime);
-        }
+        updateUniform(currentTime);
         receiver.accept(value);
     }
 
@@ -100,50 +90,8 @@ public class DisposableAnimation implements IAnimationBuilder {
         }
     }
 
-    public boolean isFinish() {
+    @Override
+    public boolean shouldRemove() {
         return finish;
-    }
-
-    @Override
-    public IAnimationBuilder setInit(float init) {
-        fakeInitValue = q -> init;
-        return this;
-    }
-
-    @Override
-    public IAnimationBuilder setInit(Function<Integer, Float> init) {
-        fakeInitValue = init;
-        return this;
-    }
-
-    @Override
-    public IAnimationBuilder setTarget(float target) {
-        fakeTargetValue = q -> target;
-        return this;
-    }
-
-    @Override
-    public IAnimationBuilder setTarget(Function<Integer, Float> target, boolean isVertical) {
-        fakeTargetValue = target;
-        this.isVertical = isVertical;
-        return this;
-    }
-
-    @Override
-    public IAnimationBuilder setDelay(float delay) {
-        startTime += delay;
-        return this;
-    }
-
-    @Override
-    public IAnimationBuilder setTiming(float timing) {
-        fixedTiming = timing;
-        return this;
-    }
-
-    @Override
-    public IAnimationBuilder setMotion(MotionType type) {
-        motionType = type;
-        return this;
     }
 }

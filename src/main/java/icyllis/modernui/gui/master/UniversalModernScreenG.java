@@ -12,7 +12,7 @@ import javax.annotation.Nonnull;
 import java.util.function.Consumer;
 
 @OnlyIn(Dist.CLIENT)
-public class UniversalModernScreenG<G extends Container> extends ContainerScreen<G> implements IModernScreen {
+public class UniversalModernScreenG<G extends Container> extends ContainerScreen<G> implements IMasterScreen {
 
     private GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
 
@@ -40,7 +40,7 @@ public class UniversalModernScreenG<G extends Container> extends ContainerScreen
     }
 
     @Override
-    public void addChild(IGuiEventListener eventListener) {
+    public void addEventListener(IGuiEventListener eventListener) {
         children.add(eventListener);
     }
 

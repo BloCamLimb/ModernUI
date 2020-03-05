@@ -18,38 +18,27 @@
 
 package icyllis.modernui.gui.element;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.IntPredicate;
+import icyllis.modernui.api.element.IElement;
+import icyllis.modernui.gui.animation.DisposableSinAnimation;
+import icyllis.modernui.gui.master.DrawTools;
+import icyllis.modernui.gui.master.GlobalModuleManager;
 
-public class ElementPool implements Consumer<IBase>, IPool {
+public class LeftSlidingRect implements IElement {
 
-    private List<IBase> elements = new ArrayList<>();
+    private float sizeW, height, opacity;
 
-    private IntPredicate availability;
-
-    public ElementPool(IntPredicate availability) {
-        this.availability = availability;
+    public LeftSlidingRect(float targetWidth, float opacity) {
+        this.opacity = opacity;
+        GlobalModuleManager.INSTANCE.addAnimation(new DisposableSinAnimation(0, targetWidth, 4, value -> sizeW = value));
     }
 
     @Override
-    public void accept(IBase iBase) {
-        elements.add(iBase);
-    }
-
-    @Override
-    public void draw() {
-        elements.forEach(IBase::draw);
+    public void draw(float currentTime) {
+        DrawTools.fillRectWithColor(0, 0, sizeW, height, 0, 0, 0, opacity);
     }
 
     @Override
     public void resize(int width, int height) {
-        elements.forEach(e -> e.resize(width, height));
-    }
-
-    @Override
-    public boolean test(int value) {
-        return availability.test(value);
+        this.height = height;
     }
 }

@@ -18,31 +18,17 @@
 
 package icyllis.modernui.gui.template;
 
-import icyllis.modernui.api.template.IButtonT1;
-import icyllis.modernui.api.builder.IEventListenerInitializer;
-import icyllis.modernui.api.builder.ITextLineBuilder;
-import icyllis.modernui.api.builder.ITextureBuilder;
-import icyllis.modernui.gui.element.IBase;
-import icyllis.modernui.gui.element.TextLine;
 import icyllis.modernui.gui.element.Texture2D;
-import icyllis.modernui.gui.element.Widget;
-import icyllis.modernui.gui.master.GlobalAnimationManager;
-import icyllis.modernui.gui.master.GlobalElementBuilder;
-import icyllis.modernui.system.ModernUI;
 
-import java.util.function.Consumer;
-
-public class ButtonT1 extends Widget<Object> implements IButtonT1 {
+public class ButtonT1 {
 
     protected Texture2D texture;
 
-    private TextLine hoverText = TextLine.DEFAULT;
-
     public ButtonT1() {
-        setListener(this);
+
     }
 
-    @Override
+    /*@Override
     public void draw() {
         super.draw();
         texture.draw();
@@ -74,7 +60,7 @@ public class ButtonT1 extends Widget<Object> implements IButtonT1 {
                         .setTarget(1.0f)
                         .setTiming(3.0f)
                         .setDelay(1.0f),
-                        r -> texture.alpha = r);
+                        r -> texture.opacity = r);
         Consumer<Boolean> c = GlobalAnimationManager.INSTANCE
                 .createHS(a -> a
                         .setInit(0.5f)
@@ -99,7 +85,7 @@ public class ButtonT1 extends Widget<Object> implements IButtonT1 {
     }
 
     @Override
-    public void buildToPool(Consumer<IBase> pool) {
+    public void buildToPool(Consumer<IElement> pool) {
         pool.accept(this);
-    }
+    }*/
 }

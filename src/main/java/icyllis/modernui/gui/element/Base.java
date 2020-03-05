@@ -18,22 +18,29 @@
 
 package icyllis.modernui.gui.element;
 
+import icyllis.modernui.api.element.IElement;
+
 import java.util.function.Function;
 
-public abstract class Base implements IBase {
+public abstract class Base implements IElement {
 
-    public Function<Integer, Float> fakeX, fakeY;
+    public Function<Integer, Float> xResizer, yResizer;
 
     /**
      * Logical X/Y/W/H
      */
-    public float renderX, renderY;
+    public float x, y;
 
-    public float alpha = 1.0f;
+    public float opacity = 1.0f;
+
+    public Base(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer) {
+        this.xResizer = xResizer;
+        this.yResizer = yResizer;
+    }
 
     @Override
     public void resize(int width, int height) {
-        renderX = fakeX.apply(width);
-        renderY = fakeY.apply(height);
+        x = xResizer.apply(width);
+        y = yResizer.apply(height);
     }
 }

@@ -5,6 +5,7 @@ import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 
+@SuppressWarnings("DuplicatedCode")
 public class DrawTools {
 
     public static void fillRectWithColor(float left, float top, float right, float bottom, int color) {
@@ -29,6 +30,14 @@ public class DrawTools {
         tessellator.draw();
         RenderSystem.enableTexture();
         RenderSystem.disableBlend();
+    }
+
+    public static void fillRectWithFrame(float left, float top, float right, float bottom, float thickness, float iR, float iG, float iB, float iA, float fR, float fG, float fB, float fA) {
+        fillRectWithColor(left, top, right, bottom, iR, iG, iB, iA);
+        fillRectWithColor(left - thickness, top - thickness, right, top, fR, fG, fB, fA);
+        fillRectWithColor(right, top - thickness, right + thickness, bottom, fR, fG, fB, fA);
+        fillRectWithColor(left, bottom, right + thickness, bottom + thickness, fR, fG, fB, fA);
+        fillRectWithColor(left - thickness, top, left, bottom + thickness, fR, fG, fB, fA);
     }
 
     /*public static void fillGradient(float x, float y, float width, float height, int startColor, int endColor, float zLevel) {

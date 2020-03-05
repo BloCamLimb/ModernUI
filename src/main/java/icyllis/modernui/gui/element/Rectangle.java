@@ -18,15 +18,13 @@
 
 package icyllis.modernui.gui.element;
 
-import icyllis.modernui.api.builder.IRectangleBuilder;
 import icyllis.modernui.gui.master.DrawTools;
 
-import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class Rectangle extends Base implements IRectangleBuilder {
+public class Rectangle extends Base {
 
-    public Function<Integer, Float> fakeW, fakeH;
+    public Function<Integer, Float> wResizer, hResizer;
 
     /**
      * Logical size
@@ -35,43 +33,25 @@ public class Rectangle extends Base implements IRectangleBuilder {
 
     public float colorR, colorG, colorB;
 
-    public Rectangle() {
-
+    public Rectangle(Function<Integer, Float> x, Function<Integer, Float> y, Function<Integer, Float> w, Function<Integer, Float> h, int RGBA) {
+        super(x, y);
+        this.wResizer = w;
+        this.hResizer = h;
+        this.opacity = (RGBA >> 24 & 255) / 255.0f;
+        this.colorR = (RGBA >> 16 & 255) / 255.0f;
+        this.colorG = (RGBA >> 8 & 255) / 255.0f;
+        this.colorB = (RGBA & 255) / 255.0f;
     }
 
     @Override
-    public void draw() {
-        DrawTools.fillRectWithColor(renderX, renderY, renderX + sizeW, renderY + sizeH, colorR, colorG, colorB, alpha);
+    public void draw(float currentTime) {
+        DrawTools.fillRectWithColor(x, y, x + sizeW, y + sizeH, colorR, colorG, colorB, opacity);
     }
 
     @Override
     public void resize(int width, int height) {
         super.resize(width, height);
-        sizeW = fakeW.apply(width);
-        sizeH = fakeH.apply(height);
-    }
-
-    @Override
-    public IRectangleBuilder init(Function<Integer, Float> x, Function<Integer, Float> y, Function<Integer, Float> w, Function<Integer, Float> h, int RGBA) {
-        this.fakeX = x;
-        this.fakeY = y;
-        this.fakeW = w;
-        this.fakeH = h;
-        this.alpha = (RGBA >> 24 & 255) / 255.0f;
-        this.colorR = (RGBA >> 16 & 255) / 255.0f;
-        this.colorG = (RGBA >> 8 & 255) / 255.0f;
-        this.colorB = (RGBA & 255) / 255.0f;
-        return this;
-    }
-
-    @Override
-    public void buildToPool(Consumer<IBase> pool) {
-        pool.accept(this);
-    }
-
-    @Override
-    public void buildToPool(Consumer<IBase> pool, Consumer<Rectangle> consumer) {
-        pool.accept(this);
-        consumer.accept(this);
+        sizeW = wResizer.apply(width);
+        sizeH = hResizer.apply(height);
     }
 }

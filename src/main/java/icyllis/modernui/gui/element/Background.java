@@ -16,13 +16,26 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.api.handler;
+package icyllis.modernui.gui.element;
 
-import java.util.function.IntConsumer;
+import icyllis.modernui.api.element.IElement;
+import icyllis.modernui.gui.master.DrawTools;
 
-public interface IModuleManager {
+public class Background implements IElement {
 
-    void switchModule(int id);
+    //TODO Config
+    private float alpha = 0.45f;
 
-    void addModuleSwitchEvent(IntConsumer event);
+    private int width, height;
+
+    @Override
+    public void draw(float currentTime) {
+        DrawTools.fillRectWithColor(0, 0, width, height, 0, 0, 0, alpha);
+    }
+
+    @Override
+    public void resize(int width, int height) {
+        this.width = width;
+        this.height = height;
+    }
 }

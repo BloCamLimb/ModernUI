@@ -18,18 +18,38 @@
 
 package icyllis.modernui.gui.animation;
 
-import java.util.function.Consumer;
-import java.util.function.Function;
+import icyllis.modernui.api.animation.IAnimation;
 
-public class HighStatusAnimation extends DisposableAnimation implements Consumer<Boolean> {
+import java.util.function.Consumer;
+
+public class HighActiveUniAnimation implements IAnimation {
+
+    protected float startTime;
+
+    protected float value;
+
+    protected float initValue;
+
+    protected float targetValue;
+
+    protected float duration;
+
+    protected Consumer<Float> receiver;
+
+    protected boolean finish = false;
 
     private boolean running = false;
+
     private boolean status = false;
 
     private boolean finishSwitch = false;
 
-    public HighStatusAnimation(Consumer<Float> receiver, Consumer<Function<Integer, Float>> relativeReceiver) {
-        super(-1, receiver, relativeReceiver);
+    public HighActiveUniAnimation(float initValue, float targetValue, float duration, Consumer<Float> receiver) {
+        value = this.initValue = initValue;
+        this.targetValue = targetValue;
+        this.duration = duration;
+        this.receiver = receiver;
+        startTime = -1;
     }
 
     @Override
@@ -38,7 +58,7 @@ public class HighStatusAnimation extends DisposableAnimation implements Consumer
             if (startTime == -1) {
                 calculateStartTime(currentTime);
             } else {
-                super.update(currentTime);
+                updateUniform(currentTime);
             }
         }
         if (finish) {
@@ -58,66 +78,31 @@ public class HighStatusAnimation extends DisposableAnimation implements Consumer
         p = (targetValue - value) / (targetValue - initValue);
         if (status)
             p = 1 - p;
-        startTime = currentTime - fixedTiming * p;
-        /*switch (motionType) {
-            case UNIFORM:
-                p = (targetValue - value) / (targetValue - initValue);
-                if (status)
-                    p = 1 - p;
-                startTime = currentTime - fixedTiming * p;
-                break;
-            case SINE:
-                p = (targetValue - value) / (targetValue - initValue);
-                if (status)
-                    p = 1 - p;
-                p = (float) (Math.asin(p) * 2 / Math.PI);
-                startTime = currentTime - fixedTiming * p;
-                break;
-        }*/
+        startTime = currentTime - duration * p;
     }
 
-    @Override
     protected void updateUniform(float currentTime) {
-        if (status)
-            super.updateUniform(currentTime);
-        else {
-            float d = currentTime - startTime;
-            value = targetValue + (initValue - targetValue) * (d / fixedTiming);
+        if (status) {
+            value = initValue + (targetValue - initValue) * ((currentTime - startTime) / duration);
+            if (value >= targetValue) {
+                value = targetValue;
+                finish = true;
+            }
+        } else {
+            value = targetValue + (initValue - targetValue) * ((currentTime - startTime) / duration);
             if (value <= initValue) {
                 value = initValue;
                 finish = true;
-                relativeReceiver.accept(fakeTargetValue);
             }
         }
+        receiver.accept(value);
     }
 
-    @Override
-    protected void updateSine(float currentTime) {
-        if (status)
-            super.updateSine(currentTime);
-        else {
-            float d = currentTime - startTime;
-            float p = d / fixedTiming;
-            value = targetValue + (initValue - targetValue) * (float) Math.sin(p * Math.PI / 2f);
-            if (p >= 1) {
-                value = initValue;
-                finish = true;
-                relativeReceiver.accept(fakeTargetValue);
-            }
-        }
-    }
-
-    @Override
-    public boolean shouldRemove() {
-        return !status && !running;
-    }
-
-    @Override
-    public void accept(Boolean aBoolean) {
-        if (!status && aBoolean) {
+    public void setStatus(Boolean t) {
+        if (!status && t) {
             running = true;
             status = true;
-        } else if (status && !aBoolean) {
+        } else if (status && !t) {
             if (running) {
                 finishSwitch = true;
             } else {

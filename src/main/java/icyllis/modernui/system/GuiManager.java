@@ -1,9 +1,9 @@
 package icyllis.modernui.system;
 
 import icyllis.modernui.api.global.IContainerFactory;
-import icyllis.modernui.api.handler.IGuiManager;
+import icyllis.modernui.api.manager.IGuiManager;
 import icyllis.modernui.api.global.IModuleFactory;
-import icyllis.modernui.gui.master.GlobalElementBuilder;
+import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.UniversalModernScreen;
 import icyllis.modernui.gui.master.UniversalModernScreenG;
 import javafx.util.Pair;
@@ -31,7 +31,7 @@ public enum GuiManager implements IGuiManager {
     public void openContainerScreen(ResourceLocation id, int windowId, PacketBuffer extraData) {
         if (CONTAINER_SCREENS.containsKey(id)) {
             Pair<IContainerFactory<? extends Container>, Consumer<IModuleFactory>> pair = CONTAINER_SCREENS.get(id);
-            GlobalElementBuilder.INSTANCE.setExtraData(new PacketBuffer(extraData.copy()));
+            GlobalModuleManager.INSTANCE.setExtraData(new PacketBuffer(extraData.copy()));
             IContainerFactory factory = pair.getKey();
             Container container = factory.create(windowId, Minecraft.getInstance().player.inventory, extraData);
             Minecraft.getInstance().player.openContainer = container;

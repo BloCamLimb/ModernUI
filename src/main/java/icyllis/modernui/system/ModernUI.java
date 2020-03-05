@@ -19,14 +19,9 @@
 package icyllis.modernui.system;
 
 import icyllis.modernui.api.ModernUI_API;
-import icyllis.modernui.api.handler.IGuiManager;
-import icyllis.modernui.api.handler.IModuleManager;
-import icyllis.modernui.api.handler.INetworkManager;
 import icyllis.modernui.gui.blur.BlurHandler;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.apache.logging.log4j.LogManager;

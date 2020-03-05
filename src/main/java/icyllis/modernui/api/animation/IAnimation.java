@@ -16,17 +16,23 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.api.builder;
+package icyllis.modernui.api.animation;
 
-import java.util.function.Function;
+public interface IAnimation {
 
-public interface IEventListenerInitializer {
+    /**
+     * Update animations before drawing
+     * @param currentTime floating point ticks, 20.0 ticks = 1 second
+     */
+    void update(float currentTime);
 
-    IEventListenerInitializer setPos(Function<Integer, Float> x, Function<Integer, Float> y);
+    default void resize(int width, int height) {}
 
-    IEventListenerInitializer setRectShape(float width, float height);
-
-    IEventListenerInitializer setCircleShape(float radius);
-
-    IEventListenerInitializer setSectorShape(float radius, float clockwise, float flare);
+    /**
+     * If return true, this instance will be removed from render loop
+     * @return whether to remove
+     */
+    default boolean shouldRemove() {
+        return false;
+    }
 }
