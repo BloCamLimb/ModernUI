@@ -18,15 +18,10 @@
 
 package icyllis.modernui.impl.menu;
 
-import icyllis.modernui.api.ModernUI_API;
-import icyllis.modernui.api.global.IElementBuilder;
-import icyllis.modernui.api.handler.IModuleManager;
-import icyllis.modernui.impl.menu.element.SettingsBackground;
-
 public class SettingsModule {
 
-    public void buildGeneralSettings(IElementBuilder builder) {
-        IModuleManager manager = ModernUI_API.INSTANCE.getModuleManager();
+    public void buildGeneralSettings() {
+        /*IModuleManager manager = ModernUI_API.INSTANCE.getModuleManager();
         builder.pool(i -> i / 30 == 1, pool -> {
             pool.accept(new SettingsBackground());
             builder.buttonT2()
@@ -47,6 +42,6 @@ public class SettingsModule {
             builder.buttonT2()
                     .init(w -> 384f, h -> 20f, "Configs")
                     .buildToPool(pool);
-        });
+        });*/
     }
 }

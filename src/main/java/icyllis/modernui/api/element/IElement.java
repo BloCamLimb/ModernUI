@@ -16,9 +16,13 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.api.template;
+package icyllis.modernui.api.element;
 
-public interface IBackground {
+public interface IElement {
 
-    void alphaAnimation(float init, float time);
+    void draw(float currentTime);
+
+    void resize(int width, int height);
+
+    default void tick(int ticks) {}
 }

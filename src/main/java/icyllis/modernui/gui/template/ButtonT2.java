@@ -18,17 +18,10 @@
 
 package icyllis.modernui.gui.template;
 
-import icyllis.modernui.api.template.IButtonT2;
-import icyllis.modernui.gui.element.IBase;
 import icyllis.modernui.gui.element.Rectangle;
 import icyllis.modernui.gui.element.TextLine;
-import icyllis.modernui.gui.element.Widget;
-import icyllis.modernui.gui.master.GlobalAnimationManager;
 
-import java.util.function.Consumer;
-import java.util.function.Function;
-
-public class ButtonT2 extends Widget<Object> implements IButtonT2 {
+public class ButtonT2 {
 
     private Rectangle rect;
 
@@ -39,10 +32,10 @@ public class ButtonT2 extends Widget<Object> implements IButtonT2 {
     private boolean selected = false;
 
     public ButtonT2() {
-        setListener(this);
+
     }
 
-    @Override
+    /*@Override
     public void draw() {
         super.draw();
         rect.draw();
@@ -69,7 +62,7 @@ public class ButtonT2 extends Widget<Object> implements IButtonT2 {
                         .setInit(0)
                         .setTarget(0.8f)
                         .setTiming(4),
-                        r -> rect.alpha = r);
+                        r -> rect.opacity = r);
         Consumer<Boolean> c2 = GlobalAnimationManager.INSTANCE
                 .createHS(a -> a
                         .setInit(0.8f)
@@ -90,7 +83,7 @@ public class ButtonT2 extends Widget<Object> implements IButtonT2 {
     }
 
     @Override
-    public void buildToPool(Consumer<IBase> pool) {
+    public void buildToPool(Consumer<IElement> pool) {
         pool.accept(this);
-    }
+    }*/
 }

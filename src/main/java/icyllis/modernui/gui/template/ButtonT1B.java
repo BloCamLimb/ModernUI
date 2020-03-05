@@ -18,21 +18,11 @@
 
 package icyllis.modernui.gui.template;
 
-import icyllis.modernui.api.ModernUI_API;
-import icyllis.modernui.api.template.IButtonT1B;
-import icyllis.modernui.gui.master.GlobalAnimationManager;
-import icyllis.modernui.gui.master.GlobalElementBuilder;
-import net.minecraft.util.ResourceLocation;
-
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.IntPredicate;
-
-public class ButtonT1B extends ButtonT1 implements IButtonT1B {
+public class ButtonT1B extends ButtonT1 {
 
     private boolean lock = false;
 
-    @Override
+    /*@Override
     public IButtonT1B init(Function<Integer, Float> x, Function<Integer, Float> y, float w, float h, ResourceLocation texture, float u, float v, float scale, IntPredicate availability, int leader) {
         this.texture = GlobalElementBuilder.INSTANCE.texture().buildForMe();
         this.texture.init(x, y, w, h, texture, u, v, 0x00808080, scale);
@@ -42,7 +32,7 @@ public class ButtonT1B extends ButtonT1 implements IButtonT1B {
                                 .setTarget(1.0f)
                                 .setTiming(3.0f)
                                 .setDelay(1.0f),
-                        r -> this.texture.alpha = r);
+                        r -> this.texture.opacity = r);
         Consumer<Boolean> c = GlobalAnimationManager.INSTANCE
                 .createHS(a -> a
                                 .setInit(0.5f)
@@ -60,7 +50,7 @@ public class ButtonT1B extends ButtonT1 implements IButtonT1B {
                 c.accept(false);
         });
         initEventListener(b -> b.setPos(x, y).setRectShape(w * scale, h * scale));
-        listener.addLeftClick(q -> ModernUI_API.INSTANCE.getModuleManager().switchModule(leader));
+        listener.addLeftClick(q -> ModernUI_API.INSTANCE.getModuleManager().switchTo(leader));
         return this;
-    }
+    }*/
 }

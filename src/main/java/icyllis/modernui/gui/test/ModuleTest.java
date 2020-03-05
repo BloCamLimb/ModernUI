@@ -1,9 +1,7 @@
 package icyllis.modernui.gui.test;
 
-import icyllis.modernui.api.global.IElementBuilder;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.TextFormatting;
 
 public class ModuleTest {
 
@@ -11,8 +9,8 @@ public class ModuleTest {
     public static final ResourceLocation FRAME = new ResourceLocation(ModernUI.MODID, "gui/gui_default_frame.png");
     public static final ResourceLocation BUTTON = new ResourceLocation(ModernUI.MODID, "gui/gui_button.png");
 
-    public void create(IElementBuilder builder) {
-        builder.defaultBackground();
+    public void create() {
+
         /*builder.texture()
                 .setTexture(BACKGROUND)
                 .setPos(-128, -128)

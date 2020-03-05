@@ -12,7 +12,7 @@ import javax.annotation.Nonnull;
 import java.util.function.Consumer;
 
 @OnlyIn(Dist.CLIENT)
-public class UniversalModernScreen extends Screen implements IModernScreen {
+public class UniversalModernScreen extends Screen implements IMasterScreen {
 
     static final StringTextComponent EMPTY_TITLE = new StringTextComponent("");
 
@@ -44,7 +44,7 @@ public class UniversalModernScreen extends Screen implements IModernScreen {
     }
 
     @Override
-    public void addChild(IGuiEventListener eventListener) {
+    public void addEventListener(IGuiEventListener eventListener) {
         children.add(eventListener);
     }
 

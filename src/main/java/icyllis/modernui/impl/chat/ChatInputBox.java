@@ -18,10 +18,11 @@
 
 package icyllis.modernui.impl.chat;
 
-import icyllis.modernui.gui.element.EventListener;
+import icyllis.modernui.gui.widget.EventListener;
 import icyllis.modernui.gui.font.EmojiStringRenderer;
 import icyllis.modernui.gui.font.IFontRenderer;
 import icyllis.modernui.gui.master.DrawTools;
+import icyllis.modernui.gui.widget.Shape;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.SharedConstants;
@@ -64,10 +65,8 @@ public final class ChatInputBox extends EventListener {
     private boolean shiftDown = false;
 
     ChatInputBox() {
-        super(null);
+        super(w -> 4f, h -> 0f, new Shape.RectShape(30, 12));
         selectorX = cursorX = 4;
-        x = 4f;
-        focused = true;
     }
 
     public void draw() {
@@ -158,7 +157,6 @@ public final class ChatInputBox extends EventListener {
         return false;
     }
 
-    @Override
     protected boolean isMouseInShape(double mouseX, double mouseY) {
         return mouseX >= x && mouseX <= x + sizeW && mouseY >= y + (isDoubleLined ? -12 : 0) && mouseY <= y + 12;
     }

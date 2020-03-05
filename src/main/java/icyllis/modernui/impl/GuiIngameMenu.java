@@ -18,16 +18,13 @@
 
 package icyllis.modernui.impl;
 
-import icyllis.modernui.api.ModernUI_API;
-import icyllis.modernui.api.global.IElementBuilder;
-import icyllis.modernui.api.global.MotionType;
-import icyllis.modernui.api.handler.IModuleManager;
-import icyllis.modernui.gui.master.GlobalAnimationManager;
+import icyllis.modernui.api.element.IElement;
+import icyllis.modernui.gui.element.LeftSlidingRect;
 import icyllis.modernui.gui.master.UniversalModernScreen;
+import icyllis.modernui.gui.widget.ModernButton;
 import icyllis.modernui.impl.menu.SettingsModule;
 import icyllis.modernui.system.ReferenceLibrary;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.advancements.AdvancementsScreen;
 import net.minecraft.client.gui.screen.DirtMessageScreen;
 import net.minecraft.client.gui.screen.MainMenuScreen;
 import net.minecraft.client.gui.screen.MultiplayerScreen;
@@ -36,25 +33,59 @@ import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
+import java.util.function.Consumer;
+
 @OnlyIn(Dist.CLIENT)
 public final class GuiIngameMenu extends UniversalModernScreen {
 
     public GuiIngameMenu(boolean isFullMenu) {
         super(l -> {
-            Modules m = new Modules();
-            SettingsModule m2 = new SettingsModule();
-            l.add(m::createDefault, 0)
-            .add(m2::buildGeneralSettings, 30);
+            l.add(i -> true, Module::new);
         });
+    }
+
+    private static class Module {
+
+        private Minecraft minecraft;
+
+        public Module(Consumer<IElement> pool) {
+            this.minecraft = Minecraft.getInstance();
+            pool.accept(new LeftSlidingRect(32, 0.7f));
+            pool.accept(new ModernButton.A(w -> 8f, h -> 8f, "Back to Game", ReferenceLibrary.ICONS, 32, 32, 128, 0, 0.5f, () -> minecraft.displayGuiScreen(null)));
+            pool.accept(new ModernButton.A(w -> 8f, h -> h - 28f, "Exit to Title", ReferenceLibrary.ICONS, 32, 32, 160, 0, 0.5f, this::exit));
+        }
+
+        private void exit() {
+            if (minecraft.world == null) {
+                return;
+            }
+            boolean flag = minecraft.isIntegratedServerRunning();
+            boolean flag1 = minecraft.isConnectedToRealms();
+            minecraft.world.sendQuittingDisconnectingPacket();
+            if (flag) {
+                minecraft.unloadWorld(new DirtMessageScreen(new TranslationTextComponent("menu.savingLevel")));
+            } else {
+                minecraft.unloadWorld();
+            }
+
+            if (flag) {
+                minecraft.displayGuiScreen(new MainMenuScreen());
+            } else if (flag1) {
+                RealmsBridge realmsbridge = new RealmsBridge();
+                realmsbridge.switchToRealms(new MainMenuScreen());
+            } else {
+                minecraft.displayGuiScreen(new MultiplayerScreen(new MainMenuScreen()));
+            }
+        }
     }
 
     private static class Modules {
 
-        void createDefault(IElementBuilder builder) {
+        /*void createDefault(IElementBuilder builder) {
             Minecraft minecraft = Minecraft.getInstance();
             IModuleManager manager = ModernUI_API.INSTANCE.getModuleManager();
-            /*builder.defaultBackground()
-                    .alphaAnimation(0, 4);*/
+            *//*builder.defaultBackground()
+                    .alphaAnimation(0, 4);*//*
             //ModernUI.LOGGER.debug("Gui Scale Factor: {}", Minecraft.getInstance().getMainWindow().getGuiScaleFactor());
             builder.pool(i -> true, pool -> {
                 builder.rectangle()
@@ -99,16 +130,16 @@ public final class GuiIngameMenu extends UniversalModernScreen {
                         .initEventListener(a -> a
                                 .setPos(w -> 8f, h -> h * 0.75f - 20 - h / 32f)
                                 .setRectShape(16, 16))
-                        .onLeftClick(() -> ModernUI_API.INSTANCE.getModuleManager().switchModule(0))
+                        .onLeftClick(() -> ModernUI_API.INSTANCE.getModuleManager().switchTo(0))
                         .buildToPool(pool);
-                /*builder.buttonT1()
+                *//*builder.buttonT1()
                         .createTexture(a -> a
                                 .init(w -> 8f, h -> h * 0.75f, 32, 32, ReferenceLibrary.ICONS, 0, 0, 0x00808080, 0.5f))
                         .initEventListener(a -> a
                                 .setPos(w -> 8f, h -> h * 0.75f)
                                 .setRectShape(16, 16))
                         .onLeftClick(() -> ModernUI_API.INSTANCE.getModuleManager().switchModule(30))
-                        .buildToPool(pool);*/
+                        .buildToPool(pool);*//*
                 builder.buttonT1B()
                         .init(w -> 8f, h -> h * 0.75f, 32, 32, ReferenceLibrary.ICONS, 0, 0, 0.5f, i -> i / 30 == 1, 30)
                         .buildToPool(pool);
@@ -142,6 +173,6 @@ public final class GuiIngameMenu extends UniversalModernScreen {
                         })
                         .buildToPool(pool);
             });
-        }
+        }*/
     }
 }

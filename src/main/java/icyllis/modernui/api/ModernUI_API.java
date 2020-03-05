@@ -1,12 +1,10 @@
 package icyllis.modernui.api;
 
-import icyllis.modernui.api.handler.IModuleManager;
-import icyllis.modernui.api.handler.INetworkManager;
-import icyllis.modernui.api.handler.IGuiManager;
+import icyllis.modernui.api.manager.IModuleManager;
+import icyllis.modernui.api.manager.INetworkManager;
+import icyllis.modernui.api.manager.IGuiManager;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
-import net.minecraftforge.fml.loading.FMLEnvironment;
 
 public enum ModernUI_API {
     INSTANCE;

@@ -16,32 +16,27 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.element;
+package icyllis.modernui.api.manager;
 
-/**
- * Universal
- * @param <T> Event listener consumer class
- */
-public class Widget<T> implements IBase {
+import icyllis.modernui.api.animation.IAnimation;
+import net.minecraft.client.gui.IGuiEventListener;
+import net.minecraft.network.PacketBuffer;
 
-    public EventListener<T> listener;
+import java.util.function.IntConsumer;
 
-    public Widget() {
+public interface IModuleManager {
 
-    }
+    /**
+     * Switch to specific module / pool
+     * @param id target id
+     */
+    void switchTo(int id);
 
-    protected void setListener(T t) {
-        listener = new EventListener<>(t);
-    }
+    void addModuleSwitchEvent(IntConsumer event);
 
-    @Override
-    public void draw() {
+    void addEventListener(IGuiEventListener listener);
 
-    }
+    void addAnimation(IAnimation animation);
 
-    @Override
-    public void resize(int width, int height) {
-        listener.resize(width, height);
-    }
-
+    PacketBuffer getExtraData();
 }

@@ -18,8 +18,8 @@
 
 package icyllis.modernui.gui.blur;
 
+import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.system.ModernUI;
-import icyllis.modernui.gui.master.GlobalAnimationManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.resources.ClientResourcePackInfo;
@@ -87,7 +87,7 @@ public enum BlurHandler {
 
     public void tick() {
         if (changingProgress) {
-            float p = Math.min(GlobalAnimationManager.INSTANCE.time(), 4.0f);
+            float p = Math.min(GlobalModuleManager.INSTANCE.getAnimationTime(), 4.0f);
             this.updateUniform("Progress", p);
             if(p >= 4.0f) {
                 changingProgress = false;

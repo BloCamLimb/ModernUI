@@ -1,6 +1,5 @@
 package icyllis.modernui.gui.template;
 
-import icyllis.modernui.gui.element.EventListener;
 import icyllis.modernui.gui.font.IFontRenderer;
 import icyllis.modernui.gui.font.StringRenderer;
 

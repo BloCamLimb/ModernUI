@@ -1,16 +1,9 @@
 package icyllis.modernui.system;
 
-import icyllis.modernui.api.ModernUI_API;
-import icyllis.modernui.api.handler.IGuiManager;
-import icyllis.modernui.impl.chat.GuiChat;
 import icyllis.modernui.gui.blur.BlurHandler;
 import icyllis.modernui.gui.font.TrueTypeRenderer;
-import icyllis.modernui.gui.master.GlobalAnimationManager;
-import icyllis.modernui.gui.test.*;
+import icyllis.modernui.gui.master.GlobalModuleManager;
 import net.minecraft.client.Minecraft;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.item.Items;
-import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.GuiOpenEvent;
@@ -30,9 +23,9 @@ public class EventsHandler {
 
     @SubscribeEvent
     public static void rightClickItem(PlayerInteractEvent.RightClickItem event) {
-        if(!event.getPlayer().getEntityWorld().isRemote && event.getItemStack().getItem().equals(Items.DIAMOND)) {
+        /*if(!event.getPlayer().getEntityWorld().isRemote && event.getItemStack().getItem().equals(Items.DIAMOND)) {
             ModernUI_API.INSTANCE.getNetworkManager().openGUI((ServerPlayerEntity) event.getPlayer(), new ContainerProvider(), new BlockPos(-155,82,-121));
-        }
+        }*/
     }
 
     @SubscribeEvent
@@ -47,7 +40,7 @@ public class EventsHandler {
         @SubscribeEvent
         public static void onRenderTick(TickEvent.RenderTickEvent event) {
             if (event.phase == TickEvent.Phase.START) {
-                GlobalAnimationManager.INSTANCE.renderTick(event.renderTickTime);
+                GlobalModuleManager.INSTANCE.renderTick(event.renderTickTime);
                 TrueTypeRenderer.INSTANCE.init();
             } else {
                 BlurHandler.INSTANCE.tick();
@@ -57,10 +50,7 @@ public class EventsHandler {
         @SubscribeEvent
         public static void onClientTick(TickEvent.ClientTickEvent event) {
             if (event.phase == TickEvent.Phase.START) {
-                GlobalAnimationManager.INSTANCE.clientTick();
-                if (Minecraft.getInstance().gameSettings.keyBindDrop.isPressed()) {
-                    Minecraft.getInstance().displayGuiScreen(new GuiChat());
-                }
+                GlobalModuleManager.INSTANCE.clientTick();
             }
         }
 
@@ -70,7 +60,7 @@ public class EventsHandler {
             boolean hasGui = event.getGui() != null;
             boolean current = Minecraft.getInstance().currentScreen != null;
             if (hasGui != current)
-                GlobalAnimationManager.INSTANCE.resetTimer();
+                GlobalModuleManager.INSTANCE.resetTicks();
             BlurHandler.INSTANCE.blur(hasGui);
             ModernUI.LOGGER.debug("Open GUI {}", hasGui ? event.getGui().getClass().getSimpleName() : "null");
         }
@@ -89,8 +79,6 @@ public class EventsHandler {
         @OnlyIn(Dist.CLIENT)
         @SubscribeEvent
         public static void setupClient(FMLClientSetupEvent event) {
-            IGuiManager guiHandler = ModernUI_API.INSTANCE.getGuiManager();
-            guiHandler.registerContainerGui(UILibs.TEST_CONTAINER_SCREEN, ContainerTest::new, l -> l.add(new ModuleTest()::create, 0));
             HistoryRecorder.gEmojiPair();
         }
 
