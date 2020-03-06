@@ -27,7 +27,6 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.function.Consumer;
 
-@OnlyIn(Dist.CLIENT)
 public interface IGuiManager {
 
     /**

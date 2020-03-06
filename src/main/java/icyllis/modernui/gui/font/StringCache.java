@@ -20,6 +20,8 @@
 
 package icyllis.modernui.gui.font;
 
+import icyllis.modernui.system.ModernUI;
+
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.lang.ref.WeakReference;
@@ -399,6 +401,7 @@ class StringCache {
                 key.str = str;
                 entry.keyRef = new WeakReference<>(key);
                 stringCache.put(key, entry);
+                //ModernUI.LOGGER.debug("cache string {}", key.str);
             }
         }
 
