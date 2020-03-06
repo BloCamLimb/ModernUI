@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.system.asm;
+package icyllis.modernui.system;
 
 import net.minecraft.util.math.MathHelper;
 

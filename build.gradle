@@ -1,11 +1,16 @@
 buildscript {
     repositories {
-        maven { url = 'https://files.minecraftforge.net/maven' }
+        maven {
+            name "forge"
+            url "https://files.minecraftforge.net/maven"
+        }
+        maven {
+            url 'http://dogforce-games.com/maven'
+        }
         jcenter()
-        mavenCentral()
     }
     dependencies {
-        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.+', changing: true
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.0.163+pull-657', changing: true
     }
 }
 apply plugin: 'net.minecraftforge.gradle'
@@ -13,14 +18,14 @@ apply plugin: 'eclipse'
 apply plugin: 'java-library'
 apply plugin: 'maven-publish'
 
-version = '${minecraft_version}-${mod_version}-2'
+version = "${minecraft_version}-${mod_version}-universal"
 group = 'icyllis.modernui'
 archivesBaseName = 'ModernUI'
 
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
 
 minecraft {
-    mappings channel: 'snapshot', version: '20200202-1.15.1'
+    mappings channel: 'snapshot', version: '20200305-1.15.1'
 
     accessTransformer(file('src/main/resources/META-INF/accesstransformer.cfg'))
 
@@ -92,20 +97,19 @@ dependencies {
 
 processResources {
     // this will ensure that this task is redone when the versions change.
-    inputs.property 'version', project.version
-    inputs.property 'mcversion', minecraft_version
+     inputs.property 'version', mod_version
 
     // replace stuff in mcmod.info, nothing else
     from(sourceSets.main.resources.srcDirs) {
-        include 'META_INF/mods.toml'
+        include 'META-INF/mods.toml'
 
-        // replace version and mcversion
-        expand 'version':project.version, 'mcversion': minecraft_version
+        // replace version
+        expand 'version': mod_version
     }
 
     // copy everything else except the mods.toml
     from(sourceSets.main.resources.srcDirs) {
-        exclude 'META_INF/mods.toml'
+        exclude 'META-INF/mods.toml'
     }
 }
 
@@ -116,14 +120,14 @@ jar {
             "Specification-Vendor": "BloCamLimb",
             "Specification-Version": "1",
             "Implementation-Title": project.name,
-            "Implementation-Version": "${mod_version}",
+            "Implementation-Version": "${version}",
             "Implementation-Vendor" :"BloCamLimb",
             "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
         ])
     }
 }
 
-def reobfFile = file("$buildDir/reobfJar/output.jar")
+/*def reobfFile = file("$buildDir/reobfJar/output.jar")
 def reobfArtifact = artifacts.add('default', reobfFile) {
     type 'jar'
     builtBy 'reobfJar'
@@ -139,7 +143,7 @@ publishing {
             url "file:///${project.projectDir}/mcmodsrepo"
         }
     }
-}
+}*/
 
 sourceSets {
     api

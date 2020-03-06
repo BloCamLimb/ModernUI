@@ -22,7 +22,6 @@ import icyllis.modernui.api.element.IElement;
 import icyllis.modernui.gui.element.LeftSlidingRect;
 import icyllis.modernui.gui.master.UniversalModernScreen;
 import icyllis.modernui.gui.widget.ModernButton;
-import icyllis.modernui.impl.menu.SettingsModule;
 import icyllis.modernui.system.ReferenceLibrary;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.DirtMessageScreen;
@@ -30,18 +29,16 @@ import net.minecraft.client.gui.screen.MainMenuScreen;
 import net.minecraft.client.gui.screen.MultiplayerScreen;
 import net.minecraft.realms.RealmsBridge;
 import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.function.Consumer;
 
-@OnlyIn(Dist.CLIENT)
-public final class GuiIngameMenu extends UniversalModernScreen {
+public class GuiIngameMenu extends UniversalModernScreen {
 
     public GuiIngameMenu(boolean isFullMenu) {
         super(l -> {
             l.add(i -> true, Module::new);
         });
+
     }
 
     private static class Module {
@@ -52,7 +49,9 @@ public final class GuiIngameMenu extends UniversalModernScreen {
             this.minecraft = Minecraft.getInstance();
             pool.accept(new LeftSlidingRect(32, 0.7f));
             pool.accept(new ModernButton.A(w -> 8f, h -> 8f, "Back to Game", ReferenceLibrary.ICONS, 32, 32, 128, 0, 0.5f, () -> minecraft.displayGuiScreen(null)));
-            pool.accept(new ModernButton.A(w -> 8f, h -> h - 28f, "Exit to Title", ReferenceLibrary.ICONS, 32, 32, 160, 0, 0.5f, this::exit));
+            pool.accept(new ModernButton.B(w -> 8f, h -> 40f, "Advancements", ReferenceLibrary.ICONS, 32, 32, 32, 0, 0.5f, () -> {}, i -> i > 100));
+            pool.accept(new ModernButton.B(w -> 8f, h -> h - 60f, "Settings", ReferenceLibrary.ICONS, 32, 32, 0, 0, 0.5f, () -> {}, i -> i / 30 == 1));
+            pool.accept(new ModernButton.A(w -> 8f, h -> h - 28f, "Exit to Main Menu", ReferenceLibrary.ICONS, 32, 32, 160, 0, 0.5f, this::exit));
         }
 
         private void exit() {

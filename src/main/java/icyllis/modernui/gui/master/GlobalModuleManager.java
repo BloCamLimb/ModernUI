@@ -14,9 +14,8 @@ import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
 
-public class GlobalModuleManager implements IModuleFactory, IModuleManager {
-
-    public static final GlobalModuleManager INSTANCE = new GlobalModuleManager();
+public enum GlobalModuleManager implements IModuleFactory, IModuleManager {
+    INSTANCE;
 
     @Nullable
     public IMasterScreen master;
@@ -96,6 +95,7 @@ public class GlobalModuleManager implements IModuleFactory, IModuleManager {
         pools.forEach(e -> e.tick(ticks));
     }
 
+    // called before draw
     public void renderTick(float partialTick) {
         floatingPointTicks = ticks + partialTick;
         animations.removeIf(IAnimation::shouldRemove);

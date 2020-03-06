@@ -20,10 +20,10 @@ package icyllis.modernui.gui.widget;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.api.ModernUI_API;
 import icyllis.modernui.api.element.IElement;
 import icyllis.modernui.gui.animation.DisposableUniAnimation;
 import icyllis.modernui.gui.animation.HighActiveUniAnimation;
-import icyllis.modernui.gui.animation.HighStatusAnimation;
 import icyllis.modernui.gui.element.Base;
 import icyllis.modernui.gui.element.SideFrameText;
 import icyllis.modernui.gui.master.DrawTools;
@@ -34,6 +34,7 @@ import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
 
 import java.util.function.Function;
+import java.util.function.IntPredicate;
 
 public class ModernButton extends Base implements IElement {
 
@@ -58,17 +59,24 @@ public class ModernButton extends Base implements IElement {
         this.u = u;
         this.v = v;
         this.scale = scale;
-        listener.addHoverOn(() -> animation.setStatus(true));
-        listener.addHoverOff(() -> animation.setStatus(false));
+        addAnimationEvent();
         listener.addLeftClick(onLeftClick);
         GlobalModuleManager.INSTANCE.addEventListener(listener);
+    }
+
+    protected void addAnimationEvent() {
+        listener.addHoverOn(() -> animation.setStatus(true));
+        listener.addHoverOff(() -> animation.setStatus(false));
     }
 
     @Override
     public void draw(float currentTime) {
         animation.update(currentTime);
-        RenderSystem.enableBlend();
         RenderSystem.disableAlphaTest();
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+        GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
         RenderSystem.pushMatrix();
         RenderSystem.color4f(brightness, brightness, brightness, opacity);
         RenderSystem.scalef(scale, scale, scale);
@@ -105,7 +113,30 @@ public class ModernButton extends Base implements IElement {
         @Override
         public void resize(int width, int height) {
             super.resize(width, height);
-            text.setPos(x + sizeW * scale + 15, y + (sizeH * scale) / 2 - 5);
+            text.setPos(x + sizeW * scale + 15, y + (sizeH * scale) / 2 - 4);
+        }
+    }
+
+    public static class B extends A {
+
+        private boolean lock = false;
+
+        public B(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, String text, ResourceLocation res, float sizeW, float sizeH, float u, float v, float scale, Runnable onLeftClick, IntPredicate availability) {
+            super(xResizer, yResizer, text, res, sizeW, sizeH, u, v, scale, onLeftClick);
+            ModernUI_API.INSTANCE.getModuleManager().addModuleSwitchEvent(i -> {
+                lock = availability.test(i);
+                if(!lock)
+                    animation.setStatus(false);
+            });
+        }
+
+        @Override
+        protected void addAnimationEvent() {
+            listener.addHoverOn(() -> animation.setStatus(true));
+            listener.addHoverOff(() -> {
+                if(!lock)
+                    animation.setStatus(false);
+            });
         }
     }
 }

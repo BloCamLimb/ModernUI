@@ -1,19 +1,19 @@
 modLoader="javafml"
-loaderVersion="[30,)"
+loaderVersion="[31,)"
 issueTrackerURL="https://github.com/BloCamLimb/ModernUI/issues"
 
 [[mods]]
-modId="modernui"
-version="${file.jarVersion}"
-displayName="Modern UI"
-displayURL="https://curseforge.com/minecraft/mc-mods/modern-ui"
-authors="BloCamLimb (Icyllis Milica)"
-description='''Modern Style GUI/UI Library.'''
+    modId="modernui"
+    version="${version}"
+    displayName="Modern UI"
+    displayURL="https://curseforge.com/minecraft/mc-mods/modern-ui"
+    authors="BloCamLimb (Icyllis Milica)"
+    description='''ModernUI provides better menu, gui animations, blur shader, TTF font renderer, also as a library for other mods'''
 
 [[dependencies.modernui]]
     modId="forge"
     mandatory=true
-    versionRange="[30,)"
+    versionRange="[31,)"
     ordering="NONE"
     side="BOTH"
 [[dependencies.modernui]]
