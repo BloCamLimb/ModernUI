@@ -26,10 +26,10 @@ public interface IFontRenderer {
      * @param str unformatted text
      * @param startX x pos
      * @param startY y pos
-     * @param r red
-     * @param g green
-     * @param b blue
-     * @param a alpha
+     * @param r red 0-1
+     * @param g green 0-1
+     * @param b blue 0-1
+     * @param a alpha 0-1
      * @param align 0-left 0.25-center 0.5-right
      * @return formatted text width
      */

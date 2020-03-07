@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.function.Function;
 
 /**
- * An advanced element that can be interacted with mouse and keyboard and trigger something
+ * An advanced element that can be interacted with mouse and keyboard
  */
 public class EventListener implements IGuiEventListener {
 

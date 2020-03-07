@@ -9,6 +9,7 @@ import net.minecraft.network.PacketBuffer;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
@@ -49,7 +50,7 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager {
     }
 
     @Override
-    public void addModuleSwitchEvent(IntConsumer event) {
+    public void addModuleEvent(IntConsumer event) {
         moduleEvents.add(event);
     }
 
@@ -64,6 +65,11 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager {
     public void addAnimation(IAnimation animation) {
         animation.resize(width, height);
         animations.add(animation);
+    }
+
+    @Override
+    public void resizeAnimation(IAnimation animation) {
+        animation.resize(width, height);
     }
 
     public void draw() {
@@ -85,9 +91,8 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager {
     }
 
     @Override
-    public IModuleFactory add(IntPredicate availability, Consumer<Consumer<IElement>> pool) {
-        pools.add(new ElementPool(availability, pool));
-        return this;
+    public void addModule(IntPredicate availability, Consumer<Consumer<IElement>> pool) {
+        pools.add(0, new ElementPool(availability, pool));
     }
 
     public void clientTick() {

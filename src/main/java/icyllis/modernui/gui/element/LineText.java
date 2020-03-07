@@ -16,22 +16,11 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.font;
+package icyllis.modernui.gui.element;
 
-public class StringRenderer {
+public class LineText {
 
-    public static IFontRenderer STRING_RENDERER;
+    public LineText() {
 
-    static {
-        STRING_RENDERER = TrueTypeRenderer.INSTANCE;
-        //STRING_RENDERER = VanillaFontRenderer.INSTANCE;
-    }
-
-    public static void switchRenderer(boolean mod) {
-        if (mod) {
-            STRING_RENDERER = TrueTypeRenderer.INSTANCE;
-        } else {
-            STRING_RENDERER = VanillaFontRenderer.INSTANCE;
-        }
     }
 }

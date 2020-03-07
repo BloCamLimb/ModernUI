@@ -21,9 +21,9 @@ package icyllis.modernui.gui.element;
 import icyllis.modernui.api.element.IElement;
 import icyllis.modernui.gui.master.DrawTools;
 
+@Deprecated
 public class Background implements IElement {
 
-    //TODO Config
     private float alpha = 0.45f;
 
     private int width, height;

@@ -12,13 +12,13 @@ import javax.annotation.Nonnull;
 import java.util.function.Consumer;
 
 @OnlyIn(Dist.CLIENT)
-public class UniversalModernScreenG<G extends Container> extends ContainerScreen<G> implements IMasterScreen {
+public class ModernUIScreenG<G extends Container> extends ContainerScreen<G> implements IMasterScreen {
 
     private GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
 
     @SuppressWarnings("ConstantConditions")
-    public UniversalModernScreenG(Consumer<IModuleFactory> factory, G container) {
-        super(container, Minecraft.getInstance().player.inventory, UniversalModernScreen.EMPTY_TITLE);
+    public ModernUIScreenG(Consumer<IModuleFactory> factory, G container) {
+        super(container, Minecraft.getInstance().player.inventory, ModernUIScreen.EMPTY_TITLE);
         factory.accept(manager);
     }
 

@@ -16,22 +16,25 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.template;
+package icyllis.modernui.gui.widget;
 
-import icyllis.modernui.gui.element.Rectangle;
-import icyllis.modernui.gui.element.TextLine;
+import icyllis.modernui.api.element.IElement;
 
-public class ButtonT2 {
+public class TextButton implements IElement {
 
-    private Rectangle rect;
+    protected boolean lock = false;
 
-    private TextLine textline;
+    public TextButton() {
 
-    private boolean drawRect = false;
+    }
 
-    private boolean selected = false;
+    @Override
+    public void draw(float currentTime) {
 
-    public ButtonT2() {
+    }
+
+    @Override
+    public void resize(int width, int height) {
 
     }
 

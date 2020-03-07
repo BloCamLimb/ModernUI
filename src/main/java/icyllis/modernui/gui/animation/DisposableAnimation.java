@@ -24,6 +24,7 @@ import icyllis.modernui.gui.master.GlobalModuleManager;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+@Deprecated
 public class DisposableAnimation implements IAnimation {
 
     protected float value;

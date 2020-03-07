@@ -22,7 +22,7 @@ import icyllis.modernui.gui.master.DrawTools;
 
 import java.util.function.Function;
 
-public class Rectangle extends Base {
+public class StandardRect extends Element {
 
     public Function<Integer, Float> wResizer, hResizer;
 
@@ -31,9 +31,9 @@ public class Rectangle extends Base {
      */
     public float sizeW, sizeH;
 
-    public float colorR, colorG, colorB;
+    public float colorR, colorG, colorB, opacity;
 
-    public Rectangle(Function<Integer, Float> x, Function<Integer, Float> y, Function<Integer, Float> w, Function<Integer, Float> h, int RGBA) {
+    public StandardRect(Function<Integer, Float> x, Function<Integer, Float> y, Function<Integer, Float> w, Function<Integer, Float> h, int RGBA) {
         super(x, y);
         this.wResizer = w;
         this.hResizer = h;

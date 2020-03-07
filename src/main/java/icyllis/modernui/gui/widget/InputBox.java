@@ -1,7 +1,25 @@
-package icyllis.modernui.gui.template;
+/*
+ * Modern UI.
+ * Copyright (C) 2019 BloCamLimb. All rights reserved.
+ *
+ * Modern UI is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Modern UI is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+package icyllis.modernui.gui.widget;
 
 import icyllis.modernui.gui.font.IFontRenderer;
-import icyllis.modernui.gui.font.StringRenderer;
+import icyllis.modernui.gui.font.FontRendererSelector;
 
 import java.util.function.Predicate;
 
@@ -11,7 +29,7 @@ public class InputBox {
     public static final Predicate<String> digitFilter = s -> s.matches("[0-9]+"),
             hexFilter = s -> s.matches("(?i)[0-9a-f]+");
 
-    protected IFontRenderer renderer = StringRenderer.STRING_RENDERER;
+    protected IFontRenderer renderer = FontRendererSelector.CURRENT_RENDERER;
 
     /** if can focus and write things**/
     /*protected boolean enabled, canLoseFocus;
