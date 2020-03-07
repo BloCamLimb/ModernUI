@@ -23,13 +23,14 @@ import icyllis.modernui.api.element.IElement;
 import icyllis.modernui.gui.animation.DisposableSinAnimation;
 import icyllis.modernui.gui.animation.DisposableUniAnimation;
 import icyllis.modernui.gui.font.IFontRenderer;
-import icyllis.modernui.gui.font.StringRenderer;
+import icyllis.modernui.gui.font.FontRendererSelector;
 import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.gui.master.GlobalModuleManager;
+import org.lwjgl.opengl.GL11;
 
 public class SideFrameText implements IElement {
 
-    private IFontRenderer renderer = StringRenderer.STRING_RENDERER;
+    private IFontRenderer renderer = FontRendererSelector.CURRENT_RENDERER;
 
     private String text;
 
@@ -40,7 +41,7 @@ public class SideFrameText implements IElement {
     private float sizeW = 0;
 
     // 0=close 1=opening 2=open 3=closing
-    private int openState = 0;
+    private byte openState = 0;
 
     private boolean prepareToClose = false;
 
@@ -62,9 +63,13 @@ public class SideFrameText implements IElement {
         if (openState == 0) {
             return;
         }
-        DrawTools.fillRectWithFrame(x - 4, y - 3, x + sizeW, y + 11, 1, 0, 0, 0, 0.4f * frameOpacity, 0.25f, 0.25f, 0.25f, 0.8f * frameOpacity);
+        RenderSystem.pushMatrix();
+        RenderSystem.depthFunc(GL11.GL_ALWAYS);
+        RenderSystem.translatef(0, 0, 150);
+        DrawTools.fillRectWithFrame(x - 4, y - 3, x + sizeW, y + 11, 0.51f, 0x000000, 0.4f * frameOpacity, 0x404040, 0.8f * frameOpacity);
         RenderSystem.enableBlend();
         renderer.drawString(text, x, y, 1, 1, 1, textOpacity, 0);
+        RenderSystem.popMatrix();
     }
 
     private void open() {
@@ -81,15 +86,13 @@ public class SideFrameText implements IElement {
     }
 
     public void startOpen() {
-        if (openState == 0 || openState == 3) {
-            prepareToOpen = true;
-        }
+        prepareToOpen = true;
+        prepareToClose = false;
     }
 
     public void startClose() {
-        if (openState == 1 || openState == 2) {
-            prepareToClose = true;
-        }
+        prepareToClose = true;
+        prepareToOpen = false;
     }
 
     public void setPos(float x, float y) {

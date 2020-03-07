@@ -18,22 +18,37 @@
 
 package icyllis.modernui.gui.element;
 
+import icyllis.modernui.api.ModernUI_API;
 import icyllis.modernui.api.element.IElement;
+import icyllis.modernui.api.manager.IModuleManager;
+import icyllis.modernui.gui.font.FontRendererSelector;
+import icyllis.modernui.gui.font.IFontRenderer;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.texture.TextureManager;
 
 import java.util.function.Function;
 
-public abstract class Base implements IElement {
+public abstract class Element implements IElement {
 
+    protected Minecraft minecraft = Minecraft.getInstance();
+
+    protected TextureManager textureManager = minecraft.textureManager;
+
+    protected IFontRenderer fontRenderer = FontRendererSelector.CURRENT_RENDERER;
+
+    protected IModuleManager moduleManager = ModernUI_API.INSTANCE.getModuleManager();
+
+    /**
+     * Change X/Y position when game window size changed
+     */
     public Function<Integer, Float> xResizer, yResizer;
 
     /**
-     * Logical X/Y/W/H
+     * Logical X/Y to render
      */
     public float x, y;
 
-    public float opacity = 1.0f;
-
-    public Base(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer) {
+    public Element(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer) {
         this.xResizer = xResizer;
         this.yResizer = yResizer;
     }

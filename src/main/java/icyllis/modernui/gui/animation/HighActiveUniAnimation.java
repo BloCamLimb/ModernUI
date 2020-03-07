@@ -22,7 +22,10 @@ import icyllis.modernui.api.animation.IAnimation;
 
 import java.util.function.Consumer;
 
-public class HighActiveUniAnimation implements IAnimation {
+/**
+ * Use this as fewer as possible
+ */
+public class HighActiveUniAnimation {
 
     protected float startTime;
 
@@ -52,7 +55,6 @@ public class HighActiveUniAnimation implements IAnimation {
         startTime = -1;
     }
 
-    @Override
     public void update(float currentTime) {
         if (running) {
             if (startTime == -1) {

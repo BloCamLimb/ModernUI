@@ -4,8 +4,8 @@ import icyllis.modernui.api.global.IContainerFactory;
 import icyllis.modernui.api.manager.IGuiManager;
 import icyllis.modernui.api.global.IModuleFactory;
 import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.gui.master.UniversalModernScreen;
-import icyllis.modernui.gui.master.UniversalModernScreenG;
+import icyllis.modernui.gui.master.ModernUIScreen;
+import icyllis.modernui.gui.master.ModernUIScreenG;
 import javafx.util.Pair;
 import net.minecraft.client.Minecraft;
 import net.minecraft.inventory.container.Container;
@@ -35,7 +35,7 @@ public enum GuiManager implements IGuiManager {
             IContainerFactory factory = pair.getKey();
             Container container = factory.create(windowId, Minecraft.getInstance().player.inventory, extraData);
             Minecraft.getInstance().player.openContainer = container;
-            Minecraft.getInstance().displayGuiScreen(new UniversalModernScreenG<>(pair.getValue(), container));
+            Minecraft.getInstance().displayGuiScreen(new ModernUIScreenG<>(pair.getValue(), container));
         } else {
             Minecraft.getInstance().player.connection.sendPacket(new CCloseWindowPacket(windowId));
         }
@@ -52,7 +52,7 @@ public enum GuiManager implements IGuiManager {
 
     @Override
     public void openGui(Consumer<IModuleFactory> factoryConsumer) {
-        Minecraft.getInstance().displayGuiScreen(new UniversalModernScreen(factoryConsumer));
+        Minecraft.getInstance().displayGuiScreen(new ModernUIScreen(factoryConsumer));
     }
 
 }

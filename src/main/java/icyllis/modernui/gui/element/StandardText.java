@@ -21,23 +21,21 @@ package icyllis.modernui.gui.element;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.font.IFontRenderer;
-import icyllis.modernui.gui.font.StringRenderer;
+import icyllis.modernui.gui.font.FontRendererSelector;
 import org.lwjgl.opengl.GL11;
 
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public class TextLine extends Base {
-
-    private IFontRenderer renderer = StringRenderer.STRING_RENDERER;
+public class StandardText extends Element {
 
     private Supplier<String> text;
 
     private float align, scale;
 
-    public float colorR, colorG, colorB;
+    public float colorR, colorG, colorB, opacity;
 
-    public TextLine(Function<Integer, Float> x, Function<Integer, Float> y, Supplier<String> text, float align, int RGBA, float scale) {
+    public StandardText(Function<Integer, Float> x, Function<Integer, Float> y, Supplier<String> text, float align, int RGBA, float scale) {
         super(x, y);
         this.text = text;
         this.align = align;
@@ -57,7 +55,7 @@ public class TextLine extends Base {
         GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
         String text = this.text.get();
         RenderSystem.scalef(scale, scale, 1);
-        renderer.drawString(text,  x / scale, y / scale, colorR, colorG, colorB, opacity, align / scale);
+        fontRenderer.drawString(text,  x / scale, y / scale, colorR, colorG, colorB, opacity, align / scale);
         RenderSystem.popMatrix();
     }
 

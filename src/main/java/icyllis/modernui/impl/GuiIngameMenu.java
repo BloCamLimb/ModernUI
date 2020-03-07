@@ -18,10 +18,12 @@
 
 package icyllis.modernui.impl;
 
+import icyllis.modernui.api.ModernUI_API;
 import icyllis.modernui.api.element.IElement;
 import icyllis.modernui.gui.element.LeftSlidingRect;
-import icyllis.modernui.gui.master.UniversalModernScreen;
-import icyllis.modernui.gui.widget.ModernButton;
+import icyllis.modernui.gui.master.ModernUIScreen;
+import icyllis.modernui.gui.widget.MenuButton;
+import icyllis.modernui.impl.menu.SettingsHeader;
 import icyllis.modernui.system.ReferenceLibrary;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.DirtMessageScreen;
@@ -32,146 +34,52 @@ import net.minecraft.util.text.TranslationTextComponent;
 
 import java.util.function.Consumer;
 
-public class GuiIngameMenu extends UniversalModernScreen {
+public class GuiIngameMenu extends ModernUIScreen {
 
     public GuiIngameMenu(boolean isFullMenu) {
         super(l -> {
-            l.add(i -> true, Module::new);
+            l.addModule(i -> true, Home::new);
+            l.addModule(i -> i / 30 == 1, SettingsHeader::new);
         });
 
     }
 
-    private static class Module {
+    private static class Home {
 
         private Minecraft minecraft;
 
-        public Module(Consumer<IElement> pool) {
+        public Home(Consumer<IElement> pool) {
             this.minecraft = Minecraft.getInstance();
             pool.accept(new LeftSlidingRect(32, 0.7f));
-            pool.accept(new ModernButton.A(w -> 8f, h -> 8f, "Back to Game", ReferenceLibrary.ICONS, 32, 32, 128, 0, 0.5f, () -> minecraft.displayGuiScreen(null)));
-            pool.accept(new ModernButton.B(w -> 8f, h -> 40f, "Advancements", ReferenceLibrary.ICONS, 32, 32, 32, 0, 0.5f, () -> {}, i -> i > 100));
-            pool.accept(new ModernButton.B(w -> 8f, h -> h - 60f, "Settings", ReferenceLibrary.ICONS, 32, 32, 0, 0, 0.5f, () -> {}, i -> i / 30 == 1));
-            pool.accept(new ModernButton.A(w -> 8f, h -> h - 28f, "Exit to Main Menu", ReferenceLibrary.ICONS, 32, 32, 160, 0, 0.5f, this::exit));
+            pool.accept(new MenuButton.A(w -> 8f, h -> 8f, "Back to Game", ReferenceLibrary.ICONS, 32, 32, 128, 0, 0.5f, () -> minecraft.displayGuiScreen(null)));
+            pool.accept(new MenuButton.B(w -> 8f, h -> 44f, "Advancements", ReferenceLibrary.ICONS, 32, 32, 32, 0, 0.5f, () -> {}, i -> i < 0));
+            pool.accept(new MenuButton.B(w -> 8f, h -> 72f, "Statistics", ReferenceLibrary.ICONS, 32, 32, 64, 0, 0.5f, () -> {}, i -> i == 1 || i == 2));
+            pool.accept(new MenuButton.B(w -> 8f, h -> h - 92f, "Forge Mods", ReferenceLibrary.ICONS, 32, 32, 192, 0, 0.5f, () -> {}, i -> false));
+            pool.accept(new MenuButton.B(w -> 8f, h -> h - 64f, "Settings", ReferenceLibrary.ICONS, 32, 32, 0, 0, 0.5f, () -> ModernUI_API.INSTANCE.getModuleManager().switchTo(30), i -> i / 30 == 1));
+            pool.accept(new MenuButton.A(w -> 8f, h -> h - 28f, "Exit to Main Menu", ReferenceLibrary.ICONS, 32, 32, 160, 0, 0.5f, this::exit));
         }
 
         private void exit() {
             if (minecraft.world == null) {
                 return;
             }
-            boolean flag = minecraft.isIntegratedServerRunning();
-            boolean flag1 = minecraft.isConnectedToRealms();
+            boolean singlePlayer = minecraft.isIntegratedServerRunning();
+            boolean realmsConnected = minecraft.isConnectedToRealms();
             minecraft.world.sendQuittingDisconnectingPacket();
-            if (flag) {
+            if (singlePlayer) {
                 minecraft.unloadWorld(new DirtMessageScreen(new TranslationTextComponent("menu.savingLevel")));
             } else {
                 minecraft.unloadWorld();
             }
 
-            if (flag) {
+            if (singlePlayer) {
                 minecraft.displayGuiScreen(new MainMenuScreen());
-            } else if (flag1) {
+            } else if (realmsConnected) {
                 RealmsBridge realmsbridge = new RealmsBridge();
                 realmsbridge.switchToRealms(new MainMenuScreen());
             } else {
                 minecraft.displayGuiScreen(new MultiplayerScreen(new MainMenuScreen()));
             }
         }
-    }
-
-    private static class Modules {
-
-        /*void createDefault(IElementBuilder builder) {
-            Minecraft minecraft = Minecraft.getInstance();
-            IModuleManager manager = ModernUI_API.INSTANCE.getModuleManager();
-            *//*builder.defaultBackground()
-                    .alphaAnimation(0, 4);*//*
-            //ModernUI.LOGGER.debug("Gui Scale Factor: {}", Minecraft.getInstance().getMainWindow().getGuiScaleFactor());
-            builder.pool(i -> true, pool -> {
-                builder.rectangle()
-                        .init(w -> 0f, h -> 0f, w -> 0f, Float::valueOf, 0xb2000000)
-                        .buildToPool(pool, t ->
-                                GlobalAnimationManager.INSTANCE.create(a -> a
-                                                .setInit(0)
-                                                .setTarget(32)
-                                                .setTiming(4)
-                                                .setMotion(MotionType.SINE),
-                                        r -> t.sizeW = r,
-                                        rs -> t.fakeW = rs
-                                )
-                        );
-                builder.buttonT1()
-                        .createTexture(a -> a
-                                .init(w -> 8f, h -> 8f, 32, 32, ReferenceLibrary.ICONS, 128, 0, 0x00808080, 0.5f))
-                        .initEventListener(a -> a
-                                .setPos(w -> 8f, h -> 8f)
-                                .setRectShape(16, 16))
-                        .onLeftClick(() -> Minecraft.getInstance().displayGuiScreen(null))
-                        .buildToPool(pool);
-                builder.buttonT1()
-                        .createTexture(a -> a
-                                .init(w -> 8f, h -> h / 4f - 16f, 32, 32, ReferenceLibrary.ICONS, 32, 0, 0x00808080, 0.5f))
-                        .initEventListener(a -> a
-                                .setPos(w -> 8f, h -> h / 4f - 16f)
-                                .setRectShape(16, 16))
-                        .onLeftClick(() -> minecraft.displayGuiScreen(new AdvancementsScreen(minecraft.player.connection.getAdvancementManager())))
-                        .buildToPool(pool);
-                builder.buttonT1()
-                        .createTexture(a -> a
-                                .init(w -> 8f, h -> h / 4f + 4f + h / 32f, 32, 32, ReferenceLibrary.ICONS, 64, 0, 0x00808080, 0.5f))
-                        .initEventListener(a -> a
-                                .setPos(w -> 8f, h -> h / 4f + 4f + h / 32f)
-                                .setRectShape(16, 16))
-                        .onLeftClick(() -> {})
-                        .buildToPool(pool);
-                builder.buttonT1()
-                        .createTexture(a -> a
-                                .init(w -> 8f, h -> h * 0.75f - 20 - h / 32f, 32, 32, ReferenceLibrary.ICONS, 96, 0, 0x00808080, 0.5f))
-                        .initEventListener(a -> a
-                                .setPos(w -> 8f, h -> h * 0.75f - 20 - h / 32f)
-                                .setRectShape(16, 16))
-                        .onLeftClick(() -> ModernUI_API.INSTANCE.getModuleManager().switchTo(0))
-                        .buildToPool(pool);
-                *//*builder.buttonT1()
-                        .createTexture(a -> a
-                                .init(w -> 8f, h -> h * 0.75f, 32, 32, ReferenceLibrary.ICONS, 0, 0, 0x00808080, 0.5f))
-                        .initEventListener(a -> a
-                                .setPos(w -> 8f, h -> h * 0.75f)
-                                .setRectShape(16, 16))
-                        .onLeftClick(() -> ModernUI_API.INSTANCE.getModuleManager().switchModule(30))
-                        .buildToPool(pool);*//*
-                builder.buttonT1B()
-                        .init(w -> 8f, h -> h * 0.75f, 32, 32, ReferenceLibrary.ICONS, 0, 0, 0.5f, i -> i / 30 == 1, 30)
-                        .buildToPool(pool);
-                builder.buttonT1()
-                        .createTexture(a -> a
-                                .init(w -> 8f, h -> h - 28f, 32, 32, ReferenceLibrary.ICONS, 160, 0, 0x00808080, 0.5f))
-                        .initEventListener(a -> a
-                                .setPos(w -> 8f, h -> h - 28f)
-                                .setRectShape(16, 16))
-                        .onLeftClick(() -> {
-                            if (minecraft.world == null) {
-                                return;
-                            }
-                            boolean flag = minecraft.isIntegratedServerRunning();
-                            boolean flag1 = minecraft.isConnectedToRealms();
-                            minecraft.world.sendQuittingDisconnectingPacket();
-                            if (flag) {
-                                minecraft.unloadWorld(new DirtMessageScreen(new TranslationTextComponent("menu.savingLevel")));
-                            } else {
-                                minecraft.unloadWorld();
-                            }
-
-                            if (flag) {
-                                minecraft.displayGuiScreen(new MainMenuScreen());
-                            } else if (flag1) {
-                                RealmsBridge realmsbridge = new RealmsBridge();
-                                realmsbridge.switchToRealms(new MainMenuScreen());
-                            } else {
-                                minecraft.displayGuiScreen(new MultiplayerScreen(new MainMenuScreen()));
-                            }
-                        })
-                        .buildToPool(pool);
-            });
-        }*/
     }
 }

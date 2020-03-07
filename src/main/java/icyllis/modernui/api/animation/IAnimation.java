@@ -26,10 +26,15 @@ public interface IAnimation {
      */
     void update(float currentTime);
 
+    /**
+     * Resize animation if using resizable appliers
+     * @param width window width
+     * @param height window height
+     */
     default void resize(int width, int height) {}
 
     /**
-     * If return true, this instance will be removed from render loop
+     * If return true, this instance should be removed from render loop
      * @return whether to remove
      */
     default boolean shouldRemove() {

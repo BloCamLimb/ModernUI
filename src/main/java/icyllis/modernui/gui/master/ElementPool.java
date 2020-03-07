@@ -3,6 +3,7 @@ package icyllis.modernui.gui.master;
 import icyllis.modernui.api.element.IElement;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.IntPredicate;
@@ -17,6 +18,8 @@ public class ElementPool implements IntPredicate, Consumer<IElement> {
     private Consumer<Consumer<IElement>> builder;
 
     private List<IElement> elements = new ArrayList<>();
+
+    private boolean built = false;
 
     public ElementPool(IntPredicate availability, Consumer<Consumer<IElement>> builder) {
         this.availability = availability;
@@ -36,13 +39,16 @@ public class ElementPool implements IntPredicate, Consumer<IElement> {
     }
 
     public void build() {
-        if (elements.isEmpty()) {
+        if (!built) {
             builder.accept(this);
+            elements.sort(Comparator.comparing(IElement::priority));
+            built = true;
         }
     }
 
     public void clear() {
         elements.clear();
+        built = false;
     }
 
     @Override

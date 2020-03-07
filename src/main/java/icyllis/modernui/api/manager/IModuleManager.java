@@ -27,16 +27,41 @@ import java.util.function.IntConsumer;
 public interface IModuleManager {
 
     /**
-     * Switch to specific module / pool
+     * Switch to specific module
      * @param id target id
      */
     void switchTo(int id);
 
-    void addModuleSwitchEvent(IntConsumer event);
+    /**
+     * Add a module event that called after switching to a new module
+     * Given new module ID, you can use to make animations here
+     * @param event int consumer
+     */
+    void addModuleEvent(IntConsumer event);
 
+    /**
+     * Add a sub event listener to listen mouse and keyboard event
+     * Generally use {@link icyllis.modernui.gui.widget.EventListener}
+     * @param listener event listener
+     */
     void addEventListener(IGuiEventListener listener);
 
+    /**
+     * Add animation to global animation pool
+     * Animation will be auto resized
+     * @param animation animation to add
+     */
     void addAnimation(IAnimation animation);
 
+    /**
+     * Resize an animation with current width and height
+     * @param animation animation to resize
+     */
+    void resizeAnimation(IAnimation animation);
+
+    /**
+     * Get extra data from server side
+     * @return packet buffer
+     */
     PacketBuffer getExtraData();
 }

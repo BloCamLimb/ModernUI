@@ -21,6 +21,7 @@ package icyllis.modernui.gui.animation;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+@Deprecated
 public class HighStatusAnimation extends DisposableAnimation implements Consumer<Boolean> {
 
     private boolean running = false;

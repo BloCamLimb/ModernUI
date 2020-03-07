@@ -16,27 +16,21 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.api.global;
+package icyllis.modernui.gui.font;
 
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.inventory.container.Container;
-import net.minecraft.util.ResourceLocation;
+public class FontRendererSelector {
 
-import javax.annotation.Nonnull;
+    public static IFontRenderer CURRENT_RENDERER;
 
-public interface IContainerProvider {
+    static {
+        CURRENT_RENDERER = TrueTypeRenderer.INSTANCE;
+    }
 
-    /**
-     * Create a new container on server side
-     * @return container
-     */
-    @Nonnull
-    Container createContainer(int windowId, PlayerInventory playerInventory, PlayerEntity playerEntity);
-
-    /**
-     * Get gui registry name that registered on client side
-     * @return registry name
-     */
-    ResourceLocation getGui();
+    public static void switchRenderer(boolean ttf) {
+        if (ttf) {
+            CURRENT_RENDERER = TrueTypeRenderer.INSTANCE;
+        } else {
+            CURRENT_RENDERER = VanillaFontRenderer.INSTANCE;
+        }
+    }
 }

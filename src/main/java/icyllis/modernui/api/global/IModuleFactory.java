@@ -26,5 +26,5 @@ import java.util.function.IntPredicate;
 @FunctionalInterface
 public interface IModuleFactory {
 
-    IModuleFactory add(IntPredicate availability, Consumer<Consumer<IElement>> pool);
+    void addModule(IntPredicate availability, Consumer<Consumer<IElement>> pool);
 }

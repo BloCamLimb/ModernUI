@@ -12,13 +12,13 @@ import javax.annotation.Nonnull;
 import java.util.function.Consumer;
 
 @OnlyIn(Dist.CLIENT)
-public class UniversalModernScreen extends Screen implements IMasterScreen {
+public class ModernUIScreen extends Screen implements IMasterScreen {
 
     static final StringTextComponent EMPTY_TITLE = new StringTextComponent("");
 
     private GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
 
-    public UniversalModernScreen(Consumer<IModuleFactory> factory) {
+    public ModernUIScreen(Consumer<IModuleFactory> factory) {
         super(EMPTY_TITLE);
         factory.accept(manager);
     }

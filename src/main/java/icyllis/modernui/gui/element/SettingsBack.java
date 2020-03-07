@@ -18,32 +18,22 @@
 
 package icyllis.modernui.gui.element;
 
-import icyllis.modernui.api.ModernUI_API;
-import icyllis.modernui.api.element.IElement;
-import icyllis.modernui.gui.animation.Animation;
-import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.animation.DisposableSinAnimation;
+import icyllis.modernui.gui.animation.DisposableUniAnimation;
+import icyllis.modernui.gui.animation.DpsResizerSinAnimation;
 import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 
-public class LeftSlidingRect implements IElement {
+public class SettingsBack extends StandardRect {
 
-    private float sizeW, height, opacity;
-
-    public LeftSlidingRect(float targetWidth, float opacity) {
-        this.opacity = opacity;
-        ModernUI_API.INSTANCE.getModuleManager().addAnimation(
-                new Animation(4, true)
-                    .applyTo(new Applier(0, targetWidth, value -> sizeW = value)));
+    public SettingsBack() {
+        super(w -> 24f, h -> 16f, w -> w - 80f, h -> h - 32f, 0x00000000);
+        GlobalModuleManager.INSTANCE.addAnimation(new DpsResizerSinAnimation(2, false, value -> x = value, resizer -> xResizer = resizer).init(q -> 24f, q -> 40f));
+        GlobalModuleManager.INSTANCE.addAnimation(new DisposableUniAnimation(0, 0.5f, 2, value -> opacity = value));
     }
 
     @Override
     public void draw(float currentTime) {
-        DrawTools.fillRectWithColor(0, 0, sizeW, height, 0, 0, 0, opacity);
-    }
-
-    @Override
-    public void resize(int width, int height) {
-        this.height = height;
+        super.draw(currentTime);
+        DrawTools.fillRectWithColor(x, y, x + sizeW, y + 20, colorR, colorG, colorB, opacity);
     }
 }

@@ -31,7 +31,7 @@ function initializeCoreMod() {
             'target': {
                 'type': 'METHOD',
                 'class': 'net.minecraft.client.Minecraft',
-                'methodName': 'func_71385_j',
+                'methodName': 'func_71385_j', // displayInGameMenu
                 'methodDesc': '(Z)V'
             },
             'transformer': function (methodNode) {
@@ -54,7 +54,7 @@ function initializeCoreMod() {
             'target': {
                 'type': 'METHOD',
                 'class': 'net.minecraft.client.MainWindow',
-                'methodName': 'calcGuiScale',
+                'methodName': 'func_216521_a', // calcGuiScale
                 'methodDesc': '(IZ)I'
             },
             'transformer': function (methodNode) {
@@ -69,9 +69,9 @@ function initializeCoreMod() {
                         var cast = ASMAPI.listOf(
                             new VarInsnNode(Opcodes.ILOAD, 1),
                             new VarInsnNode(Opcodes.ALOAD, 0),
-                            new FieldInsnNode(Opcodes.GETFIELD, "net/minecraft/client/MainWindow", "framebufferWidth", "I"),
+                            new FieldInsnNode(Opcodes.GETFIELD, "net/minecraft/client/MainWindow", "framebufferWidth", "I"), // framebufferWidth
                             new VarInsnNode(Opcodes.ALOAD, 0),
-                            new FieldInsnNode(Opcodes.GETFIELD, "net/minecraft/client/MainWindow", "framebufferHeight", "I"),
+                            new FieldInsnNode(Opcodes.GETFIELD, "net/minecraft/client/MainWindow", "framebufferHeight", "I"), // framebufferHeight
                             new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/RewrittenMethods", "calcGuiScale", "(III)I", false),
                             new InsnNode(Opcodes.IRETURN));
                         list.insert(inst, cast);
