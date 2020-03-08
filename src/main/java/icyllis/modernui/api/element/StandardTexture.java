@@ -1,18 +1,32 @@
-package icyllis.modernui.gui.element;
+/*
+ * Modern UI.
+ * Copyright (C) 2019 BloCamLimb. All rights reserved.
+ *
+ * Modern UI is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Modern UI is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+package icyllis.modernui.api.element;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.master.DrawTools;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
 
 import java.util.function.Function;
 
 public class StandardTexture extends Element {
-
-    protected TextureManager textureManager = Minecraft.getInstance().textureManager;
 
     protected ResourceLocation res;
 

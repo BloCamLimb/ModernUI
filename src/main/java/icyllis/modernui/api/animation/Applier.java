@@ -16,35 +16,34 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.animation;
+package icyllis.modernui.api.animation;
 
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class Applier {
 
-    protected float initValue;
+    public float initValue;
 
-    protected float targetValue;
+    public float targetValue;
 
-    private Consumer<Float> resultSetter;
+    private Consumer<Float> receiver;
 
-    public Applier(float initValue, float targetValue, Consumer<Float> resultSetter) {
+    public Applier(float initValue, float targetValue, Consumer<Float> receiver) {
         this.initValue = initValue;
         this.targetValue = targetValue;
-        this.resultSetter = resultSetter;
+        this.receiver = receiver;
     }
 
-    public void resize(int width, int height) {
-
+    public Applier(float targetValue, Consumer<Float> receiver) {
+        this(0, targetValue, receiver);
     }
 
     public void apply(float progress) {
         float value = initValue + (targetValue - initValue) * progress;
-        resultSetter.accept(value);
+        receiver.accept(value);
     }
 
-    public static class Resizable extends Applier {
+    /*public static class Resizable extends Applier {
 
         private Function<Integer, Float> initResizer;
 
@@ -54,8 +53,10 @@ public class Applier {
 
         private boolean useHeight;
 
-        public Resizable(float initValue, float targetValue, Consumer<Float> resultSetter, Consumer<Function<Integer, Float>> resizerSetter, boolean useHeight) {
-            super(initValue, targetValue, resultSetter);
+        public Resizable(Function<Integer, Float> initResizer, Function<Integer, Float> targetResizer, Consumer<Float> resultSetter, Consumer<Function<Integer, Float>> resizerSetter, boolean useHeight) {
+            super(0, 0, resultSetter);
+            this.initResizer = initResizer;
+            this.targetResizer = targetResizer;
             this.resizerSetter = resizerSetter;
             this.useHeight = useHeight;
         }
@@ -73,5 +74,5 @@ public class Applier {
                 resizerSetter.accept(targetResizer);
             }
         }
-    }
+    }*/
 }

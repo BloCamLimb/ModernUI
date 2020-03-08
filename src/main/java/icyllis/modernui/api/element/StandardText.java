@@ -16,26 +16,23 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.element;
+package icyllis.modernui.api.element;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.gui.font.IFontRenderer;
-import icyllis.modernui.gui.font.FontRendererSelector;
 import org.lwjgl.opengl.GL11;
 
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 public class StandardText extends Element {
 
-    private Supplier<String> text;
+    private String text;
 
     private float align, scale;
 
     public float colorR, colorG, colorB, opacity;
 
-    public StandardText(Function<Integer, Float> x, Function<Integer, Float> y, Supplier<String> text, float align, int RGBA, float scale) {
+    public StandardText(Function<Integer, Float> x, Function<Integer, Float> y, String text, float align, int RGBA, float scale) {
         super(x, y);
         this.text = text;
         this.align = align;
@@ -53,22 +50,9 @@ public class StandardText extends Element {
         RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
         GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
         GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-        String text = this.text.get();
         RenderSystem.scalef(scale, scale, 1);
         fontRenderer.drawString(text,  x / scale, y / scale, colorR, colorG, colorB, opacity, align / scale);
         RenderSystem.popMatrix();
     }
 
-    /*public ITextLineBuilder style() {
-        *//*deco = sc -> {
-            RenderSystem.color4f(120/255f, 190/255f, 230/255f, alpha.get());
-            float s = sc * 0.5f;
-            RenderSystem.scalef(0.5f, 0.5f, 1);
-            textureManager.bindTexture(ReferenceLibrary.BUTTON);
-            float x = this.x - length * align * 2;
-            DrawTools.blit((x - 8) / s, (y + 0.5f) / s, 0, 8, 16, 16);
-            DrawTools.blit((x + length * sc + 1) / s, (y + 0.5f) / s, 0, 8, 16, 16);
-        };*//*
-        return this;
-    }*/
 }

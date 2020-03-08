@@ -23,6 +23,7 @@ import icyllis.modernui.gui.master.GlobalModuleManager;
 
 import java.util.function.Consumer;
 
+@Deprecated
 public class DisposableSinAnimation implements IAnimation {
 
     protected boolean discard = false;

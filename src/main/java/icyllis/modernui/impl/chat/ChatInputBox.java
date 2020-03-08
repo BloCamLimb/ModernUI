@@ -18,11 +18,11 @@
 
 package icyllis.modernui.impl.chat;
 
-import icyllis.modernui.gui.widget.EventListener;
+import icyllis.modernui.api.widget.EventListener;
 import icyllis.modernui.gui.font.EmojiStringRenderer;
 import icyllis.modernui.gui.font.IFontRenderer;
 import icyllis.modernui.gui.master.DrawTools;
-import icyllis.modernui.gui.widget.Shape;
+import icyllis.modernui.api.widget.Shape;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.SharedConstants;

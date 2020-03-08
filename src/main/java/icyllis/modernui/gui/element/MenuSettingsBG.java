@@ -18,32 +18,44 @@
 
 package icyllis.modernui.gui.element;
 
-import icyllis.modernui.api.ModernUI_API;
-import icyllis.modernui.api.element.IElement;
-import icyllis.modernui.gui.animation.Animation;
-import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.animation.DisposableSinAnimation;
+import icyllis.modernui.api.element.Element;
+import icyllis.modernui.api.animation.Animation;
+import icyllis.modernui.api.animation.Applier;
 import icyllis.modernui.gui.master.DrawTools;
-import icyllis.modernui.gui.master.GlobalModuleManager;
 
-public class LeftSlidingRect implements IElement {
+public class MenuSettingsBG extends Element {
 
-    private float sizeW, height, opacity;
+    private float sizeW, sizeH;
 
-    public LeftSlidingRect(float targetWidth, float opacity) {
+    private float opacity = 0;
+
+    public MenuSettingsBG() {
+        super(w -> 24f, h -> 16f);
+        moduleManager.addAnimation(new Animation(2, true)
+                .applyTo(new Applier(24, 40, this::setX))
+                .onFinish(() -> xResizer = w -> 40f));
+        moduleManager.addAnimation(new Animation(2)
+                .applyTo(new Applier(0, 0.5f, this::setOpacity)));
+    }
+
+    private void setX(float x) {
+        this.x = x;
+    }
+
+    private void setOpacity(float opacity) {
         this.opacity = opacity;
-        ModernUI_API.INSTANCE.getModuleManager().addAnimation(
-                new Animation(4, true)
-                    .applyTo(new Applier(0, targetWidth, value -> sizeW = value)));
     }
 
     @Override
     public void draw(float currentTime) {
-        DrawTools.fillRectWithColor(0, 0, sizeW, height, 0, 0, 0, opacity);
+        DrawTools.fillRectWithColor(x, y, x + sizeW, y + sizeH, 0, 0, 0, opacity);
+        DrawTools.fillRectWithColor(x, y, x + sizeW, y + 20, 0, 0, 0, opacity);
     }
 
     @Override
     public void resize(int width, int height) {
-        this.height = height;
+        super.resize(width, height);
+        sizeW = width - 80;
+        sizeH = height - 32;
     }
 }

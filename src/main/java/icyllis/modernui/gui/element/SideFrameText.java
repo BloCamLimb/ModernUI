@@ -19,89 +19,58 @@
 package icyllis.modernui.gui.element;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.api.element.IElement;
-import icyllis.modernui.gui.animation.DisposableSinAnimation;
-import icyllis.modernui.gui.animation.DisposableUniAnimation;
-import icyllis.modernui.gui.font.IFontRenderer;
-import icyllis.modernui.gui.font.FontRendererSelector;
+import icyllis.modernui.api.animation.Animation;
+import icyllis.modernui.api.animation.Applier;
+import icyllis.modernui.api.element.StateAnimatedElement;
 import icyllis.modernui.gui.master.DrawTools;
-import icyllis.modernui.gui.master.GlobalModuleManager;
-import org.lwjgl.opengl.GL11;
 
-public class SideFrameText implements IElement {
+import java.util.function.Function;
 
-    private IFontRenderer renderer = FontRendererSelector.CURRENT_RENDERER;
+public class SideFrameText extends StateAnimatedElement {
 
     private String text;
-
-    private float x, y;
 
     private float frameOpacity = 0, textOpacity = 0;
 
     private float sizeW = 0;
 
-    // 0=close 1=opening 2=open 3=closing
-    private byte openState = 0;
-
-    private boolean prepareToClose = false;
-
-    private boolean prepareToOpen = false;
-
-    public SideFrameText(String text) {
+    public SideFrameText(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, String text) {
+        super(xResizer, yResizer);
         this.text = text;
     }
 
     @Override
     public void draw(float currentTime) {
-        if (prepareToOpen && openState == 0) {
-            open();
-            prepareToOpen = false;
-        } else if (prepareToClose && openState == 2) {
-            close();
-            prepareToClose = false;
-        }
-        if (openState == 0) {
+        if (!checkState()) {
             return;
         }
         RenderSystem.pushMatrix();
-        RenderSystem.depthFunc(GL11.GL_ALWAYS);
-        RenderSystem.translatef(0, 0, 150);
         DrawTools.fillRectWithFrame(x - 4, y - 3, x + sizeW, y + 11, 0.51f, 0x000000, 0.4f * frameOpacity, 0x404040, 0.8f * frameOpacity);
         RenderSystem.enableBlend();
-        renderer.drawString(text, x, y, 1, 1, 1, textOpacity, 0);
+        fontRenderer.drawString(text, x, y, 1, 1, 1, textOpacity, 0);
         RenderSystem.popMatrix();
     }
 
-    private void open() {
-        openState = 1;
-        float textLength = renderer.getStringWidth(text);
-        GlobalModuleManager.INSTANCE.addAnimation(new DisposableSinAnimation(-4, textLength + 4, 3, value -> sizeW = value));
-        GlobalModuleManager.INSTANCE.addAnimation(new DisposableUniAnimation(0, 1, 3, value -> frameOpacity = value));
-        GlobalModuleManager.INSTANCE.addAnimation(new DisposableUniAnimation(0, 1, 3, value -> textOpacity = value).withDelay(2).onFinish(() -> openState = 2));
-    }
-
-    private void close() {
-        openState = 3;
-        GlobalModuleManager.INSTANCE.addAnimation(new DisposableUniAnimation(1, 0, 5, value -> textOpacity = frameOpacity = value).onFinish(() -> openState = 0));
-    }
-
-    public void startOpen() {
-        prepareToOpen = true;
-        prepareToClose = false;
-    }
-
-    public void startClose() {
-        prepareToClose = true;
-        prepareToOpen = false;
-    }
-
-    public void setPos(float x, float y) {
-        this.x = x;
-        this.y = y;
+    @Override
+    protected void open() {
+        super.open();
+        float textLength = fontRenderer.getStringWidth(text);
+        moduleManager.addAnimation(new Animation(3, true)
+                .applyTo(new Applier(-4, textLength + 4, value -> sizeW = value)));
+        moduleManager.addAnimation(new Animation(3)
+                .applyTo(new Applier(1, value -> frameOpacity = value)));
+        moduleManager.addAnimation(new Animation(3)
+                .applyTo(new Applier(1, value -> textOpacity = value))
+                .withDelay(2)
+                .onFinish(() -> openState = 2));
     }
 
     @Override
-    public void resize(int width, int height) {
-
+    protected void close() {
+        super.close();
+        moduleManager.addAnimation(new Animation(5)
+                .applyTo(new Applier(1, 0, value -> textOpacity = frameOpacity = value))
+                .onFinish(() -> openState = 0));
     }
+
 }

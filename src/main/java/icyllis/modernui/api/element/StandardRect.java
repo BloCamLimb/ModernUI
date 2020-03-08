@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.element;
+package icyllis.modernui.api.element;
 
 import icyllis.modernui.gui.master.DrawTools;
 
