@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.widget;
+package icyllis.modernui.api.widget;
 
 import net.minecraft.client.gui.IGuiEventListener;
 

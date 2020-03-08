@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.element;
+package icyllis.modernui.api.element;
 
 import java.util.function.Function;
 
@@ -33,8 +33,7 @@ public abstract class StateAnimatedElement extends Element {
         super(xResizer, yResizer);
     }
 
-    @Override
-    public void draw(float currentTime) {
+    protected boolean checkState() {
         if (prepareToOpen && openState == 0) {
             openState = 1;
             open();
@@ -44,20 +43,22 @@ public abstract class StateAnimatedElement extends Element {
             close();
             prepareToClose = false;
         }
-        if (openState == 0) {
-            return; // do not draw anymore
-        }
+        return openState != 0;
     }
 
     /**
      * Create open animations and set open state to 2 here
      */
-    protected abstract void open();
+    protected void open() {
+        openState = 1;
+    }
 
     /**
      * Create close animations and set open state to 0 here
      */
-    protected abstract void close();
+    protected void close() {
+        openState = 3;
+    }
 
     public void startOpen() {
         prepareToOpen = true;

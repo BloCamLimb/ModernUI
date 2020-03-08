@@ -16,9 +16,8 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.animation;
+package icyllis.modernui.api.animation;
 
-import icyllis.modernui.api.animation.IAnimation;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 
 import java.util.Arrays;
@@ -77,11 +76,6 @@ public class Animation implements IAnimation {
             finish = true;
             finishRunnable.run();
         }
-    }
-
-    @Override
-    public void resize(int width, int height) {
-        Arrays.stream(appliers).forEach(e -> e.resize(width, height));
     }
 
     @Override

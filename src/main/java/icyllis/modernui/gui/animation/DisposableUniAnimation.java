@@ -23,6 +23,7 @@ import icyllis.modernui.gui.master.GlobalModuleManager;
 
 import java.util.function.Consumer;
 
+@Deprecated
 public class DisposableUniAnimation implements IAnimation {
 
     protected float startTime;

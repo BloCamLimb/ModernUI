@@ -18,8 +18,6 @@
 
 package icyllis.modernui.gui.animation;
 
-import icyllis.modernui.api.animation.IAnimation;
-
 import java.util.function.Consumer;
 
 /**

@@ -19,6 +19,7 @@
 package icyllis.modernui.api.manager;
 
 import icyllis.modernui.api.animation.IAnimation;
+import icyllis.modernui.api.widget.EventListener;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.network.PacketBuffer;
 
@@ -41,23 +42,16 @@ public interface IModuleManager {
 
     /**
      * Add a sub event listener to listen mouse and keyboard event
-     * Generally use {@link icyllis.modernui.gui.widget.EventListener}
+     * Generally use {@link EventListener}
      * @param listener event listener
      */
     void addEventListener(IGuiEventListener listener);
 
     /**
      * Add animation to global animation pool
-     * Animation will be auto resized
      * @param animation animation to add
      */
     void addAnimation(IAnimation animation);
-
-    /**
-     * Resize an animation with current width and height
-     * @param animation animation to resize
-     */
-    void resizeAnimation(IAnimation animation);
 
     /**
      * Get extra data from server side

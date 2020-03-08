@@ -20,7 +20,7 @@ package icyllis.modernui.impl;
 
 import icyllis.modernui.api.ModernUI_API;
 import icyllis.modernui.api.element.IElement;
-import icyllis.modernui.gui.element.LeftSlidingRect;
+import icyllis.modernui.gui.element.MenuHomeBG;
 import icyllis.modernui.gui.master.ModernUIScreen;
 import icyllis.modernui.gui.widget.MenuButton;
 import icyllis.modernui.impl.menu.SettingsHeader;
@@ -50,7 +50,7 @@ public class GuiIngameMenu extends ModernUIScreen {
 
         public Home(Consumer<IElement> pool) {
             this.minecraft = Minecraft.getInstance();
-            pool.accept(new LeftSlidingRect(32, 0.7f));
+            pool.accept(new MenuHomeBG());
             pool.accept(new MenuButton.A(w -> 8f, h -> 8f, "Back to Game", ReferenceLibrary.ICONS, 32, 32, 128, 0, 0.5f, () -> minecraft.displayGuiScreen(null)));
             pool.accept(new MenuButton.B(w -> 8f, h -> 44f, "Advancements", ReferenceLibrary.ICONS, 32, 32, 32, 0, 0.5f, () -> {}, i -> i < 0));
             pool.accept(new MenuButton.B(w -> 8f, h -> 72f, "Statistics", ReferenceLibrary.ICONS, 32, 32, 64, 0, 0.5f, () -> {}, i -> i == 1 || i == 2));

@@ -30,7 +30,7 @@ public interface IElement {
 
     /**
      * Called when game window size changed
-     * {@link icyllis.modernui.gui.element.Element#xResizer} is an example
+     * {@link Element#xResizer} is an example
      * @param width scaled window width
      * @param height scaled window height
      */

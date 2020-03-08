@@ -20,10 +20,13 @@ package icyllis.modernui.gui.widget;
 
 import icyllis.modernui.api.ModernUI_API;
 import icyllis.modernui.api.element.IElement;
-import icyllis.modernui.gui.animation.DisposableUniAnimation;
+import icyllis.modernui.api.animation.Animation;
+import icyllis.modernui.api.animation.Applier;
+import icyllis.modernui.api.widget.EventListener;
+import icyllis.modernui.api.widget.Shape;
 import icyllis.modernui.gui.animation.HighActiveUniAnimation;
 import icyllis.modernui.gui.element.SideFrameText;
-import icyllis.modernui.gui.element.StandardTexture;
+import icyllis.modernui.api.element.StandardTexture;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import net.minecraft.util.ResourceLocation;
 
@@ -68,26 +71,28 @@ public class MenuButton implements IElement {
 
     public static class A extends MenuButton {
 
-        private SideFrameText text;
+        private SideFrameText textComponent;
 
         public A(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, String text, ResourceLocation res, float sizeW, float sizeH, float u, float v, float scale, Runnable onLeftClick) {
             super(xResizer, yResizer, res, sizeW, sizeH, u, v, scale, onLeftClick);
-            this.text = new SideFrameText(text);
-            GlobalModuleManager.INSTANCE.addAnimation(new DisposableUniAnimation(0, 1, 3, value -> texture.opacity = value).withDelay(1));
-            listener.addHoverOn(() -> this.text.startOpen());
-            listener.addHoverOff(() -> this.text.startClose());
+            this.textComponent = new SideFrameText(w -> xResizer.apply(w) + sizeW * scale + 15, h -> yResizer.apply(h) + (sizeH * scale) / 2 - 4, text);
+            ModernUI_API.INSTANCE.getModuleManager().addAnimation(new Animation(3)
+                    .applyTo(new Applier(0, 1, value -> texture.opacity = value))
+                    .withDelay(1));
+            listener.addHoverOn(() -> this.textComponent.startOpen());
+            listener.addHoverOff(() -> this.textComponent.startClose());
         }
 
         @Override
         public void draw(float currentTime) {
             super.draw(currentTime);
-            text.draw(currentTime);
+            textComponent.draw(currentTime);
         }
 
         @Override
         public void resize(int width, int height) {
             super.resize(width, height);
-            text.setPos(texture.x + texture.sizeW * texture.scale + 15, texture.y + (texture.sizeH * texture.scale) / 2 - 4);
+            textComponent.resize(width, height);
         }
     }
 
