@@ -16,21 +16,16 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.font;
+package icyllis.modernui.impl.menu.popup;
 
-public class FontRendererSelector {
+import icyllis.modernui.api.element.IElement;
+import icyllis.modernui.gui.component.ConfirmWindow;
 
-    public static IFontRenderer CURRENT_RENDERER;
+import java.util.function.Consumer;
 
-    static {
-        CURRENT_RENDERER = TrueTypeRenderer.INSTANCE;
-    }
+public class TestPopup {
 
-    public static void switchRenderer(boolean ttf) {
-        if (ttf) {
-            CURRENT_RENDERER = TrueTypeRenderer.INSTANCE;
-        } else {
-            CURRENT_RENDERER = VanillaFontRenderer.INSTANCE;
-        }
+    public TestPopup(Consumer<IElement> pool) {
+        pool.accept(new ConfirmWindow(" Exit", "Are you sure you want to exit to main menu?"));
     }
 }

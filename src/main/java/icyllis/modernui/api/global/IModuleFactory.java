@@ -23,8 +23,9 @@ import icyllis.modernui.api.element.IElement;
 import java.util.function.Consumer;
 import java.util.function.IntPredicate;
 
-@FunctionalInterface
 public interface IModuleFactory {
 
     void addModule(IntPredicate availability, Consumer<Consumer<IElement>> pool);
+
+    void addPopupModule(int id, Consumer<Consumer<IElement>> pool);
 }

@@ -50,7 +50,7 @@ public enum GuiManager implements IGuiManager {
         if (CONTAINER_SCREENS.containsKey(id)) {
             Pair<IContainerFactory<? extends Container>, Consumer<IModuleFactory>> pair = CONTAINER_SCREENS.get(id);
             GlobalModuleManager.INSTANCE.setExtraData(new PacketBuffer(extraData.copy()));
-            IContainerFactory factory = pair.getKey();
+            IContainerFactory<?> factory = pair.getKey();
             Container container = factory.create(windowId, Minecraft.getInstance().player.inventory, extraData);
             Minecraft.getInstance().player.openContainer = container;
             Minecraft.getInstance().displayGuiScreen(new ModernUIScreenG<>(pair.getValue(), container));
