@@ -27,6 +27,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 import java.util.function.Consumer;
 
 @OnlyIn(Dist.CLIENT)
@@ -34,10 +35,18 @@ public class ModernUIScreenG<G extends Container> extends ContainerScreen<G> imp
 
     private GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
 
+    private boolean hasPopup = false;
+
     @SuppressWarnings("ConstantConditions")
     public ModernUIScreenG(Consumer<IModuleFactory> factory, G container) {
         super(container, Minecraft.getInstance().player.inventory, ModernUIScreen.EMPTY_TITLE);
         factory.accept(manager);
+    }
+
+    @Nonnull
+    @Override
+    public List<? extends IGuiEventListener> children() {
+        return hasPopup ? manager.popupListener : children;
     }
 
     @Override
@@ -60,6 +69,11 @@ public class ModernUIScreenG<G extends Container> extends ContainerScreen<G> imp
     @Override
     public void addEventListener(IGuiEventListener eventListener) {
         children.add(eventListener);
+    }
+
+    @Override
+    public void setHasPopup(boolean bool) {
+        this.hasPopup = bool;
     }
 
     @Override

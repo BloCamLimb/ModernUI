@@ -37,7 +37,7 @@ public class EmojiStringRenderer implements IFontRenderer {
     private final IFontRenderer FONT;
     private final TextureManager TEX;
     {
-        FONT = FontRendererSelector.CURRENT_RENDERER;
+        FONT = FontRendererTools.CURRENT_RENDERER;
         TEX = Minecraft.getInstance().textureManager;
     }
 

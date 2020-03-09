@@ -18,6 +18,7 @@
 
 package icyllis.modernui.gui.master;
 
+import com.google.common.collect.Lists;
 import icyllis.modernui.api.global.IModuleFactory;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
@@ -27,6 +28,8 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 @OnlyIn(Dist.CLIENT)
@@ -36,9 +39,17 @@ public class ModernUIScreen extends Screen implements IMasterScreen {
 
     private GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
 
+    private boolean hasPopup = false;
+
     public ModernUIScreen(Consumer<IModuleFactory> factory) {
         super(EMPTY_TITLE);
         factory.accept(manager);
+    }
+
+    @Nonnull
+    @Override
+    public List<? extends IGuiEventListener> children() {
+        return hasPopup ? manager.popupListener : children;
     }
 
     @Override
@@ -64,6 +75,11 @@ public class ModernUIScreen extends Screen implements IMasterScreen {
     @Override
     public void addEventListener(IGuiEventListener eventListener) {
         children.add(eventListener);
+    }
+
+    @Override
+    public void setHasPopup(boolean bool) {
+        hasPopup = bool;
     }
 
     @Override

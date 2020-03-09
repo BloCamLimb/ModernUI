@@ -18,15 +18,27 @@
 
 package icyllis.modernui.gui.element;
 
+import icyllis.modernui.api.ModernUI_API;
+import icyllis.modernui.api.animation.Animation;
+import icyllis.modernui.api.animation.Applier;
 import icyllis.modernui.api.element.IElement;
 import icyllis.modernui.gui.master.DrawTools;
+import icyllis.modernui.gui.master.GlobalModuleManager;
+import icyllis.modernui.system.ModernUI;
 
-@Deprecated
 public class Background implements IElement {
 
-    private float alpha = 0.45f;
+    private float alpha = 0f;
 
     private int width, height;
+
+    public Background(float fadeInTime) {
+        if (fadeInTime > 0)
+            ModernUI_API.INSTANCE.getModuleManager().addAnimation(new Animation(fadeInTime)
+                    .applyTo(new Applier(0.3f, value -> alpha = value)));
+        else
+            alpha = 0.3f;
+    }
 
     @Override
     public void draw(float currentTime) {
@@ -37,5 +49,10 @@ public class Background implements IElement {
     public void resize(int width, int height) {
         this.width = width;
         this.height = height;
+    }
+
+    @Override
+    public int priority() {
+        return -1;
     }
 }

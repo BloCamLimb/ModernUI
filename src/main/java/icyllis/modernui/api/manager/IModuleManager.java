@@ -34,15 +34,27 @@ public interface IModuleManager {
     void switchTo(int id);
 
     /**
+     * Open a popup window, a special module
+     * @param fadeInTime second black background animation fade in time
+     * @param id popup module id
+     */
+    void openPopup(float fadeInTime, int id);
+
+    /**
+     * Close current popup
+     */
+    void closePopup();
+
+    /**
      * Add a module event that called after switching to a new module
-     * Given new module ID, you can use to make animations here
+     * Given new module ID
      * @param event int consumer
      */
     void addModuleEvent(IntConsumer event);
 
     /**
      * Add a sub event listener to listen mouse and keyboard event
-     * Generally use {@link EventListener}
+     * to CURRENT module. Generally use {@link EventListener}
      * @param listener event listener
      */
     void addEventListener(IGuiEventListener listener);

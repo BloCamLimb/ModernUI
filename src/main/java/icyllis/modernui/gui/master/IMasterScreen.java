@@ -26,4 +26,6 @@ import net.minecraft.client.gui.IGuiEventListener;
 public interface IMasterScreen {
 
     void addEventListener(IGuiEventListener eventListener);
+
+    void setHasPopup(boolean bool);
 }

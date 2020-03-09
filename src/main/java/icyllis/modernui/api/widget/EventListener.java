@@ -62,7 +62,7 @@ public class EventListener implements IGuiEventListener {
             return;
         }
         boolean previous = mouseHovered;
-        this.mouseHovered = this.shape.isMouseInShape(x, y, mouseX, mouseY);
+        this.mouseHovered = this.isMouseOver(mouseX, mouseY);
         if (previous != mouseHovered) {
             if (mouseHovered) {
                 events.stream().filter(e -> e.id == iEvent.MOUSE_HOVER_ON).forEach(iEvent::run);
@@ -82,6 +82,11 @@ public class EventListener implements IGuiEventListener {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public boolean isMouseOver(double mouseX, double mouseY) {
+        return shape.isMouseInShape(x, y, mouseX, mouseY);
     }
 
     public void addHoverOn(Runnable runnable) {

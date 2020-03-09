@@ -19,9 +19,8 @@
 package icyllis.modernui.api.element;
 
 import icyllis.modernui.api.ModernUI_API;
-import icyllis.modernui.api.element.IElement;
 import icyllis.modernui.api.manager.IModuleManager;
-import icyllis.modernui.gui.font.FontRendererSelector;
+import icyllis.modernui.gui.font.FontRendererTools;
 import icyllis.modernui.gui.font.IFontRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureManager;
@@ -34,7 +33,7 @@ public abstract class Element implements IElement {
 
     protected TextureManager textureManager = minecraft.textureManager;
 
-    protected IFontRenderer fontRenderer = FontRendererSelector.CURRENT_RENDERER;
+    protected IFontRenderer fontRenderer = FontRendererTools.CURRENT_RENDERER;
 
     protected IModuleManager moduleManager = ModernUI_API.INSTANCE.getModuleManager();
 
