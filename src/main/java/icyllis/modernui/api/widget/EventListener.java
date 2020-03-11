@@ -84,6 +84,10 @@ public class EventListener implements IGuiEventListener {
         return false;
     }
 
+    public void setAvailable(boolean available) {
+        this.available = available;
+    }
+
     @Override
     public boolean isMouseOver(double mouseX, double mouseY) {
         return shape.isMouseInShape(x, y, mouseX, mouseY);

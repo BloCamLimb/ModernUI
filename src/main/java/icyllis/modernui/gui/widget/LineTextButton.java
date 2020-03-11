@@ -24,8 +24,6 @@ import icyllis.modernui.api.element.StateAnimatedElement;
 import icyllis.modernui.api.widget.EventListener;
 import icyllis.modernui.api.widget.Shape;
 import icyllis.modernui.gui.master.DrawTools;
-import net.minecraft.client.gui.screen.IngameMenuScreen;
-import net.minecraft.client.gui.screen.OptionsScreen;
 
 import java.util.function.Function;
 

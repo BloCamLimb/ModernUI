@@ -20,7 +20,9 @@ package icyllis.modernui.gui.master;
 
 import com.google.common.collect.Lists;
 import icyllis.modernui.api.global.IModuleFactory;
+import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.MouseHelper;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.text.StringTextComponent;
@@ -64,12 +66,16 @@ public class ModernUIScreen extends Screen implements IMasterScreen {
 
     @Override
     public void mouseMoved(double xPos, double p_212927_3_) {
-        children.forEach(e -> e.mouseMoved(xPos, p_212927_3_));
+        children().forEach(e -> e.mouseMoved(xPos, p_212927_3_));
     }
 
     @Override
     public void onClose() {
-        super.onClose();
+        if (hasPopup) {
+            manager.closePopup();
+        } else {
+            super.onClose();
+        }
     }
 
     @Override
@@ -79,7 +85,20 @@ public class ModernUIScreen extends Screen implements IMasterScreen {
 
     @Override
     public void setHasPopup(boolean bool) {
+        if (bool) {
+            children().forEach(e -> e.mouseMoved(0, 0));
+        }
         hasPopup = bool;
+        if (!bool) {
+            refreshCursor();
+        }
+    }
+
+    @Override
+    public void refreshCursor() {
+        MouseHelper mouseHelper = Minecraft.getInstance().mouseHelper;
+        double scale = Minecraft.getInstance().getMainWindow().getGuiScaleFactor();
+        children().forEach(e -> e.mouseMoved(mouseHelper.getMouseX() / scale, mouseHelper.getMouseY() / scale));
     }
 
     @Override

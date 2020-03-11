@@ -20,6 +20,7 @@ package icyllis.modernui.gui.master;
 
 import icyllis.modernui.api.global.IModuleFactory;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.MouseHelper;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.inventory.ContainerScreen;
 import net.minecraft.inventory.container.Container;
@@ -74,6 +75,13 @@ public class ModernUIScreenG<G extends Container> extends ContainerScreen<G> imp
     @Override
     public void setHasPopup(boolean bool) {
         this.hasPopup = bool;
+    }
+
+    @Override
+    public void refreshCursor() {
+        MouseHelper mouseHelper = Minecraft.getInstance().mouseHelper;
+        double scale = Minecraft.getInstance().getMainWindow().getGuiScaleFactor();
+        children().forEach(e -> e.mouseMoved(mouseHelper.getMouseX() / scale, mouseHelper.getMouseY() / scale));
     }
 
     @Override

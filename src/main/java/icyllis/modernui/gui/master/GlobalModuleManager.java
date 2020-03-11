@@ -98,6 +98,9 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager {
                     popupPool.build();
                     popupPool.resize(width, height);
                 });
+        if (master != null) {
+            master.setHasPopup(true);
+        }
     }
 
     @Override
@@ -106,6 +109,9 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager {
         if (popupPool != null) {
             popupPool.clear();
             popupPool = null;
+        }
+        if (master != null) {
+            master.setHasPopup(false);
         }
     }
 
@@ -128,6 +134,13 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager {
         animations.add(animation);
     }
 
+    @Override
+    public void refreshCursor() {
+        if (master != null) {
+            master.refreshCursor();
+        }
+    }
+
     public void draw() {
         animations.forEach(e -> e.update(floatingPointTicks));
         pools.forEach(elementPool -> elementPool.draw(floatingPointTicks));
@@ -147,8 +160,13 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager {
     public void clear() {
         pools.clear();
         animations.clear();
-        closePopup();
+        moduleEvents.clear();
+        popupListener.clear();
+        popups.clear();
+        currentPool = null;
+        popupPool = null;
         master = null;
+        extraData = null;
     }
 
     @Override
@@ -166,6 +184,8 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager {
     public void clientTick() {
         ticks++;
         pools.forEach(e -> e.tick(ticks));
+        if (popupPool != null)
+            popupPool.tick(ticks);
     }
 
     // called before draw
@@ -179,8 +199,14 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager {
         floatingPointTicks = 0;
     }
 
+    @Override
     public float getAnimationTime() {
         return floatingPointTicks;
+    }
+
+    @Override
+    public int getTicks() {
+        return ticks;
     }
 
     public void setExtraData(PacketBuffer extraData) {
