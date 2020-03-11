@@ -35,9 +35,9 @@ public class Background implements IElement {
     public Background(float fadeInTime) {
         if (fadeInTime > 0)
             ModernUI_API.INSTANCE.getModuleManager().addAnimation(new Animation(fadeInTime)
-                    .applyTo(new Applier(0.3f, value -> alpha = value)));
+                    .applyTo(new Applier(0.45f, value -> alpha = value)));
         else
-            alpha = 0.3f;
+            alpha = 0.45f;
     }
 
     @Override

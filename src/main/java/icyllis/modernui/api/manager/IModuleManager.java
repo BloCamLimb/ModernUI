@@ -66,6 +66,23 @@ public interface IModuleManager {
     void addAnimation(IAnimation animation);
 
     /**
+     * Refresh current mouse cursor
+     */
+    void refreshCursor();
+
+    /**
+     * Get current time
+     * @return time
+     */
+    float getAnimationTime();
+
+    /**
+     * Get current ticks
+     * @return ticks
+     */
+    int getTicks();
+
+    /**
      * Get extra data from server side
      * @return packet buffer
      */

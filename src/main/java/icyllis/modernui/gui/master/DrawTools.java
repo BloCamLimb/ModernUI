@@ -26,11 +26,11 @@ import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 @SuppressWarnings("DuplicatedCode")
 public class DrawTools {
 
-    public static void fillRectWithColor(float left, float top, float right, float bottom, int color) {
-        int a = color >> 24 & 255;
-        int r = color >> 16 & 255;
-        int g = color >> 8 & 255;
-        int b = color & 255;
+    public static void fillRectWithColor(float left, float top, float right, float bottom, int RGBA) {
+        int a = RGBA >> 24 & 255;
+        int r = RGBA >> 16 & 255;
+        int g = RGBA >> 8 & 255;
+        int b = RGBA & 255;
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferbuilder = tessellator.getBuffer();
         RenderSystem.enableBlend();
@@ -46,11 +46,11 @@ public class DrawTools {
         RenderSystem.disableBlend();
     }
 
-    public static void fillRectWithColor(float left, float top, float right, float bottom, int color, float opacity) {
-        int a = (int) (opacity * 255F);
-        int r = color >> 16 & 255;
-        int g = color >> 8 & 255;
-        int b = color & 255;
+    public static void fillRectWithColor(float left, float top, float right, float bottom, int RGB, float alpha) {
+        int a = (int) (alpha * 255F);
+        int r = RGB >> 16 & 255;
+        int g = RGB >> 8 & 255;
+        int b = RGB & 255;
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferbuilder = tessellator.getBuffer();
         RenderSystem.enableBlend();
@@ -82,11 +82,11 @@ public class DrawTools {
         RenderSystem.disableBlend();
     }
 
-    public static void fillRectWithFrame(float left, float top, float right, float bottom, float thickness, int innerColor, float innerOpacity, int frameColor, float frameOpacity) {
-        int a = (int) (innerOpacity * 255F);
-        int r = innerColor >> 16 & 255;
-        int g = innerColor >> 8 & 255;
-        int b = innerColor & 255;
+    public static void fillRectWithFrame(float left, float top, float right, float bottom, float thickness, int innerRGB, float innerAlpha, int frameRGB, float frameAlpha) {
+        int a = (int) (innerAlpha * 255F);
+        int r = innerRGB >> 16 & 255;
+        int g = innerRGB >> 8 & 255;
+        int b = innerRGB & 255;
 
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferbuilder = tessellator.getBuffer();
@@ -101,10 +101,55 @@ public class DrawTools {
         bufferbuilder.pos(left, top, 0.0D).color(r, g, b, a).endVertex();
         tessellator.draw();
 
-        a = (int) (frameOpacity * 255F);
-        r = frameColor >> 16 & 255;
-        g = frameColor >> 8 & 255;
-        b = frameColor & 255;
+        a = (int) (frameAlpha * 255F);
+        r = frameRGB >> 16 & 255;
+        g = frameRGB >> 8 & 255;
+        b = frameRGB & 255;
+
+        bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
+        bufferbuilder.pos(left - thickness, top, 0.0D).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(right, top, 0.0D).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(right, top - thickness, 0.0D).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(left - thickness, top - thickness, 0.0D).color(r, g, b, a).endVertex();
+        tessellator.draw();
+
+        bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
+        bufferbuilder.pos(right, bottom, 0.0D).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(right + thickness, bottom, 0.0D).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(right + thickness, top - thickness, 0.0D).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(right, top - thickness, 0.0D).color(r, g, b, a).endVertex();
+        tessellator.draw();
+
+        bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
+        bufferbuilder.pos(left, bottom + thickness, 0.0D).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(right + thickness, bottom + thickness, 0.0D).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(right + thickness, bottom, 0.0D).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(left, bottom, 0.0D).color(r, g, b, a).endVertex();
+        tessellator.draw();
+
+        bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
+        bufferbuilder.pos(left - thickness, bottom + thickness, 0.0D).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(left, bottom + thickness, 0.0D).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(left, top, 0.0D).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(left - thickness, top, 0.0D).color(r, g, b, a).endVertex();
+        tessellator.draw();
+
+        RenderSystem.enableTexture();
+        RenderSystem.disableBlend();
+    }
+
+    public static void fillFrameWithColor(float left, float top, float right, float bottom, float thickness, int frameRGB, float frameAlpha) {
+
+        int a = (int) (frameAlpha * 255F);
+        int r = frameRGB >> 16 & 255;
+        int g = frameRGB >> 8 & 255;
+        int b = frameRGB & 255;
+
+        Tessellator tessellator = Tessellator.getInstance();
+        BufferBuilder bufferbuilder = tessellator.getBuffer();
+        RenderSystem.enableBlend();
+        RenderSystem.disableTexture();
+        RenderSystem.defaultBlendFunc();
 
         bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
         bufferbuilder.pos(left - thickness, top, 0.0D).color(r, g, b, a).endVertex();
