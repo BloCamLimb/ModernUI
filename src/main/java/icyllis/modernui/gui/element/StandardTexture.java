@@ -30,7 +30,6 @@ import java.util.function.Function;
 /**
  * Example
  */
-@Deprecated
 public class StandardTexture extends Element {
 
     protected ResourceLocation res;
@@ -66,7 +65,7 @@ public class StandardTexture extends Element {
         GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
         RenderSystem.pushMatrix();
         RenderSystem.color4f(tintR, tintG, tintB, opacity);
-        RenderSystem.scalef(scale, scale, scale);
+        RenderSystem.scalef(scale, scale, 1);
         textureManager.bindTexture(res);
         DrawTools.blit(x / scale, y / scale, u, v, sizeW, sizeH);
         RenderSystem.popMatrix();
