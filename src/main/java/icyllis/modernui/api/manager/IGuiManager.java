@@ -22,24 +22,19 @@ import icyllis.modernui.api.global.IContainerFactory;
 import icyllis.modernui.api.global.IModuleFactory;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraft.util.text.ITextComponent;
 
 import java.util.function.Consumer;
 
 public interface IGuiManager {
 
     /**
-     * Register a gui with container
-     *
-     * @param id registry name
+     * Register a gui with container on client side
+     *  @param id registry name
+     * @param title screen title
      * @param containerFactory factory to create container
      * @param moduleFactory gui modules, ID is determined by order, the first one would be main module
      */
-    <M extends Container> void registerContainerGui(ResourceLocation id, IContainerFactory<M> containerFactory, Consumer<IModuleFactory> moduleFactory);
+    <M extends Container> void registerContainerGui(ResourceLocation id, ITextComponent title, IContainerFactory<M> containerFactory, Consumer<IModuleFactory> moduleFactory);
 
-    /**
-     * Open a gui on client side.
-     */
-    void openGui(Consumer<IModuleFactory> factoryConsumer);
 }

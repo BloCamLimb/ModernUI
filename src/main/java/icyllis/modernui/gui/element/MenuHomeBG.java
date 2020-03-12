@@ -19,17 +19,17 @@
 package icyllis.modernui.gui.element;
 
 import icyllis.modernui.api.ModernUI_API;
-import icyllis.modernui.api.element.IElement;
-import icyllis.modernui.api.animation.Animation;
-import icyllis.modernui.api.animation.Applier;
+import icyllis.modernui.gui.animation.Animation;
+import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.DrawTools;
+import icyllis.modernui.gui.master.GlobalModuleManager;
 
 public class MenuHomeBG implements IElement {
 
     private float sizeW, height;
 
     public MenuHomeBG() {
-        ModernUI_API.INSTANCE.getModuleManager().addAnimation(
+        GlobalModuleManager.INSTANCE.addAnimation(
                 new Animation(4, true)
                     .applyTo(new Applier(0, 32, value -> sizeW = value)));
     }

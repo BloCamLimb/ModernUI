@@ -18,9 +18,9 @@
 
 package icyllis.modernui.gui.component;
 
-import icyllis.modernui.api.animation.Animation;
-import icyllis.modernui.api.animation.Applier;
-import icyllis.modernui.api.element.Element;
+import icyllis.modernui.gui.animation.Animation;
+import icyllis.modernui.gui.animation.Applier;
+import icyllis.modernui.gui.element.Element;
 import icyllis.modernui.gui.font.FontRendererTools;
 import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.gui.widget.TextButton;
@@ -55,6 +55,8 @@ public class ConfirmWindow extends Element {
         confirmButton = new TextButton.Countdown(w -> w / 2f + 74f - cancelButton.sizeW, h -> h / 2f + 20f, title, confirmOperation, confirmCountdown);
         cancelButton.setTextOpacity(0);
         confirmButton.setTextOpacity(0);
+        cancelButton.rightAlign();
+        confirmButton.rightAlign();
         moduleManager.addAnimation(new Animation(3, true)
                 .applyTo(new Applier(0, 80, value -> frameSizeHOffset = value)));
         moduleManager.addAnimation(new Animation(3)

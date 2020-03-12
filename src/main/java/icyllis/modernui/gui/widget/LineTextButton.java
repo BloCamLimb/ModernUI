@@ -18,18 +18,13 @@
 
 package icyllis.modernui.gui.widget;
 
-import icyllis.modernui.api.animation.Animation;
-import icyllis.modernui.api.animation.Applier;
-import icyllis.modernui.api.element.StateAnimatedElement;
-import icyllis.modernui.api.widget.EventListener;
-import icyllis.modernui.api.widget.Shape;
+import icyllis.modernui.gui.animation.Animation;
+import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.DrawTools;
 
 import java.util.function.Function;
 
-public class LineTextButton extends StateAnimatedElement {
-
-    protected EventListener listener;
+public class LineTextButton extends StateAnimatedWidget {
 
     protected String text;
 
@@ -48,10 +43,8 @@ public class LineTextButton extends StateAnimatedElement {
         this.text = text;
         this.width = width;
         this.widthOffset = this.halfWidth = width / 2f;
-        listener = new EventListener(xResizer, yResizer, new Shape.RectShape(width, 12));
-        listener.addHoverOn(this::startOpen);
-        listener.addHoverOff(this::startClose);
-        moduleManager.addEventListener(listener);
+        this.shape = new Shape.Rect(width, 12);
+        moduleManager.addEventListener(this);
         moduleManager.addModuleEvent(i -> {
             if (i == moduleID) {
                 lock = true;
@@ -69,14 +62,13 @@ public class LineTextButton extends StateAnimatedElement {
     @Override
     public void draw(float currentTime) {
         super.checkState();
-        fontRenderer.drawString(text, x + halfWidth, y + 2, textBrightness, textBrightness, textBrightness, opacity, 0.25f);
+        fontRenderer.drawString(text, x + width / 2f, y + 2, textBrightness, textBrightness, textBrightness, opacity, 0.25f);
         DrawTools.fillRectWithColor(x + widthOffset, y + 11, x + width - widthOffset, y + 12, 0xffffff, opacity);
     }
 
     @Override
     public void resize(int width, int height) {
         super.resize(width, height);
-        listener.resize(width, height);
     }
 
     @Override
@@ -102,4 +94,5 @@ public class LineTextButton extends StateAnimatedElement {
         if (!lock)
             super.startClose();
     }
+
 }

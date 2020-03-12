@@ -19,9 +19,8 @@
 package icyllis.modernui.gui.element;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.api.animation.Animation;
-import icyllis.modernui.api.animation.Applier;
-import icyllis.modernui.api.element.StateAnimatedElement;
+import icyllis.modernui.gui.animation.Animation;
+import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.DrawTools;
 
 import java.util.function.Function;

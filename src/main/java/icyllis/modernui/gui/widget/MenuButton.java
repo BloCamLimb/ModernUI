@@ -18,15 +18,12 @@
 
 package icyllis.modernui.gui.widget;
 
-import icyllis.modernui.api.ModernUI_API;
-import icyllis.modernui.api.element.IElement;
-import icyllis.modernui.api.animation.Animation;
-import icyllis.modernui.api.animation.Applier;
-import icyllis.modernui.api.widget.EventListener;
-import icyllis.modernui.api.widget.Shape;
-import icyllis.modernui.gui.animation.HighActiveUniAnimation;
+import icyllis.modernui.gui.element.IElement;
+import icyllis.modernui.gui.animation.Animation;
+import icyllis.modernui.gui.animation.Applier;
+import icyllis.modernui.gui.animation.HSiAnimation;
 import icyllis.modernui.gui.element.SideFrameText;
-import icyllis.modernui.api.element.StandardTexture;
+import icyllis.modernui.gui.element.StandardTexture;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import net.minecraft.util.ResourceLocation;
 
@@ -35,17 +32,17 @@ import java.util.function.IntPredicate;
 
 public class MenuButton implements IElement {
 
-    protected EventListener listener;
+    protected StandardEventListener listener;
 
     protected StandardTexture texture;
 
-    protected HighActiveUniAnimation textureOpacityAnimation;
+    protected HSiAnimation textureOpacityAnimation;
 
     public MenuButton(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, ResourceLocation res, float sizeW, float sizeH, float u, float v, float scale, Runnable onLeftClick) {
-        listener = new EventListener(xResizer, yResizer, new Shape.RectShape(sizeW * scale, sizeH * scale));
+        listener = new StandardEventListener(xResizer, yResizer, new Shape.Rect(sizeW * scale, sizeH * scale));
 
         texture = new StandardTexture(xResizer, yResizer, sizeW, sizeH, res, u, v, 0x00808080, scale);
-        textureOpacityAnimation = new HighActiveUniAnimation(0.5f, 1.0f, 4, value -> texture.tintR = texture.tintG = texture.tintB = value);
+        textureOpacityAnimation = new HSiAnimation(0.5f, 1.0f, 4, value -> texture.tintR = texture.tintG = texture.tintB = value);
 
         addAnimationEvent();
         listener.addLeftClick(onLeftClick);
@@ -76,7 +73,7 @@ public class MenuButton implements IElement {
         public A(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, String text, ResourceLocation res, float sizeW, float sizeH, float u, float v, float scale, Runnable onLeftClick) {
             super(xResizer, yResizer, res, sizeW, sizeH, u, v, scale, onLeftClick);
             this.textComponent = new SideFrameText(w -> xResizer.apply(w) + sizeW * scale + 15, h -> yResizer.apply(h) + (sizeH * scale) / 2 - 4, text);
-            ModernUI_API.INSTANCE.getModuleManager().addAnimation(new Animation(3)
+            GlobalModuleManager.INSTANCE.addAnimation(new Animation(3)
                     .applyTo(new Applier(0, 1, value -> texture.opacity = value))
                     .withDelay(1));
             listener.addHoverOn(() -> this.textComponent.startOpen());
@@ -102,7 +99,7 @@ public class MenuButton implements IElement {
 
         public B(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, String text, ResourceLocation res, float sizeW, float sizeH, float u, float v, float scale, Runnable onLeftClick, IntPredicate availability) {
             super(xResizer, yResizer, text, res, sizeW, sizeH, u, v, scale, onLeftClick);
-            ModernUI_API.INSTANCE.getModuleManager().addModuleEvent(i -> {
+            GlobalModuleManager.INSTANCE.addModuleEvent(i -> {
                 lock = availability.test(i);
                 if(!lock)
                     textureOpacityAnimation.setStatus(false);

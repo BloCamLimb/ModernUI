@@ -16,17 +16,17 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.api.widget;
+package icyllis.modernui.gui.widget;
 
 public abstract class Shape {
 
     public abstract boolean isMouseInShape(float posX, float posY, double mouseX, double mouseY);
 
-    public static class RectShape extends Shape {
+    public static class Rect extends Shape {
 
         private float width, height;
 
-        public RectShape(float width, float height) {
+        public Rect(float width, float height) {
             this.width = width;
             this.height = height;
         }
@@ -37,11 +37,11 @@ public abstract class Shape {
         }
     }
 
-    public static class CircleShape extends Shape {
+    public static class Circle extends Shape {
 
         private float radius;
 
-        public CircleShape(float radius) {
+        public Circle(float radius) {
             this.radius = radius;
         }
 
@@ -51,13 +51,13 @@ public abstract class Shape {
         }
     }
 
-    public static class SectorShape extends Shape {
+    public static class Sector extends Shape {
 
         private float radius;
 
         private double clockwise, flare;
 
-        public SectorShape(float radius, double clockwise, double flare) {
+        public Sector(float radius, double clockwise, double flare) {
             this.radius = radius;
             this.clockwise = Math.tan(clockwise);
             this.flare = Math.tan(flare);

@@ -24,14 +24,17 @@ import icyllis.modernui.api.global.IModuleFactory;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.ModernUIScreen;
 import icyllis.modernui.gui.master.ModernUIScreenG;
-import javafx.util.Pair;
 import net.minecraft.client.Minecraft;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.client.CCloseWindowPacket;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.apache.commons.lang3.tuple.ImmutableTriple;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -40,37 +43,32 @@ import java.util.function.Consumer;
 public enum GuiManager implements IGuiManager {
     INSTANCE;
 
-    /*private final Map<ResourceLocation, IContainerFactory> CONTAINERS = new HashMap<>();
-    private final Map<ResourceLocation, Function<PacketBuffer, IGuiScreen>> SCREENS = new HashMap<>();*/
+    //private final Map<ResourceLocation, Pair<ITextComponent, Consumer<IModuleFactory>>> SCREENS = new HashMap<>();
 
-    private final Map<ResourceLocation, Pair<IContainerFactory<? extends Container>, Consumer<IModuleFactory>>> CONTAINER_SCREENS = new HashMap<>();
+    private final Map<ResourceLocation, Triple<ITextComponent, IContainerFactory<? extends Container>, Consumer<IModuleFactory>>> CONTAINER_SCREENS = new HashMap<>();
 
     @SuppressWarnings("ConstantConditions")
     public void openContainerScreen(ResourceLocation id, int windowId, PacketBuffer extraData) {
         if (CONTAINER_SCREENS.containsKey(id)) {
-            Pair<IContainerFactory<? extends Container>, Consumer<IModuleFactory>> pair = CONTAINER_SCREENS.get(id);
+            Triple<ITextComponent, IContainerFactory<? extends Container>, Consumer<IModuleFactory>> triple = CONTAINER_SCREENS.get(id);
             GlobalModuleManager.INSTANCE.setExtraData(new PacketBuffer(extraData.copy()));
-            IContainerFactory<?> factory = pair.getKey();
+            ITextComponent title = triple.getLeft();
+            IContainerFactory<?> factory = triple.getMiddle();
             Container container = factory.create(windowId, Minecraft.getInstance().player.inventory, extraData);
             Minecraft.getInstance().player.openContainer = container;
-            Minecraft.getInstance().displayGuiScreen(new ModernUIScreenG<>(pair.getValue(), container));
+            Minecraft.getInstance().displayGuiScreen(new ModernUIScreenG<>(title, container, triple.getRight()));
         } else {
             Minecraft.getInstance().player.connection.sendPacket(new CCloseWindowPacket(windowId));
         }
     }
 
     @Override
-    public <M extends Container> void registerContainerGui(ResourceLocation id, IContainerFactory<M> containerFactory, Consumer<IModuleFactory> moduleFactory) {
+    public <M extends Container> void registerContainerGui(ResourceLocation id, ITextComponent title, IContainerFactory<M> containerFactory, Consumer<IModuleFactory> moduleFactory) {
         if (CONTAINER_SCREENS.containsKey(id)) {
             ModernUI.LOGGER.error("Duplicated ID when registering container gui ({})", id.toString());
         } else {
-            CONTAINER_SCREENS.put(id, new Pair<>(containerFactory, moduleFactory));
+            CONTAINER_SCREENS.put(id, new ImmutableTriple<>(title, containerFactory, moduleFactory));
         }
-    }
-
-    @Override
-    public void openGui(Consumer<IModuleFactory> factoryConsumer) {
-        Minecraft.getInstance().displayGuiScreen(new ModernUIScreen(factoryConsumer));
     }
 
 }

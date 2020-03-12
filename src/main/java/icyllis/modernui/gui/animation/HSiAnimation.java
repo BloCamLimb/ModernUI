@@ -23,7 +23,7 @@ import java.util.function.Consumer;
 /**
  * Use this as fewer as possible
  */
-public class HighActiveUniAnimation {
+public class HSiAnimation {
 
     protected float startTime;
 
@@ -45,7 +45,7 @@ public class HighActiveUniAnimation {
 
     private boolean finishSwitch = false;
 
-    public HighActiveUniAnimation(float initValue, float targetValue, float duration, Consumer<Float> receiver) {
+    public HSiAnimation(float initValue, float targetValue, float duration, Consumer<Float> receiver) {
         value = this.initValue = initValue;
         this.targetValue = targetValue;
         this.duration = duration;

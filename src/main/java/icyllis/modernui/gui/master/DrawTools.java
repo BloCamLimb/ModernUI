@@ -145,6 +145,19 @@ public class DrawTools {
         int g = frameRGB >> 8 & 255;
         int b = frameRGB & 255;
 
+        fillFrameWithColor(left, top, right, bottom, thickness, r, g, b, a);
+    }
+
+    public static void fillFrameWithWhite(float left, float top, float right, float bottom, float thickness, float brightness, float frameAlpha) {
+
+        int a = (int) (frameAlpha * 255F);
+        int r = (int) (brightness * 255F);
+
+        fillFrameWithColor(left, top, right, bottom, thickness, r, r, r, a);
+    }
+
+    public static void fillFrameWithColor(float left, float top, float right, float bottom, float thickness, int r, int g, int b, int a) {
+
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferbuilder = tessellator.getBuffer();
         RenderSystem.enableBlend();

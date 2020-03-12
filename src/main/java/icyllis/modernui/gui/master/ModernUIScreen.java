@@ -18,20 +18,19 @@
 
 package icyllis.modernui.gui.master;
 
-import com.google.common.collect.Lists;
 import icyllis.modernui.api.global.IModuleFactory;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHelper;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.Consumer;
 
 @OnlyIn(Dist.CLIENT)
@@ -44,14 +43,12 @@ public class ModernUIScreen extends Screen implements IMasterScreen {
     private boolean hasPopup = false;
 
     public ModernUIScreen(Consumer<IModuleFactory> factory) {
-        super(EMPTY_TITLE);
-        factory.accept(manager);
+        this(EMPTY_TITLE, factory);
     }
 
-    @Nonnull
-    @Override
-    public List<? extends IGuiEventListener> children() {
-        return hasPopup ? manager.popupListener : children;
+    public ModernUIScreen(ITextComponent title, Consumer<IModuleFactory> factory) {
+        super(title);
+        factory.accept(manager);
     }
 
     @Override
@@ -65,8 +62,13 @@ public class ModernUIScreen extends Screen implements IMasterScreen {
     }
 
     @Override
-    public void mouseMoved(double xPos, double p_212927_3_) {
-        children().forEach(e -> e.mouseMoved(xPos, p_212927_3_));
+    public void render(int mouseX, int mouseY, float partialTicks) {
+        manager.draw();
+    }
+
+    @Override
+    public void removed() {
+        manager.clear();
     }
 
     @Override
@@ -84,12 +86,11 @@ public class ModernUIScreen extends Screen implements IMasterScreen {
     }
 
     @Override
-    public void setHasPopup(boolean bool) {
-        if (bool) {
-            children().forEach(e -> e.mouseMoved(0, 0));
-        }
-        hasPopup = bool;
-        if (!bool) {
+    public void setHasPopup(boolean hasPopup) {
+        this.hasPopup = hasPopup;
+        if (hasPopup) {
+            children.forEach(e -> e.mouseMoved(0, 0));
+        } else {
             refreshCursor();
         }
     }
@@ -98,12 +99,13 @@ public class ModernUIScreen extends Screen implements IMasterScreen {
     public void refreshCursor() {
         MouseHelper mouseHelper = Minecraft.getInstance().mouseHelper;
         double scale = Minecraft.getInstance().getMainWindow().getGuiScaleFactor();
-        children().forEach(e -> e.mouseMoved(mouseHelper.getMouseX() / scale, mouseHelper.getMouseY() / scale));
-    }
-
-    @Override
-    public void render(int mouseX, int mouseY, float partialTicks) {
-        manager.draw();
+        double x = mouseHelper.getMouseX() / scale;
+        double y = mouseHelper.getMouseY() / scale;
+        if (hasPopup) {
+            manager.popup.mouseMoved(x, y);
+        } else {
+            children.forEach(e -> e.mouseMoved(x, y));
+        }
     }
 
     @Override
@@ -112,8 +114,113 @@ public class ModernUIScreen extends Screen implements IMasterScreen {
     }
 
     @Override
-    public void removed() {
-        manager.clear();
+    public void mouseMoved(double mouseX, double mouseY) {
+        if (hasPopup) {
+            manager.popup.mouseMoved(mouseX, mouseY);
+        } else {
+            children.forEach(e -> e.mouseMoved(mouseX, mouseY));
+        }
     }
 
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        if (hasPopup) {
+            return manager.popup.mouseClicked(mouseX, mouseY, mouseButton);
+        } else {
+            for (IGuiEventListener listener : children) {
+                if (listener.mouseClicked(mouseX, mouseY, mouseButton)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
+        if (hasPopup) {
+            return manager.popup.mouseReleased(mouseX, mouseY, mouseButton);
+        } else {
+            for (IGuiEventListener listener : children) {
+                if (listener.mouseReleased(mouseX, mouseY, mouseButton)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double RDX, double RDY) {
+        if (hasPopup) {
+            return manager.popup.mouseDragged(mouseX, mouseY, mouseButton, RDX, RDY);
+        } else {
+            for (IGuiEventListener listener : children) {
+                if (listener.mouseDragged(mouseX, mouseY, mouseButton, RDX, RDY)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double shift) {
+        if (hasPopup) {
+            return manager.popup.mouseScrolled(mouseX, mouseY, shift);
+        } else {
+            for (IGuiEventListener listener : children) {
+                if (listener.mouseScrolled(mouseX, mouseY, shift)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean keyPressed(int key, int scanCode, int modifier) {
+        if (key == GLFW.GLFW_KEY_ESCAPE && shouldCloseOnEsc()) {
+            onClose();
+            return true;
+        }
+        if (hasPopup) {
+            return manager.popup.keyPressed(key, scanCode, modifier);
+        } else {
+            for (IGuiEventListener listener : children) {
+                if (listener.keyPressed(key, scanCode, modifier)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean keyReleased(int key, int scanCode, int modifier) {
+        if (hasPopup) {
+            return manager.popup.keyReleased(key, scanCode, modifier);
+        } else {
+            for (IGuiEventListener listener : children) {
+                if (listener.keyReleased(key, scanCode, modifier)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean charTyped(char charCode, int modifier) {
+        if (hasPopup) {
+            return manager.popup.charTyped(charCode, modifier);
+        } else {
+            for (IGuiEventListener listener : children) {
+                if (listener.charTyped(charCode, modifier)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 }

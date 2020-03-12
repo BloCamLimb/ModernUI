@@ -18,14 +18,14 @@
 
 package icyllis.modernui.api.global;
 
-import icyllis.modernui.api.element.IElement;
+import icyllis.modernui.api.manager.IModuleManager;
 
 import java.util.function.Consumer;
 import java.util.function.IntPredicate;
 
 public interface IModuleFactory {
 
-    void addModule(IntPredicate availability, Consumer<Consumer<IElement>> pool);
+    void addModule(IntPredicate availability, Consumer<IModuleManager> manager);
 
-    void addPopupModule(int id, Consumer<Consumer<IElement>> pool);
+    void addPopupModule(int id, Consumer<IModuleManager> manager);
 }
