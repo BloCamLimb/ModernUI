@@ -18,26 +18,22 @@
 
 package icyllis.modernui.impl.menu.popup;
 
-import icyllis.modernui.api.element.IElement;
+import icyllis.modernui.api.manager.IModuleManager;
 import icyllis.modernui.gui.component.ConfirmWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.DirtMessageScreen;
 import net.minecraft.client.gui.screen.MainMenuScreen;
 import net.minecraft.client.gui.screen.MultiplayerScreen;
 import net.minecraft.realms.RealmsBridge;
-import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraftforge.common.BiomeManager;
-
-import java.util.function.Consumer;
 
 public class ExitPopup {
 
     private Minecraft minecraft;
 
-    public ExitPopup(Consumer<IElement> pool) {
+    public ExitPopup(IModuleManager manager) {
         this.minecraft = Minecraft.getInstance();
-        pool.accept(new ConfirmWindow("Exit", "Are you sure you want to exit to main menu?", this::exit));
+        manager.addElement(new ConfirmWindow("Exit", "Are you sure you want to exit to main menu?", this::exit));
     }
 
     private void exit() {

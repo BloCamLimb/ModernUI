@@ -16,45 +16,65 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.api.element;
+package icyllis.modernui.gui.component.list;
 
 import icyllis.modernui.api.ModernUI_API;
+import icyllis.modernui.gui.element.IElement;
 import icyllis.modernui.api.manager.IModuleManager;
 import icyllis.modernui.gui.font.FontRendererTools;
 import icyllis.modernui.gui.font.IFontRenderer;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.TextureManager;
 
+import javax.annotation.Nullable;
 import java.util.function.Function;
 
-public abstract class Element implements IElement {
+/**
+ * Single option line in settings interface
+ */
+public abstract class OptionEntryBase implements IElement {
 
-    protected Minecraft minecraft = Minecraft.getInstance();
-
-    protected TextureManager textureManager = minecraft.textureManager;
+    public static Function<Integer, Float> X = w -> w / 2f - 300f;
 
     protected IFontRenderer fontRenderer = FontRendererTools.CURRENT_RENDERER;
 
     protected IModuleManager moduleManager = ModernUI_API.INSTANCE.getModuleManager();
 
-    /**
-     * Change X/Y position when game window size changed
-     */
-    public Function<Integer, Float> xResizer, yResizer;
+    public String optionName;
 
-    /**
-     * Logical X/Y to render
-     */
-    public float x, y;
+    public String[] desc = new String[0];
 
-    public Element(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer) {
-        this.xResizer = xResizer;
-        this.yResizer = yResizer;
+    public float x, absY;
+
+    public float textBrightness = 0.7f;
+
+    public OptionEntryBase(String optionName) {
+        this(optionName, null);
+    }
+
+    public OptionEntryBase(String optionName, @Nullable String desc) {
+        this.optionName = optionName;
+        if (desc != null)
+            this.desc = FontRendererTools.splitStringToWidth(desc, 150);
+        //TODO
+    }
+
+    public void setY(float absY) {
+        this.absY = absY;
+    }
+
+    public void mouseMoved(double mouseX, double mouseY) {
+
+    }
+
+    @Override
+    public void draw(float currentTime) {
+        fontRenderer.drawString(optionName, x, absY, textBrightness, textBrightness, textBrightness, 1, 0);
+        if (desc.length > 0) {
+            //TODO
+        }
     }
 
     @Override
     public void resize(int width, int height) {
-        x = xResizer.apply(width);
-        y = yResizer.apply(height);
+        x = X.apply(width);
     }
 }

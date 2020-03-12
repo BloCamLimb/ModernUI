@@ -16,14 +16,13 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.api.animation;
+package icyllis.modernui.gui.animation;
 
 import icyllis.modernui.gui.master.GlobalModuleManager;
 
-/**
- * A single animation depend on current value
- */
-public class PartialAnimation implements IAnimation {
+import java.util.Arrays;
+
+public class Animation implements IAnimation {
 
     private final float duration;
 
@@ -31,39 +30,51 @@ public class PartialAnimation implements IAnimation {
 
     private float startTime;
 
-    private Applier applier;
+    private Applier[] appliers;
 
     private boolean finish = false;
 
-    public PartialAnimation(float duration) {
+    private Runnable finishRunnable = () -> {};
+
+    public Animation(float duration) {
         this(duration, false);
     }
 
-    public PartialAnimation(float duration, boolean useSine) {
+    public Animation(float duration, boolean useSine) {
         this.duration = duration;
         this.useSine = useSine;
         startTime = GlobalModuleManager.INSTANCE.getAnimationTime();
     }
 
-    public PartialAnimation applyTo(Applier applier, float currentValue) {
-        this.applier = applier;
-        float p = 1 - (applier.targetValue - currentValue) / (applier.targetValue - applier.initValue);
-        if (useSine) {
-            p = (float) (Math.asin(p) * 2 / Math.PI);
-        }
-        startTime = startTime - duration * p;
+    public Animation applyTo(Applier... appliers) {
+        this.appliers = appliers;
+        return this;
+    }
+
+    public Animation withDelay(float delay) {
+        startTime += delay;
+        return this;
+    }
+
+    public Animation onFinish(Runnable runnable) {
+        finishRunnable = runnable;
         return this;
     }
 
     @Override
     public void update(float currentTime) {
+        if (currentTime <= startTime) {
+            return;
+        }
         float p = Math.min((currentTime - startTime) / duration, 1);
         if (useSine) {
             p = (float) Math.sin(p * Math.PI / 2);
         }
-        applier.apply(p);
-        if (p == 1) {
+        float progress = p;
+        Arrays.stream(appliers).forEach(e -> e.apply(progress));
+        if (progress == 1) {
             finish = true;
+            finishRunnable.run();
         }
     }
 

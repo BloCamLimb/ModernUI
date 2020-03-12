@@ -18,11 +18,11 @@
 
 package icyllis.modernui.gui.master;
 
-import icyllis.modernui.api.animation.IAnimation;
-import icyllis.modernui.api.element.IElement;
+import icyllis.modernui.gui.animation.IAnimation;
 import icyllis.modernui.api.global.IModuleFactory;
 import icyllis.modernui.api.manager.IModuleManager;
 import icyllis.modernui.gui.element.Background;
+import icyllis.modernui.gui.element.IElement;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.network.PacketBuffer;
@@ -50,18 +50,14 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager {
 
     private List<ElementPool> popups = new ArrayList<>();
 
-    private List<IntConsumer> moduleEvents = new ArrayList<>();
-
     private List<IAnimation> animations = new ArrayList<>();
 
-    private ElementPool popupPool;
-
-    public List<IGuiEventListener> popupListener = new ArrayList<>(1);
+    public ElementPool popup;
 
     /**
      * The current module which is building, used to add event listener
      */
-    private ElementPool currentPool;
+    private ElementPool pool;
 
     private int ticks = 0;
 
@@ -79,51 +75,66 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager {
     @Override
     public void switchTo(int id) {
         pools.stream().filter(m -> m.test(id)).forEach(ElementPool::build);
+        pools.forEach(e -> e.runModuleEvents(id));
         pools.stream().filter(m -> !m.test(id)).forEach(ElementPool::clear);
         pools.forEach(e -> e.resize(width, height));
-        moduleEvents.forEach(e -> e.accept(id));
     }
 
     @Override
     public void openPopup(float fadeInTime, int id) {
-        if (popupPool != null || !popupListener.isEmpty()) {
+        if (popup != null) {
             ModernUI.LOGGER.warn(MARKER, "Failed to open popup, there's already a popup open");
             return;
         }
         popups.stream().filter(m -> m.test(id)).findFirst()
                 .ifPresent(popupPool -> {
-                    this.popupPool = popupPool;
-                    this.popupListener.add(popupPool);
-                    popupPool.accept(new Background(fadeInTime));
+                    popupPool.addElement(new Background(fadeInTime));
                     popupPool.build();
                     popupPool.resize(width, height);
+                    this.popup = popupPool;
                 });
         if (master != null) {
             master.setHasPopup(true);
+        } else {
+            ModernUI.LOGGER.fatal(MARKER, "Current screen shouldn't have been null when calling #openPopup(FI)V");
         }
     }
 
     @Override
     public void closePopup() {
-        popupListener.clear();
-        if (popupPool != null) {
-            popupPool.clear();
-            popupPool = null;
+        if (popup != null) {
+            popup.clear();
+            popup = null;
         }
         if (master != null) {
             master.setHasPopup(false);
+        } else {
+            ModernUI.LOGGER.fatal(MARKER, "Current screen shouldn't have been null when calling #closePopup()V");
+        }
+    }
+
+    @Override
+    public void addElement(IElement element) {
+        if (pool != null) {
+            pool.addElement(element);
+        } else {
+            ModernUI.LOGGER.warn(MARKER, "Failed to add event for {}, there's no module under building", element);
         }
     }
 
     @Override
     public void addModuleEvent(IntConsumer event) {
-        moduleEvents.add(event);
+        if (pool != null) {
+            pool.addModuleEvent(event);
+        } else {
+            ModernUI.LOGGER.warn(MARKER, "Failed to add module event for {}, there's no module under building", event);
+        }
     }
 
     @Override
     public void addEventListener(IGuiEventListener listener) {
-        if (currentPool != null) {
-            currentPool.addEventListener(listener);
+        if (pool != null) {
+            pool.addEventListener(listener);
         } else {
             ModernUI.LOGGER.warn(MARKER, "Failed to add event listener for {}, there's no module under building", listener);
         }
@@ -138,57 +149,56 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager {
     public void refreshCursor() {
         if (master != null) {
             master.refreshCursor();
+        }  else {
+            ModernUI.LOGGER.fatal(MARKER, "Current screen shouldn't have been null when calling #refreshCursor()V");
         }
     }
 
     public void draw() {
         animations.forEach(e -> e.update(floatingPointTicks));
         pools.forEach(elementPool -> elementPool.draw(floatingPointTicks));
-        if (popupPool != null) {
-            popupPool.draw(floatingPointTicks);
+        if (popup != null) {
+            popup.draw(floatingPointTicks);
         }
     }
 
     public void resize(int width, int height) {
         this.width = width;
         this.height = height;
-        pools.forEach(e -> e.resize(width, height));
-        if (popupPool != null)
-            popupPool.resize(width, height);
+        this.pools.forEach(e -> e.resize(width, height));
+        if (popup != null)
+            popup.resize(width, height);
     }
 
     public void clear() {
         pools.clear();
         animations.clear();
-        moduleEvents.clear();
-        popupListener.clear();
         popups.clear();
-        currentPool = null;
-        popupPool = null;
+        pool = null;
+        popup = null;
         master = null;
         extraData = null;
     }
 
     @Override
-    public void addModule(IntPredicate availability, Consumer<Consumer<IElement>> pool) {
-        ElementPool newPool = new ElementPool(availability, pool);
+    public void addModule(IntPredicate availability, Consumer<IModuleManager> manager) {
+        ElementPool newPool = new ElementPool(availability, manager);
         pools.add(0, newPool);
     }
 
     @Override
-    public void addPopupModule(int id, Consumer<Consumer<IElement>> pool) {
-        ElementPool newPool = new ElementPool(i -> i == id, pool);
+    public void addPopupModule(int id, Consumer<IModuleManager> manager) {
+        ElementPool newPool = new ElementPool(i -> i == id, manager);
         popups.add(newPool);
     }
 
     public void clientTick() {
         ticks++;
         pools.forEach(e -> e.tick(ticks));
-        if (popupPool != null)
-            popupPool.tick(ticks);
+        if (popup != null)
+            popup.tick(ticks);
     }
 
-    // called before draw
     public void renderTick(float partialTick) {
         floatingPointTicks = ticks + partialTick;
         animations.removeIf(IAnimation::shouldRemove);
@@ -213,8 +223,8 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager {
         this.extraData = extraData;
     }
 
-    public void setCurrentPool(ElementPool pool) {
-        this.currentPool = pool;
+    public void setPool(ElementPool pool) {
+        this.pool = pool;
     }
 
     @Override

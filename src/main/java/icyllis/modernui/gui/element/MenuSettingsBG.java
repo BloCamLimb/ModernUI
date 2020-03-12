@@ -18,9 +18,8 @@
 
 package icyllis.modernui.gui.element;
 
-import icyllis.modernui.api.element.Element;
-import icyllis.modernui.api.animation.Animation;
-import icyllis.modernui.api.animation.Applier;
+import icyllis.modernui.gui.animation.Animation;
+import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.DrawTools;
 
 public class MenuSettingsBG extends Element {

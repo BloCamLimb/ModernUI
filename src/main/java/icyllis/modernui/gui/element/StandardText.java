@@ -16,14 +16,19 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.api.element;
+package icyllis.modernui.gui.element;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.gui.element.Element;
 import org.lwjgl.opengl.GL11;
 
 import java.util.function.Function;
 
+/**
+ * Example
+ */
+@Deprecated
 public class StandardText extends Element {
 
     private String text;

@@ -18,18 +18,15 @@
 
 package icyllis.modernui.gui.widget;
 
-import icyllis.modernui.api.animation.Animation;
-import icyllis.modernui.api.animation.Applier;
-import icyllis.modernui.api.element.StateAnimatedElement;
-import icyllis.modernui.api.widget.EventListener;
-import icyllis.modernui.api.widget.Shape;
+import icyllis.modernui.gui.animation.Animation;
+import icyllis.modernui.gui.animation.Applier;
+import icyllis.modernui.gui.element.StateAnimatedElement;
 import icyllis.modernui.gui.master.DrawTools;
+import net.minecraft.client.gui.IGuiEventListener;
 
 import java.util.function.Function;
 
-public class TextButton extends StateAnimatedElement {
-
-    protected EventListener listener;
+public class TextButton extends StateAnimatedWidget {
 
     private String text;
 
@@ -43,17 +40,21 @@ public class TextButton extends StateAnimatedElement {
 
     private float frameWidthOffset, frameHeightOffset;
 
+    protected Runnable leftClick;
+
     public TextButton(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, String text, Runnable leftClick) {
         super(xResizer, yResizer);
         this.text = text;
         this.sizeW = Math.max(28, fontRenderer.getStringWidth(text) + 6);
         frameWidthOffset = sizeW;
         frameHeightOffset = 13;
-        listener = new EventListener(w -> xResizer.apply(w) - sizeW, yResizer, new Shape.RectShape(sizeW, 13));
-        listener.addHoverOn(this::startOpen);
-        listener.addHoverOff(this::startClose);
-        listener.addLeftClick(leftClick);
-        moduleManager.addEventListener(listener);
+        shape = new Shape.Rect(sizeW, 13);
+        this.leftClick = leftClick;
+        moduleManager.addEventListener(this);
+    }
+
+    public void rightAlign() {
+        xResizer = w -> xResizer.apply(w) - sizeW;
     }
 
     public void setTextOpacity(float a) {
@@ -63,15 +64,14 @@ public class TextButton extends StateAnimatedElement {
     @Override
     public void draw(float currentTime) {
         checkState();
-        fontRenderer.drawString(text, x - sizeW / 2f, y + 2, textBrightness, textBrightness, textBrightness, textOpacity, 0.25f);
+        fontRenderer.drawString(text, x + sizeW / 2f, y + 2, textBrightness, textBrightness, textBrightness, textOpacity, 0.25f);
         if (frameOpacity > 0)
-            DrawTools.fillFrameWithColor(x - sizeW - frameWidthOffset, y - frameHeightOffset, x + frameWidthOffset, y + 13 + frameHeightOffset, 0.51f, 0x808080, frameOpacity);
+            DrawTools.fillFrameWithColor(x - frameWidthOffset, y - frameHeightOffset, x + frameWidthOffset + sizeW, y + 13 + frameHeightOffset, 0.51f, 0x808080, frameOpacity);
     }
 
     @Override
     public void resize(int width, int height) {
         super.resize(width, height);
-        listener.resize(width, height);
     }
 
     @Override
@@ -95,6 +95,15 @@ public class TextButton extends StateAnimatedElement {
                 .onFinish(() -> openState = 0));
     }
 
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        if (available && mouseHovered && mouseButton == 0) {
+            leftClick.run();
+            return true;
+        }
+        return false;
+    }
+
     public static class Countdown extends TextButton {
 
         private final int countdown, startTick = moduleManager.getTicks();
@@ -106,7 +115,7 @@ public class TextButton extends StateAnimatedElement {
         public Countdown(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, String text, Runnable leftClick, int countdown) {
             super(xResizer, yResizer, text, leftClick);
             this.displayCount = this.countdown = countdown;
-            listener.setAvailable(false);
+            available = false;
         }
 
         @Override
@@ -124,7 +133,7 @@ public class TextButton extends StateAnimatedElement {
                 counting = ticks < startTick + countdown * 20;
                 displayCount = countdown - (ticks - startTick) / 20;
                 if (!counting) {
-                    listener.setAvailable(true);
+                    available = true;
                     moduleManager.refreshCursor();
                 }
             }

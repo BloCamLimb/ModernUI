@@ -19,12 +19,10 @@
 package icyllis.modernui.gui.element;
 
 import icyllis.modernui.api.ModernUI_API;
-import icyllis.modernui.api.animation.Animation;
-import icyllis.modernui.api.animation.Applier;
-import icyllis.modernui.api.element.IElement;
+import icyllis.modernui.gui.animation.Animation;
+import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.system.ModernUI;
 
 public class Background implements IElement {
 
@@ -34,7 +32,7 @@ public class Background implements IElement {
 
     public Background(float fadeInTime) {
         if (fadeInTime > 0)
-            ModernUI_API.INSTANCE.getModuleManager().addAnimation(new Animation(fadeInTime)
+            GlobalModuleManager.INSTANCE.addAnimation(new Animation(fadeInTime)
                     .applyTo(new Applier(0.45f, value -> alpha = value)));
         else
             alpha = 0.45f;

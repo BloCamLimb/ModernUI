@@ -24,6 +24,7 @@ import net.minecraft.client.MouseHelper;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.inventory.ContainerScreen;
 import net.minecraft.inventory.container.Container;
+import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -39,15 +40,9 @@ public class ModernUIScreenG<G extends Container> extends ContainerScreen<G> imp
     private boolean hasPopup = false;
 
     @SuppressWarnings("ConstantConditions")
-    public ModernUIScreenG(Consumer<IModuleFactory> factory, G container) {
-        super(container, Minecraft.getInstance().player.inventory, ModernUIScreen.EMPTY_TITLE);
+    public ModernUIScreenG(ITextComponent title, G container, Consumer<IModuleFactory> factory) {
+        super(container, Minecraft.getInstance().player.inventory, title);
         factory.accept(manager);
-    }
-
-    @Nonnull
-    @Override
-    public List<? extends IGuiEventListener> children() {
-        return hasPopup ? manager.popupListener : children;
     }
 
     @Override

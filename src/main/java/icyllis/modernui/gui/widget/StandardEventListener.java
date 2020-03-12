@@ -16,8 +16,9 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.api.widget;
+package icyllis.modernui.gui.widget;
 
+import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.gui.IGuiEventListener;
 
 import java.util.ArrayList;
@@ -25,9 +26,10 @@ import java.util.List;
 import java.util.function.Function;
 
 /**
- * An advanced element that can be interacted with mouse and keyboard
+ * Example
  */
-public class EventListener implements IGuiEventListener {
+@Deprecated
+public class StandardEventListener implements IGuiEventListener {
 
     protected Function<Integer, Float> xResizer, yResizer;
 
@@ -43,7 +45,7 @@ public class EventListener implements IGuiEventListener {
 
     protected List<iEvent> events = new ArrayList<>();
 
-    public EventListener(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, Shape shape) {
+    public StandardEventListener(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, Shape shape) {
         this.xResizer = xResizer;
         this.yResizer = yResizer;
         this.shape = shape;
@@ -110,7 +112,6 @@ public class EventListener implements IGuiEventListener {
         public static int MOUSE_HOVER_ON = 1;
         public static int MOUSE_HOVER_OFF = 2;
         public static int LEFT_CLICK = 3;
-        public static int RIGHT_CLICK = 4;
 
         public final int id;
 

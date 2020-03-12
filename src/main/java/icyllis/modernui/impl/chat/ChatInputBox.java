@@ -18,11 +18,11 @@
 
 package icyllis.modernui.impl.chat;
 
-import icyllis.modernui.api.widget.EventListener;
+import icyllis.modernui.gui.widget.StandardEventListener;
 import icyllis.modernui.gui.font.EmojiStringRenderer;
 import icyllis.modernui.gui.font.IFontRenderer;
 import icyllis.modernui.gui.master.DrawTools;
-import icyllis.modernui.api.widget.Shape;
+import icyllis.modernui.gui.widget.Shape;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.SharedConstants;
@@ -35,7 +35,7 @@ import java.util.function.Predicate;
 /**
  * Double lined, intended for chat bar
  */
-public final class ChatInputBox extends EventListener {
+public final class ChatInputBox extends StandardEventListener {
 
     private final IFontRenderer renderer = EmojiStringRenderer.INSTANCE;
 
@@ -65,7 +65,7 @@ public final class ChatInputBox extends EventListener {
     private boolean shiftDown = false;
 
     ChatInputBox() {
-        super(w -> 4f, h -> 0f, new Shape.RectShape(30, 12));
+        super(w -> 4f, h -> 0f, new Shape.Rect(30, 12));
         selectorX = cursorX = 4;
     }
 

@@ -16,12 +16,17 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.api.element;
+package icyllis.modernui.gui.element;
 
+import icyllis.modernui.gui.element.Element;
 import icyllis.modernui.gui.master.DrawTools;
 
 import java.util.function.Function;
 
+/**
+ * Example
+ */
+@Deprecated
 public class StandardRect extends Element {
 
     public Function<Integer, Float> wResizer, hResizer;
