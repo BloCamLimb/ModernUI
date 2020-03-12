@@ -18,7 +18,6 @@
 
 package icyllis.modernui.gui.widget;
 
-import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.gui.IGuiEventListener;
 
 import java.util.ArrayList;
@@ -28,7 +27,6 @@ import java.util.function.Function;
 /**
  * Example
  */
-@Deprecated
 public class StandardEventListener implements IGuiEventListener {
 
     protected Function<Integer, Float> xResizer, yResizer;

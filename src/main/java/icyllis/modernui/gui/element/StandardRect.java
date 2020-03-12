@@ -26,7 +26,6 @@ import java.util.function.Function;
 /**
  * Example
  */
-@Deprecated
 public class StandardRect extends Element {
 
     public Function<Integer, Float> wResizer, hResizer;

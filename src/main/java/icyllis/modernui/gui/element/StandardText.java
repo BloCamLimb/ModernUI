@@ -28,7 +28,6 @@ import java.util.function.Function;
 /**
  * Example
  */
-@Deprecated
 public class StandardText extends Element {
 
     private String text;

@@ -36,6 +36,10 @@ public class Animation implements IAnimation {
 
     private Runnable finishRunnable = () -> {};
 
+    /**
+     * New animation use uniform motion
+     * @param duration floating point ticks
+     */
     public Animation(float duration) {
         this(duration, false);
     }

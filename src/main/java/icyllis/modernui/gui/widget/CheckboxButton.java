@@ -18,12 +18,15 @@
 
 package icyllis.modernui.gui.widget;
 
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.element.Element;
 import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.system.ReferenceLibrary;
 import net.minecraft.client.gui.IGuiEventListener;
+import org.lwjgl.opengl.GL11;
 
 import java.util.function.Function;
 
@@ -31,14 +34,20 @@ public class CheckboxButton extends Element implements IGuiEventListener {
 
     protected Shape shape;
 
+    protected boolean mouseHovered = false;
+
     protected boolean checked = false;
 
     protected float frameBrightness = 0.7f;
 
     protected float markAlpha = 0;
 
+    protected float scale;
+
     public CheckboxButton(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer) {
         super(xResizer, yResizer);
+        shape = new Shape.Rect(8, 8);
+        scale = 0.25f;
     }
 
     public boolean isChecked() {
@@ -60,11 +69,49 @@ public class CheckboxButton extends Element implements IGuiEventListener {
         this.markAlpha = markAlpha;
     }
 
+    public void setFrameBrightness(float frameBrightness) {
+        this.frameBrightness = frameBrightness;
+    }
+
     @Override
     public void draw(float currentTime) {
         DrawTools.fillFrameWithWhite(x, y, x + 8, y + 8, 0.51f, frameBrightness, 1);
         if (markAlpha > 0) {
-            fontRenderer.drawString(ReferenceLibrary.CHECK_MARK_STRING, x, y, 1, 1, 1, markAlpha, 0.25f);
+            RenderSystem.enableBlend();
+            RenderSystem.defaultBlendFunc();
+            RenderSystem.disableAlphaTest();
+            GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+            GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+            RenderSystem.pushMatrix();
+            RenderSystem.color4f(1, 1, 1, markAlpha);
+            RenderSystem.scalef(scale, scale, 1);
+            textureManager.bindTexture(ReferenceLibrary.ICONS);
+            DrawTools.blit(x / scale, y / scale, 0, 32, 32, 32);
+            RenderSystem.popMatrix();
         }
+    }
+
+    @Override
+    public void mouseMoved(double mouseX, double mouseY) {
+        boolean prev = mouseHovered;
+        mouseHovered = shape.isMouseInShape(x, y, mouseX, mouseY);
+        if (prev != mouseHovered) {
+            if (mouseHovered) {
+                moduleManager.addAnimation(new Animation(2)
+                        .applyTo(new Applier(0.7f, 1.0f, this::setFrameBrightness)));
+            } else {
+                moduleManager.addAnimation(new Animation(2)
+                        .applyTo(new Applier(1.0f, 0.7f, this::setFrameBrightness)));
+            }
+        }
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        if (mouseHovered && mouseButton == 0) {
+            setChecked(!checked);
+            return true;
+        }
+        return false;
     }
 }

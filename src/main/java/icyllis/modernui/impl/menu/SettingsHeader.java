@@ -21,6 +21,7 @@ package icyllis.modernui.impl.menu;
 import icyllis.modernui.api.manager.IModuleManager;
 import icyllis.modernui.gui.element.IElement;
 import icyllis.modernui.gui.element.MenuSettingsBG;
+import icyllis.modernui.gui.widget.CheckboxButton;
 import icyllis.modernui.gui.widget.LineTextButton;
 
 import java.util.function.Consumer;
@@ -35,6 +36,6 @@ public class SettingsHeader {
         manager.addElement(new LineTextButton(w -> 256f, h -> 20f, "Controls", 48f, 34));
         manager.addElement(new LineTextButton(w -> 320f, h -> 20f, "Assets", 48f, 35));
         manager.addElement(new LineTextButton(w -> 384f, h -> 20f, "Configs", 48f, 36));
-
+        manager.addElement(new CheckboxButton(w -> 384f, h -> 50f));
     }
 }
