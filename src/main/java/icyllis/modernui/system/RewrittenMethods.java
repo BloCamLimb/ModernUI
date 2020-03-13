@@ -32,13 +32,21 @@ public class RewrittenMethods {
 
     public static int calcGuiScales(int framebufferWidth, int framebufferHeight) {
 
-        double a1 = framebufferWidth / 16d;
-        double a2 = framebufferHeight / 9d;
+        double a1 = Math.floor(framebufferWidth / 16.0d);
+        double a2 = Math.floor(framebufferHeight / 9.0d);
+
+        if (a1 % 2 != 0) {
+            a1++;
+        }
+        if (a2 % 2 != 0) {
+            a2++;
+        }
+
         double base = Math.min(a1, a2);
         double top = Math.max(a1, a2);
 
         int min;
-        int max = MathHelper.clamp((int) (base / 32), 1, 0xf);
+        int max = MathHelper.clamp((int) (base / 27), 1, 0xf);
         if (max > 1) {
             int i = (int) (base / 64);
             int j = (int) (top / 64);
@@ -49,9 +57,9 @@ public class RewrittenMethods {
 
         int best;
         if (min > 1) {
-            int i = (int) (base / 40);
-            int j = (int) (top / 40);
-            double v1 = base / (i * 40);
+            int i = (int) (base / 32);
+            int j = (int) (top / 32);
+            double v1 = base / (i * 32);
             if (v1 > 1.25 || j > i) {
                 best = Math.min(max, i + 1);
             } else {
@@ -59,6 +67,14 @@ public class RewrittenMethods {
             }
         } else {
             best = 1;
+        }
+
+        if (best % 2 != 0) {
+            if (best < max) {
+                best++;
+            } else {
+                best--;
+            }
         }
 
         return min << 8 | best << 4 | max;

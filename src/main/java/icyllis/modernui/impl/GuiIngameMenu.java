@@ -18,27 +18,25 @@
 
 package icyllis.modernui.impl;
 
-import icyllis.modernui.api.ModernUI_API;
 import icyllis.modernui.api.manager.IModuleManager;
-import icyllis.modernui.gui.element.IElement;
 import icyllis.modernui.gui.element.MenuHomeBG;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.ModernUIScreen;
 import icyllis.modernui.gui.widget.MenuButton;
-import icyllis.modernui.impl.menu.SettingsHeader;
+import icyllis.modernui.impl.menu.Settings;
 import icyllis.modernui.impl.menu.popup.ExitPopup;
 import icyllis.modernui.system.ReferenceLibrary;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.OptionsScreen;
-
-import java.util.function.Consumer;
+import net.minecraft.client.gui.screen.StatsScreen;
 
 public class GuiIngameMenu extends ModernUIScreen {
 
     public GuiIngameMenu(boolean isFullMenu) {
         super(l -> {
             l.addModule(i -> true, Home::new);
-            l.addModule(i -> i / 30 == 1, SettingsHeader::new);
+            l.addModule(i -> i == 31, Settings.General::new);
+            l.addModule(i -> i / 30 == 1, Settings::new);
             l.addPopupModule(10001, ExitPopup::new);
         });
 
@@ -53,7 +51,7 @@ public class GuiIngameMenu extends ModernUIScreen {
             manager.addElement(new MenuHomeBG());
             manager.addElement(new MenuButton.A(w -> 8f, h -> 8f, "Back to Game", ReferenceLibrary.ICONS, 32, 32, 128, 0, 0.5f, () -> minecraft.displayGuiScreen(null)));
             manager.addElement(new MenuButton.B(w -> 8f, h -> 44f, "Advancements", ReferenceLibrary.ICONS, 32, 32, 32, 0, 0.5f, () -> {}, i -> i < 0));
-            manager.addElement(new MenuButton.B(w -> 8f, h -> 72f, "Statistics", ReferenceLibrary.ICONS, 32, 32, 64, 0, 0.5f, () -> {}, i -> i == 1 || i == 2));
+            manager.addElement(new MenuButton.B(w -> 8f, h -> 72f, "Statistics", ReferenceLibrary.ICONS, 32, 32, 64, 0, 0.5f, () -> minecraft.displayGuiScreen(new StatsScreen(null, minecraft.player.getStats())), i -> i == 1 || i == 2));
             manager.addElement(new MenuButton.B(w -> 8f, h -> h - 92f, "Forge Mods", ReferenceLibrary.ICONS, 32, 32, 192, 0, 0.5f, () -> minecraft.displayGuiScreen(new OptionsScreen(null, minecraft.gameSettings)), i -> false));
             manager.addElement(new MenuButton.B(w -> 8f, h -> h - 64f, "Settings", ReferenceLibrary.ICONS, 32, 32, 0, 0, 0.5f, () -> GlobalModuleManager.INSTANCE.switchTo(30), i -> i / 30 == 1));
             manager.addElement(new MenuButton.A(w -> 8f, h -> h - 28f, "Exit to Main Menu", ReferenceLibrary.ICONS, 32, 32, 160, 0, 0.5f, () -> GlobalModuleManager.INSTANCE.openPopup(4, 10001)));

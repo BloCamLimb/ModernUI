@@ -18,7 +18,6 @@
 
 package icyllis.modernui.gui.widget;
 
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
@@ -44,6 +43,9 @@ public class CheckboxButton extends Element implements IGuiEventListener {
 
     protected float scale;
 
+    /**
+     * You need manually add this event listener
+     */
     public CheckboxButton(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer) {
         super(xResizer, yResizer);
         shape = new Shape.Rect(8, 8);
@@ -80,8 +82,8 @@ public class CheckboxButton extends Element implements IGuiEventListener {
             RenderSystem.enableBlend();
             RenderSystem.defaultBlendFunc();
             RenderSystem.disableAlphaTest();
-            GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
-            GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
             RenderSystem.pushMatrix();
             RenderSystem.color4f(1, 1, 1, markAlpha);
             RenderSystem.scalef(scale, scale, 1);

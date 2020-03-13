@@ -1,0 +1,52 @@
+/*
+ * Modern UI.
+ * Copyright (C) 2019 BloCamLimb. All rights reserved.
+ *
+ * Modern UI is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Modern UI is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+package icyllis.modernui.system;
+
+import net.minecraft.client.Minecraft;
+import org.lwjgl.glfw.GLFW;
+
+public class MouseTools {
+
+    private final static long HAND_CURSOR;
+
+    private final static long IBEAM_CURSOR;
+
+    static {
+        HAND_CURSOR = GLFW.glfwCreateStandardCursor(GLFW.GLFW_HAND_CURSOR);
+        IBEAM_CURSOR = GLFW.glfwCreateStandardCursor(GLFW.GLFW_IBEAM_CURSOR);
+    }
+
+    /**
+     * The default arrow cursor.
+     */
+    public static void useDefaultCursor() {
+        GLFW.glfwSetCursor(Minecraft.getInstance().getMainWindow().getHandle(), 0);
+    }
+
+    public static void useHandCursor() {
+        GLFW.glfwSetCursor(Minecraft.getInstance().getMainWindow().getHandle(), HAND_CURSOR);
+    }
+
+    /**
+     * The text input I-beam cursor.
+     */
+    public static void useIBeamCursor() {
+        GLFW.glfwSetCursor(Minecraft.getInstance().getMainWindow().getHandle(), IBEAM_CURSOR);
+    }
+}

@@ -62,6 +62,9 @@ public class Animation implements IAnimation {
 
     public Animation onFinish(Runnable runnable) {
         finishRunnable = runnable;
+        if (appliers == null) {
+            appliers = new Applier[0];
+        }
         return this;
     }
 
