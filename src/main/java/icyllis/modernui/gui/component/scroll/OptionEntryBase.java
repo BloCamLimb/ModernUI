@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.component.list;
+package icyllis.modernui.gui.component.scroll;
 
 import icyllis.modernui.api.ModernUI_API;
 import icyllis.modernui.gui.element.IElement;

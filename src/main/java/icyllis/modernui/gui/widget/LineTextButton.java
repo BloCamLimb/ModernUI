@@ -24,7 +24,7 @@ import icyllis.modernui.gui.master.DrawTools;
 
 import java.util.function.Function;
 
-public class LineTextButton extends StateAnimatedWidget {
+public class LineTextButton extends StateAnimatedButton {
 
     protected String text;
 

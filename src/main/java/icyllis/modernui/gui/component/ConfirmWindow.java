@@ -33,7 +33,7 @@ public class ConfirmWindow extends Element {
 
     private float frameSizeHOffset;
 
-    private float generalOpacity;
+    private float opacity;
 
     private TextButton cancelButton;
 
@@ -51,17 +51,15 @@ public class ConfirmWindow extends Element {
         super(width -> width / 2f - 90f, height -> height / 2f - 40f);
         this.titleText = "Confirm " + title;
         infoText = FontRendererTools.splitStringToWidth(info, 164);
-        cancelButton = new TextButton(w -> w / 2f + 80f, h -> h / 2f + 20f, "No", () -> moduleManager.closePopup());
-        confirmButton = new TextButton.Countdown(w -> w / 2f + 74f - cancelButton.sizeW, h -> h / 2f + 20f, title, confirmOperation, confirmCountdown);
+        cancelButton = new TextButton(w -> w / 2f + 80f, h -> h / 2f + 20f, "No", () -> moduleManager.closePopup(), true);
+        confirmButton = new TextButton.Countdown(w -> w / 2f + 74f - cancelButton.sizeW, h -> h / 2f + 20f, title, confirmOperation, true, confirmCountdown);
         cancelButton.setTextOpacity(0);
         confirmButton.setTextOpacity(0);
-        cancelButton.rightAlign();
-        confirmButton.rightAlign();
         moduleManager.addAnimation(new Animation(3, true)
                 .applyTo(new Applier(0, 80, value -> frameSizeHOffset = value)));
         moduleManager.addAnimation(new Animation(3)
                 .applyTo(new Applier(1, value -> {
-                    generalOpacity = value;
+                    opacity = value;
                     cancelButton.setTextOpacity(value);
                     confirmButton.setTextOpacity(value);
                 }))
@@ -72,10 +70,10 @@ public class ConfirmWindow extends Element {
     public void draw(float currentTime) {
         DrawTools.fillRectWithFrame(x, y, x + 180, y + frameSizeHOffset, 0.51f, 0x101010, 0.7f, 0x404040, 1.f);
         DrawTools.fillRectWithColor(x, y, x + 180, y + Math.min(frameSizeHOffset, 16), 0x080808, 0.7f);
-        fontRenderer.drawString(titleText, x + 90, y + 4, 1, 1, 1, generalOpacity, 0.25f);
+        fontRenderer.drawString(titleText, x + 90, y + 4, 1, 1, 1, opacity, 0.25f);
         int i = 0;
         for (String t : infoText) {
-            fontRenderer.drawString(t, x + 8, y + 24 + i++ * 12, 1, 1, 1, generalOpacity, 0);
+            fontRenderer.drawString(t, x + 8, y + 24 + i++ * 12, 1, 1, 1, opacity, 0);
         }
         cancelButton.draw(currentTime);
         confirmButton.draw(currentTime);

@@ -20,13 +20,12 @@ package icyllis.modernui.gui.widget;
 
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.element.StateAnimatedElement;
 import icyllis.modernui.gui.master.DrawTools;
-import net.minecraft.client.gui.IGuiEventListener;
+import icyllis.modernui.system.MouseTools;
 
 import java.util.function.Function;
 
-public class TextButton extends StateAnimatedWidget {
+public class TextButton extends StateAnimatedButton {
 
     private String text;
 
@@ -40,9 +39,15 @@ public class TextButton extends StateAnimatedWidget {
 
     private float frameWidthOffset, frameHeightOffset;
 
+    private boolean rightAlign;
+
     protected Runnable leftClick;
 
     public TextButton(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, String text, Runnable leftClick) {
+        this(xResizer, yResizer, text, leftClick, false);
+    }
+
+    public TextButton(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, String text, Runnable leftClick, boolean rightAlign) {
         super(xResizer, yResizer);
         this.text = text;
         this.sizeW = Math.max(28, fontRenderer.getStringWidth(text) + 6);
@@ -51,10 +56,7 @@ public class TextButton extends StateAnimatedWidget {
         shape = new Shape.Rect(sizeW, 13);
         this.leftClick = leftClick;
         moduleManager.addEventListener(this);
-    }
-
-    public void rightAlign() {
-        xResizer = w -> xResizer.apply(w) - sizeW;
+        this.rightAlign = rightAlign;
     }
 
     public void setTextOpacity(float a) {
@@ -72,6 +74,9 @@ public class TextButton extends StateAnimatedWidget {
     @Override
     public void resize(int width, int height) {
         super.resize(width, height);
+        if (rightAlign) {
+            x = x - sizeW;
+        }
     }
 
     @Override
@@ -99,6 +104,7 @@ public class TextButton extends StateAnimatedWidget {
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if (available && mouseHovered && mouseButton == 0) {
             leftClick.run();
+            MouseTools.useDefaultCursor();
             return true;
         }
         return false;
@@ -112,10 +118,14 @@ public class TextButton extends StateAnimatedWidget {
 
         private int displayCount;
 
-        public Countdown(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, String text, Runnable leftClick, int countdown) {
-            super(xResizer, yResizer, text, leftClick);
+        public Countdown(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, String text, Runnable leftClick, boolean rightAlign, int countdown) {
+            super(xResizer, yResizer, text, leftClick, rightAlign);
             this.displayCount = this.countdown = countdown;
             available = false;
+        }
+
+        public Countdown(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, String text, Runnable leftClick, int countdown) {
+            this(xResizer, yResizer, text, leftClick, false, countdown);
         }
 
         @Override

@@ -18,7 +18,6 @@
 
 package icyllis.modernui.gui.element;
 
-import icyllis.modernui.api.ModernUI_API;
 import icyllis.modernui.api.manager.IModuleManager;
 import icyllis.modernui.gui.font.FontRendererTools;
 import icyllis.modernui.gui.font.IFontRenderer;

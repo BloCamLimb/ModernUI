@@ -43,7 +43,6 @@ public class DrawTools {
         bufferbuilder.pos(left, top, 0.0D).color(r, g, b, a).endVertex();
         tessellator.draw();
         RenderSystem.enableTexture();
-        RenderSystem.disableBlend();
     }
 
     public static void fillRectWithColor(float left, float top, float right, float bottom, int RGB, float alpha) {
@@ -63,7 +62,6 @@ public class DrawTools {
         bufferbuilder.pos(left, top, 0.0D).color(r, g, b, a).endVertex();
         tessellator.draw();
         RenderSystem.enableTexture();
-        RenderSystem.disableBlend();
     }
 
     public static void fillRectWithColor(float left, float top, float right, float bottom, float r, float g, float b, float a) {
@@ -79,7 +77,6 @@ public class DrawTools {
         bufferbuilder.pos(left, top, 0.0D).color(r, g, b, a).endVertex();
         tessellator.draw();
         RenderSystem.enableTexture();
-        RenderSystem.disableBlend();
     }
 
     public static void fillRectWithFrame(float left, float top, float right, float bottom, float thickness, int innerRGB, float innerAlpha, int frameRGB, float frameAlpha) {
@@ -135,7 +132,6 @@ public class DrawTools {
         tessellator.draw();
 
         RenderSystem.enableTexture();
-        RenderSystem.disableBlend();
     }
 
     public static void fillFrameWithColor(float left, float top, float right, float bottom, float thickness, int frameRGB, float frameAlpha) {
@@ -193,7 +189,6 @@ public class DrawTools {
         tessellator.draw();
 
         RenderSystem.enableTexture();
-        RenderSystem.disableBlend();
     }
 
     /*public static void fillGradient(float x, float y, float width, float height, int startColor, int endColor, float zLevel) {

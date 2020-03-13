@@ -19,11 +19,12 @@
 package icyllis.modernui.gui.widget;
 
 import icyllis.modernui.gui.element.StateAnimatedElement;
+import icyllis.modernui.system.MouseTools;
 import net.minecraft.client.gui.IGuiEventListener;
 
 import java.util.function.Function;
 
-public abstract class StateAnimatedWidget extends StateAnimatedElement implements IGuiEventListener {
+public abstract class StateAnimatedButton extends StateAnimatedElement implements IGuiEventListener {
 
     protected boolean available = true;
 
@@ -31,7 +32,7 @@ public abstract class StateAnimatedWidget extends StateAnimatedElement implement
 
     protected Shape shape;
 
-    public StateAnimatedWidget(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer) {
+    public StateAnimatedButton(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer) {
         super(xResizer, yResizer);
     }
 
@@ -43,8 +44,10 @@ public abstract class StateAnimatedWidget extends StateAnimatedElement implement
             if (prev != mouseHovered) {
                 if (mouseHovered) {
                     startOpen();
+                    MouseTools.useHandCursor();
                 } else {
                     startClose();
+                    MouseTools.useDefaultCursor();
                 }
             }
         }
