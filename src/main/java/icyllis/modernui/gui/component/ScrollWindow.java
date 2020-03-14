@@ -20,7 +20,9 @@ package icyllis.modernui.gui.component;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.component.scroll.ScrollController;
-import icyllis.modernui.gui.component.scroll.Scrollbar;
+import icyllis.modernui.gui.component.scroll.ScrollEntry;
+import icyllis.modernui.gui.component.scroll.ScrollList;
+import icyllis.modernui.gui.component.scroll.ScrollBar;
 import icyllis.modernui.gui.element.Element;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -29,34 +31,36 @@ import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.math.MathHelper;
 import org.lwjgl.opengl.GL11;
 
+import java.util.Collection;
 import java.util.function.Function;
 
-public class ScrollWindow extends Element implements IGuiEventListener {
+public class ScrollWindow<T extends ScrollEntry> extends Element implements IGuiEventListener {
 
-    public static int EDGE_BLACK_THICKNESS = 6;
+    public int borderThickness = 6;
 
     protected Function<Integer, Float> wResizer, hResizer;
 
-    protected float width;
+    protected float width, height;
 
-    protected float height;
+    protected float right, bottom; // right = x + width | bottom = y + height
 
-    protected float visibleHeight;
+    protected float visibleHeight; // except black fade out border * 2
 
-    protected float scrollAmount = 0f;
+    protected float scrollAmount = 0f; // scroll offset, > 0
 
-    protected Scrollbar scrollbar;
+    protected ScrollBar scrollbar;
 
     protected ScrollController controller;
 
-    int totalHeight = 600;
+    protected ScrollList<T> scrollList;
 
     public ScrollWindow(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, Function<Integer, Float> wResizer, Function<Integer, Float> hResizer) {
         super(xResizer, yResizer);
         this.wResizer = wResizer;
         this.hResizer = hResizer;
-        this.scrollbar = new Scrollbar(this);
+        this.scrollbar = new ScrollBar(this);
         this.controller = new ScrollController(this::callbackScrollAmount);
+        this.scrollList = new ScrollList<>(this);
         this.moduleManager.addEventListener(this);
     }
 
@@ -69,40 +73,36 @@ public class ScrollWindow extends Element implements IGuiEventListener {
 
         double scale = minecraft.getMainWindow().getGuiScaleFactor();
         GL11.glEnable(GL11.GL_SCISSOR_TEST);
-        GL11.glScissor((int) (x * scale), (int) (minecraft.getMainWindow().getFramebufferHeight() - ((y + height) * scale)),
+        GL11.glScissor((int) (x * scale), (int) (minecraft.getMainWindow().getFramebufferHeight() - (bottom * scale)),
                     (int) (width * scale), (int) (height * scale));
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableAlphaTest();
 
+        RenderSystem.enableTexture();
+
+        scrollList.draw(x + width / 2f, y, scrollAmount, bottom, currentTime);
+
         RenderSystem.shadeModel(GL11.GL_SMOOTH);
         RenderSystem.disableTexture();
         bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
-        bufferBuilder.pos(x, y + EDGE_BLACK_THICKNESS, 0.0D).color(0, 0, 0, 0).endVertex();
-        bufferBuilder.pos(x + width, y + EDGE_BLACK_THICKNESS, 0.0D).color(0, 0, 0, 0).endVertex();
-        bufferBuilder.pos(x + width, y, 0.0D).color(0, 0, 0, 128).endVertex();
+        bufferBuilder.pos(x, y + borderThickness, 0.0D).color(0, 0, 0, 0).endVertex();
+        bufferBuilder.pos(right, y + borderThickness, 0.0D).color(0, 0, 0, 0).endVertex();
+        bufferBuilder.pos(right, y, 0.0D).color(0, 0, 0, 128).endVertex();
         bufferBuilder.pos(x, y, 0.0D).color(0, 0, 0, 128).endVertex();
         tessellator.draw();
         bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
-        bufferBuilder.pos(x, y + height, 0.0D).color(0, 0, 0, 128).endVertex();
-        bufferBuilder.pos(x + width, y + height, 0.0D).color(0, 0, 0, 128).endVertex();
-        bufferBuilder.pos(x + width, y + height - EDGE_BLACK_THICKNESS, 0.0D).color(0, 0, 0, 0).endVertex();
-        bufferBuilder.pos(x, y + height - EDGE_BLACK_THICKNESS, 0.0D).color(0, 0, 0, 0).endVertex();
+        bufferBuilder.pos(x, bottom, 0.0D).color(0, 0, 0, 128).endVertex();
+        bufferBuilder.pos(right, bottom, 0.0D).color(0, 0, 0, 128).endVertex();
+        bufferBuilder.pos(right, bottom - borderThickness, 0.0D).color(0, 0, 0, 0).endVertex();
+        bufferBuilder.pos(x, bottom - borderThickness, 0.0D).color(0, 0, 0, 0).endVertex();
         tessellator.draw();
         RenderSystem.shadeModel(GL11.GL_FLAT);
 
         scrollbar.draw(currentTime);
 
         RenderSystem.enableTexture();
-
-        fontRenderer.drawString("Yes", x + 1, y - scrollAmount + 10, 1, 1, 1, 1, 0);
-
-        fontRenderer.drawString("Peach!", x + 1, y - scrollAmount + 200, 1, 1, 1, 1, 0);
-
-        fontRenderer.drawString("Hey, you are here", x + 1, y - scrollAmount + 400, 1, 1, 1, 1, 0);
-
-        fontRenderer.drawString("TQL", x + 1, y - scrollAmount + 595, 1, 1, 1, 1, 0);
 
         GL11.glDisable(GL11.GL_SCISSOR_TEST);
     }
@@ -112,17 +112,22 @@ public class ScrollWindow extends Element implements IGuiEventListener {
         super.resize(width, height);
         this.width = wResizer.apply(width);
         this.height = hResizer.apply(height);
-        this.visibleHeight = this.height - EDGE_BLACK_THICKNESS * 2;;
-        this.scrollbar.setPos(x + this.width - Scrollbar.BAR_THICKNESS - 1, y + 1);
+        this.right = x + this.width;
+        this.bottom = y + this.height;
+        this.visibleHeight = this.height - borderThickness * 2;
+        this.scrollbar.setPos(this.right - scrollbar.barThickness - 1, y + 1);
         this.scrollbar.setMaxLength(this.height - 2);
         updateScrollBarLength();
-        updateScrollBarOffset();
+        updateScrollBarOffset(); // scrollAmount() not always call updateScrollBarOffset()
         scrollAmount(0);
     }
 
     @Override
     public void mouseMoved(double mouseX, double mouseY) {
         scrollbar.mouseMoved(mouseX, mouseY);
+        if (isMouseOver(mouseX, mouseY)) {
+            scrollList.mouseMoved(y, scrollAmount, bottom, x + width / 2, mouseY);
+        }
     }
 
     @Override
@@ -130,12 +135,20 @@ public class ScrollWindow extends Element implements IGuiEventListener {
         if (scrollbar.mouseClicked(mouseX, mouseY, mouseButton)) {
             return true;
         }
+        if (isMouseOver(mouseX, mouseY)) {
+            return scrollList.mouseClicked(y, scrollAmount, bottom, x + width / 2, mouseY, mouseButton);
+        }
         return false;
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
-        scrollbar.mouseReleased(mouseX, mouseY, mouseButton);
+        if (scrollbar.mouseReleased(mouseX, mouseY, mouseButton)) {
+            return true;
+        }
+        if (isMouseOver(mouseX, mouseY)) {
+            return scrollList.mouseReleased(y, scrollAmount, bottom, x + width / 2, mouseY, mouseButton);
+        }
         return false;
     }
 
@@ -144,12 +157,18 @@ public class ScrollWindow extends Element implements IGuiEventListener {
         if (scrollbar.mouseDragged(mouseX, mouseY, mouseButton, rmx, rmy)) {
             return true;
         }
+        if (isMouseOver(mouseX, mouseY)) {
+            return scrollList.mouseDragged(y, scrollAmount, bottom, x + width / 2, mouseY, mouseButton, rmx, rmy);
+        }
         return false;
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollAmount) {
         if (isMouseOver(mouseX, mouseY)) {
+            if (scrollList.mouseScrolled(y, this.scrollAmount, bottom, x + width / 2, mouseY, scrollAmount)) {
+                return true;
+            }
             scrollAmount(Math.round(scrollAmount * -20f));
             return true;
         }
@@ -179,8 +198,11 @@ public class ScrollWindow extends Element implements IGuiEventListener {
         updateScrollBarOffset();
     }
 
-    public int getTotalHeight() {
-        return totalHeight;
+    /**
+     * Get total entries height
+     */
+    public float getTotalHeight() {
+        return scrollList.getMaxHeight();
     }
 
     public float getVisibleHeight() {
@@ -213,5 +235,26 @@ public class ScrollWindow extends Element implements IGuiEventListener {
             float p = v / t;
             scrollbar.setBarLength(p);
         }
+    }
+
+    public void onTotalHeightChanged() {
+        updateScrollBarLength();
+        updateScrollBarOffset();
+    }
+
+    public void addEntry(T entry) {
+        scrollList.addEntry(entry);
+    }
+
+    public void addEntries(Collection<T> collection) {
+        scrollList.addEntries(collection);
+    }
+
+    public void removeEntry(T entry) {
+        scrollList.removeEntry(entry);
+    }
+
+    public void clearEntries() {
+        scrollList.clearEntries();
     }
 }

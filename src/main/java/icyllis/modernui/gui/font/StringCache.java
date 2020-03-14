@@ -1,19 +1,31 @@
 /*
- * Modern UI.
+ * Modern UI - Better Fonts.
  * Copyright (C) 2019 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Better Fonts is a minecraft mod originally made by iSuzutsuki
+ * for minecraft 1.4 ~ 1.7, and be ported to 1.8 ~ 1.12 by cube2x.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * Both two above are under LGPL v2.1 license, and this class is
+ * under LGPL v3.0 license. See https://www.gnu.org/licenses/lgpl-3.0.en.html
+ *
+ * This class is from cube2x's source code, also a part of
+ * Modern UI - Better Fonts, which is a branch of Modern UI and
+ * uses different license from Modern UI.
+ *
+ * Modern UI - Better Fonts is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or 3.0 any later version.
+ *
+ * Modern UI - Better Fonts is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with Modern UI - Better Fonts; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
+ * USA
  */
 
 package icyllis.modernui.gui.font;

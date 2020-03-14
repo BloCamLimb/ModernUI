@@ -69,14 +69,6 @@ public class RewrittenMethods {
             best = 1;
         }
 
-        if (best % 2 != 0) {
-            if (best < max) {
-                best++;
-            } else {
-                best--;
-            }
-        }
-
         return min << 8 | best << 4 | max;
     }
 }
