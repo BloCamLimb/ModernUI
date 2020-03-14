@@ -21,6 +21,7 @@ package icyllis.modernui.impl.menu;
 import icyllis.modernui.api.manager.IModuleManager;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.component.ScrollWindow;
+import icyllis.modernui.gui.component.scroll.ScrollEntry;
 import icyllis.modernui.gui.element.IElement;
 import icyllis.modernui.gui.element.MenuSettingsBG;
 import icyllis.modernui.gui.master.GlobalModuleManager;
@@ -46,7 +47,11 @@ public class Settings {
     public static class General {
 
         public General(IModuleManager manager) {
-            manager.addElement(new ScrollWindow(w -> 40f, h -> 36f, w -> w - 80f, h -> h - 64f));
+            ScrollWindow<ScrollEntry.Test> window = new ScrollWindow<>(w -> 40f, h -> 36f, w -> w - 80f, h -> h - 64f);
+            for (int i = 0; i < 16; i++) {
+                window.addEntry(new ScrollEntry.Test(i));
+            }
+            manager.addElement(window);
         }
     }
 }

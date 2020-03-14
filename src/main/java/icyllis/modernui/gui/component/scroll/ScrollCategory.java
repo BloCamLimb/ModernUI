@@ -18,61 +18,10 @@
 
 package icyllis.modernui.gui.component.scroll;
 
-import icyllis.modernui.gui.widget.Shape;
-import net.minecraft.client.gui.IGuiEventListener;
+public class ScrollCategory {
 
-public class ScrollCategory implements IGuiEventListener {
-
-    protected float x, y;
-
-    protected boolean visible = true;
-
-    protected boolean mouseHovered = false;
-
-    protected Shape shape;
-
-    /**
-     * In vertical list, it's height
-     * In horizontal list, it's width
-     */
-    private final int size;
-
-    public ScrollCategory(int size, Shape shape) {
-        this.size = size;
-        this.shape = shape;
-    }
-
-    /**
-     * Draw =w=
-     * @param alpha make entry fade in or fade out when it is on the list window edge
-     */
-    public void draw(float alpha) {
+    public ScrollCategory() {
 
     }
 
-    public void setPos(float x, float y) {
-        this.x = x;
-        this.y = y;
-    }
-
-    public int getSize() {
-        return size;
-    }
-
-    public void onHoverStateChanged(boolean mouseHovered) {
-        this.mouseHovered = mouseHovered;
-    }
-
-    public boolean isMouseHovered() {
-        return mouseHovered;
-    }
-
-    public void setVisible(boolean visible) {
-        this.visible = visible;
-    }
-
-    @Override
-    public final boolean isMouseOver(double mouseX, double mouseY) {
-        return shape.isMouseInShape(x, y, mouseX, mouseY);
-    }
 }

@@ -23,7 +23,7 @@ public interface IFontRenderer {
     /**
      * Draw string
      *
-     * @param str unformatted text
+     * @param str formatted text
      * @param startX x pos
      * @param startY y pos
      * @param r red 0-1

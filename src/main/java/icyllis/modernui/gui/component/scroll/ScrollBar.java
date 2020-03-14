@@ -30,11 +30,11 @@ import org.lwjgl.opengl.GL11;
 /**
  * Vertical
  */
-public class Scrollbar implements IGuiEventListener {
+public class ScrollBar implements IGuiEventListener {
 
-    public static int BAR_THICKNESS = 5;
+    public int barThickness = 5;
 
-    protected final ScrollWindow window;
+    protected final ScrollWindow<?> window;
 
     protected float x, y;
 
@@ -54,11 +54,12 @@ public class Scrollbar implements IGuiEventListener {
 
     protected boolean isDragging = false;
 
-    public Scrollbar(ScrollWindow window) {
+    public ScrollBar(ScrollWindow<?> window) {
         this.window = window;
     }
 
     public void draw(float currentTime) {
+
         if (brightness > 0.5f && !mouseHovered) {
             if (currentTime > startTime) {
                 float change = (startTime - currentTime) / 40.0f;
@@ -73,16 +74,24 @@ public class Scrollbar implements IGuiEventListener {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();
 
+        RenderSystem.color4f(0.06f, 0.06f, 0.06f, 0.15f);
+
+        renderRect(tessellator, bufferBuilder, y, maxLength);
+
         RenderSystem.color4f(brightness, brightness, brightness, 0.5f);
 
-        bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION);
-        bufferBuilder.pos(x, renderY + barLength, 0.0D).endVertex();
-        bufferBuilder.pos(x + BAR_THICKNESS, renderY + barLength, 0.0D).endVertex();
-        bufferBuilder.pos(x + BAR_THICKNESS, renderY, 0.0D).endVertex();
-        bufferBuilder.pos(x, renderY, 0.0D).endVertex();
-        tessellator.draw();
+        renderRect(tessellator, bufferBuilder, renderY, barLength);
 
         RenderSystem.clearCurrentColor();
+    }
+
+    private void renderRect(Tessellator tessellator, BufferBuilder bufferBuilder, float renderY, float barLength) {
+        bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION);
+        bufferBuilder.pos(x, renderY + barLength, 0.0D).endVertex();
+        bufferBuilder.pos(x + barThickness, renderY + barLength, 0.0D).endVertex();
+        bufferBuilder.pos(x + barThickness, renderY, 0.0D).endVertex();
+        bufferBuilder.pos(x, renderY, 0.0D).endVertex();
+        tessellator.draw();
     }
 
     public void setPos(float x, float y) {
@@ -108,7 +117,7 @@ public class Scrollbar implements IGuiEventListener {
     }
 
     public boolean isMouseOnBar(double mouseX, double mouseY) {
-        return mouseX >= x && mouseX <= x + BAR_THICKNESS && mouseY >= renderY && mouseY <= renderY + barLength;
+        return mouseX >= x && mouseX <= x + barThickness && mouseY >= renderY && mouseY <= renderY + barLength;
     }
 
     public void setBarOffset(float percentage) {
@@ -137,17 +146,18 @@ public class Scrollbar implements IGuiEventListener {
             if (mouseHovered) {
                 isDragging = true;
                 return true;
-            }
-            boolean inWidth = mouseX >= x && mouseX <= x + BAR_THICKNESS;
-            if (inWidth) {
-                if (mouseY >= y && mouseY < renderY) {
-                    float mov = transformPosToAmount((float) (renderY - mouseY));
-                    window.scrollAmount(-Math.min(60f, mov));
-                    return true;
-                } else if (mouseY > renderY + barLength && mouseY <= y + maxLength) {
-                    float mov = transformPosToAmount((float) (mouseY - renderY - barLength));
-                    window.scrollAmount(Math.min(60f, mov));
-                    return true;
+            } else {
+                boolean inWidth = mouseX >= x && mouseX <= x + barThickness;
+                if (inWidth) {
+                    if (mouseY >= y && mouseY < renderY) {
+                        float mov = transformPosToAmount((float) (renderY - mouseY));
+                        window.scrollAmount(-Math.min(60f, mov));
+                        return true;
+                    } else if (mouseY > renderY + barLength && mouseY <= y + maxLength) {
+                        float mov = transformPosToAmount((float) (mouseY - renderY - barLength));
+                        window.scrollAmount(Math.min(60f, mov));
+                        return true;
+                    }
                 }
             }
         }
@@ -158,6 +168,7 @@ public class Scrollbar implements IGuiEventListener {
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
         if (visible && isDragging) {
             isDragging = false;
+            return true;
         }
         return false;
     }
@@ -171,6 +182,10 @@ public class Scrollbar implements IGuiEventListener {
         return false;
     }
 
+    /**
+     * Transform pos to scroll amount
+     * @param rm relative move (pos)
+     */
     public float transformPosToAmount(float rm) {
         return window.getMaxScrollAmount() * rm / getMaxDragLength();
     }
