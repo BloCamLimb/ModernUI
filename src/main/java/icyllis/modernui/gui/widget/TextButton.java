@@ -55,7 +55,6 @@ public class TextButton extends StateAnimatedButton {
         frameHeightOffset = 13;
         shape = new Shape.Rect(sizeW, 13);
         this.leftClick = leftClick;
-        moduleManager.addEventListener(this);
         this.rightAlign = rightAlign;
     }
 

@@ -16,14 +16,14 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.impl.chat;
+package icyllis.modernui.gui.chat;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.system.HistoryRecorder;
 import icyllis.modernui.system.ReferenceLibrary;
-import icyllis.modernui.gui.font.EmojiStringRenderer;
-import icyllis.modernui.gui.font.FontRendererTools;
+import icyllis.modernui.font.EmojiStringRenderer;
+import icyllis.modernui.font.FontRendererTools;
 import icyllis.modernui.gui.master.DrawTools;
 import javafx.util.Pair;
 import net.minecraft.client.Minecraft;

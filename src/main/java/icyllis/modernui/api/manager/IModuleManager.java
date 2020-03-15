@@ -20,6 +20,7 @@ package icyllis.modernui.api.manager;
 
 import icyllis.modernui.gui.animation.IAnimation;
 import icyllis.modernui.gui.element.IElement;
+import icyllis.modernui.gui.master.IGuiModule;
 import icyllis.modernui.gui.widget.StandardEventListener;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.network.PacketBuffer;
@@ -30,16 +31,15 @@ public interface IModuleManager {
 
     /**
      * Switch to specific module
-     * @param id target id
+     * @param newID target id
      */
-    void switchTo(int id);
+    void switchModule(int newID);
 
     /**
      * Open a popup window, a special module
-     * @param fadeInTime second black background animation fade in time
-     * @param id popup module id
+     * @param popup popup module
      */
-    void openPopup(float fadeInTime, int id);
+    void openPopup(IGuiModule popup);
 
     /**
      * Close current popup
@@ -50,21 +50,21 @@ public interface IModuleManager {
      * Add an element to CURRENT module.
      * @param element element to add
      */
-    void addElement(IElement element);
+    //void addElement(IElement element);
 
     /**
      * Add a module event that called when switching modules
      * to CURRENT module.
      * @param event int consumer
      */
-    void addModuleEvent(IntConsumer event);
+    //void addModuleEvent(IntConsumer event);
 
     /**
      * Add a sub event listener to listen mouse and keyboard event
      * to CURRENT module. Generally use {@link StandardEventListener}
      * @param listener event listener
      */
-    void addEventListener(IGuiEventListener listener);
+    //void addEventListener(IGuiEventListener listener);
 
     /**
      * Add animation to global animation pool

@@ -16,11 +16,11 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.impl.chat;
+package icyllis.modernui.gui.chat;
 
 import icyllis.modernui.gui.widget.StandardEventListener;
-import icyllis.modernui.gui.font.EmojiStringRenderer;
-import icyllis.modernui.gui.font.IFontRenderer;
+import icyllis.modernui.font.EmojiStringRenderer;
+import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.gui.widget.Shape;
 import net.minecraft.client.Minecraft;

@@ -18,15 +18,12 @@
 
 package icyllis.modernui.system;
 
-import icyllis.modernui.gui.blur.BlurHandler;
-import icyllis.modernui.gui.font.TrueTypeRenderer;
+import icyllis.modernui.shader.blur.BlurHandler;
+import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.MouseHelper;
-import net.minecraft.client.util.InputMappings;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerContainerEvent;
@@ -37,7 +34,6 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
-import org.lwjgl.glfw.GLFW;
 
 @SuppressWarnings("unused")
 @Mod.EventBusSubscriber

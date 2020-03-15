@@ -16,10 +16,12 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.impl.menu.popup;
+package icyllis.modernui.gui.module;
 
-import icyllis.modernui.api.manager.IModuleManager;
 import icyllis.modernui.gui.component.ConfirmWindow;
+import icyllis.modernui.gui.element.Background;
+import icyllis.modernui.gui.element.IElement;
+import icyllis.modernui.gui.master.IGuiModule;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.DirtMessageScreen;
 import net.minecraft.client.gui.screen.MainMenuScreen;
@@ -27,13 +29,19 @@ import net.minecraft.client.gui.screen.MultiplayerScreen;
 import net.minecraft.realms.RealmsBridge;
 import net.minecraft.util.text.TranslationTextComponent;
 
-public class ExitPopup {
+import java.util.ArrayList;
+import java.util.List;
+
+public class ExitTitlePopup implements IGuiModule {
 
     private Minecraft minecraft;
 
-    public ExitPopup(IModuleManager manager) {
+    private List<IElement> elements = new ArrayList<>();
+
+    public ExitTitlePopup() {
         this.minecraft = Minecraft.getInstance();
-        manager.addElement(new ConfirmWindow("Exit", "Are you sure you want to exit to main menu?", this::exit));
+        elements.add(new Background(4));
+        elements.add(new ConfirmWindow("Exit", "Are you sure you want to exit to main menu?", this::exit));
     }
 
     private void exit() {
@@ -57,5 +65,15 @@ public class ExitPopup {
         } else {
             minecraft.displayGuiScreen(new MultiplayerScreen(new MainMenuScreen()));
         }
+    }
+
+    @Override
+    public void draw(float currentTime) {
+
+    }
+
+    @Override
+    public void resize(int width, int height) {
+
     }
 }

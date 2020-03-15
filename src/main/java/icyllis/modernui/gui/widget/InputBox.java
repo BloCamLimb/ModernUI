@@ -18,8 +18,8 @@
 
 package icyllis.modernui.gui.widget;
 
-import icyllis.modernui.gui.font.IFontRenderer;
-import icyllis.modernui.gui.font.FontRendererTools;
+import icyllis.modernui.font.IFontRenderer;
+import icyllis.modernui.font.FontRendererTools;
 
 import java.util.function.Predicate;
 

@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.font;
+package icyllis.modernui.font;
 
 public interface IFontRenderer {
 

@@ -21,7 +21,7 @@ package icyllis.modernui.gui.component;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.element.Element;
-import icyllis.modernui.gui.font.FontRendererTools;
+import icyllis.modernui.font.FontRendererTools;
 import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.gui.widget.TextButton;
 

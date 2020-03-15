@@ -44,6 +44,8 @@ public class ScrollWindow<T extends ScrollEntry> extends Element implements IGui
 
     protected float right, bottom; // right = x + width | bottom = y + height
 
+    protected float centerX;
+
     protected float visibleHeight; // except black fade out border * 2
 
     protected float scrollAmount = 0f; // scroll offset, > 0
@@ -54,6 +56,11 @@ public class ScrollWindow<T extends ScrollEntry> extends Element implements IGui
 
     protected ScrollList<T> scrollList;
 
+    /**
+     * Make mouseClicked return true to remove this
+     */
+    protected IGuiEventListener menu;
+
     public ScrollWindow(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, Function<Integer, Float> wResizer, Function<Integer, Float> hResizer) {
         super(xResizer, yResizer);
         this.wResizer = wResizer;
@@ -61,7 +68,7 @@ public class ScrollWindow<T extends ScrollEntry> extends Element implements IGui
         this.scrollbar = new ScrollBar(this);
         this.controller = new ScrollController(this::callbackScrollAmount);
         this.scrollList = new ScrollList<>(this);
-        this.moduleManager.addEventListener(this);
+        //this.moduleManager.addEventListener(this);
     }
 
     @Override
@@ -82,7 +89,7 @@ public class ScrollWindow<T extends ScrollEntry> extends Element implements IGui
 
         RenderSystem.enableTexture();
 
-        scrollList.draw(x + width / 2f, y, scrollAmount, bottom, currentTime);
+        scrollList.draw(getCenterX(), y, getVisibleOffset(), bottom, currentTime);
 
         RenderSystem.shadeModel(GL11.GL_SMOOTH);
         RenderSystem.disableTexture();
@@ -114,6 +121,7 @@ public class ScrollWindow<T extends ScrollEntry> extends Element implements IGui
         this.height = hResizer.apply(height);
         this.right = x + this.width;
         this.bottom = y + this.height;
+        this.centerX = x + this.width / 2f;
         this.visibleHeight = this.height - borderThickness * 2;
         this.scrollbar.setPos(this.right - scrollbar.barThickness - 1, y + 1);
         this.scrollbar.setMaxLength(this.height - 2);
@@ -126,7 +134,7 @@ public class ScrollWindow<T extends ScrollEntry> extends Element implements IGui
     public void mouseMoved(double mouseX, double mouseY) {
         scrollbar.mouseMoved(mouseX, mouseY);
         if (isMouseOver(mouseX, mouseY)) {
-            scrollList.mouseMoved(y, scrollAmount, bottom, x + width / 2, mouseY);
+            scrollList.mouseMoved(y, getVisibleOffset(), bottom, mouseX - getCenterX(), mouseY);
         }
     }
 
@@ -136,7 +144,7 @@ public class ScrollWindow<T extends ScrollEntry> extends Element implements IGui
             return true;
         }
         if (isMouseOver(mouseX, mouseY)) {
-            return scrollList.mouseClicked(y, scrollAmount, bottom, x + width / 2, mouseY, mouseButton);
+            return scrollList.mouseClicked(y, getVisibleOffset(), bottom, mouseX - getCenterX(), mouseY, mouseButton);
         }
         return false;
     }
@@ -147,7 +155,7 @@ public class ScrollWindow<T extends ScrollEntry> extends Element implements IGui
             return true;
         }
         if (isMouseOver(mouseX, mouseY)) {
-            return scrollList.mouseReleased(y, scrollAmount, bottom, x + width / 2, mouseY, mouseButton);
+            return scrollList.mouseReleased(y, getVisibleOffset(), bottom, mouseX - getCenterX(), mouseY, mouseButton);
         }
         return false;
     }
@@ -158,7 +166,7 @@ public class ScrollWindow<T extends ScrollEntry> extends Element implements IGui
             return true;
         }
         if (isMouseOver(mouseX, mouseY)) {
-            return scrollList.mouseDragged(y, scrollAmount, bottom, x + width / 2, mouseY, mouseButton, rmx, rmy);
+            return scrollList.mouseDragged(y, getVisibleOffset(), bottom, mouseX - getCenterX(), mouseY, mouseButton, rmx, rmy);
         }
         return false;
     }
@@ -166,7 +174,7 @@ public class ScrollWindow<T extends ScrollEntry> extends Element implements IGui
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollAmount) {
         if (isMouseOver(mouseX, mouseY)) {
-            if (scrollList.mouseScrolled(y, this.scrollAmount, bottom, x + width / 2, mouseY, scrollAmount)) {
+            if (scrollList.mouseScrolled(y, this.scrollAmount, bottom, mouseX - (x + width / 2), mouseY, scrollAmount)) {
                 return true;
             }
             scrollAmount(Math.round(scrollAmount * -20f));
@@ -209,6 +217,10 @@ public class ScrollWindow<T extends ScrollEntry> extends Element implements IGui
         return visibleHeight;
     }
 
+    public float getVisibleOffset() {
+        return scrollAmount - borderThickness;
+    }
+
     public float getMaxScrollAmount() {
         return Math.max(0, getTotalHeight() - getVisibleHeight());
     }
@@ -219,6 +231,10 @@ public class ScrollWindow<T extends ScrollEntry> extends Element implements IGui
             return 0;
         }
         return scrollAmount / max;
+    }
+
+    public float getCenterX() {
+        return centerX;
     }
 
     public void updateScrollBarOffset() {

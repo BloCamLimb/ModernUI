@@ -18,9 +18,8 @@
 
 package icyllis.modernui.gui.component.scroll;
 
-import icyllis.modernui.gui.font.FontRendererTools;
-import icyllis.modernui.gui.font.IFontRenderer;
-import icyllis.modernui.system.ModernUI;
+import icyllis.modernui.font.FontRendererTools;
+import icyllis.modernui.font.IFontRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureManager;
 
@@ -30,7 +29,7 @@ public abstract class ScrollEntry {
 
     protected IFontRenderer fontRenderer = FontRendererTools.CURRENT_RENDERER;
 
-    public final int height;
+    public int height;
 
     public ScrollEntry(int height) {
         this.height = height;
@@ -83,24 +82,4 @@ public abstract class ScrollEntry {
         return false;
     }
 
-    public static class Test extends ScrollEntry {
-
-        private final int line;
-
-        public Test(int line) {
-            super(24);
-            this.line = line;
-        }
-
-        @Override
-        public void draw(float centerX, float y, float maxY, float currentTime) {
-            fontRenderer.drawString("This is Line " + line, centerX, y + 9, 1, 1, 1, 1, 0.25f);
-        }
-
-        @Override
-        public boolean mouseClicked(double rcx, double rty, int mouseButton) {
-            ModernUI.LOGGER.info("Mouse click on line {}, RCX{} RTY{}", line, rcx, rty);
-            return true;
-        }
-    }
 }

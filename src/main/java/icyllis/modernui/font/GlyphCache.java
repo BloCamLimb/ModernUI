@@ -28,7 +28,7 @@
  * USA
  */
 
-package icyllis.modernui.gui.font;
+package icyllis.modernui.font;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;

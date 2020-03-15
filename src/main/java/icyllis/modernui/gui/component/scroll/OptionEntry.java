@@ -18,63 +18,42 @@
 
 package icyllis.modernui.gui.component.scroll;
 
-import icyllis.modernui.api.ModernUI_API;
-import icyllis.modernui.gui.element.IElement;
-import icyllis.modernui.api.manager.IModuleManager;
-import icyllis.modernui.gui.font.FontRendererTools;
-import icyllis.modernui.gui.font.IFontRenderer;
+import icyllis.modernui.font.FontRendererTools;
+import icyllis.modernui.font.IFontRenderer;
 
 import javax.annotation.Nullable;
-import java.util.function.Function;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Single option line in settings interface
  */
-public abstract class OptionEntryBase implements IElement {
-
-    public static Function<Integer, Float> X = w -> w / 2f - 300f;
+public class OptionEntry {
 
     protected IFontRenderer fontRenderer = FontRendererTools.CURRENT_RENDERER;
-
-    protected IModuleManager moduleManager = ModernUI_API.INSTANCE.getModuleManager();
 
     public String optionName;
 
     public String[] desc = new String[0];
 
-    public float x, absY;
-
     public float textBrightness = 0.7f;
 
-    public OptionEntryBase(String optionName) {
+    public OptionEntry(String optionName) {
         this(optionName, null);
     }
 
-    public OptionEntryBase(String optionName, @Nullable String desc) {
+    public OptionEntry(String optionName, @Nullable String desc) {
         this.optionName = optionName;
         if (desc != null)
             this.desc = FontRendererTools.splitStringToWidth(desc, 150);
-        //TODO
-    }
-
-    public void setY(float absY) {
-        this.absY = absY;
-    }
-
-    public void mouseMoved(double mouseX, double mouseY) {
 
     }
 
-    @Override
-    public void draw(float currentTime) {
-        fontRenderer.drawString(optionName, x, absY, textBrightness, textBrightness, textBrightness, 1, 0);
+    public void draw(float centerX, float y, float maxY, float currentTime) {
+        fontRenderer.drawString(optionName, centerX - 160, y + 8, textBrightness, textBrightness, textBrightness, 1, 0);
         if (desc.length > 0) {
             //TODO
         }
     }
 
-    @Override
-    public void resize(int width, int height) {
-        x = X.apply(width);
-    }
 }
