@@ -1,0 +1,141 @@
+/*
+ * Modern UI.
+ * Copyright (C) 2019 BloCamLimb. All rights reserved.
+ *
+ * Modern UI is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Modern UI is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+package icyllis.modernui.gui.master;
+
+import net.minecraft.client.gui.IGuiEventListener;
+
+import javax.annotation.Nullable;
+import java.util.function.IntPredicate;
+import java.util.function.Supplier;
+
+public class ModuleBuilder implements IGuiEventListener {
+
+    private final IntPredicate availability;
+
+    private final Supplier<IGuiModule> supplier;
+
+    @Nullable
+    private IGuiModule moduleInstance;
+
+    public ModuleBuilder(IntPredicate availability, Supplier<IGuiModule> supplier) {
+        this.availability = availability;
+        this.supplier = supplier;
+    }
+
+    public void draw(float currentTime) {
+        if (moduleInstance != null) {
+            moduleInstance.draw(currentTime);
+        }
+    }
+
+    public void resize(int width, int height) {
+        if (moduleInstance != null) {
+            moduleInstance.resize(width, height);
+        }
+    }
+
+    public void tick(int ticks) {
+        if (moduleInstance != null) {
+            moduleInstance.tick(ticks);
+        }
+    }
+
+    public void build() {
+        if (moduleInstance == null) {
+            moduleInstance = supplier.get();
+        }
+    }
+
+    public void onModuleChanged(int newID) {
+        if (moduleInstance != null) {
+            moduleInstance.onModuleChanged(newID);
+        }
+    }
+
+    public void clear() {
+        moduleInstance = null;
+    }
+
+    public boolean test(int value) {
+        return availability.test(value);
+    }
+
+    @Override
+    public void mouseMoved(double xPos, double yPos) {
+        if (moduleInstance != null) {
+            moduleInstance.mouseMoved(xPos, yPos);
+        }
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        if (moduleInstance != null) {
+            return moduleInstance.mouseClicked(mouseX, mouseY, mouseButton);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
+        if (moduleInstance != null) {
+            return moduleInstance.mouseReleased(mouseX, mouseY, mouseButton);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double RDX, double RDY) {
+        if (moduleInstance != null) {
+            return moduleInstance.mouseDragged(mouseX, mouseY, mouseButton, RDX, RDY);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double shift) {
+        if (moduleInstance != null) {
+            return moduleInstance.mouseScrolled(mouseX, mouseY, shift);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean keyPressed(int key, int scanCode, int modifier) {
+        if (moduleInstance != null) {
+            return moduleInstance.keyPressed(key, scanCode, modifier);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean keyReleased(int key, int scanCode, int modifier) {
+        if (moduleInstance != null) {
+            return moduleInstance.keyReleased(key, scanCode, modifier);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean charTyped(char charCode, int modifier) {
+        if (moduleInstance != null) {
+            return moduleInstance.charTyped(charCode, modifier);
+        }
+        return false;
+    }
+}

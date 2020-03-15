@@ -18,14 +18,16 @@
 
 package icyllis.modernui.api.global;
 
-import icyllis.modernui.api.manager.IModuleManager;
+import icyllis.modernui.gui.master.IGuiModule;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
-import java.util.function.Consumer;
 import java.util.function.IntPredicate;
+import java.util.function.Supplier;
 
+@OnlyIn(Dist.CLIENT)
+@FunctionalInterface
 public interface IModuleFactory {
 
-    void addModule(IntPredicate availability, Consumer<IModuleManager> manager);
-
-    void addPopupModule(int id, Consumer<IModuleManager> manager);
+    void addModule(IntPredicate availability, Supplier<IGuiModule> module);
 }

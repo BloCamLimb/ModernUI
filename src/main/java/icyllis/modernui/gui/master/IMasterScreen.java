@@ -21,7 +21,7 @@ package icyllis.modernui.gui.master;
 import net.minecraft.client.gui.IGuiEventListener;
 
 /**
- * Internal interface
+ * An internal interface make GlobalModuleManager can call master screen
  */
 public interface IMasterScreen {
 

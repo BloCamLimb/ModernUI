@@ -46,11 +46,11 @@ public class RewrittenMethods {
         double top = Math.max(a1, a2);
 
         int min;
-        int max = MathHelper.clamp((int) (base / 27), 1, 0xf);
+        int max = MathHelper.clamp((int) (base / 27), 1, 10);
         if (max > 1) {
             int i = (int) (base / 64);
             int j = (int) (top / 64);
-            min = MathHelper.clamp(j > i ? i + 1 : i, 2, 0xf);
+            min = MathHelper.clamp(j > i ? i + 1 : i, 2, 10);
         } else {
             min = 1;
         }

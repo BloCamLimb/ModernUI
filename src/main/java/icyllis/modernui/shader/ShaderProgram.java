@@ -16,35 +16,12 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.impl.chat;
+package icyllis.modernui.shader;
 
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.network.play.client.CChatMessagePacket;
-
-/**
- * Lengthened message
- */
-public final class CChatMessage extends CChatMessagePacket {
-
-    private String message;
-
-    public CChatMessage() {
-    }
-
-    public CChatMessage(String message) {
-        if(message.length() > 512) {
-            message = message.substring(0, 512);
-        }
-        this.message = message;
-    }
+public class ShaderProgram implements AutoCloseable {
 
     @Override
-    public void readPacketData(PacketBuffer buffer) {
-        message = buffer.readString(512);
-    }
+    public void close() throws Exception {
 
-    @Override
-    public void writePacketData(PacketBuffer buffer) {
-        buffer.writeString(message);
     }
 }

@@ -28,7 +28,7 @@
  * USA
  */
 
-package icyllis.modernui.gui.font;
+package icyllis.modernui.font;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;

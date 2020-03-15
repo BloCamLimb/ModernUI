@@ -16,20 +16,17 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.impl;
+package icyllis.modernui.gui.chat;
 
-import icyllis.modernui.gui.master.ModernUIScreen;
-import icyllis.modernui.gui.module.GeneralSetting;
-import icyllis.modernui.gui.module.IngameMenuHome;
-import icyllis.modernui.gui.module.SettingHeader;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.NewChatGui;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
-public class GuiIngameMenu extends ModernUIScreen {
+@OnlyIn(Dist.CLIENT)
+public final class PersistentChatGui extends NewChatGui {
 
-    public GuiIngameMenu(boolean isFullMenu) {
-        super(l -> {
-            l.addModule(i -> i >= 30 && i < 50, SettingHeader::new);
-            l.addModule(i -> i == 31, GeneralSetting::new);
-            l.addModule(i -> true, IngameMenuHome::new);
-        });
+    public PersistentChatGui() {
+        super(Minecraft.getInstance());
     }
 }

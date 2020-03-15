@@ -19,8 +19,8 @@
 package icyllis.modernui.gui.element;
 
 import icyllis.modernui.api.manager.IModuleManager;
-import icyllis.modernui.gui.font.FontRendererTools;
-import icyllis.modernui.gui.font.IFontRenderer;
+import icyllis.modernui.font.FontRendererTools;
+import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureManager;

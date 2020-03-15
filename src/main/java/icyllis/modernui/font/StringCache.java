@@ -28,9 +28,7 @@
  * USA
  */
 
-package icyllis.modernui.gui.font;
-
-import icyllis.modernui.system.ModernUI;
+package icyllis.modernui.font;
 
 import java.awt.*;
 import java.awt.font.GlyphVector;

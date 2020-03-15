@@ -46,7 +46,6 @@ public class MenuButton implements IElement {
 
         addAnimationEvent();
         listener.addLeftClick(onLeftClick);
-        GlobalModuleManager.INSTANCE.addEventListener(listener);
     }
 
     protected void addAnimationEvent() {
@@ -64,6 +63,10 @@ public class MenuButton implements IElement {
     public void resize(int width, int height) {
         texture.resize(width, height);
         listener.resize(width, height);
+    }
+
+    protected void onModuleChanged(int id) {
+
     }
 
     public static class A extends MenuButton {
@@ -97,13 +100,11 @@ public class MenuButton implements IElement {
 
         private boolean lock = false;
 
+        private IntPredicate availability;
+
         public B(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, String text, ResourceLocation res, float sizeW, float sizeH, float u, float v, float scale, Runnable onLeftClick, IntPredicate availability) {
             super(xResizer, yResizer, text, res, sizeW, sizeH, u, v, scale, onLeftClick);
-            GlobalModuleManager.INSTANCE.addModuleEvent(i -> {
-                lock = availability.test(i);
-                if(!lock)
-                    textureOpacityAnimation.setStatus(false);
-            });
+            this.availability = availability;
         }
 
         @Override
@@ -113,6 +114,14 @@ public class MenuButton implements IElement {
                 if(!lock)
                     textureOpacityAnimation.setStatus(false);
             });
+        }
+
+        @Override
+        protected void onModuleChanged(int id) {
+            super.onModuleChanged(id);
+            lock = availability.test(id);
+            if(!lock)
+                textureOpacityAnimation.setStatus(false);
         }
     }
 }

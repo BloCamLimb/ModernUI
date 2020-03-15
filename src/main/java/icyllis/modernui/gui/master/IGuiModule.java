@@ -16,12 +16,12 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.component.scroll;
+package icyllis.modernui.gui.master;
 
-public class ScrollCategory {
+import icyllis.modernui.gui.element.IElement;
+import net.minecraft.client.gui.IGuiEventListener;
 
-    public ScrollCategory() {
+public interface IGuiModule extends IElement, IGuiEventListener {
 
-    }
-
+    default void onModuleChanged(int newID) {}
 }

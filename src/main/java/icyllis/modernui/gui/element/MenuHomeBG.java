@@ -23,6 +23,7 @@ import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.gui.master.GlobalModuleManager;
+import net.minecraft.client.gui.AbstractGui;
 
 public class MenuHomeBG implements IElement {
 
@@ -37,6 +38,7 @@ public class MenuHomeBG implements IElement {
     @Override
     public void draw(float currentTime) {
         DrawTools.fillRectWithColor(0, 0, sizeW, height, 0, 0, 0, 0.7f);
+        DrawTools.fillRectWithColor(sizeW - 0.51f, 0, sizeW, height, 0.55f, 0.55f, 0.55f, 0.9f);
     }
 
     @Override

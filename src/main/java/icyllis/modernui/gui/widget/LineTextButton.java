@@ -38,22 +38,15 @@ public class LineTextButton extends StateAnimatedButton {
 
     protected boolean lock = false;
 
+    private int moduleID;
+
     public LineTextButton(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, String text, float width, int moduleID) {
         super(xResizer, yResizer);
         this.text = text;
         this.width = width;
         this.widthOffset = this.halfWidth = width / 2f;
         this.shape = new Shape.Rect(width, 12);
-        moduleManager.addEventListener(this);
-        moduleManager.addModuleEvent(i -> {
-            if (i == moduleID) {
-                lock = true;
-                startOpen();
-            } else {
-                lock = false;
-                startClose();
-            }
-        });
+        this.moduleID = moduleID;
         moduleManager.addAnimation(new Animation(3)
                 .applyTo(new Applier(1f, value -> opacity = value))
                 .withDelay(1));
@@ -78,6 +71,16 @@ public class LineTextButton extends StateAnimatedButton {
                 .applyTo(new Applier(halfWidth, 0, value -> widthOffset = value),
                         new Applier(0.7f, 1, value -> textBrightness = value))
                 .onFinish(() -> openState = 2));
+    }
+
+    protected void onModuleChanged(int id) {
+        if (id == moduleID) {
+            lock = true;
+            startOpen();
+        } else {
+            lock = false;
+            startClose();
+        }
     }
 
     @Override

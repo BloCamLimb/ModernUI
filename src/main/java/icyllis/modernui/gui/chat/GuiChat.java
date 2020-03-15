@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.impl.chat;
+package icyllis.modernui.gui.chat;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;

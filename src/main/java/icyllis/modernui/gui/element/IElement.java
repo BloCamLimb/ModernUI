@@ -18,6 +18,9 @@
 
 package icyllis.modernui.gui.element;
 
+/**
+ * This interface can be used everywhere
+ */
 public interface IElement {
 
     /**
