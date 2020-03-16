@@ -18,7 +18,7 @@
 
 package icyllis.modernui.gui.component.scroll;
 
-import icyllis.modernui.gui.component.ScrollWindow;
+import icyllis.modernui.gui.window.ScrollWindow;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -62,15 +62,19 @@ public class ScrollList<T extends ScrollEntry> {
      */
     public void mouseMoved(float topY, float yOffset, float bottomY, double rcx, double mouseY) {
         float baseY = topY - yOffset;
+        boolean finish = false;
         for (T entry : entries) {
-            if (mouseY >= baseY && mouseY <= baseY + entry.height) {
-                entry.mouseMoved(rcx, mouseY - baseY);
-                break;
+            if (!finish) {
+                if (mouseY >= baseY && mouseY <= baseY + entry.height) {
+                    entry.mouseMoved(rcx, mouseY - baseY);
+                    entry.setMouseHovered(true);
+                    finish = true;
+                } else {
+                    baseY += entry.height;
+                    entry.setMouseHovered(false);
+                }
             } else {
-                baseY += entry.height;
-            }
-            if (baseY >= bottomY) {
-                break;
+                entry.setMouseHovered(false);
             }
         }
     }

@@ -21,7 +21,6 @@ package icyllis.modernui.gui.widget;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.DrawTools;
-import icyllis.modernui.system.MouseTools;
 
 import java.util.function.Function;
 
@@ -53,7 +52,7 @@ public class TextButton extends StateAnimatedButton {
         this.sizeW = Math.max(28, fontRenderer.getStringWidth(text) + 6);
         frameWidthOffset = sizeW;
         frameHeightOffset = 13;
-        shape = new Shape.Rect(sizeW, 13);
+        shape = new FixedShape.Rect(sizeW, 13);
         this.leftClick = leftClick;
         this.rightAlign = rightAlign;
     }
@@ -103,7 +102,6 @@ public class TextButton extends StateAnimatedButton {
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if (available && mouseHovered && mouseButton == 0) {
             leftClick.run();
-            MouseTools.useDefaultCursor();
             return true;
         }
         return false;

@@ -45,7 +45,7 @@ public class LineTextButton extends StateAnimatedButton {
         this.text = text;
         this.width = width;
         this.widthOffset = this.halfWidth = width / 2f;
-        this.shape = new Shape.Rect(width, 12);
+        this.shape = new FixedShape.Rect(width, 12);
         this.moduleID = moduleID;
         moduleManager.addAnimation(new Animation(3)
                 .applyTo(new Applier(1f, value -> opacity = value))

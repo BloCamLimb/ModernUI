@@ -18,37 +18,46 @@
 
 package icyllis.modernui.gui.module;
 
-import icyllis.modernui.gui.component.ScrollWindow;
-import icyllis.modernui.gui.component.scroll.OptionCategory;
-import icyllis.modernui.gui.component.scroll.OptionEntry;
+import com.google.common.collect.Lists;
+import icyllis.modernui.gui.component.option.SelectiveOptionEntry;
+import icyllis.modernui.gui.element.IElement;
+import icyllis.modernui.gui.component.option.OptionCategory;
+import icyllis.modernui.gui.component.option.OptionEntry;
 import icyllis.modernui.gui.master.IGuiModule;
+import icyllis.modernui.gui.window.SettingScrollWindow;
+import net.minecraft.client.gui.IGuiEventListener;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class GeneralSetting implements IGuiModule {
 
-    private ScrollWindow<OptionCategory> window;
+    private List<IElement> elements = new ArrayList<>();
+
+    private List<IGuiEventListener> listeners = new ArrayList<>();
 
     public GeneralSetting() {
-        window = new ScrollWindow<>(w -> 40f, h -> 36f, w -> w - 80f, h -> h - 72f);
+        SettingScrollWindow window = new SettingScrollWindow();
         OptionCategory category = new OptionCategory("Game",
-                new OptionEntry("Difficulty"),
-                new OptionEntry("Lock Difficulty"),
-                new OptionEntry("Enable PVP"));
-        OptionCategory category1 = new OptionCategory("Rule",
+                new SelectiveOptionEntry(window, "Difficulty", Lists.newArrayList("Peaceful", "Easy", "Normal", "Hard"), 1));
+        /*OptionCategory category1 = new OptionCategory("Rule",
                 new OptionEntry("Keep Inventory"),
                 new OptionEntry("Send Commands Feedback"),
                 new OptionEntry("Allow Fire Spread"),
-                new OptionEntry("Allow Daylight Cycle"));
+                new OptionEntry("Allow Daylight Cycle"));*/
         window.addEntry(category);
-        window.addEntry(category1);
+        //window.addEntry(category1);
+        elements.add(window);
+        listeners.add(window);
     }
 
     @Override
-    public void draw(float currentTime) {
-        window.draw(currentTime);
+    public List<? extends IElement> getElements() {
+        return elements;
     }
 
     @Override
-    public void resize(int width, int height) {
-        window.resize(width, height);
+    public List<? extends IGuiEventListener> getEventListeners() {
+        return listeners;
     }
 }

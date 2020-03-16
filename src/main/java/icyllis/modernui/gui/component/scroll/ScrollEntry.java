@@ -39,10 +39,15 @@ public abstract class ScrollEntry {
 
     /**
      * Called when mouseY move to this height range, whatever mouseX is
+     * Use less this
      * @param rcx Relative move to Center X (Range: -scrollWindowWidth / 2 <= rcx <= scrollWindowWidth / 2)
      * @param rty Relative move to Top Y (Range: 0 <= rty <= this.height)
      */
     public void mouseMoved(double rcx, double rty) {
+
+    }
+
+    public void setMouseHovered(boolean mouseHovered) {
 
     }
 

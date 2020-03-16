@@ -19,7 +19,7 @@
 package icyllis.modernui.gui.component.scroll;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.gui.component.ScrollWindow;
+import icyllis.modernui.gui.window.ScrollWindow;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.renderer.BufferBuilder;

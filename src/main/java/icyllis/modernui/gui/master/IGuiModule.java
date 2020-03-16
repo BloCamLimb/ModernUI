@@ -21,7 +21,70 @@ package icyllis.modernui.gui.master;
 import icyllis.modernui.gui.element.IElement;
 import net.minecraft.client.gui.IGuiEventListener;
 
+import java.util.Collections;
+import java.util.List;
+
 public interface IGuiModule extends IElement, IGuiEventListener {
 
+    default List<? extends IElement> getElements() {
+        return Collections.emptyList();
+    }
+
+    default List<? extends IGuiEventListener> getEventListeners() {
+        return Collections.emptyList();
+    }
+
     default void onModuleChanged(int newID) {}
+
+    default void draw(float currentTime) {
+        getElements().forEach(e -> e.draw(currentTime));
+    }
+
+    default void resize(int width, int height) {
+        getElements().forEach(e -> e.resize(width, height));
+    }
+
+    default void tick(int ticks) {
+        getElements().forEach(e -> e.tick(ticks));
+    }
+
+    default void mouseMoved(double mouseX, double mouseY) {
+        getEventListeners().forEach(e -> e.mouseMoved(mouseX, mouseY));
+    }
+
+    default boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        for (IGuiEventListener listener : getEventListeners()) {
+            if (listener.mouseClicked(mouseX, mouseY, mouseButton)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    default boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
+        for (IGuiEventListener listener : getEventListeners()) {
+            if (listener.mouseReleased(mouseX, mouseY, mouseButton)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    default boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double deltaX, double deltaY) {
+        for (IGuiEventListener listener : getEventListeners()) {
+            if (listener.mouseDragged(mouseX, mouseY, mouseButton, deltaX, deltaY)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    default boolean mouseScrolled(double mouseX, double mouseY, double shift) {
+        for (IGuiEventListener listener : getEventListeners()) {
+            if (listener.mouseScrolled(mouseX, mouseY, shift)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

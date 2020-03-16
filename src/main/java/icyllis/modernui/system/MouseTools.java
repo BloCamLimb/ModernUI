@@ -19,16 +19,16 @@
 package icyllis.modernui.system;
 
 import net.minecraft.client.Minecraft;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lwjgl.glfw.GLFW;
 
+@OnlyIn(Dist.CLIENT)
 public class MouseTools {
-
-    private final static long HAND_CURSOR;
 
     private final static long IBEAM_CURSOR;
 
     static {
-        HAND_CURSOR = GLFW.glfwCreateStandardCursor(GLFW.GLFW_HAND_CURSOR);
         IBEAM_CURSOR = GLFW.glfwCreateStandardCursor(GLFW.GLFW_IBEAM_CURSOR);
     }
 
@@ -37,10 +37,6 @@ public class MouseTools {
      */
     public static void useDefaultCursor() {
         GLFW.glfwSetCursor(Minecraft.getInstance().getMainWindow().getHandle(), 0);
-    }
-
-    public static void useHandCursor() {
-        GLFW.glfwSetCursor(Minecraft.getInstance().getMainWindow().getHandle(), HAND_CURSOR);
     }
 
     /**

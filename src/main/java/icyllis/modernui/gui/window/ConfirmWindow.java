@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.component;
+package icyllis.modernui.gui.window;
 
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
@@ -24,6 +24,9 @@ import icyllis.modernui.gui.element.Element;
 import icyllis.modernui.font.FontRendererTools;
 import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.gui.widget.TextButton;
+import net.minecraft.client.gui.IGuiEventListener;
+
+import java.util.function.Consumer;
 
 public class ConfirmWindow extends Element {
 
@@ -39,15 +42,15 @@ public class ConfirmWindow extends Element {
 
     private TextButton.Countdown confirmButton;
 
-    public ConfirmWindow(String title, String info, Runnable confirmOperation) {
-        this(title, info, confirmOperation, 0);
+    public ConfirmWindow(Consumer<IGuiEventListener> consumer, String title, String info, Runnable confirmOperation) {
+        this(consumer, title, info, confirmOperation, 0);
     }
 
     /**
      * Constructor
      * @param confirmCountdown Countdown to confirm button available (unit-seconds)
      */
-    public ConfirmWindow(String title, String info, Runnable confirmOperation, int confirmCountdown) {
+    public ConfirmWindow(Consumer<IGuiEventListener> consumer, String title, String info, Runnable confirmOperation, int confirmCountdown) {
         super(width -> width / 2f - 90f, height -> height / 2f - 40f);
         this.titleText = "Confirm " + title;
         infoText = FontRendererTools.splitStringToWidth(info, 164);
@@ -64,6 +67,8 @@ public class ConfirmWindow extends Element {
                     confirmButton.setTextOpacity(value);
                 }))
                 .withDelay(3));
+        consumer.accept(cancelButton);
+        consumer.accept(confirmButton);
     }
 
     @Override

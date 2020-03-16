@@ -61,8 +61,7 @@ public class MenuSettingsBG extends Element {
         GlStateManager.disableTexture();
         bufferBuilder.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION);
         GL11.glLineWidth(1.0f);
-        RenderSystem.color4f(0.5f,0.5f,0.5f,0.5f);
-        RenderSystem.color4f(1,1,1,1);
+        RenderSystem.color4f(0.55f,0.55f,0.55f,0.9f);
         bufferBuilder.pos(x, y + 20f, 0.0D).endVertex();
         bufferBuilder.pos(x + sizeW, y + 20f, 0.0D).endVertex();
         tessellator.draw();

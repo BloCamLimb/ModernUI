@@ -18,11 +18,11 @@
 
 package icyllis.modernui.gui.widget;
 
-public abstract class Shape {
+public abstract class FixedShape {
 
     public abstract boolean isMouseInShape(float posX, float posY, double mouseX, double mouseY);
 
-    public static class Rect extends Shape {
+    public static class Rect extends FixedShape {
 
         private float width, height;
 
@@ -37,7 +37,7 @@ public abstract class Shape {
         }
     }
 
-    public static class Circle extends Shape {
+    public static class Circle extends FixedShape {
 
         private float radius;
 
@@ -51,7 +51,7 @@ public abstract class Shape {
         }
     }
 
-    public static class Sector extends Shape {
+    public static class Sector extends FixedShape {
 
         private float radius;
 

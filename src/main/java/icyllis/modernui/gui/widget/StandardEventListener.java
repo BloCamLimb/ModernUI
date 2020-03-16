@@ -33,7 +33,7 @@ public class StandardEventListener implements IGuiEventListener {
 
     protected float x, y;
 
-    protected Shape shape;
+    protected FixedShape shape;
 
     /** whether this listener is active (false will skip) **/
     protected boolean available = true;
@@ -43,7 +43,7 @@ public class StandardEventListener implements IGuiEventListener {
 
     protected List<iEvent> events = new ArrayList<>();
 
-    public StandardEventListener(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, Shape shape) {
+    public StandardEventListener(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, FixedShape shape) {
         this.xResizer = xResizer;
         this.yResizer = yResizer;
         this.shape = shape;

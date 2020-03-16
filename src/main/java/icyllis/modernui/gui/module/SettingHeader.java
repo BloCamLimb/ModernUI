@@ -23,24 +23,33 @@ import icyllis.modernui.gui.element.IElement;
 import icyllis.modernui.gui.element.MenuSettingsBG;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.IGuiModule;
+import icyllis.modernui.gui.master.TickEvent;
 import icyllis.modernui.gui.widget.LineTextButton;
+import icyllis.modernui.gui.widget.StateAnimatedButton;
+import net.minecraft.client.gui.IGuiEventListener;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class SettingHeader implements IGuiModule {
 
     private List<IElement> elements = new ArrayList<>();
 
+    private List<IGuiEventListener> listeners = new ArrayList<>();
+
     public SettingHeader() {
         elements.add(new MenuSettingsBG());
-        elements.add(new LineTextButton(w -> w / 2f - 152f, h -> 20f, "General", 48f, 31));
-        elements.add(new LineTextButton(w -> w / 2f - 88f, h -> 20f, "Video", 48f, 32));
-        elements.add(new LineTextButton(w -> w / 2f - 24f, h -> 20f, "Audio", 48f, 33));
-        elements.add(new LineTextButton(w -> w / 2f + 40f, h -> 20f, "Controls", 48f, 34));
-        elements.add(new LineTextButton(w -> w / 2f + 104f, h -> 20f, "Assets", 48f, 35));
-        GlobalModuleManager.INSTANCE.addAnimation(new Animation(2)
-                .onFinish(() -> GlobalModuleManager.INSTANCE.switchModule(31)));
+        Consumer<StateAnimatedButton> consumer = s -> {
+            elements.add(s);
+            listeners.add(s);
+        };
+        consumer.accept(new LineTextButton(w -> w / 2f - 152f, h -> 20f, "General", 48f, 31));
+        consumer.accept(new LineTextButton(w -> w / 2f - 88f, h -> 20f, "Video", 48f, 32));
+        consumer.accept(new LineTextButton(w -> w / 2f - 24f, h -> 20f, "Audio", 48f, 33));
+        consumer.accept(new LineTextButton(w -> w / 2f + 40f, h -> 20f, "Controls", 48f, 34));
+        consumer.accept(new LineTextButton(w -> w / 2f + 104f, h -> 20f, "Assets", 48f, 35));
+        GlobalModuleManager.INSTANCE.addTickEvent(new TickEvent(2, () -> GlobalModuleManager.INSTANCE.switchModule(31)));
     }
 
     @Override
@@ -50,6 +59,11 @@ public class SettingHeader implements IGuiModule {
 
     @Override
     public void resize(int width, int height) {
+        elements.forEach(e -> e.resize(width, height));
+    }
 
+    @Override
+    public List<? extends IGuiEventListener> getEventListeners() {
+        return listeners;
     }
 }

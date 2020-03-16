@@ -21,6 +21,7 @@ package icyllis.modernui.api.manager;
 import icyllis.modernui.gui.animation.IAnimation;
 import icyllis.modernui.gui.element.IElement;
 import icyllis.modernui.gui.master.IGuiModule;
+import icyllis.modernui.gui.master.TickEvent;
 import icyllis.modernui.gui.widget.StandardEventListener;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.network.PacketBuffer;
@@ -71,6 +72,8 @@ public interface IModuleManager {
      * @param animation animation to add
      */
     void addAnimation(IAnimation animation);
+
+    void addTickEvent(TickEvent event);
 
     /**
      * Refresh current mouse cursor
