@@ -32,14 +32,14 @@ import java.util.function.IntPredicate;
 
 public class MenuButton implements IElement {
 
-    protected StandardEventListener listener;
+    public StandardEventListener listener;
 
     protected StandardTexture texture;
 
     protected HSiAnimation textureOpacityAnimation;
 
     public MenuButton(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, ResourceLocation res, float sizeW, float sizeH, float u, float v, float scale, Runnable onLeftClick) {
-        listener = new StandardEventListener(xResizer, yResizer, new Shape.Rect(sizeW * scale, sizeH * scale));
+        listener = new StandardEventListener(xResizer, yResizer, new FixedShape.Rect(sizeW * scale, sizeH * scale));
 
         texture = new StandardTexture(xResizer, yResizer, sizeW, sizeH, res, u, v, 0x00808080, scale);
         textureOpacityAnimation = new HSiAnimation(0.5f, 1.0f, 4, value -> texture.tintR = texture.tintG = texture.tintB = value);

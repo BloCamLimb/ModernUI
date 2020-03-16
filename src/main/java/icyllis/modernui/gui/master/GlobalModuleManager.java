@@ -50,6 +50,8 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager {
 
     private List<IAnimation> animations = new ArrayList<>();
 
+    private List<TickEvent> tickEvents = new ArrayList<>();
+
     @Nullable
     public IGuiModule popup;
 
@@ -107,6 +109,11 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager {
     }
 
     @Override
+    public void addTickEvent(TickEvent event) {
+        tickEvents.add(event);
+    }
+
+    @Override
     public void refreshCursor() {
         if (master != null) {
             master.refreshCursor();
@@ -150,6 +157,8 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager {
         builders.forEach(e -> e.tick(ticks));
         if (popup != null)
             popup.tick(ticks);
+        tickEvents.removeIf(TickEvent::shouldRemove);
+        tickEvents.forEach(e -> e.tick(ticks));
     }
 
     public void renderTick(float partialTick) {

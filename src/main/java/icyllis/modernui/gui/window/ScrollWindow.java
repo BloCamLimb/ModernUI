@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.component;
+package icyllis.modernui.gui.window;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.component.scroll.ScrollController;
@@ -56,11 +56,6 @@ public class ScrollWindow<T extends ScrollEntry> extends Element implements IGui
 
     protected ScrollList<T> scrollList;
 
-    /**
-     * Make mouseClicked return true to remove this
-     */
-    protected IGuiEventListener menu;
-
     public ScrollWindow(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, Function<Integer, Float> wResizer, Function<Integer, Float> hResizer) {
         super(xResizer, yResizer);
         this.wResizer = wResizer;
@@ -72,7 +67,7 @@ public class ScrollWindow<T extends ScrollEntry> extends Element implements IGui
     }
 
     @Override
-    public void draw(float currentTime) {
+    public final void draw(float currentTime) {
         controller.update(currentTime);
 
         Tessellator tessellator = Tessellator.getInstance();
@@ -91,8 +86,8 @@ public class ScrollWindow<T extends ScrollEntry> extends Element implements IGui
 
         scrollList.draw(getCenterX(), y, getVisibleOffset(), bottom, currentTime);
 
-        RenderSystem.shadeModel(GL11.GL_SMOOTH);
         RenderSystem.disableTexture();
+        RenderSystem.shadeModel(GL11.GL_SMOOTH);
         bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
         bufferBuilder.pos(x, y + borderThickness, 0.0D).color(0, 0, 0, 0).endVertex();
         bufferBuilder.pos(right, y + borderThickness, 0.0D).color(0, 0, 0, 0).endVertex();
@@ -107,11 +102,21 @@ public class ScrollWindow<T extends ScrollEntry> extends Element implements IGui
         tessellator.draw();
         RenderSystem.shadeModel(GL11.GL_FLAT);
 
+        RenderSystem.enableTexture();
+
+        drawEndExtra();
+
+        RenderSystem.disableTexture();
+
         scrollbar.draw(currentTime);
 
         RenderSystem.enableTexture();
 
         GL11.glDisable(GL11.GL_SCISSOR_TEST);
+    }
+
+    public void drawEndExtra() {
+
     }
 
     @Override

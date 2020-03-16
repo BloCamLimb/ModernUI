@@ -22,7 +22,7 @@ import icyllis.modernui.gui.widget.StandardEventListener;
 import icyllis.modernui.font.EmojiStringRenderer;
 import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.gui.master.DrawTools;
-import icyllis.modernui.gui.widget.Shape;
+import icyllis.modernui.gui.widget.FixedShape;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.SharedConstants;
@@ -65,7 +65,7 @@ public final class ChatInputBox extends StandardEventListener {
     private boolean shiftDown = false;
 
     ChatInputBox() {
-        super(w -> 4f, h -> 0f, new Shape.Rect(30, 12));
+        super(w -> 4f, h -> 0f, new FixedShape.Rect(30, 12));
         selectorX = cursorX = 4;
     }
 

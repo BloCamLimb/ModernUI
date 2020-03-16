@@ -33,7 +33,7 @@ public interface IGuiManager {
      *  @param id registry name
      * @param title screen title
      * @param containerFactory factory to create container
-     * @param moduleFactory gui modules, ID is determined by order, the first one would be main module
+     * @param moduleFactory gui modules
      */
     <M extends Container> void registerContainerGui(ResourceLocation id, ITextComponent title, IContainerFactory<M> containerFactory, Consumer<IModuleFactory> moduleFactory);
 

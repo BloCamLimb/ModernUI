@@ -31,7 +31,7 @@ import java.util.function.Function;
 
 public class CheckboxButton extends Element implements IGuiEventListener {
 
-    protected Shape shape;
+    protected FixedShape shape;
 
     protected boolean mouseHovered = false;
 
@@ -48,7 +48,7 @@ public class CheckboxButton extends Element implements IGuiEventListener {
      */
     public CheckboxButton(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer) {
         super(xResizer, yResizer);
-        shape = new Shape.Rect(8, 8);
+        shape = new FixedShape.Rect(8, 8);
         scale = 0.25f;
     }
 
