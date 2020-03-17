@@ -23,7 +23,6 @@ import icyllis.modernui.gui.element.MenuHomeBG;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.IGuiModule;
 import icyllis.modernui.gui.widget.MenuButton;
-import icyllis.modernui.gui.widget.StateAnimatedButton;
 import icyllis.modernui.system.ReferenceLibrary;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
@@ -40,14 +39,14 @@ public class IngameMenuHome implements IGuiModule {
 
     private List<IElement> elements = new ArrayList<>();
 
-    private List<IGuiEventListener> listeners = new ArrayList<>();
+    private List<MenuButton> buttons = new ArrayList<>();
 
     public IngameMenuHome() {
         minecraft = Minecraft.getInstance();
         elements.add(new MenuHomeBG());
         Consumer<MenuButton> consumer = s -> {
             elements.add(s);
-            listeners.add(s.listener);
+            buttons.add(s);
         };
         consumer.accept(new MenuButton.A(w -> 8f, h -> 8f, "Back to Game", ReferenceLibrary.ICONS, 32, 32, 128, 0, 0.5f, () -> minecraft.displayGuiScreen(null)));
         consumer.accept(new MenuButton.B(w -> 8f, h -> 44f, "Advancements", ReferenceLibrary.ICONS, 32, 32, 32, 0, 0.5f, () -> {}, i -> i < 0));
@@ -64,6 +63,11 @@ public class IngameMenuHome implements IGuiModule {
 
     @Override
     public List<? extends IGuiEventListener> getEventListeners() {
-        return listeners;
+        return buttons;
+    }
+
+    @Override
+    public void onModuleChanged(int newID) {
+        buttons.forEach(e -> e.onModuleChanged(newID));
     }
 }

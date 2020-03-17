@@ -19,13 +19,15 @@
 package icyllis.modernui.gui.module;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.gui.component.option.SelectiveOptionEntry;
+import icyllis.modernui.gui.component.option.*;
 import icyllis.modernui.gui.element.IElement;
-import icyllis.modernui.gui.component.option.OptionCategory;
-import icyllis.modernui.gui.component.option.OptionEntry;
 import icyllis.modernui.gui.master.IGuiModule;
 import icyllis.modernui.gui.window.SettingScrollWindow;
+import net.minecraft.client.GameSettings;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
+import net.minecraft.client.gui.screen.ConfirmScreen;
+import net.minecraft.client.gui.screen.OptionsScreen;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,8 +40,11 @@ public class GeneralSetting implements IGuiModule {
 
     public GeneralSetting() {
         SettingScrollWindow window = new SettingScrollWindow();
+        GameSettings gameSettings = Minecraft.getInstance().gameSettings;
         OptionCategory category = new OptionCategory("Game",
-                new SelectiveOptionEntry(window, "Difficulty", Lists.newArrayList("Peaceful", "Easy", "Normal", "Hard"), 1));
+                new SelectiveOptionEntry(window, "Difficulty", Lists.newArrayList("Peaceful", "Easy", "Normal", "Hard"), 1),
+                new BooleanOptionEntry(window, "Lock World Difficulty", false),
+                new SliderOptionEntry(window, "FOV", 30, 110, (float) gameSettings.fov, 1, v -> gameSettings.fov = v));
         /*OptionCategory category1 = new OptionCategory("Rule",
                 new OptionEntry("Keep Inventory"),
                 new OptionEntry("Send Commands Feedback"),

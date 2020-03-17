@@ -16,21 +16,14 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.system;
+package icyllis.modernui.gui.component.option;
 
-import net.minecraft.util.ResourceLocation;
+import com.google.common.collect.Lists;
+import icyllis.modernui.gui.window.SettingScrollWindow;
 
-public class ReferenceLibrary {
+public class BooleanOptionEntry extends SelectiveOptionEntry {
 
-    public static final ResourceLocation BUTTON = new ResourceLocation(ModernUI.MODID, "gui/button.png");
-
-    public static final ResourceLocation ICONS = new ResourceLocation(ModernUI.MODID, "gui/gui_icon.png");
-
-    public static final char CHECK_MARK = '\u2714';
-
-    public static final char BLACK_CIRCLE = '\u25cf';
-
-    public static final String CHECK_MARK_STRING = String.valueOf(CHECK_MARK);
-
-    public static final String BLACK_CIRCLE_STRING = String.valueOf(BLACK_CIRCLE);
+    public BooleanOptionEntry(SettingScrollWindow window, String optionTitle, boolean originalValue) {
+        super(window, optionTitle, Lists.newArrayList("Yes", "No"), originalValue ? 0 : 1);
+    }
 }

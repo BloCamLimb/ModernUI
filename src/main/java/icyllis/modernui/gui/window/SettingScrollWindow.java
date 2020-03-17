@@ -21,6 +21,7 @@ package icyllis.modernui.gui.window;
 import icyllis.modernui.gui.component.DropDownList;
 import icyllis.modernui.gui.component.option.OptionCategory;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public class SettingScrollWindow extends ScrollWindow<OptionCategory> {
@@ -36,10 +37,24 @@ public class SettingScrollWindow extends ScrollWindow<OptionCategory> {
     }
 
     @Override
+    public void resize(int width, int height) {
+        super.resize(width, height);
+        dropDownList = null;
+    }
+
+    @Override
+    public void drawEndExtra() {
+        if (dropDownList != null) {
+            dropDownList.draw();
+        }
+    }
+
+    @Override
     public void mouseMoved(double mouseX, double mouseY) {
-        super.mouseMoved(mouseX, mouseY);
         if (dropDownList != null) {
             dropDownList.mouseMoved(mouseX, mouseY);
+        } else {
+            super.mouseMoved(mouseX, mouseY);
         }
     }
 
@@ -48,6 +63,7 @@ public class SettingScrollWindow extends ScrollWindow<OptionCategory> {
         if (dropDownList != null) {
             dropDownList.mouseClicked(mouseX, mouseY, mouseButton);
             dropDownList = null;
+            super.mouseMoved(mouseX, mouseY);
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, mouseButton);
@@ -59,5 +75,13 @@ public class SettingScrollWindow extends ScrollWindow<OptionCategory> {
             return false;
         }
         return super.mouseScrolled(mouseX, mouseY, scrollAmount);
+    }
+
+    public boolean hasDropDownList() {
+        return dropDownList != null;
+    }
+
+    public void setDropDownList(@Nonnull DropDownList list) {
+        this.dropDownList = list;
     }
 }

@@ -30,6 +30,8 @@ public class ScrollList<T extends ScrollEntry> {
 
     private List<T> entries = new ArrayList<>();
 
+    private List<T> visibleEntries = new ArrayList<>();
+
     private float maxHeight;
 
     public ScrollList(ScrollWindow<T> window) {
@@ -38,31 +40,35 @@ public class ScrollList<T extends ScrollEntry> {
 
     public void draw(float centerX, float topY, float yOffset, float bottomY, float currentTime) {
         float baseY = topY - yOffset;
-        int accHeight = 0;
         boolean startDraw = false;
+        float accHeight;
+        visibleEntries.clear();
         for (T entry : entries) {
+            accHeight = entry.height + entry.lastHeight;
             if (!startDraw) {
-                accHeight += entry.height;
                 if (accHeight >= yOffset) {
                     startDraw = true;
                 }
             }
             if (startDraw) {
-                entry.draw(centerX, baseY, bottomY, currentTime);
+                visibleEntries.add(entry);
+                if (accHeight >= bottomY) {
+                    break;
+                }
             }
-            baseY += entry.height;
-            if (startDraw && baseY >= bottomY) {
-                break;
-            }
+        }
+        for (T entry : visibleEntries) {
+            entry.draw(centerX, baseY + entry.lastHeight, bottomY, currentTime);
         }
     }
 
     /**
      * Check if mouse is in scroll window width first!
      */
-    public void mouseMoved(float topY, float yOffset, float bottomY, double rcx, double mouseY) {
+    public void mouseMoved(float topY, float yOffset, double deltaCenterX, double mouseX, double mouseY) {
         float baseY = topY - yOffset;
-        boolean finish = false;
+        double rMouseY = mouseY - baseY;
+        /*boolean finish = false;
         for (T entry : entries) {
             if (!finish) {
                 if (mouseY >= baseY && mouseY <= baseY + entry.height) {
@@ -76,14 +82,15 @@ public class ScrollList<T extends ScrollEntry> {
             } else {
                 entry.setMouseHovered(false);
             }
-        }
+        }*/
+        visibleEntries.forEach(e -> e.mouseMoved(deltaCenterX, rMouseY - e.lastHeight, mouseX, mouseY));
     }
 
-    public boolean mouseClicked(float topY, float yOffset, float bottomY, double rcx, double mouseY, int mouseButton) {
+    public boolean mouseClicked(float topY, float yOffset, float bottomY, double deltaCenterX, double mouseX, double mouseY, int mouseButton) {
         float baseY = topY - yOffset;
         for (T entry : entries) {
             if (mouseY >= baseY && mouseY <= baseY + entry.height) {
-                if (entry.mouseClicked(rcx, mouseY - baseY, mouseButton)) {
+                if (entry.mouseClicked(deltaCenterX, mouseY - baseY, mouseX, mouseY, mouseButton)) {
                     return true;
                 }
                 break;
@@ -97,11 +104,12 @@ public class ScrollList<T extends ScrollEntry> {
         return false;
     }
 
-    public boolean mouseReleased(float topY, float yOffset, float bottomY, double rcx, double mouseY, int mouseButton) {
+    public boolean mouseReleased(float topY, float yOffset, float bottomY, double deltaCenterX, double mouseX, double mouseY, int mouseButton) {
         float baseY = topY - yOffset;
-        for (T entry : entries) {
+        double rMouseY = mouseY - baseY;
+        /*for (T entry : entries) {
             if (mouseY >= baseY && mouseY <= baseY + entry.height) {
-                if (entry.mouseReleased(rcx, mouseY - baseY, mouseButton)) {
+                if (entry.mouseReleased(rcx, mouseY - baseY, mouseX, mouseY, mouseButton)) {
                     return true;
                 }
                 break;
@@ -110,16 +118,22 @@ public class ScrollList<T extends ScrollEntry> {
             }
             if (baseY >= bottomY) {
                 break;
+            }
+        }*/
+        for (T entry : visibleEntries) {
+            if (entry.mouseReleased(deltaCenterX, rMouseY - entry.lastHeight, mouseX, mouseY, mouseButton)) {
+                return true;
             }
         }
         return false;
     }
 
-    public boolean mouseDragged(float topY, float yOffset, float bottomY, double rcx, double mouseY, int mouseButton, double rmx, double rmy) {
+    public boolean mouseDragged(float topY, float yOffset, float bottomY, double deltaCenterX, double mouseX, double mouseY, int mouseButton, double deltaX, double deltaY) {
         float baseY = topY - yOffset;
-        for (T entry : entries) {
+        double rMouseY = mouseY - baseY;
+        /*for (T entry : entries) {
             if (mouseY >= baseY && mouseY <= baseY + entry.height) {
-                if (entry.mouseDragged(rcx, mouseY - baseY, mouseButton, rmx, rmy)) {
+                if (entry.mouseDragged(deltaCenterX, mouseY - baseY, mouseX, mouseY, mouseButton, deltaX, deltaY)) {
                     return true;
                 }
                 break;
@@ -128,6 +142,11 @@ public class ScrollList<T extends ScrollEntry> {
             }
             if (baseY >= bottomY) {
                 break;
+            }
+        }*/
+        for (T entry : visibleEntries) {
+            if (entry.mouseDragged(deltaCenterX, rMouseY - entry.lastHeight, mouseX, mouseY, mouseButton, deltaX, deltaY)) {
+                return true;
             }
         }
         return false;
@@ -158,12 +177,14 @@ public class ScrollList<T extends ScrollEntry> {
     public void addEntry(T entry) {
         entries.add(entry);
         maxHeight += entry.height;
+        resizeEntries();
         window.onTotalHeightChanged();
     }
 
     public void addEntries(Collection<T> collection) {
         entries.addAll(collection);
         maxHeight += collection.stream().mapToInt(t -> t.height).sum();
+        resizeEntries();
         window.onTotalHeightChanged();
     }
 
@@ -171,7 +192,20 @@ public class ScrollList<T extends ScrollEntry> {
         if (entries.remove(entry)) {
             maxHeight -= entry.height;
         }
+        resizeEntries();
         window.onTotalHeightChanged();
+    }
+
+    private void resizeEntries() {
+        entries.forEach(e -> e.lastHeight = 0);
+        int size = entries.size();
+        if (size > 1) {
+            for (int i = 1; i < size; i++) {
+                T entry = entries.get(i);
+                T lastEntry = entries.get(i - 1);
+                entry.lastHeight = lastEntry.height + lastEntry.lastHeight;
+            }
+        }
     }
 
     public void clearEntries() {

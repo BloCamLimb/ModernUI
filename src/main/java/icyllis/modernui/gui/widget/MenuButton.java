@@ -18,39 +18,67 @@
 
 package icyllis.modernui.gui.widget;
 
-import icyllis.modernui.gui.element.IElement;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.animation.HSiAnimation;
+import icyllis.modernui.gui.element.Element;
 import icyllis.modernui.gui.element.SideFrameText;
 import icyllis.modernui.gui.element.StandardTexture;
 import icyllis.modernui.gui.master.GlobalModuleManager;
+import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.util.ResourceLocation;
 
 import java.util.function.Function;
 import java.util.function.IntPredicate;
 
-public class MenuButton implements IElement {
+public class MenuButton extends Element implements IGuiEventListener {
 
-    public StandardEventListener listener;
+    protected FixedShape shape;
+
+    protected boolean mouseHovered = false;
 
     protected StandardTexture texture;
 
     protected HSiAnimation textureOpacityAnimation;
 
+    protected Runnable leftClick;
+
+    protected boolean lock = false;
+
     public MenuButton(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, ResourceLocation res, float sizeW, float sizeH, float u, float v, float scale, Runnable onLeftClick) {
-        listener = new StandardEventListener(xResizer, yResizer, new FixedShape.Rect(sizeW * scale, sizeH * scale));
+        super(xResizer, yResizer);
+        shape = new FixedShape.Rect(sizeW * scale, sizeH * scale);
 
         texture = new StandardTexture(xResizer, yResizer, sizeW, sizeH, res, u, v, 0x00808080, scale);
         textureOpacityAnimation = new HSiAnimation(0.5f, 1.0f, 4, value -> texture.tintR = texture.tintG = texture.tintB = value);
 
-        addAnimationEvent();
-        listener.addLeftClick(onLeftClick);
+        leftClick = onLeftClick;
     }
 
-    protected void addAnimationEvent() {
-        listener.addHoverOn(() -> textureOpacityAnimation.setStatus(true));
-        listener.addHoverOff(() -> textureOpacityAnimation.setStatus(false));
+    @Override
+    public void mouseMoved(double mouseX, double mouseY) {
+        boolean prev = this.mouseHovered;
+        mouseHovered = shape.isMouseInShape(x, y, mouseX, mouseY);
+        if (prev != mouseHovered) {
+            onMouseHoverChange();
+        }
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        if (mouseHovered && mouseButton == 0) {
+            if (!lock)
+                leftClick.run();
+        }
+        return false;
+    }
+
+    protected void onMouseHoverChange() {
+        if (mouseHovered) {
+            textureOpacityAnimation.setStatus(true);
+        } else if (!lock) {
+            textureOpacityAnimation.setStatus(false);
+        }
     }
 
     @Override
@@ -61,44 +89,50 @@ public class MenuButton implements IElement {
 
     @Override
     public void resize(int width, int height) {
+        super.resize(width, height);
         texture.resize(width, height);
-        listener.resize(width, height);
     }
 
-    protected void onModuleChanged(int id) {
+    public void onModuleChanged(int id) {
 
     }
 
     public static class A extends MenuButton {
 
-        private SideFrameText textComponent;
+        private SideFrameText sideFrameText;
 
         public A(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, String text, ResourceLocation res, float sizeW, float sizeH, float u, float v, float scale, Runnable onLeftClick) {
             super(xResizer, yResizer, res, sizeW, sizeH, u, v, scale, onLeftClick);
-            this.textComponent = new SideFrameText(w -> xResizer.apply(w) + sizeW * scale + 15, h -> yResizer.apply(h) + (sizeH * scale) / 2 - 4, text);
+            this.sideFrameText = new SideFrameText(w -> xResizer.apply(w) + sizeW * scale + 15, h -> yResizer.apply(h) + (sizeH * scale) / 2 - 4, text);
             GlobalModuleManager.INSTANCE.addAnimation(new Animation(3)
                     .applyTo(new Applier(0, 1, value -> texture.opacity = value))
                     .withDelay(1));
-            listener.addHoverOn(() -> this.textComponent.startOpen());
-            listener.addHoverOff(() -> this.textComponent.startClose());
+        }
+
+        @Override
+        protected void onMouseHoverChange() {
+            super.onMouseHoverChange();
+            if (mouseHovered) {
+                this.sideFrameText.startOpen();
+            } else {
+                this.sideFrameText.startClose();
+            }
         }
 
         @Override
         public void draw(float currentTime) {
             super.draw(currentTime);
-            textComponent.draw(currentTime);
+            sideFrameText.draw(currentTime);
         }
 
         @Override
         public void resize(int width, int height) {
             super.resize(width, height);
-            textComponent.resize(width, height);
+            sideFrameText.resize(width, height);
         }
     }
 
     public static class B extends A {
-
-        private boolean lock = false;
 
         private IntPredicate availability;
 
@@ -108,16 +142,7 @@ public class MenuButton implements IElement {
         }
 
         @Override
-        protected void addAnimationEvent() {
-            listener.addHoverOn(() -> textureOpacityAnimation.setStatus(true));
-            listener.addHoverOff(() -> {
-                if(!lock)
-                    textureOpacityAnimation.setStatus(false);
-            });
-        }
-
-        @Override
-        protected void onModuleChanged(int id) {
+        public void onModuleChanged(int id) {
             super.onModuleChanged(id);
             lock = availability.test(id);
             if(!lock)

@@ -18,11 +18,9 @@
 
 package icyllis.modernui.gui.element;
 
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.master.DrawTools;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
@@ -53,19 +51,38 @@ public class MenuSettingsBG extends Element {
 
     @Override
     public void draw(float currentTime) {
-        DrawTools.fillRectWithColor(x, y, x + sizeW, y + sizeH, 0, 0, 0, opacity);
-        DrawTools.fillRectWithColor(x, y, x + sizeW, y + 20, 0, 0, 0, opacity);
-        //DrawTools.fillRectWithColor(x, y + 19.49f, x + sizeW, y + 20, 0.55f, 0.55f, 0.55f, opacity * 1.8f);
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();
-        GlStateManager.disableTexture();
-        bufferBuilder.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION);
-        GL11.glLineWidth(1.0f);
-        RenderSystem.color4f(0.55f,0.55f,0.55f,0.9f);
-        bufferBuilder.pos(x, y + 20f, 0.0D).endVertex();
-        bufferBuilder.pos(x + sizeW, y + 20f, 0.0D).endVertex();
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableTexture();
+        bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION);
+        RenderSystem.color4f(0, 0, 0, opacity);
+        bufferBuilder.pos(x, y + sizeH, 0.0D).endVertex();
+        bufferBuilder.pos(x + sizeW, y + sizeH, 0.0D).endVertex();
+        bufferBuilder.pos(x + sizeW, y, 0.0D).endVertex();
+        bufferBuilder.pos(x, y, 0.0D).endVertex();
         tessellator.draw();
-        GlStateManager.enableTexture();
+        bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION);
+        bufferBuilder.pos(x, y + 20, 0.0D).endVertex();
+        bufferBuilder.pos(x + sizeW, y + 20, 0.0D).endVertex();
+        bufferBuilder.pos(x + sizeW, y, 0.0D).endVertex();
+        bufferBuilder.pos(x, y, 0.0D).endVertex();
+        tessellator.draw();
+        bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION);
+        bufferBuilder.pos(x, y + sizeH, 0.0D).endVertex();
+        bufferBuilder.pos(x + sizeW, y + sizeH, 0.0D).endVertex();
+        bufferBuilder.pos(x + sizeW, y + sizeH - 20, 0.0D).endVertex();
+        bufferBuilder.pos(x, y + sizeH - 20, 0.0D).endVertex();
+        tessellator.draw();
+        bufferBuilder.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);
+        GL11.glLineWidth(1.0f);
+        bufferBuilder.pos(x, y + 20, 0.0D).color(140, 140, 140, 220).endVertex();
+        bufferBuilder.pos(x + sizeW, y + 20, 0.0D).color(140, 140, 140, 220).endVertex();
+        bufferBuilder.pos(x, y + sizeH - 19.5, 0.0D).color(140, 140, 140, 220).endVertex();
+        bufferBuilder.pos(x + sizeW, y + sizeH - 19.5, 0.0D).color(140, 140, 140, 220).endVertex();
+        tessellator.draw();
+        RenderSystem.enableTexture();
     }
 
     @Override

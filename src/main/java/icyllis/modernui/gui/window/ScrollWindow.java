@@ -139,7 +139,7 @@ public class ScrollWindow<T extends ScrollEntry> extends Element implements IGui
     public void mouseMoved(double mouseX, double mouseY) {
         scrollbar.mouseMoved(mouseX, mouseY);
         if (isMouseOver(mouseX, mouseY)) {
-            scrollList.mouseMoved(y, getVisibleOffset(), bottom, mouseX - getCenterX(), mouseY);
+            scrollList.mouseMoved(y, getVisibleOffset(), mouseX - getCenterX(), mouseX, mouseY);
         }
     }
 
@@ -149,7 +149,7 @@ public class ScrollWindow<T extends ScrollEntry> extends Element implements IGui
             return true;
         }
         if (isMouseOver(mouseX, mouseY)) {
-            return scrollList.mouseClicked(y, getVisibleOffset(), bottom, mouseX - getCenterX(), mouseY, mouseButton);
+            return scrollList.mouseClicked(y, getVisibleOffset(), bottom, mouseX - getCenterX(), mouseX, mouseY, mouseButton);
         }
         return false;
     }
@@ -160,7 +160,7 @@ public class ScrollWindow<T extends ScrollEntry> extends Element implements IGui
             return true;
         }
         if (isMouseOver(mouseX, mouseY)) {
-            return scrollList.mouseReleased(y, getVisibleOffset(), bottom, mouseX - getCenterX(), mouseY, mouseButton);
+            return scrollList.mouseReleased(y, getVisibleOffset(), bottom, mouseX - getCenterX(), mouseX, mouseY, mouseButton);
         }
         return false;
     }
@@ -171,7 +171,7 @@ public class ScrollWindow<T extends ScrollEntry> extends Element implements IGui
             return true;
         }
         if (isMouseOver(mouseX, mouseY)) {
-            return scrollList.mouseDragged(y, getVisibleOffset(), bottom, mouseX - getCenterX(), mouseY, mouseButton, rmx, rmy);
+            return scrollList.mouseDragged(y, getVisibleOffset(), bottom, mouseX - getCenterX(), mouseX, mouseY, mouseButton, rmx, rmy);
         }
         return false;
     }

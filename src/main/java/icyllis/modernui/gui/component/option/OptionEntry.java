@@ -27,39 +27,30 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import org.lwjgl.opengl.GL11;
 
-import javax.annotation.Nullable;
-import java.util.List;
-
 /**
  * Single option line in settings interface
  */
-public class OptionEntry<T> {
+public class OptionEntry {
 
     protected IFontRenderer fontRenderer = FontRendererTools.CURRENT_RENDERER;
 
     protected final SettingScrollWindow window;
 
-    public String optionName;
+    public String optionTitle;
 
-    public String[] desc = new String[0];
-
-    public final int originalOption;
-
-    public int currentOption;
-
-    public List<T> options;
+    //public String[] desc = new String[0];
 
     public boolean mouseHovered;
+
+    protected float textBrightness = 0.9f;
 
     /*public OptionEntry(String optionName, T originalOption, List<T> options) {
         this(optionName, originalOption, options, null);
     }*/
 
-    public OptionEntry(SettingScrollWindow windowString, String optionName, List<T> options, int originalIndex) {
+    public OptionEntry(SettingScrollWindow windowString, String optionTitle) {
         this.window = windowString;
-        this.optionName = optionName;
-        this.currentOption = this.originalOption = originalIndex;
-        this.options = options;
+        this.optionTitle = optionTitle;
         /*if (desc != null)
             this.desc = FontRendererTools.splitStringToWidth(desc, 150);*/
 
@@ -68,10 +59,10 @@ public class OptionEntry<T> {
     public final void draw(float centerX, float y, float currentTime) {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();
-        fontRenderer.drawString(optionName, centerX - 160, y + 6, 0.75f, 0.75f, 0.75f, 1, 0);
-        if (desc.length > 0) {
+        fontRenderer.drawString(optionTitle, centerX - 160, y + 6, textBrightness, textBrightness, textBrightness, 1, 0);
+        /*if (desc.length > 0) {
             //TODO
-        }
+        }*/
         drawExtra(centerX, y, currentTime);
         RenderSystem.disableTexture();
         bufferBuilder.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);
@@ -86,11 +77,39 @@ public class OptionEntry<T> {
 
     }
 
-    public void setMouseHovered(boolean mouseHovered) {
-        this.mouseHovered = mouseHovered;
+    public void mouseMoved(double deltaCenterX, double deltaY, double mouseX, double mouseY) {
+
     }
 
-    public boolean mouseClicked(double rcx, double rty, int mouseButton) {
+    public void setMouseHovered(boolean mouseHovered) {
+        boolean prev = this.mouseHovered;
+        this.mouseHovered = mouseHovered;
+        if (prev != mouseHovered) {
+            if (mouseHovered) {
+                onMouseHoverOn();
+            } else {
+                onMouseHoverOff();
+            }
+        }
+    }
+
+    protected void onMouseHoverOn() {
+        textBrightness = 1.0f;
+    }
+
+    protected void onMouseHoverOff() {
+        textBrightness = 0.9f;
+    }
+
+    public boolean mouseClicked(double deltaCenterX, double deltaY, double mouseX, double mouseY, int mouseButton) {
+        return false;
+    }
+
+    public boolean mouseReleased(double deltaCenterX, double deltaY, double mouseX, double mouseY, int mouseButton) {
+        return false;
+    }
+
+    public boolean mouseDragged(double deltaCenterX, double deltaY, double mouseX, double mouseY, int mouseButton, double deltaMouseX, double deltaMouseY) {
         return false;
     }
 

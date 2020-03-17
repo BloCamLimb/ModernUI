@@ -18,12 +18,15 @@
 
 package icyllis.modernui.gui.element;
 
-import icyllis.modernui.api.ModernUI_API;
+import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.gui.master.GlobalModuleManager;
-import net.minecraft.client.gui.AbstractGui;
+import net.minecraft.client.renderer.BufferBuilder;
+import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import org.lwjgl.opengl.GL11;
 
 public class MenuHomeBG implements IElement {
 
@@ -37,8 +40,24 @@ public class MenuHomeBG implements IElement {
 
     @Override
     public void draw(float currentTime) {
-        DrawTools.fillRectWithColor(0, 0, sizeW, height, 0, 0, 0, 0.7f);
-        DrawTools.fillRectWithColor(sizeW - 0.51f, 0, sizeW, height, 0.55f, 0.55f, 0.55f, 0.9f);
+        Tessellator tessellator = Tessellator.getInstance();
+        BufferBuilder bufferbuilder = tessellator.getBuffer();
+        RenderSystem.enableBlend();
+        RenderSystem.disableTexture();
+        RenderSystem.defaultBlendFunc();
+        bufferbuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+        bufferbuilder.pos(0, height, 0.0D).color(0, 0, 0, 180).endVertex();
+        bufferbuilder.pos(sizeW, height, 0.0D).color(0, 0, 0, 180).endVertex();
+        bufferbuilder.pos(sizeW, 0, 0.0D).color(0, 0, 0, 180).endVertex();
+        bufferbuilder.pos(0, 0, 0.0D).color(0, 0, 0, 180).endVertex();
+        tessellator.draw();
+        bufferbuilder.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);
+        GL11.glLineWidth(1.0F);
+        bufferbuilder.pos(sizeW, 0, 0.0D).color(140, 140, 140, 220).endVertex();
+        bufferbuilder.pos(sizeW, height, 0.0D).color(140, 140, 140, 220).endVertex();
+        tessellator.draw();
+        RenderSystem.enableTexture();
+        RenderSystem.disableBlend();
     }
 
     @Override
