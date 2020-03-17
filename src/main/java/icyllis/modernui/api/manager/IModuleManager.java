@@ -92,6 +92,8 @@ public interface IModuleManager {
      */
     int getTicks();
 
+    int getWindowHeight();
+
     /**
      * Get extra data from server side
      * @return packet buffer

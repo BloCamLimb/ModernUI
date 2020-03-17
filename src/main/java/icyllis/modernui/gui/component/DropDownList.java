@@ -18,6 +18,7 @@
 
 package icyllis.modernui.gui.component;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.FontRendererTools;
 import icyllis.modernui.font.IFontRenderer;
@@ -49,7 +50,7 @@ public class DropDownList implements IGuiEventListener {
 
     private final Consumer<Integer> receiver;
 
-    private float x, y;
+    private float x2, y;
 
     private float width, height;
 
@@ -82,37 +83,40 @@ public class DropDownList implements IGuiEventListener {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();
 
-        float right = x + width;
+        float left = x2 - width;
         float bottom = upward ? y + vHeight : y + height;
 
         bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
         if (upward) {
-            bufferBuilder.pos(x, bottom, 0.0D).color(8, 8, 8, 80).endVertex();
-            bufferBuilder.pos(right, bottom, 0.0D).color(8, 8, 8, 80).endVertex();
-            bufferBuilder.pos(right, bottom - height, 0.0D).color(8, 8, 8, 80).endVertex();
-            bufferBuilder.pos(x, bottom - height, 0.0D).color(8, 8, 8, 80).endVertex();
+            bufferBuilder.pos(left, bottom, 0.0D).color(8, 8, 8, 160).endVertex();
+            bufferBuilder.pos(x2, bottom, 0.0D).color(8, 8, 8, 160).endVertex();
+            bufferBuilder.pos(x2, bottom - height, 0.0D).color(8, 8, 8, 160).endVertex();
+            bufferBuilder.pos(left, bottom - height, 0.0D).color(8, 8, 8, 160).endVertex();
         } else {
-            bufferBuilder.pos(x, bottom, 0.0D).color(8, 8, 8, 80).endVertex();
-            bufferBuilder.pos(right, bottom, 0.0D).color(8, 8, 8, 80).endVertex();
-            bufferBuilder.pos(right, y, 0.0D).color(8, 8, 8, 80).endVertex();
-            bufferBuilder.pos(x, y, 0.0D).color(8, 8, 8, 80).endVertex();
+            bufferBuilder.pos(left, bottom, 0.0D).color(8, 8, 8, 160).endVertex();
+            bufferBuilder.pos(x2, bottom, 0.0D).color(8, 8, 8, 160).endVertex();
+            bufferBuilder.pos(x2, y, 0.0D).color(8, 8, 8, 160).endVertex();
+            bufferBuilder.pos(left, y, 0.0D).color(8, 8, 8, 160).endVertex();
         }
         tessellator.draw();
 
+        GL11.glEnable(GL11.GL_LINE_SMOOTH);
+        GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
         bufferBuilder.begin(GL11.GL_LINE_LOOP, DefaultVertexFormats.POSITION_COLOR);
         GL11.glLineWidth(1.0F);
         if (upward) {
-            bufferBuilder.pos(x, bottom, 0.0D).color(255, 255, 255, 80).endVertex();
-            bufferBuilder.pos(right, bottom, 0.0D).color(255, 255, 255, 80).endVertex();
-            bufferBuilder.pos(right, bottom - height, 0.0D).color(255, 255, 255, 80).endVertex();
-            bufferBuilder.pos(x, bottom - height, 0.0D).color(255, 255, 255, 80).endVertex();
+            bufferBuilder.pos(left, bottom, 0.0D).color(255, 255, 255, 80).endVertex();
+            bufferBuilder.pos(x2, bottom, 0.0D).color(255, 255, 255, 80).endVertex();
+            bufferBuilder.pos(x2, bottom - height, 0.0D).color(255, 255, 255, 80).endVertex();
+            bufferBuilder.pos(left, bottom - height, 0.0D).color(255, 255, 255, 80).endVertex();
         } else {
-            bufferBuilder.pos(x, bottom, 0.0D).color(255, 255, 255, 80).endVertex();
-            bufferBuilder.pos(right, bottom, 0.0D).color(255, 255, 255, 80).endVertex();
-            bufferBuilder.pos(right, y, 0.0D).color(255, 255, 255, 80).endVertex();
-            bufferBuilder.pos(x, y, 0.0D).color(255, 255, 255, 80).endVertex();
+            bufferBuilder.pos(left, bottom, 0.0D).color(255, 255, 255, 80).endVertex();
+            bufferBuilder.pos(x2, bottom, 0.0D).color(255, 255, 255, 80).endVertex();
+            bufferBuilder.pos(x2, y, 0.0D).color(255, 255, 255, 80).endVertex();
+            bufferBuilder.pos(left, y, 0.0D).color(255, 255, 255, 80).endVertex();
         }
         tessellator.draw();
+        GL11.glDisable(GL11.GL_LINE_SMOOTH);
 
         RenderSystem.enableTexture();
         for (int i = 0; i < list.size(); i++) {
@@ -121,23 +125,23 @@ public class DropDownList implements IGuiEventListener {
             if (i == hoveredIndex) {
                 RenderSystem.disableTexture();
                 bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
-                bufferBuilder.pos(x, cy + ENTRY_HEIGHT, 0.0D).color(128, 128, 128, 80).endVertex();
-                bufferBuilder.pos(right, cy + ENTRY_HEIGHT, 0.0D).color(128, 128, 128, 80).endVertex();
-                bufferBuilder.pos(right, cy, 0.0D).color(128, 128, 128, 80).endVertex();
-                bufferBuilder.pos(x, cy, 0.0D).color(128, 128, 128, 80).endVertex();
+                bufferBuilder.pos(left, cy + ENTRY_HEIGHT, 0.0D).color(128, 128, 128, 80).endVertex();
+                bufferBuilder.pos(x2, cy + ENTRY_HEIGHT, 0.0D).color(128, 128, 128, 80).endVertex();
+                bufferBuilder.pos(x2, cy, 0.0D).color(128, 128, 128, 80).endVertex();
+                bufferBuilder.pos(left, cy, 0.0D).color(128, 128, 128, 80).endVertex();
                 tessellator.draw();
                 RenderSystem.enableTexture();
             }
             if (selectedIndex == i) {
-                fontRenderer.drawString(text, right - 3, cy + 2, 0.6f, 0.87f, 0.94f, textAlpha, 0.5f);
+                fontRenderer.drawString(text, x2 - 3, cy + 2, 0.6f, 0.87f, 0.94f, textAlpha, 0.5f);
             } else {
-                fontRenderer.drawString(text, right - 3, cy + 2, 1, 1, 1, textAlpha, 0.5f);
+                fontRenderer.drawString(text, x2 - 3, cy + 2, 1, 1, 1, textAlpha, 0.5f);
             }
         }
     }
 
-    public void setPos(float x, float y, float height) {
-        this.x = x;
+    public void setPos(float x2, float y, float height) {
+        this.x2 = x2;
         this.y = y;
         float vH = vHeight + reservedSpace;
         upward = y + vH >= height;
@@ -162,14 +166,14 @@ public class DropDownList implements IGuiEventListener {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        if (mouseButton == 0 && hoveredIndex != -1) {
-            receiver.accept(hoveredIndex);
+        if (mouseButton == 0) {
+            receiver.accept(hoveredIndex == -1 ? selectedIndex : hoveredIndex);
         }
         return true;
     }
 
     @Override
     public boolean isMouseOver(double mouseX, double mouseY) {
-        return mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height;
+        return mouseX >= x2 - width && mouseX <= x2 && mouseY >= y && mouseY <= y + height;
     }
 }

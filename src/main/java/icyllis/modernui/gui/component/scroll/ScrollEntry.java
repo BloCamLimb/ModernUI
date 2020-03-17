@@ -18,18 +18,11 @@
 
 package icyllis.modernui.gui.component.scroll;
 
-import icyllis.modernui.font.FontRendererTools;
-import icyllis.modernui.font.IFontRenderer;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.TextureManager;
-
 public abstract class ScrollEntry {
 
-    protected TextureManager textureManager = Minecraft.getInstance().textureManager;
-
-    protected IFontRenderer fontRenderer = FontRendererTools.CURRENT_RENDERER;
-
     public int height;
+
+    public float lastHeight;
 
     public ScrollEntry(int height) {
         this.height = height;
@@ -40,41 +33,37 @@ public abstract class ScrollEntry {
     /**
      * Called when mouseY move to this height range, whatever mouseX is
      * Use less this
-     * @param rcx Relative move to Center X (Range: -scrollWindowWidth / 2 <= rcx <= scrollWindowWidth / 2)
-     * @param rty Relative move to Top Y (Range: 0 <= rty <= this.height)
+     * @param deltaCenterX Relative move to Center X (Range: -scrollWindowWidth / 2 <= deltaCenterX <= scrollWindowWidth / 2)
+     * @param deltaY Relative move to Top Y (Range: 0 <= deltaY <= this.height)
      */
-    public void mouseMoved(double rcx, double rty) {
-
-    }
-
-    public void setMouseHovered(boolean mouseHovered) {
+    public void mouseMoved(double deltaCenterX, double deltaY, double mouseX, double mouseY) {
 
     }
 
     /**
      * Same as above
-     * @param rcx Relative move to Center X (Range: -scrollWindowWidth / 2 <= rcx <= scrollWindowWidth / 2)
-     * @param rty Relative move to Top Y (Range: 0 <= rty <= this.height)
+     * @param deltaCenterX Relative move to Center X (Range: -scrollWindowWidth / 2 <= deltaCenterX <= scrollWindowWidth / 2)
+     * @param deltaY Relative move to Top Y (Range: 0 <= deltaY <= this.height)
      */
-    public boolean mouseClicked(double rcx, double rty, int mouseButton) {
+    public boolean mouseClicked(double deltaCenterX, double deltaY, double mouseX, double mouseY, int mouseButton) {
         return false;
     }
 
     /**
      * Same as above
-     * @param rcx Relative move to Center X (Range: -scrollWindowWidth / 2 <= rcx <= scrollWindowWidth / 2)
-     * @param rty Relative move to Top Y (Range: 0 <= rty <= this.height)
+     * @param deltaCenterX Relative move to Center X (Range: -scrollWindowWidth / 2 <= deltaCenterX <= scrollWindowWidth / 2)
+     * @param deltaY Relative move to Top Y (Range: 0 <= deltaY <= this.height)
      */
-    public boolean mouseReleased(double rcx, double rty, int mouseButton) {
+    public boolean mouseReleased(double deltaCenterX, double deltaY, double mouseX, double mouseY, int mouseButton) {
         return false;
     }
 
     /**
      * Same as above
-     * @param rcx Relative move to Center X (Range: -scrollWindowWidth / 2 <= rcx <= scrollWindowWidth / 2)
-     * @param rty Relative move to Top Y (Range: 0 <= rty <= this.height)
+     * @param deltaCenterX Relative move to Center X (Range: -scrollWindowWidth / 2 <= deltaCenterX <= scrollWindowWidth / 2)
+     * @param deltaY Relative move to Top Y (Range: 0 <= deltaY <= this.height)
      */
-    public boolean mouseDragged(double rcx, double rty, int mouseButton, double rmx, double rmy) {
+    public boolean mouseDragged(double deltaCenterX, double deltaY, double mouseX, double mouseY, int mouseButton, double deltaMouseX, double deltaMouseY) {
         return false;
     }
 

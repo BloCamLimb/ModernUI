@@ -181,6 +181,11 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager {
         return ticks;
     }
 
+    @Override
+    public int getWindowHeight() {
+        return height;
+    }
+
     public void setExtraData(PacketBuffer extraData) {
         this.extraData = extraData;
     }

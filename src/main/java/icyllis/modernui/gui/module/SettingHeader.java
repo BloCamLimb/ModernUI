@@ -18,13 +18,13 @@
 
 package icyllis.modernui.gui.module;
 
-import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.element.IElement;
 import icyllis.modernui.gui.element.MenuSettingsBG;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.IGuiModule;
 import icyllis.modernui.gui.master.TickEvent;
 import icyllis.modernui.gui.widget.LineTextButton;
+import icyllis.modernui.gui.widget.MenuButton;
 import icyllis.modernui.gui.widget.StateAnimatedButton;
 import net.minecraft.client.gui.IGuiEventListener;
 
@@ -36,13 +36,13 @@ public class SettingHeader implements IGuiModule {
 
     private List<IElement> elements = new ArrayList<>();
 
-    private List<IGuiEventListener> listeners = new ArrayList<>();
+    private List<LineTextButton> buttons = new ArrayList<>();
 
     public SettingHeader() {
         elements.add(new MenuSettingsBG());
-        Consumer<StateAnimatedButton> consumer = s -> {
+        Consumer<LineTextButton> consumer = s -> {
             elements.add(s);
-            listeners.add(s);
+            buttons.add(s);
         };
         consumer.accept(new LineTextButton(w -> w / 2f - 152f, h -> 20f, "General", 48f, 31));
         consumer.accept(new LineTextButton(w -> w / 2f - 88f, h -> 20f, "Video", 48f, 32));
@@ -63,7 +63,12 @@ public class SettingHeader implements IGuiModule {
     }
 
     @Override
+    public void onModuleChanged(int newID) {
+        buttons.forEach(e -> e.onModuleChanged(newID));
+    }
+
+    @Override
     public List<? extends IGuiEventListener> getEventListeners() {
-        return listeners;
+        return buttons;
     }
 }

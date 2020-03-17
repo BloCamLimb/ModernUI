@@ -73,7 +73,7 @@ public class LineTextButton extends StateAnimatedButton {
                 .onFinish(() -> openState = 2));
     }
 
-    protected void onModuleChanged(int id) {
+    public void onModuleChanged(int id) {
         if (id == moduleID) {
             lock = true;
             startOpen();
