@@ -18,6 +18,7 @@
 
 package icyllis.modernui.gui.module;
 
+import icyllis.modernui.gui.component.option.OptionEntry;
 import icyllis.modernui.gui.element.IElement;
 import icyllis.modernui.gui.element.MenuSettingsBG;
 import icyllis.modernui.gui.master.GlobalModuleManager;
@@ -27,18 +28,22 @@ import icyllis.modernui.gui.widget.LineTextButton;
 import icyllis.modernui.gui.widget.MenuButton;
 import icyllis.modernui.gui.widget.StateAnimatedButton;
 import net.minecraft.client.gui.IGuiEventListener;
+import net.minecraft.client.settings.AbstractOption;
+import net.minecraft.client.settings.SliderMultiplierOption;
+import net.minecraft.client.settings.SliderPercentageOption;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class SettingHeader implements IGuiModule {
+public class MenuSettingHeader implements IGuiModule {
 
     private List<IElement> elements = new ArrayList<>();
 
     private List<LineTextButton> buttons = new ArrayList<>();
 
-    public SettingHeader() {
+    public MenuSettingHeader() {
         elements.add(new MenuSettingsBG());
         Consumer<LineTextButton> consumer = s -> {
             elements.add(s);
@@ -71,4 +76,5 @@ public class SettingHeader implements IGuiModule {
     public List<? extends IGuiEventListener> getEventListeners() {
         return buttons;
     }
+
 }

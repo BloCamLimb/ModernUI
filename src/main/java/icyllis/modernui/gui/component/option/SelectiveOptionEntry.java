@@ -35,6 +35,7 @@ import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import org.lwjgl.opengl.GL11;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 public class SelectiveOptionEntry extends OptionEntry {
 
@@ -54,11 +55,28 @@ public class SelectiveOptionEntry extends OptionEntry {
 
     private int frameAlpha = 0;
 
-    public SelectiveOptionEntry(SettingScrollWindow window, String optionTitle, List<String> options, int originalIndex) {
+    private Consumer<Integer> saveOption;
+
+    protected float optionBrightness = 0.85f;
+
+    protected boolean clickable = true;
+
+    public SelectiveOptionEntry(SettingScrollWindow window, String optionTitle, List<String> options, int originalIndex, Consumer<Integer> saveOption) {
         super(window, optionTitle);
         this.currentOptionIndex = this.originalOptionIndex = originalIndex;
         this.options = options;
-        onOptionChanged(originalIndex);
+        this.saveOption = saveOption;
+        optionText = options.get(originalIndex);
+        textLength = fontRenderer.getStringWidth(optionText) + 3;
+    }
+
+    public void setClickable(boolean b) {
+        clickable = b;
+        if (b) {
+            optionBrightness = mouseHovered ? 1.0f : 0.85f;
+        } else {
+            optionBrightness = 0.5f;
+        }
     }
 
     @Override
@@ -76,12 +94,12 @@ public class SelectiveOptionEntry extends OptionEntry {
             tessellator.draw();
             RenderSystem.enableTexture();
         }
-        fontRenderer.drawString(optionText, centerX + 150, y + 6, textBrightness, textBrightness, textBrightness, 1, 0.5f);
+        fontRenderer.drawString(optionText, centerX + 150, y + 6, optionBrightness, optionBrightness, optionBrightness, 1, 0.5f);
         GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
         GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
         RenderSystem.pushMatrix();
         RenderSystem.scalef(0.25f, 0.25f, 1);
-        RenderSystem.color3f(textBrightness, textBrightness, textBrightness);
+        RenderSystem.color3f(optionBrightness, optionBrightness, optionBrightness);
         textureManager.bindTexture(ReferenceLibrary.ICONS);
         DrawTools.blit(centerX * 4 + 606, y * 4 + 28, 64, 32, 32, 32);
         RenderSystem.popMatrix();
@@ -97,7 +115,7 @@ public class SelectiveOptionEntry extends OptionEntry {
 
     @Override
     public void mouseMoved(double deltaCenterX, double deltaY, double mouseX, double mouseY) {
-        if (!drawOptionFrame) {
+        if (clickable && !drawOptionFrame) {
             if (mouseInOption(deltaCenterX, deltaY)) {
                 drawOptionFrame = true;
                 GlobalModuleManager.INSTANCE.addAnimation(new Animation(2)
@@ -117,7 +135,7 @@ public class SelectiveOptionEntry extends OptionEntry {
     @Override
     public boolean mouseClicked(double deltaCenterX, double deltaY, double mouseX, double mouseY, int mouseButton) {
         if (drawOptionFrame && mouseButton == 0 && !window.hasDropDownList()) {
-            DropDownList list = new DropDownList(options, currentOptionIndex, 16, this::onOptionChanged);
+            DropDownList list = new DropDownList(options, currentOptionIndex, 16, this::onValueChanged);
             list.setPos((float) (mouseX - deltaCenterX + 156), (float) (mouseY - deltaY + 18), GlobalModuleManager.INSTANCE.getWindowHeight());
             window.setDropDownList(list);
             return true;
@@ -126,15 +144,33 @@ public class SelectiveOptionEntry extends OptionEntry {
     }
 
     @Override
+    protected void onMouseHoverOn() {
+        super.onMouseHoverOn();
+        if (clickable) {
+            optionBrightness = 1.0f;
+        }
+    }
+
+    @Override
     protected void onMouseHoverOff() {
         super.onMouseHoverOff();
         drawOptionFrame = false;
         frameAlpha = 0;
+        if (clickable) {
+            optionBrightness = 0.85f;
+        }
     }
 
-    public void onOptionChanged(int index) {
+    protected void onValueChanged(int index) {
         this.currentOptionIndex = index;
         optionText = options.get(index);
         textLength = fontRenderer.getStringWidth(optionText) + 3;
+        if (autoSave) {
+            saveOption();
+        }
+    }
+
+    public void saveOption() {
+        saveOption.accept(currentOptionIndex);
     }
 }

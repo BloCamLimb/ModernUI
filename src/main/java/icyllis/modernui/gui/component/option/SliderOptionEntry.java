@@ -37,7 +37,7 @@ public class SliderOptionEntry extends OptionEntry {
 
     private Consumer<Float> saveOption;
 
-    public SliderOptionEntry(SettingScrollWindow windowString, String optionTitle, float minValue, float maxValue, float currentValue, float stepSize, Consumer<Float> saveOption) {
+    public SliderOptionEntry(SettingScrollWindow windowString, String optionTitle, float minValue, float maxValue, float stepSize, float currentValue, Consumer<Float> saveOption) {
         super(windowString, optionTitle);
         slider = new Slider(84, (currentValue - minValue) / (maxValue - minValue), this::onValueChange);
         this.minValue = minValue;
@@ -76,6 +76,12 @@ public class SliderOptionEntry extends OptionEntry {
     protected void onValueChange(float percent) {
         currentValue = minValue + (maxValue - minValue) * percent;
         currentValue = stepSize * (Math.round(currentValue / stepSize));
+        if (autoSave) {
+            saveOption();
+        }
+    }
+
+    public void saveOption() {
         saveOption.accept(currentValue);
     }
 }

@@ -42,11 +42,13 @@ public class OptionEntry {
 
     public boolean mouseHovered;
 
-    protected float textBrightness = 0.9f;
+    protected float textBrightness = 0.85f;
 
     /*public OptionEntry(String optionName, T originalOption, List<T> options) {
         this(optionName, originalOption, options, null);
     }*/
+
+    protected boolean autoSave = true;
 
     public OptionEntry(SettingScrollWindow windowString, String optionTitle) {
         this.window = windowString;
@@ -54,6 +56,10 @@ public class OptionEntry {
         /*if (desc != null)
             this.desc = FontRendererTools.splitStringToWidth(desc, 150);*/
 
+    }
+
+    public void disableAutoSave() {
+        autoSave = false;
     }
 
     public final void draw(float centerX, float y, float currentTime) {
@@ -98,7 +104,7 @@ public class OptionEntry {
     }
 
     protected void onMouseHoverOff() {
-        textBrightness = 0.9f;
+        textBrightness = 0.85f;
     }
 
     public boolean mouseClicked(double deltaCenterX, double deltaY, double mouseX, double mouseY, int mouseButton) {

@@ -102,17 +102,13 @@ public class ScrollWindow<T extends ScrollEntry> extends Element implements IGui
         tessellator.draw();
         RenderSystem.shadeModel(GL11.GL_FLAT);
 
-        RenderSystem.enableTexture();
-
-        drawEndExtra();
-
-        RenderSystem.disableTexture();
-
         scrollbar.draw(currentTime);
 
         RenderSystem.enableTexture();
 
         GL11.glDisable(GL11.GL_SCISSOR_TEST);
+
+        drawEndExtra();
     }
 
     public void drawEndExtra() {

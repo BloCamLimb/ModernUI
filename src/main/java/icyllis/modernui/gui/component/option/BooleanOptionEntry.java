@@ -20,10 +20,31 @@ package icyllis.modernui.gui.component.option;
 
 import com.google.common.collect.Lists;
 import icyllis.modernui.gui.window.SettingScrollWindow;
+import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
+import net.minecraft.client.resources.I18n;
+
+import java.util.List;
+import java.util.function.Supplier;
 
 public class BooleanOptionEntry extends SelectiveOptionEntry {
 
-    public BooleanOptionEntry(SettingScrollWindow window, String optionTitle, boolean originalValue) {
-        super(window, optionTitle, Lists.newArrayList("Yes", "No"), originalValue ? 0 : 1);
+    private static Supplier<List<String>> YES_OR_NO = () -> Lists.newArrayList(I18n.format("gui.yes"), I18n.format("gui.no"));
+
+    private static Supplier<List<String>> ON_OR_OFF = () -> Lists.newArrayList(I18n.format("options.on"), I18n.format("options.off"));
+
+    private BooleanConsumer saveOption;
+
+    public BooleanOptionEntry(SettingScrollWindow window, String optionTitle, boolean originalValue, BooleanConsumer saveOption) {
+        this(window, optionTitle, originalValue, saveOption, false);
+    }
+
+    public BooleanOptionEntry(SettingScrollWindow window, String optionTitle, boolean originalValue, BooleanConsumer saveOption, boolean useYesOrNo) {
+        super(window, optionTitle, useYesOrNo ? YES_OR_NO.get() : ON_OR_OFF.get(), originalValue ? 0 : 1, null);
+        this.saveOption = saveOption;
+    }
+
+    @Override
+    public void saveOption() {
+        saveOption.accept(currentOptionIndex == 0);
     }
 }
