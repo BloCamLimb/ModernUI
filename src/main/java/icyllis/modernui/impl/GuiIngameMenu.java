@@ -19,17 +19,25 @@
 package icyllis.modernui.impl;
 
 import icyllis.modernui.gui.master.ModernUIScreen;
-import icyllis.modernui.gui.module.GeneralSetting;
+import icyllis.modernui.gui.module.SettingGeneral;
 import icyllis.modernui.gui.module.IngameMenuHome;
-import icyllis.modernui.gui.module.SettingHeader;
+import icyllis.modernui.gui.module.MenuSettingHeader;
+import net.minecraft.client.Minecraft;
+import net.minecraft.util.text.TranslationTextComponent;
 
 public class GuiIngameMenu extends ModernUIScreen {
 
     public GuiIngameMenu(boolean isFullMenu) {
-        super(l -> {
-            l.addModule(i -> i >= 30 && i < 50, SettingHeader::new);
-            l.addModule(i -> i == 31, GeneralSetting::new);
+        super(new TranslationTextComponent("menu.game"), l -> {
+            l.addModule(i -> i >= 30 && i < 50, MenuSettingHeader::new);
+            l.addModule(i -> i == 31, SettingGeneral::new);
             l.addModule(i -> true, IngameMenuHome::new);
         });
+    }
+
+    @Override
+    public void removed() {
+        super.removed();
+        Minecraft.getInstance().gameSettings.saveOptions();
     }
 }

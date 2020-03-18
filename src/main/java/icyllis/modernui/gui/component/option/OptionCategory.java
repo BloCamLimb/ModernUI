@@ -18,12 +18,11 @@
 
 package icyllis.modernui.gui.component.option;
 
+import com.google.common.collect.Lists;
 import icyllis.modernui.font.FontRendererTools;
 import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.gui.component.scroll.ScrollEntry;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class OptionCategory extends ScrollEntry {
@@ -34,13 +33,17 @@ public class OptionCategory extends ScrollEntry {
 
     private String title;
 
-    private List<OptionEntry> entries = new ArrayList<>();
+    private List<OptionEntry> entries;
 
     public OptionCategory(String title, OptionEntry... entries) {
+        this(title, Lists.newArrayList(entries));
+    }
+
+    public OptionCategory(String title, List<OptionEntry> entries) {
         super(0);
         this.title = title;
-        Collections.addAll(this.entries, entries);
-        height = 36 + entries.length * ENTRY_HEIGHT;
+        this.entries = entries;
+        height = 36 + entries.size() * ENTRY_HEIGHT;
     }
 
     @Override

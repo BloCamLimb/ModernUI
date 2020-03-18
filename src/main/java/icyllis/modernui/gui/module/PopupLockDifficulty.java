@@ -18,58 +18,31 @@
 
 package icyllis.modernui.gui.module;
 
-import icyllis.modernui.gui.window.ConfirmWindow;
 import icyllis.modernui.gui.element.Background;
 import icyllis.modernui.gui.element.IElement;
 import icyllis.modernui.gui.master.IGuiModule;
+import icyllis.modernui.gui.window.ConfirmWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.gui.screen.DirtMessageScreen;
-import net.minecraft.client.gui.screen.MainMenuScreen;
-import net.minecraft.client.gui.screen.MultiplayerScreen;
-import net.minecraft.realms.RealmsBridge;
+import net.minecraft.client.resources.I18n;
 import net.minecraft.util.text.TranslationTextComponent;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class ExitTitlePopup implements IGuiModule {
-
-    private Minecraft minecraft;
+public class PopupLockDifficulty implements IGuiModule {
 
     private List<IElement> elements = new ArrayList<>();
 
     private List<IGuiEventListener> listeners = new ArrayList<>();
 
-    public ExitTitlePopup() {
-        this.minecraft = Minecraft.getInstance();
+    public PopupLockDifficulty(Runnable callback) {
         elements.add(new Background(4));
         Consumer<IGuiEventListener> consumer = s -> listeners.add(s);
-        elements.add(new ConfirmWindow(consumer, "Exit", "Are you sure you want to exit to main menu?", this::exit));
-    }
-
-    private void exit() {
-        if (minecraft.world == null) {
-            return;
-        }
-        boolean singlePlayer = minecraft.isIntegratedServerRunning();
-        boolean realmsConnected = minecraft.isConnectedToRealms();
-        minecraft.world.sendQuittingDisconnectingPacket();
-        if (singlePlayer) {
-            minecraft.unloadWorld(new DirtMessageScreen(new TranslationTextComponent("menu.savingLevel")));
-        } else {
-            minecraft.unloadWorld();
-        }
-
-        if (singlePlayer) {
-            minecraft.displayGuiScreen(new MainMenuScreen());
-        } else if (realmsConnected) {
-            RealmsBridge realmsbridge = new RealmsBridge();
-            realmsbridge.switchToRealms(new MainMenuScreen());
-        } else {
-            minecraft.displayGuiScreen(new MultiplayerScreen(new MainMenuScreen()));
-        }
+        elements.add(new ConfirmWindow(consumer, "Confirm Lock World Difficulty",
+                new TranslationTextComponent("difficulty.lock.question", new TranslationTextComponent("options.difficulty." + Minecraft.getInstance().world.getWorldInfo().getDifficulty().getTranslationKey())).getFormattedText(),
+                "Lock", callback, 5));
     }
 
     @Override

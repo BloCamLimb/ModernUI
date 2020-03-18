@@ -1,16 +1,13 @@
 buildscript {
     repositories {
+        jcenter()
         maven {
             name "forge"
             url "https://files.minecraftforge.net/maven"
         }
-        maven {
-            url 'http://dogforce-games.com/maven'
-        }
-        jcenter()
     }
     dependencies {
-        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.0.163+pull-657', changing: true
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.+', changing: true
     }
 }
 apply plugin: 'net.minecraftforge.gradle'
@@ -25,7 +22,7 @@ archivesBaseName = 'ModernUI'
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
 
 minecraft {
-    mappings channel: 'snapshot', version: '20200305-1.15.1'
+    mappings channel: 'snapshot', version: '20200317-1.15.1'
 
     accessTransformer(file('src/main/resources/META-INF/accesstransformer.cfg'))
 

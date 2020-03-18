@@ -25,6 +25,7 @@ import icyllis.modernui.font.FontRendererTools;
 import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.gui.widget.TextButton;
 import net.minecraft.client.gui.IGuiEventListener;
+import net.minecraft.client.resources.I18n;
 
 import java.util.function.Consumer;
 
@@ -42,20 +43,24 @@ public class ConfirmWindow extends Element {
 
     private TextButton.Countdown confirmButton;
 
-    public ConfirmWindow(Consumer<IGuiEventListener> consumer, String title, String info, Runnable confirmOperation) {
-        this(consumer, title, info, confirmOperation, 0);
+    public ConfirmWindow(Consumer<IGuiEventListener> listenerAdder, String title, String info, Runnable confirmOperation) {
+        this(listenerAdder, title, info, I18n.format("gui.yes"), confirmOperation, 0);
+    }
+
+    public ConfirmWindow(Consumer<IGuiEventListener> listenerAdder, String title, String info, String confirmText, Runnable confirmOperation) {
+        this(listenerAdder, title, info, confirmText, confirmOperation, 0);
     }
 
     /**
      * Constructor
      * @param confirmCountdown Countdown to confirm button available (unit-seconds)
      */
-    public ConfirmWindow(Consumer<IGuiEventListener> consumer, String title, String info, Runnable confirmOperation, int confirmCountdown) {
+    public ConfirmWindow(Consumer<IGuiEventListener> listenerAdder, String title, String info, String confirmText, Runnable confirmOperation, int confirmCountdown) {
         super(width -> width / 2f - 90f, height -> height / 2f - 40f);
-        this.titleText = "Confirm " + title;
+        this.titleText = title;
         infoText = FontRendererTools.splitStringToWidth(info, 164);
-        cancelButton = new TextButton(w -> w / 2f + 80f, h -> h / 2f + 20f, "No", () -> moduleManager.closePopup(), true);
-        confirmButton = new TextButton.Countdown(w -> w / 2f + 74f - cancelButton.sizeW, h -> h / 2f + 20f, title, confirmOperation, true, confirmCountdown);
+        cancelButton = new TextButton(w -> w / 2f + 80f, h -> h / 2f + 20f, I18n.format("gui.no"), () -> moduleManager.closePopup(), true);
+        confirmButton = new TextButton.Countdown(w -> w / 2f + 74f - cancelButton.sizeW, h -> h / 2f + 20f, confirmText, confirmOperation, true, confirmCountdown);
         cancelButton.setTextOpacity(0);
         confirmButton.setTextOpacity(0);
         moduleManager.addAnimation(new Animation(3, true)
@@ -67,8 +72,8 @@ public class ConfirmWindow extends Element {
                     confirmButton.setTextOpacity(value);
                 }))
                 .withDelay(3));
-        consumer.accept(cancelButton);
-        consumer.accept(confirmButton);
+        listenerAdder.accept(cancelButton);
+        listenerAdder.accept(confirmButton);
     }
 
     @Override
