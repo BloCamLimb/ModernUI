@@ -41,7 +41,7 @@ public class PopupLockDifficulty implements IGuiModule {
         elements.add(new Background(4));
         Consumer<IGuiEventListener> consumer = s -> listeners.add(s);
         elements.add(new ConfirmWindow(consumer, "Confirm Lock World Difficulty",
-                new TranslationTextComponent("difficulty.lock.question", new TranslationTextComponent("options.difficulty." + Minecraft.getInstance().world.getWorldInfo().getDifficulty().getTranslationKey())).getFormattedText(),
+                "Are you sure you want to lock world difficulty?",
                 "Lock", callback, 5));
     }
 

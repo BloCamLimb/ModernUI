@@ -40,20 +40,22 @@ public class ScrollList<T extends ScrollEntry> {
 
     public void draw(float centerX, float topY, float yOffset, float bottomY, float currentTime) {
         float baseY = topY - yOffset;
+        float maxHeight = bottomY - baseY;
         boolean startDraw = false;
         float accHeight;
         visibleEntries.clear();
         for (T entry : entries) {
-            accHeight = entry.height + entry.lastHeight;
             if (!startDraw) {
+                accHeight = entry.height + entry.lastHeight;
                 if (accHeight >= yOffset) {
                     startDraw = true;
                 }
             }
             if (startDraw) {
-                visibleEntries.add(entry);
-                if (accHeight >= bottomY) {
+                if (entry.lastHeight >= maxHeight) {
                     break;
+                } else {
+                    visibleEntries.add(entry);
                 }
             }
         }

@@ -32,7 +32,7 @@ public class Slider implements IGuiEventListener {
 
     private float x, y;
 
-    private float slideAmount;
+    private double slideAmount;
 
     private float width;
 
@@ -40,9 +40,9 @@ public class Slider implements IGuiEventListener {
 
     private boolean mouseHovered = false;
 
-    private Consumer<Float> receiver;
+    private Consumer<Double> receiver;
 
-    public Slider(float width, float initPercent, Consumer<Float> receiver) {
+    public Slider(float width, double initPercent, Consumer<Double> receiver) {
         this.width = width;
         slideAmount = getMaxSlideAmount() * initPercent;
         this.receiver = receiver;
@@ -101,9 +101,11 @@ public class Slider implements IGuiEventListener {
                 if (inY) {
                     if (mouseX >= x && mouseX <= x + slideAmount) {
                         slideToAmount((float) (mouseX - x - 2));
+                        mouseMoved(mouseX, mouseY);
                         return true;
                     } else if (mouseX >= x + slideAmount + 4 && mouseX <= x + width) {
                         slideToAmount((float) (mouseX - x - 2));
+                        mouseMoved(mouseX, mouseY);
                         return true;
                     }
                 }
@@ -135,9 +137,9 @@ public class Slider implements IGuiEventListener {
         this.y = y;
     }
 
-    private void slideToAmount(float amount) {
+    private void slideToAmount(double amount) {
         slideAmount = MathHelper.clamp(amount, 0, getMaxSlideAmount());
-        float slidePercent = slideAmount / getMaxSlideAmount();
+        double slidePercent = slideAmount / getMaxSlideAmount();
         receiver.accept(slidePercent);
     }
 

@@ -166,8 +166,8 @@ public class DropDownList implements IGuiEventListener {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        if (mouseButton == 0) {
-            receiver.accept(hoveredIndex == -1 ? selectedIndex : hoveredIndex);
+        if (mouseButton == 0 && hoveredIndex != -1) {
+            receiver.accept(hoveredIndex);
         }
         return true;
     }

@@ -22,35 +22,46 @@ import icyllis.modernui.gui.component.Slider;
 import icyllis.modernui.gui.window.SettingScrollWindow;
 
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class SliderOptionEntry extends OptionEntry {
 
     private Slider slider;
 
-    private float minValue;
+    private double minValue;
 
-    private float maxValue;
+    private double maxValue;
 
     private float stepSize;
 
-    private float currentValue;
+    private double currentValue;
 
-    private Consumer<Float> saveOption;
+    private Consumer<Double> saveOptionFunc;
 
-    public SliderOptionEntry(SettingScrollWindow windowString, String optionTitle, float minValue, float maxValue, float stepSize, float currentValue, Consumer<Float> saveOption) {
-        super(windowString, optionTitle);
-        slider = new Slider(84, (currentValue - minValue) / (maxValue - minValue), this::onValueChange);
+    private Function<Double, String> displayStringFunc;
+
+    private String displayString;
+
+    public SliderOptionEntry(SettingScrollWindow window, String optionTitle, double minValue, double maxValue, float stepSize, double currentValue, Consumer<Double> saveOption, Function<Double, String> displayStringFunc) {
+        super(window, optionTitle);
+        slider = new Slider(84, (currentValue - minValue) / (maxValue - minValue), this::onPercentageChange);
         this.minValue = minValue;
         this.maxValue = maxValue;
         this.currentValue = currentValue;
-        this.stepSize = stepSize;
-        this.saveOption = saveOption;
+        this.stepSize = stepSize == 0 ? 0.01f / (float) (maxValue - minValue) : stepSize;
+        this.saveOptionFunc = saveOption;
+        this.displayStringFunc = displayStringFunc;
+        this.displayString = displayStringFunc.apply(currentValue);
+    }
+
+    public SliderOptionEntry(SettingScrollWindow window, String optionTitle, double minValue, double maxValue, float stepSize, double currentValue, Consumer<Double> saveOption) {
+        this(window, optionTitle, minValue, maxValue, stepSize, currentValue, saveOption, String::valueOf);
     }
 
     @Override
     public void drawExtra(float centerX, float y, float currentTime) {
         slider.draw(centerX + 40, y + 9);
-        fontRenderer.drawString(String.valueOf(currentValue), centerX + 154, y + 6, 1, 1, 1, 1, 0.5f);
+        fontRenderer.drawString(displayString, centerX + 154, y + 6, 1, 1, 1, 1, 0.5f);
     }
 
     @Override
@@ -73,15 +84,16 @@ public class SliderOptionEntry extends OptionEntry {
         return slider.mouseDragged(mouseX, mouseY, mouseButton, deltaMouseX, deltaMouseY);
     }
 
-    protected void onValueChange(float percent) {
-        currentValue = minValue + (maxValue - minValue) * percent;
+    protected void onPercentageChange(double percentage) {
+        currentValue = minValue + (maxValue - minValue) * percentage;
         currentValue = stepSize * (Math.round(currentValue / stepSize));
+        displayString = displayStringFunc.apply(currentValue);
         if (autoSave) {
             saveOption();
         }
     }
 
     public void saveOption() {
-        saveOption.accept(currentValue);
+        saveOptionFunc.accept(currentValue);
     }
 }

@@ -129,8 +129,8 @@ public class TextButton extends StateAnimatedButton {
         public void draw(float currentTime) {
             super.draw(currentTime);
             if (counting) {
-                DrawTools.fillRectWithColor(x - sizeW, y, x, y + 13, 0x101010, textOpacity * 0.7f);
-                fontRenderer.drawString(displayCount + "s", x - sizeW / 2f, y + 2, 1, 1, 1, textOpacity, 0.25f);
+                DrawTools.fillRectWithColor(x, y, x + sizeW, y + 13, 0x101010, textOpacity * 0.7f);
+                fontRenderer.drawString(displayCount + "s", x + sizeW / 2f, y + 2, 1, 1, 1, textOpacity, 0.25f);
             }
         }
 

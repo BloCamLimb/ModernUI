@@ -59,18 +59,22 @@ public class OptionCategory extends ScrollEntry {
     @Override
     public void mouseMoved(double deltaCenterX, double deltaY, double mouseX, double mouseY) {
         //ModernUI.LOGGER.info("Category Mouse Move {} {}", deltaCenterX, deltaY);
-        double rY = deltaY - 30;
-        if (rY >= 0) {
-            int pIndex = (int) (rY / ENTRY_HEIGHT);
-            if (pIndex < entries.size()) {
-                for (int i = 0; i < entries.size(); i++) {
-                    OptionEntry entry = entries.get(i);
-                    if (i == pIndex) {
-                        entry.mouseMoved(deltaCenterX, rY - pIndex * ENTRY_HEIGHT, mouseX, mouseY);
-                        entry.setMouseHovered(true);
-                    } else {
-                        entry.setMouseHovered(false);
+        if (deltaCenterX >= -160 && deltaCenterX <= 160) {
+            double rY = deltaY - 30;
+            if (rY >= 0) {
+                int pIndex = (int) (rY / ENTRY_HEIGHT);
+                if (pIndex < entries.size()) {
+                    for (int i = 0; i < entries.size(); i++) {
+                        OptionEntry entry = entries.get(i);
+                        if (i == pIndex) {
+                            entry.mouseMoved(deltaCenterX, rY - pIndex * ENTRY_HEIGHT, mouseX, mouseY);
+                            entry.setMouseHovered(true);
+                        } else {
+                            entry.setMouseHovered(false);
+                        }
                     }
+                } else {
+                    entries.forEach(e -> e.setMouseHovered(false));
                 }
             } else {
                 entries.forEach(e -> e.setMouseHovered(false));

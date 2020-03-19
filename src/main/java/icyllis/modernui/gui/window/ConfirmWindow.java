@@ -79,7 +79,7 @@ public class ConfirmWindow extends Element {
     @Override
     public void draw(float currentTime) {
         DrawTools.fillRectWithFrame(x, y, x + 180, y + frameSizeHOffset, 0.51f, 0x101010, 0.7f, 0x404040, 1.f);
-        DrawTools.fillRectWithColor(x, y, x + 180, y + Math.min(frameSizeHOffset, 16), 0x080808, 0.7f);
+        DrawTools.fillRectWithColor(x, y, x + 180, y + Math.min(frameSizeHOffset, 16), 0x080808, 0.85f);
         fontRenderer.drawString(titleText, x + 90, y + 4, 1, 1, 1, opacity, 0.25f);
         int i = 0;
         for (String t : infoText) {
