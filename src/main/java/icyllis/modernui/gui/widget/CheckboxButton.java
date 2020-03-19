@@ -23,7 +23,7 @@ import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.element.Element;
 import icyllis.modernui.gui.master.DrawTools;
-import icyllis.modernui.system.ReferenceLibrary;
+import icyllis.modernui.system.ConstantsLibrary;
 import net.minecraft.client.gui.IGuiEventListener;
 import org.lwjgl.opengl.GL11;
 
@@ -82,12 +82,12 @@ public class CheckboxButton extends Element implements IGuiEventListener {
             RenderSystem.enableBlend();
             RenderSystem.defaultBlendFunc();
             RenderSystem.disableAlphaTest();
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+            RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+            RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
             RenderSystem.pushMatrix();
             RenderSystem.color4f(1, 1, 1, markAlpha);
             RenderSystem.scalef(scale, scale, 1);
-            textureManager.bindTexture(ReferenceLibrary.ICONS);
+            textureManager.bindTexture(ConstantsLibrary.ICONS);
             DrawTools.blit(x / scale, y / scale, 0, 32, 32, 32);
             RenderSystem.popMatrix();
         }

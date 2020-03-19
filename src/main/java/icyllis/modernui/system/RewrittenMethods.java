@@ -18,14 +18,18 @@
 
 package icyllis.modernui.system;
 
+import net.minecraft.client.MainWindow;
+import net.minecraft.client.Minecraft;
 import net.minecraft.util.math.MathHelper;
 
 public class RewrittenMethods {
 
     /** MainWindow **/
 
-    public static int calcGuiScale(int guiScaleIn, int framebufferWidth, int framebufferHeight) {
-        // recheck
+    public static int calcGuiScale(int guiScaleIn) {
+        MainWindow mainWindow = Minecraft.getInstance().getMainWindow();
+        int framebufferWidth = mainWindow.getFramebufferWidth();
+        int framebufferHeight = mainWindow.getFramebufferHeight();
         int r = RewrittenMethods.calcGuiScales(framebufferWidth, framebufferHeight);
         return guiScaleIn > 0 ? MathHelper.clamp(guiScaleIn, r >> 8 & 0xf, r & 0xf) : r >> 4 & 0xf;
     }

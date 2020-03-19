@@ -18,7 +18,6 @@
 
 package icyllis.modernui.gui.component.option;
 
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
@@ -26,7 +25,7 @@ import icyllis.modernui.gui.component.DropDownList;
 import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.window.SettingScrollWindow;
-import icyllis.modernui.system.ReferenceLibrary;
+import icyllis.modernui.system.ConstantsLibrary;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
@@ -95,13 +94,15 @@ public class SelectiveOptionEntry extends OptionEntry {
             RenderSystem.enableTexture();
         }
         fontRenderer.drawString(optionText, centerX + 150, y + 6, optionBrightness, optionBrightness, optionBrightness, 1, 0.5f);
-        GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
-        GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+        RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+        RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
         RenderSystem.pushMatrix();
         RenderSystem.scalef(0.25f, 0.25f, 1);
         RenderSystem.color3f(optionBrightness, optionBrightness, optionBrightness);
-        textureManager.bindTexture(ReferenceLibrary.ICONS);
+        textureManager.bindTexture(ConstantsLibrary.ICONS);
         DrawTools.blit(centerX * 4 + 606, y * 4 + 28, 64, 32, 32, 32);
+        RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+        RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
         RenderSystem.popMatrix();
     }
 
@@ -115,7 +116,7 @@ public class SelectiveOptionEntry extends OptionEntry {
 
     @Override
     public void mouseMoved(double deltaCenterX, double deltaY, double mouseX, double mouseY) {
-        if (clickable && !drawOptionFrame) {
+        if (clickable && !drawOptionFrame && options.size() > 1) {
             if (mouseInOption(deltaCenterX, deltaY)) {
                 drawOptionFrame = true;
                 GlobalModuleManager.INSTANCE.addAnimation(new Animation(2)

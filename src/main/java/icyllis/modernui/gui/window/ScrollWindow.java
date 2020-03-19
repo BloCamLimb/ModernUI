@@ -24,6 +24,7 @@ import icyllis.modernui.gui.component.scroll.ScrollEntry;
 import icyllis.modernui.gui.component.scroll.ScrollList;
 import icyllis.modernui.gui.component.scroll.ScrollBar;
 import icyllis.modernui.gui.element.Element;
+import icyllis.modernui.gui.master.GlobalModuleManager;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
@@ -205,6 +206,7 @@ public class ScrollWindow<T extends ScrollEntry> extends Element implements IGui
     private void callbackScrollAmount(float scrollAmount) {
         this.scrollAmount = scrollAmount;
         updateScrollBarOffset();
+        GlobalModuleManager.INSTANCE.refreshCursor();
     }
 
     /**

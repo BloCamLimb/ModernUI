@@ -68,11 +68,11 @@ function initializeCoreMod() {
                     } else if (inst.getType() === AbstractInsnNode.LINE) {
                         var cast = ASMAPI.listOf(
                             new VarInsnNode(Opcodes.ILOAD, 1),
+                            /*new VarInsnNode(Opcodes.ALOAD, 0),
+                            new FieldInsnNode(Opcodes.GETFIELD, "net/minecraft/client/MainWindow", "field_198131_r", "I"), // framebufferWidth
                             new VarInsnNode(Opcodes.ALOAD, 0),
-                            new FieldInsnNode(Opcodes.GETFIELD, "net/minecraft/client/MainWindow", "framebufferWidth", "I"), // framebufferWidth
-                            new VarInsnNode(Opcodes.ALOAD, 0),
-                            new FieldInsnNode(Opcodes.GETFIELD, "net/minecraft/client/MainWindow", "framebufferHeight", "I"), // framebufferHeight
-                            new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/RewrittenMethods", "calcGuiScale", "(III)I", false),
+                            new FieldInsnNode(Opcodes.GETFIELD, "net/minecraft/client/MainWindow", "field_198132_s", "I"), // framebufferHeight*/
+                            new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/RewrittenMethods", "calcGuiScale", "(I)I", false),
                             new InsnNode(Opcodes.IRETURN));
                         list.insert(inst, cast);
                         finish = true;

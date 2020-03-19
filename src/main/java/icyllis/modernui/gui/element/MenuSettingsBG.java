@@ -38,7 +38,7 @@ public class MenuSettingsBG extends Element {
                 .applyTo(new Applier(24, 40, this::setX))
                 .onFinish(() -> xResizer = w -> 40f));
         moduleManager.addAnimation(new Animation(2)
-                .applyTo(new Applier(0, 0.5f, this::setOpacity)));
+                .applyTo(new Applier(0, 0.4f, this::setOpacity)));
     }
 
     private void setX(float x) {
@@ -58,12 +58,13 @@ public class MenuSettingsBG extends Element {
         RenderSystem.disableTexture();
         bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION);
         RenderSystem.color4f(0, 0, 0, opacity);
-        bufferBuilder.pos(x, y + sizeH, 0.0D).endVertex();
-        bufferBuilder.pos(x + sizeW, y + sizeH, 0.0D).endVertex();
-        bufferBuilder.pos(x + sizeW, y, 0.0D).endVertex();
-        bufferBuilder.pos(x, y, 0.0D).endVertex();
+        bufferBuilder.pos(x, y + sizeH - 20, 0.0D).endVertex();
+        bufferBuilder.pos(x + sizeW, y + sizeH - 20, 0.0D).endVertex();
+        bufferBuilder.pos(x + sizeW, y + 20, 0.0D).endVertex();
+        bufferBuilder.pos(x, y + 20, 0.0D).endVertex();
         tessellator.draw();
         bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION);
+        RenderSystem.color4f(0, 0, 0, opacity * 2f);
         bufferBuilder.pos(x, y + 20, 0.0D).endVertex();
         bufferBuilder.pos(x + sizeW, y + 20, 0.0D).endVertex();
         bufferBuilder.pos(x + sizeW, y, 0.0D).endVertex();
