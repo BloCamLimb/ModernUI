@@ -4,13 +4,7 @@
  *
  * Better Fonts is a minecraft mod originally made by iSuzutsuki
  * for minecraft 1.4 ~ 1.7, and be ported to 1.8 ~ 1.12 by cube2x.
- *
- * Both two above are under LGPL v2.1 license, and this class is
- * under LGPL v3.0 license. See https://www.gnu.org/licenses/lgpl-3.0.en.html
- *
- * This class is from cube2x's source code, also a part of
- * Modern UI - Better Fonts, which is a branch of Modern UI and
- * uses different license from Modern UI.
+ * This class is under LGPL v3.0 license. See https://www.gnu.org/licenses/lgpl-3.0.en.html
  *
  * Modern UI - Better Fonts is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -277,10 +271,6 @@ class GlyphCache {
         fontSize = size;
         antiAliasEnabled = antiAlias;
         setRenderingHints();
-    }
-
-    public void clear() {
-        glyphCache.clear();
     }
 
     /**

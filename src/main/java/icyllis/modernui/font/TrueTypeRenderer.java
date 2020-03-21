@@ -4,13 +4,7 @@
  *
  * Better Fonts is a minecraft mod originally made by iSuzutsuki
  * for minecraft 1.4 ~ 1.7, and be ported to 1.8 ~ 1.12 by cube2x.
- *
- * Both two above are under LGPL v2.1 license, and this class is
- * under LGPL v3.0 license. See https://www.gnu.org/licenses/lgpl-3.0.en.html
- *
- * This class is from cube2x's source code, also a part of
- * Modern UI - Better Fonts, which is a branch of Modern UI and
- * uses different license from Modern UI.
+ * This class is under LGPL v3.0 license. See https://www.gnu.org/licenses/lgpl-3.0.en.html
  *
  * Modern UI - Better Fonts is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -32,6 +26,7 @@ package icyllis.modernui.font;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
@@ -89,10 +84,6 @@ public class TrueTypeRenderer implements IFontRenderer {
 
     }
 
-    public void clear() {
-        cache.clear();
-    }
-
     /**
      * Render a single-line string to the screen using the current OpenGL color. The (x,y) coordinates are of the uppet-left
      * corner of the string's bounding box, rather than the baseline position as is typical with fonts. This function will also
@@ -107,10 +98,10 @@ public class TrueTypeRenderer implements IFontRenderer {
      * @param a
      * @return the total advance (horizontal distance) of this string
      */
-    //todo Add optional NumericShaper to replace ASCII digits with locale specific ones
-    //todo Add support for the "k" code which randomly replaces letters on each render (used on
-    //todo Pre-sort by texture to minimize binds; can store colors per glyph in string cache
-    //todo Optimize the underline/strikethrough drawing to draw a single line for each run
+    //TODO Add optional NumericShaper to replace ASCII digits with locale specific ones
+    //TODO Add support for the "k" code which randomly replaces letters on each render (used on
+    //TODO Pre-sort by texture to minimize binds; can store colors per glyph in string cache (?)
+    //TODO Optimize the underline/strikethrough drawing to draw a single line for each run
     @Override
     public float drawString(String str, float startX, float startY, float r, float g, float b, float a, float align) {
         /* Check for invalid arguments */
@@ -149,7 +140,6 @@ public class TrueTypeRenderer implements IFontRenderer {
          * function doesn't try to save/restore the blending state. Hopefully everything else that depends on blending in Minecraft
          * will set its own state as needed.
          */
-
         if (cache.antiAliasEnabled) {
             GlStateManager.enableBlend();
             GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);

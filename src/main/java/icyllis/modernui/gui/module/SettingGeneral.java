@@ -41,6 +41,7 @@ import net.minecraft.network.play.client.CLockDifficultyPacket;
 import net.minecraft.network.play.client.CSetDifficultyPacket;
 import net.minecraft.util.HandSide;
 import net.minecraft.world.Difficulty;
+import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
 import java.util.List;

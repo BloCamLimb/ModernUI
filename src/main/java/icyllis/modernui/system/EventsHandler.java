@@ -91,13 +91,14 @@ public class EventsHandler {
 
         @SubscribeEvent
         public static void setupCommon(FMLCommonSetupEvent event) {
-
+            ModIntegration.init();
         }
 
         @OnlyIn(Dist.CLIENT)
         @SubscribeEvent
         public static void setupClient(FMLClientSetupEvent event) {
-            HistoryRecorder.gEmojiPair();
+            //HistoryRecorder.gEmojiPair();
+            ModernUI.LOGGER.debug(MARKER, "{} has been initialized", SettingsManager.INSTANCE.getDeclaringClass().getSimpleName()); // call constructor methods
         }
 
     }

@@ -35,6 +35,7 @@ import org.apache.commons.lang3.tuple.Triple;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -98,6 +99,29 @@ public enum SettingsManager {
 
         boolean_getter = ObfuscationReflectionHelper.findField(BooleanOption.class, "field_216746_Q");
         boolean_setter = ObfuscationReflectionHelper.findField(BooleanOption.class, "field_216747_R");
+
+        try {
+            Field[] fields = AbstractOption.class.getFields();
+            ModernUI.LOGGER.debug("Searching Abstract Options...");
+            for (Field f : fields) {
+                if (Modifier.isStatic(f.getModifiers())) {
+                    AbstractOption instance = (AbstractOption) f.get(AbstractOption.class);
+                    String translateKey = (String) option_translateKey.get(instance);
+                    ModernUI.LOGGER.debug("Name: {{}}, ClassName: {{}}, TranslateKey: {{}}", f.getName(), instance.getClass().getSimpleName(), translateKey);
+                }
+            }
+            ModernUI.LOGGER.debug("Searching Abstract Options finished");
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+
+        if (ModIntegration.optifineLoaded) {
+            try {
+                Class<?> clazz = Class.forName("net.optifine.gui.GuiQualitySettingsOF");
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public Function<SettingScrollWindow, SliderOptionEntry> transformToPercentage(SliderPercentageOption instance) {

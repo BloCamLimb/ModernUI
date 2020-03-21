@@ -20,6 +20,8 @@ package icyllis.modernui.gui.component.option;
 
 import icyllis.modernui.gui.component.Slider;
 import icyllis.modernui.gui.window.SettingScrollWindow;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.overlay.DebugOverlayGui;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -52,6 +54,7 @@ public class SliderOptionEntry extends OptionEntry {
         this.saveOptionFunc = saveOption;
         this.displayStringFunc = displayStringFunc;
         this.displayString = displayStringFunc.apply(currentValue);
+        
     }
 
     public SliderOptionEntry(SettingScrollWindow window, String optionTitle, double minValue, double maxValue, float stepSize, double currentValue, Consumer<Double> saveOption) {
@@ -61,7 +64,7 @@ public class SliderOptionEntry extends OptionEntry {
     @Override
     public void drawExtra(float centerX, float y, float currentTime) {
         slider.draw(centerX + 40, y + 9);
-        fontRenderer.drawString(displayString, centerX + 154, y + 6, 1, 1, 1, 1, 0.5f);
+        fontRenderer.drawString(displayString, centerX + 154, y + 6, textBrightness, textBrightness, textBrightness, 1, 0.5f);
     }
 
     @Override
