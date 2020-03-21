@@ -4,13 +4,7 @@
  *
  * Better Fonts is a minecraft mod originally made by iSuzutsuki
  * for minecraft 1.4 ~ 1.7, and be ported to 1.8 ~ 1.12 by cube2x.
- *
- * Both two above are under LGPL v2.1 license, and this class is
- * under LGPL v3.0 license. See https://www.gnu.org/licenses/lgpl-3.0.en.html
- *
- * This class is from cube2x's source code, also a part of
- * Modern UI - Better Fonts, which is a branch of Modern UI and
- * uses different license from Modern UI.
+ * This class is under LGPL v3.0 license. See https://www.gnu.org/licenses/lgpl-3.0.en.html
  *
  * Modern UI - Better Fonts is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -29,6 +23,10 @@
  */
 
 package icyllis.modernui.font;
+
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import icyllis.modernui.system.ModernUI;
 
 import java.awt.*;
 import java.awt.font.GlyphVector;
@@ -61,6 +59,8 @@ class StringCache {
      */
     private WeakHashMap<String, Key> weakRefCache = new WeakHashMap<>();
 
+    private Cache<Key, Entry> cache;
+
     /**
      * Temporary Key object re-used for lookups with stringCache.get(). Using a temporary object like this avoids the overhead
      * of allocating new objects in the critical rendering path. Of course, new Key objects are always created when adding
@@ -69,12 +69,12 @@ class StringCache {
     private Key lookupKey = new Key();
 
     /**
-     * Pre-cached glyphs for the ASCII digits 0-9 (in that order). Used by renderString() to substiture digit glyphs on the fly
-     * as a performance boost. The speed up is most noticable on the F3 screen which rapidly displays lots of changing numbers.
+     * Pre-cached glyphs for the ASCII digits 0-9 (in that order). Used by renderString() to substitute digit glyphs on the fly
+     * as a performance boost. The speed up is most noticeable on the F3 screen which rapidly displays lots of changing numbers.
      * The 4 element array is index by the font style (combination of Font.PLAIN, Font.BOLD, and Font.ITALIC), and each of the
      * nested elements is index by the digit value 0-9.
      */
-    GlyphCache.Glyph[][] digitGlyphs = new GlyphCache.Glyph[4][];
+    GlyphCache.Glyph[][] digitGlyphs = new GlyphCache.Glyph[4][10];
 
     /**
      * True if digitGlyphs[] has been assigned and cacheString() can begin replacing all digits with '0' in the string.
@@ -249,7 +249,7 @@ class StringCache {
         public int stripIndex;
 
         /**
-         * Combination of Font.PLAIN, Font.BOLD, and Font.ITALIC specifying font specific syles
+         * Combination of Font.PLAIN, Font.BOLD, and Font.ITALIC specifying font specific styles
          */
         public byte fontStyle;
 
@@ -286,11 +286,7 @@ class StringCache {
         glyphCache = new GlyphCache();
 
         /* Pre-cache the ASCII digits to allow for fast glyph substitution */
-        //cacheDightGlyphs();
-    }
-
-    public void clear() {
-        glyphCache.clear();
+        //cacheDightGlyphs(); // called by setDefaultFont
     }
 
     /**
@@ -328,11 +324,11 @@ class StringCache {
     /**
      * Add a string to the string cache by perform full layout on it, remembering its glyph positions, and making sure that
      * every font glyph used by the string is pre-rendering. If this string has already been cached, then simply return its
-     * existing Entry from the cahe. Note that for caching purposes, this method considers two strings to be identical if they
+     * existing Entry from the cache. Note that for caching purposes, this method considers two strings to be identical if they
      * only differ in their ASCII digits; the renderString() method performs fast glyph substitution based on the actual digits
      * in the string at the time.
      *
-     * @param str this String will be layed out and added to the cache (or looked up, if alraedy cached)
+     * @param str this String will be laid out and added to the cache (or looked up, if already cached)
      * @return the string's cache entry containing all the glyph positions
      */
     Entry cacheString(String str) {

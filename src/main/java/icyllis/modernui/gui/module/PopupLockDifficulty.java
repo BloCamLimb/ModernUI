@@ -22,10 +22,9 @@ import icyllis.modernui.gui.element.Background;
 import icyllis.modernui.gui.element.IElement;
 import icyllis.modernui.gui.master.IGuiModule;
 import icyllis.modernui.gui.window.ConfirmWindow;
-import net.minecraft.client.Minecraft;
+import icyllis.modernui.system.ModernUI;
+import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.util.text.TranslationTextComponent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,7 +41,7 @@ public class PopupLockDifficulty implements IGuiModule {
         Consumer<IGuiEventListener> consumer = s -> listeners.add(s);
         elements.add(new ConfirmWindow(consumer, "Confirm Lock World Difficulty",
                 "Are you sure you want to lock world difficulty?",
-                "Lock", callback, 5));
+                "Lock", callback, 3));
     }
 
     @Override
@@ -51,7 +50,7 @@ public class PopupLockDifficulty implements IGuiModule {
     }
 
     @Override
-    public List<? extends IGuiEventListener> getEventListeners() {
+    public List<IGuiEventListener> getEventListeners() {
         return listeners;
     }
 }
