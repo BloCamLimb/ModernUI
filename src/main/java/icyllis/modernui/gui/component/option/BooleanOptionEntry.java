@@ -26,7 +26,7 @@ import net.minecraft.client.resources.I18n;
 import java.util.List;
 import java.util.function.Supplier;
 
-public class BooleanOptionEntry extends SelectiveOptionEntry {
+public class BooleanOptionEntry extends MenuOptionEntry {
 
     private static Supplier<List<String>> YES_OR_NO = () -> Lists.newArrayList(I18n.format("gui.yes"), I18n.format("gui.no"));
 

@@ -21,6 +21,7 @@ package icyllis.modernui.gui.widget;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.DrawTools;
+import icyllis.modernui.gui.master.GlobalModuleManager;
 
 import java.util.function.Function;
 
@@ -98,4 +99,12 @@ public class LineTextButton extends StateAnimatedButton {
             super.startClose();
     }
 
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        if (mouseHovered && !lock) {
+            GlobalModuleManager.INSTANCE.switchModule(moduleID);
+            return true;
+        }
+        return false;
+    }
 }

@@ -19,7 +19,7 @@
 package icyllis.modernui.gui.widget;
 
 import icyllis.modernui.font.IFontRenderer;
-import icyllis.modernui.font.FontRendererTools;
+import icyllis.modernui.font.FontTools;
 
 import java.util.function.Predicate;
 
@@ -29,7 +29,7 @@ public class InputBox {
     public static final Predicate<String> digitFilter = s -> s.matches("[0-9]+"),
             hexFilter = s -> s.matches("(?i)[0-9a-f]+");
 
-    protected IFontRenderer renderer = FontRendererTools.CURRENT_RENDERER;
+    protected IFontRenderer renderer = FontTools.FONT_RENDERER;
 
     /** if can focus and write things**/
     /*protected boolean enabled, canLoseFocus;

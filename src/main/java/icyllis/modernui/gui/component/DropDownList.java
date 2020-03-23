@@ -18,9 +18,8 @@
 
 package icyllis.modernui.gui.component;
 
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.font.FontRendererTools;
+import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
@@ -38,7 +37,7 @@ public class DropDownList implements IGuiEventListener {
 
     private static int ENTRY_HEIGHT = 13;
 
-    private IFontRenderer fontRenderer = FontRendererTools.CURRENT_RENDERER;
+    private IFontRenderer fontRenderer = FontTools.FONT_RENDERER;
 
     private final List<String> list;
 

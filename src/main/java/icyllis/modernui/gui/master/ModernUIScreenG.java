@@ -27,17 +27,18 @@ import net.minecraft.inventory.container.Container;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.event.GuiContainerEvent;
+import net.minecraftforge.common.MinecraftForge;
+import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
-import java.util.List;
 import java.util.function.Consumer;
 
+//TODO WIP
 @OnlyIn(Dist.CLIENT)
-public class ModernUIScreenG<G extends Container> extends ContainerScreen<G> implements IMasterScreen {
+public class ModernUIScreenG<G extends Container> extends ContainerScreen<G> {
 
     private GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
-
-    private boolean hasPopup = false;
 
     @SuppressWarnings("ConstantConditions")
     public ModernUIScreenG(ITextComponent title, G container, Consumer<IModuleFactory> factory) {
@@ -47,14 +48,18 @@ public class ModernUIScreenG<G extends Container> extends ContainerScreen<G> imp
 
     @Override
     protected void init() {
-        super.init();
-        manager.build(this, width, height);
+        manager.init(width, height);
     }
 
     @Override
     public void resize(@Nonnull Minecraft minecraft, int width, int height) {
-        //super.resize(minecraft, width, height);
         manager.resize(width, height);
+    }
+
+    @Override
+    public void render(int mouseX, int mouseY, float partialTicks) {
+        MinecraftForge.EVENT_BUS.post(new GuiContainerEvent.DrawBackground(this, mouseX, mouseY));
+        manager.draw();
     }
 
     @Override
@@ -63,25 +68,15 @@ public class ModernUIScreenG<G extends Container> extends ContainerScreen<G> imp
     }
 
     @Override
-    public void addEventListener(IGuiEventListener eventListener) {
-        children.add(eventListener);
+    public void removed() {
+        manager.removed();
     }
 
     @Override
-    public void setHasPopup(boolean bool) {
-        this.hasPopup = bool;
-    }
-
-    @Override
-    public void refreshCursor() {
-        MouseHelper mouseHelper = Minecraft.getInstance().mouseHelper;
-        double scale = Minecraft.getInstance().getMainWindow().getGuiScaleFactor();
-        children().forEach(e -> e.mouseMoved(mouseHelper.getMouseX() / scale, mouseHelper.getMouseY() / scale));
-    }
-
-    @Override
-    public void render(int mouseX, int mouseY, float partialTicks) {
-        manager.draw();
+    public void onClose() {
+        if (manager.onClose()) {
+            super.onClose();
+        }
     }
 
     @Override
@@ -90,12 +85,46 @@ public class ModernUIScreenG<G extends Container> extends ContainerScreen<G> imp
     }
 
     @Override
-    public void removed() {
-        manager.clear();
+    public final void mouseMoved(double mouseX, double mouseY) {
+        manager.mouseMoved(mouseX, mouseY);
     }
 
     @Override
-    public void mouseMoved(double p_212927_1_, double p_212927_3_) {
-        children.forEach(e -> e.mouseMoved(p_212927_1_, p_212927_3_));
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        return manager.mouseClicked(mouseX, mouseY, mouseButton);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
+        return manager.mouseReleased(mouseX, mouseY, mouseButton);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double deltaX, double deltaY) {
+        return manager.mouseDragged(mouseX, mouseY, mouseButton, deltaX, deltaY);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        return manager.mouseScrolled(mouseX, mouseY, delta);
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == GLFW.GLFW_KEY_ESCAPE && shouldCloseOnEsc()) {
+            onClose();
+            return true;
+        } else
+            return manager.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
+        return manager.keyReleased(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public boolean charTyped(char charCode, int modifiers) {
+        return manager.charTyped(charCode, modifiers);
     }
 }

@@ -76,9 +76,9 @@ public interface IModuleManager {
     void addTickEvent(TickEvent event);
 
     /**
-     * Refresh current mouse cursor
+     * Refresh current mouse position, will recall mouseMoved()
      */
-    void refreshCursor();
+    void refreshMouse();
 
     /**
      * Get current time

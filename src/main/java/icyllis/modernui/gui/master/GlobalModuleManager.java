@@ -21,29 +21,29 @@ package icyllis.modernui.gui.master;
 import icyllis.modernui.gui.animation.IAnimation;
 import icyllis.modernui.api.global.IModuleFactory;
 import icyllis.modernui.api.manager.IModuleManager;
-import icyllis.modernui.gui.element.IElement;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.gui.IGuiEventListener;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.network.PacketBuffer;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
 import java.util.function.Supplier;
 
-public enum GlobalModuleManager implements IModuleFactory, IModuleManager {
+/**
+ * Manager current GUI (screen / modules) (singleton)
+ */
+public enum GlobalModuleManager implements IModuleFactory, IModuleManager, IGuiEventListener {
     INSTANCE;
 
-    private final Marker MARKER = MarkerManager.getMarker("MODULE");
+    private final Marker MARKER = MarkerManager.getMarker("SCREEN");
 
-    @Nullable
-    public IMasterScreen master;
-
+    /* For container gui, the packet from server */
     private PacketBuffer extraData;
 
     private List<ModuleBuilder> builders = new ArrayList<>();
@@ -57,49 +57,48 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager {
 
     private int ticks = 0;
 
-    private float floatingPointTicks = 0;
+    private float animationTime = 0;
 
     private int width, height;
 
-    public void build(IMasterScreen master, int width, int height) {
-        this.master = master;
+    private double mouseX, mouseY;
+
+    public void init(int width, int height) {
         this.width = width;
         this.height = height;
-        this.builders.forEach(master::addEventListener);
         this.switchModule(0);
     }
+
+    public void setExtraData(PacketBuffer extraData) {
+        this.extraData = extraData;
+    }
+
     @Override
     public void switchModule(int newID) {
         builders.stream().filter(m -> m.test(newID)).forEach(ModuleBuilder::build);
         builders.forEach(e -> e.onModuleChanged(newID));
-        builders.stream().filter(m -> !m.test(newID)).forEach(ModuleBuilder::clear);
+        builders.stream().filter(m -> !m.test(newID)).forEach(ModuleBuilder::removed);
         builders.forEach(e -> e.resize(width, height));
     }
 
     @Override
     public void openPopup(IGuiModule popup) {
         if (this.popup != null) {
-            ModernUI.LOGGER.warn(MARKER, "Failed to open popup, there's already a popup open");
-            return;
+            ModernUI.LOGGER.warn(MARKER, "#openPopup() shouldn't be called when there's already a popup, the previous one has been overwritten");
         }
-        popup.resize(width, height);
+        this.mouseMoved(0, 0);
         this.popup = popup;
-        if (master != null) {
-            master.setHasPopup(true);
-        } else {
-            ModernUI.LOGGER.fatal(MARKER, "Current screen shouldn't have been null when calling #openPopup");
-        }
+        this.popup.resize(width, height);
+        this.refreshMouse();
     }
 
     @Override
     public void closePopup() {
         if (popup != null) {
             popup = null;
-        }
-        if (master != null) {
-            master.setHasPopup(false);
+            this.refreshMouse();
         } else {
-            ModernUI.LOGGER.fatal(MARKER, "Current screen shouldn't have been null when calling #closePopup()V");
+            ModernUI.LOGGER.info(MARKER, "#closePopup() shouldn't be called when there's no popup, this is not an error");
         }
     }
 
@@ -114,19 +113,136 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager {
     }
 
     @Override
-    public void refreshCursor() {
-        if (master != null) {
-            master.refreshCursor();
-        }  else {
-            ModernUI.LOGGER.fatal(MARKER, "Current screen shouldn't have been null when calling #refreshCursor()V");
+    public void mouseMoved(double mouseX, double mouseY) {
+        this.mouseX = mouseX;
+        this.mouseY = mouseY;
+        if (popup != null) {
+            popup.mouseMoved(mouseX, mouseY);
+        } else {
+            builders.forEach(e -> e.mouseMoved(mouseX, mouseY));
         }
     }
 
-    public void draw() {
-        animations.forEach(e -> e.update(floatingPointTicks));
-        builders.forEach(e -> e.draw(floatingPointTicks));
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if (popup != null) {
-            popup.draw(floatingPointTicks);
+            return popup.mouseClicked(mouseX, mouseY, mouseButton);
+        } else {
+            for (IGuiEventListener listener : builders) {
+                if (listener.mouseClicked(mouseX, mouseY, mouseButton)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
+        if (popup != null) {
+            return popup.mouseReleased(mouseX, mouseY, mouseButton);
+        } else {
+            for (IGuiEventListener listener : builders) {
+                if (listener.mouseReleased(mouseX, mouseY, mouseButton)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double deltaX, double deltaY) {
+        if (popup != null) {
+            return popup.mouseDragged(mouseX, mouseY, mouseButton, deltaX, deltaY);
+        } else {
+            for (IGuiEventListener listener : builders) {
+                if (listener.mouseDragged(mouseX, mouseY, mouseButton, deltaX, deltaY)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        if (popup != null) {
+            return popup.mouseScrolled(mouseX, mouseY, delta);
+        } else {
+            for (IGuiEventListener listener : builders) {
+                if (listener.mouseScrolled(mouseX, mouseY, delta)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == GLFW.GLFW_KEY_TAB) {
+            boolean searchNext = !Screen.hasShiftDown();
+            if (!this.changeFocus(searchNext)) {
+                return this.changeFocus(searchNext);
+            }
+            return true;
+        } else if (popup != null) {
+            return popup.keyPressed(keyCode, scanCode, modifiers);
+        } else {
+            for (IGuiEventListener listener : builders) {
+                if (listener.keyPressed(keyCode, scanCode, modifiers)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
+        if (popup != null) {
+            return popup.keyReleased(keyCode, scanCode, modifiers);
+        } else {
+            for (IGuiEventListener listener : builders) {
+                if (listener.keyReleased(keyCode, scanCode, modifiers)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean charTyped(char charCode, int modifiers) {
+        if (popup != null) {
+            return popup.charTyped(charCode, modifiers);
+        } else {
+            for (IGuiEventListener listener : builders) {
+                if (listener.charTyped(charCode, modifiers)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean changeFocus(boolean searchNext) {
+        //TODO
+        return false;
+    }
+
+    @Override
+    public void refreshMouse() {
+        mouseMoved(mouseX, mouseY);
+    }
+
+    public void draw() {
+        animations.forEach(e -> e.update(animationTime));
+        builders.forEach(e -> e.draw(animationTime));
+        if (popup != null) {
+            popup.draw(animationTime);
         }
     }
 
@@ -138,12 +254,20 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager {
             popup.resize(width, height);
     }
 
-    public void clear() {
+    public void removed() {
         builders.clear();
         animations.clear();
         popup = null;
-        master = null;
         extraData = null;
+    }
+
+    /* return false will not close this gui/screen */
+    public boolean onClose() {
+        if (popup != null) {
+            closePopup();
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -162,18 +286,18 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager {
     }
 
     public void renderTick(float partialTick) {
-        floatingPointTicks = ticks + partialTick;
+        animationTime = ticks + partialTick;
         animations.removeIf(IAnimation::shouldRemove);
     }
 
     public void resetTicks() {
         ticks = 0;
-        floatingPointTicks = 0;
+        animationTime = 0;
     }
 
     @Override
     public float getAnimationTime() {
-        return floatingPointTicks;
+        return animationTime;
     }
 
     @Override
@@ -184,10 +308,6 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager {
     @Override
     public int getWindowHeight() {
         return height;
-    }
-
-    public void setExtraData(PacketBuffer extraData) {
-        this.extraData = extraData;
     }
 
     @Override

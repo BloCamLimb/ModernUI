@@ -44,26 +44,39 @@ import java.util.function.Predicate;
 public enum SettingsManager {
     INSTANCE;
 
-    public static Function<SettingScrollWindow, SliderOptionEntry> FOV
-            = INSTANCE.transformToPercentage(AbstractOption.FOV);
+    public static Function<SettingScrollWindow, SliderOptionEntry> FOV = INSTANCE
+            .transformToPercentage(AbstractOption.FOV);
 
-    public static Function<SettingScrollWindow, SliderOptionEntry> CHAT_OPACITY
-            = INSTANCE.transformToPercentage(AbstractOption.CHAT_OPACITY, Triple.of(0.1, null, null), ConstantsLibrary.PERCENTAGE_STRING_FUNC);
+    /**
+     * Different (from vanilla):
+     * Same effect, but less computation. [0.1, 1.0]
+     */
+    public static Function<SettingScrollWindow, SliderOptionEntry> CHAT_OPACITY = INSTANCE
+            .transformToPercentage(AbstractOption.CHAT_OPACITY, Triple.of(0.1, null, null), ConstantsLibrary.PERCENTAGE_STRING_FUNC);
 
-    public static Function<SettingScrollWindow, SliderOptionEntry> TEXT_BACKGROUND_OPACITY
-            = INSTANCE.transformToPercentage(AbstractOption.ACCESSIBILITY_TEXT_BACKGROUND_OPACITY, ConstantsLibrary.PERCENTAGE_STRING_FUNC);
+    /**
+     * Different (from vanilla):
+     * Set minimum value to 10% rather than 0% (OFF), because we have visibility. [0.1, 1.0]
+     */
+    public static Function<SettingScrollWindow, SliderOptionEntry> CHAT_SCALE = INSTANCE
+            .transformToPercentage(AbstractOption.CHAT_SCALE, Triple.of(0.1, null, null), ConstantsLibrary.PERCENTAGE_STRING_FUNC);
 
-    public static Function<SettingScrollWindow, SliderOptionEntry> CHAT_SCALE
-            = INSTANCE.transformToPercentage(AbstractOption.CHAT_SCALE, Triple.of(0.1, null, null), ConstantsLibrary.PERCENTAGE_STRING_FUNC);
+    /**
+     * Different (from vanilla):
+     * Use Optifine setting, so now width in [40, 1176] rather than [40, 320]
+     */
+    public static Function<SettingScrollWindow, SliderOptionEntry> CHAT_WIDTH = INSTANCE
+            .transformToPercentage(AbstractOption.CHAT_WIDTH, Triple.of(null, 4.0571431d, 1.0f / 1136.0f), d -> NewChatGui.calculateChatboxWidth(d) + "px");
 
-    public static Function<SettingScrollWindow, SliderOptionEntry> CHAT_WIDTH
-            = INSTANCE.transformToPercentage(AbstractOption.CHAT_WIDTH, Triple.of(null, null, 1.0f / 280.0f), d -> NewChatGui.calculateChatboxWidth(d) + "px");
+    public static Function<SettingScrollWindow, SliderOptionEntry> CHAT_HEIGHT_FOCUSED = INSTANCE
+            .transformToPercentage(AbstractOption.CHAT_HEIGHT_FOCUSED, Triple.of(null, null, 1.0f / 160.0f), d -> NewChatGui.calculateChatboxHeight(d) + "px");
 
-    public static Function<SettingScrollWindow, SliderOptionEntry> CHAT_HEIGHT_FOCUSED
-            = INSTANCE.transformToPercentage(AbstractOption.CHAT_HEIGHT_FOCUSED, Triple.of(null, null, 1.0f / 160.0f), d -> NewChatGui.calculateChatboxHeight(d) + "px");
+    public static Function<SettingScrollWindow, SliderOptionEntry> CHAT_HEIGHT_UNFOCUSED = INSTANCE
+            .transformToPercentage(AbstractOption.CHAT_HEIGHT_UNFOCUSED, Triple.of(null, null, 1.0f / 160.0f), d -> NewChatGui.calculateChatboxHeight(d) + "px");
 
-    public static Function<SettingScrollWindow, SliderOptionEntry> CHAT_HEIGHT_UNFOCUSED
-            = INSTANCE.transformToPercentage(AbstractOption.CHAT_HEIGHT_UNFOCUSED, Triple.of(null, null, 1.0f / 160.0f), d -> NewChatGui.calculateChatboxHeight(d) + "px");
+    public static Function<SettingScrollWindow, SliderOptionEntry> TEXT_BACKGROUND_OPACITY = INSTANCE
+            .transformToPercentage(AbstractOption.ACCESSIBILITY_TEXT_BACKGROUND_OPACITY, ConstantsLibrary.PERCENTAGE_STRING_FUNC);
+
 
 
     public static Function<SettingScrollWindow, BooleanOptionEntry> REALMS_NOTIFICATIONS = INSTANCE.transformToBoolean(AbstractOption.REALMS_NOTIFICATIONS);
@@ -75,6 +88,7 @@ public enum SettingsManager {
     public static Function<SettingScrollWindow, BooleanOptionEntry> AUTO_SUGGEST_COMMANDS = INSTANCE.transformToBoolean(AbstractOption.AUTO_SUGGEST_COMMANDS);
 
     public static Function<SettingScrollWindow, BooleanOptionEntry> SHOW_SUBTITLES = INSTANCE.transformToBoolean(AbstractOption.SHOW_SUBTITLES);
+
 
 
     private Field option_translateKey;

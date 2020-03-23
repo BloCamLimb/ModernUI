@@ -19,17 +19,18 @@
 package icyllis.modernui.gui.component.option;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.font.FontRendererTools;
+import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.IFontRenderer;
-import icyllis.modernui.gui.component.scroll.ScrollEntry;
+import icyllis.modernui.gui.component.scroll.ScrollGroup;
+import net.minecraft.util.text.TextFormatting;
 
 import java.util.List;
 
-public class OptionCategory extends ScrollEntry {
+public class OptionCategory extends ScrollGroup {
 
     public static int ENTRY_HEIGHT = 21;
 
-    private IFontRenderer fontRenderer = FontRendererTools.CURRENT_RENDERER;
+    private IFontRenderer fontRenderer = FontTools.FONT_RENDERER;
 
     private String title;
 
@@ -48,7 +49,7 @@ public class OptionCategory extends ScrollEntry {
 
     @Override
     public void draw(float centerX, float y, float maxY, float currentTime) {
-        fontRenderer.drawString(title, centerX - 160, y + 14, 1, 1, 1, 1, 0f);
+        fontRenderer.drawString(TextFormatting.BOLD + title, centerX - 160, y + 14, 1, 1, 1, 1, 0f);
         int maxSize = Math.min((int) Math.ceil((maxY - y) / ENTRY_HEIGHT), entries.size());
         for (int i = 0; i < maxSize; i++) {
             float cy = y + 30 + i * ENTRY_HEIGHT;

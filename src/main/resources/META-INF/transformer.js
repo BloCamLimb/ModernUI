@@ -41,10 +41,10 @@ function initializeCoreMod() {
                     var inst = list.get(i);
                     // New and InvokeSpecial will be called twice
                     if (inst.getOpcode() === Opcodes.NEW) {
-                        list.set(inst, new TypeInsnNode(Opcodes.NEW, "icyllis/modernui/impl/GuiIngameMenu"));
+                        list.set(inst, new TypeInsnNode(Opcodes.NEW, "icyllis/modernui/gui/screen/GuiIngameMenu"));
                     }
                     if (inst.getOpcode() === Opcodes.INVOKESPECIAL) {
-                        list.set(inst, new MethodInsnNode(Opcodes.INVOKESPECIAL, "icyllis/modernui/impl/GuiIngameMenu", "<init>", "(Z)V", false));
+                        list.set(inst, new MethodInsnNode(Opcodes.INVOKESPECIAL, "icyllis/modernui/gui/screen/GuiIngameMenu", "<init>", "(Z)V", false));
                     }
                 }
                 return methodNode;

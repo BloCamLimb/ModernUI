@@ -151,11 +151,11 @@ public class ScrollBar implements IGuiEventListener {
                 if (inWidth) {
                     if (mouseY >= y && mouseY < renderY) {
                         float mov = transformPosToAmount((float) (renderY - mouseY));
-                        window.scrollAmount(-Math.min(60f, mov));
+                        window.scrollSmoothly(-Math.min(60f, mov));
                         return true;
                     } else if (mouseY > renderY + barLength && mouseY <= y + maxLength) {
                         float mov = transformPosToAmount((float) (mouseY - renderY - barLength));
-                        window.scrollAmount(Math.min(60f, mov));
+                        window.scrollSmoothly(Math.min(60f, mov));
                         return true;
                     }
                 }
@@ -176,7 +176,7 @@ public class ScrollBar implements IGuiEventListener {
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double rmx, double rmy) {
         if (visible && isDragging) {
-            window.scrollWithoutAnimation(transformPosToAmount((float) rmy));
+            window.scrollDirectly(transformPosToAmount((float) rmy));
             return true;
         }
         return false;

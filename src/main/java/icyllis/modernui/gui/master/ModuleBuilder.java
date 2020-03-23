@@ -68,7 +68,7 @@ public class ModuleBuilder implements IGuiEventListener {
         }
     }
 
-    public void clear() {
+    public void removed() {
         moduleInstance = null;
     }
 
@@ -77,9 +77,9 @@ public class ModuleBuilder implements IGuiEventListener {
     }
 
     @Override
-    public void mouseMoved(double xPos, double yPos) {
+    public void mouseMoved(double mouseX, double mouseY) {
         if (moduleInstance != null) {
-            moduleInstance.mouseMoved(xPos, yPos);
+            moduleInstance.mouseMoved(mouseX, mouseY);
         }
     }
 
@@ -135,6 +135,14 @@ public class ModuleBuilder implements IGuiEventListener {
     public boolean charTyped(char charCode, int modifier) {
         if (moduleInstance != null) {
             return moduleInstance.charTyped(charCode, modifier);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean changeFocus(boolean searchNext) {
+        if (moduleInstance != null) {
+            return moduleInstance.changeFocus(searchNext);
         }
         return false;
     }

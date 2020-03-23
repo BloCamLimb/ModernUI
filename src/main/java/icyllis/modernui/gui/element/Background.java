@@ -18,7 +18,6 @@
 
 package icyllis.modernui.gui.element;
 
-import icyllis.modernui.api.ModernUI_API;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.DrawTools;
@@ -49,8 +48,4 @@ public class Background implements IElement {
         this.height = height;
     }
 
-    @Override
-    public int priority() {
-        return -1;
-    }
 }
