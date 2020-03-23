@@ -19,10 +19,12 @@
 package icyllis.modernui.system;
 
 import icyllis.modernui.api.ModernUI_API;
-import icyllis.modernui.shader.blur.BlurHandler;
 import icyllis.modernui.gui.master.GlobalModuleManager;
+import icyllis.modernui.shader.blur.BlurHandler;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -41,20 +43,20 @@ public class ModernUI {
 
     public ModernUI() {
         try {
-            Class<?> apiClass = Class.forName("icyllis.modernui.api.ModernUI_API");
-            Field f = apiClass.getDeclaredField("network");
+            Field f = ModernUI_API.class.getDeclaredField("network");
             f.setAccessible(true);
             f.set(ModernUI_API.INSTANCE, NetworkManager.INSTANCE);
             if (FMLEnvironment.dist == Dist.CLIENT) {
-                f = apiClass.getDeclaredField("gui");
+                f = ModernUI_API.class.getDeclaredField("gui");
                 f.setAccessible(true);
                 f.set(ModernUI_API.INSTANCE, GuiManager.INSTANCE);
-                f = apiClass.getDeclaredField("module");
+                f = ModernUI_API.class.getDeclaredField("module");
                 f.setAccessible(true);
                 f.set(ModernUI_API.INSTANCE, GlobalModuleManager.INSTANCE);
+                ModernUI_Config.registerClientConfig();
                 ModernUI.LOGGER.debug(MARKER, "{} has been initialized", BlurHandler.INSTANCE.getDeclaringClass().getSimpleName()); // call constructor methods
             }
-        } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException | ClassCastException e) {
+        } catch (NoSuchFieldException | IllegalAccessException | ClassCastException e) {
             throw new RuntimeException(e);
         }
     }

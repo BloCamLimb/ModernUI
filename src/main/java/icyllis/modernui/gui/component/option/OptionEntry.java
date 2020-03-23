@@ -19,7 +19,7 @@
 package icyllis.modernui.gui.component.option;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.font.FontRendererTools;
+import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.gui.window.SettingScrollWindow;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -30,42 +30,42 @@ import org.lwjgl.opengl.GL11;
 /**
  * Single option line in settings interface
  */
-public class OptionEntry {
+public abstract class OptionEntry {
 
-    protected IFontRenderer fontRenderer = FontRendererTools.CURRENT_RENDERER;
+    protected IFontRenderer fontRenderer = FontTools.FONT_RENDERER;
 
     protected final SettingScrollWindow window;
 
-    public String optionTitle;
+    public String title;
 
     //public String[] desc = new String[0];
 
-    public boolean mouseHovered;
+    protected boolean mouseHovered;
 
-    protected float textBrightness = 0.85f;
+    protected float titleGrayscale = 0.85f;
 
     /*public OptionEntry(String optionName, T originalOption, List<T> options) {
         this(optionName, originalOption, options, null);
     }*/
 
-    protected boolean autoSave = true;
+    protected boolean autoApply = true;
 
-    public OptionEntry(SettingScrollWindow windowString, String optionTitle) {
-        this.window = windowString;
-        this.optionTitle = optionTitle;
+    public OptionEntry(SettingScrollWindow window, String title) {
+        this.window = window;
+        this.title = title;
         /*if (desc != null)
             this.desc = FontRendererTools.splitStringToWidth(desc, 150);*/
 
     }
 
-    public void disableAutoSave() {
-        autoSave = false;
+    public void disableAutoApply() {
+        autoApply = false;
     }
 
     public final void draw(float centerX, float y, float currentTime) {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();
-        fontRenderer.drawString(optionTitle, centerX - 160, y + 6, textBrightness, textBrightness, textBrightness, 1, 0);
+        fontRenderer.drawString(title, centerX - 160, y + 6, titleGrayscale, titleGrayscale, titleGrayscale, 1, 0);
         /*if (desc.length > 0) {
             //TODO
         }*/
@@ -100,11 +100,11 @@ public class OptionEntry {
     }
 
     protected void onMouseHoverOn() {
-        textBrightness = 1.0f;
+        titleGrayscale = 1.0f;
     }
 
     protected void onMouseHoverOff() {
-        textBrightness = 0.85f;
+        titleGrayscale = 0.85f;
     }
 
     public boolean mouseClicked(double deltaCenterX, double deltaY, double mouseX, double mouseY, int mouseButton) {

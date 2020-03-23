@@ -34,10 +34,10 @@ public interface IElement {
     /**
      * Called when game window size changed
      * {@link Element#xResizer} is an example
-     * @param width scaled window width
-     * @param height scaled window height
+     * @param width scaled game window width
+     * @param height scaled game window height
      */
-    void resize(int width, int height);
+    default void resize(int width, int height) {}
 
     /**
      * Ticks something you like
@@ -46,14 +46,4 @@ public interface IElement {
      */
     default void tick(int ticks) {}
 
-    /**
-     * The priority of this element, higher value will render last,
-     * so it will render at the top, such as you want to render tooltips
-     * First module added will render last as well
-     * Default order is followed by element build order
-     * @return custom priority
-     */
-    default int priority() {
-        return 0;
-    }
 }

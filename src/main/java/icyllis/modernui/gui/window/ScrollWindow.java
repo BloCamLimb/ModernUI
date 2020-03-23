@@ -20,11 +20,10 @@ package icyllis.modernui.gui.window;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.component.scroll.ScrollController;
-import icyllis.modernui.gui.component.scroll.ScrollEntry;
+import icyllis.modernui.gui.component.scroll.ScrollGroup;
 import icyllis.modernui.gui.component.scroll.ScrollList;
 import icyllis.modernui.gui.component.scroll.ScrollBar;
 import icyllis.modernui.gui.element.Element;
-import icyllis.modernui.gui.master.GlobalModuleManager;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
@@ -35,7 +34,7 @@ import org.lwjgl.opengl.GL11;
 import java.util.Collection;
 import java.util.function.Function;
 
-public class ScrollWindow<T extends ScrollEntry> extends Element implements IGuiEventListener {
+public class ScrollWindow<T extends ScrollGroup> extends Element implements IGuiEventListener {
 
     public int borderThickness = 6;
 
@@ -129,7 +128,7 @@ public class ScrollWindow<T extends ScrollEntry> extends Element implements IGui
         this.scrollbar.setMaxLength(this.height - 2);
         updateScrollBarLength();
         updateScrollBarOffset(); // scrollAmount() not always call updateScrollBarOffset()
-        scrollAmount(0);
+        scrollSmoothly(0);
     }
 
     @Override
@@ -163,12 +162,12 @@ public class ScrollWindow<T extends ScrollEntry> extends Element implements IGui
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double rmx, double rmy) {
-        if (scrollbar.mouseDragged(mouseX, mouseY, mouseButton, rmx, rmy)) {
+    public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double deltaX, double deltaY) {
+        if (scrollbar.mouseDragged(mouseX, mouseY, mouseButton, deltaX, deltaY)) {
             return true;
         }
         if (isMouseOver(mouseX, mouseY)) {
-            return scrollList.mouseDragged(y, getVisibleOffset(), bottom, mouseX - getCenterX(), mouseX, mouseY, mouseButton, rmx, rmy);
+            return scrollList.mouseDragged(y, getVisibleOffset(), bottom, mouseX - getCenterX(), mouseX, mouseY, mouseButton, deltaX, deltaY);
         }
         return false;
     }
@@ -179,7 +178,7 @@ public class ScrollWindow<T extends ScrollEntry> extends Element implements IGui
             if (scrollList.mouseScrolled(y, this.scrollAmount, bottom, mouseX - (x + width / 2), mouseY, scrollAmount)) {
                 return true;
             }
-            scrollAmount(Math.round(scrollAmount * -20f));
+            scrollSmoothly(Math.round(scrollAmount * -20f));
             return true;
         }
         return false;
@@ -190,12 +189,12 @@ public class ScrollWindow<T extends ScrollEntry> extends Element implements IGui
         return mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height;
     }
 
-    public void scrollAmount(float change) {
-        controller.setTargetValue(MathHelper.clamp(controller.getTargetValue() + change, 0, getMaxScrollAmount()));
+    public void scrollSmoothly(float delta) {
+        controller.setTargetValue(MathHelper.clamp(controller.getTargetValue() + delta, 0, getMaxScrollAmount()));
     }
 
-    public void scrollWithoutAnimation(float change) {
-        float amount = MathHelper.clamp(controller.getTargetValue() + change, 0, getMaxScrollAmount());
+    public void scrollDirectly(float delta) {
+        float amount = MathHelper.clamp(controller.getTargetValue() + delta, 0, getMaxScrollAmount());
         controller.setTargetValueDirect(amount);
         callbackScrollAmount(amount);
     }
@@ -206,7 +205,7 @@ public class ScrollWindow<T extends ScrollEntry> extends Element implements IGui
     private void callbackScrollAmount(float scrollAmount) {
         this.scrollAmount = scrollAmount;
         updateScrollBarOffset();
-        GlobalModuleManager.INSTANCE.refreshCursor();
+        moduleManager.refreshMouse();
     }
 
     /**
@@ -261,19 +260,19 @@ public class ScrollWindow<T extends ScrollEntry> extends Element implements IGui
         updateScrollBarOffset();
     }
 
-    public void addEntry(T entry) {
-        scrollList.addEntry(entry);
+    public void addGroup(T entry) {
+        scrollList.addGroup(entry);
     }
 
-    public void addEntries(Collection<T> collection) {
-        scrollList.addEntries(collection);
+    public void addGroups(Collection<T> collection) {
+        scrollList.addGroups(collection);
     }
 
-    public void removeEntry(T entry) {
-        scrollList.removeEntry(entry);
+    public void removeGroup(T entry) {
+        scrollList.removeGroup(entry);
     }
 
-    public void clearEntries() {
-        scrollList.clearEntries();
+    public void clearGroup() {
+        scrollList.clearGroups();
     }
 }

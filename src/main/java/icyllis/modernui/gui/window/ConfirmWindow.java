@@ -21,7 +21,7 @@ package icyllis.modernui.gui.window;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.element.Element;
-import icyllis.modernui.font.FontRendererTools;
+import icyllis.modernui.font.FontTools;
 import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.gui.widget.TextButton;
 import net.minecraft.client.gui.IGuiEventListener;
@@ -43,24 +43,24 @@ public class ConfirmWindow extends Element {
 
     private TextButton.Countdown confirmButton;
 
-    public ConfirmWindow(Consumer<IGuiEventListener> listenerAdder, String title, String info, Runnable confirmOperation) {
-        this(listenerAdder, title, info, I18n.format("gui.yes"), confirmOperation, 0);
+    public ConfirmWindow(Consumer<IGuiEventListener> listenerAdder, String title, String info, Consumer<Boolean> callback) {
+        this(listenerAdder, title, info, I18n.format("gui.yes"), callback, 0);
     }
 
-    public ConfirmWindow(Consumer<IGuiEventListener> listenerAdder, String title, String info, String confirmText, Runnable confirmOperation) {
-        this(listenerAdder, title, info, confirmText, confirmOperation, 0);
+    public ConfirmWindow(Consumer<IGuiEventListener> listenerAdder, String title, String info, String confirmText, Consumer<Boolean> callback) {
+        this(listenerAdder, title, info, confirmText, callback, 0);
     }
 
     /**
      * Constructor
-     * @param confirmCountdown Countdown to confirm button available (unit-seconds)
+     * @param countdown Countdown to confirm button available (unit-seconds)
      */
-    public ConfirmWindow(Consumer<IGuiEventListener> listenerAdder, String title, String info, String confirmText, Runnable confirmOperation, int confirmCountdown) {
+    public ConfirmWindow(Consumer<IGuiEventListener> listenerAdder, String title, String info, String confirmText, Consumer<Boolean> callback, int countdown) {
         super(width -> width / 2f - 90f, height -> height / 2f - 40f);
         this.titleText = title;
-        infoText = FontRendererTools.splitStringToWidth(info, 164);
-        cancelButton = new TextButton(w -> w / 2f + 80f, h -> h / 2f + 20f, I18n.format("gui.no"), () -> moduleManager.closePopup(), true);
-        confirmButton = new TextButton.Countdown(w -> w / 2f + 74f - cancelButton.sizeW, h -> h / 2f + 20f, confirmText, confirmOperation, true, confirmCountdown);
+        infoText = FontTools.splitStringToWidth(info, 164);
+        cancelButton = new TextButton(w -> w / 2f + 80f, h -> h / 2f + 20f, I18n.format("gui.no"), () -> callback.accept(false), true);
+        confirmButton = new TextButton.Countdown(w -> w / 2f + 74f - cancelButton.sizeW, h -> h / 2f + 20f, confirmText, () -> callback.accept(true), true, countdown);
         cancelButton.setTextOpacity(0);
         confirmButton.setTextOpacity(0);
         moduleManager.addAnimation(new Animation(3, true)

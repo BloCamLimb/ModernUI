@@ -24,24 +24,19 @@ import icyllis.modernui.gui.element.IElement;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.IGuiModule;
 import icyllis.modernui.gui.window.SettingScrollWindow;
-import icyllis.modernui.system.ConstantsLibrary;
 import icyllis.modernui.system.SettingsManager;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.AccessibilityScreen;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.chat.NarratorChatListener;
-import net.minecraft.client.gui.screen.ChatOptionsScreen;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.settings.NarratorStatus;
-import net.minecraft.client.settings.SliderPercentageOption;
 import net.minecraft.entity.player.ChatVisibility;
 import net.minecraft.entity.player.PlayerModelPart;
 import net.minecraft.network.play.client.CLockDifficultyPacket;
 import net.minecraft.network.play.client.CSetDifficultyPacket;
 import net.minecraft.util.HandSide;
 import net.minecraft.world.Difficulty;
-import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,7 +59,7 @@ public class SettingGeneral implements IGuiModule {
 
     private SettingScrollWindow window;
 
-    private SelectiveOptionEntry difficultyEntry;
+    private MenuOptionEntry difficultyEntry;
 
     private BooleanOptionEntry lockEntry;
 
@@ -83,7 +78,7 @@ public class SettingGeneral implements IGuiModule {
         List<OptionEntry> list = new ArrayList<>();
 
         if (minecraft.world != null) {
-            difficultyEntry = new SelectiveOptionEntry(window, I18n.format("options.difficulty"), DIFFICULTY_OPTIONS.get(),
+            difficultyEntry = new MenuOptionEntry(window, I18n.format("options.difficulty"), DIFFICULTY_OPTIONS.get(),
                     minecraft.world.getDifficulty().getId(), i -> {
                 Difficulty difficulty = Difficulty.values()[i];
                 minecraft.getConnection().sendPacket(new CSetDifficultyPacket(difficulty));
@@ -108,7 +103,7 @@ public class SettingGeneral implements IGuiModule {
         list.add(SettingsManager.REALMS_NOTIFICATIONS.apply(window));
 
         OptionCategory category = new OptionCategory("Game", list);
-        window.addEntry(category);
+        window.addGroup(category);
     }
 
     private void addSkinCategory() {
@@ -120,7 +115,7 @@ public class SettingGeneral implements IGuiModule {
                     gameSettings.getModelParts().contains(part), b -> gameSettings.setModelPartEnabled(part, b));
             list.add(entry);
         }
-        OptionEntry mainHand = new SelectiveOptionEntry(window, I18n.format("options.mainHand"), MAIN_HANDS.get(),
+        OptionEntry mainHand = new MenuOptionEntry(window, I18n.format("options.mainHand"), MAIN_HANDS.get(),
                 gameSettings.mainHand.ordinal(), i -> {
            gameSettings.mainHand = HandSide.values()[i];
            gameSettings.saveOptions();
@@ -129,14 +124,14 @@ public class SettingGeneral implements IGuiModule {
         list.add(mainHand);
 
         OptionCategory category = new OptionCategory("Skin", list);
-        window.addEntry(category);
+        window.addGroup(category);
     }
 
     private void addChatCategory() {
         List<OptionEntry> list = new ArrayList<>();
         GameSettings gameSettings = minecraft.gameSettings;
 
-        list.add(new SelectiveOptionEntry(window, "Visibility", CHAT_VISIBILITIES.get(),
+        list.add(new MenuOptionEntry(window, "Visibility", CHAT_VISIBILITIES.get(),
                 gameSettings.chatVisibility.ordinal(), i -> gameSettings.chatVisibility = ChatVisibility.values()[i]));
         list.add(SettingsManager.CHAT_COLOR.apply(window));
         list.add(SettingsManager.CHAT_LINKS.apply(window));
@@ -150,7 +145,7 @@ public class SettingGeneral implements IGuiModule {
         list.add(SettingsManager.AUTO_SUGGEST_COMMANDS.apply(window));
 
         OptionCategory category = new OptionCategory("Chat", list);
-        window.addEntry(category);
+        window.addGroup(category);
     }
 
     private void addAccessibilityCategory() {
@@ -161,7 +156,7 @@ public class SettingGeneral implements IGuiModule {
         List<String> narratorStatus = active ?
                 Lists.newArrayList(NarratorStatus.values()).stream().map(n -> I18n.format(n.getResourceKey())).collect(Collectors.toCollection(ArrayList::new)) :
                 Lists.newArrayList(I18n.format("options.narrator.notavailable"));
-        SelectiveOptionEntry narrator = new SelectiveOptionEntry(window, I18n.format("options.narrator"), narratorStatus,
+        MenuOptionEntry narrator = new MenuOptionEntry(window, I18n.format("options.narrator"), narratorStatus,
                 active ? gameSettings.narrator.ordinal() : 0, i -> {
             gameSettings.narrator = NarratorStatus.values()[i];
             NarratorChatListener.INSTANCE.announceMode(gameSettings.narrator);
@@ -171,18 +166,23 @@ public class SettingGeneral implements IGuiModule {
         list.add(SettingsManager.TEXT_BACKGROUND_OPACITY.apply(window));
         List<String> textBackgrounds = Lists.newArrayList(I18n.format("options.accessibility.text_background.chat"),
                 I18n.format("options.accessibility.text_background.everywhere"));
-        list.add(new SelectiveOptionEntry(window, I18n.format("options.accessibility.text_background"), textBackgrounds,
+        list.add(new MenuOptionEntry(window, I18n.format("options.accessibility.text_background"), textBackgrounds,
                 gameSettings.accessibilityTextBackground ? 0 : 1, i -> gameSettings.accessibilityTextBackground = i == 0));
 
         OptionCategory category = new OptionCategory("Accessibility", list);
-        window.addEntry(category);
+        window.addGroup(category);
     }
 
-    private void lockDifficulty() {
-        if (this.minecraft.world != null) {
-            this.minecraft.getConnection().sendPacket(new CLockDifficultyPacket(true));
-            difficultyEntry.setClickable(false);
-            lockEntry.setClickable(false);
+    private void lockDifficulty(boolean lock) {
+        GlobalModuleManager.INSTANCE.closePopup();
+        if (lock) {
+            if (this.minecraft.world != null) {
+                this.minecraft.getConnection().sendPacket(new CLockDifficultyPacket(true));
+                difficultyEntry.setClickable(false);
+                lockEntry.setClickable(false);
+            }
+        } else {
+            lockEntry.onValueChanged(1);
         }
     }
 

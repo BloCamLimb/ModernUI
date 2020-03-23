@@ -36,7 +36,7 @@ public class PopupLockDifficulty implements IGuiModule {
 
     private List<IGuiEventListener> listeners = new ArrayList<>();
 
-    public PopupLockDifficulty(Runnable callback) {
+    public PopupLockDifficulty(Consumer<Boolean> callback) {
         elements.add(new Background(4));
         Consumer<IGuiEventListener> consumer = s -> listeners.add(s);
         elements.add(new ConfirmWindow(consumer, "Confirm Lock World Difficulty",

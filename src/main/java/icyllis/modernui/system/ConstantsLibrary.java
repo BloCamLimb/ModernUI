@@ -24,8 +24,8 @@ import java.util.function.Function;
 
 public class ConstantsLibrary {
 
-    public static final ResourceLocation BUTTON = new ResourceLocation(ModernUI.MODID, "gui/button.png");
-    public static final ResourceLocation ICONS = new ResourceLocation(ModernUI.MODID, "gui/gui_icon.png");
+    public static final ResourceLocation BUTTON = new ResourceLocation(ModernUI.MODID, "textures/gui/button.png");
+    public static final ResourceLocation ICONS = new ResourceLocation(ModernUI.MODID, "textures/gui/gui_icon.png");
 
     public static final Function<Double, String> PERCENTAGE_STRING_FUNC = p -> (int) (p * 100) + "%";
 

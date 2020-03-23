@@ -141,7 +141,7 @@ public class TextButton extends StateAnimatedButton {
                 displayCount = countdown - (ticks - startTick) / 20;
                 if (!counting) {
                     available = true;
-                    moduleManager.refreshCursor();
+                    moduleManager.refreshMouse();
                 }
             }
         }

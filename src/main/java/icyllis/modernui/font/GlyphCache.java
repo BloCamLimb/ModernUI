@@ -257,19 +257,19 @@ class GlyphCache {
      *
      * @param size the new point size
      */
-    void setDefaultFont(float size, boolean antiAlias) {
+    void setDefaultFont(float size) {
         usedFonts.clear();
         //usedFonts.add(new Font(name, Font.PLAIN, 72)); //size 1 > 72
         try {
-            Font f = Font.createFont(Font.TRUETYPE_FONT, getClass().getResourceAsStream("/assets/modernui/font/unix.otf"));
+            Font f = Font.createFont(Font.TRUETYPE_FONT, getClass().getResourceAsStream("/assets/modernui/font/biliw.otf"));
             usedFonts.add(f);
-            //ModernUI.LOGGER.info(ModernUI.MARKER, "{} has been loaded", f.getName());
+            ModernUI.LOGGER.info(ModernUI.MARKER, "{} has been loaded", f.getName());
         } catch (FontFormatException | IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
 
         fontSize = size;
-        antiAliasEnabled = antiAlias;
+        antiAliasEnabled = true;
         setRenderingHints();
     }
 
@@ -342,7 +342,7 @@ class GlyphCache {
      * to cacheGlyphs().
      *
      * @param font      the font to which this glyphCode belongs and which was used to pre-render the glyph image in cacheGlyphs()
-     * @param glyphCode the font specific flyph code to lookup in the cache
+     * @param glyphCode the font specific glyph code to lookup in the cache
      * @return the cache entry for this font/glyphCode pair
      */
     Entry lookupGlyph(Font font, int glyphCode) {
@@ -361,7 +361,7 @@ class GlyphCache {
      * @param layoutFlags either Font.LAYOUT_RIGHT_TO_LEFT or Font.LAYOUT_LEFT_TO_RIGHT; needed for weak bidirectional characters like
      *                    parenthesis which are mapped to two different glyph codes depending on the surrounding text direction
      */
-    //todo May need a blank border of pixels around everything for mip-map/tri-linear filtering with Optifine
+    //TODO May need a blank border of pixels around everything for mip-map/tri-linear filtering with Optifine
     void cacheGlyphs(Font font, char[] text, int start, int limit, int layoutFlags) {
         /* Create new GlyphVector so glyphs can be moved around (kerning workaround; see below) without affecting caller */
         GlyphVector vector = layoutGlyphVector(font, text, start, limit, layoutFlags);
@@ -574,7 +574,7 @@ class GlyphCache {
      * white so the individual glyphs images within can have a transparent border between them. The new texture remains bound
      * after returning from the function.
      */
-    //todo use GL_ALPHA4 if anti-alias is turned off for even smaller textures
+    //TODO?(may never) use GL_ALPHA4 if anti-alias is turned off for even smaller textures
     private void allocateGlyphCacheTexture() {
         /* Initialize the background to all white but fully transparent. */
         glyphCacheGraphics.clearRect(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);

@@ -24,13 +24,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class ScrollList<T extends ScrollEntry> {
+public class ScrollList<T extends ScrollGroup> {
 
     private final ScrollWindow<T> window;
 
-    private List<T> entries = new ArrayList<>();
+    private List<T> groups = new ArrayList<>();
 
-    private List<T> visibleEntries = new ArrayList<>();
+    private List<T> visible = new ArrayList<>();
 
     private float maxHeight;
 
@@ -43,8 +43,8 @@ public class ScrollList<T extends ScrollEntry> {
         float maxHeight = bottomY - baseY;
         boolean startDraw = false;
         float accHeight;
-        visibleEntries.clear();
-        for (T entry : entries) {
+        visible.clear();
+        for (T entry : groups) {
             if (!startDraw) {
                 accHeight = entry.height + entry.lastHeight;
                 if (accHeight >= yOffset) {
@@ -55,11 +55,11 @@ public class ScrollList<T extends ScrollEntry> {
                 if (entry.lastHeight >= maxHeight) {
                     break;
                 } else {
-                    visibleEntries.add(entry);
+                    visible.add(entry);
                 }
             }
         }
-        for (T entry : visibleEntries) {
+        for (T entry : visible) {
             entry.draw(centerX, baseY + entry.lastHeight, bottomY, currentTime);
         }
     }
@@ -85,12 +85,12 @@ public class ScrollList<T extends ScrollEntry> {
                 entry.setMouseHovered(false);
             }
         }*/
-        visibleEntries.forEach(e -> e.mouseMoved(deltaCenterX, rMouseY - e.lastHeight, mouseX, mouseY));
+        visible.forEach(e -> e.mouseMoved(deltaCenterX, rMouseY - e.lastHeight, mouseX, mouseY));
     }
 
     public boolean mouseClicked(float topY, float yOffset, float bottomY, double deltaCenterX, double mouseX, double mouseY, int mouseButton) {
         float baseY = topY - yOffset;
-        for (T entry : entries) {
+        for (T entry : groups) {
             if (mouseY >= baseY && mouseY <= baseY + entry.height) {
                 if (entry.mouseClicked(deltaCenterX, mouseY - baseY, mouseX, mouseY, mouseButton)) {
                     return true;
@@ -122,7 +122,7 @@ public class ScrollList<T extends ScrollEntry> {
                 break;
             }
         }*/
-        for (T entry : visibleEntries) {
+        for (T entry : visible) {
             if (entry.mouseReleased(deltaCenterX, rMouseY - entry.lastHeight, mouseX, mouseY, mouseButton)) {
                 return true;
             }
@@ -146,7 +146,7 @@ public class ScrollList<T extends ScrollEntry> {
                 break;
             }
         }*/
-        for (T entry : visibleEntries) {
+        for (T entry : visible) {
             if (entry.mouseDragged(deltaCenterX, rMouseY - entry.lastHeight, mouseX, mouseY, mouseButton, deltaX, deltaY)) {
                 return true;
             }
@@ -156,7 +156,7 @@ public class ScrollList<T extends ScrollEntry> {
 
     public boolean mouseScrolled(float topY, float yOffset, float bottomY, double rcx, double mouseY, double scroll) {
         float baseY = topY - yOffset;
-        for (T entry : entries) {
+        for (T entry : groups) {
             if (mouseY >= baseY && mouseY <= baseY + entry.height) {
                 if (entry.mouseScrolled(rcx, mouseY - baseY, scroll)) {
                     return true;
@@ -176,42 +176,42 @@ public class ScrollList<T extends ScrollEntry> {
         return maxHeight;
     }
 
-    public void addEntry(T entry) {
-        entries.add(entry);
+    public void addGroup(T entry) {
+        groups.add(entry);
         maxHeight += entry.height;
-        resizeEntries();
+        resizeGroups();
         window.onTotalHeightChanged();
     }
 
-    public void addEntries(Collection<T> collection) {
-        entries.addAll(collection);
+    public void addGroups(Collection<T> collection) {
+        groups.addAll(collection);
         maxHeight += collection.stream().mapToInt(t -> t.height).sum();
-        resizeEntries();
+        resizeGroups();
         window.onTotalHeightChanged();
     }
 
-    public void removeEntry(T entry) {
-        if (entries.remove(entry)) {
+    public void removeGroup(T entry) {
+        if (groups.remove(entry)) {
             maxHeight -= entry.height;
         }
-        resizeEntries();
+        resizeGroups();
         window.onTotalHeightChanged();
     }
 
-    private void resizeEntries() {
-        entries.forEach(e -> e.lastHeight = 0);
-        int size = entries.size();
+    private void resizeGroups() {
+        groups.forEach(e -> e.lastHeight = 0);
+        int size = groups.size();
         if (size > 1) {
             for (int i = 1; i < size; i++) {
-                T entry = entries.get(i);
-                T lastEntry = entries.get(i - 1);
+                T entry = groups.get(i);
+                T lastEntry = groups.get(i - 1);
                 entry.lastHeight = lastEntry.height + lastEntry.lastHeight;
             }
         }
     }
 
-    public void clearEntries() {
-        entries.clear();
+    public void clearGroups() {
+        groups.clear();
         maxHeight = 0;
         window.onTotalHeightChanged();
     }

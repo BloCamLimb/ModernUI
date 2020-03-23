@@ -19,7 +19,6 @@
 package icyllis.modernui.gui.chat;
 
 import icyllis.modernui.gui.widget.StandardEventListener;
-import icyllis.modernui.font.EmojiStringRenderer;
 import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.gui.widget.FixedShape;

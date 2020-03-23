@@ -30,6 +30,7 @@ import net.minecraftforge.event.entity.player.PlayerContainerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import org.apache.logging.log4j.Marker;
@@ -58,8 +59,8 @@ public class EventsHandler {
         @SubscribeEvent
         public static void onRenderTick(TickEvent.RenderTickEvent event) {
             if (event.phase == TickEvent.Phase.START) {
-                GlobalModuleManager.INSTANCE.renderTick(event.renderTickTime);
                 TrueTypeRenderer.INSTANCE.init();
+                GlobalModuleManager.INSTANCE.renderTick(event.renderTickTime);
             } else {
                 BlurHandler.INSTANCE.tick();
             }
@@ -81,6 +82,13 @@ public class EventsHandler {
                 GlobalModuleManager.INSTANCE.resetTicks();
             BlurHandler.INSTANCE.blur(hasGui);
             //ModernUI.LOGGER.debug("Open GUI {}", hasGui ? event.getGui().getClass().getSimpleName() : "null");
+        }
+
+        @SubscribeEvent
+        public static void onConfigLoad(ModConfig.Loading event) {
+            if (event.getConfig().getSpec().equals(ModernUI_Config.CLIENT_SPEC)) {
+                ModernUI_Config.loadClientConfig();
+            }
         }
     }
 
