@@ -29,6 +29,7 @@ import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.OptionsScreen;
+import net.minecraft.client.gui.screen.OptionsSoundsScreen;
 import net.minecraft.client.gui.screen.VideoSettingsScreen;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.settings.AmbientOcclusionStatus;
@@ -86,16 +87,6 @@ public class SettingVideo implements IGuiModule {
         }));
 
         list.add(SettingsManager.RENDER_DISTANCE.apply(window));
-        list.add(SettingsManager.FOV.apply(window));
-
-        DropdownOptionEntry ao = new DropdownOptionEntry(window, I18n.format("options.ao"), AO.get(),
-                gameSettings.ambientOcclusionStatus.ordinal(), i -> {
-            gameSettings.ambientOcclusionStatus = AmbientOcclusionStatus.values()[i];
-            minecraft.worldRenderer.loadRenderers();
-        });
-        list.add(ao);
-
-        SettingsManager.AO_LEVEL.ifPresent(a -> list.add(a.apply(window)));
 
         DSliderOptionEntry framerateLimit = new DSliderOptionEntry(window, I18n.format("options.framerateLimit"),
                 1, 52, gameSettings.framerateLimit / 5, i -> {
@@ -104,17 +95,19 @@ public class SettingVideo implements IGuiModule {
         }, i -> i > 51 ? "260+" : Integer.toString(i * 5));
         list.add(framerateLimit);
 
-        list.add(SettingsManager.VSYNC.apply(window));
-        list.add(SettingsManager.GAMMA.apply(window));
+        list.add(SettingsManager.FOV.apply(window));
 
         guiScale = new GuiScaleOptionEntry(window);
         list.add(guiScale);
+
+        list.add(SettingsManager.GAMMA.apply(window));
 
         DropdownOptionEntry attack = new DropdownOptionEntry(window, I18n.format("options.attackIndicator"), ATTACK_INDICATOR.get(),
                 gameSettings.attackIndicator.ordinal(), i -> gameSettings.attackIndicator = AttackIndicatorStatus.values()[i]);
         list.add(attack);
 
         list.add(SettingsManager.VIEW_BOBBING.apply(window));
+        list.add(SettingsManager.VSYNC.apply(window));
 
         if (ModIntegration.optifineLoaded) {
             BooleanOptionEntry dynamicFov = new BooleanOptionEntry(window, I18n.format("of.options.DYNAMIC_FOV"),
@@ -130,6 +123,15 @@ public class SettingVideo implements IGuiModule {
     private void addQualityCategory() {
         List<OptionEntry> list = new ArrayList<>();
         GameSettings gameSettings = minecraft.gameSettings;
+
+        DropdownOptionEntry ao = new DropdownOptionEntry(window, I18n.format("options.ao"), AO.get(),
+                gameSettings.ambientOcclusionStatus.ordinal(), i -> {
+            gameSettings.ambientOcclusionStatus = AmbientOcclusionStatus.values()[i];
+            minecraft.worldRenderer.loadRenderers();
+        });
+        list.add(ao);
+
+        SettingsManager.AO_LEVEL.ifPresent(a -> list.add(a.apply(window)));
 
         DSliderOptionEntry mipmapLevel = new DSliderOptionEntry(window, I18n.format("options.mipmapLevels"),
                 0, 4, gameSettings.mipmapLevels, i -> gameSettings.mipmapLevels = i, String::valueOf).

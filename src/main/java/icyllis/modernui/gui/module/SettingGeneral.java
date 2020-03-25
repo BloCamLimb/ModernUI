@@ -24,6 +24,7 @@ import icyllis.modernui.gui.element.IElement;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.IGuiModule;
 import icyllis.modernui.gui.window.SettingScrollWindow;
+import icyllis.modernui.system.ModIntegration;
 import icyllis.modernui.system.SettingsManager;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
@@ -127,6 +128,7 @@ public class SettingGeneral implements IGuiModule {
         window.addGroup(category);
     }
 
+    @SuppressWarnings("NoTranslation")
     private void addChatCategory() {
         List<OptionEntry> list = new ArrayList<>();
         GameSettings gameSettings = minecraft.gameSettings;
@@ -141,6 +143,16 @@ public class SettingGeneral implements IGuiModule {
         list.add(SettingsManager.CHAT_WIDTH.apply(window));
         list.add(SettingsManager.CHAT_HEIGHT_FOCUSED.apply(window));
         list.add(SettingsManager.CHAT_HEIGHT_UNFOCUSED.apply(window));
+
+        if (ModIntegration.optifineLoaded) {
+            DropdownOptionEntry chatBackground = new DropdownOptionEntry(window, I18n.format("of.options.CHAT_BACKGROUND"),
+                    SettingsManager.INSTANCE.getChatBackgroundTexts(), SettingsManager.INSTANCE.getChatBackgroundIndex(), SettingsManager.INSTANCE::setChatBackgroundIndex);
+            list.add(chatBackground);
+            BooleanOptionEntry chatShadow = new BooleanOptionEntry(window, I18n.format("of.options.CHAT_SHADOW"),
+                    SettingsManager.INSTANCE.getChatShadow(), SettingsManager.INSTANCE::setChatShadow);
+            list.add(chatShadow);
+        }
+
         list.add(SettingsManager.REDUCED_DEBUG_INFO.apply(window));
         list.add(SettingsManager.AUTO_SUGGEST_COMMANDS.apply(window));
 
