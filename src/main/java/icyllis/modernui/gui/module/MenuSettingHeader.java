@@ -18,21 +18,14 @@
 
 package icyllis.modernui.gui.module;
 
-import icyllis.modernui.gui.component.option.OptionEntry;
 import icyllis.modernui.gui.element.IElement;
 import icyllis.modernui.gui.element.MenuSettingsBG;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.IGuiModule;
 import icyllis.modernui.gui.master.TickEvent;
 import icyllis.modernui.gui.widget.LineTextButton;
-import icyllis.modernui.gui.widget.MenuButton;
-import icyllis.modernui.gui.widget.StateAnimatedButton;
 import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.settings.AbstractOption;
-import net.minecraft.client.settings.SliderMultiplierOption;
-import net.minecraft.client.settings.SliderPercentageOption;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;

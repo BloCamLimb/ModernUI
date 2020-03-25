@@ -16,17 +16,18 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.component.option;
+package icyllis.modernui.gui.scroll.option;
 
-import icyllis.modernui.gui.component.Slider;
+import icyllis.modernui.gui.widget.SmoothSlider;
 import icyllis.modernui.gui.window.SettingScrollWindow;
+import net.minecraft.util.math.MathHelper;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class SliderOptionEntry extends OptionEntry {
+public class SSliderOptionEntry extends OptionEntry {
 
-    private Slider slider;
+    private SmoothSlider slider;
 
     private double minValue;
 
@@ -42,9 +43,10 @@ public class SliderOptionEntry extends OptionEntry {
 
     private String displayString;
 
-    public SliderOptionEntry(SettingScrollWindow window, String optionTitle, double minValue, double maxValue, float stepSize, double currentValue, Consumer<Double> saveOption, Function<Double, String> displayStringFunc) {
+    public SSliderOptionEntry(SettingScrollWindow window, String optionTitle, double minValue, double maxValue, float stepSize, double currentValue, Consumer<Double> saveOption, Function<Double, String> displayStringFunc) {
         super(window, optionTitle);
-        slider = new Slider(84, (currentValue - minValue) / (maxValue - minValue), this::onPercentageChange);
+        currentValue = MathHelper.clamp(currentValue, minValue, maxValue);
+        slider = new SmoothSlider(84, (currentValue - minValue) / (maxValue - minValue), this::onPercentageChange);
         this.minValue = minValue;
         this.maxValue = maxValue;
         this.currentValue = currentValue;
@@ -55,13 +57,14 @@ public class SliderOptionEntry extends OptionEntry {
         
     }
 
-    public SliderOptionEntry(SettingScrollWindow window, String optionTitle, double minValue, double maxValue, float stepSize, double currentValue, Consumer<Double> saveOption) {
+    public SSliderOptionEntry(SettingScrollWindow window, String optionTitle, double minValue, double maxValue, float stepSize, double currentValue, Consumer<Double> saveOption) {
         this(window, optionTitle, minValue, maxValue, stepSize, currentValue, saveOption, String::valueOf);
     }
 
     @Override
     public void drawExtra(float centerX, float y, float currentTime) {
-        slider.draw(centerX + 40, y + 9);
+        slider.setPos(centerX + 40, y + 9);
+        slider.draw(currentTime);
         fontRenderer.drawString(displayString, centerX + 154, y + 6, titleGrayscale, titleGrayscale, titleGrayscale, 1, 0.5f);
     }
 
@@ -89,9 +92,7 @@ public class SliderOptionEntry extends OptionEntry {
         currentValue = minValue + (maxValue - minValue) * percentage;
         currentValue = stepSize * (Math.round(currentValue / stepSize));
         displayString = displayStringFunc.apply(currentValue);
-        if (autoApply) {
-            saveOption();
-        }
+        saveOption();
     }
 
     public void saveOption() {

@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.component.scroll;
+package icyllis.modernui.gui.scroll;
 
 import icyllis.modernui.gui.window.ScrollWindow;
 
@@ -38,38 +38,45 @@ public class ScrollList<T extends ScrollGroup> {
         this.window = window;
     }
 
-    public void draw(float centerX, float topY, float yOffset, float bottomY, float currentTime) {
+    public void updateVisible(float centerX, float topY, float yOffset, float bottomY) {
         float baseY = topY - yOffset;
         float maxHeight = bottomY - baseY;
         boolean startDraw = false;
         float accHeight;
         visible.clear();
-        for (T entry : groups) {
+        for (T group : groups) {
             if (!startDraw) {
-                accHeight = entry.height + entry.lastHeight;
+                accHeight = group.height + group.lastHeight;
                 if (accHeight >= yOffset) {
                     startDraw = true;
                 }
             }
             if (startDraw) {
-                if (entry.lastHeight >= maxHeight) {
+                if (group.lastHeight >= maxHeight) {
                     break;
                 } else {
-                    visible.add(entry);
+                    visible.add(group);
                 }
             }
         }
         for (T entry : visible) {
-            entry.draw(centerX, baseY + entry.lastHeight, bottomY, currentTime);
+            entry.centerX = centerX;
+            entry.y = baseY + entry.lastHeight;
+        }
+    }
+
+    public void draw(float bottomY, float currentTime) {
+        for (T entry : visible) {
+            entry.draw(bottomY, currentTime);
         }
     }
 
     /**
      * Check if mouse is in scroll window width first!
      */
-    public void mouseMoved(float topY, float yOffset, double deltaCenterX, double mouseX, double mouseY) {
-        float baseY = topY - yOffset;
-        double rMouseY = mouseY - baseY;
+    public void mouseMoved(double mouseX, double mouseY) {
+        //float baseY = topY - yOffset;
+        //double rMouseY = mouseY - baseY;
         /*boolean finish = false;
         for (T entry : entries) {
             if (!finish) {
@@ -85,14 +92,15 @@ public class ScrollList<T extends ScrollGroup> {
                 entry.setMouseHovered(false);
             }
         }*/
-        visible.forEach(e -> e.mouseMoved(deltaCenterX, rMouseY - e.lastHeight, mouseX, mouseY));
+        //visible.forEach(e -> e.mouseMoved(deltaCenterX, rMouseY - e.lastHeight, mouseX, mouseY));
+        visible.forEach(e -> e.mouseMoved(mouseX, mouseY));
     }
 
-    public boolean mouseClicked(float topY, float yOffset, float bottomY, double deltaCenterX, double mouseX, double mouseY, int mouseButton) {
-        float baseY = topY - yOffset;
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        /*float baseY = topY - yOffset;
         for (T entry : groups) {
             if (mouseY >= baseY && mouseY <= baseY + entry.height) {
-                if (entry.mouseClicked(deltaCenterX, mouseY - baseY, mouseX, mouseY, mouseButton)) {
+                if (entry.mouseClicked(mouseX, mouseY, mouseButton)) {
                     return true;
                 }
                 break;
@@ -102,13 +110,18 @@ public class ScrollList<T extends ScrollGroup> {
             if (baseY >= bottomY) {
                 break;
             }
+        }*/
+        for (T entry : visible) {
+            if (entry.mouseClicked(mouseX, mouseY, mouseButton)) {
+                return true;
+            }
         }
         return false;
     }
 
-    public boolean mouseReleased(float topY, float yOffset, float bottomY, double deltaCenterX, double mouseX, double mouseY, int mouseButton) {
-        float baseY = topY - yOffset;
-        double rMouseY = mouseY - baseY;
+    public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
+        //float baseY = topY - yOffset;
+        //double rMouseY = mouseY - baseY;
         /*for (T entry : entries) {
             if (mouseY >= baseY && mouseY <= baseY + entry.height) {
                 if (entry.mouseReleased(rcx, mouseY - baseY, mouseX, mouseY, mouseButton)) {
@@ -123,16 +136,16 @@ public class ScrollList<T extends ScrollGroup> {
             }
         }*/
         for (T entry : visible) {
-            if (entry.mouseReleased(deltaCenterX, rMouseY - entry.lastHeight, mouseX, mouseY, mouseButton)) {
+            if (entry.mouseReleased(mouseX, mouseY, mouseButton)) {
                 return true;
             }
         }
         return false;
     }
 
-    public boolean mouseDragged(float topY, float yOffset, float bottomY, double deltaCenterX, double mouseX, double mouseY, int mouseButton, double deltaX, double deltaY) {
-        float baseY = topY - yOffset;
-        double rMouseY = mouseY - baseY;
+    public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double deltaX, double deltaY) {
+        //float baseY = topY - yOffset;
+        //double rMouseY = mouseY - baseY;
         /*for (T entry : entries) {
             if (mouseY >= baseY && mouseY <= baseY + entry.height) {
                 if (entry.mouseDragged(deltaCenterX, mouseY - baseY, mouseX, mouseY, mouseButton, deltaX, deltaY)) {
@@ -147,15 +160,15 @@ public class ScrollList<T extends ScrollGroup> {
             }
         }*/
         for (T entry : visible) {
-            if (entry.mouseDragged(deltaCenterX, rMouseY - entry.lastHeight, mouseX, mouseY, mouseButton, deltaX, deltaY)) {
+            if (entry.mouseDragged(mouseX, mouseY, mouseButton, deltaX, deltaY)) {
                 return true;
             }
         }
         return false;
     }
 
-    public boolean mouseScrolled(float topY, float yOffset, float bottomY, double rcx, double mouseY, double scroll) {
-        float baseY = topY - yOffset;
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        /*float baseY = topY - yOffset;
         for (T entry : groups) {
             if (mouseY >= baseY && mouseY <= baseY + entry.height) {
                 if (entry.mouseScrolled(rcx, mouseY - baseY, scroll)) {
@@ -167,6 +180,11 @@ public class ScrollList<T extends ScrollGroup> {
             }
             if (baseY >= bottomY) {
                 break;
+            }
+        }*/
+        for (T entry : visible) {
+            if (entry.mouseScrolled(mouseX, mouseY, delta)) {
+                return true;
             }
         }
         return false;

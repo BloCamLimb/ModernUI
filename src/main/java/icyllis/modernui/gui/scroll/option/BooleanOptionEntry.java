@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.component.option;
+package icyllis.modernui.gui.scroll.option;
 
 import com.google.common.collect.Lists;
 import icyllis.modernui.gui.window.SettingScrollWindow;
@@ -26,7 +26,7 @@ import net.minecraft.client.resources.I18n;
 import java.util.List;
 import java.util.function.Supplier;
 
-public class BooleanOptionEntry extends MenuOptionEntry {
+public class BooleanOptionEntry extends DropdownOptionEntry {
 
     private static Supplier<List<String>> YES_OR_NO = () -> Lists.newArrayList(I18n.format("gui.yes"), I18n.format("gui.no"));
 

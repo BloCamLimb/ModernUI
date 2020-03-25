@@ -16,12 +16,12 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.component.option;
+package icyllis.modernui.gui.scroll.option;
 
 import com.google.common.collect.Lists;
 import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.IFontRenderer;
-import icyllis.modernui.gui.component.scroll.ScrollGroup;
+import icyllis.modernui.gui.scroll.ScrollGroup;
 import net.minecraft.util.text.TextFormatting;
 
 import java.util.List;
@@ -48,7 +48,7 @@ public class OptionCategory extends ScrollGroup {
     }
 
     @Override
-    public void draw(float centerX, float y, float maxY, float currentTime) {
+    public void draw(float maxY, float currentTime) {
         fontRenderer.drawString(TextFormatting.BOLD + title, centerX - 160, y + 14, 1, 1, 1, 1, 0f);
         int maxSize = Math.min((int) Math.ceil((maxY - y) / ENTRY_HEIGHT), entries.size());
         for (int i = 0; i < maxSize; i++) {
@@ -58,10 +58,11 @@ public class OptionCategory extends ScrollGroup {
     }
 
     @Override
-    public void mouseMoved(double deltaCenterX, double deltaY, double mouseX, double mouseY) {
+    public void mouseMoved(double mouseX, double mouseY) {
         //ModernUI.LOGGER.info("Category Mouse Move {} {}", deltaCenterX, deltaY);
+        double deltaCenterX = mouseX - centerX;
         if (deltaCenterX >= -160 && deltaCenterX <= 160) {
-            double rY = deltaY - 30;
+            double rY = mouseY - y - 30;
             if (rY >= 0) {
                 int pIndex = (int) (rY / ENTRY_HEIGHT);
                 if (pIndex < entries.size()) {
@@ -86,8 +87,9 @@ public class OptionCategory extends ScrollGroup {
     }
 
     @Override
-    public boolean mouseClicked(double deltaCenterX, double deltaY, double mouseX, double mouseY, int mouseButton) {
-        double ry = deltaY - 30;
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        double ry = mouseY - y - 30;
+        double deltaCenterX = mouseX - centerX;
         /*if (ry >= 0) {
             int pIndex = (int) (ry / ENTRY_HEIGHT);
             if (pIndex >= 0 && pIndex < entries.size()) {
@@ -101,12 +103,13 @@ public class OptionCategory extends ScrollGroup {
                 return true;
             }
         }
-        return super.mouseClicked(deltaCenterX, deltaY, mouseX, mouseY, mouseButton);
+        return super.mouseClicked(mouseX, mouseY, mouseButton);
     }
 
     @Override
-    public boolean mouseReleased(double deltaCenterX, double deltaY, double mouseX, double mouseY, int mouseButton) {
-        double ry = deltaY - 30;
+    public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
+        double ry = mouseY - y - 30;
+        double deltaCenterX = mouseX - centerX;
         /*if (ry >= 0) {
             int pIndex = (int) (ry / ENTRY_HEIGHT);
             if (pIndex >= 0 && pIndex < entries.size()) {
@@ -120,12 +123,13 @@ public class OptionCategory extends ScrollGroup {
                 return true;
             }
         }
-        return super.mouseReleased(deltaCenterX, deltaY, mouseX, mouseY, mouseButton);
+        return super.mouseReleased(mouseX, mouseY, mouseButton);
     }
 
     @Override
-    public boolean mouseDragged(double deltaCenterX, double deltaY, double mouseX, double mouseY, int mouseButton, double deltaMouseX, double deltaMouseY) {
-        double ry = deltaY - 30;
+    public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double deltaX, double deltaY) {
+        double ry = mouseY - y - 30;
+        double deltaCenterX = mouseX - centerX;
         /*if (ry >= 0) {
             int pIndex = (int) (ry / ENTRY_HEIGHT);
             if (pIndex >= 0 && pIndex < entries.size()) {
@@ -135,10 +139,10 @@ public class OptionCategory extends ScrollGroup {
             }
         }*/
         for (int i = 0; i < entries.size(); i++) {
-            if (entries.get(i).mouseDragged(deltaCenterX, ry - i * ENTRY_HEIGHT, mouseX, mouseY, mouseButton, deltaMouseX, deltaMouseY)) {
+            if (entries.get(i).mouseDragged(deltaCenterX, ry - i * ENTRY_HEIGHT, mouseX, mouseY, mouseButton, deltaX, deltaY)) {
                 return true;
             }
         }
-        return super.mouseDragged(deltaCenterX, deltaY, mouseX, mouseY, mouseButton, deltaMouseX, deltaMouseY);
+        return super.mouseDragged(mouseX, mouseY, mouseButton, deltaX, deltaY);
     }
 }

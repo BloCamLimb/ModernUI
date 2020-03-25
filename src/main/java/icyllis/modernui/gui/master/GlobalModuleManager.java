@@ -21,7 +21,9 @@ package icyllis.modernui.gui.master;
 import icyllis.modernui.gui.animation.IAnimation;
 import icyllis.modernui.api.global.IModuleFactory;
 import icyllis.modernui.api.manager.IModuleManager;
+import icyllis.modernui.shader.blur.BlurHandler;
 import icyllis.modernui.system.ModernUI;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.network.PacketBuffer;
@@ -42,6 +44,8 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager, IGuiE
     INSTANCE;
 
     private final Marker MARKER = MarkerManager.getMarker("SCREEN");
+
+    private boolean initialized = false;
 
     /* For container gui, the packet from server */
     private PacketBuffer extraData;
@@ -66,7 +70,11 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager, IGuiE
     public void init(int width, int height) {
         this.width = width;
         this.height = height;
-        this.switchModule(0);
+        if (!initialized) {
+            this.switchModule(0);
+            initialized = true;
+        }
+        BlurHandler.INSTANCE.blur(true);
     }
 
     public void setExtraData(PacketBuffer extraData) {
@@ -229,7 +237,7 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager, IGuiE
 
     @Override
     public boolean changeFocus(boolean searchNext) {
-        //TODO
+        //TODO change focus
         return false;
     }
 
@@ -252,6 +260,11 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager, IGuiE
         builders.forEach(e -> e.resize(width, height));
         if (popup != null)
             popup.resize(width, height);
+        Minecraft minecraft = Minecraft.getInstance();
+        double scale = minecraft.getMainWindow().getGuiScaleFactor();
+        this.mouseX = minecraft.mouseHelper.getMouseX() / scale;
+        this.mouseY = minecraft.mouseHelper.getMouseY() / scale;
+        refreshMouse();
     }
 
     public void removed() {
@@ -259,6 +272,7 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager, IGuiE
         animations.clear();
         popup = null;
         extraData = null;
+        initialized = false;
     }
 
     /* return false will not close this gui/screen */

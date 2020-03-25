@@ -19,10 +19,10 @@
 package icyllis.modernui.gui.window;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.gui.component.scroll.ScrollController;
-import icyllis.modernui.gui.component.scroll.ScrollGroup;
-import icyllis.modernui.gui.component.scroll.ScrollList;
-import icyllis.modernui.gui.component.scroll.ScrollBar;
+import icyllis.modernui.gui.scroll.ScrollController;
+import icyllis.modernui.gui.scroll.ScrollGroup;
+import icyllis.modernui.gui.scroll.ScrollList;
+import icyllis.modernui.gui.scroll.ScrollBar;
 import icyllis.modernui.gui.element.Element;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -84,7 +84,7 @@ public class ScrollWindow<T extends ScrollGroup> extends Element implements IGui
 
         RenderSystem.enableTexture();
 
-        scrollList.draw(getCenterX(), y, getVisibleOffset(), bottom, currentTime);
+        scrollList.draw(bottom, currentTime);
 
         RenderSystem.disableTexture();
         RenderSystem.shadeModel(GL11.GL_SMOOTH);
@@ -108,10 +108,10 @@ public class ScrollWindow<T extends ScrollGroup> extends Element implements IGui
 
         GL11.glDisable(GL11.GL_SCISSOR_TEST);
 
-        drawEndExtra();
+        drawMenu();
     }
 
-    public void drawEndExtra() {
+    public void drawMenu() {
 
     }
 
@@ -127,7 +127,8 @@ public class ScrollWindow<T extends ScrollGroup> extends Element implements IGui
         this.scrollbar.setPos(this.right - scrollbar.barThickness - 1, y + 1);
         this.scrollbar.setMaxLength(this.height - 2);
         updateScrollBarLength();
-        updateScrollBarOffset(); // scrollAmount() not always call updateScrollBarOffset()
+        updateScrollBarOffset(); // scrollSmoothly() not always call updateScrollBarOffset()
+        updateScrollList();
         scrollSmoothly(0);
     }
 
@@ -135,7 +136,7 @@ public class ScrollWindow<T extends ScrollGroup> extends Element implements IGui
     public void mouseMoved(double mouseX, double mouseY) {
         scrollbar.mouseMoved(mouseX, mouseY);
         if (isMouseOver(mouseX, mouseY)) {
-            scrollList.mouseMoved(y, getVisibleOffset(), mouseX - getCenterX(), mouseX, mouseY);
+            scrollList.mouseMoved(mouseX, mouseY);
         }
     }
 
@@ -145,7 +146,7 @@ public class ScrollWindow<T extends ScrollGroup> extends Element implements IGui
             return true;
         }
         if (isMouseOver(mouseX, mouseY)) {
-            return scrollList.mouseClicked(y, getVisibleOffset(), bottom, mouseX - getCenterX(), mouseX, mouseY, mouseButton);
+            return scrollList.mouseClicked(mouseX, mouseY, mouseButton);
         }
         return false;
     }
@@ -156,7 +157,7 @@ public class ScrollWindow<T extends ScrollGroup> extends Element implements IGui
             return true;
         }
         if (isMouseOver(mouseX, mouseY)) {
-            return scrollList.mouseReleased(y, getVisibleOffset(), bottom, mouseX - getCenterX(), mouseX, mouseY, mouseButton);
+            return scrollList.mouseReleased(mouseX, mouseY, mouseButton);
         }
         return false;
     }
@@ -167,7 +168,7 @@ public class ScrollWindow<T extends ScrollGroup> extends Element implements IGui
             return true;
         }
         if (isMouseOver(mouseX, mouseY)) {
-            return scrollList.mouseDragged(y, getVisibleOffset(), bottom, mouseX - getCenterX(), mouseX, mouseY, mouseButton, deltaX, deltaY);
+            return scrollList.mouseDragged(mouseX, mouseY, mouseButton, deltaX, deltaY);
         }
         return false;
     }
@@ -175,7 +176,7 @@ public class ScrollWindow<T extends ScrollGroup> extends Element implements IGui
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollAmount) {
         if (isMouseOver(mouseX, mouseY)) {
-            if (scrollList.mouseScrolled(y, this.scrollAmount, bottom, mouseX - (x + width / 2), mouseY, scrollAmount)) {
+            if (scrollList.mouseScrolled(mouseX, mouseY, scrollAmount)) {
                 return true;
             }
             scrollSmoothly(Math.round(scrollAmount * -20f));
@@ -186,11 +187,12 @@ public class ScrollWindow<T extends ScrollGroup> extends Element implements IGui
 
     @Override
     public boolean isMouseOver(double mouseX, double mouseY) {
-        return mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height;
+        return mouseX >= x && mouseX <= right && mouseY >= y && mouseY <= bottom;
     }
 
     public void scrollSmoothly(float delta) {
-        controller.setTargetValue(MathHelper.clamp(controller.getTargetValue() + delta, 0, getMaxScrollAmount()));
+        float amount = MathHelper.clamp(controller.getTargetValue() + delta, 0, getMaxScrollAmount());
+        controller.setTargetValue(amount);
     }
 
     public void scrollDirectly(float delta) {
@@ -205,6 +207,7 @@ public class ScrollWindow<T extends ScrollGroup> extends Element implements IGui
     private void callbackScrollAmount(float scrollAmount) {
         this.scrollAmount = scrollAmount;
         updateScrollBarOffset();
+        updateScrollList();
         moduleManager.refreshMouse();
     }
 
@@ -255,9 +258,14 @@ public class ScrollWindow<T extends ScrollGroup> extends Element implements IGui
         }
     }
 
+    public void updateScrollList() {
+        scrollList.updateVisible(getCenterX(), y, getVisibleOffset(), bottom);
+    }
+
     public void onTotalHeightChanged() {
         updateScrollBarLength();
         updateScrollBarOffset();
+        updateScrollList();
     }
 
     public void addGroup(T entry) {

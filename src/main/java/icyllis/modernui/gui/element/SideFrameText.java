@@ -40,7 +40,8 @@ public class SideFrameText extends StateAnimatedElement {
 
     @Override
     public void draw(float currentTime) {
-        if (!checkState()) {
+        checkState();
+        if (openState == 0) {
             return;
         }
         RenderSystem.pushMatrix();

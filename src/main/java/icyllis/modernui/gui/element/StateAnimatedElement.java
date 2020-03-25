@@ -33,7 +33,7 @@ public abstract class StateAnimatedElement extends Element {
         super(xResizer, yResizer);
     }
 
-    protected boolean checkState() {
+    protected void checkState() {
         if (prepareToOpen && openState == 0) {
             openState = 1;
             open();
@@ -43,7 +43,6 @@ public abstract class StateAnimatedElement extends Element {
             close();
             prepareToClose = false;
         }
-        return openState != 0;
     }
 
     /**

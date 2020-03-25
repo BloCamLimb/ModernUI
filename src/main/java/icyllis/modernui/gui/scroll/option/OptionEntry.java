@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.component.option;
+package icyllis.modernui.gui.scroll.option;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.FontTools;
@@ -48,8 +48,6 @@ public abstract class OptionEntry {
         this(optionName, originalOption, options, null);
     }*/
 
-    protected boolean autoApply = true;
-
     public OptionEntry(SettingScrollWindow window, String title) {
         this.window = window;
         this.title = title;
@@ -58,16 +56,12 @@ public abstract class OptionEntry {
 
     }
 
-    public void disableAutoApply() {
-        autoApply = false;
-    }
-
     public final void draw(float centerX, float y, float currentTime) {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();
         fontRenderer.drawString(title, centerX - 160, y + 6, titleGrayscale, titleGrayscale, titleGrayscale, 1, 0);
         /*if (desc.length > 0) {
-            //TODO
+            //TODO tooltip description lines
         }*/
         drawExtra(centerX, y, currentTime);
         RenderSystem.disableTexture();
