@@ -33,9 +33,9 @@ public class LineTextButton extends StateAnimatedButton {
 
     protected float widthOffset;
 
-    protected float textBrightness = 0.7f;
+    protected float textGrayscale = 0.7f;
 
-    protected float opacity = 0;
+    protected float alpha = 0;
 
     protected boolean lock = false;
 
@@ -49,15 +49,15 @@ public class LineTextButton extends StateAnimatedButton {
         this.shape = new FixedShape.Rect(width, 12);
         this.moduleID = moduleID;
         moduleManager.addAnimation(new Animation(3)
-                .applyTo(new Applier(1f, value -> opacity = value))
+                .applyTo(new Applier(1f, value -> alpha = value))
                 .withDelay(1));
     }
 
     @Override
     public void draw(float currentTime) {
         super.checkState();
-        fontRenderer.drawString(text, x + width / 2f, y + 2, textBrightness, textBrightness, textBrightness, opacity, 0.25f);
-        DrawTools.fillRectWithColor(x + widthOffset, y + 11, x + width - widthOffset, y + 12, 0xffffff, opacity);
+        fontRenderer.drawString(text, x + halfWidth, y + 2, textGrayscale, textGrayscale, textGrayscale, alpha, 0.25f);
+        DrawTools.fillRectWithColor(x + widthOffset, y + 11, x + width - widthOffset, y + 12, 0xffffff, alpha);
     }
 
     @Override
@@ -70,7 +70,7 @@ public class LineTextButton extends StateAnimatedButton {
         super.open();
         moduleManager.addAnimation(new Animation(3)
                 .applyTo(new Applier(halfWidth, 0, value -> widthOffset = value),
-                        new Applier(0.7f, 1, value -> textBrightness = value))
+                        new Applier(0.7f, 1, value -> textGrayscale = value))
                 .onFinish(() -> openState = 2));
     }
 
@@ -89,7 +89,7 @@ public class LineTextButton extends StateAnimatedButton {
         super.close();
         moduleManager.addAnimation(new Animation(3)
                 .applyTo(new Applier(0, halfWidth, value -> widthOffset = value),
-                        new Applier(1, 0.7f, value -> textBrightness = value))
+                        new Applier(1, 0.7f, value -> textGrayscale = value))
                 .onFinish(() -> openState = 0));
     }
 

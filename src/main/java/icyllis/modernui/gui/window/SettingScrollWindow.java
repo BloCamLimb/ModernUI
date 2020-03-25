@@ -18,17 +18,14 @@
 
 package icyllis.modernui.gui.window;
 
-import icyllis.modernui.gui.component.DropDownList;
-import icyllis.modernui.gui.component.option.OptionCategory;
+import icyllis.modernui.gui.widget.DropDownList;
+import icyllis.modernui.gui.scroll.option.OptionCategory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public class SettingScrollWindow extends ScrollWindow<OptionCategory> {
 
-    /**
-     * Make mouseClicked return false to remove this
-     */
     @Nullable
     protected DropDownList dropDownList;
 
@@ -43,7 +40,7 @@ public class SettingScrollWindow extends ScrollWindow<OptionCategory> {
     }
 
     @Override
-    public void drawEndExtra() {
+    public void drawMenu() {
         if (dropDownList != null) {
             dropDownList.draw();
         }

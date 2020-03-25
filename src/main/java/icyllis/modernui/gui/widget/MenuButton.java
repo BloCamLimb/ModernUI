@@ -67,8 +67,10 @@ public class MenuButton extends Element implements IGuiEventListener {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if (mouseHovered && mouseButton == 0) {
-            if (!lock)
+            if (!lock) {
                 leftClick.run();
+                return true;
+            }
         }
         return false;
     }

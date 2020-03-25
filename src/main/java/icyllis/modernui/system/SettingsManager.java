@@ -18,11 +18,13 @@
 
 package icyllis.modernui.system;
 
-import icyllis.modernui.gui.component.option.BooleanOptionEntry;
-import icyllis.modernui.gui.component.option.OptionEntry;
-import icyllis.modernui.gui.component.option.SliderOptionEntry;
+import icyllis.modernui.gui.scroll.option.BooleanOptionEntry;
+import icyllis.modernui.gui.scroll.option.DSliderOptionEntry;
+import icyllis.modernui.gui.scroll.option.OptionEntry;
+import icyllis.modernui.gui.scroll.option.SSliderOptionEntry;
 import icyllis.modernui.gui.window.SettingScrollWindow;
 import net.minecraft.client.GameSettings;
+import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.NewChatGui;
 import net.minecraft.client.resources.I18n;
@@ -30,13 +32,18 @@ import net.minecraft.client.settings.AbstractOption;
 import net.minecraft.client.settings.BooleanOption;
 import net.minecraft.client.settings.IteratableOption;
 import net.minecraft.client.settings.SliderPercentageOption;
+import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import org.apache.commons.lang3.tuple.Triple;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -44,52 +51,131 @@ import java.util.function.Predicate;
 public enum SettingsManager {
     INSTANCE;
 
-    public static Function<SettingScrollWindow, SliderOptionEntry> FOV = INSTANCE
-            .transformToPercentage(AbstractOption.FOV);
+    public static Function<SettingScrollWindow, SSliderOptionEntry> FOV;
 
     /**
      * Different (from vanilla):
      * Same effect, but less computation. [0.1, 1.0]
      */
-    public static Function<SettingScrollWindow, SliderOptionEntry> CHAT_OPACITY = INSTANCE
-            .transformToPercentage(AbstractOption.CHAT_OPACITY, Triple.of(0.1, null, null), ConstantsLibrary.PERCENTAGE_STRING_FUNC);
+    public static Function<SettingScrollWindow, SSliderOptionEntry> CHAT_OPACITY;
 
     /**
      * Different (from vanilla):
      * Set minimum value to 10% rather than 0% (OFF), because we have visibility. [0.1, 1.0]
      */
-    public static Function<SettingScrollWindow, SliderOptionEntry> CHAT_SCALE = INSTANCE
-            .transformToPercentage(AbstractOption.CHAT_SCALE, Triple.of(0.1, null, null), ConstantsLibrary.PERCENTAGE_STRING_FUNC);
+    public static Function<SettingScrollWindow, SSliderOptionEntry> CHAT_SCALE;
 
     /**
      * Different (from vanilla):
      * Use Optifine setting, so now width in [40, 1176] rather than [40, 320]
      */
-    public static Function<SettingScrollWindow, SliderOptionEntry> CHAT_WIDTH = INSTANCE
-            .transformToPercentage(AbstractOption.CHAT_WIDTH, Triple.of(null, 4.0571431d, 1.0f / 1136.0f), d -> NewChatGui.calculateChatboxWidth(d) + "px");
+    public static Function<SettingScrollWindow, SSliderOptionEntry> CHAT_WIDTH;
 
-    public static Function<SettingScrollWindow, SliderOptionEntry> CHAT_HEIGHT_FOCUSED = INSTANCE
-            .transformToPercentage(AbstractOption.CHAT_HEIGHT_FOCUSED, Triple.of(null, null, 1.0f / 160.0f), d -> NewChatGui.calculateChatboxHeight(d) + "px");
+    public static Function<SettingScrollWindow, SSliderOptionEntry> CHAT_HEIGHT_FOCUSED;
 
-    public static Function<SettingScrollWindow, SliderOptionEntry> CHAT_HEIGHT_UNFOCUSED = INSTANCE
-            .transformToPercentage(AbstractOption.CHAT_HEIGHT_UNFOCUSED, Triple.of(null, null, 1.0f / 160.0f), d -> NewChatGui.calculateChatboxHeight(d) + "px");
+    public static Function<SettingScrollWindow, SSliderOptionEntry> CHAT_HEIGHT_UNFOCUSED;
 
-    public static Function<SettingScrollWindow, SliderOptionEntry> TEXT_BACKGROUND_OPACITY = INSTANCE
-            .transformToPercentage(AbstractOption.ACCESSIBILITY_TEXT_BACKGROUND_OPACITY, ConstantsLibrary.PERCENTAGE_STRING_FUNC);
+    public static Function<SettingScrollWindow, SSliderOptionEntry> TEXT_BACKGROUND_OPACITY;
 
+    public static Function<SettingScrollWindow, SSliderOptionEntry> GAMMA;
 
-
-    public static Function<SettingScrollWindow, BooleanOptionEntry> REALMS_NOTIFICATIONS = INSTANCE.transformToBoolean(AbstractOption.REALMS_NOTIFICATIONS);
-
-    public static Function<SettingScrollWindow, BooleanOptionEntry> CHAT_COLOR = INSTANCE.transformToBoolean(AbstractOption.CHAT_COLOR);
-    public static Function<SettingScrollWindow, BooleanOptionEntry> CHAT_LINKS = INSTANCE.transformToBoolean(AbstractOption.CHAT_LINKS);
-    public static Function<SettingScrollWindow, BooleanOptionEntry> CHAT_LINKS_PROMPT = INSTANCE.transformToBoolean(AbstractOption.CHAT_LINKS_PROMPT);
-    public static Function<SettingScrollWindow, BooleanOptionEntry> REDUCED_DEBUG_INFO = INSTANCE.transformToBoolean(AbstractOption.REDUCED_DEBUG_INFO);
-    public static Function<SettingScrollWindow, BooleanOptionEntry> AUTO_SUGGEST_COMMANDS = INSTANCE.transformToBoolean(AbstractOption.AUTO_SUGGEST_COMMANDS);
-
-    public static Function<SettingScrollWindow, BooleanOptionEntry> SHOW_SUBTITLES = INSTANCE.transformToBoolean(AbstractOption.SHOW_SUBTITLES);
+    /**
+     * Optifine setting
+     */
+    public static LazyOptional<Function<SettingScrollWindow, SSliderOptionEntry>> AO_LEVEL = LazyOptional.empty();
 
 
+
+    public static Function<SettingScrollWindow, DSliderOptionEntry> RENDER_DISTANCE;
+
+    public static Function<SettingScrollWindow, DSliderOptionEntry> BIOME_BLEND_RADIUS;
+
+
+
+    public static Function<SettingScrollWindow, BooleanOptionEntry> REALMS_NOTIFICATIONS;
+
+    public static Function<SettingScrollWindow, BooleanOptionEntry> CHAT_COLOR;
+    public static Function<SettingScrollWindow, BooleanOptionEntry> CHAT_LINKS;
+    public static Function<SettingScrollWindow, BooleanOptionEntry> CHAT_LINKS_PROMPT;
+    public static Function<SettingScrollWindow, BooleanOptionEntry> REDUCED_DEBUG_INFO;
+    public static Function<SettingScrollWindow, BooleanOptionEntry> AUTO_SUGGEST_COMMANDS;
+
+    public static Function<SettingScrollWindow, BooleanOptionEntry> SHOW_SUBTITLES;
+
+    public static Function<SettingScrollWindow, BooleanOptionEntry> VSYNC;
+    public static Function<SettingScrollWindow, BooleanOptionEntry> VIEW_BOBBING;
+
+    public static Function<SettingScrollWindow, BooleanOptionEntry> ENTITY_SHADOWS;
+
+
+
+    static {
+        FOV = INSTANCE
+                .transformToSmooth(AbstractOption.FOV);
+        CHAT_OPACITY = INSTANCE
+                .transformToSmooth(AbstractOption.CHAT_OPACITY, Triple.of(0.1, null, null), ConstantsLibrary.PERCENTAGE_STRING_FUNC);
+        CHAT_SCALE = INSTANCE
+                .transformToSmooth(AbstractOption.CHAT_SCALE, Triple.of(0.1, null, null), ConstantsLibrary.PERCENTAGE_STRING_FUNC);
+        CHAT_WIDTH = INSTANCE
+                .transformToSmooth(AbstractOption.CHAT_WIDTH, Triple.of(null, 4.0571431d, 1.0f / 1136.0f),
+                        d -> NewChatGui.calculateChatboxWidth(d) + "px");
+        CHAT_HEIGHT_FOCUSED = INSTANCE
+                .transformToSmooth(AbstractOption.CHAT_HEIGHT_FOCUSED, Triple.of(null, null, 1.0f / 160.0f),
+                        d -> NewChatGui.calculateChatboxHeight(d) + "px");
+        CHAT_HEIGHT_UNFOCUSED = INSTANCE
+                .transformToSmooth(AbstractOption.CHAT_HEIGHT_UNFOCUSED, Triple.of(null, null, 1.0f / 160.0f),
+                        d -> NewChatGui.calculateChatboxHeight(d) + "px");
+        TEXT_BACKGROUND_OPACITY = INSTANCE
+                .transformToSmooth(AbstractOption.ACCESSIBILITY_TEXT_BACKGROUND_OPACITY, ConstantsLibrary.PERCENTAGE_STRING_FUNC);
+        GAMMA = INSTANCE
+                .transformToSmooth(AbstractOption.GAMMA, ConstantsLibrary.PERCENTAGE_STRING_FUNC);
+        RENDER_DISTANCE = INSTANCE
+                .transformToDiscrete(AbstractOption.RENDER_DISTANCE, false);
+        BIOME_BLEND_RADIUS = INSTANCE
+                .transformToDiscrete(AbstractOption.BIOME_BLEND_RADIUS, i -> {
+                    if (i == 0) {
+                        return I18n.format("options.off");
+                    } else {
+                        int c = i * 2 + 1;
+                        return c + "x" + c;
+                    }
+                }, false);
+        REALMS_NOTIFICATIONS = INSTANCE
+                .transformToBoolean(AbstractOption.REALMS_NOTIFICATIONS);
+        CHAT_COLOR = INSTANCE
+                .transformToBoolean(AbstractOption.CHAT_COLOR);
+        CHAT_LINKS = INSTANCE
+                .transformToBoolean(AbstractOption.CHAT_LINKS);
+        CHAT_LINKS_PROMPT = INSTANCE
+                .transformToBoolean(AbstractOption.CHAT_LINKS_PROMPT);
+        REDUCED_DEBUG_INFO = INSTANCE
+                .transformToBoolean(AbstractOption.REDUCED_DEBUG_INFO);
+        AUTO_SUGGEST_COMMANDS = INSTANCE
+                .transformToBoolean(AbstractOption.AUTO_SUGGEST_COMMANDS);
+        SHOW_SUBTITLES = INSTANCE
+                .transformToBoolean(AbstractOption.SHOW_SUBTITLES);
+        VSYNC = INSTANCE
+                .transformToBoolean(AbstractOption.VSYNC);
+        VIEW_BOBBING = INSTANCE
+                .transformToBoolean(AbstractOption.VIEW_BOBBING);
+        ENTITY_SHADOWS = INSTANCE
+                .transformToBoolean(AbstractOption.ENTITY_SHADOWS);
+
+        if (ModIntegration.optifineLoaded) {
+            try {
+                Field field;
+                field = AbstractOption.class.getDeclaredField("AO_LEVEL");
+                SliderPercentageOption ao_level = (SliderPercentageOption) field.get(AbstractOption.class);
+                AO_LEVEL = LazyOptional.of(() ->
+                        INSTANCE.transformToSmooth(ao_level, ConstantsLibrary.PERCENTAGE_STRING_FUNC));
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+    private GameSettings gameSettings;
 
     private Field option_translateKey;
 
@@ -102,7 +188,14 @@ public enum SettingsManager {
     private Field boolean_getter;
     private Field boolean_setter;
 
+    /**
+     * Optifine
+     */
+    private Field of_dynamic_fov;
+
     {
+        gameSettings = Minecraft.getInstance().gameSettings;
+
         option_translateKey = ObfuscationReflectionHelper.findField(AbstractOption.class, "field_216693_Q");
 
         slider_minValue = ObfuscationReflectionHelper.findField(SliderPercentageOption.class, "field_216735_R");
@@ -114,7 +207,15 @@ public enum SettingsManager {
         boolean_getter = ObfuscationReflectionHelper.findField(BooleanOption.class, "field_216746_Q");
         boolean_setter = ObfuscationReflectionHelper.findField(BooleanOption.class, "field_216747_R");
 
-        try {
+        if (ModIntegration.optifineLoaded) {
+            try {
+                of_dynamic_fov = GameSettings.class.getDeclaredField("ofDynamicFov");
+            } catch (NoSuchFieldException e) {
+                e.printStackTrace();
+            }
+        }
+
+        /*try {
             Field[] fields = AbstractOption.class.getFields();
             ModernUI.LOGGER.debug("Searching Abstract Options...");
             for (Field f : fields) {
@@ -127,30 +228,22 @@ public enum SettingsManager {
             ModernUI.LOGGER.debug("Searching Abstract Options finished");
         } catch (IllegalAccessException e) {
             e.printStackTrace();
-        }
-
-        if (ModIntegration.optifineLoaded) {
-            try {
-                Class<?> clazz = Class.forName("net.optifine.gui.GuiQualitySettingsOF");
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            }
-        }
+        }*/
     }
 
-    public Function<SettingScrollWindow, SliderOptionEntry> transformToPercentage(SliderPercentageOption instance) {
-        return transformToPercentage(instance, null, null);
+    public Function<SettingScrollWindow, SSliderOptionEntry> transformToSmooth(SliderPercentageOption instance) {
+        return transformToSmooth(instance, null, null);
     }
 
-    public Function<SettingScrollWindow, SliderOptionEntry> transformToPercentage(SliderPercentageOption instance, Function<Double, String> stringFunction) {
-        return transformToPercentage(instance, null, stringFunction);
+    public Function<SettingScrollWindow, SSliderOptionEntry> transformToSmooth(SliderPercentageOption instance, Function<Double, String> stringFunction) {
+        return transformToSmooth(instance, null, stringFunction);
     }
 
-    public Function<SettingScrollWindow, SliderOptionEntry> transformToPercentage(SliderPercentageOption instance, Triple<Double, Double, Float> customize) {
-        return transformToPercentage(instance, customize, null);
+    public Function<SettingScrollWindow, SSliderOptionEntry> transformToSmooth(SliderPercentageOption instance, Triple<Double, Double, Float> customize) {
+        return transformToSmooth(instance, customize, null);
     }
 
-    public Function<SettingScrollWindow, SliderOptionEntry> transformToPercentage(SliderPercentageOption instance, @Nullable Triple<Double, Double, Float> customize, @Nullable Function<Double, String> stringFunction) {
+    public Function<SettingScrollWindow, SSliderOptionEntry> transformToSmooth(SliderPercentageOption instance, @Nullable Triple<Double, Double, Float> customize, @Nullable Function<Double, String> stringFunction) {
         GameSettings gameSettings = Minecraft.getInstance().gameSettings;
         try {
             String translationKey = (String) option_translateKey.get(instance);
@@ -169,11 +262,38 @@ public enum SettingsManager {
             Function<GameSettings, Double> getter = (Function<GameSettings, Double>) slider_getter.get(instance);
             BiConsumer<GameSettings, Double> setter = (BiConsumer<GameSettings, Double>) slider_setter.get(instance);
             if (stringFunction == null) {
-                return window -> new SliderOptionEntry(window, I18n.format(translationKey), minValue, maxValue,
+                return window -> new SSliderOptionEntry(window, I18n.format(translationKey), minValue, maxValue,
                         stepSize, getter.apply(gameSettings), v -> setter.accept(gameSettings, v));
             } else {
-                return window -> new SliderOptionEntry(window, I18n.format(translationKey), minValue, maxValue,
+                return window -> new SSliderOptionEntry(window, I18n.format(translationKey), minValue, maxValue,
                         stepSize, getter.apply(gameSettings), v -> setter.accept(gameSettings, v), stringFunction);
+            }
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        throw new RuntimeException();
+    }
+
+    public Function<SettingScrollWindow, DSliderOptionEntry> transformToDiscrete(SliderPercentageOption instance, boolean dynamicModify) {
+        return this.transformToDiscrete(instance, String::valueOf, dynamicModify);
+    }
+
+    public Function<SettingScrollWindow, DSliderOptionEntry> transformToDiscrete(SliderPercentageOption instance, Function<Integer, String> displayStringFunc, boolean dynamicModify) {
+        GameSettings gameSettings = Minecraft.getInstance().gameSettings;
+        try {
+            String translationKey = (String) option_translateKey.get(instance);
+            int minValue;
+            int maxValue;
+            minValue = (int) slider_minValue.getDouble(instance);
+            maxValue = (int) slider_maxValue.getDouble(instance);
+            Function<GameSettings, Double> getter = (Function<GameSettings, Double>) slider_getter.get(instance);
+            BiConsumer<GameSettings, Double> setter = (BiConsumer<GameSettings, Double>) slider_setter.get(instance);
+            if (dynamicModify) {
+                return window -> new DSliderOptionEntry(window, I18n.format(translationKey), minValue, maxValue,
+                        getter.apply(gameSettings).intValue(), v -> setter.accept(gameSettings, (double) v), displayStringFunc);
+            } else {
+                return window -> new DSliderOptionEntry(window, I18n.format(translationKey), minValue, maxValue,
+                        getter.apply(gameSettings).intValue(), i -> {}, displayStringFunc).setApplyChange(v -> setter.accept(gameSettings, (double) v));
             }
         } catch (IllegalAccessException e) {
             e.printStackTrace();
@@ -214,12 +334,32 @@ public enum SettingsManager {
                 BiConsumer<GameSettings, Boolean> setter = (BiConsumer<GameSettings, Boolean>) boolean_setter.get(instance);
                 return window -> new BooleanOptionEntry(window, I18n.format(translationKey), getter.test(gameSettings), b -> setter.accept(gameSettings, b));
             } else */if (abstractOption instanceof IteratableOption) {
-                //TODO There's no way to do this at present, we should get all selective options name before iterate or a new way. awa
+                // There's no way to do this at present, we should get all selective options name before iterate or a new way. awa
                 ModernUI.LOGGER.fatal("Iterable option found, {} with name {}", abstractOption, translationKey);
             }
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
         throw new RuntimeException();
+    }
+
+
+    /** Optifine Soft Compatibility **/
+
+    public boolean getDynamicFov() {
+        try {
+            return of_dynamic_fov.getBoolean(gameSettings);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public void setDynamicFov(boolean b) {
+        try {
+            of_dynamic_fov.setBoolean(gameSettings, b);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
     }
 }

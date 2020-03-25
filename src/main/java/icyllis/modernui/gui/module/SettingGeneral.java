@@ -19,7 +19,7 @@
 package icyllis.modernui.gui.module;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.gui.component.option.*;
+import icyllis.modernui.gui.scroll.option.*;
 import icyllis.modernui.gui.element.IElement;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.IGuiModule;
@@ -29,6 +29,7 @@ import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.chat.NarratorChatListener;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.settings.NarratorStatus;
 import net.minecraft.entity.player.ChatVisibility;
@@ -59,7 +60,7 @@ public class SettingGeneral implements IGuiModule {
 
     private SettingScrollWindow window;
 
-    private MenuOptionEntry difficultyEntry;
+    private DropdownOptionEntry difficultyEntry;
 
     private BooleanOptionEntry lockEntry;
 
@@ -78,7 +79,7 @@ public class SettingGeneral implements IGuiModule {
         List<OptionEntry> list = new ArrayList<>();
 
         if (minecraft.world != null) {
-            difficultyEntry = new MenuOptionEntry(window, I18n.format("options.difficulty"), DIFFICULTY_OPTIONS.get(),
+            difficultyEntry = new DropdownOptionEntry(window, I18n.format("options.difficulty"), DIFFICULTY_OPTIONS.get(),
                     minecraft.world.getDifficulty().getId(), i -> {
                 Difficulty difficulty = Difficulty.values()[i];
                 minecraft.getConnection().sendPacket(new CSetDifficultyPacket(difficulty));
@@ -91,15 +92,14 @@ public class SettingGeneral implements IGuiModule {
                         GlobalModuleManager.INSTANCE.openPopup(new PopupLockDifficulty(this::lockDifficulty));
                     }
                 }, true);
-                difficultyEntry.setClickable(!locked);
-                lockEntry.setClickable(!locked);
+                difficultyEntry.setAvailable(!locked);
+                lockEntry.setAvailable(!locked);
             } else {
-                difficultyEntry.setClickable(false);
+                difficultyEntry.setAvailable(false);
             }
             list.add(lockEntry);
         }
 
-        list.add(SettingsManager.FOV.apply(window));
         list.add(SettingsManager.REALMS_NOTIFICATIONS.apply(window));
 
         OptionCategory category = new OptionCategory("Game", list);
@@ -115,7 +115,7 @@ public class SettingGeneral implements IGuiModule {
                     gameSettings.getModelParts().contains(part), b -> gameSettings.setModelPartEnabled(part, b));
             list.add(entry);
         }
-        OptionEntry mainHand = new MenuOptionEntry(window, I18n.format("options.mainHand"), MAIN_HANDS.get(),
+        OptionEntry mainHand = new DropdownOptionEntry(window, I18n.format("options.mainHand"), MAIN_HANDS.get(),
                 gameSettings.mainHand.ordinal(), i -> {
            gameSettings.mainHand = HandSide.values()[i];
            gameSettings.saveOptions();
@@ -131,7 +131,7 @@ public class SettingGeneral implements IGuiModule {
         List<OptionEntry> list = new ArrayList<>();
         GameSettings gameSettings = minecraft.gameSettings;
 
-        list.add(new MenuOptionEntry(window, "Visibility", CHAT_VISIBILITIES.get(),
+        list.add(new DropdownOptionEntry(window, I18n.format("options.chat.visibility"), CHAT_VISIBILITIES.get(),
                 gameSettings.chatVisibility.ordinal(), i -> gameSettings.chatVisibility = ChatVisibility.values()[i]));
         list.add(SettingsManager.CHAT_COLOR.apply(window));
         list.add(SettingsManager.CHAT_LINKS.apply(window));
@@ -156,18 +156,19 @@ public class SettingGeneral implements IGuiModule {
         List<String> narratorStatus = active ?
                 Lists.newArrayList(NarratorStatus.values()).stream().map(n -> I18n.format(n.getResourceKey())).collect(Collectors.toCollection(ArrayList::new)) :
                 Lists.newArrayList(I18n.format("options.narrator.notavailable"));
-        MenuOptionEntry narrator = new MenuOptionEntry(window, I18n.format("options.narrator"), narratorStatus,
+        DropdownOptionEntry narrator = new DropdownOptionEntry(window, I18n.format("options.narrator"), narratorStatus,
                 active ? gameSettings.narrator.ordinal() : 0, i -> {
             gameSettings.narrator = NarratorStatus.values()[i];
             NarratorChatListener.INSTANCE.announceMode(gameSettings.narrator);
         });
         list.add(narrator);
         list.add(SettingsManager.SHOW_SUBTITLES.apply(window));
-        list.add(SettingsManager.TEXT_BACKGROUND_OPACITY.apply(window));
+
         List<String> textBackgrounds = Lists.newArrayList(I18n.format("options.accessibility.text_background.chat"),
                 I18n.format("options.accessibility.text_background.everywhere"));
-        list.add(new MenuOptionEntry(window, I18n.format("options.accessibility.text_background"), textBackgrounds,
+        list.add(new DropdownOptionEntry(window, I18n.format("options.accessibility.text_background"), textBackgrounds,
                 gameSettings.accessibilityTextBackground ? 0 : 1, i -> gameSettings.accessibilityTextBackground = i == 0));
+        list.add(SettingsManager.TEXT_BACKGROUND_OPACITY.apply(window));
 
         OptionCategory category = new OptionCategory("Accessibility", list);
         window.addGroup(category);
@@ -178,8 +179,8 @@ public class SettingGeneral implements IGuiModule {
         if (lock) {
             if (this.minecraft.world != null) {
                 this.minecraft.getConnection().sendPacket(new CLockDifficultyPacket(true));
-                difficultyEntry.setClickable(false);
-                lockEntry.setClickable(false);
+                difficultyEntry.setAvailable(false);
+                lockEntry.setAvailable(false);
             }
         } else {
             lockEntry.onValueChanged(1);

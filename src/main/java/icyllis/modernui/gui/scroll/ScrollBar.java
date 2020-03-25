@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.component.scroll;
+package icyllis.modernui.gui.scroll;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.window.ScrollWindow;

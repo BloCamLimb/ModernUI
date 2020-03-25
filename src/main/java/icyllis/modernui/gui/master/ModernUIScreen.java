@@ -46,7 +46,8 @@ public class ModernUIScreen extends Screen {
     }
 
     @Override
-    protected void init() {
+    public void init(Minecraft minecraft, int width, int height) {
+        super.init(minecraft, width, height);
         manager.init(width, height);
     }
 

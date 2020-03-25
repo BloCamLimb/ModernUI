@@ -25,16 +25,19 @@ import net.minecraft.util.math.MathHelper;
 public class RewrittenMethods {
 
     /** MainWindow **/
-
     public static int calcGuiScale(int guiScaleIn) {
-        MainWindow mainWindow = Minecraft.getInstance().getMainWindow();
-        int framebufferWidth = mainWindow.getFramebufferWidth();
-        int framebufferHeight = mainWindow.getFramebufferHeight();
-        int r = RewrittenMethods.calcGuiScales(framebufferWidth, framebufferHeight);
+        int r = RewrittenMethods.calcGuiScales();
         return guiScaleIn > 0 ? MathHelper.clamp(guiScaleIn, r >> 8 & 0xf, r & 0xf) : r >> 4 & 0xf;
     }
 
-    public static int calcGuiScales(int framebufferWidth, int framebufferHeight) {
+    public static int calcGuiScales() {
+        MainWindow mainWindow = Minecraft.getInstance().getMainWindow();
+        int framebufferWidth = mainWindow.getFramebufferWidth();
+        int framebufferHeight = mainWindow.getFramebufferHeight();
+        return calcGuiScales(framebufferWidth, framebufferHeight);
+    }
+
+    private static int calcGuiScales(int framebufferWidth, int framebufferHeight) {
 
         double a1 = Math.floor(framebufferWidth / 16.0d);
         double a2 = Math.floor(framebufferHeight / 9.0d);

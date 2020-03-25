@@ -34,7 +34,7 @@ import org.lwjgl.glfw.GLFW;
 import javax.annotation.Nonnull;
 import java.util.function.Consumer;
 
-//TODO WIP
+//TODO WIP with Container
 @OnlyIn(Dist.CLIENT)
 public class ModernUIScreenG<G extends Container> extends ContainerScreen<G> {
 
@@ -47,7 +47,8 @@ public class ModernUIScreenG<G extends Container> extends ContainerScreen<G> {
     }
 
     @Override
-    protected void init() {
+    public void init(Minecraft minecraft, int width, int height) {
+        super.init(minecraft, width, height);
         manager.init(width, height);
     }
 

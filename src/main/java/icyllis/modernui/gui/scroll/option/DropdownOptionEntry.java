@@ -16,13 +16,13 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.component.option;
+package icyllis.modernui.gui.scroll.option;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.component.DropDownList;
+import icyllis.modernui.gui.widget.DropDownList;
 import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.window.SettingScrollWindow;
@@ -37,31 +37,28 @@ import org.lwjgl.opengl.GL11;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class MenuOptionEntry extends OptionEntry {
+public class DropdownOptionEntry extends OptionEntry {
 
     private TextureManager textureManager = Minecraft.getInstance().getTextureManager();
 
-    public final int originalOptionIndex;
-
+    public int originalOptionIndex;
     public int currentOptionIndex;
 
     public List<String> optionNames;
 
     private String optionText;
-
     private float textLength;
 
-    private boolean drawOptionFrame = false;
+    private float optionGrayscale = 0.85f;
 
+    protected boolean drawOptionFrame = false;
     private int frameAlpha = 0; // 0~255
 
-    private Consumer<Integer> saveOption;
+    protected Consumer<Integer> saveOption;
 
-    protected float optionBrightness = 0.85f;
+    protected boolean available = true;
 
-    protected boolean clickable = true;
-
-    public MenuOptionEntry(SettingScrollWindow window, String optionTitle, List<String> optionNames, int originalIndex, Consumer<Integer> saveOption) {
+    public DropdownOptionEntry(SettingScrollWindow window, String optionTitle, List<String> optionNames, int originalIndex, Consumer<Integer> saveOption) {
         super(window, optionTitle);
         this.currentOptionIndex = this.originalOptionIndex = originalIndex;
         this.optionNames = optionNames;
@@ -70,12 +67,12 @@ public class MenuOptionEntry extends OptionEntry {
         textLength = fontRenderer.getStringWidth(optionText) + 3;
     }
 
-    public void setClickable(boolean b) {
-        clickable = b;
+    public void setAvailable(boolean b) {
+        available = b;
         if (b) {
-            optionBrightness = mouseHovered ? 1.0f : 0.85f;
+            optionGrayscale = mouseHovered ? 1.0f : 0.85f;
         } else {
-            optionBrightness = 0.5f;
+            optionGrayscale = 0.5f;
         }
     }
 
@@ -94,12 +91,12 @@ public class MenuOptionEntry extends OptionEntry {
             tessellator.draw();
             RenderSystem.enableTexture();
         }
-        fontRenderer.drawString(optionText, centerX + 150, y + 6, optionBrightness, optionBrightness, optionBrightness, 1, 0.5f);
+        fontRenderer.drawString(optionText, centerX + 150, y + 6, optionGrayscale, optionGrayscale, optionGrayscale, 1, 0.5f);
+        RenderSystem.pushMatrix();
         GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
         GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-        RenderSystem.pushMatrix();
         RenderSystem.scalef(0.25f, 0.25f, 1);
-        RenderSystem.color3f(optionBrightness, optionBrightness, optionBrightness);
+        RenderSystem.color3f(optionGrayscale, optionGrayscale, optionGrayscale);
         textureManager.bindTexture(ConstantsLibrary.ICONS);
         DrawTools.blit(centerX * 4 + 606, y * 4 + 28, 64, 32, 32, 32);
         RenderSystem.popMatrix();
@@ -115,7 +112,7 @@ public class MenuOptionEntry extends OptionEntry {
 
     @Override
     public void mouseMoved(double deltaCenterX, double deltaY, double mouseX, double mouseY) {
-        if (clickable && !drawOptionFrame && optionNames.size() > 1) {
+        if (available && !drawOptionFrame && optionNames.size() > 1) {
             if (mouseInOption(deltaCenterX, deltaY)) {
                 drawOptionFrame = true;
                 GlobalModuleManager.INSTANCE.addAnimation(new Animation(2)
@@ -146,8 +143,8 @@ public class MenuOptionEntry extends OptionEntry {
     @Override
     protected void onMouseHoverOn() {
         super.onMouseHoverOn();
-        if (clickable) {
-            optionBrightness = 1.0f;
+        if (available) {
+            optionGrayscale = 1.0f;
         }
     }
 
@@ -156,18 +153,20 @@ public class MenuOptionEntry extends OptionEntry {
         super.onMouseHoverOff();
         drawOptionFrame = false;
         frameAlpha = 0;
-        if (clickable) {
-            optionBrightness = 0.85f;
+        if (available) {
+            optionGrayscale = 0.85f;
         }
     }
 
     public void onValueChanged(int index) {
-        this.currentOptionIndex = index;
+        updateValue(index);
+        saveOption();
+    }
+
+    protected void updateValue(int index) {
+        currentOptionIndex = index;
         optionText = optionNames.get(index);
         textLength = fontRenderer.getStringWidth(optionText) + 3;
-        if (autoApply) {
-            saveOption();
-        }
     }
 
     public void saveOption() {
