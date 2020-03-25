@@ -18,6 +18,7 @@
 
 package icyllis.modernui.system;
 
+import com.google.common.collect.Lists;
 import icyllis.modernui.gui.scroll.option.BooleanOptionEntry;
 import icyllis.modernui.gui.scroll.option.DSliderOptionEntry;
 import icyllis.modernui.gui.scroll.option.OptionEntry;
@@ -27,6 +28,7 @@ import net.minecraft.client.GameSettings;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.NewChatGui;
+import net.minecraft.client.gui.screen.ControlsScreen;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.settings.AbstractOption;
 import net.minecraft.client.settings.BooleanOption;
@@ -41,6 +43,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -193,6 +196,10 @@ public enum SettingsManager {
      */
     private Field of_dynamic_fov;
 
+    private Field of_chat_background;
+
+    private Field of_chat_shadow;
+
     {
         gameSettings = Minecraft.getInstance().gameSettings;
 
@@ -210,6 +217,8 @@ public enum SettingsManager {
         if (ModIntegration.optifineLoaded) {
             try {
                 of_dynamic_fov = GameSettings.class.getDeclaredField("ofDynamicFov");
+                of_chat_background = GameSettings.class.getDeclaredField("ofChatBackground");
+                of_chat_shadow = GameSettings.class.getDeclaredField("ofChatShadow");
             } catch (NoSuchFieldException e) {
                 e.printStackTrace();
             }
@@ -358,6 +367,52 @@ public enum SettingsManager {
     public void setDynamicFov(boolean b) {
         try {
             of_dynamic_fov.setBoolean(gameSettings, b);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @SuppressWarnings("NoTranslation")
+    public List<String> getChatBackgroundTexts() {
+        return Lists.newArrayList(I18n.format("generator.default"), I18n.format("of.general.compact"), I18n.format("options.off"));
+    }
+
+    public int getChatBackgroundIndex() {
+        try {
+            int c = of_chat_background.getInt(gameSettings);
+            if (c == 0) {
+                return 0;
+            } else if (c == 5) {
+                return 1;
+            } else {
+                return 2;
+            }
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public void setChatBackgroundIndex(int index) {
+        try {
+            of_chat_background.setInt(gameSettings, index);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public boolean getChatShadow() {
+        try {
+            return of_chat_shadow.getBoolean(gameSettings);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public void setChatShadow(boolean b) {
+        try {
+            of_chat_shadow.setBoolean(gameSettings, b);
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }

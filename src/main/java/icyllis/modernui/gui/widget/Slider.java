@@ -92,10 +92,16 @@ public abstract class Slider implements IElement, IGuiEventListener {
                     if (mouseX >= x && mouseX <= x + slideOffset) {
                         slideToOffset((float) (mouseX - x - 2));
                         mouseMoved(mouseX, mouseY);
+                        if (thumbHovered) {
+                            isDragging = true;
+                        }
                         return true;
                     } else if (mouseX >= x + slideOffset + 4 && mouseX <= x + width) {
                         slideToOffset((float) (mouseX - x - 2));
                         mouseMoved(mouseX, mouseY);
+                        if (thumbHovered) {
+                            isDragging = true;
+                        }
                         return true;
                     }
                 }

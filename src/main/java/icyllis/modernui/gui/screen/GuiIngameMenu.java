@@ -20,10 +20,7 @@ package icyllis.modernui.gui.screen;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.master.ModernUIScreen;
-import icyllis.modernui.gui.module.IngameMenuHome;
-import icyllis.modernui.gui.module.MenuSettingHeader;
-import icyllis.modernui.gui.module.SettingGeneral;
-import icyllis.modernui.gui.module.SettingVideo;
+import icyllis.modernui.gui.module.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.text.TranslationTextComponent;
 
@@ -36,6 +33,7 @@ public class GuiIngameMenu extends ModernUIScreen {
                 manager.addModule(i -> i >= 30 && i < 50, MenuSettingHeader::new);
                 manager.addModule(i -> i == 31, SettingGeneral::new);
                 manager.addModule(i -> i == 32, SettingVideo::new);
+                manager.addModule(i -> i == 33, SettingAudio::new);
                 manager.addModule(i -> true, IngameMenuHome::new);
             }
         }
