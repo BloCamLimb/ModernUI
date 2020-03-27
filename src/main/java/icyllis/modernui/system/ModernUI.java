@@ -22,9 +22,7 @@ import icyllis.modernui.api.ModernUI_API;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.shader.blur.BlurHandler;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -42,6 +40,7 @@ public class ModernUI {
     public static final Marker MARKER = MarkerManager.getMarker("MAIN");
 
     public ModernUI() {
+        ConfigManager.register();
         try {
             Field f = ModernUI_API.class.getDeclaredField("network");
             f.setAccessible(true);
@@ -53,7 +52,6 @@ public class ModernUI {
                 f = ModernUI_API.class.getDeclaredField("module");
                 f.setAccessible(true);
                 f.set(ModernUI_API.INSTANCE, GlobalModuleManager.INSTANCE);
-                ModernUI_Config.registerClientConfig();
                 ModernUI.LOGGER.debug(MARKER, "{} has been initialized", BlurHandler.INSTANCE.getDeclaringClass().getSimpleName()); // call constructor methods
             }
         } catch (NoSuchFieldException | IllegalAccessException | ClassCastException e) {

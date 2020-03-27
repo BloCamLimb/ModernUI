@@ -56,10 +56,13 @@ public class DiscreteSlider extends Slider implements IElement, IGuiEventListene
 
     @Override
     protected void slideToOffset(float offset) {
+        int prev = segment;
         float p = MathHelper.clamp(offset / getMaxSlideOffset(), 0, 1);
         segment = Math.round(p * maxSegment);
-        updateSlideOffset();
-        receiver.accept(segment);
+        if (prev != segment) {
+            updateSlideOffset();
+            receiver.accept(segment);
+        }
     }
 
     @Override

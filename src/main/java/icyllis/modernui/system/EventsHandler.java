@@ -83,17 +83,10 @@ public class EventsHandler {
             BlurHandler.INSTANCE.blur(hasGui);
             //ModernUI.LOGGER.debug("Open GUI {}", hasGui ? event.getGui().getClass().getSimpleName() : "null");
         }
-
-        @SubscribeEvent
-        public static void onConfigLoad(ModConfig.Loading event) {
-            if (event.getConfig().getSpec().equals(ModernUI_Config.CLIENT_SPEC)) {
-                ModernUI_Config.loadClientConfig();
-            }
-        }
     }
 
     @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
-    public static class ModSetupHandler {
+    public static class ModEventHandler {
 
         private static Marker MARKER = MarkerManager.getMarker("SETUP");
 
@@ -107,6 +100,11 @@ public class EventsHandler {
         public static void setupClient(FMLClientSetupEvent event) {
             //HistoryRecorder.gEmojiPair();
             ModernUI.LOGGER.debug(MARKER, "{} has been initialized", SettingsManager.INSTANCE.getDeclaringClass().getSimpleName()); // call constructor methods
+        }
+
+        @SubscribeEvent
+        public static void onConfigLoad(ModConfig.ModConfigEvent event) {
+            ConfigManager.loadConfig(event.getConfig().getSpec());
         }
 
     }

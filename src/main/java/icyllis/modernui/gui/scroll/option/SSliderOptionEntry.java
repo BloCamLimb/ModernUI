@@ -20,6 +20,7 @@ package icyllis.modernui.gui.scroll.option;
 
 import icyllis.modernui.gui.widget.SmoothSlider;
 import icyllis.modernui.gui.window.SettingScrollWindow;
+import icyllis.modernui.system.ModernUI;
 import net.minecraft.util.math.MathHelper;
 
 import java.util.function.Consumer;
@@ -49,8 +50,8 @@ public class SSliderOptionEntry extends OptionEntry {
         slider = new SmoothSlider(84, (currentValue - minValue) / (maxValue - minValue), this::onPercentageChange);
         this.minValue = minValue;
         this.maxValue = maxValue;
-        this.currentValue = currentValue;
         this.stepSize = stepSize == 0 ? 0.01f / (float) (maxValue - minValue) : stepSize;
+        this.currentValue = stepSize * (Math.round(currentValue / stepSize));
         this.saveOptionFunc = saveOption;
         this.displayStringFunc = displayStringFunc;
         this.displayString = displayStringFunc.apply(currentValue);

@@ -116,7 +116,7 @@ public class SettingVideo implements IGuiModule {
             //TODO optifine Dynamic Lights and Use VBOs
         }
 
-        OptionCategory category = new OptionCategory("Video", list);
+        OptionCategory category = new OptionCategory(I18n.format("gui.modernui.settings.category.video"), list);
         window.addGroup(category);
     }
 
@@ -146,7 +146,7 @@ public class SettingVideo implements IGuiModule {
             // Custom Fonts, Custom Colors, Connected Textures, Natural Textures, Custom Sky, Custom Items, Custom Entity Models, Custom Guis
         }
 
-        OptionCategory category = new OptionCategory("Quality", list);
+        OptionCategory category = new OptionCategory(I18n.format("gui.modernui.settings.category.quality"), list);
         window.addGroup(category);
     }
 
@@ -162,7 +162,7 @@ public class SettingVideo implements IGuiModule {
             //      Translucent Blocks, Held Item Tooltips, Dropped Items, Vignette, Alternate Blocks, Swamp Colors
         }
 
-        OptionCategory category = new OptionCategory("Details", list);
+        OptionCategory category = new OptionCategory(I18n.format("gui.modernui.settings.category.details"), list);
         window.addGroup(category);
     }
 
@@ -179,7 +179,7 @@ public class SettingVideo implements IGuiModule {
             //      Rain Splash, Portal Particles, Potion Particles, Dripping Water Lava, Animated Terrain, Animated Textures, Firework Particles
         }
 
-        OptionCategory category = new OptionCategory("Animations", list);
+        OptionCategory category = new OptionCategory(I18n.format("gui.modernui.settings.category.animations"), list);
         window.addGroup(category);
     }
 
@@ -191,7 +191,7 @@ public class SettingVideo implements IGuiModule {
             //TODO optifine Smooth Fps, Smooth World, Fast Render, Fast Math, Chunk Updates, Chunk Updates Dynamic, Render Regions, Lazy Chunk Loading, Smart Animations
         }
 
-        OptionCategory category = new OptionCategory("Performance", list);
+        OptionCategory category = new OptionCategory(I18n.format("gui.modernui.settings.category.performance"), list);
         window.addGroup(category);
     }
 
@@ -200,7 +200,7 @@ public class SettingVideo implements IGuiModule {
         GameSettings gameSettings = minecraft.gameSettings;
 
 
-        OptionCategory category = new OptionCategory("Other", list);
+        OptionCategory category = new OptionCategory(I18n.format("gui.modernui.settings.category.other"), list);
         window.addGroup(category);
     }
 
