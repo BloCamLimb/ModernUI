@@ -22,7 +22,9 @@ import it.unimi.dsi.fastutil.objects.Object2IntArrayMap;
 import javafx.util.Pair;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.common.UsernameCache;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;

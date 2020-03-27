@@ -34,6 +34,7 @@ public class GuiIngameMenu extends ModernUIScreen {
                 manager.addModule(i -> i == 31, SettingGeneral::new);
                 manager.addModule(i -> i == 32, SettingVideo::new);
                 manager.addModule(i -> i == 33, SettingAudio::new);
+                manager.addModule(i -> i == 34, SettingControls::new);
                 manager.addModule(i -> true, IngameMenuHome::new);
             }
         }

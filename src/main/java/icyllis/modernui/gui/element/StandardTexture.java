@@ -68,8 +68,6 @@ public class StandardTexture extends Element {
         RenderSystem.scalef(scale, scale, 1);
         textureManager.bindTexture(res);
         DrawTools.blit(x / scale, y / scale, u, v, sizeW, sizeH);
-        RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
-        RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
         RenderSystem.popMatrix();
     }
 }

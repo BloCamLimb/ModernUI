@@ -36,8 +36,11 @@ public class SmoothSlider extends Slider implements IElement, IGuiEventListener 
 
     @Override
     protected void slideToOffset(float offset) {
+        double prev = slideOffset;
         slideOffset = MathHelper.clamp(offset, 0, getMaxSlideOffset());
-        double slidePercent = slideOffset / getMaxSlideOffset();
-        receiver.accept(slidePercent);
+        if (prev != slideOffset) {
+            double slidePercent = slideOffset / getMaxSlideOffset();
+            receiver.accept(slidePercent);
+        }
     }
 }

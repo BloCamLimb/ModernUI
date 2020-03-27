@@ -53,6 +53,8 @@ public class SettingGeneral implements IGuiModule {
 
     private static Supplier<List<String>> CHAT_VISIBILITIES = () -> Lists.newArrayList(ChatVisibility.values()).stream().map(c -> I18n.format(c.getResourceKey())).collect(Collectors.toCollection(ArrayList::new));
 
+    private static Supplier<List<String>> NARRATOR = () -> Lists.newArrayList(NarratorStatus.values()).stream().map(n -> I18n.format(n.getResourceKey())).collect(Collectors.toCollection(ArrayList::new));
+
     private Minecraft minecraft;
 
     private List<IElement> elements = new ArrayList<>();
@@ -103,7 +105,7 @@ public class SettingGeneral implements IGuiModule {
 
         list.add(SettingsManager.REALMS_NOTIFICATIONS.apply(window));
 
-        OptionCategory category = new OptionCategory("Game", list);
+        OptionCategory category = new OptionCategory(I18n.format("gui.modernui.settings.category.game"), list);
         window.addGroup(category);
     }
 
@@ -124,7 +126,7 @@ public class SettingGeneral implements IGuiModule {
         });
         list.add(mainHand);
 
-        OptionCategory category = new OptionCategory("Skin", list);
+        OptionCategory category = new OptionCategory(I18n.format("gui.modernui.settings.category.skin"), list);
         window.addGroup(category);
     }
 
@@ -156,7 +158,7 @@ public class SettingGeneral implements IGuiModule {
         list.add(SettingsManager.REDUCED_DEBUG_INFO.apply(window));
         list.add(SettingsManager.AUTO_SUGGEST_COMMANDS.apply(window));
 
-        OptionCategory category = new OptionCategory("Chat", list);
+        OptionCategory category = new OptionCategory(I18n.format("gui.modernui.settings.category.chat"), list);
         window.addGroup(category);
     }
 
@@ -166,7 +168,7 @@ public class SettingGeneral implements IGuiModule {
 
         boolean active = NarratorChatListener.INSTANCE.isActive();
         List<String> narratorStatus = active ?
-                Lists.newArrayList(NarratorStatus.values()).stream().map(n -> I18n.format(n.getResourceKey())).collect(Collectors.toCollection(ArrayList::new)) :
+                NARRATOR.get() :
                 Lists.newArrayList(I18n.format("options.narrator.notavailable"));
         DropdownOptionEntry narrator = new DropdownOptionEntry(window, I18n.format("options.narrator"), narratorStatus,
                 active ? gameSettings.narrator.ordinal() : 0, i -> {
@@ -175,6 +177,7 @@ public class SettingGeneral implements IGuiModule {
         });
         list.add(narrator);
         list.add(SettingsManager.SHOW_SUBTITLES.apply(window));
+        list.add(SettingsManager.AUTO_JUMP.apply(window));
 
         List<String> textBackgrounds = Lists.newArrayList(I18n.format("options.accessibility.text_background.chat"),
                 I18n.format("options.accessibility.text_background.everywhere"));
@@ -182,7 +185,15 @@ public class SettingGeneral implements IGuiModule {
                 gameSettings.accessibilityTextBackground ? 0 : 1, i -> gameSettings.accessibilityTextBackground = i == 0));
         list.add(SettingsManager.TEXT_BACKGROUND_OPACITY.apply(window));
 
-        OptionCategory category = new OptionCategory("Accessibility", list);
+        List<String> toggle = Lists.newArrayList(I18n.format("options.key.toggle"), I18n.format("options.key.hold"));
+        DropdownOptionEntry sneak = new DropdownOptionEntry(window, I18n.format("key.sneak"), toggle,
+                gameSettings.toggleCrouch ? 0 : 1, i -> gameSettings.toggleCrouch = i == 0);
+        list.add(sneak);
+        DropdownOptionEntry sprint = new DropdownOptionEntry(window, I18n.format("key.sprint"), toggle,
+                gameSettings.toggleSprint ? 0 : 1, i -> gameSettings.toggleSprint = i == 0);
+        list.add(sprint);
+
+        OptionCategory category = new OptionCategory(I18n.format("gui.modernui.settings.category.accessibility"), list);
         window.addGroup(category);
     }
 

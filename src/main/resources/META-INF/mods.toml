@@ -9,8 +9,7 @@ issueTrackerURL="https://github.com/BloCamLimb/ModernUI/issues"
     displayURL="https://curseforge.com/minecraft/mc-mods/modern-ui"
     authors="BloCamLimb"
     description='''
-    Modern UI provides better menu, gui animations, blur shader, TTF font renderer, also as a library for other mods
-    Modern UI Fonts makes fonts with high quality, better compatible with TrueType Fonts and in better performance
+    Modern UI provides fancy and clean UI, better fonts, better menu, better optimization, also as a library for other mods
     '''
 
 [[dependencies.modernui]]

@@ -25,10 +25,8 @@ import icyllis.modernui.gui.scroll.option.OptionEntry;
 import icyllis.modernui.gui.scroll.option.SSliderOptionEntry;
 import icyllis.modernui.gui.window.SettingScrollWindow;
 import net.minecraft.client.GameSettings;
-import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.NewChatGui;
-import net.minecraft.client.gui.screen.ControlsScreen;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.settings.AbstractOption;
 import net.minecraft.client.settings.BooleanOption;
@@ -40,13 +38,8 @@ import org.apache.commons.lang3.tuple.Triple;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -87,6 +80,10 @@ public enum SettingsManager {
      */
     public static LazyOptional<Function<SettingScrollWindow, SSliderOptionEntry>> AO_LEVEL = LazyOptional.empty();
 
+    public static Function<SettingScrollWindow, SSliderOptionEntry> SENSITIVITY;
+
+    public static Function<SettingScrollWindow, SSliderOptionEntry> MOUSE_WHEEL_SENSITIVITY;
+
 
 
     public static Function<SettingScrollWindow, DSliderOptionEntry> RENDER_DISTANCE;
@@ -104,11 +101,17 @@ public enum SettingsManager {
     public static Function<SettingScrollWindow, BooleanOptionEntry> AUTO_SUGGEST_COMMANDS;
 
     public static Function<SettingScrollWindow, BooleanOptionEntry> SHOW_SUBTITLES;
+    public static Function<SettingScrollWindow, BooleanOptionEntry> AUTO_JUMP;
 
     public static Function<SettingScrollWindow, BooleanOptionEntry> VSYNC;
     public static Function<SettingScrollWindow, BooleanOptionEntry> VIEW_BOBBING;
 
     public static Function<SettingScrollWindow, BooleanOptionEntry> ENTITY_SHADOWS;
+
+    public static Function<SettingScrollWindow, BooleanOptionEntry> INVERT_MOUSE;
+    public static Function<SettingScrollWindow, BooleanOptionEntry> DISCRETE_MOUSE_WHEEL;
+    public static Function<SettingScrollWindow, BooleanOptionEntry> TOUCHSCREEN;
+    public static Function<SettingScrollWindow, BooleanOptionEntry> RAW_MOUSE_INPUT;
 
 
 
@@ -132,6 +135,10 @@ public enum SettingsManager {
                 .transformToSmooth(AbstractOption.ACCESSIBILITY_TEXT_BACKGROUND_OPACITY, ConstantsLibrary.PERCENTAGE_STRING_FUNC);
         GAMMA = INSTANCE
                 .transformToSmooth(AbstractOption.GAMMA, ConstantsLibrary.PERCENTAGE_STRING_FUNC);
+        SENSITIVITY = INSTANCE
+                .transformToSmooth(AbstractOption.SENSITIVITY, Triple.of(null, null, 0.005f), p -> (int) (p * 200) + "%");
+        MOUSE_WHEEL_SENSITIVITY = INSTANCE
+                .transformToSmooth(AbstractOption.MOUSE_WHEEL_SENSITIVITY, ConstantsLibrary.PERCENTAGE_STRING_FUNC);
         RENDER_DISTANCE = INSTANCE
                 .transformToDiscrete(AbstractOption.RENDER_DISTANCE, false);
         BIOME_BLEND_RADIUS = INSTANCE
@@ -157,12 +164,22 @@ public enum SettingsManager {
                 .transformToBoolean(AbstractOption.AUTO_SUGGEST_COMMANDS);
         SHOW_SUBTITLES = INSTANCE
                 .transformToBoolean(AbstractOption.SHOW_SUBTITLES);
+        AUTO_JUMP = INSTANCE
+                .transformToBoolean(AbstractOption.AUTO_JUMP);
         VSYNC = INSTANCE
                 .transformToBoolean(AbstractOption.VSYNC);
         VIEW_BOBBING = INSTANCE
                 .transformToBoolean(AbstractOption.VIEW_BOBBING);
         ENTITY_SHADOWS = INSTANCE
                 .transformToBoolean(AbstractOption.ENTITY_SHADOWS);
+        INVERT_MOUSE = INSTANCE
+                .transformToBoolean(AbstractOption.INVERT_MOUSE);
+        DISCRETE_MOUSE_WHEEL = INSTANCE
+                .transformToBoolean(AbstractOption.DISCRETE_MOUSE_SCROLL);
+        TOUCHSCREEN = INSTANCE
+                .transformToBoolean(AbstractOption.TOUCHSCREEN);
+        RAW_MOUSE_INPUT = INSTANCE
+                .transformToBoolean(AbstractOption.RAW_MOUSE_INPUT);
 
         if (ModIntegration.optifineLoaded) {
             try {
