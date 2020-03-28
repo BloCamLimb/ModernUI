@@ -56,6 +56,7 @@ public class HistoryRecorder {
         return EMOJI_HISTORY;
     }
 
+    //TODO use json to load map
     static void gEmojiPair() {
         EMOJI_MAP.put("beaming_face_with_smiling_eyes", 0x0000);
         EMOJI_MAP.put("face_with_tears_of_joy", 0x0100);

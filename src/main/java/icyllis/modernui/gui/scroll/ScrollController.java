@@ -48,7 +48,11 @@ public class ScrollController {
             float p = Math.min((currentTime - startTime) / duration, 1);
             p = (float) Math.sin(p * Math.PI / 2);
             value = startValue + (targetValue - startValue) * p;
-            receiver.accept(value);
+            if (p == 1) {
+                receiver.accept((float) Math.round(value));
+            } else {
+                receiver.accept(value);
+            }
         }
     }
 
@@ -57,9 +61,9 @@ public class ScrollController {
         startValue = value;
         targetValue = newTargetValue;
         if (Math.abs(targetValue - value) > 60) {
-            duration = 1.5f;
-        } else {
             duration = 2.0f;
+        } else {
+            duration = 3.0f;
         }
     }
 

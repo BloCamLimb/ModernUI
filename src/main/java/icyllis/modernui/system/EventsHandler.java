@@ -18,9 +18,9 @@
 
 package icyllis.modernui.system;
 
-import icyllis.modernui.shader.blur.BlurHandler;
 import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.gui.master.GlobalModuleManager;
+import icyllis.modernui.shader.blur.BlurHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;

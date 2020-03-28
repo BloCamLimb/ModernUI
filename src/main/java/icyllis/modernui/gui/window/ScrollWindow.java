@@ -19,6 +19,7 @@
 package icyllis.modernui.gui.window;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.scroll.ScrollController;
 import icyllis.modernui.gui.scroll.ScrollGroup;
 import icyllis.modernui.gui.scroll.ScrollList;
@@ -49,6 +50,8 @@ public class ScrollWindow<T extends ScrollGroup> extends Element implements IGui
     protected float visibleHeight; // except black fade out border * 2
 
     protected float scrollAmount = 0f; // scroll offset, > 0
+
+    private boolean mouseMoving = false;
 
     protected ScrollBar scrollbar;
 
@@ -84,7 +87,7 @@ public class ScrollWindow<T extends ScrollGroup> extends Element implements IGui
 
         RenderSystem.enableTexture();
 
-        scrollList.draw(bottom, currentTime);
+        scrollList.draw(currentTime);
 
         RenderSystem.disableTexture();
         RenderSystem.shadeModel(GL11.GL_SMOOTH);
@@ -137,6 +140,10 @@ public class ScrollWindow<T extends ScrollGroup> extends Element implements IGui
         scrollbar.mouseMoved(mouseX, mouseY);
         if (isMouseOver(mouseX, mouseY)) {
             scrollList.mouseMoved(mouseX, mouseY);
+            mouseMoving = true;
+        } else if (mouseMoving) {
+            scrollList.mouseMoved(-1, -1);
+            mouseMoving = false;
         }
     }
 
@@ -196,7 +203,7 @@ public class ScrollWindow<T extends ScrollGroup> extends Element implements IGui
     }
 
     public void scrollDirectly(float delta) {
-        float amount = MathHelper.clamp(controller.getTargetValue() + delta, 0, getMaxScrollAmount());
+        float amount = Math.round(MathHelper.clamp(controller.getTargetValue() + delta, 0, getMaxScrollAmount()));
         controller.setTargetValueDirect(amount);
         callbackScrollAmount(amount);
     }

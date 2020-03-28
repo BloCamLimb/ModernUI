@@ -79,9 +79,36 @@ public interface IGuiModule extends IElement, IGuiEventListener {
         return false;
     }
 
-    default boolean mouseScrolled(double mouseX, double mouseY, double shift) {
+    default boolean mouseScrolled(double mouseX, double mouseY, double delta) {
         for (IGuiEventListener listener : getEventListeners()) {
-            if (listener.mouseScrolled(mouseX, mouseY, shift)) {
+            if (listener.mouseScrolled(mouseX, mouseY, delta)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    default boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        for (IGuiEventListener listener : getEventListeners()) {
+            if (listener.keyPressed(keyCode, scanCode, modifiers)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    default boolean keyReleased(int keyCode, int scanCode, int modifiers) {
+        for (IGuiEventListener listener : getEventListeners()) {
+            if (listener.keyReleased(keyCode, scanCode, modifiers)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    default boolean charTyped(char ch, int modifiers) {
+        for (IGuiEventListener listener : getEventListeners()) {
+            if (listener.charTyped(ch, modifiers)) {
                 return true;
             }
         }

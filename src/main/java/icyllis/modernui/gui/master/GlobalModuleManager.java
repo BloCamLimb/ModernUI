@@ -94,7 +94,7 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager, IGuiE
         if (this.popup != null) {
             ModernUI.LOGGER.warn(MARKER, "#openPopup() shouldn't be called when there's already a popup, the previous one has been overwritten");
         }
-        this.mouseMoved(0, 0);
+        this.mouseMoved(-1, -1);
         this.popup = popup;
         this.popup.resize(width, height);
         this.refreshMouse();
@@ -196,7 +196,12 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager, IGuiE
             }
             return true;
         } else if (popup != null) {
-            return popup.keyPressed(keyCode, scanCode, modifiers);
+            if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+                closePopup();
+                return true;
+            } else {
+                return popup.keyPressed(keyCode, scanCode, modifiers);
+            }
         } else {
             for (IGuiEventListener listener : builders) {
                 if (listener.keyPressed(keyCode, scanCode, modifiers)) {
@@ -222,12 +227,12 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager, IGuiE
     }
 
     @Override
-    public boolean charTyped(char charCode, int modifiers) {
+    public boolean charTyped(char ch, int modifiers) {
         if (popup != null) {
-            return popup.charTyped(charCode, modifiers);
+            return popup.charTyped(ch, modifiers);
         } else {
             for (IGuiEventListener listener : builders) {
-                if (listener.charTyped(charCode, modifiers)) {
+                if (listener.charTyped(ch, modifiers)) {
                     return true;
                 }
             }

@@ -53,7 +53,7 @@ public class SettingAudio implements IGuiModule {
                     d -> gameSettings.setSoundLevel(soundCategory, d.floatValue()), ConstantsLibrary.PERCENTAGE_STRING_FUNC);
             list.add(entry);
         }
-        OptionCategory category = new OptionCategory("Sounds", list);
+        OptionCategory category = new OptionCategory(I18n.format("gui.modernui.settings.category.sounds"), list);
         window.addGroup(category);
 
         elements.add(window);
