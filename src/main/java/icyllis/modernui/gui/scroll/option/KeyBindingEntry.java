@@ -36,10 +36,15 @@ public class KeyBindingEntry extends OptionEntry {
 
     private KeyInputBox inputBox;
 
-    public KeyBindingEntry(SettingScrollWindow window, KeyBinding keyBinding) {
+    private Runnable conflictsCallback;
+
+    public KeyBindingEntry(SettingScrollWindow window, KeyBinding keyBinding, Runnable conflictsCallback) {
         super(window, I18n.format(keyBinding.getKeyDescription()));
         this.keyBinding = keyBinding;
         this.inputBox = new KeyInputBox(window::setFocused, this::bindKey);
+        //TODO tint text by conflict context, or maybe not?
+        //this.conflictContext = keyBinding.getKeyConflictContext().toString();
+        this.conflictsCallback = conflictsCallback;
         updateKeyText();
     }
 
@@ -62,6 +67,7 @@ public class KeyBindingEntry extends OptionEntry {
         return super.mouseClicked(deltaCenterX, deltaY, mouseX, mouseY, mouseButton);
     }
 
+    // vanilla call this every frame, emm....
     private void updateKeyText() {
         String translateKey = keyBinding.getTranslationKey();
         String localizedName = I18n.format(translateKey);
@@ -83,14 +89,15 @@ public class KeyBindingEntry extends OptionEntry {
                 glfwName = InputMappings.getKeyNameFromScanCode(keyCode);
                 break;
             case MOUSE:
-                inputBox.setKeyText(Objects.equals(localizedName, translateKey) ? // if not translated, use default, keyCode 0 = Mouse 1 (Mouse Left)
+                // if not translated, use default, eg. keyCode 0 = Mouse 1 (Mouse Left Button)
+                inputBox.setKeyText(Objects.equals(localizedName, translateKey) ?
                         I18n.format(InputMappings.Type.MOUSE.getName(), keyCode + 1) : localizedName);
                 return;
         }
 
         KeyModifier modifier = keyBinding.getKeyModifier();
         String comboPrefix;
-        // why not use forge localization? bcz there's no need actually, modifier key shouldn't be translated
+        // why not use forge localization? bcz there's no need actually, modifier key shouldn't be translated, =w=
         switch (modifier) {
             case CONTROL:
                 comboPrefix = "Ctrl + ";
@@ -107,14 +114,20 @@ public class KeyBindingEntry extends OptionEntry {
         }
 
         if (glfwName != null) {
+            // glfwName length must be 1, so no need to check
             char c = glfwName.charAt(0);
             if (Character.isLetter(c)) {
+                // uppercase looks better, awa
                 glfwName = glfwName.toUpperCase(Locale.ROOT);
             }
             inputBox.setKeyText(comboPrefix + glfwName);
         } else {
             inputBox.setKeyText(comboPrefix + localizedName);
         }
+    }
+
+    public void setConflictTier(int tier) {
+        inputBox.setTextColor(tier);
     }
 
     private void bindKey(InputMappings.Input inputIn) {
@@ -124,6 +137,11 @@ public class KeyBindingEntry extends OptionEntry {
         }
         gameSettings.setKeyBindingCode(keyBinding, inputIn);
         updateKeyText();
+        conflictsCallback.run();
+    }
+
+    public KeyBinding getKeyBinding() {
+        return keyBinding;
     }
 
     @Override

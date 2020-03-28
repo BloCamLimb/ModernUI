@@ -29,10 +29,12 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.util.InputMappings;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.client.settings.KeyModifier;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 
+import javax.annotation.Nullable;
 import java.util.function.Consumer;
 
 public class KeyInputBox implements IElement, IGuiEventListener {
@@ -55,12 +57,17 @@ public class KeyInputBox implements IElement, IGuiEventListener {
 
     private boolean editing = false;
 
-    private Consumer<IGuiEventListener> focusedSetter;
+    // pressing a modifier key
+    @Nullable
+    private InputMappings.Input pressing = null;
+
+    // focus this make keyPressed keyReleased can be called
+    private Consumer<IGuiEventListener> focuser;
 
     private Consumer<InputMappings.Input> keyBinder;
 
-    public KeyInputBox(Consumer<IGuiEventListener> focusedSetter, Consumer<InputMappings.Input> keyBinder) {
-        this.focusedSetter = focusedSetter;
+    public KeyInputBox(Consumer<IGuiEventListener> focuser, Consumer<InputMappings.Input> keyBinder) {
+        this.focuser = focuser;
         this.keyBinder = keyBinder;
     }
 
@@ -102,6 +109,20 @@ public class KeyInputBox implements IElement, IGuiEventListener {
         this.keyText = keyText;
     }
 
+    public void setTextColor(int tier) {
+        if (keyText.indexOf('\u00a7') != -1) {
+            keyText = keyText.substring(2);
+        }
+        switch (tier) {
+            case 1:
+                keyText = TextFormatting.GOLD + keyText;
+                break;
+            case 2:
+                keyText = TextFormatting.RED + keyText;
+                break;
+        }
+    }
+
     @Override
     public void mouseMoved(double mouseX, double mouseY) {
         boolean prev = mouseHovered;
@@ -124,17 +145,18 @@ public class KeyInputBox implements IElement, IGuiEventListener {
 
     private void startEditing() {
         editing = true;
-        focusedSetter.accept(this);
+        focuser.accept(this);
         backAlpha = 64;
     }
 
     private void stopEditing() {
         editing = false;
-        focusedSetter.accept(null);
+        focuser.accept(null);
         if (!mouseHovered) {
             MouseTools.useDefaultCursor();
             backAlpha = 16;
         }
+        pressing = null;
     }
 
     @Override
@@ -165,10 +187,15 @@ public class KeyInputBox implements IElement, IGuiEventListener {
             }
             InputMappings.Input input = InputMappings.getInputByCode(keyCode, scanCode);
             if (!KeyModifier.isKeyCodeModifier(input)) {
+                // a combo key or a single non-modifier key
                 keyBinder.accept(input);
                 stopEditing();
             } else {
-                keyText = I18n.format(input.getTranslationKey());
+                if (pressing == null) {
+                    // this is the modifier key that has already pressed, and can't be changed
+                    keyText = I18n.format(input.getTranslationKey());
+                    pressing = input;
+                }
             }
             return true;
         }
@@ -179,7 +206,8 @@ public class KeyInputBox implements IElement, IGuiEventListener {
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
         if (editing) {
             InputMappings.Input input = InputMappings.getInputByCode(keyCode, scanCode);
-            if (KeyModifier.isKeyCodeModifier(input)) {
+            // this used for single modifier key input, not for combo key
+            if (input.equals(pressing)) {
                 keyBinder.accept(input);
                 stopEditing();
                 return true;
