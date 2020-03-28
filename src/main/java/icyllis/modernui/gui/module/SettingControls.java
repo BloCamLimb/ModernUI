@@ -30,6 +30,8 @@ import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.client.util.InputMappings;
+import net.minecraftforge.client.settings.KeyConflictContext;
+import net.minecraftforge.client.settings.KeyModifier;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.ArrayList;
@@ -45,6 +47,8 @@ public class SettingControls implements IGuiModule {
     private List<IGuiEventListener> listeners = new ArrayList<>();
 
     private SettingScrollWindow window;
+
+    private List<KeyBindingEntry> allKeyBinding = new ArrayList<>();
 
     public SettingControls() {
         this.minecraft = Minecraft.getInstance();
@@ -75,7 +79,8 @@ public class SettingControls implements IGuiModule {
     private void addAllKeyBindings() {
         KeyBinding[] keyBindings = ArrayUtils.clone(minecraft.gameSettings.keyBindings);
         /**
-         * sort by category {@link KeyBinding#compareTo(KeyBinding)} */
+         * Sort by category and key desc {@link KeyBinding#compareTo(KeyBinding)}
+         **/
         Arrays.sort(keyBindings);
 
         String categoryKey = null;
@@ -91,14 +96,65 @@ public class SettingControls implements IGuiModule {
                 categoryKey = ck;
                 list = new ArrayList<>();
             }
-            list.add(new KeyBindingEntry(window, keybinding));
+            KeyBindingEntry entry = new KeyBindingEntry(window, keybinding, this::checkAllConflicts);
+            list.add(entry);
+            allKeyBinding.add(entry);
         }
-
-        // add last category if exists
+        // add last category
         if (categoryKey != null) {
             OptionCategory category = new OptionCategory(I18n.format(categoryKey), list);
             window.addGroup(category);
         }
+        checkAllConflicts();
+    }
+
+    /**
+     * If a key conflicts with another key, they both are conflicted
+     * Yes, double for loop, but only called when a key binding changed
+     * However, vanilla does this every frame...
+     * so it's better than vanilla, I don't have to do more optimization
+     */
+    private void checkAllConflicts() {
+        KeyBinding[] keyBindings = Minecraft.getInstance().gameSettings.keyBindings;
+        KeyBinding keyBinding;
+        for (KeyBindingEntry entry : allKeyBinding) {
+            boolean conflict = false;
+            boolean modifierConflict = true;
+            keyBinding = entry.getKeyBinding();
+            if (!keyBinding.isInvalid()) {
+                for (KeyBinding other : keyBindings) {
+                    if (keyBinding != other && conflicts(keyBinding, other)) {
+                        conflict = true;
+                        modifierConflict &= keyBinding.hasKeyCodeModifierConflict(other);
+                    }
+                }
+            }
+            if (conflict) {
+                if (modifierConflict) {
+                    entry.setConflictTier(1);
+                } else {
+                    entry.setConflictTier(2);
+                }
+            } else {
+                entry.setConflictTier(0);
+            }
+        }
+    }
+
+    // different from forge, finally return false is correct
+    private boolean conflicts(KeyBinding a, KeyBinding b) {
+        if (a.getKeyConflictContext().conflicts(b.getKeyConflictContext()) || b.getKeyConflictContext().conflicts(a.getKeyConflictContext())) {
+            KeyModifier keyModifier = a.getKeyModifier();
+            KeyModifier otherKeyModifier = b.getKeyModifier();
+            if (keyModifier.matches(b.getKey()) || otherKeyModifier.matches(a.getKey())) {
+                return true;
+            } else if (a.getKey().equals(b.getKey())) {
+                return keyModifier == otherKeyModifier ||
+                        (a.getKeyConflictContext().conflicts(KeyConflictContext.IN_GAME) &&
+                                (keyModifier == KeyModifier.NONE || otherKeyModifier == KeyModifier.NONE));
+            }
+        }
+        return false;
     }
 
     @Override
