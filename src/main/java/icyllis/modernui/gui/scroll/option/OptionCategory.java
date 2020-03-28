@@ -18,12 +18,12 @@
 
 package icyllis.modernui.gui.scroll.option;
 
-import com.google.common.collect.Lists;
 import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.gui.scroll.ScrollGroup;
 import net.minecraft.util.text.TextFormatting;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class OptionCategory extends ScrollGroup {
@@ -36,21 +36,26 @@ public class OptionCategory extends ScrollGroup {
 
     private List<OptionEntry> entries;
 
-    public OptionCategory(String title, OptionEntry... entries) {
-        this(title, Lists.newArrayList(entries));
-    }
+    private float bottomY;
 
     public OptionCategory(String title, List<OptionEntry> entries) {
         super(0);
-        this.title = title;
+        this.title = TextFormatting.BOLD + title;
         this.entries = entries;
+        // 30 for title, 6 for end space. =w=
         height = 36 + entries.size() * ENTRY_HEIGHT;
     }
 
     @Override
-    public void draw(float maxY, float currentTime) {
-        fontRenderer.drawString(TextFormatting.BOLD + title, centerX - 160, y + 14, 1, 1, 1, 1, 0f);
-        int maxSize = Math.min((int) Math.ceil((maxY - y) / ENTRY_HEIGHT), entries.size());
+    public void updateVisible(float topY, float bottomY) {
+        this.bottomY = bottomY;
+        // A category won't contain too much entries, so we don't need to optimize specially
+    }
+
+    @Override
+    public void draw(float currentTime) {
+        fontRenderer.drawString(title, centerX - 160, y + 14, 1, 1, 1, 1, 0f);
+        int maxSize = Math.min((int) Math.ceil((bottomY - y) / ENTRY_HEIGHT), entries.size());
         for (int i = 0; i < maxSize; i++) {
             float cy = y + 30 + i * ENTRY_HEIGHT;
             entries.get(i).draw(centerX, cy, currentTime);
@@ -63,13 +68,15 @@ public class OptionCategory extends ScrollGroup {
         double deltaCenterX = mouseX - centerX;
         if (deltaCenterX >= -160 && deltaCenterX <= 160) {
             double rY = mouseY - y - 30;
+            for (int i = 0; i < entries.size(); i++) {
+                entries.get(i).mouseMoved(deltaCenterX, rY - i * ENTRY_HEIGHT, mouseX, mouseY);
+            }
             if (rY >= 0) {
                 int pIndex = (int) (rY / ENTRY_HEIGHT);
                 if (pIndex < entries.size()) {
                     for (int i = 0; i < entries.size(); i++) {
                         OptionEntry entry = entries.get(i);
                         if (i == pIndex) {
-                            entry.mouseMoved(deltaCenterX, rY - pIndex * ENTRY_HEIGHT, mouseX, mouseY);
                             entry.setMouseHovered(true);
                         } else {
                             entry.setMouseHovered(false);
@@ -103,7 +110,7 @@ public class OptionCategory extends ScrollGroup {
                 return true;
             }
         }
-        return super.mouseClicked(mouseX, mouseY, mouseButton);
+        return false;
     }
 
     @Override
@@ -123,7 +130,7 @@ public class OptionCategory extends ScrollGroup {
                 return true;
             }
         }
-        return super.mouseReleased(mouseX, mouseY, mouseButton);
+        return false;
     }
 
     @Override
@@ -143,6 +150,11 @@ public class OptionCategory extends ScrollGroup {
                 return true;
             }
         }
-        return super.mouseDragged(mouseX, mouseY, mouseButton, deltaX, deltaY);
+        return false;
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        return false;
     }
 }

@@ -1,0 +1,24 @@
+{
+  "options.chat.visibility": "可见性",
+
+  "gui.modernui.settings.tab.general": "常规",
+  "gui.modernui.settings.tab.video": "视频",
+  "gui.modernui.settings.tab.audio": "音频",
+  "gui.modernui.settings.tab.controls": "控制",
+  "gui.modernui.settings.tab.assets": "资源",
+
+  "gui.modernui.settings.category.game": "游戏",
+  "gui.modernui.settings.category.chat": "聊天",
+  "gui.modernui.settings.category.accessibility": "辅助功能",
+  "gui.modernui.settings.category.skin": "皮肤",
+  "gui.modernui.settings.category.video": "视频",
+  "gui.modernui.settings.category.quality": "品质",
+  "gui.modernui.settings.category.details": "细节",
+  "gui.modernui.settings.category.animations": "动画",
+  "gui.modernui.settings.category.performance": "性能",
+  "gui.modernui.settings.category.other": "其他",
+  "gui.modernui.settings.category.sounds": "声音",
+  "gui.modernui.settings.category.mouse": "鼠标",
+
+  "gui.modernui.tooltip.thanks_optifine": "此功能由OptiFine提供技术支持"
+}

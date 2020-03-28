@@ -30,7 +30,7 @@ public class MenuSettingsBG extends Element {
 
     private float sizeW, sizeH;
 
-    private float opacity = 0;
+    private int alpha = 0;
 
     public MenuSettingsBG() {
         super(w -> 24f, h -> 16f);
@@ -38,15 +38,15 @@ public class MenuSettingsBG extends Element {
                 .applyTo(new Applier(24, 40, this::setX))
                 .onFinish(() -> xResizer = w -> 40f));
         moduleManager.addAnimation(new Animation(2)
-                .applyTo(new Applier(0, 0.4f, this::setOpacity)));
+                .applyTo(new Applier(0, 0.4f, this::setAlpha)));
     }
 
     private void setX(float x) {
         this.x = x;
     }
 
-    private void setOpacity(float opacity) {
-        this.opacity = opacity;
+    private void setAlpha(float alpha) {
+        this.alpha = (int) (255 * alpha);
     }
 
     @Override
@@ -56,25 +56,24 @@ public class MenuSettingsBG extends Element {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableTexture();
-        bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION);
-        RenderSystem.color4f(0, 0, 0, opacity);
-        bufferBuilder.pos(x, y + sizeH - 20, 0.0D).endVertex();
-        bufferBuilder.pos(x + sizeW, y + sizeH - 20, 0.0D).endVertex();
-        bufferBuilder.pos(x + sizeW, y + 20, 0.0D).endVertex();
-        bufferBuilder.pos(x, y + 20, 0.0D).endVertex();
+        bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+        bufferBuilder.pos(x, y + sizeH - 20, 0.0D).color(0, 0, 0, alpha).endVertex();
+        bufferBuilder.pos(x + sizeW, y + sizeH - 20, 0.0D).color(0, 0, 0, alpha).endVertex();
+        bufferBuilder.pos(x + sizeW, y + 20, 0.0D).color(0, 0, 0, alpha).endVertex();
+        bufferBuilder.pos(x, y + 20, 0.0D).color(0, 0, 0, alpha).endVertex();
         tessellator.draw();
-        bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION);
-        RenderSystem.color4f(0, 0, 0, opacity * 2f);
-        bufferBuilder.pos(x, y + 20, 0.0D).endVertex();
-        bufferBuilder.pos(x + sizeW, y + 20, 0.0D).endVertex();
-        bufferBuilder.pos(x + sizeW, y, 0.0D).endVertex();
-        bufferBuilder.pos(x, y, 0.0D).endVertex();
+        bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+        int alpha = this.alpha * 2;
+        bufferBuilder.pos(x, y + 20, 0.0D).color(0, 0, 0, alpha).endVertex();
+        bufferBuilder.pos(x + sizeW, y + 20, 0.0D).color(0, 0, 0, alpha).endVertex();
+        bufferBuilder.pos(x + sizeW, y, 0.0D).color(0, 0, 0, alpha).endVertex();
+        bufferBuilder.pos(x, y, 0.0D).color(0, 0, 0, alpha).endVertex();
         tessellator.draw();
-        bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION);
-        bufferBuilder.pos(x, y + sizeH, 0.0D).endVertex();
-        bufferBuilder.pos(x + sizeW, y + sizeH, 0.0D).endVertex();
-        bufferBuilder.pos(x + sizeW, y + sizeH - 20, 0.0D).endVertex();
-        bufferBuilder.pos(x, y + sizeH - 20, 0.0D).endVertex();
+        bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+        bufferBuilder.pos(x, y + sizeH, 0.0D).color(0, 0, 0, alpha).endVertex();
+        bufferBuilder.pos(x + sizeW, y + sizeH, 0.0D).color(0, 0, 0, alpha).endVertex();
+        bufferBuilder.pos(x + sizeW, y + sizeH - 20, 0.0D).color(0, 0, 0, alpha).endVertex();
+        bufferBuilder.pos(x, y + sizeH - 20, 0.0D).color(0, 0, 0, alpha).endVertex();
         tessellator.draw();
         bufferBuilder.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);
         GL11.glLineWidth(1.0f);

@@ -30,6 +30,7 @@ import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.chat.NarratorChatListener;
+import net.minecraft.client.gui.screen.OptionsScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.settings.NarratorStatus;
@@ -71,9 +72,9 @@ public class SettingGeneral implements IGuiModule {
         this.minecraft = Minecraft.getInstance();
         this.window = new SettingScrollWindow();
         addGameCategory();
-        addSkinCategory();
         addChatCategory();
         addAccessibilityCategory();
+        addSkinCategory();
         elements.add(window);
         listeners.add(window);
     }
@@ -97,36 +98,15 @@ public class SettingGeneral implements IGuiModule {
                 }, true);
                 difficultyEntry.setAvailable(!locked);
                 lockEntry.setAvailable(!locked);
+                list.add(lockEntry);
             } else {
                 difficultyEntry.setAvailable(false);
             }
-            list.add(lockEntry);
         }
 
         list.add(SettingsManager.REALMS_NOTIFICATIONS.apply(window));
 
         OptionCategory category = new OptionCategory(I18n.format("gui.modernui.settings.category.game"), list);
-        window.addGroup(category);
-    }
-
-    private void addSkinCategory() {
-        List<OptionEntry> list = new ArrayList<>();
-        GameSettings gameSettings = minecraft.gameSettings;
-
-        for (PlayerModelPart part : PlayerModelPart.values()) {
-            BooleanOptionEntry entry = new BooleanOptionEntry(window, part.getName().getFormattedText(),
-                    gameSettings.getModelParts().contains(part), b -> gameSettings.setModelPartEnabled(part, b));
-            list.add(entry);
-        }
-        OptionEntry mainHand = new DropdownOptionEntry(window, I18n.format("options.mainHand"), MAIN_HANDS.get(),
-                gameSettings.mainHand.ordinal(), i -> {
-           gameSettings.mainHand = HandSide.values()[i];
-           gameSettings.saveOptions();
-           gameSettings.sendSettingsToServer();
-        });
-        list.add(mainHand);
-
-        OptionCategory category = new OptionCategory(I18n.format("gui.modernui.settings.category.skin"), list);
         window.addGroup(category);
     }
 
@@ -177,13 +157,14 @@ public class SettingGeneral implements IGuiModule {
         });
         list.add(narrator);
         list.add(SettingsManager.SHOW_SUBTITLES.apply(window));
-        list.add(SettingsManager.AUTO_JUMP.apply(window));
 
         List<String> textBackgrounds = Lists.newArrayList(I18n.format("options.accessibility.text_background.chat"),
                 I18n.format("options.accessibility.text_background.everywhere"));
         list.add(new DropdownOptionEntry(window, I18n.format("options.accessibility.text_background"), textBackgrounds,
                 gameSettings.accessibilityTextBackground ? 0 : 1, i -> gameSettings.accessibilityTextBackground = i == 0));
         list.add(SettingsManager.TEXT_BACKGROUND_OPACITY.apply(window));
+
+        list.add(SettingsManager.AUTO_JUMP.apply(window));
 
         List<String> toggle = Lists.newArrayList(I18n.format("options.key.toggle"), I18n.format("options.key.hold"));
         DropdownOptionEntry sneak = new DropdownOptionEntry(window, I18n.format("key.sneak"), toggle,
@@ -194,6 +175,28 @@ public class SettingGeneral implements IGuiModule {
         list.add(sprint);
 
         OptionCategory category = new OptionCategory(I18n.format("gui.modernui.settings.category.accessibility"), list);
+        window.addGroup(category);
+    }
+
+    private void addSkinCategory() {
+        List<OptionEntry> list = new ArrayList<>();
+        GameSettings gameSettings = minecraft.gameSettings;
+
+        OptionEntry mainHand = new DropdownOptionEntry(window, I18n.format("options.mainHand"), MAIN_HANDS.get(),
+                gameSettings.mainHand.ordinal(), i -> {
+            gameSettings.mainHand = HandSide.values()[i];
+            gameSettings.saveOptions();
+            gameSettings.sendSettingsToServer();
+        });
+        list.add(mainHand);
+
+        for (PlayerModelPart part : PlayerModelPart.values()) {
+            BooleanOptionEntry entry = new BooleanOptionEntry(window, part.getName().getFormattedText(),
+                    gameSettings.getModelParts().contains(part), b -> gameSettings.setModelPartEnabled(part, b));
+            list.add(entry);
+        }
+
+        OptionCategory category = new OptionCategory(I18n.format("gui.modernui.settings.category.skin"), list);
         window.addGroup(category);
     }
 

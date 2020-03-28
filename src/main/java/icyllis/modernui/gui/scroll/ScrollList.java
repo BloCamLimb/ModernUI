@@ -62,12 +62,13 @@ public class ScrollList<T extends ScrollGroup> {
         for (T entry : visible) {
             entry.centerX = centerX;
             entry.y = baseY + entry.lastHeight;
+            entry.updateVisible(topY, bottomY);
         }
     }
 
-    public void draw(float bottomY, float currentTime) {
+    public void draw(float currentTime) {
         for (T entry : visible) {
-            entry.draw(bottomY, currentTime);
+            entry.draw(currentTime);
         }
     }
 

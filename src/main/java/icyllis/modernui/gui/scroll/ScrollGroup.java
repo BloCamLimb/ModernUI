@@ -20,7 +20,7 @@ package icyllis.modernui.gui.scroll;
 
 public abstract class ScrollGroup {
 
-    public int height;
+    public int height; // change this only in constructor
 
     public float lastHeight; // you can't change this manually!
 
@@ -30,42 +30,33 @@ public abstract class ScrollGroup {
         this.height = height;
     }
 
-    public abstract void draw(float maxY, float currentTime);
+    public abstract void updateVisible(float topY, float bottomY);
+
+    public abstract void draw(float currentTime);
 
     /**
      * Called when mouseY move to this height range, whatever mouseX is
      * Use less this
      */
-    public void mouseMoved(double mouseX, double mouseY) {
-
-    }
+    public abstract void mouseMoved(double mouseX, double mouseY);
 
     /**
      * Same as above
      */
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        return false;
-    }
+    public abstract boolean mouseClicked(double mouseX, double mouseY, int mouseButton);
 
     /**
      * Same as above
      */
-    public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
-        return false;
-    }
+    public abstract boolean mouseReleased(double mouseX, double mouseY, int mouseButton);
 
     /**
      * Same as above
      */
-    public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double deltaX, double deltaY) {
-        return false;
-    }
-
+    public abstract boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double deltaX, double deltaY);
     /**
      * Same as above
      */
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        return false;
-    }
+    public abstract boolean mouseScrolled(double mouseX, double mouseY, double delta);
 
 }

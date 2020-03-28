@@ -25,6 +25,7 @@ import icyllis.modernui.gui.master.IGuiModule;
 import icyllis.modernui.gui.master.TickEvent;
 import icyllis.modernui.gui.widget.LineTextButton;
 import net.minecraft.client.gui.IGuiEventListener;
+import net.minecraft.client.resources.I18n;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,11 +43,11 @@ public class MenuSettingHeader implements IGuiModule {
             elements.add(s);
             buttons.add(s);
         };
-        consumer.accept(new LineTextButton(w -> w / 2f - 152f, h -> 20f, "General", 48f, 31));
-        consumer.accept(new LineTextButton(w -> w / 2f - 88f, h -> 20f, "Video", 48f, 32));
-        consumer.accept(new LineTextButton(w -> w / 2f - 24f, h -> 20f, "Audio", 48f, 33));
-        consumer.accept(new LineTextButton(w -> w / 2f + 40f, h -> 20f, "Controls", 48f, 34));
-        consumer.accept(new LineTextButton(w -> w / 2f + 104f, h -> 20f, "Assets", 48f, 35));
+        consumer.accept(new LineTextButton(w -> w / 2f - 152f, h -> 20f, I18n.format("gui.modernui.settings.tab.general"), 48f, 31));
+        consumer.accept(new LineTextButton(w -> w / 2f - 88f, h -> 20f, I18n.format("gui.modernui.settings.tab.video"), 48f, 32));
+        consumer.accept(new LineTextButton(w -> w / 2f - 24f, h -> 20f, I18n.format("gui.modernui.settings.tab.audio"), 48f, 33));
+        consumer.accept(new LineTextButton(w -> w / 2f + 40f, h -> 20f, I18n.format("gui.modernui.settings.tab.controls"), 48f, 34));
+        consumer.accept(new LineTextButton(w -> w / 2f + 104f, h -> 20f, I18n.format("gui.modernui.settings.tab.assets"), 48f, 35));
         GlobalModuleManager.INSTANCE.addTickEvent(new TickEvent(2, () -> GlobalModuleManager.INSTANCE.switchModule(31)));
     }
 

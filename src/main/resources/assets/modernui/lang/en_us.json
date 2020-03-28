@@ -8,9 +8,9 @@
   "gui.modernui.settings.tab.assets": "Assets",
 
   "gui.modernui.settings.category.game": "Game",
-  "gui.modernui.settings.category.skin": "Skin",
   "gui.modernui.settings.category.chat": "Chat",
   "gui.modernui.settings.category.accessibility": "Accessibility",
+  "gui.modernui.settings.category.skin": "Skin",
   "gui.modernui.settings.category.video": "Video",
   "gui.modernui.settings.category.quality": "Quality",
   "gui.modernui.settings.category.details": "Details",
@@ -20,5 +20,5 @@
   "gui.modernui.settings.category.sounds": "Sounds",
   "gui.modernui.settings.category.mouse": "Mouse",
 
-  "gui.modernui.tooltip.thanks_optifine": "This function is powered by OptiFine"
+  "gui.modernui.tooltip.thanks_optifine": "This functionality is powered by OptiFine"
 }

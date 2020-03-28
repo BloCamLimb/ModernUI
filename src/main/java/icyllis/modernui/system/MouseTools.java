@@ -28,8 +28,12 @@ public class MouseTools {
 
     private final static long IBEAM_CURSOR;
 
+    private final static long HAND_CURSOR;
+
     static {
         IBEAM_CURSOR = GLFW.glfwCreateStandardCursor(GLFW.GLFW_IBEAM_CURSOR);
+        HAND_CURSOR = GLFW.glfwCreateStandardCursor(GLFW.GLFW_HAND_CURSOR);
+        ModernUI.LOGGER.debug("Cursor shape has been created. {} {}", IBEAM_CURSOR, HAND_CURSOR);
     }
 
     /**
