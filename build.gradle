@@ -107,7 +107,6 @@ processResources {
     // copy everything else except the mods.toml and .psd
     from(sourceSets.main.resources.srcDirs) {
         exclude 'META-INF/mods.toml'
-        exclude '*.psd'
     }
 }
 

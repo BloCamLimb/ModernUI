@@ -18,6 +18,9 @@
 
 package icyllis.modernui.gui.scroll.option;
 
+import com.google.common.collect.Lists;
+import icyllis.modernui.gui.master.GlobalModuleManager;
+import icyllis.modernui.gui.widget.DropDownList;
 import icyllis.modernui.gui.widget.KeyInputBox;
 import icyllis.modernui.gui.window.SettingScrollWindow;
 import net.minecraft.client.GameSettings;
@@ -61,13 +64,23 @@ public class KeyBindingEntry extends OptionEntry {
 
     @Override
     public boolean mouseClicked(double deltaCenterX, double deltaY, double mouseX, double mouseY, int mouseButton) {
+        if (mouseHovered && mouseButton == 1) {
+            DropDownList list = new DropDownList(Lists.newArrayList("WIP =w="), -1, 16, this::menuActions);
+            list.setPos((float) mouseX, (float) (mouseY - deltaY + 18), GlobalModuleManager.INSTANCE.getWindowHeight());
+            window.setDropDownList(list);
+            return true;
+        }
         if (inputBox.mouseClicked(mouseX, mouseY, mouseButton)) {
             return true;
         }
         return super.mouseClicked(deltaCenterX, deltaY, mouseX, mouseY, mouseButton);
     }
 
-    // vanilla call this every frame, emm....
+    private void menuActions(int index) {
+
+    }
+
+    // vanilla call this every frame... but we don't
     private void updateKeyText() {
         String translateKey = keyBinding.getTranslationKey();
         String localizedName = I18n.format(translateKey);

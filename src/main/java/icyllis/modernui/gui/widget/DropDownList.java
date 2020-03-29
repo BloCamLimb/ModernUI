@@ -23,17 +23,20 @@ import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
+import icyllis.modernui.gui.element.IElement;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL43;
+import org.lwjgl.opengl.GL46;
 
 import java.util.List;
 import java.util.function.Consumer;
 
-public class DropDownList implements IGuiEventListener {
+public class DropDownList implements IElement, IGuiEventListener {
 
     private static int ENTRY_HEIGHT = 13;
 
@@ -74,6 +77,11 @@ public class DropDownList implements IGuiEventListener {
     }
 
     public void draw() {
+        this.draw(0);
+    }
+
+    @Override
+    public void draw(float currentTime) {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.enableAlphaTest();

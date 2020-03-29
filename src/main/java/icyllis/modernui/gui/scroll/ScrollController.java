@@ -48,18 +48,14 @@ public class ScrollController {
             float p = Math.min((currentTime - startTime) / duration, 1);
             p = (float) Math.sin(p * Math.PI / 2);
             value = startValue + (targetValue - startValue) * p;
-            if (p == 1) {
-                receiver.accept((float) Math.round(value));
-            } else {
-                receiver.accept(value);
-            }
+            receiver.accept(value);
         }
     }
 
     public void setTargetValue(float newTargetValue) {
         startTime = GlobalModuleManager.INSTANCE.getAnimationTime();
         startValue = value;
-        targetValue = newTargetValue;
+        targetValue = Math.round(newTargetValue);
         if (Math.abs(targetValue - value) > 60) {
             duration = 2.0f;
         } else {

@@ -24,6 +24,7 @@ import net.minecraft.client.gui.IGuiEventListener;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.function.Function;
 
 public class SettingScrollWindow extends ScrollWindow<OptionCategory> {
 

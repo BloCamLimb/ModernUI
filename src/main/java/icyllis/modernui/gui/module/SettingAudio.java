@@ -19,7 +19,6 @@
 package icyllis.modernui.gui.module;
 
 import icyllis.modernui.gui.element.IElement;
-import icyllis.modernui.gui.master.IGuiModule;
 import icyllis.modernui.gui.scroll.option.OptionCategory;
 import icyllis.modernui.gui.scroll.option.OptionEntry;
 import icyllis.modernui.gui.scroll.option.SSliderOptionEntry;

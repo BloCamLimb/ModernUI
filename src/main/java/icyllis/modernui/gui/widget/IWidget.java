@@ -20,27 +20,6 @@ package icyllis.modernui.gui.widget;
 
 import icyllis.modernui.gui.element.IElement;
 import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.util.math.MathHelper;
 
-import java.util.function.Consumer;
-
-public class SmoothSlider extends AbstractSlider implements IElement, IGuiEventListener {
-
-    private Consumer<Double> receiver;
-
-    public SmoothSlider(float width, double initPercent, Consumer<Double> receiver) {
-        super(width);
-        this.slideOffset = getMaxSlideOffset() * MathHelper.clamp(initPercent, 0, 1);
-        this.receiver = receiver;
-    }
-
-    @Override
-    protected void slideToOffset(float offset) {
-        double prev = slideOffset;
-        slideOffset = MathHelper.clamp(offset, 0, getMaxSlideOffset());
-        if (prev != slideOffset) {
-            double slidePercent = slideOffset / getMaxSlideOffset();
-            receiver.accept(slidePercent);
-        }
-    }
+public interface IWidget extends IElement, IGuiEventListener {
 }

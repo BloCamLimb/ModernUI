@@ -142,7 +142,7 @@ public class ScrollWindow<T extends ScrollGroup> extends Element implements IGui
             scrollList.mouseMoved(mouseX, mouseY);
             mouseMoving = true;
         } else if (mouseMoving) {
-            scrollList.mouseMoved(-1, -1);
+            scrollList.mouseMoved(mouseX, -1);
             mouseMoving = false;
         }
     }

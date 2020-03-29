@@ -16,28 +16,13 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.util;
+package icyllis.modernui.gui.module;
 
-public enum Color {
-    VANILLA_RED(255, 85, 85);
+import icyllis.modernui.system.ModernUI;
 
-    private int red, green, blue;
+public class SettingAssetsResource implements IGuiModule {
 
-    Color(int red, int green, int blue) {
-        this.red = red;
-        this.green = green;
-        this.blue = blue;
-    }
-
-    public int getRed() {
-        return red;
-    }
-
-    public int getGreen() {
-        return green;
-    }
-
-    public int getBlue() {
-        return blue;
+    public SettingAssetsResource() {
+        ModernUI.LOGGER.info("Hello, Resource Packs");
     }
 }

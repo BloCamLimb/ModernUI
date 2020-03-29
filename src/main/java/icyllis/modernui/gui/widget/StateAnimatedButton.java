@@ -42,11 +42,19 @@ public abstract class StateAnimatedButton extends StateAnimatedElement implement
             mouseHovered = shape.isMouseInShape(x, y, mouseX, mouseY);
             if (prev != mouseHovered) {
                 if (mouseHovered) {
-                    startOpen();
+                    onMouseHoverOn();
                 } else {
-                    startClose();
+                    onMouseHoverOff();
                 }
             }
         }
+    }
+
+    protected void onMouseHoverOn() {
+        startOpen();
+    }
+
+    protected void onMouseHoverOff() {
+        startClose();
     }
 }

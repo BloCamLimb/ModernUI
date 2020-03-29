@@ -22,7 +22,6 @@ import com.google.common.collect.Lists;
 import icyllis.modernui.gui.scroll.option.*;
 import icyllis.modernui.gui.element.IElement;
 import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.gui.master.IGuiModule;
 import icyllis.modernui.gui.window.SettingScrollWindow;
 import icyllis.modernui.system.ModIntegration;
 import icyllis.modernui.system.SettingsManager;
@@ -30,8 +29,6 @@ import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.chat.NarratorChatListener;
-import net.minecraft.client.gui.screen.OptionsScreen;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.settings.NarratorStatus;
 import net.minecraft.entity.player.ChatVisibility;
@@ -93,7 +90,7 @@ public class SettingGeneral implements IGuiModule {
                 boolean locked = minecraft.world.getWorldInfo().isDifficultyLocked();
                 lockEntry = new BooleanOptionEntry(window, I18n.format("difficulty.lock.title"), locked, b -> {
                     if (b) {
-                        GlobalModuleManager.INSTANCE.openPopup(new PopupLockDifficulty(this::lockDifficulty));
+                        GlobalModuleManager.INSTANCE.openPopup(new PopupLockDifficulty(this::lockDifficulty), true);
                     }
                 }, true);
                 difficultyEntry.setAvailable(!locked);

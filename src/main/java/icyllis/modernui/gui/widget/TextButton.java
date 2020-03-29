@@ -78,8 +78,8 @@ public class TextButton extends StateAnimatedButton {
     }
 
     @Override
-    protected void open() {
-        super.open();
+    protected void onOpen() {
+        super.onOpen();
         moduleManager.addAnimation(new Animation(2, true)
                 .applyTo(new Applier(sizeW / 2, 0, value -> frameWidthOffset = value),
                         new Applier(6, 0, value -> frameHeightOffset = value)));
@@ -90,8 +90,8 @@ public class TextButton extends StateAnimatedButton {
     }
 
     @Override
-    protected void close() {
-        super.close();
+    protected void onClose() {
+        super.onClose();
         moduleManager.addAnimation(new Animation(4)
                 .applyTo(new Applier(1, 0, value -> frameOpacity = value),
                         new Applier(1, 0.7f, value -> textBrightness = value))

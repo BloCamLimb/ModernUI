@@ -18,6 +18,7 @@
 
 package icyllis.modernui.gui.master;
 
+import icyllis.modernui.gui.module.IGuiModule;
 import net.minecraft.client.gui.IGuiEventListener;
 
 import javax.annotation.Nullable;

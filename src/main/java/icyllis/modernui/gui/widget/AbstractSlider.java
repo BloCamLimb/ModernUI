@@ -26,7 +26,7 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import org.lwjgl.opengl.GL11;
 
-public abstract class Slider implements IElement, IGuiEventListener {
+public abstract class AbstractSlider implements IElement, IGuiEventListener {
 
     protected float x, y;
 
@@ -38,7 +38,7 @@ public abstract class Slider implements IElement, IGuiEventListener {
 
     protected boolean thumbHovered = false;
 
-    public Slider(float width) {
+    public AbstractSlider(float width) {
         this.width = width;
     }
 
