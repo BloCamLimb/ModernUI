@@ -18,12 +18,15 @@
 
 package icyllis.modernui.gui.widget;
 
+import com.google.common.collect.Lists;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.gui.master.GlobalModuleManager;
+import icyllis.modernui.gui.module.PopupMenuAssetsTabs;
 
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 public class LineTextButton extends StateAnimatedButton {
 
@@ -39,15 +42,12 @@ public class LineTextButton extends StateAnimatedButton {
 
     protected boolean lock = false;
 
-    private int moduleID;
-
-    public LineTextButton(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, String text, float width, int moduleID) {
+    public LineTextButton(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, String text, float width) {
         super(xResizer, yResizer);
         this.text = text;
         this.width = width;
         this.widthOffset = this.halfWidth = width / 2f;
         this.shape = new FixedShape.Rect(width, 12);
-        this.moduleID = moduleID;
         moduleManager.addAnimation(new Animation(3)
                 .applyTo(new Applier(1f, value -> alpha = value))
                 .withDelay(1));
@@ -66,30 +66,38 @@ public class LineTextButton extends StateAnimatedButton {
     }
 
     @Override
-    protected void open() {
-        super.open();
+    protected void onOpen() {
+        super.onOpen();
         moduleManager.addAnimation(new Animation(3)
                 .applyTo(new Applier(halfWidth, 0, value -> widthOffset = value),
-                        new Applier(0.7f, 1, value -> textGrayscale = value))
+                        new Applier(textGrayscale, 1, value -> textGrayscale = value))
                 .onFinish(() -> openState = 2));
     }
 
     public void onModuleChanged(int id) {
-        if (id == moduleID) {
-            lock = true;
-            startOpen();
-        } else {
-            lock = false;
-            startClose();
-        }
+
     }
 
     @Override
-    protected void close() {
-        super.close();
+    protected void onMouseHoverOn() {
+        if (!lock)
+            moduleManager.addAnimation(new Animation(3)
+                    .applyTo(new Applier(0.7f, 1, value -> textGrayscale = value)));
+    }
+
+    @Override
+    protected void onMouseHoverOff() {
+        if (!lock)
+            moduleManager.addAnimation(new Animation(3)
+                    .applyTo(new Applier(1, 0.7f, value -> textGrayscale = value)));
+    }
+
+    @Override
+    protected void onClose() {
+        super.onClose();
         moduleManager.addAnimation(new Animation(3)
                 .applyTo(new Applier(0, halfWidth, value -> widthOffset = value),
-                        new Applier(1, 0.7f, value -> textGrayscale = value))
+                        new Applier(textGrayscale, 0.7f, value -> textGrayscale = value))
                 .onFinish(() -> openState = 0));
     }
 
@@ -99,12 +107,83 @@ public class LineTextButton extends StateAnimatedButton {
             super.startClose();
     }
 
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        if (mouseHovered && !lock) {
-            GlobalModuleManager.INSTANCE.switchModule(moduleID);
-            return true;
+    public static class A extends LineTextButton {
+
+        private int moduleID;
+
+        public A(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, String text, float width, int moduleID) {
+            super(xResizer, yResizer, text, width);
+            this.moduleID = moduleID;
         }
-        return false;
+
+        @Override
+        public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+            if (mouseHovered && !lock && mouseButton == 0) {
+                GlobalModuleManager.INSTANCE.switchModule(moduleID);
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public void onModuleChanged(int id) {
+            if (id == moduleID) {
+                lock = true;
+                startOpen();
+            } else {
+                lock = false;
+                startClose();
+            }
+        }
+    }
+
+    public static class B extends LineTextButton {
+
+        private Predicate<Integer> module;
+
+        private int id;
+
+        public B(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, String text, float width, Predicate<Integer> module) {
+            super(xResizer, yResizer, text, width);
+            this.module = module;
+        }
+
+        @Override
+        public void draw(float currentTime) {
+            super.draw(currentTime);
+        }
+
+        @Override
+        public void mouseMoved(double mouseX, double mouseY) {
+            super.mouseMoved(mouseX, mouseY);
+        }
+
+        @Override
+        public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+            if (mouseHovered && mouseButton == 0) {
+                DropDownList list = new DropDownList(Lists.newArrayList("Resource Packs", "Shaders", "Fonts", "Language"), id - 35, 12, this::menuActions);
+                list.setPos(x + width, y + 13, GlobalModuleManager.INSTANCE.getWindowHeight());
+                GlobalModuleManager.INSTANCE.openPopup(new PopupMenuAssetsTabs(list), false);
+                return true;
+            }
+            return false;
+        }
+
+        private void menuActions(int index) {
+            if (index >= 0 && index <= 4)
+                GlobalModuleManager.INSTANCE.switchModule(index + 35);
+        }
+
+        @Override
+        public void onModuleChanged(int id) {
+            this.id = id;
+            if (module.test(id)) {
+                lock = true;
+                startOpen();
+            } else {
+                lock = false;
+                startClose();
+            }
+        }
     }
 }

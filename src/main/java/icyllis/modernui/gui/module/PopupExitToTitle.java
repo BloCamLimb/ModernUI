@@ -22,7 +22,6 @@ import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.window.ConfirmWindow;
 import icyllis.modernui.gui.element.Background;
 import icyllis.modernui.gui.element.IElement;
-import icyllis.modernui.gui.master.IGuiModule;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.DirtMessageScreen;

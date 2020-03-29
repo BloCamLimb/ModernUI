@@ -21,7 +21,6 @@ package icyllis.modernui.gui.module;
 import icyllis.modernui.gui.element.IElement;
 import icyllis.modernui.gui.element.MenuHomeBG;
 import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.gui.master.IGuiModule;
 import icyllis.modernui.gui.widget.MenuButton;
 import icyllis.modernui.system.ConstantsLibrary;
 import net.minecraft.client.Minecraft;
@@ -53,7 +52,7 @@ public class IngameMenuHome implements IGuiModule {
         consumer.accept(new MenuButton.B(w -> 8f, h -> 72f, "Statistics", ConstantsLibrary.ICONS, 32, 32, 64, 0, 0.5f, () -> minecraft.displayGuiScreen(new StatsScreen(null, minecraft.player.getStats())), i -> i == 1 || i == 2));
         consumer.accept(new MenuButton.B(w -> 8f, h -> h - 92f, "Forge Mods", ConstantsLibrary.ICONS, 32, 32, 192, 0, 0.5f, () -> minecraft.displayGuiScreen(new OptionsScreen(null, minecraft.gameSettings)), i -> false));
         consumer.accept(new MenuButton.B(w -> 8f, h -> h - 64f, "Settings", ConstantsLibrary.ICONS, 32, 32, 0, 0, 0.5f, () -> GlobalModuleManager.INSTANCE.switchModule(30), i -> i / 30 == 1));
-        consumer.accept(new MenuButton.A(w -> 8f, h -> h - 28f, "Exit to Main Menu", ConstantsLibrary.ICONS, 32, 32, 160, 0, 0.5f, () -> GlobalModuleManager.INSTANCE.openPopup(new PopupExitToTitle())));
+        consumer.accept(new MenuButton.A(w -> 8f, h -> h - 28f, "Exit to Main Menu", ConstantsLibrary.ICONS, 32, 32, 160, 0, 0.5f, () -> GlobalModuleManager.INSTANCE.openPopup(new PopupExitToTitle(), true)));
     }
 
     @Override

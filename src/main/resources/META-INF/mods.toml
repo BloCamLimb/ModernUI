@@ -1,6 +1,7 @@
 modLoader="javafml"
 loaderVersion="[31,)"
 issueTrackerURL="https://github.com/BloCamLimb/ModernUI/issues"
+logoFile="modernui_logo.png"
 
 [[mods]]
     modId="modernui"

@@ -24,7 +24,7 @@ import net.minecraft.util.math.MathHelper;
 
 import java.util.function.Consumer;
 
-public class DiscreteSlider extends Slider implements IElement, IGuiEventListener {
+public class DiscreteSlider extends AbstractSlider implements IElement, IGuiEventListener {
 
     private int segment;
 

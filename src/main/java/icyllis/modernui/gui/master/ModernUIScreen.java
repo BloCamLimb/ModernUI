@@ -20,8 +20,6 @@ package icyllis.modernui.gui.master;
 
 import icyllis.modernui.api.global.IModuleFactory;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.MouseHelper;
-import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -63,12 +61,12 @@ public class ModernUIScreen extends Screen {
 
     @Override
     public void removed() {
-        manager.removed();
+        manager.clear();
     }
 
     @Override
     public void onClose() {
-        if (manager.onClose()) {
+        if (manager.onGuiClosed()) {
             super.onClose();
         }
     }

@@ -21,7 +21,6 @@ package icyllis.modernui.gui.module;
 import icyllis.modernui.gui.element.IElement;
 import icyllis.modernui.gui.element.MenuSettingsBG;
 import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.gui.master.IGuiModule;
 import icyllis.modernui.gui.master.TickEvent;
 import icyllis.modernui.gui.widget.LineTextButton;
 import net.minecraft.client.gui.IGuiEventListener;
@@ -31,23 +30,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class MenuSettingHeader implements IGuiModule {
+public final class SettingIndexer implements IGuiModule {
 
     private List<IElement> elements = new ArrayList<>();
 
     private List<LineTextButton> buttons = new ArrayList<>();
 
-    public MenuSettingHeader() {
+    public SettingIndexer() {
         elements.add(new MenuSettingsBG());
         Consumer<LineTextButton> consumer = s -> {
             elements.add(s);
             buttons.add(s);
         };
-        consumer.accept(new LineTextButton(w -> w / 2f - 152f, h -> 20f, I18n.format("gui.modernui.settings.tab.general"), 48f, 31));
-        consumer.accept(new LineTextButton(w -> w / 2f - 88f, h -> 20f, I18n.format("gui.modernui.settings.tab.video"), 48f, 32));
-        consumer.accept(new LineTextButton(w -> w / 2f - 24f, h -> 20f, I18n.format("gui.modernui.settings.tab.audio"), 48f, 33));
-        consumer.accept(new LineTextButton(w -> w / 2f + 40f, h -> 20f, I18n.format("gui.modernui.settings.tab.controls"), 48f, 34));
-        consumer.accept(new LineTextButton(w -> w / 2f + 104f, h -> 20f, I18n.format("gui.modernui.settings.tab.assets"), 48f, 35));
+        consumer.accept(new LineTextButton.A(w -> w / 2f - 152f, h -> 20f, I18n.format("gui.modernui.settings.tab.general"), 48f, 31));
+        consumer.accept(new LineTextButton.A(w -> w / 2f - 88f, h -> 20f, I18n.format("gui.modernui.settings.tab.video"), 48f, 32));
+        consumer.accept(new LineTextButton.A(w -> w / 2f - 24f, h -> 20f, I18n.format("gui.modernui.settings.tab.audio"), 48f, 33));
+        consumer.accept(new LineTextButton.A(w -> w / 2f + 40f, h -> 20f, I18n.format("gui.modernui.settings.tab.controls"), 48f, 34));
+        consumer.accept(new LineTextButton.B(w -> w / 2f + 104f, h -> 20f, I18n.format("gui.modernui.settings.tab.assets"), 48f, i -> i >= 35 && i < 40));
+        //TODO use shader to make global animation
         GlobalModuleManager.INSTANCE.addTickEvent(new TickEvent(2, () -> GlobalModuleManager.INSTANCE.switchModule(31)));
     }
 

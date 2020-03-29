@@ -16,18 +16,28 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.api.global;
+package icyllis.modernui.gui.util;
 
-import icyllis.modernui.gui.module.IGuiModule;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+public enum Color3I {
+    VANILLA_RED(255, 85, 85);
 
-import java.util.function.IntPredicate;
-import java.util.function.Supplier;
+    private int red, green, blue;
 
-@OnlyIn(Dist.CLIENT)
-@FunctionalInterface
-public interface IModuleFactory {
+    Color3I(int red, int green, int blue) {
+        this.red = red;
+        this.green = green;
+        this.blue = blue;
+    }
 
-    void addModule(IntPredicate availability, Supplier<IGuiModule> module);
+    public int getRed() {
+        return red;
+    }
+
+    public int getGreen() {
+        return green;
+    }
+
+    public int getBlue() {
+        return blue;
+    }
 }

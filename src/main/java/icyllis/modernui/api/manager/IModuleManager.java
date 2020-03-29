@@ -19,14 +19,10 @@
 package icyllis.modernui.api.manager;
 
 import icyllis.modernui.gui.animation.IAnimation;
-import icyllis.modernui.gui.element.IElement;
-import icyllis.modernui.gui.master.IGuiModule;
+import icyllis.modernui.gui.module.IGuiModule;
 import icyllis.modernui.gui.master.TickEvent;
 import icyllis.modernui.gui.widget.StandardEventListener;
-import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.network.PacketBuffer;
-
-import java.util.function.IntConsumer;
 
 public interface IModuleManager {
 
@@ -39,8 +35,9 @@ public interface IModuleManager {
     /**
      * Open a popup window, a special module
      * @param popup popup module
+     * @param resetMouse call mouseMoved(-1, -1) for all non-popup modules
      */
-    void openPopup(IGuiModule popup);
+    void openPopup(IGuiModule popup, boolean resetMouse);
 
     /**
      * Close current popup

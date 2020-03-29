@@ -52,8 +52,8 @@ public class SideFrameText extends StateAnimatedElement {
     }
 
     @Override
-    protected void open() {
-        super.open();
+    protected void onOpen() {
+        super.onOpen();
         float textLength = fontRenderer.getStringWidth(text);
         moduleManager.addAnimation(new Animation(3, true)
                 .applyTo(new Applier(-4, textLength + 4, value -> sizeW = value)));
@@ -66,8 +66,8 @@ public class SideFrameText extends StateAnimatedElement {
     }
 
     @Override
-    protected void close() {
-        super.close();
+    protected void onClose() {
+        super.onClose();
         moduleManager.addAnimation(new Animation(5)
                 .applyTo(new Applier(1, 0, value -> textOpacity = frameOpacity = value))
                 .onFinish(() -> openState = 0));

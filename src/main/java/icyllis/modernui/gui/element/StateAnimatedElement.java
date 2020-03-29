@@ -36,11 +36,11 @@ public abstract class StateAnimatedElement extends Element {
     protected void checkState() {
         if (prepareToOpen && openState == 0) {
             openState = 1;
-            open();
+            onOpen();
             prepareToOpen = false;
         } else if (prepareToClose && openState == 2) {
             openState = 3;
-            close();
+            onClose();
             prepareToClose = false;
         }
     }
@@ -48,14 +48,14 @@ public abstract class StateAnimatedElement extends Element {
     /**
      * Create open animations and set open state to 2 here
      */
-    protected void open() {
+    protected void onOpen() {
         openState = 1;
     }
 
     /**
      * Create close animations and set open state to 0 here
      */
-    protected void close() {
+    protected void onClose() {
         openState = 3;
     }
 

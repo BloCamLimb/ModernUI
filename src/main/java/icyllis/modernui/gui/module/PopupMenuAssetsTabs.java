@@ -18,28 +18,33 @@
 
 package icyllis.modernui.gui.module;
 
-import icyllis.modernui.gui.element.Background;
 import icyllis.modernui.gui.element.IElement;
 import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.gui.window.ConfirmWindow;
+import icyllis.modernui.gui.widget.DropDownList;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
-public class PopupLockDifficulty implements IGuiModule {
+public class PopupMenuAssetsTabs implements IGuiModule {
 
     private List<IElement> elements = new ArrayList<>();
 
     private List<IGuiEventListener> listeners = new ArrayList<>();
 
-    public PopupLockDifficulty(Consumer<Boolean> callback) {
-        elements.add(new Background(4));
-        Consumer<IGuiEventListener> consumer = s -> listeners.add(s);
-        elements.add(new ConfirmWindow(consumer, "Confirm Lock World Difficulty",
-                "Are you sure you want to lock world difficulty?",
-                "Lock", callback, 3));
+    public PopupMenuAssetsTabs(DropDownList list) {
+        elements.add(list);
+        listeners.add(list);
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        for (IGuiEventListener listener : getEventListeners()) {
+            listener.mouseClicked(mouseX, mouseY, mouseButton);
+        }
+        Minecraft.getInstance().deferTask(GlobalModuleManager.INSTANCE::closePopup);
+        return true;
     }
 
     @Override

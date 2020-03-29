@@ -21,6 +21,7 @@ package icyllis.modernui.gui.master;
 import icyllis.modernui.gui.animation.IAnimation;
 import icyllis.modernui.api.global.IModuleFactory;
 import icyllis.modernui.api.manager.IModuleManager;
+import icyllis.modernui.gui.module.IGuiModule;
 import icyllis.modernui.shader.blur.BlurHandler;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
@@ -70,6 +71,7 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager, IGuiE
     public void init(int width, int height) {
         this.width = width;
         this.height = height;
+        // called on resource reload, so re-blur game renderer, and prevent from re-switching to 0
         if (!initialized) {
             this.switchModule(0);
             initialized = true;
@@ -90,11 +92,13 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager, IGuiE
     }
 
     @Override
-    public void openPopup(IGuiModule popup) {
+    public void openPopup(IGuiModule popup, boolean resetMouse) {
         if (this.popup != null) {
             ModernUI.LOGGER.warn(MARKER, "#openPopup() shouldn't be called when there's already a popup, the previous one has been overwritten");
         }
-        this.mouseMoved(-1, -1);
+        if (resetMouse) {
+            this.mouseMoved(-1, -1);
+        }
         this.popup = popup;
         this.popup.resize(width, height);
         this.refreshMouse();
@@ -272,7 +276,7 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager, IGuiE
         refreshMouse();
     }
 
-    public void removed() {
+    public void clear() {
         builders.clear();
         animations.clear();
         popup = null;
@@ -281,7 +285,7 @@ public enum GlobalModuleManager implements IModuleFactory, IModuleManager, IGuiE
     }
 
     /* return false will not close this gui/screen */
-    public boolean onClose() {
+    public boolean onGuiClosed() {
         if (popup != null) {
             closePopup();
             return false;
