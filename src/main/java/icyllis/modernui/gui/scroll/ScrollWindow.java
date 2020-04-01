@@ -16,10 +16,9 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.window;
+package icyllis.modernui.gui.scroll;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.scroll.ScrollController;
 import icyllis.modernui.gui.scroll.ScrollGroup;
 import icyllis.modernui.gui.scroll.ScrollList;
@@ -111,10 +110,10 @@ public class ScrollWindow<T extends ScrollGroup> extends Element implements IGui
 
         GL11.glDisable(GL11.GL_SCISSOR_TEST);
 
-        drawMenu();
+        drawEndExtra();
     }
 
-    public void drawMenu() {
+    public void drawEndExtra() {
 
     }
 

@@ -20,8 +20,10 @@ package icyllis.modernui.gui.chat;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.font.FontTools;
+import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.font.TextTools;
 import icyllis.modernui.font.IFontRenderer;
+import icyllis.modernui.gui.util.Color3I;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.gui.master.DrawTools;
 import net.minecraft.client.Minecraft;
@@ -31,6 +33,7 @@ import org.lwjgl.opengl.GL11;
 
 import java.util.*;
 
+//TODO
 public class EmojiStringRenderer implements IFontRenderer {
 
     public static final EmojiStringRenderer INSTANCE = new EmojiStringRenderer();
@@ -38,7 +41,7 @@ public class EmojiStringRenderer implements IFontRenderer {
     private final IFontRenderer FONT;
     private final TextureManager TEX;
     {
-        FONT = FontTools.FONT_RENDERER;
+        FONT = TextTools.FONT_RENDERER;
         TEX = Minecraft.getInstance().textureManager;
     }
 
@@ -50,18 +53,28 @@ public class EmojiStringRenderer implements IFontRenderer {
     private WeakHashMap<String, EmojiText> MAPS = new WeakHashMap<>();
 
     @Override
-    public float drawString(String str, float startX, float startY, float r, float g, float b, float a, float align) {
+    public float drawString(String str, float startX, float startY, Color3I color, float alpha, TextAlign align) {
         EmojiText entry = MAPS.get(str);
         if (entry == null) {
             entry = cache(str);
         }
-        entry.text.forEach(t -> FONT.drawString(t.str, startX + t.x, startY, r, g, b, a, align));
+        entry.text.forEach(t -> FONT.drawString(t.str, startX + t.x, startY, color, alpha, align));
         RenderSystem.color3f(0.867f, 0.867f, 0.867f);
         GlStateManager.enableBlend();
         GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         TEX.bindTexture(EMOJI);
         entry.emoji.forEach(e -> DrawTools.blit(startX + e.x, startY - 1, e.u, e.v, TEX_WID, TEX_WID));
         return 0; // unsupported
+    }
+
+    @Override
+    public float drawString(String str, float startX, float startY, float r, float g, float b, float a, TextAlign align) {
+        return 0;
+    }
+
+    @Override
+    public float drawString(String str, float startX, float startY, float brightness, float alpha, TextAlign align) {
+        return 0;
     }
 
     @Override

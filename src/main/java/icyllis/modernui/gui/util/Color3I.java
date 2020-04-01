@@ -18,26 +18,71 @@
 
 package icyllis.modernui.gui.util;
 
+import javax.annotation.Nullable;
+
 public enum Color3I {
-    VANILLA_RED(255, 85, 85);
+    BLACK(0, 0, 0),
+    DARK_BLUE(0, 0, 170),
+    DARK_GREEN(0, 170, 0),
+    DARK_AQUA(0, 170, 170),
+    DARK_RED(170, 0, 0),
+    DARK_PURPLE(170, 0, 170),
+    GOLD(255, 170, 0),
+    GRAY(170, 170, 170),
+    DARK_GRAY(85, 85, 85),
+    BLUE(85, 85, 255),
+    GREEN(85, 255, 85),
+    AQUA(85, 255, 255),
+    RED(255, 85, 85),
+    LIGHT_PURPLE(255, 85, 255),
+    YELLOW(255, 255, 85),
+    WHILE(255, 255, 255),
+    BLUE_C(170, 220, 240),
+    GRAY_224(224, 224, 224);
 
     private int red, green, blue;
+
+    private float redF, greenF, blueF;
 
     Color3I(int red, int green, int blue) {
         this.red = red;
         this.green = green;
         this.blue = blue;
+        this.redF = red / 255.0f;
+        this.greenF = green / 255.0f;
+        this.blueF = blue / 255.0f;
+        //this.RGB = red << 16 | green << 8 | blue;
     }
 
-    public int getRed() {
+    public int getIntRed() {
         return red;
     }
 
-    public int getGreen() {
+    public int getIntGreen() {
         return green;
     }
 
-    public int getBlue() {
+    public int getIntBlue() {
         return blue;
+    }
+
+    public float getFloatRed() {
+        return redF;
+    }
+
+    public float getFloatGreen() {
+        return greenF;
+    }
+
+    public float getFloatBlue() {
+        return blueF;
+    }
+
+    @Nullable
+    public static Color3I getFormattedColor(int code) {
+        if (code >= 0 && code <= 15) {
+            return values()[code];
+        }
+        return null;
     }
 }

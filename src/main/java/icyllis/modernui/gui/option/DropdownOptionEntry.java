@@ -16,16 +16,18 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.scroll.option;
+package icyllis.modernui.gui.option;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.widget.DropDownList;
+import icyllis.modernui.gui.module.PopupContextMenu;
+import icyllis.modernui.gui.widget.DropDownMenu;
 import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.gui.window.SettingScrollWindow;
+import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import icyllis.modernui.system.ConstantsLibrary;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -37,7 +39,7 @@ import org.lwjgl.opengl.GL11;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class DropdownOptionEntry extends OptionEntry {
+public class DropdownOptionEntry extends AbstractOptionEntry {
 
     private TextureManager textureManager = Minecraft.getInstance().getTextureManager();
 
@@ -49,7 +51,7 @@ public class DropdownOptionEntry extends OptionEntry {
     private String optionText;
     private float textLength;
 
-    private float optionGrayscale = 0.85f;
+    private float optionBrightness = 0.85f;
 
     protected boolean drawOptionFrame = false;
     private int frameAlpha = 0; // 0~255
@@ -70,9 +72,9 @@ public class DropdownOptionEntry extends OptionEntry {
     public void setAvailable(boolean b) {
         available = b;
         if (b) {
-            optionGrayscale = mouseHovered ? 1.0f : 0.85f;
+            optionBrightness = mouseHovered ? 1.0f : 0.85f;
         } else {
-            optionGrayscale = 0.5f;
+            optionBrightness = 0.5f;
         }
     }
 
@@ -91,12 +93,12 @@ public class DropdownOptionEntry extends OptionEntry {
             tessellator.draw();
             RenderSystem.enableTexture();
         }
-        fontRenderer.drawString(optionText, centerX + 150, y + 6, optionGrayscale, optionGrayscale, optionGrayscale, 1, 0.5f);
+        fontRenderer.drawString(optionText, centerX + 150, y + 6, optionBrightness, 1, TextAlign.RIGHT);
         RenderSystem.pushMatrix();
         GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
         GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
         RenderSystem.scalef(0.25f, 0.25f, 1);
-        RenderSystem.color3f(optionGrayscale, optionGrayscale, optionGrayscale);
+        RenderSystem.color3f(optionBrightness, optionBrightness, optionBrightness);
         textureManager.bindTexture(ConstantsLibrary.ICONS);
         DrawTools.blit(centerX * 4 + 606, y * 4 + 28, 64, 32, 32, 32);
         RenderSystem.popMatrix();
@@ -131,10 +133,10 @@ public class DropdownOptionEntry extends OptionEntry {
 
     @Override
     public boolean mouseClicked(double deltaCenterX, double deltaY, double mouseX, double mouseY, int mouseButton) {
-        if (drawOptionFrame && mouseButton == 0 && !window.hasDropDownList()) {
-            DropDownList list = new DropDownList(optionNames, currentOptionIndex, 16, this::onValueChanged);
-            list.setPos((float) (mouseX - deltaCenterX + 156), (float) (mouseY - deltaY + 18), GlobalModuleManager.INSTANCE.getWindowHeight());
-            window.setDropDownList(list);
+        if (drawOptionFrame && mouseButton == 0) {
+            DropDownMenu menu = new DropDownMenu(optionNames, currentOptionIndex, 16, this::onValueChanged);
+            menu.setPos((float) (mouseX - deltaCenterX + 156), (float) (mouseY - deltaY + 18), GlobalModuleManager.INSTANCE.getWindowHeight());
+            GlobalModuleManager.INSTANCE.openPopup(new PopupContextMenu(menu), false);
             return true;
         }
         return super.mouseClicked(deltaCenterX, deltaY, mouseX, mouseY, mouseButton);
@@ -144,7 +146,7 @@ public class DropdownOptionEntry extends OptionEntry {
     protected void onMouseHoverOn() {
         super.onMouseHoverOn();
         if (available) {
-            optionGrayscale = 1.0f;
+            optionBrightness = 1.0f;
         }
     }
 
@@ -154,7 +156,7 @@ public class DropdownOptionEntry extends OptionEntry {
         drawOptionFrame = false;
         frameAlpha = 0;
         if (available) {
-            optionGrayscale = 0.85f;
+            optionBrightness = 0.85f;
         }
     }
 

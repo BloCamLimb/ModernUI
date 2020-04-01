@@ -18,6 +18,7 @@
 
 package icyllis.modernui.font;
 
+import icyllis.modernui.gui.util.Color3I;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 
@@ -31,8 +32,8 @@ public class VanillaFontRenderer implements IFontRenderer {
     }
 
     @Override
-    public float drawString(String str, float startX, float startY, float r, float g, float b, float a, float align) {
-        startX = startX - FONT.getStringWidth(str) * align * 2;
+    public float drawString(String str, float startX, float startY, float r, float g, float b, float a, TextAlign align) {
+        startX = startX - FONT.getStringWidth(str) * align.getOffset() * 2;
         return FONT.drawString(str, startX, startY, (int) (a * 0xff) << 24 | (int) (r * 0xff) << 16 | (int) (g * 0xff) << 8 | (int) (b * 0xff));
     }
 

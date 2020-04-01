@@ -16,29 +16,30 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.scroll.option;
+package icyllis.modernui.gui.option;
 
-import icyllis.modernui.font.FontTools;
+import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.font.TextTools;
 import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.gui.scroll.ScrollGroup;
+import icyllis.modernui.gui.util.Color3I;
 import net.minecraft.util.text.TextFormatting;
 
-import java.util.ArrayList;
 import java.util.List;
 
-public class OptionCategory extends ScrollGroup {
+public class OptionCategoryGroup extends ScrollGroup {
 
     public static int ENTRY_HEIGHT = 21;
 
-    private IFontRenderer fontRenderer = FontTools.FONT_RENDERER;
+    private IFontRenderer fontRenderer = TextTools.FONT_RENDERER;
 
     private String title;
 
-    private List<OptionEntry> entries;
+    private List<AbstractOptionEntry> entries;
 
     private float bottomY;
 
-    public OptionCategory(String title, List<OptionEntry> entries) {
+    public OptionCategoryGroup(String title, List<AbstractOptionEntry> entries) {
         super(0);
         this.title = TextFormatting.BOLD + title;
         this.entries = entries;
@@ -54,7 +55,7 @@ public class OptionCategory extends ScrollGroup {
 
     @Override
     public void draw(float currentTime) {
-        fontRenderer.drawString(title, centerX - 160, y + 14, 1, 1, 1, 1, 0f);
+        fontRenderer.drawString(title, centerX - 160, y + 14, Color3I.WHILE, 1.0f, TextAlign.LEFT);
         int maxSize = Math.min((int) Math.ceil((bottomY - y) / ENTRY_HEIGHT), entries.size());
         for (int i = 0; i < maxSize; i++) {
             float cy = y + 30 + i * ENTRY_HEIGHT;
@@ -75,7 +76,7 @@ public class OptionCategory extends ScrollGroup {
                 int pIndex = (int) (rY / ENTRY_HEIGHT);
                 if (pIndex < entries.size()) {
                     for (int i = 0; i < entries.size(); i++) {
-                        OptionEntry entry = entries.get(i);
+                        AbstractOptionEntry entry = entries.get(i);
                         if (i == pIndex) {
                             entry.setMouseHovered(true);
                         } else {

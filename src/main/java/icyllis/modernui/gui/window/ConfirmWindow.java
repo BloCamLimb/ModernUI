@@ -18,10 +18,11 @@
 
 package icyllis.modernui.gui.window;
 
+import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.element.Element;
-import icyllis.modernui.font.FontTools;
+import icyllis.modernui.font.TextTools;
 import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.gui.widget.TextButton;
 import net.minecraft.client.gui.IGuiEventListener;
@@ -37,7 +38,7 @@ public class ConfirmWindow extends Element {
 
     private float frameSizeHOffset;
 
-    private float opacity;
+    private float alpha;
 
     private TextButton cancelButton;
 
@@ -58,18 +59,18 @@ public class ConfirmWindow extends Element {
     public ConfirmWindow(Consumer<IGuiEventListener> listenerAdder, String title, String info, String confirmText, Consumer<Boolean> callback, int countdown) {
         super(width -> width / 2f - 90f, height -> height / 2f - 40f);
         this.titleText = title;
-        infoText = FontTools.splitStringToWidth(info, 164);
+        infoText = TextTools.splitStringToWidth(info, 164);
         cancelButton = new TextButton(w -> w / 2f + 80f, h -> h / 2f + 20f, I18n.format("gui.no"), () -> callback.accept(false), true);
         confirmButton = new TextButton.Countdown(w -> w / 2f + 74f - cancelButton.sizeW, h -> h / 2f + 20f, confirmText, () -> callback.accept(true), true, countdown);
-        cancelButton.setTextOpacity(0);
-        confirmButton.setTextOpacity(0);
+        cancelButton.setTextAlpha(0);
+        confirmButton.setTextAlpha(0);
         moduleManager.addAnimation(new Animation(3, true)
                 .applyTo(new Applier(0, 80, value -> frameSizeHOffset = value)));
         moduleManager.addAnimation(new Animation(3)
                 .applyTo(new Applier(1, value -> {
-                    opacity = value;
-                    cancelButton.setTextOpacity(value);
-                    confirmButton.setTextOpacity(value);
+                    alpha = value;
+                    cancelButton.setTextAlpha(value);
+                    confirmButton.setTextAlpha(value);
                 }))
                 .withDelay(3));
         listenerAdder.accept(cancelButton);
@@ -80,10 +81,10 @@ public class ConfirmWindow extends Element {
     public void draw(float currentTime) {
         DrawTools.fillRectWithFrame(x, y, x + 180, y + frameSizeHOffset, 0.51f, 0x101010, 0.7f, 0x404040, 1.f);
         DrawTools.fillRectWithColor(x, y, x + 180, y + Math.min(frameSizeHOffset, 16), 0x080808, 0.85f);
-        fontRenderer.drawString(titleText, x + 90, y + 4, 1, 1, 1, opacity, 0.25f);
+        fontRenderer.drawString(titleText, x + 90, y + 4, 1, alpha, TextAlign.CENTER);
         int i = 0;
         for (String t : infoText) {
-            fontRenderer.drawString(t, x + 8, y + 24 + i++ * 12, 1, 1, 1, opacity, 0);
+            fontRenderer.drawString(t, x + 8, y + 24 + i++ * 12, 1, alpha);
         }
         cancelButton.draw(currentTime);
         confirmButton.draw(currentTime);

@@ -16,10 +16,10 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.scroll.option;
+package icyllis.modernui.gui.option;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.gui.window.SettingScrollWindow;
+import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
 import net.minecraft.client.resources.I18n;
 

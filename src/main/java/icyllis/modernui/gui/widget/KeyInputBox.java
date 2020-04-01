@@ -19,7 +19,8 @@
 package icyllis.modernui.gui.widget;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.font.FontTools;
+import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.font.TextTools;
 import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.gui.element.IElement;
 import icyllis.modernui.system.MouseTools;
@@ -39,7 +40,7 @@ import java.util.function.Consumer;
 
 public class KeyInputBox implements IElement, IGuiEventListener {
 
-    private IFontRenderer fontRenderer = FontTools.FONT_RENDERER;
+    private IFontRenderer fontRenderer = TextTools.FONT_RENDERER;
 
     private float x, y;
 
@@ -53,7 +54,7 @@ public class KeyInputBox implements IElement, IGuiEventListener {
 
     private int backAlpha = 16;
 
-    private float textGrayscale = 0.85f;
+    private float textBrightness = 0.85f;
 
     private boolean editing = false;
 
@@ -97,7 +98,7 @@ public class KeyInputBox implements IElement, IGuiEventListener {
         }
         RenderSystem.enableTexture();
 
-        fontRenderer.drawString(keyText, x + 42, y + 4, textGrayscale, textGrayscale, textGrayscale, 1, 0.25f);
+        fontRenderer.drawString(keyText, x + 42, y + 4, textBrightness, TextAlign.CENTER);
     }
 
     public void setPos(float x, float y) {
@@ -139,8 +140,8 @@ public class KeyInputBox implements IElement, IGuiEventListener {
         }
     }
 
-    public void setTextGrayscale(float s) {
-        this.textGrayscale = s;
+    public void setTextBrightness(float s) {
+        this.textBrightness = s;
     }
 
     private void startEditing() {

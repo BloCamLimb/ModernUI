@@ -16,12 +16,13 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.scroll.option;
+package icyllis.modernui.gui.option;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.font.FontTools;
+import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.font.TextTools;
 import icyllis.modernui.font.IFontRenderer;
-import icyllis.modernui.gui.window.SettingScrollWindow;
+import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
@@ -30,9 +31,9 @@ import org.lwjgl.opengl.GL11;
 /**
  * Single option line in settings interface
  */
-public abstract class OptionEntry {
+public abstract class AbstractOptionEntry {
 
-    protected IFontRenderer fontRenderer = FontTools.FONT_RENDERER;
+    protected IFontRenderer fontRenderer = TextTools.FONT_RENDERER;
 
     protected final SettingScrollWindow window;
 
@@ -42,13 +43,13 @@ public abstract class OptionEntry {
 
     protected boolean mouseHovered;
 
-    protected float titleGrayscale = 0.85f;
+    protected float titleBrightness = 0.85f;
 
     /*public OptionEntry(String optionName, T originalOption, List<T> options) {
         this(optionName, originalOption, options, null);
     }*/
 
-    public OptionEntry(SettingScrollWindow window, String title) {
+    public AbstractOptionEntry(SettingScrollWindow window, String title) {
         this.window = window;
         this.title = title;
         /*if (desc != null)
@@ -59,7 +60,7 @@ public abstract class OptionEntry {
     public final void draw(float centerX, float y, float currentTime) {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();
-        fontRenderer.drawString(title, centerX - 160, y + 6, titleGrayscale, titleGrayscale, titleGrayscale, 1, 0);
+        fontRenderer.drawString(title, centerX - 160, y + 6, titleBrightness, 1.0f, TextAlign.LEFT);
         /*if (desc.length > 0) {
             //TODO tooltip description lines
         }*/
@@ -67,8 +68,8 @@ public abstract class OptionEntry {
         RenderSystem.disableTexture();
         bufferBuilder.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);
         GL11.glLineWidth(1.0f);
-        bufferBuilder.pos(centerX - 160, y + OptionCategory.ENTRY_HEIGHT, 0.0D).color(140, 140, 140, 220).endVertex();
-        bufferBuilder.pos(centerX + 160, y + OptionCategory.ENTRY_HEIGHT, 0.0D).color(140, 140, 140, 220).endVertex();
+        bufferBuilder.pos(centerX - 160, y + OptionCategoryGroup.ENTRY_HEIGHT, 0.0D).color(140, 140, 140, 220).endVertex();
+        bufferBuilder.pos(centerX + 160, y + OptionCategoryGroup.ENTRY_HEIGHT, 0.0D).color(140, 140, 140, 220).endVertex();
         tessellator.draw();
         RenderSystem.enableTexture();
     }
@@ -94,11 +95,11 @@ public abstract class OptionEntry {
     }
 
     protected void onMouseHoverOn() {
-        titleGrayscale = 1.0f;
+        titleBrightness = 1.0f;
     }
 
     protected void onMouseHoverOff() {
-        titleGrayscale = 0.85f;
+        titleBrightness = 0.85f;
     }
 
     public boolean mouseClicked(double deltaCenterX, double deltaY, double mouseX, double mouseY, int mouseButton) {

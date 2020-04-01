@@ -19,10 +19,10 @@
 package icyllis.modernui.gui.module;
 
 import icyllis.modernui.gui.element.IElement;
-import icyllis.modernui.gui.scroll.option.KeyBindingEntry;
-import icyllis.modernui.gui.scroll.option.OptionCategory;
-import icyllis.modernui.gui.scroll.option.OptionEntry;
-import icyllis.modernui.gui.window.SettingScrollWindow;
+import icyllis.modernui.gui.option.KeyBindingEntry;
+import icyllis.modernui.gui.option.OptionCategoryGroup;
+import icyllis.modernui.gui.option.AbstractOptionEntry;
+import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.system.SettingsManager;
 import net.minecraft.client.Minecraft;
@@ -61,7 +61,7 @@ public class SettingControls implements IGuiModule {
     }
 
     private void addMouseCategory() {
-        List<OptionEntry> list = new ArrayList<>();
+        List<AbstractOptionEntry> list = new ArrayList<>();
 
         list.add(SettingsManager.SENSITIVITY.apply(window));
         list.add(SettingsManager.MOUSE_WHEEL_SENSITIVITY.apply(window));
@@ -72,7 +72,7 @@ public class SettingControls implements IGuiModule {
             list.add(SettingsManager.RAW_MOUSE_INPUT.apply(window));
         }
 
-        OptionCategory category = new OptionCategory(I18n.format("gui.modernui.settings.category.mouse"), list);
+        OptionCategoryGroup category = new OptionCategoryGroup(I18n.format("gui.modernui.settings.category.mouse"), list);
         window.addGroup(category);
     }
 
@@ -85,13 +85,13 @@ public class SettingControls implements IGuiModule {
         Arrays.sort(keyBindings);
 
         String categoryKey = null;
-        List<OptionEntry> list = null;
+        List<AbstractOptionEntry> list = null;
 
         for (KeyBinding keybinding : keyBindings) {
             String ck = keybinding.getKeyCategory();
             if (!ck.equals(categoryKey)) {
                 if (list != null) {
-                    OptionCategory category = new OptionCategory(I18n.format(categoryKey), list);
+                    OptionCategoryGroup category = new OptionCategoryGroup(I18n.format(categoryKey), list);
                     window.addGroup(category);
                 }
                 categoryKey = ck;
@@ -108,7 +108,7 @@ public class SettingControls implements IGuiModule {
         }
         // add last category
         if (categoryKey != null) {
-            OptionCategory category = new OptionCategory(I18n.format(categoryKey), list);
+            OptionCategoryGroup category = new OptionCategoryGroup(I18n.format(categoryKey), list);
             window.addGroup(category);
         }
         checkAllConflicts();

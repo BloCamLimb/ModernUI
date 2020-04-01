@@ -49,12 +49,9 @@ public enum BlurHandler {
 
     private DummyResourcePack sp = new DummyResourcePack();
 
-    private Field shaders;
-
     private boolean changingProgress;
 
     BlurHandler() {
-        shaders = ObfuscationReflectionHelper.findField(ShaderGroup.class, "field_148031_d");
         this.loadResourcePack();
     }
 
@@ -62,12 +59,12 @@ public enum BlurHandler {
         ResourcePackList<ClientResourcePackInfo> rps = ObfuscationReflectionHelper.getPrivateValue(Minecraft.class, Minecraft.getInstance(), "field_110448_aq");
         if(rps != null)
             rps.addPackFinder(new IPackFinder() {
-                @SuppressWarnings({"unchecked", "deprecation"})
+                @SuppressWarnings("unchecked")
                 @Override
                 public <T extends ResourcePackInfo> void addPackInfosToMap(@Nonnull Map<String, T> nameToPackMap, @Nonnull ResourcePackInfo.IFactory<T> packInfoFactory) {
-                    T pack = (T) new ClientResourcePackInfo(ModernUI.MODID + "_blur", true, () -> sp, new StringTextComponent(sp.getName()), new StringTextComponent("Add blur shader to vanilla directory"),
-                            PackCompatibility.COMPATIBLE, ResourcePackInfo.Priority.BOTTOM, true, null);
-                    nameToPackMap.put(ModernUI.MODID + "_blur", pack);
+                    ResourcePackInfo pack = new ClientResourcePackInfo(ModernUI.MODID + "_blur", true, () -> sp, new StringTextComponent(sp.getName()), new StringTextComponent(""),
+                            PackCompatibility.COMPATIBLE, ResourcePackInfo.Priority.BOTTOM, true, null, true);
+                    nameToPackMap.put(ModernUI.MODID + "_blur", (T) pack);
                 }
             });
     }
@@ -75,10 +72,15 @@ public enum BlurHandler {
     public void blur(boolean hasGui) {
         if (Minecraft.getInstance().world != null) {
             GameRenderer gr = Minecraft.getInstance().gameRenderer;
-            if (gr.getShaderGroup() == null && hasGui) {
-                gr.loadShader(BLUR);
-                changingProgress = true;
-            } else if (!hasGui) {
+            if (hasGui) {
+                if (gr.getShaderGroup() == null) {
+                    gr.loadShader(BLUR);
+                    changingProgress = true;
+                    ModernUI.LOGGER.debug("Blur shader loaded");
+                } else {
+                    ModernUI.LOGGER.debug("Can't load blur shader");
+                }
+            } else {
                 gr.stopUseShader();
                 changingProgress = false;
             }
@@ -88,26 +90,21 @@ public enum BlurHandler {
     public void tick() {
         if (changingProgress) {
             float p = Math.min(GlobalModuleManager.INSTANCE.getAnimationTime(), 4.0f);
-            this.updateUniform("Progress", p);
-            if(p >= 4.0f) {
+            this.updateProgress(p);
+            if (p == 4.0f) {
                 changingProgress = false;
             }
         }
     }
 
-    @SuppressWarnings({"unchecked"})
-    private void updateUniform(String name, float value) {
+    private void updateProgress(float value) {
         ShaderGroup sg = Minecraft.getInstance().gameRenderer.getShaderGroup();
         if(sg == null)
             return;
-        try {
-            List<Shader> shaders = (List<Shader>) this.shaders.get(sg);
-            for (Shader s : shaders) {
-                ShaderDefault u = s.getShaderManager().getShaderUniform(name);
-                u.set(value);
-            }
-        } catch (IllegalArgumentException | IllegalAccessException e) {
-            throw new RuntimeException(e);
+        List<Shader> shaders = sg.listShaders;
+        for (Shader s : shaders) {
+            ShaderDefault u = s.getShaderManager().getShaderUniform("Progress");
+            u.set(value);
         }
     }
 

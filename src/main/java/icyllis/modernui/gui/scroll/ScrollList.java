@@ -18,8 +18,6 @@
 
 package icyllis.modernui.gui.scroll;
 
-import icyllis.modernui.gui.window.ScrollWindow;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;

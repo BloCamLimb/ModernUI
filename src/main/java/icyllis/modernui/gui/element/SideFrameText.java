@@ -19,9 +19,11 @@
 package icyllis.modernui.gui.element;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.DrawTools;
+import icyllis.modernui.gui.util.Color3I;
 
 import java.util.function.Function;
 
@@ -29,7 +31,7 @@ public class SideFrameText extends StateAnimatedElement {
 
     private String text;
 
-    private float frameOpacity = 0, textOpacity = 0;
+    private float frameAlpha = 0, textAlpha = 0;
 
     private float sizeW = 0;
 
@@ -45,9 +47,9 @@ public class SideFrameText extends StateAnimatedElement {
             return;
         }
         RenderSystem.pushMatrix();
-        DrawTools.fillRectWithFrame(x - 4, y - 3, x + sizeW, y + 11, 0.51f, 0x000000, 0.4f * frameOpacity, 0x404040, 0.8f * frameOpacity);
+        DrawTools.fillRectWithFrame(x - 4, y - 3, x + sizeW, y + 11, 0.51f, 0x000000, 0.4f * frameAlpha, 0x404040, 0.8f * frameAlpha);
         RenderSystem.enableBlend();
-        fontRenderer.drawString(text, x, y, 1, 1, 1, textOpacity, 0);
+        fontRenderer.drawString(text, x, y, Color3I.WHILE, textAlpha, TextAlign.LEFT);
         RenderSystem.popMatrix();
     }
 
@@ -58,9 +60,9 @@ public class SideFrameText extends StateAnimatedElement {
         moduleManager.addAnimation(new Animation(3, true)
                 .applyTo(new Applier(-4, textLength + 4, value -> sizeW = value)));
         moduleManager.addAnimation(new Animation(3)
-                .applyTo(new Applier(1, value -> frameOpacity = value)));
+                .applyTo(new Applier(1, value -> frameAlpha = value)));
         moduleManager.addAnimation(new Animation(3)
-                .applyTo(new Applier(1, value -> textOpacity = value))
+                .applyTo(new Applier(1, value -> textAlpha = value))
                 .withDelay(2)
                 .onFinish(() -> openState = 2));
     }
@@ -69,7 +71,7 @@ public class SideFrameText extends StateAnimatedElement {
     protected void onClose() {
         super.onClose();
         moduleManager.addAnimation(new Animation(5)
-                .applyTo(new Applier(1, 0, value -> textOpacity = frameOpacity = value))
+                .applyTo(new Applier(1, 0, value -> textAlpha = frameAlpha = value))
                 .onFinish(() -> openState = 0));
     }
 

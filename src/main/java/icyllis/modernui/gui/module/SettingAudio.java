@@ -19,10 +19,10 @@
 package icyllis.modernui.gui.module;
 
 import icyllis.modernui.gui.element.IElement;
-import icyllis.modernui.gui.scroll.option.OptionCategory;
-import icyllis.modernui.gui.scroll.option.OptionEntry;
-import icyllis.modernui.gui.scroll.option.SSliderOptionEntry;
-import icyllis.modernui.gui.window.SettingScrollWindow;
+import icyllis.modernui.gui.option.OptionCategoryGroup;
+import icyllis.modernui.gui.option.AbstractOptionEntry;
+import icyllis.modernui.gui.option.SSliderOptionEntry;
+import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import icyllis.modernui.system.ConstantsLibrary;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
@@ -44,7 +44,7 @@ public class SettingAudio implements IGuiModule {
         SettingScrollWindow window = new SettingScrollWindow();
         GameSettings gameSettings = minecraft.gameSettings;
 
-        List<OptionEntry> list = new ArrayList<>();
+        List<AbstractOptionEntry> list = new ArrayList<>();
 
         for (SoundCategory soundCategory : SoundCategory.values()) {
             SSliderOptionEntry entry = new SSliderOptionEntry(window, I18n.format("soundCategory." + soundCategory.getName()),
@@ -52,7 +52,7 @@ public class SettingAudio implements IGuiModule {
                     d -> gameSettings.setSoundLevel(soundCategory, d.floatValue()), ConstantsLibrary.PERCENTAGE_STRING_FUNC);
             list.add(entry);
         }
-        OptionCategory category = new OptionCategory(I18n.format("gui.modernui.settings.category.sounds"), list);
+        OptionCategoryGroup category = new OptionCategoryGroup(I18n.format("gui.modernui.settings.category.sounds"), list);
         window.addGroup(category);
 
         elements.add(window);

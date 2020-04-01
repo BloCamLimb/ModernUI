@@ -23,11 +23,12 @@ import net.minecraftforge.fml.ModList;
 public class ModIntegration {
 
     public static final String OPTIFINE_MODID = "optifine";
+    public static final String OPTIFORGE_MODID = "optiforge";
 
     public static boolean optifineLoaded = false;
 
     public static void init() {
         ModList modList = ModList.get();
-        optifineLoaded = modList.isLoaded(OPTIFINE_MODID);
+        optifineLoaded = modList.isLoaded(OPTIFINE_MODID) || modList.isLoaded(OPTIFORGE_MODID);
     }
 }

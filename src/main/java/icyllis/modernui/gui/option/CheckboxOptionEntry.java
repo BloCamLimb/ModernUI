@@ -16,13 +16,13 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.module;
+package icyllis.modernui.gui.option;
 
-import icyllis.modernui.system.ModernUI;
+import icyllis.modernui.gui.scroll.SettingScrollWindow;
 
-public class SettingAssetsResource implements IGuiModule {
+public class CheckboxOptionEntry extends AbstractOptionEntry {
 
-    public SettingAssetsResource() {
-        ModernUI.LOGGER.info("Hello, Resource Packs");
+    public CheckboxOptionEntry(SettingScrollWindow windowString, String optionTitle) {
+        super(windowString, optionTitle);
     }
 }

@@ -19,11 +19,11 @@
 package icyllis.modernui.system;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.gui.scroll.option.BooleanOptionEntry;
-import icyllis.modernui.gui.scroll.option.DSliderOptionEntry;
-import icyllis.modernui.gui.scroll.option.OptionEntry;
-import icyllis.modernui.gui.scroll.option.SSliderOptionEntry;
-import icyllis.modernui.gui.window.SettingScrollWindow;
+import icyllis.modernui.gui.option.BooleanOptionEntry;
+import icyllis.modernui.gui.option.DSliderOptionEntry;
+import icyllis.modernui.gui.option.AbstractOptionEntry;
+import icyllis.modernui.gui.option.SSliderOptionEntry;
+import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.NewChatGui;
@@ -119,7 +119,7 @@ public enum SettingsManager {
         FOV = INSTANCE
                 .transformToSmooth(AbstractOption.FOV);
         CHAT_OPACITY = INSTANCE
-                .transformToSmooth(AbstractOption.CHAT_OPACITY, Triple.of(0.1, null, null), ConstantsLibrary.PERCENTAGE_STRING_FUNC);
+                .transformToSmooth(AbstractOption.CHAT_OPACITY, p -> (int) (p * 90 + 10) + "%");
         CHAT_SCALE = INSTANCE
                 .transformToSmooth(AbstractOption.CHAT_SCALE, Triple.of(0.1, null, null), ConstantsLibrary.PERCENTAGE_STRING_FUNC);
         CHAT_WIDTH = INSTANCE
@@ -341,7 +341,7 @@ public enum SettingsManager {
     }
 
     @Deprecated
-    public <T extends AbstractOption> Function<SettingScrollWindow, OptionEntry> transformVanillaOption(T abstractOption) {
+    public <T extends AbstractOption> Function<SettingScrollWindow, AbstractOptionEntry> transformVanillaOption(T abstractOption) {
         GameSettings gameSettings = Minecraft.getInstance().gameSettings;
         try {
             String translationKey = (String) option_translateKey.get(abstractOption);

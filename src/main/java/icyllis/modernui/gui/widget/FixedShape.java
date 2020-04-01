@@ -18,9 +18,11 @@
 
 package icyllis.modernui.gui.widget;
 
-public abstract class FixedShape {
+public class FixedShape {
 
-    public abstract boolean isMouseInShape(float posX, float posY, double mouseX, double mouseY);
+    public boolean isMouseInShape(float posX, float posY, double mouseX, double mouseY) {
+        return false;
+    }
 
     public static class Rect extends FixedShape {
 

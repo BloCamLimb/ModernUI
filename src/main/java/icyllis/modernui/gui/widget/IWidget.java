@@ -22,4 +22,5 @@ import icyllis.modernui.gui.element.IElement;
 import net.minecraft.client.gui.IGuiEventListener;
 
 public interface IWidget extends IElement, IGuiEventListener {
+
 }

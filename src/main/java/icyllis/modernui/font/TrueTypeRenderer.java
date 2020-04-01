@@ -26,14 +26,16 @@ package icyllis.modernui.font;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.gui.util.Color3I;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.text.TextFormatting;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lwjgl.opengl.GL11;
 
-import java.awt.*;
-
+@OnlyIn(Dist.CLIENT)
 public class TrueTypeRenderer implements IFontRenderer {
 
     public static final TrueTypeRenderer INSTANCE = new TrueTypeRenderer();
@@ -68,11 +70,6 @@ public class TrueTypeRenderer implements IFontRenderer {
      */
     private final StringCache cache;
 
-    /**
-     * {@link TextFormatting#values()}
-     */
-    private final int[] formattedColorTable = new int[]{0, 170, 43520, 43690, 11141120, 11141290, 16755200, 11184810, 5592405, 5592575, 5635925, 5636095, 16733525, 16733695, 16777045, 16777215};
-
     private TrueTypeRenderer() {
         cache = new StringCache();
         cache.setDefaultFont(14.0f);
@@ -85,15 +82,11 @@ public class TrueTypeRenderer implements IFontRenderer {
     /**
      * Render a single-line string to the screen using the current OpenGL color. The (x,y) coordinates are of the upper-left
      * corner of the string's bounding box, rather than the baseline position as is typical with fonts. This function will also
-     * add the string to the cache so the next renderString() call with the same string is faster.
+     * add the string to the cache so the next drawString() call with the same string is faster.
      *
-     * @param str          the string being rendered; it can contain color codes
+     * @param str          the string being rendered; it can contain formatting codes
      * @param startX       the x coordinate to draw at
      * @param startY       the y coordinate to draw at
-     * @param r
-     * @param g
-     * @param b
-     * @param a
      * @return the total advance (horizontal distance) of this string
      */
     //TODO Add optional NumericShaper to replace ASCII digits with locale specific ones
@@ -101,7 +94,7 @@ public class TrueTypeRenderer implements IFontRenderer {
     //TODO Pre-sort by texture to minimize binds; can store colors per glyph in string cache (?)
     //TODO Optimize the underline/strikethrough drawing to draw a single line for each run
     @Override
-    public float drawString(String str, float startX, float startY, float r, float g, float b, float a, float align) {
+    public float drawString(String str, float startX, float startY, float r, float g, float b, float a, TextAlign align) {
         /* Check for invalid arguments */
         if (str == null || str.isEmpty()) {
             return 0;
@@ -123,14 +116,13 @@ public class TrueTypeRenderer implements IFontRenderer {
          */
         RenderSystem.color3f(r, g, b);
 
-        int red = (int) (r * 0xff);
-        int green = (int) (g * 0xff);
-        int blue = (int) (b * 0xff);
-
+        int red = (int) (r * 255);
+        int green = (int) (g * 255);
+        int blue = (int) (b * 255);
         int alpha = (int) (a * 255);
 
         /* formatting color will replace parameter color */
-        int color = -1;
+        Color3I rColor = null;
 
         /*
          * Enable GL_BLEND in case the font is drawn anti-aliased because Minecraft itself only enables blending for chat text
@@ -145,7 +137,7 @@ public class TrueTypeRenderer implements IFontRenderer {
         }*/
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        startX = startX - entry.advance * align;
+        startX = startX - entry.advance * align.getOffset();
 
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder buffer = tessellator.getBuffer();
@@ -162,7 +154,7 @@ public class TrueTypeRenderer implements IFontRenderer {
              */
             while (colorIndex < entry.codes.length && entry.glyphs[glyphIndex].stringIndex >= entry.codes[colorIndex].stringIndex) {
                 int colorCode = entry.codes[colorIndex].colorCode;
-                color = colorCode == -1 ? -1 : formattedColorTable[colorCode];
+                rColor = Color3I.getFormattedColor(colorCode);
                 fontStyle = entry.codes[colorIndex].fontStyle;
                 colorIndex++;
             }
@@ -195,10 +187,10 @@ public class TrueTypeRenderer implements IFontRenderer {
             buffer.begin(7, DefaultVertexFormats.POSITION_COLOR_TEX);
             GlStateManager.bindTexture(texture.textureName);
 
-            if (color != -1) {
-                int rr = color >> 16 & 255;
-                int rg = color >> 8 & 255;
-                int rb = color & 255;
+            if (rColor != null) {
+                int rr = rColor.getIntRed();
+                int rg = rColor.getIntGreen();
+                int rb = rColor.getIntBlue();
                 buffer.pos(x1, y1, 0).color(rr, rg, rb, alpha).tex(texture.u1, texture.v1).endVertex();
                 buffer.pos(x1, y2, 0).color(rr, rg, rb, alpha).tex(texture.u1, texture.v2).endVertex();
                 buffer.pos(x2, y2, 0).color(rr, rg, rb, alpha).tex(texture.u2, texture.v2).endVertex();
