@@ -19,9 +19,9 @@
 package icyllis.modernui.gui.module;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.gui.scroll.option.*;
+import icyllis.modernui.gui.option.*;
 import icyllis.modernui.gui.element.IElement;
-import icyllis.modernui.gui.window.SettingScrollWindow;
+import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import icyllis.modernui.system.ModIntegration;
 import icyllis.modernui.system.SettingsManager;
 import net.minecraft.client.GameSettings;
@@ -70,7 +70,7 @@ public class SettingVideo implements IGuiModule {
 
     @SuppressWarnings("NoTranslation")
     private void addVideoCategory() {
-        List<OptionEntry> list = new ArrayList<>();
+        List<AbstractOptionEntry> list = new ArrayList<>();
         GameSettings gameSettings = minecraft.gameSettings;
 
         list.add(new DropdownOptionEntry(window, I18n.format("options.graphics"),
@@ -110,12 +110,12 @@ public class SettingVideo implements IGuiModule {
             //TODO optifine Dynamic Lights and Use VBOs
         }
 
-        OptionCategory category = new OptionCategory(I18n.format("gui.modernui.settings.category.video"), list);
+        OptionCategoryGroup category = new OptionCategoryGroup(I18n.format("gui.modernui.settings.category.video"), list);
         window.addGroup(category);
     }
 
     private void addQualityCategory() {
-        List<OptionEntry> list = new ArrayList<>();
+        List<AbstractOptionEntry> list = new ArrayList<>();
         GameSettings gameSettings = minecraft.gameSettings;
 
         DropdownOptionEntry ao = new DropdownOptionEntry(window, I18n.format("options.ao"), AO.get(),
@@ -140,12 +140,12 @@ public class SettingVideo implements IGuiModule {
             // Custom Fonts, Custom Colors, Connected Textures, Natural Textures, Custom Sky, Custom Items, Custom Entity Models, Custom Guis
         }
 
-        OptionCategory category = new OptionCategory(I18n.format("gui.modernui.settings.category.quality"), list);
+        OptionCategoryGroup category = new OptionCategoryGroup(I18n.format("gui.modernui.settings.category.quality"), list);
         window.addGroup(category);
     }
 
     private void addDetailsCategory() {
-        List<OptionEntry> list = new ArrayList<>();
+        List<AbstractOptionEntry> list = new ArrayList<>();
         GameSettings gameSettings = minecraft.gameSettings;
 
         list.add(SettingsManager.ENTITY_SHADOWS.apply(window));
@@ -156,12 +156,12 @@ public class SettingVideo implements IGuiModule {
             //      Translucent Blocks, Held Item Tooltips, Dropped Items, Vignette, Alternate Blocks, Swamp Colors
         }
 
-        OptionCategory category = new OptionCategory(I18n.format("gui.modernui.settings.category.details"), list);
+        OptionCategoryGroup category = new OptionCategoryGroup(I18n.format("gui.modernui.settings.category.details"), list);
         window.addGroup(category);
     }
 
     private void addAnimationsCategory() {
-        List<OptionEntry> list = new ArrayList<>();
+        List<AbstractOptionEntry> list = new ArrayList<>();
         GameSettings gameSettings = minecraft.gameSettings;
 
         DropdownOptionEntry particles = new DropdownOptionEntry(window, I18n.format("options.particles"), PARTICLES.get(),
@@ -173,28 +173,28 @@ public class SettingVideo implements IGuiModule {
             //      Rain Splash, Portal Particles, Potion Particles, Dripping Water Lava, Animated Terrain, Animated Textures, Firework Particles
         }
 
-        OptionCategory category = new OptionCategory(I18n.format("gui.modernui.settings.category.animations"), list);
+        OptionCategoryGroup category = new OptionCategoryGroup(I18n.format("gui.modernui.settings.category.animations"), list);
         window.addGroup(category);
     }
 
     private void addPerformanceCategory() {
-        List<OptionEntry> list = new ArrayList<>();
+        List<AbstractOptionEntry> list = new ArrayList<>();
         GameSettings gameSettings = minecraft.gameSettings;
 
         if (ModIntegration.optifineLoaded) {
             //TODO optifine Smooth Fps, Smooth World, Fast Render, Fast Math, Chunk Updates, Chunk Updates Dynamic, Render Regions, Lazy Chunk Loading, Smart Animations
         }
 
-        OptionCategory category = new OptionCategory(I18n.format("gui.modernui.settings.category.performance"), list);
+        OptionCategoryGroup category = new OptionCategoryGroup(I18n.format("gui.modernui.settings.category.performance"), list);
         window.addGroup(category);
     }
 
     private void addOtherCategory() {
-        List<OptionEntry> list = new ArrayList<>();
+        List<AbstractOptionEntry> list = new ArrayList<>();
         GameSettings gameSettings = minecraft.gameSettings;
 
 
-        OptionCategory category = new OptionCategory(I18n.format("gui.modernui.settings.category.other"), list);
+        OptionCategoryGroup category = new OptionCategoryGroup(I18n.format("gui.modernui.settings.category.other"), list);
         window.addGroup(category);
     }
 

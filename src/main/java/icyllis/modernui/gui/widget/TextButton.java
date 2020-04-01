@@ -18,6 +18,7 @@
 
 package icyllis.modernui.gui.widget;
 
+import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.DrawTools;
@@ -34,7 +35,7 @@ public class TextButton extends StateAnimatedButton {
 
     private float textBrightness = 0.7f;
 
-    protected float textOpacity = 1;
+    protected float textAlpha = 1;
 
     private float frameWidthOffset, frameHeightOffset;
 
@@ -57,14 +58,14 @@ public class TextButton extends StateAnimatedButton {
         this.rightAlign = rightAlign;
     }
 
-    public void setTextOpacity(float a) {
-        textOpacity = a;
+    public void setTextAlpha(float a) {
+        textAlpha = a;
     }
 
     @Override
     public void draw(float currentTime) {
         checkState();
-        fontRenderer.drawString(text, x + sizeW / 2f, y + 2, textBrightness, textBrightness, textBrightness, textOpacity, 0.25f);
+        fontRenderer.drawString(text, x + sizeW / 2f, y + 2, textBrightness, textAlpha, TextAlign.CENTER);
         if (frameOpacity > 0)
             DrawTools.fillFrameWithColor(x - frameWidthOffset, y - frameHeightOffset, x + frameWidthOffset + sizeW, y + 13 + frameHeightOffset, 0.51f, 0x808080, frameOpacity);
     }
@@ -129,8 +130,8 @@ public class TextButton extends StateAnimatedButton {
         public void draw(float currentTime) {
             super.draw(currentTime);
             if (counting) {
-                DrawTools.fillRectWithColor(x, y, x + sizeW, y + 13, 0x101010, textOpacity * 0.7f);
-                fontRenderer.drawString(displayCount + "s", x + sizeW / 2f, y + 2, 1, 1, 1, textOpacity, 0.25f);
+                DrawTools.fillRectWithColor(x, y, x + sizeW, y + 13, 0x101010, textAlpha * 0.7f);
+                fontRenderer.drawString(displayCount + "s", x + sizeW / 2f, y + 2, 1, textAlpha, TextAlign.CENTER);
             }
         }
 

@@ -19,10 +19,10 @@
 package icyllis.modernui.gui.module;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.gui.scroll.option.*;
+import icyllis.modernui.gui.option.*;
 import icyllis.modernui.gui.element.IElement;
 import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.gui.window.SettingScrollWindow;
+import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import icyllis.modernui.system.ModIntegration;
 import icyllis.modernui.system.SettingsManager;
 import net.minecraft.client.GameSettings;
@@ -77,7 +77,7 @@ public class SettingGeneral implements IGuiModule {
     }
 
     private void addGameCategory() {
-        List<OptionEntry> list = new ArrayList<>();
+        List<AbstractOptionEntry> list = new ArrayList<>();
 
         if (minecraft.world != null) {
             difficultyEntry = new DropdownOptionEntry(window, I18n.format("options.difficulty"), DIFFICULTY_OPTIONS.get(),
@@ -103,13 +103,13 @@ public class SettingGeneral implements IGuiModule {
 
         list.add(SettingsManager.REALMS_NOTIFICATIONS.apply(window));
 
-        OptionCategory category = new OptionCategory(I18n.format("gui.modernui.settings.category.game"), list);
+        OptionCategoryGroup category = new OptionCategoryGroup(I18n.format("gui.modernui.settings.category.game"), list);
         window.addGroup(category);
     }
 
     @SuppressWarnings("NoTranslation")
     private void addChatCategory() {
-        List<OptionEntry> list = new ArrayList<>();
+        List<AbstractOptionEntry> list = new ArrayList<>();
         GameSettings gameSettings = minecraft.gameSettings;
 
         list.add(new DropdownOptionEntry(window, I18n.format("options.chat.visibility"), CHAT_VISIBILITIES.get(),
@@ -135,12 +135,12 @@ public class SettingGeneral implements IGuiModule {
         list.add(SettingsManager.REDUCED_DEBUG_INFO.apply(window));
         list.add(SettingsManager.AUTO_SUGGEST_COMMANDS.apply(window));
 
-        OptionCategory category = new OptionCategory(I18n.format("gui.modernui.settings.category.chat"), list);
+        OptionCategoryGroup category = new OptionCategoryGroup(I18n.format("gui.modernui.settings.category.chat"), list);
         window.addGroup(category);
     }
 
     private void addAccessibilityCategory() {
-        List<OptionEntry> list = new ArrayList<>();
+        List<AbstractOptionEntry> list = new ArrayList<>();
         GameSettings gameSettings = minecraft.gameSettings;
 
         boolean active = NarratorChatListener.INSTANCE.isActive();
@@ -171,15 +171,15 @@ public class SettingGeneral implements IGuiModule {
                 gameSettings.toggleSprint ? 0 : 1, i -> gameSettings.toggleSprint = i == 0);
         list.add(sprint);
 
-        OptionCategory category = new OptionCategory(I18n.format("gui.modernui.settings.category.accessibility"), list);
+        OptionCategoryGroup category = new OptionCategoryGroup(I18n.format("gui.modernui.settings.category.accessibility"), list);
         window.addGroup(category);
     }
 
     private void addSkinCategory() {
-        List<OptionEntry> list = new ArrayList<>();
+        List<AbstractOptionEntry> list = new ArrayList<>();
         GameSettings gameSettings = minecraft.gameSettings;
 
-        OptionEntry mainHand = new DropdownOptionEntry(window, I18n.format("options.mainHand"), MAIN_HANDS.get(),
+        AbstractOptionEntry mainHand = new DropdownOptionEntry(window, I18n.format("options.mainHand"), MAIN_HANDS.get(),
                 gameSettings.mainHand.ordinal(), i -> {
             gameSettings.mainHand = HandSide.values()[i];
             gameSettings.saveOptions();
@@ -193,7 +193,7 @@ public class SettingGeneral implements IGuiModule {
             list.add(entry);
         }
 
-        OptionCategory category = new OptionCategory(I18n.format("gui.modernui.settings.category.skin"), list);
+        OptionCategoryGroup category = new OptionCategoryGroup(I18n.format("gui.modernui.settings.category.skin"), list);
         window.addGroup(category);
     }
 

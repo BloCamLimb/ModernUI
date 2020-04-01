@@ -20,6 +20,7 @@ package icyllis.modernui.system;
 
 import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.gui.master.GlobalModuleManager;
+import icyllis.modernui.gui.master.ModernUIScreen;
 import icyllis.modernui.shader.blur.BlurHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
@@ -80,7 +81,10 @@ public class EventsHandler {
             boolean current = Minecraft.getInstance().currentScreen != null;
             if (hasGui != current)
                 GlobalModuleManager.INSTANCE.resetTicks();
-            BlurHandler.INSTANCE.blur(hasGui);
+            if (hasGui && !(event.getGui() instanceof ModernUIScreen))
+                BlurHandler.INSTANCE.blur(true);
+            else if (!hasGui)
+                BlurHandler.INSTANCE.blur(false);
             //ModernUI.LOGGER.debug("Open GUI {}", hasGui ? event.getGui().getClass().getSimpleName() : "null");
         }
     }

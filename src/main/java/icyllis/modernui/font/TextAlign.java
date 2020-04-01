@@ -16,13 +16,20 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.scroll.option;
+package icyllis.modernui.font;
 
-import icyllis.modernui.gui.window.SettingScrollWindow;
+public enum TextAlign {
+    LEFT(0.0f),
+    CENTER(0.25f),
+    RIGHT(0.5f);
 
-public class CheckboxOptionEntry extends OptionEntry {
+    private float offset;
 
-    public CheckboxOptionEntry(SettingScrollWindow windowString, String optionTitle) {
-        super(windowString, optionTitle);
+    TextAlign(float offset) {
+        this.offset = offset;
+    }
+
+    public float getOffset() {
+        return offset;
     }
 }

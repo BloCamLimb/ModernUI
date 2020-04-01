@@ -18,28 +18,92 @@
 
 package icyllis.modernui.font;
 
+import icyllis.modernui.gui.util.Color3I;
+
 public interface IFontRenderer {
 
     /**
-     * Draw string
+     * Render a single-line string to the screen using the current OpenGL color. The (x,y) coordinates are of the upper-left
+     * corner of the string's bounding box, rather than the baseline position as is typical with fonts. This function will also
+     * add the string to the cache so the next drawString() call with the same string is faster.
      *
-     * @param str formatted text
-     * @param startX x pos
-     * @param startY y pos
-     * @param r red 0-1
-     * @param g green 0-1
-     * @param b blue 0-1
-     * @param a alpha 0-1
+     * @param str string to draw
+     * @param startX start x pos
+     * @param startY start y pos
+     * @param color RGB color
+     * @param alpha alpha 0-1
      * @param align 0-left 0.25-center 0.5-right
      * @return formatted text width
      */
-    float drawString(String str, float startX, float startY, float r, float g, float b, float a, float align);
+    default float drawString(String str, float startX, float startY, Color3I color, float alpha, TextAlign align) {
+        return drawString(str, startX, startY, color.getFloatRed(), color.getFloatGreen(), color.getFloatBlue(), alpha, align);
+    }
+
+    default float drawString(String str, float startX, float startY, Color3I color, float alpha) {
+        return drawString(str, startX, startY, color, alpha, TextAlign.LEFT);
+    }
+
+    default float drawString(String str, float startX, float startY, Color3I color, TextAlign align) {
+        return drawString(str, startX, startY, color, 1.0f, align);
+    }
+
+    default float drawString(String str, float startX, float startY, Color3I color) {
+        return drawString(str, startX, startY, color, 1.0f, TextAlign.LEFT);
+    }
 
     /**
-     * Get string width
+     * Render a single-line string to the screen using the current OpenGL color. The (x,y) coordinates are of the upper-left
+     * corner of the string's bounding box, rather than the baseline position as is typical with fonts. This function will also
+     * add the string to the cache so the next drawString() call with the same string is faster.
      *
-     * @param str unformatted text
+     * @param str string to draw
+     * @param startX start x pos
+     * @param startY start y pos
+     * @param r red 0-1f
+     * @param g green 0-1f
+     * @param b blue 0-1f
+     * @param a alpha 0-1f
+     * @param align 0-left 0.25-center 0.5-right
      * @return formatted text width
+     */
+    float drawString(String str, float startX, float startY, float r, float g, float b, float a, TextAlign align);
+
+    default float drawString(String str, float startX, float startY, float r, float g, float b, float a) {
+        return drawString(str, startX, startY, r, g, b, a, TextAlign.LEFT);
+    }
+
+    /**
+     * Use brightness color to render
+     *
+     * @param str string to draw
+     * @param startX start x pos
+     * @param startY start y pos
+     * @param brightness black-to-white 0-1
+     * @param alpha alpha 0-1
+     * @param align 0-left 0.25-center 0.5-right
+     * @return formatted text width
+     */
+    default float drawString(String str, float startX, float startY, float brightness, float alpha, TextAlign align) {
+        return drawString(str, startX, startY, brightness, brightness, brightness, alpha, align);
+    }
+
+    default float drawString(String str, float startX, float startY, float brightness, float alpha) {
+        return drawString(str, startX, startY, brightness, alpha, TextAlign.LEFT);
+    }
+
+    default float drawString(String str, float startX, float startY, float brightness, TextAlign align) {
+        return drawString(str, startX, startY, brightness, 1.0f, align);
+    }
+
+    default float drawString(String str, float startX, float startY, float brightness) {
+        return drawString(str, startX, startY, brightness, 1.0f, TextAlign.LEFT);
+    }
+
+    /**
+     * Return the width of a string in pixels. Used for centering strings.
+     *
+     * @param str string with formatting codes
+     * @return the width of the text that should render on screen
      */
     float getStringWidth(String str);
 

@@ -19,41 +19,51 @@
 package icyllis.modernui.gui.module;
 
 import icyllis.modernui.gui.element.IElement;
-import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.gui.widget.DropDownList;
+import icyllis.modernui.gui.scroll.ResourceScrollWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
+import net.minecraft.client.renderer.texture.TextureManager;
+import net.minecraft.util.ResourceLocation;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
-public class PopupMenuAssetsTabs implements IGuiModule {
+public class SettingResourcePack implements IGuiModule {
+
+    private Minecraft minecraft;
 
     private List<IElement> elements = new ArrayList<>();
 
     private List<IGuiEventListener> listeners = new ArrayList<>();
 
-    public PopupMenuAssetsTabs(DropDownList list) {
-        elements.add(list);
-        listeners.add(list);
+    private ResourceScrollWindow leftWindow;
+
+    private ResourceScrollWindow rightWindow;
+
+    public SettingResourcePack() {
+        Function<Integer, Float> widthFunc = w -> Math.min((float) Math.round((w - 80) / 2f), 200);
+        Function<Integer, Float> leftXFunc = w -> w / 2f - widthFunc.apply(w);
+
+        leftWindow = new ResourceScrollWindow(leftXFunc, widthFunc);
+        rightWindow = new ResourceScrollWindow(w -> w / 2f, widthFunc);
+
+        Consumer<ResourceScrollWindow> consumer = s -> {
+            elements.add(s);
+            listeners.add(s);
+        };
+        consumer.accept(leftWindow);
+        consumer.accept(rightWindow);
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        for (IGuiEventListener listener : getEventListeners()) {
-            listener.mouseClicked(mouseX, mouseY, mouseButton);
-        }
-        Minecraft.getInstance().deferTask(GlobalModuleManager.INSTANCE::closePopup);
-        return true;
-    }
-
-    @Override
-    public List<IElement> getElements() {
+    public List<? extends IElement> getElements() {
         return elements;
     }
 
     @Override
-    public List<IGuiEventListener> getEventListeners() {
+    public List<? extends IGuiEventListener> getEventListeners() {
         return listeners;
     }
 }

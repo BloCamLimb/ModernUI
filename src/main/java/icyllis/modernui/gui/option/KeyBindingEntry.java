@@ -16,13 +16,14 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.scroll.option;
+package icyllis.modernui.gui.option;
 
 import com.google.common.collect.Lists;
 import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.gui.widget.DropDownList;
+import icyllis.modernui.gui.module.PopupContextMenu;
+import icyllis.modernui.gui.widget.DropDownMenu;
 import icyllis.modernui.gui.widget.KeyInputBox;
-import icyllis.modernui.gui.window.SettingScrollWindow;
+import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.I18n;
@@ -33,7 +34,7 @@ import net.minecraftforge.client.settings.KeyModifier;
 import java.util.Locale;
 import java.util.Objects;
 
-public class KeyBindingEntry extends OptionEntry {
+public class KeyBindingEntry extends AbstractOptionEntry {
 
     private KeyBinding keyBinding;
 
@@ -65,9 +66,9 @@ public class KeyBindingEntry extends OptionEntry {
     @Override
     public boolean mouseClicked(double deltaCenterX, double deltaY, double mouseX, double mouseY, int mouseButton) {
         if (mouseHovered && mouseButton == 1) {
-            DropDownList list = new DropDownList(Lists.newArrayList("WIP =w="), -1, 16, this::menuActions);
+            DropDownMenu list = new DropDownMenu(Lists.newArrayList("WIP =w="), -1, 16, this::menuActions);
             list.setPos((float) mouseX, (float) (mouseY - deltaY + 18), GlobalModuleManager.INSTANCE.getWindowHeight());
-            window.setDropDownList(list);
+            GlobalModuleManager.INSTANCE.openPopup(new PopupContextMenu(list), false);
             return true;
         }
         if (inputBox.mouseClicked(mouseX, mouseY, mouseButton)) {
@@ -160,12 +161,12 @@ public class KeyBindingEntry extends OptionEntry {
     @Override
     protected void onMouseHoverOn() {
         super.onMouseHoverOn();
-        inputBox.setTextGrayscale(titleGrayscale);
+        inputBox.setTextBrightness(titleBrightness);
     }
 
     @Override
     protected void onMouseHoverOff() {
         super.onMouseHoverOff();
-        inputBox.setTextGrayscale(titleGrayscale);
+        inputBox.setTextBrightness(titleBrightness);
     }
 }

@@ -16,17 +16,17 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.scroll.option;
+package icyllis.modernui.gui.option;
 
+import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.gui.widget.SmoothSlider;
-import icyllis.modernui.gui.window.SettingScrollWindow;
-import icyllis.modernui.system.ModernUI;
+import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import net.minecraft.util.math.MathHelper;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class SSliderOptionEntry extends OptionEntry {
+public class SSliderOptionEntry extends AbstractOptionEntry {
 
     private SmoothSlider slider;
 
@@ -66,7 +66,7 @@ public class SSliderOptionEntry extends OptionEntry {
     public void drawExtra(float centerX, float y, float currentTime) {
         slider.setPos(centerX + 40, y + 9);
         slider.draw(currentTime);
-        fontRenderer.drawString(displayString, centerX + 154, y + 6, titleGrayscale, titleGrayscale, titleGrayscale, 1, 0.5f);
+        fontRenderer.drawString(displayString, centerX + 154, y + 6, titleBrightness, 1.0f, TextAlign.RIGHT);
     }
 
     @Override

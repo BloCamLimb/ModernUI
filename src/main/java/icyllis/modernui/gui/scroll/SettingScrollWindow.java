@@ -16,20 +16,15 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.window;
+package icyllis.modernui.gui.scroll;
 
-import icyllis.modernui.gui.widget.DropDownList;
-import icyllis.modernui.gui.scroll.option.OptionCategory;
+import icyllis.modernui.gui.option.OptionCategoryGroup;
 import net.minecraft.client.gui.IGuiEventListener;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.function.Function;
 
-public class SettingScrollWindow extends ScrollWindow<OptionCategory> {
-
-    @Nullable
-    protected DropDownList dropDownList;
+public class SettingScrollWindow extends ScrollWindow<OptionCategoryGroup> {
 
     @Nullable
     protected IGuiEventListener focused;
@@ -39,35 +34,7 @@ public class SettingScrollWindow extends ScrollWindow<OptionCategory> {
     }
 
     @Override
-    public void resize(int width, int height) {
-        super.resize(width, height);
-        dropDownList = null;
-    }
-
-    @Override
-    public void drawMenu() {
-        if (dropDownList != null) {
-            dropDownList.draw();
-        }
-    }
-
-    @Override
-    public void mouseMoved(double mouseX, double mouseY) {
-        if (dropDownList != null) {
-            dropDownList.mouseMoved(mouseX, mouseY);
-        } else {
-            super.mouseMoved(mouseX, mouseY);
-        }
-    }
-
-    @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        if (dropDownList != null) {
-            dropDownList.mouseClicked(mouseX, mouseY, mouseButton);
-            dropDownList = null;
-            super.mouseMoved(mouseX, mouseY);
-            return true;
-        }
         if (focused != null) {
             if (focused.mouseClicked(mouseX, mouseY, mouseButton)) {
                 return true;
@@ -77,19 +44,7 @@ public class SettingScrollWindow extends ScrollWindow<OptionCategory> {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double scrollAmount) {
-        if (dropDownList != null) {
-            return false;
-        }
-        return super.mouseScrolled(mouseX, mouseY, scrollAmount);
-    }
-
-    @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (dropDownList != null) {
-            dropDownList = null;
-            return true;
-        }
         if (focused != null) {
             return focused.keyPressed(keyCode, scanCode, modifiers);
         }
@@ -102,14 +57,6 @@ public class SettingScrollWindow extends ScrollWindow<OptionCategory> {
             return focused.keyReleased(keyCode, scanCode, modifiers);
         }
         return false;
-    }
-
-    public boolean hasDropDownList() {
-        return dropDownList != null;
-    }
-
-    public void setDropDownList(@Nonnull DropDownList list) {
-        this.dropDownList = list;
     }
 
     public void setFocused(@Nonnull IGuiEventListener eventListener) {

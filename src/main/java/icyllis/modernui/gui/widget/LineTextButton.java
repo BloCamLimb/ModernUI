@@ -19,11 +19,12 @@
 package icyllis.modernui.gui.widget;
 
 import com.google.common.collect.Lists;
+import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.gui.module.PopupMenuAssetsTabs;
+import icyllis.modernui.gui.module.PopupContextMenu;
 
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -36,7 +37,7 @@ public class LineTextButton extends StateAnimatedButton {
 
     protected float widthOffset;
 
-    protected float textGrayscale = 0.7f;
+    protected float textBrightness = 0.7f;
 
     protected float alpha = 0;
 
@@ -56,7 +57,7 @@ public class LineTextButton extends StateAnimatedButton {
     @Override
     public void draw(float currentTime) {
         super.checkState();
-        fontRenderer.drawString(text, x + halfWidth, y + 2, textGrayscale, textGrayscale, textGrayscale, alpha, 0.25f);
+        fontRenderer.drawString(text, x + halfWidth, y + 2, textBrightness, alpha, TextAlign.CENTER);
         DrawTools.fillRectWithColor(x + widthOffset, y + 11, x + width - widthOffset, y + 12, 0xffffff, alpha);
     }
 
@@ -70,7 +71,7 @@ public class LineTextButton extends StateAnimatedButton {
         super.onOpen();
         moduleManager.addAnimation(new Animation(3)
                 .applyTo(new Applier(halfWidth, 0, value -> widthOffset = value),
-                        new Applier(textGrayscale, 1, value -> textGrayscale = value))
+                        new Applier(textBrightness, 1, value -> textBrightness = value))
                 .onFinish(() -> openState = 2));
     }
 
@@ -82,14 +83,14 @@ public class LineTextButton extends StateAnimatedButton {
     protected void onMouseHoverOn() {
         if (!lock)
             moduleManager.addAnimation(new Animation(3)
-                    .applyTo(new Applier(0.7f, 1, value -> textGrayscale = value)));
+                    .applyTo(new Applier(0.7f, 1, value -> textBrightness = value)));
     }
 
     @Override
     protected void onMouseHoverOff() {
         if (!lock)
             moduleManager.addAnimation(new Animation(3)
-                    .applyTo(new Applier(1, 0.7f, value -> textGrayscale = value)));
+                    .applyTo(new Applier(1, 0.7f, value -> textBrightness = value)));
     }
 
     @Override
@@ -97,7 +98,7 @@ public class LineTextButton extends StateAnimatedButton {
         super.onClose();
         moduleManager.addAnimation(new Animation(3)
                 .applyTo(new Applier(0, halfWidth, value -> widthOffset = value),
-                        new Applier(textGrayscale, 0.7f, value -> textGrayscale = value))
+                        new Applier(textBrightness, 0.7f, value -> textBrightness = value))
                 .onFinish(() -> openState = 0));
     }
 
@@ -161,9 +162,9 @@ public class LineTextButton extends StateAnimatedButton {
         @Override
         public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
             if (mouseHovered && mouseButton == 0) {
-                DropDownList list = new DropDownList(Lists.newArrayList("Resource Packs", "Shaders", "Fonts", "Language"), id - 35, 12, this::menuActions);
+                DropDownMenu list = new DropDownMenu(Lists.newArrayList("Resource Packs", "Shaders", "Fonts", "Language"), id - 35, 12, this::menuActions);
                 list.setPos(x + width, y + 13, GlobalModuleManager.INSTANCE.getWindowHeight());
-                GlobalModuleManager.INSTANCE.openPopup(new PopupMenuAssetsTabs(list), false);
+                GlobalModuleManager.INSTANCE.openPopup(new PopupContextMenu(list), false);
                 return true;
             }
             return false;

@@ -21,7 +21,7 @@ package icyllis.modernui.font;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FontTools {
+public class TextTools {
 
     public static IFontRenderer FONT_RENDERER;
 

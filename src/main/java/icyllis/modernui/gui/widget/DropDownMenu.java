@@ -19,28 +19,28 @@
 package icyllis.modernui.gui.widget;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.font.FontTools;
+import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.font.TextTools;
 import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.element.IElement;
 import icyllis.modernui.gui.master.GlobalModuleManager;
+import icyllis.modernui.gui.util.Color3I;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL43;
-import org.lwjgl.opengl.GL46;
 
 import java.util.List;
 import java.util.function.Consumer;
 
-public class DropDownList implements IElement, IGuiEventListener {
+public class DropDownMenu implements IWidget {
 
     private static int ENTRY_HEIGHT = 13;
 
-    private IFontRenderer fontRenderer = FontTools.FONT_RENDERER;
+    private IFontRenderer fontRenderer = TextTools.FONT_RENDERER;
 
     private final List<String> list;
 
@@ -62,7 +62,9 @@ public class DropDownList implements IElement, IGuiEventListener {
 
     private float textAlpha = 0;
 
-    public DropDownList(List<String> contents, int selectedIndex, float reservedSpace, Consumer<Integer> receiver) {
+    private boolean initResize = false;
+
+    public DropDownMenu(List<String> contents, int selectedIndex, float reservedSpace, Consumer<Integer> receiver) {
         list = contents;
         this.selectedIndex = selectedIndex;
         width = list.stream().distinct().mapToInt(s -> (int) fontRenderer.getStringWidth(s)).max().orElse(0) + 7;
@@ -140,9 +142,9 @@ public class DropDownList implements IElement, IGuiEventListener {
                 RenderSystem.enableTexture();
             }
             if (selectedIndex == i) {
-                fontRenderer.drawString(text, x2 - 3, cy + 2, 0.6f, 0.87f, 0.94f, textAlpha, 0.5f);
+                fontRenderer.drawString(text, x2 - 3, cy + 2, Color3I.BLUE_C, textAlpha, TextAlign.RIGHT);
             } else {
-                fontRenderer.drawString(text, x2 - 3, cy + 2, 1, 1, 1, textAlpha, 0.5f);
+                fontRenderer.drawString(text, x2 - 3, cy + 2, Color3I.WHILE, textAlpha, TextAlign.RIGHT);
             }
         }
     }
@@ -155,6 +157,15 @@ public class DropDownList implements IElement, IGuiEventListener {
         if (upward) {
             this.y -= vH;
         }
+    }
+
+    @Override
+    public void resize(int width, int height) {
+        if (!initResize) {
+            initResize = true;
+            return;
+        }
+        GlobalModuleManager.INSTANCE.closePopup();
     }
 
     @Override

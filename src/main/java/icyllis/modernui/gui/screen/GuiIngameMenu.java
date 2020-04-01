@@ -21,6 +21,7 @@ package icyllis.modernui.gui.screen;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.master.ModernUIScreen;
 import icyllis.modernui.gui.module.*;
+import icyllis.modernui.system.MouseTools;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.text.TranslationTextComponent;
 
@@ -35,7 +36,7 @@ public class GuiIngameMenu extends ModernUIScreen {
                 manager.addModule(i -> i == 32, SettingVideo::new);
                 manager.addModule(i -> i == 33, SettingAudio::new);
                 manager.addModule(i -> i == 34, SettingControls::new);
-                manager.addModule(i -> i == 35, SettingAssetsResource::new);
+                manager.addModule(i -> i == 35, SettingResourcePack::new);
                 manager.addModule(i -> true, IngameMenuHome::new);
             }
         }
@@ -45,5 +46,6 @@ public class GuiIngameMenu extends ModernUIScreen {
     public void removed() {
         super.removed();
         Minecraft.getInstance().gameSettings.saveOptions();
+        MouseTools.useDefaultCursor();
     }
 }
