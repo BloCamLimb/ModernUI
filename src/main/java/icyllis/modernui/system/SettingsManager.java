@@ -122,9 +122,15 @@ public enum SettingsManager {
                 .transformToSmooth(AbstractOption.CHAT_OPACITY, p -> (int) (p * 90 + 10) + "%");
         CHAT_SCALE = INSTANCE
                 .transformToSmooth(AbstractOption.CHAT_SCALE, Triple.of(0.1, null, null), ConstantsLibrary.PERCENTAGE_STRING_FUNC);
-        CHAT_WIDTH = INSTANCE
-                .transformToSmooth(AbstractOption.CHAT_WIDTH, Triple.of(null, 4.0571431d, 1.0f / 1136.0f),
-                        d -> NewChatGui.calculateChatboxWidth(d) + "px");
+        if (ModIntegration.optifineLoaded) {
+            CHAT_WIDTH = INSTANCE
+                    .transformToSmooth(AbstractOption.CHAT_WIDTH, Triple.of(null, null, 1.0f / 1136.0f),
+                            d -> NewChatGui.calculateChatboxWidth(d * 4.0571431d) + "px");
+        } else {
+            CHAT_WIDTH = INSTANCE
+                    .transformToSmooth(AbstractOption.CHAT_WIDTH, Triple.of(null, 4.0571431d, 1.0f / 1136.0f),
+                            d -> NewChatGui.calculateChatboxWidth(d) + "px");
+        }
         CHAT_HEIGHT_FOCUSED = INSTANCE
                 .transformToSmooth(AbstractOption.CHAT_HEIGHT_FOCUSED, Triple.of(null, null, 1.0f / 160.0f),
                         d -> NewChatGui.calculateChatboxHeight(d) + "px");

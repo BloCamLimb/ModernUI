@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.shader.blur;
+package icyllis.modernui.system;
 
 import com.google.common.collect.ImmutableSet;
 import icyllis.modernui.system.ModernUI;
@@ -42,8 +42,9 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.function.Predicate;
 
+@Deprecated
 @OnlyIn(Dist.CLIENT)
-public class DummyResourcePack implements IResourcePack {
+public class ShadersResourcePack implements IResourcePack {
 
     private final ModFile MF = FMLLoader.getLoadingModList().getModFileById(ModernUI.MODID).getFile();
 
@@ -99,7 +100,7 @@ public class DummyResourcePack implements IResourcePack {
     @Nonnull
     @Override
     public String getName() {
-        return "ModernUI Blur";
+        return "";
     }
 
     @Override

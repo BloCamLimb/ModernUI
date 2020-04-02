@@ -79,7 +79,7 @@ public enum Color3I {
     }
 
     @Nullable
-    public static Color3I getFormattedColor(int code) {
+    public static Color3I getFormattingColor(int code) {
         if (code >= 0 && code <= 15) {
             return values()[code];
         }

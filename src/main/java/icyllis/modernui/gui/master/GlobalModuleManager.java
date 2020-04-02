@@ -22,7 +22,7 @@ import icyllis.modernui.gui.animation.IAnimation;
 import icyllis.modernui.api.global.IModuleFactory;
 import icyllis.modernui.api.manager.IModuleManager;
 import icyllis.modernui.gui.module.IGuiModule;
-import icyllis.modernui.shader.blur.BlurHandler;
+import icyllis.modernui.shader.BlurHandler;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;

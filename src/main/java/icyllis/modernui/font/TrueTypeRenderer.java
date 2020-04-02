@@ -30,7 +30,6 @@ import icyllis.modernui.gui.util.Color3I;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lwjgl.opengl.GL11;
@@ -154,7 +153,7 @@ public class TrueTypeRenderer implements IFontRenderer {
              */
             while (colorIndex < entry.codes.length && entry.glyphs[glyphIndex].stringIndex >= entry.codes[colorIndex].stringIndex) {
                 int colorCode = entry.codes[colorIndex].colorCode;
-                rColor = Color3I.getFormattedColor(colorCode);
+                rColor = Color3I.getFormattingColor(colorCode);
                 fontStyle = entry.codes[colorIndex].fontStyle;
                 colorIndex++;
             }
