@@ -24,12 +24,16 @@ import icyllis.modernui.gui.scroll.ScrollGroup;
 import icyllis.modernui.gui.scroll.ScrollList;
 import icyllis.modernui.gui.scroll.ScrollBar;
 import icyllis.modernui.gui.element.Element;
+import icyllis.modernui.shader.ShaderTools;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.renderer.BufferBuilder;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.math.MathHelper;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL14;
+import org.lwjgl.opengl.GL20;
 
 import java.util.Collection;
 import java.util.function.Function;

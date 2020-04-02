@@ -10,7 +10,7 @@ logoFile="modernui_logo.png"
     displayURL="https://curseforge.com/minecraft/mc-mods/modern-ui"
     authors="BloCamLimb"
     description='''
-    Modern UI provides fancy and clean UI, better fonts, better menu, better optimization, also as a library for other mods
+    Modern UI creates fancy and clean UI, provides better fonts, better menu with better optimization.
     '''
 
 [[dependencies.modernui]]

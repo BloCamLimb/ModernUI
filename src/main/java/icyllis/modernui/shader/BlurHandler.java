@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.shader.blur;
+package icyllis.modernui.shader;
 
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.system.ModernUI;
@@ -47,26 +47,12 @@ public enum BlurHandler {
 
     private final ResourceLocation BLUR = new ResourceLocation("shaders/post/fade_in_blur.json");
 
-    private DummyResourcePack sp = new DummyResourcePack();
+    private boolean changingProgress = false;
 
-    private boolean changingProgress;
+    private boolean blurring = false;
 
     BlurHandler() {
-        this.loadResourcePack();
-    }
 
-    private void loadResourcePack() {
-        ResourcePackList<ClientResourcePackInfo> rps = ObfuscationReflectionHelper.getPrivateValue(Minecraft.class, Minecraft.getInstance(), "field_110448_aq");
-        if(rps != null)
-            rps.addPackFinder(new IPackFinder() {
-                @SuppressWarnings("unchecked")
-                @Override
-                public <T extends ResourcePackInfo> void addPackInfosToMap(@Nonnull Map<String, T> nameToPackMap, @Nonnull ResourcePackInfo.IFactory<T> packInfoFactory) {
-                    ResourcePackInfo pack = new ClientResourcePackInfo(ModernUI.MODID + "_blur", true, () -> sp, new StringTextComponent(sp.getName()), new StringTextComponent(""),
-                            PackCompatibility.COMPATIBLE, ResourcePackInfo.Priority.BOTTOM, true, null, true);
-                    nameToPackMap.put(ModernUI.MODID + "_blur", (T) pack);
-                }
-            });
     }
 
     public void blur(boolean hasGui) {
@@ -76,13 +62,14 @@ public enum BlurHandler {
                 if (gr.getShaderGroup() == null) {
                     gr.loadShader(BLUR);
                     changingProgress = true;
-                    ModernUI.LOGGER.debug("Blur shader loaded");
+                    blurring = true;
                 } else {
-                    ModernUI.LOGGER.debug("Can't load blur shader");
+                    ModernUI.LOGGER.debug("Can't load blur shader. Now active shader group: {}", gr.getShaderGroup().getShaderGroupName());
                 }
-            } else {
+            } else if (blurring) {
                 gr.stopUseShader();
                 changingProgress = false;
+                blurring = false;
             }
         }
     }

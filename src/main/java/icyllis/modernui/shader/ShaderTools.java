@@ -18,9 +18,82 @@
 
 package icyllis.modernui.shader;
 
+import icyllis.modernui.system.ModernUI;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.shader.ShaderLinkHelper;
+import net.minecraft.client.shader.ShaderLoader;
+import net.minecraft.resources.IResourceManager;
+import net.minecraft.util.ResourceLocation;
+import org.lwjgl.system.MemoryUtil;
+
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.FloatBuffer;
+import java.util.Arrays;
+import java.util.EnumMap;
+import java.util.Map;
+import java.util.function.Consumer;
+
 public class ShaderTools {
 
-    public static void s() {
+    public enum Shaders {
+        ;
 
+        private ResourceLocation vert;
+
+        private ResourceLocation frag;
+
+        Shaders(String vert, String frag) {
+            this.vert = new ResourceLocation(ModernUI.MODID, vert);
+            this.frag = new ResourceLocation(ModernUI.MODID, frag);
+        }
+    }
+
+    public static final FloatBuffer FLOAT_BUF = MemoryUtil.memAllocFloat(1);
+
+    private static final Map<Shaders, ShaderProgram> PROGRAMS = new EnumMap<>(Shaders.class);
+
+    static {
+        Arrays.stream(Shaders.values()).forEach(shaders -> createProgram(Minecraft.getInstance().getResourceManager(), shaders));
+    }
+
+    private static void useShader(Shaders shader, Consumer<Integer> callback) {
+        ShaderProgram program = PROGRAMS.get(shader);
+
+        if (program != null) {
+            useShader(program.getProgram(), callback);
+        }
+    }
+
+    private static void useShader(int shader, Consumer<Integer> callback) {
+        ShaderLinkHelper.func_227804_a_(shader);
+
+        if (callback != null) {
+            callback.accept(shader);
+        }
+    }
+
+    public static void releaseShader() {
+        ShaderLinkHelper.func_227804_a_(0);
+    }
+
+    private static void createProgram(IResourceManager manager, Shaders shader) {
+        try {
+            ShaderLoader vertex = createShader(manager, shader.vert, ShaderLoader.ShaderType.VERTEX);
+            ShaderLoader fragment = createShader(manager, shader.frag, ShaderLoader.ShaderType.FRAGMENT);
+            int program = ShaderLinkHelper.createProgram();
+            ShaderProgram shaderProgram = new ShaderProgram(program, vertex, fragment);
+            ShaderLinkHelper.linkProgram(shaderProgram);
+            PROGRAMS.put(shader, shaderProgram);
+        } catch (IOException ex) {
+            ModernUI.LOGGER.debug("Can't create program");
+        }
+    }
+
+    private static ShaderLoader createShader(IResourceManager manager, ResourceLocation location, ShaderLoader.ShaderType type) throws IOException {
+        try (InputStream is = new BufferedInputStream(manager.getResource(location).getInputStream())) {
+            return ShaderLoader.func_216534_a(type, location.toString(), is);
+        }
     }
 }

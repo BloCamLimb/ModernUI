@@ -20,7 +20,7 @@ package icyllis.modernui.system;
 
 import icyllis.modernui.api.ModernUI_API;
 import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.shader.blur.BlurHandler;
+import icyllis.modernui.shader.BlurHandler;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLEnvironment;

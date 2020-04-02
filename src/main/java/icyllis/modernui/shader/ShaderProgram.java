@@ -18,10 +18,44 @@
 
 package icyllis.modernui.shader;
 
-public class ShaderProgram implements AutoCloseable {
+import net.minecraft.client.shader.IShaderManager;
+import net.minecraft.client.shader.ShaderLoader;
+
+import javax.annotation.Nonnull;
+
+public class ShaderProgram implements IShaderManager {
+
+    private int program;
+
+    private ShaderLoader vertex;
+
+    private ShaderLoader fragment;
+
+    public ShaderProgram(int program, ShaderLoader vertex, ShaderLoader fragment) {
+        this.program = program;
+        this.vertex = vertex;
+        this.fragment = fragment;
+    }
 
     @Override
-    public void close() throws Exception {
+    public int getProgram() {
+        return program;
+    }
 
+    @Override
+    public void markDirty() {
+
+    }
+
+    @Nonnull
+    @Override
+    public ShaderLoader getVertexShaderLoader() {
+        return vertex;
+    }
+
+    @Nonnull
+    @Override
+    public ShaderLoader getFragmentShaderLoader() {
+        return fragment;
     }
 }
