@@ -22,9 +22,9 @@ public interface IAnimation {
 
     /**
      * Update animations before drawing
-     * @param currentTime floating point ticks, 20.0 ticks = 1 second
+     * @param time floating point ticks, 20.0 ticks = 1 second
      */
-    void update(float currentTime);
+    void update(float time);
 
     /**
      * If return true, this instance should be removed from render loop

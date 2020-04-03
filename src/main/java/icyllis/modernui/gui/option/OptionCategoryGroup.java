@@ -19,7 +19,7 @@
 package icyllis.modernui.gui.option;
 
 import icyllis.modernui.font.TextAlign;
-import icyllis.modernui.font.TextTools;
+import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.gui.scroll.ScrollGroup;
 import icyllis.modernui.gui.util.Color3I;
@@ -31,7 +31,7 @@ public class OptionCategoryGroup extends ScrollGroup {
 
     public static int ENTRY_HEIGHT = 21;
 
-    private IFontRenderer fontRenderer = TextTools.FONT_RENDERER;
+    private IFontRenderer fontRenderer = FontTools.FONT_RENDERER;
 
     private String title;
 

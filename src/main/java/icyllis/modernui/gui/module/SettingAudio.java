@@ -18,26 +18,24 @@
 
 package icyllis.modernui.gui.module;
 
-import icyllis.modernui.gui.element.IElement;
-import icyllis.modernui.gui.option.OptionCategoryGroup;
+import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.option.AbstractOptionEntry;
+import icyllis.modernui.gui.option.OptionCategoryGroup;
 import icyllis.modernui.gui.option.SSliderOptionEntry;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import icyllis.modernui.system.ConstantsLibrary;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.SoundCategory;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class SettingAudio implements IGuiModule {
-
-    private List<IElement> elements = new ArrayList<>();
-
-    private List<IGuiEventListener> listeners = new ArrayList<>();
+/**
+ * Really simple module :p
+ */
+public class SettingAudio extends Module {
 
     public SettingAudio() {
         Minecraft minecraft = Minecraft.getInstance();
@@ -55,17 +53,7 @@ public class SettingAudio implements IGuiModule {
         OptionCategoryGroup category = new OptionCategoryGroup(I18n.format("gui.modernui.settings.category.sounds"), list);
         window.addGroup(category);
 
-        elements.add(window);
-        listeners.add(window);
+        addWidget(window);
     }
 
-    @Override
-    public List<? extends IElement> getElements() {
-        return elements;
-    }
-
-    @Override
-    public List<? extends IGuiEventListener> getEventListeners() {
-        return listeners;
-    }
 }

@@ -20,9 +20,9 @@ package icyllis.modernui.gui.widget;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.TextAlign;
-import icyllis.modernui.font.TextTools;
+import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.IFontRenderer;
-import icyllis.modernui.gui.element.IElement;
+import icyllis.modernui.gui.master.IElement;
 import icyllis.modernui.system.MouseTools;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -40,7 +40,7 @@ import java.util.function.Consumer;
 
 public class KeyInputBox implements IElement, IGuiEventListener {
 
-    private IFontRenderer fontRenderer = TextTools.FONT_RENDERER;
+    private IFontRenderer fontRenderer = FontTools.FONT_RENDERER;
 
     private float x, y;
 
@@ -58,11 +58,15 @@ public class KeyInputBox implements IElement, IGuiEventListener {
 
     private boolean editing = false;
 
-    // pressing a modifier key
+    /**
+     * Pressing a modifier key
+     */
     @Nullable
     private InputMappings.Input pressing = null;
 
-    // focus this make keyPressed keyReleased can be called
+    /**
+     * Focus this make keyPressed keyReleased can be called
+     */
     private Consumer<IGuiEventListener> focuser;
 
     private Consumer<InputMappings.Input> keyBinder;
@@ -73,7 +77,7 @@ public class KeyInputBox implements IElement, IGuiEventListener {
     }
 
     @Override
-    public void draw(float currentTime) {
+    public void draw(float time) {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();
         RenderSystem.disableTexture();

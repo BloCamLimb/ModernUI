@@ -18,19 +18,20 @@
 
 package icyllis.modernui.gui.master;
 
-import icyllis.modernui.api.global.IModuleFactory;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
-import java.util.function.Consumer;
+import java.util.function.Supplier;
 
+/**
+ * All ModernUI guis should open this screen first by {@link GlobalModuleManager#openGuiScreen(ITextComponent, Supplier)}
+ */
 @OnlyIn(Dist.CLIENT)
-public class ModernUIScreen extends Screen {
+public final class ModernUIScreen extends Screen {
 
     protected GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
 
@@ -38,15 +39,10 @@ public class ModernUIScreen extends Screen {
         super(title);
     }
 
-    public ModernUIScreen(ITextComponent title, Consumer<IModuleFactory> factory) {
-        super(title);
-        factory.accept(manager);
-    }
-
     @Override
     public void init(Minecraft minecraft, int width, int height) {
         super.init(minecraft, width, height);
-        manager.init(width, height);
+        manager.resize(width, height);
     }
 
     @Override
@@ -62,13 +58,6 @@ public class ModernUIScreen extends Screen {
     @Override
     public void removed() {
         manager.clear();
-    }
-
-    @Override
-    public void onClose() {
-        if (manager.onGuiClosed()) {
-            super.onClose();
-        }
     }
 
     @Override
@@ -93,7 +82,7 @@ public class ModernUIScreen extends Screen {
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double deltaX, double deltaY) {
-        return manager.mouseDragged(mouseX, mouseY, mouseButton, deltaX, deltaY);
+        return manager.mouseDragged(mouseX, mouseY, deltaX, deltaY);
     }
 
     @Override
@@ -103,13 +92,7 @@ public class ModernUIScreen extends Screen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (manager.keyPressed(keyCode, scanCode, modifiers)) {
-            return true;
-        } else if (keyCode == GLFW.GLFW_KEY_ESCAPE && shouldCloseOnEsc()) {
-            onClose();
-            return true;
-        }
-        return false;
+        return manager.keyPressed(keyCode, scanCode, modifiers);
     }
 
     @Override
@@ -118,7 +101,7 @@ public class ModernUIScreen extends Screen {
     }
 
     @Override
-    public boolean charTyped(char ch, int modifiers) {
-        return manager.charTyped(ch, modifiers);
+    public boolean charTyped(char codePoint, int modifiers) {
+        return manager.charTyped(codePoint, modifiers);
     }
 }

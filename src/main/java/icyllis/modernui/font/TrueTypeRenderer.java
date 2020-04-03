@@ -136,7 +136,7 @@ public class TrueTypeRenderer implements IFontRenderer {
         }*/
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        startX = startX - entry.advance * align.getOffset();
+        startX = startX - entry.advance * align.getTextOffset();
 
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder buffer = tessellator.getBuffer();

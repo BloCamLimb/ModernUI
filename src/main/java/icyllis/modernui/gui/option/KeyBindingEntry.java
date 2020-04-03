@@ -20,7 +20,7 @@ package icyllis.modernui.gui.option;
 
 import com.google.common.collect.Lists;
 import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.gui.module.PopupContextMenu;
+import icyllis.modernui.gui.popup.PopupMenu;
 import icyllis.modernui.gui.widget.DropDownMenu;
 import icyllis.modernui.gui.widget.KeyInputBox;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
@@ -68,7 +68,7 @@ public class KeyBindingEntry extends AbstractOptionEntry {
         if (mouseHovered && mouseButton == 1) {
             DropDownMenu list = new DropDownMenu(Lists.newArrayList("WIP =w="), -1, 16, this::menuActions);
             list.setPos((float) mouseX, (float) (mouseY - deltaY + 18), GlobalModuleManager.INSTANCE.getWindowHeight());
-            GlobalModuleManager.INSTANCE.openPopup(new PopupContextMenu(list), false);
+            GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(list), false);
             return true;
         }
         if (inputBox.mouseClicked(mouseX, mouseY, mouseButton)) {

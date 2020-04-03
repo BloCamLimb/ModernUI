@@ -18,15 +18,14 @@
 
 package icyllis.modernui.gui.module;
 
-import icyllis.modernui.gui.element.IElement;
+import icyllis.modernui.gui.master.Module;
+import icyllis.modernui.gui.option.AbstractOptionEntry;
 import icyllis.modernui.gui.option.KeyBindingEntry;
 import icyllis.modernui.gui.option.OptionCategoryGroup;
-import icyllis.modernui.gui.option.AbstractOptionEntry;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.system.SettingsManager;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.client.util.InputMappings;
@@ -39,13 +38,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class SettingControls implements IGuiModule {
+public class SettingControls extends Module {
 
     private Minecraft minecraft;
-
-    private List<IElement> elements = new ArrayList<>();
-
-    private List<IGuiEventListener> listeners = new ArrayList<>();
 
     private SettingScrollWindow window;
 
@@ -56,8 +51,7 @@ public class SettingControls implements IGuiModule {
         this.window = new SettingScrollWindow();
         addMouseCategory();
         addAllKeyBindings();
-        elements.add(window);
-        listeners.add(window);
+        addWidget(window);
     }
 
     private void addMouseCategory() {
@@ -160,13 +154,4 @@ public class SettingControls implements IGuiModule {
         return 0;
     }
 
-    @Override
-    public List<? extends IElement> getElements() {
-        return elements;
-    }
-
-    @Override
-    public List<? extends IGuiEventListener> getEventListeners() {
-        return listeners;
-    }
 }

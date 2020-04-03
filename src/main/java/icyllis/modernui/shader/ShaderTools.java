@@ -55,22 +55,19 @@ public class ShaderTools {
     private static final Map<Shaders, ShaderProgram> PROGRAMS = new EnumMap<>(Shaders.class);
 
     static {
-        Arrays.stream(Shaders.values()).forEach(shaders -> createProgram(Minecraft.getInstance().getResourceManager(), shaders));
+        Arrays.stream(Shaders.values()).forEach(shader -> createProgram(Minecraft.getInstance().getResourceManager(), shader));
     }
 
-    private static void useShader(Shaders shader, Consumer<Integer> callback) {
-        ShaderProgram program = PROGRAMS.get(shader);
+    public static void useShader(Shaders shader, Consumer<Integer> callback) {
+        ShaderProgram instance = PROGRAMS.get(shader);
 
-        if (program != null) {
-            useShader(program.getProgram(), callback);
-        }
-    }
+        if (instance != null) {
+            int program = instance.getProgram();
+            ShaderLinkHelper.func_227804_a_(program);
 
-    private static void useShader(int shader, Consumer<Integer> callback) {
-        ShaderLinkHelper.func_227804_a_(shader);
-
-        if (callback != null) {
-            callback.accept(shader);
+            if (callback != null) {
+                callback.accept(program);
+            }
         }
     }
 
@@ -86,8 +83,9 @@ public class ShaderTools {
             ShaderProgram shaderProgram = new ShaderProgram(program, vertex, fragment);
             ShaderLinkHelper.linkProgram(shaderProgram);
             PROGRAMS.put(shader, shaderProgram);
-        } catch (IOException ex) {
+        } catch (IOException e) {
             ModernUI.LOGGER.debug("Can't create program");
+            e.printStackTrace();
         }
     }
 

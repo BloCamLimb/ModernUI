@@ -1,6 +1,11 @@
 {
   "options.chat.visibility": "Visibility",
 
+  "gui.modernui.button.exit": "Exit",
+  "gui.modernui.button.confirm": "Confirm %s",
+
+  "gui.modernui.menu.back": "Back to Game",
+
   "gui.modernui.settings.tab.general": "General",
   "gui.modernui.settings.tab.video": "Video",
   "gui.modernui.settings.tab.audio": "Audio",

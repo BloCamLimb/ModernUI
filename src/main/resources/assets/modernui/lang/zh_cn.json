@@ -1,6 +1,10 @@
 {
   "options.chat.visibility": "可见性",
 
+  "gui.modernui.button.confirm": "确认%s",
+
+  "gui.modernui.menu.back": "回到游戏",
+
   "gui.modernui.settings.tab.general": "常规",
   "gui.modernui.settings.tab.video": "视频",
   "gui.modernui.settings.tab.audio": "音频",

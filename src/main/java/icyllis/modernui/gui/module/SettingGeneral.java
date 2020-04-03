@@ -19,9 +19,13 @@
 package icyllis.modernui.gui.module;
 
 import com.google.common.collect.Lists;
+import icyllis.modernui.gui.master.IModule;
+import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.option.*;
-import icyllis.modernui.gui.element.IElement;
+import icyllis.modernui.gui.master.IElement;
 import icyllis.modernui.gui.master.GlobalModuleManager;
+import icyllis.modernui.gui.popup.ConfirmCallback;
+import icyllis.modernui.gui.popup.PopupConfirm;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import icyllis.modernui.system.ModIntegration;
 import icyllis.modernui.system.SettingsManager;
@@ -40,10 +44,11 @@ import net.minecraft.world.Difficulty;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class SettingGeneral implements IGuiModule {
+public class SettingGeneral extends Module {
 
     private static Supplier<List<String>> DIFFICULTY_OPTIONS = () -> Lists.newArrayList(Difficulty.values()).stream().map(d -> d.getDisplayName().getFormattedText()).collect(Collectors.toCollection(ArrayList::new));
 
@@ -54,10 +59,6 @@ public class SettingGeneral implements IGuiModule {
     private static Supplier<List<String>> NARRATOR = () -> Lists.newArrayList(NarratorStatus.values()).stream().map(n -> I18n.format(n.getResourceKey())).collect(Collectors.toCollection(ArrayList::new));
 
     private Minecraft minecraft;
-
-    private List<IElement> elements = new ArrayList<>();
-
-    private List<IGuiEventListener> listeners = new ArrayList<>();
 
     private SettingScrollWindow window;
 
@@ -72,8 +73,7 @@ public class SettingGeneral implements IGuiModule {
         addChatCategory();
         addAccessibilityCategory();
         addSkinCategory();
-        elements.add(window);
-        listeners.add(window);
+        addWidget(window);
     }
 
     private void addGameCategory() {
@@ -83,14 +83,17 @@ public class SettingGeneral implements IGuiModule {
             difficultyEntry = new DropdownOptionEntry(window, I18n.format("options.difficulty"), DIFFICULTY_OPTIONS.get(),
                     minecraft.world.getDifficulty().getId(), i -> {
                 Difficulty difficulty = Difficulty.values()[i];
-                minecraft.getConnection().sendPacket(new CSetDifficultyPacket(difficulty));
+                Objects.requireNonNull(minecraft.getConnection()).sendPacket(new CSetDifficultyPacket(difficulty));
             });
             list.add(difficultyEntry);
             if (minecraft.isSingleplayer() && !minecraft.world.getWorldInfo().isHardcore()) {
                 boolean locked = minecraft.world.getWorldInfo().isDifficultyLocked();
-                lockEntry = new BooleanOptionEntry(window, I18n.format("difficulty.lock.title"), locked, b -> {
-                    if (b) {
-                        GlobalModuleManager.INSTANCE.openPopup(new PopupLockDifficulty(this::lockDifficulty), true);
+                lockEntry = new BooleanOptionEntry(window, I18n.format("difficulty.lock.title"), locked, yes -> {
+                    if (yes) {
+                        IModule popup = new PopupConfirm(this::lockDifficulty, 3)
+                                .setConfirmTitle("Lock")
+                                .setDescription("Are you sure you want to lock world difficulty?");
+                        GlobalModuleManager.INSTANCE.openPopup(popup, true);
                     }
                 }, true);
                 difficultyEntry.setAvailable(!locked);
@@ -197,9 +200,9 @@ public class SettingGeneral implements IGuiModule {
         window.addGroup(category);
     }
 
-    private void lockDifficulty(boolean lock) {
+    private void lockDifficulty(int callback) {
         GlobalModuleManager.INSTANCE.closePopup();
-        if (lock) {
+        if (callback == ConfirmCallback.CONFIRM) {
             if (this.minecraft.world != null) {
                 this.minecraft.getConnection().sendPacket(new CLockDifficultyPacket(true));
                 difficultyEntry.setAvailable(false);
@@ -208,15 +211,5 @@ public class SettingGeneral implements IGuiModule {
         } else {
             lockEntry.onValueChanged(1);
         }
-    }
-
-    @Override
-    public List<? extends IElement> getElements() {
-        return elements;
-    }
-
-    @Override
-    public List<? extends IGuiEventListener> getEventListeners() {
-        return listeners;
     }
 }

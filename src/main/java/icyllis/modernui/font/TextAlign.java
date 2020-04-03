@@ -23,13 +23,13 @@ public enum TextAlign {
     CENTER(0.25f),
     RIGHT(0.5f);
 
-    private float offset;
+    private float textOffset;
 
-    TextAlign(float offset) {
-        this.offset = offset;
+    TextAlign(float textOffset) {
+        this.textOffset = textOffset;
     }
 
-    public float getOffset() {
-        return offset;
+    public float getTextOffset() {
+        return textOffset;
     }
 }

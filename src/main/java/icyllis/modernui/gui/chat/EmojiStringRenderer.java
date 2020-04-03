@@ -21,7 +21,7 @@ package icyllis.modernui.gui.chat;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.TextAlign;
-import icyllis.modernui.font.TextTools;
+import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.gui.util.Color3I;
 import icyllis.modernui.system.ModernUI;
@@ -41,7 +41,7 @@ public class EmojiStringRenderer implements IFontRenderer {
     private final IFontRenderer FONT;
     private final TextureManager TEX;
     {
-        FONT = TextTools.FONT_RENDERER;
+        FONT = FontTools.FONT_RENDERER;
         TEX = Minecraft.getInstance().textureManager;
     }
 

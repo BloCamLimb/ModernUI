@@ -26,6 +26,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.GuiOpenEvent;
+import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerContainerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -41,17 +42,15 @@ import org.apache.logging.log4j.MarkerManager;
 @Mod.EventBusSubscriber
 public class EventsHandler {
 
-    @SubscribeEvent
+    /*@SubscribeEvent
     public static void rightClickItem(PlayerInteractEvent.RightClickItem event) {
-        /*if(!event.getPlayer().getEntityWorld().isRemote && event.getItemStack().getItem().equals(Items.DIAMOND)) {
-            ModernUI_API.INSTANCE.getNetworkManager().openGUI((ServerPlayerEntity) event.getPlayer(), new ContainerProvider(), new BlockPos(-155,82,-121));
-        }*/
+
     }
 
     @SubscribeEvent
     public static void onContainerClosed(PlayerContainerEvent.Close event) {
-        //ModernUI.logger.info("Container closed: {}", event.getContainer());
-    }
+
+    }*/
 
     @OnlyIn(Dist.CLIENT)
     @Mod.EventBusSubscriber(Dist.CLIENT)
@@ -74,18 +73,16 @@ public class EventsHandler {
             }
         }
 
-        @SuppressWarnings("UnclearExpression")
         @SubscribeEvent
         public static void onGuiOpen(GuiOpenEvent event) {
+            GlobalModuleManager.INSTANCE.resetTicks();
             boolean hasGui = event.getGui() != null;
-            boolean current = Minecraft.getInstance().currentScreen != null;
-            if (hasGui != current)
-                GlobalModuleManager.INSTANCE.resetTicks();
-            if (hasGui && !(event.getGui() instanceof ModernUIScreen))
-                BlurHandler.INSTANCE.blur(true);
-            else if (!hasGui)
-                BlurHandler.INSTANCE.blur(false);
-            //ModernUI.LOGGER.debug("Open GUI {}", hasGui ? event.getGui().getClass().getSimpleName() : "null");
+            BlurHandler.INSTANCE.blur(hasGui);
+        }
+
+        @SubscribeEvent
+        public static void onGuiInit(GuiScreenEvent.InitGuiEvent event) {
+            BlurHandler.INSTANCE.blur(true);
         }
     }
 
@@ -102,12 +99,11 @@ public class EventsHandler {
         @OnlyIn(Dist.CLIENT)
         @SubscribeEvent
         public static void setupClient(FMLClientSetupEvent event) {
-            //HistoryRecorder.gEmojiPair();
             ModernUI.LOGGER.debug(MARKER, "{} has been initialized", SettingsManager.INSTANCE.getDeclaringClass().getSimpleName()); // call constructor methods
         }
 
         @SubscribeEvent
-        public static void onConfigLoad(ModConfig.ModConfigEvent event) {
+        public static void onConfigChange(ModConfig.ModConfigEvent event) {
             ConfigManager.loadConfig(event.getConfig().getSpec());
         }
 

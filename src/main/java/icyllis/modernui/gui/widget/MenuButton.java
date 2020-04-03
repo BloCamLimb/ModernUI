@@ -18,137 +18,120 @@
 
 package icyllis.modernui.gui.widget;
 
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.animation.HSiAnimation;
-import icyllis.modernui.gui.element.Element;
-import icyllis.modernui.gui.element.SideFrameText;
-import icyllis.modernui.gui.element.StandardTexture;
-import icyllis.modernui.gui.master.GlobalModuleManager;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.util.ResourceLocation;
+import icyllis.modernui.gui.master.DrawTools;
+import icyllis.modernui.gui.util.Color3I;
+import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.system.ConstantsLibrary;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.texture.TextureManager;
+import org.lwjgl.opengl.GL11;
 
 import java.util.function.Function;
-import java.util.function.IntPredicate;
 
-public class MenuButton extends Element implements IGuiEventListener {
+public class MenuButton extends AnimatedWidget {
 
-    protected FixedShape shape;
+    protected TextureManager textureManager = Minecraft.getInstance().getTextureManager();
 
-    protected boolean mouseHovered = false;
+    private Function<Integer, Float> xResizer;
 
-    protected StandardTexture texture;
+    private Function<Integer, Float> yResizer;
 
-    protected HSiAnimation textureOpacityAnimation;
+    private float u;
 
-    protected Runnable leftClick;
+    private float brightness = 0.5f;
 
-    protected boolean lock = false;
+    private String text;
 
-    public MenuButton(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, ResourceLocation res, float sizeW, float sizeH, float u, float v, float scale, Runnable onLeftClick) {
-        super(xResizer, yResizer);
-        shape = new FixedShape.Rect(sizeW * scale, sizeH * scale);
+    private float frameAlpha = 0, textAlpha = 0;
 
-        texture = new StandardTexture(xResizer, yResizer, sizeW, sizeH, res, u, v, 0x00808080, scale);
-        textureOpacityAnimation = new HSiAnimation(0.5f, 1.0f, 4, value -> texture.tintR = texture.tintG = texture.tintB = value);
+    private float frameSizeW = 0;
 
-        leftClick = onLeftClick;
+    protected Runnable leftClickFunc;
+
+    private int id;
+
+    public MenuButton(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, String text, int index, Runnable leftClick, int id) {
+        super(new WidgetArea.Rect(16, 16));
+        this.xResizer = xResizer;
+        this.yResizer = yResizer;
+        this.text = text;
+        this.u = index * 32;
+        this.leftClickFunc = leftClick;
+        this.id = id;
     }
 
     @Override
-    public void mouseMoved(double mouseX, double mouseY) {
-        boolean prev = this.mouseHovered;
-        mouseHovered = shape.isMouseInShape(x, y, mouseX, mouseY);
-        if (prev != mouseHovered) {
-            onMouseHoverChange();
-        }
-    }
-
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        if (mouseHovered && mouseButton == 0) {
-            if (!lock) {
-                leftClick.run();
+    public boolean mouseClicked(int mouseButton) {
+        if (listening && mouseButton == 0) {
+            if (isNotLocked()) {
+                leftClickFunc.run();
                 return true;
             }
         }
         return false;
     }
 
-    protected void onMouseHoverChange() {
-        if (mouseHovered) {
-            textureOpacityAnimation.setStatus(true);
-        } else if (!lock) {
-            textureOpacityAnimation.setStatus(false);
+    @Override
+    public void draw(float time) {
+        super.draw(time);
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableAlphaTest();
+
+        RenderSystem.pushMatrix();
+
+        GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+        GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+        RenderSystem.color3f(brightness, brightness, brightness);
+        RenderSystem.scalef(0.5f, 0.5f, 1);
+        textureManager.bindTexture(ConstantsLibrary.ICONS);
+        DrawTools.blit(x1 * 2, y1 * 2, u, 0, 32, 32);
+
+        // right side text box
+        if (isAnimationOpen()) {
+            DrawTools.fillRectWithFrame(x1 + 27, y1 + 1, x1 + 31 + frameSizeW, y1 + 15, 0.51f, 0x000000, 0.4f * frameAlpha, 0x404040, 0.8f * frameAlpha);
+            fontRenderer.drawString(text, x1 + 31, y1 + 4, Color3I.WHILE, textAlpha, TextAlign.LEFT);
         }
+
+        RenderSystem.popMatrix();
     }
 
     @Override
-    public void draw(float currentTime) {
-        textureOpacityAnimation.update(currentTime);
-        texture.draw(currentTime);
+    protected void onAnimationOpen() {
+        float textLength = fontRenderer.getStringWidth(text);
+        manager.addAnimation(new Animation(4)
+                .applyTo(new Applier(0.5f, 1.0f, value -> brightness = value)));
+        manager.addAnimation(new Animation(3, true)
+                .applyTo(new Applier(-4.0f, textLength + 4.0f, value -> frameSizeW = value)));
+        manager.addAnimation(new Animation(3)
+                .applyTo(new Applier(1.0f, value -> frameAlpha = value)));
+        manager.addAnimation(new Animation(3)
+                .applyTo(new Applier(1.0f, value -> textAlpha = value))
+                .withDelay(2)
+                .onFinish(() -> setOpenState(true)));
+    }
+
+    @Override
+    protected void onAnimationClose() {
+        manager.addAnimation(new Animation(4)
+                .applyTo(new Applier(1.0f, 0.5f, value -> brightness = value)));
+        manager.addAnimation(new Animation(5)
+                .applyTo(new Applier(1.0f, 0.0f, value -> textAlpha = frameAlpha = value))
+                .onFinish(() -> setOpenState(false)));
     }
 
     @Override
     public void resize(int width, int height) {
-        super.resize(width, height);
-        texture.resize(width, height);
+        float x = xResizer.apply(width);
+        float y = yResizer.apply(height);
+        setPos(x, y);
     }
 
     public void onModuleChanged(int id) {
-
-    }
-
-    public static class A extends MenuButton {
-
-        private SideFrameText sideFrameText;
-
-        public A(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, String text, ResourceLocation res, float sizeW, float sizeH, float u, float v, float scale, Runnable onLeftClick) {
-            super(xResizer, yResizer, res, sizeW, sizeH, u, v, scale, onLeftClick);
-            this.sideFrameText = new SideFrameText(w -> xResizer.apply(w) + sizeW * scale + 15, h -> yResizer.apply(h) + (sizeH * scale) / 2 - 4, text);
-            GlobalModuleManager.INSTANCE.addAnimation(new Animation(3)
-                    .applyTo(new Applier(0, 1, value -> texture.opacity = value))
-                    .withDelay(1));
-        }
-
-        @Override
-        protected void onMouseHoverChange() {
-            super.onMouseHoverChange();
-            if (mouseHovered) {
-                this.sideFrameText.startOpen();
-            } else {
-                this.sideFrameText.startClose();
-            }
-        }
-
-        @Override
-        public void draw(float currentTime) {
-            super.draw(currentTime);
-            sideFrameText.draw(currentTime);
-        }
-
-        @Override
-        public void resize(int width, int height) {
-            super.resize(width, height);
-            sideFrameText.resize(width, height);
-        }
-    }
-
-    public static class B extends A {
-
-        private IntPredicate availability;
-
-        public B(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, String text, ResourceLocation res, float sizeW, float sizeH, float u, float v, float scale, Runnable onLeftClick, IntPredicate availability) {
-            super(xResizer, yResizer, text, res, sizeW, sizeH, u, v, scale, onLeftClick);
-            this.availability = availability;
-        }
-
-        @Override
-        public void onModuleChanged(int id) {
-            super.onModuleChanged(id);
-            lock = availability.test(id);
-            if(!lock)
-                textureOpacityAnimation.setStatus(false);
-        }
+        setLockState(this.id == id);
     }
 }

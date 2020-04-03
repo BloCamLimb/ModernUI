@@ -20,13 +20,13 @@ package icyllis.modernui.gui.option;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.module.PopupContextMenu;
+import icyllis.modernui.gui.popup.PopupMenu;
 import icyllis.modernui.gui.widget.DropDownMenu;
 import icyllis.modernui.gui.master.DrawTools;
-import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import icyllis.modernui.system.ConstantsLibrary;
 import net.minecraft.client.Minecraft;
@@ -136,7 +136,7 @@ public class DropdownOptionEntry extends AbstractOptionEntry {
         if (drawOptionFrame && mouseButton == 0) {
             DropDownMenu menu = new DropDownMenu(optionNames, currentOptionIndex, 16, this::onValueChanged);
             menu.setPos((float) (mouseX - deltaCenterX + 156), (float) (mouseY - deltaY + 18), GlobalModuleManager.INSTANCE.getWindowHeight());
-            GlobalModuleManager.INSTANCE.openPopup(new PopupContextMenu(menu), false);
+            GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(menu), false);
             return true;
         }
         return super.mouseClicked(deltaCenterX, deltaY, mouseX, mouseY, mouseButton);

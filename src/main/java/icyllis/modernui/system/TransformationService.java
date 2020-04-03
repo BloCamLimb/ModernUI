@@ -46,9 +46,9 @@ import static org.objectweb.asm.Opcodes.*;
 @Deprecated
 public class TransformationService implements ITransformationService {
 
-    private static Logger LOGGER = LogManager.getLogger();
+    /*private static Logger LOGGER = LogManager.getLogger();
 
-    private static Marker MARKER = MarkerManager.getMarker("COREMOD");
+    private static Marker MARKER = MarkerManager.getMarker("COREMOD");*/
 
     @Nonnull
     @Override
@@ -71,13 +71,12 @@ public class TransformationService implements ITransformationService {
 
     }
 
-    @Override
+    /*@Override
     public Map.Entry<Set<String>, Supplier<Function<String, Optional<URL>>>> additionalClassesLocator() {
         Set<String> key = new HashSet<>();
         key.add("icyllis.modernui.");
         Supplier<Function<String, Optional<URL>>> value = () -> this::getResourceUrl;
-        Map.Entry<Set<String>, Supplier<Function<String, Optional<URL>>>> entry = new AbstractMap.SimpleEntry<>(key, value);
-        return entry;
+        return new AbstractMap.SimpleEntry<>(key, value);
     }
 
     public Optional<URL> getResourceUrl(String name) {
@@ -100,15 +99,15 @@ public class TransformationService implements ITransformationService {
             e.printStackTrace();
         }
         return Optional.empty();
-    }
+    }*/
 
     @Nonnull
-    @Override
+    @Override // why not use ITransformer<?>
     public List<ITransformer> transformers() {
-        return Lists.newArrayList(new Transformer());
+        return Lists.newArrayList();
     }
 
-    private static class Transformer implements ITransformer<MethodNode> {
+    /*private static class Transformer implements ITransformer<MethodNode> {
 
         private int order = 0;
 
@@ -174,5 +173,5 @@ public class TransformationService implements ITransformationService {
         public static String remapName(INameMappingService.Domain domain, String name) {
             return FMLLoader.getNameFunction("srg").map(f -> f.apply(domain, name)).orElse(name);
         }
-    }
+    }*/
 }

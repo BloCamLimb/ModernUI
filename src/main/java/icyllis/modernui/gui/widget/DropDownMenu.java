@@ -19,15 +19,11 @@
 package icyllis.modernui.gui.widget;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.font.TextAlign;
-import icyllis.modernui.font.TextTools;
-import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.element.IElement;
-import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.util.Color3I;
-import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
@@ -36,15 +32,11 @@ import org.lwjgl.opengl.GL11;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class DropDownMenu implements IWidget {
+public class DropDownMenu extends Widget {
 
     private static int ENTRY_HEIGHT = 13;
 
-    private IFontRenderer fontRenderer = TextTools.FONT_RENDERER;
-
     private final List<String> list;
-
-    private final float vHeight;
 
     private final int selectedIndex;
 
@@ -52,9 +44,7 @@ public class DropDownMenu implements IWidget {
 
     private final Consumer<Integer> receiver;
 
-    private float x2, y;
-
-    private float width, height;
+    private float heightOffset;
 
     private boolean upward = false;
 
@@ -62,28 +52,25 @@ public class DropDownMenu implements IWidget {
 
     private float textAlpha = 0;
 
-    private boolean initResize = false;
+    private boolean init = false;
 
-    public DropDownMenu(List<String> contents, int selectedIndex, float reservedSpace, Consumer<Integer> receiver) {
-        list = contents;
-        this.selectedIndex = selectedIndex;
-        width = list.stream().distinct().mapToInt(s -> (int) fontRenderer.getStringWidth(s)).max().orElse(0) + 7;
-        vHeight = list.size() * ENTRY_HEIGHT;
+    public DropDownMenu(List<String> contents, int selected, float reservedSpace, Consumer<Integer> receiver) {
+        this.list = contents;
+        this.selectedIndex = selected;
+        float width = list.stream().distinct().mapToInt(s -> (int) Math.ceil(fontRenderer.getStringWidth(s))).max().orElse(0) + 7;
+        float height = list.size() * ENTRY_HEIGHT;
+        area = new WidgetArea.Rect(width, height);
         this.reservedSpace = reservedSpace;
         this.receiver = receiver;
         GlobalModuleManager.INSTANCE.addAnimation(new Animation(4, true)
-                .applyTo(new Applier(0, vHeight, value -> height = value)));
+                .applyTo(new Applier(0, height, value -> heightOffset = value)));
         GlobalModuleManager.INSTANCE.addAnimation(new Animation(3)
                 .applyTo(new Applier(1, value -> textAlpha = value))
                 .withDelay(3));
     }
 
-    public void draw() {
-        this.draw(0);
-    }
-
     @Override
-    public void draw(float currentTime) {
+    public void draw(float time) {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.enableAlphaTest();
@@ -92,20 +79,20 @@ public class DropDownMenu implements IWidget {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();
 
-        float left = x2 - width;
-        float bottom = upward ? y + vHeight : y + height;
+        float left = x1;
+        float bottom = upward ? y2 : y1 + heightOffset;
 
         bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
         if (upward) {
             bufferBuilder.pos(left, bottom, 0.0D).color(8, 8, 8, 160).endVertex();
             bufferBuilder.pos(x2, bottom, 0.0D).color(8, 8, 8, 160).endVertex();
-            bufferBuilder.pos(x2, bottom - height, 0.0D).color(8, 8, 8, 160).endVertex();
-            bufferBuilder.pos(left, bottom - height, 0.0D).color(8, 8, 8, 160).endVertex();
+            bufferBuilder.pos(x2, bottom - heightOffset, 0.0D).color(8, 8, 8, 160).endVertex();
+            bufferBuilder.pos(left, bottom - heightOffset, 0.0D).color(8, 8, 8, 160).endVertex();
         } else {
             bufferBuilder.pos(left, bottom, 0.0D).color(8, 8, 8, 160).endVertex();
             bufferBuilder.pos(x2, bottom, 0.0D).color(8, 8, 8, 160).endVertex();
-            bufferBuilder.pos(x2, y, 0.0D).color(8, 8, 8, 160).endVertex();
-            bufferBuilder.pos(left, y, 0.0D).color(8, 8, 8, 160).endVertex();
+            bufferBuilder.pos(x2, y1, 0.0D).color(8, 8, 8, 160).endVertex();
+            bufferBuilder.pos(left, y1, 0.0D).color(8, 8, 8, 160).endVertex();
         }
         tessellator.draw();
 
@@ -116,13 +103,13 @@ public class DropDownMenu implements IWidget {
         if (upward) {
             bufferBuilder.pos(left, bottom, 0.0D).color(255, 255, 255, 80).endVertex();
             bufferBuilder.pos(x2, bottom, 0.0D).color(255, 255, 255, 80).endVertex();
-            bufferBuilder.pos(x2, bottom - height, 0.0D).color(255, 255, 255, 80).endVertex();
-            bufferBuilder.pos(left, bottom - height, 0.0D).color(255, 255, 255, 80).endVertex();
+            bufferBuilder.pos(x2, bottom - heightOffset, 0.0D).color(255, 255, 255, 80).endVertex();
+            bufferBuilder.pos(left, bottom - heightOffset, 0.0D).color(255, 255, 255, 80).endVertex();
         } else {
             bufferBuilder.pos(left, bottom, 0.0D).color(255, 255, 255, 80).endVertex();
             bufferBuilder.pos(x2, bottom, 0.0D).color(255, 255, 255, 80).endVertex();
-            bufferBuilder.pos(x2, y, 0.0D).color(255, 255, 255, 80).endVertex();
-            bufferBuilder.pos(left, y, 0.0D).color(255, 255, 255, 80).endVertex();
+            bufferBuilder.pos(x2, y1, 0.0D).color(255, 255, 255, 80).endVertex();
+            bufferBuilder.pos(left, y1, 0.0D).color(255, 255, 255, 80).endVertex();
         }
         tessellator.draw();
         GL11.glDisable(GL11.GL_LINE_SMOOTH);
@@ -130,7 +117,7 @@ public class DropDownMenu implements IWidget {
         RenderSystem.enableTexture();
         for (int i = 0; i < list.size(); i++) {
             String text = list.get(i);
-            float cy = y + ENTRY_HEIGHT * i;
+            float cy = y1 + ENTRY_HEIGHT * i;
             if (i == hoveredIndex) {
                 RenderSystem.disableTexture();
                 bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
@@ -149,49 +136,49 @@ public class DropDownMenu implements IWidget {
         }
     }
 
-    public void setPos(float x2, float y, float height) {
+    @Override
+    public void setPos(float x2, float y) {
+        this.x1 = x2 - area.getWidth();
         this.x2 = x2;
-        this.y = y;
-        float vH = vHeight + reservedSpace;
-        upward = y + vH >= height;
+        this.y1 = y;
+        this.y2 = y + area.getHeight();
+        float vH = area.getHeight() + reservedSpace;
+        upward = y + vH >= GlobalModuleManager.INSTANCE.getWindowHeight();
         if (upward) {
-            this.y -= vH;
+            this.y1 -= vH;
+            this.y2 -= vH;
         }
     }
 
     @Override
     public void resize(int width, int height) {
-        if (!initResize) {
-            initResize = true;
+        if (!init) {
+            init = true;
             return;
         }
         GlobalModuleManager.INSTANCE.closePopup();
     }
 
     @Override
-    public void mouseMoved(double mouseX, double mouseY) {
-        if (isMouseOver(mouseX, mouseY)) {
-            int pIndex = (int) ((mouseY - y) / ENTRY_HEIGHT);
+    public boolean updateMouseHover(double mouseX, double mouseY) {
+        if (super.updateMouseHover(mouseX, mouseY)) {
+            int pIndex = (int) ((mouseY - y1) / ENTRY_HEIGHT);
             if (pIndex >= 0 && pIndex < list.size()) {
                 hoveredIndex = pIndex;
             } else {
                 hoveredIndex = -1;
             }
-        } else {
-            hoveredIndex = -1;
+            return true;
         }
+        hoveredIndex = -1;
+        return false;
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        if (mouseButton == 0 && hoveredIndex != -1) {
+    public boolean mouseClicked(int mouseButton) {
+        if (listening && mouseButton == 0 && hoveredIndex != -1) {
             receiver.accept(hoveredIndex);
         }
         return true;
-    }
-
-    @Override
-    public boolean isMouseOver(double mouseX, double mouseY) {
-        return mouseX >= x2 - width && mouseX <= x2 && mouseY >= y && mouseY <= y + height;
     }
 }
