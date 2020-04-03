@@ -21,7 +21,7 @@ package icyllis.modernui.gui.widget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.element.Element;
+import icyllis.modernui.gui.trash.Element;
 import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.system.ConstantsLibrary;
 import net.minecraft.client.gui.IGuiEventListener;
@@ -29,9 +29,9 @@ import org.lwjgl.opengl.GL11;
 
 import java.util.function.Function;
 
-public class CheckboxButton extends Element implements IGuiEventListener {
+public class CheckboxButton {
 
-    protected FixedShape shape;
+    /*protected WidgetArea shape;
 
     protected boolean mouseHovered = false;
 
@@ -43,12 +43,9 @@ public class CheckboxButton extends Element implements IGuiEventListener {
 
     protected float scale;
 
-    /**
-     * You need manually add this event listener
-     */
     public CheckboxButton(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer) {
         super(xResizer, yResizer);
-        shape = new FixedShape.Rect(8, 8);
+        shape = new WidgetArea.Rect(8, 8);
         scale = 0.25f;
     }
 
@@ -76,7 +73,7 @@ public class CheckboxButton extends Element implements IGuiEventListener {
     }
 
     @Override
-    public void draw(float currentTime) {
+    public void draw(float time) {
         DrawTools.fillFrameWithWhite(x, y, x + 8, y + 8, 0.51f, frameBrightness, 1);
         if (markAlpha > 0) {
             RenderSystem.enableBlend();
@@ -96,7 +93,7 @@ public class CheckboxButton extends Element implements IGuiEventListener {
     @Override
     public void mouseMoved(double mouseX, double mouseY) {
         boolean prev = mouseHovered;
-        mouseHovered = shape.isMouseInShape(x, y, mouseX, mouseY);
+        mouseHovered = shape.isMouseInArea(x, y, mouseX, mouseY);
         if (prev != mouseHovered) {
             if (mouseHovered) {
                 moduleManager.addAnimation(new Animation(2)
@@ -115,5 +112,5 @@ public class CheckboxButton extends Element implements IGuiEventListener {
             return true;
         }
         return false;
-    }
+    }*/
 }

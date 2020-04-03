@@ -20,7 +20,7 @@ package icyllis.modernui.gui.option;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.TextAlign;
-import icyllis.modernui.font.TextTools;
+import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -33,7 +33,7 @@ import org.lwjgl.opengl.GL11;
  */
 public abstract class AbstractOptionEntry {
 
-    protected IFontRenderer fontRenderer = TextTools.FONT_RENDERER;
+    protected IFontRenderer fontRenderer = FontTools.FONT_RENDERER;
 
     protected final SettingScrollWindow window;
 

@@ -19,7 +19,7 @@
 package icyllis.modernui.gui.option;
 
 import icyllis.modernui.font.TextAlign;
-import icyllis.modernui.gui.widget.DiscreteSlider;
+import icyllis.modernui.gui.widget.SliderDiscrete;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
 
 import java.util.function.Consumer;
@@ -27,7 +27,7 @@ import java.util.function.Function;
 
 public class DSliderOptionEntry extends AbstractOptionEntry {
 
-    protected DiscreteSlider slider;
+    protected SliderDiscrete slider;
 
     protected int minValue;
 
@@ -43,7 +43,7 @@ public class DSliderOptionEntry extends AbstractOptionEntry {
 
     public DSliderOptionEntry(SettingScrollWindow window, String title, int minValue, int maxValue, int currentValue, Consumer<Integer> saveOptionFunc, Function<Integer, String> displayStringFunc) {
         super(window, title);
-        slider = new DiscreteSlider(84, currentValue - minValue, maxValue - minValue, this::onDiscreteChange).setApplier(this::applyChange);
+        slider = new SliderDiscrete(84, currentValue - minValue, maxValue - minValue, this::onDiscreteChange).setApplier(this::applyChange);
         this.minValue = minValue;
         this.currentValue = currentValue;
         this.saveChangeFunc = saveOptionFunc;

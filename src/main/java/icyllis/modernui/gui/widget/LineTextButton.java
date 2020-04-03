@@ -18,47 +18,38 @@
 
 package icyllis.modernui.gui.widget;
 
-import com.google.common.collect.Lists;
 import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.DrawTools;
-import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.gui.module.PopupContextMenu;
 
-import java.util.function.Function;
 import java.util.function.Predicate;
 
-public class LineTextButton extends StateAnimatedButton {
+public class LineTextButton extends AnimatedWidget {
 
-    protected String text;
+    private final String text;
 
-    protected final float width, halfWidth;
+    private float sizeWOffset;
 
-    protected float widthOffset;
+    private float textBrightness = 0.7f;
 
-    protected float textBrightness = 0.7f;
+    private Runnable leftClickFunc;
 
-    protected float alpha = 0;
+    private Predicate<Integer> isSelectedFunc;
 
-    protected boolean lock = false;
-
-    public LineTextButton(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, String text, float width) {
-        super(xResizer, yResizer);
+    public LineTextButton(String text, float sizeW, Runnable leftClick, Predicate<Integer> isSelected) {
+        super(new WidgetArea.Rect(sizeW, 12));
         this.text = text;
-        this.width = width;
-        this.widthOffset = this.halfWidth = width / 2f;
-        this.shape = new FixedShape.Rect(width, 12);
-        moduleManager.addAnimation(new Animation(3)
-                .applyTo(new Applier(1f, value -> alpha = value))
-                .withDelay(1));
+        this.sizeWOffset = sizeW / 2f;
+        this.leftClickFunc = leftClick;
+        this.isSelectedFunc = isSelected;
     }
 
     @Override
-    public void draw(float currentTime) {
-        super.checkState();
-        fontRenderer.drawString(text, x + halfWidth, y + 2, textBrightness, alpha, TextAlign.CENTER);
-        DrawTools.fillRectWithColor(x + widthOffset, y + 11, x + width - widthOffset, y + 12, 0xffffff, alpha);
+    public void draw(float time) {
+        super.draw(time);
+        fontRenderer.drawString(text, x1 + area.getWidth() / 2f, y1 + 2, textBrightness, TextAlign.CENTER);
+        DrawTools.fillRectWithColor(x1 + sizeWOffset, y1 + 11, x2 - sizeWOffset, y1 + 12, 0xffffff, 1);
     }
 
     @Override
@@ -67,124 +58,54 @@ public class LineTextButton extends StateAnimatedButton {
     }
 
     @Override
-    protected void onOpen() {
-        super.onOpen();
-        moduleManager.addAnimation(new Animation(3)
-                .applyTo(new Applier(halfWidth, 0, value -> widthOffset = value),
+    protected void onAnimationOpen() {
+        manager.addAnimation(new Animation(3)
+                .applyTo(new Applier(area.getWidth() / 2f, 0, value -> sizeWOffset = value),
                         new Applier(textBrightness, 1, value -> textBrightness = value))
-                .onFinish(() -> openState = 2));
-    }
-
-    public void onModuleChanged(int id) {
-
+                .onFinish(() -> setOpenState(true)));
     }
 
     @Override
-    protected void onMouseHoverOn() {
-        if (!lock)
-            moduleManager.addAnimation(new Animation(3)
+    protected void onAnimationClose() {
+        manager.addAnimation(new Animation(3)
+                .applyTo(new Applier(0, area.getWidth() / 2f, value -> sizeWOffset = value),
+                        new Applier(textBrightness, 0.7f, value -> textBrightness = value))
+                .onFinish(() -> setOpenState(false)));
+    }
+
+    @Override
+    protected void onMouseHoverEnter() {
+        if (isNotLocked())
+            manager.addAnimation(new Animation(3)
                     .applyTo(new Applier(0.7f, 1, value -> textBrightness = value)));
     }
 
     @Override
-    protected void onMouseHoverOff() {
-        if (!lock)
-            moduleManager.addAnimation(new Animation(3)
+    protected void onMouseHoverExit() {
+        if (isNotLocked())
+            manager.addAnimation(new Animation(3)
                     .applyTo(new Applier(1, 0.7f, value -> textBrightness = value)));
     }
 
     @Override
-    protected void onClose() {
-        super.onClose();
-        moduleManager.addAnimation(new Animation(3)
-                .applyTo(new Applier(0, halfWidth, value -> widthOffset = value),
-                        new Applier(textBrightness, 0.7f, value -> textBrightness = value))
-                .onFinish(() -> openState = 0));
-    }
-
-    @Override
-    public void startClose() {
-        if (!lock)
-            super.startClose();
-    }
-
-    public static class A extends LineTextButton {
-
-        private int moduleID;
-
-        public A(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, String text, float width, int moduleID) {
-            super(xResizer, yResizer, text, width);
-            this.moduleID = moduleID;
-        }
-
-        @Override
-        public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-            if (mouseHovered && !lock && mouseButton == 0) {
-                GlobalModuleManager.INSTANCE.switchModule(moduleID);
+    public boolean mouseClicked(int mouseButton) {
+        if (listening && mouseButton == 0) {
+            if (isNotLocked()) {
+                leftClickFunc.run();
                 return true;
             }
-            return false;
         }
+        return false;
+    }
 
-        @Override
-        public void onModuleChanged(int id) {
-            if (id == moduleID) {
-                lock = true;
-                startOpen();
-            } else {
-                lock = false;
-                startClose();
-            }
+    public void onModuleChanged(int id) {
+        if (isSelectedFunc.test(id)) {
+            startOpenAnimation();
+            setLockState(true);
+        } else {
+            startCloseAnimation();
+            setLockState(false);
         }
     }
 
-    public static class B extends LineTextButton {
-
-        private Predicate<Integer> module;
-
-        private int id;
-
-        public B(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, String text, float width, Predicate<Integer> module) {
-            super(xResizer, yResizer, text, width);
-            this.module = module;
-        }
-
-        @Override
-        public void draw(float currentTime) {
-            super.draw(currentTime);
-        }
-
-        @Override
-        public void mouseMoved(double mouseX, double mouseY) {
-            super.mouseMoved(mouseX, mouseY);
-        }
-
-        @Override
-        public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-            if (mouseHovered && mouseButton == 0) {
-                DropDownMenu list = new DropDownMenu(Lists.newArrayList("Resource Packs", "Shaders", "Fonts", "Language"), id - 35, 12, this::menuActions);
-                list.setPos(x + width, y + 13, GlobalModuleManager.INSTANCE.getWindowHeight());
-                GlobalModuleManager.INSTANCE.openPopup(new PopupContextMenu(list), false);
-                return true;
-            }
-            return false;
-        }
-
-        private void menuActions(int index) {
-            if (index >= 0 && index <= 4)
-                GlobalModuleManager.INSTANCE.switchModule(index + 35);
-        }
-
-        @Override
-        public void onModuleChanged(int id) {
-            this.id = id;
-            if (module.test(id)) {
-                lock = true;
-                startOpen();
-            } else {
-                lock = false;
-                startClose();
-            }
-        }
-    }
 }

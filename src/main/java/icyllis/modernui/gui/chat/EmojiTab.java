@@ -24,7 +24,7 @@ import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.gui.util.Color3I;
 import icyllis.modernui.system.HistoryRecorder;
 import icyllis.modernui.system.ConstantsLibrary;
-import icyllis.modernui.font.TextTools;
+import icyllis.modernui.font.FontTools;
 import icyllis.modernui.gui.master.DrawTools;
 import javafx.util.Pair;
 import net.minecraft.client.Minecraft;
@@ -131,7 +131,7 @@ public class EmojiTab implements IGuiEventListener {
             GlStateManager.enableBlend();
             GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
             DrawTools.fillRectWithColor(rx, ry, rx + 11.5f, ry + 11.5f, 0x40d0d0d0);
-            TextTools.FONT_RENDERER.drawString(name, 18, y - 11, Color3I.GRAY_224, 1.0f, TextAlign.LEFT);
+            FontTools.FONT_RENDERER.drawString(name, 18, y - 11, Color3I.GRAY_224, 1.0f, TextAlign.LEFT);
             GlStateManager.disableBlend();
             GlStateManager.enableBlend();
             hoverEmoji = emoji;

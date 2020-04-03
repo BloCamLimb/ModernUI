@@ -22,30 +22,20 @@ import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.resources.ClientResourcePackInfo;
 import net.minecraft.client.shader.Shader;
 import net.minecraft.client.shader.ShaderDefault;
 import net.minecraft.client.shader.ShaderGroup;
-import net.minecraft.resources.IPackFinder;
-import net.minecraft.resources.PackCompatibility;
-import net.minecraft.resources.ResourcePackInfo;
-import net.minecraft.resources.ResourcePackList;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 
-import javax.annotation.Nonnull;
-import java.lang.reflect.Field;
 import java.util.List;
-import java.util.Map;
 
 @OnlyIn(Dist.CLIENT)
 public enum BlurHandler {
     INSTANCE;
 
-    private final ResourceLocation BLUR = new ResourceLocation("shaders/post/fade_in_blur.json");
+    private final ResourceLocation BLUR = new ResourceLocation("shaders/post/blur_fast.json");
 
     private boolean changingProgress = false;
 
@@ -58,13 +48,11 @@ public enum BlurHandler {
     public void blur(boolean hasGui) {
         if (Minecraft.getInstance().world != null) {
             GameRenderer gr = Minecraft.getInstance().gameRenderer;
-            if (hasGui) {
+            if (hasGui && !blurring) {
                 if (gr.getShaderGroup() == null) {
                     gr.loadShader(BLUR);
                     changingProgress = true;
                     blurring = true;
-                } else {
-                    ModernUI.LOGGER.debug("Can't load blur shader. Now active shader group: {}", gr.getShaderGroup().getShaderGroupName());
                 }
             } else if (blurring) {
                 gr.stopUseShader();
@@ -86,7 +74,7 @@ public enum BlurHandler {
 
     private void updateProgress(float value) {
         ShaderGroup sg = Minecraft.getInstance().gameRenderer.getShaderGroup();
-        if(sg == null)
+        if (sg == null)
             return;
         List<Shader> shaders = sg.listShaders;
         for (Shader s : shaders) {

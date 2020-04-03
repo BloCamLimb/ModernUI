@@ -49,9 +49,6 @@ public class ModernUI {
                 f = ModernUI_API.class.getDeclaredField("gui");
                 f.setAccessible(true);
                 f.set(ModernUI_API.INSTANCE, GuiManager.INSTANCE);
-                f = ModernUI_API.class.getDeclaredField("module");
-                f.setAccessible(true);
-                f.set(ModernUI_API.INSTANCE, GlobalModuleManager.INSTANCE);
                 ModernUI.LOGGER.debug(MARKER, "{} has been initialized", BlurHandler.INSTANCE.getDeclaringClass().getSimpleName()); // call constructor methods
             }
         } catch (NoSuchFieldException | IllegalAccessException | ClassCastException e) {

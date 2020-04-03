@@ -19,14 +19,13 @@
 package icyllis.modernui.gui.module;
 
 import com.google.common.collect.Lists;
+import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.option.*;
-import icyllis.modernui.gui.element.IElement;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import icyllis.modernui.system.ModIntegration;
 import icyllis.modernui.system.SettingsManager;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.settings.AmbientOcclusionStatus;
 import net.minecraft.client.settings.AttackIndicatorStatus;
@@ -37,7 +36,7 @@ import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class SettingVideo implements IGuiModule {
+public class SettingVideo extends Module {
 
     private static Supplier<List<String>> AO = () -> Lists.newArrayList(AmbientOcclusionStatus.values()).stream().map(m -> I18n.format(m.getResourceKey())).collect(Collectors.toCollection(ArrayList::new));
 
@@ -46,10 +45,6 @@ public class SettingVideo implements IGuiModule {
     private static Supplier<List<String>> PARTICLES = () -> Lists.newArrayList(ParticleStatus.values()).stream().map(m -> I18n.format(m.getResourceKey())).collect(Collectors.toCollection(ArrayList::new));
 
     private Minecraft minecraft;
-
-    private List<IElement> elements = new ArrayList<>();
-
-    private List<IGuiEventListener> listeners = new ArrayList<>();
 
     private SettingScrollWindow window;
 
@@ -64,8 +59,7 @@ public class SettingVideo implements IGuiModule {
         addAnimationsCategory();
         addPerformanceCategory();
         addOtherCategory();
-        elements.add(window);
-        listeners.add(window);
+        addWidget(window);
     }
 
     @SuppressWarnings("NoTranslation")
@@ -200,17 +194,8 @@ public class SettingVideo implements IGuiModule {
 
     @Override
     public void resize(int width, int height) {
-        getElements().forEach(e -> e.resize(width, height));
+        super.resize(width, height);
         guiScale.onResized();
     }
 
-    @Override
-    public List<? extends IElement> getElements() {
-        return elements;
-    }
-
-    @Override
-    public List<? extends IGuiEventListener> getEventListeners() {
-        return listeners;
-    }
 }

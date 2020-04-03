@@ -95,8 +95,16 @@ public interface IFontRenderer {
         return drawString(str, startX, startY, brightness, 1.0f, align);
     }
 
+    default float drawString(String str, float startX, float startY, TextAlign align) {
+        return drawString(str, startX, startY, 1.0f, 1.0f, align);
+    }
+
     default float drawString(String str, float startX, float startY, float brightness) {
         return drawString(str, startX, startY, brightness, 1.0f, TextAlign.LEFT);
+    }
+
+    default float drawString(String str, float startX, float startY) {
+        return drawString(str, startX, startY, 1.0f, 1.0f, TextAlign.LEFT);
     }
 
     /**

@@ -32,22 +32,22 @@ import org.lwjgl.glfw.GLFW;
 import javax.annotation.Nonnull;
 import java.util.function.Consumer;
 
-//TODO WIP with Container
+//TODO Not working on with container gui now
 @OnlyIn(Dist.CLIENT)
-public class ModernUIScreenG<G extends Container> extends ContainerScreen<G> {
+public final class ModernUIScreenG<G extends Container> extends ContainerScreen<G> {
 
     private GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
 
     @SuppressWarnings("ConstantConditions")
     public ModernUIScreenG(ITextComponent title, G container, Consumer<IModuleFactory> factory) {
         super(container, Minecraft.getInstance().player.inventory, title);
-        factory.accept(manager);
+        //factory.accept(manager);
     }
 
     @Override
     public void init(Minecraft minecraft, int width, int height) {
         super.init(minecraft, width, height);
-        manager.init(width, height);
+        manager.resize(width, height);
     }
 
     @Override
@@ -72,13 +72,6 @@ public class ModernUIScreenG<G extends Container> extends ContainerScreen<G> {
     }
 
     @Override
-    public void onClose() {
-        if (manager.onGuiClosed()) {
-            super.onClose();
-        }
-    }
-
-    @Override
     public boolean isPauseScreen() {
         return false;
     }
@@ -100,7 +93,7 @@ public class ModernUIScreenG<G extends Container> extends ContainerScreen<G> {
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double deltaX, double deltaY) {
-        return manager.mouseDragged(mouseX, mouseY, mouseButton, deltaX, deltaY);
+        return manager.mouseDragged(mouseX, mouseY, deltaX, deltaY);
     }
 
     @Override
@@ -110,13 +103,7 @@ public class ModernUIScreenG<G extends Container> extends ContainerScreen<G> {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (manager.keyPressed(keyCode, scanCode, modifiers)) {
-            return true;
-        } else if (keyCode == GLFW.GLFW_KEY_ESCAPE && shouldCloseOnEsc()) {
-            onClose();
-            return true;
-        }
-        return false;
+        return manager.keyPressed(keyCode, scanCode, modifiers);
     }
 
     @Override
@@ -125,7 +112,7 @@ public class ModernUIScreenG<G extends Container> extends ContainerScreen<G> {
     }
 
     @Override
-    public boolean charTyped(char ch, int modifiers) {
-        return manager.charTyped(ch, modifiers);
+    public boolean charTyped(char codePoint, int modifiers) {
+        return manager.charTyped(codePoint, modifiers);
     }
 }

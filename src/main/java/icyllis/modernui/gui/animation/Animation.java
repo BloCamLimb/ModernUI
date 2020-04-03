@@ -69,11 +69,11 @@ public class Animation implements IAnimation {
     }
 
     @Override
-    public void update(float currentTime) {
-        if (currentTime <= startTime) {
+    public void update(float time) {
+        if (time <= startTime) {
             return;
         }
-        float p = Math.min((currentTime - startTime) / duration, 1);
+        float p = Math.min((time - startTime) / duration, 1);
         if (useSine) {
             p = (float) Math.sin(p * Math.PI / 2);
         }

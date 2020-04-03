@@ -18,9 +18,15 @@
 
 package icyllis.modernui.system;
 
+import icyllis.modernui.gui.master.GlobalModuleManager;
+import icyllis.modernui.gui.module.IngameMenuHome;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screen.IngameMenuScreen;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.text.TranslationTextComponent;
+
+import java.util.Objects;
 
 public class RewrittenMethods {
 
@@ -28,6 +34,22 @@ public class RewrittenMethods {
     public static int calcGuiScale(int guiScaleIn) {
         int r = RewrittenMethods.calcGuiScales();
         return guiScaleIn > 0 ? MathHelper.clamp(guiScaleIn, r >> 8 & 0xf, r & 0xf) : r >> 4 & 0xf;
+    }
+
+    /** Minecraft **/
+    public static void displayInGameMenu(boolean pause) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.currentScreen == null) {
+            // If is single player and not open LAN world
+            boolean singleplayer = minecraft.isSingleplayer() && !Objects.requireNonNull(minecraft.getIntegratedServer()).getPublic();
+            pause &= singleplayer;
+            if (pause) {
+                minecraft.displayGuiScreen(new IngameMenuScreen(false));
+                minecraft.getSoundHandler().pause();
+            } else {
+                GlobalModuleManager.INSTANCE.openGuiScreen(new TranslationTextComponent("menu.game"), IngameMenuHome::new);
+            }
+        }
     }
 
     public static int calcGuiScales() {

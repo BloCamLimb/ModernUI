@@ -22,7 +22,6 @@ import icyllis.modernui.api.global.IContainerFactory;
 import icyllis.modernui.api.manager.IGuiManager;
 import icyllis.modernui.api.global.IModuleFactory;
 import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.gui.master.ModernUIScreen;
 import icyllis.modernui.gui.master.ModernUIScreenG;
 import net.minecraft.client.Minecraft;
 import net.minecraft.inventory.container.Container;
@@ -33,7 +32,6 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 
 import java.util.*;

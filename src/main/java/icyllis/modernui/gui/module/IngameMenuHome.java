@@ -18,55 +18,82 @@
 
 package icyllis.modernui.gui.module;
 
-import icyllis.modernui.gui.element.IElement;
-import icyllis.modernui.gui.element.MenuHomeBG;
+import icyllis.modernui.gui.background.MenuHomeBG;
 import icyllis.modernui.gui.master.GlobalModuleManager;
+import icyllis.modernui.gui.master.IModule;
+import icyllis.modernui.gui.master.ModuleGroup;
+import icyllis.modernui.gui.popup.ConfirmCallback;
+import icyllis.modernui.gui.popup.PopupConfirm;
 import icyllis.modernui.gui.widget.MenuButton;
-import icyllis.modernui.system.ConstantsLibrary;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.gui.screen.OptionsScreen;
-import net.minecraft.client.gui.screen.StatsScreen;
+import net.minecraft.client.gui.screen.*;
+import net.minecraft.client.resources.I18n;
+import net.minecraft.realms.RealmsBridge;
+import net.minecraft.util.text.TranslationTextComponent;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class IngameMenuHome implements IGuiModule {
+public class IngameMenuHome extends ModuleGroup {
 
-    private Minecraft minecraft;
-
-    private List<IElement> elements = new ArrayList<>();
+    private Minecraft minecraft = Minecraft.getInstance();
 
     private List<MenuButton> buttons = new ArrayList<>();
 
     public IngameMenuHome() {
-        minecraft = Minecraft.getInstance();
-        elements.add(new MenuHomeBG());
+        addBackground(new MenuHomeBG());
         Consumer<MenuButton> consumer = s -> {
-            elements.add(s);
+            addWidget(s);
             buttons.add(s);
         };
-        consumer.accept(new MenuButton.A(w -> 8f, h -> 8f, "Back to Game", ConstantsLibrary.ICONS, 32, 32, 128, 0, 0.5f, () -> minecraft.displayGuiScreen(null)));
-        consumer.accept(new MenuButton.B(w -> 8f, h -> 44f, "Advancements", ConstantsLibrary.ICONS, 32, 32, 32, 0, 0.5f, () -> {}, i -> i < 0));
-        consumer.accept(new MenuButton.B(w -> 8f, h -> 72f, "Statistics", ConstantsLibrary.ICONS, 32, 32, 64, 0, 0.5f, () -> minecraft.displayGuiScreen(new StatsScreen(null, minecraft.player.getStats())), i -> i == 1 || i == 2));
-        consumer.accept(new MenuButton.B(w -> 8f, h -> h - 92f, "Forge Mods", ConstantsLibrary.ICONS, 32, 32, 192, 0, 0.5f, () -> minecraft.displayGuiScreen(new OptionsScreen(null, minecraft.gameSettings)), i -> false));
-        consumer.accept(new MenuButton.B(w -> 8f, h -> h - 64f, "Settings", ConstantsLibrary.ICONS, 32, 32, 0, 0, 0.5f, () -> GlobalModuleManager.INSTANCE.switchModule(30), i -> i / 30 == 1));
-        consumer.accept(new MenuButton.A(w -> 8f, h -> h - 28f, "Exit to Main Menu", ConstantsLibrary.ICONS, 32, 32, 160, 0, 0.5f, () -> GlobalModuleManager.INSTANCE.openPopup(new PopupExitToTitle(), true)));
+        consumer.accept(new MenuButton(w -> 8f, h -> 8f, "Back to Game", 4,
+                GlobalModuleManager.INSTANCE::closeGuiScreen, -1));
+        consumer.accept(new MenuButton(w -> 8f, h -> 44f, "Advancements", 1,
+                () -> {}, 1));
+        consumer.accept(new MenuButton(w -> 8f, h -> 72f, "Statistics", 2,
+                () -> {}, 2));
+        consumer.accept(new MenuButton(w -> 8f, h -> h - 92f, "Forge Mods", 6,
+                () -> minecraft.displayGuiScreen(new OptionsScreen(null, minecraft.gameSettings)), 3));
+        consumer.accept(new MenuButton(w -> 8f, h -> h - 64f, "Settings", 0,
+                () -> switchChildModule(4), 4));
+        consumer.accept(new MenuButton(w -> 8f, h -> h - 28f, "Exit to Main Menu", 5,
+                this::exit, -1));
+        addChildModule(4, IngameMenuSetting::new);
+    }
+
+    private void exit() {
+        IModule popup = new PopupConfirm(this::confirmExit)
+                .setConfirmTitle(I18n.format("gui.modernui.button.exit"))
+                .setDescription("Are you sure you want to exit to main menu?");
+        GlobalModuleManager.INSTANCE.openPopup(popup, true);
+    }
+
+    private void confirmExit(int callback) {
+        if (minecraft.world == null || callback != ConfirmCallback.CONFIRM) {
+            return;
+        }
+        boolean singleplayer = minecraft.isIntegratedServerRunning();
+        boolean realmsConnected = minecraft.isConnectedToRealms();
+        minecraft.world.sendQuittingDisconnectingPacket();
+        if (singleplayer) {
+            minecraft.unloadWorld(new DirtMessageScreen(new TranslationTextComponent("menu.savingLevel")));
+        } else {
+            minecraft.unloadWorld();
+        }
+
+        if (singleplayer) {
+            minecraft.displayGuiScreen(new MainMenuScreen());
+        } else if (realmsConnected) {
+            RealmsBridge realmsbridge = new RealmsBridge();
+            realmsbridge.switchToRealms(new MainMenuScreen());
+        } else {
+            minecraft.displayGuiScreen(new MultiplayerScreen(new MainMenuScreen()));
+        }
     }
 
     @Override
-    public List<IElement> getElements() {
-        return elements;
-    }
-
-    @Override
-    public List<? extends IGuiEventListener> getEventListeners() {
-        return buttons;
-    }
-
-    @Override
-    public void onModuleChanged(int newID) {
-        buttons.forEach(e -> e.onModuleChanged(newID));
+    public void moduleChanged(int id) {
+        buttons.forEach(e -> e.onModuleChanged(id));
     }
 }
