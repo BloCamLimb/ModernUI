@@ -19,7 +19,7 @@
 package icyllis.modernui.gui.master;
 
 /**
- * Widget has its area and position, also can listen mouse events as default, most widely used in gui
+ * Widget has its rect area and position, also can listen mouse events as default, most widely used in gui
  */
 public interface IWidget extends IElement, IMouseListener {
 

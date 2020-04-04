@@ -91,7 +91,7 @@ public abstract class AnimatedElement implements IElement {
         this.lockState = lock;
     }
 
-    public final boolean isNotLocked() {
+    public final boolean canChangeState() {
         return !lockState;
     }
 }

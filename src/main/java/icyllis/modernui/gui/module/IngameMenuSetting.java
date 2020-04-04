@@ -54,7 +54,7 @@ public class IngameMenuSetting extends ModuleGroup {
         addChildModule(3, SettingAudio::new);
         addChildModule(4, SettingControls::new);
         addChildModule(5, SettingResourcePack::new);
-        // 6 7 8
+
     }
 
     @Override
@@ -65,7 +65,7 @@ public class IngameMenuSetting extends ModuleGroup {
 
     private void openAssetsMenu() {
         List<String> tabs = Lists.newArrayList("Resource Packs", "Shaders", "Fonts", "Language");
-        DropDownMenu list = new DropDownMenu(tabs, getCid() - 5, 12, this::assetsActions);
+        DropDownMenu list = new DropDownMenu(tabs, getCid() - 5, 12, this::assetsActions, DropDownMenu.Align.RIGHT);
         LineTextButton t = buttons.get(4);
         list.setPos(t.getRight() - 8, t.getBottom() + 1);
         GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(list), false);

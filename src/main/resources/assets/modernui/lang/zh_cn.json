@@ -1,6 +1,7 @@
 {
   "options.chat.visibility": "可见性",
 
+  "gui.modernui.button.exit": "退出",
   "gui.modernui.button.confirm": "确认%s",
 
   "gui.modernui.menu.back": "回到游戏",

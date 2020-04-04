@@ -88,8 +88,6 @@ dependencies {
     compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}:api")
 
     runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}")
-
-    //runtimeOnly fg.deobf("malte0811.nbtedit:NBTEdit:0.8.2")
 }
 
 processResources {

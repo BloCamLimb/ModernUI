@@ -18,54 +18,54 @@
 
 package icyllis.modernui.gui.scroll;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.master.GlobalModuleManager;
-import net.minecraft.client.gui.IGuiEventListener;
+import icyllis.modernui.gui.master.IDraggable;
+import icyllis.modernui.gui.master.IMouseListener;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import org.lwjgl.opengl.GL11;
 
 /**
- * Vertical
+ * This is a part of scroll window
  */
-public class ScrollBar implements IGuiEventListener {
+public class ScrollBar implements IMouseListener, IDraggable {
 
-    public int barThickness = 5;
+    public final int barThickness = 5;
 
-    protected final ScrollWindow<?> window;
+    private final ScrollWindow<?> window;
 
-    protected float x, y;
+    private float x, y;
 
-    private float renderY;
+    private float barY;
 
-    protected float barLength;
+    private float barLength;
 
-    protected float maxLength;
+    private float maxLength;
 
-    protected boolean visible;
+    private boolean visible;
 
-    protected float brightness = 0.5f;
+    private float brightness = 0.5f;
 
-    protected float startTime = 0;
+    private float startTime = 0;
 
-    protected boolean mouseHovered = false;
+    private boolean mouseHovered = false;
 
-    protected boolean isDragging = false;
+    private boolean isDragging = false;
+
+    private double draggingY = 0;
 
     public ScrollBar(ScrollWindow<?> window) {
         this.window = window;
     }
 
     public void draw(float currentTime) {
-
-        if (brightness > 0.5f && !mouseHovered) {
+        if (!mouseHovered && brightness > 0.5f) {
             if (currentTime > startTime) {
                 float change = (startTime - currentTime) / 40.0f;
                 brightness = Math.max(0.75f + change, 0.5f);
             }
         }
-
         if (!visible) {
             return;
         }
@@ -73,23 +73,20 @@ public class ScrollBar implements IGuiEventListener {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();
 
-        RenderSystem.color4f(0.06f, 0.06f, 0.06f, 0.15f);
+        bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+        bufferBuilder.pos(x, y + maxLength, 0.0D).color(16, 16, 16, 40).endVertex();
+        bufferBuilder.pos(x + barThickness, y + maxLength, 0.0D).color(16, 16, 16, 40).endVertex();
+        bufferBuilder.pos(x + barThickness, y, 0.0D).color(16, 16, 16, 40).endVertex();
+        bufferBuilder.pos(x, y, 0.0D).color(16, 16, 16, 40).endVertex();
+        tessellator.draw();
 
-        renderRect(tessellator, bufferBuilder, y, maxLength);
+        int b = (int) (brightness * 255);
 
-        RenderSystem.color4f(brightness, brightness, brightness, 0.5f);
-
-        renderRect(tessellator, bufferBuilder, renderY, barLength);
-
-        RenderSystem.clearCurrentColor();
-    }
-
-    private void renderRect(Tessellator tessellator, BufferBuilder bufferBuilder, float renderY, float barLength) {
-        bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION);
-        bufferBuilder.pos(x, renderY + barLength, 0.0D).endVertex();
-        bufferBuilder.pos(x + barThickness, renderY + barLength, 0.0D).endVertex();
-        bufferBuilder.pos(x + barThickness, renderY, 0.0D).endVertex();
-        bufferBuilder.pos(x, renderY, 0.0D).endVertex();
+        bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+        bufferBuilder.pos(x, barY + barLength, 0.0D).color(b, b, b, 128).endVertex();
+        bufferBuilder.pos(x + barThickness, barY + barLength, 0.0D).color(b, b, b, 128).endVertex();
+        bufferBuilder.pos(x + barThickness, barY, 0.0D).color(b, b, b, 128).endVertex();
+        bufferBuilder.pos(x, barY, 0.0D).color(b, b, b, 128).endVertex();
         tessellator.draw();
     }
 
@@ -115,17 +112,13 @@ public class ScrollBar implements IGuiEventListener {
         return maxLength - barLength;
     }
 
-    public boolean isMouseOnBar(double mouseX, double mouseY) {
-        return mouseX >= x && mouseX <= x + barThickness && mouseY >= renderY && mouseY <= renderY + barLength;
-    }
-
     public void setBarOffset(float percentage) {
-        renderY = y + getMaxDragLength() * percentage;
+        barY = y + getMaxDragLength() * percentage;
         wake();
     }
 
     @Override
-    public void mouseMoved(double mouseX, double mouseY) {
+    public boolean updateMouseHover(double mouseX, double mouseY) {
         if (visible) {
             boolean prev = mouseHovered;
             mouseHovered = isMouseOnBar(mouseX, mouseY);
@@ -136,24 +129,33 @@ public class ScrollBar implements IGuiEventListener {
                     startTime = GlobalModuleManager.INSTANCE.getAnimationTime() + 10.0f;
                 }
             }
+            return mouseHovered;
         }
+        return false;
+    }
+
+    private boolean isMouseOnBar(double mouseX, double mouseY) {
+        return mouseX >= x && mouseX <= x + barThickness && mouseY >= barY && mouseY <= barY + barLength;
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+    public boolean mouseClicked(int mouseButton) {
+        double mouseX = GlobalModuleManager.INSTANCE.getMouseX();
+        double mouseY = GlobalModuleManager.INSTANCE.getMouseY();
         if (visible && mouseButton == 0) {
             if (mouseHovered) {
                 isDragging = true;
+                draggingY = mouseY;
                 return true;
             } else {
                 boolean inWidth = mouseX >= x && mouseX <= x + barThickness;
                 if (inWidth) {
-                    if (mouseY >= y && mouseY < renderY) {
-                        float mov = transformPosToAmount((float) (renderY - mouseY));
+                    if (mouseY >= y && mouseY < barY) {
+                        float mov = transformPosToAmount((float) (barY - mouseY));
                         window.scrollSmoothly(-Math.min(60f, mov));
                         return true;
-                    } else if (mouseY > renderY + barLength && mouseY <= y + maxLength) {
-                        float mov = transformPosToAmount((float) (mouseY - renderY - barLength));
+                    } else if (mouseY > barY + barLength && mouseY <= y + maxLength) {
+                        float mov = transformPosToAmount((float) (mouseY - barY - barLength));
                         window.scrollSmoothly(Math.min(60f, mov));
                         return true;
                     }
@@ -163,30 +165,31 @@ public class ScrollBar implements IGuiEventListener {
         return false;
     }
 
-    @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
-        if (visible && isDragging) {
+    public boolean mouseReleased(int mouseButton) {
+        if (visible && mouseButton == 0 && isDragging) {
             isDragging = false;
             return true;
         }
         return false;
     }
 
-    @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double rmx, double rmy) {
+    public void mouseDragged(double mouseX, double mouseY, double deltaX, double deltaY) {
         if (visible && isDragging) {
-            window.scrollDirectly(transformPosToAmount((float) rmy));
-            return true;
+            if (barY >= y && barY - y <= getMaxDragLength()) {
+                draggingY += deltaY;
+            }
+            if (mouseY == draggingY) {
+                window.scrollDirectly(transformPosToAmount((float) deltaY));
+            }
         }
-        return false;
     }
 
     /**
      * Transform pos to scroll amount
-     * @param rm relative move (pos)
+     * @param relativePos relative move (pos)
      */
-    public float transformPosToAmount(float rm) {
-        return window.getMaxScrollAmount() * rm / getMaxDragLength();
+    public float transformPosToAmount(float relativePos) {
+        return window.getMaxScrollAmount() * relativePos / getMaxDragLength();
     }
 
     public void setMaxLength(float maxLength) {

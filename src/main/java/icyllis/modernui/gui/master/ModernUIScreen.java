@@ -35,8 +35,11 @@ public final class ModernUIScreen extends Screen {
 
     protected GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
 
-    public ModernUIScreen(ITextComponent title) {
+    public boolean pauseGame;
+
+    public ModernUIScreen(ITextComponent title, boolean pauseGame) {
         super(title);
+        this.pauseGame = pauseGame;
     }
 
     @Override
@@ -62,7 +65,7 @@ public final class ModernUIScreen extends Screen {
 
     @Override
     public boolean isPauseScreen() {
-        return false;
+        return pauseGame;
     }
 
     @Override

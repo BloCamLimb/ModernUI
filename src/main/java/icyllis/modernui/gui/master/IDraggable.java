@@ -19,4 +19,13 @@
 package icyllis.modernui.gui.master;
 
 public interface IDraggable {
+
+    /**
+     * Called when mouse moved
+     * @param mouseX mouse x pos
+     * @param mouseY mouse y pos
+     * @param deltaX mouse x change
+     * @param deltaY mouse y change
+     */
+    default void mouseDragged(double mouseX, double mouseY, double deltaX, double deltaY) {}
 }

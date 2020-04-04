@@ -38,16 +38,16 @@ public class TextFrameButton extends AnimatedWidget {
 
     public TextFrameButton(String text, Runnable onLeftClick) {
         this.text = text;
-        float sizeW = Math.max(28, fontRenderer.getStringWidth(text) + 6);
-        this.frameWidthOffset = sizeW;
-        this.frameHeightOffset = 13;
-        this.area = new WidgetArea.Rect(sizeW, 13);
+        this.width = Math.max(28, fontRenderer.getStringWidth(text) + 6);
+        this.frameWidthOffset = width;
+        this.height = 13;
+        this.frameHeightOffset = height;
         this.leftClickFunc = onLeftClick;
     }
 
     @Override
     public void draw(float time) {
-        fontRenderer.drawString(text, x1 + area.getWidth() / 2f, y1 + 2, textBrightness, TextAlign.CENTER);
+        fontRenderer.drawString(text, x1 + width / 2f, y1 + 2, textBrightness, TextAlign.CENTER);
         if (frameAlpha > 0)
             DrawTools.fillFrameWithColor(x1 - frameWidthOffset, y1 - frameHeightOffset, x2 + frameWidthOffset, y2 + frameHeightOffset, 0.51f, 0x808080, frameAlpha);
     }
@@ -60,7 +60,7 @@ public class TextFrameButton extends AnimatedWidget {
     @Override
     protected void onAnimationOpen() {
         manager.addAnimation(new Animation(2, true)
-                .applyTo(new Applier(area.getWidth() / 2f, 0, value -> frameWidthOffset = value),
+                .applyTo(new Applier(width / 2f, 0, value -> frameWidthOffset = value),
                         new Applier(6, 0, value -> frameHeightOffset = value)));
         manager.addAnimation(new Animation(2)
                 .applyTo(new Applier(1, value -> frameAlpha = value),
@@ -106,7 +106,7 @@ public class TextFrameButton extends AnimatedWidget {
             super.draw(time);
             if (counting) {
                 DrawTools.fillRectWithColor(x1, y1, x2, y2, 0x101010, 0.7f);
-                fontRenderer.drawString(displayCount + "s", x1 + area.getWidth() / 2f, y1 + 2, 1, TextAlign.CENTER);
+                fontRenderer.drawString(displayCount + "s", x1 + width / 2f, y1 + 2, 1, TextAlign.CENTER);
             }
         }
 
