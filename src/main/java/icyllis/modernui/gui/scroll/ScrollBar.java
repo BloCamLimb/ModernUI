@@ -31,9 +31,11 @@ import org.lwjgl.opengl.GL11;
  */
 public class ScrollBar implements IMouseListener, IDraggable {
 
-    public final int barThickness = 5;
+    private final GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
 
     private final ScrollWindow<?> window;
+
+    public final int barThickness = 5;
 
     private float x, y;
 
@@ -97,7 +99,7 @@ public class ScrollBar implements IMouseListener, IDraggable {
 
     protected void wake() {
         brightness = 0.75f;
-        startTime = GlobalModuleManager.INSTANCE.getAnimationTime() + 10.0f;
+        startTime = manager.getAnimationTime() + 10.0f;
     }
 
     public void setBarLength(float percentage) {
@@ -126,12 +128,20 @@ public class ScrollBar implements IMouseListener, IDraggable {
                 if (mouseHovered) {
                     wake();
                 } else {
-                    startTime = GlobalModuleManager.INSTANCE.getAnimationTime() + 10.0f;
+                    startTime = manager.getAnimationTime() + 10.0f;
                 }
             }
             return mouseHovered;
         }
         return false;
+    }
+
+    @Override
+    public void setMouseHoverExit() {
+        if (mouseHovered) {
+            mouseHovered = false;
+            startTime = manager.getAnimationTime() + 10.0f;
+        }
     }
 
     private boolean isMouseOnBar(double mouseX, double mouseY) {
@@ -140,23 +150,24 @@ public class ScrollBar implements IMouseListener, IDraggable {
 
     @Override
     public boolean mouseClicked(int mouseButton) {
-        double mouseX = GlobalModuleManager.INSTANCE.getMouseX();
-        double mouseY = GlobalModuleManager.INSTANCE.getMouseY();
+        double mouseX = manager.getMouseX();
+        double mouseY = manager.getMouseY();
         if (visible && mouseButton == 0) {
             if (mouseHovered) {
                 isDragging = true;
                 draggingY = mouseY;
+                window.setDraggable(this);
                 return true;
             } else {
                 boolean inWidth = mouseX >= x && mouseX <= x + barThickness;
                 if (inWidth) {
                     if (mouseY >= y && mouseY < barY) {
                         float mov = transformPosToAmount((float) (barY - mouseY));
-                        window.scrollSmoothly(-Math.min(60f, mov));
+                        window.scrollSmooth(-Math.min(60f, mov));
                         return true;
                     } else if (mouseY > barY + barLength && mouseY <= y + maxLength) {
                         float mov = transformPosToAmount((float) (mouseY - barY - barLength));
-                        window.scrollSmoothly(Math.min(60f, mov));
+                        window.scrollSmooth(Math.min(60f, mov));
                         return true;
                     }
                 }
@@ -165,21 +176,29 @@ public class ScrollBar implements IMouseListener, IDraggable {
         return false;
     }
 
+    @Override
+    public boolean isMouseHovered() {
+        return mouseHovered;
+    }
+
+    @Override
     public boolean mouseReleased(int mouseButton) {
         if (visible && mouseButton == 0 && isDragging) {
             isDragging = false;
+            window.setDraggable(null);
             return true;
         }
         return false;
     }
 
+    @Override
     public void mouseDragged(double mouseX, double mouseY, double deltaX, double deltaY) {
         if (visible && isDragging) {
             if (barY >= y && barY - y <= getMaxDragLength()) {
                 draggingY += deltaY;
             }
             if (mouseY == draggingY) {
-                window.scrollDirectly(transformPosToAmount((float) deltaY));
+                window.scrollDirect(transformPosToAmount((float) deltaY));
             }
         }
     }

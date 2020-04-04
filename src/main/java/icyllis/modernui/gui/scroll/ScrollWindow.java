@@ -20,6 +20,8 @@ package icyllis.modernui.gui.scroll;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.master.GlobalModuleManager;
+import icyllis.modernui.gui.master.IDraggable;
+import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.widget.FlexibleWidget;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -28,6 +30,7 @@ import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.math.MathHelper;
 import org.lwjgl.opengl.GL11;
 
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.function.Function;
 
@@ -37,17 +40,17 @@ public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget {
 
     protected final Function<Integer, Float> wResizer, hResizer;
 
-    private Minecraft minecraft;
+    protected final Module module;
+
+    protected final Minecraft minecraft;
 
     public final int borderThickness = 6;
 
     protected float centerX;
 
-    protected float visibleHeight; // except black fade out border * 2
+    protected float visibleHeight;
 
-    protected float scrollAmount = 0f; // scroll offset, > 0
-
-    private boolean mouseMoving = false;
+    protected float scrollAmount = 0f;
 
     protected final ScrollBar scrollbar;
 
@@ -55,8 +58,9 @@ public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget {
 
     protected final ScrollList<T> scrollList;
 
-    public ScrollWindow(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, Function<Integer, Float> wResizer, Function<Integer, Float> hResizer) {
+    public ScrollWindow(Module module, Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, Function<Integer, Float> wResizer, Function<Integer, Float> hResizer) {
         this.minecraft = Minecraft.getInstance();
+        this.module = module;
         this.xResizer = xResizer;
         this.yResizer = yResizer;
         this.wResizer = wResizer;
@@ -84,7 +88,10 @@ public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget {
 
         RenderSystem.enableTexture();
 
+        RenderSystem.pushMatrix();
+        RenderSystem.translatef(0, -getVisibleOffset(), 0);
         scrollList.draw(time);
+        RenderSystem.popMatrix();
 
         RenderSystem.disableTexture();
         RenderSystem.shadeModel(GL11.GL_SMOOTH);
@@ -116,7 +123,7 @@ public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget {
     }
 
     @Override
-    public void setPos(float x, float y) {
+    public final void setPos(float x, float y) {
         throw new RuntimeException("Scroll window doesn't allow to set pos");
     }
 
@@ -133,81 +140,65 @@ public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget {
         this.visibleHeight = this.height - borderThickness * 2;
         this.scrollbar.setPos(this.x2 - scrollbar.barThickness - 1, y1 + 1);
         this.scrollbar.setMaxLength(this.height - 2);
-        updateScrollBarLength();
-        updateScrollBarOffset(); // scrollSmoothly() not always call updateScrollBarOffset()
-        updateScrollList();
-        scrollSmoothly(0);
+        this.layoutList();
+        this.scrollSmooth(0);
+        // Am I cute?
     }
 
     @Override
     public boolean updateMouseHover(double mouseX, double mouseY) {
-        mouseHovered = isMouseOver(mouseX, mouseY);
-        scrollbar.updateMouseHover(mouseX, mouseY);
-        if (mouseHovered) {
-            scrollList.mouseMoved(mouseX, mouseY);
-            mouseMoving = true;
-        } else if (mouseMoving) {
-            scrollList.mouseMoved(mouseX, -1);
-            mouseMoving = false;
+        if (super.updateMouseHover(mouseX, mouseY)) {
+            if (scrollbar.updateMouseHover(mouseX, mouseY)) {
+                scrollList.setMouseHoverExit();
+            } else {
+                scrollList.updateMouseHover(mouseX, mouseY + getVisibleOffset());
+            }
+            return true;
         }
+        return false;
+    }
+
+    @Override
+    public void setMouseHoverExit() {
+        super.setMouseHoverExit();
+        scrollbar.setMouseHoverExit();
+        scrollList.setMouseHoverExit();
+    }
+
+    @Override
+    public boolean mouseClicked(int mouseButton) {
+        if (scrollbar.mouseClicked(mouseButton)) {
+            return true;
+        }
+        return scrollList.mouseClicked(mouseButton);
+    }
+
+    @Override
+    public boolean mouseReleased(int mouseButton) {
+        if (scrollbar.mouseReleased(mouseButton)) {
+            return true;
+        }
+        return scrollList.mouseReleased(mouseButton);
+    }
+
+    @Override
+    public boolean mouseScrolled(double amount) {
+        if (scrollbar.mouseScrolled(amount)) {
+            return true;
+        }
+        if (scrollList.mouseScrolled(amount)) {
+            return true;
+        }
+        scrollSmooth(Math.round(amount * -20f));
         return true;
     }
 
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        if (scrollbar.mouseClicked(mouseX, mouseY, mouseButton)) {
-            return true;
-        }
-        if (isMouseOver(mouseX, mouseY)) {
-            return scrollList.mouseClicked(mouseX, mouseY, mouseButton);
-        }
-        return false;
-    }
-
-    @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
-        if (scrollbar.mouseReleased(mouseX, mouseY, mouseButton)) {
-            return true;
-        }
-        if (isMouseOver(mouseX, mouseY)) {
-            return scrollList.mouseReleased(mouseX, mouseY, mouseButton);
-        }
-        return false;
-    }
-
-    @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double deltaX, double deltaY) {
-        if (scrollbar.mouseDragged(mouseX, mouseY, mouseButton, deltaX, deltaY)) {
-            return true;
-        }
-        if (isMouseOver(mouseX, mouseY)) {
-            return scrollList.mouseDragged(mouseX, mouseY, mouseButton, deltaX, deltaY);
-        }
-        return false;
-    }
-
-    @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double scrollAmount) {
-        if (isMouseOver(mouseX, mouseY)) {
-            if (scrollList.mouseScrolled(mouseX, mouseY, scrollAmount)) {
-                return true;
-            }
-            scrollSmoothly(Math.round(scrollAmount * -20f));
-            return true;
-        }
-        return false;
-    }
-
-    private boolean isMouseOver(double mouseX, double mouseY) {
-        return mouseX >= x1 && mouseX <= x2 && mouseY >= y1 && mouseY <= y2;
-    }
-
-    public void scrollSmoothly(float delta) {
+    protected void scrollSmooth(float delta) {
         float amount = MathHelper.clamp(controller.getTargetValue() + delta, 0, getMaxScrollAmount());
         controller.setTargetValue(amount);
     }
 
-    public void scrollDirectly(float delta) {
+    protected void scrollDirect(float delta) {
         float amount = Math.round(MathHelper.clamp(controller.getTargetValue() + delta, 0, getMaxScrollAmount()));
         controller.setTargetValueDirect(amount);
         callbackScrollAmount(amount);
@@ -250,16 +241,11 @@ public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget {
         return scrollAmount / max;
     }
 
-    public float getCenterX() {
-        return centerX;
-    }
-
     public void updateScrollBarOffset() {
         scrollbar.setBarOffset(getScrollPercentage());
     }
 
     public void updateScrollBarLength() {
-
         float v = getVisibleHeight();
         float t = getTotalHeight();
         boolean renderBar = t > v;
@@ -271,28 +257,25 @@ public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget {
     }
 
     public void updateScrollList() {
-        scrollList.updateVisible(getCenterX(), y1, getVisibleOffset(), y2);
+        scrollList.updateVisible(y1, getVisibleOffset(), y2);
     }
 
-    public void onTotalHeightChanged() {
+    public void layoutList() {
+        scrollList.layoutGroups(getLeft(), getRight(), getTop());
+        onTotalHeightChanged();
+    }
+
+    private void onTotalHeightChanged() {
         updateScrollBarLength();
         updateScrollBarOffset();
         updateScrollList();
-    }
-
-    public void addGroup(T entry) {
-        scrollList.addGroup(entry);
     }
 
     public void addGroups(Collection<T> collection) {
         scrollList.addGroups(collection);
     }
 
-    public void removeGroup(T entry) {
-        scrollList.removeGroup(entry);
-    }
-
-    public void clearGroup() {
-        scrollList.clearGroups();
+    public void setDraggable(@Nullable IDraggable draggable) {
+        module.setDraggable(draggable);
     }
 }

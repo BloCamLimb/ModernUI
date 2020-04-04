@@ -18,6 +18,7 @@
 
 package icyllis.modernui.gui.scroll;
 
+import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.option.OptionCategoryGroup;
 import net.minecraft.client.gui.IGuiEventListener;
 
@@ -26,40 +27,7 @@ import javax.annotation.Nullable;
 
 public class SettingScrollWindow extends ScrollWindow<OptionCategoryGroup> {
 
-    @Nullable
-    protected IGuiEventListener focused;
-
-    public SettingScrollWindow() {
-        super(w -> 40f, h -> 36f, w -> w - 80f, h -> h - 72f);
-    }
-
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        if (focused != null) {
-            if (focused.mouseClicked(mouseX, mouseY, mouseButton)) {
-                return true;
-            }
-        }
-        return super.mouseClicked(mouseX, mouseY, mouseButton);
-    }
-
-    @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (focused != null) {
-            return focused.keyPressed(keyCode, scanCode, modifiers);
-        }
-        return false;
-    }
-
-    @Override
-    public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-        if (focused != null) {
-            return focused.keyReleased(keyCode, scanCode, modifiers);
-        }
-        return false;
-    }
-
-    public void setFocused(@Nonnull IGuiEventListener eventListener) {
-        this.focused = eventListener;
+    public SettingScrollWindow(Module module) {
+        super(module, w -> 40f, h -> 36f, w -> w - 80f, h -> h - 72f);
     }
 }

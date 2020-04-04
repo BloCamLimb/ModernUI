@@ -22,6 +22,7 @@ import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.gui.scroll.ScrollGroup;
+import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.gui.util.Color3I;
 import net.minecraft.util.text.TextFormatting;
 
@@ -35,12 +36,10 @@ public class OptionCategoryGroup extends ScrollGroup {
 
     private String title;
 
-    private List<AbstractOptionEntry> entries;
+    private List<OptionEntry> entries;
 
-    private float bottomY;
-
-    public OptionCategoryGroup(String title, List<AbstractOptionEntry> entries) {
-        super(0);
+    public OptionCategoryGroup(ScrollWindow<?> window, String title, List<OptionEntry> entries) {
+        super(window);
         this.title = TextFormatting.BOLD + title;
         this.entries = entries;
         // 30 for title, 6 for end space. =w=
@@ -48,22 +47,21 @@ public class OptionCategoryGroup extends ScrollGroup {
     }
 
     @Override
-    public void updateVisible(float topY, float bottomY) {
-        this.bottomY = bottomY;
+    public void updateVisible(float top, float bottom) {
         // A category won't contain too much entries, so we don't need to optimize specially
     }
 
     @Override
-    public void draw(float currentTime) {
-        fontRenderer.drawString(title, centerX - 160, y + 14, Color3I.WHILE, 1.0f, TextAlign.LEFT);
-        int maxSize = Math.min((int) Math.ceil((bottomY - y) / ENTRY_HEIGHT), entries.size());
-        for (int i = 0; i < maxSize; i++) {
-            float cy = y + 30 + i * ENTRY_HEIGHT;
-            entries.get(i).draw(centerX, cy, currentTime);
+    public void draw(float time) {
+        fontRenderer.drawString(title, centerX - 160, y1 + 14, Color3I.WHILE, 1.0f, TextAlign.LEFT);
+        //int maxSize = Math.min((int) Math.ceil((bottomY - y) / ENTRY_HEIGHT), entries.size());
+        for (int i = 0; i < entries.size(); i++) {
+            float cy = y1 + 30 + i * ENTRY_HEIGHT;
+            entries.get(i).draw(centerX, cy, time);
         }
     }
 
-    @Override
+    /*@Override
     public void mouseMoved(double mouseX, double mouseY) {
         //ModernUI.LOGGER.info("Category Mouse Move {} {}", deltaCenterX, deltaY);
         double deltaCenterX = mouseX - centerX;
@@ -76,7 +74,7 @@ public class OptionCategoryGroup extends ScrollGroup {
                 int pIndex = (int) (rY / ENTRY_HEIGHT);
                 if (pIndex < entries.size()) {
                     for (int i = 0; i < entries.size(); i++) {
-                        AbstractOptionEntry entry = entries.get(i);
+                        OptionEntry entry = entries.get(i);
                         if (i == pIndex) {
                             entry.setMouseHovered(true);
                         } else {
@@ -98,14 +96,14 @@ public class OptionCategoryGroup extends ScrollGroup {
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         double ry = mouseY - y - 30;
         double deltaCenterX = mouseX - centerX;
-        /*if (ry >= 0) {
+        *//*if (ry >= 0) {
             int pIndex = (int) (ry / ENTRY_HEIGHT);
             if (pIndex >= 0 && pIndex < entries.size()) {
                 if (entries.get(pIndex).mouseClicked(deltaCenterX, ry - pIndex * ENTRY_HEIGHT, mouseX, mouseY, mouseButton)) {
                     return true;
                 }
             }
-        }*/
+        }*//*
         for (int i = 0; i < entries.size(); i++) {
             if (entries.get(i).mouseClicked(deltaCenterX, ry - i * ENTRY_HEIGHT, mouseX, mouseY, mouseButton)) {
                 return true;
@@ -118,14 +116,14 @@ public class OptionCategoryGroup extends ScrollGroup {
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
         double ry = mouseY - y - 30;
         double deltaCenterX = mouseX - centerX;
-        /*if (ry >= 0) {
+        *//*if (ry >= 0) {
             int pIndex = (int) (ry / ENTRY_HEIGHT);
             if (pIndex >= 0 && pIndex < entries.size()) {
                 if (entries.get(pIndex).mouseReleased(deltaCenterX, ry - pIndex * ENTRY_HEIGHT, mouseX, mouseY, mouseButton)) {
                     return true;
                 }
             }
-        }*/
+        }*//*
         for (int i = 0; i < entries.size(); i++) {
             if (entries.get(i).mouseReleased(deltaCenterX, ry - i * ENTRY_HEIGHT, mouseX, mouseY, mouseButton)) {
                 return true;
@@ -135,27 +133,7 @@ public class OptionCategoryGroup extends ScrollGroup {
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double deltaX, double deltaY) {
-        double ry = mouseY - y - 30;
-        double deltaCenterX = mouseX - centerX;
-        /*if (ry >= 0) {
-            int pIndex = (int) (ry / ENTRY_HEIGHT);
-            if (pIndex >= 0 && pIndex < entries.size()) {
-                if (entries.get(pIndex).mouseDragged(deltaCenterX, ry - pIndex * ENTRY_HEIGHT, mouseX, mouseY, mouseButton, deltaMouseX, deltaMouseY)) {
-                    return true;
-                }
-            }
-        }*/
-        for (int i = 0; i < entries.size(); i++) {
-            if (entries.get(i).mouseDragged(deltaCenterX, ry - i * ENTRY_HEIGHT, mouseX, mouseY, mouseButton, deltaX, deltaY)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
         return false;
-    }
+    }*/
 }

@@ -34,7 +34,7 @@ import net.minecraftforge.client.settings.KeyModifier;
 import java.util.Locale;
 import java.util.Objects;
 
-public class KeyBindingEntry extends AbstractOptionEntry {
+public class KeyBindingEntry extends OptionEntry {
 
     private KeyBinding keyBinding;
 
@@ -45,7 +45,7 @@ public class KeyBindingEntry extends AbstractOptionEntry {
     public KeyBindingEntry(SettingScrollWindow window, KeyBinding keyBinding, Runnable conflictsCallback) {
         super(window, I18n.format(keyBinding.getKeyDescription()));
         this.keyBinding = keyBinding;
-        this.inputBox = new KeyInputBox(window::setFocused, this::bindKey);
+        //this.inputBox = new KeyInputBox(window::setFocused, this::bindKey);
         //TODO tint text by conflict context, or maybe not?
         //this.conflictContext = keyBinding.getKeyConflictContext().toString();
         this.conflictsCallback = conflictsCallback;
@@ -66,9 +66,9 @@ public class KeyBindingEntry extends AbstractOptionEntry {
     @Override
     public boolean mouseClicked(double deltaCenterX, double deltaY, double mouseX, double mouseY, int mouseButton) {
         if (mouseHovered && mouseButton == 1) {
-            DropDownMenu list = new DropDownMenu(Lists.newArrayList("WIP =w="), -1, 16, this::menuActions);
-            list.setPos((float) mouseX, (float) (mouseY - deltaY + 18), GlobalModuleManager.INSTANCE.getWindowHeight());
-            GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(list), false);
+            //DropDownMenu list = new DropDownMenu(Lists.newArrayList("WIP =w="), -1, 16, this::menuActions);
+            //list.setPos((float) mouseX, (float) (mouseY - deltaY + 18), GlobalModuleManager.INSTANCE.getWindowHeight());
+            //GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(list), false);
             return true;
         }
         if (inputBox.mouseClicked(mouseX, mouseY, mouseButton)) {

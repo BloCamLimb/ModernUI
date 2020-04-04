@@ -40,6 +40,11 @@ public class ModuleGroup extends Module {
      */
     private int cid = 0, tid = 0;
 
+    /**
+     * If true, this module will draw over child module
+     */
+    protected boolean overDraw = false;
+
     public ModuleGroup() {
 
     }
@@ -64,6 +69,7 @@ public class ModuleGroup extends Module {
              }
         }
         child = childModules.getOrDefault(tid, () -> null).get();
+        GlobalModuleManager.INSTANCE.resizeModule(child);
         cid = tid;
         moduleChanged(cid);
     }
@@ -74,9 +80,16 @@ public class ModuleGroup extends Module {
 
     @Override
     public void draw(float time) {
-        super.draw(time);
-        if (child != null) {
-            child.draw(time);
+        if (overDraw) {
+            if (child != null) {
+                child.draw(time);
+            }
+            super.draw(time);
+        } else {
+            super.draw(time);
+            if (child != null) {
+                child.draw(time);
+            }
         }
     }
 
@@ -97,6 +110,7 @@ public class ModuleGroup extends Module {
         if (cid != tid && child != null ) {
             if (child.changingModule(tid)) {
                 child = childModules.getOrDefault(tid, () -> null).get();
+                GlobalModuleManager.INSTANCE.resizeModule(child);
                 cid = tid;
                 moduleChanged(cid);
             }

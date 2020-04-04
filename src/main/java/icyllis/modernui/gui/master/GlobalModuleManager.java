@@ -30,6 +30,7 @@ import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.glfw.GLFW;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
@@ -72,12 +73,9 @@ public enum GlobalModuleManager {
     private float animationTime = 0;
 
     public void openGuiScreen(ITextComponent title, Supplier<IModule> root) {
-        this.openGuiScreen(title, root, true);
-    }
-
-    public void openGuiScreen(ITextComponent title, Supplier<IModule> root, boolean pauseGame) {
-        minecraft.displayGuiScreen(new ModernUIScreen(title, pauseGame));
+        resetTicks();
         this.root = Objects.requireNonNull(root.get());
+        minecraft.displayGuiScreen(new ModernUIScreen(title));
     }
 
     public void closeGuiScreen() {
@@ -123,7 +121,7 @@ public enum GlobalModuleManager {
         runnables.add(event);
     }
 
-    void mouseMoved(double mouseX, double mouseY) {
+    protected void mouseMoved(double mouseX, double mouseY) {
         this.mouseX = mouseX;
         this.mouseY = mouseY;
         if (popup != null) {
@@ -133,7 +131,7 @@ public enum GlobalModuleManager {
         }
     }
 
-    boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+    protected boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if (popup != null) {
             return popup.mouseClicked(mouseX, mouseY, mouseButton);
         } else {
@@ -141,7 +139,7 @@ public enum GlobalModuleManager {
         }
     }
 
-    boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
+    protected boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
         if (popup != null) {
             return popup.mouseReleased(mouseX, mouseY, mouseButton);
         } else {
@@ -149,7 +147,7 @@ public enum GlobalModuleManager {
         }
     }
 
-    boolean mouseDragged(double mouseX, double mouseY, double deltaX, double deltaY) {
+    protected boolean mouseDragged(double mouseX, double mouseY, double deltaX, double deltaY) {
         if (popup != null) {
             return popup.mouseDragged(mouseX, mouseY, deltaX, deltaY);
         } else {
@@ -157,7 +155,7 @@ public enum GlobalModuleManager {
         }
     }
 
-    boolean mouseScrolled(double mouseX, double mouseY, double amount) {
+    protected boolean mouseScrolled(double mouseX, double mouseY, double amount) {
         if (popup != null) {
             return popup.mouseScrolled(mouseX, mouseY, amount);
         } else {
@@ -165,13 +163,14 @@ public enum GlobalModuleManager {
         }
     }
 
-    boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    protected boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
             if (popup != null) {
                 closePopup();
             } else {
                 closeGuiScreen();
             }
+            return true;
         } else if (keyCode == GLFW.GLFW_KEY_TAB) {
             boolean searchNext = !Screen.hasShiftDown();
             if (!this.changeFocus(searchNext)) {
@@ -186,7 +185,7 @@ public enum GlobalModuleManager {
         }
     }
 
-    boolean keyReleased(int keyCode, int scanCode, int modifiers) {
+    protected boolean keyReleased(int keyCode, int scanCode, int modifiers) {
         if (popup != null) {
             return popup.keyReleased(keyCode, scanCode, modifiers);
         } else {
@@ -194,7 +193,7 @@ public enum GlobalModuleManager {
         }
     }
 
-    boolean charTyped(char codePoint, int modifiers) {
+    protected boolean charTyped(char codePoint, int modifiers) {
         if (popup != null) {
             return popup.charTyped(codePoint, modifiers);
         } else {
@@ -214,14 +213,14 @@ public enum GlobalModuleManager {
         mouseMoved(mouseX, mouseY);
     }
 
-    void draw() {
+    protected void draw() {
         root.draw(animationTime);
         if (popup != null) {
             popup.draw(animationTime);
         }
     }
 
-    void resize(int width, int height) {
+    protected void resize(int width, int height) {
         this.width = width;
         this.height = height;
         root.resize(width, height);
@@ -234,7 +233,11 @@ public enum GlobalModuleManager {
         refreshMouse();
     }
 
-    void clear() {
+    public void resizeModule(IModule module) {
+        module.resize(width, height);
+    }
+
+    protected void clear() {
         animations.clear();
         runnables.clear();
         root = null;

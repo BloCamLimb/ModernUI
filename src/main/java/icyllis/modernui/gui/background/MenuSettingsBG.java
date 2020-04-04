@@ -23,6 +23,7 @@ import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.IElement;
 import icyllis.modernui.gui.trash.Element;
+import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
@@ -43,7 +44,7 @@ public class MenuSettingsBG implements IElement {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableTexture();
-        float x = 24, y = 16;
+        float x = 40, y = 16;
         int alpha = 96;
         bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
         bufferBuilder.pos(x, y + sizeH - 20, 0.0D).color(0, 0, 0, alpha).endVertex();
@@ -51,8 +52,8 @@ public class MenuSettingsBG implements IElement {
         bufferBuilder.pos(x + sizeW, y + 20, 0.0D).color(0, 0, 0, alpha).endVertex();
         bufferBuilder.pos(x, y + 20, 0.0D).color(0, 0, 0, alpha).endVertex();
         tessellator.draw();
-        bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
         alpha = 192;
+        bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
         bufferBuilder.pos(x, y + 20, 0.0D).color(0, 0, 0, alpha).endVertex();
         bufferBuilder.pos(x + sizeW, y + 20, 0.0D).color(0, 0, 0, alpha).endVertex();
         bufferBuilder.pos(x + sizeW, y, 0.0D).color(0, 0, 0, alpha).endVertex();

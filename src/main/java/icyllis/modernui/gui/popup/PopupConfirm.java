@@ -22,12 +22,11 @@ import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
+import icyllis.modernui.gui.background.Background;
+import icyllis.modernui.gui.background.ConfirmWindowBG;
 import icyllis.modernui.gui.layout.WidgetLayout;
-import icyllis.modernui.gui.master.DrawTools;
-import icyllis.modernui.gui.master.GlobalModuleManager;
+import icyllis.modernui.gui.master.*;
 import icyllis.modernui.font.TextAlign;
-import icyllis.modernui.gui.master.IModule;
-import icyllis.modernui.gui.master.IWidget;
 import icyllis.modernui.gui.widget.TextFrameButton;
 import net.minecraft.client.resources.I18n;
 
@@ -35,7 +34,7 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PopupConfirm implements IModule {
+public class PopupConfirm extends Module {
 
     private IFontRenderer fontRenderer = FontTools.FONT_RENDERER;
 
@@ -43,13 +42,9 @@ public class PopupConfirm implements IModule {
 
     private String[] desc = new String[0];
 
-    private List<IWidget> buttons = new ArrayList<>();
-
     private WidgetLayout buttonLayout;
 
     private float x, y;
-
-    private float frameSizeHOffset = 16;
 
     public PopupConfirm(ConfirmCallback callback) {
         this(callback, 0);
@@ -60,6 +55,9 @@ public class PopupConfirm implements IModule {
     }
 
     public PopupConfirm(ConfirmCallback callback, int seconds, @Nullable String alternative) {
+        addBackground(new Background(4));
+        addBackground(new ConfirmWindowBG());
+        List<IWidget> buttons = new ArrayList<>();
         if (seconds > 0) {
             buttons.add(new TextFrameButton.Countdown(I18n.format("gui.yes"), () -> callback.call(ConfirmCallback.CONFIRM), seconds));
         } else {
@@ -69,11 +67,8 @@ public class PopupConfirm implements IModule {
             buttons.add(new TextFrameButton(alternative, () -> callback.call(ConfirmCallback.ALTERNATIVE)));
         }
         buttons.add(new TextFrameButton(I18n.format("gui.no"), () -> callback.call(ConfirmCallback.CANCEL)));
+        buttons.forEach(this::addWidget);
         buttonLayout = new WidgetLayout(buttons, WidgetLayout.Direction.HORIZONTAL_NEGATIVE, 6);
-
-        GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
-        manager.addAnimation(new Animation(3, true)
-                .applyTo(new Applier(frameSizeHOffset, 80, value -> frameSizeHOffset = value)));
     }
 
     public PopupConfirm setFullTitle(String title) {
@@ -93,45 +88,27 @@ public class PopupConfirm implements IModule {
 
     @Override
     public void draw(float time) {
-        DrawTools.fillRectWithFrame(x, y, x + 180, y + frameSizeHOffset, 0.51f, 0x101010, 0.7f, 0x404040, 1);
-        DrawTools.fillRectWithColor(x, y, x + 180, y + 16, 0x080808, 0.85f);
+        super.draw(time);
         fontRenderer.drawString(title, x + 90, y + 4, TextAlign.CENTER);
         int i = 0;
         for (String t : desc) {
             fontRenderer.drawString(t, x + 8, y + 24 + i++ * 12);
         }
-        buttons.forEach(e -> e.draw(time));
     }
 
     @Override
     public void resize(int width, int height) {
+        super.resize(width, height);
         this.x = width / 2f - 90;
         this.y = height / 2f - 40;
         buttonLayout.layout(width / 2f + 80, height / 2f + 20);
     }
 
     @Override
-    public void tick(int ticks) {
-        buttons.forEach(e -> e.tick(ticks));
-    }
-
-    @Override
-    public boolean mouseMoved(double mouseX, double mouseY) {
-        for (IWidget widget : buttons) {
-            if (widget.updateMouseHover(mouseX, mouseY)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        for (IWidget widget : buttons) {
-            if (widget.isMouseHovered() && widget.mouseClicked(mouseButton)) {
-                GlobalModuleManager.INSTANCE.closePopup();
-                return true;
-            }
+        if (super.mouseClicked(mouseX, mouseY, mouseButton)) {
+            GlobalModuleManager.INSTANCE.closePopup();
+            return true;
         }
         return false;
     }

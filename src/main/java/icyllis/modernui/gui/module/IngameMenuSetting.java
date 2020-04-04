@@ -23,6 +23,7 @@ import icyllis.modernui.gui.layout.WidgetLayout;
 import icyllis.modernui.gui.master.*;
 import icyllis.modernui.gui.background.MenuSettingsBG;
 import icyllis.modernui.gui.popup.PopupMenu;
+import icyllis.modernui.gui.util.DelayedRunnable;
 import icyllis.modernui.gui.widget.DropDownMenu;
 import icyllis.modernui.gui.widget.LineTextButton;
 import net.minecraft.client.resources.I18n;
@@ -54,7 +55,7 @@ public class IngameMenuSetting extends ModuleGroup {
         addChildModule(3, SettingAudio::new);
         addChildModule(4, SettingControls::new);
         addChildModule(5, SettingResourcePack::new);
-
+        switchChildModule(1);
     }
 
     @Override

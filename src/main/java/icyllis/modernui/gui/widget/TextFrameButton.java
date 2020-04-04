@@ -23,6 +23,7 @@ import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.DrawTools;
+import icyllis.modernui.system.ModernUI;
 
 public class TextFrameButton extends AnimatedWidget {
 
@@ -47,6 +48,7 @@ public class TextFrameButton extends AnimatedWidget {
 
     @Override
     public void draw(float time) {
+        super.draw(time);
         fontRenderer.drawString(text, x1 + width / 2f, y1 + 2, textBrightness, TextAlign.CENTER);
         if (frameAlpha > 0)
             DrawTools.fillFrameWithColor(x1 - frameWidthOffset, y1 - frameHeightOffset, x2 + frameWidthOffset, y2 + frameHeightOffset, 0.51f, 0x808080, frameAlpha);

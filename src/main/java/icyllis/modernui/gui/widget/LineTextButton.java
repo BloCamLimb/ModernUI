@@ -22,6 +22,7 @@ import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.DrawTools;
+import icyllis.modernui.system.ModernUI;
 
 import java.util.function.Predicate;
 
@@ -77,14 +78,14 @@ public class LineTextButton extends AnimatedWidget {
     protected void onMouseHoverEnter() {
         if (canChangeState())
             manager.addAnimation(new Animation(3)
-                    .applyTo(new Applier(0.7f, 1, value -> textBrightness = value)));
+                    .applyTo(new Applier(textBrightness, 1, value -> textBrightness = value)));
     }
 
     @Override
     protected void onMouseHoverExit() {
         if (canChangeState())
             manager.addAnimation(new Animation(3)
-                    .applyTo(new Applier(1, 0.7f, value -> textBrightness = value)));
+                    .applyTo(new Applier(textBrightness, 0.7f, value -> textBrightness = value)));
     }
 
     @Override
@@ -103,8 +104,8 @@ public class LineTextButton extends AnimatedWidget {
             startOpenAnimation();
             setLockState(true);
         } else {
-            startCloseAnimation();
             setLockState(false);
+            startCloseAnimation();
         }
     }
 

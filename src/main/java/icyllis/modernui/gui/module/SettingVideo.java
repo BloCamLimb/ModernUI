@@ -52,19 +52,21 @@ public class SettingVideo extends Module {
 
     public SettingVideo() {
         this.minecraft = Minecraft.getInstance();
-        this.window = new SettingScrollWindow();
-        addVideoCategory();
-        addQualityCategory();
-        addDetailsCategory();
-        addAnimationsCategory();
-        addPerformanceCategory();
-        addOtherCategory();
+        this.window = new SettingScrollWindow(this);
+        List<OptionCategoryGroup> groups = new ArrayList<>();
+        groups.add(getVideoCategory());
+        groups.add(getQualityCategory());
+        groups.add(getDetailsCategory());
+        groups.add(getAnimationsCategory());
+        groups.add(getPerformanceCategory());
+        groups.add(getOtherCategory());
+        window.addGroups(groups);
         addWidget(window);
     }
 
     @SuppressWarnings("NoTranslation")
-    private void addVideoCategory() {
-        List<AbstractOptionEntry> list = new ArrayList<>();
+    private OptionCategoryGroup getVideoCategory() {
+        List<OptionEntry> list = new ArrayList<>();
         GameSettings gameSettings = minecraft.gameSettings;
 
         list.add(new DropdownOptionEntry(window, I18n.format("options.graphics"),
@@ -104,12 +106,11 @@ public class SettingVideo extends Module {
             //TODO optifine Dynamic Lights and Use VBOs
         }
 
-        OptionCategoryGroup category = new OptionCategoryGroup(I18n.format("gui.modernui.settings.category.video"), list);
-        window.addGroup(category);
+        return new OptionCategoryGroup(window, I18n.format("gui.modernui.settings.category.video"), list);
     }
 
-    private void addQualityCategory() {
-        List<AbstractOptionEntry> list = new ArrayList<>();
+    private OptionCategoryGroup getQualityCategory() {
+        List<OptionEntry> list = new ArrayList<>();
         GameSettings gameSettings = minecraft.gameSettings;
 
         DropdownOptionEntry ao = new DropdownOptionEntry(window, I18n.format("options.ao"), AO.get(),
@@ -134,12 +135,11 @@ public class SettingVideo extends Module {
             // Custom Fonts, Custom Colors, Connected Textures, Natural Textures, Custom Sky, Custom Items, Custom Entity Models, Custom Guis
         }
 
-        OptionCategoryGroup category = new OptionCategoryGroup(I18n.format("gui.modernui.settings.category.quality"), list);
-        window.addGroup(category);
+        return new OptionCategoryGroup(window, I18n.format("gui.modernui.settings.category.quality"), list);
     }
 
-    private void addDetailsCategory() {
-        List<AbstractOptionEntry> list = new ArrayList<>();
+    private OptionCategoryGroup getDetailsCategory() {
+        List<OptionEntry> list = new ArrayList<>();
         GameSettings gameSettings = minecraft.gameSettings;
 
         list.add(SettingsManager.ENTITY_SHADOWS.apply(window));
@@ -150,12 +150,11 @@ public class SettingVideo extends Module {
             //      Translucent Blocks, Held Item Tooltips, Dropped Items, Vignette, Alternate Blocks, Swamp Colors
         }
 
-        OptionCategoryGroup category = new OptionCategoryGroup(I18n.format("gui.modernui.settings.category.details"), list);
-        window.addGroup(category);
+        return new OptionCategoryGroup(window, I18n.format("gui.modernui.settings.category.details"), list);
     }
 
-    private void addAnimationsCategory() {
-        List<AbstractOptionEntry> list = new ArrayList<>();
+    private OptionCategoryGroup getAnimationsCategory() {
+        List<OptionEntry> list = new ArrayList<>();
         GameSettings gameSettings = minecraft.gameSettings;
 
         DropdownOptionEntry particles = new DropdownOptionEntry(window, I18n.format("options.particles"), PARTICLES.get(),
@@ -167,29 +166,26 @@ public class SettingVideo extends Module {
             //      Rain Splash, Portal Particles, Potion Particles, Dripping Water Lava, Animated Terrain, Animated Textures, Firework Particles
         }
 
-        OptionCategoryGroup category = new OptionCategoryGroup(I18n.format("gui.modernui.settings.category.animations"), list);
-        window.addGroup(category);
+        return new OptionCategoryGroup(window, I18n.format("gui.modernui.settings.category.animations"), list);
     }
 
-    private void addPerformanceCategory() {
-        List<AbstractOptionEntry> list = new ArrayList<>();
+    private OptionCategoryGroup getPerformanceCategory() {
+        List<OptionEntry> list = new ArrayList<>();
         GameSettings gameSettings = minecraft.gameSettings;
 
         if (ModIntegration.optifineLoaded) {
             //TODO optifine Smooth Fps, Smooth World, Fast Render, Fast Math, Chunk Updates, Chunk Updates Dynamic, Render Regions, Lazy Chunk Loading, Smart Animations
         }
 
-        OptionCategoryGroup category = new OptionCategoryGroup(I18n.format("gui.modernui.settings.category.performance"), list);
-        window.addGroup(category);
+        return new OptionCategoryGroup(window, I18n.format("gui.modernui.settings.category.performance"), list);
     }
 
-    private void addOtherCategory() {
-        List<AbstractOptionEntry> list = new ArrayList<>();
+    private OptionCategoryGroup getOtherCategory() {
+        List<OptionEntry> list = new ArrayList<>();
         GameSettings gameSettings = minecraft.gameSettings;
 
 
-        OptionCategoryGroup category = new OptionCategoryGroup(I18n.format("gui.modernui.settings.category.other"), list);
-        window.addGroup(category);
+        return new OptionCategoryGroup(window, I18n.format("gui.modernui.settings.category.other"), list);
     }
 
     @Override

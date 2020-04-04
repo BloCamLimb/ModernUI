@@ -20,7 +20,7 @@ package icyllis.modernui.gui.option;
 
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
 
-public class CheckboxOptionEntry extends AbstractOptionEntry {
+public class CheckboxOptionEntry extends OptionEntry {
 
     public CheckboxOptionEntry(SettingScrollWindow windowString, String optionTitle) {
         super(windowString, optionTitle);

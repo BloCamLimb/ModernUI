@@ -18,11 +18,14 @@
 
 package icyllis.modernui.gui.scroll;
 
+import icyllis.modernui.gui.master.IMouseListener;
+import icyllis.modernui.system.ModernUI;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class ScrollList<T extends ScrollGroup> {
+public class ScrollList<T extends ScrollGroup> implements IMouseListener {
 
     private final ScrollWindow<T> window;
 
@@ -36,200 +39,97 @@ public class ScrollList<T extends ScrollGroup> {
         this.window = window;
     }
 
-    public void updateVisible(float centerX, float topY, float yOffset, float bottomY) {
-        float baseY = topY - yOffset;
-        float maxHeight = bottomY - baseY;
-        boolean startDraw = false;
-        float accHeight;
+    protected void updateVisible(float topY, float yOffset, float bottomY) {
+        topY += yOffset;
+        bottomY += yOffset;
         visible.clear();
         for (T group : groups) {
-            if (!startDraw) {
-                accHeight = group.height + group.lastHeight;
-                if (accHeight >= yOffset) {
-                    startDraw = true;
-                }
+            if (group.getBottom() > topY) {
+                visible.add(group);
+                group.updateVisible(topY, bottomY);
             }
-            if (startDraw) {
-                if (group.lastHeight >= maxHeight) {
-                    break;
-                } else {
-                    visible.add(group);
-                }
+            if (group.getTop() >= bottomY) {
+                break;
             }
-        }
-        for (T entry : visible) {
-            entry.centerX = centerX;
-            entry.y = baseY + entry.lastHeight;
-            entry.updateVisible(topY, bottomY);
         }
     }
 
-    public void draw(float currentTime) {
-        for (T entry : visible) {
-            entry.draw(currentTime);
+    protected void draw(float time) {
+        for (T group : visible) {
+            group.draw(time);
         }
+    }
+
+    @Override
+    public boolean updateMouseHover(double mouseX, double mouseY) {
+        boolean result = false;
+        for (T group : visible) {
+            if (!result && group.updateMouseHover(mouseX, mouseY)) {
+                result = true;
+            } else {
+                group.setMouseHoverExit();
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public void setMouseHoverExit() {
+        visible.forEach(IMouseListener::setMouseHoverExit);
+    }
+
+    @Override
+    public boolean mouseClicked(int mouseButton) {
+        for (T group : visible) {
+            if (group.isMouseHovered() && group.mouseClicked(mouseButton)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean mouseReleased(int mouseButton) {
+        for (T group : visible) {
+            if (group.isMouseHovered() && group.mouseReleased(mouseButton)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean mouseScrolled(double amount) {
+        for (T group : visible) {
+            if (group.isMouseHovered() && group.mouseScrolled(amount)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
-     * Check if mouse is in scroll window width first!
+     * This method shouldn't be called (
      */
-    public void mouseMoved(double mouseX, double mouseY) {
-        //float baseY = topY - yOffset;
-        //double rMouseY = mouseY - baseY;
-        /*boolean finish = false;
-        for (T entry : entries) {
-            if (!finish) {
-                if (mouseY >= baseY && mouseY <= baseY + entry.height) {
-                    entry.mouseMoved(rcx, mouseY - baseY);
-                    entry.setMouseHovered(true);
-                    finish = true;
-                } else {
-                    baseY += entry.height;
-                    entry.setMouseHovered(false);
-                }
-            } else {
-                entry.setMouseHovered(false);
-            }
-        }*/
-        //visible.forEach(e -> e.mouseMoved(deltaCenterX, rMouseY - e.lastHeight, mouseX, mouseY));
-        visible.forEach(e -> e.mouseMoved(mouseX, mouseY));
+    @Override
+    public boolean isMouseHovered() {
+        return window.isMouseHovered();
     }
 
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        /*float baseY = topY - yOffset;
-        for (T entry : groups) {
-            if (mouseY >= baseY && mouseY <= baseY + entry.height) {
-                if (entry.mouseClicked(mouseX, mouseY, mouseButton)) {
-                    return true;
-                }
-                break;
-            } else {
-                baseY += entry.height;
-            }
-            if (baseY >= bottomY) {
-                break;
-            }
-        }*/
-        for (T entry : visible) {
-            if (entry.mouseClicked(mouseX, mouseY, mouseButton)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
-        //float baseY = topY - yOffset;
-        //double rMouseY = mouseY - baseY;
-        /*for (T entry : entries) {
-            if (mouseY >= baseY && mouseY <= baseY + entry.height) {
-                if (entry.mouseReleased(rcx, mouseY - baseY, mouseX, mouseY, mouseButton)) {
-                    return true;
-                }
-                break;
-            } else {
-                baseY += entry.height;
-            }
-            if (baseY >= bottomY) {
-                break;
-            }
-        }*/
-        for (T entry : visible) {
-            if (entry.mouseReleased(mouseX, mouseY, mouseButton)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double deltaX, double deltaY) {
-        //float baseY = topY - yOffset;
-        //double rMouseY = mouseY - baseY;
-        /*for (T entry : entries) {
-            if (mouseY >= baseY && mouseY <= baseY + entry.height) {
-                if (entry.mouseDragged(deltaCenterX, mouseY - baseY, mouseX, mouseY, mouseButton, deltaX, deltaY)) {
-                    return true;
-                }
-                break;
-            } else {
-                baseY += entry.height;
-            }
-            if (baseY >= bottomY) {
-                break;
-            }
-        }*/
-        for (T entry : visible) {
-            if (entry.mouseDragged(mouseX, mouseY, mouseButton, deltaX, deltaY)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        /*float baseY = topY - yOffset;
-        for (T entry : groups) {
-            if (mouseY >= baseY && mouseY <= baseY + entry.height) {
-                if (entry.mouseScrolled(rcx, mouseY - baseY, scroll)) {
-                    return true;
-                }
-                break;
-            } else {
-                baseY += entry.height;
-            }
-            if (baseY >= bottomY) {
-                break;
-            }
-        }*/
-        for (T entry : visible) {
-            if (entry.mouseScrolled(mouseX, mouseY, delta)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public float getMaxHeight() {
+    protected float getMaxHeight() {
         return maxHeight;
     }
 
-    public void addGroup(T entry) {
-        groups.add(entry);
-        maxHeight += entry.height;
-        resizeGroups();
-        window.onTotalHeightChanged();
-    }
-
-    public void addGroups(Collection<T> collection) {
+    protected void addGroups(Collection<T> collection) {
         groups.addAll(collection);
-        maxHeight += collection.stream().mapToInt(t -> t.height).sum();
-        resizeGroups();
-        window.onTotalHeightChanged();
+        maxHeight += collection.stream().mapToDouble(ScrollGroup::getHeight).sum();
     }
 
-    public void removeGroup(T entry) {
-        if (groups.remove(entry)) {
-            maxHeight -= entry.height;
+    protected void layoutGroups(float x1, float x2, float baseY) {
+        float ay = baseY;
+        for (T group : groups) {
+            group.setPos(x1, x2, ay);
+            ay += group.getHeight();
         }
-        resizeGroups();
-        window.onTotalHeightChanged();
-    }
-
-    private void resizeGroups() {
-        groups.forEach(e -> e.lastHeight = 0);
-        int size = groups.size();
-        if (size > 1) {
-            for (int i = 1; i < size; i++) {
-                T entry = groups.get(i);
-                T lastEntry = groups.get(i - 1);
-                entry.lastHeight = lastEntry.height + lastEntry.lastHeight;
-            }
-        }
-    }
-
-    public void clearGroups() {
-        groups.clear();
-        maxHeight = 0;
-        window.onTotalHeightChanged();
     }
 }

@@ -98,6 +98,14 @@ public abstract class FlexibleWidget implements IWidget {
         return false;
     }
 
+    @Override
+    public void setMouseHoverExit() {
+        if (mouseHovered) {
+            mouseHovered = false;
+            onMouseHoverExit();
+        }
+    }
+
     private boolean isMouseInArea(double mouseX, double mouseY) {
         return mouseX >= x1 && mouseX <= x2 && mouseY >= y1 && mouseY <= y2;
     }

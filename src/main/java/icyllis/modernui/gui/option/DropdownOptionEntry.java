@@ -39,7 +39,7 @@ import org.lwjgl.opengl.GL11;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class DropdownOptionEntry extends AbstractOptionEntry {
+public class DropdownOptionEntry extends OptionEntry {
 
     private TextureManager textureManager = Minecraft.getInstance().getTextureManager();
 
@@ -134,9 +134,9 @@ public class DropdownOptionEntry extends AbstractOptionEntry {
     @Override
     public boolean mouseClicked(double deltaCenterX, double deltaY, double mouseX, double mouseY, int mouseButton) {
         if (drawOptionFrame && mouseButton == 0) {
-            DropDownMenu menu = new DropDownMenu(optionNames, currentOptionIndex, 16, this::onValueChanged);
-            menu.setPos((float) (mouseX - deltaCenterX + 156), (float) (mouseY - deltaY + 18), GlobalModuleManager.INSTANCE.getWindowHeight());
-            GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(menu), false);
+            //DropDownMenu menu = new DropDownMenu(optionNames, currentOptionIndex, 16, this::onValueChanged);
+            //menu.setPos((float) (mouseX - deltaCenterX + 156), (float) (mouseY - deltaY + 18), GlobalModuleManager.INSTANCE.getWindowHeight());
+            //GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(menu), false);
             return true;
         }
         return super.mouseClicked(deltaCenterX, deltaY, mouseX, mouseY, mouseButton);

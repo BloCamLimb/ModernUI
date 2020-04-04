@@ -21,6 +21,7 @@ package icyllis.modernui.gui.widget;
 import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.gui.master.IWidget;
+import icyllis.modernui.system.ModernUI;
 
 public abstract class AnimatedWidget extends AnimatedElement implements IWidget {
 
@@ -98,6 +99,14 @@ public abstract class AnimatedWidget extends AnimatedElement implements IWidget 
             return mouseHovered;
         }
         return false;
+    }
+
+    @Override
+    public void setMouseHoverExit() {
+        if (mouseHovered) {
+            mouseHovered = false;
+            onMouseHoverExit();
+        }
     }
 
     private boolean isMouseInArea(double mouseX, double mouseY) {

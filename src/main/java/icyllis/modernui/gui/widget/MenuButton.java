@@ -40,6 +40,8 @@ public class MenuButton extends AnimatedWidget {
 
     private Function<Integer, Float> yResizer;
 
+    private AnimatedElement sideText = new SideTextAnimator(this);
+
     private float u;
 
     private float brightness = 0.5f;
@@ -78,6 +80,7 @@ public class MenuButton extends AnimatedWidget {
     @Override
     public void draw(float time) {
         super.draw(time);
+        sideText.draw(time);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableAlphaTest();
@@ -90,38 +93,39 @@ public class MenuButton extends AnimatedWidget {
         RenderSystem.scalef(0.5f, 0.5f, 1);
         textureManager.bindTexture(ConstantsLibrary.ICONS);
         DrawTools.blit(x1 * 2, y1 * 2, u, 0, 32, 32);
+        RenderSystem.popMatrix();
 
         // right side text box
-        if (isAnimationOpen()) {
+        if (sideText.isAnimationOpen()) {
             DrawTools.fillRectWithFrame(x1 + 27, y1 + 1, x1 + 31 + frameSizeW, y1 + 15, 0.51f, 0x000000, 0.4f * frameAlpha, 0x404040, 0.8f * frameAlpha);
             fontRenderer.drawString(text, x1 + 31, y1 + 4, Color3I.WHILE, textAlpha, TextAlign.LEFT);
         }
-
-        RenderSystem.popMatrix();
     }
 
     @Override
     protected void onAnimationOpen() {
-        float textLength = fontRenderer.getStringWidth(text);
         manager.addAnimation(new Animation(4)
-                .applyTo(new Applier(0.5f, 1.0f, value -> brightness = value)));
-        manager.addAnimation(new Animation(3, true)
-                .applyTo(new Applier(-4.0f, textLength + 4.0f, value -> frameSizeW = value)));
-        manager.addAnimation(new Animation(3)
-                .applyTo(new Applier(1.0f, value -> frameAlpha = value)));
-        manager.addAnimation(new Animation(3)
-                .applyTo(new Applier(1.0f, value -> textAlpha = value))
-                .withDelay(2)
+                .applyTo(new Applier(0.5f, 1.0f, value -> brightness = value))
                 .onFinish(() -> setOpenState(true)));
     }
 
     @Override
     protected void onAnimationClose() {
         manager.addAnimation(new Animation(4)
-                .applyTo(new Applier(1.0f, 0.5f, value -> brightness = value)));
-        manager.addAnimation(new Animation(5)
-                .applyTo(new Applier(1.0f, 0.0f, value -> textAlpha = frameAlpha = value))
+                .applyTo(new Applier(1.0f, 0.5f, value -> brightness = value))
                 .onFinish(() -> setOpenState(false)));
+    }
+
+    @Override
+    protected void onMouseHoverEnter() {
+        super.onMouseHoverEnter();
+        sideText.startOpenAnimation();
+    }
+
+    @Override
+    protected void onMouseHoverExit() {
+        super.onMouseHoverExit();
+        sideText.startCloseAnimation();
     }
 
     @Override
@@ -131,7 +135,59 @@ public class MenuButton extends AnimatedWidget {
         setPos(x, y);
     }
 
+    public float getTextLength() {
+        return fontRenderer.getStringWidth(text);
+    }
+
+    public void setFrameAlpha(float frameAlpha) {
+        this.frameAlpha = frameAlpha;
+    }
+
+    public void setTextAlpha(float textAlpha) {
+        this.textAlpha = textAlpha;
+    }
+
+    public void setFrameSizeW(float frameSizeW) {
+        this.frameSizeW = frameSizeW;
+    }
+
     public void onModuleChanged(int id) {
         setLockState(this.id == id);
+    }
+
+    private static class SideTextAnimator extends AnimatedElement {
+
+        private final MenuButton instance;
+
+        public SideTextAnimator(MenuButton instance) {
+            this.instance = instance;
+        }
+
+        @Override
+        public void draw(float time) {
+            super.draw(time);
+        }
+
+        @Override
+        protected void onAnimationOpen() {
+            manager.addAnimation(new Animation(3, true)
+                    .applyTo(new Applier(-4.0f, instance.getTextLength() + 4.0f, instance::setFrameSizeW)));
+            manager.addAnimation(new Animation(3)
+                    .applyTo(new Applier(1.0f, instance::setFrameAlpha)));
+            manager.addAnimation(new Animation(3)
+                    .applyTo(new Applier(1.0f, instance::setTextAlpha))
+                    .withDelay(2)
+                    .onFinish(() -> setOpenState(true)));
+        }
+
+        @Override
+        protected void onAnimationClose() {
+            manager.addAnimation(new Animation(5)
+                    .applyTo(new Applier(1.0f, 0.0f, v -> {
+                        instance.setTextAlpha(v);
+                        instance.setFrameAlpha(v);
+                    }))
+                    .onFinish(() -> setOpenState(false)));
+        }
     }
 }

@@ -18,45 +18,74 @@
 
 package icyllis.modernui.gui.scroll;
 
-public abstract class ScrollGroup {
+import icyllis.modernui.gui.master.IMouseListener;
 
-    public int height; // change this only in constructor
+public abstract class ScrollGroup implements IMouseListener {
 
-    public float lastHeight; // you can't change this manually!
+    protected final ScrollWindow<?> window;
 
-    public float centerX, y; // you can't change this manually!
+    protected float x1, y1;
 
-    public ScrollGroup(int height) {
+    protected float x2, y2;
+
+    protected float centerX;
+
+    protected float height;
+
+    protected boolean mouseHovered = false;
+
+    public ScrollGroup(ScrollWindow<?> window) {
+        this.window = window;
+    }
+
+    public ScrollGroup(ScrollWindow<?> window, int height) {
+        this.window = window;
         this.height = height;
     }
 
-    public abstract void updateVisible(float topY, float bottomY);
+    public final void setPos(float x1, float x2, float y) {
+        this.x1 = x1;
+        this.x2 = x2;
+        this.centerX = (x1 + x2) / 2f;
+        this.y1 = y;
+        this.y2 = y + height;
+    }
 
-    public abstract void draw(float currentTime);
+    public final float getHeight() {
+        return height;
+    }
 
-    /**
-     * Called when mouseY move to this height range, whatever mouseX is
-     * Use less this
-     */
-    public abstract void mouseMoved(double mouseX, double mouseY);
+    public final float getTop() {
+        return y1;
+    }
 
-    /**
-     * Same as above
-     */
-    public abstract boolean mouseClicked(double mouseX, double mouseY, int mouseButton);
+    public final float getBottom() {
+        return y2;
+    }
 
-    /**
-     * Same as above
-     */
-    public abstract boolean mouseReleased(double mouseX, double mouseY, int mouseButton);
+    public abstract void updateVisible(float top, float bottom);
 
-    /**
-     * Same as above
-     */
-    public abstract boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double deltaX, double deltaY);
-    /**
-     * Same as above
-     */
-    public abstract boolean mouseScrolled(double mouseX, double mouseY, double delta);
+    public abstract void draw(float time);
 
+    @Override
+    public boolean updateMouseHover(double mouseX, double mouseY) {
+        mouseHovered = isMouseInArea(mouseX, mouseY);
+        return mouseHovered;
+    }
+
+    private boolean isMouseInArea(double mouseX, double mouseY) {
+        return mouseX >= x1 && mouseX <= x2 && mouseY >= y1 && mouseY <= y2;
+    }
+
+    @Override
+    public void setMouseHoverExit() {
+        if (mouseHovered) {
+            mouseHovered = false;
+        }
+    }
+
+    @Override
+    public boolean isMouseHovered() {
+        return mouseHovered;
+    }
 }

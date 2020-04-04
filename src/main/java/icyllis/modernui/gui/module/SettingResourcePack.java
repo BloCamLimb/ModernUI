@@ -18,17 +18,8 @@
 
 package icyllis.modernui.gui.module;
 
-import icyllis.modernui.gui.master.IElement;
-import icyllis.modernui.gui.master.IModule;
 import icyllis.modernui.gui.master.Module;
-import icyllis.modernui.gui.scroll.ResourceScrollWindow;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.IGuiEventListener;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class SettingResourcePack extends Module {
 
