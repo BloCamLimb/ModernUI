@@ -72,7 +72,11 @@ public enum GlobalModuleManager {
     private float animationTime = 0;
 
     public void openGuiScreen(ITextComponent title, Supplier<IModule> root) {
-        minecraft.displayGuiScreen(new ModernUIScreen(title));
+        this.openGuiScreen(title, root, true);
+    }
+
+    public void openGuiScreen(ITextComponent title, Supplier<IModule> root, boolean pauseGame) {
+        minecraft.displayGuiScreen(new ModernUIScreen(title, pauseGame));
         this.root = Objects.requireNonNull(root.get());
     }
 
@@ -276,6 +280,14 @@ public enum GlobalModuleManager {
 
     public int getWindowHeight() {
         return height;
+    }
+
+    public double getMouseX() {
+        return mouseX;
+    }
+
+    public double getMouseY() {
+        return mouseY;
     }
 
     public void setExtraData(PacketBuffer extraData) {

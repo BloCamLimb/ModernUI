@@ -18,6 +18,7 @@
 
 package icyllis.modernui.system;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.module.IngameMenuHome;
 import net.minecraft.client.MainWindow;
@@ -28,6 +29,7 @@ import net.minecraft.util.text.TranslationTextComponent;
 
 import java.util.Objects;
 
+@SuppressWarnings("unused")
 public class RewrittenMethods {
 
     /** MainWindow **/
@@ -37,17 +39,17 @@ public class RewrittenMethods {
     }
 
     /** Minecraft **/
-    public static void displayInGameMenu(boolean pause) {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.currentScreen == null) {
-            // If is single player and not open LAN world
-            boolean singleplayer = minecraft.isSingleplayer() && !Objects.requireNonNull(minecraft.getIntegratedServer()).getPublic();
-            pause &= singleplayer;
-            if (pause) {
-                minecraft.displayGuiScreen(new IngameMenuScreen(false));
-                minecraft.getSoundHandler().pause();
-            } else {
-                GlobalModuleManager.INSTANCE.openGuiScreen(new TranslationTextComponent("menu.game"), IngameMenuHome::new);
+    public static void displayInGameMenu(boolean pauseGame) {
+        if (RenderSystem.isOnRenderThread()) {
+            Minecraft minecraft = Minecraft.getInstance();
+            if (minecraft.currentScreen == null) {
+                // If press F3 + Esc and is single player and not open LAN world
+                if (pauseGame && minecraft.isSingleplayer() && !Objects.requireNonNull(minecraft.getIntegratedServer()).getPublic()) {
+                    minecraft.displayGuiScreen(new IngameMenuScreen(false));
+                    minecraft.getSoundHandler().pause();
+                } else {
+                    GlobalModuleManager.INSTANCE.openGuiScreen(new TranslationTextComponent("menu.game"), IngameMenuHome::new);
+                }
             }
         }
     }

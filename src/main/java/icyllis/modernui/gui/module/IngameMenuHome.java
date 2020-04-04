@@ -47,7 +47,7 @@ public class IngameMenuHome extends ModuleGroup {
             addWidget(s);
             buttons.add(s);
         };
-        consumer.accept(new MenuButton(w -> 8f, h -> 8f, "Back to Game", 4,
+        consumer.accept(new MenuButton(w -> 8f, h -> 8f, I18n.format("gui.modernui.menu.back"), 4,
                 GlobalModuleManager.INSTANCE::closeGuiScreen, -1));
         consumer.accept(new MenuButton(w -> 8f, h -> 44f, "Advancements", 1,
                 () -> {}, 1));

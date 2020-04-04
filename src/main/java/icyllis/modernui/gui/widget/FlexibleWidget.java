@@ -23,7 +23,7 @@ import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.IWidget;
 
-public abstract class Widget implements IWidget {
+public abstract class FlexibleWidget implements IWidget {
 
     protected GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
 
@@ -33,55 +33,51 @@ public abstract class Widget implements IWidget {
 
     protected float x2, y2;
 
+    protected float width, height;
+
     protected boolean listening = true;
 
     protected boolean mouseHovered = false;
 
-    protected WidgetArea.Rect area;
+    public FlexibleWidget() {
 
-    public Widget() {
-
-    }
-
-    public Widget(WidgetArea.Rect area) {
-        this.area = area;
     }
 
     @Override
     public void setPos(float x, float y) {
         this.x1 = x;
-        this.x2 = x + area.getWidth();
+        this.x2 = x + width;
         this.y1 = y;
-        this.y2 = y + area.getHeight();
+        this.y2 = y + height;
     }
 
     @Override
-    public float getWidth() {
-        return area.getWidth();
+    public final float getWidth() {
+        return width;
     }
 
     @Override
-    public float getHeight() {
-        return area.getHeight();
+    public final float getHeight() {
+        return height;
     }
 
     @Override
-    public float getLeft() {
+    public final float getLeft() {
         return x1;
     }
 
     @Override
-    public float getRight() {
+    public final float getRight() {
         return x2;
     }
 
     @Override
-    public float getTop() {
+    public final float getTop() {
         return y1;
     }
 
     @Override
-    public float getBottom() {
+    public final float getBottom() {
         return y2;
     }
 
@@ -89,7 +85,7 @@ public abstract class Widget implements IWidget {
     public boolean updateMouseHover(double mouseX, double mouseY) {
         if (listening) {
             boolean prev = mouseHovered;
-            mouseHovered = area.isMouseInArea(x1, y1, mouseX, mouseY);
+            mouseHovered = isMouseInArea(mouseX, mouseY);
             if (prev != mouseHovered) {
                 if (mouseHovered) {
                     onMouseHoverEnter();
@@ -100,6 +96,10 @@ public abstract class Widget implements IWidget {
             return mouseHovered;
         }
         return false;
+    }
+
+    private boolean isMouseInArea(double mouseX, double mouseY) {
+        return mouseX >= x1 && mouseX <= x2 && mouseY >= y1 && mouseY <= y2;
     }
 
     @Override

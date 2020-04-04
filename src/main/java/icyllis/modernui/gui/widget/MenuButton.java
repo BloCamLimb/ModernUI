@@ -55,7 +55,7 @@ public class MenuButton extends AnimatedWidget {
     private int id;
 
     public MenuButton(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, String text, int index, Runnable leftClick, int id) {
-        super(new WidgetArea.Rect(16, 16));
+        super(16, 16);
         this.xResizer = xResizer;
         this.yResizer = yResizer;
         this.text = text;
@@ -67,7 +67,7 @@ public class MenuButton extends AnimatedWidget {
     @Override
     public boolean mouseClicked(int mouseButton) {
         if (listening && mouseButton == 0) {
-            if (isNotLocked()) {
+            if (canChangeState()) {
                 leftClickFunc.run();
                 return true;
             }

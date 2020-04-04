@@ -19,19 +19,62 @@
 package icyllis.modernui.gui.popup;
 
 import icyllis.modernui.gui.master.GlobalModuleManager;
+import icyllis.modernui.gui.master.IModule;
 import icyllis.modernui.gui.master.IWidget;
 import icyllis.modernui.gui.master.Module;
 
-public class PopupMenu extends Module {
+/**
+ * Open a drop down menu or context menu, resize and mouse release will close this popup
+ */
+public class PopupMenu implements IModule {
+
+    private final IWidget menu;
+
+    private boolean init = false;
 
     public PopupMenu(IWidget menu) {
-        addWidget(menu);
+        this.menu = menu;
+    }
+
+    @Override
+    public void draw(float time) {
+        menu.draw(time);
+    }
+
+    @Override
+    public void resize(int width, int height) {
+        if (!init) {
+            init = true;
+            return;
+        }
+        GlobalModuleManager.INSTANCE.closePopup();
+    }
+
+    @Override
+    public void tick(int ticks) {
+        menu.tick(ticks);
+    }
+
+    @Override
+    public boolean mouseMoved(double mouseX, double mouseY) {
+        return menu.updateMouseHover(mouseX, mouseY);
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        if (menu.isMouseHovered()) {
+            return menu.mouseClicked(mouseButton);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
         GlobalModuleManager.INSTANCE.closePopup();
-        super.mouseClicked(mouseX, mouseY, mouseButton);
+        if (menu.isMouseHovered()) {
+            menu.mouseReleased(mouseButton);
+        }
         return true;
     }
+
 }

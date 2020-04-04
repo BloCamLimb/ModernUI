@@ -30,26 +30,27 @@ public abstract class AnimatedWidget extends AnimatedElement implements IWidget 
 
     protected float x2, y2;
 
+    protected float width, height;
+
     protected boolean listening = true;
 
     protected boolean mouseHovered = false;
-
-    protected WidgetArea.Rect area;
 
     public AnimatedWidget() {
 
     }
 
-    public AnimatedWidget(WidgetArea.Rect area) {
-        this.area = area;
+    public AnimatedWidget(float width, float height) {
+        this.width = width;
+        this.height = height;
     }
 
     @Override
     public final void setPos(float x, float y) {
         this.x1 = x;
-        this.x2 = x + area.getWidth();
+        this.x2 = x + width;
         this.y1 = y;
-        this.y2 = y + area.getHeight();
+        this.y2 = y + height;
     }
 
     @Override
@@ -74,19 +75,19 @@ public abstract class AnimatedWidget extends AnimatedElement implements IWidget 
 
     @Override
     public final float getWidth() {
-        return area.getWidth();
+        return width;
     }
 
     @Override
     public final float getHeight() {
-        return area.getHeight();
+        return height;
     }
 
     @Override
     public boolean updateMouseHover(double mouseX, double mouseY) {
         if (listening) {
             boolean prev = mouseHovered;
-            mouseHovered = area.isMouseInArea(x1, y1, mouseX, mouseY);
+            mouseHovered = isMouseInArea(mouseX, mouseY);
             if (prev != mouseHovered) {
                 if (mouseHovered) {
                     onMouseHoverEnter();
@@ -97,6 +98,10 @@ public abstract class AnimatedWidget extends AnimatedElement implements IWidget 
             return mouseHovered;
         }
         return false;
+    }
+
+    private boolean isMouseInArea(double mouseX, double mouseY) {
+        return mouseX >= x1 && mouseX <= x2 && mouseY >= y1 && mouseY <= y2;
     }
 
     @Override

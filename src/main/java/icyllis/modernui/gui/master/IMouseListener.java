@@ -33,6 +33,19 @@ public interface IMouseListener {
     }
 
     /**
+     * If update mouse hover event is canceled, the rest listeners will be called this method
+     */
+    default void setMouseHoverExit() {}
+
+    /**
+     * Get if mouse hover this widget
+     * @return mouse hovered state
+     */
+    default boolean isMouseHovered() {
+        return false;
+    }
+
+    /**
      * Called when mouse hover and a mouse button clicked
      * See {@link #isMouseHovered()}
      * @param mouseButton See {@link GLFW}
@@ -62,12 +75,4 @@ public interface IMouseListener {
         return false;
     }
 
-    /**
-     * Return if mouse over this widget
-     * See {@link #updateMouseHover(double, double)}
-     * @return is mouse over
-     */
-    default boolean isMouseHovered() {
-        return false;
-    }
 }

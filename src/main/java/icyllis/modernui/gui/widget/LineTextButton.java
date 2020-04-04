@@ -37,10 +37,10 @@ public class LineTextButton extends AnimatedWidget {
 
     private Predicate<Integer> isSelectedFunc;
 
-    public LineTextButton(String text, float sizeW, Runnable leftClick, Predicate<Integer> isSelected) {
-        super(new WidgetArea.Rect(sizeW, 12));
+    public LineTextButton(String text, float width, Runnable leftClick, Predicate<Integer> isSelected) {
+        super(width, 12);
         this.text = text;
-        this.sizeWOffset = sizeW / 2f;
+        this.sizeWOffset = width / 2f;
         this.leftClickFunc = leftClick;
         this.isSelectedFunc = isSelected;
     }
@@ -48,7 +48,7 @@ public class LineTextButton extends AnimatedWidget {
     @Override
     public void draw(float time) {
         super.draw(time);
-        fontRenderer.drawString(text, x1 + area.getWidth() / 2f, y1 + 2, textBrightness, TextAlign.CENTER);
+        fontRenderer.drawString(text, x1 + width / 2f, y1 + 2, textBrightness, TextAlign.CENTER);
         DrawTools.fillRectWithColor(x1 + sizeWOffset, y1 + 11, x2 - sizeWOffset, y1 + 12, 0xffffff, 1);
     }
 
@@ -60,7 +60,7 @@ public class LineTextButton extends AnimatedWidget {
     @Override
     protected void onAnimationOpen() {
         manager.addAnimation(new Animation(3)
-                .applyTo(new Applier(area.getWidth() / 2f, 0, value -> sizeWOffset = value),
+                .applyTo(new Applier(width / 2f, 0, value -> sizeWOffset = value),
                         new Applier(textBrightness, 1, value -> textBrightness = value))
                 .onFinish(() -> setOpenState(true)));
     }
@@ -68,21 +68,21 @@ public class LineTextButton extends AnimatedWidget {
     @Override
     protected void onAnimationClose() {
         manager.addAnimation(new Animation(3)
-                .applyTo(new Applier(0, area.getWidth() / 2f, value -> sizeWOffset = value),
+                .applyTo(new Applier(0, width / 2f, value -> sizeWOffset = value),
                         new Applier(textBrightness, 0.7f, value -> textBrightness = value))
                 .onFinish(() -> setOpenState(false)));
     }
 
     @Override
     protected void onMouseHoverEnter() {
-        if (isNotLocked())
+        if (canChangeState())
             manager.addAnimation(new Animation(3)
                     .applyTo(new Applier(0.7f, 1, value -> textBrightness = value)));
     }
 
     @Override
     protected void onMouseHoverExit() {
-        if (isNotLocked())
+        if (canChangeState())
             manager.addAnimation(new Animation(3)
                     .applyTo(new Applier(1, 0.7f, value -> textBrightness = value)));
     }
@@ -90,7 +90,7 @@ public class LineTextButton extends AnimatedWidget {
     @Override
     public boolean mouseClicked(int mouseButton) {
         if (listening && mouseButton == 0) {
-            if (isNotLocked()) {
+            if (canChangeState()) {
                 leftClickFunc.run();
                 return true;
             }

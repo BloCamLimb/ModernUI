@@ -20,10 +20,8 @@ package icyllis.modernui.gui.scroll;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.gui.trash.Element;
-import icyllis.modernui.gui.widget.Widget;
+import icyllis.modernui.gui.widget.FlexibleWidget;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
@@ -33,17 +31,15 @@ import org.lwjgl.opengl.GL11;
 import java.util.Collection;
 import java.util.function.Function;
 
-public class ScrollWindow<T extends ScrollGroup> extends Widget {
+public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget {
 
-    public int borderThickness = 6;
+    protected final Function<Integer, Float> xResizer, yResizer;
+
+    protected final Function<Integer, Float> wResizer, hResizer;
 
     private Minecraft minecraft;
 
-    protected Function<Integer, Float> xResizer, yResizer;
-
-    protected Function<Integer, Float> wResizer, hResizer;
-
-    protected float width, height;
+    public final int borderThickness = 6;
 
     protected float centerX;
 
@@ -53,11 +49,11 @@ public class ScrollWindow<T extends ScrollGroup> extends Widget {
 
     private boolean mouseMoving = false;
 
-    protected ScrollBar scrollbar;
+    protected final ScrollBar scrollbar;
 
-    protected ScrollController controller;
+    protected final ScrollController controller;
 
-    protected ScrollList<T> scrollList;
+    protected final ScrollList<T> scrollList;
 
     public ScrollWindow(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, Function<Integer, Float> wResizer, Function<Integer, Float> hResizer) {
         this.minecraft = Minecraft.getInstance();
@@ -144,19 +140,9 @@ public class ScrollWindow<T extends ScrollGroup> extends Widget {
     }
 
     @Override
-    public float getWidth() {
-        return width;
-    }
-
-    @Override
-    public float getHeight() {
-        return height;
-    }
-
-    @Override
     public boolean updateMouseHover(double mouseX, double mouseY) {
         mouseHovered = isMouseOver(mouseX, mouseY);
-        scrollbar.mouseMoved(mouseX, mouseY);
+        scrollbar.updateMouseHover(mouseX, mouseY);
         if (mouseHovered) {
             scrollList.mouseMoved(mouseX, mouseY);
             mouseMoving = true;

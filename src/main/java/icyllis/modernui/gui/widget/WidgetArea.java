@@ -18,6 +18,9 @@
 
 package icyllis.modernui.gui.widget;
 
+/**
+ * This is an template for complex shape such as circle, sector
+ */
 public interface WidgetArea {
 
     /**
@@ -29,29 +32,6 @@ public interface WidgetArea {
      * @return is in area
      */
     boolean isMouseInArea(float x, float y, double mouseX, double mouseY);
-
-    final class Rect implements WidgetArea {
-
-        private float width, height;
-
-        public Rect(float width, float height) {
-            this.width = width;
-            this.height = height;
-        }
-
-        @Override
-        public boolean isMouseInArea(float x, float y, double mouseX, double mouseY) {
-            return mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height;
-        }
-
-        public float getWidth() {
-            return width;
-        }
-
-        public float getHeight() {
-            return height;
-        }
-    }
 
     final class Circle implements WidgetArea {
 
@@ -77,6 +57,9 @@ public interface WidgetArea {
 
         private double clockwise, flare;
 
+        /**
+         * Use radian, and clockwise direction
+         */
         public Sector(float radius, double clockwise, double flare) {
             this.radius = radius;
             this.clockwise = Math.tan(clockwise);
