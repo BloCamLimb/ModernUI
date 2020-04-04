@@ -21,6 +21,7 @@ package icyllis.modernui.gui.scroll;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.IDraggable;
 import icyllis.modernui.gui.master.IMouseListener;
+import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
@@ -55,14 +56,14 @@ public class ScrollBar implements IMouseListener, IDraggable {
 
     private boolean isDragging = false;
 
-    private double draggingY = 0;
+    //private double draggingY = 0;
 
     public ScrollBar(ScrollWindow<?> window) {
         this.window = window;
     }
 
     public void draw(float currentTime) {
-        if (!mouseHovered && brightness > 0.5f) {
+        if (!mouseHovered && !isDragging && brightness > 0.5f) {
             if (currentTime > startTime) {
                 float change = (startTime - currentTime) / 40.0f;
                 brightness = Math.max(0.75f + change, 0.5f);
@@ -155,7 +156,7 @@ public class ScrollBar implements IMouseListener, IDraggable {
         if (visible && mouseButton == 0) {
             if (mouseHovered) {
                 isDragging = true;
-                draggingY = mouseY;
+                //draggingY = mouseY;
                 window.setDraggable(this);
                 return true;
             } else {
@@ -176,6 +177,9 @@ public class ScrollBar implements IMouseListener, IDraggable {
         return false;
     }
 
+    /**
+     * This shouldn't be called
+     */
     @Override
     public boolean isMouseHovered() {
         return mouseHovered;
@@ -186,6 +190,7 @@ public class ScrollBar implements IMouseListener, IDraggable {
         if (visible && mouseButton == 0 && isDragging) {
             isDragging = false;
             window.setDraggable(null);
+            startTime = manager.getAnimationTime() + 10.0f;
             return true;
         }
         return false;
@@ -194,12 +199,13 @@ public class ScrollBar implements IMouseListener, IDraggable {
     @Override
     public void mouseDragged(double mouseX, double mouseY, double deltaX, double deltaY) {
         if (visible && isDragging) {
-            if (barY >= y && barY - y <= getMaxDragLength()) {
+            /*if (barY + deltaY >= y && barY - y + deltaY <= getMaxDragLength()) {
                 draggingY += deltaY;
             }
             if (mouseY == draggingY) {
                 window.scrollDirect(transformPosToAmount((float) deltaY));
-            }
+            }*/
+            window.scrollDirect(transformPosToAmount((float) deltaY));
         }
     }
 

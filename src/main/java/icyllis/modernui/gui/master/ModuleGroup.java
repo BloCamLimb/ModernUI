@@ -156,4 +156,14 @@ public class ModuleGroup extends Module {
         }
         return false;
     }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, double deltaX, double deltaY) {
+        if (super.mouseDragged(mouseX, mouseY, deltaX, deltaY)) {
+            return true;
+        } else if (child != null) {
+            return child.mouseDragged(mouseX, mouseY, deltaX, deltaY);
+        }
+        return false;
+    }
 }

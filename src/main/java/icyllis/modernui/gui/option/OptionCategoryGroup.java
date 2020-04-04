@@ -42,7 +42,7 @@ public class OptionCategoryGroup extends ScrollGroup {
         super(window);
         this.title = TextFormatting.BOLD + title;
         this.entries = entries;
-        // 30 for title, 6 for end space. =w=
+        // 30 for title, 6 for end space.
         height = 36 + entries.size() * ENTRY_HEIGHT;
     }
 

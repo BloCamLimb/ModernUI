@@ -44,12 +44,11 @@ public class ScrollList<T extends ScrollGroup> implements IMouseListener {
         bottomY += yOffset;
         visible.clear();
         for (T group : groups) {
-            if (group.getBottom() > topY) {
-                visible.add(group);
-                group.updateVisible(topY, bottomY);
-            }
             if (group.getTop() >= bottomY) {
                 break;
+            } else if (group.getBottom() > topY) {
+                visible.add(group);
+                group.updateVisible(topY, bottomY);
             }
         }
     }
