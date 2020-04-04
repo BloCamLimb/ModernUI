@@ -45,16 +45,22 @@ public class IngameMenuSetting extends ModuleGroup {
             addWidget(s);
             buttons.add(s);
         };
-        consumer.accept(new LineTextButton(I18n.format("gui.modernui.settings.tab.general"), 48f, () -> switchChildModule(1), i -> i == 1));
-        consumer.accept(new LineTextButton(I18n.format("gui.modernui.settings.tab.video"), 48f, () -> switchChildModule(2), i -> i == 2));
-        consumer.accept(new LineTextButton(I18n.format("gui.modernui.settings.tab.audio"), 48f, () -> switchChildModule(3), i -> i == 3));
-        consumer.accept(new LineTextButton(I18n.format("gui.modernui.settings.tab.controls"), 48f, () -> switchChildModule(4), i -> i == 4));
-        consumer.accept(new LineTextButton(I18n.format("gui.modernui.settings.tab.assets"), 48f, this::openAssetsMenu, i -> i >= 5 && i <= 8));
+        consumer.accept(new LineTextButton(I18n.format("gui.modernui.settings.tab.general"), 48f,
+                () -> switchChildModule(1), i -> i == 1));
+        consumer.accept(new LineTextButton(I18n.format("gui.modernui.settings.tab.video"), 48f,
+                () -> switchChildModule(2), i -> i == 2));
+        consumer.accept(new LineTextButton(I18n.format("gui.modernui.settings.tab.audio"), 48f,
+                () -> switchChildModule(3), i -> i == 3));
+        consumer.accept(new LineTextButton(I18n.format("gui.modernui.settings.tab.controls"), 48f,
+                () -> switchChildModule(4), i -> i == 4));
+        consumer.accept(new LineTextButton(I18n.format("gui.modernui.settings.tab.assets"), 48f,
+                this::openAssetsMenu, i -> i >= 5 && i <= 8));
         addChildModule(1, SettingGeneral::new);
         addChildModule(2, SettingVideo::new);
         addChildModule(3, SettingAudio::new);
         addChildModule(4, SettingControls::new);
         addChildModule(5, SettingResourcePack::new);
+
         switchChildModule(1);
     }
 
