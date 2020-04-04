@@ -26,7 +26,7 @@ import net.minecraft.util.math.MathHelper;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class SSliderOptionEntry extends AbstractOptionEntry {
+public class SSliderOptionEntry extends OptionEntry {
 
     private SliderSmooth slider;
 

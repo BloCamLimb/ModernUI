@@ -21,7 +21,7 @@ package icyllis.modernui.system;
 import com.google.common.collect.Lists;
 import icyllis.modernui.gui.option.BooleanOptionEntry;
 import icyllis.modernui.gui.option.DSliderOptionEntry;
-import icyllis.modernui.gui.option.AbstractOptionEntry;
+import icyllis.modernui.gui.option.OptionEntry;
 import icyllis.modernui.gui.option.SSliderOptionEntry;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import net.minecraft.client.GameSettings;
@@ -347,7 +347,7 @@ public enum SettingsManager {
     }
 
     @Deprecated
-    public <T extends AbstractOption> Function<SettingScrollWindow, AbstractOptionEntry> transformVanillaOption(T abstractOption) {
+    public <T extends AbstractOption> Function<SettingScrollWindow, OptionEntry> transformVanillaOption(T abstractOption) {
         GameSettings gameSettings = Minecraft.getInstance().gameSettings;
         try {
             String translationKey = (String) option_translateKey.get(abstractOption);

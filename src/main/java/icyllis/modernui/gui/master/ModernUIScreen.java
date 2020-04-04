@@ -25,6 +25,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nonnull;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
@@ -35,11 +36,8 @@ public final class ModernUIScreen extends Screen {
 
     protected GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
 
-    public boolean pauseGame;
-
-    public ModernUIScreen(ITextComponent title, boolean pauseGame) {
+    protected ModernUIScreen(ITextComponent title) {
         super(title);
-        this.pauseGame = pauseGame;
     }
 
     @Override
@@ -65,7 +63,7 @@ public final class ModernUIScreen extends Screen {
 
     @Override
     public boolean isPauseScreen() {
-        return pauseGame;
+        return false;
     }
 
     @Override

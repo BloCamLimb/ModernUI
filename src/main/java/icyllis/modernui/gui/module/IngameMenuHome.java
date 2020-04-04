@@ -60,6 +60,7 @@ public class IngameMenuHome extends ModuleGroup {
         consumer.accept(new MenuButton(w -> 8f, h -> h - 28f, "Exit to Main Menu", 5,
                 this::exit, -1));
         addChildModule(4, IngameMenuSetting::new);
+        overDraw = true;
     }
 
     private void exit() {

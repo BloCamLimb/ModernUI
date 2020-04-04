@@ -36,17 +36,6 @@ function initializeCoreMod() {
             },
             'transformer': function (methodNode) {
                 var list = methodNode.instructions;
-                /*var size = list.size();
-                for (var i = 0; i < size; i++) {
-                    var inst = list.get(i);
-                    // New and InvokeSpecial will be called twice
-                    if (inst.getOpcode() === Opcodes.NEW) {
-                        list.set(inst, new TypeInsnNode(Opcodes.NEW, "icyllis/modernui/gui/screen/GuiIngameMenu"));
-                    }
-                    if (inst.getOpcode() === Opcodes.INVOKESPECIAL) {
-                        list.set(inst, new MethodInsnNode(Opcodes.INVOKESPECIAL, "icyllis/modernui/gui/screen/GuiIngameMenu", "<init>", "(Z)V", false));
-                    }
-                }*/
                 var iterator = list.iterator();
                 var finish = false;
                 while(iterator.hasNext()) {
@@ -56,7 +45,8 @@ function initializeCoreMod() {
                     } else if (inst.getType() === AbstractInsnNode.LINE) {
                         var cast = ASMAPI.listOf(
                             new VarInsnNode(Opcodes.ILOAD, 1),
-                            new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/RewrittenMethods", "displayInGameMenu", "(Z)V", false));
+                            new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/RewrittenMethods", "displayInGameMenu", "(Z)V", false),
+                            new InsnNode(Opcodes.RETURN));
                         list.insert(inst, cast);
                         finish = true;
                     }

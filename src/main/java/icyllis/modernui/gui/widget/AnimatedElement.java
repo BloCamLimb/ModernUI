@@ -66,14 +66,14 @@ public abstract class AnimatedElement implements IElement {
     protected abstract void onAnimationClose();
 
     protected final void startOpenAnimation() {
-        if (!lockState) {
+        if (!lockState && openState != 2) {
             prepareToOpen = true;
             prepareToClose = false;
         }
     }
 
     protected final void startCloseAnimation() {
-        if (!lockState) {
+        if (!lockState && openState != 0) {
             prepareToClose = true;
             prepareToOpen = false;
         }

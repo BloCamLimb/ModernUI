@@ -66,7 +66,7 @@ public final class ChatInputBox extends StandardEventListener {
     private boolean shiftDown = false;
 
     ChatInputBox() {
-        super(w -> 4f, h -> 0f, new WidgetArea.Rect(30, 12));
+        super(w -> 4f, h -> 0f, null/*new WidgetArea.Rect(30, 12)*/);
         selectorX = cursorX = 4;
     }
 

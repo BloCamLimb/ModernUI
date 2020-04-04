@@ -31,7 +31,7 @@ import org.lwjgl.opengl.GL11;
 /**
  * Single option line in settings interface
  */
-public abstract class AbstractOptionEntry {
+public abstract class OptionEntry {
 
     protected IFontRenderer fontRenderer = FontTools.FONT_RENDERER;
 
@@ -49,7 +49,7 @@ public abstract class AbstractOptionEntry {
         this(optionName, originalOption, options, null);
     }*/
 
-    public AbstractOptionEntry(SettingScrollWindow window, String title) {
+    public OptionEntry(SettingScrollWindow window, String title) {
         this.window = window;
         this.title = title;
         /*if (desc != null)

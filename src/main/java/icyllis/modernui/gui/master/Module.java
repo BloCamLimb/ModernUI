@@ -18,6 +18,7 @@
 
 package icyllis.modernui.gui.master;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,6 +27,9 @@ public class Module implements IModule {
     private List<IElement> backgrounds = new ArrayList<>();
 
     private List<IWidget> widgets = new ArrayList<>();
+
+    @Nullable
+    private IDraggable draggable;
 
     public Module() {
 
@@ -75,14 +79,26 @@ public class Module implements IModule {
 
     }
 
+    public void setDraggable(@Nullable IDraggable draggable) {
+        this.draggable = draggable;
+    }
+
+    @Nullable
+    public IDraggable getDraggable() {
+        return draggable;
+    }
+
     @Override
     public boolean mouseMoved(double mouseX, double mouseY) {
+        boolean result = false;
         for (IWidget widget : widgets) {
-            if (widget.updateMouseHover(mouseX, mouseY)) {
-                return true;
+            if (!result && widget.updateMouseHover(mouseX, mouseY)) {
+                result = true;
+            } else {
+                widget.setMouseHoverExit();
             }
         }
-        return false;
+        return result;
     }
 
     @Override
@@ -117,7 +133,10 @@ public class Module implements IModule {
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, double deltaX, double deltaY) {
-
+        if (draggable != null) {
+            draggable.mouseDragged(mouseX, mouseY, deltaX, deltaY);
+            return true;
+        }
         return false;
     }
 
