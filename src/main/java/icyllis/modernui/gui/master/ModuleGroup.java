@@ -62,7 +62,10 @@ public class ModuleGroup extends Module {
     }
 
     public void switchChildModule(int id) {
-        if (id == cid || cid != tid || !childModules.containsKey(id)) {
+        if (id < 0) {
+            return;
+        }
+        if (id == cid || cid != tid) {
             return;
         }
         tid = id;
@@ -72,7 +75,9 @@ public class ModuleGroup extends Module {
              }
         }
         child = childModules.getOrDefault(tid, () -> null).get();
-        GlobalModuleManager.INSTANCE.resizeModule(child);
+        if (child != null) {
+            GlobalModuleManager.INSTANCE.resizeModule(child);
+        }
         cid = tid;
         moduleChanged(cid);
     }
@@ -113,7 +118,9 @@ public class ModuleGroup extends Module {
         if (cid != tid && child != null ) {
             if (child.changingModule(tid)) {
                 child = childModules.getOrDefault(tid, () -> null).get();
-                GlobalModuleManager.INSTANCE.resizeModule(child);
+                if (child != null) {
+                    GlobalModuleManager.INSTANCE.resizeModule(child);
+                }
                 cid = tid;
                 moduleChanged(cid);
             }

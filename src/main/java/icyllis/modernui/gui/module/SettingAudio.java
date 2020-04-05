@@ -34,7 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Really simple module :p
+ * Really simple module (
  */
 public class SettingAudio extends Module {
 

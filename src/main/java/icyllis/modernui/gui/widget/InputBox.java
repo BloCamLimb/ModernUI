@@ -23,7 +23,7 @@ import icyllis.modernui.font.FontTools;
 
 import java.util.function.Predicate;
 
-@Deprecated
+//TODO input box
 public class InputBox {
 
     public static final Predicate<String> digitFilter = s -> s.matches("[0-9]+"),
