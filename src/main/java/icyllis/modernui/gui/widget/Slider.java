@@ -19,26 +19,29 @@
 package icyllis.modernui.gui.widget;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.gui.master.IElement;
-import net.minecraft.client.gui.IGuiEventListener;
+import icyllis.modernui.gui.master.IDraggable;
+import icyllis.modernui.gui.master.IFocuser;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import org.lwjgl.opengl.GL11;
 
-public abstract class Slider implements IElement, IGuiEventListener {
+/**
+ * Horizontal slider
+ */
+public abstract class Slider extends FlexibleWidget implements IDraggable {
 
-    protected float x, y;
+    private final IFocuser focuser;
 
     protected double slideOffset;
-
-    protected float width;
 
     protected boolean isDragging = false;
 
     protected boolean thumbHovered = false;
 
-    public Slider(float width) {
+    public Slider(IFocuser focuser, float width) {
+        this.focuser = focuser;
+        this.height = 3;
         this.width = width;
     }
 
@@ -50,34 +53,44 @@ public abstract class Slider implements IElement, IGuiEventListener {
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableTexture();
 
+        double cx = x1 + slideOffset;
+
         bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
-        bufferBuilder.pos(x, y + 3, 0.0D).color(160, 160, 160, 255).endVertex();
-        bufferBuilder.pos(x + slideOffset, y + 3, 0.0D).color(160, 160, 160, 255).endVertex();
-        bufferBuilder.pos(x + slideOffset, y, 0.0D).color(160, 160, 160, 255).endVertex();
-        bufferBuilder.pos(x, y, 0.0D).color(160, 160, 160, 255).endVertex();
+        bufferBuilder.pos(x1, y2, 0.0D).color(160, 160, 160, 255).endVertex();
+        bufferBuilder.pos(cx, y2, 0.0D).color(160, 160, 160, 255).endVertex();
+        bufferBuilder.pos(cx, y1, 0.0D).color(160, 160, 160, 255).endVertex();
+        bufferBuilder.pos(x1, y1, 0.0D).color(160, 160, 160, 255).endVertex();
         tessellator.draw();
 
         bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
-        bufferBuilder.pos(x + slideOffset, y + 3, 0.0D).color(80, 80, 80, 220).endVertex();
-        bufferBuilder.pos(x + width, y + 3, 0.0D).color(80, 80, 80, 220).endVertex();
-        bufferBuilder.pos(x + width, y, 0.0D).color(80, 80, 80, 220).endVertex();
-        bufferBuilder.pos(x + slideOffset, y, 0.0D).color(80, 80, 80, 220).endVertex();
+        bufferBuilder.pos(cx, y2, 0.0D).color(80, 80, 80, 220).endVertex();
+        bufferBuilder.pos(x2, y2, 0.0D).color(80, 80, 80, 220).endVertex();
+        bufferBuilder.pos(x2, y1, 0.0D).color(80, 80, 80, 220).endVertex();
+        bufferBuilder.pos(cx, y1, 0.0D).color(80, 80, 80, 220).endVertex();
         tessellator.draw();
 
         bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
         int cc = (thumbHovered || isDragging) ? 255 : 204;
-        bufferBuilder.pos(x + slideOffset, y + 4, 0.0D).color(cc, cc, cc, 255).endVertex();
-        bufferBuilder.pos(x + slideOffset + 4, y + 4, 0.0D).color(cc, cc, cc, 255).endVertex();
-        bufferBuilder.pos(x + slideOffset + 4, y - 1, 0.0D).color(cc, cc, cc, 255).endVertex();
-        bufferBuilder.pos(x + slideOffset, y - 1, 0.0D).color(cc, cc, cc, 255).endVertex();
+        bufferBuilder.pos(cx, y2 + 1, 0.0D).color(cc, cc, cc, 255).endVertex();
+        bufferBuilder.pos(cx + 4, y2 + 1, 0.0D).color(cc, cc, cc, 255).endVertex();
+        bufferBuilder.pos(cx + 4, y1 - 1, 0.0D).color(cc, cc, cc, 255).endVertex();
+        bufferBuilder.pos(cx, y1 - 1, 0.0D).color(cc, cc, cc, 255).endVertex();
         tessellator.draw();
 
         RenderSystem.enableTexture();
     }
 
     @Override
-    public void mouseMoved(double mouseX, double mouseY) {
-        thumbHovered = mouseX >= x + slideOffset && mouseX <= x + slideOffset + 4 && mouseY >= y - 1 && mouseY <= y + 4;
+    public boolean updateMouseHover(double mouseX, double mouseY) {
+        if (super.updateMouseHover(mouseX, mouseY)) {
+            checkThumb(mouseX, mouseY);
+            return true;
+        }
+        return false;
+    }
+
+    private void checkThumb(double mouseX, double mouseY) {
+        thumbHovered = mouseX >= x1 + slideOffset && mouseX <= x1 + slideOffset + 4 && mouseY >= y1 - 1 && mouseY <= y2 + 1;
     }
 
     @Override
@@ -85,25 +98,25 @@ public abstract class Slider implements IElement, IGuiEventListener {
         if (mouseButton == 0) {
             if (thumbHovered) {
                 isDragging = true;
+                focuser.setDraggable(this);
                 return true;
             } else {
-                boolean inY = mouseY >= y && mouseY <= y + 3;
-                if (inY) {
-                    if (mouseX >= x && mouseX <= x + slideOffset) {
-                        slideToOffset((float) (mouseX - x - 2));
-                        mouseMoved(mouseX, mouseY);
-                        if (thumbHovered) {
-                            isDragging = true;
-                        }
-                        return true;
-                    } else if (mouseX >= x + slideOffset + 4 && mouseX <= x + width) {
-                        slideToOffset((float) (mouseX - x - 2));
-                        mouseMoved(mouseX, mouseY);
-                        if (thumbHovered) {
-                            isDragging = true;
-                        }
-                        return true;
+                if (mouseX >= x1 && mouseX <= x1 + slideOffset) {
+                    slideToOffset((float) (mouseX - x1 - 2));
+                    checkThumb(mouseX, mouseY);
+                    if (thumbHovered) {
+                        isDragging = true;
+                        focuser.setDraggable(this);
                     }
+                    return true;
+                } else if (mouseX >= x1 + slideOffset + 4 && mouseX <= x2) {
+                    slideToOffset((float) (mouseX - x1 - 2));
+                    checkThumb(mouseX, mouseY);
+                    if (thumbHovered) {
+                        isDragging = true;
+                        focuser.setDraggable(this);
+                    }
+                    return true;
                 }
             }
         }
@@ -112,26 +125,32 @@ public abstract class Slider implements IElement, IGuiEventListener {
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
-        if (mouseButton == 0 && isDragging) {
-            isDragging = false;
-            onStopDragging();
+        return false;
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, double deltaX, double deltaY) {
+        if (isDragging) {
+            slideToOffset((float) (mouseX - x1 - 2));
             return true;
         }
         return false;
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double deltaX, double deltaY) {
+    public void onStopDragging(double mouseX, double mouseY) {
         if (isDragging) {
-            slideToOffset((float) (mouseX - x - 2));
-            return true;
+            isDragging = false;
+            focuser.setDraggable(null);
+            checkThumb(mouseX, mouseY);
+            onStopDragging();
         }
-        return false;
     }
 
-    public void setPos(float x, float y) {
-        this.x = x;
-        this.y = y;
+    @Override
+    protected void onMouseHoverExit() {
+        super.onMouseHoverExit();
+        thumbHovered = false;
     }
 
     protected abstract void onStopDragging();

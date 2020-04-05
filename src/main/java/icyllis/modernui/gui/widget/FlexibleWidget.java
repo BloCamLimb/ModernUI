@@ -25,9 +25,9 @@ import icyllis.modernui.gui.master.IWidget;
 
 public abstract class FlexibleWidget implements IWidget {
 
-    protected GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
+    protected final GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
 
-    protected IFontRenderer fontRenderer = FontTools.FONT_RENDERER;
+    protected final IFontRenderer fontRenderer = FontTools.FONT_RENDERER;
 
     protected float x1, y1;
 
@@ -99,7 +99,7 @@ public abstract class FlexibleWidget implements IWidget {
     }
 
     @Override
-    public void setMouseHoverExit() {
+    public final void setMouseHoverExit() {
         if (mouseHovered) {
             mouseHovered = false;
             onMouseHoverExit();

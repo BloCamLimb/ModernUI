@@ -19,9 +19,9 @@
 package icyllis.modernui.gui.module;
 
 import icyllis.modernui.gui.master.Module;
+import icyllis.modernui.gui.option.OptionCategory;
 import icyllis.modernui.gui.option.OptionEntry;
 import icyllis.modernui.gui.option.KeyBindingEntry;
-import icyllis.modernui.gui.option.OptionCategoryGroup;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.system.SettingsManager;
@@ -49,14 +49,14 @@ public class SettingControls extends Module {
     public SettingControls() {
         this.minecraft = Minecraft.getInstance();
         this.window = new SettingScrollWindow(this);
-        List<OptionCategoryGroup> groups = new ArrayList<>();
+        List<OptionCategory> groups = new ArrayList<>();
         groups.add(getMouseCategory());
         groups.addAll(getAllKeyBindings());
         window.addGroups(groups);
         addWidget(window);
     }
 
-    private OptionCategoryGroup getMouseCategory() {
+    private OptionCategory getMouseCategory() {
         List<OptionEntry> list = new ArrayList<>();
 
         list.add(SettingsManager.SENSITIVITY.apply(window));
@@ -68,12 +68,12 @@ public class SettingControls extends Module {
             list.add(SettingsManager.RAW_MOUSE_INPUT.apply(window));
         }
 
-        return new OptionCategoryGroup(window, I18n.format("gui.modernui.settings.category.mouse"), list);
+        return new OptionCategory(window, I18n.format("gui.modernui.settings.category.mouse"), list);
     }
 
     @SuppressWarnings("DanglingJavadoc")
-    private List<OptionCategoryGroup> getAllKeyBindings() {
-        List<OptionCategoryGroup> groups = new ArrayList<>();
+    private List<OptionCategory> getAllKeyBindings() {
+        List<OptionCategory> groups = new ArrayList<>();
         KeyBinding[] keyBindings = ArrayUtils.clone(minecraft.gameSettings.keyBindings);
         /**
          * Sort by category and key desc {@link KeyBinding#compareTo(KeyBinding)}
@@ -87,7 +87,7 @@ public class SettingControls extends Module {
             String ck = keybinding.getKeyCategory();
             if (!ck.equals(categoryKey)) {
                 if (list != null) {
-                    OptionCategoryGroup category = new OptionCategoryGroup(window, I18n.format(categoryKey), list);
+                    OptionCategory category = new OptionCategory(window, I18n.format(categoryKey), list);
                     groups.add(category);
                 }
                 categoryKey = ck;
@@ -104,7 +104,7 @@ public class SettingControls extends Module {
         }
         // add last category
         if (categoryKey != null) {
-            OptionCategoryGroup category = new OptionCategoryGroup(window, I18n.format(categoryKey), list);
+            OptionCategory category = new OptionCategory(window, I18n.format(categoryKey), list);
             groups.add(category);
         }
         checkAllConflicts();

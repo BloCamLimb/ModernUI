@@ -67,7 +67,7 @@ public class SettingGeneral extends Module {
     public SettingGeneral() {
         this.minecraft = Minecraft.getInstance();
         this.window = new SettingScrollWindow(this);
-        List<OptionCategoryGroup> groups = new ArrayList<>();
+        List<OptionCategory> groups = new ArrayList<>();
         groups.add(getGameCategory());
         groups.add(getChatCategory());
         groups.add(getAccessibilityCategory());
@@ -76,7 +76,7 @@ public class SettingGeneral extends Module {
         addWidget(window);
     }
 
-    private OptionCategoryGroup getGameCategory() {
+    private OptionCategory getGameCategory() {
         List<OptionEntry> list = new ArrayList<>();
 
         if (minecraft.world != null) {
@@ -106,11 +106,11 @@ public class SettingGeneral extends Module {
 
         list.add(SettingsManager.REALMS_NOTIFICATIONS.apply(window));
 
-        return new OptionCategoryGroup(window, I18n.format("gui.modernui.settings.category.game"), list);
+        return new OptionCategory(window, I18n.format("gui.modernui.settings.category.game"), list);
     }
 
     @SuppressWarnings("NoTranslation")
-    private OptionCategoryGroup getChatCategory() {
+    private OptionCategory getChatCategory() {
         List<OptionEntry> list = new ArrayList<>();
         GameSettings gameSettings = minecraft.gameSettings;
 
@@ -137,10 +137,10 @@ public class SettingGeneral extends Module {
         list.add(SettingsManager.REDUCED_DEBUG_INFO.apply(window));
         list.add(SettingsManager.AUTO_SUGGEST_COMMANDS.apply(window));
 
-        return new OptionCategoryGroup(window, I18n.format("gui.modernui.settings.category.chat"), list);
+        return new OptionCategory(window, I18n.format("gui.modernui.settings.category.chat"), list);
     }
 
-    private OptionCategoryGroup getAccessibilityCategory() {
+    private OptionCategory getAccessibilityCategory() {
         List<OptionEntry> list = new ArrayList<>();
         GameSettings gameSettings = minecraft.gameSettings;
 
@@ -172,10 +172,10 @@ public class SettingGeneral extends Module {
                 gameSettings.toggleSprint ? 0 : 1, i -> gameSettings.toggleSprint = i == 0);
         list.add(sprint);
 
-        return new OptionCategoryGroup(window, I18n.format("gui.modernui.settings.category.accessibility"), list);
+        return new OptionCategory(window, I18n.format("gui.modernui.settings.category.accessibility"), list);
     }
 
-    private OptionCategoryGroup getSkinCategory() {
+    private OptionCategory getSkinCategory() {
         List<OptionEntry> list = new ArrayList<>();
         GameSettings gameSettings = minecraft.gameSettings;
 
@@ -193,7 +193,7 @@ public class SettingGeneral extends Module {
             list.add(entry);
         }
 
-        return new OptionCategoryGroup(window, I18n.format("gui.modernui.settings.category.skin"), list);
+        return new OptionCategory(window, I18n.format("gui.modernui.settings.category.skin"), list);
     }
 
     private void lockDifficulty(int callback) {

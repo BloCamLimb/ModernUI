@@ -47,7 +47,7 @@ public class SSliderOptionEntry extends OptionEntry {
     public SSliderOptionEntry(SettingScrollWindow window, String optionTitle, double minValue, double maxValue, float stepSize, double currentValue, Consumer<Double> saveOption, Function<Double, String> displayStringFunc) {
         super(window, optionTitle);
         currentValue = MathHelper.clamp(currentValue, minValue, maxValue);
-        slider = new SliderSmooth(84, (currentValue - minValue) / (maxValue - minValue), this::onPercentageChange);
+        slider = new SliderSmooth(window, 84, (currentValue - minValue) / (maxValue - minValue), this::onPercentageChange);
         this.minValue = minValue;
         this.maxValue = maxValue;
         this.stepSize = stepSize == 0 ? 0.01f / (float) (maxValue - minValue) : stepSize;
@@ -63,30 +63,40 @@ public class SSliderOptionEntry extends OptionEntry {
     }
 
     @Override
-    public void drawExtra(float centerX, float y, float currentTime) {
+    public void setPos(float x1, float x2, float y) {
+        super.setPos(x1, x2, y);
         slider.setPos(centerX + 40, y + 9);
-        slider.draw(currentTime);
-        fontRenderer.drawString(displayString, centerX + 154, y + 6, titleBrightness, 1.0f, TextAlign.RIGHT);
     }
 
     @Override
-    public void mouseMoved(double deltaCenterX, double deltaY, double mouseX, double mouseY) {
-        slider.mouseMoved(mouseX, mouseY);
+    public void drawExtra(float time) {
+        slider.draw(time);
+        fontRenderer.drawString(displayString, x2 - 6, y1 + 6, titleBrightness, 1.0f, TextAlign.RIGHT);
     }
 
     @Override
-    public boolean mouseClicked(double deltaCenterX, double deltaY, double mouseX, double mouseY, int mouseButton) {
-        return slider.mouseClicked(mouseX, mouseY, mouseButton);
+    public boolean updateMouseHover(double mouseX, double mouseY) {
+        if (super.updateMouseHover(mouseX, mouseY)) {
+            slider.updateMouseHover(mouseX, mouseY);
+            return true;
+        }
+        return false;
     }
 
     @Override
-    public boolean mouseReleased(double deltaCenterX, double deltaY, double mouseX, double mouseY, int mouseButton) {
-        return slider.mouseReleased(mouseX, mouseY, mouseButton);
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        return slider.isMouseHovered() && slider.mouseClicked(mouseX, mouseY, mouseButton);
     }
 
     @Override
-    public boolean mouseDragged(double deltaCenterX, double deltaY, double mouseX, double mouseY, int mouseButton, double deltaMouseX, double deltaMouseY) {
-        return slider.mouseDragged(mouseX, mouseY, mouseButton, deltaMouseX, deltaMouseY);
+    public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
+        return slider.isMouseHovered() && slider.mouseReleased(mouseX, mouseY, mouseButton);
+    }
+
+    @Override
+    protected void onMouseHoverExit() {
+        super.onMouseHoverExit();
+        slider.setMouseHoverExit();
     }
 
     protected void onPercentageChange(double percentage) {

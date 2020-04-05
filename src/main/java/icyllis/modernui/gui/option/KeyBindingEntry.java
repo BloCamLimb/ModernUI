@@ -45,7 +45,7 @@ public class KeyBindingEntry extends OptionEntry {
     public KeyBindingEntry(SettingScrollWindow window, KeyBinding keyBinding, Runnable conflictsCallback) {
         super(window, I18n.format(keyBinding.getKeyDescription()));
         this.keyBinding = keyBinding;
-        //this.inputBox = new KeyInputBox(window::setFocused, this::bindKey);
+        this.inputBox = new KeyInputBox(window, this::bindKey);
         //TODO tint text by conflict context, or maybe not?
         //this.conflictContext = keyBinding.getKeyConflictContext().toString();
         this.conflictsCallback = conflictsCallback;
@@ -53,28 +53,37 @@ public class KeyBindingEntry extends OptionEntry {
     }
 
     @Override
-    public void drawExtra(float centerX, float y, float currentTime) {
+    public void setPos(float x1, float x2, float y) {
+        super.setPos(x1, x2, y);
         inputBox.setPos(centerX + 70, y + 2);
-        inputBox.draw(currentTime);
     }
 
     @Override
-    public void mouseMoved(double deltaCenterX, double deltaY, double mouseX, double mouseY) {
-        inputBox.mouseMoved(mouseX, mouseY);
+    public void drawExtra(float time) {
+        inputBox.draw(time);
     }
 
     @Override
-    public boolean mouseClicked(double deltaCenterX, double deltaY, double mouseX, double mouseY, int mouseButton) {
-        if (mouseHovered && mouseButton == 1) {
+    public boolean updateMouseHover(double mouseX, double mouseY) {
+        if (super.updateMouseHover(mouseX, mouseY)) {
+            inputBox.updateMouseHover(mouseX, mouseY);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        if (mouseButton == 1) {
             //DropDownMenu list = new DropDownMenu(Lists.newArrayList("WIP =w="), -1, 16, this::menuActions);
             //list.setPos((float) mouseX, (float) (mouseY - deltaY + 18), GlobalModuleManager.INSTANCE.getWindowHeight());
             //GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(list), false);
             return true;
         }
-        if (inputBox.mouseClicked(mouseX, mouseY, mouseButton)) {
+        if (inputBox.isMouseHovered() && inputBox.mouseClicked(mouseX, mouseY, mouseButton)) {
             return true;
         }
-        return super.mouseClicked(deltaCenterX, deltaY, mouseX, mouseY, mouseButton);
+        return false;
     }
 
     private void menuActions(int index) {
@@ -159,14 +168,15 @@ public class KeyBindingEntry extends OptionEntry {
     }
 
     @Override
-    protected void onMouseHoverOn() {
-        super.onMouseHoverOn();
+    protected void onMouseHoverEnter() {
+        super.onMouseHoverEnter();
         inputBox.setTextBrightness(titleBrightness);
     }
 
     @Override
-    protected void onMouseHoverOff() {
-        super.onMouseHoverOff();
+    protected void onMouseHoverExit() {
+        super.onMouseHoverExit();
+        inputBox.setMouseHoverExit();
         inputBox.setTextBrightness(titleBrightness);
     }
 }

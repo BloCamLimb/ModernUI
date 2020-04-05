@@ -102,7 +102,7 @@ public abstract class AnimatedWidget extends AnimatedElement implements IWidget 
     }
 
     @Override
-    public void setMouseHoverExit() {
+    public final void setMouseHoverExit() {
         if (mouseHovered) {
             mouseHovered = false;
             onMouseHoverExit();

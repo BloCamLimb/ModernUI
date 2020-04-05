@@ -19,6 +19,7 @@
 package icyllis.modernui.gui.widget;
 
 import icyllis.modernui.gui.master.IElement;
+import icyllis.modernui.gui.master.IFocuser;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.util.math.MathHelper;
 
@@ -41,8 +42,8 @@ public class SliderDiscrete extends Slider implements IElement, IGuiEventListene
      * @param maxSegment max segment, if you need 3 values, so there are 2 segments
      * @param receiver receive new segment value
      */
-    public SliderDiscrete(float width, int segment, int maxSegment, Consumer<Integer> receiver) {
-        super(width);
+    public SliderDiscrete(IFocuser focuser, float width, int segment, int maxSegment, Consumer<Integer> receiver) {
+        super(focuser, width);
         this.segment = segment;
         this.maxSegment = maxSegment;
         this.receiver = receiver;

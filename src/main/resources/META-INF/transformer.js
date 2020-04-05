@@ -27,7 +27,7 @@ var MethodInsnNode = Java.type('org.objectweb.asm.tree.MethodInsnNode');
 
 function initializeCoreMod() {
     return wrapMethodTransformers({
-        'replaceIngameMenu': {
+        'replaceDisplayIngameMenu': {
             'target': {
                 'type': 'METHOD',
                 'class': 'net.minecraft.client.Minecraft',

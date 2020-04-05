@@ -23,6 +23,8 @@ import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.gui.master.IElement;
+import icyllis.modernui.gui.master.IFocuser;
+import icyllis.modernui.gui.master.IKeyboardListener;
 import icyllis.modernui.system.MouseTools;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -38,19 +40,11 @@ import org.lwjgl.opengl.GL11;
 import javax.annotation.Nullable;
 import java.util.function.Consumer;
 
-public class KeyInputBox implements IElement, IGuiEventListener {
+public class KeyInputBox extends FlexibleWidget implements IKeyboardListener {
 
-    private IFontRenderer fontRenderer = FontTools.FONT_RENDERER;
-
-    private float x, y;
-
-    private float width = 84;
-
-    private float height = 16;
+    private final IFocuser focuser;
 
     private String keyText;
-
-    private boolean mouseHovered;
 
     private int backAlpha = 16;
 
@@ -64,16 +58,13 @@ public class KeyInputBox implements IElement, IGuiEventListener {
     @Nullable
     private InputMappings.Input pressing = null;
 
-    /**
-     * Focus this make keyPressed keyReleased can be called
-     */
-    private Consumer<IGuiEventListener> focuser;
-
     private Consumer<InputMappings.Input> keyBinder;
 
-    public KeyInputBox(Consumer<IGuiEventListener> focuser, Consumer<InputMappings.Input> keyBinder) {
+    public KeyInputBox(IFocuser focuser, Consumer<InputMappings.Input> keyBinder) {
         this.focuser = focuser;
         this.keyBinder = keyBinder;
+        this.width = 84;
+        this.height = 16;
     }
 
     @Override
@@ -82,10 +73,10 @@ public class KeyInputBox implements IElement, IGuiEventListener {
         BufferBuilder bufferBuilder = tessellator.getBuffer();
         RenderSystem.disableTexture();
         bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
-        bufferBuilder.pos(x, y + height, 0.0D).color(96, 96, 96, backAlpha).endVertex();
-        bufferBuilder.pos(x + width, y + height, 0.0D).color(96, 96, 96, backAlpha).endVertex();
-        bufferBuilder.pos(x + width, y, 0.0D).color(96, 96, 96, backAlpha).endVertex();
-        bufferBuilder.pos(x, y, 0.0D).color(96, 96, 96, backAlpha).endVertex();
+        bufferBuilder.pos(x1, y2, 0.0D).color(96, 96, 96, backAlpha).endVertex();
+        bufferBuilder.pos(x2, y2, 0.0D).color(96, 96, 96, backAlpha).endVertex();
+        bufferBuilder.pos(x2, y1, 0.0D).color(96, 96, 96, backAlpha).endVertex();
+        bufferBuilder.pos(x1, y1, 0.0D).color(96, 96, 96, backAlpha).endVertex();
         tessellator.draw();
 
         if (editing) {
@@ -93,21 +84,16 @@ public class KeyInputBox implements IElement, IGuiEventListener {
             GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
             bufferBuilder.begin(GL11.GL_LINE_LOOP, DefaultVertexFormats.POSITION_COLOR);
             GL11.glLineWidth(1.0F);
-            bufferBuilder.pos(x, y + height, 0.0D).color(153, 220, 240, 220).endVertex();
-            bufferBuilder.pos(x + width, y + height, 0.0D).color(153, 220, 240, 220).endVertex();
-            bufferBuilder.pos(x + width, y, 0.0D).color(153, 220, 240, 220).endVertex();
-            bufferBuilder.pos(x, y, 0.0D).color(153, 220, 240, 220).endVertex();
+            bufferBuilder.pos(x1, y2, 0.0D).color(153, 220, 240, 220).endVertex();
+            bufferBuilder.pos(x2, y2, 0.0D).color(153, 220, 240, 220).endVertex();
+            bufferBuilder.pos(x2, y1, 0.0D).color(153, 220, 240, 220).endVertex();
+            bufferBuilder.pos(x1, y1, 0.0D).color(153, 220, 240, 220).endVertex();
             tessellator.draw();
             GL11.glDisable(GL11.GL_LINE_SMOOTH);
         }
         RenderSystem.enableTexture();
 
-        fontRenderer.drawString(keyText, x + 42, y + 4, textBrightness, TextAlign.CENTER);
-    }
-
-    public void setPos(float x, float y) {
-        this.x = x;
-        this.y = y;
+        fontRenderer.drawString(keyText, x1 + 42, y1 + 4, textBrightness, TextAlign.CENTER);
     }
 
     public void setKeyText(String keyText) {
@@ -129,18 +115,18 @@ public class KeyInputBox implements IElement, IGuiEventListener {
     }
 
     @Override
-    public void mouseMoved(double mouseX, double mouseY) {
-        boolean prev = mouseHovered;
-        mouseHovered = isMouseOver(mouseX, mouseY);
-        if (prev != mouseHovered) {
-            if (mouseHovered) {
-                MouseTools.useIBeamCursor();
-                backAlpha = 64;
-            } else {
-                MouseTools.useDefaultCursor();
-                if (!editing)
-                    backAlpha = 16;
-            }
+    protected void onMouseHoverEnter() {
+        super.onMouseHoverEnter();
+        MouseTools.useIBeamCursor();
+        backAlpha = 64;
+    }
+
+    @Override
+    protected void onMouseHoverExit() {
+        super.onMouseHoverExit();
+        MouseTools.useDefaultCursor();
+        if (!editing) {
+            backAlpha = 16;
         }
     }
 
@@ -150,13 +136,13 @@ public class KeyInputBox implements IElement, IGuiEventListener {
 
     private void startEditing() {
         editing = true;
-        focuser.accept(this);
+        focuser.setKeyboardListener(this);
         backAlpha = 64;
     }
 
     private void stopEditing() {
         editing = false;
-        focuser.accept(null);
+        focuser.setKeyboardListener(null);
         if (!mouseHovered) {
             MouseTools.useDefaultCursor();
             backAlpha = 16;
@@ -166,17 +152,13 @@ public class KeyInputBox implements IElement, IGuiEventListener {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        if (editing && mouseHovered) {
+        if (editing) {
             keyBinder.accept(InputMappings.Type.MOUSE.getOrMakeInput(mouseButton));
             stopEditing();
             return true;
         }
-        if (!editing && mouseHovered && mouseButton == 0) {
+        if (mouseButton == 0) {
             startEditing();
-            return true;
-        }
-        if (editing) {
-            stopEditing();
             return true;
         }
         return false;
@@ -221,8 +203,4 @@ public class KeyInputBox implements IElement, IGuiEventListener {
         return false;
     }
 
-    @Override
-    public boolean isMouseOver(double mouseX, double mouseY) {
-        return mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height;
-    }
 }

@@ -72,7 +72,15 @@ public abstract class ScrollGroup implements IMouseListener {
 
     @Override
     public boolean updateMouseHover(double mouseX, double mouseY) {
+        boolean prev = mouseHovered;
         mouseHovered = isMouseInArea(mouseX, mouseY);
+        if (prev != mouseHovered) {
+            if (mouseHovered) {
+                onMouseHoverEnter();
+            } else {
+                onMouseHoverExit();
+            }
+        }
         return mouseHovered;
     }
 
@@ -81,14 +89,23 @@ public abstract class ScrollGroup implements IMouseListener {
     }
 
     @Override
-    public void setMouseHoverExit() {
+    public final void setMouseHoverExit() {
         if (mouseHovered) {
             mouseHovered = false;
+            onMouseHoverExit();
         }
     }
 
+    protected void onMouseHoverEnter() {
+
+    }
+
+    protected void onMouseHoverExit() {
+
+    }
+
     @Override
-    public boolean isMouseHovered() {
+    public final boolean isMouseHovered() {
         return mouseHovered;
     }
 }
