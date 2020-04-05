@@ -18,25 +18,39 @@
 
 package icyllis.modernui.gui.module;
 
+import com.google.common.collect.Lists;
 import icyllis.modernui.gui.master.Module;
+import icyllis.modernui.gui.option.ResourcePackGroup;
+import icyllis.modernui.gui.scroll.ScrollWindow;
 import net.minecraft.client.Minecraft;
+
+import java.util.function.Function;
 
 public class SettingResourcePack extends Module {
 
     private Minecraft minecraft;
 
+    private ScrollWindow<ResourcePackGroup> aWindow;
+
+    private ScrollWindow<ResourcePackGroup> sWindow;
+
     public SettingResourcePack() {
-        /*Function<Integer, Float> widthFunc = w -> Math.min((float) Math.round((w - 80) / 2f), 200);
-        Function<Integer, Float> leftXFunc = w -> w / 2f - widthFunc.apply(w);
+        minecraft = Minecraft.getInstance();
 
-        leftWindow = new ResourceScrollWindow(leftXFunc, widthFunc);
-        rightWindow = new ResourceScrollWindow(w -> w / 2f, widthFunc);
+        Function<Integer, Float> widthFunc = w -> (float) Math.round((w - 80) / 2f) - 8;
+        Function<Integer, Float> leftXFunc = w -> w / 2f - widthFunc.apply(w) - 8;
 
-        Consumer<ResourceScrollWindow> consumer = s -> {
-            elements.add(s);
-            listeners.add(s);
-        };
-        consumer.accept(leftWindow);
-        consumer.accept(rightWindow);*/
+        aWindow = new ScrollWindow<>(this, leftXFunc, h -> 36f, widthFunc, h -> h - 72f);
+        sWindow = new ScrollWindow<>(this, w -> w / 2f + 8, h -> 36f, widthFunc, h -> h - 72f);
+
+        ResourcePackGroup aGroup = new ResourcePackGroup(aWindow, minecraft.getResourcePackList(), ResourcePackGroup.Type.AVAILABLE);
+        ResourcePackGroup sGroup = new ResourcePackGroup(sWindow, minecraft.getResourcePackList(), ResourcePackGroup.Type.SELECTED);
+
+        aWindow.addGroups(Lists.newArrayList(aGroup));
+        sWindow.addGroups(Lists.newArrayList(sGroup));
+
+        addWidget(aWindow);
+        addWidget(sWindow);
     }
+
 }

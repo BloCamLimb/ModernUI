@@ -33,6 +33,8 @@ public class DSliderOptionEntry extends OptionEntry {
 
     protected int currentValue;
 
+    protected int originalValue;
+
     private Consumer<Integer> saveChangeFunc;
 
     private Consumer<Integer> applyChangeFunc = i -> {};
@@ -45,6 +47,7 @@ public class DSliderOptionEntry extends OptionEntry {
         super(window, title);
         slider = new SliderDiscrete(window, 84, currentValue - minValue, maxValue - minValue, this::onDiscreteChange).setApplier(this::applyChange);
         this.minValue = minValue;
+        this.originalValue = currentValue;
         this.currentValue = currentValue;
         this.saveChangeFunc = saveOptionFunc;
         this.displayStringFunc = displayStringFunc;
@@ -104,6 +107,9 @@ public class DSliderOptionEntry extends OptionEntry {
     }
 
     public void applyChange() {
-        applyChangeFunc.accept(currentValue);
+        if (currentValue != originalValue) {
+            applyChangeFunc.accept(currentValue);
+            originalValue = currentValue;
+        }
     }
 }

@@ -174,10 +174,14 @@ public enum GlobalModuleManager {
             }
         }
         if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
-            if (popup != null) {
-                closePopup();
+            if (root.onBack()) {
+                return true;
             } else {
-                closeGuiScreen();
+                if (popup != null) {
+                    closePopup();
+                } else {
+                    closeGuiScreen();
+                }
             }
             return true;
         } else if (keyCode == GLFW.GLFW_KEY_TAB) {

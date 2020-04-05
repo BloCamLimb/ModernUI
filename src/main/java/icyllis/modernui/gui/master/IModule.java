@@ -47,6 +47,15 @@ public interface IModule {
     default void tick(int ticks) {}
 
     /**
+     * Called when Esc pressed, return false to continue operation
+     *
+     * @return cancel the event
+     */
+    default boolean onBack() {
+        return false;
+    }
+
+    /**
      * Called when mouse cursor moved
      * @param mouseX mouse x pos
      * @param mouseY mouse y pos

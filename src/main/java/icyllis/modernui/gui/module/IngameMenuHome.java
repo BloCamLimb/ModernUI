@@ -63,6 +63,18 @@ public class IngameMenuHome extends ModuleGroup {
         overDraw = true;
     }
 
+    @Override
+    public boolean onBack() {
+        if (getCid() != 0) {
+            if (getCid() == 4) {
+                minecraft.gameSettings.saveOptions();
+            }
+            switchChildModule(0);
+            return true;
+        }
+        return false;
+    }
+
     private void exit() {
         IModule popup = new PopupConfirm(this::confirmExit)
                 .setConfirmTitle(I18n.format("gui.modernui.button.exit"))
