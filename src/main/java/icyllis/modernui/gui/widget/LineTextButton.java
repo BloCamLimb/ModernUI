@@ -90,10 +90,8 @@ public class LineTextButton extends AnimatedWidget {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if (listening && mouseButton == 0) {
-            if (canChangeState()) {
-                leftClickFunc.run();
-                return true;
-            }
+            leftClickFunc.run();
+            return true;
         }
         return false;
     }

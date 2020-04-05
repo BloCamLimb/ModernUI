@@ -107,6 +107,8 @@ public abstract class Slider extends FlexibleWidget implements IDraggable {
                     if (thumbHovered) {
                         isDragging = true;
                         focuser.setDraggable(this);
+                    } else {
+                        onStopChanging();
                     }
                     return true;
                 } else if (mouseX >= x1 + slideOffset + 4 && mouseX <= x2) {
@@ -115,6 +117,8 @@ public abstract class Slider extends FlexibleWidget implements IDraggable {
                     if (thumbHovered) {
                         isDragging = true;
                         focuser.setDraggable(this);
+                    } else {
+                        onStopChanging();
                     }
                     return true;
                 }
@@ -143,7 +147,7 @@ public abstract class Slider extends FlexibleWidget implements IDraggable {
             isDragging = false;
             focuser.setDraggable(null);
             checkThumb(mouseX, mouseY);
-            onStopDragging();
+            onStopChanging();
         }
     }
 
@@ -153,7 +157,7 @@ public abstract class Slider extends FlexibleWidget implements IDraggable {
         thumbHovered = false;
     }
 
-    protected abstract void onStopDragging();
+    protected abstract void onStopChanging();
 
     protected abstract void slideToOffset(float offset);
 

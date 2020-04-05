@@ -26,6 +26,8 @@ import icyllis.modernui.gui.popup.PopupMenu;
 import icyllis.modernui.gui.util.DelayedRunnable;
 import icyllis.modernui.gui.widget.DropDownMenu;
 import icyllis.modernui.gui.widget.LineTextButton;
+import icyllis.modernui.system.ModIntegration;
+import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.resources.I18n;
 
 import java.util.ArrayList;
@@ -55,11 +57,12 @@ public class IngameMenuSetting extends ModuleGroup {
                 () -> switchChildModule(4), i -> i == 4));
         consumer.accept(new LineTextButton(I18n.format("gui.modernui.settings.tab.assets"), 48f,
                 this::openAssetsMenu, i -> i >= 5 && i <= 8));
-        addChildModule(1, SettingGeneral::new);
-        addChildModule(2, SettingVideo::new);
-        addChildModule(3, SettingAudio::new);
-        addChildModule(4, SettingControls::new);
-        addChildModule(5, SettingResourcePack::new);
+        int i = 0;
+        addChildModule(++i, SettingGeneral::new);
+        addChildModule(++i, SettingVideo::new);
+        addChildModule(++i, SettingAudio::new);
+        addChildModule(++i, SettingControls::new);
+        addChildModule(++i, SettingResourcePack::new);
 
         switchChildModule(1);
     }
@@ -70,8 +73,13 @@ public class IngameMenuSetting extends ModuleGroup {
         buttonLayout.layout(width / 2f, 20);
     }
 
+    @SuppressWarnings("NoTranslation")
     private void openAssetsMenu() {
-        List<String> tabs = Lists.newArrayList(I18n.format("options.resourcepack"), "Shaders", "Fonts", I18n.format("options.language"));
+        List<String> tabs = Lists.newArrayList(I18n.format("gui.modernui.settings.tab.resource_packs"),
+                I18n.format("gui.modernui.settings.tab.language"));
+        if (ModIntegration.optifineLoaded) {
+            tabs.add(1, I18n.format("of.options.shadersTitle"));
+        }
         DropDownMenu menu = new DropDownMenu(tabs, getCid() - 5, 12, this::assetsActions, DropDownMenu.Align.RIGHT);
         LineTextButton t = buttons.get(4);
         menu.setPos(t.getRight() - 8, t.getBottom() + 1);
@@ -79,7 +87,7 @@ public class IngameMenuSetting extends ModuleGroup {
     }
 
     private void assetsActions(int index) {
-        if (index >= 0 && index <= 3) {
+        if (index >= 0 && index <= 2) {
             switchChildModule(5 + index);
         }
     }

@@ -63,7 +63,7 @@ public class PopupMenu implements IModule {
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         GlobalModuleManager.INSTANCE.closePopup();
         if (menu.isMouseHovered()) {
-            menu.mouseReleased(mouseX, mouseY, mouseButton);
+            menu.mouseClicked(mouseX, mouseY, mouseButton);
         }
         return true;
     }
