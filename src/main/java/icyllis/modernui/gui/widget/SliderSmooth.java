@@ -36,7 +36,7 @@ public class SliderSmooth extends Slider implements IElement, IGuiEventListener 
     }
 
     @Override
-    protected void onStopDragging() {
+    protected void onStopChanging() {
 
     }
 

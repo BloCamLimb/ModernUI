@@ -136,7 +136,7 @@ public class DropdownOptionEntry extends OptionEntry {
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if (drawOptionFrame && mouseButton == 0) {
             DropDownMenu menu = new DropDownMenu(optionNames, currentOptionIndex, 16, this::onValueChanged, DropDownMenu.Align.RIGHT);
             menu.setPos(x2 - 4, y1 + 18 - window.getVisibleOffset());

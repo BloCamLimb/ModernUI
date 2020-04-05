@@ -55,11 +55,14 @@ public class ModuleGroup extends Module {
      * @param module module supplier
      */
     protected void addChildModule(int id, Supplier<Module> module) {
+        if (id < 1) {
+            throw new RuntimeException();
+        }
         childModules.put(id, module);
     }
 
     public void switchChildModule(int id) {
-        if (id == cid || cid != tid) {
+        if (id == cid || cid != tid || !childModules.containsKey(id)) {
             return;
         }
         tid = id;

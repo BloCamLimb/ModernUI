@@ -67,7 +67,7 @@ public class SliderDiscrete extends Slider implements IElement, IGuiEventListene
     }
 
     @Override
-    protected void onStopDragging() {
+    protected void onStopChanging() {
         applier.run();
     }
 

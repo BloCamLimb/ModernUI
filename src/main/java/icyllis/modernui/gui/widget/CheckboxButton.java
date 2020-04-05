@@ -29,6 +29,7 @@ import org.lwjgl.opengl.GL11;
 
 import java.util.function.Function;
 
+//TODO checkbox
 public class CheckboxButton {
 
     /*protected WidgetArea shape;
