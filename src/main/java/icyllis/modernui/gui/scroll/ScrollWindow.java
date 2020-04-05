@@ -19,9 +19,7 @@
 package icyllis.modernui.gui.scroll;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.gui.master.IDraggable;
-import icyllis.modernui.gui.master.Module;
+import icyllis.modernui.gui.master.*;
 import icyllis.modernui.gui.widget.FlexibleWidget;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -34,7 +32,7 @@ import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.function.Function;
 
-public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget {
+public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget implements IFocuser {
 
     protected final Function<Integer, Float> xResizer, yResizer;
 
@@ -159,26 +157,26 @@ public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget {
     }
 
     @Override
-    public void setMouseHoverExit() {
-        super.setMouseHoverExit();
+    protected void onMouseHoverExit() {
+        super.onMouseHoverExit();
         scrollbar.setMouseHoverExit();
         scrollList.setMouseHoverExit();
     }
 
     @Override
-    public boolean mouseClicked(int mouseButton) {
-        if (scrollbar.mouseClicked(mouseButton)) {
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        if (scrollbar.mouseClicked(mouseX, mouseY, mouseButton)) {
             return true;
         }
-        return scrollList.mouseClicked(mouseButton);
+        return scrollList.mouseClicked(mouseX, mouseY + getVisibleOffset(), mouseButton);
     }
 
     @Override
-    public boolean mouseReleased(int mouseButton) {
-        if (scrollbar.mouseReleased(mouseButton)) {
+    public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
+        if (scrollbar.mouseReleased(mouseX, mouseY, mouseButton)) {
             return true;
         }
-        return scrollList.mouseReleased(mouseButton);
+        return scrollList.mouseReleased(mouseX, mouseY + getVisibleOffset(), mouseButton);
     }
 
     @Override
@@ -275,7 +273,25 @@ public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget {
         scrollList.addGroups(collection);
     }
 
+    @Override
     public void setDraggable(@Nullable IDraggable draggable) {
         module.setDraggable(draggable);
+    }
+
+    @Nullable
+    @Override
+    public IDraggable getDraggable() {
+        return module.getDraggable();
+    }
+
+    @Override
+    public void setKeyboardListener(@Nullable IKeyboardListener keyboardListener) {
+        module.setKeyboardListener(keyboardListener);
+    }
+
+    @Nullable
+    @Override
+    public IKeyboardListener getKeyboardListener() {
+        return module.getKeyboardListener();
     }
 }

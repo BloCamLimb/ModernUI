@@ -71,11 +71,11 @@ public class IngameMenuSetting extends ModuleGroup {
     }
 
     private void openAssetsMenu() {
-        List<String> tabs = Lists.newArrayList("Resource Packs", "Shaders", "Fonts", "Language");
-        DropDownMenu list = new DropDownMenu(tabs, getCid() - 5, 12, this::assetsActions, DropDownMenu.Align.RIGHT);
+        List<String> tabs = Lists.newArrayList(I18n.format("options.resourcepack"), "Shaders", "Fonts", I18n.format("options.language"));
+        DropDownMenu menu = new DropDownMenu(tabs, getCid() - 5, 12, this::assetsActions, DropDownMenu.Align.RIGHT);
         LineTextButton t = buttons.get(4);
-        list.setPos(t.getRight() - 8, t.getBottom() + 1);
-        GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(list), false);
+        menu.setPos(t.getRight() - 8, t.getBottom() + 1);
+        GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(menu), false);
     }
 
     private void assetsActions(int index) {

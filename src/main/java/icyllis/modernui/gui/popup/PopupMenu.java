@@ -21,7 +21,6 @@ package icyllis.modernui.gui.popup;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.IModule;
 import icyllis.modernui.gui.master.IWidget;
-import icyllis.modernui.gui.master.Module;
 
 /**
  * Open a drop down menu or context menu, resize and mouse release will close this popup
@@ -62,19 +61,16 @@ public class PopupMenu implements IModule {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        GlobalModuleManager.INSTANCE.closePopup();
         if (menu.isMouseHovered()) {
-            return menu.mouseClicked(mouseButton);
+            menu.mouseReleased(mouseX, mouseY, mouseButton);
         }
-        return false;
+        return true;
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
-        GlobalModuleManager.INSTANCE.closePopup();
-        if (menu.isMouseHovered()) {
-            menu.mouseReleased(mouseButton);
-        }
-        return true;
+        return false;
     }
 
 }

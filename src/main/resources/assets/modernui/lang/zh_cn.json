@@ -4,7 +4,12 @@
   "gui.modernui.button.exit": "退出",
   "gui.modernui.button.confirm": "确认%s",
 
+  "gui.modernui.desc.exit": "你确定要退出到主菜单吗？",
+
   "gui.modernui.menu.back": "回到游戏",
+  "gui.modernui.menu.mods": "Forge模组",
+  "gui.modernui.menu.settings": "设置",
+  "gui.modernui.menu.exit": "退出到主菜单",
 
   "gui.modernui.settings.tab.general": "常规",
   "gui.modernui.settings.tab.video": "视频",

@@ -22,7 +22,7 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Module implements IModule {
+public class Module implements IModule, IFocuser {
 
     private List<IElement> backgrounds = new ArrayList<>();
 
@@ -30,6 +30,9 @@ public class Module implements IModule {
 
     @Nullable
     private IDraggable draggable;
+
+    @Nullable
+    private IKeyboardListener keyboardListener;
 
     public Module() {
 
@@ -79,13 +82,26 @@ public class Module implements IModule {
 
     }
 
+    @Override
     public void setDraggable(@Nullable IDraggable draggable) {
         this.draggable = draggable;
     }
 
     @Nullable
+    @Override
     public IDraggable getDraggable() {
         return draggable;
+    }
+
+    @Override
+    public void setKeyboardListener(@Nullable IKeyboardListener keyboardListener) {
+        this.keyboardListener = keyboardListener;
+    }
+
+    @Nullable
+    @Override
+    public IKeyboardListener getKeyboardListener() {
+        return keyboardListener;
     }
 
     @Override
@@ -104,7 +120,7 @@ public class Module implements IModule {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         for (IWidget widget : widgets) {
-            if (widget.isMouseHovered() && widget.mouseClicked(mouseButton)) {
+            if (widget.isMouseHovered() && widget.mouseClicked(mouseX, mouseY, mouseButton)) {
                 return true;
             }
         }
@@ -113,8 +129,11 @@ public class Module implements IModule {
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
+        if (draggable != null) {
+            draggable.onStopDragging(mouseX, mouseY);
+        }
         for (IWidget widget : widgets) {
-            if (widget.isMouseHovered() && widget.mouseReleased(mouseButton)) {
+            if (widget.isMouseHovered() && widget.mouseReleased(mouseX, mouseY, mouseButton)) {
                 return true;
             }
         }
@@ -134,27 +153,32 @@ public class Module implements IModule {
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, double deltaX, double deltaY) {
         if (draggable != null) {
-            draggable.mouseDragged(mouseX, mouseY, deltaX, deltaY);
-            return true;
+            return draggable.mouseDragged(mouseX, mouseY, deltaX, deltaY);
         }
         return false;
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-
+        if (keyboardListener != null) {
+            return keyboardListener.keyPressed(keyCode, scanCode, modifiers);
+        }
         return false;
     }
 
     @Override
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-
+        if (keyboardListener != null) {
+            return keyboardListener.keyReleased(keyCode, scanCode, modifiers);
+        }
         return false;
     }
 
     @Override
     public boolean charTyped(char codePoint, int modifiers) {
-
+        if (keyboardListener != null) {
+            return keyboardListener.charTyped(codePoint, modifiers);
+        }
         return false;
     }
 

@@ -166,4 +166,34 @@ public class ModuleGroup extends Module {
         }
         return false;
     }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (super.keyPressed(keyCode, scanCode, modifiers)) {
+            return true;
+        } else if (child != null) {
+            return child.keyPressed(keyCode, scanCode, modifiers);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
+        if (super.keyReleased(keyCode, scanCode, modifiers)) {
+            return true;
+        } else if (child != null) {
+            return child.keyReleased(keyCode, scanCode, modifiers);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean charTyped(char codePoint, int modifiers) {
+        if (super.charTyped(codePoint, modifiers)) {
+            return true;
+        } else if (child != null) {
+            return child.charTyped(codePoint, modifiers);
+        }
+        return false;
+    }
 }

@@ -19,6 +19,7 @@
 package icyllis.modernui.gui.widget;
 
 import icyllis.modernui.gui.master.IElement;
+import icyllis.modernui.gui.master.IFocuser;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.util.math.MathHelper;
 
@@ -28,8 +29,8 @@ public class SliderSmooth extends Slider implements IElement, IGuiEventListener 
 
     private Consumer<Double> receiver;
 
-    public SliderSmooth(float width, double initPercent, Consumer<Double> receiver) {
-        super(width);
+    public SliderSmooth(IFocuser focuser, float width, double initPercent, Consumer<Double> receiver) {
+        super(focuser, width);
         this.slideOffset = getMaxSlideOffset() * MathHelper.clamp(initPercent, 0, 1);
         this.receiver = receiver;
     }

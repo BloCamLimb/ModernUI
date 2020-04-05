@@ -164,6 +164,15 @@ public enum GlobalModuleManager {
     }
 
     protected boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (popup != null) {
+            if (popup.keyPressed(keyCode, scanCode, modifiers)) {
+                return true;
+            }
+        } else {
+            if (root.keyPressed(keyCode, scanCode, modifiers)) {
+                return true;
+            }
+        }
         if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
             if (popup != null) {
                 closePopup();
@@ -178,11 +187,7 @@ public enum GlobalModuleManager {
             }
             return true;
         }
-        if (popup != null) {
-            return popup.keyPressed(keyCode, scanCode, modifiers);
-        } else {
-            return root.keyPressed(keyCode, scanCode, modifiers);
-        }
+        return false;
     }
 
     protected boolean keyReleased(int keyCode, int scanCode, int modifiers) {

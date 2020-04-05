@@ -79,28 +79,28 @@ public class DropdownOptionEntry extends OptionEntry {
     }
 
     @Override
-    public void drawExtra(float centerX, float y, float currentTime) {
+    public void drawExtra(float time) {
         if (frameAlpha > 0) {
             Tessellator tessellator = Tessellator.getInstance();
             BufferBuilder bufferBuilder = tessellator.getBuffer();
             RenderSystem.disableTexture();
             bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
-            float bl = centerX + 150 - textLength;
-            bufferBuilder.pos(bl, y + 18, 0.0D).color(96, 96, 96, frameAlpha).endVertex();
-            bufferBuilder.pos(centerX + 160, y + 18, 0.0D).color(96, 96, 96, frameAlpha).endVertex();
-            bufferBuilder.pos(centerX + 160, y + 2, 0.0D).color(96, 96, 96, frameAlpha).endVertex();
-            bufferBuilder.pos(bl, y + 2, 0.0D).color(96, 96, 96, frameAlpha).endVertex();
+            float bl = x2 - 10 - textLength;
+            bufferBuilder.pos(bl, y1 + 18, 0.0D).color(96, 96, 96, frameAlpha).endVertex();
+            bufferBuilder.pos(x2, y1 + 18, 0.0D).color(96, 96, 96, frameAlpha).endVertex();
+            bufferBuilder.pos(x2, y1 + 2, 0.0D).color(96, 96, 96, frameAlpha).endVertex();
+            bufferBuilder.pos(bl, y1 + 2, 0.0D).color(96, 96, 96, frameAlpha).endVertex();
             tessellator.draw();
             RenderSystem.enableTexture();
         }
-        fontRenderer.drawString(optionText, centerX + 150, y + 6, optionBrightness, 1, TextAlign.RIGHT);
+        fontRenderer.drawString(optionText, x2 - 10, y1 + 6, optionBrightness, 1, TextAlign.RIGHT);
         RenderSystem.pushMatrix();
         GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
         GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
         RenderSystem.scalef(0.25f, 0.25f, 1);
         RenderSystem.color3f(optionBrightness, optionBrightness, optionBrightness);
         textureManager.bindTexture(ConstantsLibrary.ICONS);
-        DrawTools.blit(centerX * 4 + 606, y * 4 + 28, 64, 32, 32, 32);
+        DrawTools.blit(x2 * 4 - 34, y1 * 4 + 28, 64, 32, 32, 32);
         RenderSystem.popMatrix();
     }
 
@@ -113,46 +113,50 @@ public class DropdownOptionEntry extends OptionEntry {
     }
 
     @Override
-    public void mouseMoved(double deltaCenterX, double deltaY, double mouseX, double mouseY) {
-        if (available && !drawOptionFrame && optionNames.size() > 1) {
-            if (mouseInOption(deltaCenterX, deltaY)) {
-                drawOptionFrame = true;
+    public boolean updateMouseHover(double mouseX, double mouseY) {
+        if (super.updateMouseHover(mouseX, mouseY)) {
+            if (available && !drawOptionFrame && optionNames.size() > 1) {
+                if (mouseInOption(mouseX, mouseY)) {
+                    drawOptionFrame = true;
+                    GlobalModuleManager.INSTANCE.addAnimation(new Animation(2)
+                            .applyTo(new Applier(64, this::setFrameAlpha)));
+                }
+            } else if (!mouseInOption(mouseX, mouseY)) {
                 GlobalModuleManager.INSTANCE.addAnimation(new Animation(2)
-                        .applyTo(new Applier(64, this::setFrameAlpha)));
+                        .applyTo(new Applier(64, 0, this::setFrameAlpha))
+                        .onFinish(() -> drawOptionFrame = false));
             }
-        } else if (!mouseInOption(deltaCenterX, deltaY)) {
-            GlobalModuleManager.INSTANCE.addAnimation(new Animation(2)
-                    .applyTo(new Applier(64, 0, this::setFrameAlpha))
-                    .onFinish(() -> drawOptionFrame = false));
-        }
-    }
-
-    private boolean mouseInOption(double deltaCenterX, double deltaY) {
-        return deltaCenterX >= 150 - textLength && deltaCenterX <= 156 && deltaY >= 2 && deltaY <= 18;
-    }
-
-    @Override
-    public boolean mouseClicked(double deltaCenterX, double deltaY, double mouseX, double mouseY, int mouseButton) {
-        if (drawOptionFrame && mouseButton == 0) {
-            //DropDownMenu menu = new DropDownMenu(optionNames, currentOptionIndex, 16, this::onValueChanged);
-            //menu.setPos((float) (mouseX - deltaCenterX + 156), (float) (mouseY - deltaY + 18), GlobalModuleManager.INSTANCE.getWindowHeight());
-            //GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(menu), false);
             return true;
         }
-        return super.mouseClicked(deltaCenterX, deltaY, mouseX, mouseY, mouseButton);
+        return false;
+    }
+
+    private boolean mouseInOption(double mouseX, double mouseY) {
+        return mouseX >= x2 - 10 - textLength && mouseX <= x2 - 4 && mouseY >= y1 + 2 && mouseY <= y1 + 18;
     }
 
     @Override
-    protected void onMouseHoverOn() {
-        super.onMouseHoverOn();
+    public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
+        if (drawOptionFrame && mouseButton == 0) {
+            DropDownMenu menu = new DropDownMenu(optionNames, currentOptionIndex, 16, this::onValueChanged, DropDownMenu.Align.RIGHT);
+            menu.setPos(x2 - 4, y1 + 18 - window.getVisibleOffset());
+            GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(menu), false);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    protected void onMouseHoverEnter() {
+        super.onMouseHoverEnter();
         if (available) {
             optionBrightness = 1.0f;
         }
     }
 
     @Override
-    protected void onMouseHoverOff() {
-        super.onMouseHoverOff();
+    protected void onMouseHoverExit() {
+        super.onMouseHoverExit();
         drawOptionFrame = false;
         frameAlpha = 0;
         if (available) {

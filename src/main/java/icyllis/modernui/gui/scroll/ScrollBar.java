@@ -21,7 +21,6 @@ package icyllis.modernui.gui.scroll;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.IDraggable;
 import icyllis.modernui.gui.master.IMouseListener;
-import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
@@ -29,6 +28,7 @@ import org.lwjgl.opengl.GL11;
 
 /**
  * This is a part of scroll window
+ * Not a widget
  */
 public class ScrollBar implements IMouseListener, IDraggable {
 
@@ -52,7 +52,7 @@ public class ScrollBar implements IMouseListener, IDraggable {
 
     private float startTime = 0;
 
-    private boolean mouseHovered = false;
+    private boolean barHovered = false;
 
     private boolean isDragging = false;
 
@@ -63,7 +63,7 @@ public class ScrollBar implements IMouseListener, IDraggable {
     }
 
     public void draw(float currentTime) {
-        if (!mouseHovered && !isDragging && brightness > 0.5f) {
+        if (!barHovered && !isDragging && brightness > 0.5f) {
             if (currentTime > startTime) {
                 float change = (startTime - currentTime) / 40.0f;
                 brightness = Math.max(0.75f + change, 0.5f);
@@ -123,24 +123,24 @@ public class ScrollBar implements IMouseListener, IDraggable {
     @Override
     public boolean updateMouseHover(double mouseX, double mouseY) {
         if (visible) {
-            boolean prev = mouseHovered;
-            mouseHovered = isMouseOnBar(mouseX, mouseY);
-            if (prev != mouseHovered) {
-                if (mouseHovered) {
+            boolean prev = barHovered;
+            barHovered = isMouseOnBar(mouseX, mouseY);
+            if (prev != barHovered) {
+                if (barHovered) {
                     wake();
                 } else {
                     startTime = manager.getAnimationTime() + 10.0f;
                 }
             }
-            return mouseHovered;
+            return barHovered;
         }
         return false;
     }
 
     @Override
     public void setMouseHoverExit() {
-        if (mouseHovered) {
-            mouseHovered = false;
+        if (barHovered) {
+            barHovered = false;
             startTime = manager.getAnimationTime() + 10.0f;
         }
     }
@@ -150,11 +150,9 @@ public class ScrollBar implements IMouseListener, IDraggable {
     }
 
     @Override
-    public boolean mouseClicked(int mouseButton) {
-        double mouseX = manager.getMouseX();
-        double mouseY = manager.getMouseY();
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if (visible && mouseButton == 0) {
-            if (mouseHovered) {
+            if (barHovered) {
                 isDragging = true;
                 //draggingY = mouseY;
                 window.setDraggable(this);
@@ -178,26 +176,29 @@ public class ScrollBar implements IMouseListener, IDraggable {
     }
 
     /**
-     * This shouldn't be called
+     * This shouldn't be called (
      */
     @Override
     public boolean isMouseHovered() {
-        return mouseHovered;
+        return barHovered;
     }
 
     @Override
-    public boolean mouseReleased(int mouseButton) {
-        if (visible && mouseButton == 0 && isDragging) {
-            isDragging = false;
-            window.setDraggable(null);
-            startTime = manager.getAnimationTime() + 10.0f;
-            return true;
-        }
+    public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
         return false;
     }
 
     @Override
-    public void mouseDragged(double mouseX, double mouseY, double deltaX, double deltaY) {
+    public void onStopDragging(double mouseX, double mouseY) {
+        if (visible && isDragging) {
+            isDragging = false;
+            window.setDraggable(null);
+            startTime = manager.getAnimationTime() + 10.0f;
+        }
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, double deltaX, double deltaY) {
         if (visible && isDragging) {
             /*if (barY + deltaY >= y && barY - y + deltaY <= getMaxDragLength()) {
                 draggingY += deltaY;
@@ -206,7 +207,9 @@ public class ScrollBar implements IMouseListener, IDraggable {
                 window.scrollDirect(transformPosToAmount((float) deltaY));
             }*/
             window.scrollDirect(transformPosToAmount((float) deltaY));
+            return true;
         }
+        return false;
     }
 
     /**

@@ -22,6 +22,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.IFontRenderer;
+import icyllis.modernui.gui.master.IMouseListener;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
@@ -31,87 +32,115 @@ import org.lwjgl.opengl.GL11;
 /**
  * Single option line in settings interface
  */
-public abstract class OptionEntry {
+public abstract class OptionEntry implements IMouseListener {
 
-    protected IFontRenderer fontRenderer = FontTools.FONT_RENDERER;
+    protected final IFontRenderer fontRenderer = FontTools.FONT_RENDERER;
 
     protected final SettingScrollWindow window;
 
+    protected float x1, y1;
+
+    protected float x2, y2;
+
+    protected float centerX;
+
+    protected float height;
+
+    protected boolean mouseHovered = false;
+
     public String title;
 
-    //public String[] desc = new String[0];
-
-    protected boolean mouseHovered;
-
     protected float titleBrightness = 0.85f;
-
-    /*public OptionEntry(String optionName, T originalOption, List<T> options) {
-        this(optionName, originalOption, options, null);
-    }*/
 
     public OptionEntry(SettingScrollWindow window, String title) {
         this.window = window;
         this.title = title;
+        this.height = OptionCategory.ENTRY_HEIGHT;
+        //TODO tooltip description lines
         /*if (desc != null)
             this.desc = FontRendererTools.splitStringToWidth(desc, 150);*/
-
     }
 
-    public final void draw(float centerX, float y, float currentTime) {
+    /**
+     * Called when layout
+     */
+    public void setPos(float x1, float x2, float y) {
+        this.x1 = x1;
+        this.x2 = x2;
+        this.centerX = (x1 + x2) / 2f;
+        this.y1 = y;
+        this.y2 = y + height;
+    }
+
+    public final float getHeight() {
+        return height;
+    }
+
+    public final float getTop() {
+        return y1;
+    }
+
+    public final float getBottom() {
+        return y2;
+    }
+
+    public final void draw(float time) {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();
-        fontRenderer.drawString(title, centerX - 160, y + 6, titleBrightness, 1.0f, TextAlign.LEFT);
+        fontRenderer.drawString(title, x1, y1 + 6, titleBrightness, 1.0f, TextAlign.LEFT);
         /*if (desc.length > 0) {
-            //TODO tooltip description lines
+
         }*/
-        drawExtra(centerX, y, currentTime);
+        drawExtra(time);
         RenderSystem.disableTexture();
         bufferBuilder.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);
         GL11.glLineWidth(1.0f);
-        bufferBuilder.pos(centerX - 160, y + OptionCategoryGroup.ENTRY_HEIGHT, 0.0D).color(140, 140, 140, 220).endVertex();
-        bufferBuilder.pos(centerX + 160, y + OptionCategoryGroup.ENTRY_HEIGHT, 0.0D).color(140, 140, 140, 220).endVertex();
+        bufferBuilder.pos(x1, y2, 0.0D).color(140, 140, 140, 220).endVertex();
+        bufferBuilder.pos(x2, y2, 0.0D).color(140, 140, 140, 220).endVertex();
         tessellator.draw();
         RenderSystem.enableTexture();
     }
 
-    public void drawExtra(float centerX, float y, float currentTime) {
+    protected void drawExtra(float time) {
 
     }
 
-    public void mouseMoved(double deltaCenterX, double deltaY, double mouseX, double mouseY) {
-
-    }
-
-    public void setMouseHovered(boolean mouseHovered) {
-        boolean prev = this.mouseHovered;
-        this.mouseHovered = mouseHovered;
+    @Override
+    public boolean updateMouseHover(double mouseX, double mouseY) {
+        boolean prev = mouseHovered;
+        mouseHovered = isMouseInArea(mouseX, mouseY);
         if (prev != mouseHovered) {
             if (mouseHovered) {
-                onMouseHoverOn();
+                onMouseHoverEnter();
             } else {
-                onMouseHoverOff();
+                onMouseHoverExit();
             }
+        }
+        return mouseHovered;
+    }
+
+    private boolean isMouseInArea(double mouseX, double mouseY) {
+        return mouseX >= x1 && mouseX <= x2 && mouseY >= y1 && mouseY <= y2;
+    }
+
+    @Override
+    public final void setMouseHoverExit() {
+        if (mouseHovered) {
+            mouseHovered = false;
+            onMouseHoverExit();
         }
     }
 
-    protected void onMouseHoverOn() {
+    protected void onMouseHoverEnter() {
         titleBrightness = 1.0f;
     }
 
-    protected void onMouseHoverOff() {
+    protected void onMouseHoverExit() {
         titleBrightness = 0.85f;
     }
 
-    public boolean mouseClicked(double deltaCenterX, double deltaY, double mouseX, double mouseY, int mouseButton) {
-        return false;
+    @Override
+    public final boolean isMouseHovered() {
+        return mouseHovered;
     }
-
-    public boolean mouseReleased(double deltaCenterX, double deltaY, double mouseX, double mouseY, int mouseButton) {
-        return false;
-    }
-
-    public boolean mouseDragged(double deltaCenterX, double deltaY, double mouseX, double mouseY, int mouseButton, double deltaMouseX, double deltaMouseY) {
-        return false;
-    }
-
 }

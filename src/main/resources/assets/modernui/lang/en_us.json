@@ -4,7 +4,12 @@
   "gui.modernui.button.exit": "Exit",
   "gui.modernui.button.confirm": "Confirm %s",
 
+  "gui.modernui.desc.exit": "Are you sure you want to exit to main menu?",
+
   "gui.modernui.menu.back": "Back to Game",
+  "gui.modernui.menu.mods": "Forge Mods",
+  "gui.modernui.menu.settings": "Settings",
+  "gui.modernui.menu.exit": "Exit to Main Menu",
 
   "gui.modernui.settings.tab.general": "General",
   "gui.modernui.settings.tab.video": "Video",

@@ -49,15 +49,15 @@ public class IngameMenuHome extends ModuleGroup {
         };
         consumer.accept(new MenuButton(w -> 8f, h -> 8f, I18n.format("gui.modernui.menu.back"), 4,
                 GlobalModuleManager.INSTANCE::closeGuiScreen, -1));
-        consumer.accept(new MenuButton(w -> 8f, h -> 44f, "Advancements", 1,
+        consumer.accept(new MenuButton(w -> 8f, h -> 44f, I18n.format("gui.advancements"), 1,
                 () -> {}, 1));
-        consumer.accept(new MenuButton(w -> 8f, h -> 72f, "Statistics", 2,
+        consumer.accept(new MenuButton(w -> 8f, h -> 72f, I18n.format("gui.stats"), 2,
                 () -> {}, 2));
-        consumer.accept(new MenuButton(w -> 8f, h -> h - 92f, "Forge Mods", 6,
+        consumer.accept(new MenuButton(w -> 8f, h -> h - 92f, I18n.format("gui.modernui.menu.mods"), 6,
                 () -> minecraft.displayGuiScreen(new OptionsScreen(null, minecraft.gameSettings)), 3));
-        consumer.accept(new MenuButton(w -> 8f, h -> h - 64f, "Settings", 0,
+        consumer.accept(new MenuButton(w -> 8f, h -> h - 64f, I18n.format("gui.modernui.menu.settings"), 0,
                 () -> switchChildModule(4), 4));
-        consumer.accept(new MenuButton(w -> 8f, h -> h - 28f, "Exit to Main Menu", 5,
+        consumer.accept(new MenuButton(w -> 8f, h -> h - 28f, I18n.format("gui.modernui.menu.exit"), 5,
                 this::exit, -1));
         addChildModule(4, IngameMenuSetting::new);
         overDraw = true;
@@ -66,7 +66,7 @@ public class IngameMenuHome extends ModuleGroup {
     private void exit() {
         IModule popup = new PopupConfirm(this::confirmExit)
                 .setConfirmTitle(I18n.format("gui.modernui.button.exit"))
-                .setDescription("Are you sure you want to exit to main menu?");
+                .setDescription(I18n.format("gui.modernui.desc.exit"));
         GlobalModuleManager.INSTANCE.openPopup(popup, true);
     }
 

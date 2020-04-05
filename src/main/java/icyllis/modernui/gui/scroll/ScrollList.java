@@ -19,7 +19,6 @@
 package icyllis.modernui.gui.scroll;
 
 import icyllis.modernui.gui.master.IMouseListener;
-import icyllis.modernui.system.ModernUI;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -78,9 +77,9 @@ public class ScrollList<T extends ScrollGroup> implements IMouseListener {
     }
 
     @Override
-    public boolean mouseClicked(int mouseButton) {
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         for (T group : visible) {
-            if (group.isMouseHovered() && group.mouseClicked(mouseButton)) {
+            if (group.isMouseHovered() && group.mouseClicked(mouseX, mouseY, mouseButton)) {
                 return true;
             }
         }
@@ -88,9 +87,9 @@ public class ScrollList<T extends ScrollGroup> implements IMouseListener {
     }
 
     @Override
-    public boolean mouseReleased(int mouseButton) {
+    public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
         for (T group : visible) {
-            if (group.isMouseHovered() && group.mouseReleased(mouseButton)) {
+            if (group.isMouseHovered() && group.mouseReleased(mouseX, mouseY, mouseButton)) {
                 return true;
             }
         }

@@ -34,6 +34,7 @@ public interface IMouseListener {
 
     /**
      * If update mouse hover event is canceled, the rest listeners will be called this method
+     * Must check if mouseHovered and set mouse hovered to false
      */
     default void setMouseHoverExit() {}
 
@@ -48,20 +49,26 @@ public interface IMouseListener {
     /**
      * Called when mouse hover and a mouse button clicked
      * See {@link #isMouseHovered()}
+     *
+     * @param mouseX scaled mouse X pos
+     * @param mouseY scaled mouse Y pos
      * @param mouseButton See {@link GLFW}
      * @return return true to cancel the event
      */
-    default boolean mouseClicked(int mouseButton) {
+    default boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         return false;
     }
 
     /**
      * Called when mouse hover and a mouse button released
      * See {@link #isMouseHovered()}
+     *
+     * @param mouseX scaled mouse X pos
+     * @param mouseY scaled mouse Y pos
      * @param mouseButton See {@link GLFW}
      * @return return true to cancel the event
      */
-    default boolean mouseReleased(int mouseButton) {
+    default boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
         return false;
     }
 

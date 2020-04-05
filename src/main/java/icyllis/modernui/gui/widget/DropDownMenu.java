@@ -147,7 +147,7 @@ public class DropDownMenu extends FlexibleWidget {
             this.x2 = Math.min(x + width, gWidth);
             this.x1 = x2 - width;
         } else {
-            this.x1 = Math.max(x2 - width, 0);
+            this.x1 = Math.max(x - width, 0);
             this.x2 = x1 + width;
         }
         this.y1 = y;
@@ -176,15 +176,16 @@ public class DropDownMenu extends FlexibleWidget {
     }
 
     @Override
-    public boolean mouseClicked(int mouseButton) {
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        if (listening && mouseButton == 0 && hovered != -1) {
+            callback.accept(hovered);
+            return true;
+        }
         return false;
     }
 
     @Override
-    public boolean mouseReleased(int mouseButton) {
-        if (listening && mouseButton == 0 && hovered != -1) {
-            callback.accept(hovered);
-        }
+    public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
         return false;
     }
 

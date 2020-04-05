@@ -21,6 +21,7 @@ package icyllis.modernui.gui.option;
 import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.IFontRenderer;
+import icyllis.modernui.gui.master.IMouseListener;
 import icyllis.modernui.gui.scroll.ScrollGroup;
 import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.gui.util.Color3I;
@@ -28,7 +29,7 @@ import net.minecraft.util.text.TextFormatting;
 
 import java.util.List;
 
-public class OptionCategoryGroup extends ScrollGroup {
+public class OptionCategory extends ScrollGroup {
 
     public static int ENTRY_HEIGHT = 21;
 
@@ -38,12 +39,26 @@ public class OptionCategoryGroup extends ScrollGroup {
 
     private List<OptionEntry> entries;
 
-    public OptionCategoryGroup(ScrollWindow<?> window, String title, List<OptionEntry> entries) {
+    public OptionCategory(ScrollWindow<?> window, String title, List<OptionEntry> entries) {
         super(window);
         this.title = TextFormatting.BOLD + title;
         this.entries = entries;
         // 30 for title, 6 for end space.
         height = 36 + entries.size() * ENTRY_HEIGHT;
+    }
+
+    @Override
+    public void setPos(float x1, float x2, float y) {
+        super.setPos(x1, x2, y);
+        x1 = centerX - 160;
+        x2 = centerX + 160;
+        y += 30;
+        int i = 0;
+        for (OptionEntry entry : entries) {
+            float cy = y + i * ENTRY_HEIGHT;
+            entry.setPos(x1, x2, cy);
+            i++;
+        }
     }
 
     @Override
@@ -54,11 +69,62 @@ public class OptionCategoryGroup extends ScrollGroup {
     @Override
     public void draw(float time) {
         fontRenderer.drawString(title, centerX - 160, y1 + 14, Color3I.WHILE, 1.0f, TextAlign.LEFT);
-        //int maxSize = Math.min((int) Math.ceil((bottomY - y) / ENTRY_HEIGHT), entries.size());
-        for (int i = 0; i < entries.size(); i++) {
-            float cy = y1 + 30 + i * ENTRY_HEIGHT;
-            entries.get(i).draw(centerX, cy, time);
+
+        for (OptionEntry entry : entries) {
+            entry.draw(time);
         }
+    }
+
+    @Override
+    public boolean updateMouseHover(double mouseX, double mouseY) {
+        if (super.updateMouseHover(mouseX, mouseY)) {
+            boolean result = false;
+            for (OptionEntry entry : entries) {
+                if (!result && entry.updateMouseHover(mouseX, mouseY)) {
+                    result = true;
+                } else {
+                    entry.setMouseHoverExit();
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    protected void onMouseHoverExit() {
+        super.onMouseHoverExit();
+        entries.forEach(IMouseListener::setMouseHoverExit);
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        for (OptionEntry entry : entries) {
+            if (entry.isMouseHovered() && entry.mouseClicked(mouseX, mouseY, mouseButton)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
+        for (OptionEntry entry : entries) {
+            if (entry.isMouseHovered() && entry.mouseReleased(mouseX, mouseY, mouseButton)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean mouseScrolled(double amount) {
+        for (OptionEntry entry : entries) {
+            if (entry.isMouseHovered() && entry.mouseScrolled(amount)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /*@Override

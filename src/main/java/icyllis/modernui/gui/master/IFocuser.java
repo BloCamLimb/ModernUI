@@ -16,14 +16,22 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.scroll;
+package icyllis.modernui.gui.master;
 
-import icyllis.modernui.gui.master.Module;
-import icyllis.modernui.gui.option.OptionCategory;
+import javax.annotation.Nullable;
 
-public class SettingScrollWindow extends ScrollWindow<OptionCategory> {
+/**
+ * Used to focus a draggable widget or keyboard listener
+ */
+public interface IFocuser {
 
-    public SettingScrollWindow(Module module) {
-        super(module, w -> 40f, h -> 36f, w -> w - 80f, h -> h - 72f);
-    }
+    void setDraggable(@Nullable IDraggable draggable);
+
+    @Nullable
+    IDraggable getDraggable();
+
+    void setKeyboardListener(@Nullable IKeyboardListener keyboardListener);
+
+    @Nullable
+    IKeyboardListener getKeyboardListener();
 }

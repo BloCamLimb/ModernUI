@@ -22,7 +22,6 @@ import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.DrawTools;
-import icyllis.modernui.system.ModernUI;
 
 import java.util.function.Predicate;
 
@@ -89,7 +88,7 @@ public class LineTextButton extends AnimatedWidget {
     }
 
     @Override
-    public boolean mouseClicked(int mouseButton) {
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if (listening && mouseButton == 0) {
             if (canChangeState()) {
                 leftClickFunc.run();
