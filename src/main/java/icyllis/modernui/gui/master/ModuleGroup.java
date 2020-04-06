@@ -128,6 +128,14 @@ public class ModuleGroup extends Module {
     }
 
     @Override
+    public boolean onBack() {
+        if (child != null) {
+            return child.onBack();
+        }
+        return false;
+    }
+
+    @Override
     public boolean mouseMoved(double mouseX, double mouseY) {
         if (super.mouseMoved(mouseX, mouseY)) {
             return true;

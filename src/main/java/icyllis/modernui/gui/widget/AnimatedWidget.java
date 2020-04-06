@@ -47,7 +47,7 @@ public abstract class AnimatedWidget extends AnimatedElement implements IWidget 
     }
 
     @Override
-    public final void setPos(float x, float y) {
+    public void setPos(float x, float y) {
         this.x1 = x;
         this.x2 = x + width;
         this.y1 = y;

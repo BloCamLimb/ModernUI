@@ -65,6 +65,9 @@ public class IngameMenuHome extends ModuleGroup {
 
     @Override
     public boolean onBack() {
+        if (super.onBack()) {
+            return true;
+        }
         if (getCid() != 0) {
             if (getCid() == 4) {
                 minecraft.gameSettings.saveOptions();
