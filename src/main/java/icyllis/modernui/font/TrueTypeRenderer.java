@@ -141,7 +141,7 @@ public class TrueTypeRenderer implements IFontRenderer {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder buffer = tessellator.getBuffer();
 
-        /* The currently active font syle is needed to select the proper ASCII digit style for fast replacement */
+        /* The currently active font style is needed to select the proper ASCII digit style for fast replacement */
         int fontStyle = StringCache.FormattingCode.PLAIN;
 
         for (int glyphIndex = 0, colorIndex = 0; glyphIndex < entry.glyphs.length; glyphIndex++) {

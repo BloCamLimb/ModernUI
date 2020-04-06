@@ -18,12 +18,21 @@
 
 package icyllis.modernui.gui.option;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.IFontRenderer;
+import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.gui.master.IMouseListener;
+import icyllis.modernui.gui.util.Color3I;
+import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.BufferBuilder;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.texture.TextureManager;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.resources.ClientResourcePackInfo;
+import org.lwjgl.opengl.GL11;
 
 public class ResourcePackEntry implements IMouseListener {
 
@@ -63,13 +72,42 @@ public class ResourcePackEntry implements IMouseListener {
     }
 
     public final void draw(float time) {
-        fontRenderer.drawString(title, x1, y1);
+        Tessellator tessellator = Tessellator.getInstance();
+        BufferBuilder bufferBuilder = tessellator.getBuffer();
+        RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
+        bindTexture();
+        DrawTools.blitIcon(x1 + 3, y1 + 2, 32, 32);
+
+        if (mouseHovered) {
+            RenderSystem.disableTexture();
+            GL11.glEnable(GL11.GL_LINE_SMOOTH);
+            GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
+            GL11.glLineWidth(1.0F);
+            bufferBuilder.begin(GL11.GL_LINE_LOOP, DefaultVertexFormats.POSITION_COLOR);
+            bufferBuilder.pos(x1 + 1, y2, 0.0D).color(224, 224, 224, 180).endVertex();
+            bufferBuilder.pos(x2 - 1, y2, 0.0D).color(224, 224, 224, 180).endVertex();
+            bufferBuilder.pos(x2 - 1, y1, 0.0D).color(224, 224, 224, 180).endVertex();
+            bufferBuilder.pos(x1 + 1, y1, 0.0D).color(224, 224, 224, 180).endVertex();
+            tessellator.draw();
+            GL11.glDisable(GL11.GL_LINE_SMOOTH);
+            RenderSystem.enableTexture();
+        }
+
+        fontRenderer.drawString(title, x1 + 39, y1 + 4);
+        int i = 0;
+        for (String d : desc) {
+            fontRenderer.drawString(d, x1 + 39, y1 + 14 + i * 10, Color3I.GRAY);
+            i++;
+            if (i > 1) {
+                break;
+            }
+        }
     }
 
     public void updateTitle() {
         title = info.getTitle().getFormattedText();
         float w = fontRenderer.getStringWidth(title);
-        float cw = width - 43;
+        float cw = width - 41;
         if (w > cw) {
             float kw = cw - fontRenderer.getStringWidth("...");
             title = fontRenderer.trimStringToWidth(title, kw, false) + "...";
@@ -79,10 +117,49 @@ public class ResourcePackEntry implements IMouseListener {
 
     public void updateDescription() {
         //TODO split string is not perfect
-        this.desc = FontTools.splitStringToWidth(info.getDescription().getFormattedText(), width - 43);
+        this.desc = FontTools.splitStringToWidth(info.getDescription().getFormattedText(), width - 41);
     }
 
     public void bindTexture() {
         info.func_195808_a(textureManager);
+    }
+
+    @Override
+    public boolean updateMouseHover(double mouseX, double mouseY) {
+        boolean prev = mouseHovered;
+        mouseHovered = isMouseInArea(mouseX, mouseY);
+        if (prev != mouseHovered) {
+            if (mouseHovered) {
+                onMouseHoverEnter();
+            } else {
+                onMouseHoverExit();
+            }
+        }
+        return mouseHovered;
+    }
+
+    private boolean isMouseInArea(double mouseX, double mouseY) {
+        return mouseX >= x1 && mouseX <= x2 && mouseY >= y1 && mouseY <= y2;
+    }
+
+    @Override
+    public final void setMouseHoverExit() {
+        if (mouseHovered) {
+            mouseHovered = false;
+            onMouseHoverExit();
+        }
+    }
+
+    private void onMouseHoverEnter() {
+
+    }
+
+    private void onMouseHoverExit() {
+
+    }
+
+    @Override
+    public final boolean isMouseHovered() {
+        return mouseHovered;
     }
 }

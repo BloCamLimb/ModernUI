@@ -22,7 +22,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import org.lwjgl.opengl.GL11;
 
 @SuppressWarnings("DuplicatedCode")
 public class DrawTools {
@@ -221,25 +220,25 @@ public class DrawTools {
     }*/
 
     public static void blit(float x, float y, float u, float v, float width, float height) {
-        blitToScale(x, y, 0, u, v, width, height);
+        blit(x, y, u, v, width, height, 256, 256);
     }
 
-    public static void blitWithZ(float x, float y, float z, float u, float v, float width, float height) {
-        blitToScale(x, y, z, u, v, width, height);
+    public static void blit(float x, float y, float textureX, float textureY, float width, float height, float textureWidth, float textureHeight) {
+        blitFinal(x, x + width, y, y + height, textureX / textureWidth, (textureX + width) / textureWidth, textureY / textureHeight, (textureY + height) / textureHeight);
     }
 
-    private static void blitToScale(float x, float y, float z, float textureX, float textureY, float width, float height) {
-        blitRender(x, x + width, y, y + height, z, textureX / 256.0f, (textureX + width) / 256.0f, textureY / 256.0f, (textureY + height) / 256.0f);
+    public static void blitIcon(float x, float y, float width, float height) {
+        blitFinal(x, x + width, y, y + height, 0, 1, 0, 1);
     }
 
-    private static void blitRender(double x1, double x2, double y1, double y2, double z, float textureX1, float textureX2, float textureY1, float textureY2) {
+    private static void blitFinal(double x1, double x2, double y1, double y2, float textureX1, float textureX2, float textureY1, float textureY2) {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferbuilder = tessellator.getBuffer();
         bufferbuilder.begin(7, DefaultVertexFormats.POSITION_TEX);
-        bufferbuilder.pos(x1, y2, z).tex(textureX1, textureY2).endVertex();
-        bufferbuilder.pos(x2, y2, z).tex(textureX2, textureY2).endVertex();
-        bufferbuilder.pos(x2, y1, z).tex(textureX2, textureY1).endVertex();
-        bufferbuilder.pos(x1, y1, z).tex(textureX1, textureY1).endVertex();
+        bufferbuilder.pos(x1, y2, 0.0D).tex(textureX1, textureY2).endVertex();
+        bufferbuilder.pos(x2, y2, 0.0D).tex(textureX2, textureY2).endVertex();
+        bufferbuilder.pos(x2, y1, 0.0D).tex(textureX2, textureY1).endVertex();
+        bufferbuilder.pos(x1, y1, 0.0D).tex(textureX1, textureY1).endVertex();
         tessellator.draw();
     }
 }

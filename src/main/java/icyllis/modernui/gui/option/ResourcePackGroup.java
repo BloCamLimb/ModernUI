@@ -22,6 +22,7 @@ import com.google.common.collect.Lists;
 import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.gui.master.IMouseListener;
 import icyllis.modernui.gui.scroll.ScrollGroup;
 import icyllis.modernui.gui.scroll.ScrollWindow;
 import net.minecraft.client.resources.ClientResourcePackInfo;
@@ -74,6 +75,9 @@ public class ResourcePackGroup extends ScrollGroup {
         height = 18 + entries.size() * ENTRY_HEIGHT;
     }
 
+    /**
+     * Layout entries and group
+     */
     @Override
     public void setPos(float x1, float x2, float y) {
         super.setPos(x1, x2, y);
@@ -106,6 +110,28 @@ public class ResourcePackGroup extends ScrollGroup {
         for (ResourcePackEntry entry : entries) {
             entry.draw(time);
         }
+    }
+
+    @Override
+    public boolean updateMouseHover(double mouseX, double mouseY) {
+        if (super.updateMouseHover(mouseX, mouseY)) {
+            boolean result = false;
+            for (ResourcePackEntry entry : entries) {
+                if (!result && entry.updateMouseHover(mouseX, mouseY)) {
+                    result = true;
+                } else {
+                    entry.setMouseHoverExit();
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    protected void onMouseHoverExit() {
+        super.onMouseHoverExit();
+        entries.forEach(IMouseListener::setMouseHoverExit);
     }
 
     public enum Type {
