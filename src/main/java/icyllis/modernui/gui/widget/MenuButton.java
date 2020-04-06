@@ -26,6 +26,7 @@ import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.gui.util.Color3I;
 import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.system.ConstantsLibrary;
+import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureManager;
 import org.lwjgl.opengl.GL11;
@@ -153,6 +154,11 @@ public class MenuButton extends AnimatedWidget {
 
     public void onModuleChanged(int id) {
         setLockState(this.id == id);
+        if (canChangeState()) {
+            if (!mouseHovered) {
+                onMouseHoverExit();
+            }
+        }
     }
 
     private static class SideTextAnimator extends AnimatedElement {

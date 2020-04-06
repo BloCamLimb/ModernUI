@@ -19,6 +19,7 @@
 package icyllis.modernui.gui.module;
 
 import com.google.common.collect.Lists;
+import icyllis.modernui.gui.background.ResourcePackBG;
 import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.option.ResourcePackGroup;
 import icyllis.modernui.gui.scroll.ScrollWindow;
@@ -36,9 +37,10 @@ public class SettingResourcePack extends Module {
 
     public SettingResourcePack() {
         minecraft = Minecraft.getInstance();
+        addBackground(new ResourcePackBG());
 
-        Function<Integer, Float> widthFunc = w -> (float) Math.round((w - 80) / 2f) - 8;
-        Function<Integer, Float> leftXFunc = w -> w / 2f - widthFunc.apply(w) - 8;
+        Function<Integer, Float> widthFunc = w -> Math.min((w - 80) / 2f - 8f, 240);
+        Function<Integer, Float> leftXFunc = w -> w / 2f - widthFunc.apply(w) - 8f;
 
         aWindow = new ScrollWindow<>(this, leftXFunc, h -> 36f, widthFunc, h -> h - 72f);
         sWindow = new ScrollWindow<>(this, w -> w / 2f + 8, h -> 36f, widthFunc, h -> h - 72f);
