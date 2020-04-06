@@ -31,10 +31,10 @@ public class ResourcePackBG implements IElement {
 
     @Override
     public void draw(float time) {
-        DrawTools.fillRectWithColor(x11, y1, x12, y2, 0x60000000);
+        DrawTools.fillRectWithColor(x11, y1, x12, y2, 0x45000000);
         if (drawSide) {
-            DrawTools.fillRectWithColor(x21, y1, x22, y2, 0x90000000);
-            DrawTools.fillRectWithColor(x31, y1, x32, y2, 0x90000000);
+            DrawTools.fillRectWithColor(x21, y1, x22, y2, 0x45000000);
+            DrawTools.fillRectWithColor(x31, y1, x32, y2, 0x45000000);
         }
     }
 

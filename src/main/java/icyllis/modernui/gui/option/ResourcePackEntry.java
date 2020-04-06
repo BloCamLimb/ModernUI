@@ -23,16 +23,20 @@ import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.gui.master.IMouseListener;
+import icyllis.modernui.gui.module.SettingResourcePack;
 import icyllis.modernui.gui.util.Color3I;
-import net.minecraft.client.GameSettings;
+import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.resources.ClientResourcePackInfo;
+import net.minecraft.client.resources.I18n;
+import net.minecraft.util.text.TextFormatting;
 import org.lwjgl.opengl.GL11;
+
+import java.util.List;
 
 public class ResourcePackEntry implements IMouseListener {
 
@@ -40,7 +44,9 @@ public class ResourcePackEntry implements IMouseListener {
 
     private final TextureManager textureManager = Minecraft.getInstance().getTextureManager();
 
-    private final ClientResourcePackInfo info;
+    private final ClientResourcePackInfo resourcePack;
+
+    private final SettingResourcePack module;
 
     private float x1, y1;
 
@@ -56,8 +62,9 @@ public class ResourcePackEntry implements IMouseListener {
 
     private String[] desc = new String[0];
 
-    public ResourcePackEntry(ClientResourcePackInfo info) {
-        this.info = info;
+    public ResourcePackEntry(SettingResourcePack module, ClientResourcePackInfo resourcePack) {
+        this.module = module;
+        this.resourcePack = resourcePack;
         this.height = ResourcePackGroup.ENTRY_HEIGHT;
     }
 
@@ -71,27 +78,47 @@ public class ResourcePackEntry implements IMouseListener {
         updateDescription();
     }
 
-    public final void draw(float time) {
+    public final void draw() {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();
-        RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
-        bindTexture();
-        DrawTools.blitIcon(x1 + 3, y1 + 2, 32, 32);
 
-        if (mouseHovered) {
+        if (module.getHighlight() == this) {
+            RenderSystem.disableTexture();
+            bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+            bufferBuilder.pos(x1 + 1, y2, 0.0D).color(128, 128, 128, 96).endVertex();
+            bufferBuilder.pos(x2 - 7, y2, 0.0D).color(128, 128, 128, 96).endVertex();
+            bufferBuilder.pos(x2 - 7, y1, 0.0D).color(128, 128, 128, 96).endVertex();
+            bufferBuilder.pos(x1 + 1, y1, 0.0D).color(128, 128, 128, 96).endVertex();
+            tessellator.draw();
+            GL11.glEnable(GL11.GL_LINE_SMOOTH);
+            GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
+            GL11.glLineWidth(1.0F);
+            bufferBuilder.begin(GL11.GL_LINE_LOOP, DefaultVertexFormats.POSITION_COLOR);
+            bufferBuilder.pos(x1 + 1, y2, 0.0D).color(255, 255, 255, 224).endVertex();
+            bufferBuilder.pos(x2 - 7, y2, 0.0D).color(255, 255, 255, 224).endVertex();
+            bufferBuilder.pos(x2 - 7, y1, 0.0D).color(255, 255, 255, 224).endVertex();
+            bufferBuilder.pos(x1 + 1, y1, 0.0D).color(255, 255, 255, 224).endVertex();
+            tessellator.draw();
+            GL11.glDisable(GL11.GL_LINE_SMOOTH);
+            RenderSystem.enableTexture();
+        } else if (mouseHovered) {
             RenderSystem.disableTexture();
             GL11.glEnable(GL11.GL_LINE_SMOOTH);
             GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
             GL11.glLineWidth(1.0F);
             bufferBuilder.begin(GL11.GL_LINE_LOOP, DefaultVertexFormats.POSITION_COLOR);
             bufferBuilder.pos(x1 + 1, y2, 0.0D).color(224, 224, 224, 180).endVertex();
-            bufferBuilder.pos(x2 - 1, y2, 0.0D).color(224, 224, 224, 180).endVertex();
-            bufferBuilder.pos(x2 - 1, y1, 0.0D).color(224, 224, 224, 180).endVertex();
+            bufferBuilder.pos(x2 - 7, y2, 0.0D).color(224, 224, 224, 180).endVertex();
+            bufferBuilder.pos(x2 - 7, y1, 0.0D).color(224, 224, 224, 180).endVertex();
             bufferBuilder.pos(x1 + 1, y1, 0.0D).color(224, 224, 224, 180).endVertex();
             tessellator.draw();
             GL11.glDisable(GL11.GL_LINE_SMOOTH);
             RenderSystem.enableTexture();
         }
+
+        RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
+        bindTexture();
+        DrawTools.blitIcon(x1 + 3, y1 + 2, 32, 32);
 
         fontRenderer.drawString(title, x1 + 39, y1 + 4);
         int i = 0;
@@ -105,9 +132,12 @@ public class ResourcePackEntry implements IMouseListener {
     }
 
     public void updateTitle() {
-        title = info.getTitle().getFormattedText();
+        title = resourcePack.getTitle().getFormattedText();
+        if (!resourcePack.getCompatibility().isCompatible()) {
+            title = TextFormatting.DARK_RED + "(" + I18n.format("resourcePack.incompatible") + ") " + TextFormatting.RESET + title;
+        }
         float w = fontRenderer.getStringWidth(title);
-        float cw = width - 41;
+        float cw = width - 45;
         if (w > cw) {
             float kw = cw - fontRenderer.getStringWidth("...");
             title = fontRenderer.trimStringToWidth(title, kw, false) + "...";
@@ -116,12 +146,53 @@ public class ResourcePackEntry implements IMouseListener {
     }
 
     public void updateDescription() {
-        //TODO split string is not perfect
-        this.desc = FontTools.splitStringToWidth(info.getDescription().getFormattedText(), width - 41);
+        this.desc = FontTools.splitStringToWidth(resourcePack.getDescription().getFormattedText(), width - 45);
     }
 
     public void bindTexture() {
-        info.func_195808_a(textureManager);
+        resourcePack.func_195808_a(textureManager);
+    }
+
+    public boolean canIntoSelected() {
+        return !module.getSelectedGroup().getEntries().contains(this);
+    }
+
+    public boolean canIntoAvailable() {
+        return module.getSelectedGroup().getEntries().contains(this) && !resourcePack.isAlwaysEnabled();
+    }
+
+    public boolean canGoUp() {
+        List<ResourcePackEntry> list = module.getSelectedGroup().getEntries();
+        int i = list.indexOf(this);
+        return i > 0 && !(list.get(i - 1)).resourcePack.isOrderLocked();
+    }
+
+    public boolean canGoDown() {
+        List<ResourcePackEntry> list = module.getSelectedGroup().getEntries();
+        int i = list.indexOf(this);
+        return i >= 0 && i < list.size() - 1 && !(list.get(i + 1)).resourcePack.isOrderLocked();
+    }
+
+    public ClientResourcePackInfo getResourcePack() {
+        return resourcePack;
+    }
+
+    public final void intoSelected(ResourcePackGroup selectedGroup) {
+        resourcePack.getPriority().insert(selectedGroup.getEntries(), this, ResourcePackEntry::getResourcePack, true);
+    }
+
+    public void goUp() {
+        List<ResourcePackEntry> list = module.getSelectedGroup().getEntries();
+        int i = list.indexOf(this);
+        list.remove(i);
+        list.add(i - 1, this);
+    }
+
+    public void goDown() {
+        List<ResourcePackEntry> list = module.getSelectedGroup().getEntries();
+        int i = list.indexOf(this);
+        list.remove(i);
+        list.add(i + 1, this);
     }
 
     @Override
@@ -148,6 +219,15 @@ public class ResourcePackEntry implements IMouseListener {
             mouseHovered = false;
             onMouseHoverExit();
         }
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        if (mouseButton == 0) {
+            module.setHighlight(this);
+            return true;
+        }
+        return false;
     }
 
     private void onMouseHoverEnter() {
