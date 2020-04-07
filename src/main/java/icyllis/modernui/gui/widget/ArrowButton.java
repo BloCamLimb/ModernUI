@@ -41,10 +41,14 @@ public class ArrowButton extends AnimatedWidget {
 
     private Runnable leftClickFunc;
 
-    public ArrowButton(Direction direction, Runnable leftClick) {
+    public ArrowButton(Direction direction, Runnable leftClick, boolean available) {
         super(12, 12);
         u = 32 * direction.ordinal();
         this.leftClickFunc = leftClick;
+        this.available = available;
+        if (!available) {
+            brightness = 0.3f;
+        }
     }
 
     @Override
@@ -70,7 +74,8 @@ public class ArrowButton extends AnimatedWidget {
         if (available) {
             if (mouseHovered) {
                 manager.addAnimation(new Animation(2)
-                        .applyTo(new Applier(brightness, 1.0f, v -> brightness = v)));
+                        .applyTo(new Applier(brightness, 1.0f, v -> brightness = v))
+                        .onFinish(() -> setOpenState(true)));
             } else {
                 manager.addAnimation(new Animation(2)
                         .applyTo(new Applier(brightness, 0.8f, v -> brightness = v)));
@@ -93,9 +98,11 @@ public class ArrowButton extends AnimatedWidget {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        if (listening && available && mouseButton == 0) {
-            brightness = 0.85f;
-            leftClickFunc.run();
+        if (listening && mouseButton == 0) {
+            if (available) {
+                brightness = 0.85f;
+                leftClickFunc.run();
+            }
             return true;
         }
         return false;

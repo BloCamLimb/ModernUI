@@ -191,12 +191,12 @@ public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget implemen
         return true;
     }
 
-    protected void scrollSmooth(float delta) {
+    public void scrollSmooth(float delta) {
         float amount = MathHelper.clamp(controller.getTargetValue() + delta, 0, getMaxScrollAmount());
         controller.setTargetValue(amount);
     }
 
-    protected void scrollDirect(float delta) {
+    public void scrollDirect(float delta) {
         float amount = Math.round(MathHelper.clamp(controller.getTargetValue() + delta, 0, getMaxScrollAmount()));
         controller.setTargetValueDirect(amount);
         callbackScrollAmount(amount);
@@ -225,6 +225,10 @@ public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget implemen
 
     public float getVisibleOffset() {
         return scrollAmount - borderThickness;
+    }
+
+    public float getActualScrollAmount() {
+        return scrollAmount;
     }
 
     public float getMaxScrollAmount() {

@@ -82,6 +82,10 @@ public class Module implements IModule, IFocuser {
 
     }
 
+    public void upperModuleExit() {
+
+    }
+
     @Override
     public void setDraggable(@Nullable IDraggable draggable) {
         this.draggable = draggable;

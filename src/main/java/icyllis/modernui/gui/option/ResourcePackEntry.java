@@ -78,6 +78,14 @@ public class ResourcePackEntry implements IMouseListener {
         updateDescription();
     }
 
+    public final float getTop() {
+        return y1;
+    }
+
+    public final float getBottom() {
+        return y2;
+    }
+
     public final void draw() {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();
