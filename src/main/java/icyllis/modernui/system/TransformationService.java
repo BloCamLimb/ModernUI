@@ -58,7 +58,7 @@ public class TransformationService implements ITransformationService {
 
     @Override
     public void initialize(@Nonnull IEnvironment environment) {
-        // transformation service is hard, only cpw knows
+        // Transformation service is hard, only cpw knows
         throw new RuntimeException();
     }
 
@@ -102,9 +102,9 @@ public class TransformationService implements ITransformationService {
         return Optional.empty();
     }*/
 
-    /* I: Why not use ITransformer<?>.
+    /*
     Fermion: Fuck you, ITransformer<?> is hard, wasn't it?
-    Lex: Oh, fuck that project(fermion). */
+    Lex: Oh, fuck that project (fermion). */
     @Nonnull
     @Override
     public List<ITransformer> transformers() {

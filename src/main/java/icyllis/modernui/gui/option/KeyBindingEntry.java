@@ -24,8 +24,10 @@ import icyllis.modernui.gui.popup.PopupMenu;
 import icyllis.modernui.gui.widget.DropDownMenu;
 import icyllis.modernui.gui.widget.KeyInputBox;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
+import icyllis.modernui.gui.widget.LineTextButton;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screen.ControlsScreen;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.client.util.InputMappings;
@@ -78,16 +80,25 @@ public class KeyBindingEntry extends OptionEntry {
             //DropDownMenu list = new DropDownMenu(Lists.newArrayList("WIP =w="), -1, 16, this::menuActions);
             //list.setPos((float) mouseX, (float) (mouseY - deltaY + 18), GlobalModuleManager.INSTANCE.getWindowHeight());
             //GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(list), false);
+            DropDownMenu menu = new DropDownMenu(Lists.newArrayList(I18n.format("controls.reset")), -1, 12, this::menuActions, DropDownMenu.Align.RIGHT);
+            menu.setPos((float) GlobalModuleManager.INSTANCE.getMouseX(), (float) GlobalModuleManager.INSTANCE.getMouseY());
+            GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(menu), false);
             return true;
         }
-        if (inputBox.isMouseHovered() && inputBox.mouseClicked(mouseX, mouseY, mouseButton)) {
-            return true;
-        }
-        return false;
+        return inputBox.isMouseHovered() && inputBox.mouseClicked(mouseX, mouseY, mouseButton);
     }
 
+    /**
+     * Context menu
+     */
     private void menuActions(int index) {
-
+        if (index == 0) {
+            GameSettings gameSettings = Minecraft.getInstance().gameSettings;
+            keyBinding.setToDefault();
+            gameSettings.setKeyBindingCode(keyBinding, keyBinding.getDefault());
+            updateKeyText();
+            conflictsCallback.run();
+        }
     }
 
     // vanilla call this every frame... but we don't

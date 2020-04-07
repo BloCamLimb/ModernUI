@@ -29,6 +29,8 @@ public class FontTools {
         FONT_RENDERER = TrueTypeRenderer.INSTANCE;
     }
 
+    // vanilla renderer is not supported (have bugs in modern ui screens)
+    @Deprecated
     public static void switchRenderer(boolean mui) {
         if (mui) {
             FONT_RENDERER = TrueTypeRenderer.INSTANCE;

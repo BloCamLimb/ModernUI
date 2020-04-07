@@ -139,7 +139,6 @@ public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget implemen
         this.scrollbar.setPos(this.x2 - scrollbar.barThickness - 1, y1 + 1);
         this.scrollbar.setMaxLength(this.height - 2);
         this.layoutList();
-        this.scrollSmooth(0);
         // Am I cute?
     }
 
@@ -223,10 +222,16 @@ public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget implemen
         return visibleHeight;
     }
 
+    /**
+     * Get scroll amount for drawing
+     */
     public float getVisibleOffset() {
         return scrollAmount - borderThickness;
     }
 
+    /**
+     * Logic scroll amount for logic check
+     */
     public float getActualScrollAmount() {
         return scrollAmount;
     }
@@ -271,6 +276,7 @@ public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget implemen
         updateScrollBarLength();
         updateScrollBarOffset();
         updateScrollList();
+        scrollSmooth(0);
     }
 
     public void addGroups(Collection<T> collection) {

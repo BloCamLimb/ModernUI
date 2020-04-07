@@ -21,64 +21,42 @@ package icyllis.modernui.gui.option;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.IFontRenderer;
-import icyllis.modernui.gui.master.DrawTools;
+import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.gui.master.IMouseListener;
-import icyllis.modernui.gui.module.SettingResourcePack;
-import icyllis.modernui.gui.util.Color3I;
-import net.minecraft.client.Minecraft;
+import icyllis.modernui.gui.module.SettingLanguage;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.client.resources.ClientResourcePackInfo;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.client.resources.Language;
 import org.lwjgl.opengl.GL11;
 
-import java.util.List;
-
-public class ResourcePackEntry implements IMouseListener {
+public class LanguageEntry implements IMouseListener {
 
     private final IFontRenderer fontRenderer = FontTools.FONT_RENDERER;
 
-    private final TextureManager textureManager = Minecraft.getInstance().getTextureManager();
+    private final SettingLanguage module;
 
-    private final ClientResourcePackInfo resourcePack;
-
-    private final SettingResourcePack module;
+    private final Language language;
 
     private float x1, y1;
 
     private float x2, y2;
 
-    private float width;
-
-    private final float height;
+    private float centerX;
 
     private boolean mouseHovered = false;
 
-    private String title = "";
-
-    private String[] desc = new String[0];
-
-    public ResourcePackEntry(SettingResourcePack module, ClientResourcePackInfo resourcePack) {
+    public LanguageEntry(SettingLanguage module, Language language) {
         this.module = module;
-        this.resourcePack = resourcePack;
-        this.height = ResourcePackGroup.ENTRY_HEIGHT;
+        this.language = language;
     }
 
     public final void setPos(float x1, float x2, float y) {
         this.x1 = x1;
         this.x2 = x2;
-        this.width = x2 - x1;
         this.y1 = y;
-        this.y2 = y + height;
-        updateTitle();
-        updateDescription();
-    }
-
-    public final float getTop() {
-        return y1;
+        this.y2 = y + LanguageGroup.ENTRY_HEIGHT;
+        this.centerX = (x1 + x2) / 2f;
     }
 
     public final float getBottom() {
@@ -123,83 +101,11 @@ public class ResourcePackEntry implements IMouseListener {
             RenderSystem.enableTexture();
         }
 
-        RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
-        bindTexture();
-        DrawTools.blitIcon(x1 + 3, y1 + 2, 32, 32);
-
-        fontRenderer.drawString(title, x1 + 39, y1 + 4);
-        int i = 0;
-        for (String d : desc) {
-            fontRenderer.drawString(d, x1 + 39, y1 + 14 + i * 10, Color3I.GRAY);
-            i++;
-            if (i > 1) {
-                break;
-            }
-        }
+        fontRenderer.drawString(language.toString(), centerX, y1 + 4, TextAlign.CENTER);
     }
 
-    public void updateTitle() {
-        title = resourcePack.getTitle().getFormattedText();
-        if (!resourcePack.getCompatibility().isCompatible()) {
-            title = TextFormatting.DARK_RED + "(" + I18n.format("resourcePack.incompatible") + ") " + TextFormatting.RESET + title;
-        }
-        float w = fontRenderer.getStringWidth(title);
-        float cw = width - 39;
-        if (w > cw) {
-            float kw = cw - fontRenderer.getStringWidth("...");
-            title = fontRenderer.trimStringToWidth(title, kw, false) + "...";
-        }
-
-    }
-
-    public void updateDescription() {
-        this.desc = FontTools.splitStringToWidth(resourcePack.getDescription().getFormattedText(), width - 39);
-    }
-
-    public void bindTexture() {
-        resourcePack.func_195808_a(textureManager);
-    }
-
-    public boolean canIntoSelected() {
-        return !module.getSelectedGroup().getEntries().contains(this);
-    }
-
-    public boolean canIntoAvailable() {
-        return module.getSelectedGroup().getEntries().contains(this) && !resourcePack.isAlwaysEnabled();
-    }
-
-    public boolean canGoUp() {
-        List<ResourcePackEntry> list = module.getSelectedGroup().getEntries();
-        int i = list.indexOf(this);
-        return i > 0 && !(list.get(i - 1)).resourcePack.isOrderLocked();
-    }
-
-    public boolean canGoDown() {
-        List<ResourcePackEntry> list = module.getSelectedGroup().getEntries();
-        int i = list.indexOf(this);
-        return i >= 0 && i < list.size() - 1 && !(list.get(i + 1)).resourcePack.isOrderLocked();
-    }
-
-    public ClientResourcePackInfo getResourcePack() {
-        return resourcePack;
-    }
-
-    public final void intoSelected(ResourcePackGroup selectedGroup) {
-        resourcePack.getPriority().insert(selectedGroup.getEntries(), this, ResourcePackEntry::getResourcePack, true);
-    }
-
-    public void goUp() {
-        List<ResourcePackEntry> list = module.getSelectedGroup().getEntries();
-        int i = list.indexOf(this);
-        list.remove(i);
-        list.add(i - 1, this);
-    }
-
-    public void goDown() {
-        List<ResourcePackEntry> list = module.getSelectedGroup().getEntries();
-        int i = list.indexOf(this);
-        list.remove(i);
-        list.add(i + 1, this);
+    public Language getLanguage() {
+        return language;
     }
 
     @Override

@@ -21,14 +21,22 @@ package icyllis.modernui.gui.module;
 import com.google.common.collect.Lists;
 import icyllis.modernui.gui.background.ResourcePackBG;
 import icyllis.modernui.gui.layout.WidgetLayout;
+import icyllis.modernui.gui.master.GlobalModuleManager;
+import icyllis.modernui.gui.master.IModule;
+import icyllis.modernui.gui.master.IWidget;
 import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.option.ResourcePackEntry;
 import icyllis.modernui.gui.option.ResourcePackGroup;
+import icyllis.modernui.gui.popup.ConfirmCallback;
+import icyllis.modernui.gui.popup.PopupConfirm;
 import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.gui.widget.ArrowButton;
+import icyllis.modernui.gui.widget.TextFrameButton;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.ClientResourcePackInfo;
+import net.minecraft.client.resources.I18n;
+import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -103,7 +111,7 @@ public class SettingResourcePack extends Module {
     @Override
     public boolean onBack() {
         if (changed) {
-            applyResourcePacks();
+            applyResourcePacks(0);
         }
         return false;
     }
@@ -112,11 +120,15 @@ public class SettingResourcePack extends Module {
     public void upperModuleExit() {
         super.upperModuleExit();
         if (changed) {
-            applyResourcePacks();
+            applyResourcePacks(0);
         }
     }
 
-    private void applyResourcePacks() {
+    //TODO buttons
+    private void applyResourcePacks(int callback) {
+        if (callback == ConfirmCallback.CANCEL) {
+            return;
+        }
         List<ClientResourcePackInfo> list = Lists.newArrayList();
         GameSettings gameSettings = minecraft.gameSettings;
 
@@ -139,7 +151,10 @@ public class SettingResourcePack extends Module {
         }
 
         gameSettings.saveOptions();
-        minecraft.reloadResources();
+        if (callback == ConfirmCallback.CONFIRM) {
+            minecraft.reloadResources();
+        }
+        changed = false;
     }
 
     @Override
@@ -158,6 +173,7 @@ public class SettingResourcePack extends Module {
             highlight.intoSelected(sGroup);
             sGroup.layoutGroup();
             sGroup.followEntry(highlight);
+            highlight.setMouseHoverExit();
             setHighlight(highlight);
             changed = true;
         }
@@ -169,6 +185,7 @@ public class SettingResourcePack extends Module {
             sGroup.layoutGroup();
             aGroup.getEntries().add(highlight);
             aGroup.layoutGroup();
+            highlight.setMouseHoverExit();
             setHighlight(highlight);
             changed = true;
         }
@@ -180,6 +197,7 @@ public class SettingResourcePack extends Module {
             sGroup.layoutGroup();
             sGroup.followEntry(highlight);
             setHighlight(highlight);
+            GlobalModuleManager.INSTANCE.refreshMouse();
             changed = true;
         }
     }
@@ -190,8 +208,30 @@ public class SettingResourcePack extends Module {
             sGroup.layoutGroup();
             sGroup.followEntry(highlight);
             setHighlight(highlight);
+            GlobalModuleManager.INSTANCE.refreshMouse();
             changed = true;
         }
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (super.keyPressed(keyCode, scanCode, modifiers)) {
+            return true;
+        }
+        if (keyCode == GLFW.GLFW_KEY_W) {
+            goUp();
+            return true;
+        } else if (keyCode == GLFW.GLFW_KEY_S) {
+            goDown();
+            return true;
+        } else if (keyCode == GLFW.GLFW_KEY_A) {
+            intoAvailable();
+            return true;
+        } else if (keyCode == GLFW.GLFW_KEY_D) {
+            intoSelected();
+            return true;
+        }
+        return false;
     }
 
     @Nullable

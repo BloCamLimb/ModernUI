@@ -18,6 +18,8 @@
 
 package icyllis.modernui.gui.master;
 
+import icyllis.modernui.system.MouseTools;
+
 import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
@@ -81,6 +83,8 @@ public class ModuleGroup extends Module {
         }
         cid = tid;
         moduleChanged(cid);
+        GlobalModuleManager.INSTANCE.refreshMouse();
+        MouseTools.useDefaultCursor();
     }
 
     public int getCid() {
@@ -125,6 +129,8 @@ public class ModuleGroup extends Module {
                 }
                 cid = tid;
                 moduleChanged(cid);
+                GlobalModuleManager.INSTANCE.refreshMouse();
+                MouseTools.useDefaultCursor();
             }
         }
     }

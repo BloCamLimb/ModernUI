@@ -2,6 +2,11 @@
   "options.chat.visibility": "Visibility",
 
   "gui.modernui.button.exit": "Exit",
+  "gui.modernui.button.leave": "Leave",
+  "gui.modernui.button.save": "Save",
+  "gui.modernui.button.apply": "Apply",
+  "gui.modernui.button.applyAndReload": "Apply & Reload",
+  "gui.modernui.button.discard": "Discard",
   "gui.modernui.button.confirm": "Confirm %s",
 
   "gui.modernui.menu.back": "Back to Game",
@@ -15,7 +20,7 @@
   "gui.modernui.settings.tab.controls": "Controls",
   "gui.modernui.settings.tab.assets": "Assets",
   "gui.modernui.settings.tab.language": "Language",
-  "gui.modernui.settings.tab.resource_packs": "Resource Packs",
+  "gui.modernui.settings.tab.resourcePacks": "Resource Packs",
 
   "gui.modernui.settings.category.game": "Game",
   "gui.modernui.settings.category.chat": "Chat",
@@ -30,7 +35,7 @@
   "gui.modernui.settings.category.sounds": "Sounds",
   "gui.modernui.settings.category.mouse": "Mouse",
 
-  "gui.modernui.desc.exit": "Are you sure you want to exit to main menu?",
+  "gui.modernui.popup.exit": "Are you sure you want to exit to main menu?",
 
-  "gui.modernui.tooltip.thanks_optifine": "This functionality is powered by OptiFine"
+  "gui.modernui.tooltip.thanksOptifine": "This functionality is powered by OptiFine"
 }

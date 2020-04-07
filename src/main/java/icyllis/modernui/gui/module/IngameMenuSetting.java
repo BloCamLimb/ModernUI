@@ -23,12 +23,9 @@ import icyllis.modernui.gui.layout.WidgetLayout;
 import icyllis.modernui.gui.master.*;
 import icyllis.modernui.gui.background.MenuSettingsBG;
 import icyllis.modernui.gui.popup.PopupMenu;
-import icyllis.modernui.gui.util.DelayedRunnable;
 import icyllis.modernui.gui.widget.DropDownMenu;
 import icyllis.modernui.gui.widget.LineTextButton;
 import icyllis.modernui.system.ModIntegration;
-import icyllis.modernui.system.ModernUI;
-import net.minecraft.client.gui.screen.LanguageScreen;
 import net.minecraft.client.resources.I18n;
 
 import java.util.ArrayList;
@@ -64,6 +61,10 @@ public class IngameMenuSetting extends ModuleGroup {
         addChildModule(++i, SettingAudio::new);
         addChildModule(++i, SettingControls::new);
         addChildModule(++i, SettingResourcePack::new);
+        if (ModIntegration.optifineLoaded) {
+
+        }
+        addChildModule(++i, SettingLanguage::new);
 
         switchChildModule(1);
     }
@@ -76,11 +77,11 @@ public class IngameMenuSetting extends ModuleGroup {
 
     @SuppressWarnings("NoTranslation")
     private void openAssetsMenu() {
-        List<String> tabs = Lists.newArrayList(I18n.format("gui.modernui.settings.tab.resource_packs"),
+        List<String> tabs = Lists.newArrayList(I18n.format("gui.modernui.settings.tab.resourcePacks"),
                 I18n.format("gui.modernui.settings.tab.language"));
-        if (ModIntegration.optifineLoaded) {
+        /*if (ModIntegration.optifineLoaded) {
             tabs.add(1, I18n.format("of.options.shadersTitle"));
-        }
+        }*/
         DropDownMenu menu = new DropDownMenu(tabs, getCid() - 5, 12, this::assetsActions, DropDownMenu.Align.RIGHT);
         LineTextButton t = buttons.get(4);
         menu.setPos(t.getRight() - 8, t.getBottom() + 1);

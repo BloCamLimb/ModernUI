@@ -23,7 +23,8 @@ import net.minecraft.client.gui.FontRenderer;
 
 public class VanillaFontRenderer implements IFontRenderer {
 
-    static final VanillaFontRenderer INSTANCE = new VanillaFontRenderer();
+    public static final VanillaFontRenderer INSTANCE = new VanillaFontRenderer();
+
     private final FontRenderer FONT;
     {
         FONT = Minecraft.getInstance().fontRenderer;

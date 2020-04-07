@@ -81,7 +81,7 @@ public class IngameMenuHome extends ModuleGroup {
     private void exit() {
         IModule popup = new PopupConfirm(this::confirmExit)
                 .setConfirmTitle(I18n.format("gui.modernui.button.exit"))
-                .setDescription(I18n.format("gui.modernui.desc.exit"));
+                .setDescription(I18n.format("gui.modernui.popup.exit"));
         GlobalModuleManager.INSTANCE.openPopup(popup, true);
     }
 
