@@ -28,6 +28,7 @@ import icyllis.modernui.gui.widget.DropDownMenu;
 import icyllis.modernui.gui.widget.LineTextButton;
 import icyllis.modernui.system.ModIntegration;
 import icyllis.modernui.system.ModernUI;
+import net.minecraft.client.gui.screen.LanguageScreen;
 import net.minecraft.client.resources.I18n;
 
 import java.util.ArrayList;
@@ -94,6 +95,7 @@ public class IngameMenuSetting extends ModuleGroup {
 
     @Override
     public void moduleChanged(int id) {
+        super.moduleChanged(id);
         buttons.forEach(e -> e.onModuleChanged(id));
     }
 

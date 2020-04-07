@@ -169,8 +169,29 @@ public class ResourcePackGroup extends ScrollGroup {
         return entries;
     }
 
-    public void layout() {
+    public void layoutGroup() {
+        height = 18 + entries.size() * ENTRY_HEIGHT;
         window.layoutList();
+    }
+
+    public void followEntry(ResourcePackEntry entry) {
+        float c = entry.getTop() - window.getActualScrollAmount() - ENTRY_HEIGHT;
+        if (c < 0) {
+            if (c < -120) {
+                window.scrollDirect(c);
+            } else {
+                window.scrollSmooth(c);
+            }
+            return;
+        }
+        float d = entry.getBottom() - window.getActualScrollAmount() - window.getVisibleHeight() - ENTRY_HEIGHT;
+        if (d > 0) {
+            if (d > 120) {
+                window.scrollDirect(d);
+            } else {
+                window.scrollSmooth(d);
+            }
+        }
     }
 
     public enum Type {

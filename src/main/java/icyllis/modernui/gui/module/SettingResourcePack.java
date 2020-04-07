@@ -26,10 +26,8 @@ import icyllis.modernui.gui.option.ResourcePackEntry;
 import icyllis.modernui.gui.option.ResourcePackGroup;
 import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.gui.widget.ArrowButton;
-import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.widget.list.AbstractResourcePackList;
 import net.minecraft.client.resources.ClientResourcePackInfo;
 
 import javax.annotation.Nullable;
@@ -78,18 +76,17 @@ public class SettingResourcePack extends Module {
         sWindow.addGroups(Lists.newArrayList(sGroup));
 
         List<ArrowButton> list = new ArrayList<>();
-        leftArrow = new ArrowButton(ArrowButton.Direction.LEFT, this::intoAvailable);
-        leftArrow.setAvailable(false);
-        rightArrow = new ArrowButton(ArrowButton.Direction.RIGHT, this::intoSelected);
-        rightArrow.setAvailable(false);
-        upArrow = new ArrowButton(ArrowButton.Direction.UP, this::goUp);
-        upArrow.setAvailable(false);
-        downArrow = new ArrowButton(ArrowButton.Direction.DOWN, this::goDown);
-        downArrow.setAvailable(false);
+
+        leftArrow = new ArrowButton(ArrowButton.Direction.LEFT, this::intoAvailable, false);
+        rightArrow = new ArrowButton(ArrowButton.Direction.RIGHT, this::intoSelected, false);
+        upArrow = new ArrowButton(ArrowButton.Direction.UP, this::goUp, false);
+        downArrow = new ArrowButton(ArrowButton.Direction.DOWN, this::goDown, false);
+
         list.add(leftArrow);
         list.add(rightArrow);
         list.add(upArrow);
         list.add(downArrow);
+
         arrowLayout = new WidgetLayout(list, WidgetLayout.Direction.VERTICAL_POSITIVE, 4);
 
         addWidget(aWindow);
@@ -100,7 +97,7 @@ public class SettingResourcePack extends Module {
     @Override
     public void resize(int width, int height) {
         super.resize(width, height);
-        arrowLayout.layout(width / 2f - 6, height * 0.2f);
+        arrowLayout.layout(width / 2f - 6, height * 0.25f);
     }
 
     @Override
@@ -112,8 +109,8 @@ public class SettingResourcePack extends Module {
     }
 
     @Override
-    public void moduleChanged(int id) {
-        super.moduleChanged(id);
+    public void upperModuleExit() {
+        super.upperModuleExit();
         if (changed) {
             applyResourcePacks();
         }
@@ -123,7 +120,7 @@ public class SettingResourcePack extends Module {
         List<ClientResourcePackInfo> list = Lists.newArrayList();
         GameSettings gameSettings = minecraft.gameSettings;
 
-        for(ResourcePackEntry c2 : sGroup.getEntries()) {
+        for (ResourcePackEntry c2 : sGroup.getEntries()) {
             list.add(c2.getResourcePack());
         }
 
@@ -142,7 +139,7 @@ public class SettingResourcePack extends Module {
         }
 
         gameSettings.saveOptions();
-        minecraft.scheduleResourcesRefresh();
+        minecraft.reloadResources();
     }
 
     @Override
@@ -157,9 +154,10 @@ public class SettingResourcePack extends Module {
     private void intoSelected() {
         if (highlight != null && highlight.canIntoSelected()) {
             aGroup.getEntries().remove(highlight);
-            aGroup.layout();
+            aGroup.layoutGroup();
             highlight.intoSelected(sGroup);
-            sGroup.layout();
+            sGroup.layoutGroup();
+            sGroup.followEntry(highlight);
             setHighlight(highlight);
             changed = true;
         }
@@ -168,9 +166,9 @@ public class SettingResourcePack extends Module {
     private void intoAvailable() {
         if (highlight != null && highlight.canIntoAvailable()) {
             sGroup.getEntries().remove(highlight);
-            sGroup.layout();
+            sGroup.layoutGroup();
             aGroup.getEntries().add(highlight);
-            aGroup.layout();
+            aGroup.layoutGroup();
             setHighlight(highlight);
             changed = true;
         }
@@ -179,7 +177,8 @@ public class SettingResourcePack extends Module {
     private void goUp() {
         if (highlight != null && highlight.canGoUp()) {
             highlight.goUp();
-            sGroup.layout();
+            sGroup.layoutGroup();
+            sGroup.followEntry(highlight);
             setHighlight(highlight);
             changed = true;
         }
@@ -188,7 +187,8 @@ public class SettingResourcePack extends Module {
     private void goDown() {
         if (highlight != null && highlight.canGoDown()) {
             highlight.goDown();
-            sGroup.layout();
+            sGroup.layoutGroup();
+            sGroup.followEntry(highlight);
             setHighlight(highlight);
             changed = true;
         }

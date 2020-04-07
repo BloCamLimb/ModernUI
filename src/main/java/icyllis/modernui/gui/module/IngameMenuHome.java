@@ -110,6 +110,7 @@ public class IngameMenuHome extends ModuleGroup {
 
     @Override
     public void moduleChanged(int id) {
+        super.moduleChanged(id);
         buttons.forEach(e -> e.onModuleChanged(id));
     }
 }

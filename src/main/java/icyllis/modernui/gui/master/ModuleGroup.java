@@ -73,6 +73,7 @@ public class ModuleGroup extends Module {
              if (!child.changingModule(id)) {
                  return;
              }
+            child.upperModuleExit();
         }
         child = childModules.getOrDefault(tid, () -> null).get();
         if (child != null) {
@@ -117,6 +118,7 @@ public class ModuleGroup extends Module {
         }
         if (cid != tid && child != null ) {
             if (child.changingModule(tid)) {
+                child.upperModuleExit();
                 child = childModules.getOrDefault(tid, () -> null).get();
                 if (child != null) {
                     GlobalModuleManager.INSTANCE.resizeModule(child);
@@ -133,6 +135,11 @@ public class ModuleGroup extends Module {
             return child.onBack();
         }
         return false;
+    }
+
+    @Override
+    public void moduleChanged(int id) {
+        super.moduleChanged(id);
     }
 
     @Override
