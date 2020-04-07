@@ -31,6 +31,7 @@ import net.minecraft.client.resources.I18n;
 import net.minecraft.resources.ResourcePackList;
 import net.minecraft.util.text.TextFormatting;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -52,8 +53,11 @@ public class ResourcePackGroup extends ScrollGroup {
 
     private final Type type;
 
+    private final SettingResourcePack module;
+
     public ResourcePackGroup(SettingResourcePack module, ScrollWindow<?> window, ResourcePackList<ClientResourcePackInfo> list, Type type) {
         super(window);
+        this.module = module;
         this.type = type;
         if (type == Type.AVAILABLE) {
             this.title = TextFormatting.UNDERLINE + I18n.format("resourcePack.available.title");
@@ -92,16 +96,21 @@ public class ResourcePackGroup extends ScrollGroup {
         }
         titleCenterX = (int) ((x1 + x2) / 2f);
         int i = 0;
+        x2 -= window.borderThickness + 1;
         for (ResourcePackEntry entry : entries) {
             float cy = y + i * ENTRY_HEIGHT;
             entry.setPos(x1, x2, cy);
             i++;
         }
+
+        if (module.getHighlight() != null) {
+            followEntry(module.getHighlight());
+        }
     }
 
     @Override
     public void updateVisible(float top, float bottom) {
-
+        //TODO maybe?
     }
 
     @Override
@@ -174,7 +183,11 @@ public class ResourcePackGroup extends ScrollGroup {
         window.layoutList();
     }
 
-    public void followEntry(ResourcePackEntry entry) {
+    /**
+     * Follow and focus an entry to make sure it's visible on scroll window
+     * @param entry entry to follow
+     */
+    public void followEntry(@Nonnull ResourcePackEntry entry) {
         float c = entry.getTop() - window.getActualScrollAmount() - ENTRY_HEIGHT;
         if (c < 0) {
             if (c < -120) {

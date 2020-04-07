@@ -51,22 +51,30 @@ public class PopupConfirm extends Module {
     }
 
     public PopupConfirm(ConfirmCallback callback, int seconds) {
-        this(callback, seconds, null);
+        this(callback, seconds, I18n.format("gui.yes"), I18n.format("gui.no"), null);
     }
 
-    public PopupConfirm(ConfirmCallback callback, int seconds, @Nullable String alternative) {
+    /**
+     * Main constructor to build popup confirm window
+     * @param callback operation when left clicked button
+     * @param seconds countdown to make confirm button clickable
+     * @param confirmText confirm button text
+     * @param cancelText cancel button text
+     * @param alternative third button between confirm button and cancel button to perform another operation
+     */
+    public PopupConfirm(ConfirmCallback callback, int seconds, String confirmText, String cancelText, @Nullable String alternative) {
         addBackground(new Background(4));
         addBackground(new ConfirmWindowBG());
         List<IWidget> buttons = new ArrayList<>();
         if (seconds > 0) {
-            buttons.add(new TextFrameButton.Countdown(I18n.format("gui.yes"), () -> callback.call(ConfirmCallback.CONFIRM), seconds));
+            buttons.add(new TextFrameButton.Countdown(confirmText, () -> callback.call(ConfirmCallback.CONFIRM), seconds));
         } else {
-            buttons.add(new TextFrameButton(I18n.format("gui.yes"), () -> callback.call(ConfirmCallback.CONFIRM)));
+            buttons.add(new TextFrameButton(confirmText, () -> callback.call(ConfirmCallback.CONFIRM)));
         }
         if (alternative != null) {
             buttons.add(new TextFrameButton(alternative, () -> callback.call(ConfirmCallback.ALTERNATIVE)));
         }
-        buttons.add(new TextFrameButton(I18n.format("gui.no"), () -> callback.call(ConfirmCallback.CANCEL)));
+        buttons.add(new TextFrameButton(cancelText, () -> callback.call(ConfirmCallback.CANCEL)));
         buttons.forEach(this::addWidget);
         buttonLayout = new WidgetLayout(buttons, WidgetLayout.Direction.HORIZONTAL_NEGATIVE, 6);
     }
@@ -82,14 +90,14 @@ public class PopupConfirm extends Module {
     }
 
     public PopupConfirm setDescription(String description) {
-        this.desc = FontTools.splitStringToWidth(description, 164);
+        this.desc = FontTools.splitStringToWidth(description, 244);
         return this;
     }
 
     @Override
     public void draw(float time) {
         super.draw(time);
-        fontRenderer.drawString(title, x + 90, y + 4, TextAlign.CENTER);
+        fontRenderer.drawString(title, x + 130, y + 4, TextAlign.CENTER);
         int i = 0;
         for (String t : desc) {
             fontRenderer.drawString(t, x + 8, y + 24 + i++ * 12);
@@ -99,9 +107,9 @@ public class PopupConfirm extends Module {
     @Override
     public void resize(int width, int height) {
         super.resize(width, height);
-        this.x = width / 2f - 90;
+        this.x = width / 2f - 130;
         this.y = height / 2f - 40;
-        buttonLayout.layout(width / 2f + 80, height / 2f + 20);
+        buttonLayout.layout(width / 2f + 130, height / 2f + 20);
     }
 
     @Override

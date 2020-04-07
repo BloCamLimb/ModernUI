@@ -510,6 +510,7 @@ public class StringCache {
                 case 21:
                     fontStyle = FormattingCode.PLAIN;
                     renderStyle = 0;
+                    colorCode = -1; // we need to back default color
                     break;
 
                 /* Otherwise, must be a color code or some other unsupported code */
