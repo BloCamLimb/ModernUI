@@ -18,11 +18,14 @@
 
 package icyllis.modernui.gui.module;
 
+import icyllis.modernui.gui.background.MenuSettingsBG;
 import icyllis.modernui.gui.master.ModuleGroup;
 
 public class IngameMenuStats extends ModuleGroup {
 
     public IngameMenuStats() {
-
+        addBackground(new MenuSettingsBG());
+        addChildModule(1, StatsGeneral::new);
+        switchChildModule(1);
     }
 }

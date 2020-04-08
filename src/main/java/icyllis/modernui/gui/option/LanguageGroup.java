@@ -44,8 +44,8 @@ public class LanguageGroup extends UniformScrollGroup<LanguageEntry> {
     }
 
     @Override
-    public void setPos(float x1, float x2, float y) {
-        super.setPos(x1, x2, y);
+    public void layout(float x1, float x2, float y) {
+        super.layout(x1, x2, y);
         x1 = centerX - 120;
         x2 = centerX + 120;
         int i = 0;
