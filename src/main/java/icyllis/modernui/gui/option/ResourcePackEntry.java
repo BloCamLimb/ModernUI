@@ -22,8 +22,8 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.gui.master.DrawTools;
-import icyllis.modernui.gui.master.IMouseListener;
 import icyllis.modernui.gui.module.SettingResourcePack;
+import icyllis.modernui.gui.scroll.UniformScrollEntry;
 import icyllis.modernui.gui.util.Color3I;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -37,9 +37,7 @@ import org.lwjgl.opengl.GL11;
 
 import java.util.List;
 
-public class ResourcePackEntry implements IMouseListener {
-
-    private final IFontRenderer fontRenderer = FontTools.FONT_RENDERER;
+public class ResourcePackEntry extends UniformScrollEntry {
 
     private final TextureManager textureManager = Minecraft.getInstance().getTextureManager();
 
@@ -47,45 +45,28 @@ public class ResourcePackEntry implements IMouseListener {
 
     private final SettingResourcePack module;
 
-    private float x1, y1;
-
-    private float x2, y2;
-
     private float width;
-
-    private final float height;
-
-    private boolean mouseHovered = false;
 
     private String title = "";
 
     private String[] desc = new String[0];
 
     public ResourcePackEntry(SettingResourcePack module, ClientResourcePackInfo resourcePack) {
+        super(ResourcePackGroup.ENTRY_HEIGHT);
         this.module = module;
         this.resourcePack = resourcePack;
-        this.height = ResourcePackGroup.ENTRY_HEIGHT;
     }
 
+    @Override
     public final void setPos(float x1, float x2, float y) {
-        this.x1 = x1;
-        this.x2 = x2;
+        super.setPos(x1, x2, y);
         this.width = x2 - x1;
-        this.y1 = y;
-        this.y2 = y + height;
         updateTitle();
         updateDescription();
     }
 
-    public final float getTop() {
-        return y1;
-    }
-
-    public final float getBottom() {
-        return y2;
-    }
-
-    public final void draw() {
+    @Override
+    public final void draw(float time) {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();
 
@@ -136,6 +117,25 @@ public class ResourcePackEntry implements IMouseListener {
                 break;
             }
         }
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        if (mouseButton == 0) {
+            module.setHighlightEntry(this);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    protected void onMouseHoverEnter() {
+
+    }
+
+    @Override
+    protected void onMouseHoverExit() {
+
     }
 
     public void updateTitle() {
@@ -202,51 +202,4 @@ public class ResourcePackEntry implements IMouseListener {
         list.add(i + 1, this);
     }
 
-    @Override
-    public boolean updateMouseHover(double mouseX, double mouseY) {
-        boolean prev = mouseHovered;
-        mouseHovered = isMouseInArea(mouseX, mouseY);
-        if (prev != mouseHovered) {
-            if (mouseHovered) {
-                onMouseHoverEnter();
-            } else {
-                onMouseHoverExit();
-            }
-        }
-        return mouseHovered;
-    }
-
-    private boolean isMouseInArea(double mouseX, double mouseY) {
-        return mouseX >= x1 && mouseX <= x2 && mouseY >= y1 && mouseY <= y2;
-    }
-
-    @Override
-    public final void setMouseHoverExit() {
-        if (mouseHovered) {
-            mouseHovered = false;
-            onMouseHoverExit();
-        }
-    }
-
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        if (mouseButton == 0) {
-            module.setHighlightEntry(this);
-            return true;
-        }
-        return false;
-    }
-
-    private void onMouseHoverEnter() {
-
-    }
-
-    private void onMouseHoverExit() {
-
-    }
-
-    @Override
-    public final boolean isMouseHovered() {
-        return mouseHovered;
-    }
 }

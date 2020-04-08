@@ -16,18 +16,28 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.option;
+package icyllis.modernui.gui.stats;
 
-import icyllis.modernui.gui.scroll.SettingScrollWindow;
+import icyllis.modernui.gui.scroll.UniformScrollEntry;
 
-public class CheckboxOptionEntry extends OptionEntry {
+public class GeneralStatsEntry extends UniformScrollEntry {
 
-    public CheckboxOptionEntry(SettingScrollWindow windowString, String optionTitle) {
-        super(windowString, optionTitle);
+    public GeneralStatsEntry() {
+        super(GeneralStatsGroup.ENTRY_HEIGHT);
     }
 
     @Override
-    protected void drawExtra(float time) {
+    public void draw(float time) {
+
+    }
+
+    @Override
+    protected void onMouseHoverEnter() {
+
+    }
+
+    @Override
+    protected void onMouseHoverExit() {
 
     }
 }

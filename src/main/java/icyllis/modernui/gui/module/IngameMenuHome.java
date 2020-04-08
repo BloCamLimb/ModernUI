@@ -30,7 +30,6 @@ import net.minecraft.client.gui.advancements.AdvancementsScreen;
 import net.minecraft.client.gui.screen.*;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.realms.RealmsBridge;
-import net.minecraft.stats.Stats;
 import net.minecraft.util.text.TranslationTextComponent;
 
 import java.util.ArrayList;
@@ -61,7 +60,8 @@ public class IngameMenuHome extends ModuleGroup {
                 () -> switchChildModule(4), 4));
         consumer.accept(new MenuButton(w -> 8f, h -> h - 28f, I18n.format("gui.modernui.menu.exit"), 5,
                 this::exit, -1));
-        addChildModule(4, IngameMenuSetting::new);
+
+        addChildModule(4, IngameMenuSettings::new);
 
         // always draw at the top
         makeOverDraw();

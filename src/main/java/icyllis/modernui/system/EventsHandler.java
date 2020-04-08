@@ -23,6 +23,7 @@ import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.ModernUIScreen;
 import icyllis.modernui.shader.BlurHandler;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.GuiOpenEvent;
@@ -76,7 +77,7 @@ public class EventsHandler {
         @SubscribeEvent
         public static void onGuiOpen(GuiOpenEvent event) {
             GlobalModuleManager.INSTANCE.resetTicks();
-            boolean hasGui = event.getGui() != null;
+            boolean hasGui = event.getGui() != null && !(event.getGui() instanceof ChatScreen);
             BlurHandler.INSTANCE.blur(hasGui);
         }
 
