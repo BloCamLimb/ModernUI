@@ -38,13 +38,13 @@ public class ConfirmWindowBG implements IElement {
 
     @Override
     public void draw(float time) {
-        DrawTools.fillRectWithFrame(x, y, x + 260, y + frameSizeHOffset, 0.51f, 0x101010, 0.7f, 0x404040, 1);
-        DrawTools.fillRectWithColor(x, y, x + 260, y + 16, 0x080808, 0.85f);
+        DrawTools.fillRectWithFrame(x, y, x + 180, y + frameSizeHOffset, 0.51f, 0x101010, 0.7f, 0x404040, 1);
+        DrawTools.fillRectWithColor(x, y, x + 180, y + 16, 0x080808, 0.85f);
     }
 
     @Override
     public void resize(int width, int height) {
-        this.x = width / 2f - 130;
+        this.x = width / 2f - 90;
         this.y = height / 2f - 40;
     }
 }

@@ -89,7 +89,7 @@ public class ResourcePackEntry implements IMouseListener {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();
 
-        if (module.getHighlight() == this) {
+        if (module.getHighlightEntry() == this) {
             RenderSystem.disableTexture();
             bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
             bufferBuilder.pos(x1 + 1, y2, 0.0D).color(128, 128, 128, 96).endVertex();
@@ -231,7 +231,7 @@ public class ResourcePackEntry implements IMouseListener {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if (mouseButton == 0) {
-            module.setHighlight(this);
+            module.setHighlightEntry(this);
             return true;
         }
         return false;

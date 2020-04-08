@@ -80,8 +80,8 @@ public class KeyBindingEntry extends OptionEntry {
             //DropDownMenu list = new DropDownMenu(Lists.newArrayList("WIP =w="), -1, 16, this::menuActions);
             //list.setPos((float) mouseX, (float) (mouseY - deltaY + 18), GlobalModuleManager.INSTANCE.getWindowHeight());
             //GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(list), false);
-            DropDownMenu menu = new DropDownMenu(Lists.newArrayList(I18n.format("controls.reset")), -1, 12, this::menuActions, DropDownMenu.Align.RIGHT);
-            menu.setPos((float) GlobalModuleManager.INSTANCE.getMouseX(), (float) GlobalModuleManager.INSTANCE.getMouseY());
+            DropDownMenu menu = new DropDownMenu(Lists.newArrayList(I18n.format("controls.reset")), -1, 12, this::menuActions, DropDownMenu.Align.LEFT);
+            menu.setPos((float) GlobalModuleManager.INSTANCE.getMouseX() + 1, (float) GlobalModuleManager.INSTANCE.getMouseY() + 1);
             GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(menu), false);
             return true;
         }

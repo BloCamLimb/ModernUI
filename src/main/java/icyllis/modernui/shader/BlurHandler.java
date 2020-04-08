@@ -54,7 +54,7 @@ public enum BlurHandler {
                     changingProgress = true;
                     blurring = true;
                 }
-            } else if (blurring) {
+            } else if (!hasGui && blurring) {
                 gr.stopUseShader();
                 changingProgress = false;
                 blurring = false;

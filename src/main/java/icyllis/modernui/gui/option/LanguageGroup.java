@@ -47,7 +47,7 @@ public class LanguageGroup extends ScrollGroup {
     public LanguageGroup(SettingLanguage module, ScrollWindow<?> window, LanguageManager manager) {
         super(window);
         this.module = module;
-        title = TextFormatting.UNDERLINE + I18n.format("gui.modernui.settings.tab.language");
+        title = TextFormatting.BOLD + I18n.format("gui.modernui.settings.tab.language");
         manager.getLanguages().forEach(l -> {
             LanguageEntry entry = new LanguageEntry(module, l);
             entries.add(entry);

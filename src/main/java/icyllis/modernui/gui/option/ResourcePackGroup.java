@@ -60,7 +60,7 @@ public class ResourcePackGroup extends ScrollGroup {
         this.module = module;
         this.type = type;
         if (type == Type.AVAILABLE) {
-            this.title = TextFormatting.UNDERLINE + I18n.format("resourcePack.available.title");
+            this.title = TextFormatting.BOLD + I18n.format("resourcePack.available.title");
 
             List<ClientResourcePackInfo> infoList = Lists.newArrayList(list.getAllPacks());
             infoList.removeAll(list.getEnabledPacks());
@@ -68,7 +68,7 @@ public class ResourcePackGroup extends ScrollGroup {
 
             infoList.forEach(t -> entries.add(new ResourcePackEntry(module, t)));
         } else {
-            this.title = TextFormatting.UNDERLINE + I18n.format("resourcePack.selected.title");
+            this.title = TextFormatting.BOLD + I18n.format("resourcePack.selected.title");
 
             List<ClientResourcePackInfo> enabledList = Lists.newArrayList(list.getEnabledPacks());
             enabledList.removeIf(ClientResourcePackInfo::isHidden);
@@ -103,8 +103,8 @@ public class ResourcePackGroup extends ScrollGroup {
             i++;
         }
 
-        if (module.getHighlight() != null) {
-            followEntry(module.getHighlight());
+        if (module.getHighlightEntry() != null) {
+            followEntry(module.getHighlightEntry());
         }
     }
 
