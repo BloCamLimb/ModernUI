@@ -34,13 +34,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class IngameMenuSetting extends ModuleGroup {
+public class IngameMenuSettings extends ModuleGroup {
 
     private List<LineTextButton> buttons = new ArrayList<>();
 
     private WidgetLayout buttonLayout;
 
-    public IngameMenuSetting() {
+    public IngameMenuSettings() {
         addBackground(new MenuSettingsBG());
         buttonLayout = new WidgetLayout(buttons, WidgetLayout.Direction.HORIZONTAL_CENTER, 16);
         Consumer<LineTextButton> consumer = s -> {

@@ -22,24 +22,21 @@ import com.google.common.collect.Lists;
 import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.font.TextAlign;
-import icyllis.modernui.gui.master.IMouseListener;
 import icyllis.modernui.gui.module.SettingResourcePack;
-import icyllis.modernui.gui.scroll.ScrollGroup;
 import icyllis.modernui.gui.scroll.ScrollWindow;
+import icyllis.modernui.gui.scroll.UniformScrollGroup;
 import net.minecraft.client.resources.ClientResourcePackInfo;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.resources.ResourcePackList;
 import net.minecraft.util.text.TextFormatting;
 
-import javax.annotation.Nonnull;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 /**
  * Let resource packs roll!
  */
-public class ResourcePackGroup extends ScrollGroup {
+public class ResourcePackGroup extends UniformScrollGroup<ResourcePackEntry> {
 
     public static int ENTRY_HEIGHT = 36;
 
@@ -49,14 +46,12 @@ public class ResourcePackGroup extends ScrollGroup {
 
     private float titleCenterX;
 
-    private List<ResourcePackEntry> entries = new ArrayList<>();
-
     private final Type type;
 
     private final SettingResourcePack module;
 
     public ResourcePackGroup(SettingResourcePack module, ScrollWindow<?> window, ResourcePackList<ClientResourcePackInfo> list, Type type) {
-        super(window);
+        super(window, ENTRY_HEIGHT);
         this.module = module;
         this.type = type;
         if (type == Type.AVAILABLE) {
@@ -77,7 +72,7 @@ public class ResourcePackGroup extends ScrollGroup {
             enabledList.forEach(t -> entries.add(new ResourcePackEntry(module, t)));
         }
         // 14 for title, 4 for end space
-        height = 18 + entries.size() * ENTRY_HEIGHT;
+        height = 18 + entries.size() * entryHeight;
     }
 
     /**
@@ -98,7 +93,7 @@ public class ResourcePackGroup extends ScrollGroup {
         int i = 0;
         x2 -= window.borderThickness + 1;
         for (ResourcePackEntry entry : entries) {
-            float cy = y + i * ENTRY_HEIGHT;
+            float cy = y + i * entryHeight;
             entry.setPos(x1, x2, cy);
             i++;
         }
@@ -109,102 +104,14 @@ public class ResourcePackGroup extends ScrollGroup {
     }
 
     @Override
-    public void updateVisible(float top, float bottom) {
-        //TODO maybe?
-    }
-
-    @Override
     public void draw(float time) {
         fontRenderer.drawString(title, titleCenterX, y1 + 2, TextAlign.CENTER);
-
-        for (ResourcePackEntry entry : entries) {
-            entry.draw();
-        }
-    }
-
-    @Override
-    public boolean updateMouseHover(double mouseX, double mouseY) {
-        if (super.updateMouseHover(mouseX, mouseY)) {
-            boolean result = false;
-            for (ResourcePackEntry entry : entries) {
-                if (!result && entry.updateMouseHover(mouseX, mouseY)) {
-                    result = true;
-                } else {
-                    entry.setMouseHoverExit();
-                }
-            }
-            return true;
-        }
-        return false;
-    }
-
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        for (ResourcePackEntry entry :entries) {
-            if (entry.isMouseHovered() && entry.mouseClicked(mouseX, mouseY, mouseButton)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
-        for (ResourcePackEntry entry : entries) {
-            if (entry.isMouseHovered() && entry.mouseReleased(mouseX, mouseY, mouseButton)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public boolean mouseScrolled(double amount) {
-        for (ResourcePackEntry entry : entries) {
-            if (entry.isMouseHovered() && entry.mouseScrolled(amount)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @Override
-    protected void onMouseHoverExit() {
-        super.onMouseHoverExit();
-        entries.forEach(IMouseListener::setMouseHoverExit);
-    }
-
-    public List<ResourcePackEntry> getEntries() {
-        return entries;
+        super.draw(time);
     }
 
     public void layoutGroup() {
-        height = 18 + entries.size() * ENTRY_HEIGHT;
+        height = 18 + entries.size() * entryHeight;
         window.layoutList();
-    }
-
-    /**
-     * Follow and focus an entry to make sure it's visible on scroll window
-     * @param entry entry to follow
-     */
-    public void followEntry(@Nonnull ResourcePackEntry entry) {
-        float c = entry.getTop() - window.getActualScrollAmount() - ENTRY_HEIGHT;
-        if (c < 0) {
-            if (c < -120) {
-                window.scrollDirect(c);
-            } else {
-                window.scrollSmooth(c);
-            }
-            return;
-        }
-        float d = entry.getBottom() - window.getActualScrollAmount() - window.getVisibleHeight() - ENTRY_HEIGHT;
-        if (d > 0) {
-            if (d > 120) {
-                window.scrollDirect(d);
-            } else {
-                window.scrollSmooth(d);
-            }
-        }
     }
 
     public enum Type {

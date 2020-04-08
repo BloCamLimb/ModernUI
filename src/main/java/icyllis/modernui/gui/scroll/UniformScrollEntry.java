@@ -18,11 +18,16 @@
 
 package icyllis.modernui.gui.scroll;
 
+import icyllis.modernui.font.FontTools;
+import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.gui.master.IMouseListener;
 
-public abstract class ScrollGroup implements IMouseListener {
+/**
+ * Entry in uniform scroll group with same height
+ */
+public abstract class UniformScrollEntry implements IMouseListener {
 
-    protected final ScrollWindow<?> window;
+    protected final IFontRenderer fontRenderer = FontTools.FONT_RENDERER;
 
     protected float x1, y1;
 
@@ -30,19 +35,11 @@ public abstract class ScrollGroup implements IMouseListener {
 
     protected float centerX;
 
-    protected float height;
-
     protected boolean mouseHovered = false;
 
-    /**
-     * Must specify height in constructor
-     */
-    public ScrollGroup(ScrollWindow<?> window) {
-        this.window = window;
-    }
+    protected final float height;
 
-    public ScrollGroup(ScrollWindow<?> window, int height) {
-        this.window = window;
+    public UniformScrollEntry(float height) {
         this.height = height;
     }
 
@@ -57,9 +54,7 @@ public abstract class ScrollGroup implements IMouseListener {
         this.y2 = y + height;
     }
 
-    public final float getHeight() {
-        return height;
-    }
+    public abstract void draw(float time);
 
     public final float getTop() {
         return y1;
@@ -68,10 +63,6 @@ public abstract class ScrollGroup implements IMouseListener {
     public final float getBottom() {
         return y2;
     }
-
-    public abstract void updateVisible(float top, float bottom);
-
-    public abstract void draw(float time);
 
     @Override
     public boolean updateMouseHover(double mouseX, double mouseY) {
@@ -99,17 +90,12 @@ public abstract class ScrollGroup implements IMouseListener {
         }
     }
 
-    protected void onMouseHoverEnter() {
+    protected abstract void onMouseHoverEnter();
 
-    }
-
-    protected void onMouseHoverExit() {
-
-    }
+    protected abstract void onMouseHoverExit();
 
     @Override
     public final boolean isMouseHovered() {
         return mouseHovered;
     }
-
 }

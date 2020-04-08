@@ -24,12 +24,13 @@ import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.gui.master.IMouseListener;
 import icyllis.modernui.gui.scroll.ScrollGroup;
 import icyllis.modernui.gui.scroll.ScrollWindow;
+import icyllis.modernui.gui.scroll.UniformScrollGroup;
 import icyllis.modernui.gui.util.Color3I;
 import net.minecraft.util.text.TextFormatting;
 
 import java.util.List;
 
-public class OptionCategory extends ScrollGroup {
+public class OptionCategoryGroup extends UniformScrollGroup<OptionEntry> {
 
     public static int ENTRY_HEIGHT = 21;
 
@@ -37,14 +38,12 @@ public class OptionCategory extends ScrollGroup {
 
     private String title;
 
-    private List<OptionEntry> entries;
-
-    public OptionCategory(ScrollWindow<?> window, String title, List<OptionEntry> entries) {
-        super(window);
+    public OptionCategoryGroup(ScrollWindow<?> window, String title, List<OptionEntry> entries) {
+        super(window, ENTRY_HEIGHT);
         this.title = TextFormatting.BOLD + title;
         this.entries = entries;
         // 30 for title, 6 for end space.
-        height = 36 + entries.size() * ENTRY_HEIGHT;
+        height = 36 + entries.size() * entryHeight;
     }
 
     @Override
@@ -55,76 +54,16 @@ public class OptionCategory extends ScrollGroup {
         y += 30;
         int i = 0;
         for (OptionEntry entry : entries) {
-            float cy = y + i * ENTRY_HEIGHT;
+            float cy = y + i * entryHeight;
             entry.setPos(x1, x2, cy);
             i++;
         }
     }
 
     @Override
-    public void updateVisible(float top, float bottom) {
-        // A category won't contain too much entries, so we don't need to optimize specially
-    }
-
-    @Override
     public void draw(float time) {
         fontRenderer.drawString(title, centerX - 160, y1 + 14, Color3I.WHILE, 1.0f, TextAlign.LEFT);
-
-        for (OptionEntry entry : entries) {
-            entry.draw(time);
-        }
-    }
-
-    @Override
-    public boolean updateMouseHover(double mouseX, double mouseY) {
-        if (super.updateMouseHover(mouseX, mouseY)) {
-            boolean result = false;
-            for (OptionEntry entry : entries) {
-                if (!result && entry.updateMouseHover(mouseX, mouseY)) {
-                    result = true;
-                } else {
-                    entry.setMouseHoverExit();
-                }
-            }
-            return true;
-        }
-        return false;
-    }
-
-    @Override
-    protected void onMouseHoverExit() {
-        super.onMouseHoverExit();
-        entries.forEach(IMouseListener::setMouseHoverExit);
-    }
-
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        for (OptionEntry entry : entries) {
-            if (entry.isMouseHovered() && entry.mouseClicked(mouseX, mouseY, mouseButton)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
-        for (OptionEntry entry : entries) {
-            if (entry.isMouseHovered() && entry.mouseReleased(mouseX, mouseY, mouseButton)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public boolean mouseScrolled(double amount) {
-        for (OptionEntry entry : entries) {
-            if (entry.isMouseHovered() && entry.mouseScrolled(amount)) {
-                return true;
-            }
-        }
-        return false;
+        super.draw(time);
     }
 
     /*@Override

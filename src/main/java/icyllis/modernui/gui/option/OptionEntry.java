@@ -24,6 +24,7 @@ import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.gui.master.IMouseListener;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
+import icyllis.modernui.gui.scroll.UniformScrollEntry;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
@@ -32,58 +33,24 @@ import org.lwjgl.opengl.GL11;
 /**
  * Single option line in settings interface
  */
-public abstract class OptionEntry implements IMouseListener {
-
-    protected final IFontRenderer fontRenderer = FontTools.FONT_RENDERER;
+public abstract class OptionEntry extends UniformScrollEntry {
 
     protected final SettingScrollWindow window;
-
-    protected float x1, y1;
-
-    protected float x2, y2;
-
-    protected float centerX;
-
-    protected float height;
-
-    protected boolean mouseHovered = false;
 
     public String title;
 
     protected float titleBrightness = 0.85f;
 
     public OptionEntry(SettingScrollWindow window, String title) {
+        super(OptionCategoryGroup.ENTRY_HEIGHT);
         this.window = window;
         this.title = title;
-        this.height = OptionCategory.ENTRY_HEIGHT;
         //TODO tooltip description lines
         /*if (desc != null)
             this.desc = FontRendererTools.splitStringToWidth(desc, 150);*/
     }
 
-    /**
-     * Called when layout
-     */
-    public void setPos(float x1, float x2, float y) {
-        this.x1 = x1;
-        this.x2 = x2;
-        this.centerX = (x1 + x2) / 2f;
-        this.y1 = y;
-        this.y2 = y + height;
-    }
-
-    public final float getHeight() {
-        return height;
-    }
-
-    public final float getTop() {
-        return y1;
-    }
-
-    public final float getBottom() {
-        return y2;
-    }
-
+    @Override
     public final void draw(float time) {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();
@@ -101,46 +68,16 @@ public abstract class OptionEntry implements IMouseListener {
         RenderSystem.enableTexture();
     }
 
-    protected void drawExtra(float time) {
-
-    }
+    protected abstract void drawExtra(float time);
 
     @Override
-    public boolean updateMouseHover(double mouseX, double mouseY) {
-        boolean prev = mouseHovered;
-        mouseHovered = isMouseInArea(mouseX, mouseY);
-        if (prev != mouseHovered) {
-            if (mouseHovered) {
-                onMouseHoverEnter();
-            } else {
-                onMouseHoverExit();
-            }
-        }
-        return mouseHovered;
-    }
-
-    private boolean isMouseInArea(double mouseX, double mouseY) {
-        return mouseX >= x1 && mouseX <= x2 && mouseY >= y1 && mouseY <= y2;
-    }
-
-    @Override
-    public final void setMouseHoverExit() {
-        if (mouseHovered) {
-            mouseHovered = false;
-            onMouseHoverExit();
-        }
-    }
-
     protected void onMouseHoverEnter() {
         titleBrightness = 1.0f;
     }
 
+    @Override
     protected void onMouseHoverExit() {
         titleBrightness = 0.85f;
     }
 
-    @Override
-    public final boolean isMouseHovered() {
-        return mouseHovered;
-    }
 }

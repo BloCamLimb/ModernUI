@@ -20,8 +20,8 @@ package icyllis.modernui.gui.module;
 
 import com.google.common.collect.Lists;
 import icyllis.modernui.gui.master.Module;
+import icyllis.modernui.gui.option.OptionCategoryGroup;
 import icyllis.modernui.gui.option.OptionEntry;
-import icyllis.modernui.gui.option.OptionCategory;
 import icyllis.modernui.gui.option.SSliderOptionEntry;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import icyllis.modernui.system.ConstantsLibrary;
@@ -51,7 +51,7 @@ public class SettingAudio extends Module {
                     d -> gameSettings.setSoundLevel(soundCategory, d.floatValue()), ConstantsLibrary.PERCENTAGE_STRING_FUNC);
             list.add(entry);
         }
-        OptionCategory category = new OptionCategory(window, I18n.format("gui.modernui.settings.category.sounds"), list);
+        OptionCategoryGroup category = new OptionCategoryGroup(window, I18n.format("gui.modernui.settings.category.sounds"), list);
         window.addGroups(Lists.newArrayList(category));
 
         addWidget(window);

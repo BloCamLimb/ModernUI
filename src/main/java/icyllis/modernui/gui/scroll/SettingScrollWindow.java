@@ -19,9 +19,9 @@
 package icyllis.modernui.gui.scroll;
 
 import icyllis.modernui.gui.master.Module;
-import icyllis.modernui.gui.option.OptionCategory;
+import icyllis.modernui.gui.option.OptionCategoryGroup;
 
-public class SettingScrollWindow extends ScrollWindow<OptionCategory> {
+public class SettingScrollWindow extends ScrollWindow<OptionCategoryGroup> {
 
     public SettingScrollWindow(Module module) {
         super(module, w -> 40f, h -> 36f, w -> w - 80f, h -> h - 72f);
