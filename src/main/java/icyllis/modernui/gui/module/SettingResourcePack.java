@@ -22,20 +22,15 @@ import com.google.common.collect.Lists;
 import icyllis.modernui.gui.background.ResourcePackBG;
 import icyllis.modernui.gui.layout.WidgetLayout;
 import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.gui.master.IModule;
-import icyllis.modernui.gui.master.IWidget;
 import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.option.ResourcePackEntry;
 import icyllis.modernui.gui.option.ResourcePackGroup;
 import icyllis.modernui.gui.popup.ConfirmCallback;
-import icyllis.modernui.gui.popup.PopupConfirm;
 import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.gui.widget.ArrowButton;
-import icyllis.modernui.gui.widget.TextFrameButton;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.ClientResourcePackInfo;
-import net.minecraft.client.resources.I18n;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nullable;
@@ -48,9 +43,9 @@ public class SettingResourcePack extends Module {
 
     private final Minecraft minecraft;
 
-    private ResourcePackGroup aGroup;
+    private ResourcePackGroup availableGroup;
 
-    private ResourcePackGroup sGroup;
+    private ResourcePackGroup selectedGroup;
 
     private ArrowButton leftArrow;
 
@@ -60,10 +55,10 @@ public class SettingResourcePack extends Module {
 
     private ArrowButton downArrow;
 
-    private WidgetLayout arrowLayout;
+    private WidgetLayout arrowsLayout;
 
     @Nullable
-    private ResourcePackEntry highlight;
+    private ResourcePackEntry highlightEntry;
 
     private boolean changed = false;
 
@@ -77,11 +72,11 @@ public class SettingResourcePack extends Module {
         ScrollWindow<ResourcePackGroup> aWindow = new ScrollWindow<>(this, leftXFunc, h -> 36f, widthFunc, h -> h - 72f);
         ScrollWindow<ResourcePackGroup> sWindow = new ScrollWindow<>(this, w -> w / 2f + 8, h -> 36f, widthFunc, h -> h - 72f);
 
-        aGroup = new ResourcePackGroup(this, aWindow, minecraft.getResourcePackList(), ResourcePackGroup.Type.AVAILABLE);
-        sGroup = new ResourcePackGroup(this, sWindow, minecraft.getResourcePackList(), ResourcePackGroup.Type.SELECTED);
+        availableGroup = new ResourcePackGroup(this, aWindow, minecraft.getResourcePackList(), ResourcePackGroup.Type.AVAILABLE);
+        selectedGroup = new ResourcePackGroup(this, sWindow, minecraft.getResourcePackList(), ResourcePackGroup.Type.SELECTED);
 
-        aWindow.addGroups(Lists.newArrayList(aGroup));
-        sWindow.addGroups(Lists.newArrayList(sGroup));
+        aWindow.addGroups(Lists.newArrayList(availableGroup));
+        sWindow.addGroups(Lists.newArrayList(selectedGroup));
 
         List<ArrowButton> list = new ArrayList<>();
 
@@ -95,7 +90,7 @@ public class SettingResourcePack extends Module {
         list.add(upArrow);
         list.add(downArrow);
 
-        arrowLayout = new WidgetLayout(list, WidgetLayout.Direction.VERTICAL_POSITIVE, 4);
+        arrowsLayout = new WidgetLayout(list, WidgetLayout.Direction.VERTICAL_POSITIVE, 4);
 
         addWidget(aWindow);
         addWidget(sWindow);
@@ -105,7 +100,7 @@ public class SettingResourcePack extends Module {
     @Override
     public void resize(int width, int height) {
         super.resize(width, height);
-        arrowLayout.layout(width / 2f - 6, height * 0.25f);
+        arrowsLayout.layout(width / 2f - 6, height * 0.25f);
     }
 
     @Override
@@ -132,7 +127,7 @@ public class SettingResourcePack extends Module {
         List<ClientResourcePackInfo> list = Lists.newArrayList();
         GameSettings gameSettings = minecraft.gameSettings;
 
-        for (ResourcePackEntry c2 : sGroup.getEntries()) {
+        for (ResourcePackEntry c2 : selectedGroup.getEntries()) {
             list.add(c2.getResourcePack());
         }
 
@@ -162,52 +157,55 @@ public class SettingResourcePack extends Module {
         if (super.mouseClicked(mouseX, mouseY, mouseButton)) {
             return true;
         }
-        setHighlight(null);
+        setHighlightEntry(null);
         return false;
     }
 
     private void intoSelected() {
-        if (highlight != null && highlight.canIntoSelected()) {
-            aGroup.getEntries().remove(highlight);
-            aGroup.layoutGroup();
-            highlight.intoSelected(sGroup);
-            sGroup.layoutGroup();
-            sGroup.followEntry(highlight);
-            highlight.setMouseHoverExit();
-            setHighlight(highlight);
+        if (highlightEntry != null && highlightEntry.canIntoSelected()) {
+            availableGroup.getEntries().remove(highlightEntry);
+            availableGroup.layoutGroup();
+            highlightEntry.intoSelected(selectedGroup);
+            selectedGroup.layoutGroup();
+            selectedGroup.followEntry(highlightEntry);
+            highlightEntry.setMouseHoverExit();
+            GlobalModuleManager.INSTANCE.refreshMouse();
+            setHighlightEntry(highlightEntry);
             changed = true;
         }
     }
 
     private void intoAvailable() {
-        if (highlight != null && highlight.canIntoAvailable()) {
-            sGroup.getEntries().remove(highlight);
-            sGroup.layoutGroup();
-            aGroup.getEntries().add(highlight);
-            aGroup.layoutGroup();
-            highlight.setMouseHoverExit();
-            setHighlight(highlight);
+        if (highlightEntry != null && highlightEntry.canIntoAvailable()) {
+            selectedGroup.getEntries().remove(highlightEntry);
+            selectedGroup.layoutGroup();
+            availableGroup.getEntries().add(highlightEntry);
+            availableGroup.layoutGroup();
+            availableGroup.followEntry(highlightEntry);
+            highlightEntry.setMouseHoverExit();
+            GlobalModuleManager.INSTANCE.refreshMouse();
+            setHighlightEntry(highlightEntry);
             changed = true;
         }
     }
 
     private void goUp() {
-        if (highlight != null && highlight.canGoUp()) {
-            highlight.goUp();
-            sGroup.layoutGroup();
-            sGroup.followEntry(highlight);
-            setHighlight(highlight);
+        if (highlightEntry != null && highlightEntry.canGoUp()) {
+            highlightEntry.goUp();
+            selectedGroup.layoutGroup();
+            selectedGroup.followEntry(highlightEntry);
+            setHighlightEntry(highlightEntry);
             GlobalModuleManager.INSTANCE.refreshMouse();
             changed = true;
         }
     }
 
     private void goDown() {
-        if (highlight != null && highlight.canGoDown()) {
-            highlight.goDown();
-            sGroup.layoutGroup();
-            sGroup.followEntry(highlight);
-            setHighlight(highlight);
+        if (highlightEntry != null && highlightEntry.canGoDown()) {
+            highlightEntry.goDown();
+            selectedGroup.layoutGroup();
+            selectedGroup.followEntry(highlightEntry);
+            setHighlightEntry(highlightEntry);
             GlobalModuleManager.INSTANCE.refreshMouse();
             changed = true;
         }
@@ -235,17 +233,17 @@ public class SettingResourcePack extends Module {
     }
 
     @Nullable
-    public ResourcePackEntry getHighlight() {
-        return highlight;
+    public ResourcePackEntry getHighlightEntry() {
+        return highlightEntry;
     }
 
-    public void setHighlight(@Nullable ResourcePackEntry highlight) {
-        this.highlight = highlight;
-        if (highlight != null) {
-            leftArrow.setAvailable(highlight.canIntoAvailable());
-            rightArrow.setAvailable(highlight.canIntoSelected());
-            upArrow.setAvailable(highlight.canGoUp());
-            downArrow.setAvailable(highlight.canGoDown());
+    public void setHighlightEntry(@Nullable ResourcePackEntry highlightEntry) {
+        this.highlightEntry = highlightEntry;
+        if (highlightEntry != null) {
+            leftArrow.setAvailable(highlightEntry.canIntoAvailable());
+            rightArrow.setAvailable(highlightEntry.canIntoSelected());
+            upArrow.setAvailable(highlightEntry.canGoUp());
+            downArrow.setAvailable(highlightEntry.canGoDown());
         } else {
             leftArrow.setAvailable(false);
             rightArrow.setAvailable(false);
@@ -255,6 +253,6 @@ public class SettingResourcePack extends Module {
     }
 
     public ResourcePackGroup getSelectedGroup() {
-        return sGroup;
+        return selectedGroup;
     }
 }

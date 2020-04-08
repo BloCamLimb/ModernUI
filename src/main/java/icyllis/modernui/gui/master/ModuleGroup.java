@@ -45,7 +45,7 @@ public class ModuleGroup extends Module {
     /**
      * If true, this module will draw over child module
      */
-    protected boolean overDraw = false;
+    private boolean overDraw = false;
 
     public ModuleGroup() {
 
@@ -85,6 +85,10 @@ public class ModuleGroup extends Module {
         moduleChanged(cid);
         GlobalModuleManager.INSTANCE.refreshMouse();
         MouseTools.useDefaultCursor();
+    }
+
+    protected void makeOverDraw() {
+        overDraw = true;
     }
 
     public int getCid() {

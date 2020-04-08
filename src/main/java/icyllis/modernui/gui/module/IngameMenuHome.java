@@ -26,9 +26,11 @@ import icyllis.modernui.gui.popup.ConfirmCallback;
 import icyllis.modernui.gui.popup.PopupConfirm;
 import icyllis.modernui.gui.widget.MenuButton;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.advancements.AdvancementsScreen;
 import net.minecraft.client.gui.screen.*;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.realms.RealmsBridge;
+import net.minecraft.stats.Stats;
 import net.minecraft.util.text.TranslationTextComponent;
 
 import java.util.ArrayList;
@@ -50,17 +52,19 @@ public class IngameMenuHome extends ModuleGroup {
         consumer.accept(new MenuButton(w -> 8f, h -> 8f, I18n.format("gui.modernui.menu.back"), 4,
                 GlobalModuleManager.INSTANCE::closeGuiScreen, -1));
         consumer.accept(new MenuButton(w -> 8f, h -> 44f, I18n.format("gui.advancements"), 1,
-                () -> {}, 1));
+                () -> minecraft.displayGuiScreen(new AdvancementsScreen(minecraft.player.connection.getAdvancementManager())), 1));
         consumer.accept(new MenuButton(w -> 8f, h -> 72f, I18n.format("gui.stats"), 2,
-                () -> {}, 2));
-        consumer.accept(new MenuButton(w -> 8f, h -> h - 92f, I18n.format("gui.modernui.menu.mods"), 6,
-                () -> minecraft.displayGuiScreen(new OptionsScreen(null, minecraft.gameSettings)), 3));
+                () -> minecraft.displayGuiScreen(new StatsScreen(null, minecraft.player.getStats())), 2));
+        consumer.accept(new MenuButton(w -> 8f, h -> h - 92f, I18n.format("gui.modernui.menu.mods") + " (WIP)", 6,
+                () -> {}, 3));
         consumer.accept(new MenuButton(w -> 8f, h -> h - 64f, I18n.format("gui.modernui.menu.settings"), 0,
                 () -> switchChildModule(4), 4));
         consumer.accept(new MenuButton(w -> 8f, h -> h - 28f, I18n.format("gui.modernui.menu.exit"), 5,
                 this::exit, -1));
         addChildModule(4, IngameMenuSetting::new);
-        overDraw = true;
+
+        // always draw at the top
+        makeOverDraw();
     }
 
     @Override

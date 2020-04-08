@@ -90,14 +90,14 @@ public class PopupConfirm extends Module {
     }
 
     public PopupConfirm setDescription(String description) {
-        this.desc = FontTools.splitStringToWidth(description, 244);
+        this.desc = FontTools.splitStringToWidth(description, 164);
         return this;
     }
 
     @Override
     public void draw(float time) {
         super.draw(time);
-        fontRenderer.drawString(title, x + 130, y + 4, TextAlign.CENTER);
+        fontRenderer.drawString(title, x + 90, y + 4, TextAlign.CENTER);
         int i = 0;
         for (String t : desc) {
             fontRenderer.drawString(t, x + 8, y + 24 + i++ * 12);
@@ -107,9 +107,9 @@ public class PopupConfirm extends Module {
     @Override
     public void resize(int width, int height) {
         super.resize(width, height);
-        this.x = width / 2f - 130;
+        this.x = width / 2f - 90;
         this.y = height / 2f - 40;
-        buttonLayout.layout(width / 2f + 130, height / 2f + 20);
+        buttonLayout.layout(width / 2f + 82, height / 2f + 20);
     }
 
     @Override

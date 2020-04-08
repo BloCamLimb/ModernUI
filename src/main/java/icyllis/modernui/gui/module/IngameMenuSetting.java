@@ -26,6 +26,8 @@ import icyllis.modernui.gui.popup.PopupMenu;
 import icyllis.modernui.gui.widget.DropDownMenu;
 import icyllis.modernui.gui.widget.LineTextButton;
 import icyllis.modernui.system.ModIntegration;
+import net.minecraft.client.gui.advancements.AdvancementsScreen;
+import net.minecraft.client.gui.screen.StatsScreen;
 import net.minecraft.client.resources.I18n;
 
 import java.util.ArrayList;
@@ -62,7 +64,7 @@ public class IngameMenuSetting extends ModuleGroup {
         addChildModule(++i, SettingControls::new);
         addChildModule(++i, SettingResourcePack::new);
         if (ModIntegration.optifineLoaded) {
-
+            // shaders
         }
         addChildModule(++i, SettingLanguage::new);
 
@@ -79,6 +81,7 @@ public class IngameMenuSetting extends ModuleGroup {
     private void openAssetsMenu() {
         List<String> tabs = Lists.newArrayList(I18n.format("gui.modernui.settings.tab.resourcePacks"),
                 I18n.format("gui.modernui.settings.tab.language"));
+        //TODO optifine shaders
         /*if (ModIntegration.optifineLoaded) {
             tabs.add(1, I18n.format("of.options.shadersTitle"));
         }*/
