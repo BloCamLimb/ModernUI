@@ -18,12 +18,52 @@
 
 package icyllis.modernui.gui.module;
 
+import com.google.common.collect.Lists;
 import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.scroll.ScrollWindow;
+import icyllis.modernui.gui.stats.GeneralStatsGroup;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.network.play.ClientPlayNetHandler;
+import net.minecraft.network.play.client.CClientStatusPacket;
+import net.minecraft.stats.StatisticsManager;
+
+import java.util.Objects;
 
 public class StatsGeneral extends Module {
 
-    public StatsGeneral() {
+    private final StatisticsManager manager;
 
+    private final ClientPlayNetHandler netHandler;
+
+    private final GeneralStatsGroup group;
+
+    private int updateCycle = 4;
+
+    public StatsGeneral() {
+        Minecraft minecraft = Minecraft.getInstance();
+        manager = Objects.requireNonNull(minecraft.player).getStats();
+        netHandler = Objects.requireNonNull(minecraft.getConnection());
+        netHandler.sendPacket(new CClientStatusPacket(CClientStatusPacket.State.REQUEST_STATS));
+
+        ScrollWindow<GeneralStatsGroup> window = new ScrollWindow<>(this, w -> 40f, h -> 36f, w -> w - 80f, h -> h - 72f);
+
+        group = new GeneralStatsGroup(window);
+        group.updateValues(manager);
+
+        window.addGroups(Lists.newArrayList(group));
+
+        addWidget(window);
+    }
+
+    @Override
+    public void tick(int ticks) {
+        super.tick(ticks);
+        if (ticks % updateCycle == 0) {
+            group.updateValues(manager);
+            updateCycle = Math.min(updateCycle + 1, 40);
+        }
+        if ((ticks & 127) == 0) {
+            netHandler.sendPacket(new CClientStatusPacket(CClientStatusPacket.State.REQUEST_STATS));
+        }
     }
 }

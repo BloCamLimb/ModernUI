@@ -79,8 +79,8 @@ public class ResourcePackGroup extends UniformScrollGroup<ResourcePackEntry> {
      * Layout entries and group
      */
     @Override
-    public void setPos(float x1, float x2, float y) {
-        super.setPos(x1, x2, y);
+    public void layout(float x1, float x2, float y) {
+        super.layout(x1, x2, y);
         float pw = (int) Math.floor(x2 - x1);
         pw = Math.min(pw, 240);
         y += 14;

@@ -21,8 +21,6 @@ package icyllis.modernui.gui.option;
 import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.IFontRenderer;
-import icyllis.modernui.gui.master.IMouseListener;
-import icyllis.modernui.gui.scroll.ScrollGroup;
 import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.gui.scroll.UniformScrollGroup;
 import icyllis.modernui.gui.util.Color3I;
@@ -47,8 +45,8 @@ public class OptionCategoryGroup extends UniformScrollGroup<OptionEntry> {
     }
 
     @Override
-    public void setPos(float x1, float x2, float y) {
-        super.setPos(x1, x2, y);
+    public void layout(float x1, float x2, float y) {
+        super.layout(x1, x2, y);
         x1 = centerX - 160;
         x2 = centerX + 160;
         y += 30;

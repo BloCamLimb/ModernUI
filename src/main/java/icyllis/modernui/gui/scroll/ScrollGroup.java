@@ -49,7 +49,7 @@ public abstract class ScrollGroup implements IMouseListener {
     /**
      * Called when layout
      */
-    public void setPos(float x1, float x2, float y) {
+    public void layout(float x1, float x2, float y) {
         this.x1 = x1;
         this.x2 = x2;
         this.centerX = (x1 + x2) / 2f;
