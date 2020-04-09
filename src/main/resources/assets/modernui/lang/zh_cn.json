@@ -5,6 +5,7 @@
   "gui.modernui.button.leave": "离开",
   "gui.modernui.button.save": "保存",
   "gui.modernui.button.apply": "应用",
+  "gui.modernui.button.Lock": "锁定",
   "gui.modernui.button.applyAndReload": "应用并重载",
   "gui.modernui.button.discard": "舍弃",
   "gui.modernui.button.confirm": "确认%s",
@@ -36,6 +37,7 @@
   "gui.modernui.settings.category.mouse": "鼠标",
 
   "gui.modernui.popup.exit": "你确定要退出到主菜单吗？",
+  "gui.modernui.popup.lockDifficulty": "你确定要锁定世界难度吗？",
 
   "gui.modernui.tooltip.thanksOptifine": "此功能由OptiFine提供技术支持"
 }

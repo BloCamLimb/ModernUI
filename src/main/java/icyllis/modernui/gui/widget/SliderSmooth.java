@@ -27,24 +27,17 @@ import java.util.function.Consumer;
 
 public class SliderSmooth extends Slider implements IElement, IGuiEventListener {
 
-    private Consumer<Double> receiver;
+    private ISmoothSliderReceiver receiver;
 
-    private Runnable applier = () -> {};
-
-    public SliderSmooth(IFocuser focuser, float width, double initPercent, Consumer<Double> receiver) {
+    public SliderSmooth(IFocuser focuser, float width, double initPercent, ISmoothSliderReceiver receiver) {
         super(focuser, width);
         this.slideOffset = getMaxSlideOffset() * MathHelper.clamp(initPercent, 0, 1);
         this.receiver = receiver;
     }
 
-    public SliderSmooth setApplier(Runnable r) {
-        applier = r;
-        return this;
-    }
-
     @Override
     protected void onStopChanging() {
-        applier.run();
+        receiver.onSliderFinalChange(slideOffset / getMaxSlideOffset());
     }
 
     @Override
@@ -53,7 +46,7 @@ public class SliderSmooth extends Slider implements IElement, IGuiEventListener 
         slideOffset = MathHelper.clamp(offset, 0, getMaxSlideOffset());
         if (prev != slideOffset) {
             double slidePercent = slideOffset / getMaxSlideOffset();
-            receiver.accept(slidePercent);
+            receiver.onSliderRealtimeChange(slidePercent);
         }
     }
 }

@@ -16,9 +16,10 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.option;
+package icyllis.modernui.gui.setting;
 
 import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.gui.widget.ISmoothSliderReceiver;
 import icyllis.modernui.gui.widget.SliderSmooth;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import net.minecraft.util.math.MathHelper;
@@ -26,9 +27,15 @@ import net.minecraft.util.math.MathHelper;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class SSliderOptionEntry extends OptionEntry {
+public class SSliderSettingEntry extends SettingEntry implements ISmoothSliderReceiver {
 
-    private SliderSmooth slider;
+    private final SliderSmooth slider;
+
+    private final Consumer<Double> applyFunc;
+
+    private final Function<Double, String> displayStringFunc;
+
+    private final boolean realtimeApply;
 
     private double minValue;
 
@@ -40,36 +47,22 @@ public class SSliderOptionEntry extends OptionEntry {
 
     private double originalValue;
 
-    private Consumer<Double> saveOptionFunc;
-
-    private Consumer<Double> applyChangeFunc = i -> {};
-
-    private Function<Double, String> displayStringFunc;
-
     private String displayString;
 
-    public SSliderOptionEntry(SettingScrollWindow window, String optionTitle, double minValue, double maxValue, float stepSize, double currentValue, Consumer<Double> saveOption, Function<Double, String> displayStringFunc) {
+    public SSliderSettingEntry(SettingScrollWindow window, String optionTitle, double minValue, double maxValue, float stepSize, double currentValue, Consumer<Double> applyFunc, Function<Double, String> displayStringFunc, boolean realtimeApply) {
         super(window, optionTitle);
         currentValue = MathHelper.clamp(currentValue, minValue, maxValue);
-        slider = new SliderSmooth(window, 84, (currentValue - minValue) / (maxValue - minValue), this::onPercentageChange).setApplier(this::applyChange);
+        this.slider = new SliderSmooth(window, 84, (currentValue - minValue) / (maxValue - minValue), this);
         this.minValue = minValue;
         this.maxValue = maxValue;
         this.stepSize = stepSize == 0 ? 0.01f / (float) (maxValue - minValue) : stepSize;
         this.currentValue = stepSize * (Math.round(currentValue / stepSize));
         this.originalValue = currentValue;
-        this.saveOptionFunc = saveOption;
+        this.applyFunc = applyFunc;
         this.displayStringFunc = displayStringFunc;
         this.displayString = displayStringFunc.apply(currentValue);
+        this.realtimeApply = realtimeApply;
         
-    }
-
-    public SSliderOptionEntry(SettingScrollWindow window, String optionTitle, double minValue, double maxValue, float stepSize, double currentValue, Consumer<Double> saveOption) {
-        this(window, optionTitle, minValue, maxValue, stepSize, currentValue, saveOption, String::valueOf);
-    }
-
-    public SSliderOptionEntry setApplyChange(Consumer<Double> c) {
-        this.applyChangeFunc = c;
-        return this;
     }
 
     @Override
@@ -109,21 +102,27 @@ public class SSliderOptionEntry extends OptionEntry {
         slider.setMouseHoverExit();
     }
 
-    protected void onPercentageChange(double percentage) {
+    private void applyChange() {
+        if (currentValue != originalValue) {
+            applyFunc.accept(currentValue);
+            originalValue = currentValue;
+        }
+    }
+
+    @Override
+    public void onSliderRealtimeChange(double percentage) {
         currentValue = minValue + (maxValue - minValue) * percentage;
         currentValue = stepSize * (Math.round(currentValue / stepSize));
         displayString = displayStringFunc.apply(currentValue);
-        saveOption();
+        if (realtimeApply) {
+            applyChange();
+        }
     }
 
-    public void saveOption() {
-        saveOptionFunc.accept(currentValue);
-    }
-
-    public void applyChange() {
-        if (currentValue != originalValue) {
-            applyChangeFunc.accept(currentValue);
-            originalValue = currentValue;
+    @Override
+    public void onSliderFinalChange(double percentage) {
+        if (!realtimeApply) {
+            applyChange();
         }
     }
 }

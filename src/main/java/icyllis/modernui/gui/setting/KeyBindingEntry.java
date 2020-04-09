@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.option;
+package icyllis.modernui.gui.setting;
 
 import com.google.common.collect.Lists;
 import icyllis.modernui.gui.master.GlobalModuleManager;
@@ -34,7 +34,7 @@ import net.minecraftforge.client.settings.KeyModifier;
 import java.util.Locale;
 import java.util.Objects;
 
-public class KeyBindingEntry extends OptionEntry {
+public class KeyBindingEntry extends SettingEntry {
 
     private KeyBinding keyBinding;
 

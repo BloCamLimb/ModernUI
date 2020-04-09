@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.option;
+package icyllis.modernui.gui.setting;
 
 import com.google.common.collect.Lists;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
@@ -24,9 +24,9 @@ import icyllis.modernui.system.RewrittenMethods;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.I18n;
 
-public class GuiScaleOptionEntry extends DropdownOptionEntry {
+public class GuiScaleSettingEntry extends DropdownSettingEntry {
 
-    public GuiScaleOptionEntry(SettingScrollWindow window) {
+    public GuiScaleSettingEntry(SettingScrollWindow window) {
         super(window, I18n.format("options.guiScale"), Lists.newArrayList(""), 0, i -> {});
         this.saveOption = i -> {
             Minecraft.getInstance().gameSettings.guiScale = i == 0 ? 0 :

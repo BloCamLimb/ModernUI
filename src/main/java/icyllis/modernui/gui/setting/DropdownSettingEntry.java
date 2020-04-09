@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.option;
+package icyllis.modernui.gui.setting;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -39,7 +39,7 @@ import org.lwjgl.opengl.GL11;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class DropdownOptionEntry extends OptionEntry {
+public class DropdownSettingEntry extends SettingEntry {
 
     private TextureManager textureManager = Minecraft.getInstance().getTextureManager();
 
@@ -60,7 +60,7 @@ public class DropdownOptionEntry extends OptionEntry {
 
     protected boolean available = true;
 
-    public DropdownOptionEntry(SettingScrollWindow window, String optionTitle, List<String> optionNames, int originalIndex, Consumer<Integer> saveOption) {
+    public DropdownSettingEntry(SettingScrollWindow window, String optionTitle, List<String> optionNames, int originalIndex, Consumer<Integer> saveOption) {
         super(window, optionTitle);
         this.currentOptionIndex = this.originalOptionIndex = originalIndex;
         this.optionNames = optionNames;

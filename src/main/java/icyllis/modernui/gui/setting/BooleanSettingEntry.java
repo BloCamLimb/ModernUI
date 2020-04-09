@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.option;
+package icyllis.modernui.gui.setting;
 
 import com.google.common.collect.Lists;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
@@ -26,7 +26,7 @@ import net.minecraft.client.resources.I18n;
 import java.util.List;
 import java.util.function.Supplier;
 
-public class BooleanOptionEntry extends DropdownOptionEntry {
+public class BooleanSettingEntry extends DropdownSettingEntry {
 
     private static Supplier<List<String>> YES_OR_NO = () -> Lists.newArrayList(I18n.format("gui.yes"), I18n.format("gui.no"));
 
@@ -34,11 +34,11 @@ public class BooleanOptionEntry extends DropdownOptionEntry {
 
     private BooleanConsumer saveOption;
 
-    public BooleanOptionEntry(SettingScrollWindow window, String optionTitle, boolean originalValue, BooleanConsumer saveOption) {
+    public BooleanSettingEntry(SettingScrollWindow window, String optionTitle, boolean originalValue, BooleanConsumer saveOption) {
         this(window, optionTitle, originalValue, saveOption, false);
     }
 
-    public BooleanOptionEntry(SettingScrollWindow window, String optionTitle, boolean originalValue, BooleanConsumer saveOption, boolean useYesOrNo) {
+    public BooleanSettingEntry(SettingScrollWindow window, String optionTitle, boolean originalValue, BooleanConsumer saveOption, boolean useYesOrNo) {
         super(window, optionTitle, useYesOrNo ? YES_OR_NO.get() : ON_OR_OFF.get(), originalValue ? 0 : 1, null);
         this.saveOption = saveOption;
     }

@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.option;
+package icyllis.modernui.gui.setting;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.FontTools;
