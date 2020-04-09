@@ -22,6 +22,7 @@ import com.google.common.collect.Lists;
 import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.option.*;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
+import icyllis.modernui.system.ConstantsLibrary;
 import icyllis.modernui.system.ModIntegration;
 import icyllis.modernui.system.SettingsManager;
 import net.minecraft.client.GameSettings;
@@ -39,8 +40,6 @@ import java.util.stream.Collectors;
 public class SettingVideo extends Module {
 
     private static Supplier<List<String>> AO = () -> Lists.newArrayList(AmbientOcclusionStatus.values()).stream().map(m -> I18n.format(m.getResourceKey())).collect(Collectors.toCollection(ArrayList::new));
-
-    private static Supplier<List<String>> ATTACK_INDICATOR = () -> Lists.newArrayList(AttackIndicatorStatus.values()).stream().map(m -> I18n.format(m.getResourceKey())).collect(Collectors.toCollection(ArrayList::new));
 
     private static Supplier<List<String>> PARTICLES = () -> Lists.newArrayList(ParticleStatus.values()).stream().map(m -> I18n.format(m.getResourceKey())).collect(Collectors.toCollection(ArrayList::new));
 
@@ -71,26 +70,14 @@ public class SettingVideo extends Module {
         addWidget(window);
     }
 
-    @SuppressWarnings("NoTranslation")
     private void addVideoCategory(List<OptionCategoryGroup> groups) {
         List<OptionEntry> list = new ArrayList<>();
-        GameSettings gameSettings = minecraft.gameSettings;
 
-        list.add(new DropdownOptionEntry(window, I18n.format("options.graphics"),
-                        Lists.newArrayList(I18n.format("options.graphics.fancy"), I18n.format("options.graphics.fast")),
-                        gameSettings.fancyGraphics ? 0 : 1, i -> {
-            gameSettings.fancyGraphics = i == 0;
-            minecraft.worldRenderer.loadRenderers();
-        }));
+        list.add(SettingsManager.GRAPHICS.apply(window));
 
         list.add(SettingsManager.RENDER_DISTANCE.apply(window));
 
-        DSliderOptionEntry framerateLimit = new DSliderOptionEntry(window, I18n.format("options.framerateLimit"),
-                1, 52, gameSettings.framerateLimit / 5, i -> {
-            gameSettings.framerateLimit = i * 5;
-            minecraft.getMainWindow().setFramerateLimit(gameSettings.framerateLimit);
-        }, i -> i > 51 ? "260+" : Integer.toString(i * 5));
-        list.add(framerateLimit);
+        list.add(SettingsManager.FRAMERATE_LIMIT.apply(window));
 
         list.add(SettingsManager.FOV.apply(window));
 
@@ -99,17 +86,14 @@ public class SettingVideo extends Module {
 
         list.add(SettingsManager.GAMMA.apply(window));
 
-        DropdownOptionEntry attack = new DropdownOptionEntry(window, I18n.format("options.attackIndicator"), ATTACK_INDICATOR.get(),
-                gameSettings.attackIndicator.ordinal(), i -> gameSettings.attackIndicator = AttackIndicatorStatus.values()[i]);
-        list.add(attack);
+        list.add(SettingsManager.ATTACK_INDICATOR.apply(window));
 
         list.add(SettingsManager.VIEW_BOBBING.apply(window));
+
         list.add(SettingsManager.VSYNC.apply(window));
 
         if (ModIntegration.optifineLoaded) {
-            BooleanOptionEntry dynamicFov = new BooleanOptionEntry(window, I18n.format("of.options.DYNAMIC_FOV"),
-                    SettingsManager.INSTANCE.getDynamicFov(), SettingsManager.INSTANCE::setDynamicFov);
-            list.add(dynamicFov);
+            list.add(SettingsManager.DYNAMIC_FOV.apply(window));
             //TODO optifine Dynamic Lights and Use VBOs
         }
 
@@ -117,6 +101,7 @@ public class SettingVideo extends Module {
         groups.add(categoryGroup);
     }
 
+    @SuppressWarnings("NoTranslation")
     private void addQualityCategory(List<OptionCategoryGroup> groups) {
         List<OptionEntry> list = new ArrayList<>();
         GameSettings gameSettings = minecraft.gameSettings;
@@ -128,7 +113,11 @@ public class SettingVideo extends Module {
         });
         list.add(ao);
 
-        SettingsManager.AO_LEVEL.ifPresent(a -> list.add(a.apply(window)));
+        SSliderOptionEntry aoLevel = new SSliderOptionEntry(window, I18n.format("of.options.AO_LEVEL"), 0, 1, 0,
+                SettingsManager.INSTANCE.getAoLevel(), SettingsManager.INSTANCE::setAoLevel, ConstantsLibrary.PERCENTAGE_STRING_FUNC)
+                .setApplyChange(d -> minecraft.worldRenderer.loadRenderers());
+
+        list.add(aoLevel);
 
         DSliderOptionEntry mipmapLevel = new DSliderOptionEntry(window, I18n.format("options.mipmapLevels"),
                 0, 4, gameSettings.mipmapLevels, i -> gameSettings.mipmapLevels = i, String::valueOf).

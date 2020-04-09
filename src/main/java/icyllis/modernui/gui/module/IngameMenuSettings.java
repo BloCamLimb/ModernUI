@@ -26,10 +26,15 @@ import icyllis.modernui.gui.popup.PopupMenu;
 import icyllis.modernui.gui.widget.DropDownMenu;
 import icyllis.modernui.gui.widget.LineTextButton;
 import icyllis.modernui.system.ModIntegration;
+import net.minecraft.client.GameSettings;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.advancements.AdvancementsScreen;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.StatsScreen;
 import net.minecraft.client.resources.I18n;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -63,9 +68,6 @@ public class IngameMenuSettings extends ModuleGroup {
         addChildModule(++i, SettingAudio::new);
         addChildModule(++i, SettingControls::new);
         addChildModule(++i, SettingResourcePack::new);
-        if (ModIntegration.optifineLoaded) {
-            // shaders
-        }
         addChildModule(++i, SettingLanguage::new);
 
         switchChildModule(1);
@@ -82,9 +84,9 @@ public class IngameMenuSettings extends ModuleGroup {
         List<String> tabs = Lists.newArrayList(I18n.format("gui.modernui.settings.tab.resourcePacks"),
                 I18n.format("gui.modernui.settings.tab.language"));
         //TODO optifine shaders
-        /*if (ModIntegration.optifineLoaded) {
-            tabs.add(1, I18n.format("of.options.shadersTitle"));
-        }*/
+        if (ModIntegration.optifineLoaded) {
+            tabs.add(I18n.format("of.options.shadersTitle") + " (WIP)");
+        }
         DropDownMenu menu = new DropDownMenu(tabs, getCid() - 5, 12, this::assetsActions, DropDownMenu.Align.RIGHT);
         LineTextButton t = buttons.get(4);
         menu.setPos(t.getRight() - 8, t.getBottom() + 1);
@@ -93,6 +95,17 @@ public class IngameMenuSettings extends ModuleGroup {
 
     private void assetsActions(int index) {
         if (index >= 0 && index <= 2) {
+            if (ModIntegration.optifineLoaded && index == 2) {
+                try {
+                    Class<?> clazz = Class.forName("net.optifine.shaders.gui.GuiShaders");
+                    Constructor<?> constructor = clazz.getConstructor(Screen.class, GameSettings.class);
+                    Screen screen = (Screen) constructor.newInstance(null, Minecraft.getInstance().gameSettings);
+                    Minecraft.getInstance().displayGuiScreen(screen);
+                } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException | ClassCastException e) {
+                    e.printStackTrace();
+                }
+                return;
+            }
             switchChildModule(5 + index);
         }
     }

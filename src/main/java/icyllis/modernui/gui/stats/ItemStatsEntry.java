@@ -30,6 +30,7 @@ import net.minecraft.stats.Stat;
 import net.minecraft.stats.StatisticsManager;
 import net.minecraft.stats.Stats;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,7 +48,7 @@ public class ItemStatsEntry extends UniformScrollEntry {
 
     private boolean drawTooltip = false;
 
-    public ItemStatsEntry(Item item, Color3I color) {
+    public ItemStatsEntry(@Nonnull Item item, Color3I color) {
         super(ItemStatsGroup.ENTRY_HEIGHT);
         this.item = item;
         this.itemName = item.getName().getFormattedText();

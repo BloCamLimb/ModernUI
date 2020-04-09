@@ -26,6 +26,8 @@ import net.minecraft.stats.Stats;
 import net.minecraft.util.Util;
 import net.minecraft.util.text.TextFormatting;
 
+import javax.annotation.Nonnull;
+
 public class MobStatsEntry extends UniformScrollEntry {
 
     private final EntityType<?> entity;
@@ -49,20 +51,20 @@ public class MobStatsEntry extends UniformScrollEntry {
         fontRenderer.drawString(death, x1 + 12, y1 + 19);
     }
 
-    public void updateValue(StatisticsManager manager) {
+    public void updateValue(@Nonnull StatisticsManager manager) {
         int kills = manager.getValue(Stats.ENTITY_KILLED.get(entity));
         int deaths = manager.getValue(Stats.ENTITY_KILLED_BY.get(entity));
-        String k = Stats.ENTITY_KILLED.getTranslationKey();
+        String key = Stats.ENTITY_KILLED.getTranslationKey();
         if (kills == 0) {
-            kill = TextFormatting.DARK_GRAY + I18n.format(k + ".none", entityName);
+            kill = TextFormatting.DARK_GRAY + I18n.format(key + ".none", entityName);
         } else {
-            kill = TextFormatting.GRAY + I18n.format(k, kills, entityName);
+            kill = TextFormatting.GRAY + I18n.format(key, kills, entityName);
         }
-        k = Stats.ENTITY_KILLED_BY.getTranslationKey();
+        key = Stats.ENTITY_KILLED_BY.getTranslationKey();
         if (deaths == 0) {
-            death = TextFormatting.DARK_GRAY + I18n.format(k + ".none", entityName);
+            death = TextFormatting.DARK_GRAY + I18n.format(key + ".none", entityName);
         } else {
-            death = TextFormatting.GRAY + I18n.format(k, deaths, entityName);
+            death = TextFormatting.GRAY + I18n.format(key, deaths, entityName);
         }
     }
 

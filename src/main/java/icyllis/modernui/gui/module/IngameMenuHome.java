@@ -50,7 +50,7 @@ public class IngameMenuHome extends ModuleGroup {
         };
         consumer.accept(new MenuButton(w -> 8f, h -> 8f, I18n.format("gui.modernui.menu.back"), 4,
                 GlobalModuleManager.INSTANCE::closeGuiScreen, -1));
-        consumer.accept(new MenuButton(w -> 8f, h -> 44f, I18n.format("gui.advancements"), 1,
+        consumer.accept(new MenuButton(w -> 8f, h -> 44f, I18n.format("gui.advancements") + " (WIP)", 1,
                 () -> minecraft.displayGuiScreen(new AdvancementsScreen(minecraft.player.connection.getAdvancementManager())), 1));
         consumer.accept(new MenuButton(w -> 8f, h -> 72f, I18n.format("gui.stats"), 2,
                 () -> switchChildModule(2), 2));
@@ -61,7 +61,9 @@ public class IngameMenuHome extends ModuleGroup {
         consumer.accept(new MenuButton(w -> 8f, h -> h - 28f, I18n.format("gui.modernui.menu.exit"), 5,
                 this::exit, -1));
 
+        // advancements
         addChildModule(2, IngameMenuStats::new);
+        // mod list
         addChildModule(4, IngameMenuSettings::new);
 
         // always draw at the top
