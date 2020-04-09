@@ -18,14 +18,12 @@
 
 package icyllis.modernui.gui.stats;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.gui.scroll.UniformScrollEntry;
+import icyllis.modernui.gui.util.Color3I;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.ItemRenderer;
-import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.stats.Stat;
@@ -41,16 +39,19 @@ public class ItemStatsEntry extends UniformScrollEntry {
 
     private final Item item;
 
+    private final Color3I color;
+
     private final String itemName;
 
     private final List<String> vars = new ArrayList<>();
 
     private boolean drawTooltip = false;
 
-    public ItemStatsEntry(Item item) {
+    public ItemStatsEntry(Item item, Color3I color) {
         super(ItemStatsGroup.ENTRY_HEIGHT);
         this.item = item;
         this.itemName = item.getName().getFormattedText();
+        this.color = color;
     }
 
     @Override
@@ -63,13 +64,13 @@ public class ItemStatsEntry extends UniformScrollEntry {
         itemRenderer.renderItemIntoGUI(item.getDefaultInstance(), (int) x1 + 2, (int) y1 + 2);
         int i = 0;
         for (String var : vars) {
-            fontRenderer.drawString(var, x1 + 80 + i * 50, y1 + 6, TextAlign.RIGHT);
+            fontRenderer.drawString(var, x1 + 80 + i * 50, y1 + 6, color, TextAlign.RIGHT);
             i++;
         }
         if (drawTooltip) {
             DrawTools.fillRectWithColor(x1 + 1, y1 + 1, x1 + 19, y2 - 1, 0x40808080);
             float l = fontRenderer.getStringWidth(itemName);
-            DrawTools.fillRectWithColor(x1 + 22, y1 + 3, x1 + 28 + l, y2 - 3, 0xc0000000);
+            DrawTools.fillRectWithColor(x1 + 22, y1 + 3, x1 + 28 + l, y2 - 3, 0x80000000);
             fontRenderer.drawString(itemName, x1 + 25, y1 + 6);
         }
     }
@@ -89,11 +90,11 @@ public class ItemStatsEntry extends UniformScrollEntry {
             stat = Stats.ITEM_DROPPED.get(blockItem);
             vars.add(stat.format(manager.getValue(stat)));
         } else {
-            Stat<?> stat = Stats.ITEM_CRAFTED.get(item);
+            Stat<?> stat = Stats.ITEM_BROKEN.get(item);
+            vars.add(stat.format(manager.getValue(stat)));
+            stat = Stats.ITEM_CRAFTED.get(item);
             vars.add(stat.format(manager.getValue(stat)));
             stat = Stats.ITEM_USED.get(item);
-            vars.add(stat.format(manager.getValue(stat)));
-            stat = Stats.ITEM_BROKEN.get(item);
             vars.add(stat.format(manager.getValue(stat)));
             stat = Stats.ITEM_PICKED_UP.get(item);
             vars.add(stat.format(manager.getValue(stat)));
