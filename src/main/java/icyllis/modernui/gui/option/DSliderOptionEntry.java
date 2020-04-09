@@ -19,44 +19,41 @@
 package icyllis.modernui.gui.option;
 
 import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.gui.widget.IDiscreteSliderReceiver;
 import icyllis.modernui.gui.widget.SliderDiscrete;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class DSliderOptionEntry extends OptionEntry {
+public class DSliderOptionEntry extends OptionEntry implements IDiscreteSliderReceiver {
 
-    protected SliderDiscrete slider;
+    private final SliderDiscrete slider;
 
-    protected int minValue;
+    private final Consumer<Integer> applyFunc;
 
-    protected int currentValue;
+    private final Function<Integer, String> displayStringFunc;
 
-    protected int originalValue;
+    private final boolean realtimeApply;
 
-    private Consumer<Integer> saveChangeFunc;
+    private int minValue;
 
-    private Consumer<Integer> applyChangeFunc = i -> {};
+    private int currentValue;
 
-    protected Function<Integer, String> displayStringFunc;
+    private int originalValue;
 
-    protected String displayString;
+    private String displayString;
 
-    public DSliderOptionEntry(SettingScrollWindow window, String title, int minValue, int maxValue, int currentValue, Consumer<Integer> saveOptionFunc, Function<Integer, String> displayStringFunc) {
+    public DSliderOptionEntry(SettingScrollWindow window, String title, int minValue, int maxValue, int currentValue, Consumer<Integer> applyFunc, Function<Integer, String> displayStringFunc, boolean realtimeApply) {
         super(window, title);
-        slider = new SliderDiscrete(window, 84, currentValue - minValue, maxValue - minValue, this::onDiscreteChange).setApplier(this::applyChange);
+        this.slider = new SliderDiscrete(window, 84, currentValue - minValue, maxValue - minValue, this);
         this.minValue = minValue;
         this.originalValue = currentValue;
         this.currentValue = currentValue;
-        this.saveChangeFunc = saveOptionFunc;
+        this.applyFunc = applyFunc;
         this.displayStringFunc = displayStringFunc;
         this.displayString = displayStringFunc.apply(currentValue);
-    }
-
-    public DSliderOptionEntry setApplyChange(Consumer<Integer> c) {
-        this.applyChangeFunc = c;
-        return this;
+        this.realtimeApply = realtimeApply;
     }
 
     @Override
@@ -96,20 +93,26 @@ public class DSliderOptionEntry extends OptionEntry {
         slider.setMouseHoverExit();
     }
 
-    protected void onDiscreteChange(int offset) {
-        currentValue = minValue + offset;
-        displayString = displayStringFunc.apply(currentValue);
-        saveChange();
-    }
-
-    public void saveChange() {
-        saveChangeFunc.accept(currentValue);
-    }
-
     public void applyChange() {
         if (currentValue != originalValue) {
-            applyChangeFunc.accept(currentValue);
+            applyFunc.accept(currentValue);
             originalValue = currentValue;
+        }
+    }
+
+    @Override
+    public void onSliderRealtimeChange(int value) {
+        currentValue = minValue + value;
+        displayString = displayStringFunc.apply(currentValue);
+        if (realtimeApply) {
+            applyChange();
+        }
+    }
+
+    @Override
+    public void onSliderFinalChange(int value) {
+        if (!realtimeApply) {
+            applyChange();
         }
     }
 }

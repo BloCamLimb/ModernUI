@@ -38,7 +38,11 @@ public class SSliderOptionEntry extends OptionEntry {
 
     private double currentValue;
 
+    private double originalValue;
+
     private Consumer<Double> saveOptionFunc;
+
+    private Consumer<Double> applyChangeFunc = i -> {};
 
     private Function<Double, String> displayStringFunc;
 
@@ -47,11 +51,12 @@ public class SSliderOptionEntry extends OptionEntry {
     public SSliderOptionEntry(SettingScrollWindow window, String optionTitle, double minValue, double maxValue, float stepSize, double currentValue, Consumer<Double> saveOption, Function<Double, String> displayStringFunc) {
         super(window, optionTitle);
         currentValue = MathHelper.clamp(currentValue, minValue, maxValue);
-        slider = new SliderSmooth(window, 84, (currentValue - minValue) / (maxValue - minValue), this::onPercentageChange);
+        slider = new SliderSmooth(window, 84, (currentValue - minValue) / (maxValue - minValue), this::onPercentageChange).setApplier(this::applyChange);
         this.minValue = minValue;
         this.maxValue = maxValue;
         this.stepSize = stepSize == 0 ? 0.01f / (float) (maxValue - minValue) : stepSize;
         this.currentValue = stepSize * (Math.round(currentValue / stepSize));
+        this.originalValue = currentValue;
         this.saveOptionFunc = saveOption;
         this.displayStringFunc = displayStringFunc;
         this.displayString = displayStringFunc.apply(currentValue);
@@ -60,6 +65,11 @@ public class SSliderOptionEntry extends OptionEntry {
 
     public SSliderOptionEntry(SettingScrollWindow window, String optionTitle, double minValue, double maxValue, float stepSize, double currentValue, Consumer<Double> saveOption) {
         this(window, optionTitle, minValue, maxValue, stepSize, currentValue, saveOption, String::valueOf);
+    }
+
+    public SSliderOptionEntry setApplyChange(Consumer<Double> c) {
+        this.applyChangeFunc = c;
+        return this;
     }
 
     @Override
@@ -108,5 +118,12 @@ public class SSliderOptionEntry extends OptionEntry {
 
     public void saveOption() {
         saveOptionFunc.accept(currentValue);
+    }
+
+    public void applyChange() {
+        if (currentValue != originalValue) {
+            applyChangeFunc.accept(currentValue);
+            originalValue = currentValue;
+        }
     }
 }

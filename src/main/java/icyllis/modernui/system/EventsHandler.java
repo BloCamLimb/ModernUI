@@ -100,7 +100,7 @@ public class EventsHandler {
         @OnlyIn(Dist.CLIENT)
         @SubscribeEvent
         public static void setupClient(FMLClientSetupEvent event) {
-            ModernUI.LOGGER.debug(MARKER, "{} has been initialized", SettingsManager.INSTANCE.getDeclaringClass().getSimpleName()); // call constructor methods
+            SettingsManager.INSTANCE.buildAllSettings();
         }
 
         @SubscribeEvent

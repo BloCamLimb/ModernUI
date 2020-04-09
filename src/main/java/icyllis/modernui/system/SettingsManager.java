@@ -19,31 +19,40 @@
 package icyllis.modernui.system;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.gui.option.BooleanOptionEntry;
-import icyllis.modernui.gui.option.DSliderOptionEntry;
-import icyllis.modernui.gui.option.OptionEntry;
-import icyllis.modernui.gui.option.SSliderOptionEntry;
+import icyllis.modernui.gui.option.*;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.NewChatGui;
 import net.minecraft.client.resources.I18n;
-import net.minecraft.client.settings.AbstractOption;
-import net.minecraft.client.settings.BooleanOption;
-import net.minecraft.client.settings.IteratableOption;
-import net.minecraft.client.settings.SliderPercentageOption;
+import net.minecraft.client.settings.*;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import org.apache.commons.lang3.tuple.Triple;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
-@SuppressWarnings("unchecked")
+/**
+ * Manage almost ALL Overwritten vanilla settings (options) and OptiFine
+ * settings to set or get their values or generate all option texts, and
+ * cache the methods to create their entries for Modern UI settings interface
+ *
+ * Settings are only available on client side
+ *
+ * @since 1.1
+ */
+@SuppressWarnings({"unchecked", "NoTranslation"})
+@OnlyIn(Dist.CLIENT)
 public enum SettingsManager {
     INSTANCE;
 
@@ -75,16 +84,15 @@ public enum SettingsManager {
 
     public static Function<SettingScrollWindow, SSliderOptionEntry> GAMMA;
 
-    /**
-     * Optifine setting
-     */
-    public static LazyOptional<Function<SettingScrollWindow, SSliderOptionEntry>> AO_LEVEL = LazyOptional.empty();
+
 
     public static Function<SettingScrollWindow, SSliderOptionEntry> SENSITIVITY;
 
     public static Function<SettingScrollWindow, SSliderOptionEntry> MOUSE_WHEEL_SENSITIVITY;
 
 
+
+    public static Function<SettingScrollWindow, DSliderOptionEntry> FRAMERATE_LIMIT;
 
     public static Function<SettingScrollWindow, DSliderOptionEntry> RENDER_DISTANCE;
 
@@ -114,8 +122,106 @@ public enum SettingsManager {
     public static Function<SettingScrollWindow, BooleanOptionEntry> RAW_MOUSE_INPUT;
 
 
+    public static Function<SettingScrollWindow, DropdownOptionEntry> GRAPHICS;
+
+    public static Function<SettingScrollWindow, DropdownOptionEntry> ATTACK_INDICATOR;
+
+
+
+
+    /** OptiFine Settings **/
+
+    public static Function<SettingScrollWindow, BooleanOptionEntry> DYNAMIC_FOV;
+
+
 
     static {
+        /*if (ModIntegration.optifineLoaded) {
+            try {
+                Field field;
+                field = AbstractOption.class.getDeclaredField("AO_LEVEL");
+                SliderPercentageOption ao_level = (SliderPercentageOption) field.get(AbstractOption.class);
+                AO_LEVEL = LazyOptional.of(() ->
+                        INSTANCE.transformToSmooth(ao_level, ConstantsLibrary.PERCENTAGE_STRING_FUNC));
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }*/
+    }
+
+
+    private final Minecraft minecraft;
+
+    /**
+     * The instance of game settings
+     */
+    private final GameSettings gameSettings;
+
+    private final Field option_translateKey;
+
+    private final Field slider_minValue;
+    private final Field slider_maxValue;
+    private final Field slider_stepSize;
+    private final Field slider_getter;
+    private final Field slider_setter;
+
+    private final Field boolean_getter;
+    private final Field boolean_setter;
+
+    /**
+     * Belows are OptiFine's
+     */
+    private Field of_dynamic_fov;
+
+    private Field of_chat_background;
+
+    private Field of_chat_shadow;
+
+    private Field of_ao_level;
+
+    {
+        minecraft = Minecraft.getInstance();
+        gameSettings = minecraft.gameSettings;
+
+        option_translateKey = ObfuscationReflectionHelper.findField(AbstractOption.class, "field_216693_Q");
+
+        slider_minValue = ObfuscationReflectionHelper.findField(SliderPercentageOption.class, "field_216735_R");
+        slider_maxValue = ObfuscationReflectionHelper.findField(SliderPercentageOption.class, "field_216736_S");
+        slider_stepSize = ObfuscationReflectionHelper.findField(SliderPercentageOption.class, "field_216734_Q");
+        slider_getter = ObfuscationReflectionHelper.findField(SliderPercentageOption.class, "field_216737_T");
+        slider_setter = ObfuscationReflectionHelper.findField(SliderPercentageOption.class, "field_216738_U");
+
+        boolean_getter = ObfuscationReflectionHelper.findField(BooleanOption.class, "field_216746_Q");
+        boolean_setter = ObfuscationReflectionHelper.findField(BooleanOption.class, "field_216747_R");
+
+        if (ModIntegration.optifineLoaded) {
+            try {
+                of_dynamic_fov = GameSettings.class.getDeclaredField("ofDynamicFov");
+                of_chat_background = GameSettings.class.getDeclaredField("ofChatBackground");
+                of_chat_shadow = GameSettings.class.getDeclaredField("ofChatShadow");
+                of_ao_level = GameSettings.class.getDeclaredField("ofAoLevel");
+            } catch (NoSuchFieldException e) {
+                e.printStackTrace();
+            }
+        }
+
+        /*try {
+            Field[] fields = AbstractOption.class.getFields();
+            ModernUI.LOGGER.debug("Searching Abstract Options...");
+            for (Field f : fields) {
+                if (Modifier.isStatic(f.getModifiers())) {
+                    AbstractOption instance = (AbstractOption) f.get(AbstractOption.class);
+                    String translateKey = (String) option_translateKey.get(instance);
+                    ModernUI.LOGGER.debug("Name: {{}}, ClassName: {{}}, TranslateKey: {{}}", f.getName(), instance.getClass().getSimpleName(), translateKey);
+                }
+            }
+            ModernUI.LOGGER.debug("Searching Abstract Options finished");
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }*/
+    }
+
+    public void buildAllSettings() {
         FOV = INSTANCE
                 .transformToSmooth(AbstractOption.FOV);
         CHAT_OPACITY = INSTANCE
@@ -187,94 +293,45 @@ public enum SettingsManager {
         RAW_MOUSE_INPUT = INSTANCE
                 .transformToBoolean(AbstractOption.RAW_MOUSE_INPUT);
 
+        FRAMERATE_LIMIT = window -> new DSliderOptionEntry(window, I18n.format("options.framerateLimit"),
+                1, 52, gameSettings.framerateLimit / 5, i -> {
+            gameSettings.framerateLimit = i * 5;
+            minecraft.getMainWindow().setFramerateLimit(gameSettings.framerateLimit);
+        }, i -> i > 51 ? "260+" : Integer.toString(i * 5), true);
+
+        GRAPHICS = window -> new DropdownOptionEntry(window, I18n.format("options.graphics"),
+                getGraphicTexts(),
+                gameSettings.fancyGraphics ? 0 : 1, i -> {
+            gameSettings.fancyGraphics = i == 0;
+            minecraft.worldRenderer.loadRenderers();
+        });
+
+        ATTACK_INDICATOR = window -> new DropdownOptionEntry(window, I18n.format("options.attackIndicator"),
+                getAttackIndicatorTexts(),
+                gameSettings.attackIndicator.ordinal(), i -> gameSettings.attackIndicator = AttackIndicatorStatus.values()[i]);
+
         if (ModIntegration.optifineLoaded) {
-            try {
-                Field field;
-                field = AbstractOption.class.getDeclaredField("AO_LEVEL");
-                SliderPercentageOption ao_level = (SliderPercentageOption) field.get(AbstractOption.class);
-                AO_LEVEL = LazyOptional.of(() ->
-                        INSTANCE.transformToSmooth(ao_level, ConstantsLibrary.PERCENTAGE_STRING_FUNC));
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                e.printStackTrace();
-            }
+            DYNAMIC_FOV = window -> new BooleanOptionEntry(window, I18n.format("of.options.DYNAMIC_FOV"),
+                    getDynamicFov(), this::setDynamicFov);
         }
     }
 
-
-    private GameSettings gameSettings;
-
-    private Field option_translateKey;
-
-    private Field slider_minValue;
-    private Field slider_maxValue;
-    private Field slider_stepSize;
-    private Field slider_getter;
-    private Field slider_setter;
-
-    private Field boolean_getter;
-    private Field boolean_setter;
-
-    /**
-     * Optifine
-     */
-    private Field of_dynamic_fov;
-
-    private Field of_chat_background;
-
-    private Field of_chat_shadow;
-
-    {
-        gameSettings = Minecraft.getInstance().gameSettings;
-
-        option_translateKey = ObfuscationReflectionHelper.findField(AbstractOption.class, "field_216693_Q");
-
-        slider_minValue = ObfuscationReflectionHelper.findField(SliderPercentageOption.class, "field_216735_R");
-        slider_maxValue = ObfuscationReflectionHelper.findField(SliderPercentageOption.class, "field_216736_S");
-        slider_stepSize = ObfuscationReflectionHelper.findField(SliderPercentageOption.class, "field_216734_Q");
-        slider_getter = ObfuscationReflectionHelper.findField(SliderPercentageOption.class, "field_216737_T");
-        slider_setter = ObfuscationReflectionHelper.findField(SliderPercentageOption.class, "field_216738_U");
-
-        boolean_getter = ObfuscationReflectionHelper.findField(BooleanOption.class, "field_216746_Q");
-        boolean_setter = ObfuscationReflectionHelper.findField(BooleanOption.class, "field_216747_R");
-
-        if (ModIntegration.optifineLoaded) {
-            try {
-                of_dynamic_fov = GameSettings.class.getDeclaredField("ofDynamicFov");
-                of_chat_background = GameSettings.class.getDeclaredField("ofChatBackground");
-                of_chat_shadow = GameSettings.class.getDeclaredField("ofChatShadow");
-            } catch (NoSuchFieldException e) {
-                e.printStackTrace();
-            }
-        }
-
-        /*try {
-            Field[] fields = AbstractOption.class.getFields();
-            ModernUI.LOGGER.debug("Searching Abstract Options...");
-            for (Field f : fields) {
-                if (Modifier.isStatic(f.getModifiers())) {
-                    AbstractOption instance = (AbstractOption) f.get(AbstractOption.class);
-                    String translateKey = (String) option_translateKey.get(instance);
-                    ModernUI.LOGGER.debug("Name: {{}}, ClassName: {{}}, TranslateKey: {{}}", f.getName(), instance.getClass().getSimpleName(), translateKey);
-                }
-            }
-            ModernUI.LOGGER.debug("Searching Abstract Options finished");
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }*/
-    }
-
+    @Nonnull
     public Function<SettingScrollWindow, SSliderOptionEntry> transformToSmooth(SliderPercentageOption instance) {
         return transformToSmooth(instance, null, null);
     }
 
+    @Nonnull
     public Function<SettingScrollWindow, SSliderOptionEntry> transformToSmooth(SliderPercentageOption instance, Function<Double, String> stringFunction) {
         return transformToSmooth(instance, null, stringFunction);
     }
 
+    @Nonnull
     public Function<SettingScrollWindow, SSliderOptionEntry> transformToSmooth(SliderPercentageOption instance, Triple<Double, Double, Float> customize) {
         return transformToSmooth(instance, customize, null);
     }
 
+    @Nonnull
     public Function<SettingScrollWindow, SSliderOptionEntry> transformToSmooth(SliderPercentageOption instance, @Nullable Triple<Double, Double, Float> customize, @Nullable Function<Double, String> stringFunction) {
         GameSettings gameSettings = Minecraft.getInstance().gameSettings;
         try {
@@ -306,10 +363,12 @@ public enum SettingsManager {
         throw new RuntimeException();
     }
 
+    @Nonnull
     public Function<SettingScrollWindow, DSliderOptionEntry> transformToDiscrete(SliderPercentageOption instance, boolean dynamicModify) {
         return this.transformToDiscrete(instance, String::valueOf, dynamicModify);
     }
 
+    @Nonnull
     public Function<SettingScrollWindow, DSliderOptionEntry> transformToDiscrete(SliderPercentageOption instance, Function<Integer, String> displayStringFunc, boolean dynamicModify) {
         GameSettings gameSettings = Minecraft.getInstance().gameSettings;
         try {
@@ -320,19 +379,15 @@ public enum SettingsManager {
             maxValue = (int) slider_maxValue.getDouble(instance);
             Function<GameSettings, Double> getter = (Function<GameSettings, Double>) slider_getter.get(instance);
             BiConsumer<GameSettings, Double> setter = (BiConsumer<GameSettings, Double>) slider_setter.get(instance);
-            if (dynamicModify) {
-                return window -> new DSliderOptionEntry(window, I18n.format(translationKey), minValue, maxValue,
-                        getter.apply(gameSettings).intValue(), v -> setter.accept(gameSettings, (double) v), displayStringFunc);
-            } else {
-                return window -> new DSliderOptionEntry(window, I18n.format(translationKey), minValue, maxValue,
-                        getter.apply(gameSettings).intValue(), i -> {}, displayStringFunc).setApplyChange(v -> setter.accept(gameSettings, (double) v));
-            }
+            return window -> new DSliderOptionEntry(window, I18n.format(translationKey), minValue, maxValue,
+                    getter.apply(gameSettings).intValue(), v -> setter.accept(gameSettings, (double) v), displayStringFunc, dynamicModify);
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
         throw new RuntimeException();
     }
 
+    @Nonnull
     public Function<SettingScrollWindow, BooleanOptionEntry> transformToBoolean(BooleanOption instance) {
         GameSettings gameSettings = Minecraft.getInstance().gameSettings;
         try {
@@ -365,18 +420,30 @@ public enum SettingsManager {
                 Predicate<GameSettings> getter = (Predicate<GameSettings>) boolean_getter.get(instance);
                 BiConsumer<GameSettings, Boolean> setter = (BiConsumer<GameSettings, Boolean>) boolean_setter.get(instance);
                 return window -> new BooleanOptionEntry(window, I18n.format(translationKey), getter.test(gameSettings), b -> setter.accept(gameSettings, b));
-            } else */if (abstractOption instanceof IteratableOption) {
+            } else if (abstractOption instanceof IteratableOption) {
                 // There's no way to do this at present, we should get all selective options name before iterate or a new way. awa
-                //ModernUI.LOGGER.fatal("Iterable option found, {} with name {}", abstractOption, translationKey);
-            }
+                ModernUI.LOGGER.fatal("Iterable option found, {} with name {}", abstractOption, translationKey);
+            }*/
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
         throw new RuntimeException();
     }
 
+    @Nonnull
+    private List<String> getGraphicTexts() {
+        return Lists.newArrayList(
+                I18n.format("options.graphics.fancy"),
+                I18n.format("options.graphics.fast"));
+    }
 
-    /** Optifine Soft Compatibility **/
+    private List<String> getAttackIndicatorTexts() {
+        return Lists.newArrayList(AttackIndicatorStatus.values()).stream()
+                .map(m -> I18n.format(m.getResourceKey())).collect(Collectors.toCollection(ArrayList::new));
+    }
+
+
+    /** All belows are OptiFine soft compatibility **/
 
     public boolean getDynamicFov() {
         try {
@@ -395,9 +462,13 @@ public enum SettingsManager {
         }
     }
 
+    @Nonnull
     @SuppressWarnings("NoTranslation")
     public List<String> getChatBackgroundTexts() {
-        return Lists.newArrayList(I18n.format("generator.default"), I18n.format("of.general.compact"), I18n.format("options.off"));
+        return Lists.newArrayList(
+                I18n.format("generator.default"),
+                I18n.format("of.general.compact"),
+                I18n.format("options.off"));
     }
 
     public int getChatBackgroundIndex() {
@@ -436,6 +507,23 @@ public enum SettingsManager {
     public void setChatShadow(boolean b) {
         try {
             of_chat_shadow.setBoolean(gameSettings, b);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public double getAoLevel() {
+        try {
+            return of_ao_level.getDouble(gameSettings);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public void setAoLevel(double d) {
+        try {
+            of_ao_level.setDouble(gameSettings, d);
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }

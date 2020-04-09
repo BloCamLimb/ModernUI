@@ -26,6 +26,8 @@ import net.minecraft.stats.Stat;
 import net.minecraft.stats.StatisticsManager;
 import net.minecraft.util.ResourceLocation;
 
+import javax.annotation.Nonnull;
+
 public class GeneralStatsEntry extends UniformScrollEntry {
 
     private final Stat<ResourceLocation> stat;
@@ -36,7 +38,7 @@ public class GeneralStatsEntry extends UniformScrollEntry {
 
     private String value = "";
 
-    public GeneralStatsEntry(Stat<ResourceLocation> stat, Color3I color) {
+    public GeneralStatsEntry(@Nonnull Stat<ResourceLocation> stat, Color3I color) {
         super(GeneralStatsGroup.ENTRY_HEIGHT);
         this.stat = stat;
         this.color = color;
@@ -49,7 +51,7 @@ public class GeneralStatsEntry extends UniformScrollEntry {
         fontRenderer.drawString(value, x2 - 2, y1 + 1, color, TextAlign.RIGHT);
     }
 
-    public void updateValue(StatisticsManager manager) {
+    public void updateValue(@Nonnull StatisticsManager manager) {
         value = stat.format(manager.getValue(stat));
     }
 

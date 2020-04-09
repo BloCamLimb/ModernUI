@@ -29,15 +29,22 @@ public class SliderSmooth extends Slider implements IElement, IGuiEventListener 
 
     private Consumer<Double> receiver;
 
+    private Runnable applier = () -> {};
+
     public SliderSmooth(IFocuser focuser, float width, double initPercent, Consumer<Double> receiver) {
         super(focuser, width);
         this.slideOffset = getMaxSlideOffset() * MathHelper.clamp(initPercent, 0, 1);
         this.receiver = receiver;
     }
 
+    public SliderSmooth setApplier(Runnable r) {
+        applier = r;
+        return this;
+    }
+
     @Override
     protected void onStopChanging() {
-
+        applier.run();
     }
 
     @Override

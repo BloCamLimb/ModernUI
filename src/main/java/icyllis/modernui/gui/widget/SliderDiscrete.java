@@ -23,17 +23,13 @@ import icyllis.modernui.gui.master.IFocuser;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.util.math.MathHelper;
 
-import java.util.function.Consumer;
-
 public class SliderDiscrete extends Slider implements IElement, IGuiEventListener {
 
     private int segment;
 
     private int maxSegment;
 
-    private Consumer<Integer> receiver;
-
-    private Runnable applier = () -> {};
+    private IDiscreteSliderReceiver receiver;
 
     /**
      * Constructor
@@ -42,17 +38,12 @@ public class SliderDiscrete extends Slider implements IElement, IGuiEventListene
      * @param maxSegment max segment, if you need 3 values, so there are 2 segments
      * @param receiver receive new segment value
      */
-    public SliderDiscrete(IFocuser focuser, float width, int segment, int maxSegment, Consumer<Integer> receiver) {
+    public SliderDiscrete(IFocuser focuser, float width, int segment, int maxSegment, IDiscreteSliderReceiver receiver) {
         super(focuser, width);
         this.segment = segment;
         this.maxSegment = maxSegment;
         this.receiver = receiver;
         updateSlideOffset();
-    }
-
-    public SliderDiscrete setApplier(Runnable r) {
-        applier = r;
-        return this;
     }
 
     @Override
@@ -62,13 +53,13 @@ public class SliderDiscrete extends Slider implements IElement, IGuiEventListene
         segment = Math.round(p * maxSegment);
         if (prev != segment) {
             updateSlideOffset();
-            receiver.accept(segment);
+            receiver.onSliderRealtimeChange(segment);
         }
     }
 
     @Override
     protected void onStopChanging() {
-        applier.run();
+        receiver.onSliderFinalChange(segment);
     }
 
     private void updateSlideOffset() {

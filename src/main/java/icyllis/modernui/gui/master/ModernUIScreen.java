@@ -25,7 +25,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nonnull;
-import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
@@ -34,7 +33,7 @@ import java.util.function.Supplier;
 @OnlyIn(Dist.CLIENT)
 public final class ModernUIScreen extends Screen {
 
-    protected GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
+    private final GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
 
     protected ModernUIScreen(ITextComponent title) {
         super(title);

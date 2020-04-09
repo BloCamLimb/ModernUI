@@ -72,7 +72,7 @@ public enum GlobalModuleManager {
 
     private float animationTime = 0;
 
-    public void openGuiScreen(ITextComponent title, Supplier<IModule> root) {
+    public void openGuiScreen(ITextComponent title, @Nonnull Supplier<IModule> root) {
         resetTicks();
         this.root = Objects.requireNonNull(root.get());
         minecraft.displayGuiScreen(new ModernUIScreen(title));
