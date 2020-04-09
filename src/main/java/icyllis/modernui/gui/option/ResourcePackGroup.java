@@ -94,7 +94,7 @@ public class ResourcePackGroup extends UniformScrollGroup<ResourcePackEntry> {
         x2 -= window.borderThickness + 1;
         for (ResourcePackEntry entry : entries) {
             float cy = y + i * entryHeight;
-            entry.setPos(x1, x2, cy);
+            entry.layout(x1, x2, cy);
             i++;
         }
 

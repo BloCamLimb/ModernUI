@@ -91,6 +91,10 @@ public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget implemen
         scrollList.draw(time);
         RenderSystem.popMatrix();
 
+        RenderSystem.disableDepthTest();
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+
         RenderSystem.disableTexture();
         RenderSystem.shadeModel(GL11.GL_SMOOTH);
         bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);

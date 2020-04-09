@@ -24,6 +24,8 @@ import net.minecraft.client.shader.ShaderLinkHelper;
 import net.minecraft.client.shader.ShaderLoader;
 import net.minecraft.resources.IResourceManager;
 import net.minecraft.util.ResourceLocation;
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.system.MemoryUtil;
 
 import java.io.BufferedInputStream;
@@ -51,6 +53,8 @@ public class ShaderTools {
     }
 
     public static final FloatBuffer FLOAT_BUF = MemoryUtil.memAllocFloat(1);
+
+    public static final Marker MARKER = MarkerManager.getMarker("SHADER");
 
     private static final Map<Shaders, ShaderProgram> PROGRAMS = new EnumMap<>(Shaders.class);
 
@@ -84,7 +88,7 @@ public class ShaderTools {
             ShaderLinkHelper.linkProgram(shaderProgram);
             PROGRAMS.put(shader, shaderProgram);
         } catch (IOException e) {
-            ModernUI.LOGGER.debug("Can't create program");
+            ModernUI.LOGGER.fatal(MARKER, "Can't create program, please report this issue");
             e.printStackTrace();
         }
     }

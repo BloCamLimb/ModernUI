@@ -24,10 +24,8 @@ import icyllis.modernui.gui.popup.PopupMenu;
 import icyllis.modernui.gui.widget.DropDownMenu;
 import icyllis.modernui.gui.widget.KeyInputBox;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
-import icyllis.modernui.gui.widget.LineTextButton;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screen.ControlsScreen;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.client.util.InputMappings;
@@ -55,8 +53,8 @@ public class KeyBindingEntry extends OptionEntry {
     }
 
     @Override
-    public void setPos(float x1, float x2, float y) {
-        super.setPos(x1, x2, y);
+    public void layout(float x1, float x2, float y) {
+        super.layout(x1, x2, y);
         inputBox.setPos(centerX + 70, y + 2);
     }
 

@@ -21,27 +21,27 @@ package icyllis.modernui.gui.module;
 import com.google.common.collect.Lists;
 import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.scroll.ScrollWindow;
-import icyllis.modernui.gui.stats.GeneralStatsGroup;
+import icyllis.modernui.gui.stats.ItemStatsGroup;
 import net.minecraft.client.Minecraft;
 import net.minecraft.stats.StatisticsManager;
 
 import java.util.Objects;
 
-public class StatsGeneral extends Module {
+public class StatsBlocks extends Module {
 
     private final StatisticsManager manager;
 
-    private final GeneralStatsGroup group;
+    private final ItemStatsGroup group;
 
     private int updateCycle = 2;
 
-    public StatsGeneral() {
+    public StatsBlocks() {
         Minecraft minecraft = Minecraft.getInstance();
         manager = Objects.requireNonNull(minecraft.player).getStats();
 
-        ScrollWindow<GeneralStatsGroup> window = new ScrollWindow<>(this, w -> 40f, h -> 36f, w -> w - 80f, h -> h - 72f);
+        ScrollWindow<ItemStatsGroup> window = new ScrollWindow<>(this, w -> 40f, h -> 36f, w -> w - 80f, h -> h - 72f);
 
-        group = new GeneralStatsGroup(window);
+        group = new ItemStatsGroup(window, ItemStatsGroup.Type.BLOCKS);
         group.updateValues(manager);
 
         window.addGroups(Lists.newArrayList(group));

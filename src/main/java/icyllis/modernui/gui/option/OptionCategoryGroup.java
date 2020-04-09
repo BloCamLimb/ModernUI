@@ -53,7 +53,7 @@ public class OptionCategoryGroup extends UniformScrollGroup<OptionEntry> {
         int i = 0;
         for (OptionEntry entry : entries) {
             float cy = y + i * entryHeight;
-            entry.setPos(x1, x2, cy);
+            entry.layout(x1, x2, cy);
             i++;
         }
     }

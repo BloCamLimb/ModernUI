@@ -21,12 +21,14 @@ package icyllis.modernui.gui.stats;
 import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.gui.scroll.UniformScrollGroup;
 import icyllis.modernui.gui.util.Color3I;
-import icyllis.modernui.system.SettingsManager;
 import net.minecraft.stats.Stat;
 import net.minecraft.stats.StatisticsManager;
 import net.minecraft.stats.Stats;
 import net.minecraft.util.ResourceLocation;
 
+/**
+ * Text-to-value statistics tab
+ */
 public class GeneralStatsGroup extends UniformScrollGroup<GeneralStatsEntry> {
 
     public static int ENTRY_HEIGHT = 12;
@@ -49,7 +51,7 @@ public class GeneralStatsGroup extends UniformScrollGroup<GeneralStatsEntry> {
         int i = 0;
         for (GeneralStatsEntry entry : entries) {
             float cy = y + i * entryHeight;
-            entry.setPos(x1, x2, cy);
+            entry.layout(x1, x2, cy);
             i++;
         }
     }
