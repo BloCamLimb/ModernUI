@@ -59,12 +59,13 @@ public class IngameMenuStats extends ModuleGroup {
         consumer.accept(new LineTextButton(I18n.format("stat.itemsButton"), 48f,
                 () -> switchChildModule(3), i -> i == 3));
         consumer.accept(new LineTextButton(I18n.format("stat.mobsButton"), 48f,
-                () -> {}, i -> i == 4));
+                () -> switchChildModule(4), i -> i == 4));
 
         int i = 0;
         addChildModule(++i, StatsGeneral::new);
         addChildModule(++i, StatsBlocks::new);
         addChildModule(++i, StatsItems::new);
+        addChildModule(++i, StatsMobs::new);
 
         switchChildModule(1);
     }

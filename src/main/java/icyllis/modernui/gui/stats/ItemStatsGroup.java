@@ -19,14 +19,24 @@
 package icyllis.modernui.gui.stats;
 
 import com.google.common.collect.Sets;
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.gui.scroll.UniformScrollGroup;
+import icyllis.modernui.gui.util.Color3I;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.AbstractGui;
+import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 import net.minecraft.stats.StatisticsManager;
 import net.minecraft.stats.Stats;
+import org.lwjgl.opengl.GL11;
 
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -36,23 +46,27 @@ public class ItemStatsGroup extends UniformScrollGroup<ItemStatsEntry> {
 
     public static int ENTRY_HEIGHT = 20;
 
+    private final TextureManager textureManager = Minecraft.getInstance().getTextureManager();
+
+    private final int[] uMap;
+
     public ItemStatsGroup(ScrollWindow<?> window, Type type) {
         super(window, ENTRY_HEIGHT);
 
         Set<Item> set = Sets.newIdentityHashSet();
         // if someone breaks the vanilla rules, he should be fucked away
         if (type == Type.ITEMS) {
+            Stats.ITEM_BROKEN.forEach(e -> {
+                if (!(e.getValue() instanceof BlockItem)) {
+                    set.add(e.getValue());
+                }
+            });
             Stats.ITEM_CRAFTED.forEach(e -> {
                 if (!(e.getValue() instanceof BlockItem)) {
                     set.add(e.getValue());
                 }
             });
             Stats.ITEM_USED.forEach(e -> {
-                if (!(e.getValue() instanceof BlockItem)) {
-                    set.add(e.getValue());
-                }
-            });
-            Stats.ITEM_BROKEN.forEach(e -> {
                 if (!(e.getValue() instanceof BlockItem)) {
                     set.add(e.getValue());
                 }
@@ -67,6 +81,7 @@ public class ItemStatsGroup extends UniformScrollGroup<ItemStatsEntry> {
                     set.add(e.getValue());
                 }
             });
+            uMap = new int[]{4, 1, 2, 5, 6};
         } else {
             Stats.BLOCK_MINED.forEach(e -> set.add(e.getValue().asItem()));
             Stats.ITEM_CRAFTED.forEach(e -> {
@@ -89,10 +104,15 @@ public class ItemStatsGroup extends UniformScrollGroup<ItemStatsEntry> {
                     set.add(e.getValue());
                 }
             });
+            uMap = new int[]{3, 1, 2, 5, 6};
         }
 
         set.remove(Items.AIR);
-        set.forEach(e -> entries.add(new ItemStatsEntry(e)));
+        int i = 0;
+        for (Item item : set) {
+            entries.add(new ItemStatsEntry(item, (i & 1) == 0 ? Color3I.WHILE : Color3I.GRAY));
+            i++;
+        }
 
         // 20 for labels header
         height = 20 + entries.size() * entryHeight;
@@ -119,6 +139,16 @@ public class ItemStatsGroup extends UniformScrollGroup<ItemStatsEntry> {
     @Override
     public void draw(float time) {
         super.draw(time);
+        RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
+        textureManager.bindTexture(AbstractGui.STATS_ICON_LOCATION);
+        GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+        GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+        int i = 0;
+        float x3 = centerX - 80;
+        for (int c : uMap) {
+            DrawTools.blit(x3 + i * 50, y1 + 1, c * 18, 18, 18, 18, 128, 128);
+            i++;
+        }
     }
 
     public enum Type {
