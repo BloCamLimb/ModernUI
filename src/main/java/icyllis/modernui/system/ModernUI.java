@@ -37,6 +37,7 @@ public class ModernUI {
     public static final String MODID = "modernui";
 
     public static final Logger LOGGER = LogManager.getLogger("ModernUI");
+
     public static final Marker MARKER = MarkerManager.getMarker("MAIN");
 
     public ModernUI() {

@@ -367,7 +367,7 @@ public enum SettingsManager {
                 return window -> new BooleanOptionEntry(window, I18n.format(translationKey), getter.test(gameSettings), b -> setter.accept(gameSettings, b));
             } else */if (abstractOption instanceof IteratableOption) {
                 // There's no way to do this at present, we should get all selective options name before iterate or a new way. awa
-                ModernUI.LOGGER.fatal("Iterable option found, {} with name {}", abstractOption, translationKey);
+                //ModernUI.LOGGER.fatal("Iterable option found, {} with name {}", abstractOption, translationKey);
             }
         } catch (IllegalAccessException e) {
             e.printStackTrace();

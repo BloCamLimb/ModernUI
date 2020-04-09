@@ -20,7 +20,6 @@ package icyllis.modernui.gui.option;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.FontTools;
-import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.gui.module.SettingResourcePack;
 import icyllis.modernui.gui.scroll.UniformScrollEntry;
@@ -58,8 +57,8 @@ public class ResourcePackEntry extends UniformScrollEntry {
     }
 
     @Override
-    public final void setPos(float x1, float x2, float y) {
-        super.setPos(x1, x2, y);
+    public final void layout(float x1, float x2, float y) {
+        super.layout(x1, x2, y);
         this.width = x2 - x1;
         updateTitle();
         updateDescription();

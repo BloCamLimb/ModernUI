@@ -60,8 +60,8 @@ public class DSliderOptionEntry extends OptionEntry {
     }
 
     @Override
-    public void setPos(float x1, float x2, float y) {
-        super.setPos(x1, x2, y);
+    public void layout(float x1, float x2, float y) {
+        super.layout(x1, x2, y);
         slider.setPos(centerX + 40, y + 9);
     }
 

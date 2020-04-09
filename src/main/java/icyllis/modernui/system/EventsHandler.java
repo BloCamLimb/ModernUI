@@ -83,7 +83,7 @@ public class EventsHandler {
 
         @SubscribeEvent
         public static void onGuiInit(GuiScreenEvent.InitGuiEvent event) {
-            BlurHandler.INSTANCE.blur(true);
+
         }
     }
 

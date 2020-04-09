@@ -51,7 +51,7 @@ public class LanguageGroup extends UniformScrollGroup<LanguageEntry> {
         int i = 0;
         for (LanguageEntry entry : entries) {
             float cy = y + i * entryHeight;
-            entry.setPos(x1, x2, cy);
+            entry.layout(x1, x2, cy);
             i++;
         }
 

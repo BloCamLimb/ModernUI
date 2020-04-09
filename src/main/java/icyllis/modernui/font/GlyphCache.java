@@ -29,6 +29,8 @@ import com.google.common.collect.Maps;
 import com.mojang.blaze3d.platform.GlStateManager;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.renderer.GLAllocation;
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.opengl.GL11;
 
 import java.awt.*;
@@ -46,6 +48,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 class GlyphCache {
+
+    private static final Marker MARKER = MarkerManager.getMarker("FONT");
 
     /**
      * The width in pixels of every texture used for caching pre-rendered glyph images. Used by GlyphCache when calculating
@@ -263,7 +267,7 @@ class GlyphCache {
         try {
             Font f = Font.createFont(Font.TRUETYPE_FONT, getClass().getResourceAsStream("/assets/modernui/font/biliw.otf"));
             usedFonts.add(f);
-            ModernUI.LOGGER.info(ModernUI.MARKER, "{} has been loaded", f.getName());
+            ModernUI.LOGGER.info(MARKER, "{} has been loaded", f.getName());
         } catch (FontFormatException | IOException e) {
             throw new RuntimeException(e);
         }
@@ -320,7 +324,7 @@ class GlyphCache {
             Font font = iterator.next();
             if (font.canDisplayUpTo(text, start, limit) != start) {
                 /* If found, add this font to the usedFonts list so it can be looked up faster next time */
-                ModernUI.LOGGER.debug("{} has been loaded", font.getName());
+                ModernUI.LOGGER.debug(MARKER, "{} has been loaded", font.getName());
                 usedFonts.add(font);
 
                 /* Return a font instance of the proper point size and style; allFonts has only 1pt sized plain style fonts */

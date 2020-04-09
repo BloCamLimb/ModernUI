@@ -18,6 +18,7 @@
 
 package icyllis.modernui.gui.module;
 
+import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.option.OptionCategoryGroup;
 import icyllis.modernui.gui.option.OptionEntry;
@@ -99,7 +100,7 @@ public class SettingControls extends Module {
             list.add(entry);
             allKeyBinding.add(entry);
             if (allKeyBinding.size() >= 1000) {
-                ModernUI.LOGGER.warn("Too much key bindings, please report this issue");
+                ModernUI.LOGGER.warn(GlobalModuleManager.MARKER, "Too much key bindings, please report this issue");
                 // maybe we want more optimization?
                 break;
             }
@@ -115,8 +116,7 @@ public class SettingControls extends Module {
 
     /**
      * If a key conflicts with another key, they both are conflicted
-     * Yes, double for loop, but only called when a key binding changed
-     * However, vanilla does this every frame...
+     * Called when a key binding changed, but vanilla does this every frame
      * so it's much better than vanilla, I don't have to do more optimization
      */
     private void checkAllConflicts() {
