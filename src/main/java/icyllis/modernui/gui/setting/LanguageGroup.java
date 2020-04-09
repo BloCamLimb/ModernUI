@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.option;
+package icyllis.modernui.gui.setting;
 
 import icyllis.modernui.gui.module.SettingLanguage;
 import icyllis.modernui.gui.scroll.ScrollWindow;

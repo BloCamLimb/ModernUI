@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.option;
+package icyllis.modernui.gui.setting;
 
 import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.gui.widget.IDiscreteSliderReceiver;
@@ -26,7 +26,7 @@ import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class DSliderOptionEntry extends OptionEntry implements IDiscreteSliderReceiver {
+public class DSliderSettingEntry extends SettingEntry implements IDiscreteSliderReceiver {
 
     private final SliderDiscrete slider;
 
@@ -44,7 +44,7 @@ public class DSliderOptionEntry extends OptionEntry implements IDiscreteSliderRe
 
     private String displayString;
 
-    public DSliderOptionEntry(SettingScrollWindow window, String title, int minValue, int maxValue, int currentValue, Consumer<Integer> applyFunc, Function<Integer, String> displayStringFunc, boolean realtimeApply) {
+    public DSliderSettingEntry(SettingScrollWindow window, String title, int minValue, int maxValue, int currentValue, Consumer<Integer> applyFunc, Function<Integer, String> displayStringFunc, boolean realtimeApply) {
         super(window, title);
         this.slider = new SliderDiscrete(window, 84, currentValue - minValue, maxValue - minValue, this);
         this.minValue = minValue;
@@ -93,7 +93,7 @@ public class DSliderOptionEntry extends OptionEntry implements IDiscreteSliderRe
         slider.setMouseHoverExit();
     }
 
-    public void applyChange() {
+    private void applyChange() {
         if (currentValue != originalValue) {
             applyFunc.accept(currentValue);
             originalValue = currentValue;
@@ -101,8 +101,8 @@ public class DSliderOptionEntry extends OptionEntry implements IDiscreteSliderRe
     }
 
     @Override
-    public void onSliderRealtimeChange(int value) {
-        currentValue = minValue + value;
+    public void onSliderRealtimeChange(int offset) {
+        currentValue = minValue + offset;
         displayString = displayStringFunc.apply(currentValue);
         if (realtimeApply) {
             applyChange();
@@ -110,7 +110,7 @@ public class DSliderOptionEntry extends OptionEntry implements IDiscreteSliderRe
     }
 
     @Override
-    public void onSliderFinalChange(int value) {
+    public void onSliderFinalChange(int offset) {
         if (!realtimeApply) {
             applyChange();
         }

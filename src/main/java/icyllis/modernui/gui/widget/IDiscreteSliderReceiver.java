@@ -25,13 +25,13 @@ public interface IDiscreteSliderReceiver {
 
     /**
      * Called as long as slider was dragged
-     * @param value new value
+     * @param offset new value
      */
-    void onSliderRealtimeChange(int value);
+    void onSliderRealtimeChange(int offset);
 
     /**
      * Called when stopped dragging
-     * @param value final value
+     * @param offset final value
      */
-    void onSliderFinalChange(int value);
+    void onSliderFinalChange(int offset);
 }

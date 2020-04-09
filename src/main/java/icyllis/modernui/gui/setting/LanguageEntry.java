@@ -16,13 +16,10 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.option;
+package icyllis.modernui.gui.setting;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.font.FontTools;
-import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.font.TextAlign;
-import icyllis.modernui.gui.master.IMouseListener;
 import icyllis.modernui.gui.module.SettingLanguage;
 import icyllis.modernui.gui.scroll.UniformScrollEntry;
 import net.minecraft.client.renderer.BufferBuilder;

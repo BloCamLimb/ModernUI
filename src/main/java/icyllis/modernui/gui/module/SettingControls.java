@@ -20,9 +20,9 @@ package icyllis.modernui.gui.module;
 
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.Module;
-import icyllis.modernui.gui.option.OptionCategoryGroup;
-import icyllis.modernui.gui.option.OptionEntry;
-import icyllis.modernui.gui.option.KeyBindingEntry;
+import icyllis.modernui.gui.setting.SettingCategoryGroup;
+import icyllis.modernui.gui.setting.SettingEntry;
+import icyllis.modernui.gui.setting.KeyBindingEntry;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.system.SettingsManager;
@@ -51,7 +51,7 @@ public class SettingControls extends Module {
         this.minecraft = Minecraft.getInstance();
         this.window = new SettingScrollWindow(this);
 
-        List<OptionCategoryGroup> groups = new ArrayList<>();
+        List<SettingCategoryGroup> groups = new ArrayList<>();
 
         addMouseCategory(groups);
         addAllKeyBindings(groups);
@@ -61,8 +61,8 @@ public class SettingControls extends Module {
         addWidget(window);
     }
 
-    private void addMouseCategory(List<OptionCategoryGroup> groups) {
-        List<OptionEntry> list = new ArrayList<>();
+    private void addMouseCategory(List<SettingCategoryGroup> groups) {
+        List<SettingEntry> list = new ArrayList<>();
 
         list.add(SettingsManager.SENSITIVITY.apply(window));
         list.add(SettingsManager.MOUSE_WHEEL_SENSITIVITY.apply(window));
@@ -73,24 +73,24 @@ public class SettingControls extends Module {
             list.add(SettingsManager.RAW_MOUSE_INPUT.apply(window));
         }
 
-        OptionCategoryGroup categoryGroup = new OptionCategoryGroup(window, I18n.format("gui.modernui.settings.category.mouse"), list);
+        SettingCategoryGroup categoryGroup = new SettingCategoryGroup(window, I18n.format("gui.modernui.settings.category.mouse"), list);
         groups.add(categoryGroup);
     }
 
-    private void addAllKeyBindings(List<OptionCategoryGroup> groups) {
+    private void addAllKeyBindings(List<SettingCategoryGroup> groups) {
         KeyBinding[] keyBindings = ArrayUtils.clone(minecraft.gameSettings.keyBindings);
 
         //Sort by category and key desc {@link KeyBinding#compareTo(KeyBinding)}
         Arrays.sort(keyBindings);
 
         String categoryKey = null;
-        List<OptionEntry> list = null;
+        List<SettingEntry> list = null;
 
         for (KeyBinding keybinding : keyBindings) {
             String ck = keybinding.getKeyCategory();
             if (!ck.equals(categoryKey)) {
                 if (list != null) {
-                    OptionCategoryGroup category = new OptionCategoryGroup(window, I18n.format(categoryKey), list);
+                    SettingCategoryGroup category = new SettingCategoryGroup(window, I18n.format(categoryKey), list);
                     groups.add(category);
                 }
                 categoryKey = ck;
@@ -107,7 +107,7 @@ public class SettingControls extends Module {
         }
         // add last category
         if (categoryKey != null) {
-            OptionCategoryGroup category = new OptionCategoryGroup(window, I18n.format(categoryKey), list);
+            SettingCategoryGroup category = new SettingCategoryGroup(window, I18n.format(categoryKey), list);
             groups.add(category);
         }
 

@@ -5,6 +5,7 @@
   "gui.modernui.button.leave": "Leave",
   "gui.modernui.button.save": "Save",
   "gui.modernui.button.apply": "Apply",
+  "gui.modernui.button.Lock": "Lock",
   "gui.modernui.button.applyAndReload": "Apply & Reload",
   "gui.modernui.button.discard": "Discard",
   "gui.modernui.button.confirm": "Confirm %s",
@@ -36,6 +37,7 @@
   "gui.modernui.settings.category.mouse": "Mouse",
 
   "gui.modernui.popup.exit": "Are you sure you want to exit to main menu?",
+  "gui.modernui.popup.lockDifficulty": "Are you sure you want to lock world difficulty?",
 
   "gui.modernui.tooltip.thanksOptifine": "This functionality is powered by OptiFine"
 }

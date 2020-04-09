@@ -16,18 +16,22 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.option;
+package icyllis.modernui.gui.widget;
 
-import icyllis.modernui.gui.scroll.SettingScrollWindow;
+/**
+ * Receive slider values
+ */
+public interface ISmoothSliderReceiver {
 
-public class CheckboxOptionEntry extends OptionEntry {
+    /**
+     * Called as long as slider was dragged
+     * @param percentage new value
+     */
+    void onSliderRealtimeChange(double percentage);
 
-    public CheckboxOptionEntry(SettingScrollWindow windowString, String optionTitle) {
-        super(windowString, optionTitle);
-    }
-
-    @Override
-    protected void drawExtra(float time) {
-
-    }
+    /**
+     * Called when stopped dragging
+     * @param percentage final value
+     */
+    void onSliderFinalChange(double percentage);
 }

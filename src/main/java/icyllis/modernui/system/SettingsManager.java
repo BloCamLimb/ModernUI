@@ -19,16 +19,18 @@
 package icyllis.modernui.system;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.gui.option.*;
+import icyllis.modernui.gui.setting.*;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.NewChatGui;
+import net.minecraft.client.gui.chat.NarratorChatListener;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.settings.*;
+import net.minecraft.entity.player.ChatVisibility;
+import net.minecraft.util.HandSide;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import org.apache.commons.lang3.tuple.Triple;
 
@@ -56,82 +58,100 @@ import java.util.stream.Collectors;
 public enum SettingsManager {
     INSTANCE;
 
-    public static Function<SettingScrollWindow, SSliderOptionEntry> FOV;
+    public static Function<SettingScrollWindow, SSliderSettingEntry> FOV;
 
     /**
      * Different (from vanilla):
      * Same effect, but less computation. [0.1, 1.0]
      */
-    public static Function<SettingScrollWindow, SSliderOptionEntry> CHAT_OPACITY;
+    public static Function<SettingScrollWindow, SSliderSettingEntry> CHAT_OPACITY;
 
     /**
      * Different (from vanilla):
      * Set minimum value to 10% rather than 0% (OFF), because we have visibility. [0.1, 1.0]
      */
-    public static Function<SettingScrollWindow, SSliderOptionEntry> CHAT_SCALE;
+    public static Function<SettingScrollWindow, SSliderSettingEntry> CHAT_SCALE;
 
     /**
      * Different (from vanilla):
      * Use Optifine setting, so now width in [40, 1176] rather than [40, 320]
      */
-    public static Function<SettingScrollWindow, SSliderOptionEntry> CHAT_WIDTH;
+    public static Function<SettingScrollWindow, SSliderSettingEntry> CHAT_WIDTH;
 
-    public static Function<SettingScrollWindow, SSliderOptionEntry> CHAT_HEIGHT_FOCUSED;
+    public static Function<SettingScrollWindow, SSliderSettingEntry> CHAT_HEIGHT_FOCUSED;
 
-    public static Function<SettingScrollWindow, SSliderOptionEntry> CHAT_HEIGHT_UNFOCUSED;
+    public static Function<SettingScrollWindow, SSliderSettingEntry> CHAT_HEIGHT_UNFOCUSED;
 
-    public static Function<SettingScrollWindow, SSliderOptionEntry> TEXT_BACKGROUND_OPACITY;
+    public static Function<SettingScrollWindow, SSliderSettingEntry> TEXT_BACKGROUND_OPACITY;
 
-    public static Function<SettingScrollWindow, SSliderOptionEntry> GAMMA;
-
-
-
-    public static Function<SettingScrollWindow, SSliderOptionEntry> SENSITIVITY;
-
-    public static Function<SettingScrollWindow, SSliderOptionEntry> MOUSE_WHEEL_SENSITIVITY;
+    public static Function<SettingScrollWindow, SSliderSettingEntry> GAMMA;
 
 
 
-    public static Function<SettingScrollWindow, DSliderOptionEntry> FRAMERATE_LIMIT;
+    public static Function<SettingScrollWindow, SSliderSettingEntry> SENSITIVITY;
 
-    public static Function<SettingScrollWindow, DSliderOptionEntry> RENDER_DISTANCE;
-
-    public static Function<SettingScrollWindow, DSliderOptionEntry> BIOME_BLEND_RADIUS;
+    public static Function<SettingScrollWindow, SSliderSettingEntry> MOUSE_WHEEL_SENSITIVITY;
 
 
 
-    public static Function<SettingScrollWindow, BooleanOptionEntry> REALMS_NOTIFICATIONS;
+    public static Function<SettingScrollWindow, DSliderSettingEntry> FRAMERATE_LIMIT;
 
-    public static Function<SettingScrollWindow, BooleanOptionEntry> CHAT_COLOR;
-    public static Function<SettingScrollWindow, BooleanOptionEntry> CHAT_LINKS;
-    public static Function<SettingScrollWindow, BooleanOptionEntry> CHAT_LINKS_PROMPT;
-    public static Function<SettingScrollWindow, BooleanOptionEntry> REDUCED_DEBUG_INFO;
-    public static Function<SettingScrollWindow, BooleanOptionEntry> AUTO_SUGGEST_COMMANDS;
+    public static Function<SettingScrollWindow, DSliderSettingEntry> RENDER_DISTANCE;
 
-    public static Function<SettingScrollWindow, BooleanOptionEntry> SHOW_SUBTITLES;
-    public static Function<SettingScrollWindow, BooleanOptionEntry> AUTO_JUMP;
+    public static Function<SettingScrollWindow, DSliderSettingEntry> BIOME_BLEND_RADIUS;
 
-    public static Function<SettingScrollWindow, BooleanOptionEntry> VSYNC;
-    public static Function<SettingScrollWindow, BooleanOptionEntry> VIEW_BOBBING;
-
-    public static Function<SettingScrollWindow, BooleanOptionEntry> ENTITY_SHADOWS;
-
-    public static Function<SettingScrollWindow, BooleanOptionEntry> INVERT_MOUSE;
-    public static Function<SettingScrollWindow, BooleanOptionEntry> DISCRETE_MOUSE_WHEEL;
-    public static Function<SettingScrollWindow, BooleanOptionEntry> TOUCHSCREEN;
-    public static Function<SettingScrollWindow, BooleanOptionEntry> RAW_MOUSE_INPUT;
+    public static Function<SettingScrollWindow, DSliderSettingEntry> MIPMAP_LEVEL;
 
 
-    public static Function<SettingScrollWindow, DropdownOptionEntry> GRAPHICS;
 
-    public static Function<SettingScrollWindow, DropdownOptionEntry> ATTACK_INDICATOR;
+    public static Function<SettingScrollWindow, BooleanSettingEntry> REALMS_NOTIFICATIONS;
+
+    public static Function<SettingScrollWindow, BooleanSettingEntry> CHAT_COLOR;
+    public static Function<SettingScrollWindow, BooleanSettingEntry> CHAT_LINKS;
+    public static Function<SettingScrollWindow, BooleanSettingEntry> CHAT_LINKS_PROMPT;
+    public static Function<SettingScrollWindow, BooleanSettingEntry> REDUCED_DEBUG_INFO;
+    public static Function<SettingScrollWindow, BooleanSettingEntry> AUTO_SUGGEST_COMMANDS;
+
+    public static Function<SettingScrollWindow, BooleanSettingEntry> SHOW_SUBTITLES;
+    public static Function<SettingScrollWindow, BooleanSettingEntry> AUTO_JUMP;
+
+    public static Function<SettingScrollWindow, BooleanSettingEntry> VSYNC;
+    public static Function<SettingScrollWindow, BooleanSettingEntry> VIEW_BOBBING;
+
+    public static Function<SettingScrollWindow, BooleanSettingEntry> ENTITY_SHADOWS;
+
+    public static Function<SettingScrollWindow, BooleanSettingEntry> INVERT_MOUSE;
+    public static Function<SettingScrollWindow, BooleanSettingEntry> DISCRETE_MOUSE_WHEEL;
+    public static Function<SettingScrollWindow, BooleanSettingEntry> TOUCHSCREEN;
+    public static Function<SettingScrollWindow, BooleanSettingEntry> RAW_MOUSE_INPUT;
+
+
+    public static Function<SettingScrollWindow, DropdownSettingEntry> GRAPHICS;
+
+    public static Function<SettingScrollWindow, DropdownSettingEntry> ATTACK_INDICATOR;
+
+    public static Function<SettingScrollWindow, DropdownSettingEntry> AO;
+
+    public static Function<SettingScrollWindow, DropdownSettingEntry> PARTICLES;
+
+    public static Function<SettingScrollWindow, DropdownSettingEntry> CHAT_VISIBILITY;
+
+    public static Function<SettingScrollWindow, DropdownSettingEntry> NARRATOR;
+
+    public static Function<SettingScrollWindow, DropdownSettingEntry> MAIN_HAND;
 
 
 
 
     /** OptiFine Settings **/
 
-    public static Function<SettingScrollWindow, BooleanOptionEntry> DYNAMIC_FOV;
+    public static Function<SettingScrollWindow, BooleanSettingEntry> DYNAMIC_FOV;
+
+    public static Function<SettingScrollWindow, BooleanSettingEntry> CHAT_SHADOW;
+
+    public static Function<SettingScrollWindow, SSliderSettingEntry> AO_LEVEL;
+
+    public static Function<SettingScrollWindow, DropdownSettingEntry> CHAT_BACKGROUND;
 
 
 
@@ -293,46 +313,95 @@ public enum SettingsManager {
         RAW_MOUSE_INPUT = INSTANCE
                 .transformToBoolean(AbstractOption.RAW_MOUSE_INPUT);
 
-        FRAMERATE_LIMIT = window -> new DSliderOptionEntry(window, I18n.format("options.framerateLimit"),
+        FRAMERATE_LIMIT = window -> new DSliderSettingEntry(window, I18n.format("options.framerateLimit"),
                 1, 52, gameSettings.framerateLimit / 5, i -> {
             gameSettings.framerateLimit = i * 5;
             minecraft.getMainWindow().setFramerateLimit(gameSettings.framerateLimit);
         }, i -> i > 51 ? "260+" : Integer.toString(i * 5), true);
 
-        GRAPHICS = window -> new DropdownOptionEntry(window, I18n.format("options.graphics"),
+        MIPMAP_LEVEL = window -> new DSliderSettingEntry(window, I18n.format("options.mipmapLevels"),
+                0, 4, gameSettings.mipmapLevels, i -> {
+            gameSettings.mipmapLevels = i;
+            this.minecraft.setMipmapLevels(i);
+            this.minecraft.scheduleResourcesRefresh(); // Forge?
+        }, String::valueOf, false);
+
+        GRAPHICS = window -> new DropdownSettingEntry(window, I18n.format("options.graphics"),
                 getGraphicTexts(),
                 gameSettings.fancyGraphics ? 0 : 1, i -> {
             gameSettings.fancyGraphics = i == 0;
             minecraft.worldRenderer.loadRenderers();
         });
 
-        ATTACK_INDICATOR = window -> new DropdownOptionEntry(window, I18n.format("options.attackIndicator"),
+        ATTACK_INDICATOR = window -> new DropdownSettingEntry(window, I18n.format("options.attackIndicator"),
                 getAttackIndicatorTexts(),
                 gameSettings.attackIndicator.ordinal(), i -> gameSettings.attackIndicator = AttackIndicatorStatus.values()[i]);
 
+        AO = window -> new DropdownSettingEntry(window, I18n.format("options.ao"),
+                getAoTexts(),
+                gameSettings.ambientOcclusionStatus.ordinal(), i -> {
+            gameSettings.ambientOcclusionStatus = AmbientOcclusionStatus.values()[i];
+            minecraft.worldRenderer.loadRenderers();
+        });
+
+        PARTICLES = window -> new DropdownSettingEntry(window, I18n.format("options.particles"),
+                getParticleTexts(),
+                gameSettings.particles.ordinal(), i -> gameSettings.particles = ParticleStatus.values()[i]);
+
+        CHAT_VISIBILITY = window -> new DropdownSettingEntry(window, I18n.format("options.chat.visibility"),
+                getChatVisibilityTexts(),
+                gameSettings.chatVisibility.ordinal(), i -> gameSettings.chatVisibility = ChatVisibility.values()[i]);
+
+        NARRATOR = window -> new DropdownSettingEntry(window, I18n.format("options.narrator"),
+                getNarratorTexts(),
+                NarratorChatListener.INSTANCE.isActive() ? gameSettings.narrator.ordinal() : 0, i -> {
+            gameSettings.narrator = NarratorStatus.values()[i];
+            NarratorChatListener.INSTANCE.announceMode(gameSettings.narrator);
+        });
+
+        MAIN_HAND = window -> new DropdownSettingEntry(window, I18n.format("options.mainHand"),
+                getMainHandTexts(),
+                gameSettings.mainHand.ordinal(), i -> {
+            gameSettings.mainHand = HandSide.values()[i];
+            gameSettings.saveOptions();
+            gameSettings.sendSettingsToServer();
+        });
+
         if (ModIntegration.optifineLoaded) {
-            DYNAMIC_FOV = window -> new BooleanOptionEntry(window, I18n.format("of.options.DYNAMIC_FOV"),
-                    getDynamicFov(), this::setDynamicFov);
+            DYNAMIC_FOV = window -> new BooleanSettingEntry(window, I18n.format("of.options.DYNAMIC_FOV"),
+                    SettingsManager.INSTANCE.getDynamicFov(), SettingsManager.INSTANCE::setDynamicFov);
+
+            AO_LEVEL = window -> new SSliderSettingEntry(window, I18n.format("of.options.AO_LEVEL"),
+                    0, 1, 0,
+                    SettingsManager.INSTANCE.getAoLevel(), SettingsManager.INSTANCE::setAoLevel,
+                    ConstantsLibrary.PERCENTAGE_STRING_FUNC, false);
+
+            CHAT_SHADOW = window -> new BooleanSettingEntry(window, I18n.format("of.options.CHAT_SHADOW"),
+                    SettingsManager.INSTANCE.getChatShadow(), SettingsManager.INSTANCE::setChatShadow);
+
+            CHAT_BACKGROUND = window -> new DropdownSettingEntry(window, I18n.format("of.options.CHAT_BACKGROUND"),
+                    SettingsManager.INSTANCE.getChatBackgroundTexts(),
+                    SettingsManager.INSTANCE.getChatBackgroundIndex(), SettingsManager.INSTANCE::setChatBackgroundIndex);
         }
     }
 
     @Nonnull
-    public Function<SettingScrollWindow, SSliderOptionEntry> transformToSmooth(SliderPercentageOption instance) {
+    public Function<SettingScrollWindow, SSliderSettingEntry> transformToSmooth(SliderPercentageOption instance) {
         return transformToSmooth(instance, null, null);
     }
 
     @Nonnull
-    public Function<SettingScrollWindow, SSliderOptionEntry> transformToSmooth(SliderPercentageOption instance, Function<Double, String> stringFunction) {
+    public Function<SettingScrollWindow, SSliderSettingEntry> transformToSmooth(SliderPercentageOption instance, Function<Double, String> stringFunction) {
         return transformToSmooth(instance, null, stringFunction);
     }
 
     @Nonnull
-    public Function<SettingScrollWindow, SSliderOptionEntry> transformToSmooth(SliderPercentageOption instance, Triple<Double, Double, Float> customize) {
+    public Function<SettingScrollWindow, SSliderSettingEntry> transformToSmooth(SliderPercentageOption instance, Triple<Double, Double, Float> customize) {
         return transformToSmooth(instance, customize, null);
     }
 
     @Nonnull
-    public Function<SettingScrollWindow, SSliderOptionEntry> transformToSmooth(SliderPercentageOption instance, @Nullable Triple<Double, Double, Float> customize, @Nullable Function<Double, String> stringFunction) {
+    public Function<SettingScrollWindow, SSliderSettingEntry> transformToSmooth(SliderPercentageOption instance, @Nullable Triple<Double, Double, Float> customize, @Nullable Function<Double, String> stringFunction) {
         GameSettings gameSettings = Minecraft.getInstance().gameSettings;
         try {
             String translationKey = (String) option_translateKey.get(instance);
@@ -351,11 +420,11 @@ public enum SettingsManager {
             Function<GameSettings, Double> getter = (Function<GameSettings, Double>) slider_getter.get(instance);
             BiConsumer<GameSettings, Double> setter = (BiConsumer<GameSettings, Double>) slider_setter.get(instance);
             if (stringFunction == null) {
-                return window -> new SSliderOptionEntry(window, I18n.format(translationKey), minValue, maxValue,
-                        stepSize, getter.apply(gameSettings), v -> setter.accept(gameSettings, v));
+                return window -> new SSliderSettingEntry(window, I18n.format(translationKey), minValue, maxValue,
+                        stepSize, getter.apply(gameSettings), v -> setter.accept(gameSettings, v), String::valueOf, true);
             } else {
-                return window -> new SSliderOptionEntry(window, I18n.format(translationKey), minValue, maxValue,
-                        stepSize, getter.apply(gameSettings), v -> setter.accept(gameSettings, v), stringFunction);
+                return window -> new SSliderSettingEntry(window, I18n.format(translationKey), minValue, maxValue,
+                        stepSize, getter.apply(gameSettings), v -> setter.accept(gameSettings, v), stringFunction, true);
             }
         } catch (IllegalAccessException e) {
             e.printStackTrace();
@@ -364,12 +433,12 @@ public enum SettingsManager {
     }
 
     @Nonnull
-    public Function<SettingScrollWindow, DSliderOptionEntry> transformToDiscrete(SliderPercentageOption instance, boolean dynamicModify) {
+    public Function<SettingScrollWindow, DSliderSettingEntry> transformToDiscrete(SliderPercentageOption instance, boolean dynamicModify) {
         return this.transformToDiscrete(instance, String::valueOf, dynamicModify);
     }
 
     @Nonnull
-    public Function<SettingScrollWindow, DSliderOptionEntry> transformToDiscrete(SliderPercentageOption instance, Function<Integer, String> displayStringFunc, boolean dynamicModify) {
+    public Function<SettingScrollWindow, DSliderSettingEntry> transformToDiscrete(SliderPercentageOption instance, Function<Integer, String> displayStringFunc, boolean dynamicModify) {
         GameSettings gameSettings = Minecraft.getInstance().gameSettings;
         try {
             String translationKey = (String) option_translateKey.get(instance);
@@ -379,7 +448,7 @@ public enum SettingsManager {
             maxValue = (int) slider_maxValue.getDouble(instance);
             Function<GameSettings, Double> getter = (Function<GameSettings, Double>) slider_getter.get(instance);
             BiConsumer<GameSettings, Double> setter = (BiConsumer<GameSettings, Double>) slider_setter.get(instance);
-            return window -> new DSliderOptionEntry(window, I18n.format(translationKey), minValue, maxValue,
+            return window -> new DSliderSettingEntry(window, I18n.format(translationKey), minValue, maxValue,
                     getter.apply(gameSettings).intValue(), v -> setter.accept(gameSettings, (double) v), displayStringFunc, dynamicModify);
         } catch (IllegalAccessException e) {
             e.printStackTrace();
@@ -388,13 +457,13 @@ public enum SettingsManager {
     }
 
     @Nonnull
-    public Function<SettingScrollWindow, BooleanOptionEntry> transformToBoolean(BooleanOption instance) {
+    public Function<SettingScrollWindow, BooleanSettingEntry> transformToBoolean(BooleanOption instance) {
         GameSettings gameSettings = Minecraft.getInstance().gameSettings;
         try {
             String translationKey = (String) option_translateKey.get(instance);
             Predicate<GameSettings> getter = (Predicate<GameSettings>) boolean_getter.get(instance);
             BiConsumer<GameSettings, Boolean> setter = (BiConsumer<GameSettings, Boolean>) boolean_setter.get(instance);
-            return window -> new BooleanOptionEntry(window, I18n.format(translationKey), getter.test(gameSettings), b -> setter.accept(gameSettings, b));
+            return window -> new BooleanSettingEntry(window, I18n.format(translationKey), getter.test(gameSettings), b -> setter.accept(gameSettings, b));
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
@@ -402,7 +471,7 @@ public enum SettingsManager {
     }
 
     @Deprecated
-    public <T extends AbstractOption> Function<SettingScrollWindow, OptionEntry> transformVanillaOption(T abstractOption) {
+    public <T extends AbstractOption> Function<SettingScrollWindow, SettingEntry> transformVanillaOption(T abstractOption) {
         GameSettings gameSettings = Minecraft.getInstance().gameSettings;
         try {
             String translationKey = (String) option_translateKey.get(abstractOption);
@@ -431,15 +500,42 @@ public enum SettingsManager {
     }
 
     @Nonnull
-    private List<String> getGraphicTexts() {
+    public List<String> getGraphicTexts() {
         return Lists.newArrayList(
                 I18n.format("options.graphics.fancy"),
                 I18n.format("options.graphics.fast"));
     }
 
-    private List<String> getAttackIndicatorTexts() {
+    public List<String> getAttackIndicatorTexts() {
         return Lists.newArrayList(AttackIndicatorStatus.values()).stream()
                 .map(m -> I18n.format(m.getResourceKey())).collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    public List<String> getAoTexts() {
+        return Lists.newArrayList(AmbientOcclusionStatus.values()).stream()
+                .map(m -> I18n.format(m.getResourceKey())).collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    public List<String> getParticleTexts() {
+        return Lists.newArrayList(ParticleStatus.values()).stream()
+                .map(m -> I18n.format(m.getResourceKey())).collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    public List<String> getMainHandTexts() {
+        return Lists.newArrayList(HandSide.values()).stream()
+                .map(HandSide::toString).collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    public List<String> getChatVisibilityTexts() {
+        return Lists.newArrayList(ChatVisibility.values()).stream()
+                .map(c -> I18n.format(c.getResourceKey())).collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    public List<String> getNarratorTexts() {
+        return NarratorChatListener.INSTANCE.isActive() ?
+                Lists.newArrayList(NarratorStatus.values()).stream()
+                        .map(n -> I18n.format(n.getResourceKey())).collect(Collectors.toCollection(ArrayList::new)) :
+                Lists.newArrayList(I18n.format("options.narrator.notavailable"));
     }
 
 
@@ -527,5 +623,6 @@ public enum SettingsManager {
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
+        minecraft.worldRenderer.loadRenderers();
     }
 }

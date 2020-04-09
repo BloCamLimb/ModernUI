@@ -18,42 +18,28 @@
 
 package icyllis.modernui.gui.module;
 
-import com.google.common.collect.Lists;
 import icyllis.modernui.gui.master.Module;
-import icyllis.modernui.gui.option.*;
+import icyllis.modernui.gui.setting.GuiScaleSettingEntry;
+import icyllis.modernui.gui.setting.SettingCategoryGroup;
+import icyllis.modernui.gui.setting.SettingEntry;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
-import icyllis.modernui.system.ConstantsLibrary;
 import icyllis.modernui.system.ModIntegration;
 import icyllis.modernui.system.SettingsManager;
-import net.minecraft.client.GameSettings;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.I18n;
-import net.minecraft.client.settings.AmbientOcclusionStatus;
-import net.minecraft.client.settings.AttackIndicatorStatus;
-import net.minecraft.client.settings.ParticleStatus;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 public class SettingVideo extends Module {
 
-    private static Supplier<List<String>> AO = () -> Lists.newArrayList(AmbientOcclusionStatus.values()).stream().map(m -> I18n.format(m.getResourceKey())).collect(Collectors.toCollection(ArrayList::new));
-
-    private static Supplier<List<String>> PARTICLES = () -> Lists.newArrayList(ParticleStatus.values()).stream().map(m -> I18n.format(m.getResourceKey())).collect(Collectors.toCollection(ArrayList::new));
-
-    private Minecraft minecraft;
-
     private SettingScrollWindow window;
 
-    private GuiScaleOptionEntry guiScale;
+    private GuiScaleSettingEntry guiScale;
 
     public SettingVideo() {
-        this.minecraft = Minecraft.getInstance();
         this.window = new SettingScrollWindow(this);
 
-        List<OptionCategoryGroup> groups = new ArrayList<>();
+        List<SettingCategoryGroup> groups = new ArrayList<>();
 
         addVideoCategory(groups);
         addQualityCategory(groups);
@@ -70,8 +56,8 @@ public class SettingVideo extends Module {
         addWidget(window);
     }
 
-    private void addVideoCategory(List<OptionCategoryGroup> groups) {
-        List<OptionEntry> list = new ArrayList<>();
+    private void addVideoCategory(List<SettingCategoryGroup> groups) {
+        List<SettingEntry> list = new ArrayList<>();
 
         list.add(SettingsManager.GRAPHICS.apply(window));
 
@@ -81,7 +67,7 @@ public class SettingVideo extends Module {
 
         list.add(SettingsManager.FOV.apply(window));
 
-        guiScale = new GuiScaleOptionEntry(window);
+        guiScale = new GuiScaleSettingEntry(window);
         list.add(guiScale);
 
         list.add(SettingsManager.GAMMA.apply(window));
@@ -97,48 +83,32 @@ public class SettingVideo extends Module {
             //TODO optifine Dynamic Lights and Use VBOs
         }
 
-        OptionCategoryGroup categoryGroup = new OptionCategoryGroup(window, I18n.format("gui.modernui.settings.category.video"), list);
+        SettingCategoryGroup categoryGroup = new SettingCategoryGroup(window, I18n.format("gui.modernui.settings.category.video"), list);
         groups.add(categoryGroup);
     }
 
-    @SuppressWarnings("NoTranslation")
-    private void addQualityCategory(List<OptionCategoryGroup> groups) {
-        List<OptionEntry> list = new ArrayList<>();
-        GameSettings gameSettings = minecraft.gameSettings;
+    private void addQualityCategory(List<SettingCategoryGroup> groups) {
+        List<SettingEntry> list = new ArrayList<>();
 
-        DropdownOptionEntry ao = new DropdownOptionEntry(window, I18n.format("options.ao"), AO.get(),
-                gameSettings.ambientOcclusionStatus.ordinal(), i -> {
-            gameSettings.ambientOcclusionStatus = AmbientOcclusionStatus.values()[i];
-            minecraft.worldRenderer.loadRenderers();
-        });
-        list.add(ao);
+        list.add(SettingsManager.AO.apply(window));
 
-        SSliderOptionEntry aoLevel = new SSliderOptionEntry(window, I18n.format("of.options.AO_LEVEL"), 0, 1, 0,
-                SettingsManager.INSTANCE.getAoLevel(), SettingsManager.INSTANCE::setAoLevel, ConstantsLibrary.PERCENTAGE_STRING_FUNC)
-                .setApplyChange(d -> minecraft.worldRenderer.loadRenderers());
+        if (ModIntegration.optifineLoaded) {
+            list.add(SettingsManager.AO_LEVEL.apply(window));
+        }
 
-        list.add(aoLevel);
-
-        DSliderOptionEntry mipmapLevel = new DSliderOptionEntry(window, I18n.format("options.mipmapLevels"),
-                0, 4, gameSettings.mipmapLevels, i -> gameSettings.mipmapLevels = i, String::valueOf).
-                setApplyChange(i -> {
-                    this.minecraft.setMipmapLevels(i);
-                    this.minecraft.scheduleResourcesRefresh(); // Forge?
-                });
-        list.add(mipmapLevel);
+        list.add(SettingsManager.MIPMAP_LEVEL.apply(window));
 
         if (ModIntegration.optifineLoaded) {
             //TODO optifine Mipmap Type, AF Level, AA Level, Emissive Textures, Random Entities, Better Grass, Better Snow,
             // Custom Fonts, Custom Colors, Connected Textures, Natural Textures, Custom Sky, Custom Items, Custom Entity Models, Custom Guis
         }
 
-        OptionCategoryGroup categoryGroup = new OptionCategoryGroup(window, I18n.format("gui.modernui.settings.category.quality"), list);
+        SettingCategoryGroup categoryGroup = new SettingCategoryGroup(window, I18n.format("gui.modernui.settings.category.quality"), list);
         groups.add(categoryGroup);
     }
 
-    private void addDetailsCategory(List<OptionCategoryGroup> groups) {
-        List<OptionEntry> list = new ArrayList<>();
-        GameSettings gameSettings = minecraft.gameSettings;
+    private void addDetailsCategory(List<SettingCategoryGroup> groups) {
+        List<SettingEntry> list = new ArrayList<>();
 
         list.add(SettingsManager.ENTITY_SHADOWS.apply(window));
         list.add(SettingsManager.BIOME_BLEND_RADIUS.apply(window));
@@ -148,45 +118,40 @@ public class SettingVideo extends Module {
             //      Translucent Blocks, Held Item Tooltips, Dropped Items, Vignette, Alternate Blocks, Swamp Colors
         }
 
-        OptionCategoryGroup categoryGroup = new OptionCategoryGroup(window, I18n.format("gui.modernui.settings.category.details"), list);
+        SettingCategoryGroup categoryGroup = new SettingCategoryGroup(window, I18n.format("gui.modernui.settings.category.details"), list);
         groups.add(categoryGroup);
     }
 
-    private void addAnimationsCategory(List<OptionCategoryGroup> groups) {
-        List<OptionEntry> list = new ArrayList<>();
-        GameSettings gameSettings = minecraft.gameSettings;
+    private void addAnimationsCategory(List<SettingCategoryGroup> groups) {
+        List<SettingEntry> list = new ArrayList<>();
 
-        DropdownOptionEntry particles = new DropdownOptionEntry(window, I18n.format("options.particles"), PARTICLES.get(),
-                gameSettings.particles.ordinal(), i -> gameSettings.particles = ParticleStatus.values()[i]);
-        list.add(particles);
+        list.add(SettingsManager.PARTICLES.apply(window));
 
         if (ModIntegration.optifineLoaded) {
             //TODO optifine Animated Water, Animated Lava, Animated Fire, Animated Portal, Animated Redstone, Animated Explosion, Animated Flame, Animated Smoke, Void Particles, Water Particles,
             //      Rain Splash, Portal Particles, Potion Particles, Dripping Water Lava, Animated Terrain, Animated Textures, Firework Particles
         }
 
-        OptionCategoryGroup categoryGroup = new OptionCategoryGroup(window, I18n.format("gui.modernui.settings.category.animations"), list);
+        SettingCategoryGroup categoryGroup = new SettingCategoryGroup(window, I18n.format("gui.modernui.settings.category.animations"), list);
         groups.add(categoryGroup);
     }
 
-    private void addPerformanceCategory(List<OptionCategoryGroup> groups) {
-        List<OptionEntry> list = new ArrayList<>();
-        GameSettings gameSettings = minecraft.gameSettings;
+    private void addPerformanceCategory(List<SettingCategoryGroup> groups) {
+        List<SettingEntry> list = new ArrayList<>();
 
         if (ModIntegration.optifineLoaded) {
             //TODO optifine Smooth Fps, Smooth World, Fast Render, Fast Math, Chunk Updates, Chunk Updates Dynamic, Render Regions, Lazy Chunk Loading, Smart Animations
         }
 
-        OptionCategoryGroup categoryGroup = new OptionCategoryGroup(window, I18n.format("gui.modernui.settings.category.performance"), list);
+        SettingCategoryGroup categoryGroup = new SettingCategoryGroup(window, I18n.format("gui.modernui.settings.category.performance"), list);
         groups.add(categoryGroup);
     }
 
-    private void addOtherCategory(List<OptionCategoryGroup> groups) {
-        List<OptionEntry> list = new ArrayList<>();
-        GameSettings gameSettings = minecraft.gameSettings;
+    private void addOtherCategory(List<SettingCategoryGroup> groups) {
+        List<SettingEntry> list = new ArrayList<>();
 
 
-        OptionCategoryGroup categoryGroup = new OptionCategoryGroup(window, I18n.format("gui.modernui.settings.category.other"), list);
+        SettingCategoryGroup categoryGroup = new SettingCategoryGroup(window, I18n.format("gui.modernui.settings.category.other"), list);
         groups.add(categoryGroup);
     }
 

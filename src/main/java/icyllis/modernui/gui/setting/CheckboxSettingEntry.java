@@ -16,14 +16,18 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.scroll;
+package icyllis.modernui.gui.setting;
 
-import icyllis.modernui.gui.master.Module;
-import icyllis.modernui.gui.setting.SettingCategoryGroup;
+import icyllis.modernui.gui.scroll.SettingScrollWindow;
 
-public class SettingScrollWindow extends ScrollWindow<SettingCategoryGroup> {
+public class CheckboxSettingEntry extends SettingEntry {
 
-    public SettingScrollWindow(Module module) {
-        super(module, w -> 40f, h -> 36f, w -> w - 80f, h -> h - 72f);
+    public CheckboxSettingEntry(SettingScrollWindow windowString, String optionTitle) {
+        super(windowString, optionTitle);
+    }
+
+    @Override
+    protected void drawExtra(float time) {
+
     }
 }

@@ -16,13 +16,10 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.option;
+package icyllis.modernui.gui.setting;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.TextAlign;
-import icyllis.modernui.font.FontTools;
-import icyllis.modernui.font.IFontRenderer;
-import icyllis.modernui.gui.master.IMouseListener;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import icyllis.modernui.gui.scroll.UniformScrollEntry;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -33,7 +30,7 @@ import org.lwjgl.opengl.GL11;
 /**
  * Single option line in settings interface
  */
-public abstract class OptionEntry extends UniformScrollEntry {
+public abstract class SettingEntry extends UniformScrollEntry {
 
     protected final SettingScrollWindow window;
 
@@ -41,8 +38,8 @@ public abstract class OptionEntry extends UniformScrollEntry {
 
     protected float titleBrightness = 0.85f;
 
-    public OptionEntry(SettingScrollWindow window, String title) {
-        super(OptionCategoryGroup.ENTRY_HEIGHT);
+    public SettingEntry(SettingScrollWindow window, String title) {
+        super(SettingCategoryGroup.ENTRY_HEIGHT);
         this.window = window;
         this.title = title;
         //TODO tooltip description lines

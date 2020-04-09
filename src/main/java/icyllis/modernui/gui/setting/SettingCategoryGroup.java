@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.option;
+package icyllis.modernui.gui.setting;
 
 import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.font.FontTools;
@@ -28,7 +28,7 @@ import net.minecraft.util.text.TextFormatting;
 
 import java.util.List;
 
-public class OptionCategoryGroup extends UniformScrollGroup<OptionEntry> {
+public class SettingCategoryGroup extends UniformScrollGroup<SettingEntry> {
 
     public static int ENTRY_HEIGHT = 21;
 
@@ -36,7 +36,7 @@ public class OptionCategoryGroup extends UniformScrollGroup<OptionEntry> {
 
     private String title;
 
-    public OptionCategoryGroup(ScrollWindow<?> window, String title, List<OptionEntry> entries) {
+    public SettingCategoryGroup(ScrollWindow<?> window, String title, List<SettingEntry> entries) {
         super(window, ENTRY_HEIGHT);
         this.title = TextFormatting.BOLD + title;
         this.entries = entries;
@@ -51,7 +51,7 @@ public class OptionCategoryGroup extends UniformScrollGroup<OptionEntry> {
         x2 = centerX + 160;
         y += 30;
         int i = 0;
-        for (OptionEntry entry : entries) {
+        for (SettingEntry entry : entries) {
             float cy = y + i * entryHeight;
             entry.layout(x1, x2, cy);
             i++;

@@ -20,8 +20,8 @@ package icyllis.modernui.gui.module;
 
 import com.google.common.collect.Lists;
 import icyllis.modernui.gui.master.Module;
-import icyllis.modernui.gui.option.LanguageEntry;
-import icyllis.modernui.gui.option.LanguageGroup;
+import icyllis.modernui.gui.setting.LanguageEntry;
+import icyllis.modernui.gui.setting.LanguageGroup;
 import icyllis.modernui.gui.scroll.ScrollWindow;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
