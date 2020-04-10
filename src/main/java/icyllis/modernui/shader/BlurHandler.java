@@ -62,6 +62,20 @@ public enum BlurHandler {
         }
     }
 
+    /**
+     * Mainly for ingame menu gui, re-blur after resources reloaded
+     */
+    public void forceBlur() {
+        if (Minecraft.getInstance().world != null) {
+            GameRenderer gr = Minecraft.getInstance().gameRenderer;
+            if (gr.getShaderGroup() == null) {
+                gr.loadShader(BLUR);
+                changingProgress = true;
+                blurring = true;
+            }
+        }
+    }
+
     public void tick() {
         if (changingProgress) {
             float p = Math.min(GlobalModuleManager.INSTANCE.getAnimationTime(), 4.0f);

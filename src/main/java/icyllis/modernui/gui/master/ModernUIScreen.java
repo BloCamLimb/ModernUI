@@ -18,6 +18,7 @@
 
 package icyllis.modernui.gui.master;
 
+import icyllis.modernui.shader.BlurHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.text.ITextComponent;
@@ -43,6 +44,7 @@ public final class ModernUIScreen extends Screen {
     public void init(Minecraft minecraft, int width, int height) {
         super.init(minecraft, width, height);
         manager.resize(width, height);
+        BlurHandler.INSTANCE.forceBlur();
     }
 
     @Override

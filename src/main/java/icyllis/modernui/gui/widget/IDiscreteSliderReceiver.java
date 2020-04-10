@@ -31,7 +31,6 @@ public interface IDiscreteSliderReceiver {
 
     /**
      * Called when stopped dragging
-     * @param offset final value
      */
-    void onSliderFinalChange(int offset);
+    void onSliderFinalChange();
 }

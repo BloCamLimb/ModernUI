@@ -31,7 +31,6 @@ public interface ISmoothSliderReceiver {
 
     /**
      * Called when stopped dragging
-     * @param percentage final value
      */
-    void onSliderFinalChange(double percentage);
+    void onSliderFinalChange();
 }

@@ -58,8 +58,8 @@ public class SliderDiscrete extends Slider implements IElement, IGuiEventListene
     }
 
     @Override
-    protected void onStopChanging() {
-        receiver.onSliderFinalChange(segment);
+    protected void onFinalChange() {
+        receiver.onSliderFinalChange();
     }
 
     private void updateSlideOffset() {
