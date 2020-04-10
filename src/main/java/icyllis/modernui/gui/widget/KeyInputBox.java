@@ -140,7 +140,7 @@ public class KeyInputBox extends FlexibleWidget implements IKeyboardListener {
         backAlpha = 64;
     }
 
-    private void stopEditing() {
+    public void stopEditing() {
         editing = false;
         focuser.setKeyboardListener(null);
         if (!mouseHovered) {

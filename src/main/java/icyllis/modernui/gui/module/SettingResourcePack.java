@@ -157,7 +157,10 @@ public class SettingResourcePack extends Module {
         if (super.mouseClicked(mouseX, mouseY, mouseButton)) {
             return true;
         }
-        setHighlightEntry(null);
+        if (highlightEntry != null) {
+            setHighlightEntry(null);
+            return true;
+        }
         return false;
     }
 
