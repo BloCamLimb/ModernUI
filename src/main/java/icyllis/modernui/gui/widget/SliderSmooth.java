@@ -23,8 +23,6 @@ import icyllis.modernui.gui.master.IFocuser;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.util.math.MathHelper;
 
-import java.util.function.Consumer;
-
 public class SliderSmooth extends Slider implements IElement, IGuiEventListener {
 
     private ISmoothSliderReceiver receiver;
@@ -36,8 +34,8 @@ public class SliderSmooth extends Slider implements IElement, IGuiEventListener 
     }
 
     @Override
-    protected void onStopChanging() {
-        receiver.onSliderFinalChange(slideOffset / getMaxSlideOffset());
+    protected void onFinalChange() {
+        receiver.onSliderFinalChange();
     }
 
     @Override

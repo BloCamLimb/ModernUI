@@ -79,8 +79,12 @@ public class SettingVideo extends Module {
         list.add(SettingsManager.VSYNC.apply(window));
 
         if (ModIntegration.optifineLoaded) {
+
             list.add(SettingsManager.DYNAMIC_FOV.apply(window));
-            //TODO optifine Dynamic Lights and Use VBOs
+
+            list.add(SettingsManager.DYNAMIC_LIGHTS.apply(window));
+
+            list.add(SettingsManager.USE_VBO.apply(window));
         }
 
         SettingCategoryGroup categoryGroup = new SettingCategoryGroup(window, I18n.format("gui.modernui.settings.category.video"), list);
@@ -99,8 +103,32 @@ public class SettingVideo extends Module {
         list.add(SettingsManager.MIPMAP_LEVEL.apply(window));
 
         if (ModIntegration.optifineLoaded) {
-            //TODO optifine Mipmap Type, AF Level, AA Level, Emissive Textures, Random Entities, Better Grass, Better Snow,
-            // Custom Fonts, Custom Colors, Connected Textures, Natural Textures, Custom Sky, Custom Items, Custom Entity Models, Custom Guis
+
+            list.add(SettingsManager.MIPMAP_TYPE.apply(window));
+            //TODO optifine (WIP) AF Level, AA Level
+            list.add(SettingsManager.EMISSIVE_TEXTURES.apply(window));
+
+            list.add(SettingsManager.RANDOM_ENTITIES.apply(window));
+
+            list.add(SettingsManager.BETTER_GRASS.apply(window));
+
+            list.add(SettingsManager.BETTER_SNOW.apply(window));
+
+            list.add(SettingsManager.CUSTOM_FONTS.apply(window));
+
+            list.add(SettingsManager.CUSTOM_COLORS.apply(window));
+
+            list.add(SettingsManager.CONNECTED_TEXTURES.apply(window));
+
+            list.add(SettingsManager.NATURAL_TEXTURES.apply(window));
+
+            list.add(SettingsManager.CUSTOM_SKY.apply(window));
+
+            list.add(SettingsManager.CUSTOM_ITEMS.apply(window));
+
+            list.add(SettingsManager.CUSTOM_ENTITY_MODELS.apply(window));
+
+            list.add(SettingsManager.CUSTOM_GUIS.apply(window));
         }
 
         SettingCategoryGroup categoryGroup = new SettingCategoryGroup(window, I18n.format("gui.modernui.settings.category.quality"), list);

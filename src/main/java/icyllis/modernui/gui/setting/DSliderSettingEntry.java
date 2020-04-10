@@ -110,7 +110,7 @@ public class DSliderSettingEntry extends SettingEntry implements IDiscreteSlider
     }
 
     @Override
-    public void onSliderFinalChange(int offset) {
+    public void onSliderFinalChange() {
         if (!realtimeApply) {
             applyChange();
         }

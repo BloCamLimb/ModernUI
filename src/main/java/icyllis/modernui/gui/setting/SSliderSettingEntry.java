@@ -120,7 +120,7 @@ public class SSliderSettingEntry extends SettingEntry implements ISmoothSliderRe
     }
 
     @Override
-    public void onSliderFinalChange(double percentage) {
+    public void onSliderFinalChange() {
         if (!realtimeApply) {
             applyChange();
         }

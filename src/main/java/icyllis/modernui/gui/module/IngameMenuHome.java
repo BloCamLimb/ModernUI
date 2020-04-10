@@ -31,6 +31,7 @@ import net.minecraft.client.gui.screen.*;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.realms.RealmsBridge;
 import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraftforge.fml.client.gui.screen.ModListScreen;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,7 +56,7 @@ public class IngameMenuHome extends ModuleGroup {
         consumer.accept(new MenuButton(w -> 8f, h -> 72f, I18n.format("gui.stats"), 2,
                 () -> switchChildModule(2), 2));
         consumer.accept(new MenuButton(w -> 8f, h -> h - 92f, I18n.format("gui.modernui.menu.mods") + " (WIP)", 6,
-                () -> {}, 3));
+                () -> minecraft.displayGuiScreen(new ModListScreen(null)), 3));
         consumer.accept(new MenuButton(w -> 8f, h -> h - 64f, I18n.format("gui.modernui.menu.settings"), 0,
                 () -> switchChildModule(4), 4));
         consumer.accept(new MenuButton(w -> 8f, h -> h - 28f, I18n.format("gui.modernui.menu.exit"), 5,

@@ -25,6 +25,7 @@ import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.NewChatGui;
 import net.minecraft.client.gui.chat.NarratorChatListener;
+import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.settings.*;
 import net.minecraft.entity.player.ChatVisibility;
@@ -37,6 +38,8 @@ import org.apache.commons.lang3.tuple.Triple;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -149,9 +152,43 @@ public enum SettingsManager {
 
     public static Function<SettingScrollWindow, BooleanSettingEntry> CHAT_SHADOW;
 
+    public static Function<SettingScrollWindow, BooleanSettingEntry> EMISSIVE_TEXTURES;
+
+    public static Function<SettingScrollWindow, BooleanSettingEntry> RANDOM_ENTITIES;
+
+    public static Function<SettingScrollWindow, BooleanSettingEntry> CUSTOM_FONTS;
+
+    public static Function<SettingScrollWindow, BooleanSettingEntry> CUSTOM_COLORS;
+
+    public static Function<SettingScrollWindow, BooleanSettingEntry> BETTER_SNOW;
+
+    public static Function<SettingScrollWindow, BooleanSettingEntry> NATURAL_TEXTURES;
+
+    public static Function<SettingScrollWindow, BooleanSettingEntry> CUSTOM_SKY;
+
+    public static Function<SettingScrollWindow, BooleanSettingEntry> CUSTOM_ITEMS;
+
+    public static Function<SettingScrollWindow, BooleanSettingEntry> CUSTOM_ENTITY_MODELS;
+
+    public static Function<SettingScrollWindow, BooleanSettingEntry> CUSTOM_GUIS;
+
+    public static Function<SettingScrollWindow, BooleanSettingEntry> USE_VBO;
+
+
+
     public static Function<SettingScrollWindow, SSliderSettingEntry> AO_LEVEL;
 
+
+
     public static Function<SettingScrollWindow, DropdownSettingEntry> CHAT_BACKGROUND;
+
+    public static Function<SettingScrollWindow, DropdownSettingEntry> DYNAMIC_LIGHTS;
+
+    public static Function<SettingScrollWindow, DropdownSettingEntry> MIPMAP_TYPE;
+
+    public static Function<SettingScrollWindow, DropdownSettingEntry> BETTER_GRASS;
+
+    public static Function<SettingScrollWindow, DropdownSettingEntry> CONNECTED_TEXTURES;
 
 
 
@@ -199,6 +236,36 @@ public enum SettingsManager {
 
     private Field of_ao_level;
 
+    private Field of_dynamic_lights;
+
+    private Field of_use_vbo;
+
+    private Field of_mipmap_type;
+
+    private Field of_emissive_textures;
+
+    private Field of_random_entities;
+
+    private Field of_better_grass;
+
+    private Field of_better_snow;
+
+    private Field of_custom_fonts;
+
+    private Field of_custom_colors;
+
+    private Field of_connected_textures;
+
+    private Field of_natural_textures;
+
+    private Field of_custom_sky;
+
+    private Field of_custom_items;
+
+    private Field of_custom_entity_models;
+
+    private Field of_custom_guis;
+
     {
         minecraft = Minecraft.getInstance();
         gameSettings = minecraft.gameSettings;
@@ -220,8 +287,24 @@ public enum SettingsManager {
                 of_chat_background = GameSettings.class.getDeclaredField("ofChatBackground");
                 of_chat_shadow = GameSettings.class.getDeclaredField("ofChatShadow");
                 of_ao_level = GameSettings.class.getDeclaredField("ofAoLevel");
+                of_dynamic_lights = GameSettings.class.getDeclaredField("ofDynamicLights");
+                of_use_vbo = GameSettings.class.getDeclaredField("ofUseVbo");
+                of_mipmap_type = GameSettings.class.getDeclaredField("ofMipmapType");
+                of_emissive_textures = GameSettings.class.getDeclaredField("ofEmissiveTextures");
+                of_random_entities = GameSettings.class.getDeclaredField("ofRandomEntities");
+                of_better_grass = GameSettings.class.getDeclaredField("ofBetterGrass");
+                of_better_snow = GameSettings.class.getDeclaredField("ofBetterSnow");
+                of_custom_fonts = GameSettings.class.getDeclaredField("ofCustomFonts");
+                of_custom_colors = GameSettings.class.getDeclaredField("ofCustomColors");
+                of_connected_textures = GameSettings.class.getDeclaredField("ofConnectedTextures");
+                of_natural_textures = GameSettings.class.getDeclaredField("ofNaturalTextures");
+                of_custom_sky = GameSettings.class.getDeclaredField("ofCustomSky");
+                of_custom_items = GameSettings.class.getDeclaredField("ofCustomItems");
+                of_custom_entity_models = GameSettings.class.getDeclaredField("ofCustomEntityModels");
+                of_custom_guis = GameSettings.class.getDeclaredField("ofCustomGuis");
             } catch (NoSuchFieldException e) {
                 e.printStackTrace();
+                throw new RuntimeException();
             }
         }
 
@@ -368,6 +451,7 @@ public enum SettingsManager {
         });
 
         if (ModIntegration.optifineLoaded) {
+
             DYNAMIC_FOV = window -> new BooleanSettingEntry(window, I18n.format("of.options.DYNAMIC_FOV"),
                     SettingsManager.INSTANCE.getDynamicFov(), SettingsManager.INSTANCE::setDynamicFov);
 
@@ -382,6 +466,55 @@ public enum SettingsManager {
             CHAT_BACKGROUND = window -> new DropdownSettingEntry(window, I18n.format("of.options.CHAT_BACKGROUND"),
                     SettingsManager.INSTANCE.getChatBackgroundTexts(),
                     SettingsManager.INSTANCE.getChatBackgroundIndex(), SettingsManager.INSTANCE::setChatBackgroundIndex);
+
+            DYNAMIC_LIGHTS = window -> new DropdownSettingEntry(window, I18n.format("of.options.DYNAMIC_LIGHTS"),
+                    SettingsManager.INSTANCE.getOffFastFancy(),
+                    SettingsManager.INSTANCE.getDynamicLightsIndex(), SettingsManager.INSTANCE::setDynamicLightsIndex);
+
+            USE_VBO = window -> new BooleanSettingEntry(window, I18n.format("options.vbo"),
+                    SettingsManager.INSTANCE.getUseVbo(), SettingsManager.INSTANCE::setUseVbo);
+
+            MIPMAP_TYPE = window -> new DropdownSettingEntry(window, I18n.format("of.options.MIPMAP_TYPE"),
+                    getMipmapTypeTexts(),
+                    getMipmapTypeIndex(), this::setMipmapTypeIndex);
+
+            EMISSIVE_TEXTURES = window -> new BooleanSettingEntry(window, I18n.format("of.options.EMISSIVE_TEXTURES"),
+                    getEmissiveTextures(), this::setEmissiveTextures);
+
+            RANDOM_ENTITIES = window -> new BooleanSettingEntry(window, I18n.format("of.options.RANDOM_ENTITIES"),
+                    getRandomEntities(), this::setRandomEntities);
+
+            BETTER_GRASS = window -> new DropdownSettingEntry(window, I18n.format("of.options.BETTER_GRASS"),
+                    getOffFastFancy(),
+                    getBetterGrassIndex(), this::setBetterGrass);
+
+            BETTER_SNOW = window -> new BooleanSettingEntry(window, I18n.format("of.options.BETTER_SNOW"),
+                    getBetterSnow(), this::setBetterSnow);
+
+            CUSTOM_FONTS = window -> new BooleanSettingEntry(window, I18n.format("of.options.CUSTOM_FONTS"),
+                    getCustomFonts(), this::setCustomFonts);
+
+            CUSTOM_COLORS = window -> new BooleanSettingEntry(window, I18n.format("of.options.CUSTOM_COLORS"),
+                    getCustomColors(), this::setCustomColors);
+
+            CONNECTED_TEXTURES = window -> new DropdownSettingEntry(window, I18n.format("of.options.CONNECTED_TEXTURES"),
+                    getOffFastFancy(),
+                    getConnectedTexturesIndex(), this::setConnectedTexturesIndex);
+
+            NATURAL_TEXTURES = window -> new BooleanSettingEntry(window, I18n.format("of.options.NATURAL_TEXTURES"),
+                    getNaturalTextures(), this::setNaturalTextures);
+
+            CUSTOM_SKY = window -> new BooleanSettingEntry(window, I18n.format("of.options.CUSTOM_SKY"),
+                    getCustomSky(), this::setCustomSky);
+
+            CUSTOM_ITEMS = window -> new BooleanSettingEntry(window, I18n.format("of.options.CUSTOM_ITEMS"),
+                    getCustomItems(), this::setCustomItems);
+
+            CUSTOM_ENTITY_MODELS = window -> new BooleanSettingEntry(window, I18n.format("of.options.CUSTOM_ENTITY_MODELS"),
+                    getCustomEntityModels(), this::setCustomEntityModels);
+
+            CUSTOM_GUIS = window -> new BooleanSettingEntry(window, I18n.format("of.options.CUSTOM_GUIS"),
+                    getCustomGuis(), this::setCustomGuis);
         }
     }
 
@@ -503,7 +636,8 @@ public enum SettingsManager {
     public List<String> getGraphicTexts() {
         return Lists.newArrayList(
                 I18n.format("options.graphics.fancy"),
-                I18n.format("options.graphics.fast"));
+                I18n.format("options.graphics.fast")
+        );
     }
 
     public List<String> getAttackIndicatorTexts() {
@@ -558,13 +692,32 @@ public enum SettingsManager {
         }
     }
 
+    public boolean getUseVbo() {
+        try {
+            return of_use_vbo.getBoolean(gameSettings);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public void setUseVbo(boolean b) {
+        try {
+            of_use_vbo.setBoolean(gameSettings, b);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        minecraft.worldRenderer.loadRenderers();
+    }
+
     @Nonnull
     @SuppressWarnings("NoTranslation")
     public List<String> getChatBackgroundTexts() {
         return Lists.newArrayList(
                 I18n.format("generator.default"),
                 I18n.format("of.general.compact"),
-                I18n.format("options.off"));
+                I18n.format("options.off")
+        );
     }
 
     public int getChatBackgroundIndex() {
@@ -583,10 +736,62 @@ public enum SettingsManager {
         return 0;
     }
 
-    public void setChatBackgroundIndex(int index) {
+    public void setChatBackgroundIndex(int i) {
         try {
-            of_chat_background.setInt(gameSettings, index);
+            if (i == 1) {
+                of_chat_background.setInt(gameSettings, 5);
+            } else if (i == 2) {
+                of_chat_background.setInt(gameSettings, 3);
+            } else {
+                of_chat_background.setInt(gameSettings, 0);
+            }
         } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Nonnull
+    public List<String> getOffFastFancy() {
+        return Lists.newArrayList(
+                I18n.format("options.off"),
+                I18n.format("options.graphics.fast"),
+                I18n.format("options.graphics.fancy")
+        );
+    }
+
+    public int getDynamicLightsIndex() {
+        try {
+            int c = of_dynamic_lights.getInt(gameSettings);
+            if (c == 3) {
+                return 0;
+            } else if (c == 1) {
+                return 1;
+            } else {
+                return 2;
+            }
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public void setDynamicLightsIndex(int i) {
+        try {
+            if (i == 0) {
+                of_dynamic_lights.setInt(gameSettings, 3);
+            } else if (i == 1) {
+                of_dynamic_lights.setInt(gameSettings, 1);
+            } else {
+                of_dynamic_lights.setInt(gameSettings, 2);
+            }
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        try {
+            Class<?> clazz = Class.forName("net.optifine.DynamicLights");
+            Method method = clazz.getDeclaredMethod("removeLights", WorldRenderer.class);
+            method.invoke(null, minecraft.worldRenderer);
+        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             e.printStackTrace();
         }
     }
@@ -625,4 +830,285 @@ public enum SettingsManager {
         }
         minecraft.worldRenderer.loadRenderers();
     }
+
+    @Nonnull
+    public List<String> getMipmapTypeTexts() {
+        return Lists.newArrayList(
+                I18n.format("of.options.mipmap.nearest"),
+                I18n.format("of.options.mipmap.linear"),
+                I18n.format("of.options.mipmap.bilinear"),
+                I18n.format("of.options.mipmap.trilinear")
+        );
+    }
+
+    public int getMipmapTypeIndex() {
+        try {
+            return of_mipmap_type.getInt(gameSettings);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public void setMipmapTypeIndex(int i) {
+        try {
+            of_mipmap_type.setInt(gameSettings, i);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        try {
+            GameSettings.class.getDeclaredMethod("updateMipmaps").invoke(gameSettings);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public boolean getEmissiveTextures() {
+        try {
+            return of_emissive_textures.getBoolean(gameSettings);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public void setEmissiveTextures(boolean b) {
+        try {
+            of_emissive_textures.setBoolean(gameSettings, b);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        minecraft.scheduleResourcesRefresh();
+    }
+
+    public boolean getRandomEntities() {
+        try {
+            return of_random_entities.getBoolean(gameSettings);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public void setRandomEntities(boolean b) {
+        try {
+            of_random_entities.setBoolean(gameSettings, b);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            // FaQ
+            Class.forName("net.optifine.RandomEntities").getDeclaredMethod("update").invoke(null);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public int getBetterGrassIndex() {
+        try {
+            return of_better_grass.getInt(gameSettings) - 1;
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public void setBetterGrass(int i) {
+        try {
+            of_better_grass.setInt(gameSettings, i + 1);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        minecraft.worldRenderer.loadRenderers();
+    }
+
+    public boolean getBetterSnow() {
+        try {
+            return of_better_snow.getBoolean(gameSettings);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public void setBetterSnow(boolean b) {
+        try {
+            of_better_snow.setBoolean(gameSettings, b);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        minecraft.worldRenderer.loadRenderers();
+    }
+
+    public boolean getCustomFonts() {
+        try {
+            return of_custom_fonts.getBoolean(gameSettings);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public void setCustomFonts(boolean b) {
+        try {
+            of_custom_fonts.setBoolean(gameSettings, b);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        try {
+            Class.forName("net.optifine.util.FontUtils").getDeclaredMethod("reloadFonts").invoke(null);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public boolean getCustomColors() {
+        try {
+            return of_custom_colors.getBoolean(gameSettings);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public void setCustomColors(boolean b) {
+        try {
+            of_custom_colors.setBoolean(gameSettings, b);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        try {
+            Class.forName("net.optifine.CustomColors").getDeclaredMethod("update").invoke(null);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        minecraft.worldRenderer.loadRenderers();
+    }
+
+    public int getConnectedTexturesIndex() {
+        try {
+            return of_connected_textures.getInt(gameSettings);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public void setConnectedTexturesIndex(int i) {
+        try {
+            of_connected_textures.set(gameSettings, i);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        if (i == 2) {
+            minecraft.worldRenderer.loadRenderers();
+        } else {
+            minecraft.scheduleResourcesRefresh();
+        }
+    }
+
+    public boolean getNaturalTextures() {
+        try {
+            return of_natural_textures.getBoolean(gameSettings);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public void setNaturalTextures(boolean b) {
+        try {
+            of_natural_textures.setBoolean(gameSettings, b);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        try {
+            Class.forName("net.optifine.NaturalTextures").getDeclaredMethod("update").invoke(null);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        minecraft.worldRenderer.loadRenderers();
+    }
+
+    public boolean getCustomSky() {
+        try {
+            return of_custom_sky.getBoolean(gameSettings);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public void setCustomSky(boolean b) {
+        try {
+            of_custom_sky.setBoolean(gameSettings, b);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        try {
+            Class.forName("net.optifine.CustomSky").getDeclaredMethod("update").invoke(null);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public boolean getCustomItems() {
+        try {
+            return of_custom_items.getBoolean(gameSettings);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public void setCustomItems(boolean b) {
+        try {
+            of_custom_items.setBoolean(gameSettings, b);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        minecraft.scheduleResourcesRefresh();
+    }
+
+    public boolean getCustomEntityModels() {
+        try {
+            return of_custom_entity_models.getBoolean(gameSettings);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public void setCustomEntityModels(boolean b) {
+        try {
+            of_custom_entity_models.setBoolean(gameSettings, b);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        minecraft.scheduleResourcesRefresh();
+    }
+
+    public boolean getCustomGuis() {
+        try {
+            return of_custom_guis.getBoolean(gameSettings);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public void setCustomGuis(boolean b) {
+        try {
+            of_custom_guis.setBoolean(gameSettings, b);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        try {
+            Class.forName("net.optifine.CustomGuis").getDeclaredMethod("update").invoke(null);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
 }

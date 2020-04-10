@@ -167,29 +167,27 @@ public enum GlobalModuleManager {
         if (popup != null) {
             if (popup.keyPressed(keyCode, scanCode, modifiers)) {
                 return true;
+            } else if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+                closePopup();
+                return true;
             }
         } else {
             if (root.keyPressed(keyCode, scanCode, modifiers)) {
                 return true;
-            }
-        }
-        if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
-            if (root.onBack()) {
-                return true;
-            } else {
-                if (popup != null) {
-                    closePopup();
+            } else if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+                if (root.onBack()) {
+                    return true;
                 } else {
                     closeGuiScreen();
                 }
+                return true;
+            } else if (keyCode == GLFW.GLFW_KEY_TAB) {
+                boolean searchNext = !Screen.hasShiftDown();
+                if (!this.changeFocus(searchNext)) {
+                    return this.changeFocus(searchNext);
+                }
+                return true;
             }
-            return true;
-        } else if (keyCode == GLFW.GLFW_KEY_TAB) {
-            boolean searchNext = !Screen.hasShiftDown();
-            if (!this.changeFocus(searchNext)) {
-                return this.changeFocus(searchNext);
-            }
-            return true;
         }
         return false;
     }

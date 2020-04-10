@@ -49,7 +49,7 @@ import java.util.List;
 
 class GlyphCache {
 
-    private static final Marker MARKER = MarkerManager.getMarker("FONT");
+    private static final Marker MARKER = MarkerManager.getMarker("FONTS");
 
     /**
      * The width in pixels of every texture used for caching pre-rendered glyph images. Used by GlyphCache when calculating
