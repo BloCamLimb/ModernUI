@@ -24,6 +24,7 @@ import icyllis.modernui.gui.setting.SettingCategoryGroup;
 import icyllis.modernui.gui.setting.SettingEntry;
 import icyllis.modernui.gui.setting.KeyBindingEntry;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
+import icyllis.modernui.gui.widget.KeyInputBox;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.system.SettingsManager;
 import net.minecraft.client.Minecraft;
@@ -112,6 +113,18 @@ public class SettingControls extends Module {
         }
 
         checkAllConflicts();
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        if (super.mouseClicked(mouseX, mouseY, mouseButton)) {
+            return true;
+        }
+        if (getKeyboardListener() instanceof KeyInputBox) {
+            ((KeyInputBox) getKeyboardListener()).stopEditing();
+            return true;
+        }
+        return false;
     }
 
     /**
