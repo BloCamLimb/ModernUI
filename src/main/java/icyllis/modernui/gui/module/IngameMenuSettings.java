@@ -19,18 +19,21 @@
 package icyllis.modernui.gui.module;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.gui.layout.WidgetLayout;
-import icyllis.modernui.gui.master.*;
+import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.gui.animation.Animation;
+import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.background.MenuSettingsBG;
+import icyllis.modernui.gui.layout.WidgetLayout;
+import icyllis.modernui.gui.master.GlobalModuleManager;
+import icyllis.modernui.gui.master.ModuleGroup;
 import icyllis.modernui.gui.popup.PopupMenu;
 import icyllis.modernui.gui.widget.DropDownMenu;
 import icyllis.modernui.gui.widget.LineTextButton;
+import icyllis.modernui.shader.ShaderTools;
 import icyllis.modernui.system.ModIntegration;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.advancements.AdvancementsScreen;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.StatsScreen;
 import net.minecraft.client.resources.I18n;
 
 import java.lang.reflect.Constructor;
@@ -45,11 +48,14 @@ public class IngameMenuSettings extends ModuleGroup {
 
     private WidgetLayout buttonLayout;
 
+    private float xOffset;
+
     public IngameMenuSettings() {
-        addBackground(new MenuSettingsBG());
+        addDrawable(new MenuSettingsBG());
         buttonLayout = new WidgetLayout(buttons, WidgetLayout.Direction.HORIZONTAL_CENTER, 16);
         Consumer<LineTextButton> consumer = s -> {
-            addWidget(s);
+            addDrawable(s);
+            addMouseListener(s);
             buttons.add(s);
         };
         consumer.accept(new LineTextButton(I18n.format("gui.modernui.settings.tab.general"), 48f,
@@ -70,13 +76,31 @@ public class IngameMenuSettings extends ModuleGroup {
         addChildModule(++i, SettingResourcePack::new);
         addChildModule(++i, SettingLanguage::new);
 
+        GlobalModuleManager.INSTANCE.addAnimation(new Animation(4, true)
+                .applyTo(new Applier(-800, 0, v -> xOffset = v)));
+
         switchChildModule(1);
+    }
+
+    @Override
+    public void draw(float time) {
+        RenderSystem.pushMatrix();
+        RenderSystem.translatef(xOffset, 0, 0);
+        super.draw(time);
+        RenderSystem.popMatrix();
     }
 
     @Override
     public void resize(int width, int height) {
         super.resize(width, height);
         buttonLayout.layout(width / 2f, 20);
+    }
+
+    @Override
+    public int[] changingModule() {
+        GlobalModuleManager.INSTANCE.addAnimation(new Animation(4, true)
+                .applyTo(new Applier(0, 800, v -> xOffset = v)));
+        return new int[]{0, 4};
     }
 
     @SuppressWarnings("NoTranslation")

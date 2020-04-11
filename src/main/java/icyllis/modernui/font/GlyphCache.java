@@ -176,7 +176,7 @@ class GlyphCache {
 
     /**
      * The X coordinate of the upper=left corner in glyphCacheImage where the next glyph image should be stored. Glyphs are
-     * always added left-to-right on the curren tline until it fills up, at which point they continue filling the texture on
+     * always added left-to-right on the current line until it fills up, at which point they continue filling the texture on
      * the next line.
      */
     private int cachePosX = GLYPH_BORDER;

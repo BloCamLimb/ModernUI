@@ -23,10 +23,10 @@ import icyllis.modernui.gui.background.ResourcePackBG;
 import icyllis.modernui.gui.layout.WidgetLayout;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.Module;
-import icyllis.modernui.gui.setting.ResourcePackEntry;
-import icyllis.modernui.gui.setting.ResourcePackGroup;
 import icyllis.modernui.gui.popup.ConfirmCallback;
 import icyllis.modernui.gui.scroll.ScrollWindow;
+import icyllis.modernui.gui.setting.ResourcePackEntry;
+import icyllis.modernui.gui.setting.ResourcePackGroup;
 import icyllis.modernui.gui.widget.ArrowButton;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
@@ -64,13 +64,15 @@ public class SettingResourcePack extends Module {
 
     public SettingResourcePack() {
         minecraft = Minecraft.getInstance();
-        addBackground(new ResourcePackBG());
+        addDrawable(new ResourcePackBG());
 
         Function<Integer, Float> widthFunc = w -> Math.min((w - 80) / 2f - 8f, 240);
         Function<Integer, Float> leftXFunc = w -> w / 2f - widthFunc.apply(w) - 8f;
 
         ScrollWindow<ResourcePackGroup> aWindow = new ScrollWindow<>(this, leftXFunc, h -> 36f, widthFunc, h -> h - 72f);
         ScrollWindow<ResourcePackGroup> sWindow = new ScrollWindow<>(this, w -> w / 2f + 8, h -> 36f, widthFunc, h -> h - 72f);
+
+        minecraft.getResourcePackList().reloadPacksFromFinders();
 
         availableGroup = new ResourcePackGroup(this, aWindow, minecraft.getResourcePackList(), ResourcePackGroup.Type.AVAILABLE);
         selectedGroup = new ResourcePackGroup(this, sWindow, minecraft.getResourcePackList(), ResourcePackGroup.Type.SELECTED);
@@ -92,9 +94,12 @@ public class SettingResourcePack extends Module {
 
         arrowsLayout = new WidgetLayout(list, WidgetLayout.Direction.VERTICAL_POSITIVE, 4);
 
-        addWidget(aWindow);
-        addWidget(sWindow);
-        list.forEach(this::addWidget);
+        addDrawable(aWindow);
+        addMouseListener(aWindow);
+        addDrawable(sWindow);
+        addMouseListener(sWindow);
+        list.forEach(this::addDrawable);
+        list.forEach(this::addMouseListener);
     }
 
     @Override
@@ -109,14 +114,6 @@ public class SettingResourcePack extends Module {
             applyResourcePacks(0);
         }
         return false;
-    }
-
-    @Override
-    public void upperModuleExit() {
-        super.upperModuleExit();
-        if (changed) {
-            applyResourcePacks(0);
-        }
     }
 
     //TODO buttons

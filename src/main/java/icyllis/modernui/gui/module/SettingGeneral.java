@@ -64,7 +64,8 @@ public class SettingGeneral extends Module {
 
         window.addGroups(groups);
 
-        addWidget(window);
+        addDrawable(window);
+        addMouseListener(window);
     }
 
     private void addGameCategory(List<SettingCategoryGroup> groups) {
@@ -107,13 +108,21 @@ public class SettingGeneral extends Module {
         List<SettingEntry> list = new ArrayList<>();
 
         list.add(SettingsManager.CHAT_VISIBILITY.apply(window));
+
         list.add(SettingsManager.CHAT_COLOR.apply(window));
+
         list.add(SettingsManager.CHAT_LINKS.apply(window));
+
         list.add(SettingsManager.CHAT_LINKS_PROMPT.apply(window));
+
         list.add(SettingsManager.CHAT_OPACITY.apply(window));
+
         list.add(SettingsManager.CHAT_SCALE.apply(window));
+
         list.add(SettingsManager.CHAT_WIDTH.apply(window));
+
         list.add(SettingsManager.CHAT_HEIGHT_FOCUSED.apply(window));
+
         list.add(SettingsManager.CHAT_HEIGHT_UNFOCUSED.apply(window));
 
         if (ModIntegration.optifineLoaded) {

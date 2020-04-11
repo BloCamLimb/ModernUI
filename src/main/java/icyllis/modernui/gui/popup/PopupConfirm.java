@@ -63,8 +63,8 @@ public class PopupConfirm extends Module {
      * @param alternative third button between confirm button and cancel button to perform another operation
      */
     public PopupConfirm(ConfirmCallback callback, int seconds, String confirmText, String cancelText, @Nullable String alternative) {
-        addBackground(new Background(4));
-        addBackground(new ConfirmWindowBG());
+        addDrawable(new Background(4));
+        addDrawable(new ConfirmWindowBG());
         List<IWidget> buttons = new ArrayList<>();
         if (seconds > 0) {
             buttons.add(new TextFrameButton.Countdown(confirmText, () -> callback.call(ConfirmCallback.CONFIRM), seconds));
@@ -75,7 +75,8 @@ public class PopupConfirm extends Module {
             buttons.add(new TextFrameButton(alternative, () -> callback.call(ConfirmCallback.ALTERNATIVE)));
         }
         buttons.add(new TextFrameButton(cancelText, () -> callback.call(ConfirmCallback.CANCEL)));
-        buttons.forEach(this::addWidget);
+        buttons.forEach(this::addDrawable);
+        buttons.forEach(this::addMouseListener);
         buttonLayout = new WidgetLayout(buttons, WidgetLayout.Direction.HORIZONTAL_NEGATIVE, 6);
     }
 
