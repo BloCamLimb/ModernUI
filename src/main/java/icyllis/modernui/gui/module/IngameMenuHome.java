@@ -44,9 +44,10 @@ public class IngameMenuHome extends ModuleGroup {
     private List<MenuButton> buttons = new ArrayList<>();
 
     public IngameMenuHome() {
-        addBackground(new MenuHomeBG());
+        addDrawable(new MenuHomeBG());
         Consumer<MenuButton> consumer = s -> {
-            addWidget(s);
+            addDrawable(s);
+            addMouseListener(s);
             buttons.add(s);
         };
         consumer.accept(new MenuButton(w -> 8f, h -> 8f, I18n.format("gui.modernui.menu.back"), 4,

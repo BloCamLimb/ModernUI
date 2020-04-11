@@ -24,9 +24,9 @@ import java.util.List;
 
 public class Module implements IModule, IFocuser {
 
-    private List<IElement> backgrounds = new ArrayList<>();
+    private List<IElement> drawables = new ArrayList<>();
 
-    private List<IWidget> widgets = new ArrayList<>();
+    private List<IMouseListener> mouseListeners = new ArrayList<>();
 
     @Nullable
     private IDraggable draggable;
@@ -40,50 +40,40 @@ public class Module implements IModule, IFocuser {
 
     @Override
     public void draw(float time) {
-        backgrounds.forEach(e -> e.draw(time));
-        widgets.forEach(e -> e.draw(time));
+        drawables.forEach(e -> e.draw(time));
     }
 
     @Override
     public void resize(int width, int height) {
-        backgrounds.forEach(e -> e.resize(width, height));
-        widgets.forEach(e -> e.resize(width, height));
+        drawables.forEach(e -> e.resize(width, height));
     }
 
     @Override
     public void tick(int ticks) {
-        backgrounds.forEach(e -> e.tick(ticks));
-        widgets.forEach(e -> e.tick(ticks));
+        drawables.forEach(e -> e.tick(ticks));
     }
 
-    protected void addBackground(IElement element) {
-        backgrounds.add(element);
+    protected void addDrawable(IElement element) {
+        drawables.add(element);
     }
 
-    protected void addWidget(IWidget widget) {
-        widgets.add(widget);
-    }
-
-    /**
-     * Called when switch child module
-     * If return false, this will be continue called every tick until return true
-     * @param id new child module id
-     * @return false to delay the changing
-     */
-    public boolean changingModule(int id) {
-        return true;
+    protected void addMouseListener(IWidget widget) {
+        mouseListeners.add(widget);
     }
 
     /**
-     * Called when module group changed a module successfully
-     * @param id new module id
+     * Called when upper module group want to switch another child module
+     * and this onBack return false
+     * First value is the delay to switch to another module
+     * Second value is that after new module switched, the duration that current
+     * module should keep (only) to draw. (oh sorry, my statement is too vague)
+     * Both two values must be positive number or 0 (no delay)
+     * Unit: ticks
+     *
+     * @return a array with length of 2
      */
-    public void moduleChanged(int id) {
-
-    }
-
-    public void upperModuleExit() {
-
+    public int[] changingModule() {
+        return new int[]{0, 0};
     }
 
     @Override
@@ -111,11 +101,11 @@ public class Module implements IModule, IFocuser {
     @Override
     public boolean mouseMoved(double mouseX, double mouseY) {
         boolean result = false;
-        for (IWidget widget : widgets) {
-            if (!result && widget.updateMouseHover(mouseX, mouseY)) {
+        for (IMouseListener listener : mouseListeners) {
+            if (!result && listener.updateMouseHover(mouseX, mouseY)) {
                 result = true;
             } else {
-                widget.setMouseHoverExit();
+                listener.setMouseHoverExit();
             }
         }
         return result;
@@ -123,8 +113,8 @@ public class Module implements IModule, IFocuser {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        for (IWidget widget : widgets) {
-            if (widget.isMouseHovered() && widget.mouseClicked(mouseX, mouseY, mouseButton)) {
+        for (IMouseListener listener : mouseListeners) {
+            if (listener.isMouseHovered() && listener.mouseClicked(mouseX, mouseY, mouseButton)) {
                 return true;
             }
         }
@@ -135,9 +125,10 @@ public class Module implements IModule, IFocuser {
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
         if (draggable != null) {
             draggable.onStopDragging(mouseX, mouseY);
+            return true;
         }
-        for (IWidget widget : widgets) {
-            if (widget.isMouseHovered() && widget.mouseReleased(mouseX, mouseY, mouseButton)) {
+        for (IMouseListener listener : mouseListeners) {
+            if (listener.isMouseHovered() && listener.mouseReleased(mouseX, mouseY, mouseButton)) {
                 return true;
             }
         }
@@ -146,8 +137,8 @@ public class Module implements IModule, IFocuser {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
-        for (IWidget widget : widgets) {
-            if (widget.isMouseHovered() && widget.mouseScrolled(amount)) {
+        for (IMouseListener listener : mouseListeners) {
+            if (listener.isMouseHovered() && listener.mouseScrolled(amount)) {
                 return true;
             }
         }

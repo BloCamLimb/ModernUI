@@ -45,19 +45,14 @@ public class SettingLanguage extends Module {
 
         window.addGroups(Lists.newArrayList(group));
 
-        addWidget(window);
+        addDrawable(window);
+        addMouseListener(window);
     }
 
     @Override
     public boolean onBack() {
         applyLanguage();
         return false;
-    }
-
-    @Override
-    public void upperModuleExit() {
-        super.upperModuleExit();
-        applyLanguage();
     }
 
     private void applyLanguage() {

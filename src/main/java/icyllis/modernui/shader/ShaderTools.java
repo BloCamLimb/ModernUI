@@ -28,6 +28,7 @@ import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.system.MemoryUtil;
 
+import javax.annotation.Nullable;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,7 +41,7 @@ import java.util.function.Consumer;
 public class ShaderTools {
 
     public enum Shaders {
-        ;
+        ALPHA("shader/passthrough.vert", "shader/alpha.frag");
 
         private ResourceLocation vert;
 
@@ -62,7 +63,7 @@ public class ShaderTools {
         Arrays.stream(Shaders.values()).forEach(shader -> createProgram(Minecraft.getInstance().getResourceManager(), shader));
     }
 
-    public static void useShader(Shaders shader, Consumer<Integer> callback) {
+    public static void useShader(Shaders shader, @Nullable Consumer<Integer> callback) {
         ShaderProgram instance = PROGRAMS.get(shader);
 
         if (instance != null) {

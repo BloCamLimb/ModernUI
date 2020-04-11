@@ -25,6 +25,7 @@ import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.gui.util.Color3I;
 import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.shader.ShaderTools;
 import icyllis.modernui.system.ConstantsLibrary;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;

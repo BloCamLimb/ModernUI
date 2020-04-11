@@ -18,8 +18,12 @@
 
 package icyllis.modernui.gui.module;
 
+import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.gui.animation.Animation;
+import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.background.MenuSettingsBG;
 import icyllis.modernui.gui.layout.WidgetLayout;
+import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.ModuleGroup;
 import icyllis.modernui.gui.widget.LineTextButton;
 import net.minecraft.client.Minecraft;
@@ -40,16 +44,19 @@ public class IngameMenuStats extends ModuleGroup {
 
     private final ClientPlayNetHandler netHandler;
 
+    private float xOffset;
+
     public IngameMenuStats() {
         netHandler = Objects.requireNonNull(Minecraft.getInstance().getConnection());
         netHandler.sendPacket(new CClientStatusPacket(CClientStatusPacket.State.REQUEST_STATS));
 
-        addBackground(new MenuSettingsBG());
+        addDrawable(new MenuSettingsBG());
 
         buttonLayout = new WidgetLayout(buttons, WidgetLayout.Direction.HORIZONTAL_CENTER, 16);
 
         Consumer<LineTextButton> consumer = s -> {
-            addWidget(s);
+            addDrawable(s);
+            addMouseListener(s);
             buttons.add(s);
         };
         consumer.accept(new LineTextButton(I18n.format("stat.generalButton"), 48f,
@@ -67,13 +74,31 @@ public class IngameMenuStats extends ModuleGroup {
         addChildModule(++i, StatsItems::new);
         addChildModule(++i, StatsMobs::new);
 
+        GlobalModuleManager.INSTANCE.addAnimation(new Animation(4, true)
+                .applyTo(new Applier(-800, 0, v -> xOffset = v)));
+
         switchChildModule(1);
+    }
+
+    @Override
+    public void draw(float time) {
+        RenderSystem.pushMatrix();
+        RenderSystem.translatef(xOffset, 0, 0);
+        super.draw(time);
+        RenderSystem.popMatrix();
     }
 
     @Override
     public void resize(int width, int height) {
         super.resize(width, height);
         buttonLayout.layout(width / 2f, 20);
+    }
+
+    @Override
+    public int[] changingModule() {
+        GlobalModuleManager.INSTANCE.addAnimation(new Animation(4, true)
+                .applyTo(new Applier(0, 800, v -> xOffset = v)));
+        return new int[]{0, 4};
     }
 
     @Override

@@ -53,6 +53,12 @@ public enum GlobalModuleManager {
     private PacketBuffer extraData;
 
     /**
+     * Cached for init
+     */
+    @Nullable
+    private Supplier<IModule> supplier;
+
+    /**
      * The origin of all modules
      */
     private IModule root;
@@ -73,13 +79,20 @@ public enum GlobalModuleManager {
     private float animationTime = 0;
 
     public void openGuiScreen(ITextComponent title, @Nonnull Supplier<IModule> root) {
-        resetTicks();
-        this.root = Objects.requireNonNull(root.get());
+        this.supplier = root;
         minecraft.displayGuiScreen(new ModernUIScreen(title));
     }
 
     public void closeGuiScreen() {
         minecraft.displayGuiScreen(null);
+    }
+
+    public void init(int width, int height) {
+        if (supplier != null) {
+            root = Objects.requireNonNull(supplier.get());
+            supplier = null;
+        }
+        resize(width, height);
     }
 
     /**
@@ -240,7 +253,7 @@ public enum GlobalModuleManager {
         refreshMouse();
     }
 
-    public void resizeModule(IModule module) {
+    public void resizeForModule(IModule module) {
         module.resize(width, height);
     }
 

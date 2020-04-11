@@ -47,9 +47,9 @@ public interface IModule {
     default void tick(int ticks) {}
 
     /**
-     * Called when Esc pressed, return false to continue operation
+     * Called when upper module exit
      *
-     * @return cancel the event
+     * @return return true to cancel the event
      */
     default boolean onBack() {
         return false;

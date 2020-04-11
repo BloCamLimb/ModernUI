@@ -18,6 +18,7 @@
 
 package icyllis.modernui.gui.master;
 
+import icyllis.modernui.gui.util.DelayedRunnable;
 import icyllis.modernui.system.MouseTools;
 
 import javax.annotation.Nullable;
@@ -35,6 +36,9 @@ public class ModuleGroup extends Module {
 
     @Nullable
     private Module child;
+
+    @Nullable
+    private Module shadow;
 
     /**
      * Current id, target id. 0 = no child
@@ -67,19 +71,36 @@ public class ModuleGroup extends Module {
         if (id < 0) {
             return;
         }
-        if (id == cid || cid != tid) {
+        if (id == cid || cid != tid || shadow != null) {
+            return;
+        }
+        int[] op = new int[]{0, 0};
+        if (child != null) {
+            if (child.onBack()) {
+                return;
+            }
+            op = child.changingModule();
+        }
+        if (op.length != 2 || op[0] < 0 || op[1] < 0) {
             return;
         }
         tid = id;
-        if (child != null) {
-             if (!child.changingModule(id)) {
-                 return;
-             }
-            child.upperModuleExit();
+        int cKeep = op[1];
+        if (op[0] > 0) {
+            GlobalModuleManager.INSTANCE.scheduleRunnable(new DelayedRunnable(() -> switchToTid(cKeep), op[0]));
+            return;
+        }
+        switchToTid(cKeep);
+    }
+
+    private void switchToTid(int cKeep) {
+        if (cKeep > 0) {
+            shadow = child;
+            GlobalModuleManager.INSTANCE.scheduleRunnable(new DelayedRunnable(() -> shadow = null, cKeep));
         }
         child = childModules.getOrDefault(tid, () -> null).get();
         if (child != null) {
-            GlobalModuleManager.INSTANCE.resizeModule(child);
+            GlobalModuleManager.INSTANCE.resizeForModule(child);
         }
         cid = tid;
         moduleChanged(cid);
@@ -98,12 +119,18 @@ public class ModuleGroup extends Module {
     @Override
     public void draw(float time) {
         if (overDraw) {
+            if (shadow != null) {
+                shadow.draw(time);
+            }
             if (child != null) {
                 child.draw(time);
             }
             super.draw(time);
         } else {
             super.draw(time);
+            if (shadow != null) {
+                shadow.draw(time);
+            }
             if (child != null) {
                 child.draw(time);
             }
@@ -124,19 +151,6 @@ public class ModuleGroup extends Module {
         if (child != null) {
             child.tick(ticks);
         }
-        if (cid != tid && child != null ) {
-            if (child.changingModule(tid)) {
-                child.upperModuleExit();
-                child = childModules.getOrDefault(tid, () -> null).get();
-                if (child != null) {
-                    GlobalModuleManager.INSTANCE.resizeModule(child);
-                }
-                cid = tid;
-                moduleChanged(cid);
-                GlobalModuleManager.INSTANCE.refreshMouse();
-                MouseTools.useDefaultCursor();
-            }
-        }
     }
 
     @Override
@@ -147,9 +161,12 @@ public class ModuleGroup extends Module {
         return false;
     }
 
-    @Override
+    /**
+     * Called when module group changed a module successfully
+     * @param id new module id
+     */
     public void moduleChanged(int id) {
-        super.moduleChanged(id);
+
     }
 
     @Override

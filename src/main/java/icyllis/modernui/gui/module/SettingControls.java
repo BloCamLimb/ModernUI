@@ -59,7 +59,8 @@ public class SettingControls extends Module {
 
         window.addGroups(groups);
 
-        addWidget(window);
+        addDrawable(window);
+        addMouseListener(window);
     }
 
     private void addMouseCategory(List<SettingCategoryGroup> groups) {

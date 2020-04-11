@@ -43,7 +43,7 @@ public final class ModernUIScreen extends Screen {
     @Override
     public void init(Minecraft minecraft, int width, int height) {
         super.init(minecraft, width, height);
-        manager.resize(width, height);
+        manager.init(width, height);
         BlurHandler.INSTANCE.forceBlur();
     }
 
