@@ -64,7 +64,7 @@ public class SettingGeneral extends Module {
 
         window.addGroups(groups);
 
-        addDrawable(window);
+        addElements(window);
         addMouseListener(window);
     }
 

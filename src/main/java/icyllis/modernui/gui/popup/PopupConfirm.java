@@ -20,8 +20,6 @@ package icyllis.modernui.gui.popup;
 
 import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.IFontRenderer;
-import icyllis.modernui.gui.animation.Animation;
-import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.background.Background;
 import icyllis.modernui.gui.background.ConfirmWindowBG;
 import icyllis.modernui.gui.layout.WidgetLayout;
@@ -63,8 +61,8 @@ public class PopupConfirm extends Module {
      * @param alternative third button between confirm button and cancel button to perform another operation
      */
     public PopupConfirm(ConfirmCallback callback, int seconds, String confirmText, String cancelText, @Nullable String alternative) {
-        addDrawable(new Background(4));
-        addDrawable(new ConfirmWindowBG());
+        addElements(new Background(4));
+        addElements(new ConfirmWindowBG());
         List<IWidget> buttons = new ArrayList<>();
         if (seconds > 0) {
             buttons.add(new TextFrameButton.Countdown(confirmText, () -> callback.call(ConfirmCallback.CONFIRM), seconds));
@@ -75,7 +73,7 @@ public class PopupConfirm extends Module {
             buttons.add(new TextFrameButton(alternative, () -> callback.call(ConfirmCallback.ALTERNATIVE)));
         }
         buttons.add(new TextFrameButton(cancelText, () -> callback.call(ConfirmCallback.CANCEL)));
-        buttons.forEach(this::addDrawable);
+        buttons.forEach(this::addElements);
         buttons.forEach(this::addMouseListener);
         buttonLayout = new WidgetLayout(buttons, WidgetLayout.Direction.HORIZONTAL_NEGATIVE, 6);
     }

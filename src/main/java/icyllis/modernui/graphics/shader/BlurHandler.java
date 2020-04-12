@@ -16,10 +16,9 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.shader;
+package icyllis.modernui.graphics.shader;
 
 import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.shader.Shader;

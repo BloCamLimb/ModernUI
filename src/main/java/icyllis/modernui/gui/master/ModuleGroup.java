@@ -18,7 +18,6 @@
 
 package icyllis.modernui.gui.master;
 
-import icyllis.modernui.gui.util.DelayedRunnable;
 import icyllis.modernui.system.MouseTools;
 
 import javax.annotation.Nullable;

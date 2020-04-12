@@ -53,7 +53,7 @@ public class SettingVideo extends Module {
 
         window.addGroups(groups);
 
-        addDrawable(window);
+        addElements(window);
         addMouseListener(window);
     }
 

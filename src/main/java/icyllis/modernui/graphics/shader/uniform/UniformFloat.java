@@ -16,31 +16,21 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.util;
+package icyllis.modernui.graphics.shader.uniform;
 
-import icyllis.modernui.gui.master.GlobalModuleManager;
+import icyllis.modernui.graphics.shader.ShaderUniform;
+import org.lwjgl.opengl.GL20;
 
-public class DelayedRunnable {
+public class UniformFloat extends ShaderUniform<Float> {
 
-    private final Runnable runnable;
-
-    private final int finishTick;
-
-    private boolean finish = false;
-
-    public DelayedRunnable(Runnable runnable, int delayedTick) {
-        this.runnable = runnable;
-        this.finishTick = GlobalModuleManager.INSTANCE.getTicks() + delayedTick;
+    public UniformFloat(int location) {
+        super(location);
     }
 
-    public void tick(int ticks) {
-        if (ticks >= finishTick) {
-            runnable.run();
-            finish = true;
+    @Override
+    public void load(Float data) {
+        if (location != -1) {
+            GL20.glUniform1f(location, data);
         }
-    }
-
-    public boolean shouldRemove() {
-        return finish;
     }
 }

@@ -19,18 +19,15 @@
 package icyllis.modernui.system;
 
 import icyllis.modernui.font.TrueTypeRenderer;
+import icyllis.modernui.graphics.shader.ShaderTools;
 import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.gui.master.ModernUIScreen;
-import icyllis.modernui.shader.BlurHandler;
-import net.minecraft.client.Minecraft;
+import icyllis.modernui.graphics.shader.BlurHandler;
 import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.player.PlayerContainerEvent;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
@@ -38,6 +35,8 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+
+import javax.annotation.Nonnull;
 
 @SuppressWarnings("unused")
 @Mod.EventBusSubscriber
@@ -104,7 +103,7 @@ public class EventsHandler {
         }
 
         @SubscribeEvent
-        public static void onConfigChange(ModConfig.ModConfigEvent event) {
+        public static void onConfigChange(@Nonnull ModConfig.ModConfigEvent event) {
             ConfigManager.loadConfig(event.getConfig().getSpec());
         }
 

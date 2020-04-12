@@ -1,3 +1,3 @@
 # Modern UI
 ### News
-#### I'm switching to modern OpenGL, it will take a long time
+#### See curseforge page for details [curseforge](https://www.curseforge.com/minecraft/mc-mods/modern-ui)

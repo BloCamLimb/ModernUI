@@ -20,7 +20,7 @@ package icyllis.modernui.gui.stats;
 
 import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.gui.scroll.UniformScrollGroup;
-import icyllis.modernui.gui.util.Color3I;
+import icyllis.modernui.math.Color3i;
 import net.minecraft.stats.Stat;
 import net.minecraft.stats.StatisticsManager;
 import net.minecraft.stats.Stats;
@@ -37,7 +37,7 @@ public class GeneralStatsGroup extends UniformScrollGroup<GeneralStatsEntry> {
         super(window, ENTRY_HEIGHT);
         int i = 0;
         for (Stat<ResourceLocation> stat : Stats.CUSTOM) {
-            entries.add(new GeneralStatsEntry(stat, (i & 1) == 0 ? Color3I.WHILE : Color3I.GRAY));
+            entries.add(new GeneralStatsEntry(stat, (i & 1) == 0 ? Color3i.WHILE : Color3i.GRAY));
             i++;
         }
         height = entries.size() * entryHeight;

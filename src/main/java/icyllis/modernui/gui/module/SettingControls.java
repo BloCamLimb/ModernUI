@@ -59,7 +59,7 @@ public class SettingControls extends Module {
 
         window.addGroups(groups);
 
-        addDrawable(window);
+        addElements(window);
         addMouseListener(window);
     }
 

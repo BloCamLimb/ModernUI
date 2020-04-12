@@ -44,9 +44,9 @@ public class IngameMenuHome extends ModuleGroup {
     private List<MenuButton> buttons = new ArrayList<>();
 
     public IngameMenuHome() {
-        addDrawable(new MenuHomeBG());
+        addElements(new MenuHomeBG());
         Consumer<MenuButton> consumer = s -> {
-            addDrawable(s);
+            addElements(s);
             addMouseListener(s);
             buttons.add(s);
         };

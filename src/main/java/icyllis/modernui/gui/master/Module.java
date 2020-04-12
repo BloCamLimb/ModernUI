@@ -24,7 +24,7 @@ import java.util.List;
 
 public class Module implements IModule, IFocuser {
 
-    private List<IElement> drawables = new ArrayList<>();
+    private List<IElement> elements = new ArrayList<>();
 
     private List<IMouseListener> mouseListeners = new ArrayList<>();
 
@@ -40,24 +40,24 @@ public class Module implements IModule, IFocuser {
 
     @Override
     public void draw(float time) {
-        drawables.forEach(e -> e.draw(time));
+        elements.forEach(e -> e.draw(time));
     }
 
     @Override
     public void resize(int width, int height) {
-        drawables.forEach(e -> e.resize(width, height));
+        elements.forEach(e -> e.resize(width, height));
     }
 
     @Override
     public void tick(int ticks) {
-        drawables.forEach(e -> e.tick(ticks));
+        elements.forEach(e -> e.tick(ticks));
     }
 
-    protected void addDrawable(IElement element) {
-        drawables.add(element);
+    protected void addElements(IElement element) {
+        elements.add(element);
     }
 
-    protected void addMouseListener(IWidget widget) {
+    protected void addMouseListener(IMouseListener widget) {
         mouseListeners.add(widget);
     }
 

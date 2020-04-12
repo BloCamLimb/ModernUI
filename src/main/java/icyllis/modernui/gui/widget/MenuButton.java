@@ -20,14 +20,12 @@ package icyllis.modernui.gui.widget;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.DrawTools;
-import icyllis.modernui.gui.util.Color3I;
-import icyllis.modernui.font.TextAlign;
-import icyllis.modernui.shader.ShaderTools;
+import icyllis.modernui.math.Color3i;
 import icyllis.modernui.system.ConstantsLibrary;
-import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureManager;
 import org.lwjgl.opengl.GL11;
@@ -95,12 +93,13 @@ public class MenuButton extends AnimatedWidget {
         RenderSystem.scalef(0.5f, 0.5f, 1);
         textureManager.bindTexture(ConstantsLibrary.ICONS);
         DrawTools.blit(x1 * 2, y1 * 2, u, 0, 32, 32);
+
         RenderSystem.popMatrix();
 
         // right side text box
         if (sideText.isAnimationOpen()) {
             DrawTools.fillRectWithFrame(x1 + 27, y1 + 1, x1 + 31 + frameSizeW, y1 + 15, 0.51f, 0x000000, 0.4f * frameAlpha, 0x404040, 0.8f * frameAlpha);
-            fontRenderer.drawString(text, x1 + 31, y1 + 4, Color3I.WHILE, textAlpha, TextAlign.LEFT);
+            fontRenderer.drawString(text, x1 + 31, y1 + 4, Color3i.WHILE, textAlpha, TextAlign.LEFT);
         }
     }
 

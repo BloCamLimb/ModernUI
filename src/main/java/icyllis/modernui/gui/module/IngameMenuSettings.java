@@ -20,6 +20,7 @@ package icyllis.modernui.gui.module;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.sun.javafx.geom.Matrix3f;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.background.MenuSettingsBG;
@@ -29,15 +30,17 @@ import icyllis.modernui.gui.master.ModuleGroup;
 import icyllis.modernui.gui.popup.PopupMenu;
 import icyllis.modernui.gui.widget.DropDownMenu;
 import icyllis.modernui.gui.widget.LineTextButton;
-import icyllis.modernui.shader.ShaderTools;
 import icyllis.modernui.system.ModIntegration;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.renderer.Matrix4f;
 import net.minecraft.client.resources.I18n;
+import org.lwjgl.opengl.GL11;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -51,10 +54,10 @@ public class IngameMenuSettings extends ModuleGroup {
     private float xOffset;
 
     public IngameMenuSettings() {
-        addDrawable(new MenuSettingsBG());
+        addElements(new MenuSettingsBG());
         buttonLayout = new WidgetLayout(buttons, WidgetLayout.Direction.HORIZONTAL_CENTER, 16);
         Consumer<LineTextButton> consumer = s -> {
-            addDrawable(s);
+            addElements(s);
             addMouseListener(s);
             buttons.add(s);
         };
