@@ -50,12 +50,12 @@ public class IngameMenuStats extends ModuleGroup {
         netHandler = Objects.requireNonNull(Minecraft.getInstance().getConnection());
         netHandler.sendPacket(new CClientStatusPacket(CClientStatusPacket.State.REQUEST_STATS));
 
-        addDrawable(new MenuSettingsBG());
+        addElements(new MenuSettingsBG());
 
         buttonLayout = new WidgetLayout(buttons, WidgetLayout.Direction.HORIZONTAL_CENTER, 16);
 
         Consumer<LineTextButton> consumer = s -> {
-            addDrawable(s);
+            addElements(s);
             addMouseListener(s);
             buttons.add(s);
         };

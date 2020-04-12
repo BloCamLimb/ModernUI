@@ -19,7 +19,6 @@
 package icyllis.modernui.gui.master;
 
 import icyllis.modernui.gui.animation.IAnimation;
-import icyllis.modernui.gui.util.DelayedRunnable;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.system.MouseTools;
 import net.minecraft.client.Minecraft;

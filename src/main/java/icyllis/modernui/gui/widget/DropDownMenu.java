@@ -23,7 +23,7 @@ import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.util.Color3I;
+import icyllis.modernui.math.Color3i;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
@@ -125,15 +125,15 @@ public class DropDownMenu extends FlexibleWidget {
             }
             if (i == selected) {
                 if (align == Align.LEFT) {
-                    fontRenderer.drawString(text, x1 + 3, cy + 2, Color3I.BLUE_C, textAlpha, TextAlign.LEFT);
+                    fontRenderer.drawString(text, x1 + 3, cy + 2, Color3i.BLUE_C, textAlpha, TextAlign.LEFT);
                 } else {
-                    fontRenderer.drawString(text, x2 - 3, cy + 2, Color3I.BLUE_C, textAlpha, TextAlign.RIGHT);
+                    fontRenderer.drawString(text, x2 - 3, cy + 2, Color3i.BLUE_C, textAlpha, TextAlign.RIGHT);
                 }
             } else {
                 if (align == Align.LEFT) {
-                    fontRenderer.drawString(text, x1 + 3, cy + 2, Color3I.WHILE, textAlpha, TextAlign.LEFT);
+                    fontRenderer.drawString(text, x1 + 3, cy + 2, Color3i.WHILE, textAlpha, TextAlign.LEFT);
                 } else {
-                    fontRenderer.drawString(text, x2 - 3, cy + 2, Color3I.WHILE, textAlpha, TextAlign.RIGHT);
+                    fontRenderer.drawString(text, x2 - 3, cy + 2, Color3i.WHILE, textAlpha, TextAlign.RIGHT);
                 }
             }
         }

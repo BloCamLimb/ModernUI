@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.shader;
+package icyllis.modernui.graphics.shader;
 
 import net.minecraft.client.shader.IShaderManager;
 import net.minecraft.client.shader.ShaderLoader;
@@ -58,4 +58,5 @@ public class ShaderProgram implements IShaderManager {
     public ShaderLoader getFragmentShaderLoader() {
         return fragment;
     }
+
 }

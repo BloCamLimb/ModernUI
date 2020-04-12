@@ -16,11 +16,12 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.util;
+package icyllis.modernui.math;
 
 import javax.annotation.Nullable;
 
-public enum Color3I {
+//TODO change to float and not enum
+public enum Color3i {
     BLACK(0, 0, 0),
     DARK_BLUE(0, 0, 170),
     DARK_GREEN(0, 170, 0),
@@ -44,7 +45,7 @@ public enum Color3I {
 
     private float redF, greenF, blueF;
 
-    Color3I(int red, int green, int blue) {
+    Color3i(int red, int green, int blue) {
         this.red = red;
         this.green = green;
         this.blue = blue;
@@ -79,7 +80,7 @@ public enum Color3I {
     }
 
     @Nullable
-    public static Color3I getFormattingColor(int code) {
+    public static Color3i getFormattingColor(int code) {
         if (code >= 0 && code <= 15) {
             return values()[code];
         }

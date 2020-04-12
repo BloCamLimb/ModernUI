@@ -19,8 +19,7 @@
 package icyllis.modernui.system;
 
 import icyllis.modernui.api.ModernUI_API;
-import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.shader.BlurHandler;
+import icyllis.modernui.graphics.shader.ShaderTools;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLEnvironment;
@@ -58,6 +57,7 @@ public class ModernUI {
                 f = ModernUI_API.class.getDeclaredField("gui");
                 f.setAccessible(true);
                 f.set(ModernUI_API.INSTANCE, GuiManager.INSTANCE);
+                ShaderTools.addResourceListener();
             }
         } catch (NoSuchFieldException | IllegalAccessException | ClassCastException e) {
             throw new RuntimeException(e);

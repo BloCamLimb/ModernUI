@@ -46,7 +46,7 @@ public class StatsBlocks extends Module {
 
         window.addGroups(Lists.newArrayList(group));
 
-        addDrawable(window);
+        addElements(window);
         addMouseListener(window);
     }
 

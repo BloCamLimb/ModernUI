@@ -64,7 +64,7 @@ public class SettingResourcePack extends Module {
 
     public SettingResourcePack() {
         minecraft = Minecraft.getInstance();
-        addDrawable(new ResourcePackBG());
+        addElements(new ResourcePackBG());
 
         Function<Integer, Float> widthFunc = w -> Math.min((w - 80) / 2f - 8f, 240);
         Function<Integer, Float> leftXFunc = w -> w / 2f - widthFunc.apply(w) - 8f;
@@ -94,11 +94,11 @@ public class SettingResourcePack extends Module {
 
         arrowsLayout = new WidgetLayout(list, WidgetLayout.Direction.VERTICAL_POSITIVE, 4);
 
-        addDrawable(aWindow);
+        addElements(aWindow);
         addMouseListener(aWindow);
-        addDrawable(sWindow);
+        addElements(sWindow);
         addMouseListener(sWindow);
-        list.forEach(this::addDrawable);
+        list.forEach(this::addElements);
         list.forEach(this::addMouseListener);
     }
 

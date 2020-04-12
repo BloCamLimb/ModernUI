@@ -23,7 +23,7 @@ import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.gui.scroll.UniformScrollGroup;
-import icyllis.modernui.gui.util.Color3I;
+import icyllis.modernui.math.Color3i;
 import net.minecraft.util.text.TextFormatting;
 
 import java.util.List;
@@ -60,7 +60,7 @@ public class SettingCategoryGroup extends UniformScrollGroup<SettingEntry> {
 
     @Override
     public void draw(float time) {
-        fontRenderer.drawString(title, centerX - 160, y1 + 14, Color3I.WHILE, 1.0f, TextAlign.LEFT);
+        fontRenderer.drawString(title, centerX - 160, y1 + 14, Color3i.WHILE, 1.0f, TextAlign.LEFT);
         super.draw(time);
     }
 
