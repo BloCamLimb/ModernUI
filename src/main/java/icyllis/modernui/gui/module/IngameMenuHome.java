@@ -35,6 +35,7 @@ import net.minecraftforge.fml.client.gui.screen.ModListScreen;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.function.Consumer;
 
 public class IngameMenuHome extends ModuleGroup {
@@ -42,6 +43,9 @@ public class IngameMenuHome extends ModuleGroup {
     private Minecraft minecraft = Minecraft.getInstance();
 
     private List<MenuButton> buttons = new ArrayList<>();
+
+    // true = right false = left
+    private boolean moduleTransitionDirection = true;
 
     public IngameMenuHome() {
         addElements(new MenuHomeBG());
@@ -64,12 +68,23 @@ public class IngameMenuHome extends ModuleGroup {
                 this::exit, -1));
 
         // advancements
-        addChildModule(2, IngameMenuStats::new);
+        addChildModule(2, () -> new IngameMenuStats(this));
         // mod list
-        addChildModule(4, IngameMenuSettings::new);
+        addChildModule(4, () -> new IngameMenuSettings(this));
 
         // always draw at the top
         makeOverDraw();
+    }
+
+    /**
+     * @param constr is in constructor
+     */
+    public boolean getTransitionDirection(boolean constr) {
+        boolean b = moduleTransitionDirection;
+        if (constr) {
+            moduleTransitionDirection = new Random().nextBoolean();
+        }
+        return b;
     }
 
     @Override

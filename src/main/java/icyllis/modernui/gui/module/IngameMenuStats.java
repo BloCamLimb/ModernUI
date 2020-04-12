@@ -46,7 +46,10 @@ public class IngameMenuStats extends ModuleGroup {
 
     private float xOffset;
 
-    public IngameMenuStats() {
+    private final IngameMenuHome home;
+
+    public IngameMenuStats(IngameMenuHome home) {
+        this.home = home;
         netHandler = Objects.requireNonNull(Minecraft.getInstance().getConnection());
         netHandler.sendPacket(new CClientStatusPacket(CClientStatusPacket.State.REQUEST_STATS));
 
@@ -74,8 +77,14 @@ public class IngameMenuStats extends ModuleGroup {
         addChildModule(++i, StatsItems::new);
         addChildModule(++i, StatsMobs::new);
 
-        GlobalModuleManager.INSTANCE.addAnimation(new Animation(4, true)
-                .applyTo(new Applier(-800, 0, v -> xOffset = v)));
+        int c = GlobalModuleManager.INSTANCE.getWindowWidth();
+        if (home.getTransitionDirection(true)) {
+            GlobalModuleManager.INSTANCE.addAnimation(new Animation(4, true)
+                    .applyTo(new Applier(-c, 0, v -> xOffset = v)));
+        } else {
+            GlobalModuleManager.INSTANCE.addAnimation(new Animation(4, true)
+                    .applyTo(new Applier(c, 0, v -> xOffset = v)));
+        }
 
         switchChildModule(1);
     }
@@ -96,9 +105,15 @@ public class IngameMenuStats extends ModuleGroup {
 
     @Override
     public int[] changingModule() {
-        GlobalModuleManager.INSTANCE.addAnimation(new Animation(4, true)
-                .applyTo(new Applier(0, 800, v -> xOffset = v)));
-        return new int[]{0, 4};
+        int c = GlobalModuleManager.INSTANCE.getWindowWidth();
+        if (home.getTransitionDirection(false)) {
+            GlobalModuleManager.INSTANCE.addAnimation(new Animation(4, true)
+                    .applyTo(new Applier(0, c, v -> xOffset = v)));
+        } else {
+            GlobalModuleManager.INSTANCE.addAnimation(new Animation(4, true)
+                    .applyTo(new Applier(0, -c, v -> xOffset = v)));
+        }
+        return new int[]{1, 4};
     }
 
     @Override

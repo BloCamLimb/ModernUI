@@ -53,7 +53,10 @@ public class IngameMenuSettings extends ModuleGroup {
 
     private float xOffset;
 
-    public IngameMenuSettings() {
+    private final IngameMenuHome home;
+
+    public IngameMenuSettings(IngameMenuHome home) {
+        this.home = home;
         addElements(new MenuSettingsBG());
         buttonLayout = new WidgetLayout(buttons, WidgetLayout.Direction.HORIZONTAL_CENTER, 16);
         Consumer<LineTextButton> consumer = s -> {
@@ -79,8 +82,14 @@ public class IngameMenuSettings extends ModuleGroup {
         addChildModule(++i, SettingResourcePack::new);
         addChildModule(++i, SettingLanguage::new);
 
-        GlobalModuleManager.INSTANCE.addAnimation(new Animation(4, true)
-                .applyTo(new Applier(-800, 0, v -> xOffset = v)));
+        int c = GlobalModuleManager.INSTANCE.getWindowWidth();
+        if (home.getTransitionDirection(true)) {
+            GlobalModuleManager.INSTANCE.addAnimation(new Animation(4, true)
+                    .applyTo(new Applier(-c, 0, v -> xOffset = v)));
+        } else {
+            GlobalModuleManager.INSTANCE.addAnimation(new Animation(4, true)
+                    .applyTo(new Applier(c, 0, v -> xOffset = v)));
+        }
 
         switchChildModule(1);
     }
@@ -101,9 +110,15 @@ public class IngameMenuSettings extends ModuleGroup {
 
     @Override
     public int[] changingModule() {
-        GlobalModuleManager.INSTANCE.addAnimation(new Animation(4, true)
-                .applyTo(new Applier(0, 800, v -> xOffset = v)));
-        return new int[]{0, 4};
+        int c = GlobalModuleManager.INSTANCE.getWindowWidth();
+        if (home.getTransitionDirection(false)) {
+            GlobalModuleManager.INSTANCE.addAnimation(new Animation(4, true)
+                    .applyTo(new Applier(0, c, v -> xOffset = v)));
+        } else {
+            GlobalModuleManager.INSTANCE.addAnimation(new Animation(4, true)
+                    .applyTo(new Applier(0, -c, v -> xOffset = v)));
+        }
+        return new int[]{1, 4};
     }
 
     @SuppressWarnings("NoTranslation")

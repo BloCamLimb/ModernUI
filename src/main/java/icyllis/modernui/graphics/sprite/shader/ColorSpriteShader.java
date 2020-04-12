@@ -32,6 +32,9 @@ import org.lwjgl.opengl.GL20;
 import java.io.IOException;
 import java.nio.FloatBuffer;
 
+/**
+ * Shaders don't work until mojang updates to modern OpenGL
+ */
 public class ColorSpriteShader extends SpriteShader {
 
     public static ColorSpriteShader INSTANCE;
