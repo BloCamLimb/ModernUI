@@ -42,6 +42,8 @@ public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget implemen
 
     protected final Minecraft minecraft;
 
+    private int gameWindowWidth;
+
     public final int borderThickness = 6;
 
     protected float centerX;
@@ -77,8 +79,8 @@ public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget implemen
 
         double scale = minecraft.getMainWindow().getGuiScaleFactor();
         GL11.glEnable(GL11.GL_SCISSOR_TEST);
-        GL11.glScissor((int) (x1 * scale), (int) (minecraft.getMainWindow().getFramebufferHeight() - (y2 * scale)),
-                    (int) (width * scale), (int) (height * scale));
+        GL11.glScissor(0, (int) (minecraft.getMainWindow().getFramebufferHeight() - (y2 * scale)),
+                    (int) (gameWindowWidth * scale), (int) (height * scale));
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -132,6 +134,7 @@ public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget implemen
     @Override
     public void resize(int width, int height) {
         super.resize(width, height);
+        this.gameWindowWidth = width;
         this.x1 = xResizer.apply(width);
         this.y1 = yResizer.apply(height);
         this.width = wResizer.apply(width);

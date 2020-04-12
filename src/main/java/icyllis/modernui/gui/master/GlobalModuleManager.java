@@ -31,9 +31,8 @@ import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 
 /**
@@ -71,7 +70,7 @@ public enum GlobalModuleManager {
 
     private List<IAnimation> animations = new ArrayList<>();
 
-    private List<DelayedRunnable> runnables = new ArrayList<>();
+    private List<DelayedRunnable> runnables = new CopyOnWriteArrayList<>();
 
     private int ticks = 0;
 
@@ -252,7 +251,7 @@ public enum GlobalModuleManager {
         refreshMouse();
     }
 
-    public void resizeForModule(IModule module) {
+    public void resizeForModule(@Nonnull IModule module) {
         module.resize(width, height);
     }
 
@@ -273,7 +272,9 @@ public enum GlobalModuleManager {
         if (popup != null) {
             popup.tick(ticks);
         }
-        runnables.forEach(e -> e.tick(ticks));
+        for (DelayedRunnable runnable : runnables) {
+            runnable.tick(ticks);
+        }
         runnables.removeIf(DelayedRunnable::shouldRemove);
     }
 

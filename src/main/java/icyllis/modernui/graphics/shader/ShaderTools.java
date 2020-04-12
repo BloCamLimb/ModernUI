@@ -22,6 +22,7 @@ import icyllis.modernui.graphics.shader.uniform.UniformFloat;
 import icyllis.modernui.graphics.shader.uniform.UniformMatrix4f;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.shader.ShaderLinkHelper;
 import net.minecraft.client.shader.ShaderLoader;
 import net.minecraft.resources.IReloadableResourceManager;
@@ -50,7 +51,6 @@ public class ShaderTools {
         if (manager instanceof IReloadableResourceManager) {
             ((IReloadableResourceManager) manager).addReloadListener(
                     (ISelectiveResourceReloadListener) ShaderTools::compileShaders);
-            ModernUI.LOGGER.debug("Shader listener added");
         }
     }
 

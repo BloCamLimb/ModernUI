@@ -34,27 +34,22 @@ import java.util.function.Function;
 
 public class MenuButton extends AnimatedWidget {
 
-    protected TextureManager textureManager = Minecraft.getInstance().getTextureManager();
+    private TextureManager textureManager = Minecraft.getInstance().getTextureManager();
 
     private Function<Integer, Float> xResizer;
-
     private Function<Integer, Float> yResizer;
 
     private AnimatedElement sideText = new SideTextAnimator(this);
 
-    private float u;
+    private final String text;
+    private final float u;
+    private final Runnable leftClickFunc;
+    private final int id;
 
     private float brightness = 0.5f;
-
-    private String text;
-
-    private float frameAlpha = 0, textAlpha = 0;
-
+    private float frameAlpha = 0;
+    private float textAlpha = 0;
     private float frameSizeW = 0;
-
-    protected Runnable leftClickFunc;
-
-    private int id;
 
     public MenuButton(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, String text, int index, Runnable leftClick, int id) {
         super(16, 16);
