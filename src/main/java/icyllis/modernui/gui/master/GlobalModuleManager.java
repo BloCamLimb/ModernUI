@@ -18,16 +18,19 @@
 
 package icyllis.modernui.gui.master;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import icyllis.modernui.gui.animation.IAnimation;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.system.MouseTools;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.renderer.ItemRenderer;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.text.ITextComponent;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.glfw.GLFW;
+import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -236,6 +239,8 @@ public enum GlobalModuleManager {
         if (popup != null) {
             popup.draw(animationTime);
         }
+        GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+        GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
     }
 
     protected void resize(int width, int height) {

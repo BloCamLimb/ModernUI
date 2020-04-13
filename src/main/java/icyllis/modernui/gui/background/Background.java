@@ -41,7 +41,8 @@ public class Background implements IElement {
 
     @Override
     public void draw(float time) {
-        DrawTools.fillRectWithColor(0, 0, width, height, 0, 0, 0, alpha);
+        DrawTools.INSTANCE.setRGBA(0, 0, 0, alpha);
+        DrawTools.INSTANCE.drawRect(0, 0, width, height);
     }
 
     @Override

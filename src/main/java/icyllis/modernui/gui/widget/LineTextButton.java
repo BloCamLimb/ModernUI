@@ -49,7 +49,8 @@ public class LineTextButton extends AnimatedWidget {
     public void draw(float time) {
         super.draw(time);
         fontRenderer.drawString(text, x1 + width / 2f, y1 + 2, textBrightness, TextAlign.CENTER);
-        DrawTools.fillRectWithColor(x1 + sizeWOffset, y1 + 11, x2 - sizeWOffset, y1 + 12, 0xffffff, 1);
+        DrawTools.INSTANCE.setRGBA(0, 0, 0, 1);
+        DrawTools.INSTANCE.drawRect(x1 + sizeWOffset, y1 + 11, x2 - sizeWOffset, y1 + 12);
     }
 
     @Override
