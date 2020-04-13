@@ -18,9 +18,11 @@
 
 package icyllis.modernui.gui.animation;
 
+import com.google.common.collect.Lists;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 
 import java.util.Arrays;
+import java.util.List;
 
 public class Animation implements IAnimation {
 
@@ -30,7 +32,7 @@ public class Animation implements IAnimation {
 
     private float startTime;
 
-    private Applier[] appliers;
+    private List<Applier> appliers;
 
     private boolean finish = false;
 
@@ -51,7 +53,7 @@ public class Animation implements IAnimation {
     }
 
     public Animation applyTo(Applier... appliers) {
-        this.appliers = appliers;
+        this.appliers = Lists.newArrayList(appliers);
         return this;
     }
 
@@ -63,7 +65,7 @@ public class Animation implements IAnimation {
     public Animation onFinish(Runnable runnable) {
         finishRunnable = runnable;
         if (appliers == null) {
-            appliers = new Applier[0];
+            appliers = Lists.newArrayList();
         }
         return this;
     }
@@ -78,7 +80,7 @@ public class Animation implements IAnimation {
             p = (float) Math.sin(p * Math.PI / 2);
         }
         float progress = p;
-        Arrays.stream(appliers).forEach(e -> e.apply(progress));
+        appliers.forEach(e -> e.apply(progress));
         if (progress == 1) {
             finish = true;
             finishRunnable.run();

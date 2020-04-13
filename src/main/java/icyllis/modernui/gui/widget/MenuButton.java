@@ -93,7 +93,9 @@ public class MenuButton extends AnimatedWidget {
 
         // right side text box
         if (sideText.isAnimationOpen()) {
-            DrawTools.fillRectWithFrame(x1 + 27, y1 + 1, x1 + 31 + frameSizeW, y1 + 15, 0.51f, 0x000000, 0.4f * frameAlpha, 0x404040, 0.8f * frameAlpha);
+            DrawTools.INSTANCE.setColor(0.2f, 0.8f, 0.9f, 0.5f);
+            DrawTools.INSTANCE.drawRing(90, 80, 24, 30);
+            //DrawTools.fillRectWithFrame(x1 + 27, y1 + 1, x1 + 31 + frameSizeW, y1 + 15, 0.51f, 0x000000, 0.4f * frameAlpha, 0x404040, 0.8f * frameAlpha);
             fontRenderer.drawString(text, x1 + 31, y1 + 4, Color3i.WHILE, textAlpha, TextAlign.LEFT);
         }
     }

@@ -19,14 +19,100 @@
 package icyllis.modernui.gui.master;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.gui.AbstractGui;
-import net.minecraft.client.gui.screen.MainMenuScreen;
+import icyllis.modernui.gui.shader.RingShader;
+import icyllis.modernui.graphics.shader.ShaderTools;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import org.lwjgl.opengl.GL11;
 
+/**
+ * Use paint brush and drawing board to draw everything!
+ */
 @SuppressWarnings("DuplicatedCode")
-public class DrawTools {
+public enum DrawTools {
+    INSTANCE;
+
+    private final Tessellator tessellator = Tessellator.getInstance();
+
+    private final BufferBuilder bufferBuilder = tessellator.getBuffer();
+
+    /**
+     * Paint colors
+     */
+    private float r;
+    private float g;
+    private float b;
+    private float a;
+
+    private final RingShader ring = RingShader.INSTANCE;
+
+    {
+        resetColor();
+    }
+
+    /**
+     * Set current paint color
+     * @param r red [0,1]
+     * @param g green [0,1]
+     * @param b blue [0,1]
+     * @param a alpha [0,1]
+     */
+    public void setColor(float r, float g, float b, float a) {
+        this.r = r;
+        this.g = g;
+        this.b = b;
+        this.a = a;
+    }
+
+    /**
+     * Set current paint color
+     * @param r red [0,1]
+     * @param g green [0,1]
+     * @param b blue [0,1]
+     */
+    public void setColor(float r, float g, float b) {
+        this.r = r;
+        this.g = g;
+        this.b = b;
+    }
+
+    /**
+     * Set current paint alpha
+     * @param a alpha [0,1]
+     */
+    public void setAlpha(float a) {
+        this.a = a;
+    }
+
+    /**
+     * Reset color to default color
+     */
+    public void resetColor() {
+        r = 1.0f;
+        g = 1.0f;
+        b = 1.0f;
+        a = 1.0f;
+    }
+
+    public void drawRect(float left, float top, float right, float bottom) {
+        RenderSystem.disableTexture();
+        bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+        bufferBuilder.pos(left, bottom, 0.0D).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(right, bottom, 0.0D).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(right, top, 0.0D).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(left, top, 0.0D).color(r, g, b, a).endVertex();
+        tessellator.draw();
+        RenderSystem.enableTexture();
+    }
+
+    public void drawRing(float centerX, float centerY, float innerRadius, float totalRadius) {
+        ShaderTools.useShader(ring);
+        ring.setRadius(innerRadius, totalRadius);
+        ring.setCenterPos(centerX, centerY);
+        drawRect(centerX - totalRadius, centerY - totalRadius, centerX + totalRadius, centerY + totalRadius);
+        ShaderTools.releaseShader();
+    }
 
     public static void fillRectWithColor(float left, float top, float right, float bottom, int RGBA) {
         int a = RGBA >> 24 & 255;
@@ -45,6 +131,7 @@ public class DrawTools {
         bufferbuilder.pos(left, top, 0.0D).color(r, g, b, a).endVertex();
         tessellator.draw();
         RenderSystem.enableTexture();
+
     }
 
     public static void fillRectWithColor(float left, float top, float right, float bottom, int RGB, float alpha) {

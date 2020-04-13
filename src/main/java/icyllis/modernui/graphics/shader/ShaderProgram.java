@@ -18,12 +18,23 @@
 
 package icyllis.modernui.graphics.shader;
 
+import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.shader.IShaderManager;
+import net.minecraft.client.shader.ShaderLinkHelper;
 import net.minecraft.client.shader.ShaderLoader;
+import net.minecraft.resources.IResourceManager;
+import net.minecraft.util.ResourceLocation;
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.MarkerManager;
 
 import javax.annotation.Nonnull;
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 public class ShaderProgram implements IShaderManager {
+
+    public static final Marker MARKER = MarkerManager.getMarker("SHADER");
 
     private int program;
 
@@ -31,10 +42,35 @@ public class ShaderProgram implements IShaderManager {
 
     private ShaderLoader fragment;
 
-    public ShaderProgram(int program, ShaderLoader vertex, ShaderLoader fragment) {
-        this.program = program;
-        this.vertex = vertex;
-        this.fragment = fragment;
+    private final String vert;
+
+    private final String frag;
+
+    public ShaderProgram(String vert, String frag) {
+        this.vert = vert;
+        this.frag = frag;
+    }
+
+    protected void compile(IResourceManager manager) {
+        if (vertex != null || fragment != null) {
+            ShaderLinkHelper.deleteShader(this);
+        }
+        try {
+            this.vertex = createShader(manager, new ResourceLocation(ModernUI.MODID, String.format("shader/%s.%s", vert, "vert")), ShaderLoader.ShaderType.VERTEX);
+            this.fragment = createShader(manager, new ResourceLocation(ModernUI.MODID, String.format("shader/%s.%s", frag, "frag")), ShaderLoader.ShaderType.FRAGMENT);
+            this.program = ShaderLinkHelper.createProgram();
+            ShaderLinkHelper.linkProgram(this);
+        } catch (IOException e) {
+            ModernUI.LOGGER.fatal(MARKER, "Can't create program, please report this issue");
+            e.printStackTrace();
+        }
+    }
+
+    @Nonnull
+    private ShaderLoader createShader(IResourceManager manager, @Nonnull ResourceLocation location, ShaderLoader.ShaderType type) throws IOException {
+        try (InputStream is = new BufferedInputStream(manager.getResource(location).getInputStream())) {
+            return ShaderLoader.func_216534_a(type, location.toString(), is);
+        }
     }
 
     @Override
