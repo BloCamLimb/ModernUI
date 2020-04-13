@@ -18,11 +18,14 @@
 
 package icyllis.modernui.gui.master;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.shader.RingShader;
 import icyllis.modernui.graphics.shader.ShaderTools;
+import icyllis.modernui.gui.shader.RoundedRectShader;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.texture.Texture;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import org.lwjgl.opengl.GL11;
 
@@ -30,8 +33,9 @@ import org.lwjgl.opengl.GL11;
  * Use paint brush and drawing board to draw everything!
  */
 @SuppressWarnings("DuplicatedCode")
-public enum DrawTools {
-    INSTANCE;
+public class DrawTools {
+
+    public static final DrawTools INSTANCE = new DrawTools();
 
     private final Tessellator tessellator = Tessellator.getInstance();
 
@@ -41,14 +45,23 @@ public enum DrawTools {
      * Paint colors
      */
     private float r;
+
     private float g;
+
     private float b;
+
     private float a;
 
     private final RingShader ring = RingShader.INSTANCE;
 
+    private final RoundedRectShader roundedRect = RoundedRectShader.INSTANCE;
+
     {
         resetColor();
+    }
+
+    public DrawTools() {
+
     }
 
     /**
@@ -58,11 +71,9 @@ public enum DrawTools {
      * @param b blue [0,1]
      * @param a alpha [0,1]
      */
-    public void setColor(float r, float g, float b, float a) {
-        this.r = r;
-        this.g = g;
-        this.b = b;
-        this.a = a;
+    public void setRGBA(float r, float g, float b, float a) {
+        setRGB(r, g, b);
+        setAlpha(a);
     }
 
     /**
@@ -71,10 +82,20 @@ public enum DrawTools {
      * @param g green [0,1]
      * @param b blue [0,1]
      */
-    public void setColor(float r, float g, float b) {
+    public void setRGB(float r, float g, float b) {
         this.r = r;
         this.g = g;
         this.b = b;
+    }
+
+    /**
+     * Set current paint color without alpha
+     * @param color rgb hex color
+     */
+    public void setColor(int color) {
+        r = (color >> 16 & 255) / 255.0f;
+        g = (color >> 8 & 255) / 255.0f;
+        b = (color & 255) / 255.0f;
     }
 
     /**
@@ -89,12 +110,17 @@ public enum DrawTools {
      * Reset color to default color
      */
     public void resetColor() {
-        r = 1.0f;
-        g = 1.0f;
-        b = 1.0f;
-        a = 1.0f;
+        setRGBA(1.0f, 1.0f, 1.0f, 1.0f);
     }
 
+    /**
+     * Draw a rectangle on screen with given rect area
+     *
+     * @param left x1
+     * @param top y1
+     * @param right x2
+     * @param bottom y2
+     */
     public void drawRect(float left, float top, float right, float bottom) {
         RenderSystem.disableTexture();
         bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
@@ -106,14 +132,33 @@ public enum DrawTools {
         RenderSystem.enableTexture();
     }
 
-    public void drawRing(float centerX, float centerY, float innerRadius, float totalRadius) {
+    /**
+     * Draw ring / annulus on screen with given center pos and radius
+     *
+     * Default feather radius: 1 px
+     *
+     * @param centerX center x pos
+     * @param centerY center y pos
+     * @param innerRadius inner circle radius
+     * @param outerRadius outer circle radius
+     */
+    public void drawRing(float centerX, float centerY, float innerRadius, float outerRadius) {
         ShaderTools.useShader(ring);
-        ring.setRadius(innerRadius, totalRadius);
+        ring.setRadius(innerRadius, outerRadius);
         ring.setCenterPos(centerX, centerY);
-        drawRect(centerX - totalRadius, centerY - totalRadius, centerX + totalRadius, centerY + totalRadius);
+        drawRect(centerX - outerRadius, centerY - outerRadius, centerX + outerRadius, centerY + outerRadius);
         ShaderTools.releaseShader();
     }
 
+    public void drawRoundedRect(float left, float top, float right, float bottom, float radius) {
+        ShaderTools.useShader(roundedRect);
+        roundedRect.setRadius(radius);
+        roundedRect.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
+        drawRect(left, top, right, bottom);
+        ShaderTools.releaseShader();
+    }
+
+    @Deprecated
     public static void fillRectWithColor(float left, float top, float right, float bottom, int RGBA) {
         int a = RGBA >> 24 & 255;
         int r = RGBA >> 16 & 255;
@@ -134,6 +179,7 @@ public enum DrawTools {
 
     }
 
+    @Deprecated
     public static void fillRectWithColor(float left, float top, float right, float bottom, int RGB, float alpha) {
         int a = (int) (alpha * 255F);
         int r = RGB >> 16 & 255;
@@ -153,6 +199,7 @@ public enum DrawTools {
         RenderSystem.enableTexture();
     }
 
+    @Deprecated
     public static void fillRectWithColor(float left, float top, float right, float bottom, float r, float g, float b, float a) {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferbuilder = tessellator.getBuffer();

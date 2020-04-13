@@ -23,34 +23,35 @@ import icyllis.modernui.gui.master.IElement;
 
 public class ResourcePackBG implements IElement {
 
-    private float x11, x12, y1, y2;
+    private float x1, x2, y1, y2;
 
     private boolean drawSide = false;
 
-    private float x21, x22, x31, x32;
+    private float x3, x4, x5, x6;
 
     @Override
     public void draw(float time) {
-        DrawTools.fillRectWithColor(x11, y1, x12, y2, 0x45000000);
+        DrawTools.INSTANCE.setRGBA(0, 0, 0, 0.27f);
+        DrawTools.INSTANCE.drawRect(x1, y1, x2, y2);
         if (drawSide) {
-            DrawTools.fillRectWithColor(x21, y1, x22, y2, 0x45000000);
-            DrawTools.fillRectWithColor(x31, y1, x32, y2, 0x45000000);
+            DrawTools.INSTANCE.drawRect(x3, y1, x4, y2);
+            DrawTools.INSTANCE.drawRect(x5, y1, x6, y2);
         }
     }
 
     @Override
     public void resize(int width, int height) {
-        x11 = width / 2f - 8f;
-        x12 = width / 2f + 8f;
+        x1 = width / 2f - 8f;
+        x2 = width / 2f + 8f;
         y1 = 36f;
         y2 = height - 36f;
         float crd = (width - 80) / 2f - 8f;
         if (crd > 240) {
             drawSide = true;
-            x21 = 40f;
-            x22 = width / 2f - 248;
-            x31 = width / 2f + 248;
-            x32 = width - 40f;
+            x3 = 40f;
+            x4 = width / 2f - 248;
+            x5 = width / 2f + 248;
+            x6 = width - 40f;
         } else {
             drawSide = false;
         }

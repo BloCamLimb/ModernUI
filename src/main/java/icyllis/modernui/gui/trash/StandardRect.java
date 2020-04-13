@@ -49,7 +49,7 @@ public class StandardRect extends Element {
 
     @Override
     public void draw(float time) {
-        DrawTools.fillRectWithColor(x, y, x + sizeW, y + sizeH, colorR, colorG, colorB, opacity);
+        //DrawTools.fillRectWithColor(x, y, x + sizeW, y + sizeH, colorR, colorG, colorB, opacity);
     }
 
     @Override
