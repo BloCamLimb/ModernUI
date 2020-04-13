@@ -20,7 +20,6 @@ package icyllis.modernui.gui.module;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.sun.javafx.geom.Matrix3f;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.background.MenuSettingsBG;
@@ -34,13 +33,10 @@ import icyllis.modernui.system.ModIntegration;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.renderer.Matrix4f;
 import net.minecraft.client.resources.I18n;
-import org.lwjgl.opengl.GL11;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -129,13 +125,13 @@ public class IngameMenuSettings extends ModuleGroup {
         if (ModIntegration.optifineLoaded) {
             tabs.add(I18n.format("of.options.shadersTitle") + " (WIP)");
         }
-        DropDownMenu menu = new DropDownMenu(tabs, getCid() - 5, 12, this::assetsActions, DropDownMenu.Align.RIGHT);
+        DropDownMenu menu = new DropDownMenu(tabs, getCid() - 5, 12, this::assetsButtonMenuActions, DropDownMenu.Align.RIGHT);
         LineTextButton t = buttons.get(4);
         menu.setPos(t.getRight() - 8, t.getBottom() + 1);
         GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(menu), false);
     }
 
-    private void assetsActions(int index) {
+    private void assetsButtonMenuActions(int index) {
         if (index >= 0 && index <= 2) {
             if (ModIntegration.optifineLoaded && index == 2) {
                 try {

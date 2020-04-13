@@ -20,7 +20,6 @@ package icyllis.modernui.math;
 
 import javax.annotation.Nullable;
 
-//TODO change to float and not enum
 public enum Color3i {
     BLACK(0, 0, 0),
     DARK_BLUE(0, 0, 170),
