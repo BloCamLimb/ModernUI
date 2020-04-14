@@ -35,7 +35,7 @@ public class ArrowButton extends AnimatedWidget {
 
     private float tx, ty;
 
-    private boolean available = true;
+    private boolean available;
 
     private float brightness = 0.8f;
 

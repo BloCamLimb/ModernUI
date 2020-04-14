@@ -69,10 +69,10 @@ public class ItemStatsEntry extends UniformScrollEntry {
             i++;
         }
         if (drawTooltip) {
-            DrawTools.INSTANCE.setRGBA(0.25f, 0.5f, 0.5f, 0.5f);
+            DrawTools.INSTANCE.setRGBA(0.5f, 0.5f, 0.5f, 0.25f);
             DrawTools.INSTANCE.drawRect(x1 + 1, y1 + 1, x1 + 19, y2 - 1);
             float l = fontRenderer.getStringWidth(itemName);
-            DrawTools.INSTANCE.setRGBA(0.5f, 0, 0, 0);
+            DrawTools.INSTANCE.setRGBA(0, 0, 0, 0.5f);
             DrawTools.INSTANCE.drawRect(x1 + 22, y1 + 3, x1 + 28 + l, y2 - 3);
             fontRenderer.drawString(itemName, x1 + 25, y1 + 6);
         }
