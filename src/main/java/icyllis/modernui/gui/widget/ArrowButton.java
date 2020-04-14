@@ -118,7 +118,7 @@ public class ArrowButton extends AnimatedWidget {
     }
 
     @Override
-    protected void onAnimationOpen() {
+    protected void createOpenAnimations() {
         if (available) {
             manager.addAnimation(new Animation(3)
                     .applyTo(new Applier(0.8f, 1.0f, v -> brightness = v))
@@ -129,7 +129,7 @@ public class ArrowButton extends AnimatedWidget {
     }
 
     @Override
-    protected void onAnimationClose() {
+    protected void createCloseAnimations() {
         if (available) {
             manager.addAnimation(new Animation(3)
                     .applyTo(new Applier(1.0f, 0.8f, v -> brightness = v))

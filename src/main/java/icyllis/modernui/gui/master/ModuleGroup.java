@@ -18,9 +18,6 @@
 
 package icyllis.modernui.gui.master;
 
-import icyllis.modernui.system.MouseTools;
-import net.minecraft.client.Minecraft;
-
 import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;

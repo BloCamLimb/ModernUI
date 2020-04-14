@@ -46,10 +46,10 @@ public abstract class UniformScrollEntry implements IMouseListener {
     /**
      * Called when layout
      */
-    public void layout(float x1, float x2, float y) {
-        this.x1 = x1;
-        this.x2 = x2;
-        this.centerX = (x1 + x2) / 2f;
+    public void onLayout(float left, float right, float y) {
+        this.x1 = left;
+        this.x2 = right;
+        this.centerX = (left + right) / 2f;
         this.y1 = y;
         this.y2 = y + height;
     }

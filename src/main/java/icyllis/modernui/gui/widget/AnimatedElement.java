@@ -46,11 +46,11 @@ public abstract class AnimatedElement implements IElement {
     private void checkState() {
         if (prepareToOpen && openState == 0) {
             openState = 1;
-            onAnimationOpen();
+            createOpenAnimations();
             prepareToOpen = false;
         } else if (prepareToClose && openState == 2) {
             openState = 3;
-            onAnimationClose();
+            createCloseAnimations();
             prepareToClose = false;
         }
     }
@@ -58,12 +58,12 @@ public abstract class AnimatedElement implements IElement {
     /**
      * Create open animations and set open state to 2 on last animation finished
      */
-    protected abstract void onAnimationOpen();
+    protected abstract void createOpenAnimations();
 
     /**
      * Create close animations and set open state to 0 on last animation finished
      */
-    protected abstract void onAnimationClose();
+    protected abstract void createCloseAnimations();
 
     protected final void startOpenAnimation() {
         if (!lockState && openState != 2) {

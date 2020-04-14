@@ -20,13 +20,9 @@ package icyllis.modernui.gui.widget;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.TextAlign;
-import icyllis.modernui.font.FontTools;
-import icyllis.modernui.font.IFontRenderer;
-import icyllis.modernui.gui.master.IElement;
 import icyllis.modernui.gui.master.IFocuser;
 import icyllis.modernui.gui.master.IKeyboardListener;
-import icyllis.modernui.system.MouseTools;
-import net.minecraft.client.gui.IGuiEventListener;
+import icyllis.modernui.gui.master.MouseTools;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;

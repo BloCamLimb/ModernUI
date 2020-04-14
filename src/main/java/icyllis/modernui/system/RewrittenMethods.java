@@ -20,7 +20,7 @@ package icyllis.modernui.system;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.gui.module.IngameMenuHome;
+import icyllis.modernui.impl.module.IngameMenuHome;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.IngameMenuScreen;

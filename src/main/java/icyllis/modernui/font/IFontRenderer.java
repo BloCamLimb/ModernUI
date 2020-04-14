@@ -18,7 +18,7 @@
 
 package icyllis.modernui.font;
 
-import icyllis.modernui.math.Color3i;
+import icyllis.modernui.gui.math.Color3i;
 
 public interface IFontRenderer {
 

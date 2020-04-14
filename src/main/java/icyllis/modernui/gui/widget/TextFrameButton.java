@@ -32,16 +32,16 @@ public class TextFrameButton extends AnimatedWidget {
 
     private float frameAlpha = 0;
 
-    private float frameWidthOffset, frameHeightOffset;
+    private float fwo, fho;
 
     private Runnable leftClickFunc;
 
     public TextFrameButton(String text, Runnable onLeftClick) {
         this.text = text;
         this.width = Math.max(28, fontRenderer.getStringWidth(text) + 6);
-        this.frameWidthOffset = width;
         this.height = 13;
-        this.frameHeightOffset = height;
+        this.fwo = width;
+        this.fho = height;
         this.leftClickFunc = onLeftClick;
     }
 
@@ -49,8 +49,10 @@ public class TextFrameButton extends AnimatedWidget {
     public void draw(float time) {
         super.draw(time);
         fontRenderer.drawString(text, x1 + width / 2f, y1 + 2, textBrightness, TextAlign.CENTER);
-        if (frameAlpha > 0)
-            DrawTools.fillFrameWithColor(x1 - frameWidthOffset, y1 - frameHeightOffset, x2 + frameWidthOffset, y2 + frameHeightOffset, 0.51f, 0x808080, frameAlpha);
+        if (frameAlpha > 0) {
+            DrawTools.INSTANCE.setRGBA(0.5f, 0.5f, 0.5f, frameAlpha);
+            DrawTools.INSTANCE.drawOutlineRect(x1 - fwo, y1 - fho, x2 + fwo, y2 + fho, 0.51f);
+        }
     }
 
     @Override
@@ -59,10 +61,10 @@ public class TextFrameButton extends AnimatedWidget {
     }
 
     @Override
-    protected void onAnimationOpen() {
+    protected void createOpenAnimations() {
         manager.addAnimation(new Animation(2, true)
-                .applyTo(new Applier(width / 2f, 0, value -> frameWidthOffset = value),
-                        new Applier(6, 0, value -> frameHeightOffset = value)));
+                .applyTo(new Applier(width / 2f, 0, value -> fwo = value),
+                        new Applier(6, 0, value -> fho = value)));
         manager.addAnimation(new Animation(2)
                 .applyTo(new Applier(1, value -> frameAlpha = value),
                         new Applier(0.7f, 1, value -> textBrightness = value))
@@ -70,7 +72,7 @@ public class TextFrameButton extends AnimatedWidget {
     }
 
     @Override
-    protected void onAnimationClose() {
+    protected void createCloseAnimations() {
         manager.addAnimation(new Animation(4)
                 .applyTo(new Applier(1, 0, value -> frameAlpha = value),
                         new Applier(1, 0.7f, value -> textBrightness = value))

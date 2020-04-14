@@ -19,7 +19,7 @@
 package icyllis.modernui.system;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.gui.setting.*;
+import icyllis.modernui.impl.setting.*;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;

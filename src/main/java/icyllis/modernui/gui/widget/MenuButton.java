@@ -24,7 +24,7 @@ import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.DrawTools;
-import icyllis.modernui.math.Color3i;
+import icyllis.modernui.gui.math.Color3i;
 import icyllis.modernui.system.ConstantsLibrary;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureManager;
@@ -101,14 +101,14 @@ public class MenuButton extends AnimatedWidget {
     }
 
     @Override
-    protected void onAnimationOpen() {
+    protected void createOpenAnimations() {
         manager.addAnimation(new Animation(4)
                 .applyTo(new Applier(0.5f, 1.0f, value -> brightness = value))
                 .onFinish(() -> setOpenState(true)));
     }
 
     @Override
-    protected void onAnimationClose() {
+    protected void createCloseAnimations() {
         manager.addAnimation(new Animation(4)
                 .applyTo(new Applier(1.0f, 0.5f, value -> brightness = value))
                 .onFinish(() -> setOpenState(false)));
@@ -172,7 +172,7 @@ public class MenuButton extends AnimatedWidget {
         }
 
         @Override
-        protected void onAnimationOpen() {
+        protected void createOpenAnimations() {
             manager.addAnimation(new Animation(3, true)
                     .applyTo(new Applier(-4.0f, instance.getTextLength() + 4.0f, instance::setFrameSizeW)));
             manager.addAnimation(new Animation(3)
@@ -184,7 +184,7 @@ public class MenuButton extends AnimatedWidget {
         }
 
         @Override
-        protected void onAnimationClose() {
+        protected void createCloseAnimations() {
             manager.addAnimation(new Animation(5)
                     .applyTo(new Applier(1.0f, 0.0f, v -> {
                         instance.setTextAlpha(v);
