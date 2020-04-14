@@ -102,6 +102,9 @@ public class TrueTypeRenderer implements IFontRenderer {
         // Fix for what RenderLivingBase#setBrightness does
         GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL11.GL_MODULATE);
 
+        //TODO remove this state control
+        RenderSystem.enableTexture();
+
         /* Make sure the entire string is cached before rendering and return its glyph representation */
         StringCache.Entry entry = cache.getOrCacheString(str);
 

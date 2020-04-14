@@ -51,7 +51,7 @@ public class TextFrameButton extends AnimatedWidget {
         fontRenderer.drawString(text, x1 + width / 2f, y1 + 2, textBrightness, TextAlign.CENTER);
         if (frameAlpha > 0) {
             DrawTools.INSTANCE.setRGBA(0.5f, 0.5f, 0.5f, frameAlpha);
-            DrawTools.INSTANCE.drawOutlineRect(x1 - fwo, y1 - fho, x2 + fwo, y2 + fho, 0.51f);
+            DrawTools.INSTANCE.drawRectOutline(x1 - fwo, y1 - fho, x2 + fwo, y2 + fho, 0.51f);
         }
     }
 

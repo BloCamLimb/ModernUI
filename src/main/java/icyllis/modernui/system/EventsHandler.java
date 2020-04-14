@@ -19,9 +19,8 @@
 package icyllis.modernui.system;
 
 import icyllis.modernui.font.TrueTypeRenderer;
-import icyllis.modernui.graphics.shader.ShaderTools;
 import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.graphics.shader.BlurHandler;
+import icyllis.modernui.graphics.BlurHandler;
 import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;

@@ -144,7 +144,7 @@ public class ItemStatsGroup extends UniformScrollGroup<ItemStatsEntry> {
         int i = 0;
         float x3 = centerX - 80;
         for (int c : uMap) {
-            DrawTools.blit(x3 + i * 50, y1 + 1, c * 18, 18, 18, 18, 128, 128);
+            DrawTools.blit(x3 + i * 50, y1 + 1, 18, 18, c * 18, 18, 128, 128);
             i++;
         }
     }

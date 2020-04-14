@@ -20,6 +20,10 @@ package icyllis.modernui.gui.master;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.font.FontTools;
+import icyllis.modernui.font.IFontRenderer;
+import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.gui.shader.RingShader;
 import icyllis.modernui.graphics.shader.ShaderTools;
 import icyllis.modernui.gui.shader.RoundedRectShader;
@@ -37,9 +41,23 @@ public class DrawTools {
 
     public static final DrawTools INSTANCE = new DrawTools();
 
+    /**
+     * Instances
+     */
     private final Tessellator tessellator = Tessellator.getInstance();
 
     private final BufferBuilder bufferBuilder = tessellator.getBuffer();
+
+    private final IFontRenderer fontRenderer = TrueTypeRenderer.INSTANCE;
+
+
+    /**
+     * Shaders instance
+     */
+    private final RingShader ring = RingShader.INSTANCE;
+
+    private final RoundedRectShader roundedRect = RoundedRectShader.INSTANCE;
+
 
     /**
      * Paint colors
@@ -54,17 +72,16 @@ public class DrawTools {
 
 
     /**
+     * Text align
+     */
+    private TextAlign textAlign = TextAlign.LEFT;
+
+
+    /**
      * GL states
      */
     private boolean lineAA = false;
 
-
-    /**
-     * Shaders instance
-     */
-    private final RingShader ring = RingShader.INSTANCE;
-
-    private final RoundedRectShader roundedRect = RoundedRectShader.INSTANCE;
 
     public DrawTools() {
 
@@ -134,6 +151,21 @@ public class DrawTools {
         }
     }
 
+    public void setTextAlign(TextAlign align) {
+        this.textAlign = align;
+    }
+
+    /**
+     * Draw text on screen, text formatting and bidi are supported
+     *
+     * @param text formatted string
+     * @param x x pos
+     * @param y y pos
+     */
+    public void drawText(String text, float x, float y) {
+        fontRenderer.drawString(text, x, y, r, g, b, a, textAlign);
+    }
+
     /**
      * Draw a rectangle on screen with given rect area
      *
@@ -150,7 +182,6 @@ public class DrawTools {
         bufferBuilder.pos(right, top, 0.0D).color(r, g, b, a).endVertex();
         bufferBuilder.pos(left, top, 0.0D).color(r, g, b, a).endVertex();
         tessellator.draw();
-        RenderSystem.enableTexture();
     }
 
     /**
@@ -162,7 +193,7 @@ public class DrawTools {
      * @param bottom rect bottom
      * @param thickness thickness
      */
-    public void drawOutlineRect(float left, float top, float right, float bottom, float thickness) {
+    public void drawRectOutline(float left, float top, float right, float bottom, float thickness) {
         RenderSystem.disableTexture();
 
         bufferBuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
@@ -192,8 +223,6 @@ public class DrawTools {
         bufferBuilder.pos(left, top, 0.0D).color(r, g, b, a).endVertex();
         bufferBuilder.pos(left - thickness, top, 0.0D).color(r, g, b, a).endVertex();
         tessellator.draw();
-
-        RenderSystem.enableTexture();
     }
 
     /**
@@ -204,7 +233,7 @@ public class DrawTools {
      * @param right rect right
      * @param bottom rect bottom
      */
-    public void drawFrame(float left, float top, float right, float bottom) {
+    public void drawLineLoopRect(float left, float top, float right, float bottom) {
         RenderSystem.disableTexture();
         bufferBuilder.begin(GL11.GL_LINE_LOOP, DefaultVertexFormats.POSITION_COLOR);
         bufferBuilder.pos(left, bottom, 0.0D).color(r, g, b, a).endVertex();
@@ -212,7 +241,6 @@ public class DrawTools {
         bufferBuilder.pos(right, top, 0.0D).color(r, g, b, a).endVertex();
         bufferBuilder.pos(left, top, 0.0D).color(r, g, b, a).endVertex();
         tessellator.draw();
-        RenderSystem.enableTexture();
     }
 
     /**
@@ -269,6 +297,7 @@ public class DrawTools {
     private static void blitFinal(double x1, double x2, double y1, double y2, float textureX1, float textureX2, float textureY1, float textureY2) {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferbuilder = tessellator.getBuffer();
+        RenderSystem.enableTexture();
         bufferbuilder.begin(7, DefaultVertexFormats.POSITION_TEX);
         bufferbuilder.pos(x1, y2, 0.0D).tex(textureX1, textureY2).endVertex();
         bufferbuilder.pos(x2, y2, 0.0D).tex(textureX2, textureY2).endVertex();
