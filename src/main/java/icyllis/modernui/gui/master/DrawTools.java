@@ -44,21 +44,27 @@ public class DrawTools {
     /**
      * Paint colors
      */
-    private float r;
+    private float r = 1.0f;
 
-    private float g;
+    private float g = 1.0f;
 
-    private float b;
+    private float b = 1.0f;
 
-    private float a;
+    private float a = 1.0f;
 
+
+    /**
+     * GL states
+     */
+    private boolean lineAA = false;
+
+
+    /**
+     * Shaders instance
+     */
     private final RingShader ring = RingShader.INSTANCE;
 
     private final RoundedRectShader roundedRect = RoundedRectShader.INSTANCE;
-
-    {
-        resetColor();
-    }
 
     public DrawTools() {
 
@@ -114,16 +120,93 @@ public class DrawTools {
     }
 
     /**
+     * Enable or disable anti aliasing for lines
+     * @param aa anti-aliasing
+     */
+    public void setLineAntiAliasing(boolean aa) {
+        if (aa && !lineAA) {
+            GL11.glEnable(GL11.GL_LINE_SMOOTH);
+            GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
+            lineAA = true;
+        } else if (!aa && lineAA) {
+            GL11.glDisable(GL11.GL_LINE_SMOOTH);
+            lineAA = false;
+        }
+    }
+
+    /**
      * Draw a rectangle on screen with given rect area
      *
-     * @param left x1
-     * @param top y1
-     * @param right x2
-     * @param bottom y2
+     * @param left rect left
+     * @param top rect top
+     * @param right rect right
+     * @param bottom rect bottom
      */
     public void drawRect(float left, float top, float right, float bottom) {
         RenderSystem.disableTexture();
         bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+        bufferBuilder.pos(left, bottom, 0.0D).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(right, bottom, 0.0D).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(right, top, 0.0D).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(left, top, 0.0D).color(r, g, b, a).endVertex();
+        tessellator.draw();
+        RenderSystem.enableTexture();
+    }
+
+    /**
+     * Draw four rectangles outside the given rect with thickness
+     *
+     * @param left rect left
+     * @param top rect top
+     * @param right rect right
+     * @param bottom rect bottom
+     * @param thickness thickness
+     */
+    public void drawOutlineRect(float left, float top, float right, float bottom, float thickness) {
+        RenderSystem.disableTexture();
+
+        bufferBuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
+        bufferBuilder.pos(left - thickness, top, 0.0D).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(right, top, 0.0D).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(right, top - thickness, 0.0D).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(left - thickness, top - thickness, 0.0D).color(r, g, b, a).endVertex();
+        tessellator.draw();
+
+        bufferBuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
+        bufferBuilder.pos(right, bottom, 0.0D).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(right + thickness, bottom, 0.0D).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(right + thickness, top - thickness, 0.0D).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(right, top - thickness, 0.0D).color(r, g, b, a).endVertex();
+        tessellator.draw();
+
+        bufferBuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
+        bufferBuilder.pos(left, bottom + thickness, 0.0D).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(right + thickness, bottom + thickness, 0.0D).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(right + thickness, bottom, 0.0D).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(left, bottom, 0.0D).color(r, g, b, a).endVertex();
+        tessellator.draw();
+
+        bufferBuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
+        bufferBuilder.pos(left - thickness, bottom + thickness, 0.0D).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(left, bottom + thickness, 0.0D).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(left, top, 0.0D).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(left - thickness, top, 0.0D).color(r, g, b, a).endVertex();
+        tessellator.draw();
+
+        RenderSystem.enableTexture();
+    }
+
+    /**
+     * Draw four lines around a closed rect area
+     *
+     * @param left rect left
+     * @param top rect top
+     * @param right rect right
+     * @param bottom rect bottom
+     */
+    public void drawFrame(float left, float top, float right, float bottom) {
+        RenderSystem.disableTexture();
+        bufferBuilder.begin(GL11.GL_LINE_LOOP, DefaultVertexFormats.POSITION_COLOR);
         bufferBuilder.pos(left, bottom, 0.0D).color(r, g, b, a).endVertex();
         bufferBuilder.pos(right, bottom, 0.0D).color(r, g, b, a).endVertex();
         bufferBuilder.pos(right, top, 0.0D).color(r, g, b, a).endVertex();
@@ -150,12 +233,48 @@ public class DrawTools {
         ShaderTools.releaseShader();
     }
 
+    /**
+     * Draw rounded rectangle on screen with given rect area and rounded radius
+     *
+     * Default feather radius: 1 px
+     *
+     * @param left rect left
+     * @param top rect top
+     * @param right rect right
+     * @param bottom rect bottom
+     * @param radius rounded radius
+     */
     public void drawRoundedRect(float left, float top, float right, float bottom, float radius) {
         ShaderTools.useShader(roundedRect);
         roundedRect.setRadius(radius);
         roundedRect.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
         drawRect(left, top, right, bottom);
         ShaderTools.releaseShader();
+    }
+
+
+
+    public static void blit(float x, float y, float u, float v, float width, float height) {
+        blit(x, y, width, height, u, v, 256, 256);
+    }
+
+    public static void blit(float x, float y, float width, float height, float textureX, float textureY, float textureWidth, float textureHeight) {
+        blitFinal(x, x + width, y, y + height, textureX / textureWidth, (textureX + width) / textureWidth, textureY / textureHeight, (textureY + height) / textureHeight);
+    }
+
+    public static void blitIcon(float x, float y, float width, float height) {
+        blitFinal(x, x + width, y, y + height, 0, 1, 0, 1);
+    }
+
+    private static void blitFinal(double x1, double x2, double y1, double y2, float textureX1, float textureX2, float textureY1, float textureY2) {
+        Tessellator tessellator = Tessellator.getInstance();
+        BufferBuilder bufferbuilder = tessellator.getBuffer();
+        bufferbuilder.begin(7, DefaultVertexFormats.POSITION_TEX);
+        bufferbuilder.pos(x1, y2, 0.0D).tex(textureX1, textureY2).endVertex();
+        bufferbuilder.pos(x2, y2, 0.0D).tex(textureX2, textureY2).endVertex();
+        bufferbuilder.pos(x2, y1, 0.0D).tex(textureX2, textureY1).endVertex();
+        bufferbuilder.pos(x1, y1, 0.0D).tex(textureX1, textureY1).endVertex();
+        tessellator.draw();
     }
 
     @Deprecated
@@ -179,7 +298,7 @@ public class DrawTools {
 
     }
 
-    @Deprecated
+    /*@Deprecated
     public static void fillRectWithColor(float left, float top, float right, float bottom, int RGB, float alpha) {
         int a = (int) (alpha * 255F);
         int r = RGB >> 16 & 255;
@@ -215,6 +334,7 @@ public class DrawTools {
         RenderSystem.enableTexture();
     }
 
+    @Deprecated
     public static void fillRectWithFrame(float left, float top, float right, float bottom, float thickness, int innerRGB, float innerAlpha, int frameRGB, float frameAlpha) {
         int a = (int) (innerAlpha * 255F);
         int r = innerRGB >> 16 & 255;
@@ -270,6 +390,7 @@ public class DrawTools {
         RenderSystem.enableTexture();
     }
 
+    @Deprecated
     public static void fillFrameWithColor(float left, float top, float right, float bottom, float thickness, int frameRGB, float frameAlpha) {
 
         int a = (int) (frameAlpha * 255F);
@@ -280,6 +401,7 @@ public class DrawTools {
         fillFrameWithColor(left, top, right, bottom, thickness, r, g, b, a);
     }
 
+    @Deprecated
     public static void fillFrameWithWhite(float left, float top, float right, float bottom, float thickness, float brightness, float frameAlpha) {
 
         int a = (int) (frameAlpha * 255F);
@@ -288,6 +410,7 @@ public class DrawTools {
         fillFrameWithColor(left, top, right, bottom, thickness, r, r, r, a);
     }
 
+    @Deprecated
     public static void fillFrameWithColor(float left, float top, float right, float bottom, float thickness, int r, int g, int b, int a) {
 
         Tessellator tessellator = Tessellator.getInstance();
@@ -327,7 +450,7 @@ public class DrawTools {
         RenderSystem.enableTexture();
     }
 
-    /*public static void fillGradient(float x, float y, float width, float height, int startColor, int endColor, float zLevel) {
+    public static void fillGradient(float x, float y, float width, float height, int startColor, int endColor, float zLevel) {
         float f = (float)(startColor >> 24 & 255) / 255.0F;
         float f1 = (float)(startColor >> 16 & 255) / 255.0F;
         float f2 = (float)(startColor >> 8 & 255) / 255.0F;
@@ -354,27 +477,4 @@ public class DrawTools {
         GlStateManager.enableAlphaTest();
         GlStateManager.enableTexture();
     }*/
-
-    public static void blit(float x, float y, float u, float v, float width, float height) {
-        blit(x, y, u, v, width, height, 256, 256);
-    }
-
-    public static void blit(float x, float y, float textureX, float textureY, float width, float height, float textureWidth, float textureHeight) {
-        blitFinal(x, x + width, y, y + height, textureX / textureWidth, (textureX + width) / textureWidth, textureY / textureHeight, (textureY + height) / textureHeight);
-    }
-
-    public static void blitIcon(float x, float y, float width, float height) {
-        blitFinal(x, x + width, y, y + height, 0, 1, 0, 1);
-    }
-
-    private static void blitFinal(double x1, double x2, double y1, double y2, float textureX1, float textureX2, float textureY1, float textureY2) {
-        Tessellator tessellator = Tessellator.getInstance();
-        BufferBuilder bufferbuilder = tessellator.getBuffer();
-        bufferbuilder.begin(7, DefaultVertexFormats.POSITION_TEX);
-        bufferbuilder.pos(x1, y2, 0.0D).tex(textureX1, textureY2).endVertex();
-        bufferbuilder.pos(x2, y2, 0.0D).tex(textureX2, textureY2).endVertex();
-        bufferbuilder.pos(x2, y1, 0.0D).tex(textureX2, textureY1).endVertex();
-        bufferbuilder.pos(x1, y1, 0.0D).tex(textureX1, textureY1).endVertex();
-        tessellator.draw();
-    }
 }

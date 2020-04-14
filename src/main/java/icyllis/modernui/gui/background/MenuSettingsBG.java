@@ -19,11 +19,7 @@
 package icyllis.modernui.gui.background;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.gui.animation.Animation;
-import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.IElement;
-import icyllis.modernui.gui.trash.Element;
-import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;

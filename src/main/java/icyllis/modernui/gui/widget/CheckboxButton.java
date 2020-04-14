@@ -18,17 +18,6 @@
 
 package icyllis.modernui.gui.widget;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.gui.animation.Animation;
-import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.trash.Element;
-import icyllis.modernui.gui.master.DrawTools;
-import icyllis.modernui.system.ConstantsLibrary;
-import net.minecraft.client.gui.IGuiEventListener;
-import org.lwjgl.opengl.GL11;
-
-import java.util.function.Function;
-
 //TODO checkbox
 public class CheckboxButton {
 

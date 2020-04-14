@@ -18,7 +18,7 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.math.Matrix4f;
+import icyllis.modernui.gui.math.Matrix4f;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;

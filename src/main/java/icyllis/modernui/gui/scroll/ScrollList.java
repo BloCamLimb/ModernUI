@@ -126,7 +126,7 @@ public class ScrollList<T extends ScrollGroup> implements IMouseListener {
     protected void layoutGroups(float x1, float x2, float baseY) {
         float ay = baseY;
         for (T group : groups) {
-            group.layout(x1, x2, ay);
+            group.onLayout(x1, x2, ay);
             ay += group.getHeight();
         }
         maxHeight = (float) groups.stream().mapToDouble(ScrollGroup::getHeight).sum();

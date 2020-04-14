@@ -38,10 +38,14 @@ public class ConfirmWindowBG implements IElement {
 
     @Override
     public void draw(float time) {
-        DrawTools.fillRectWithFrame(x, y, x + 180, y + frameSizeHOffset, 0.51f, 0x101010, 0.7f, 0x404040, 1);
-        DrawTools.INSTANCE.setColor(0x080808);
-        DrawTools.INSTANCE.setAlpha(0.85f);
+        DrawTools.INSTANCE.setRGBA(0.03f, 0.03f, 0.03f, 0.7f);
+        DrawTools.INSTANCE.drawRect(x, y, x + 180, y + frameSizeHOffset);
+
+        DrawTools.INSTANCE.setRGBA(0.03f, 0.03f, 0.03f, 0.85f);
         DrawTools.INSTANCE.drawRect(x, y, x + 180, y + 16);
+
+        DrawTools.INSTANCE.setRGBA(0.5f, 0.5f, 0.5f, 1.0f);
+        DrawTools.INSTANCE.drawOutlineRect(x, y, x + 180, y + frameSizeHOffset, 0.51f);
     }
 
     @Override
