@@ -18,25 +18,22 @@
 
 package icyllis.modernui.gui.master;
 
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.font.TrueTypeRenderer;
-import icyllis.modernui.gui.shader.RingShader;
 import icyllis.modernui.graphics.shader.ShaderTools;
+import icyllis.modernui.gui.shader.RingShader;
 import icyllis.modernui.gui.shader.RoundedRectShader;
+import net.minecraft.client.gui.screen.MainMenuScreen;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.texture.Texture;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import org.lwjgl.opengl.GL11;
 
 /**
  * Use paint brush and drawing board to draw everything!
  */
-@SuppressWarnings("DuplicatedCode")
 public class DrawTools {
 
     public static final DrawTools INSTANCE = new DrawTools();
@@ -274,7 +271,7 @@ public class DrawTools {
      */
     public void drawRoundedRect(float left, float top, float right, float bottom, float radius) {
         ShaderTools.useShader(roundedRect);
-        roundedRect.setRadius(radius);
+        roundedRect.setRadius(radius - 1);
         roundedRect.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
         drawRect(left, top, right, bottom);
         ShaderTools.releaseShader();
