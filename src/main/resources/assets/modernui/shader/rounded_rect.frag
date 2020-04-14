@@ -15,14 +15,8 @@ void main() {
     vec2 br = f_Position - u_InnerRect.zw;
 
     vec2 dis = max(br, tl);
-    float mDis = max(dis.x, dis.y);
 
-    float v;
-    if (mDis <= 0.0) {
-        v = mDis - u_Radius;
-    } else {
-        v = length(max(vec2(0.0), dis)) - u_Radius;
-    }
+    float v = length(max(vec2(0.0), dis)) - u_Radius;
 
     float a = 1.0 - smoothstep(0.0, 1.0, v);
 

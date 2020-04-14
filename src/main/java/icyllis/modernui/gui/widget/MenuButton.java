@@ -27,7 +27,10 @@ import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.gui.math.Color3i;
 import icyllis.modernui.system.ConstantsLibrary;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.BufferBuilder;
+import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.texture.TextureManager;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import org.lwjgl.opengl.GL11;
 
 import java.util.function.Function;
@@ -93,10 +96,29 @@ public class MenuButton extends AnimatedWidget {
 
         // right side text box
         if (sideText.isAnimationOpen()) {
+            /*Tessellator tessellator = Tessellator.getInstance();
+            BufferBuilder bufferBuilder = tessellator.getBuffer();
+            RenderSystem.disableTexture();
+            DrawTools.INSTANCE.setLineAntiAliasing(true);
+            bufferBuilder.begin(GL11.GL_LINE_LOOP, DefaultVertexFormats.POSITION_COLOR);
+            bufferBuilder.pos(10,11, 0.0D).color(255, 255, 255, 255).endVertex();
+            bufferBuilder.pos(10,19, 0.0D).color(255, 255, 255, 255).endVertex();
+            bufferBuilder.pos(11,19, 0.0D).color(255, 255, 255, 255).endVertex();
+            bufferBuilder.pos(11,20, 0.0D).color(255, 255, 255, 255).endVertex();
+            bufferBuilder.pos(29,20, 0.0D).color(255, 255, 255, 255).endVertex();
+            bufferBuilder.pos(29,19, 0.0D).color(255, 255, 255, 255).endVertex();
+            bufferBuilder.pos(30,19, 0.0D).color(255, 255, 255, 255).endVertex();
+            bufferBuilder.pos(30,11, 0.0D).color(255, 255, 255, 255).endVertex();
+            bufferBuilder.pos(29,11, 0.0D).color(255, 255, 255, 255).endVertex();
+            bufferBuilder.pos(29,10, 0.0D).color(255, 255, 255, 255).endVertex();
+            bufferBuilder.pos(11,10, 0.0D).color(255, 255, 255, 255).endVertex();
+            bufferBuilder.pos(11,11, 0.0D).color(255, 255, 255, 255).endVertex();
+            tessellator.draw();
+            DrawTools.INSTANCE.setLineAntiAliasing(false);*/
             DrawTools.INSTANCE.setRGBA(0.0f, 0.0f, 0.0f, 0.4f * frameAlpha);
-            DrawTools.INSTANCE.drawRoundedRect(x1 + 27, y1 + 1, x1 + 31 + frameSizeW, y1 + 15, 6);
+            DrawTools.INSTANCE.drawRoundedRect(x1 + 27, y1 + 1, x1 + 32 + frameSizeW, y1 + 15, 6);
             //DrawTools.fillRectWithFrame(x1 + 27, y1 + 1, x1 + 31 + frameSizeW, y1 + 15, 0.51f, 0x000000, 0.4f * frameAlpha, 0x404040, 0.8f * frameAlpha);
-            fontRenderer.drawString(text, x1 + 31, y1 + 4, Color3i.WHILE, textAlpha, TextAlign.LEFT);
+            fontRenderer.drawString(text, x1 + 32, y1 + 4, Color3i.WHILE, textAlpha, TextAlign.LEFT);
         }
     }
 
@@ -174,7 +196,7 @@ public class MenuButton extends AnimatedWidget {
         @Override
         protected void createOpenAnimations() {
             manager.addAnimation(new Animation(3, true)
-                    .applyTo(new Applier(-4.0f, instance.getTextLength() + 4.0f, instance::setFrameSizeW)));
+                    .applyTo(new Applier(-4.0f, instance.getTextLength() + 5.0f, instance::setFrameSizeW)));
             manager.addAnimation(new Animation(3)
                     .applyTo(new Applier(1.0f, instance::setFrameAlpha)));
             manager.addAnimation(new Animation(3)
