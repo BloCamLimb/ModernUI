@@ -41,7 +41,7 @@ public class ConfirmWindowBG implements IElement {
         DrawTools.INSTANCE.setRGBA(0.06f, 0.06f, 0.06f, 0.7f);
         DrawTools.INSTANCE.drawRect(x, y, x + 180, y + frameSizeHOffset);
 
-        DrawTools.INSTANCE.setAlpha(0.85f);
+        DrawTools.INSTANCE.setRGBA(0.03f, 0.03f, 0.03f, 0.85f);
         DrawTools.INSTANCE.drawRect(x, y, x + 180, y + 16);
 
         DrawTools.INSTANCE.setRGBA(0.5f, 0.5f, 0.5f, 1.0f);

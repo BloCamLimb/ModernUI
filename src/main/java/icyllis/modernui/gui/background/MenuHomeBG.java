@@ -31,12 +31,10 @@ import org.lwjgl.opengl.GL11;
 
 public class MenuHomeBG implements IElement {
 
-    private float sizeW, height;
+    private float height;
 
     public MenuHomeBG() {
-        GlobalModuleManager.INSTANCE.addAnimation(
-                new Animation(4, true)
-                    .applyTo(new Applier(0, 32, value -> sizeW = value)));
+
     }
 
     @Override
@@ -48,14 +46,14 @@ public class MenuHomeBG implements IElement {
         RenderSystem.defaultBlendFunc();
         bufferbuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
         bufferbuilder.pos(0, height, 0.0D).color(0, 0, 0, 180).endVertex();
-        bufferbuilder.pos(sizeW, height, 0.0D).color(0, 0, 0, 180).endVertex();
-        bufferbuilder.pos(sizeW, 0, 0.0D).color(0, 0, 0, 180).endVertex();
+        bufferbuilder.pos(32, height, 0.0D).color(0, 0, 0, 180).endVertex();
+        bufferbuilder.pos(32, 0, 0.0D).color(0, 0, 0, 180).endVertex();
         bufferbuilder.pos(0, 0, 0.0D).color(0, 0, 0, 180).endVertex();
         tessellator.draw();
         bufferbuilder.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);
         GL11.glLineWidth(1.0F);
-        bufferbuilder.pos(sizeW, 0, 0.0D).color(140, 140, 140, 220).endVertex();
-        bufferbuilder.pos(sizeW, height, 0.0D).color(140, 140, 140, 220).endVertex();
+        bufferbuilder.pos(32, 0, 0.0D).color(140, 140, 140, 220).endVertex();
+        bufferbuilder.pos(32, height, 0.0D).color(140, 140, 140, 220).endVertex();
         tessellator.draw();
         RenderSystem.enableTexture();
         RenderSystem.disableBlend();

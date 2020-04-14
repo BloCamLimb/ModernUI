@@ -18,6 +18,9 @@
 
 package icyllis.modernui.impl.module;
 
+import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.gui.animation.Animation;
+import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.background.MenuHomeBG;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.IModule;
@@ -47,6 +50,10 @@ public class IngameMenuHome extends ModuleGroup {
     // true = right false = left
     private boolean moduleTransitionDirection = true;
 
+    private float xOffset = -32;
+
+    private Random random = new Random();
+
     public IngameMenuHome() {
         addElements(new MenuHomeBG());
         Consumer<MenuButton> consumer = s -> {
@@ -74,17 +81,33 @@ public class IngameMenuHome extends ModuleGroup {
 
         // always draw at the top
         makeOverDraw();
+
+        GlobalModuleManager.INSTANCE.addAnimation(new Animation(4, true)
+                .applyTo(new Applier(-32, 0, v -> xOffset = v)));
     }
 
     /**
+     * Get transition animation direction
      * @param constr is in constructor
      */
     public boolean getTransitionDirection(boolean constr) {
         boolean b = moduleTransitionDirection;
         if (constr) {
-            moduleTransitionDirection = new Random().nextBoolean();
+            moduleTransitionDirection = random.nextBoolean();
         }
         return b;
+    }
+
+    @Override
+    public void draw(float time) {
+        if (xOffset != 0) {
+            RenderSystem.pushMatrix();
+            RenderSystem.translatef(xOffset, 0, 0);
+            super.draw(time);
+            RenderSystem.popMatrix();
+        } else {
+            super.draw(time);
+        }
     }
 
     @Override
