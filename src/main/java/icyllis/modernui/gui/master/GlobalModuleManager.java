@@ -18,6 +18,7 @@
 
 package icyllis.modernui.gui.master;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.animation.IAnimation;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
@@ -237,6 +238,7 @@ public enum GlobalModuleManager {
             popup.draw(animationTime);
         }
         DrawTools.INSTANCE.setLineAntiAliasing(false);
+        RenderSystem.enableTexture();
     }
 
     protected void resize(int width, int height) {
