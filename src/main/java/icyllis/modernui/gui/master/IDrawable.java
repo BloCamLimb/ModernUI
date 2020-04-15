@@ -16,13 +16,22 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.test;
+package icyllis.modernui.gui.master;
 
-import icyllis.modernui.system.ModernUI;
-import net.minecraft.util.ResourceLocation;
+/**
+ * This is an really basic interface that represents a drawable element in gui
+ * But also can be used for update animations. A.K.A Frame Event Listener
+ */
+public interface IDrawable {
 
-@Deprecated
-public class UILibs {
+    /**
+     * Draw content you want, called every frame
+     * You have to do animations update at the top of lines
+     *
+     * @param canvas The canvas provided by module, used to draw everything
+     * @param time elapsed time from a gui open
+     *                    unit: floating point ticks, 20.0 ticks = 1 second
+     */
+    void draw(Canvas canvas, float time);
 
-    //public static final ResourceLocation TEST_CONTAINER_SCREEN = new ResourceLocation(ModernUI.MODID, "test_screen");
 }

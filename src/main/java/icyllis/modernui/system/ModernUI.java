@@ -48,19 +48,11 @@ public class ModernUI {
                 throw new RuntimeException("Outdated java version found, please update it to java 1.8.0_200 or above");
             }
         }
+
         ConfigManager.register();
-        try {
-            Field f = ModernUI_API.class.getDeclaredField("network");
-            f.setAccessible(true);
-            f.set(ModernUI_API.INSTANCE, NetworkManager.INSTANCE);
-            if (FMLEnvironment.dist == Dist.CLIENT) {
-                f = ModernUI_API.class.getDeclaredField("gui");
-                f.setAccessible(true);
-                f.set(ModernUI_API.INSTANCE, GuiManager.INSTANCE);
-                ShaderTools.addResourceListener();
-            }
-        } catch (NoSuchFieldException | IllegalAccessException | ClassCastException e) {
-            throw new RuntimeException(e);
+
+        if (FMLEnvironment.dist == Dist.CLIENT) {
+            ShaderTools.addResourceListener();
         }
     }
 

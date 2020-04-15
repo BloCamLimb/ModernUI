@@ -16,13 +16,19 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.test;
+package icyllis.modernui.system.test;
 
-import icyllis.modernui.system.ModernUI;
-import net.minecraft.util.ResourceLocation;
+import icyllis.modernui.gui.master.IModule;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+
+import java.util.function.IntPredicate;
+import java.util.function.Supplier;
 
 @Deprecated
-public class UILibs {
+@OnlyIn(Dist.CLIENT)
+@FunctionalInterface
+public interface IModuleFactory {
 
-    //public static final ResourceLocation TEST_CONTAINER_SCREEN = new ResourceLocation(ModernUI.MODID, "test_screen");
+    void addModule(IntPredicate availability, Supplier<IModule> module);
 }

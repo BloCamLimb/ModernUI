@@ -71,6 +71,8 @@ public enum GlobalModuleManager {
 
     private List<IAnimation> animations = new ArrayList<>();
 
+    private List<ITickListener> tickListeners = new ArrayList<>();
+
     private List<DelayedRunnable> runnables = new CopyOnWriteArrayList<>();
 
     private int ticks = 0;
@@ -79,7 +81,7 @@ public enum GlobalModuleManager {
 
     public void openGuiScreen(ITextComponent title, @Nonnull Supplier<IModule> root) {
         this.supplier = root;
-        minecraft.displayGuiScreen(new ModernUIScreen(title));
+        minecraft.displayGuiScreen(new ModernScreen(title));
     }
 
     public void closeGuiScreen() {
@@ -127,6 +129,10 @@ public enum GlobalModuleManager {
 
     public void addAnimation(IAnimation animation) {
         animations.add(animation);
+    }
+
+    protected void addTickListener(ITickListener listener) {
+        tickListeners.add(listener);
     }
 
     public void scheduleRunnable(DelayedRunnable runnable) {
@@ -233,12 +239,16 @@ public enum GlobalModuleManager {
     }
 
     protected void draw() {
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableAlphaTest();
         root.draw(animationTime);
         if (popup != null) {
             popup.draw(animationTime);
         }
         DrawTools.INSTANCE.setLineAntiAliasing(false);
         RenderSystem.enableTexture();
+        RenderSystem.disableBlend();
     }
 
     protected void resize(int width, int height) {
@@ -275,6 +285,10 @@ public enum GlobalModuleManager {
         if (popup != null) {
             popup.tick(ticks);
         }
+        for (ITickListener listener : tickListeners) {
+            listener.tick(ticks);
+        }
+        // tick listeners are always called before runnables
         for (DelayedRunnable runnable : runnables) {
             runnable.tick(ticks);
         }

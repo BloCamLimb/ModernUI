@@ -18,36 +18,40 @@
 
 package icyllis.modernui.gui.master;
 
-import icyllis.modernui.api.global.IModuleFactory;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.IHasContainer;
+import net.minecraft.client.gui.ScreenManager;
 import net.minecraft.client.gui.screen.inventory.ContainerScreen;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.GuiContainerEvent;
-import net.minecraftforge.common.MinecraftForge;
-import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
-import java.util.function.Consumer;
 
 //TODO Not working on with container gui now
-@OnlyIn(Dist.CLIENT)
-public final class ModernUIScreenG<G extends Container> extends ContainerScreen<G> {
+// because I want to rewrite vanilla code, make item slots can be renderer with alpha
 
-    private GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
+/**
+ * This is required, because ALL(?) mods check if instanceof {@link ContainerScreen} rather than {@link IHasContainer}, like JEI. However,
+ * Vanilla interface: IScreenFactory<T extends Container, U extends Screen & IHasContainer<T>>, see {@link ScreenManager.IScreenFactory}
+ * Vanilla is Screen & IHasContainer<T>, not ContainerScreen, FUCK YOU, no one want to break the rules
+ * @param <G> container
+ */
+@OnlyIn(Dist.CLIENT)
+public final class ModernContainerScreen<G extends Container> extends ContainerScreen<G> implements IHasContainer<G> {
+
+    private final GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
 
     @SuppressWarnings("ConstantConditions")
-    public ModernUIScreenG(ITextComponent title, G container, Consumer<IModuleFactory> factory) {
+    public ModernContainerScreen(ITextComponent title, G container) {
         super(container, Minecraft.getInstance().player.inventory, title);
-        //factory.accept(manager);
     }
 
     @Override
     public void init(Minecraft minecraft, int width, int height) {
         super.init(minecraft, width, height);
-        manager.resize(width, height);
+        manager.init(width, height);
     }
 
     @Override
@@ -57,23 +61,17 @@ public final class ModernUIScreenG<G extends Container> extends ContainerScreen<
 
     @Override
     public void render(int mouseX, int mouseY, float partialTicks) {
-        MinecraftForge.EVENT_BUS.post(new GuiContainerEvent.DrawBackground(this, mouseX, mouseY));
-        manager.draw();
+        super.render(mouseX, mouseY, partialTicks);
     }
 
     @Override
     protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY) {
-
+        manager.draw();
     }
 
     @Override
     public void removed() {
         manager.clear();
-    }
-
-    @Override
-    public boolean isPauseScreen() {
-        return false;
     }
 
     @Override

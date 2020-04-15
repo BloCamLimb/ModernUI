@@ -24,6 +24,8 @@ import java.util.List;
 
 public class Module implements IModule, IFocuser {
 
+    private final GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
+
     private List<IElement> elements = new ArrayList<>();
 
     private List<IMouseListener> mouseListeners = new ArrayList<>();
@@ -57,8 +59,12 @@ public class Module implements IModule, IFocuser {
         elements.add(element);
     }
 
-    protected void addMouseListener(IMouseListener widget) {
-        mouseListeners.add(widget);
+    protected void addMouseListener(IMouseListener listener) {
+        mouseListeners.add(listener);
+    }
+
+    protected void addTickListener(ITickListener listener) {
+        manager.addTickListener(listener);
     }
 
     /**

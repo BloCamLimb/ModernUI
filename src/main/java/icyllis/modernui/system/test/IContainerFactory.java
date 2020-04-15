@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.api.global;
+package icyllis.modernui.system.test;
 
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.container.Container;
@@ -30,6 +30,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
  */
 @OnlyIn(Dist.CLIENT)
 @FunctionalInterface
+@Deprecated
 public interface IContainerFactory<T extends Container> {
 
     T create(int windowId, PlayerInventory playerInventory, PacketBuffer extraData);

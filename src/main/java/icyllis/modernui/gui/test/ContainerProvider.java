@@ -18,25 +18,29 @@
 
 package icyllis.modernui.gui.test;
 
-import icyllis.modernui.api.global.IContainerProvider;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.container.Container;
+import net.minecraft.inventory.container.INamedContainerProvider;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.StringTextComponent;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
-public class ContainerProvider implements IContainerProvider {
+@Deprecated
+public class ContainerProvider implements INamedContainerProvider {
 
     @Nonnull
     @Override
-    public Container createContainer(int windowId, PlayerInventory playerInventory, PlayerEntity playerEntity) {
-        return new ContainerTest(windowId, playerInventory, (TileEntity) null);
+    public ITextComponent getDisplayName() {
+        return new StringTextComponent("Test");
     }
 
+    @Nullable
     @Override
-    public ResourceLocation getGui() {
-        return UILibs.TEST_CONTAINER_SCREEN;
+    public Container createMenu(int windowId, @Nonnull PlayerInventory playerInventory, @Nonnull PlayerEntity playerEntity) {
+        return new ContainerTest(windowId, playerInventory, (TileEntity) null);
     }
 }

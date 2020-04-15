@@ -25,8 +25,8 @@ public interface IWidget extends IElement, IMouseListener {
 
     /**
      * Set widget position, or use layout for multiple widgets
-     * This position is not always left top position, or be center position..
-     * But must be matched to all the four methods below
+     * This position is always left top position
+     *
      * @param x x pos
      * @param y y pos
      */

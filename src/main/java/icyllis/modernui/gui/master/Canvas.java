@@ -16,27 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.api.global;
+package icyllis.modernui.gui.master;
 
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.inventory.container.Container;
-import net.minecraft.util.ResourceLocation;
-
-import javax.annotation.Nonnull;
-
-public interface IContainerProvider {
-
-    /**
-     * Create a new container on server side
-     * @return container
-     */
-    @Nonnull
-    Container createContainer(int windowId, PlayerInventory playerInventory, PlayerEntity playerEntity);
-
-    /**
-     * Get gui registry name that registered on client side
-     * @return registry name
-     */
-    ResourceLocation getGui();
+public class Canvas extends DrawTools {
 }

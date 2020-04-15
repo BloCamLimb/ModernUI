@@ -18,25 +18,13 @@
 
 package icyllis.modernui.system;
 
-import icyllis.modernui.api.global.IContainerProvider;
-import icyllis.modernui.api.manager.INetworkManager;
-import io.netty.buffer.Unpooled;
 import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.inventory.container.Container;
-import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.BlockPos;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.entity.player.PlayerContainerEvent;
 import net.minecraftforge.fml.network.NetworkDirection;
 import net.minecraftforge.fml.network.NetworkRegistry;
 import net.minecraftforge.fml.network.simple.SimpleChannel;
 
-import java.util.function.Consumer;
-
-import static icyllis.modernui.system.PlayMessages.*;
-
-public enum NetworkManager implements INetworkManager {
+public enum NetworkManager {
     INSTANCE;
 
     private final String protocol = "mui-net-1-1";
@@ -53,7 +41,7 @@ public enum NetworkManager implements INetworkManager {
 
     public void registerMessages() {
         int index = 0;
-        CHANNEL.messageBuilder(OpenContainer.class, index).encoder(OpenContainer::encode).decoder(OpenContainer::decode).consumer(OpenContainer::handle).add();
+        //CHANNEL.messageBuilder(OpenContainer.class, index).encoder(OpenContainer::encode).decoder(OpenContainer::decode).consumer(OpenContainer::handle).add();
     }
 
     public <M> void sendToServer(M message) {
@@ -64,7 +52,7 @@ public enum NetworkManager implements INetworkManager {
         CHANNEL.sendTo(message, playerMP.connection.netManager, NetworkDirection.PLAY_TO_CLIENT);
     }
 
-    @Override
+    /*@Override
     public void openGUI(ServerPlayerEntity serverPlayer, IContainerProvider containerProvider) {
         openGUI(serverPlayer, containerProvider, buf -> {});
     }
@@ -105,5 +93,5 @@ public enum NetworkManager implements INetworkManager {
         serverPlayer.openContainer = c;
         serverPlayer.openContainer.addListener(serverPlayer);
         MinecraftForge.EVENT_BUS.post(new PlayerContainerEvent.Open(serverPlayer, c));
-    }
+    }*/
 }
