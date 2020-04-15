@@ -19,6 +19,7 @@
 package icyllis.modernui.graphics.shader;
 
 import icyllis.modernui.gui.shader.RingShader;
+import icyllis.modernui.gui.shader.RoundedRectFrameShader;
 import icyllis.modernui.gui.shader.RoundedRectShader;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
@@ -44,6 +45,7 @@ public class ShaderTools {
     private static void compileShaders(IResourceManager manager, Predicate<IResourceType> typePredicate) {
         RingShader.INSTANCE.compile(manager);
         RoundedRectShader.INSTANCE.compile(manager);
+        RoundedRectFrameShader.INSTANCE.compile(manager);
         ModernUI.LOGGER.debug(ShaderProgram.MARKER, "Shaders have been compiled");
     }
 

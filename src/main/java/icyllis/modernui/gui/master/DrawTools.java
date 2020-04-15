@@ -24,6 +24,7 @@ import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.graphics.shader.ShaderTools;
 import icyllis.modernui.gui.shader.RingShader;
+import icyllis.modernui.gui.shader.RoundedRectFrameShader;
 import icyllis.modernui.gui.shader.RoundedRectShader;
 import net.minecraft.client.gui.screen.MainMenuScreen;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -54,6 +55,8 @@ public class DrawTools {
     private final RingShader ring = RingShader.INSTANCE;
 
     private final RoundedRectShader roundedRect = RoundedRectShader.INSTANCE;
+
+    private final RoundedRectFrameShader roundedRectFrame = RoundedRectFrameShader.INSTANCE;
 
 
     /**
@@ -267,11 +270,19 @@ public class DrawTools {
      * @param top rect top
      * @param right rect right
      * @param bottom rect bottom
-     * @param radius rounded radius
+     * @param radius rounded radius, actually must >= 2
      */
     public void drawRoundedRect(float left, float top, float right, float bottom, float radius) {
         ShaderTools.useShader(roundedRect);
-        roundedRect.setRadius(radius - 1);
+        roundedRect.setRadius(radius - 1); // we have feather radius 1px
+        roundedRect.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
+        drawRect(left, top, right, bottom);
+        ShaderTools.releaseShader();
+    }
+
+    public void drawRoundedRectFrame(float left, float top, float right, float bottom, float radius) {
+        ShaderTools.useShader(roundedRectFrame);
+        roundedRect.setRadius(radius - 1); // we have feather radius 1px
         roundedRect.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
         drawRect(left, top, right, bottom);
         ShaderTools.releaseShader();
