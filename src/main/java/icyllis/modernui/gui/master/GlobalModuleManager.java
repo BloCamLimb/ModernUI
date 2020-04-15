@@ -129,8 +129,8 @@ public enum GlobalModuleManager {
         animations.add(animation);
     }
 
-    public void scheduleRunnable(DelayedRunnable event) {
-        runnables.add(event);
+    public void scheduleRunnable(DelayedRunnable runnable) {
+        runnables.add(runnable);
     }
 
     protected void mouseMoved(double mouseX, double mouseY) {
