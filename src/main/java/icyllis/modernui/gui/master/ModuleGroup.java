@@ -18,14 +18,17 @@
 
 package icyllis.modernui.gui.master;
 
+import icyllis.modernui.system.ModernUI;
+
 import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * Contain itself and its child modules
- * It must exist this parent module and can exist at most one of child modules at the same time
+ * Contain self module and its child modules
+ * It must exist self module and can exist at most one of child modules at the same time
+ * The other modules stored in supplier
  */
 public class ModuleGroup extends Module {
 
@@ -53,13 +56,14 @@ public class ModuleGroup extends Module {
     }
 
     /**
-     * Add child module
+     * Add a child module
      * @param id must >= 1, the parent is 0, and -1 for invalid
      * @param module module supplier
      */
     protected void addChildModule(int id, Supplier<Module> module) {
         if (id < 1) {
-            throw new RuntimeException();
+            ModernUI.LOGGER.warn(GlobalModuleManager.MARKER, "Child module id must be greater than 1");
+            return;
         }
         childModules.put(id, module);
     }

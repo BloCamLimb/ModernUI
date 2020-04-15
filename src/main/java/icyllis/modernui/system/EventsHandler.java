@@ -19,8 +19,8 @@
 package icyllis.modernui.system;
 
 import icyllis.modernui.font.TrueTypeRenderer;
-import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.graphics.BlurHandler;
+import icyllis.modernui.gui.master.GlobalModuleManager;
 import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -56,7 +56,7 @@ public class EventsHandler {
     public static class ClientEventHandler {
 
         @SubscribeEvent
-        public static void onRenderTick(TickEvent.RenderTickEvent event) {
+        public static void onRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
             if (event.phase == TickEvent.Phase.START) {
                 TrueTypeRenderer.INSTANCE.init();
                 GlobalModuleManager.INSTANCE.renderTick(event.renderTickTime);
@@ -66,14 +66,14 @@ public class EventsHandler {
         }
 
         @SubscribeEvent
-        public static void onClientTick(TickEvent.ClientTickEvent event) {
+        public static void onClientTick(@Nonnull TickEvent.ClientTickEvent event) {
             if (event.phase == TickEvent.Phase.START) {
                 GlobalModuleManager.INSTANCE.clientTick();
             }
         }
 
         @SubscribeEvent
-        public static void onGuiOpen(GuiOpenEvent event) {
+        public static void onGuiOpen(@Nonnull GuiOpenEvent event) {
             GlobalModuleManager.INSTANCE.resetTicks();
             boolean hasGui = event.getGui() != null && !(event.getGui() instanceof ChatScreen);
             BlurHandler.INSTANCE.blur(hasGui);

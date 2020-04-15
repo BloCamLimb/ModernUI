@@ -16,25 +16,28 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.api.manager;
+package icyllis.modernui.system.test;
 
-import icyllis.modernui.api.global.IContainerFactory;
-import icyllis.modernui.api.global.IModuleFactory;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.ITextComponent;
 
-import java.util.function.Consumer;
+import javax.annotation.Nonnull;
 
-public interface IGuiManager {
+@Deprecated
+public interface IContainerProvider {
 
     /**
-     * Register a gui with container on client side
-     *  @param id registry name
-     * @param title screen title
-     * @param containerFactory factory to create container
-     * @param moduleFactory gui modules
+     * Create a new container on server side
+     * @return container
      */
-    <M extends Container> void registerContainerGui(ResourceLocation id, ITextComponent title, IContainerFactory<M> containerFactory, Consumer<IModuleFactory> moduleFactory);
+    @Nonnull
+    Container createContainer(int windowId, PlayerInventory playerInventory, PlayerEntity playerEntity);
 
+    /**
+     * Get gui registry name that registered on client side
+     * @return registry name
+     */
+    ResourceLocation getGui();
 }

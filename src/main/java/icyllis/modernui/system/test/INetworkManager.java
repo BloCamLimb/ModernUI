@@ -16,15 +16,15 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.api.manager;
+package icyllis.modernui.system.test;
 
-import icyllis.modernui.api.global.IContainerProvider;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.math.BlockPos;
 
 import java.util.function.Consumer;
 
+@Deprecated
 public interface INetworkManager {
 
     /**

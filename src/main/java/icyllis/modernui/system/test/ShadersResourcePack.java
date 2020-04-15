@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.system;
+package icyllis.modernui.system.test;
 
 import com.google.common.collect.ImmutableSet;
 import icyllis.modernui.system.ModernUI;

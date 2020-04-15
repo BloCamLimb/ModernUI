@@ -41,9 +41,7 @@ public class MenuHomeBG implements IElement {
     public void draw(float time) {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferbuilder = tessellator.getBuffer();
-        RenderSystem.enableBlend();
         RenderSystem.disableTexture();
-        RenderSystem.defaultBlendFunc();
         bufferbuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
         bufferbuilder.pos(0, height, 0.0D).color(0, 0, 0, 180).endVertex();
         bufferbuilder.pos(32, height, 0.0D).color(0, 0, 0, 180).endVertex();
@@ -56,7 +54,6 @@ public class MenuHomeBG implements IElement {
         bufferbuilder.pos(32, height, 0.0D).color(140, 140, 140, 220).endVertex();
         tessellator.draw();
         RenderSystem.enableTexture();
-        RenderSystem.disableBlend();
     }
 
     @Override

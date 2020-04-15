@@ -16,19 +16,19 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.api.global;
+package icyllis.modernui.gui.master;
 
-import icyllis.modernui.gui.master.IModule;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+/**
+ * Used to listen tick event in gui
+ */
+public interface ITickListener {
 
-import java.util.function.IntPredicate;
-import java.util.function.Supplier;
-
-@Deprecated
-@OnlyIn(Dist.CLIENT)
-@FunctionalInterface
-public interface IModuleFactory {
-
-    void addModule(IntPredicate availability, Supplier<IModule> module);
+    /**
+     * This is global method.
+     *
+     * Ticks something you like, used by % calculation to update gui values or state
+     *
+     * @param ticks elapsed ticks from a gui open, 20 tick = 1 second
+     */
+    default void tick(int ticks) {}
 }

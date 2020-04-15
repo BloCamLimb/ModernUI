@@ -21,6 +21,7 @@ package icyllis.modernui.gui.test;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.util.ResourceLocation;
 
+@Deprecated
 public class ModuleTest {
 
     public static final ResourceLocation BACKGROUND = new ResourceLocation(ModernUI.MODID, "textures/gui/gui_default_background.png");

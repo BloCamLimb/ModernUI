@@ -26,11 +26,12 @@ import icyllis.modernui.graphics.shader.ShaderTools;
 import icyllis.modernui.gui.shader.RingShader;
 import icyllis.modernui.gui.shader.RoundedRectFrameShader;
 import icyllis.modernui.gui.shader.RoundedRectShader;
-import net.minecraft.client.gui.screen.MainMenuScreen;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import org.lwjgl.opengl.GL11;
+
+import javax.annotation.Nonnull;
 
 /**
  * Use paint brush and drawing board to draw everything!
@@ -80,7 +81,7 @@ public class DrawTools {
     /**
      * GL states
      */
-    private boolean lineAA = false;
+    private static boolean lineAA = false;
 
 
     public DrawTools() {
@@ -112,16 +113,6 @@ public class DrawTools {
     }
 
     /**
-     * Set current paint color without alpha
-     * @param color rgb hex color
-     */
-    public void setColor(int color) {
-        r = (color >> 16 & 255) / 255.0f;
-        g = (color >> 8 & 255) / 255.0f;
-        b = (color & 255) / 255.0f;
-    }
-
-    /**
      * Set current paint alpha
      * @param a alpha [0,1]
      */
@@ -141,6 +132,10 @@ public class DrawTools {
      * @param aa anti-aliasing
      */
     public void setLineAntiAliasing(boolean aa) {
+        setLineAA(aa);
+    }
+
+    protected static void setLineAA(boolean aa) {
         if (aa && !lineAA) {
             GL11.glEnable(GL11.GL_LINE_SMOOTH);
             GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
@@ -157,6 +152,7 @@ public class DrawTools {
 
     /**
      * Draw text on screen, text formatting and bidi are supported
+     * {@link net.minecraft.util.text.TextFormatting}
      *
      * @param text formatted string
      * @param x x pos
@@ -226,14 +222,15 @@ public class DrawTools {
     }
 
     /**
-     * Draw four lines around a closed rect area
+     * Draw four lines around a closed rect area, anti-aliasing is needed
+     * Otherwise, there's a missing pixel
      *
      * @param left rect left
      * @param top rect top
      * @param right rect right
      * @param bottom rect bottom
      */
-    public void drawLineLoopRect(float left, float top, float right, float bottom) {
+    public void drawRectLines(float left, float top, float right, float bottom) {
         RenderSystem.disableTexture();
         bufferBuilder.begin(GL11.GL_LINE_LOOP, DefaultVertexFormats.POSITION_COLOR);
         bufferBuilder.pos(left, bottom, 0.0D).color(r, g, b, a).endVertex();
@@ -261,6 +258,14 @@ public class DrawTools {
         ShaderTools.releaseShader();
     }
 
+    public void drawLine(float startX, float startY, float stopX, float stopY) {
+        RenderSystem.disableTexture();
+        bufferBuilder.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);
+        bufferBuilder.pos(startX, startY, 0.0D).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(stopX, stopY, 0.0D).color(r, g, b, a).endVertex();
+        tessellator.draw();
+    }
+
     /**
      * Draw rounded rectangle on screen with given rect area and rounded radius
      *
@@ -280,12 +285,45 @@ public class DrawTools {
         ShaderTools.releaseShader();
     }
 
+    /**
+     * Draw rounded rectangle frame in a rounded rect on screen
+     * with given rect area and rounded radius
+     *
+     * Default feather radius: 1 px
+     * Default frame thickness: 1 px
+     *
+     * @param left rect left
+     * @param top rect top
+     * @param right rect right
+     * @param bottom rect bottom
+     * @param radius rounded radius, actually must >= 2
+     */
     public void drawRoundedRectFrame(float left, float top, float right, float bottom, float radius) {
         ShaderTools.useShader(roundedRectFrame);
-        roundedRect.setRadius(radius - 1); // we have feather radius 1px
+        roundedRect.setRadius(radius - 1);
         roundedRect.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
         drawRect(left, top, right, bottom);
         ShaderTools.releaseShader();
+    }
+
+    /**
+     * Draw icon on screen fitting to given rect area
+     *
+     * @param icon icon
+     * @param left rect left
+     * @param top rect top
+     * @param right rect right
+     * @param bottom rect bottom
+     */
+    public void drawIcon(@Nonnull Icon icon, float left, float top, float right, float bottom) {
+        RenderSystem.enableTexture();
+        icon.loadTexture();
+        bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR_TEX);
+        bufferBuilder.pos(left, bottom, 0.0D).color(r, g, b, a).tex(icon.getLeft(), icon.getBottom()).endVertex();
+        bufferBuilder.pos(right, bottom, 0.0D).color(r, g, b, a).tex(icon.getRight(), icon.getBottom()).endVertex();
+        bufferBuilder.pos(right, top, 0.0D).color(r, g, b, a).tex(icon.getRight(), icon.getTop()).endVertex();
+        bufferBuilder.pos(left, top, 0.0D).color(r, g, b, a).tex(icon.getLeft(), icon.getTop()).endVertex();
+        tessellator.draw();
     }
 
 
@@ -302,7 +340,7 @@ public class DrawTools {
         blitFinal(x, x + width, y, y + height, 0, 1, 0, 1);
     }
 
-    private static void blitFinal(double x1, double x2, double y1, double y2, float textureX1, float textureX2, float textureY1, float textureY2) {
+    public static void blitFinal(double x1, double x2, double y1, double y2, float textureX1, float textureX2, float textureY1, float textureY2) {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferbuilder = tessellator.getBuffer();
         RenderSystem.enableTexture();

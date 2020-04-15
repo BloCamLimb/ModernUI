@@ -24,6 +24,9 @@ import net.minecraft.inventory.container.Container;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.tileentity.TileEntity;
 
+import javax.annotation.Nonnull;
+
+@Deprecated
 public class ContainerTest extends Container {
 
     public ContainerTest(int windowId, PlayerInventory inv, PacketBuffer buf) {
@@ -35,7 +38,7 @@ public class ContainerTest extends Container {
     }
 
     @Override
-    public boolean canInteractWith(PlayerEntity playerIn) {
+    public boolean canInteractWith(@Nonnull PlayerEntity playerIn) {
         return true;
     }
 }

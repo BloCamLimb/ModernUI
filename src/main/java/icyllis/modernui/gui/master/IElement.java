@@ -20,8 +20,8 @@ package icyllis.modernui.gui.master;
 
 /**
  * This is an really basic interface and can be used everywhere
- * In the rule, this is directly used in background, and extends by {@link IWidget}
  */
+@Deprecated
 public interface IElement {
 
     /**

@@ -16,11 +16,12 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.system;
+package icyllis.modernui.system.test;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import cpw.mods.modlauncher.api.*;
+import icyllis.modernui.system.ModernUI;
 import net.minecraftforge.coremod.api.ASMAPI;
 import net.minecraftforge.fml.loading.FMLLoader;
 import org.apache.logging.log4j.LogManager;

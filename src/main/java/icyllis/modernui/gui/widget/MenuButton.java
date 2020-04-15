@@ -24,9 +24,12 @@ import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.DrawTools;
+import icyllis.modernui.gui.master.Icon;
 import icyllis.modernui.gui.math.Color3i;
 import icyllis.modernui.system.ConstantsLibrary;
+import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screen.inventory.ContainerScreen;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.texture.TextureManager;
@@ -37,7 +40,7 @@ import java.util.function.Function;
 
 public class MenuButton extends AnimatedWidget {
 
-    private TextureManager textureManager = Minecraft.getInstance().getTextureManager();
+    //private TextureManager textureManager = Minecraft.getInstance().getTextureManager();
 
     private Function<Integer, Float> xResizer;
     private Function<Integer, Float> yResizer;
@@ -45,7 +48,7 @@ public class MenuButton extends AnimatedWidget {
     private AnimatedElement sideText = new SideTextAnimator(this);
 
     private final String text;
-    private final float u;
+    private final Icon icon;
     private final Runnable leftClickFunc;
     private final int id;
 
@@ -54,12 +57,12 @@ public class MenuButton extends AnimatedWidget {
     private float textAlpha = 0;
     private float frameSizeW = 5;
 
-    public MenuButton(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, String text, int index, Runnable leftClick, int id) {
+    public MenuButton(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, String text, int uIndex, Runnable leftClick, int id) {
         super(16, 16);
         this.xResizer = xResizer;
         this.yResizer = yResizer;
         this.text = text;
-        this.u = index * 32;
+        this.icon = new Icon(ConstantsLibrary.ICONS, uIndex * 64 / 512f, 0, (uIndex + 1) * 64 / 512f, 64 / 512f, true);
         this.leftClickFunc = leftClick;
         this.id = id;
     }
@@ -79,29 +82,30 @@ public class MenuButton extends AnimatedWidget {
     public void draw(float time) {
         super.draw(time);
         sideText.draw(time);
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.disableAlphaTest();
 
-        RenderSystem.pushMatrix();
+        //RenderSystem.pushMatrix();
 
-        GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
-        GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-        RenderSystem.color3f(brightness, brightness, brightness);
-        RenderSystem.scalef(0.5f, 0.5f, 1);
-        textureManager.bindTexture(ConstantsLibrary.ICONS);
-        DrawTools.blit(x1 * 2, y1 * 2, u, 0, 32, 32);
+        //RenderSystem.color3f(brightness, brightness, brightness);
+        DrawTools.INSTANCE.setRGBA(brightness, brightness, brightness, 1.0f);
+        //RenderSystem.scalef(0.5f, 0.5f, 1);
+        //textureManager.bindTexture(ConstantsLibrary.ICONS);
+        /*GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+        GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);*/
+        //DrawTools.blitFinal(x1, x1 + 16, y1, y1 + 16, u / 512, (u + 64) / 512, 0, 64 / 512f);
+        DrawTools.INSTANCE.drawIcon(icon, x1, y1, x1 + 16, y1 + 16);
 
-        RenderSystem.popMatrix();
+        //RenderSystem.popMatrix();
 
-        // right side text box
+        // draw text box on right side
+        // ingame menu would be opened in the game initialization phase, so font renderer shouldn't be called because there's no proper GL state !!
         if (sideText.isAnimationOpen()) {
             DrawTools.INSTANCE.setRGBA(0.0f, 0.0f, 0.0f, 0.5f * frameAlpha);
             DrawTools.INSTANCE.drawRoundedRect(x1 + 27, y1 + 1, x1 + 32 + frameSizeW, y1 + 15, 6);
-            DrawTools.INSTANCE.setRGBA(0.25f, 0.25f, 0.25f, frameAlpha);
+            DrawTools.INSTANCE.setRGBA(0.5f, 0.5f, 0.5f, frameAlpha);
             DrawTools.INSTANCE.drawRoundedRectFrame(x1 + 27, y1 + 1, x1 + 32 + frameSizeW, y1 + 15, 6);
             //DrawTools.fillRectWithFrame(x1 + 27, y1 + 1, x1 + 31 + frameSizeW, y1 + 15, 0.51f, 0x000000, 0.4f * frameAlpha, 0x404040, 0.8f * frameAlpha);
-            fontRenderer.drawString(text, x1 + 32, y1 + 4, Color3i.WHILE, textAlpha, TextAlign.LEFT);
+            DrawTools.INSTANCE.setRGBA(1.0f, 1.0f, 1.0f, textAlpha);
+            DrawTools.INSTANCE.drawText(text, x1 + 32, y1 + 4); // called font renderer
         }
     }
 

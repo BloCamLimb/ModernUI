@@ -16,13 +16,24 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.test;
+package icyllis.modernui.system.test;
 
-import icyllis.modernui.system.ModernUI;
+import net.minecraft.inventory.container.Container;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.text.ITextComponent;
+
+import java.util.function.Consumer;
 
 @Deprecated
-public class UILibs {
+public interface IGuiManager {
 
-    //public static final ResourceLocation TEST_CONTAINER_SCREEN = new ResourceLocation(ModernUI.MODID, "test_screen");
+    /**
+     * Register a gui with container on client side
+     *  @param id registry name
+     * @param title screen title
+     * @param containerFactory factory to create container
+     * @param moduleFactory gui modules
+     */
+    <M extends Container> void registerContainerGui(ResourceLocation id, ITextComponent title, IContainerFactory<M> containerFactory, Consumer<IModuleFactory> moduleFactory);
+
 }

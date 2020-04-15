@@ -32,11 +32,11 @@ import java.util.function.Supplier;
  * All ModernUI guis should open this screen first by {@link GlobalModuleManager#openGuiScreen(ITextComponent, Supplier)}
  */
 @OnlyIn(Dist.CLIENT)
-public final class ModernUIScreen extends Screen {
+public final class ModernScreen extends Screen {
 
     private final GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
 
-    protected ModernUIScreen(ITextComponent title) {
+    protected ModernScreen(ITextComponent title) {
         super(title);
     }
 
