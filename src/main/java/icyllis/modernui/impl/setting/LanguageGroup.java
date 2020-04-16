@@ -33,7 +33,7 @@ public class LanguageGroup extends UniformScrollGroup<LanguageEntry> {
         super(window, ENTRY_HEIGHT);
         this.module = module;
         manager.getLanguages().forEach(l -> {
-            LanguageEntry entry = new LanguageEntry(module, l);
+            LanguageEntry entry = new LanguageEntry(module, window, l);
             entries.add(entry);
             if (l.getCode().equals(manager.getCurrentLanguage().getCode())) {
                 module.setHighlight(entry);
@@ -58,8 +58,4 @@ public class LanguageGroup extends UniformScrollGroup<LanguageEntry> {
         followEntry(module.getHighlight());
     }
 
-    @Override
-    public void draw(float time) {
-        super.draw(time);
-    }
 }

@@ -47,28 +47,28 @@ public class IngameMenuSettings extends ModuleGroup {
 
     private WidgetLayout buttonLayout;
 
-    private float xOffset;
-
     private final IngameMenuHome home;
+
+    private final MenuSettingsBG bg;
 
     public IngameMenuSettings(IngameMenuHome home) {
         this.home = home;
-        addElements(new MenuSettingsBG());
+        bg = new MenuSettingsBG(home);
+        addDrawable(bg);
         buttonLayout = new WidgetLayout(buttons, WidgetLayout.Direction.HORIZONTAL_CENTER, 16);
         Consumer<LineTextButton> consumer = s -> {
-            addElements(s);
-            addMouseListener(s);
+            addWidget(s);
             buttons.add(s);
         };
-        consumer.accept(new LineTextButton(I18n.format("gui.modernui.settings.tab.general"), 48f,
+        consumer.accept(new LineTextButton(this, I18n.format("gui.modernui.settings.tab.general"), 48f,
                 () -> switchChildModule(1), i -> i == 1));
-        consumer.accept(new LineTextButton(I18n.format("gui.modernui.settings.tab.video"), 48f,
+        consumer.accept(new LineTextButton(this, I18n.format("gui.modernui.settings.tab.video"), 48f,
                 () -> switchChildModule(2), i -> i == 2));
-        consumer.accept(new LineTextButton(I18n.format("gui.modernui.settings.tab.audio"), 48f,
+        consumer.accept(new LineTextButton(this, I18n.format("gui.modernui.settings.tab.audio"), 48f,
                 () -> switchChildModule(3), i -> i == 3));
-        consumer.accept(new LineTextButton(I18n.format("gui.modernui.settings.tab.controls"), 48f,
+        consumer.accept(new LineTextButton(this, I18n.format("gui.modernui.settings.tab.controls"), 48f,
                 () -> switchChildModule(4), i -> i == 4));
-        consumer.accept(new LineTextButton(I18n.format("gui.modernui.settings.tab.assets"), 48f,
+        consumer.accept(new LineTextButton(this, I18n.format("gui.modernui.settings.tab.assets"), 48f,
                 this::openAssetsMenu, i -> i >= 5 && i <= 8));
         int i = 0;
         addChildModule(++i, SettingGeneral::new);
@@ -78,24 +78,9 @@ public class IngameMenuSettings extends ModuleGroup {
         addChildModule(++i, SettingResourcePack::new);
         addChildModule(++i, SettingLanguage::new);
 
-        int c = GlobalModuleManager.INSTANCE.getWindowWidth();
-        if (home.getTransitionDirection(true)) {
-            GlobalModuleManager.INSTANCE.addAnimation(new Animation(4, true)
-                    .applyTo(new Applier(-c, 0, v -> xOffset = v)));
-        } else {
-            GlobalModuleManager.INSTANCE.addAnimation(new Animation(4, true)
-                    .applyTo(new Applier(c, 0, v -> xOffset = v)));
-        }
+
 
         switchChildModule(1);
-    }
-
-    @Override
-    public void draw(float time) {
-        RenderSystem.pushMatrix();
-        RenderSystem.translatef(xOffset, 0, 0);
-        super.draw(time);
-        RenderSystem.popMatrix();
     }
 
     @Override
@@ -106,13 +91,13 @@ public class IngameMenuSettings extends ModuleGroup {
 
     @Override
     public int[] changingModule() {
-        int c = GlobalModuleManager.INSTANCE.getWindowWidth();
+        int c = home.getWindowWidth();
         if (home.getTransitionDirection(false)) {
-            GlobalModuleManager.INSTANCE.addAnimation(new Animation(4, true)
-                    .applyTo(new Applier(0, c, v -> xOffset = v)));
+            home.addAnimation(new Animation(4, true)
+                    .applyTo(new Applier(0, c, bg::setXOffset)));
         } else {
-            GlobalModuleManager.INSTANCE.addAnimation(new Animation(4, true)
-                    .applyTo(new Applier(0, -c, v -> xOffset = v)));
+            home.addAnimation(new Animation(4, true)
+                    .applyTo(new Applier(0, -c, bg::setXOffset)));
         }
         return new int[]{1, 4};
     }
@@ -125,7 +110,7 @@ public class IngameMenuSettings extends ModuleGroup {
         if (ModIntegration.optifineLoaded) {
             tabs.add(I18n.format("of.options.shadersTitle") + " (WIP)");
         }
-        DropDownMenu menu = new DropDownMenu(tabs, getCid() - 5, 12, this::assetsButtonMenuActions, DropDownMenu.Align.RIGHT);
+        DropDownMenu menu = new DropDownMenu(this, tabs, getCid() - 5, 12, this::assetsButtonMenuActions, DropDownMenu.Align.RIGHT);
         LineTextButton t = buttons.get(4);
         menu.setPos(t.getRight() - 8, t.getBottom() + 1);
         GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(menu), false);

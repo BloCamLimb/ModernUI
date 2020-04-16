@@ -19,6 +19,7 @@
 package icyllis.modernui.impl.setting;
 
 import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.widget.IDiscreteSliderReceiver;
 import icyllis.modernui.gui.widget.SliderDiscrete;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
@@ -46,7 +47,7 @@ public class DSliderSettingEntry extends SettingEntry implements IDiscreteSlider
 
     public DSliderSettingEntry(SettingScrollWindow window, String title, int minValue, int maxValue, int currentValue, Consumer<Integer> applyFunc, Function<Integer, String> displayStringFunc, boolean realtimeApply) {
         super(window, title);
-        this.slider = new SliderDiscrete(window, 84, currentValue - minValue, maxValue - minValue, this);
+        this.slider = new SliderDiscrete(window.getModule(), 84, currentValue - minValue, maxValue - minValue, this);
         this.minValue = minValue;
         this.originalValue = currentValue;
         this.currentValue = currentValue;
@@ -63,9 +64,11 @@ public class DSliderSettingEntry extends SettingEntry implements IDiscreteSlider
     }
 
     @Override
-    public void drawExtra(float time) {
-        slider.draw(time);
-        fontRenderer.drawString(displayString, x2 - 6, y1 + 6, titleBrightness, 1.0f, TextAlign.RIGHT);
+    public void drawExtra(Canvas canvas, float time) {
+        slider.draw(canvas, time);
+        canvas.setRGBA(titleBrightness, titleBrightness, titleBrightness, 1);
+        canvas.setTextAlign(TextAlign.RIGHT);
+        canvas.drawText(displayString, x2 - 6, y1 + 6);
     }
 
     @Override

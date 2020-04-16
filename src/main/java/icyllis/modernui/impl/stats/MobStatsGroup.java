@@ -38,7 +38,7 @@ public class MobStatsGroup extends UniformScrollGroup<MobStatsEntry> {
         Stats.ENTITY_KILLED.forEach(e -> set.add(e.getValue()));
         Stats.ENTITY_KILLED_BY.forEach(e -> set.add(e.getValue()));
 
-        set.forEach(e -> entries.add(new MobStatsEntry(e)));
+        set.forEach(e -> entries.add(new MobStatsEntry(window, e)));
 
         height = entries.size() * entryHeight;
     }

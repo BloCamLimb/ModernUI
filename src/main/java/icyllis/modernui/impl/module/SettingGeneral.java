@@ -64,8 +64,7 @@ public class SettingGeneral extends Module {
 
         window.addGroups(groups);
 
-        addElements(window);
-        addMouseListener(window);
+        addWidget(window);
     }
 
     private void addGameCategory(List<SettingCategoryGroup> groups) {

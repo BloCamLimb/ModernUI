@@ -18,6 +18,7 @@
 
 package icyllis.modernui.gui.scroll;
 
+import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.IMouseListener;
 
 import javax.annotation.Nonnull;
@@ -53,9 +54,9 @@ public abstract class UniformScrollGroup<T extends UniformScrollEntry> extends S
     }
 
     @Override
-    public void draw(float time) {
+    public void draw(Canvas canvas, float time) {
         for (UniformScrollEntry entry : visible) {
-            entry.draw(time);
+            entry.draw(canvas, time);
         }
     }
 

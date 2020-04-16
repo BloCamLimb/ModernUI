@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.draw;
+package icyllis.modernui.gui.background;
 
 import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.gui.animation.Animation;
@@ -26,7 +26,7 @@ import icyllis.modernui.gui.master.*;
 
 import javax.annotation.Nonnull;
 
-public class ConfirmWindowDraw implements IDrawable {
+public class ConfirmWindowBG implements IDrawable {
 
     private String title = "";
 
@@ -36,7 +36,7 @@ public class ConfirmWindowDraw implements IDrawable {
 
     private float frameSizeHOffset = 16;
 
-    public ConfirmWindowDraw(Module module) {
+    public ConfirmWindowBG(Module module) {
         module.addAnimation(new Animation(3, true)
                 .applyTo(new Applier(frameSizeHOffset, 80, value -> frameSizeHOffset = value)));
     }
@@ -50,7 +50,7 @@ public class ConfirmWindowDraw implements IDrawable {
         canvas.drawRect(x, y, x + 180, y + 16);
 
         canvas.setRGBA(0.5f, 0.5f, 0.5f, 1.0f);
-        canvas.drawRectFrame(x, y, x + 180, y + frameSizeHOffset);
+        canvas.drawRectOutline(x, y, x + 180, y + frameSizeHOffset, 0.51f);
 
         canvas.resetColor();
         canvas.setTextAlign(TextAlign.CENTER);

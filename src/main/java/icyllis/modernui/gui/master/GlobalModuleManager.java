@@ -241,13 +241,11 @@ public enum GlobalModuleManager {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableAlphaTest();
-        RenderSystem.pushMatrix();
         root.draw(animationTime);
         if (popup != null) {
             popup.draw(animationTime);
         }
-        DrawTools.INSTANCE.setLineAntiAliasing(false);
-        RenderSystem.popMatrix();
+        DrawTools.setLineAA(false);
         RenderSystem.enableTexture();
         RenderSystem.disableBlend();
     }
@@ -280,7 +278,9 @@ public enum GlobalModuleManager {
 
     public void clientTick() {
         ticks++;
-        root.tick(ticks);
+        if (root != null) {
+            root.tick(ticks);
+        }
         if (popup != null) {
             popup.tick(ticks);
         }

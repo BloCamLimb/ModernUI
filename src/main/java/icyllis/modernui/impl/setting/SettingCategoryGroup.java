@@ -19,11 +19,9 @@
 package icyllis.modernui.impl.setting;
 
 import icyllis.modernui.font.TextAlign;
-import icyllis.modernui.font.FontTools;
-import icyllis.modernui.font.IFontRenderer;
+import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.gui.scroll.UniformScrollGroup;
-import icyllis.modernui.gui.math.Color3f;
 import net.minecraft.util.text.TextFormatting;
 
 import java.util.List;
@@ -31,8 +29,6 @@ import java.util.List;
 public class SettingCategoryGroup extends UniformScrollGroup<SettingEntry> {
 
     public static int ENTRY_HEIGHT = 21;
-
-    private IFontRenderer fontRenderer = FontTools.FONT_RENDERER;
 
     private String title;
 
@@ -58,10 +54,18 @@ public class SettingCategoryGroup extends UniformScrollGroup<SettingEntry> {
         }
     }
 
-    @Override
+    /*@Override
     public void draw(float time) {
         fontRenderer.drawString(title, centerX - 160, y1 + 14, Color3f.WHILE, 1.0f, TextAlign.LEFT);
         super.draw(time);
+    }*/
+
+    @Override
+    public void draw(Canvas canvas, float time) {
+        canvas.resetColor();
+        canvas.setTextAlign(TextAlign.LEFT);
+        canvas.drawText(title, centerX - 160, y1 + 14);
+        super.draw(canvas, time);
     }
 
     /*@Override

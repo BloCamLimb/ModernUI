@@ -19,8 +19,8 @@
 package icyllis.modernui.gui.popup;
 
 import icyllis.modernui.font.FontTools;
-import icyllis.modernui.gui.draw.Background;
-import icyllis.modernui.gui.draw.ConfirmWindowDraw;
+import icyllis.modernui.gui.background.Background;
+import icyllis.modernui.gui.background.ConfirmWindowBG;
 import icyllis.modernui.gui.layout.WidgetLayout;
 import icyllis.modernui.gui.master.*;
 import icyllis.modernui.gui.widget.TextFrameButton;
@@ -32,7 +32,7 @@ import java.util.List;
 
 public class PopupConfirm extends Module {
 
-    private final ConfirmWindowDraw bg;
+    private final ConfirmWindowBG bg;
 
     private WidgetLayout buttonLayout;
 
@@ -54,7 +54,7 @@ public class PopupConfirm extends Module {
      */
     public PopupConfirm(ConfirmCallback callback, int seconds, String confirmText, String cancelText, @Nullable String alternative) {
         addDrawable(new Background(this, 4));
-        bg = new ConfirmWindowDraw(this);
+        bg = new ConfirmWindowBG(this);
         addDrawable(bg);
         List<IWidget> buttons = new ArrayList<>();
         if (seconds > 0) {

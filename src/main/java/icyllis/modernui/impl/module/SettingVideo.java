@@ -53,8 +53,7 @@ public class SettingVideo extends Module {
 
         window.addGroups(groups);
 
-        addElements(window);
-        addMouseListener(window);
+        addWidget(window);
     }
 
     private void addVideoCategory(List<SettingCategoryGroup> groups) {

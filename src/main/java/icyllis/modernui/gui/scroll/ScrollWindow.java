@@ -20,7 +20,7 @@ package icyllis.modernui.gui.scroll;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.master.*;
+import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.widget.Widget;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -29,7 +29,7 @@ import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.math.MathHelper;
 import org.lwjgl.opengl.GL11;
 
-import javax.annotation.Nullable;
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.function.Function;
 
@@ -70,7 +70,7 @@ public class ScrollWindow<T extends ScrollGroup> extends Widget {
     }
 
     @Override
-    public final void draw(Canvas canvas, float time) {
+    public final void draw(@Nonnull Canvas canvas, float time) {
         controller.update(time);
 
         Tessellator tessellator = Tessellator.getInstance();
@@ -87,10 +87,10 @@ public class ScrollWindow<T extends ScrollGroup> extends Widget {
 
         RenderSystem.enableTexture();
 
-        RenderSystem.pushMatrix();
-        RenderSystem.translatef(0, -getVisibleOffset(), 0);
-        scrollList.draw(time);
-        RenderSystem.popMatrix();
+        canvas.save();
+        canvas.translate(0, -getVisibleOffset());
+        scrollList.draw(canvas, time);
+        canvas.restore();
 
         RenderSystem.disableDepthTest();
         RenderSystem.enableBlend();
@@ -112,17 +112,11 @@ public class ScrollWindow<T extends ScrollGroup> extends Widget {
         tessellator.draw();
         RenderSystem.shadeModel(GL11.GL_FLAT);
 
-        scrollbar.draw(time);
+        scrollbar.draw(canvas, time);
 
         RenderSystem.enableTexture();
 
         GL11.glDisable(GL11.GL_SCISSOR_TEST);
-
-        drawEndExtra();
-    }
-
-    protected void drawEndExtra() {
-
     }
 
     @Override
@@ -213,7 +207,7 @@ public class ScrollWindow<T extends ScrollGroup> extends Widget {
         this.scrollAmount = scrollAmount;
         updateScrollBarOffset();
         updateScrollList();
-        GlobalModuleManager.INSTANCE.refreshMouse();
+        module.refocusCursor();
     }
 
     /**

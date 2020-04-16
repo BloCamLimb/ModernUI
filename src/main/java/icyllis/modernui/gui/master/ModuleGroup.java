@@ -18,6 +18,7 @@
 
 package icyllis.modernui.gui.master;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.math.DelayedRunnable;
 import icyllis.modernui.system.ModernUI;
 
@@ -46,11 +47,6 @@ public class ModuleGroup extends Module {
      * Not always same, such as there's exit animation
      */
     private int cid = 0, tid = 0;
-
-    /**
-     * If true, this module will draw over child module
-     */
-    private boolean overDraw = false;
 
     public ModuleGroup() {
 
@@ -110,10 +106,6 @@ public class ModuleGroup extends Module {
         MouseTools.useDefaultCursor();
     }
 
-    protected void makeOverDraw() {
-        overDraw = true;
-    }
-
     public int getCid() {
         return cid;
     }
@@ -143,10 +135,14 @@ public class ModuleGroup extends Module {
     protected final void drawChild(float time) {
         super.drawChild(time);
         if (shadow != null) {
+            RenderSystem.pushMatrix();
             shadow.draw(time);
+            RenderSystem.popMatrix();
         }
         if (child != null) {
+            RenderSystem.pushMatrix();
             child.draw(time);
+            RenderSystem.popMatrix();
         }
     }
 

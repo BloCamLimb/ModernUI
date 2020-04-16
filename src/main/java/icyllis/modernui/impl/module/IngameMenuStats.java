@@ -44,31 +44,31 @@ public class IngameMenuStats extends ModuleGroup {
 
     private final ClientPlayNetHandler netHandler;
 
-    private float xOffset;
-
     private final IngameMenuHome home;
+
+    private final MenuSettingsBG bg;
 
     public IngameMenuStats(IngameMenuHome home) {
         this.home = home;
         netHandler = Objects.requireNonNull(Minecraft.getInstance().getConnection());
         netHandler.sendPacket(new CClientStatusPacket(CClientStatusPacket.State.REQUEST_STATS));
 
-        addElements(new MenuSettingsBG());
+        bg = new MenuSettingsBG(home);
+        addDrawable(bg);
 
         buttonLayout = new WidgetLayout(buttons, WidgetLayout.Direction.HORIZONTAL_CENTER, 16);
 
         Consumer<LineTextButton> consumer = s -> {
-            addElements(s);
-            addMouseListener(s);
+            addWidget(s);
             buttons.add(s);
         };
-        consumer.accept(new LineTextButton(I18n.format("stat.generalButton"), 48f,
+        consumer.accept(new LineTextButton(this, I18n.format("stat.generalButton"), 48f,
                 () -> switchChildModule(1), i -> i == 1));
-        consumer.accept(new LineTextButton(I18n.format("stat.blocksButton"), 48f,
+        consumer.accept(new LineTextButton(this, I18n.format("stat.blocksButton"), 48f,
                 () -> switchChildModule(2), i -> i == 2));
-        consumer.accept(new LineTextButton(I18n.format("stat.itemsButton"), 48f,
+        consumer.accept(new LineTextButton(this, I18n.format("stat.itemsButton"), 48f,
                 () -> switchChildModule(3), i -> i == 3));
-        consumer.accept(new LineTextButton(I18n.format("stat.mobsButton"), 48f,
+        consumer.accept(new LineTextButton(this, I18n.format("stat.mobsButton"), 48f,
                 () -> switchChildModule(4), i -> i == 4));
 
         int i = 0;
@@ -77,24 +77,9 @@ public class IngameMenuStats extends ModuleGroup {
         addChildModule(++i, StatsItems::new);
         addChildModule(++i, StatsMobs::new);
 
-        int c = GlobalModuleManager.INSTANCE.getWindowWidth();
-        if (home.getTransitionDirection(true)) {
-            GlobalModuleManager.INSTANCE.addAnimation(new Animation(4, true)
-                    .applyTo(new Applier(-c, 0, v -> xOffset = v)));
-        } else {
-            GlobalModuleManager.INSTANCE.addAnimation(new Animation(4, true)
-                    .applyTo(new Applier(c, 0, v -> xOffset = v)));
-        }
+
 
         switchChildModule(1);
-    }
-
-    @Override
-    public void draw(float time) {
-        RenderSystem.pushMatrix();
-        RenderSystem.translatef(xOffset, 0, 0);
-        super.draw(time);
-        RenderSystem.popMatrix();
     }
 
     @Override
@@ -105,13 +90,13 @@ public class IngameMenuStats extends ModuleGroup {
 
     @Override
     public int[] changingModule() {
-        int c = GlobalModuleManager.INSTANCE.getWindowWidth();
+        int c = home.getWindowWidth();
         if (home.getTransitionDirection(false)) {
-            GlobalModuleManager.INSTANCE.addAnimation(new Animation(4, true)
-                    .applyTo(new Applier(0, c, v -> xOffset = v)));
+            home.addAnimation(new Animation(4, true)
+                    .applyTo(new Applier(0, c, bg::setXOffset)));
         } else {
-            GlobalModuleManager.INSTANCE.addAnimation(new Animation(4, true)
-                    .applyTo(new Applier(0, -c, v -> xOffset = v)));
+            home.addAnimation(new Animation(4, true)
+                    .applyTo(new Applier(0, -c, bg::setXOffset)));
         }
         return new int[]{1, 4};
     }

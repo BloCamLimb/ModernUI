@@ -42,7 +42,7 @@ public class ArrowButton extends Widget {
     public ArrowButton(Module module, @Nonnull Direction direction, float size, Runnable leftClick, boolean clickable) {
         super(module, size, size);
         int i = direction.ordinal();
-        this.icon = new Icon(ConstantsLibrary.ICONS, 64 * i / 512f, 64 / 512f, (i + 1) * 64 / 512f, 128 / 512f, true);
+        this.icon = new Icon(ConstantsLibrary.ICONS, 64 * i / 512f, 0.25f, (i + 1) * 64 / 512f, 0.375f, true);
         this.leftClickFunc = leftClick;
         this.clickable = clickable;
         if (!clickable) {

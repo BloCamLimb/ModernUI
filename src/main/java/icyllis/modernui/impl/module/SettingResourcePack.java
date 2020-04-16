@@ -64,7 +64,7 @@ public class SettingResourcePack extends Module {
 
     public SettingResourcePack() {
         minecraft = Minecraft.getInstance();
-        addElements(new ResourcePackBG());
+        addDrawable(new ResourcePackBG());
 
         Function<Integer, Float> widthFunc = w -> Math.min((w - 80) / 2f - 8f, 240);
         Function<Integer, Float> leftXFunc = w -> w / 2f - widthFunc.apply(w) - 8f;
@@ -82,10 +82,10 @@ public class SettingResourcePack extends Module {
 
         List<ArrowButton> list = new ArrayList<>();
 
-        leftArrow = new ArrowButton(ArrowButton.Direction.LEFT, this::intoAvailable, false);
-        rightArrow = new ArrowButton(ArrowButton.Direction.RIGHT, this::intoSelected, false);
-        upArrow = new ArrowButton(ArrowButton.Direction.UP, this::goUp, false);
-        downArrow = new ArrowButton(ArrowButton.Direction.DOWN, this::goDown, false);
+        leftArrow = new ArrowButton(this, ArrowButton.Direction.LEFT, 12, this::intoAvailable, false);
+        rightArrow = new ArrowButton(this, ArrowButton.Direction.RIGHT, 12, this::intoSelected, false);
+        upArrow = new ArrowButton(this, ArrowButton.Direction.UP, 12, this::goUp, false);
+        downArrow = new ArrowButton(this, ArrowButton.Direction.DOWN, 12, this::goDown, false);
 
         list.add(leftArrow);
         list.add(rightArrow);
@@ -94,12 +94,9 @@ public class SettingResourcePack extends Module {
 
         arrowsLayout = new WidgetLayout(list, WidgetLayout.Direction.VERTICAL_POSITIVE, 4);
 
-        addElements(aWindow);
-        addMouseListener(aWindow);
-        addElements(sWindow);
-        addMouseListener(sWindow);
-        list.forEach(this::addElements);
-        list.forEach(this::addMouseListener);
+        addWidget(aWindow);
+        addWidget(sWindow);
+        list.forEach(this::addWidget);
     }
 
     @Override

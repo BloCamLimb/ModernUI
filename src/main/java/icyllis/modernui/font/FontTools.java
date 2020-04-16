@@ -45,6 +45,10 @@ public class FontTools {
         return FONT_RENDERER.getStringWidth(string);
     }
 
+    public static String trimStringToWidth(String str, float width, boolean reverse) {
+        return FONT_RENDERER.trimStringToWidth(str, width, reverse);
+    }
+
     @Nonnull
     public static String[] splitStringToWidth(@Nonnull String string, float width) {
         List<String> list = new ArrayList<>();

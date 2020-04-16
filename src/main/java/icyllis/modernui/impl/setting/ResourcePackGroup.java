@@ -22,6 +22,7 @@ import com.google.common.collect.Lists;
 import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.impl.module.SettingResourcePack;
 import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.gui.scroll.UniformScrollGroup;
@@ -39,8 +40,6 @@ import java.util.List;
 public class ResourcePackGroup extends UniformScrollGroup<ResourcePackEntry> {
 
     public static int ENTRY_HEIGHT = 36;
-
-    private final IFontRenderer fontRenderer = FontTools.FONT_RENDERER;
 
     private final String title;
 
@@ -61,7 +60,7 @@ public class ResourcePackGroup extends UniformScrollGroup<ResourcePackEntry> {
             infoList.removeAll(list.getEnabledPacks());
             infoList.removeIf(ClientResourcePackInfo::isHidden);
 
-            infoList.forEach(t -> entries.add(new ResourcePackEntry(module, t)));
+            infoList.forEach(t -> entries.add(new ResourcePackEntry(module, window, t)));
         } else {
             this.title = TextFormatting.BOLD + I18n.format("resourcePack.selected.title");
 
@@ -69,7 +68,7 @@ public class ResourcePackGroup extends UniformScrollGroup<ResourcePackEntry> {
             enabledList.removeIf(ClientResourcePackInfo::isHidden);
             Collections.reverse(enabledList);
 
-            enabledList.forEach(t -> entries.add(new ResourcePackEntry(module, t)));
+            enabledList.forEach(t -> entries.add(new ResourcePackEntry(module, window, t)));
         }
         // 14 for title, 4 for end space
         height = 18 + entries.size() * entryHeight;
@@ -103,10 +102,18 @@ public class ResourcePackGroup extends UniformScrollGroup<ResourcePackEntry> {
         }
     }
 
-    @Override
+    /*@Override
     public void draw(float time) {
         fontRenderer.drawString(title, titleCenterX, y1 + 2, TextAlign.CENTER);
         super.draw(time);
+    }*/
+
+    @Override
+    public void draw(Canvas canvas, float time) {
+        canvas.resetColor();
+        canvas.setTextAlign(TextAlign.CENTER);
+        canvas.drawText(title, titleCenterX, y1 + 2);
+        super.draw(canvas, time);
     }
 
     public void layoutGroup() {

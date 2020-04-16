@@ -21,6 +21,7 @@ package icyllis.modernui.impl.stats;
 import com.google.common.collect.Sets;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.gui.scroll.UniformScrollGroup;
@@ -108,7 +109,7 @@ public class ItemStatsGroup extends UniformScrollGroup<ItemStatsEntry> {
         set.remove(Items.AIR);
         int i = 0;
         for (Item item : set) {
-            entries.add(new ItemStatsEntry(item, (i & 1) == 0 ? Color3f.WHILE : Color3f.GRAY));
+            entries.add(new ItemStatsEntry(window, item, (i & 1) == 0 ? Color3f.WHILE : Color3f.GRAY));
             i++;
         }
 
@@ -135,12 +136,10 @@ public class ItemStatsGroup extends UniformScrollGroup<ItemStatsEntry> {
     }
 
     @Override
-    public void draw(float time) {
-        super.draw(time);
+    public void draw(Canvas canvas, float time) {
+        super.draw(canvas, time);
         RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
         textureManager.bindTexture(AbstractGui.STATS_ICON_LOCATION);
-        GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
-        GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
         int i = 0;
         float x3 = centerX - 80;
         for (int c : uMap) {

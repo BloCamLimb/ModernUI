@@ -19,6 +19,7 @@
 package icyllis.modernui.impl.setting;
 
 import com.google.common.collect.Lists;
+import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.popup.PopupMenu;
 import icyllis.modernui.gui.widget.DropDownMenu;
@@ -45,7 +46,7 @@ public class KeyBindingEntry extends SettingEntry {
     public KeyBindingEntry(SettingScrollWindow window, KeyBinding keyBinding, Runnable conflictsCallback) {
         super(window, I18n.format(keyBinding.getKeyDescription()));
         this.keyBinding = keyBinding;
-        this.inputBox = new KeyInputBox(window, this::bindKey);
+        this.inputBox = new KeyInputBox(window.getModule(), this::bindKey);
         //TODO tint text by conflict context, or maybe not?
         //this.conflictContext = keyBinding.getKeyConflictContext().toString();
         this.conflictsCallback = conflictsCallback;
@@ -59,8 +60,8 @@ public class KeyBindingEntry extends SettingEntry {
     }
 
     @Override
-    public void drawExtra(float time) {
-        inputBox.draw(time);
+    public void drawExtra(Canvas canvas, float time) {
+        inputBox.draw(canvas, time);
     }
 
     @Override
@@ -78,8 +79,8 @@ public class KeyBindingEntry extends SettingEntry {
             //DropDownMenu list = new DropDownMenu(Lists.newArrayList("WIP =w="), -1, 16, this::menuActions);
             //list.setPos((float) mouseX, (float) (mouseY - deltaY + 18), GlobalModuleManager.INSTANCE.getWindowHeight());
             //GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(list), false);
-            DropDownMenu menu = new DropDownMenu(Lists.newArrayList(I18n.format("controls.reset")), -1, 12, this::menuActions, DropDownMenu.Align.LEFT);
-            menu.setPos((float) GlobalModuleManager.INSTANCE.getMouseX() + 1, (float) GlobalModuleManager.INSTANCE.getMouseY() + 1);
+            DropDownMenu menu = new DropDownMenu(module, Lists.newArrayList(I18n.format("controls.reset")), -1, 12, this::menuActions, DropDownMenu.Align.LEFT);
+            menu.setPos((float) module.getMouseX() + 1, (float) module.getMouseY() + 1);
             GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(menu), false);
             return true;
         }

@@ -32,7 +32,7 @@ import java.util.function.Function;
 @Deprecated
 public class StandardTexture extends Element {
 
-    protected ResourceLocation res;
+    /*protected ResourceLocation res;
 
     protected float u, v;
 
@@ -69,5 +69,5 @@ public class StandardTexture extends Element {
         textureManager.bindTexture(res);
         DrawTools.blit(x / scale, y / scale, u, v, sizeW, sizeH);
         RenderSystem.popMatrix();
-    }
+    }*/
 }

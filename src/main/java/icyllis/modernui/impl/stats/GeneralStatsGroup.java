@@ -37,7 +37,7 @@ public class GeneralStatsGroup extends UniformScrollGroup<GeneralStatsEntry> {
         super(window, ENTRY_HEIGHT);
         int i = 0;
         for (Stat<ResourceLocation> stat : Stats.CUSTOM) {
-            entries.add(new GeneralStatsEntry(stat, (i & 1) == 0 ? Color3f.WHILE : Color3f.GRAY));
+            entries.add(new GeneralStatsEntry(window, stat, (i & 1) == 0 ? Color3f.WHILE : Color3f.GRAY));
             i++;
         }
         height = entries.size() * entryHeight;

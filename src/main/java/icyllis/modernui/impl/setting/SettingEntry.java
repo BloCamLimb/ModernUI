@@ -19,7 +19,10 @@
 package icyllis.modernui.impl.setting;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.font.TrueTypeRenderer;
+import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import icyllis.modernui.gui.scroll.UniformScrollEntry;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -32,15 +35,12 @@ import org.lwjgl.opengl.GL11;
  */
 public abstract class SettingEntry extends UniformScrollEntry {
 
-    protected final SettingScrollWindow window;
-
     public String title;
 
     protected float titleBrightness = 0.85f;
 
     public SettingEntry(SettingScrollWindow window, String title) {
-        super(SettingCategoryGroup.ENTRY_HEIGHT);
-        this.window = window;
+        super(window, SettingCategoryGroup.ENTRY_HEIGHT);
         this.title = title;
         //TODO tooltip description lines
         /*if (desc != null)
@@ -48,24 +48,28 @@ public abstract class SettingEntry extends UniformScrollEntry {
     }
 
     @Override
-    public final void draw(float time) {
-        Tessellator tessellator = Tessellator.getInstance();
-        BufferBuilder bufferBuilder = tessellator.getBuffer();
-        fontRenderer.drawString(title, x1, y1 + 6, titleBrightness, 1.0f, TextAlign.LEFT);
+    public final void draw(Canvas canvas, float time) {
+        /*Tessellator tessellator = Tessellator.getInstance();
+        BufferBuilder bufferBuilder = tessellator.getBuffer();*/
+        canvas.setRGBA(titleBrightness, titleBrightness, titleBrightness, 1);
+        canvas.setTextAlign(TextAlign.LEFT);
+        canvas.drawText(title, x1, y1 + 6);
         /*if (desc.length > 0) {
 
         }*/
-        drawExtra(time);
-        RenderSystem.disableTexture();
+        drawExtra(canvas, time);
+        canvas.setRGBA(0.55f, 0.55f, 0.55f, 0.863f);
+        canvas.drawLine(x1, y2, x2, y2);
+        /*RenderSystem.disableTexture();
         bufferBuilder.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);
         GL11.glLineWidth(1.0f);
         bufferBuilder.pos(x1, y2, 0.0D).color(140, 140, 140, 220).endVertex();
         bufferBuilder.pos(x2, y2, 0.0D).color(140, 140, 140, 220).endVertex();
         tessellator.draw();
-        RenderSystem.enableTexture();
+        RenderSystem.enableTexture();*/
     }
 
-    protected abstract void drawExtra(float time);
+    protected abstract void drawExtra(Canvas canvas, float time);
 
     @Override
     protected void onMouseHoverEnter() {

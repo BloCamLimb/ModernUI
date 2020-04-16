@@ -46,8 +46,7 @@ public class StatsItems extends Module {
 
         window.addGroups(Lists.newArrayList(group));
 
-        addElements(window);
-        addMouseListener(window);
+        addWidget(window);
     }
 
     @Override

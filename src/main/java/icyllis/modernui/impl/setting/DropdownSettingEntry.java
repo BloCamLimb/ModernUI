@@ -20,10 +20,13 @@ package icyllis.modernui.impl.setting;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.font.FontTools;
+import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
+import icyllis.modernui.gui.master.Icon;
 import icyllis.modernui.gui.popup.PopupMenu;
 import icyllis.modernui.gui.widget.DropDownMenu;
 import icyllis.modernui.gui.master.DrawTools;
@@ -36,6 +39,7 @@ import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import org.lwjgl.opengl.GL11;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -46,7 +50,7 @@ public class DropdownSettingEntry extends SettingEntry {
     public int originalOptionIndex;
     public int currentOptionIndex;
 
-    public List<String> optionNames;
+    public final List<String> optionNames;
 
     private String optionText;
     private float textLength;
@@ -54,19 +58,21 @@ public class DropdownSettingEntry extends SettingEntry {
     private float optionBrightness = 0.85f;
 
     protected boolean drawOptionFrame = false;
-    private int frameAlpha = 0; // 0~255
+    private float frameAlpha = 0;
 
     protected Consumer<Integer> saveOption;
 
     protected boolean available = true;
 
-    public DropdownSettingEntry(SettingScrollWindow window, String optionTitle, List<String> optionNames, int originalIndex, Consumer<Integer> saveOption) {
+    private final Icon icon = new Icon(ConstantsLibrary.ICONS, 0.25f, 0.125f, 0.375f, 0.25f, true);
+
+    public DropdownSettingEntry(SettingScrollWindow window, String optionTitle, @Nonnull List<String> optionNames, int originalIndex, Consumer<Integer> saveOption) {
         super(window, optionTitle);
         this.currentOptionIndex = this.originalOptionIndex = originalIndex;
         this.optionNames = optionNames;
         this.saveOption = saveOption;
         optionText = optionNames.get(originalIndex);
-        textLength = fontRenderer.getStringWidth(optionText) + 3;
+        textLength = FontTools.getStringWidth(optionText) + 3;
     }
 
     public void setAvailable(boolean b) {
@@ -79,29 +85,35 @@ public class DropdownSettingEntry extends SettingEntry {
     }
 
     @Override
-    public void drawExtra(float time) {
+    public void drawExtra(Canvas canvas, float time) {
         if (frameAlpha > 0) {
-            Tessellator tessellator = Tessellator.getInstance();
+            /*Tessellator tessellator = Tessellator.getInstance();
             BufferBuilder bufferBuilder = tessellator.getBuffer();
             RenderSystem.disableTexture();
-            bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+            bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);*/
             float bl = x2 - 10 - textLength;
-            bufferBuilder.pos(bl, y1 + 18, 0.0D).color(96, 96, 96, frameAlpha).endVertex();
+            /*bufferBuilder.pos(bl, y1 + 18, 0.0D).color(96, 96, 96, frameAlpha).endVertex();
             bufferBuilder.pos(x2, y1 + 18, 0.0D).color(96, 96, 96, frameAlpha).endVertex();
             bufferBuilder.pos(x2, y1 + 2, 0.0D).color(96, 96, 96, frameAlpha).endVertex();
             bufferBuilder.pos(bl, y1 + 2, 0.0D).color(96, 96, 96, frameAlpha).endVertex();
             tessellator.draw();
-            RenderSystem.enableTexture();
+            RenderSystem.enableTexture();*/
+            canvas.setRGBA(0.377f, 0.377f, 0.377f, frameAlpha);
+            canvas.drawRect(bl, y1 + 2, x2, y1 + 18);
         }
-        fontRenderer.drawString(optionText, x2 - 10, y1 + 6, optionBrightness, 1, TextAlign.RIGHT);
-        RenderSystem.pushMatrix();
+        canvas.setTextAlign(TextAlign.RIGHT);
+        canvas.setRGBA(optionBrightness, optionBrightness, optionBrightness, 1);
+        canvas.drawText(optionText, x2 - 10, y1 + 6);
+        //fontRenderer.drawString(optionText, x2 - 10, y1 + 6, optionBrightness, 1, TextAlign.RIGHT);
+        canvas.drawIcon(icon, x2 - 8, y1 + 7, x2, y1 + 15);
+        /*RenderSystem.pushMatrix();
         GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
         GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
         RenderSystem.scalef(0.25f, 0.25f, 1);
         RenderSystem.color3f(optionBrightness, optionBrightness, optionBrightness);
         textureManager.bindTexture(ConstantsLibrary.ICONS);
         DrawTools.blit(x2 * 4 - 34, y1 * 4 + 28, 64, 32, 32, 32);
-        RenderSystem.popMatrix();
+        RenderSystem.popMatrix();*/
     }
 
     public void setFrameAlpha(float a) {
@@ -109,7 +121,7 @@ public class DropdownSettingEntry extends SettingEntry {
             frameAlpha = 0;
             return;
         }
-        frameAlpha = (int) a;
+        frameAlpha = a;
     }
 
     @Override
@@ -119,11 +131,11 @@ public class DropdownSettingEntry extends SettingEntry {
                 if (mouseInOption(mouseX, mouseY)) {
                     drawOptionFrame = true;
                     GlobalModuleManager.INSTANCE.addAnimation(new Animation(2)
-                            .applyTo(new Applier(64, this::setFrameAlpha)));
+                            .applyTo(new Applier(0.25f, this::setFrameAlpha)));
                 }
             } else if (!mouseInOption(mouseX, mouseY)) {
                 GlobalModuleManager.INSTANCE.addAnimation(new Animation(2)
-                        .applyTo(new Applier(64, 0, this::setFrameAlpha))
+                        .applyTo(new Applier(0.25f, 0, this::setFrameAlpha))
                         .onFinish(() -> drawOptionFrame = false));
             }
             return true;
@@ -138,7 +150,7 @@ public class DropdownSettingEntry extends SettingEntry {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if (drawOptionFrame && mouseButton == 0) {
-            DropDownMenu menu = new DropDownMenu(optionNames, currentOptionIndex, 16, this::onValueChanged, DropDownMenu.Align.RIGHT);
+            DropDownMenu menu = new DropDownMenu(window.getModule(), optionNames, currentOptionIndex, 16, this::onValueChanged, DropDownMenu.Align.RIGHT);
             menu.setPos(x2 - 4, y1 + 18 - window.getVisibleOffset());
             GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(menu), false);
             return true;
@@ -172,7 +184,7 @@ public class DropdownSettingEntry extends SettingEntry {
     protected void updateValue(int index) {
         currentOptionIndex = index;
         optionText = optionNames.get(index);
-        textLength = fontRenderer.getStringWidth(optionText) + 3;
+        textLength = FontTools.getStringWidth(optionText) + 3;
     }
 
     public void saveOption() {

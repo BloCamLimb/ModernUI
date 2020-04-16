@@ -18,6 +18,10 @@
 
 package icyllis.modernui.impl.stats;
 
+import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.font.TrueTypeRenderer;
+import icyllis.modernui.gui.master.Canvas;
+import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.gui.scroll.UniformScrollEntry;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.EntityType;
@@ -38,17 +42,19 @@ public class MobStatsEntry extends UniformScrollEntry {
 
     private String death = "";
 
-    public MobStatsEntry(EntityType<?> entity) {
-        super(MobStatsGroup.ENTRY_HEIGHT);
+    public MobStatsEntry(ScrollWindow<?> window, EntityType<?> entity) {
+        super(window, MobStatsGroup.ENTRY_HEIGHT);
         this.entity = entity;
         entityName = I18n.format(Util.makeTranslationKey("entity", EntityType.getKey(entity)));
     }
 
     @Override
-    public void draw(float time) {
-        fontRenderer.drawString(entityName, x1 + 2, y1 + 1);
-        fontRenderer.drawString(kill, x1 + 12, y1 + 10);
-        fontRenderer.drawString(death, x1 + 12, y1 + 19);
+    public void draw(Canvas canvas, float time) {
+        canvas.setTextAlign(TextAlign.LEFT);
+        canvas.resetColor();
+        canvas.drawText(entityName, x1 + 2, y1 + 1);
+        canvas.drawText(kill, x1 + 12, y1 + 10);
+        canvas.drawText(death, x1 + 12, y1 + 19);
     }
 
     public void updateValue(@Nonnull StatisticsManager manager) {

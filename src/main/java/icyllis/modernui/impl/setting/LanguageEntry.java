@@ -20,6 +20,9 @@ package icyllis.modernui.impl.setting;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.font.TrueTypeRenderer;
+import icyllis.modernui.gui.master.Canvas;
+import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.impl.module.SettingLanguage;
 import icyllis.modernui.gui.scroll.UniformScrollEntry;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -34,19 +37,26 @@ public class LanguageEntry extends UniformScrollEntry {
 
     private final Language language;
 
-    public LanguageEntry(SettingLanguage module, Language language) {
-        super(LanguageGroup.ENTRY_HEIGHT);
+    public LanguageEntry(SettingLanguage module, ScrollWindow<?> window, Language language) {
+        super(window, LanguageGroup.ENTRY_HEIGHT);
         this.module = module;
         this.language = language;
     }
 
     @Override
-    public final void draw(float time) {
-        Tessellator tessellator = Tessellator.getInstance();
-        BufferBuilder bufferBuilder = tessellator.getBuffer();
+    public final void draw(Canvas canvas, float time) {
+        /*Tessellator tessellator = Tessellator.getInstance();
+        BufferBuilder bufferBuilder = tessellator.getBuffer();*/
 
         if (module.getHighlight() == this) {
-            RenderSystem.disableTexture();
+            canvas.setRGBA(0.5f, 0.5f, 0.5f, 0.377f);
+            canvas.drawRect(x1 + 1, y1, x2 - 1, y2);
+
+            canvas.setLineAntiAliasing(true);
+            canvas.setRGBA(1, 1, 1, 0.879f);
+            canvas.drawRectLines(x1 + 1, y1, x2 - 1, y2);
+            canvas.setLineAntiAliasing(false);
+            /*RenderSystem.disableTexture();
             bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
             bufferBuilder.pos(x1 + 1, y2, 0.0D).color(128, 128, 128, 96).endVertex();
             bufferBuilder.pos(x2 - 1, y2, 0.0D).color(128, 128, 128, 96).endVertex();
@@ -63,9 +73,15 @@ public class LanguageEntry extends UniformScrollEntry {
             bufferBuilder.pos(x1 + 1, y1, 0.0D).color(255, 255, 255, 224).endVertex();
             tessellator.draw();
             GL11.glDisable(GL11.GL_LINE_SMOOTH);
-            RenderSystem.enableTexture();
+            RenderSystem.enableTexture();*/
         } else if (mouseHovered) {
-            RenderSystem.disableTexture();
+
+            canvas.setLineAntiAliasing(true);
+            canvas.setRGBA(0.879f, 0.879f, 0.879f, 0.7f);
+            canvas.drawRectLines(x1 + 1, y1, x2 - 1, y2);
+            canvas.setLineAntiAliasing(false);
+
+            /*RenderSystem.disableTexture();
             GL11.glEnable(GL11.GL_LINE_SMOOTH);
             GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
             GL11.glLineWidth(1.0F);
@@ -76,10 +92,12 @@ public class LanguageEntry extends UniformScrollEntry {
             bufferBuilder.pos(x1 + 1, y1, 0.0D).color(224, 224, 224, 180).endVertex();
             tessellator.draw();
             GL11.glDisable(GL11.GL_LINE_SMOOTH);
-            RenderSystem.enableTexture();
+            RenderSystem.enableTexture();*/
         }
 
-        fontRenderer.drawString(language.toString(), centerX, y1 + 4, TextAlign.CENTER);
+        canvas.setTextAlign(TextAlign.CENTER);
+        canvas.resetColor();
+        canvas.drawText(language.toString(), centerX, y1 + 4);
     }
 
     @Override
