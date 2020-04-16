@@ -50,7 +50,7 @@ public class ItemStatsGroup extends UniformScrollGroup<ItemStatsEntry> {
 
     private final int[] uMap;
 
-    public ItemStatsGroup(ScrollWindow<?> window, Type type) {
+    public ItemStatsGroup(ScrollWindow<?> window, StatisticsManager manager, Type type) {
         super(window, ENTRY_HEIGHT);
 
         Set<Item> set = Sets.newIdentityHashSet();
@@ -58,50 +58,72 @@ public class ItemStatsGroup extends UniformScrollGroup<ItemStatsEntry> {
         if (type == Type.ITEMS) {
             Stats.ITEM_BROKEN.forEach(e -> {
                 if (!(e.getValue() instanceof BlockItem)) {
-                    set.add(e.getValue());
+                    if (manager.getValue(e) > 0) {
+                        set.add(e.getValue());
+                    }
                 }
             });
             Stats.ITEM_CRAFTED.forEach(e -> {
                 if (!(e.getValue() instanceof BlockItem)) {
-                    set.add(e.getValue());
+                    if (manager.getValue(e) > 0) {
+                        set.add(e.getValue());
+                    }
                 }
             });
             Stats.ITEM_USED.forEach(e -> {
                 if (!(e.getValue() instanceof BlockItem)) {
-                    set.add(e.getValue());
+                    if (manager.getValue(e) > 0) {
+                        set.add(e.getValue());
+                    }
                 }
             });
             Stats.ITEM_PICKED_UP.forEach(e -> {
                 if (!(e.getValue() instanceof BlockItem)) {
-                    set.add(e.getValue());
+                    if (manager.getValue(e) > 0) {
+                        set.add(e.getValue());
+                    }
                 }
             });
             Stats.ITEM_DROPPED.forEach(e -> {
                 if (!(e.getValue() instanceof BlockItem)) {
-                    set.add(e.getValue());
+                    if (manager.getValue(e) > 0) {
+                        set.add(e.getValue());
+                    }
                 }
             });
             uMap = new int[]{4, 1, 2, 5, 6};
         } else {
-            Stats.BLOCK_MINED.forEach(e -> set.add(e.getValue().asItem()));
+            Stats.BLOCK_MINED.forEach(e -> {
+                if (manager.getValue(e) > 0) {
+                    set.add(e.getValue().asItem());
+                }
+            });
             Stats.ITEM_CRAFTED.forEach(e -> {
                 if (e.getValue() instanceof BlockItem) {
-                    set.add(e.getValue());
+                    if (manager.getValue(e) > 0) {
+                        set.add(e.getValue());
+                    }
                 }
             });
             Stats.ITEM_USED.forEach(e -> {
                 if (e.getValue() instanceof BlockItem) {
-                    set.add(e.getValue());
+                    if (manager.getValue(e) > 0) {
+                        set.add(e.getValue());
+                    }
                 }
             });
             Stats.ITEM_PICKED_UP.forEach(e -> {
                 if (e.getValue() instanceof BlockItem) {
-                    set.add(e.getValue());
+                    if (manager.getValue(e) > 0) {
+                        set.add(e.getValue());
+                    }
                 }
             });
             Stats.ITEM_DROPPED.forEach(e -> {
                 if (e.getValue() instanceof BlockItem) {
-                    set.add(e.getValue());
+                    if (manager.getValue(e) > 0) {
+                        set.add(e.getValue());
+                    }
                 }
             });
             uMap = new int[]{3, 1, 2, 5, 6};
