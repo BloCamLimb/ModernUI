@@ -18,6 +18,10 @@
 
 package icyllis.modernui.api;
 
+/**
+ * This API is mainly used for adding one-click content (now there's no api)
+ * Develop your own GUI should use whole project, and you must get my explicit permission
+ */
 public enum ModernUI_API {
     INSTANCE
 

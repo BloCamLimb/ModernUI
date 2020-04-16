@@ -18,34 +18,23 @@
 
 package icyllis.modernui.impl.setting;
 
-import com.mojang.blaze3d.platform.GlStateManager;
-import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.FontTools;
-import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
+import icyllis.modernui.gui.master.Canvas;
+import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.Icon;
 import icyllis.modernui.gui.popup.PopupMenu;
-import icyllis.modernui.gui.widget.DropDownMenu;
-import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
+import icyllis.modernui.gui.widget.DropDownMenu;
 import icyllis.modernui.system.ConstantsLibrary;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.texture.TextureManager;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.function.Consumer;
 
 public class DropdownSettingEntry extends SettingEntry {
-
-    private TextureManager textureManager = Minecraft.getInstance().getTextureManager();
 
     public int originalOptionIndex;
     public int currentOptionIndex;
@@ -130,11 +119,11 @@ public class DropdownSettingEntry extends SettingEntry {
             if (available && !drawOptionFrame && optionNames.size() > 1) {
                 if (mouseInOption(mouseX, mouseY)) {
                     drawOptionFrame = true;
-                    GlobalModuleManager.INSTANCE.addAnimation(new Animation(2)
+                    module.addAnimation(new Animation(2)
                             .applyTo(new Applier(0.25f, this::setFrameAlpha)));
                 }
             } else if (!mouseInOption(mouseX, mouseY)) {
-                GlobalModuleManager.INSTANCE.addAnimation(new Animation(2)
+                module.addAnimation(new Animation(2)
                         .applyTo(new Applier(0.25f, 0, this::setFrameAlpha))
                         .onFinish(() -> drawOptionFrame = false));
             }

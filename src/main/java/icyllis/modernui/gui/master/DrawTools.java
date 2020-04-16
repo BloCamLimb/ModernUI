@@ -384,12 +384,10 @@ public class DrawTools {
         blit(x, y, width, height, u, v, 256, 256);
     }
 
-    @Deprecated
     public static void blit(float x, float y, float width, float height, float textureX, float textureY, float textureWidth, float textureHeight) {
         blitFinal(x, x + width, y, y + height, textureX / textureWidth, (textureX + width) / textureWidth, textureY / textureHeight, (textureY + height) / textureHeight);
     }
 
-    @Deprecated
     private static void blitFinal(double x1, double x2, double y1, double y2, float textureX1, float textureX2, float textureY1, float textureY2) {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferbuilder = tessellator.getBuffer();

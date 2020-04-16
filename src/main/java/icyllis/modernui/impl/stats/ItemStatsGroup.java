@@ -28,6 +28,7 @@ import icyllis.modernui.gui.scroll.UniformScrollGroup;
 import icyllis.modernui.gui.math.Color3f;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.AbstractGui;
+import net.minecraft.client.gui.screen.StatsScreen;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
@@ -146,6 +147,11 @@ public class ItemStatsGroup extends UniformScrollGroup<ItemStatsEntry> {
             DrawTools.blit(x3 + i * 50, y1 + 1, 18, 18, c * 18, 18, 128, 128);
             i++;
         }
+    }
+
+    @Override
+    public void drawForegroundLayer(Canvas canvas, float mouseX, float mouseY, float time) {
+        super.drawForegroundLayer(canvas, mouseX, mouseY, time);
     }
 
     public enum Type {

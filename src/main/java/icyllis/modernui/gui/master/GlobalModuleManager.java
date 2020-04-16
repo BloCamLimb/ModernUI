@@ -23,7 +23,11 @@ import icyllis.modernui.gui.animation.IAnimation;
 import icyllis.modernui.gui.math.DelayedRunnable;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.IHasContainer;
+import net.minecraft.client.gui.ScreenManager;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.inventory.container.Container;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.text.ITextComponent;
 import org.apache.logging.log4j.Marker;
@@ -36,12 +40,12 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
  * Manage current GUI (or screen / modules), and post events to base module
  */
-//TODO make protected
 public enum GlobalModuleManager {
     INSTANCE;
 
@@ -85,11 +89,20 @@ public enum GlobalModuleManager {
         minecraft.displayGuiScreen(new ModernScreen(title));
     }
 
+    @SuppressWarnings("unchecked")
+    @Nonnull
+    public <T extends Container, U extends Screen & IHasContainer<T>> ScreenManager.IScreenFactory<T, U> castModernScreen(T container, PlayerInventory playerInventory, ITextComponent title, @Nonnull Supplier<IModule> root) {
+        return (c, p, t) -> {
+            this.supplier = root;
+            return (U) new ModernContainerScreen<>(container, playerInventory, title);
+        };
+    }
+
     public void closeGuiScreen() {
         minecraft.displayGuiScreen(null);
     }
 
-    public void init(int width, int height) {
+    protected void init(int width, int height) {
         this.width = width;
         this.height = height;
         if (supplier != null) {
@@ -130,7 +143,7 @@ public enum GlobalModuleManager {
         }
     }
 
-    public void addAnimation(IAnimation animation) {
+    protected void addAnimation(IAnimation animation) {
         animations.add(animation);
     }
 
@@ -233,7 +246,7 @@ public enum GlobalModuleManager {
     /**
      * Refocus mouse cursor and update mouse position
      */
-    public void refreshMouse() {
+    protected void refreshMouse() {
         mouseMoved(mouseX, mouseY);
     }
 
@@ -310,19 +323,19 @@ public enum GlobalModuleManager {
         return ticks;
     }
 
-    public int getWindowWidth() {
+    protected int getWindowWidth() {
         return width;
     }
 
-    public int getWindowHeight() {
+    protected int getWindowHeight() {
         return height;
     }
 
-    public double getMouseX() {
+    protected double getMouseX() {
         return mouseX;
     }
 
-    public double getMouseY() {
+    protected double getMouseY() {
         return mouseY;
     }
 
