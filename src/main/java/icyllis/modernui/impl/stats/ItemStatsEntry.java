@@ -18,8 +18,12 @@
 
 package icyllis.modernui.impl.stats;
 
+import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.font.TrueTypeRenderer;
+import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.DrawTools;
+import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.gui.scroll.UniformScrollEntry;
 import icyllis.modernui.gui.math.Color3f;
 import net.minecraft.client.Minecraft;
@@ -48,8 +52,8 @@ public class ItemStatsEntry extends UniformScrollEntry {
 
     private boolean drawTooltip = false;
 
-    public ItemStatsEntry(@Nonnull Item item, Color3f color) {
-        super(ItemStatsGroup.ENTRY_HEIGHT);
+    public ItemStatsEntry(ScrollWindow<?> window, @Nonnull Item item, Color3f color) {
+        super(window, ItemStatsGroup.ENTRY_HEIGHT);
         this.item = item;
         this.itemName = item.getName().getFormattedText();
         this.color = color;
@@ -61,20 +65,24 @@ public class ItemStatsEntry extends UniformScrollEntry {
     }
 
     @Override
-    public void draw(float time) {
+    public void draw(Canvas canvas, float time) {
         itemRenderer.renderItemIntoGUI(item.getDefaultInstance(), (int) x1 + 2, (int) y1 + 2);
         int i = 0;
         for (String var : vars) {
-            fontRenderer.drawString(var, x1 + 80 + i * 50, y1 + 6, color, TextAlign.RIGHT);
+            canvas.setColor(color, 1);
+            canvas.setTextAlign(TextAlign.RIGHT);
+            canvas.drawText(var, x1 + 80 + i * 50, y1 + 6);
             i++;
         }
         if (drawTooltip) {
-            DrawTools.INSTANCE.setRGBA(0.5f, 0.5f, 0.5f, 0.25f);
-            DrawTools.INSTANCE.drawRect(x1 + 1, y1 + 1, x1 + 19, y2 - 1);
-            float l = fontRenderer.getStringWidth(itemName);
-            DrawTools.INSTANCE.setRGBA(0, 0, 0, 0.5f);
-            DrawTools.INSTANCE.drawRect(x1 + 22, y1 + 3, x1 + 28 + l, y2 - 3);
-            fontRenderer.drawString(itemName, x1 + 25, y1 + 6);
+            canvas.setRGBA(0.5f, 0.5f, 0.5f, 0.25f);
+            canvas.drawRect(x1 + 1, y1 + 1, x1 + 19, y2 - 1);
+            float l = FontTools.getStringWidth(itemName);
+            canvas.setRGBA(0, 0, 0, 0.5f);
+            canvas.drawRect(x1 + 22, y1 + 3, x1 + 28 + l, y2 - 3);
+            canvas.setTextAlign(TextAlign.LEFT);
+            canvas.resetColor();
+            canvas.drawText(itemName, x1 + 25, y1 + 6);
         }
     }
 

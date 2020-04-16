@@ -54,8 +54,7 @@ public class SettingAudio extends Module {
         SettingCategoryGroup category = new SettingCategoryGroup(window, I18n.format("gui.modernui.settings.category.sounds"), list);
         window.addGroups(Lists.newArrayList(category));
 
-        addElements(window);
-        addMouseListener(window);
+        addWidget(window);
     }
 
 }

@@ -18,10 +18,12 @@
 
 package icyllis.modernui.impl.background;
 
+import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.DrawTools;
+import icyllis.modernui.gui.master.IDrawable;
 import icyllis.modernui.gui.test.IElement;
 
-public class ResourcePackBG implements IElement {
+public class ResourcePackBG implements IDrawable {
 
     private float x1, x2, y1, y2;
 
@@ -30,12 +32,12 @@ public class ResourcePackBG implements IElement {
     private float x3, x4, x5, x6;
 
     @Override
-    public void draw(float time) {
-        DrawTools.INSTANCE.setRGBA(0, 0, 0, 0.27f);
-        DrawTools.INSTANCE.drawRect(x1, y1, x2, y2);
+    public void draw(Canvas canvas, float time) {
+        canvas.setRGBA(0, 0, 0, 0.27f);
+        canvas.drawRect(x1, y1, x2, y2);
         if (drawSide) {
-            DrawTools.INSTANCE.drawRect(x3, y1, x4, y2);
-            DrawTools.INSTANCE.drawRect(x5, y1, x6, y2);
+            canvas.drawRect(x3, y1, x4, y2);
+            canvas.drawRect(x5, y1, x6, y2);
         }
     }
 

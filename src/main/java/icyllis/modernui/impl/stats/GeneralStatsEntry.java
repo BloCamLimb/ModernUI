@@ -19,6 +19,9 @@
 package icyllis.modernui.impl.stats;
 
 import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.font.TrueTypeRenderer;
+import icyllis.modernui.gui.master.Canvas;
+import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.gui.scroll.UniformScrollEntry;
 import icyllis.modernui.gui.math.Color3f;
 import net.minecraft.client.resources.I18n;
@@ -38,17 +41,20 @@ public class GeneralStatsEntry extends UniformScrollEntry {
 
     private String value = "";
 
-    public GeneralStatsEntry(@Nonnull Stat<ResourceLocation> stat, Color3f color) {
-        super(GeneralStatsGroup.ENTRY_HEIGHT);
+    public GeneralStatsEntry(ScrollWindow<?> window, @Nonnull Stat<ResourceLocation> stat, Color3f color) {
+        super(window, GeneralStatsGroup.ENTRY_HEIGHT);
         this.stat = stat;
         this.color = color;
         title = I18n.format("stat." + stat.getValue().toString().replace(':', '.'));
     }
 
     @Override
-    public void draw(float time) {
-        fontRenderer.drawString(title, x1 + 2, y1 + 1, color, TextAlign.LEFT);
-        fontRenderer.drawString(value, x2 - 2, y1 + 1, color, TextAlign.RIGHT);
+    public void draw(Canvas canvas, float time) {
+        canvas.setColor(color, 1);
+        canvas.setTextAlign(TextAlign.LEFT);
+        canvas.drawText(title, x1 + 2, y1 + 1);
+        canvas.setTextAlign(TextAlign.RIGHT);
+        canvas.drawText(value, x2 - 2, y1 + 1);
     }
 
     public void updateValue(@Nonnull StatisticsManager manager) {

@@ -18,15 +18,9 @@
 
 package icyllis.modernui.gui.widget;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.IDraggable;
-import icyllis.modernui.gui.master.IFocuser;
 import icyllis.modernui.gui.master.Module;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 
@@ -49,7 +43,7 @@ public abstract class Slider extends Widget implements IDraggable {
     public void draw(@Nonnull Canvas canvas, float time) {
         float cx = (float) (x1 + slideOffset);
         canvas.setRGBA(0.63f, 0.63f, 0.63f, 1.0f);
-        canvas.drawRectLines(x1, y1, cx, y2);
+        canvas.drawRect(x1, y1, cx, y2);
         canvas.setRGBA(0.315f, 0.315f, 0.315f, 0.863f);
         canvas.drawRect(cx, y1, x2, y2);
         float c = (thumbHovered || isDragging) ? 1.0f : 0.8f;

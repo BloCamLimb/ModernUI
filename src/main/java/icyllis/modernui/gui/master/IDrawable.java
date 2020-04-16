@@ -38,7 +38,7 @@ public interface IDrawable {
     /**
      * Draw content above almost all things, called every frame
      * Generally used to draw tooltips at given mouse pos
-     * You have to do animations update at the top of lines
+     * And generally used in container gui
      *
      * @param canvas The canvas provided by module, used to draw everything
      * @param mouseX mouse x pos

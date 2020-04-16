@@ -42,7 +42,7 @@ public class DrawTools {
     /**
      * Internal use
      */
-    protected static final DrawTools INSTANCE = new DrawTools();
+    //protected static final DrawTools INSTANCE = new DrawTools();
 
     /**
      * Instances
@@ -151,7 +151,7 @@ public class DrawTools {
         setLineAA(aa);
     }
 
-    private static void setLineAA(boolean aa) {
+    protected static void setLineAA(boolean aa) {
         if (aa && !lineAA) {
             GL11.glEnable(GL11.GL_LINE_SMOOTH);
             GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
@@ -376,19 +376,21 @@ public class DrawTools {
 
 
 
+
+
+
+    @Deprecated
     public static void blit(float x, float y, float u, float v, float width, float height) {
         blit(x, y, width, height, u, v, 256, 256);
     }
 
+    @Deprecated
     public static void blit(float x, float y, float width, float height, float textureX, float textureY, float textureWidth, float textureHeight) {
         blitFinal(x, x + width, y, y + height, textureX / textureWidth, (textureX + width) / textureWidth, textureY / textureHeight, (textureY + height) / textureHeight);
     }
 
-    public static void blitIcon(float x, float y, float width, float height) {
-        blitFinal(x, x + width, y, y + height, 0, 1, 0, 1);
-    }
-
-    public static void blitFinal(double x1, double x2, double y1, double y2, float textureX1, float textureX2, float textureY1, float textureY2) {
+    @Deprecated
+    private static void blitFinal(double x1, double x2, double y1, double y2, float textureX1, float textureX2, float textureY1, float textureY2) {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferbuilder = tessellator.getBuffer();
         RenderSystem.enableTexture();

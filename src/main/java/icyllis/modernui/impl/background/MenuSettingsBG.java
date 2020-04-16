@@ -18,22 +18,45 @@
 
 package icyllis.modernui.impl.background;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.gui.test.IElement;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import org.lwjgl.opengl.GL11;
+import icyllis.modernui.gui.animation.Animation;
+import icyllis.modernui.gui.animation.Applier;
+import icyllis.modernui.gui.master.Canvas;
+import icyllis.modernui.gui.master.GlobalModuleManager;
+import icyllis.modernui.gui.master.IDrawable;
+import icyllis.modernui.impl.module.IngameMenuHome;
 
-public class MenuSettingsBG implements IElement {
+public class MenuSettingsBG implements IDrawable {
 
-    private float sizeW, sizeH;
+    private float w, h;
 
-    public MenuSettingsBG() {
+    private float xOffset;
 
+    public MenuSettingsBG(IngameMenuHome home) {
+        int c = home.getWindowWidth();
+        if (home.getTransitionDirection(true)) {
+            home.addAnimation(new Animation(4, true)
+                    .applyTo(new Applier(-c, 0, v -> xOffset = v)));
+        } else {
+            home.addAnimation(new Animation(4, true)
+                    .applyTo(new Applier(c, 0, v -> xOffset = v)));
+        }
     }
 
     @Override
+    public void draw(Canvas canvas, float time) {
+        float x = 40, y = 16;
+        canvas.translate(xOffset, 0);
+        canvas.setRGBA(0, 0, 0, 0.377f);
+        canvas.drawRect(x, y + 20, x + w, y + h - 20);
+        canvas.setAlpha(0.755f);
+        canvas.drawRect(x, y, x + w, y + 20);
+        canvas.drawRect(x, y + h - 20, x + w, y + h);
+        canvas.setRGBA(0.55f, 0.55f, 0.55f, 0.863f);
+        canvas.drawLine(x, y + 20, x + w, y + 20);
+        canvas.drawLine(x, y + h - 19.5f, x + w, y + h - 19.5f);
+    }
+
+    /*@Override
     public void draw(float time) {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();
@@ -69,11 +92,15 @@ public class MenuSettingsBG implements IElement {
         bufferBuilder.pos(x + sizeW, y + sizeH - 19.5, 0.0D).color(140, 140, 140, 220).endVertex();
         tessellator.draw();
         RenderSystem.enableTexture();
-    }
+    }*/
 
     @Override
     public void resize(int width, int height) {
-        sizeW = width - 80;
-        sizeH = height - 32;
+        w = width - 80;
+        h = height - 32;
+    }
+
+    public void setXOffset(float xOffset) {
+        this.xOffset = xOffset;
     }
 }

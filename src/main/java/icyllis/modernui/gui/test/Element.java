@@ -43,9 +43,17 @@ public abstract class Element implements IElement {
      */
     public float x, y;
 
+    public Element() {
+    }
+
     public Element(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer) {
         this.xResizer = xResizer;
         this.yResizer = yResizer;
+    }
+
+    @Override
+    public void draw(float time) {
+
     }
 
     @Override

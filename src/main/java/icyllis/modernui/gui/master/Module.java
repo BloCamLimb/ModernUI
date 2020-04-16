@@ -18,6 +18,7 @@
 
 package icyllis.modernui.gui.master;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.animation.IAnimation;
 
 import javax.annotation.Nullable;
@@ -40,23 +41,41 @@ public class Module implements IModule, IFocuser {
     @Nullable
     private IKeyboardListener keyboardListener;
 
+    /**
+     * If true, this module will draw over child module
+     */
+    private boolean overDraw = false;
+
     public Module() {
 
     }
 
     @Override
     public final void draw(float time) {
-        for (IDrawable drawable : drawables) {
-            drawable.draw(canvas, time);
+        RenderSystem.pushMatrix();
+        if (overDraw) {
+            drawChild(time);
+            for (IDrawable drawable : drawables) {
+                drawable.draw(canvas, time);
+            }
+        } else {
+            for (IDrawable drawable : drawables) {
+                drawable.draw(canvas, time);
+            }
+            drawChild(time);
         }
-        drawChild(time);
         for (IDrawable drawable : drawables) {
             drawable.drawForegroundLayer(canvas, (float) getMouseX(), (float) getMouseY(), time);
         }
+        RenderSystem.popMatrix();
     }
 
     protected void drawChild(float time) {
 
+    }
+
+    protected void makeOverDraw() {
+        overDraw = true;
     }
 
     @Override

@@ -18,9 +18,7 @@
 
 package icyllis.modernui.gui.scroll;
 
-import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.gui.master.IDraggable;
-import icyllis.modernui.gui.master.IMouseListener;
+import icyllis.modernui.gui.master.*;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
@@ -30,7 +28,7 @@ import org.lwjgl.opengl.GL11;
  * This is a part of scroll window
  * Not a widget
  */
-public class ScrollBar implements IMouseListener, IDraggable {
+public class ScrollBar implements IDrawable, IMouseListener, IDraggable {
 
     private final GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
 
@@ -62,7 +60,24 @@ public class ScrollBar implements IMouseListener, IDraggable {
         this.window = window;
     }
 
-    public void draw(float currentTime) {
+    @Override
+    public void draw(Canvas canvas, float time) {
+        if (!barHovered && !isDragging && brightness > 0.5f) {
+            if (time > startTime) {
+                float change = (startTime - time) / 40.0f;
+                brightness = Math.max(0.75f + change, 0.5f);
+            }
+        }
+        if (!visible) {
+            return;
+        }
+        canvas.setRGBA(0.063f, 0.063f, 0.063f, 0.157f);
+        canvas.drawRect(x, y, x + barThickness, y + maxLength);
+        canvas.setRGBA(brightness, brightness, brightness, 0.5f);
+        canvas.drawRect(x, barY, x + barThickness, barY + barLength);
+    }
+
+    /*public void draw(float currentTime) {
         if (!barHovered && !isDragging && brightness > 0.5f) {
             if (currentTime > startTime) {
                 float change = (startTime - currentTime) / 40.0f;
@@ -91,7 +106,7 @@ public class ScrollBar implements IMouseListener, IDraggable {
         bufferBuilder.pos(x + barThickness, barY, 0.0D).color(b, b, b, 128).endVertex();
         bufferBuilder.pos(x, barY, 0.0D).color(b, b, b, 128).endVertex();
         tessellator.draw();
-    }
+    }*/
 
     public void setPos(float x, float y) {
         this.x = x;
@@ -155,7 +170,7 @@ public class ScrollBar implements IMouseListener, IDraggable {
             if (barHovered) {
                 isDragging = true;
                 //draggingY = mouseY;
-                window.setDraggable(this);
+                window.getModule().setDraggable(this);
                 return true;
             } else {
                 boolean inWidth = mouseX >= x && mouseX <= x + barThickness;
@@ -192,7 +207,7 @@ public class ScrollBar implements IMouseListener, IDraggable {
     public void onStopDragging(double mouseX, double mouseY) {
         if (visible && isDragging) {
             isDragging = false;
-            window.setDraggable(null);
+            window.getModule().setDraggable(null);
             startTime = manager.getAnimationTime() + 10.0f;
         }
     }

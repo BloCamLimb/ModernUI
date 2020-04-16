@@ -49,7 +49,7 @@ public class Icon {
      * @param q texture top pos [0,1]
      * @param s texture right pos [0,1]
      * @param t texture bottom pos [0,1]
-     * @param aa enable anti-aliasing for HD textures (Notice: anti-aliasing will apply on whole texture, not icon)
+     * @param aa enable anti-aliasing for HD textures
      */
     public Icon(ResourceLocation resource, float p, float q, float s, float t, boolean aa) {
         TextureManager textureManager = Minecraft.getInstance().getTextureManager();

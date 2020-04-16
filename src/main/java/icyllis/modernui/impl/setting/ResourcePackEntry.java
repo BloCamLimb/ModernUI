@@ -20,7 +20,9 @@ package icyllis.modernui.impl.setting;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.FontTools;
-import icyllis.modernui.gui.master.DrawTools;
+import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.gui.master.Canvas;
+import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.impl.module.SettingResourcePack;
 import icyllis.modernui.gui.scroll.UniformScrollEntry;
 import icyllis.modernui.gui.math.Color3f;
@@ -32,7 +34,6 @@ import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.resources.ClientResourcePackInfo;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.text.TextFormatting;
-import org.lwjgl.opengl.GL11;
 
 import java.util.List;
 
@@ -50,8 +51,8 @@ public class ResourcePackEntry extends UniformScrollEntry {
 
     private String[] desc = new String[0];
 
-    public ResourcePackEntry(SettingResourcePack module, ClientResourcePackInfo resourcePack) {
-        super(ResourcePackGroup.ENTRY_HEIGHT);
+    public ResourcePackEntry(SettingResourcePack module, ScrollWindow<?> window, ClientResourcePackInfo resourcePack) {
+        super(window, ResourcePackGroup.ENTRY_HEIGHT);
         this.module = module;
         this.resourcePack = resourcePack;
     }
@@ -65,12 +66,19 @@ public class ResourcePackEntry extends UniformScrollEntry {
     }
 
     @Override
-    public final void draw(float time) {
-        Tessellator tessellator = Tessellator.getInstance();
-        BufferBuilder bufferBuilder = tessellator.getBuffer();
+    public final void draw(Canvas canvas, float time) {
+        /*Tessellator tessellator = Tessellator.getInstance();
+        BufferBuilder bufferBuilder = tessellator.getBuffer();*/
 
         if (module.getHighlightEntry() == this) {
-            RenderSystem.disableTexture();
+            canvas.setRGBA(0.5f, 0.5f, 0.5f, 0.377f);
+            canvas.drawRect(x1 + 1, y1, x2 - 1, y2);
+
+            canvas.setLineAntiAliasing(true);
+            canvas.setRGBA(1, 1, 1, 0.879f);
+            canvas.drawRectLines(x1 + 1, y1, x2 - 1, y2);
+            canvas.setLineAntiAliasing(false);
+            /*RenderSystem.disableTexture();
             bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
             bufferBuilder.pos(x1 + 1, y2, 0.0D).color(128, 128, 128, 96).endVertex();
             bufferBuilder.pos(x2 - 1, y2, 0.0D).color(128, 128, 128, 96).endVertex();
@@ -87,9 +95,13 @@ public class ResourcePackEntry extends UniformScrollEntry {
             bufferBuilder.pos(x1 + 1, y1, 0.0D).color(255, 255, 255, 224).endVertex();
             tessellator.draw();
             GL11.glDisable(GL11.GL_LINE_SMOOTH);
-            RenderSystem.enableTexture();
+            RenderSystem.enableTexture();*/
         } else if (mouseHovered) {
-            RenderSystem.disableTexture();
+            canvas.setLineAntiAliasing(true);
+            canvas.setRGBA(0.879f, 0.879f, 0.879f, 0.7f);
+            canvas.drawRectLines(x1 + 1, y1, x2 - 1, y2);
+            canvas.setLineAntiAliasing(false);
+            /*RenderSystem.disableTexture();
             GL11.glEnable(GL11.GL_LINE_SMOOTH);
             GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
             GL11.glLineWidth(1.0F);
@@ -100,17 +112,21 @@ public class ResourcePackEntry extends UniformScrollEntry {
             bufferBuilder.pos(x1 + 1, y1, 0.0D).color(224, 224, 224, 180).endVertex();
             tessellator.draw();
             GL11.glDisable(GL11.GL_LINE_SMOOTH);
-            RenderSystem.enableTexture();
+            RenderSystem.enableTexture();*/
         }
 
-        RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
+        RenderSystem.enableTexture();
         bindTexture();
-        DrawTools.blitIcon(x1 + 3, y1 + 2, 32, 32);
+        blitIcon(x1 + 3, y1 + 2);
 
-        fontRenderer.drawString(title, x1 + 39, y1 + 4);
+        canvas.resetColor();
+        canvas.setTextAlign(TextAlign.LEFT);
+        canvas.drawText(title, x1 + 39, y1 + 4);
+
+        canvas.setColor(Color3f.GRAY);
         int i = 0;
         for (String d : desc) {
-            fontRenderer.drawString(d, x1 + 39, y1 + 14 + i * 10, Color3f.GRAY);
+            canvas.drawText(d, x1 + 39, y1 + 14 + i * 10);
             i++;
             if (i > 1) {
                 break;
@@ -142,11 +158,11 @@ public class ResourcePackEntry extends UniformScrollEntry {
         if (!resourcePack.getCompatibility().isCompatible()) {
             title = TextFormatting.DARK_RED + "(" + I18n.format("resourcePack.incompatible") + ") " + TextFormatting.RESET + title;
         }
-        float w = fontRenderer.getStringWidth(title);
+        float w = FontTools.getStringWidth(title);
         float cw = width - 39;
         if (w > cw) {
-            float kw = cw - fontRenderer.getStringWidth("...");
-            title = fontRenderer.trimStringToWidth(title, kw, false) + "...";
+            float kw = cw - FontTools.getStringWidth("...");
+            title = FontTools.trimStringToWidth(title, kw, false) + "...";
         }
 
     }
@@ -199,6 +215,21 @@ public class ResourcePackEntry extends UniformScrollEntry {
         int i = list.indexOf(this);
         list.remove(i);
         list.add(i + 1, this);
+    }
+
+    private static void blitIcon(float x, float y) {
+        blitFinal(x, x + 32, y, y + 32);
+    }
+
+    private static void blitFinal(double x1, double x2, double y1, double y2) {
+        Tessellator tessellator = Tessellator.getInstance();
+        BufferBuilder bufferbuilder = tessellator.getBuffer();
+        bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR_TEX);
+        bufferbuilder.pos(x1, y2, 0.0D).color(255, 255, 255, 255).tex(0, 1).endVertex();
+        bufferbuilder.pos(x2, y2, 0.0D).color(255, 255, 255, 255).tex(1, 1).endVertex();
+        bufferbuilder.pos(x2, y1, 0.0D).color(255, 255, 255, 255).tex(1, 0).endVertex();
+        bufferbuilder.pos(x1, y1, 0.0D).color(255, 255, 255, 255).tex(0, 0).endVertex();
+        tessellator.draw();
     }
 
 }
