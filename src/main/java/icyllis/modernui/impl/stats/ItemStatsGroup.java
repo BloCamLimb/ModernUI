@@ -24,7 +24,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.gui.scroll.UniformScrollGroup;
-import icyllis.modernui.gui.math.Color3i;
+import icyllis.modernui.gui.math.Color3f;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.AbstractGui;
 import net.minecraft.client.renderer.texture.TextureManager;
@@ -108,7 +108,7 @@ public class ItemStatsGroup extends UniformScrollGroup<ItemStatsEntry> {
         set.remove(Items.AIR);
         int i = 0;
         for (Item item : set) {
-            entries.add(new ItemStatsEntry(item, (i & 1) == 0 ? Color3i.WHILE : Color3i.GRAY));
+            entries.add(new ItemStatsEntry(item, (i & 1) == 0 ? Color3f.WHILE : Color3f.GRAY));
             i++;
         }
 

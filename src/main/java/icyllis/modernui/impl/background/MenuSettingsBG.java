@@ -16,10 +16,10 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.background;
+package icyllis.modernui.impl.background;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.gui.master.IElement;
+import icyllis.modernui.gui.test.IElement;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;

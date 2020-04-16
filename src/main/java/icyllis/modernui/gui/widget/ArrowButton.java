@@ -18,88 +18,80 @@
 
 package icyllis.modernui.gui.widget;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.master.DrawTools;
-import icyllis.modernui.gui.master.GlobalModuleManager;
+import icyllis.modernui.gui.master.AnimationControl;
+import icyllis.modernui.gui.master.Canvas;
+import icyllis.modernui.gui.master.Icon;
+import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.system.ConstantsLibrary;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.TextureManager;
 
-public class ArrowButton extends AnimatedWidget {
+import javax.annotation.Nonnull;
+import java.util.List;
 
-    private final TextureManager textureManager = Minecraft.getInstance().getTextureManager();
+public class ArrowButton extends Widget {
 
-    private final float u;
+    private final AnimationControl ac = new Control(this);
 
-    private float tx, ty;
+    private final Runnable leftClickFunc;
+    private final Icon icon;
 
-    private boolean available;
-
+    private boolean clickable;
     private float brightness = 0.8f;
 
-    private Runnable leftClickFunc;
-
-    public ArrowButton(Direction direction, Runnable leftClick, boolean available) {
-        super(12, 12);
-        u = 32 * direction.ordinal();
+    public ArrowButton(Module module, @Nonnull Direction direction, float size, Runnable leftClick, boolean clickable) {
+        super(module, size, size);
+        int i = direction.ordinal();
+        this.icon = new Icon(ConstantsLibrary.ICONS, 64 * i / 512f, 64 / 512f, (i + 1) * 64 / 512f, 128 / 512f, true);
         this.leftClickFunc = leftClick;
-        this.available = available;
-        if (!available) {
+        this.clickable = clickable;
+        if (!clickable) {
             brightness = 0.3f;
         }
     }
 
     @Override
-    public void draw(float time) {
-        super.draw(time);
-        RenderSystem.pushMatrix();
+    public void draw(@Nonnull Canvas canvas, float time) {
+        ac.update();
+        canvas.setRGBA(brightness, brightness, brightness, 1.0f);
+        canvas.drawIcon(icon, x1, y1, x2, y2);
+        /*RenderSystem.pushMatrix();
         RenderSystem.scalef(0.375f, 0.375f, 1);
         RenderSystem.color3f(brightness, brightness, brightness);
         textureManager.bindTexture(ConstantsLibrary.ICONS);
         DrawTools.blit(tx, ty, u, 64, 32, 32);
-        RenderSystem.popMatrix();
+        RenderSystem.popMatrix();*/
     }
 
-    @Override
-    public void setPos(float x, float y) {
-        super.setPos(x, y);
-        tx = x * 2.6666666f;
-        ty = y * 2.6666666f;
-    }
-
-    public void setAvailable(boolean available) {
-        this.available = available;
-        if (available) {
-            if (mouseHovered) {
-                manager.addAnimation(new Animation(2)
-                        .applyTo(new Applier(brightness, 1.0f, v -> brightness = v))
-                        .onFinish(() -> setOpenState(true)));
-            } else {
-                manager.addAnimation(new Animation(2)
-                        .applyTo(new Applier(brightness, 0.8f, v -> brightness = v)));
-            }
+    public void setClickable(boolean clickable) {
+        this.clickable = clickable;
+        if (clickable) {
+            module.addAnimation(new Animation(2)
+                    .applyTo(new Applier(brightness, 0.8f, this::setBrightness)));
         } else {
-            manager.addAnimation(new Animation(2)
-                    .applyTo(new Applier(brightness, 0.3f, v -> brightness = v)));
+            module.addAnimation(new Animation(2)
+                    .applyTo(new Applier(brightness, 0.3f, this::setBrightness)));
         }
     }
 
     @Override
     protected void onMouseHoverEnter() {
         super.onMouseHoverEnter();
+        if (clickable)
+            ac.startOpenAnimation();
     }
 
     @Override
     protected void onMouseHoverExit() {
         super.onMouseHoverExit();
+        if (clickable)
+            ac.startCloseAnimation();
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if (listening && mouseButton == 0) {
-            if (available) {
+            if (clickable) {
                 brightness = 0.85f;
                 leftClickFunc.run();
             }
@@ -110,32 +102,35 @@ public class ArrowButton extends AnimatedWidget {
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
-        if (listening && available && mouseButton == 0) {
+        if (listening && clickable && mouseButton == 0) {
             brightness = 1.0f;
             return true;
         }
         return false;
     }
 
-    @Override
-    protected void createOpenAnimations() {
-        if (available) {
-            manager.addAnimation(new Animation(3)
-                    .applyTo(new Applier(0.8f, 1.0f, v -> brightness = v))
-                    .onFinish(() -> setOpenState(true)));
-        } else {
-            setOpenState(true);
-        }
+    private void setBrightness(float b) {
+        brightness = b;
     }
 
-    @Override
-    protected void createCloseAnimations() {
-        if (available) {
-            manager.addAnimation(new Animation(3)
-                    .applyTo(new Applier(1.0f, 0.8f, v -> brightness = v))
-                    .onFinish(() -> setOpenState(false)));
-        } else {
-            setOpenState(false);
+    private static class Control extends AnimationControl {
+
+        private final ArrowButton instance;
+
+        public Control(ArrowButton instance) {
+            this.instance = instance;
+        }
+
+        @Override
+        protected void createOpenAnimations(@Nonnull List<Animation> list) {
+            list.add(new Animation(3)
+                    .applyTo(new Applier(0.8f, 1.0f, instance::setBrightness)));
+        }
+
+        @Override
+        protected void createCloseAnimations(@Nonnull List<Animation> list) {
+            list.add(new Animation(3)
+                    .applyTo(new Applier(1.0f, 0.8f, instance::setBrightness)));
         }
     }
 

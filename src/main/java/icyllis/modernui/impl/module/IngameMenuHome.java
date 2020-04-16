@@ -21,7 +21,7 @@ package icyllis.modernui.impl.module;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.background.MenuHomeBG;
+import icyllis.modernui.impl.background.MenuHomeBG;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.IModule;
 import icyllis.modernui.gui.master.ModuleGroup;
@@ -50,28 +50,25 @@ public class IngameMenuHome extends ModuleGroup {
     // true = right false = left
     private boolean moduleTransitionDirection = true;
 
-    private float xOffset = -32;
-
     private Random random = new Random();
 
     public IngameMenuHome() {
-        addElements(new MenuHomeBG());
+        addDrawable(new MenuHomeBG(this));
         Consumer<MenuButton> consumer = s -> {
-            addElements(s);
-            addMouseListener(s);
+            addWidget(s);
             buttons.add(s);
         };
-        consumer.accept(new MenuButton(w -> 8f, h -> 8f, I18n.format("gui.modernui.menu.back"), 4,
+        consumer.accept(new MenuButton(this, I18n.format("gui.modernui.menu.back"), 4,
                 GlobalModuleManager.INSTANCE::closeGuiScreen, -1));
-        consumer.accept(new MenuButton(w -> 8f, h -> 44f, I18n.format("gui.advancements") + " (WIP)", 1,
+        consumer.accept(new MenuButton(this, I18n.format("gui.advancements") + " (WIP)", 1,
                 () -> minecraft.displayGuiScreen(new AdvancementsScreen(minecraft.player.connection.getAdvancementManager())), 1));
-        consumer.accept(new MenuButton(w -> 8f, h -> 72f, I18n.format("gui.stats"), 2,
+        consumer.accept(new MenuButton(this, I18n.format("gui.stats"), 2,
                 () -> switchChildModule(2), 2));
-        consumer.accept(new MenuButton(w -> 8f, h -> h - 92f, I18n.format("gui.modernui.menu.mods") + " (WIP)", 6,
+        consumer.accept(new MenuButton(this, I18n.format("gui.modernui.menu.mods") + " (WIP)", 6,
                 () -> minecraft.displayGuiScreen(new ModListScreen(null)), 3));
-        consumer.accept(new MenuButton(w -> 8f, h -> h - 64f, I18n.format("gui.modernui.menu.settings"), 0,
+        consumer.accept(new MenuButton(this, I18n.format("gui.modernui.menu.settings"), 0,
                 () -> switchChildModule(4), 4));
-        consumer.accept(new MenuButton(w -> 8f, h -> h - 28f, I18n.format("gui.modernui.menu.exit"), 5,
+        consumer.accept(new MenuButton(this, I18n.format("gui.modernui.menu.exit"), 5,
                 this::exit, -1));
 
         // advancements
@@ -81,9 +78,17 @@ public class IngameMenuHome extends ModuleGroup {
 
         // always draw at the top
         makeOverDraw();
+    }
 
-        GlobalModuleManager.INSTANCE.addAnimation(new Animation(4, true)
-                .applyTo(new Applier(-32, 0, v -> xOffset = v)));
+    @Override
+    public void resize(int width, int height) {
+        super.resize(width, height);
+        buttons.get(0).setPos(8, 8);
+        buttons.get(1).setPos(8, 44);
+        buttons.get(2).setPos(8, 72);
+        buttons.get(3).setPos(8, height - 92);
+        buttons.get(4).setPos(8, height - 64);
+        buttons.get(5).setPos(8, height - 28);
     }
 
     /**
@@ -96,18 +101,6 @@ public class IngameMenuHome extends ModuleGroup {
             moduleTransitionDirection = random.nextBoolean();
         }
         return b;
-    }
-
-    @Override
-    public void draw(float time) {
-        if (xOffset != 0) {
-            RenderSystem.pushMatrix();
-            RenderSystem.translatef(xOffset, 0, 0);
-            super.draw(time);
-            RenderSystem.popMatrix();
-        } else {
-            super.draw(time);
-        }
     }
 
     @Override

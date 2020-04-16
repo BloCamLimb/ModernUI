@@ -19,19 +19,21 @@
 package icyllis.modernui.gui.widget;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.IDraggable;
 import icyllis.modernui.gui.master.IFocuser;
+import icyllis.modernui.gui.master.Module;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import org.lwjgl.opengl.GL11;
 
+import javax.annotation.Nonnull;
+
 /**
  * Horizontal slider
  */
-public abstract class Slider extends FlexibleWidget implements IDraggable {
-
-    private final IFocuser focuser;
+public abstract class Slider extends Widget implements IDraggable {
 
     protected double slideOffset;
 
@@ -39,13 +41,23 @@ public abstract class Slider extends FlexibleWidget implements IDraggable {
 
     protected boolean thumbHovered = false;
 
-    public Slider(IFocuser focuser, float width) {
-        this.focuser = focuser;
-        this.height = 3;
-        this.width = width;
+    public Slider(Module module, float width) {
+        super(module, width, 3);
     }
 
     @Override
+    public void draw(@Nonnull Canvas canvas, float time) {
+        float cx = (float) (x1 + slideOffset);
+        canvas.setRGBA(0.63f, 0.63f, 0.63f, 1.0f);
+        canvas.drawRectLines(x1, y1, cx, y2);
+        canvas.setRGBA(0.315f, 0.315f, 0.315f, 0.863f);
+        canvas.drawRect(cx, y1, x2, y2);
+        float c = (thumbHovered || isDragging) ? 1.0f : 0.8f;
+        canvas.setRGBA(c, c, c, 1.0f);
+        canvas.drawRect(cx, y1 - 1, cx + 4, y2 + 1);
+    }
+
+    /*@Override
     public void draw(float time) {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();
@@ -78,7 +90,7 @@ public abstract class Slider extends FlexibleWidget implements IDraggable {
         tessellator.draw();
 
         RenderSystem.enableTexture();
-    }
+    }*/
 
     @Override
     public boolean updateMouseHover(double mouseX, double mouseY) {
@@ -98,7 +110,7 @@ public abstract class Slider extends FlexibleWidget implements IDraggable {
         if (mouseButton == 0) {
             if (thumbHovered) {
                 isDragging = true;
-                focuser.setDraggable(this);
+                module.setDraggable(this);
                 return true;
             } else {
                 if (mouseX >= x1 && mouseX <= x1 + slideOffset) {
@@ -106,7 +118,7 @@ public abstract class Slider extends FlexibleWidget implements IDraggable {
                     checkThumb(mouseX, mouseY);
                     if (thumbHovered) {
                         isDragging = true;
-                        focuser.setDraggable(this);
+                        module.setDraggable(this);
                     } else {
                         onFinalChange();
                     }
@@ -116,7 +128,7 @@ public abstract class Slider extends FlexibleWidget implements IDraggable {
                     checkThumb(mouseX, mouseY);
                     if (thumbHovered) {
                         isDragging = true;
-                        focuser.setDraggable(this);
+                        module.setDraggable(this);
                     } else {
                         onFinalChange();
                     }
@@ -145,7 +157,7 @@ public abstract class Slider extends FlexibleWidget implements IDraggable {
     public void onStopDragging(double mouseX, double mouseY) {
         if (isDragging) {
             isDragging = false;
-            focuser.setDraggable(null);
+            module.setDraggable(null);
             //checkThumb(mouseX, mouseY); pos is not accurate
             onFinalChange();
         }

@@ -27,8 +27,6 @@ import icyllis.modernui.gui.master.IMouseListener;
  */
 public abstract class UniformScrollEntry implements IMouseListener {
 
-    protected final IFontRenderer fontRenderer = FontTools.FONT_RENDERER;
-
     protected float x1, y1;
 
     protected float x2, y2;

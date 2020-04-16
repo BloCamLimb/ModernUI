@@ -18,17 +18,15 @@
 
 package icyllis.modernui.gui.widget;
 
-import icyllis.modernui.gui.master.IElement;
-import icyllis.modernui.gui.master.IFocuser;
-import net.minecraft.client.gui.IGuiEventListener;
+import icyllis.modernui.gui.master.Module;
 import net.minecraft.util.math.MathHelper;
 
-public class SliderSmooth extends Slider implements IElement, IGuiEventListener {
+public class SliderSmooth extends Slider {
 
     private ISmoothSliderReceiver receiver;
 
-    public SliderSmooth(IFocuser focuser, float width, double initPercent, ISmoothSliderReceiver receiver) {
-        super(focuser, width);
+    public SliderSmooth(Module module, float width, double initPercent, ISmoothSliderReceiver receiver) {
+        super(module, width);
         this.slideOffset = getMaxSlideOffset() * MathHelper.clamp(initPercent, 0, 1);
         this.receiver = receiver;
     }

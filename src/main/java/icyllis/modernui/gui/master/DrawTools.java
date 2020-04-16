@@ -23,6 +23,7 @@ import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.graphics.shader.ShaderTools;
+import icyllis.modernui.gui.math.Color3f;
 import icyllis.modernui.gui.shader.RingShader;
 import icyllis.modernui.gui.shader.RoundedRectFrameShader;
 import icyllis.modernui.gui.shader.RoundedRectShader;
@@ -38,7 +39,10 @@ import javax.annotation.Nonnull;
  */
 public class DrawTools {
 
-    public static final DrawTools INSTANCE = new DrawTools();
+    /**
+     * Internal use
+     */
+    protected static final DrawTools INSTANCE = new DrawTools();
 
     /**
      * Instances
@@ -70,6 +74,9 @@ public class DrawTools {
     private float b = 1.0f;
 
     private float a = 1.0f;
+
+
+    private double z = 0.0D;
 
 
     /**
@@ -120,6 +127,15 @@ public class DrawTools {
         this.a = a;
     }
 
+    public void setColor(@Nonnull Color3f color) {
+        setRGB(color.getFloatRed(), color.getFloatGreen(), color.getFloatBlue());
+    }
+
+    public void setColor(@Nonnull Color3f color, float a) {
+        setColor(color);
+        setAlpha(a);
+    }
+
     /**
      * Reset color to default color
      */
@@ -135,7 +151,7 @@ public class DrawTools {
         setLineAA(aa);
     }
 
-    protected static void setLineAA(boolean aa) {
+    private static void setLineAA(boolean aa) {
         if (aa && !lineAA) {
             GL11.glEnable(GL11.GL_LINE_SMOOTH);
             GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
@@ -144,6 +160,16 @@ public class DrawTools {
             GL11.glDisable(GL11.GL_LINE_SMOOTH);
             lineAA = false;
         }
+    }
+
+    /**
+     * Set z pos / level, determines the depth, higher value will draw at the top
+     * Minimum value and default value are 0
+     *
+     * @param z target z
+     */
+    public void setZ(double z) {
+        this.z = z;
     }
 
     public void setTextAlign(TextAlign align) {
@@ -173,10 +199,10 @@ public class DrawTools {
     public void drawRect(float left, float top, float right, float bottom) {
         RenderSystem.disableTexture();
         bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
-        bufferBuilder.pos(left, bottom, 0.0D).color(r, g, b, a).endVertex();
-        bufferBuilder.pos(right, bottom, 0.0D).color(r, g, b, a).endVertex();
-        bufferBuilder.pos(right, top, 0.0D).color(r, g, b, a).endVertex();
-        bufferBuilder.pos(left, top, 0.0D).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(left, bottom, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(right, bottom, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(right, top, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(left, top, z).color(r, g, b, a).endVertex();
         tessellator.draw();
     }
 
@@ -193,31 +219,53 @@ public class DrawTools {
         RenderSystem.disableTexture();
 
         bufferBuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
-        bufferBuilder.pos(left - thickness, top, 0.0D).color(r, g, b, a).endVertex();
-        bufferBuilder.pos(right, top, 0.0D).color(r, g, b, a).endVertex();
-        bufferBuilder.pos(right, top - thickness, 0.0D).color(r, g, b, a).endVertex();
-        bufferBuilder.pos(left - thickness, top - thickness, 0.0D).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(left - thickness, top, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(right, top, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(right, top - thickness, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(left - thickness, top - thickness, z).color(r, g, b, a).endVertex();
         tessellator.draw();
 
         bufferBuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
-        bufferBuilder.pos(right, bottom, 0.0D).color(r, g, b, a).endVertex();
-        bufferBuilder.pos(right + thickness, bottom, 0.0D).color(r, g, b, a).endVertex();
-        bufferBuilder.pos(right + thickness, top - thickness, 0.0D).color(r, g, b, a).endVertex();
-        bufferBuilder.pos(right, top - thickness, 0.0D).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(right, bottom, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(right + thickness, bottom, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(right + thickness, top - thickness, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(right, top - thickness, z).color(r, g, b, a).endVertex();
         tessellator.draw();
 
         bufferBuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
-        bufferBuilder.pos(left, bottom + thickness, 0.0D).color(r, g, b, a).endVertex();
-        bufferBuilder.pos(right + thickness, bottom + thickness, 0.0D).color(r, g, b, a).endVertex();
-        bufferBuilder.pos(right + thickness, bottom, 0.0D).color(r, g, b, a).endVertex();
-        bufferBuilder.pos(left, bottom, 0.0D).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(left, bottom + thickness, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(right + thickness, bottom + thickness, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(right + thickness, bottom, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(left, bottom, z).color(r, g, b, a).endVertex();
         tessellator.draw();
 
         bufferBuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
-        bufferBuilder.pos(left - thickness, bottom + thickness, 0.0D).color(r, g, b, a).endVertex();
-        bufferBuilder.pos(left, bottom + thickness, 0.0D).color(r, g, b, a).endVertex();
-        bufferBuilder.pos(left, top, 0.0D).color(r, g, b, a).endVertex();
-        bufferBuilder.pos(left - thickness, top, 0.0D).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(left - thickness, bottom + thickness, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(left, bottom + thickness, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(left, top, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(left - thickness, top, z).color(r, g, b, a).endVertex();
+        tessellator.draw();
+    }
+
+    /**
+     * Draw four lines around a rect area
+     *
+     * @param left rect left
+     * @param top rect top
+     * @param right rect right
+     * @param bottom rect bottom
+     */
+    public void drawRectFrame(float left, float top, float right, float bottom) {
+        RenderSystem.disableTexture();
+        bufferBuilder.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);
+        bufferBuilder.pos(left, bottom, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(right, bottom, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(right, bottom, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(right, top, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(right, top, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(left, top, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(left, top, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(left, bottom, z).color(r, g, b, a).endVertex();
         tessellator.draw();
     }
 
@@ -233,10 +281,10 @@ public class DrawTools {
     public void drawRectLines(float left, float top, float right, float bottom) {
         RenderSystem.disableTexture();
         bufferBuilder.begin(GL11.GL_LINE_LOOP, DefaultVertexFormats.POSITION_COLOR);
-        bufferBuilder.pos(left, bottom, 0.0D).color(r, g, b, a).endVertex();
-        bufferBuilder.pos(right, bottom, 0.0D).color(r, g, b, a).endVertex();
-        bufferBuilder.pos(right, top, 0.0D).color(r, g, b, a).endVertex();
-        bufferBuilder.pos(left, top, 0.0D).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(left, bottom, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(right, bottom, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(right, top, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(left, top, z).color(r, g, b, a).endVertex();
         tessellator.draw();
     }
 
@@ -261,8 +309,8 @@ public class DrawTools {
     public void drawLine(float startX, float startY, float stopX, float stopY) {
         RenderSystem.disableTexture();
         bufferBuilder.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);
-        bufferBuilder.pos(startX, startY, 0.0D).color(r, g, b, a).endVertex();
-        bufferBuilder.pos(stopX, stopY, 0.0D).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(startX, startY, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(stopX, stopY, z).color(r, g, b, a).endVertex();
         tessellator.draw();
     }
 
@@ -319,10 +367,10 @@ public class DrawTools {
         RenderSystem.enableTexture();
         icon.loadTexture();
         bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR_TEX);
-        bufferBuilder.pos(left, bottom, 0.0D).color(r, g, b, a).tex(icon.getLeft(), icon.getBottom()).endVertex();
-        bufferBuilder.pos(right, bottom, 0.0D).color(r, g, b, a).tex(icon.getRight(), icon.getBottom()).endVertex();
-        bufferBuilder.pos(right, top, 0.0D).color(r, g, b, a).tex(icon.getRight(), icon.getTop()).endVertex();
-        bufferBuilder.pos(left, top, 0.0D).color(r, g, b, a).tex(icon.getLeft(), icon.getTop()).endVertex();
+        bufferBuilder.pos(left, bottom, z).color(r, g, b, a).tex(icon.getLeft(), icon.getBottom()).endVertex();
+        bufferBuilder.pos(right, bottom, z).color(r, g, b, a).tex(icon.getRight(), icon.getBottom()).endVertex();
+        bufferBuilder.pos(right, top, z).color(r, g, b, a).tex(icon.getRight(), icon.getTop()).endVertex();
+        bufferBuilder.pos(left, top, z).color(r, g, b, a).tex(icon.getLeft(), icon.getTop()).endVertex();
         tessellator.draw();
     }
 
@@ -364,10 +412,10 @@ public class DrawTools {
         RenderSystem.disableTexture();
         RenderSystem.defaultBlendFunc();
         bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
-        bufferbuilder.pos(left, bottom, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(right, bottom, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(right, top, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(left, top, 0.0D).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(left, bottom, 0).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(right, bottom, 0).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(right, top, 0).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(left, top, 0).color(r, g, b, a).endVertex();
         tessellator.draw();
         RenderSystem.enableTexture();
 
@@ -385,10 +433,10 @@ public class DrawTools {
         RenderSystem.disableTexture();
         RenderSystem.defaultBlendFunc();
         bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
-        bufferbuilder.pos(left, bottom, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(right, bottom, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(right, top, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(left, top, 0.0D).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(left, bottom, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(right, bottom, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(right, top, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(left, top, z).color(r, g, b, a).endVertex();
         tessellator.draw();
         RenderSystem.enableTexture();
     }
@@ -401,10 +449,10 @@ public class DrawTools {
         RenderSystem.disableTexture();
         RenderSystem.defaultBlendFunc();
         bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
-        bufferbuilder.pos(left, bottom, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(right, bottom, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(right, top, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(left, top, 0.0D).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(left, bottom, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(right, bottom, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(right, top, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(left, top, z).color(r, g, b, a).endVertex();
         tessellator.draw();
         RenderSystem.enableTexture();
     }
@@ -423,10 +471,10 @@ public class DrawTools {
         RenderSystem.defaultBlendFunc();
 
         bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
-        bufferbuilder.pos(left, bottom, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(right, bottom, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(right, top, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(left, top, 0.0D).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(left, bottom, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(right, bottom, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(right, top, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(left, top, z).color(r, g, b, a).endVertex();
         tessellator.draw();
 
         a = (int) (frameAlpha * 255F);
@@ -435,31 +483,31 @@ public class DrawTools {
         b = frameRGB & 255;
 
         bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
-        bufferbuilder.pos(left - thickness, top, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(right, top, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(right, top - thickness, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(left - thickness, top - thickness, 0.0D).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(left - thickness, top, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(right, top, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(right, top - thickness, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(left - thickness, top - thickness, z).color(r, g, b, a).endVertex();
         tessellator.draw();
 
         bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
-        bufferbuilder.pos(right, bottom, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(right + thickness, bottom, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(right + thickness, top - thickness, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(right, top - thickness, 0.0D).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(right, bottom, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(right + thickness, bottom, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(right + thickness, top - thickness, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(right, top - thickness, z).color(r, g, b, a).endVertex();
         tessellator.draw();
 
         bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
-        bufferbuilder.pos(left, bottom + thickness, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(right + thickness, bottom + thickness, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(right + thickness, bottom, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(left, bottom, 0.0D).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(left, bottom + thickness, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(right + thickness, bottom + thickness, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(right + thickness, bottom, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(left, bottom, z).color(r, g, b, a).endVertex();
         tessellator.draw();
 
         bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
-        bufferbuilder.pos(left - thickness, bottom + thickness, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(left, bottom + thickness, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(left, top, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(left - thickness, top, 0.0D).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(left - thickness, bottom + thickness, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(left, bottom + thickness, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(left, top, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(left - thickness, top, z).color(r, g, b, a).endVertex();
         tessellator.draw();
 
         RenderSystem.enableTexture();
@@ -495,31 +543,31 @@ public class DrawTools {
         RenderSystem.defaultBlendFunc();
 
         bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
-        bufferbuilder.pos(left - thickness, top, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(right, top, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(right, top - thickness, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(left - thickness, top - thickness, 0.0D).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(left - thickness, top, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(right, top, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(right, top - thickness, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(left - thickness, top - thickness, z).color(r, g, b, a).endVertex();
         tessellator.draw();
 
         bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
-        bufferbuilder.pos(right, bottom, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(right + thickness, bottom, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(right + thickness, top - thickness, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(right, top - thickness, 0.0D).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(right, bottom, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(right + thickness, bottom, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(right + thickness, top - thickness, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(right, top - thickness, z).color(r, g, b, a).endVertex();
         tessellator.draw();
 
         bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
-        bufferbuilder.pos(left, bottom + thickness, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(right + thickness, bottom + thickness, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(right + thickness, bottom, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(left, bottom, 0.0D).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(left, bottom + thickness, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(right + thickness, bottom + thickness, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(right + thickness, bottom, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(left, bottom, z).color(r, g, b, a).endVertex();
         tessellator.draw();
 
         bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
-        bufferbuilder.pos(left - thickness, bottom + thickness, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(left, bottom + thickness, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(left, top, 0.0D).color(r, g, b, a).endVertex();
-        bufferbuilder.pos(left - thickness, top, 0.0D).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(left - thickness, bottom + thickness, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(left, bottom + thickness, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(left, top, z).color(r, g, b, a).endVertex();
+        bufferbuilder.pos(left - thickness, top, z).color(r, g, b, a).endVertex();
         tessellator.draw();
 
         RenderSystem.enableTexture();

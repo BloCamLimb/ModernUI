@@ -39,8 +39,11 @@ public class Icon {
 
     private final float t;
 
+    private final boolean aa;
+
     /**
      * Constructor
+     *
      * @param resource texture location
      * @param p texture left pos [0,1]
      * @param q texture top pos [0,1]
@@ -60,15 +63,16 @@ public class Icon {
         this.q = q;
         this.s = s;
         this.t = t;
+        this.aa = aa;
+    }
+
+    public void loadTexture() {
+        texture.bindTexture();
         if (aa) {
             texture.setBlurMipmapDirect(true, true);
         } else {
             texture.setBlurMipmapDirect(false, false);
         }
-    }
-
-    public void loadTexture() {
-        texture.bindTexture();
     }
 
     public float getLeft() {

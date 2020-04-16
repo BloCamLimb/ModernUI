@@ -18,6 +18,8 @@
 
 package icyllis.modernui.gui.master;
 
+import icyllis.modernui.gui.animation.IAnimation;
+
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +28,9 @@ public class Module implements IModule, IFocuser {
 
     private final GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
 
-    private List<IElement> elements = new ArrayList<>();
+    private final Canvas canvas = new Canvas();
+
+    private List<IDrawable> drawables = new ArrayList<>();
 
     private List<IMouseListener> mouseListeners = new ArrayList<>();
 
@@ -41,30 +45,65 @@ public class Module implements IModule, IFocuser {
     }
 
     @Override
-    public void draw(float time) {
-        elements.forEach(e -> e.draw(time));
+    public final void draw(float time) {
+        for (IDrawable drawable : drawables) {
+            drawable.draw(canvas, time);
+        }
+        drawChild(time);
+        for (IDrawable drawable : drawables) {
+            drawable.drawForegroundLayer(canvas, (float) getMouseX(), (float) getMouseY(), time);
+        }
+    }
+
+    protected void drawChild(float time) {
+
     }
 
     @Override
     public void resize(int width, int height) {
-        elements.forEach(e -> e.resize(width, height));
+        for (IDrawable drawable : drawables) {
+            drawable.resize(width, height);
+        }
     }
 
     @Override
     public void tick(int ticks) {
-        elements.forEach(e -> e.tick(ticks));
+        for (IDrawable drawable : drawables) {
+            drawable.tick(ticks);
+        }
     }
 
-    protected void addElements(IElement element) {
-        elements.add(element);
+    protected void addDrawable(IDrawable drawable) {
+        drawables.add(drawable);
     }
 
-    protected void addMouseListener(IMouseListener listener) {
-        mouseListeners.add(listener);
+    protected void addWidget(IWidget widget) {
+        drawables.add(widget);
+        mouseListeners.add(widget);
     }
 
-    protected void addTickListener(ITickListener listener) {
-        manager.addTickListener(listener);
+    public void addAnimation(IAnimation animation) {
+        manager.addAnimation(animation);
+    }
+
+    public int getWindowWidth() {
+        return manager.getWindowWidth();
+    }
+
+    public int getWindowHeight() {
+        return manager.getWindowHeight();
+    }
+
+    public double getMouseX() {
+        return manager.getMouseX();
+    }
+
+    public double getMouseY() {
+        return manager.getMouseY();
+    }
+
+    public void refocusCursor() {
+        manager.refreshMouse();
     }
 
     /**

@@ -18,34 +18,22 @@
 
 package icyllis.modernui.gui.widget;
 
-import com.mojang.blaze3d.platform.GlStateManager;
-import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.font.FontTools;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.master.DrawTools;
+import icyllis.modernui.gui.master.AnimationControl;
+import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.Icon;
-import icyllis.modernui.gui.math.Color3i;
+import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.system.ConstantsLibrary;
-import icyllis.modernui.system.ModernUI;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screen.inventory.ContainerScreen;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.texture.TextureManager;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import org.lwjgl.opengl.GL11;
 
-import java.util.function.Function;
+import javax.annotation.Nonnull;
+import java.util.List;
 
-public class MenuButton extends AnimatedWidget {
+public class MenuButton extends Widget {
 
-    //private TextureManager textureManager = Minecraft.getInstance().getTextureManager();
-
-    private Function<Integer, Float> xResizer;
-    private Function<Integer, Float> yResizer;
-
-    private AnimatedElement sideText = new SideTextAnimator(this);
+    private AnimationControl iconAC = new IconControl(this);
+    private AnimationControl sideTextAC = new SideTextControl(this);
 
     private final String text;
     private final Icon icon;
@@ -57,10 +45,8 @@ public class MenuButton extends AnimatedWidget {
     private float textAlpha = 0;
     private float frameSizeW = 5;
 
-    public MenuButton(Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, String text, int uIndex, Runnable leftClick, int id) {
-        super(16, 16);
-        this.xResizer = xResizer;
-        this.yResizer = yResizer;
+    public MenuButton(Module module, String text, int uIndex, Runnable leftClick, int id) {
+        super(module, 16, 16);
         this.text = text;
         this.icon = new Icon(ConstantsLibrary.ICONS, uIndex * 64 / 512f, 0, (uIndex + 1) * 64 / 512f, 64 / 512f, true);
         this.leftClickFunc = leftClick;
@@ -68,17 +54,26 @@ public class MenuButton extends AnimatedWidget {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        if (listening && mouseButton == 0) {
-            if (canChangeState()) {
-                leftClickFunc.run();
-                return true;
-            }
-        }
-        return false;
+    public void draw(@Nonnull Canvas canvas, float time) {
+        iconAC.update();
+        canvas.setRGBA(brightness, brightness, brightness, 1.0f);
+        canvas.drawIcon(icon, x1, y1, x1 + 16, y1 + 16);
     }
 
     @Override
+    public void drawForegroundLayer(Canvas canvas, float mouseX, float mouseY, float time) {
+        sideTextAC.update();
+        if (sideTextAC.isAnimationOpen()) {
+            canvas.setRGBA(0.0f, 0.0f, 0.0f, 0.5f * frameAlpha);
+            canvas.drawRoundedRect(x1 + 27, y1 + 1, x1 + 32 + frameSizeW, y1 + 15, 6);
+            canvas.setRGBA(0.5f, 0.5f, 0.5f, frameAlpha);
+            canvas.drawRoundedRectFrame(x1 + 27, y1 + 1, x1 + 32 + frameSizeW, y1 + 15, 6);
+            canvas.setRGBA(1.0f, 1.0f, 1.0f, textAlpha);
+            canvas.drawText(text, x1 + 32, y1 + 4);
+        }
+    }
+
+    /*@Override
     public void draw(float time) {
         super.draw(time);
         sideText.draw(time);
@@ -89,8 +84,8 @@ public class MenuButton extends AnimatedWidget {
         DrawTools.INSTANCE.setRGBA(brightness, brightness, brightness, 1.0f);
         //RenderSystem.scalef(0.5f, 0.5f, 1);
         //textureManager.bindTexture(ConstantsLibrary.ICONS);
-        /*GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
-        GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);*/
+        *//*GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+        GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);*//*
         //DrawTools.blitFinal(x1, x1 + 16, y1, y1 + 16, u / 512, (u + 64) / 512, 0, 64 / 512f);
         DrawTools.INSTANCE.drawIcon(icon, x1, y1, x1 + 16, y1 + 16);
 
@@ -107,43 +102,35 @@ public class MenuButton extends AnimatedWidget {
             DrawTools.INSTANCE.setRGBA(1.0f, 1.0f, 1.0f, textAlpha);
             DrawTools.INSTANCE.drawText(text, x1 + 32, y1 + 4); // called font renderer
         }
-    }
+    }*/
 
     @Override
-    protected void createOpenAnimations() {
-        manager.addAnimation(new Animation(4)
-                .applyTo(new Applier(0.5f, 1.0f, value -> brightness = value))
-                .onFinish(() -> setOpenState(true)));
-    }
-
-    @Override
-    protected void createCloseAnimations() {
-        manager.addAnimation(new Animation(4)
-                .applyTo(new Applier(1.0f, 0.5f, value -> brightness = value))
-                .onFinish(() -> setOpenState(false)));
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        if (listening && mouseButton == 0) {
+            if (iconAC.canChangeState()) {
+                leftClickFunc.run();
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
     protected void onMouseHoverEnter() {
         super.onMouseHoverEnter();
-        sideText.startOpenAnimation();
+        iconAC.startOpenAnimation();
+        sideTextAC.startOpenAnimation();
     }
 
     @Override
     protected void onMouseHoverExit() {
         super.onMouseHoverExit();
-        sideText.startCloseAnimation();
-    }
-
-    @Override
-    public void resize(int width, int height) {
-        float x = xResizer.apply(width);
-        float y = yResizer.apply(height);
-        setPos(x, y);
+        iconAC.startCloseAnimation();
+        sideTextAC.startCloseAnimation();
     }
 
     public float getTextLength() {
-        return fontRenderer.getStringWidth(text);
+        return FontTools.getStringWidth(text);
     }
 
     public void setFrameAlpha(float frameAlpha) {
@@ -158,48 +145,66 @@ public class MenuButton extends AnimatedWidget {
         this.frameSizeW = frameSizeW;
     }
 
+    public void setIconBrightness(float brightness) {
+        this.brightness = brightness;
+    }
+
     public void onModuleChanged(int id) {
-        setLockState(this.id == id);
-        if (canChangeState()) {
+        iconAC.setLockState(this.id == id);
+        if (iconAC.canChangeState()) {
             if (!mouseHovered) {
-                onMouseHoverExit();
+                iconAC.startCloseAnimation();
             }
         }
     }
 
-    private static class SideTextAnimator extends AnimatedElement {
+    private static class IconControl extends AnimationControl {
 
         private final MenuButton instance;
 
-        public SideTextAnimator(MenuButton instance) {
+        public IconControl(MenuButton instance) {
             this.instance = instance;
         }
 
         @Override
-        public void draw(float time) {
-            super.draw(time);
+        protected void createOpenAnimations(@Nonnull List<Animation> list) {
+            list.add(new Animation(4)
+                    .applyTo(new Applier(0.5f, 1.0f, instance::setIconBrightness)));
         }
 
         @Override
-        protected void createOpenAnimations() {
-            manager.addAnimation(new Animation(3, true)
+        protected void createCloseAnimations(@Nonnull List<Animation> list) {
+            list.add(new Animation(4)
+                    .applyTo(new Applier(1.0f, 0.5f, instance::setIconBrightness)));
+        }
+    }
+
+    private static class SideTextControl extends AnimationControl {
+
+        private final MenuButton instance;
+
+        public SideTextControl(MenuButton instance) {
+            this.instance = instance;
+        }
+
+        @Override
+        protected void createOpenAnimations(@Nonnull List<Animation> list) {
+            list.add(new Animation(3, true)
                     .applyTo(new Applier(0.0f, instance.getTextLength() + 5.0f, instance::setFrameSizeW)));
-            manager.addAnimation(new Animation(3)
+            list.add(new Animation(3)
                     .applyTo(new Applier(1.0f, instance::setFrameAlpha)));
-            manager.addAnimation(new Animation(3)
+            list.add(new Animation(3)
                     .applyTo(new Applier(1.0f, instance::setTextAlpha))
-                    .withDelay(2)
-                    .onFinish(() -> setOpenState(true)));
+                    .withDelay(2));
         }
 
         @Override
-        protected void createCloseAnimations() {
-            manager.addAnimation(new Animation(5)
+        protected void createCloseAnimations(@Nonnull List<Animation> list) {
+            list.add(new Animation(5)
                     .applyTo(new Applier(1.0f, 0.0f, v -> {
                         instance.setTextAlpha(v);
                         instance.setFrameAlpha(v);
-                    }))
-                    .onFinish(() -> setOpenState(false)));
+                    })));
         }
     }
 }

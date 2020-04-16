@@ -20,7 +20,7 @@ package icyllis.modernui.gui.math;
 
 import javax.annotation.Nullable;
 
-public enum Color3i {
+public enum Color3f {
     BLACK(0, 0, 0),
     DARK_BLUE(0, 0, 170),
     DARK_GREEN(0, 170, 0),
@@ -44,7 +44,7 @@ public enum Color3i {
 
     private float redF, greenF, blueF;
 
-    Color3i(int red, int green, int blue) {
+    Color3f(int red, int green, int blue) {
         this.red = red;
         this.green = green;
         this.blue = blue;
@@ -79,7 +79,7 @@ public enum Color3i {
     }
 
     @Nullable
-    public static Color3i getFormattingColor(int code) {
+    public static Color3f getFormattingColor(int code) {
         if (code >= 0 && code <= 15) {
             return values()[code];
         }

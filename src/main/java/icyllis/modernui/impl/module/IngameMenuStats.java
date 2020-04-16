@@ -21,7 +21,7 @@ package icyllis.modernui.impl.module;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.background.MenuSettingsBG;
+import icyllis.modernui.impl.background.MenuSettingsBG;
 import icyllis.modernui.gui.layout.WidgetLayout;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.ModuleGroup;

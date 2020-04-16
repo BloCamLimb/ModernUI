@@ -18,9 +18,6 @@
 
 package icyllis.modernui.gui.test;
 
-import icyllis.modernui.font.FontTools;
-import icyllis.modernui.font.IFontRenderer;
-import icyllis.modernui.gui.master.IElement;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureManager;
 
@@ -35,8 +32,6 @@ public abstract class Element implements IElement {
     protected Minecraft minecraft = Minecraft.getInstance();
 
     protected TextureManager textureManager = minecraft.getTextureManager();
-
-    protected IFontRenderer fontRenderer = FontTools.FONT_RENDERER;
 
     /**
      * Change X/Y position when game window size changed

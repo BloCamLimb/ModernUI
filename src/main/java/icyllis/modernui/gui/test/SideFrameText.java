@@ -18,17 +18,20 @@
 
 package icyllis.modernui.gui.test;
 
-import icyllis.modernui.gui.widget.AnimatedElement;
+import icyllis.modernui.gui.animation.Animation;
+import icyllis.modernui.gui.master.AnimationControl;
+
+import java.util.List;
 
 @Deprecated
-public class SideFrameText extends AnimatedElement {
+public class SideFrameText extends AnimationControl {
     @Override
-    protected void createOpenAnimations() {
+    protected void createOpenAnimations(List<Animation> list) {
 
     }
 
     @Override
-    protected void createCloseAnimations() {
+    protected void createCloseAnimations(List<Animation> list) {
 
     }
 

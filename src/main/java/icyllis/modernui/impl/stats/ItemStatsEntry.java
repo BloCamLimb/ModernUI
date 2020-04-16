@@ -21,7 +21,7 @@ package icyllis.modernui.impl.stats;
 import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.gui.scroll.UniformScrollEntry;
-import icyllis.modernui.gui.math.Color3i;
+import icyllis.modernui.gui.math.Color3f;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ItemRenderer;
 import net.minecraft.item.BlockItem;
@@ -40,7 +40,7 @@ public class ItemStatsEntry extends UniformScrollEntry {
 
     private final Item item;
 
-    private final Color3i color;
+    private final Color3f color;
 
     private final String itemName;
 
@@ -48,7 +48,7 @@ public class ItemStatsEntry extends UniformScrollEntry {
 
     private boolean drawTooltip = false;
 
-    public ItemStatsEntry(@Nonnull Item item, Color3i color) {
+    public ItemStatsEntry(@Nonnull Item item, Color3f color) {
         super(ItemStatsGroup.ENTRY_HEIGHT);
         this.item = item;
         this.itemName = item.getName().getFormattedText();

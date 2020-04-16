@@ -40,6 +40,8 @@ public interface IModule {
     default void resize(int width, int height) {}
 
     /**
+     * This is global method.
+     *
      * Ticks something you like, used by % calculation to update gui values or state
      *
      * @param ticks elapsed ticks from a gui open, 20 tick = 1 second

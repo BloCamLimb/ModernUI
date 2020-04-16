@@ -21,24 +21,27 @@ package icyllis.modernui.gui.widget;
 import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.master.DrawTools;
+import icyllis.modernui.gui.master.AnimationControl;
+import icyllis.modernui.gui.master.Canvas;
+import icyllis.modernui.gui.master.Module;
 
+import javax.annotation.Nonnull;
+import java.util.List;
 import java.util.function.Predicate;
 
-public class LineTextButton extends AnimatedWidget {
+public class LineTextButton extends Widget {
+
+    private final AnimationControl ac = new Control(this);
 
     private final String text;
+    private final Runnable leftClickFunc;
+    private final Predicate<Integer> isSelectedFunc;
 
     private float sizeWOffset;
-
     private float textBrightness = 0.7f;
 
-    private Runnable leftClickFunc;
-
-    private Predicate<Integer> isSelectedFunc;
-
-    public LineTextButton(String text, float width, Runnable leftClick, Predicate<Integer> isSelected) {
-        super(width, 12);
+    public LineTextButton(Module module, String text, float width, Runnable leftClick, Predicate<Integer> isSelected) {
+        super(module, width, 12);
         this.text = text;
         this.sizeWOffset = width / 2f;
         this.leftClickFunc = leftClick;
@@ -46,6 +49,16 @@ public class LineTextButton extends AnimatedWidget {
     }
 
     @Override
+    public void draw(@Nonnull Canvas canvas, float time) {
+        ac.update();
+        canvas.setRGBA(textBrightness, textBrightness, textBrightness, 1.0f);
+        canvas.setTextAlign(TextAlign.CENTER);
+        canvas.drawText(text, x1 + width / 2f, y1 + 2);
+        canvas.resetColor();
+        canvas.drawRect(x1 + sizeWOffset, y1 + 11, x2 - sizeWOffset, y1 + 12);
+    }
+
+    /*@Override
     public void draw(float time) {
         super.draw(time);
         fontRenderer.drawString(text, x1 + width / 2f, y1 + 2, textBrightness, TextAlign.CENTER);
@@ -56,36 +69,26 @@ public class LineTextButton extends AnimatedWidget {
     @Override
     public void resize(int width, int height) {
         super.resize(width, height);
-    }
-
-    @Override
-    protected void createOpenAnimations() {
-        manager.addAnimation(new Animation(3)
-                .applyTo(new Applier(width / 2f, 0, value -> sizeWOffset = value),
-                        new Applier(textBrightness, 1, value -> textBrightness = value))
-                .onFinish(() -> setOpenState(true)));
-    }
-
-    @Override
-    protected void createCloseAnimations() {
-        manager.addAnimation(new Animation(3)
-                .applyTo(new Applier(0, width / 2f, value -> sizeWOffset = value),
-                        new Applier(textBrightness, 0.7f, value -> textBrightness = value))
-                .onFinish(() -> setOpenState(false)));
-    }
+    }*/
 
     @Override
     protected void onMouseHoverEnter() {
-        if (canChangeState())
-            manager.addAnimation(new Animation(3)
-                    .applyTo(new Applier(textBrightness, 1, value -> textBrightness = value)));
+        super.onMouseHoverEnter();
+        ac.startOpenAnimation();
+        if (ac.canChangeState()) {
+            module.addAnimation(new Animation(3)
+                    .applyTo(new Applier(getTextBrightness(), 1, this::setTextBrightness)));
+        }
     }
 
     @Override
     protected void onMouseHoverExit() {
-        if (canChangeState())
-            manager.addAnimation(new Animation(3)
-                    .applyTo(new Applier(textBrightness, 0.7f, value -> textBrightness = value)));
+        super.onMouseHoverExit();
+        ac.startCloseAnimation();
+        if (ac.canChangeState()) {
+            module.addAnimation(new Animation(3)
+                    .applyTo(new Applier(getTextBrightness(), 0.7f, this::setTextBrightness)));
+        }
     }
 
     @Override
@@ -99,11 +102,46 @@ public class LineTextButton extends AnimatedWidget {
 
     public void onModuleChanged(int id) {
         if (isSelectedFunc.test(id)) {
-            startOpenAnimation();
-            setLockState(true);
+            ac.startOpenAnimation();
+            ac.setLockState(true);
         } else {
-            setLockState(false);
-            startCloseAnimation();
+            ac.setLockState(false);
+            ac.startCloseAnimation();
+        }
+    }
+
+    private void setTextBrightness(float textBrightness) {
+        this.textBrightness = textBrightness;
+    }
+
+    private float getTextBrightness() {
+        return textBrightness;
+    }
+
+    public void setSizeWOffset(float sizeWOffset) {
+        this.sizeWOffset = sizeWOffset;
+    }
+
+    private static class Control extends AnimationControl {
+
+        private final LineTextButton instance;
+
+        public Control(LineTextButton instance) {
+            this.instance = instance;
+        }
+
+        @Override
+        protected void createOpenAnimations(@Nonnull List<Animation> list) {
+            list.add(new Animation(3)
+                    .applyTo(new Applier(instance.getWidth() / 2f, 0, instance::setSizeWOffset),
+                            new Applier(instance.getTextBrightness(), 1, instance::setTextBrightness)));
+        }
+
+        @Override
+        protected void createCloseAnimations(@Nonnull List<Animation> list) {
+            list.add(new Animation(3)
+                    .applyTo(new Applier(0, instance.getWidth() / 2f, instance::setSizeWOffset),
+                            new Applier(instance.getTextBrightness(), 0.7f, instance::setTextBrightness)));
         }
     }
 
