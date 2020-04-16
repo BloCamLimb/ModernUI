@@ -21,17 +21,17 @@ package icyllis.modernui.impl.module;
 import com.google.common.collect.Lists;
 import icyllis.modernui.gui.layout.WidgetLayout;
 import icyllis.modernui.gui.master.Module;
-import icyllis.modernui.gui.popup.ConfirmCallback;
-import icyllis.modernui.gui.scroll.ScrollWindow;
-import icyllis.modernui.gui.widget.SlidingToggleButton;
-import icyllis.modernui.gui.widget.TriangleButton;
 import icyllis.modernui.gui.master.Widget;
+import icyllis.modernui.gui.scroll.ScrollWindow;
+import icyllis.modernui.gui.widget.StaticFrameButton;
+import icyllis.modernui.gui.widget.TriangleButton;
 import icyllis.modernui.impl.background.ResourcePackBG;
 import icyllis.modernui.impl.setting.ResourcePackEntry;
 import icyllis.modernui.impl.setting.ResourcePackGroup;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.ClientResourcePackInfo;
+import net.minecraft.client.resources.I18n;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nullable;
@@ -45,15 +45,11 @@ public class SettingResourcePack extends Module {
     private final Minecraft minecraft;
 
     private ResourcePackGroup availableGroup;
-
     private ResourcePackGroup selectedGroup;
 
     private TriangleButton leftArrow;
-
     private TriangleButton rightArrow;
-
     private TriangleButton upArrow;
-
     private TriangleButton downArrow;
 
     private WidgetLayout arrowsLayout;
@@ -61,7 +57,7 @@ public class SettingResourcePack extends Module {
     @Nullable
     private ResourcePackEntry highlightEntry;
 
-    private boolean changed = false;
+    private StaticFrameButton apply;
 
     public SettingResourcePack() {
         minecraft = Minecraft.getInstance();
@@ -93,10 +89,13 @@ public class SettingResourcePack extends Module {
         list.add(upArrow);
         list.add(downArrow);
 
-        list.add(new SlidingToggleButton(this, 4, b -> {}, 0xb020a0d0, 0x40808080, false));
+        apply = new StaticFrameButton(this, 48, I18n.format("gui.modernui.button.apply"), this::applyResourcePacks, false);
+
+        //list.add(new SlidingToggleButton(this, 4, b -> {}, 0xb020a0d0, 0x40808080, false)); // test
 
         arrowsLayout = new WidgetLayout(list, WidgetLayout.Direction.VERTICAL_POSITIVE, 4);
 
+        addWidget(apply);
         addWidget(aWindow);
         addWidget(sWindow);
         list.forEach(this::addWidget);
@@ -106,21 +105,10 @@ public class SettingResourcePack extends Module {
     public void resize(int width, int height) {
         super.resize(width, height);
         arrowsLayout.layout(width / 2f - 6, height * 0.25f);
+        apply.setPos(width / 2f - 24, height - 32);
     }
 
-    @Override
-    public boolean onBack() {
-        if (changed) {
-            applyResourcePacks(0);
-        }
-        return false;
-    }
-
-    //TODO buttons
-    private void applyResourcePacks(int callback) {
-        if (callback == ConfirmCallback.CANCEL) {
-            return;
-        }
+    private void applyResourcePacks() {
         List<ClientResourcePackInfo> list = Lists.newArrayList();
         GameSettings gameSettings = minecraft.gameSettings;
 
@@ -143,10 +131,7 @@ public class SettingResourcePack extends Module {
         }
 
         gameSettings.saveOptions();
-        if (callback == ConfirmCallback.CONFIRM) {
-            minecraft.reloadResources();
-        }
-        changed = false;
+        minecraft.reloadResources();
     }
 
     @Override
@@ -171,7 +156,7 @@ public class SettingResourcePack extends Module {
             highlightEntry.setMouseHoverExit();
             refocusCursor();
             setHighlightEntry(highlightEntry);
-            changed = true;
+            apply.setListening(true);
         }
     }
 
@@ -185,7 +170,7 @@ public class SettingResourcePack extends Module {
             highlightEntry.setMouseHoverExit();
             refocusCursor();
             setHighlightEntry(highlightEntry);
-            changed = true;
+            apply.setListening(true);
         }
     }
 
@@ -196,7 +181,7 @@ public class SettingResourcePack extends Module {
             selectedGroup.followEntry(highlightEntry);
             setHighlightEntry(highlightEntry);
             refocusCursor();
-            changed = true;
+            apply.setListening(true);
         }
     }
 
@@ -207,7 +192,7 @@ public class SettingResourcePack extends Module {
             selectedGroup.followEntry(highlightEntry);
             setHighlightEntry(highlightEntry);
             refocusCursor();
-            changed = true;
+            apply.setListening(true);
         }
     }
 

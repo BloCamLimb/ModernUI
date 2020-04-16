@@ -33,12 +33,18 @@ public class StaticFrameButton extends Widget {
 
     private final Runnable leftClickFunc;
 
-    private float brightness = 0.7f;
+    private float brightness;
 
-    public StaticFrameButton(Module module, float width, String text, Runnable leftClickFunc) {
+    public StaticFrameButton(Module module, float width, String text, Runnable leftClickFunc, boolean listening) {
         super(module, width, 13);
         this.text = text;
         this.leftClickFunc = leftClickFunc;
+        this.listening = listening;
+        if (listening) {
+            brightness = 0.7f;
+        } else {
+            brightness = 0.3f;
+        }
     }
 
     @Override

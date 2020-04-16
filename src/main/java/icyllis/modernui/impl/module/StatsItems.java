@@ -41,7 +41,7 @@ public class StatsItems extends Module {
 
         ScrollWindow<ItemStatsGroup> window = new ScrollWindow<>(this, w -> 40f, h -> 36f, w -> w - 80f, h -> h - 72f);
 
-        group = new ItemStatsGroup(window, ItemStatsGroup.Type.ITEMS);
+        group = new ItemStatsGroup(window, manager, ItemStatsGroup.Type.ITEMS);
         group.updateValues(manager);
 
         window.addGroups(Lists.newArrayList(group));
