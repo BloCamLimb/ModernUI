@@ -87,6 +87,10 @@ public class Animation implements IAnimation {
         }
     }
 
+    public float getDuration() {
+        return duration;
+    }
+
     @Override
     public boolean shouldRemove() {
         return finish;

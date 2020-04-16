@@ -16,19 +16,31 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.master;
+package icyllis.modernui.gui.math;
 
-/**
- * Used to listen tick event in gui
- */
-public interface ITickListener {
+import icyllis.modernui.gui.master.GlobalModuleManager;
 
-    /**
-     * This is global method.
-     *
-     * Ticks something you like, used by % calculation to update gui values or state
-     *
-     * @param ticks elapsed ticks from a gui open, 20 tick = 1 second
-     */
-    default void tick(int ticks) {}
+public class DelayedRunnable {
+
+    private final Runnable runnable;
+
+    private final int finishTick;
+
+    private boolean finish = false;
+
+    public DelayedRunnable(Runnable runnable, int delayedTick) {
+        this.runnable = runnable;
+        this.finishTick = GlobalModuleManager.INSTANCE.getTicks() + delayedTick;
+    }
+
+    public void tick(int ticks) {
+        if (ticks >= finishTick) {
+            runnable.run();
+            finish = true;
+        }
+    }
+
+    public boolean shouldRemove() {
+        return finish;
+    }
 }

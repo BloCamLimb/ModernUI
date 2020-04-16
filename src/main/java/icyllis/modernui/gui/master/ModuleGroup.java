@@ -18,6 +18,7 @@
 
 package icyllis.modernui.gui.master;
 
+import icyllis.modernui.gui.math.DelayedRunnable;
 import icyllis.modernui.system.ModernUI;
 
 import javax.annotation.Nullable;
@@ -117,7 +118,7 @@ public class ModuleGroup extends Module {
         return cid;
     }
 
-    @Override
+    /*@Override
     public void draw(float time) {
         if (overDraw) {
             if (shadow != null) {
@@ -136,6 +137,17 @@ public class ModuleGroup extends Module {
                 child.draw(time);
             }
         }
+    }*/
+
+    @Override
+    protected final void drawChild(float time) {
+        super.drawChild(time);
+        if (shadow != null) {
+            shadow.draw(time);
+        }
+        if (child != null) {
+            child.draw(time);
+        }
     }
 
     @Override
@@ -146,13 +158,13 @@ public class ModuleGroup extends Module {
         }
     }
 
-    @Override
+    /*@Override
     public void tick(int ticks) {
         super.tick(ticks);
         if (child != null) {
             child.tick(ticks);
         }
-    }
+    }*/
 
     @Override
     public boolean onBack() {
@@ -166,7 +178,7 @@ public class ModuleGroup extends Module {
      * Called when module group changed a module successfully
      * @param id new module id
      */
-    public void moduleChanged(int id) {
+    protected void moduleChanged(int id) {
 
     }
 

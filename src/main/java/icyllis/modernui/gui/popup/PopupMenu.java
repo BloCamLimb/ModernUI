@@ -18,6 +18,7 @@
 
 package icyllis.modernui.gui.popup;
 
+import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.IModule;
 import icyllis.modernui.gui.master.IWidget;
@@ -26,6 +27,8 @@ import icyllis.modernui.gui.master.IWidget;
  * Open a drop down menu or context menu, resize and mouse release will close this popup
  */
 public class PopupMenu implements IModule {
+
+    private final Canvas canvas = new Canvas();
 
     private final IWidget menu;
 
@@ -37,7 +40,7 @@ public class PopupMenu implements IModule {
 
     @Override
     public void draw(float time) {
-        menu.draw(time);
+        menu.draw(canvas, time);
     }
 
     @Override

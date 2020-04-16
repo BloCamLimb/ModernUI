@@ -26,7 +26,7 @@ package icyllis.modernui.font;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.gui.math.Color3i;
+import icyllis.modernui.gui.math.Color3f;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
@@ -124,7 +124,7 @@ public class TrueTypeRenderer implements IFontRenderer {
         int alpha = (int) (a * 255);
 
         /* formatting color will replace parameter color */
-        Color3i rColor = null;
+        Color3f rColor = null;
 
         /*
          * Enable GL_BLEND in case the font is drawn anti-aliased because Minecraft itself only enables blending for chat text
@@ -156,7 +156,7 @@ public class TrueTypeRenderer implements IFontRenderer {
              */
             while (colorIndex < entry.codes.length && entry.glyphs[glyphIndex].stringIndex >= entry.codes[colorIndex].stringIndex) {
                 int colorCode = entry.codes[colorIndex].colorCode;
-                rColor = Color3i.getFormattingColor(colorCode);
+                rColor = Color3f.getFormattingColor(colorCode);
                 fontStyle = entry.codes[colorIndex].fontStyle;
                 colorIndex++;
             }

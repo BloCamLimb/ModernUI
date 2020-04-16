@@ -20,6 +20,7 @@ package icyllis.modernui.gui.master;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.animation.IAnimation;
+import icyllis.modernui.gui.math.DelayedRunnable;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
@@ -28,6 +29,8 @@ import net.minecraft.util.text.ITextComponent;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.glfw.GLFW;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL13;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -71,8 +74,6 @@ public enum GlobalModuleManager {
 
     private List<IAnimation> animations = new ArrayList<>();
 
-    private List<ITickListener> tickListeners = new ArrayList<>();
-
     private List<DelayedRunnable> runnables = new CopyOnWriteArrayList<>();
 
     private int ticks = 0;
@@ -89,6 +90,8 @@ public enum GlobalModuleManager {
     }
 
     public void init(int width, int height) {
+        this.width = width;
+        this.height = height;
         if (supplier != null) {
             root = Objects.requireNonNull(supplier.get());
             supplier = null;
@@ -129,10 +132,6 @@ public enum GlobalModuleManager {
 
     public void addAnimation(IAnimation animation) {
         animations.add(animation);
-    }
-
-    protected void addTickListener(ITickListener listener) {
-        tickListeners.add(listener);
     }
 
     public void scheduleRunnable(DelayedRunnable runnable) {
@@ -242,11 +241,13 @@ public enum GlobalModuleManager {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableAlphaTest();
+        RenderSystem.pushMatrix();
         root.draw(animationTime);
         if (popup != null) {
             popup.draw(animationTime);
         }
         DrawTools.INSTANCE.setLineAntiAliasing(false);
+        RenderSystem.popMatrix();
         RenderSystem.enableTexture();
         RenderSystem.disableBlend();
     }
@@ -279,14 +280,9 @@ public enum GlobalModuleManager {
 
     public void clientTick() {
         ticks++;
-        if (root != null) {
-            root.tick(ticks);
-        }
+        root.tick(ticks);
         if (popup != null) {
             popup.tick(ticks);
-        }
-        for (ITickListener listener : tickListeners) {
-            listener.tick(ticks);
         }
         // tick listeners are always called before runnables
         for (DelayedRunnable runnable : runnables) {

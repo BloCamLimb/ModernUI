@@ -16,18 +16,15 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.widget;
+package icyllis.modernui.gui.test;
 
 import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.IFontRenderer;
-import icyllis.modernui.gui.master.GlobalModuleManager;
+import icyllis.modernui.gui.master.AnimationControl;
 import icyllis.modernui.gui.master.IWidget;
 
-public abstract class FlexibleWidget implements IWidget {
-
-    protected final GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
-
-    protected final IFontRenderer fontRenderer = FontTools.FONT_RENDERER;
+@Deprecated
+public abstract class AnimatedWidget extends AnimationControl implements IWidget {
 
     protected float x1, y1;
 
@@ -39,8 +36,13 @@ public abstract class FlexibleWidget implements IWidget {
 
     protected boolean mouseHovered = false;
 
-    public FlexibleWidget() {
+    public AnimatedWidget() {
 
+    }
+
+    public AnimatedWidget(float width, float height) {
+        this.width = width;
+        this.height = height;
     }
 
     @Override
@@ -49,16 +51,6 @@ public abstract class FlexibleWidget implements IWidget {
         this.x2 = x + width;
         this.y1 = y;
         this.y2 = y + height;
-    }
-
-    @Override
-    public final float getWidth() {
-        return width;
-    }
-
-    @Override
-    public final float getHeight() {
-        return height;
     }
 
     @Override
@@ -79,6 +71,16 @@ public abstract class FlexibleWidget implements IWidget {
     @Override
     public final float getBottom() {
         return y2;
+    }
+
+    @Override
+    public final float getWidth() {
+        return width;
+    }
+
+    @Override
+    public final float getHeight() {
+        return height;
     }
 
     @Override
@@ -116,10 +118,10 @@ public abstract class FlexibleWidget implements IWidget {
     }
 
     protected void onMouseHoverEnter() {
-
+        this.startOpenAnimation();
     }
 
     protected void onMouseHoverExit() {
-
+        this.startCloseAnimation();
     }
 }

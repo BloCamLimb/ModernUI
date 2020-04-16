@@ -19,8 +19,9 @@
 package icyllis.modernui.gui.scroll;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.*;
-import icyllis.modernui.gui.widget.FlexibleWidget;
+import icyllis.modernui.gui.widget.Widget;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
@@ -32,13 +33,11 @@ import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.function.Function;
 
-public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget implements IFocuser {
+public class ScrollWindow<T extends ScrollGroup> extends Widget {
 
     protected final Function<Integer, Float> xResizer, yResizer;
 
     protected final Function<Integer, Float> wResizer, hResizer;
-
-    protected final Module module;
 
     protected final Minecraft minecraft;
 
@@ -59,8 +58,8 @@ public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget implemen
     protected final ScrollList<T> scrollList;
 
     public ScrollWindow(Module module, Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, Function<Integer, Float> wResizer, Function<Integer, Float> hResizer) {
+        super(module);
         this.minecraft = Minecraft.getInstance();
-        this.module = module;
         this.xResizer = xResizer;
         this.yResizer = yResizer;
         this.wResizer = wResizer;
@@ -71,7 +70,7 @@ public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget implemen
     }
 
     @Override
-    public final void draw(float time) {
+    public final void draw(Canvas canvas, float time) {
         controller.update(time);
 
         Tessellator tessellator = Tessellator.getInstance();
@@ -122,7 +121,7 @@ public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget implemen
         drawEndExtra();
     }
 
-    public void drawEndExtra() {
+    protected void drawEndExtra() {
 
     }
 
@@ -133,7 +132,6 @@ public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget implemen
 
     @Override
     public void resize(int width, int height) {
-        super.resize(width, height);
         this.gameWindowWidth = width;
         this.x1 = xResizer.apply(width);
         this.y1 = yResizer.apply(height);
@@ -290,25 +288,4 @@ public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget implemen
         scrollList.addGroups(collection);
     }
 
-    @Override
-    public void setDraggable(@Nullable IDraggable draggable) {
-        module.setDraggable(draggable);
-    }
-
-    @Nullable
-    @Override
-    public IDraggable getDraggable() {
-        return module.getDraggable();
-    }
-
-    @Override
-    public void setKeyboardListener(@Nullable IKeyboardListener keyboardListener) {
-        module.setKeyboardListener(keyboardListener);
-    }
-
-    @Nullable
-    @Override
-    public IKeyboardListener getKeyboardListener() {
-        return module.getKeyboardListener();
-    }
 }

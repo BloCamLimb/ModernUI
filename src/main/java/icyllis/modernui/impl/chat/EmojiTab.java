@@ -21,7 +21,7 @@ package icyllis.modernui.impl.chat;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.TextAlign;
-import icyllis.modernui.gui.math.Color3i;
+import icyllis.modernui.gui.math.Color3f;
 import icyllis.modernui.system.HistoryRecorder;
 import icyllis.modernui.system.ConstantsLibrary;
 import icyllis.modernui.font.FontTools;
@@ -131,7 +131,7 @@ public class EmojiTab implements IGuiEventListener {
             GlStateManager.enableBlend();
             GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
             DrawTools.fillRectWithColor(rx, ry, rx + 11.5f, ry + 11.5f, 0x40d0d0d0);
-            FontTools.FONT_RENDERER.drawString(name, 18, y - 11, Color3i.GRAY_224, 1.0f, TextAlign.LEFT);
+            FontTools.FONT_RENDERER.drawString(name, 18, y - 11, Color3f.GRAY_224, 1.0f, TextAlign.LEFT);
             GlStateManager.disableBlend();
             GlStateManager.enableBlend();
             hoverEmoji = emoji;

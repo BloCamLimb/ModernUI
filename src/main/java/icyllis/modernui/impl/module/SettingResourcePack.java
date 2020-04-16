@@ -19,7 +19,7 @@
 package icyllis.modernui.impl.module;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.gui.background.ResourcePackBG;
+import icyllis.modernui.impl.background.ResourcePackBG;
 import icyllis.modernui.gui.layout.WidgetLayout;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.Module;
@@ -240,15 +240,15 @@ public class SettingResourcePack extends Module {
     public void setHighlightEntry(@Nullable ResourcePackEntry highlightEntry) {
         this.highlightEntry = highlightEntry;
         if (highlightEntry != null) {
-            leftArrow.setAvailable(highlightEntry.canIntoAvailable());
-            rightArrow.setAvailable(highlightEntry.canIntoSelected());
-            upArrow.setAvailable(highlightEntry.canGoUp());
-            downArrow.setAvailable(highlightEntry.canGoDown());
+            leftArrow.setClickable(highlightEntry.canIntoAvailable());
+            rightArrow.setClickable(highlightEntry.canIntoSelected());
+            upArrow.setClickable(highlightEntry.canGoUp());
+            downArrow.setClickable(highlightEntry.canGoDown());
         } else {
-            leftArrow.setAvailable(false);
-            rightArrow.setAvailable(false);
-            upArrow.setAvailable(false);
-            downArrow.setAvailable(false);
+            leftArrow.setClickable(false);
+            rightArrow.setClickable(false);
+            upArrow.setClickable(false);
+            downArrow.setClickable(false);
         }
     }
 

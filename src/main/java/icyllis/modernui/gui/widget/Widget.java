@@ -18,14 +18,12 @@
 
 package icyllis.modernui.gui.widget;
 
-import icyllis.modernui.font.FontTools;
-import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.gui.master.IWidget;
-import icyllis.modernui.system.ModernUI;
+import icyllis.modernui.gui.master.Module;
 
-public abstract class AnimatedWidget extends AnimatedElement implements IWidget {
+public abstract class Widget implements IWidget {
 
-    protected IFontRenderer fontRenderer = FontTools.FONT_RENDERER;
+    protected final Module module;
 
     protected float x1, y1;
 
@@ -37,11 +35,12 @@ public abstract class AnimatedWidget extends AnimatedElement implements IWidget 
 
     protected boolean mouseHovered = false;
 
-    public AnimatedWidget() {
-
+    public Widget(Module module) {
+        this.module = module;
     }
 
-    public AnimatedWidget(float width, float height) {
+    public Widget(Module module, float width, float height) {
+        this.module = module;
         this.width = width;
         this.height = height;
     }
@@ -52,6 +51,16 @@ public abstract class AnimatedWidget extends AnimatedElement implements IWidget 
         this.x2 = x + width;
         this.y1 = y;
         this.y2 = y + height;
+    }
+
+    @Override
+    public final float getWidth() {
+        return width;
+    }
+
+    @Override
+    public final float getHeight() {
+        return height;
     }
 
     @Override
@@ -72,16 +81,6 @@ public abstract class AnimatedWidget extends AnimatedElement implements IWidget 
     @Override
     public final float getBottom() {
         return y2;
-    }
-
-    @Override
-    public final float getWidth() {
-        return width;
-    }
-
-    @Override
-    public final float getHeight() {
-        return height;
     }
 
     @Override
@@ -119,10 +118,14 @@ public abstract class AnimatedWidget extends AnimatedElement implements IWidget 
     }
 
     protected void onMouseHoverEnter() {
-        this.startOpenAnimation();
+
     }
 
     protected void onMouseHoverExit() {
-        this.startCloseAnimation();
+
+    }
+
+    public Module getModule() {
+        return module;
     }
 }

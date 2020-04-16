@@ -18,12 +18,13 @@
 
 package icyllis.modernui.font;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 
 public class FontTools {
 
-    public static IFontRenderer FONT_RENDERER;
+    private static IFontRenderer FONT_RENDERER;
 
     static {
         FONT_RENDERER = TrueTypeRenderer.INSTANCE;
@@ -37,9 +38,15 @@ public class FontTools {
         } else {
             FONT_RENDERER = VanillaFontRenderer.INSTANCE;
         }
+        throw new RuntimeException();
     }
 
-    public static String[] splitStringToWidth(String string, float width) {
+    public static float getStringWidth(String string) {
+        return FONT_RENDERER.getStringWidth(string);
+    }
+
+    @Nonnull
+    public static String[] splitStringToWidth(@Nonnull String string, float width) {
         List<String> list = new ArrayList<>();
         String str;
         int currentIndex = 0;

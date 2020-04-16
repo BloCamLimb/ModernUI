@@ -16,39 +16,44 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.background;
+package icyllis.modernui.impl.background;
 
-import icyllis.modernui.gui.animation.Animation;
-import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.DrawTools;
-import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.gui.master.IElement;
+import icyllis.modernui.gui.test.IElement;
 
-public class Background implements IElement {
+public class ResourcePackBG implements IElement {
 
-    private float alpha = 0f;
+    private float x1, x2, y1, y2;
 
-    private int width, height;
+    private boolean drawSide = false;
 
-    public Background(float fadeInTime) {
-        if (fadeInTime > 0) {
-            GlobalModuleManager.INSTANCE.addAnimation(new Animation(fadeInTime)
-                    .applyTo(new Applier(0.5f, value -> alpha = value)));
-        } else {
-            alpha = 0.5f;
+    private float x3, x4, x5, x6;
+
+    @Override
+    public void draw(float time) {
+        DrawTools.INSTANCE.setRGBA(0, 0, 0, 0.27f);
+        DrawTools.INSTANCE.drawRect(x1, y1, x2, y2);
+        if (drawSide) {
+            DrawTools.INSTANCE.drawRect(x3, y1, x4, y2);
+            DrawTools.INSTANCE.drawRect(x5, y1, x6, y2);
         }
     }
 
     @Override
-    public void draw(float time) {
-        DrawTools.INSTANCE.setRGBA(0, 0, 0, alpha);
-        DrawTools.INSTANCE.drawRect(0, 0, width, height);
-    }
-
-    @Override
     public void resize(int width, int height) {
-        this.width = width;
-        this.height = height;
+        x1 = width / 2f - 8f;
+        x2 = width / 2f + 8f;
+        y1 = 36f;
+        y2 = height - 36f;
+        float crd = (width - 80) / 2f - 8f;
+        if (crd > 240) {
+            drawSide = true;
+            x3 = 40f;
+            x4 = width / 2f - 248;
+            x5 = width / 2f + 248;
+            x6 = width - 40f;
+        } else {
+            drawSide = false;
+        }
     }
-
 }

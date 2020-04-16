@@ -18,13 +18,21 @@
 
 package icyllis.modernui.gui.widget;
 
-import icyllis.modernui.gui.master.GlobalModuleManager;
+import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.master.DrawTools;
+import icyllis.modernui.gui.master.AnimationControl;
+import icyllis.modernui.gui.master.Canvas;
+import icyllis.modernui.gui.master.GlobalModuleManager;
+import icyllis.modernui.gui.master.Module;
 
-public class TextFrameButton extends AnimatedWidget {
+import javax.annotation.Nonnull;
+import java.util.List;
+
+public class TextFrameButton extends Widget {
+
+    private final AnimationControl ac = new Control(this);
 
     private String text;
 
@@ -36,9 +44,10 @@ public class TextFrameButton extends AnimatedWidget {
 
     private Runnable leftClickFunc;
 
-    public TextFrameButton(String text, Runnable onLeftClick) {
+    public TextFrameButton(Module module, String text, Runnable onLeftClick) {
+        super(module);
         this.text = text;
-        this.width = Math.max(28, fontRenderer.getStringWidth(text) + 6);
+        this.width = Math.max(28, FontTools.getStringWidth(text) + 6);
         this.height = 13;
         this.fwo = width;
         this.fho = height;
@@ -46,6 +55,18 @@ public class TextFrameButton extends AnimatedWidget {
     }
 
     @Override
+    public void draw(@Nonnull Canvas canvas, float time) {
+        ac.update();
+        canvas.setRGBA(textBrightness, textBrightness, textBrightness, 1.0f);
+        canvas.setTextAlign(TextAlign.CENTER);
+        canvas.drawText(text, x1 + width / 2f, y1 + 2);
+        if (frameAlpha > 0) {
+            canvas.setRGBA(0.5f, 0.5f, 0.5f, frameAlpha);
+            canvas.drawRectOutline(x1 - fwo, y1 - fho, x2 + fwo, y2 + fho, 0.51f);
+        }
+    }
+
+    /*@Override
     public void draw(float time) {
         super.draw(time);
         fontRenderer.drawString(text, x1 + width / 2f, y1 + 2, textBrightness, TextAlign.CENTER);
@@ -53,7 +74,7 @@ public class TextFrameButton extends AnimatedWidget {
             DrawTools.INSTANCE.setRGBA(0.5f, 0.5f, 0.5f, frameAlpha);
             DrawTools.INSTANCE.drawRectOutline(x1 - fwo, y1 - fho, x2 + fwo, y2 + fho, 0.51f);
         }
-    }
+    }*/
 
     @Override
     public void resize(int width, int height) {
@@ -61,22 +82,15 @@ public class TextFrameButton extends AnimatedWidget {
     }
 
     @Override
-    protected void createOpenAnimations() {
-        manager.addAnimation(new Animation(2, true)
-                .applyTo(new Applier(width / 2f, 0, value -> fwo = value),
-                        new Applier(6, 0, value -> fho = value)));
-        manager.addAnimation(new Animation(2)
-                .applyTo(new Applier(1, value -> frameAlpha = value),
-                        new Applier(0.7f, 1, value -> textBrightness = value))
-                .onFinish(() -> setOpenState(true)));
+    protected void onMouseHoverEnter() {
+        super.onMouseHoverEnter();
+        ac.startOpenAnimation();
     }
 
     @Override
-    protected void createCloseAnimations() {
-        manager.addAnimation(new Animation(4)
-                .applyTo(new Applier(1, 0, value -> frameAlpha = value),
-                        new Applier(1, 0.7f, value -> textBrightness = value))
-                .onFinish(() -> setOpenState(false)));
+    protected void onMouseHoverExit() {
+        super.onMouseHoverExit();
+        ac.startCloseAnimation();
     }
 
     @Override
@@ -86,6 +100,22 @@ public class TextFrameButton extends AnimatedWidget {
             return true;
         }
         return false;
+    }
+
+    public void setTextBrightness(float textBrightness) {
+        this.textBrightness = textBrightness;
+    }
+
+    public void setFrameAlpha(float frameAlpha) {
+        this.frameAlpha = frameAlpha;
+    }
+
+    public void setFwo(float fwo) {
+        this.fwo = fwo;
+    }
+
+    public void setFho(float fho) {
+        this.fho = fho;
     }
 
     public static class Countdown extends TextFrameButton {
@@ -98,19 +128,30 @@ public class TextFrameButton extends AnimatedWidget {
 
         private int displayCount;
 
-        public Countdown(String text, Runnable leftClick, int countdown) {
-            super(text, leftClick);
+        public Countdown(Module module, String text, Runnable leftClick, int countdown) {
+            super(module, text, leftClick);
             this.displayCount = this.countdown = countdown;
             listening = false;
         }
 
-        @Override
+        /*@Override
         public void draw(float time) {
             super.draw(time);
             if (counting) {
                 DrawTools.INSTANCE.setRGBA(0.03f, 0.03f, 0.03f, 0.7f);
                 DrawTools.INSTANCE.drawRect(x1, y1, x2, y2);
                 fontRenderer.drawString(displayCount + "s", x1 + width / 2f, y1 + 2, 1, TextAlign.CENTER);
+            }
+        }*/
+
+        @Override
+        public void draw(@Nonnull Canvas canvas, float time) {
+            super.draw(canvas, time);
+            if (counting) {
+                canvas.setRGBA(0.03f, 0.03f, 0.03f, 0.7f);
+                canvas.drawRect(x1, y1, x2, y2);
+                canvas.resetColor();
+                canvas.drawText(displayCount + "s", x1 + width / 2f, y1 + 2);
             }
         }
 
@@ -121,9 +162,35 @@ public class TextFrameButton extends AnimatedWidget {
                 displayCount = countdown - (ticks - startTick) / 20;
                 if (!counting) {
                     listening = true;
-                    manager.refreshMouse();
+                    module.refocusCursor();
                 }
             }
+        }
+    }
+
+    private static class Control extends AnimationControl {
+
+        private final TextFrameButton instance;
+
+        public Control(TextFrameButton instance) {
+            this.instance = instance;
+        }
+
+        @Override
+        protected void createOpenAnimations(@Nonnull List<Animation> list) {
+            list.add(new Animation(2, true)
+                    .applyTo(new Applier(instance.getWidth() / 2f, 0, instance::setFwo),
+                            new Applier(6, 0, instance::setFho)));
+            list.add(new Animation(2)
+                    .applyTo(new Applier(0, 1, instance::setFrameAlpha),
+                            new Applier(0.7f, 1, instance::setTextBrightness)));
+        }
+
+        @Override
+        protected void createCloseAnimations(@Nonnull List<Animation> list) {
+            list.add(new Animation(4)
+                    .applyTo(new Applier(1, 0, instance::setFrameAlpha),
+                            new Applier(1, 0.7f, instance::setTextBrightness)));
         }
     }
 

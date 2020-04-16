@@ -19,12 +19,10 @@
 package icyllis.modernui.gui.popup;
 
 import icyllis.modernui.font.FontTools;
-import icyllis.modernui.font.IFontRenderer;
-import icyllis.modernui.gui.background.Background;
-import icyllis.modernui.gui.background.ConfirmWindowBG;
+import icyllis.modernui.gui.draw.Background;
+import icyllis.modernui.gui.draw.ConfirmWindowDraw;
 import icyllis.modernui.gui.layout.WidgetLayout;
 import icyllis.modernui.gui.master.*;
-import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.gui.widget.TextFrameButton;
 import net.minecraft.client.resources.I18n;
 
@@ -34,15 +32,9 @@ import java.util.List;
 
 public class PopupConfirm extends Module {
 
-    private IFontRenderer fontRenderer = FontTools.FONT_RENDERER;
-
-    private String title = "";
-
-    private String[] desc = new String[0];
+    private final ConfirmWindowDraw bg;
 
     private WidgetLayout buttonLayout;
-
-    private float x, y;
 
     public PopupConfirm(ConfirmCallback callback) {
         this(callback, 0);
@@ -61,53 +53,41 @@ public class PopupConfirm extends Module {
      * @param alternative third button between confirm button and cancel button to perform another operation
      */
     public PopupConfirm(ConfirmCallback callback, int seconds, String confirmText, String cancelText, @Nullable String alternative) {
-        addElements(new Background(4));
-        addElements(new ConfirmWindowBG());
+        addDrawable(new Background(this, 4));
+        bg = new ConfirmWindowDraw(this);
+        addDrawable(bg);
         List<IWidget> buttons = new ArrayList<>();
         if (seconds > 0) {
-            buttons.add(new TextFrameButton.Countdown(confirmText, () -> callback.call(ConfirmCallback.CONFIRM), seconds));
+            buttons.add(new TextFrameButton.Countdown(this, confirmText, () -> callback.call(ConfirmCallback.CONFIRM), seconds));
         } else {
-            buttons.add(new TextFrameButton(confirmText, () -> callback.call(ConfirmCallback.CONFIRM)));
+            buttons.add(new TextFrameButton(this, confirmText, () -> callback.call(ConfirmCallback.CONFIRM)));
         }
         if (alternative != null) {
-            buttons.add(new TextFrameButton(alternative, () -> callback.call(ConfirmCallback.ALTERNATIVE)));
+            buttons.add(new TextFrameButton(this, alternative, () -> callback.call(ConfirmCallback.ALTERNATIVE)));
         }
-        buttons.add(new TextFrameButton(cancelText, () -> callback.call(ConfirmCallback.CANCEL)));
-        buttons.forEach(this::addElements);
-        buttons.forEach(this::addMouseListener);
+        buttons.add(new TextFrameButton(this, cancelText, () -> callback.call(ConfirmCallback.CANCEL)));
+        buttons.forEach(this::addWidget);
         buttonLayout = new WidgetLayout(buttons, WidgetLayout.Direction.HORIZONTAL_NEGATIVE, 6);
     }
 
     public PopupConfirm setFullTitle(String title) {
-        this.title = title;
+        bg.setTitle(title);
         return this;
     }
 
     public PopupConfirm setConfirmTitle(String operation) {
-        this.title = I18n.format("gui.modernui.button.confirm", operation);
+        bg.setTitle(I18n.format("gui.modernui.button.confirm", operation));
         return this;
     }
 
     public PopupConfirm setDescription(String description) {
-        this.desc = FontTools.splitStringToWidth(description, 164);
+        bg.setDesc(FontTools.splitStringToWidth(description, 164));
         return this;
-    }
-
-    @Override
-    public void draw(float time) {
-        super.draw(time);
-        fontRenderer.drawString(title, x + 90, y + 4, TextAlign.CENTER);
-        int i = 0;
-        for (String t : desc) {
-            fontRenderer.drawString(t, x + 8, y + 24 + i++ * 12);
-        }
     }
 
     @Override
     public void resize(int width, int height) {
         super.resize(width, height);
-        this.x = width / 2f - 90;
-        this.y = height / 2f - 40;
         buttonLayout.layout(width / 2f + 82, height / 2f + 20);
     }
 

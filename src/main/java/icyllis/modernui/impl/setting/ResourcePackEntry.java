@@ -23,7 +23,7 @@ import icyllis.modernui.font.FontTools;
 import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.impl.module.SettingResourcePack;
 import icyllis.modernui.gui.scroll.UniformScrollEntry;
-import icyllis.modernui.gui.math.Color3i;
+import icyllis.modernui.gui.math.Color3f;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
@@ -110,7 +110,7 @@ public class ResourcePackEntry extends UniformScrollEntry {
         fontRenderer.drawString(title, x1 + 39, y1 + 4);
         int i = 0;
         for (String d : desc) {
-            fontRenderer.drawString(d, x1 + 39, y1 + 14 + i * 10, Color3i.GRAY);
+            fontRenderer.drawString(d, x1 + 39, y1 + 14 + i * 10, Color3f.GRAY);
             i++;
             if (i > 1) {
                 break;

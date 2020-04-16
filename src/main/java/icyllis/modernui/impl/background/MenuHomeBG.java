@@ -16,28 +16,28 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.background;
+package icyllis.modernui.impl.background;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.gui.master.IElement;
-import icyllis.modernui.system.ModernUI;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import org.lwjgl.opengl.GL11;
+import icyllis.modernui.gui.master.Canvas;
+import icyllis.modernui.gui.master.IDrawable;
+import icyllis.modernui.gui.master.Module;
 
-public class MenuHomeBG implements IElement {
+import javax.annotation.Nonnull;
+
+public class MenuHomeBG implements IDrawable {
 
     private float height;
 
-    public MenuHomeBG() {
+    private float xOffset = -32;
 
+    public MenuHomeBG(Module module) {
+        module.addAnimation(new Animation(4, true)
+                .applyTo(new Applier(xOffset, 0, v -> xOffset = v)));
     }
 
-    @Override
+    /*@Override
     public void draw(float time) {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferbuilder = tessellator.getBuffer();
@@ -54,6 +54,15 @@ public class MenuHomeBG implements IElement {
         bufferbuilder.pos(32, height, 0.0D).color(140, 140, 140, 220).endVertex();
         tessellator.draw();
         RenderSystem.enableTexture();
+    }*/
+
+    @Override
+    public void draw(@Nonnull Canvas canvas, float time) {
+        canvas.translate(xOffset, 0);
+        canvas.setRGBA(0, 0, 0, 0.7f);
+        canvas.drawRect(0, 0, 32, height);
+        canvas.setRGBA(0.55f, 0.55f, 0.55f, 0.85f);
+        canvas.drawLine(32, 0, 32, height);
     }
 
     @Override

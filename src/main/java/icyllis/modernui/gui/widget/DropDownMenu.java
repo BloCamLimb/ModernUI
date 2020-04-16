@@ -18,24 +18,23 @@
 
 package icyllis.modernui.gui.widget;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.gui.master.GlobalModuleManager;
+import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.math.Color3i;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import org.lwjgl.opengl.GL11;
+import icyllis.modernui.gui.master.Canvas;
+import icyllis.modernui.gui.master.GlobalModuleManager;
+import icyllis.modernui.gui.master.Module;
+import icyllis.modernui.gui.math.Color3f;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.function.IntConsumer;
 
 /**
  * Provide multiple options, and must select one of them at the same time
  */
-public class DropDownMenu extends FlexibleWidget {
+public class DropDownMenu extends Widget {
 
     private static int ENTRY_HEIGHT = 13;
 
@@ -60,22 +59,59 @@ public class DropDownMenu extends FlexibleWidget {
 
     private float textAlpha = 0;
 
-    public DropDownMenu(List<String> list, int index, float space, IntConsumer callback, Align align) {
+    public DropDownMenu(Module module, List<String> list, int index, float space, IntConsumer callback, Align align) {
+        super(module);
         this.list = list;
         this.selected = index;
-        this.width = this.list.stream().distinct().mapToInt(s -> (int) Math.ceil(fontRenderer.getStringWidth(s))).max().orElse(0) + 7;
+        this.width = this.list.stream().distinct().mapToInt(s -> (int) Math.ceil(FontTools.getStringWidth(s))).max().orElse(0) + 7;
         this.height = this.list.size() * ENTRY_HEIGHT;
         this.space = space;
         this.align = align;
         this.callback = callback;
-        manager.addAnimation(new Animation(4, true)
+        module.addAnimation(new Animation(4, true)
                 .applyTo(new Applier(0, height, value -> heightOffset = value)));
-        manager.addAnimation(new Animation(3)
+        module.addAnimation(new Animation(3)
                 .applyTo(new Applier(1, value -> textAlpha = value))
                 .withDelay(3));
     }
 
     @Override
+    public void draw(@Nonnull Canvas canvas, float time) {
+        float top = upward ? y2 - heightOffset : y1;
+        float bottom = upward ? y2 : y1 + heightOffset;
+
+        canvas.setRGBA(0.032f, 0.032f, 0.032f, 0.63f);
+        canvas.drawRect(x1, top, x2, bottom);
+
+        canvas.setLineAntiAliasing(true);
+        canvas.setColor(Color3f.WHILE, 0.315f);
+        canvas.drawRectLines(x1, top, x2, bottom);
+        canvas.setLineAntiAliasing(false);
+
+        for (int i = 0; i < list.size(); i++) {
+            String text = list.get(i);
+            float cy = y1 + ENTRY_HEIGHT * i;
+            if (i == hovered) {
+                canvas.setRGBA(0.5f, 0.5f, 0.5f, 0.315f);
+                canvas.drawRect(x1, cy, x2, cy + ENTRY_HEIGHT);
+            }
+            canvas.setAlpha(textAlpha);
+            if (i == selected) {
+                canvas.setColor(Color3f.BLUE_C);
+            } else {
+                canvas.setColor(Color3f.WHILE);
+            }
+            if (align == Align.LEFT) {
+                canvas.setTextAlign(TextAlign.LEFT);
+                canvas.drawText(text, x1 + 3, cy + 2);
+            } else {
+                canvas.setTextAlign(TextAlign.RIGHT);
+                canvas.drawText(text, x2 - 3, cy + 2);
+            }
+        }
+    }
+
+    /*@Override
     public void draw(float time) {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -125,19 +161,19 @@ public class DropDownMenu extends FlexibleWidget {
             }
             if (i == selected) {
                 if (align == Align.LEFT) {
-                    fontRenderer.drawString(text, x1 + 3, cy + 2, Color3i.BLUE_C, textAlpha, TextAlign.LEFT);
+                    fontRenderer.drawString(text, x1 + 3, cy + 2, Color3f.BLUE_C, textAlpha, TextAlign.LEFT);
                 } else {
-                    fontRenderer.drawString(text, x2 - 3, cy + 2, Color3i.BLUE_C, textAlpha, TextAlign.RIGHT);
+                    fontRenderer.drawString(text, x2 - 3, cy + 2, Color3f.BLUE_C, textAlpha, TextAlign.RIGHT);
                 }
             } else {
                 if (align == Align.LEFT) {
-                    fontRenderer.drawString(text, x1 + 3, cy + 2, Color3i.WHILE, textAlpha, TextAlign.LEFT);
+                    fontRenderer.drawString(text, x1 + 3, cy + 2, Color3f.WHILE, textAlpha, TextAlign.LEFT);
                 } else {
-                    fontRenderer.drawString(text, x2 - 3, cy + 2, Color3i.WHILE, textAlpha, TextAlign.RIGHT);
+                    fontRenderer.drawString(text, x2 - 3, cy + 2, Color3f.WHILE, textAlpha, TextAlign.RIGHT);
                 }
             }
         }
-    }
+    }*/
 
     @Override
     public void setPos(float x, float y) {

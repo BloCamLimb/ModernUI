@@ -19,7 +19,7 @@
 package icyllis.modernui.impl.chat;
 
 import icyllis.modernui.font.TextAlign;
-import icyllis.modernui.gui.math.Color3i;
+import icyllis.modernui.gui.math.Color3f;
 import icyllis.modernui.gui.test.StandardEventListener;
 import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.gui.master.DrawTools;
@@ -93,8 +93,8 @@ public final class ChatInputBox extends StandardEventListener {
                     }
                 }
             }
-            renderer.drawString(text.substring(0, firstLength), x, y - 10.5f, Color3i.GRAY_224, 1.0f, TextAlign.LEFT);
-            renderer.drawString(text.substring(firstLength), x, y + 1.5f, Color3i.GRAY_224, 1.0f, TextAlign.LEFT);
+            renderer.drawString(text.substring(0, firstLength), x, y - 10.5f, Color3f.GRAY_224, 1.0f, TextAlign.LEFT);
+            renderer.drawString(text.substring(firstLength), x, y + 1.5f, Color3f.GRAY_224, 1.0f, TextAlign.LEFT);
         } else {
             DrawTools.fillRectWithColor(x - 2, y, x + sizeW + 2, y + 12, 0x80000000);
             if (cursor != selector) {
@@ -102,7 +102,7 @@ public final class ChatInputBox extends StandardEventListener {
                 float ri = Math.max(this.cursorX, this.selectorX);
                 DrawTools.fillRectWithColor(le, y + 0.5f, ri, y + 11.5f, 0x8097def0);
             }
-            renderer.drawString(text, x, y + 1.5f, Color3i.GRAY_224, 1.0f, TextAlign.LEFT);
+            renderer.drawString(text, x, y + 1.5f, Color3f.GRAY_224, 1.0f, TextAlign.LEFT);
         }
 
         if (timer < 10) {

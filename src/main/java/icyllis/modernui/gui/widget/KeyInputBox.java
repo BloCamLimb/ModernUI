@@ -18,31 +18,27 @@
 
 package icyllis.modernui.gui.widget;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.TextAlign;
-import icyllis.modernui.gui.master.IFocuser;
+import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.IKeyboardListener;
+import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.master.MouseTools;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import icyllis.modernui.gui.math.Color3f;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.util.InputMappings;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.client.settings.KeyModifier;
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.opengl.GL11;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.function.Consumer;
 
-public class KeyInputBox extends FlexibleWidget implements IKeyboardListener {
-
-    private final IFocuser focuser;
+public class KeyInputBox extends Widget implements IKeyboardListener {
 
     private String keyText;
 
-    private int backAlpha = 16;
+    private float backAlpha = 0.063f;
 
     private float textBrightness = 0.85f;
 
@@ -56,14 +52,27 @@ public class KeyInputBox extends FlexibleWidget implements IKeyboardListener {
 
     private Consumer<InputMappings.Input> keyBinder;
 
-    public KeyInputBox(IFocuser focuser, Consumer<InputMappings.Input> keyBinder) {
-        this.focuser = focuser;
+    public KeyInputBox(Module module, Consumer<InputMappings.Input> keyBinder) {
+        super(module, 84, 16);
         this.keyBinder = keyBinder;
-        this.width = 84;
-        this.height = 16;
     }
 
     @Override
+    public void draw(@Nonnull Canvas canvas, float time) {
+        canvas.setRGBA(0.377f, 0.377f, 0.377f, backAlpha);
+        canvas.drawRect(x1, y1, x2, y2);
+        if (editing) {
+            canvas.setLineAntiAliasing(true);
+            canvas.setColor(Color3f.BLUE_C, 0.863f);
+            canvas.drawRectLines(x1, y1, x2, y2);
+            canvas.setLineAntiAliasing(false);
+        }
+        canvas.setTextAlign(TextAlign.CENTER);
+        canvas.setRGBA(textBrightness, textBrightness, textBrightness, 1.0f);
+        canvas.drawText(keyText, x1 + 42, y1 + 4);
+    }
+
+    /*@Override
     public void draw(float time) {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();
@@ -90,7 +99,7 @@ public class KeyInputBox extends FlexibleWidget implements IKeyboardListener {
         RenderSystem.enableTexture();
 
         fontRenderer.drawString(keyText, x1 + 42, y1 + 4, textBrightness, TextAlign.CENTER);
-    }
+    }*/
 
     public void setKeyText(String keyText) {
         this.keyText = keyText;
@@ -114,7 +123,7 @@ public class KeyInputBox extends FlexibleWidget implements IKeyboardListener {
     protected void onMouseHoverEnter() {
         super.onMouseHoverEnter();
         MouseTools.useIBeamCursor();
-        backAlpha = 64;
+        backAlpha = 0.25f;
     }
 
     @Override
@@ -122,7 +131,7 @@ public class KeyInputBox extends FlexibleWidget implements IKeyboardListener {
         super.onMouseHoverExit();
         MouseTools.useDefaultCursor();
         if (!editing) {
-            backAlpha = 16;
+            backAlpha = 0.063f;
         }
     }
 
@@ -132,16 +141,16 @@ public class KeyInputBox extends FlexibleWidget implements IKeyboardListener {
 
     private void startEditing() {
         editing = true;
-        focuser.setKeyboardListener(this);
-        backAlpha = 64;
+        module.setKeyboardListener(this);
+        backAlpha = 0.25f;
     }
 
     public void stopEditing() {
         editing = false;
-        focuser.setKeyboardListener(null);
+        module.setKeyboardListener(null);
         if (!mouseHovered) {
             MouseTools.useDefaultCursor();
-            backAlpha = 16;
+            backAlpha = 0.063f;
         }
         pressing = null;
     }

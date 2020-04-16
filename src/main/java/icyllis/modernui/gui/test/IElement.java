@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.master;
+package icyllis.modernui.gui.test;
 
 /**
  * This is an really basic interface and can be used everywhere
