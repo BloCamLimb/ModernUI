@@ -23,7 +23,7 @@ import icyllis.modernui.gui.background.Background;
 import icyllis.modernui.gui.background.ConfirmWindowBG;
 import icyllis.modernui.gui.layout.WidgetLayout;
 import icyllis.modernui.gui.master.*;
-import icyllis.modernui.gui.widget.TextFrameButton;
+import icyllis.modernui.gui.widget.DynamicFrameButton;
 import net.minecraft.client.resources.I18n;
 
 import javax.annotation.Nullable;
@@ -58,14 +58,14 @@ public class PopupConfirm extends Module {
         addDrawable(bg);
         List<IWidget> buttons = new ArrayList<>();
         if (seconds > 0) {
-            buttons.add(new TextFrameButton.Countdown(this, confirmText, () -> callback.call(ConfirmCallback.CONFIRM), seconds));
+            buttons.add(new DynamicFrameButton.Countdown(this, confirmText, () -> callback.call(ConfirmCallback.CONFIRM), seconds));
         } else {
-            buttons.add(new TextFrameButton(this, confirmText, () -> callback.call(ConfirmCallback.CONFIRM)));
+            buttons.add(new DynamicFrameButton(this, confirmText, () -> callback.call(ConfirmCallback.CONFIRM)));
         }
         if (alternative != null) {
-            buttons.add(new TextFrameButton(this, alternative, () -> callback.call(ConfirmCallback.ALTERNATIVE)));
+            buttons.add(new DynamicFrameButton(this, alternative, () -> callback.call(ConfirmCallback.ALTERNATIVE)));
         }
-        buttons.add(new TextFrameButton(this, cancelText, () -> callback.call(ConfirmCallback.CANCEL)));
+        buttons.add(new DynamicFrameButton(this, cancelText, () -> callback.call(ConfirmCallback.CANCEL)));
         buttons.forEach(this::addWidget);
         buttonLayout = new WidgetLayout(buttons, WidgetLayout.Direction.HORIZONTAL_NEGATIVE, 6);
     }

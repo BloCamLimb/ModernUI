@@ -90,14 +90,14 @@ public abstract class AnimationControl {
     protected abstract void createCloseAnimations(List<Animation> list);
 
     public final void startOpenAnimation() {
-        if (!lockState && openState != 2) {
+        if (!lockState) {
             prepareToOpen = true;
             prepareToClose = false;
         }
     }
 
     public final void startCloseAnimation() {
-        if (!lockState && openState != 0) {
+        if (!lockState) {
             prepareToClose = true;
             prepareToOpen = false;
         }

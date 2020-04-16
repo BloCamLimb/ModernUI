@@ -21,10 +21,7 @@ package icyllis.modernui.gui.widget;
 import icyllis.modernui.font.FontTools;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.master.AnimationControl;
-import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.master.Icon;
-import icyllis.modernui.gui.master.Module;
+import icyllis.modernui.gui.master.*;
 import icyllis.modernui.system.ConstantsLibrary;
 
 import javax.annotation.Nonnull;

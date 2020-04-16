@@ -20,16 +20,13 @@ package icyllis.modernui.gui.widget;
 
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.master.AnimationControl;
-import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.master.Icon;
-import icyllis.modernui.gui.master.Module;
+import icyllis.modernui.gui.master.*;
 import icyllis.modernui.system.ConstantsLibrary;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 
-public class ArrowButton extends Widget {
+public class TriangleButton extends Widget {
 
     private final AnimationControl ac = new Control(this);
 
@@ -39,7 +36,7 @@ public class ArrowButton extends Widget {
     private boolean clickable;
     private float brightness = 0.8f;
 
-    public ArrowButton(Module module, @Nonnull Direction direction, float size, Runnable leftClick, boolean clickable) {
+    public TriangleButton(Module module, @Nonnull Direction direction, float size, Runnable leftClick, boolean clickable) {
         super(module, size, size);
         int i = direction.ordinal();
         this.icon = new Icon(ConstantsLibrary.ICONS, 64 * i / 512f, 0.25f, (i + 1) * 64 / 512f, 0.375f, true);
@@ -115,9 +112,9 @@ public class ArrowButton extends Widget {
 
     private static class Control extends AnimationControl {
 
-        private final ArrowButton instance;
+        private final TriangleButton instance;
 
-        public Control(ArrowButton instance) {
+        public Control(TriangleButton instance) {
             this.instance = instance;
         }
 

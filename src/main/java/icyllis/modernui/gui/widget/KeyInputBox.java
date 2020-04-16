@@ -19,10 +19,7 @@
 package icyllis.modernui.gui.widget;
 
 import icyllis.modernui.font.TextAlign;
-import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.master.IKeyboardListener;
-import icyllis.modernui.gui.master.Module;
-import icyllis.modernui.gui.master.MouseTools;
+import icyllis.modernui.gui.master.*;
 import icyllis.modernui.gui.math.Color3f;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.util.InputMappings;

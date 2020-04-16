@@ -90,7 +90,7 @@ public class ResourcePackGroup extends UniformScrollGroup<ResourcePackEntry> {
         }
         titleCenterX = (int) ((left + right) / 2f);
         int i = 0;
-        right -= window.borderThickness + 1;
+        right -= window.borderThickness;
         for (ResourcePackEntry entry : entries) {
             float cy = y + i * entryHeight;
             entry.onLayout(left, right, cy);

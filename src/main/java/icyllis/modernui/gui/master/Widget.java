@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.widget;
+package icyllis.modernui.gui.master;
 
 import icyllis.modernui.gui.master.IWidget;
 import icyllis.modernui.gui.master.Module;

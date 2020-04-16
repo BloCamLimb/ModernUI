@@ -23,13 +23,17 @@ import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.Icon;
 import icyllis.modernui.gui.master.Module;
+import icyllis.modernui.gui.master.Widget;
 import icyllis.modernui.system.ConstantsLibrary;
 
 import javax.annotation.Nonnull;
+import java.util.function.Consumer;
 
 public class CheckboxButton extends Widget {
 
     private final Icon icon;
+
+    private final Consumer<Boolean> leftClickFunc;
 
     private boolean checked;
 
@@ -37,9 +41,10 @@ public class CheckboxButton extends Widget {
 
     private float brightness = 0.7f;
 
-    public CheckboxButton(Module module, float size, boolean checked) {
+    public CheckboxButton(Module module, float size, Consumer<Boolean> leftClick, boolean checked) {
         super(module, size, size);
         this.icon = new Icon(ConstantsLibrary.ICONS, 0, 0.125f, 0.125f, 0.25f, true);
+        this.leftClickFunc = leftClick;
         this.checked = checked;
     }
 
@@ -74,6 +79,7 @@ public class CheckboxButton extends Widget {
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if (listening && mouseButton == 0) {
             setChecked(!checked);
+            leftClickFunc.accept(isChecked());
             return true;
         }
         return false;
