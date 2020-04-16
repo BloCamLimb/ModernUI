@@ -18,6 +18,7 @@
 
 package icyllis.modernui.graphics.shader;
 
+import icyllis.modernui.gui.shader.CircleShader;
 import icyllis.modernui.gui.shader.RingShader;
 import icyllis.modernui.gui.shader.RoundedRectFrameShader;
 import icyllis.modernui.gui.shader.RoundedRectShader;
@@ -46,6 +47,7 @@ public class ShaderTools {
         RingShader.INSTANCE.compile(manager);
         RoundedRectShader.INSTANCE.compile(manager);
         RoundedRectFrameShader.INSTANCE.compile(manager);
+        CircleShader.INSTANCE.compile(manager);
         ModernUI.LOGGER.debug(ShaderProgram.MARKER, "Shaders have been compiled");
     }
 

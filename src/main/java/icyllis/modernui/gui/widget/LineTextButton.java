@@ -24,6 +24,7 @@ import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.AnimationControl;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.Module;
+import icyllis.modernui.gui.master.Widget;
 
 import javax.annotation.Nonnull;
 import java.util.List;

@@ -18,10 +18,7 @@
 
 package icyllis.modernui.gui.scroll;
 
-import icyllis.modernui.font.FontTools;
-import icyllis.modernui.font.IFontRenderer;
-import icyllis.modernui.gui.master.IMouseListener;
-import icyllis.modernui.gui.widget.Widget;
+import icyllis.modernui.gui.master.Widget;
 
 import javax.annotation.Nonnull;
 

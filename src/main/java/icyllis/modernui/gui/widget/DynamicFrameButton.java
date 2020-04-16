@@ -22,15 +22,15 @@ import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.master.AnimationControl;
-import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.gui.master.Module;
+import icyllis.modernui.gui.master.*;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 
-public class TextFrameButton extends Widget {
+/**
+ * Used in confirm popup
+ */
+public class DynamicFrameButton extends Widget {
 
     private final AnimationControl ac = new Control(this);
 
@@ -44,7 +44,7 @@ public class TextFrameButton extends Widget {
 
     private Runnable leftClickFunc;
 
-    public TextFrameButton(Module module, String text, Runnable onLeftClick) {
+    public DynamicFrameButton(Module module, String text, Runnable onLeftClick) {
         super(module);
         this.text = text;
         this.width = Math.max(28, FontTools.getStringWidth(text) + 6);
@@ -118,7 +118,7 @@ public class TextFrameButton extends Widget {
         this.fho = fho;
     }
 
-    public static class Countdown extends TextFrameButton {
+    public static class Countdown extends DynamicFrameButton {
 
         private final int startTick = GlobalModuleManager.INSTANCE.getTicks();
 
@@ -170,9 +170,9 @@ public class TextFrameButton extends Widget {
 
     private static class Control extends AnimationControl {
 
-        private final TextFrameButton instance;
+        private final DynamicFrameButton instance;
 
-        public Control(TextFrameButton instance) {
+        public Control(DynamicFrameButton instance) {
             this.instance = instance;
         }
 

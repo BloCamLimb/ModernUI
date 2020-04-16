@@ -24,6 +24,7 @@ import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.graphics.shader.ShaderTools;
 import icyllis.modernui.gui.math.Color3f;
+import icyllis.modernui.gui.shader.CircleShader;
 import icyllis.modernui.gui.shader.RingShader;
 import icyllis.modernui.gui.shader.RoundedRectFrameShader;
 import icyllis.modernui.gui.shader.RoundedRectShader;
@@ -62,6 +63,8 @@ public class DrawTools {
     private final RoundedRectShader roundedRect = RoundedRectShader.INSTANCE;
 
     private final RoundedRectFrameShader roundedRectFrame = RoundedRectFrameShader.INSTANCE;
+
+    private final CircleShader circle = CircleShader.INSTANCE;
 
 
     /**
@@ -303,6 +306,23 @@ public class DrawTools {
         ring.setRadius(innerRadius, outerRadius);
         ring.setCenterPos(centerX, centerY);
         drawRect(centerX - outerRadius, centerY - outerRadius, centerX + outerRadius, centerY + outerRadius);
+        ShaderTools.releaseShader();
+    }
+
+    /**
+     * Draw circle on screen with given center pos and radius
+     *
+     * Default feather radius: 1 px
+     *
+     * @param centerX center x pos
+     * @param centerY center y pos
+     * @param radius circle radius
+     */
+    public void drawCircle(float centerX, float centerY, float radius) {
+        ShaderTools.useShader(circle);
+        circle.setRadius(radius);
+        circle.setCenterPos(centerX, centerY);
+        drawRect(centerX - radius, centerY - radius, centerX + radius, centerY + radius);
         ShaderTools.releaseShader();
     }
 

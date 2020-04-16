@@ -66,7 +66,7 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
 
     @Override
     protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY) {
-
+        renderBackground();
     }
 
     @Override

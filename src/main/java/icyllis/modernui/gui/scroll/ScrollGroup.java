@@ -18,7 +18,7 @@
 
 package icyllis.modernui.gui.scroll;
 
-import icyllis.modernui.gui.widget.Widget;
+import icyllis.modernui.gui.master.Widget;
 
 import javax.annotation.Nonnull;
 

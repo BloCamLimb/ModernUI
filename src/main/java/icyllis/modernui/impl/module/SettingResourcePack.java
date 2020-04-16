@@ -23,9 +23,9 @@ import icyllis.modernui.gui.layout.WidgetLayout;
 import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.popup.ConfirmCallback;
 import icyllis.modernui.gui.scroll.ScrollWindow;
-import icyllis.modernui.gui.widget.ArrowButton;
-import icyllis.modernui.gui.widget.CheckboxButton;
-import icyllis.modernui.gui.widget.Widget;
+import icyllis.modernui.gui.widget.SlidingToggleButton;
+import icyllis.modernui.gui.widget.TriangleButton;
+import icyllis.modernui.gui.master.Widget;
 import icyllis.modernui.impl.background.ResourcePackBG;
 import icyllis.modernui.impl.setting.ResourcePackEntry;
 import icyllis.modernui.impl.setting.ResourcePackGroup;
@@ -48,13 +48,13 @@ public class SettingResourcePack extends Module {
 
     private ResourcePackGroup selectedGroup;
 
-    private ArrowButton leftArrow;
+    private TriangleButton leftArrow;
 
-    private ArrowButton rightArrow;
+    private TriangleButton rightArrow;
 
-    private ArrowButton upArrow;
+    private TriangleButton upArrow;
 
-    private ArrowButton downArrow;
+    private TriangleButton downArrow;
 
     private WidgetLayout arrowsLayout;
 
@@ -83,17 +83,17 @@ public class SettingResourcePack extends Module {
 
         List<Widget> list = new ArrayList<>();
 
-        leftArrow = new ArrowButton(this, ArrowButton.Direction.LEFT, 12, this::intoAvailable, false);
-        rightArrow = new ArrowButton(this, ArrowButton.Direction.RIGHT, 12, this::intoSelected, false);
-        upArrow = new ArrowButton(this, ArrowButton.Direction.UP, 12, this::goUp, false);
-        downArrow = new ArrowButton(this, ArrowButton.Direction.DOWN, 12, this::goDown, false);
-
-        list.add(new CheckboxButton(this, 8, false));
+        leftArrow = new TriangleButton(this, TriangleButton.Direction.LEFT, 12, this::intoAvailable, false);
+        rightArrow = new TriangleButton(this, TriangleButton.Direction.RIGHT, 12, this::intoSelected, false);
+        upArrow = new TriangleButton(this, TriangleButton.Direction.UP, 12, this::goUp, false);
+        downArrow = new TriangleButton(this, TriangleButton.Direction.DOWN, 12, this::goDown, false);
 
         list.add(leftArrow);
         list.add(rightArrow);
         list.add(upArrow);
         list.add(downArrow);
+
+        list.add(new SlidingToggleButton(this, 4, b -> {}, 0xb020a0d0, 0x40808080, false));
 
         arrowsLayout = new WidgetLayout(list, WidgetLayout.Direction.VERTICAL_POSITIVE, 4);
 
