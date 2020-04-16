@@ -22,6 +22,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IHasContainer;
 import net.minecraft.client.gui.ScreenManager;
 import net.minecraft.client.gui.screen.inventory.ContainerScreen;
+import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -29,13 +30,12 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nonnull;
 
-//TODO Not working on with container gui now
-// because I want to rewrite vanilla code, make item slots can be renderer with alpha
+//TODO rewrite vanilla code, make item slots can be renderer with alpha
 
 /**
  * This is required, because ALL(?) mods check if instanceof {@link ContainerScreen} rather than {@link IHasContainer}, like JEI. However,
- * Vanilla interface: IScreenFactory<T extends Container, U extends Screen & IHasContainer<T>>, see {@link ScreenManager.IScreenFactory}
- * Vanilla is Screen & IHasContainer<T>, not ContainerScreen, FUCK YOU, no one want to break the rules
+ * vanilla interface: IScreenFactory<T extends Container, U extends Screen & IHasContainer<T>>, see {@link ScreenManager.IScreenFactory}
+ * is Screen & IHasContainer<T>, not ContainerScreen, emm, no one want to break the rules
  * @param <G> container
  */
 @OnlyIn(Dist.CLIENT)
@@ -43,9 +43,8 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
 
     private final GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
 
-    @SuppressWarnings("ConstantConditions")
-    public ModernContainerScreen(ITextComponent title, G container) {
-        super(container, Minecraft.getInstance().player.inventory, title);
+    public ModernContainerScreen(G container, PlayerInventory inventory, ITextComponent title) {
+        super(container, inventory, title);
     }
 
     @Override
@@ -62,11 +61,12 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
     @Override
     public void render(int mouseX, int mouseY, float partialTicks) {
         super.render(mouseX, mouseY, partialTicks);
+        manager.draw();
     }
 
     @Override
     protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY) {
-        manager.draw();
+
     }
 
     @Override

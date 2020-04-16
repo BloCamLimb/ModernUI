@@ -102,7 +102,7 @@ public class ModuleGroup extends Module {
         }
         cid = tid;
         moduleChanged(cid);
-        GlobalModuleManager.INSTANCE.refreshMouse();
+        refocusCursor();
         MouseTools.useDefaultCursor();
     }
 

@@ -19,15 +19,16 @@
 package icyllis.modernui.impl.module;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.impl.background.ResourcePackBG;
 import icyllis.modernui.gui.layout.WidgetLayout;
-import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.popup.ConfirmCallback;
 import icyllis.modernui.gui.scroll.ScrollWindow;
+import icyllis.modernui.gui.widget.ArrowButton;
+import icyllis.modernui.gui.widget.CheckboxButton;
+import icyllis.modernui.gui.widget.Widget;
+import icyllis.modernui.impl.background.ResourcePackBG;
 import icyllis.modernui.impl.setting.ResourcePackEntry;
 import icyllis.modernui.impl.setting.ResourcePackGroup;
-import icyllis.modernui.gui.widget.ArrowButton;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.ClientResourcePackInfo;
@@ -80,12 +81,14 @@ public class SettingResourcePack extends Module {
         aWindow.addGroups(Lists.newArrayList(availableGroup));
         sWindow.addGroups(Lists.newArrayList(selectedGroup));
 
-        List<ArrowButton> list = new ArrayList<>();
+        List<Widget> list = new ArrayList<>();
 
         leftArrow = new ArrowButton(this, ArrowButton.Direction.LEFT, 12, this::intoAvailable, false);
         rightArrow = new ArrowButton(this, ArrowButton.Direction.RIGHT, 12, this::intoSelected, false);
         upArrow = new ArrowButton(this, ArrowButton.Direction.UP, 12, this::goUp, false);
         downArrow = new ArrowButton(this, ArrowButton.Direction.DOWN, 12, this::goDown, false);
+
+        list.add(new CheckboxButton(this, 8, false));
 
         list.add(leftArrow);
         list.add(rightArrow);
@@ -166,7 +169,7 @@ public class SettingResourcePack extends Module {
             selectedGroup.layoutGroup();
             selectedGroup.followEntry(highlightEntry);
             highlightEntry.setMouseHoverExit();
-            GlobalModuleManager.INSTANCE.refreshMouse();
+            refocusCursor();
             setHighlightEntry(highlightEntry);
             changed = true;
         }
@@ -180,7 +183,7 @@ public class SettingResourcePack extends Module {
             availableGroup.layoutGroup();
             availableGroup.followEntry(highlightEntry);
             highlightEntry.setMouseHoverExit();
-            GlobalModuleManager.INSTANCE.refreshMouse();
+            refocusCursor();
             setHighlightEntry(highlightEntry);
             changed = true;
         }
@@ -192,7 +195,7 @@ public class SettingResourcePack extends Module {
             selectedGroup.layoutGroup();
             selectedGroup.followEntry(highlightEntry);
             setHighlightEntry(highlightEntry);
-            GlobalModuleManager.INSTANCE.refreshMouse();
+            refocusCursor();
             changed = true;
         }
     }
@@ -203,7 +206,7 @@ public class SettingResourcePack extends Module {
             selectedGroup.layoutGroup();
             selectedGroup.followEntry(highlightEntry);
             setHighlightEntry(highlightEntry);
-            GlobalModuleManager.INSTANCE.refreshMouse();
+            refocusCursor();
             changed = true;
         }
     }

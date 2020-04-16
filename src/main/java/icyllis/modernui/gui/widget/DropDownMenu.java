@@ -23,7 +23,6 @@ import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.math.Color3f;
 
@@ -177,8 +176,8 @@ public class DropDownMenu extends Widget {
 
     @Override
     public void setPos(float x, float y) {
-        int gWidth = GlobalModuleManager.INSTANCE.getWindowWidth();
-        int gHeight = GlobalModuleManager.INSTANCE.getWindowHeight();
+        int gWidth = module.getWindowWidth();
+        int gHeight = module.getWindowHeight();
         if (align == Align.LEFT) {
             this.x2 = Math.min(x + width, gWidth);
             this.x1 = x2 - width;

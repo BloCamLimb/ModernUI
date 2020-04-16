@@ -120,6 +120,11 @@ public class ScrollWindow<T extends ScrollGroup> extends Widget {
     }
 
     @Override
+    public void drawForegroundLayer(Canvas canvas, float mouseX, float mouseY, float time) {
+        scrollList.drawForegroundLayer(canvas, mouseX, mouseY - getVisibleOffset(), time);
+    }
+
+    @Override
     public final void setPos(float x, float y) {
         throw new RuntimeException("Scroll window doesn't allow to set pos");
     }
