@@ -18,7 +18,7 @@ void main() {
 
     float v = length(max(vec2(0.0), dis)) - u_Radius;
 
-    float ar = 0.5 - smoothstep(0.0, 1.0, v);
+    float ar = 0.5 - smoothstep(-0.5, 1.5, v);
     float a = 1.0 - 2.0 * abs(ar);
 
     fragColor = gl_Color * vec4(1.0, 1.0, 1.0, a);

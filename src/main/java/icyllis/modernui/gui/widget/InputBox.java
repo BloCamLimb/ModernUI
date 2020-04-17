@@ -20,6 +20,7 @@ package icyllis.modernui.gui.widget;
 
 import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.font.FontTools;
+import net.minecraft.client.gui.widget.TextFieldWidget;
 
 import java.util.function.Predicate;
 
@@ -28,6 +29,7 @@ public class InputBox {
 
     public static final Predicate<String> digitFilter = s -> s.matches("[0-9]+"),
             hexFilter = s -> s.matches("(?i)[0-9a-f]+");
+
 
     //protected IFontRenderer renderer = FontTools.FONT_RENDERER;
 
@@ -135,6 +137,7 @@ public class InputBox {
      * Sets the position of the selection anchor (the selection anchor and the cursor position mark the edges of the
      * selection). If the anchor is set beyond the bounds of the current text, it will be put back inside.
      *//*
+
     public void setSelectionPos(int position) {
         int i = this.text.length();
         this.selectionEnd = MathHelper.clamp(position, 0, i);
