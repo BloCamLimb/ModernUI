@@ -213,7 +213,7 @@ public class DropDownMenu extends Widget {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        if (listening && mouseButton == 0 && hovered != -1) {
+        if (listening && mouseButton == 0 && hovered != -1 && hovered != selected) {
             callback.accept(hovered);
             return true;
         }

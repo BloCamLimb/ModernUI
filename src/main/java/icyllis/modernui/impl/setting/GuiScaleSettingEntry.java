@@ -47,7 +47,7 @@ public class GuiScaleSettingEntry extends DropdownSettingEntry {
         }
         boolean auto = Minecraft.getInstance().gameSettings.guiScale == 0;
         int c = (int) Minecraft.getInstance().getMainWindow().getGuiScaleFactor();
-        originalOptionIndex = auto ? 0 : optionNames.indexOf(c + "x");
-        updateValue(originalOptionIndex);
+        lastOptionIndex = auto ? 0 : optionNames.indexOf(c + "x");
+        updateValue(lastOptionIndex);
     }
 }

@@ -343,6 +343,10 @@ public class TextField extends Widget implements IKeyboardListener {
             return true;
         } else {
             switch (keyCode) {
+                case GLFW.GLFW_KEY_ENTER:
+                case GLFW.GLFW_KEY_ESCAPE:
+                    module.setKeyboardListener(null);
+                    return true;
                 case GLFW.GLFW_KEY_BACKSPACE:
                     this.shiftDown = false;
                     this.delete(-1);

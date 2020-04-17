@@ -18,12 +18,10 @@
 
 package icyllis.modernui.impl.module;
 
+import com.google.common.collect.Lists;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.Module;
-import icyllis.modernui.gui.widget.KeyInputBox;
-import icyllis.modernui.gui.widget.StaticFrameButton;
-import icyllis.modernui.gui.widget.TextField;
-import icyllis.modernui.gui.widget.TriangleButton;
+import icyllis.modernui.gui.widget.*;
 import icyllis.modernui.impl.setting.SettingCategoryGroup;
 import icyllis.modernui.impl.setting.SettingEntry;
 import icyllis.modernui.impl.setting.KeyBindingEntry;
@@ -31,9 +29,11 @@ import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.system.SettingsManager;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screen.ControlsScreen;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.client.util.InputMappings;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.client.settings.IKeyConflictContext;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.client.settings.KeyModifier;
@@ -61,7 +61,10 @@ public class SettingControls extends Module {
     private KeyBindingEntry currentResult;
     private List<KeyBindingEntry> searchResults = new ArrayList<>();
 
-    private StaticFrameButton showConflict;
+    private StaticFrameButton showConflictButton;
+    private StaticFrameButton resetAllButton;
+
+    private DropDownWidget searchModeButton;
 
     public SettingControls() {
         this.minecraft = Minecraft.getInstance();
@@ -76,8 +79,14 @@ public class SettingControls extends Module {
 
         addWidget(window);
 
-        showConflict = new StaticFrameButton(this, 64, "Show Conflicts", this::filterConflicts, true);
-        addWidget(showConflict);
+        showConflictButton = new StaticFrameButton(this, 68, "Show Conflicts", this::filterConflicts, true);
+        addWidget(showConflictButton);
+
+        resetAllButton = new StaticFrameButton(this, 68, I18n.format("controls.resetAll"), this::resetAllKey, true);
+        addWidget(resetAllButton);
+
+        searchModeButton = new DropDownWidget(this, Lists.newArrayList("Name", "Key"), 0, i -> {}, DropDownMenu.Align.RIGHT);
+        addWidget(searchModeButton);
 
         searchBox = new TextField(this, 100, 12);
         searchBox.setDecoration(t -> new TextField.Frame(t, null, 0xffc0c0c0));
@@ -93,7 +102,9 @@ public class SettingControls extends Module {
     @Override
     public void resize(int width, int height) {
         super.resize(width, height);
-        showConflict.setPos(width / 2f + 16, height - 32);
+        searchModeButton.setPos(width / 2f - 122, height - 34);
+        resetAllButton.setPos(width / 2f + 88, height - 32);
+        showConflictButton.setPos(width / 2f + 16, height - 32);
         searchBox.setPos(width / 2f - 120, height - 32);
         nextButton.setPos(width / 2f, height - 32);
         previousButton.setPos(width / 2f - 16, height - 32);
@@ -101,6 +112,7 @@ public class SettingControls extends Module {
 
     private void filterConflicts() {
         searchResults.clear();
+        searchBox.setText("");
         allKeyBinding.stream().filter(f -> f.getTier() > 0).forEach(searchResults::add);
         if (!searchResults.isEmpty()) {
             nextButton.setClickable(true);
@@ -112,7 +124,6 @@ public class SettingControls extends Module {
             nextButton.setClickable(false);
             previousButton.setClickable(false);
         }
-        searchBox.setText("");
     }
 
     private void searchBoxCallback(@Nonnull TextField textField) {
@@ -120,8 +131,13 @@ public class SettingControls extends Module {
         String t = textField.getText();
         if (!t.isEmpty()) {
             String ct = t.toLowerCase();
-            allKeyBinding.stream().filter(f -> f.title.toLowerCase().contains(ct) ||
-                    f.getInputBox().getKeyText().toLowerCase().contains(ct)).forEach(searchResults::add);
+            if (searchModeButton.getIndex() == 0) {
+                allKeyBinding.stream().filter(f -> f.title.toLowerCase().contains(ct)).forEach(searchResults::add);
+            } else {
+                allKeyBinding.stream().filter(f ->
+                        Objects.equals(TextFormatting.getTextWithoutFormattingCodes(
+                                f.getInputBox().getKeyText().toLowerCase()), ct)).forEach(searchResults::add);
+            }
             if (!searchResults.isEmpty()) {
                 if (searchResults.size() > 1) {
                     nextButton.setClickable(true);
@@ -144,6 +160,15 @@ public class SettingControls extends Module {
             nextButton.setClickable(false);
             previousButton.setClickable(false);
         }
+    }
+
+    private void resetAllKey() {
+        for(KeyBinding keybinding : minecraft.gameSettings.keyBindings) {
+            keybinding.setToDefault();
+        }
+        KeyBinding.resetKeyBindingArrayAndHash();
+        allKeyBinding.forEach(KeyBindingEntry::updateKeyText);
+        checkAllConflicts();
     }
 
     private void locateNextResult() {
