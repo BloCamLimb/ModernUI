@@ -20,11 +20,14 @@ package icyllis.modernui.impl.module;
 
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.Module;
+import icyllis.modernui.gui.widget.KeyInputBox;
+import icyllis.modernui.gui.widget.StaticFrameButton;
+import icyllis.modernui.gui.widget.TextField;
+import icyllis.modernui.gui.widget.TriangleButton;
 import icyllis.modernui.impl.setting.SettingCategoryGroup;
 import icyllis.modernui.impl.setting.SettingEntry;
 import icyllis.modernui.impl.setting.KeyBindingEntry;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
-import icyllis.modernui.gui.widget.KeyInputBox;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.system.SettingsManager;
 import net.minecraft.client.Minecraft;
@@ -36,17 +39,29 @@ import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.client.settings.KeyModifier;
 import org.apache.commons.lang3.ArrayUtils;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 public class SettingControls extends Module {
 
     private Minecraft minecraft;
 
     private SettingScrollWindow window;
+    private SettingCategoryGroup landmarkGroup;
 
     private List<KeyBindingEntry> allKeyBinding = new ArrayList<>();
+
+    private TextField searchBox;
+    private TriangleButton nextButton;
+    private TriangleButton previousButton;
+
+    private KeyBindingEntry currentResult;
+    private List<KeyBindingEntry> searchResults = new ArrayList<>();
+
+    private StaticFrameButton showConflict;
 
     public SettingControls() {
         this.minecraft = Minecraft.getInstance();
@@ -60,6 +75,97 @@ public class SettingControls extends Module {
         window.addGroups(groups);
 
         addWidget(window);
+
+        showConflict = new StaticFrameButton(this, 64, "Show Conflicts", this::filterConflicts, true);
+        addWidget(showConflict);
+
+        searchBox = new TextField(this, 100, 12);
+        searchBox.setDecoration(t -> new TextField.Frame(t, null, 0xffc0c0c0));
+        searchBox.setListener(this::searchBoxCallback, true);
+        addWidget(searchBox);
+
+        nextButton = new TriangleButton(this, TriangleButton.Direction.DOWN, 12, this::locateNextResult, false);
+        previousButton = new TriangleButton(this, TriangleButton.Direction.UP, 12, this::locatePreviousResult, false);
+        addWidget(nextButton);
+        addWidget(previousButton);
+    }
+
+    @Override
+    public void resize(int width, int height) {
+        super.resize(width, height);
+        showConflict.setPos(width / 2f + 16, height - 32);
+        searchBox.setPos(width / 2f - 120, height - 32);
+        nextButton.setPos(width / 2f, height - 32);
+        previousButton.setPos(width / 2f - 16, height - 32);
+    }
+
+    private void filterConflicts() {
+        searchResults.clear();
+        allKeyBinding.stream().filter(f -> f.getTier() > 0).forEach(searchResults::add);
+        if (!searchResults.isEmpty()) {
+            nextButton.setClickable(true);
+            previousButton.setClickable(true);
+            currentResult = searchResults.get(0);
+            currentResult.lightUp();
+            landmarkGroup.followEntry(currentResult);
+        } else {
+            nextButton.setClickable(false);
+            previousButton.setClickable(false);
+        }
+        searchBox.setText("");
+    }
+
+    private void searchBoxCallback(@Nonnull TextField textField) {
+        searchResults.clear();
+        String t = textField.getText();
+        if (!t.isEmpty()) {
+            String ct = t.toLowerCase();
+            allKeyBinding.stream().filter(f -> f.title.toLowerCase().contains(ct) ||
+                    f.getInputBox().getKeyText().toLowerCase().contains(ct)).forEach(searchResults::add);
+            if (!searchResults.isEmpty()) {
+                if (searchResults.size() > 1) {
+                    nextButton.setClickable(true);
+                    previousButton.setClickable(true);
+                } else {
+                    nextButton.setClickable(false);
+                    previousButton.setClickable(false);
+                }
+                ((TextField.Frame) Objects.requireNonNull(searchBox.getDecoration())).setColor(0xffc0c0c0);
+                currentResult = searchResults.get(0);
+                currentResult.lightUp();
+                landmarkGroup.followEntry(currentResult);
+            } else {
+                ((TextField.Frame) Objects.requireNonNull(searchBox.getDecoration())).setColor(0xffff5555);
+                nextButton.setClickable(false);
+                previousButton.setClickable(false);
+            }
+        } else {
+            ((TextField.Frame) Objects.requireNonNull(searchBox.getDecoration())).setColor(0xffc0c0c0);
+            nextButton.setClickable(false);
+            previousButton.setClickable(false);
+        }
+    }
+
+    private void locateNextResult() {
+        int i = searchResults.indexOf(currentResult) + 1;
+        if (i >= searchResults.size()) {
+            currentResult = searchResults.get(0);
+        } else {
+            currentResult = searchResults.get(i);
+        }
+        currentResult.lightUp();
+        landmarkGroup.followEntry(currentResult);
+    }
+
+    private void locatePreviousResult() {
+        int i = searchResults.indexOf(currentResult) - 1;
+        if (i < 0) {
+            currentResult = searchResults.get(searchResults.size() - 1);
+        } else {
+            currentResult = searchResults.get(i);
+        }
+        currentResult.lightUp();
+        landmarkGroup.followEntry(currentResult);
     }
 
     private void addMouseCategory(List<SettingCategoryGroup> groups) {
@@ -108,8 +214,8 @@ public class SettingControls extends Module {
         }
         // add last category
         if (categoryKey != null) {
-            SettingCategoryGroup category = new SettingCategoryGroup(window, I18n.format(categoryKey), list);
-            groups.add(category);
+            landmarkGroup = new SettingCategoryGroup(window, I18n.format(categoryKey), list);
+            groups.add(landmarkGroup);
         }
 
         checkAllConflicts();
@@ -120,8 +226,8 @@ public class SettingControls extends Module {
         if (super.mouseClicked(mouseX, mouseY, mouseButton)) {
             return true;
         }
-        if (getKeyboardListener() instanceof KeyInputBox) {
-            ((KeyInputBox) getKeyboardListener()).stopEditing();
+        if (getKeyboardListener() != null) {
+            setKeyboardListener(null);
             return true;
         }
         return false;

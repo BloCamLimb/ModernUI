@@ -153,6 +153,9 @@ public class Module implements IModule, IFocuser {
 
     @Override
     public void setKeyboardListener(@Nullable IKeyboardListener keyboardListener) {
+        if (this.keyboardListener != null) {
+            this.keyboardListener.stopKeyboardListening();
+        }
         this.keyboardListener = keyboardListener;
     }
 
@@ -188,7 +191,7 @@ public class Module implements IModule, IFocuser {
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
         if (draggable != null) {
-            draggable.onStopDragging(mouseX, mouseY);
+            draggable.stopDragging(mouseX, mouseY);
             return true;
         }
         for (IMouseListener listener : mouseListeners) {

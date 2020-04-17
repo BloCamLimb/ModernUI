@@ -23,7 +23,6 @@ import icyllis.modernui.gui.layout.WidgetLayout;
 import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.master.Widget;
 import icyllis.modernui.gui.scroll.ScrollWindow;
-import icyllis.modernui.gui.widget.SlidingToggleButton;
 import icyllis.modernui.gui.widget.StaticFrameButton;
 import icyllis.modernui.gui.widget.TriangleButton;
 import icyllis.modernui.impl.background.ResourcePackBG;
@@ -92,7 +91,7 @@ public class SettingResourcePack extends Module {
 
         apply = new StaticFrameButton(this, 48, I18n.format("gui.modernui.button.apply"), this::applyResourcePacks, false);
 
-        list.add(new SlidingToggleButton(this, 4, b -> {}, 0xb020a0d0, 0x40808080, false)); // test
+        //list.add(new SlidingToggleButton(this, 4, b -> {}, 0xb020a0d0, 0x40808080, false)); // test
 
         arrowsLayout = new WidgetLayout(list, WidgetLayout.Direction.VERTICAL_POSITIVE, 4);
 

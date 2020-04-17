@@ -136,15 +136,9 @@ public class KeyInputBox extends Widget implements IKeyboardListener {
         this.textBrightness = s;
     }
 
-    private void startEditing() {
-        editing = true;
-        module.setKeyboardListener(this);
-        backAlpha = 0.25f;
-    }
-
-    public void stopEditing() {
+    @Override
+    public void stopKeyboardListening() {
         editing = false;
-        module.setKeyboardListener(null);
         if (!mouseHovered) {
             MouseTools.useDefaultCursor();
             backAlpha = 0.063f;
@@ -156,11 +150,13 @@ public class KeyInputBox extends Widget implements IKeyboardListener {
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if (editing) {
             keyBinder.accept(InputMappings.Type.MOUSE.getOrMakeInput(mouseButton));
-            stopEditing();
+            module.setKeyboardListener(null);
             return true;
         }
         if (mouseButton == 0) {
-            startEditing();
+            editing = true;
+            module.setKeyboardListener(this);
+            backAlpha = 0.25f;
             return true;
         }
         return false;
@@ -171,14 +167,14 @@ public class KeyInputBox extends Widget implements IKeyboardListener {
         if (editing) {
             if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
                 keyBinder.accept(InputMappings.INPUT_INVALID);
-                stopEditing();
+                module.setKeyboardListener(null);
                 return true;
             }
             InputMappings.Input input = InputMappings.getInputByCode(keyCode, scanCode);
             if (!KeyModifier.isKeyCodeModifier(input)) {
                 // a combo key or a single non-modifier key
                 keyBinder.accept(input);
-                stopEditing();
+                module.setKeyboardListener(null);
             } else {
                 if (pressing == null) {
                     // this is the modifier key that has already pressed, and can't be changed
@@ -198,11 +194,14 @@ public class KeyInputBox extends Widget implements IKeyboardListener {
             // this used for single modifier key input, not for combo key
             if (input.equals(pressing)) {
                 keyBinder.accept(input);
-                stopEditing();
+                module.setKeyboardListener(null);
                 return true;
             }
         }
         return false;
     }
 
+    public String getKeyText() {
+        return keyText;
+    }
 }

@@ -20,6 +20,7 @@ package icyllis.modernui.gui.scroll;
 
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.IMouseListener;
+import icyllis.modernui.system.ModernUI;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -128,7 +129,7 @@ public abstract class UniformScrollGroup<T extends UniformScrollEntry> extends S
      * @param entry entry to follow
      */
     public void followEntry(@Nonnull T entry) {
-        float c = entry.getTop() - window.getActualScrollAmount() - entryHeight;
+        float c = entry.getTop() - window.getActualScrollAmount() - entryHeight - window.borderThickness * 2;
         if (c < 0) {
             if (c < -120) {
                 window.scrollDirect(c);
@@ -137,7 +138,7 @@ public abstract class UniformScrollGroup<T extends UniformScrollEntry> extends S
             }
             return;
         }
-        float d = entry.getBottom() - window.getActualScrollAmount() - window.getVisibleHeight() - entryHeight;
+        float d = entry.getTop() - window.getActualScrollAmount() - window.getVisibleHeight() - entryHeight + window.borderThickness;
         if (d > 0) {
             if (d > 120) {
                 window.scrollDirect(d);
