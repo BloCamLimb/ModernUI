@@ -41,7 +41,7 @@ import javax.annotation.Nonnull;
 public class DrawTools {
 
     /**
-     * Internal use
+     * Internal use, oh, no longer use...
      */
     //protected static final DrawTools INSTANCE = new DrawTools();
 
@@ -258,6 +258,7 @@ public class DrawTools {
      * @param right rect right
      * @param bottom rect bottom
      */
+    @Deprecated
     public void drawRectFrame(float left, float top, float right, float bottom) {
         RenderSystem.disableTexture();
         bufferBuilder.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);

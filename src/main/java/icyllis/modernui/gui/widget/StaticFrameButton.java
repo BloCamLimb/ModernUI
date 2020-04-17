@@ -24,6 +24,7 @@ import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.master.Widget;
+import icyllis.modernui.system.ModernUI;
 
 import javax.annotation.Nonnull;
 
@@ -73,7 +74,7 @@ public class StaticFrameButton extends Widget {
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if (listening && mouseButton == 0) {
             leftClickFunc.run();
-            brightness = 0.8f;
+            brightness = 0.85f;
             return true;
         }
         return false;
@@ -93,10 +94,9 @@ public class StaticFrameButton extends Widget {
             this.listening = listening;
             if (listening) {
                 module.addAnimation(new Animation(2)
-                        .applyTo(new Applier(brightness, 1.0f, this::setBrightness)));
+                        .applyTo(new Applier(brightness, 0.7f, this::setBrightness)));
             } else {
-                module.addAnimation(new Animation(2)
-                        .applyTo(new Applier(brightness, 0.3f, this::setBrightness)));
+                brightness = 0.3f;
             }
         }
     }
