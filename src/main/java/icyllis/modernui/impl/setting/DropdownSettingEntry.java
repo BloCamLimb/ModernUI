@@ -36,7 +36,7 @@ import java.util.function.Consumer;
 
 public class DropdownSettingEntry extends SettingEntry {
 
-    public int originalOptionIndex;
+    public int lastOptionIndex;
     public int currentOptionIndex;
 
     public final List<String> optionNames;
@@ -57,7 +57,7 @@ public class DropdownSettingEntry extends SettingEntry {
 
     public DropdownSettingEntry(SettingScrollWindow window, String optionTitle, @Nonnull List<String> optionNames, int originalIndex, Consumer<Integer> saveOption) {
         super(window, optionTitle);
-        this.currentOptionIndex = this.originalOptionIndex = originalIndex;
+        this.currentOptionIndex = this.lastOptionIndex = originalIndex;
         this.optionNames = optionNames;
         this.saveOption = saveOption;
         optionText = optionNames.get(originalIndex);
