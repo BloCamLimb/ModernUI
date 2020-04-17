@@ -21,6 +21,7 @@ package icyllis.modernui.system;
 import net.minecraft.util.ResourceLocation;
 
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 public class ConstantsLibrary {
 
@@ -34,4 +35,7 @@ public class ConstantsLibrary {
 
     public static final String CHECK_MARK_STRING = String.valueOf(CHECK_MARK);
     public static final String BLACK_CIRCLE_STRING = String.valueOf(BLACK_CIRCLE);
+
+    public static final Predicate<String> DIGIT_FILTER = s -> s.matches("[0-9]+");
+    public static final Predicate<String> HEX_FILTER = s -> s.matches("(?i)[0-9a-f]+");
 }

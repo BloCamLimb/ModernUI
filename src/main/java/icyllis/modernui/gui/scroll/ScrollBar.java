@@ -204,7 +204,7 @@ public class ScrollBar implements IDrawable, IMouseListener, IDraggable {
     }
 
     @Override
-    public void onStopDragging(double mouseX, double mouseY) {
+    public void stopDragging(double mouseX, double mouseY) {
         if (visible && isDragging) {
             isDragging = false;
             window.getModule().setDraggable(null);

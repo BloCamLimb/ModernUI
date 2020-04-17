@@ -25,6 +25,7 @@ import icyllis.modernui.gui.widget.SliderSmooth;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import net.minecraft.util.math.MathHelper;
 
+import javax.annotation.Nonnull;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -50,7 +51,7 @@ public class SSliderSettingEntry extends SettingEntry implements ISmoothSliderRe
 
     private String displayString;
 
-    public SSliderSettingEntry(SettingScrollWindow window, String optionTitle, double minValue, double maxValue, float stepSize, double currentValue, Consumer<Double> applyFunc, Function<Double, String> displayStringFunc, boolean realtimeApply) {
+    public SSliderSettingEntry(SettingScrollWindow window, String optionTitle, double minValue, double maxValue, float stepSize, double currentValue, Consumer<Double> applyFunc, @Nonnull Function<Double, String> displayStringFunc, boolean realtimeApply) {
         super(window, optionTitle);
         currentValue = MathHelper.clamp(currentValue, minValue, maxValue);
         this.slider = new SliderSmooth(window.getModule(), 84, (currentValue - minValue) / (maxValue - minValue), this);

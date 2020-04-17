@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.widget;
+package icyllis.modernui.gui.test;
 
 import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.font.FontTools;
@@ -24,7 +24,7 @@ import net.minecraft.client.gui.widget.TextFieldWidget;
 
 import java.util.function.Predicate;
 
-//TODO input box
+@Deprecated
 public class InputBox {
 
     public static final Predicate<String> digitFilter = s -> s.matches("[0-9]+"),

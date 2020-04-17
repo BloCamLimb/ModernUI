@@ -154,13 +154,13 @@ public class ModuleGroup extends Module {
         }
     }
 
-    /*@Override
+    @Override
     public void tick(int ticks) {
         super.tick(ticks);
         if (child != null) {
             child.tick(ticks);
         }
-    }*/
+    }
 
     @Override
     public boolean onBack() {

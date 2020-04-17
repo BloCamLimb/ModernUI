@@ -40,5 +40,5 @@ public interface IDraggable {
      * @param mouseX mouse x pos
      * @param mouseY mouse y pos
      */
-    default void onStopDragging(double mouseX, double mouseY) {}
+    default void stopDragging(double mouseX, double mouseY) {}
 }

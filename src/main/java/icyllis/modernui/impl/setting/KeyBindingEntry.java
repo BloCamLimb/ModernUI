@@ -19,6 +19,8 @@
 package icyllis.modernui.impl.setting;
 
 import com.google.common.collect.Lists;
+import icyllis.modernui.gui.animation.Animation;
+import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.popup.PopupMenu;
@@ -32,6 +34,7 @@ import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.client.util.InputMappings;
 import net.minecraftforge.client.settings.KeyModifier;
 
+import javax.annotation.Nonnull;
 import java.util.Locale;
 import java.util.Objects;
 
@@ -43,7 +46,11 @@ public class KeyBindingEntry extends SettingEntry {
 
     private Runnable conflictsCallback;
 
-    public KeyBindingEntry(SettingScrollWindow window, KeyBinding keyBinding, Runnable conflictsCallback) {
+    private float light = 0;
+
+    private int tier = 0;
+
+    public KeyBindingEntry(SettingScrollWindow window, @Nonnull KeyBinding keyBinding, Runnable conflictsCallback) {
         super(window, I18n.format(keyBinding.getKeyDescription()));
         this.keyBinding = keyBinding;
         this.inputBox = new KeyInputBox(window.getModule(), this::bindKey);
@@ -62,6 +69,11 @@ public class KeyBindingEntry extends SettingEntry {
     @Override
     public void drawExtra(Canvas canvas, float time) {
         inputBox.draw(canvas, time);
+        if (light > 0) {
+            canvas.setRGBA(1, 1, 1, light);
+            canvas.drawRect(x1 - 4, y1 + 1, x1 - 2, y2 - 1);
+            canvas.drawRect(x2 + 2, y1 + 1, x2 + 4, y2 - 1);
+        }
     }
 
     @Override
@@ -82,6 +94,7 @@ public class KeyBindingEntry extends SettingEntry {
             DropDownMenu menu = new DropDownMenu(module, Lists.newArrayList(I18n.format("controls.reset")), -1, 12, this::menuActions, DropDownMenu.Align.LEFT);
             menu.setPos((float) module.getMouseX() + 1, (float) module.getMouseY() + 1);
             GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(menu), false);
+            lightUp();
             return true;
         }
         return inputBox.isMouseHovered() && inputBox.mouseClicked(mouseX, mouseY, mouseButton);
@@ -100,8 +113,12 @@ public class KeyBindingEntry extends SettingEntry {
         }
     }
 
+    public void lightUp() {
+        module.addAnimation(new Animation(20).applyTo(new Applier(1, 0, v -> light = v)));
+    }
+
     // vanilla call this every frame... but we don't
-    private void updateKeyText() {
+    public void updateKeyText() {
         String translateKey = keyBinding.getTranslationKey();
         String localizedName = I18n.format(translateKey);
 
@@ -161,9 +178,10 @@ public class KeyBindingEntry extends SettingEntry {
 
     public void setConflictTier(int tier) {
         inputBox.setTextColor(tier);
+        this.tier = tier;
     }
 
-    private void bindKey(InputMappings.Input inputIn) {
+    private void bindKey(@Nonnull InputMappings.Input inputIn) {
         GameSettings gameSettings = Minecraft.getInstance().gameSettings;
         if (inputIn.getType() != InputMappings.Type.MOUSE) {
             keyBinding.setKeyModifierAndCode(KeyModifier.getActiveModifier(), inputIn);
@@ -188,5 +206,13 @@ public class KeyBindingEntry extends SettingEntry {
         super.onMouseHoverExit();
         inputBox.setMouseHoverExit();
         inputBox.setTextBrightness(titleBrightness);
+    }
+
+    public KeyInputBox getInputBox() {
+        return inputBox;
+    }
+
+    public int getTier() {
+        return tier;
     }
 }

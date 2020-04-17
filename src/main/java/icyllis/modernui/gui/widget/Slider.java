@@ -149,7 +149,7 @@ public abstract class Slider extends Widget implements IDraggable {
     }
 
     @Override
-    public void onStopDragging(double mouseX, double mouseY) {
+    public void stopDragging(double mouseX, double mouseY) {
         if (isDragging) {
             isDragging = false;
             module.setDraggable(null);

@@ -54,4 +54,9 @@ public interface IKeyboardListener {
         return false;
     }
 
+    /**
+     * Called when module no longer listens this listener
+     */
+    default void stopKeyboardListening() {}
+
 }
