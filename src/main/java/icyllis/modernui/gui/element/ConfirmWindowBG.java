@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.background;
+package icyllis.modernui.gui.element;
 
 import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.gui.animation.Animation;
