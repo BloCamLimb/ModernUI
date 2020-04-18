@@ -23,8 +23,6 @@ import icyllis.modernui.gui.layout.WidgetLayout;
 import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.master.Widget;
 import icyllis.modernui.gui.scroll.ScrollWindow;
-import icyllis.modernui.gui.widget.DropDownMenu;
-import icyllis.modernui.gui.widget.DropDownWidget;
 import icyllis.modernui.gui.widget.StaticFrameButton;
 import icyllis.modernui.gui.widget.TriangleButton;
 import icyllis.modernui.impl.background.ResourcePackBG;
@@ -59,7 +57,7 @@ public class SettingResourcePack extends Module {
     @Nullable
     private ResourcePackEntry highlightEntry;
 
-    private StaticFrameButton apply;
+    private StaticFrameButton applyButton;
 
     public SettingResourcePack() {
         minecraft = Minecraft.getInstance();
@@ -91,7 +89,7 @@ public class SettingResourcePack extends Module {
         list.add(upArrow);
         list.add(downArrow);
 
-        apply = new StaticFrameButton(this, 48, I18n.format("gui.modernui.button.apply"), this::applyResourcePacks, false);
+        applyButton = new StaticFrameButton(this, 48, I18n.format("gui.modernui.button.apply"), this::applyResourcePacks, false);
 
         //list.add(new SlidingToggleButton(this, 4, b -> {}, 0xb020a0d0, 0x40808080, false)); // test
         //list.add(new DropDownWidget(this, Lists.newArrayList("1", "233333"), 0, i -> {}, DropDownMenu.Align.RIGHT));
@@ -99,7 +97,7 @@ public class SettingResourcePack extends Module {
         arrowsLayout = new WidgetLayout(list, WidgetLayout.Direction.VERTICAL_POSITIVE, 4);
 
         list.forEach(this::addWidget);
-        addWidget(apply);
+        addWidget(applyButton);
         addWidget(aWindow);
         addWidget(sWindow);
     }
@@ -108,7 +106,7 @@ public class SettingResourcePack extends Module {
     public void resize(int width, int height) {
         super.resize(width, height);
         arrowsLayout.layout(width / 2f - 6, height * 0.25f);
-        apply.setPos(width / 2f - 24, height - 32);
+        applyButton.setPos(width / 2f - 24, height - 32);
     }
 
     private void applyResourcePacks() {
@@ -135,7 +133,7 @@ public class SettingResourcePack extends Module {
 
         gameSettings.saveOptions();
         minecraft.reloadResources();
-        apply.setListening(false);
+        applyButton.setListening(false);
     }
 
     @Override
@@ -156,11 +154,11 @@ public class SettingResourcePack extends Module {
             availableGroup.layoutGroup();
             highlightEntry.intoSelected(selectedGroup);
             selectedGroup.layoutGroup();
-            selectedGroup.followEntry(highlightEntry);
+            //selectedGroup.followEntry(highlightEntry);
             highlightEntry.setMouseHoverExit();
             refocusCursor();
             setHighlightEntry(highlightEntry);
-            apply.setListening(true);
+            applyButton.setListening(true);
         }
     }
 
@@ -170,11 +168,11 @@ public class SettingResourcePack extends Module {
             selectedGroup.layoutGroup();
             availableGroup.getEntries().add(highlightEntry);
             availableGroup.layoutGroup();
-            availableGroup.followEntry(highlightEntry);
+            //availableGroup.followEntry(highlightEntry);
             highlightEntry.setMouseHoverExit();
             refocusCursor();
             setHighlightEntry(highlightEntry);
-            apply.setListening(true);
+            applyButton.setListening(true);
         }
     }
 
@@ -182,10 +180,10 @@ public class SettingResourcePack extends Module {
         if (highlightEntry != null && highlightEntry.canGoUp()) {
             highlightEntry.goUp();
             selectedGroup.layoutGroup();
-            selectedGroup.followEntry(highlightEntry);
+            //selectedGroup.followEntry(highlightEntry);
             setHighlightEntry(highlightEntry);
             refocusCursor();
-            apply.setListening(true);
+            applyButton.setListening(true);
         }
     }
 
@@ -193,10 +191,10 @@ public class SettingResourcePack extends Module {
         if (highlightEntry != null && highlightEntry.canGoDown()) {
             highlightEntry.goDown();
             selectedGroup.layoutGroup();
-            selectedGroup.followEntry(highlightEntry);
+            //selectedGroup.followEntry(highlightEntry);
             setHighlightEntry(highlightEntry);
             refocusCursor();
-            apply.setListening(true);
+            applyButton.setListening(true);
         }
     }
 
