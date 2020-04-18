@@ -95,7 +95,9 @@ public class SettingControls extends Module {
         addWidget(nextButton);
         addWidget(previousButton);
 
-        searchModeButton = new DropDownWidget(this, Lists.newArrayList("Name", "Key"), 0,
+        searchModeButton = new DropDownWidget(this, Lists.newArrayList(
+                I18n.format("gui.modernui.settings.entry.name"),
+                I18n.format("gui.modernui.settings.entry.key")), 0,
                 i -> searchBox.setText(""), DropDownMenu.Align.RIGHT);
         addWidget(searchModeButton);
 

@@ -26,6 +26,9 @@
   "gui.modernui.settings.tab.language": "Language",
   "gui.modernui.settings.tab.resourcePacks": "Resource Packs",
 
+  "gui.modernui.settings.entry.name": "Name",
+  "gui.modernui.settings.entry.key": "Key",
+
   "gui.modernui.settings.category.game": "Game",
   "gui.modernui.settings.category.chat": "Chat",
   "gui.modernui.settings.category.accessibility": "Accessibility",
