@@ -91,6 +91,9 @@ public class TextIconButton extends IconButton {
     }
 
     public void onModuleChanged(int id) {
+        if (this.id == id && !iconAC.isAnimationOpen()) {
+            iconAC.startOpenAnimation();
+        }
         iconAC.setLockState(this.id == id);
         if (iconAC.canChangeState()) {
             if (!mouseHovered) {
