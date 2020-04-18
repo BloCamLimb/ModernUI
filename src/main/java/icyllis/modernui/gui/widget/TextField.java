@@ -30,7 +30,6 @@ import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -131,6 +130,7 @@ public class TextField extends Widget implements IKeyboardListener {
             kx = ds > 0 ? x2 - rightMargin : lx;
         }
 
+        // draw selection box
         if (de != ds) {
             float l1 = lx + FontTools.getStringWidth(s.substring(0, de));
             canvas.setColor(Color3f.BLUE_C, 0.5f);
@@ -143,6 +143,7 @@ public class TextField extends Widget implements IKeyboardListener {
             canvas.drawText(s.substring(ds), cx, ty);
         }
 
+        // draw cursor
         if (editing && timer < 10) {
             canvas.drawRect(kx, ty - 1, kx + 0.5f, ty + 10);
         }

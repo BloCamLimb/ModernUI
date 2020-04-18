@@ -18,7 +18,6 @@
 
 package icyllis.modernui.gui.widget;
 
-import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
@@ -33,7 +32,6 @@ public class TextIconButton extends IconButton {
     private final Direction direction;
 
     private final String text;
-    private final float textLength;
     private int id = 0;
 
     private float textAlpha = 0;
@@ -42,7 +40,6 @@ public class TextIconButton extends IconButton {
         super(module, width, height, icon, leftClick);
         this.text = text;
         this.direction = direction;
-        this.textLength = FontTools.getStringWidth(text) + 4;
     }
 
     public void setId(int id) {
@@ -61,11 +58,11 @@ public class TextIconButton extends IconButton {
                     break;
                 case DOWN:
                     canvas.setTextAlign(TextAlign.CENTER);
-                    canvas.drawText(text, x1 + width / 2f, y2 + 8);
+                    canvas.drawText(text, x1 + width / 2f, y2 + 3);
                     break;
                 case LEFT:
                     canvas.setTextAlign(TextAlign.RIGHT);
-                    canvas.drawText(text, x1 - textLength, y1 + (height - 8) / 2f);
+                    canvas.drawText(text, x1 - 4, y1 + (height - 8) / 2f);
                     break;
                 case RIGHT:
                     canvas.setTextAlign(TextAlign.LEFT);

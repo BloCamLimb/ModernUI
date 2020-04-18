@@ -29,6 +29,7 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.network.PacketBuffer;
+import net.minecraft.network.play.client.CCloseWindowPacket;
 import net.minecraft.util.text.ITextComponent;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -89,12 +90,17 @@ public enum GlobalModuleManager {
         minecraft.displayGuiScreen(new ModernScreen(title));
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "ConstantConditions"})
     @Nonnull
-    public <T extends Container, U extends Screen & IHasContainer<T>> ScreenManager.IScreenFactory<T, U> castModernScreen(T container, PlayerInventory playerInventory, ITextComponent title, @Nonnull Supplier<IModule> root) {
+    public <T extends Container, U extends Screen & IHasContainer<T>> ScreenManager.IScreenFactory<T, U> castModernScreen(@Nonnull Function<T, Supplier<IModule>> root) {
         return (c, p, t) -> {
-            this.supplier = root;
-            return (U) new ModernContainerScreen<>(container, playerInventory, title);
+            // The client container can be null sometimes, but a container screen doesn't allow the container to be null
+            // so return null, there's no gui will be open, and the server container will be closed automatically
+            if (c == null) {
+                return null;
+            }
+            this.supplier = root.apply(c);
+            return (U) new ModernContainerScreen<>(c, p, t);
         };
     }
 
@@ -106,8 +112,12 @@ public enum GlobalModuleManager {
         this.width = width;
         this.height = height;
         if (supplier != null) {
-            root = Objects.requireNonNull(supplier.get());
+            root = supplier.get();
             supplier = null;
+        }
+        if (root == null) {
+            closeGuiScreen();
+            return;
         }
         resize(width, height);
     }
