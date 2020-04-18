@@ -19,18 +19,21 @@
 package icyllis.modernui.impl.module;
 
 import com.google.common.collect.Lists;
+import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.gui.element.TextElement;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.IKeyboardListener;
+import icyllis.modernui.gui.master.Icon;
 import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.widget.*;
 import icyllis.modernui.impl.setting.SettingCategoryGroup;
 import icyllis.modernui.impl.setting.SettingEntry;
 import icyllis.modernui.impl.setting.KeyBindingEntry;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
+import icyllis.modernui.system.ConstantsLibrary;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.system.SettingsManager;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screen.ControlsScreen;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.client.util.InputMappings;
@@ -41,10 +44,7 @@ import net.minecraftforge.client.settings.KeyModifier;
 import org.apache.commons.lang3.ArrayUtils;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class SettingControls extends Module {
 
@@ -55,17 +55,19 @@ public class SettingControls extends Module {
 
     private List<KeyBindingEntry> allKeyBinding = new ArrayList<>();
 
-    private TextField searchBox;
+    private SearchBox searchBox;
     private TriangleButton nextButton;
     private TriangleButton previousButton;
 
     private KeyBindingEntry currentResult;
     private List<KeyBindingEntry> searchResults = new ArrayList<>();
 
-    private StaticFrameButton showConflictButton;
+    private TextIconButton filterConflictButton;
     private StaticFrameButton resetAllButton;
 
     private DropDownWidget searchModeButton;
+
+    private TextElement resultCounter = new TextElement(TextAlign.CENTER);
 
     public SettingControls() {
         this.minecraft = Minecraft.getInstance();
@@ -73,93 +75,107 @@ public class SettingControls extends Module {
 
         List<SettingCategoryGroup> groups = new ArrayList<>();
 
-        addMouseCategory(groups);
-        addAllKeyBindings(groups);
-
-        window.addGroups(groups);
-
+        addDrawable(resultCounter);
         addWidget(window);
 
-        showConflictButton = new StaticFrameButton(this, 68, "Show Conflicts", this::filterConflicts, true);
-        addWidget(showConflictButton);
+        filterConflictButton = new TextIconButton(this, I18n.format("gui.modernui.button.filterConflicts"), 12, 12,
+                new Icon(ConstantsLibrary.ICONS, 0.5f, 0.25f, 0.625f, 0.375f, true), this::filterConflicts, TextIconButton.Direction.UP);
+        addWidget(filterConflictButton);
 
-        resetAllButton = new StaticFrameButton(this, 68, I18n.format("controls.resetAll"), this::resetAllKey, true);
+        resetAllButton = new StaticFrameButton(this, 64, I18n.format("controls.resetAll"), this::resetAllKey, true);
         addWidget(resetAllButton);
 
-        searchModeButton = new DropDownWidget(this, Lists.newArrayList("Name", "Key"), 0, i -> {}, DropDownMenu.Align.RIGHT);
-        addWidget(searchModeButton);
-
-        searchBox = new TextField(this, 100, 12);
-        searchBox.setDecoration(t -> new TextField.Frame(t, null, 0xffc0c0c0));
-        searchBox.setListener(this::searchBoxCallback, true);
+        searchBox = new SearchBox(this, 100);
+        searchBox.setListener(this::searchBoxCallback);
+        searchBox.setEnterOperation(this::locateNextResult);
         addWidget(searchBox);
 
         nextButton = new TriangleButton(this, TriangleButton.Direction.DOWN, 12, this::locateNextResult, false);
         previousButton = new TriangleButton(this, TriangleButton.Direction.UP, 12, this::locatePreviousResult, false);
         addWidget(nextButton);
         addWidget(previousButton);
+
+        searchModeButton = new DropDownWidget(this, Lists.newArrayList("Name", "Key"), 0,
+                i -> searchBox.setText(""), DropDownMenu.Align.RIGHT);
+        addWidget(searchModeButton);
+
+        addMouseCategory(groups);
+        addAllKeyBindings(groups);
+        window.addGroups(groups);
     }
 
     @Override
     public void resize(int width, int height) {
         super.resize(width, height);
+        // layout widgets
         searchModeButton.setPos(width / 2f - 122, height - 34);
-        resetAllButton.setPos(width / 2f + 88, height - 32);
-        showConflictButton.setPos(width / 2f + 16, height - 32);
         searchBox.setPos(width / 2f - 120, height - 32);
-        nextButton.setPos(width / 2f, height - 32);
+
         previousButton.setPos(width / 2f - 16, height - 32);
+        nextButton.setPos(width / 2f - 2, height - 32);
+
+        filterConflictButton.setPos(width / 2f + 20, height - 32);
+        resultCounter.setPos(width / 2f + 62, height - 30);
+
+        resetAllButton.setPos(width / 2f + 92, height - 32);
     }
 
     private void filterConflicts() {
-        searchResults.clear();
-        searchBox.setText("");
-        allKeyBinding.stream().filter(f -> f.getTier() > 0).forEach(searchResults::add);
-        if (!searchResults.isEmpty()) {
-            nextButton.setClickable(true);
-            previousButton.setClickable(true);
-            currentResult = searchResults.get(0);
-            currentResult.lightUp();
-            landmarkGroup.followEntry(currentResult);
-        } else {
-            nextButton.setClickable(false);
-            previousButton.setClickable(false);
-        }
+        searchModeButton.updateValue(0);
+        searchBox.setText("#conflicting");
     }
 
-    private void searchBoxCallback(@Nonnull TextField textField) {
+    private boolean searchBoxCallback(@Nonnull String t) {
         searchResults.clear();
-        String t = textField.getText();
         if (!t.isEmpty()) {
             String ct = t.toLowerCase();
             if (searchModeButton.getIndex() == 0) {
-                allKeyBinding.stream().filter(f -> f.title.toLowerCase().contains(ct)).forEach(searchResults::add);
+                if (ct.equals("#conflicting")) {
+                    allKeyBinding.stream().filter(f -> f.getTier() > 0).forEach(searchResults::add);
+                } else {
+                    allKeyBinding.stream().filter(f -> f.title.toLowerCase().contains(ct)).forEach(searchResults::add);
+                }
             } else {
                 allKeyBinding.stream().filter(f ->
                         Objects.equals(TextFormatting.getTextWithoutFormattingCodes(
                                 f.getInputBox().getKeyText().toLowerCase()), ct)).forEach(searchResults::add);
             }
             if (!searchResults.isEmpty()) {
+                KeyBindingEntry prev = currentResult;
                 if (searchResults.size() > 1) {
                     nextButton.setClickable(true);
                     previousButton.setClickable(true);
+                    // get the closest result
+                    if (prev == null) {
+                        searchResults.stream().min(Comparator.comparing(e ->
+                                Math.abs(e.getTop() - window.getTop() - window.getVisibleOffset()))).ifPresent(e -> currentResult = e);
+                    }
                 } else {
                     nextButton.setClickable(false);
                     previousButton.setClickable(false);
+                    if (prev == null) {
+                        currentResult = searchResults.get(0);
+                    }
                 }
-                ((TextField.Frame) Objects.requireNonNull(searchBox.getDecoration())).setColor(0xffc0c0c0);
-                currentResult = searchResults.get(0);
-                currentResult.lightUp();
-                landmarkGroup.followEntry(currentResult);
+                if (prev != currentResult && currentResult != null) {
+                    currentResult.lightUp();
+                    landmarkGroup.followEntry(currentResult);
+                }
+                updateResultCounter();
+                return true;
             } else {
-                ((TextField.Frame) Objects.requireNonNull(searchBox.getDecoration())).setColor(0xffff5555);
                 nextButton.setClickable(false);
                 previousButton.setClickable(false);
+                currentResult = null;
+                updateResultCounter();
+                return false;
             }
         } else {
-            ((TextField.Frame) Objects.requireNonNull(searchBox.getDecoration())).setColor(0xffc0c0c0);
             nextButton.setClickable(false);
             previousButton.setClickable(false);
+            currentResult = null;
+            updateResultCounter();
+            return true;
         }
     }
 
@@ -181,6 +197,7 @@ public class SettingControls extends Module {
         }
         currentResult.lightUp();
         landmarkGroup.followEntry(currentResult);
+        updateResultCounter();
     }
 
     private void locatePreviousResult() {
@@ -192,6 +209,16 @@ public class SettingControls extends Module {
         }
         currentResult.lightUp();
         landmarkGroup.followEntry(currentResult);
+        updateResultCounter();
+    }
+
+    private void updateResultCounter() {
+        if (searchResults.isEmpty()) {
+            resultCounter.setText("");
+        } else {
+            int i = searchResults.indexOf(currentResult) + 1;
+            resultCounter.setText(I18n.format("gui.modernui.text.oneOfAll", i, searchResults.size()));
+        }
     }
 
     private void addMouseCategory(List<SettingCategoryGroup> groups) {
@@ -247,11 +274,15 @@ public class SettingControls extends Module {
         checkAllConflicts();
     }
 
+    /**
+     * Mark mark
+     * This is a general logic for keyboard listeners, copy me!
+     */
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         IKeyboardListener k = getKeyboardListener();
         if (super.mouseClicked(mouseX, mouseY, mouseButton)) {
-            if (k == getKeyboardListener()) {
+            if (k != null && getKeyboardListener() != k) {
                 setKeyboardListener(null);
             }
             return true;
@@ -283,6 +314,7 @@ public class SettingControls extends Module {
             }
             entry.setConflictTier(conflict);
         }
+        searchBox.onTextChanged();
     }
 
     /**

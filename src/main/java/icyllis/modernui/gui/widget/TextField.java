@@ -56,8 +56,8 @@ public class TextField extends Widget implements IKeyboardListener {
     private float leftMargin = 2;
     private float rightMargin = 2;
 
-    private int timer = 0;
-    private boolean editing = false;
+    protected int timer = 0;
+    protected boolean editing = false;
 
     @Nullable
     private Decoration decoration;
@@ -173,7 +173,7 @@ public class TextField extends Widget implements IKeyboardListener {
         }
     }
 
-    private void onTextChanged() {
+    protected void onTextChanged() {
         if (listener != null && runtimeUpdate) {
             listener.accept(this);
         }
@@ -343,7 +343,6 @@ public class TextField extends Widget implements IKeyboardListener {
             return true;
         } else {
             switch (keyCode) {
-                case GLFW.GLFW_KEY_ENTER:
                 case GLFW.GLFW_KEY_ESCAPE:
                     module.setKeyboardListener(null);
                     return true;

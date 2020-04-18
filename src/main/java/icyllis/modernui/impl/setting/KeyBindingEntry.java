@@ -68,12 +68,11 @@ public class KeyBindingEntry extends SettingEntry {
 
     @Override
     public void drawExtra(Canvas canvas, float time) {
-        inputBox.draw(canvas, time);
         if (light > 0) {
-            canvas.setRGBA(1, 1, 1, light);
-            canvas.drawRect(x1 - 4, y1 + 1, x1 - 2, y2 - 1);
-            canvas.drawRect(x2 + 2, y1 + 1, x2 + 4, y2 - 1);
+            canvas.setRGBA(0.5f, 0.5f, 0.5f, light);
+            canvas.drawRect(x1 - 1, y1 + 1, x2 + 1, y2 - 1);
         }
+        inputBox.draw(canvas, time);
     }
 
     @Override
@@ -114,7 +113,7 @@ public class KeyBindingEntry extends SettingEntry {
     }
 
     public void lightUp() {
-        module.addAnimation(new Animation(20).applyTo(new Applier(1, 0, v -> light = v)));
+        module.addAnimation(new Animation(20).applyTo(new Applier(0.5f, 0, v -> light = v)));
     }
 
     // vanilla call this every frame... but we don't

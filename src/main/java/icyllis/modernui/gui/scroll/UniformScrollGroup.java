@@ -131,9 +131,6 @@ public abstract class UniformScrollGroup<T extends UniformScrollEntry> extends S
      * @param entry entry to follow
      */
     public void followEntry(@Nonnull T entry) {
-        if (!entries.contains(entry)) {
-            return;
-        }
         float c = entry.getTop() - window.getTop() - window.getVisibleOffset() - window.borderThickness;
         if (c < 0) {
             if (c < -240) {

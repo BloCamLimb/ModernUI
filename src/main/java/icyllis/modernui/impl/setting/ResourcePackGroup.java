@@ -97,7 +97,7 @@ public class ResourcePackGroup extends UniformScrollGroup<ResourcePackEntry> {
             i++;
         }
 
-        if (module.getHighlightEntry() != null) {
+        if (module.getHighlightEntry() != null && entries.contains(module.getHighlightEntry())) {
             followEntry(module.getHighlightEntry());
         }
     }

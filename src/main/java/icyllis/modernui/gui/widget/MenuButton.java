@@ -27,34 +27,27 @@ import icyllis.modernui.system.ConstantsLibrary;
 import javax.annotation.Nonnull;
 import java.util.List;
 
-public class MenuButton extends Widget {
+public class MenuButton extends IconButton {
 
-    private AnimationControl iconAC = new IconControl(this);
-    private AnimationControl sideTextAC = new SideTextControl(this);
+    private final AnimationControl sideTextAC = new SideTextControl(this);
 
     private final String text;
-    private final Icon icon;
-    private final Runnable leftClickFunc;
     private final int id;
 
-    private float brightness = 0.5f;
     private float frameAlpha = 0;
     private float textAlpha = 0;
     private float frameSizeW = 5;
 
     public MenuButton(Module module, String text, int uIndex, Runnable leftClick, int id) {
-        super(module, 16, 16);
+        super(module, 16, 16,
+                new Icon(ConstantsLibrary.ICONS, uIndex * 64 / 512f, 0, (uIndex + 1) * 64 / 512f, 64 / 512f, true), leftClick);
         this.text = text;
-        this.icon = new Icon(ConstantsLibrary.ICONS, uIndex * 64 / 512f, 0, (uIndex + 1) * 64 / 512f, 64 / 512f, true);
-        this.leftClickFunc = leftClick;
         this.id = id;
     }
 
     @Override
     public void draw(@Nonnull Canvas canvas, float time) {
-        iconAC.update();
-        canvas.setRGBA(brightness, brightness, brightness, 1.0f);
-        canvas.drawIcon(icon, x1, y1, x1 + 16, y1 + 16);
+        super.draw(canvas, time);
     }
 
     @Override
@@ -102,27 +95,14 @@ public class MenuButton extends Widget {
     }*/
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        if (listening && mouseButton == 0) {
-            if (iconAC.canChangeState()) {
-                leftClickFunc.run();
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @Override
     protected void onMouseHoverEnter() {
         super.onMouseHoverEnter();
-        iconAC.startOpenAnimation();
         sideTextAC.startOpenAnimation();
     }
 
     @Override
     protected void onMouseHoverExit() {
         super.onMouseHoverExit();
-        iconAC.startCloseAnimation();
         sideTextAC.startCloseAnimation();
     }
 
@@ -142,37 +122,12 @@ public class MenuButton extends Widget {
         this.frameSizeW = frameSizeW;
     }
 
-    public void setIconBrightness(float brightness) {
-        this.brightness = brightness;
-    }
-
     public void onModuleChanged(int id) {
         iconAC.setLockState(this.id == id);
         if (iconAC.canChangeState()) {
             if (!mouseHovered) {
                 iconAC.startCloseAnimation();
             }
-        }
-    }
-
-    private static class IconControl extends AnimationControl {
-
-        private final MenuButton instance;
-
-        public IconControl(MenuButton instance) {
-            this.instance = instance;
-        }
-
-        @Override
-        protected void createOpenAnimations(@Nonnull List<Animation> list) {
-            list.add(new Animation(4)
-                    .applyTo(new Applier(0.5f, 1.0f, instance::setIconBrightness)));
-        }
-
-        @Override
-        protected void createCloseAnimations(@Nonnull List<Animation> list) {
-            list.add(new Animation(4)
-                    .applyTo(new Applier(1.0f, 0.5f, instance::setIconBrightness)));
         }
     }
 

@@ -9,11 +9,14 @@
   "gui.modernui.button.applyAndReload": "Apply & Reload",
   "gui.modernui.button.discard": "Discard",
   "gui.modernui.button.confirm": "Confirm %s",
+  "gui.modernui.button.filterConflicts": "Filter Conflicts",
 
   "gui.modernui.menu.back": "Back to Game",
   "gui.modernui.menu.mods": "Forge Mods",
   "gui.modernui.menu.settings": "Settings",
   "gui.modernui.menu.exit": "Exit to Main Menu",
+
+  "gui.modernui.text.oneOfAll": "%1$d of %2$d",
 
   "gui.modernui.settings.tab.general": "General",
   "gui.modernui.settings.tab.video": "Video",

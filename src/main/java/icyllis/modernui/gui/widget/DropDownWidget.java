@@ -130,7 +130,7 @@ public class DropDownWidget extends Widget {
         updateValue(index);
     }
 
-    private void updateValue(int index) {
+    public void updateValue(int index) {
         this.index = index;
         text = list.get(index);
         float textLength = FontTools.getStringWidth(text) + 3;

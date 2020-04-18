@@ -9,11 +9,14 @@
   "gui.modernui.button.applyAndReload": "应用并重载",
   "gui.modernui.button.discard": "舍弃",
   "gui.modernui.button.confirm": "确认%s",
+  "gui.modernui.button.filterConflicts": "筛选冲突项",
 
   "gui.modernui.menu.back": "回到游戏",
   "gui.modernui.menu.mods": "Forge模组",
   "gui.modernui.menu.settings": "设置",
   "gui.modernui.menu.exit": "退出到主菜单",
+
+  "gui.modernui.text.oneOfAll": "%1$d / %2$d",
 
   "gui.modernui.settings.tab.general": "常规",
   "gui.modernui.settings.tab.video": "视频",
