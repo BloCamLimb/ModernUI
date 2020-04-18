@@ -59,6 +59,7 @@ public final class ModernScreen extends Screen {
 
     @Override
     public void removed() {
+        super.removed();
         manager.clear();
     }
 

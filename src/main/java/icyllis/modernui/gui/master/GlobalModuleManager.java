@@ -166,7 +166,7 @@ public enum GlobalModuleManager {
         this.mouseY = mouseY;
         if (popup != null) {
             popup.mouseMoved(mouseX, mouseY);
-        } else {
+        } else if (root != null) { // hotfix 1.4.4
             root.mouseMoved(mouseX, mouseY);
         }
     }
