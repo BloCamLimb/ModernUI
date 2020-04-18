@@ -126,21 +126,26 @@ public abstract class UniformScrollGroup<T extends UniformScrollEntry> extends S
 
     /**
      * Follow and focus an entry to make sure it's visible on scroll window
+     * Fixed in 1.4.2
+     *
      * @param entry entry to follow
      */
     public void followEntry(@Nonnull T entry) {
-        float c = entry.getTop() - window.getActualScrollAmount() - entryHeight - window.borderThickness * 2;
+        if (!entries.contains(entry)) {
+            return;
+        }
+        float c = entry.getTop() - window.getTop() - window.getVisibleOffset() - window.borderThickness;
         if (c < 0) {
-            if (c < -120) {
+            if (c < -240) {
                 window.scrollDirect(c);
             } else {
                 window.scrollSmooth(c);
             }
             return;
         }
-        float d = entry.getTop() - window.getActualScrollAmount() - window.getVisibleHeight() - entryHeight + window.borderThickness;
+        float d = entry.getBottom() - window.getBottom() - window.getVisibleOffset() + window.borderThickness;
         if (d > 0) {
-            if (d > 120) {
+            if (d > 240) {
                 window.scrollDirect(d);
             } else {
                 window.scrollSmooth(d);

@@ -20,6 +20,7 @@ package icyllis.modernui.impl.module;
 
 import com.google.common.collect.Lists;
 import icyllis.modernui.gui.master.GlobalModuleManager;
+import icyllis.modernui.gui.master.IKeyboardListener;
 import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.widget.*;
 import icyllis.modernui.impl.setting.SettingCategoryGroup;
@@ -248,7 +249,11 @@ public class SettingControls extends Module {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        IKeyboardListener k = getKeyboardListener();
         if (super.mouseClicked(mouseX, mouseY, mouseButton)) {
+            if (k == getKeyboardListener()) {
+                setKeyboardListener(null);
+            }
             return true;
         }
         if (getKeyboardListener() != null) {

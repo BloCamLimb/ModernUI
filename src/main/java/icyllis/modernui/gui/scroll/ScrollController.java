@@ -56,8 +56,9 @@ public class ScrollController {
         startTime = GlobalModuleManager.INSTANCE.getAnimationTime();
         startValue = value;
         targetValue = Math.round(newTargetValue);
-        if (Math.abs(targetValue - value) > 60) {
-            duration = 2.0f;
+        float dis = Math.abs(targetValue - value);
+        if (dis > 60) {
+            duration = dis / 30f;
         } else {
             duration = 3.0f;
         }
