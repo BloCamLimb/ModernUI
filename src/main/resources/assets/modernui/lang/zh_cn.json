@@ -26,6 +26,9 @@
   "gui.modernui.settings.tab.language": "语言",
   "gui.modernui.settings.tab.resourcePacks": "资源包",
 
+  "gui.modernui.settings.entry.name": "名称",
+  "gui.modernui.settings.entry.key": "键位",
+
   "gui.modernui.settings.category.game": "游戏",
   "gui.modernui.settings.category.chat": "聊天",
   "gui.modernui.settings.category.accessibility": "辅助功能",
