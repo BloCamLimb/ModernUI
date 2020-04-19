@@ -22,13 +22,19 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IHasContainer;
 import net.minecraft.client.gui.ScreenManager;
 import net.minecraft.client.gui.screen.inventory.ContainerScreen;
+import net.minecraft.client.renderer.GlDebugTextUtils;
+import net.minecraft.client.renderer.RenderTypeBuffers;
+import net.minecraft.client.util.InputMappings;
 import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.inventory.container.ClickType;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
+import java.util.Objects;
 
 //TODO rewrite vanilla code, make item slots can be renderer with alpha
 
@@ -55,6 +61,7 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
 
     @Override
     public void resize(@Nonnull Minecraft minecraft, int width, int height) {
+        super.resize(minecraft, width, height);
         manager.resize(width, height);
     }
 
@@ -77,41 +84,91 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
 
     @Override
     public final void mouseMoved(double mouseX, double mouseY) {
+        super.mouseMoved(mouseX, mouseY);
         manager.mouseMoved(mouseX, mouseY);
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        if (super.mouseClicked(mouseX, mouseY, mouseButton)) {
+            return true;
+        }
         return manager.mouseClicked(mouseX, mouseY, mouseButton);
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
+        if (super.mouseReleased(mouseX, mouseY, mouseButton)) {
+            return true;
+        }
         return manager.mouseReleased(mouseX, mouseY, mouseButton);
     }
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double deltaX, double deltaY) {
+        if (super.mouseDragged(mouseX, mouseY, mouseButton, deltaX, deltaY)) {
+            return true;
+        }
         return manager.mouseDragged(mouseX, mouseY, deltaX, deltaY);
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        if (super.mouseScrolled(mouseX, mouseY, delta)) {
+            return true;
+        }
         return manager.mouseScrolled(mouseX, mouseY, delta);
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        return manager.keyPressed(keyCode, scanCode, modifiers);
+        if (manager.keyPressed(keyCode, scanCode, modifiers)) {
+            return true;
+        } else {
+            InputMappings.Input mouseKey = InputMappings.getInputByCode(keyCode, scanCode);
+            if (keyCode == GLFW.GLFW_KEY_ESCAPE || Objects.requireNonNull(this.minecraft).gameSettings.keyBindInventory.isActiveAndMatches(mouseKey)) {
+                if (manager.onBack()) {
+                    return true;
+                }
+                Objects.requireNonNull(Objects.requireNonNull(this.minecraft).player).closeScreen();
+                return true;
+            }
+            if (keyCode == GLFW.GLFW_KEY_TAB) {
+                boolean searchNext = !hasShiftDown();
+                if (!manager.changeKeyboardListener(searchNext)) {
+                    return manager.changeKeyboardListener(searchNext);
+                }
+                return true;
+            }
+
+            if (this.func_195363_d(keyCode, scanCode))
+                return true;
+            if (this.hoveredSlot != null && this.hoveredSlot.getHasStack()) {
+                if (this.minecraft.gameSettings.keyBindPickBlock.isActiveAndMatches(mouseKey)) {
+                    this.handleMouseClick(this.hoveredSlot, this.hoveredSlot.slotNumber, 0, ClickType.CLONE);
+                    return true;
+                } else if (this.minecraft.gameSettings.keyBindDrop.isActiveAndMatches(mouseKey)) {
+                    this.handleMouseClick(this.hoveredSlot, this.hoveredSlot.slotNumber, hasControlDown() ? 1 : 0, ClickType.THROW);
+                    return true;
+                }
+            } else return this.minecraft.gameSettings.keyBindDrop.isActiveAndMatches(mouseKey);
+        }
+        return false;
     }
 
     @Override
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
+        if (super.keyReleased(keyCode, scanCode, modifiers)) {
+            return true;
+        }
         return manager.keyReleased(keyCode, scanCode, modifiers);
     }
 
     @Override
     public boolean charTyped(char codePoint, int modifiers) {
+        if (super.charTyped(codePoint, modifiers)) {
+            return true;
+        }
         return manager.charTyped(codePoint, modifiers);
     }
 }

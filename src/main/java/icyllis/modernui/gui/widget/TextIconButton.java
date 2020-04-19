@@ -46,6 +46,11 @@ public class TextIconButton extends IconButton {
         this.id = id;
     }
 
+    public void setDefaultOpen() {
+        setIconBrightness(1.0f);
+        iconAC.startOpenAnimation();
+    }
+
     @Override
     public void draw(@Nonnull Canvas canvas, float time) {
         super.draw(canvas, time);
@@ -91,9 +96,9 @@ public class TextIconButton extends IconButton {
     }
 
     public void onModuleChanged(int id) {
-        if (this.id == id && !iconAC.isAnimationOpen()) {
+        /*if (this.id == id && !iconAC.isAnimationOpen()) {
             iconAC.startOpenAnimation();
-        }
+        }*/
         iconAC.setLockState(this.id == id);
         if (iconAC.canChangeState()) {
             if (!mouseHovered) {

@@ -91,13 +91,13 @@ public class IconButton extends Widget {
         @Override
         protected void createOpenAnimations(@Nonnull List<Animation> list) {
             list.add(new Animation(4)
-                    .applyTo(new Applier(0.5f, 1.0f, instance::setIconBrightness)));
+                    .applyTo(new Applier(instance.brightness, 1.0f, instance::setIconBrightness)));
         }
 
         @Override
         protected void createCloseAnimations(@Nonnull List<Animation> list) {
             list.add(new Animation(4)
-                    .applyTo(new Applier(1.0f, 0.5f, instance::setIconBrightness)));
+                    .applyTo(new Applier(instance.brightness, 0.5f, instance::setIconBrightness)));
         }
     }
 }

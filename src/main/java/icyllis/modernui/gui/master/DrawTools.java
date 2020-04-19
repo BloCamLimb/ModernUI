@@ -28,9 +28,12 @@ import icyllis.modernui.gui.shader.CircleShader;
 import icyllis.modernui.gui.shader.RingShader;
 import icyllis.modernui.gui.shader.RoundedRectFrameShader;
 import icyllis.modernui.gui.shader.RoundedRectShader;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
+import net.minecraft.client.renderer.ItemRenderer;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.item.ItemStack;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
@@ -53,6 +56,8 @@ public class DrawTools {
     private final BufferBuilder bufferBuilder = tessellator.getBuffer();
 
     private final IFontRenderer fontRenderer = TrueTypeRenderer.INSTANCE;
+
+    private final ItemRenderer itemRenderer = Minecraft.getInstance().getItemRenderer();
 
 
     /**
@@ -393,6 +398,13 @@ public class DrawTools {
         bufferBuilder.pos(right, top, z).color(r, g, b, a).tex(icon.getRight(), icon.getTop()).endVertex();
         bufferBuilder.pos(left, top, z).color(r, g, b, a).tex(icon.getLeft(), icon.getTop()).endVertex();
         tessellator.draw();
+    }
+
+    public void drawItemStack(@Nonnull ItemStack stack, float x, float y) {
+        itemRenderer.renderItemAndEffectIntoGUI(stack, (int) x, (int) y);
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableDepthTest();
     }
 
 

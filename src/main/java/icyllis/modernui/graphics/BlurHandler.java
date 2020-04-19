@@ -40,11 +40,14 @@ public enum BlurHandler {
 
     private boolean blurring = false;
 
+    private float backAlpha = 0;
+
     BlurHandler() {
 
     }
 
     public void blur(boolean hasGui) {
+        backAlpha = 0;
         if (Minecraft.getInstance().world != null) {
             GameRenderer gr = Minecraft.getInstance().gameRenderer;
             if (hasGui && !blurring) {
@@ -75,10 +78,11 @@ public enum BlurHandler {
         }
     }
 
-    public void tick() {
+    public void renderTick() {
         if (changingProgress) {
             float p = Math.min(GlobalModuleManager.INSTANCE.getAnimationTime(), 4.0f);
             this.updateProgress(p);
+            backAlpha = p / 8f;
             if (p == 4.0f) {
                 changingProgress = false;
             }
@@ -94,6 +98,10 @@ public enum BlurHandler {
             ShaderDefault u = s.getShaderManager().getShaderUniform("Progress");
             u.set(value);
         }
+    }
+
+    public float getBackgroundAlpha() {
+        return backAlpha;
     }
 
 }

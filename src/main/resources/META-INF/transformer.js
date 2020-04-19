@@ -23,6 +23,7 @@ var InsnNode = Java.type('org.objectweb.asm.tree.InsnNode');
 var VarInsnNode = Java.type('org.objectweb.asm.tree.VarInsnNode');
 var TypeInsnNode = Java.type('org.objectweb.asm.tree.TypeInsnNode');
 var FieldInsnNode = Java.type('org.objectweb.asm.tree.FieldInsnNode');
+var LdcInsnNode = Java.type('org.objectweb.asm.tree.LdcInsnNode');
 var MethodInsnNode = Java.type('org.objectweb.asm.tree.MethodInsnNode');
 
 function initializeCoreMod() {
@@ -82,6 +83,28 @@ function initializeCoreMod() {
                         finish = true;
                     }
                 }
+                return methodNode;
+            }
+        },
+        'replaceRenderBackgroundAlpha': {
+            'target': {
+                'type': 'METHOD',
+                'class': 'net.minecraft.client.gui.screen.Screen',
+                'methodName': 'renderBackground',
+                'methodDesc': '(I)V'
+            },
+            'transformer': function (methodNode) {
+                var list = methodNode.instructions;
+                var invoke = ASMAPI.findFirstMethodCall(methodNode, ASMAPI.MethodType.VIRTUAL, "net/minecraft/client/gui/screen/Screen", "fillGradient", "(IIIIII)V")
+                var ldc1 = invoke.getPrevious();
+                var ldc2 = ldc1.getPrevious();
+                list.remove(ldc1);
+                list.remove(ldc2);
+                var cast = ASMAPI.listOf(
+                    new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/RewrittenMethods", "getScreenBackgroundColor", "()I", false),
+                    new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/RewrittenMethods", "getScreenBackgroundColor", "()I", false)
+                );
+                list.insertBefore(invoke, cast);
                 return methodNode;
             }
         }

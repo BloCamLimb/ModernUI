@@ -20,12 +20,10 @@ package icyllis.modernui.impl.stats;
 
 import icyllis.modernui.font.FontTools;
 import icyllis.modernui.font.TextAlign;
-import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.master.DrawTools;
+import icyllis.modernui.gui.math.Color3f;
 import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.gui.scroll.UniformScrollEntry;
-import icyllis.modernui.gui.math.Color3f;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ItemRenderer;
 import net.minecraft.item.BlockItem;
@@ -67,10 +65,10 @@ public class ItemStatsEntry extends UniformScrollEntry {
     @Override
     public void draw(Canvas canvas, float time) {
         itemRenderer.renderItemIntoGUI(item.getDefaultInstance(), (int) x1 + 2, (int) y1 + 2);
+        canvas.setColor(color, 1);
+        canvas.setTextAlign(TextAlign.RIGHT);
         int i = 0;
         for (String var : vars) {
-            canvas.setColor(color, 1);
-            canvas.setTextAlign(TextAlign.RIGHT);
             canvas.drawText(var, x1 + 80 + i * 50, y1 + 6);
             i++;
         }
