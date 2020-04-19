@@ -63,7 +63,7 @@ public class SettingControls extends Module {
     private List<KeyBindingEntry> searchResults = new ArrayList<>();
 
     private TextIconButton filterConflictButton;
-    private StaticFrameButton resetAllButton;
+    private TextIconButton resetAllButton;
 
     private DropDownWidget searchModeButton;
 
@@ -82,7 +82,8 @@ public class SettingControls extends Module {
                 new Icon(ConstantsLibrary.ICONS, 0.5f, 0.25f, 0.625f, 0.375f, true), this::filterConflicts, TextIconButton.Direction.UP);
         addWidget(filterConflictButton);
 
-        resetAllButton = new StaticFrameButton(this, 64, I18n.format("controls.resetAll"), this::resetAllKey, true);
+        resetAllButton = new TextIconButton(this, I18n.format("controls.resetAll"), 12, 12,
+                new Icon(ConstantsLibrary.ICONS, 0.625f, 0.25f, 0.75f, 0.375f, true), this::resetAllKey, TextIconButton.Direction.UP);
         addWidget(resetAllButton);
 
         searchBox = new SearchBox(this, 100);
@@ -116,10 +117,10 @@ public class SettingControls extends Module {
         previousButton.setPos(width / 2f - 16, height - 32);
         nextButton.setPos(width / 2f - 2, height - 32);
 
-        filterConflictButton.setPos(width / 2f + 20, height - 32);
-        resultCounter.setPos(width / 2f + 62, height - 30);
+        filterConflictButton.setPos(width / 2f + 112, height - 32);
+        resultCounter.setPos(width / 2f + 56, height - 30);
 
-        resetAllButton.setPos(width / 2f + 92, height - 32);
+        resetAllButton.setPos(width / 2f + 132, height - 32);
     }
 
     private void filterConflicts() {

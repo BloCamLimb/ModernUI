@@ -19,6 +19,7 @@
 package icyllis.modernui.system;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.impl.module.IngameMenuHome;
 import net.minecraft.client.MainWindow;
@@ -52,6 +53,11 @@ public class RewrittenMethods {
                 }
             }
         }
+    }
+
+    /** Screen **/
+    public static int getScreenBackgroundColor() {
+        return (int) (BlurHandler.INSTANCE.getBackgroundAlpha() * 255.0f) << 24;
     }
 
     public static int calcGuiScales() {

@@ -26,6 +26,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IHasContainer;
 import net.minecraft.client.gui.ScreenManager;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.renderer.RenderTypeBuffers;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.network.PacketBuffer;
@@ -205,31 +206,10 @@ public enum GlobalModuleManager {
 
     protected boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (popup != null) {
-            if (popup.keyPressed(keyCode, scanCode, modifiers)) {
-                return true;
-            } else if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
-                closePopup();
-                return true;
-            }
+            return popup.keyPressed(keyCode, scanCode, modifiers);
         } else {
-            if (root.keyPressed(keyCode, scanCode, modifiers)) {
-                return true;
-            } else if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
-                if (root.onBack()) {
-                    return true;
-                } else {
-                    closeGuiScreen();
-                }
-                return true;
-            } else if (keyCode == GLFW.GLFW_KEY_TAB) {
-                boolean searchNext = !Screen.hasShiftDown();
-                if (!this.changeFocus(searchNext)) {
-                    return this.changeFocus(searchNext);
-                }
-                return true;
-            }
+            return root.keyPressed(keyCode, scanCode, modifiers);
         }
-        return false;
     }
 
     protected boolean keyReleased(int keyCode, int scanCode, int modifiers) {
@@ -248,9 +228,17 @@ public enum GlobalModuleManager {
         }
     }
 
-    private boolean changeFocus(boolean searchNext) {
+    protected boolean changeKeyboardListener(boolean searchNext) {
         //TODO change focus
         return false;
+    }
+
+    protected boolean onBack() {
+        if (popup != null) {
+            closePopup();
+            return true;
+        }
+        return root.onBack();
     }
 
     /**
@@ -264,6 +252,7 @@ public enum GlobalModuleManager {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableAlphaTest();
+        RenderSystem.disableDepthTest();
         root.draw(animationTime);
         if (popup != null) {
             popup.draw(animationTime);

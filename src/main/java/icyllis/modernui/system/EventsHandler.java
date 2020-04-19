@@ -61,7 +61,7 @@ public class EventsHandler {
                 TrueTypeRenderer.INSTANCE.init();
                 GlobalModuleManager.INSTANCE.renderTick(event.renderTickTime);
             } else {
-                BlurHandler.INSTANCE.tick();
+                BlurHandler.INSTANCE.renderTick();
             }
         }
 
