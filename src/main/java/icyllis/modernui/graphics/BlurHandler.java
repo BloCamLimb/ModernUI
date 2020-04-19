@@ -47,7 +47,6 @@ public enum BlurHandler {
     }
 
     public void blur(boolean hasGui) {
-        backAlpha = 0;
         if (Minecraft.getInstance().world != null) {
             GameRenderer gr = Minecraft.getInstance().gameRenderer;
             if (hasGui && !blurring) {
@@ -60,6 +59,7 @@ public enum BlurHandler {
                 gr.stopUseShader();
                 changingProgress = false;
                 blurring = false;
+                backAlpha = 0;
             }
         }
     }
