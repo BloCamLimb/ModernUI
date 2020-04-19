@@ -49,7 +49,7 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
 
     private final GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
 
-    public ModernContainerScreen(G container, PlayerInventory inventory, ITextComponent title) {
+    public ModernContainerScreen(@Nonnull G container, PlayerInventory inventory, ITextComponent title) {
         super(container, inventory, title);
     }
 
@@ -90,33 +90,25 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        if (super.mouseClicked(mouseX, mouseY, mouseButton)) {
-            return true;
-        }
+        super.mouseClicked(mouseX, mouseY, mouseButton);
         return manager.mouseClicked(mouseX, mouseY, mouseButton);
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
-        if (super.mouseReleased(mouseX, mouseY, mouseButton)) {
-            return true;
-        }
+        super.mouseReleased(mouseX, mouseY, mouseButton);
         return manager.mouseReleased(mouseX, mouseY, mouseButton);
     }
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double deltaX, double deltaY) {
-        if (super.mouseDragged(mouseX, mouseY, mouseButton, deltaX, deltaY)) {
-            return true;
-        }
+        super.mouseDragged(mouseX, mouseY, mouseButton, deltaX, deltaY);
         return manager.mouseDragged(mouseX, mouseY, deltaX, deltaY);
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        if (super.mouseScrolled(mouseX, mouseY, delta)) {
-            return true;
-        }
+        super.mouseScrolled(mouseX, mouseY, delta);
         return manager.mouseScrolled(mouseX, mouseY, delta);
     }
 
@@ -158,17 +150,13 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
 
     @Override
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-        if (super.keyReleased(keyCode, scanCode, modifiers)) {
-            return true;
-        }
+        super.keyReleased(keyCode, scanCode, modifiers);
         return manager.keyReleased(keyCode, scanCode, modifiers);
     }
 
     @Override
     public boolean charTyped(char codePoint, int modifiers) {
-        if (super.charTyped(codePoint, modifiers)) {
-            return true;
-        }
+        super.charTyped(codePoint, modifiers);
         return manager.charTyped(codePoint, modifiers);
     }
 }
