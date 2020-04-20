@@ -49,9 +49,9 @@ public class EventsHandler {
 
     @SubscribeEvent
     public static void rightClickItem(@Nonnull PlayerInteractEvent.RightClickItem event) {
-        /*if (event.getSide().isServer() && event.getItemStack().getItem().equals(Items.DIAMOND)) {
+        if (event.getSide().isServer() && event.getItemStack().getItem().equals(Items.DIAMOND)) {
             NetworkHooks.openGui((ServerPlayerEntity) event.getPlayer(), new ContainerTest.Provider());
-        }*/
+        }
     }
 
     /*@SubscribeEvent
