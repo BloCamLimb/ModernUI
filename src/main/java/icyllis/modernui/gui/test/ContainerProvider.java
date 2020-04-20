@@ -41,6 +41,6 @@ public class ContainerProvider implements INamedContainerProvider {
     @Nullable
     @Override
     public Container createMenu(int windowId, @Nonnull PlayerInventory playerInventory, @Nonnull PlayerEntity playerEntity) {
-        return new ContainerTest(windowId, playerInventory, (TileEntity) null);
+        return new ContainerTest(windowId, playerInventory, playerEntity);
     }
 }

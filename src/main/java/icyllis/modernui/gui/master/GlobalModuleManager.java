@@ -26,22 +26,18 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IHasContainer;
 import net.minecraft.client.gui.ScreenManager;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.renderer.RenderTypeBuffers;
-import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.container.Container;
+import net.minecraft.inventory.container.ContainerType;
 import net.minecraft.network.PacketBuffer;
-import net.minecraft.network.play.client.CCloseWindowPacket;
 import net.minecraft.util.text.ITextComponent;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
-import org.lwjgl.glfw.GLFW;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL13;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -55,10 +51,17 @@ public enum GlobalModuleManager {
 
     private Minecraft minecraft = Minecraft.getInstance();
 
+    @Nullable
+    private Screen guiToOpen;
+
     /**
-     * For container gui, the last packet from server
+     * Current screen instance, must be ModernScreen or ModernContainerScreen
+     * This is not the same instance as Minecraft.currentScreen
      */
-    private PacketBuffer extraData;
+    private Screen rootScreen;
+
+
+    //private PacketBuffer extraData;
 
     /**
      * Cached for init
@@ -93,7 +96,7 @@ public enum GlobalModuleManager {
 
     @SuppressWarnings({"unchecked", "ConstantConditions"})
     @Nonnull
-    public <T extends Container, U extends Screen & IHasContainer<T>> ScreenManager.IScreenFactory<T, U> castModernScreen(@Nonnull Function<T, Supplier<IModule>> root) {
+    private <T extends Container, U extends Screen & IHasContainer<T>> ScreenManager.IScreenFactory<T, U> castModernScreen(@Nonnull Function<T, Supplier<IModule>> root) {
         return (c, p, t) -> {
             // The client container can be null sometimes, but a container screen doesn't allow the container to be null
             // so return null, there's no gui will be open, and the server container will be closed automatically
@@ -105,11 +108,16 @@ public enum GlobalModuleManager {
         };
     }
 
+    public <T extends Container> void registerContainerScreen(@Nonnull ContainerType<? extends T> type, @Nonnull Function<T, Supplier<IModule>> root) {
+        ScreenManager.registerFactory(type, castModernScreen(root));
+    }
+
     public void closeGuiScreen() {
         minecraft.displayGuiScreen(null);
     }
 
-    protected void init(int width, int height) {
+    protected void init(Screen master, int width, int height) {
+        this.rootScreen = master;
         this.width = width;
         this.height = height;
         if (supplier != null) {
@@ -121,6 +129,22 @@ public enum GlobalModuleManager {
             return;
         }
         resize(width, height);
+    }
+
+    public void onOpenGui(Screen gui, Consumer<Boolean> cancel) {
+        this.guiToOpen = gui;
+        if (gui == null) {
+            clear();
+            return;
+        }
+        if (root != null && rootScreen != gui && ((gui instanceof ModernScreen) || (gui instanceof ModernContainerScreen<?>))) {
+            cancel.accept(true);
+            ModernUI.LOGGER.fatal(MARKER, "ModernUI doesn't allow to keep other screens, use module group instead. RootScreen: {}, GuiToOpen: {}", rootScreen, gui);
+            return;
+        }
+        if (rootScreen != gui) {
+            resetTicks();
+        }
     }
 
     /**
@@ -152,6 +176,16 @@ public enum GlobalModuleManager {
             popup = null;
             this.refreshMouse();
         }
+    }
+
+    @Nullable
+    public Screen getModernScreen() {
+        return rootScreen;
+    }
+
+    @Nullable
+    public IModule getRootModule() {
+        return root;
     }
 
     protected void addAnimation(IAnimation animation) {
@@ -275,20 +309,20 @@ public enum GlobalModuleManager {
         refreshMouse();
     }
 
-    public void resizeForModule(@Nonnull IModule module) {
-        module.resize(width, height);
-    }
-
     protected void clear() {
-        animations.clear();
-        runnables.clear();
-        root = null;
-        popup = null;
-        extraData = null;
-        MouseTools.useDefaultCursor();
+        // Hotfix 1.4.7
+        if (guiToOpen == null) {
+            animations.clear();
+            runnables.clear();
+            root = null;
+            popup = null;
+            //extraData = null;
+            rootScreen = null;
+            MouseTools.useDefaultCursor();
+        }
     }
 
-    public void clientTick() {
+    public void onClientTick() {
         ticks++;
         if (root != null) {
             root.tick(ticks);
@@ -303,13 +337,13 @@ public enum GlobalModuleManager {
         runnables.removeIf(DelayedRunnable::shouldRemove);
     }
 
-    public void renderTick(float partialTick) {
+    public void onRenderTick(float partialTick) {
         animationTime = ticks + partialTick;
         animations.forEach(e -> e.update(animationTime));
         animations.removeIf(IAnimation::shouldRemove);
     }
 
-    public void resetTicks() {
+    private void resetTicks() {
         ticks = 0;
         animationTime = 0;
     }
@@ -338,16 +372,16 @@ public enum GlobalModuleManager {
         return mouseY;
     }
 
-    public void setExtraData(PacketBuffer extraData) {
+    /*public void setExtraData(PacketBuffer extraData) {
         this.extraData = extraData;
     }
 
-    /**
+    *//**
      * Get extra data from server side
      * @return packet buffer
-     */
+     *//*
     @Nullable
     public PacketBuffer getExtraData() {
         return extraData;
-    }
+    }*/
 }

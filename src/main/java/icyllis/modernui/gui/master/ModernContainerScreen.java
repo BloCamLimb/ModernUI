@@ -22,8 +22,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IHasContainer;
 import net.minecraft.client.gui.ScreenManager;
 import net.minecraft.client.gui.screen.inventory.ContainerScreen;
-import net.minecraft.client.renderer.GlDebugTextUtils;
-import net.minecraft.client.renderer.RenderTypeBuffers;
 import net.minecraft.client.util.InputMappings;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.container.ClickType;
@@ -56,7 +54,7 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
     @Override
     public void init(Minecraft minecraft, int width, int height) {
         super.init(minecraft, width, height);
-        manager.init(width, height);
+        manager.init(this, width, height);
     }
 
     @Override
@@ -158,5 +156,14 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
     public boolean charTyped(char codePoint, int modifiers) {
         super.charTyped(codePoint, modifiers);
         return manager.charTyped(codePoint, modifiers);
+    }
+
+    @Nonnull
+    @Override
+    public String toString() {
+        if (manager.getRootModule() != null) {
+            return getClass().getSimpleName() + " - " + manager.getRootModule().getClass().getSimpleName() + " (" + hashCode() + ")";
+        }
+        return getClass().getSimpleName() + " (" + hashCode() + ")";
     }
 }

@@ -32,7 +32,7 @@ import java.util.function.Supplier;
  * It must exist self module and can exist at most one of child modules at the same time
  * The other modules stored in supplier
  */
-public class ModuleGroup extends Module {
+public abstract class ModuleGroup extends Module {
 
     private Map<Integer, Supplier<Module>> childModules = new HashMap<>();
 
@@ -98,7 +98,7 @@ public class ModuleGroup extends Module {
         }
         child = childModules.getOrDefault(tid, () -> null).get();
         if (child != null) {
-            GlobalModuleManager.INSTANCE.resizeForModule(child);
+            child.resize(getWindowWidth(), getWindowHeight());
         }
         cid = tid;
         moduleChanged(cid);

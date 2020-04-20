@@ -64,8 +64,8 @@ public class IngameMenuHome extends ModuleGroup {
                 () -> minecraft.displayGuiScreen(new AdvancementsScreen(minecraft.player.connection.getAdvancementManager())), 1));
         consumer.accept(new MenuButton(this, I18n.format("gui.stats"), 2,
                 () -> switchChildModule(2), 2));
-        consumer.accept(new MenuButton(this, I18n.format("gui.modernui.menu.mods") + " (WIP)", 6,
-                () -> minecraft.displayGuiScreen(new ModListScreen(null)), 3));
+        consumer.accept(new MenuButton(this, I18n.format("gui.modernui.menu.mods"), 6,
+                () -> minecraft.displayGuiScreen(new ModListScreen(null)), 3)); // Forge's GUI is buggy, so null
         consumer.accept(new MenuButton(this, I18n.format("gui.modernui.menu.settings"), 0,
                 () -> switchChildModule(4), 4));
         consumer.accept(new MenuButton(this, I18n.format("gui.modernui.menu.exit"), 5,

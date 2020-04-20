@@ -18,15 +18,19 @@
 
 package icyllis.modernui.gui.test;
 
+import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.util.ResourceLocation;
 
-@Deprecated
-public class ModuleTest {
+public class ModuleTest extends Module {
 
     public static final ResourceLocation BACKGROUND = new ResourceLocation(ModernUI.MODID, "textures/gui/gui_default_background.png");
     public static final ResourceLocation FRAME = new ResourceLocation(ModernUI.MODID, "textures/gui/gui_default_frame.png");
     public static final ResourceLocation BUTTON = new ResourceLocation(ModernUI.MODID, "textures/gui/gui_button.png");
+
+    public ModuleTest() {
+
+    }
 
     public void create() {
 
