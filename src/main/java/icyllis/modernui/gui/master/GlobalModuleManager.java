@@ -137,12 +137,12 @@ public enum GlobalModuleManager {
             clear();
             return;
         }
-        if (root != null && rootScreen != gui && ((gui instanceof ModernScreen) || (gui instanceof ModernContainerScreen<?>))) {
-            cancel.accept(true);
-            ModernUI.LOGGER.fatal(MARKER, "ModernUI doesn't allow to keep other screens, use module group instead. RootScreen: {}, GuiToOpen: {}", rootScreen, gui);
-            return;
-        }
-        if (rootScreen != gui) {
+        if (rootScreen != gui && ((gui instanceof ModernScreen) || (gui instanceof ModernContainerScreen<?>))) {
+            if (root != null) {
+                cancel.accept(true);
+                ModernUI.LOGGER.fatal(MARKER, "ModernUI doesn't allow to keep other screens, use module group instead. RootScreen: {}, GuiToOpen: {}", rootScreen, gui);
+                return;
+            }
             resetTicks();
         }
     }
