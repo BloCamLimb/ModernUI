@@ -25,7 +25,7 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Module implements IModule, IFocuser {
+public abstract class Module implements IModule, IFocuser {
 
     private final GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
 

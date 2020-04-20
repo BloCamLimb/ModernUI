@@ -21,17 +21,23 @@ package icyllis.modernui.system;
 import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.gui.master.GlobalModuleManager;
-import net.minecraft.client.gui.screen.ChatScreen;
+import icyllis.modernui.gui.test.ContainerTest;
+import icyllis.modernui.gui.test.ModuleTest;
+import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.inventory.container.ContainerType;
+import net.minecraft.item.Items;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.GuiOpenEvent;
-import net.minecraftforge.client.event.GuiScreenEvent;
+import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.network.NetworkHooks;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
@@ -41,12 +47,14 @@ import javax.annotation.Nonnull;
 @Mod.EventBusSubscriber
 public class EventsHandler {
 
-    /*@SubscribeEvent
-    public static void rightClickItem(PlayerInteractEvent.RightClickItem event) {
-
+    @SubscribeEvent
+    public static void rightClickItem(@Nonnull PlayerInteractEvent.RightClickItem event) {
+        /*if (event.getSide().isServer() && event.getItemStack().getItem().equals(Items.DIAMOND)) {
+            NetworkHooks.openGui((ServerPlayerEntity) event.getPlayer(), new ContainerTest.Provider());
+        }*/
     }
 
-    @SubscribeEvent
+    /*@SubscribeEvent
     public static void onContainerClosed(PlayerContainerEvent.Close event) {
 
     }*/
@@ -59,7 +67,7 @@ public class EventsHandler {
         public static void onRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
             if (event.phase == TickEvent.Phase.START) {
                 TrueTypeRenderer.INSTANCE.init();
-                GlobalModuleManager.INSTANCE.renderTick(event.renderTickTime);
+                GlobalModuleManager.INSTANCE.onRenderTick(event.renderTickTime);
             } else {
                 BlurHandler.INSTANCE.renderTick();
             }
@@ -68,21 +76,20 @@ public class EventsHandler {
         @SubscribeEvent
         public static void onClientTick(@Nonnull TickEvent.ClientTickEvent event) {
             if (event.phase == TickEvent.Phase.START) {
-                GlobalModuleManager.INSTANCE.clientTick();
+                GlobalModuleManager.INSTANCE.onClientTick();
             }
         }
 
         @SubscribeEvent
         public static void onGuiOpen(@Nonnull GuiOpenEvent event) {
-            GlobalModuleManager.INSTANCE.resetTicks();
-            boolean hasGui = event.getGui() != null && !(event.getGui() instanceof ChatScreen);
-            BlurHandler.INSTANCE.blur(hasGui);
+            GlobalModuleManager.INSTANCE.onOpenGui(event.getGui(), event::setCanceled);
+            BlurHandler.INSTANCE.blur(event.getGui());
         }
 
-        @SubscribeEvent
+        /*@SubscribeEvent
         public static void onGuiInit(GuiScreenEvent.InitGuiEvent event) {
 
-        }
+        }*/
     }
 
     @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
@@ -99,6 +106,12 @@ public class EventsHandler {
         @SubscribeEvent
         public static void setupClient(FMLClientSetupEvent event) {
             SettingsManager.INSTANCE.buildAllSettings();
+            GlobalModuleManager.INSTANCE.registerContainerScreen(ContainerTest.CONTAINER, c -> ModuleTest::new);
+        }
+
+        @SubscribeEvent
+        public static void registerContainers(@Nonnull RegistryEvent.Register<ContainerType<?>> event) {
+            event.getRegistry().register(ContainerTest.CONTAINER);
         }
 
         @SubscribeEvent

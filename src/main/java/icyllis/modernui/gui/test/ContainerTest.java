@@ -18,27 +18,65 @@
 
 package icyllis.modernui.gui.test;
 
+import icyllis.modernui.system.ModernUI;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.container.Container;
+import net.minecraft.inventory.container.ContainerType;
+import net.minecraft.inventory.container.INamedContainerProvider;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.StringTextComponent;
+import net.minecraftforge.common.extensions.IForgeContainerType;
+import net.minecraftforge.fml.LogicalSide;
+import net.minecraftforge.fml.common.thread.EffectiveSide;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
-@Deprecated
 public class ContainerTest extends Container {
 
-    public ContainerTest(int windowId, PlayerInventory inv, PacketBuffer buf) {
-        super(null, windowId);
+    public static ContainerType<ContainerTest> CONTAINER = IForgeContainerType.create(ContainerTest::new);
+
+    static {
+        CONTAINER.setRegistryName("test");
     }
 
-    public ContainerTest(int windowId, PlayerInventory inv, TileEntity tile) {
-        super(null, windowId);
+    // client
+    public ContainerTest(int windowId, PlayerInventory inv, PacketBuffer buf) {
+        super(CONTAINER, windowId);
+    }
+
+    // server
+    public ContainerTest(int windowId, PlayerInventory inv, PlayerEntity player) {
+        super(CONTAINER, windowId);
+    }
+
+    @Override
+    public void onContainerClosed(PlayerEntity playerIn) {
+        super.onContainerClosed(playerIn);
+        //ModernUI.LOGGER.debug("Test Container - Closed on {}", EffectiveSide.get());
     }
 
     @Override
     public boolean canInteractWith(@Nonnull PlayerEntity playerIn) {
         return true;
+    }
+
+    public static class Provider implements INamedContainerProvider {
+
+        @Nonnull
+        @Override
+        public ITextComponent getDisplayName() {
+            return new StringTextComponent("test");
+        }
+
+        @Nullable
+        @Override
+        public Container createMenu(int windowId, @Nonnull PlayerInventory playerInventory, @Nonnull PlayerEntity playerEntity) {
+            return new ContainerTest(windowId, playerInventory, playerEntity);
+        }
     }
 }

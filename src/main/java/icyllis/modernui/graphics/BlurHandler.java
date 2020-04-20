@@ -20,6 +20,9 @@ package icyllis.modernui.graphics;
 
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screen.ChatScreen;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screen.SleepInMultiplayerScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.shader.Shader;
 import net.minecraft.client.shader.ShaderDefault;
@@ -46,7 +49,8 @@ public enum BlurHandler {
 
     }
 
-    public void blur(boolean hasGui) {
+    public void blur(Screen gui) {
+        boolean hasGui = gui != null && !(gui instanceof ChatScreen);
         if (Minecraft.getInstance().world != null) {
             GameRenderer gr = Minecraft.getInstance().gameRenderer;
             if (hasGui && !blurring) {

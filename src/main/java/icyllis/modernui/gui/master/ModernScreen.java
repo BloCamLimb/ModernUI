@@ -44,7 +44,7 @@ public final class ModernScreen extends Screen {
     @Override
     public void init(Minecraft minecraft, int width, int height) {
         super.init(minecraft, width, height);
-        manager.init(width, height);
+        manager.init(this, width, height);
         BlurHandler.INSTANCE.forceBlur(); // hotfix
     }
 
@@ -144,4 +144,12 @@ public final class ModernScreen extends Screen {
         return manager.charTyped(codePoint, modifiers);
     }
 
+    @Nonnull
+    @Override
+    public String toString() {
+        if (manager.getRootModule() != null) {
+            return getClass().getSimpleName() + " - " + manager.getRootModule().getClass().getSimpleName() + " (" + hashCode() + ")";
+        }
+        return getClass().getSimpleName() + " (" + hashCode() + ")";
+    }
 }
