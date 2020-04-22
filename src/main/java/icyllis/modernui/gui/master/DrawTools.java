@@ -33,6 +33,7 @@ import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.ItemRenderer;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import org.lwjgl.opengl.GL11;
 
@@ -159,6 +160,10 @@ public class DrawTools {
         setLineAA(aa);
     }
 
+    public void setLineWidth(float width) {
+        RenderSystem.lineWidth(width);
+    }
+
     protected static void setLineAA(boolean aa) {
         if (aa && !lineAA) {
             GL11.glEnable(GL11.GL_LINE_SMOOTH);
@@ -226,28 +231,28 @@ public class DrawTools {
     public void drawRectOutline(float left, float top, float right, float bottom, float thickness) {
         RenderSystem.disableTexture();
 
-        bufferBuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
+        bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
         bufferBuilder.pos(left - thickness, top, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(right, top, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(right, top - thickness, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(left - thickness, top - thickness, z).color(r, g, b, a).endVertex();
         tessellator.draw();
 
-        bufferBuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
+        bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
         bufferBuilder.pos(right, bottom, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(right + thickness, bottom, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(right + thickness, top - thickness, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(right, top - thickness, z).color(r, g, b, a).endVertex();
         tessellator.draw();
 
-        bufferBuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
+        bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
         bufferBuilder.pos(left, bottom + thickness, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(right + thickness, bottom + thickness, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(right + thickness, bottom, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(left, bottom, z).color(r, g, b, a).endVertex();
         tessellator.draw();
 
-        bufferBuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
+        bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
         bufferBuilder.pos(left - thickness, bottom + thickness, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(left, bottom + thickness, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(left, top, z).color(r, g, b, a).endVertex();
@@ -275,6 +280,20 @@ public class DrawTools {
         bufferBuilder.pos(left, top, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(left, top, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(left, bottom, z).color(r, g, b, a).endVertex();
+        tessellator.draw();
+    }
+
+    public void drawOctagonRectFrame(float left, float top, float right, float bottom, float offset) {
+        RenderSystem.disableTexture();
+        bufferBuilder.begin(GL11.GL_LINE_LOOP, DefaultVertexFormats.POSITION_COLOR);
+        bufferBuilder.pos(left, bottom - offset, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(left + offset, bottom, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(right - offset, bottom, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(right, bottom - offset, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(right, top + offset, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(right - offset, top, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(left + offset, top, z).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(left, top + offset, z).color(r, g, b, a).endVertex();
         tessellator.draw();
     }
 
@@ -364,7 +383,7 @@ public class DrawTools {
      * with given rect area and rounded radius
      *
      * Default feather radius: 1 px
-     * Default frame thickness: 1 px
+     * Default frame thickness: 1.5 px
      *
      * @param left rect left
      * @param top rect top
@@ -391,7 +410,7 @@ public class DrawTools {
      */
     public void drawIcon(@Nonnull Icon icon, float left, float top, float right, float bottom) {
         RenderSystem.enableTexture();
-        icon.loadTexture();
+        icon.bindTexture();
         bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR_TEX);
         bufferBuilder.pos(left, bottom, z).color(r, g, b, a).tex(icon.getLeft(), icon.getBottom()).endVertex();
         bufferBuilder.pos(right, bottom, z).color(r, g, b, a).tex(icon.getRight(), icon.getBottom()).endVertex();
@@ -400,8 +419,24 @@ public class DrawTools {
         tessellator.draw();
     }
 
+    public void drawItem(@Nonnull Item item, float x, float y) {
+        itemRenderer.renderItemIntoGUI(item.getDefaultInstance(), (int) x, (int) y);
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableDepthTest();
+    }
+
     public void drawItemStack(@Nonnull ItemStack stack, float x, float y) {
         itemRenderer.renderItemAndEffectIntoGUI(stack, (int) x, (int) y);
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableDepthTest();
+    }
+
+    @Deprecated
+    public void drawItemStackWithOverlays(@Nonnull ItemStack stack, float x, float y) {
+        itemRenderer.renderItemAndEffectIntoGUI(stack, (int) x, (int) y);
+        itemRenderer.renderItemOverlays(Minecraft.getInstance().fontRenderer, stack, (int) x, (int) y);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableDepthTest();

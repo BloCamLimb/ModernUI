@@ -77,11 +77,6 @@ public class DynamicFrameButton extends Widget {
     }*/
 
     @Override
-    public void resize(int width, int height) {
-        super.resize(width, height);
-    }
-
-    @Override
     protected void onMouseHoverEnter() {
         super.onMouseHoverEnter();
         ac.startOpenAnimation();

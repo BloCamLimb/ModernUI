@@ -29,6 +29,7 @@ import net.minecraft.item.Items;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.GuiOpenEvent;
+import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -86,6 +87,13 @@ public class EventsHandler {
             BlurHandler.INSTANCE.blur(event.getGui());
         }
 
+        @SubscribeEvent
+        public static void onRenderAttackIndicator(@Nonnull RenderGameOverlayEvent.Pre event) {
+            if (event.getType() == RenderGameOverlayEvent.ElementType.CROSSHAIRS && GlobalModuleManager.INSTANCE.getModernScreen() != null) {
+                event.setCanceled(true);
+            }
+        }
+
         /*@SubscribeEvent
         public static void onGuiInit(GuiScreenEvent.InitGuiEvent event) {
 
@@ -116,7 +124,7 @@ public class EventsHandler {
 
         @SubscribeEvent
         public static void onConfigChange(@Nonnull ModConfig.ModConfigEvent event) {
-            ConfigManager.loadConfig(event.getConfig().getSpec());
+            ConfigManager.load(event.getConfig().getSpec());
         }
 
     }

@@ -19,7 +19,9 @@
 package icyllis.modernui.gui.test;
 
 import icyllis.modernui.gui.master.Module;
+import icyllis.modernui.gui.widget.NumberInputField;
 import icyllis.modernui.gui.widget.SlidingToggleButton;
+import icyllis.modernui.gui.widget.TextField;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.util.ResourceLocation;
 
@@ -30,16 +32,21 @@ public class ModuleTest extends Module {
     public static final ResourceLocation BUTTON = new ResourceLocation(ModernUI.MODID, "textures/gui/gui_button.png");
 
     private final SlidingToggleButton b;
+    private final NumberInputField h;
 
     public ModuleTest() {
-        b = new SlidingToggleButton(this, 4, b -> {}, 0x8020a0e0, 0x40808080, false);
-        addWidget(b);
+        addWidget(b = new SlidingToggleButton(this, 4, b -> {}, 0x8020a0e0, 0x40808080, false));
+        addWidget(h = new NumberInputField(this, 90, 12));
+        h.setLimit(-997, 600);
+        h.setDecoration(f -> new TextField.Frame(f, "Limit", -1));
+        addDrawable(new TestDraw());
     }
 
     @Override
     public void resize(int width, int height) {
         super.resize(width, height);
         b.setPos(width / 2f - 10, height / 2f - 60);
+        h.setPos(width / 2f - 10, height / 2f - 44);
     }
 
     public void create() {

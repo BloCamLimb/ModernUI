@@ -63,9 +63,13 @@ public class SearchBox extends TextField {
         this.enterOperation = enterOperation;
     }
 
-    @Override
     public void onTextChanged() {
-        if (listener != null) {
+        onTextChanged(false);
+    }
+
+    @Override
+    protected void onTextChanged(boolean force) {
+        if (listener != null && !force) {
             if (listener.apply(getText())) {
                 ((TextField.Frame) Objects.requireNonNull(getDecoration())).setColor(0xffc0c0c0);
             } else {

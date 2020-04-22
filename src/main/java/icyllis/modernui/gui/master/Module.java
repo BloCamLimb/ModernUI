@@ -19,11 +19,16 @@
 package icyllis.modernui.gui.master;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.editor.WidgetParser;
+import icyllis.modernui.editor.WidgetContainer;
 import icyllis.modernui.gui.animation.IAnimation;
+import icyllis.modernui.system.ConstantsLibrary;
+import net.minecraft.util.ResourceLocation;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
+import java.lang.reflect.Field;
+import java.util.*;
+import java.util.function.Consumer;
 
 public abstract class Module implements IModule, IFocuser {
 
@@ -31,15 +36,18 @@ public abstract class Module implements IModule, IFocuser {
 
     private final Canvas canvas = new Canvas();
 
-    private List<IDrawable> drawables = new ArrayList<>();
+    private final List<IDrawable> drawables = new ArrayList<>();
 
-    private List<IMouseListener> mouseListeners = new ArrayList<>();
+    private final List<IMouseListener> mouseListeners = new ArrayList<>();
 
     @Nullable
     private IDraggable draggable;
 
     @Nullable
     private IKeyboardListener keyboardListener;
+
+    @Nullable
+    private ResourceLocation widgetLocation;
 
     /**
      * If true, this module will draw over child module
@@ -78,6 +86,64 @@ public abstract class Module implements IModule, IFocuser {
         overDraw = true;
     }
 
+    protected void parseWidgets(String modid, Consumer<WidgetContainer> containerConsumer) {
+        String[] names = ConstantsLibrary.SPLIT_BY_CAPS.apply(getClass().getSimpleName());
+
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < names.length; i++) {
+            builder.append(names[i].toLowerCase(Locale.ROOT));
+            if (i != names.length - 1)
+                builder.append('_');
+        }
+        builder.append(".json");
+
+        ResourceLocation location = new ResourceLocation(modid, "gui/" + builder.toString());
+        if (widgetLocation != null) {
+            return;
+        }
+        widgetLocation = location;
+        List<WidgetContainer> list = WidgetParser.INSTANCE.parseWidgets(location);
+        list.forEach(e -> {
+            try {
+                Field field = getClass().getDeclaredField(e.name);
+                field.setAccessible(true);
+                field.set(this, e.widget);
+            } catch (NoSuchFieldException | IllegalAccessException ignored) {
+
+            }
+            addWidget(e.widget);
+            containerConsumer.accept(e);
+        });
+    }
+
+    /*private void parseWidgets(ResourceLocation location, BiConsumer<String, Widget> callback) {
+        if (widgetLocation != null) {
+            return;
+        }
+        widgetLocation = location;
+        Map<String, Widget> map = new HashMap<>();
+        Type type = new TypeToken<Map<String, Widget>>(){}.getType();
+
+        try (BufferedReader br =
+                new BufferedReader(
+                        new InputStreamReader(
+                                Minecraft.getInstance().getResourceManager().getResource(location).getInputStream()
+                        )
+                )
+        ) {
+            map = gson.fromJson(br, type);
+        } catch (IOException e) {
+            ModernUI.LOGGER.debug(GlobalModuleManager.MARKER, "Failed to load gui widgets, {}", location);
+            e.printStackTrace();
+        }
+        map.forEach(callback);
+    }
+
+    @Nullable
+    public ResourceLocation getWidgetLocation() {
+        return widgetLocation;
+    }*/
+
     @Override
     public void resize(int width, int height) {
         for (IDrawable drawable : drawables) {
@@ -96,7 +162,7 @@ public abstract class Module implements IModule, IFocuser {
         drawables.add(drawable);
     }
 
-    protected void addWidget(IWidget widget) {
+    public void addWidget(IWidget widget) {
         drawables.add(widget);
         mouseListeners.add(widget);
     }

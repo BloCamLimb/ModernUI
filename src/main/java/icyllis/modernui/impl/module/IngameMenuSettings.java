@@ -19,7 +19,6 @@
 package icyllis.modernui.impl.module;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.impl.background.MenuSettingsBG;
@@ -134,8 +133,8 @@ public class IngameMenuSettings extends ModuleGroup {
     }
 
     @Override
-    public void moduleChanged(int id) {
-        super.moduleChanged(id);
+    public void onChildModuleChanged(int id) {
+        super.onChildModuleChanged(id);
         buttons.forEach(e -> e.onModuleChanged(id));
     }
 

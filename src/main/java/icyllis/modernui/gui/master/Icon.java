@@ -18,6 +18,7 @@
 
 package icyllis.modernui.gui.master;
 
+import com.google.gson.annotations.Expose;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.SimpleTexture;
 import net.minecraft.client.renderer.texture.Texture;
@@ -29,16 +30,24 @@ import net.minecraft.util.ResourceLocation;
  */
 public class Icon {
 
-    private final Texture texture;
+    @Expose
+    private final ResourceLocation resource;
 
+    private Texture texture;
+
+    @Expose
     private final float p;
 
+    @Expose
     private final float q;
 
+    @Expose
     private final float s;
 
+    @Expose
     private final float t;
 
+    @Expose
     private final boolean aa;
 
     /**
@@ -52,6 +61,17 @@ public class Icon {
      * @param aa enable anti-aliasing for HD textures
      */
     public Icon(ResourceLocation resource, float p, float q, float s, float t, boolean aa) {
+        this.resource = resource;
+        this.p = p;
+        this.q = q;
+        this.s = s;
+        this.t = t;
+        this.aa = aa;
+        onCreate();
+        //TODO on create
+    }
+
+    public void onCreate() {
         TextureManager textureManager = Minecraft.getInstance().getTextureManager();
         Texture texture = textureManager.getTexture(resource);
         if (texture == null) {
@@ -59,14 +79,9 @@ public class Icon {
             textureManager.loadTexture(resource, texture);
         }
         this.texture = texture;
-        this.p = p;
-        this.q = q;
-        this.s = s;
-        this.t = t;
-        this.aa = aa;
     }
 
-    public void loadTexture() {
+    public void bindTexture() {
         texture.bindTexture();
         if (aa) {
             texture.setBlurMipmapDirect(true, true);
