@@ -18,9 +18,6 @@
 
 package icyllis.modernui.impl.module;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.gui.animation.Animation;
-import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.impl.background.MenuHomeBG;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.IModule;
@@ -149,8 +146,8 @@ public class IngameMenuHome extends ModuleGroup {
     }
 
     @Override
-    public void moduleChanged(int id) {
-        super.moduleChanged(id);
+    public void onChildModuleChanged(int id) {
+        super.onChildModuleChanged(id);
         buttons.forEach(e -> e.onModuleChanged(id));
     }
 }

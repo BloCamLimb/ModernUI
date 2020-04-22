@@ -32,6 +32,7 @@ import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.text.ITextComponent;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -143,6 +144,10 @@ public enum GlobalModuleManager {
                 ModernUI.LOGGER.fatal(MARKER, "ModernUI doesn't allow to keep other screens, use module group instead. RootScreen: {}, GuiToOpen: {}", rootScreen, gui);
                 return;
             }
+            resetTicks();
+        }
+        // for non-modernui screens
+        if (rootScreen == null) {
             resetTicks();
         }
     }
@@ -292,6 +297,7 @@ public enum GlobalModuleManager {
             popup.draw(animationTime);
         }
         DrawTools.setLineAA(false);
+        RenderSystem.lineWidth(1.0f);
         RenderSystem.enableTexture();
         RenderSystem.disableBlend();
     }

@@ -131,6 +131,7 @@ public class ScrollWindow<T extends ScrollGroup> extends Widget {
 
     @Override
     public void resize(int width, int height) {
+        super.resize(width, height);
         this.gameWindowWidth = width;
         this.x1 = xResizer.apply(width);
         this.y1 = yResizer.apply(height);

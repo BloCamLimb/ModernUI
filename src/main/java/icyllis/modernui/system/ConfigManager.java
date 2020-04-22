@@ -23,6 +23,8 @@ import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.loading.FMLPaths;
 
+import javax.annotation.Nonnull;
+
 public class ConfigManager {
 
     public static final Client CLIENT;
@@ -39,7 +41,7 @@ public class ConfigManager {
         ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ConfigManager.CLIENT_SPEC, "ModernUI/client.toml");
     }
 
-    public static void loadConfig(ForgeConfigSpec spec) {
+    public static void load(ForgeConfigSpec spec) {
         if (spec == CLIENT_SPEC) {
             CLIENT.load();
         }
@@ -51,7 +53,7 @@ public class ConfigManager {
 
         private final ForgeConfigSpec.ConfigValue<String> preferredFontNameV;
 
-        private Client(ForgeConfigSpec.Builder builder) {
+        private Client(@Nonnull ForgeConfigSpec.Builder builder) {
             builder.comment("Fonts Config")
                     .push("fonts");
 

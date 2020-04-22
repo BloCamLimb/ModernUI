@@ -20,10 +20,17 @@ package icyllis.modernui.gui.master;
 
 import icyllis.modernui.gui.master.IWidget;
 import icyllis.modernui.gui.master.Module;
+import icyllis.modernui.gui.math.Locator;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public abstract class Widget implements IWidget {
 
     protected final Module module;
+
+    @Nullable
+    private Locator locator;
 
     protected float x1, y1;
 
@@ -51,6 +58,10 @@ public abstract class Widget implements IWidget {
         this.x2 = x + width;
         this.y1 = y;
         this.y2 = y + height;
+    }
+
+    public void setLocator(@Nonnull Locator locator) {
+        this.locator = locator;
     }
 
     @Override
@@ -81,6 +92,13 @@ public abstract class Widget implements IWidget {
     @Override
     public final float getBottom() {
         return y2;
+    }
+
+    @Override
+    public void resize(int width, int height) {
+        if (locator != null) {
+            locator.locate(this, width, height);
+        }
     }
 
     @Override

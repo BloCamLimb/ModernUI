@@ -37,5 +37,8 @@ public class ConstantsLibrary {
     public static final String BLACK_CIRCLE_STRING = String.valueOf(BLACK_CIRCLE);
 
     public static final Predicate<String> DIGIT_FILTER = s -> s.matches("[0-9]+");
+    public static final Predicate<String> INTEGER_FILTER = s -> s.matches("^-?[1-9]\\d*$");
     public static final Predicate<String> HEX_FILTER = s -> s.matches("(?i)[0-9a-f]+");
+
+    public static final Function<String, String[]> SPLIT_BY_CAPS = s -> s.split("(?<!^)(?=[A-Z])");
 }

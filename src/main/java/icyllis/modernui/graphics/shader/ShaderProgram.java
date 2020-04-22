@@ -56,8 +56,8 @@ public class ShaderProgram implements IShaderManager {
             ShaderLinkHelper.deleteShader(this);
         }
         try {
-            this.vertex = createShader(manager, new ResourceLocation(ModernUI.MODID, String.format("shader/%s.%s", vert, "vert")), ShaderLoader.ShaderType.VERTEX);
-            this.fragment = createShader(manager, new ResourceLocation(ModernUI.MODID, String.format("shader/%s.%s", frag, "frag")), ShaderLoader.ShaderType.FRAGMENT);
+            this.vertex = createShader(manager, new ResourceLocation(ModernUI.MODID, String.format("shaders/%s.%s", vert, "vert")), ShaderLoader.ShaderType.VERTEX);
+            this.fragment = createShader(manager, new ResourceLocation(ModernUI.MODID, String.format("shaders/%s.%s", frag, "frag")), ShaderLoader.ShaderType.FRAGMENT);
             this.program = ShaderLinkHelper.createProgram();
             ShaderLinkHelper.linkProgram(this);
         } catch (IOException e) {

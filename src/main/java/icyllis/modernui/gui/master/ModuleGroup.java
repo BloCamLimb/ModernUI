@@ -57,7 +57,7 @@ public abstract class ModuleGroup extends Module {
      * @param id must >= 1, the parent is 0, and -1 for invalid
      * @param module module supplier
      */
-    protected void addChildModule(int id, Supplier<Module> module) {
+    public void addChildModule(int id, Supplier<Module> module) {
         if (id < 1) {
             ModernUI.LOGGER.warn(GlobalModuleManager.MARKER, "Child module id must be greater than 1");
             return;
@@ -101,7 +101,7 @@ public abstract class ModuleGroup extends Module {
             child.resize(getWindowWidth(), getWindowHeight());
         }
         cid = tid;
-        moduleChanged(cid);
+        onChildModuleChanged(cid);
         refocusCursor();
         MouseTools.useDefaultCursor();
     }
@@ -171,10 +171,10 @@ public abstract class ModuleGroup extends Module {
     }
 
     /**
-     * Called when module group changed a module successfully
+     * Called when module group changed a child module successfully
      * @param id new module id
      */
-    protected void moduleChanged(int id) {
+    protected void onChildModuleChanged(int id) {
 
     }
 

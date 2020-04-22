@@ -64,7 +64,7 @@ public class TextField extends Widget implements IKeyboardListener {
     @Nullable
     private Consumer<TextField> listener;
 
-    private boolean runtimeUpdate;
+    protected boolean runtimeUpdate;
 
     public TextField(Module module, float width, float height) {
         super(module, width, height);
@@ -174,8 +174,12 @@ public class TextField extends Widget implements IKeyboardListener {
         }
     }
 
-    protected void onTextChanged() {
-        if (listener != null && runtimeUpdate) {
+    private void onTextChanged() {
+        onTextChanged(false);
+    }
+
+    protected void onTextChanged(boolean force) {
+        if (listener != null && (runtimeUpdate || force)) {
             listener.accept(this);
         }
     }
@@ -320,9 +324,7 @@ public class TextField extends Widget implements IKeyboardListener {
     public void stopKeyboardListening() {
         editing = false;
         timer = 0;
-        if (listener != null) {
-            listener.accept(this);
-        }
+        onTextChanged(true);
     }
 
     @Override
