@@ -19,7 +19,7 @@
 package icyllis.modernui.gui.master;
 
 import icyllis.modernui.gui.animation.Animation;
-import icyllis.modernui.gui.math.DelayedRunnable;
+import icyllis.modernui.gui.math.DelayedTask;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +52,7 @@ public abstract class AnimationControl {
             }
             if (d > 0) {
                 list.forEach(manager::addAnimation);
-                manager.scheduleRunnable(new DelayedRunnable(() -> setOpenState(true), (int) d));
+                manager.scheduleTask(new DelayedTask(() -> setOpenState(true), (int) d));
             } else {
                 setOpenState(true);
             }
@@ -67,7 +67,7 @@ public abstract class AnimationControl {
             }
             if (d > 0) {
                 list.forEach(manager::addAnimation);
-                manager.scheduleRunnable(new DelayedRunnable(() -> setOpenState(false), (int) d));
+                manager.scheduleTask(new DelayedTask(() -> setOpenState(false), (int) d));
             } else {
                 setOpenState(false);
             }

@@ -59,12 +59,6 @@ public class ScrollList<T extends ScrollGroup> implements IMouseListener {
         }
     }
 
-    protected void drawForegroundLayer(Canvas canvas, float mouseX, float mouseY, float time) {
-        for (T group : visible) {
-            group.drawForegroundLayer(canvas, mouseX, mouseY, time);
-        }
-    }
-
     @Override
     public boolean updateMouseHover(double mouseX, double mouseY) {
         boolean result = false;
@@ -114,7 +108,7 @@ public class ScrollList<T extends ScrollGroup> implements IMouseListener {
     }
 
     /**
-     * This method shouldn't be called (
+     * This shouldn't be called (
      */
     @Override
     public boolean isMouseHovered() {

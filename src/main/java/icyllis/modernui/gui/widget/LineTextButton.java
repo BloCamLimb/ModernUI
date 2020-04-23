@@ -76,7 +76,7 @@ public class LineTextButton extends Widget {
     protected void onMouseHoverEnter() {
         super.onMouseHoverEnter();
         if (ac.canChangeState()) {
-            module.addAnimation(new Animation(3)
+            getModule().addAnimation(new Animation(3)
                     .applyTo(new Applier(getTextBrightness(), 1, this::setTextBrightness)));
         }
     }
@@ -85,7 +85,7 @@ public class LineTextButton extends Widget {
     protected void onMouseHoverExit() {
         super.onMouseHoverExit();
         if (ac.canChangeState()) {
-            module.addAnimation(new Animation(3)
+            getModule().addAnimation(new Animation(3)
                     .applyTo(new Applier(getTextBrightness(), 0.7f, this::setTextBrightness)));
         }
     }

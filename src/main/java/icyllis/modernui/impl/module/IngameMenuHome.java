@@ -80,12 +80,12 @@ public class IngameMenuHome extends ModuleGroup {
     @Override
     public void resize(int width, int height) {
         super.resize(width, height);
-        buttons.get(0).setPos(8, 8);
-        buttons.get(1).setPos(8, 44);
-        buttons.get(2).setPos(8, 72);
-        buttons.get(3).setPos(8, height - 92);
-        buttons.get(4).setPos(8, height - 64);
-        buttons.get(5).setPos(8, height - 28);
+        buttons.get(0).locate(8, 8);
+        buttons.get(1).locate(8, 44);
+        buttons.get(2).locate(8, 72);
+        buttons.get(3).locate(8, height - 92);
+        buttons.get(4).locate(8, height - 64);
+        buttons.get(5).locate(8, height - 28);
     }
 
     /**
@@ -101,8 +101,8 @@ public class IngameMenuHome extends ModuleGroup {
     }
 
     @Override
-    public boolean onBack() {
-        if (super.onBack()) {
+    public boolean back() {
+        if (super.back()) {
             return true;
         }
         if (getCid() != 0) {

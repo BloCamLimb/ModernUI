@@ -38,7 +38,7 @@ public abstract class UniformScrollEntry extends Widget {
     }
 
     @Override
-    public final void setPos(float x, float y) {
+    public final void locate(float px, float py) {
         throw new RuntimeException();
     }
 

@@ -36,19 +36,6 @@ public interface IDrawable {
     void draw(Canvas canvas, float time);
 
     /**
-     * Draw content above almost all things, called every frame
-     * Generally used to draw tooltips at given mouse pos
-     * And generally used in container gui
-     *
-     * @param canvas The canvas provided by module, used to draw everything
-     * @param mouseX mouse x pos
-     * @param mouseY mouse y pos
-     * @param time elapsed time from a gui open
-     *                    unit: floating point ticks, 20.0 ticks = 1 second
-     */
-    default void drawForegroundLayer(Canvas canvas, float mouseX, float mouseY, float time) {}
-
-    /**
      * Called when game window size changed, used to reset position, use layout for multiple elements
      *
      * @param width scaled game window width

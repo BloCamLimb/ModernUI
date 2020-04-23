@@ -20,8 +20,8 @@ package icyllis.modernui.gui.scroll;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.master.Canvas;
+import icyllis.modernui.gui.master.FlexibleWidget;
 import icyllis.modernui.gui.master.Module;
-import icyllis.modernui.gui.master.Widget;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
@@ -33,11 +33,7 @@ import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.function.Function;
 
-public class ScrollWindow<T extends ScrollGroup> extends Widget {
-
-    protected final Function<Integer, Float> xResizer, yResizer;
-
-    protected final Function<Integer, Float> wResizer, hResizer;
+public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget {
 
     protected final Minecraft minecraft;
 
@@ -58,12 +54,8 @@ public class ScrollWindow<T extends ScrollGroup> extends Widget {
     protected final ScrollList<T> scrollList;
 
     public ScrollWindow(Module module, Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, Function<Integer, Float> wResizer, Function<Integer, Float> hResizer) {
-        super(module);
+        super(module, xResizer, yResizer, wResizer, hResizer);
         this.minecraft = Minecraft.getInstance();
-        this.xResizer = xResizer;
-        this.yResizer = yResizer;
-        this.wResizer = wResizer;
-        this.hResizer = hResizer;
         this.scrollbar = new ScrollBar(this);
         this.controller = new ScrollController(this::callbackScrollAmount);
         this.scrollList = new ScrollList<>(this);
@@ -120,29 +112,13 @@ public class ScrollWindow<T extends ScrollGroup> extends Widget {
     }
 
     @Override
-    public void drawForegroundLayer(Canvas canvas, float mouseX, float mouseY, float time) {
-        scrollList.drawForegroundLayer(canvas, mouseX, mouseY - getVisibleOffset(), time);
-    }
-
-    @Override
-    public final void setPos(float x, float y) {
-        throw new RuntimeException("Scroll window doesn't allow to set pos");
-    }
-
-    @Override
     public void resize(int width, int height) {
         super.resize(width, height);
         this.gameWindowWidth = width;
-        this.x1 = xResizer.apply(width);
-        this.y1 = yResizer.apply(height);
-        this.width = wResizer.apply(width);
-        this.height = hResizer.apply(height);
-        this.x2 = x1 + this.width;
-        this.y2 = y1 + this.height;
         this.centerX = x1 + this.width / 2f;
         this.visibleHeight = this.height - borderThickness * 2;
         this.scrollbar.setPos(this.x2 - scrollbar.barThickness - 1, y1 + 1);
-        this.scrollbar.setMaxLength(this.height - 2);
+        this.scrollbar.setHeight(this.height - 2);
         this.layoutList();
         // Am I cute?
     }
@@ -213,7 +189,7 @@ public class ScrollWindow<T extends ScrollGroup> extends Widget {
         this.scrollAmount = scrollAmount;
         updateScrollBarOffset();
         updateScrollList();
-        module.refocusCursor();
+        getModule().refocusCursor();
     }
 
     /**
@@ -232,13 +208,6 @@ public class ScrollWindow<T extends ScrollGroup> extends Widget {
      */
     public float getVisibleOffset() {
         return scrollAmount - borderThickness;
-    }
-
-    /**
-     * Logic scroll amount for logic check
-     */
-    public float getActualScrollAmount() {
-        return scrollAmount;
     }
 
     public float getMaxScrollAmount() {

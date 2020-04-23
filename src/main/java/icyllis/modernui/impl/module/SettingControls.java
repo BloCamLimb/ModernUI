@@ -111,16 +111,16 @@ public class SettingControls extends Module {
     public void resize(int width, int height) {
         super.resize(width, height);
         // layout widgets
-        searchModeButton.setPos(width / 2f - 122, height - 34);
-        searchBox.setPos(width / 2f - 120, height - 32);
+        searchModeButton.locate(width / 2f - 122, height - 34);
+        searchBox.locate(width / 2f - 120, height - 32);
 
-        previousButton.setPos(width / 2f - 16, height - 32);
-        nextButton.setPos(width / 2f - 2, height - 32);
+        previousButton.locate(width / 2f - 16, height - 32);
+        nextButton.locate(width / 2f - 2, height - 32);
 
-        filterConflictButton.setPos(width / 2f + 112, height - 32);
+        filterConflictButton.locate(width / 2f + 112, height - 32);
         resultCounter.setPos(width / 2f + 56, height - 30);
 
-        resetAllButton.setPos(width / 2f + 132, height - 32);
+        resetAllButton.locate(width / 2f + 132, height - 32);
     }
 
     private void filterConflicts() {

@@ -64,14 +64,14 @@ public class CheckboxButton extends Widget {
     @Override
     protected void onMouseHoverEnter() {
         super.onMouseHoverEnter();
-        module.addAnimation(new Animation(2)
+        getModule().addAnimation(new Animation(2)
                 .applyTo(new Applier(brightness, 1.0f, this::setBrightness)));
     }
 
     @Override
     protected void onMouseHoverExit() {
         super.onMouseHoverExit();
-        module.addAnimation(new Animation(2)
+        getModule().addAnimation(new Animation(2)
                 .applyTo(new Applier(brightness, 0.7f, this::setBrightness)));
     }
 
@@ -89,10 +89,10 @@ public class CheckboxButton extends Widget {
         if (this.listening != listening) {
             this.listening = listening;
             if (listening) {
-                module.addAnimation(new Animation(2)
+                getModule().addAnimation(new Animation(2)
                         .applyTo(new Applier(brightness, 1.0f, this::setBrightness)));
             } else {
-                module.addAnimation(new Animation(2)
+                getModule().addAnimation(new Animation(2)
                         .applyTo(new Applier(brightness, 0.3f, this::setBrightness)));
             }
         }
@@ -101,10 +101,10 @@ public class CheckboxButton extends Widget {
     public void setChecked(boolean checked) {
         this.checked = checked;
         if (checked) {
-            module.addAnimation(new Animation(2)
+            getModule().addAnimation(new Animation(2)
                     .applyTo(new Applier(0, 1, this::setMarkAlpha)));
         } else {
-            module.addAnimation(new Animation(2)
+            getModule().addAnimation(new Animation(2)
                     .applyTo(new Applier(1, 0, this::setMarkAlpha)));
         }
     }

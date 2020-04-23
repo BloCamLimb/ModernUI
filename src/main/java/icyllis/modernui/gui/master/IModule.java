@@ -53,7 +53,7 @@ public interface IModule {
      *
      * @return return true to cancel the event
      */
-    default boolean onBack() {
+    default boolean back() {
         return false;
     }
 

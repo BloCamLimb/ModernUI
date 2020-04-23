@@ -80,14 +80,14 @@ public class TextIconButton extends IconButton {
     @Override
     protected void onMouseHoverEnter() {
         super.onMouseHoverEnter();
-        module.addAnimation(new Animation(4)
+        getModule().addAnimation(new Animation(4)
                 .applyTo(new Applier(0, 1, this::setTextAlpha)));
     }
 
     @Override
     protected void onMouseHoverExit() {
         super.onMouseHoverExit();
-        module.addAnimation(new Animation(4)
+        getModule().addAnimation(new Animation(4)
                 .applyTo(new Applier(1, 0, this::setTextAlpha)));
     }
 
@@ -101,7 +101,7 @@ public class TextIconButton extends IconButton {
         }*/
         iconAC.setLockState(this.id == id);
         if (iconAC.canChangeState()) {
-            if (!mouseHovered) {
+            if (!isMouseHovered()) {
                 iconAC.startCloseAnimation();
             }
         }

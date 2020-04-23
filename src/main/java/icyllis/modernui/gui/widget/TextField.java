@@ -30,6 +30,7 @@ import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -40,7 +41,8 @@ import java.util.function.Predicate;
 //FIXME vanilla has many bugs, fuck
 public class TextField extends Widget implements IKeyboardListener {
 
-    private Predicate<String> filter = s -> true;
+    // previous text, new text, filtered text
+    private BiFunction<String, String, String> filter = (s, t) -> t;
 
     private String text = "";
 
@@ -80,7 +82,7 @@ public class TextField extends Widget implements IKeyboardListener {
         runtimeUpdate = runtime;
     }
 
-    public void setFilter(Predicate<String> filter) {
+    public void setFilter(BiFunction<String, String, String> filter) {
         this.filter = filter;
     }
 
@@ -161,11 +163,12 @@ public class TextField extends Widget implements IKeyboardListener {
      * Sets the text of the text box, and moves the cursor to the end.
      */
     public void setText(String textIn) {
-        if (filter.test(textIn)) {
-            if (textIn.length() > this.maxStringLength) {
-                this.text = textIn.substring(0, this.maxStringLength);
+        String result = filter.apply(text, textIn);
+        if (!result.equals(text)) {
+            if (result.length() > this.maxStringLength) {
+                this.text = result.substring(0, this.maxStringLength);
             } else {
-                this.text = textIn;
+                this.text = result;
             }
 
             this.setCursorToEnd();
@@ -210,7 +213,7 @@ public class TextField extends Widget implements IKeyboardListener {
 
     public void writeText(String textToWrite) {
         String result = "";
-        String filter = SharedConstants.filterAllowedCharacters(textToWrite);
+        String toWrite = SharedConstants.filterAllowedCharacters(textToWrite);
         int i = Math.min(this.cursorPosition, this.selectionEnd);
         int j = Math.max(this.cursorPosition, this.selectionEnd);
         int canWriteCount = this.maxStringLength - this.text.length() - (i - j);
@@ -220,19 +223,20 @@ public class TextField extends Widget implements IKeyboardListener {
         }
 
         int l;
-        if (canWriteCount < filter.length()) {
-            result = result + filter.substring(0, canWriteCount); // ignore excess part
+        if (canWriteCount < toWrite.length()) {
+            result = result + toWrite.substring(0, canWriteCount); // ignore excess part
             l = canWriteCount;
         } else {
-            result = result + filter;
-            l = filter.length();
+            result = result + toWrite;
+            l = toWrite.length();
         }
 
         if (!this.text.isEmpty() && j < this.text.length()) { // write text that after cursor
             result = result + this.text.substring(j);
         }
 
-        if (this.filter.test(result)) { // if result is legal
+        result = filter.apply(text, result);
+        if (!result.equals(text)) {
             this.text = result;
             setCursorPos(i + l);
             setSelectionPos(cursorPosition);
@@ -276,12 +280,12 @@ public class TextField extends Widget implements IKeyboardListener {
     }
 
     @Override
-    public void setPos(float x, float y) {
+    public void locate(float px, float py) {
         if (decoration != null) {
             float c = decoration.getHeaderLength();
-            x += c;
+            px += c;
         }
-        super.setPos(x, y);
+        super.locate(px, py);
     }
 
     @Override
@@ -315,7 +319,7 @@ public class TextField extends Widget implements IKeyboardListener {
     }
 
     private void startEditing() {
-        module.setKeyboardListener(this);
+        getModule().setKeyboardListener(this);
         editing = true;
         timer = 0;
     }
@@ -347,7 +351,7 @@ public class TextField extends Widget implements IKeyboardListener {
         } else {
             switch (keyCode) {
                 case GLFW.GLFW_KEY_ESCAPE:
-                    module.setKeyboardListener(null);
+                    getModule().setKeyboardListener(null);
                     return true;
                 case GLFW.GLFW_KEY_BACKSPACE:
                     this.shiftDown = false;
@@ -416,10 +420,10 @@ public class TextField extends Widget implements IKeyboardListener {
             if (this.selectionEnd != this.cursorPosition) {
                 this.writeText("");
             } else {
-                boolean reverse = num < 0;
+                boolean deleteLeft = num < 0;
 
-                int left = reverse ? this.cursorPosition + num : this.cursorPosition;
-                int right = reverse ? this.cursorPosition : this.cursorPosition + num;
+                int left = deleteLeft ? this.cursorPosition + num : this.cursorPosition;
+                int right = deleteLeft ? this.cursorPosition : this.cursorPosition + num;
 
                 String result = "";
 
@@ -431,10 +435,11 @@ public class TextField extends Widget implements IKeyboardListener {
                     result = result + this.text.substring(right);
                 }
 
-                if (this.filter.test(result)) {
+                result = filter.apply(text, result);
+                if (!result.equals(text)) {
                     this.text = result;
-                    if (reverse) {
-                        this.moveCursorBy(num);
+                    if (deleteLeft) {
+                        this.moveCursorBy(result.length() - text.length());
                     }
                     this.onTextChanged();
                 }

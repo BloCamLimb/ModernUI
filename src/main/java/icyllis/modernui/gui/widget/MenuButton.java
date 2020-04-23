@@ -48,10 +48,6 @@ public class MenuButton extends IconButton {
     @Override
     public void draw(@Nonnull Canvas canvas, float time) {
         super.draw(canvas, time);
-    }
-
-    @Override
-    public void drawForegroundLayer(Canvas canvas, float mouseX, float mouseY, float time) {
         sideTextAC.update();
         if (sideTextAC.isAnimationOpen()) {
             canvas.setRGBA(0.0f, 0.0f, 0.0f, 0.5f * frameAlpha);
@@ -125,7 +121,7 @@ public class MenuButton extends IconButton {
     public void onModuleChanged(int id) {
         iconAC.setLockState(this.id == id);
         if (iconAC.canChangeState()) {
-            if (!mouseHovered) {
+            if (!isMouseHovered()) {
                 iconAC.startCloseAnimation();
             }
         }

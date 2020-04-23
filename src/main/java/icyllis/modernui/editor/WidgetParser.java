@@ -45,6 +45,7 @@ public enum WidgetParser {
                 .setPrettyPrinting()
                 .registerTypeAdapter(WidgetContainer.class, new WidgetAdaptor())
                 .excludeFieldsWithoutExposeAnnotation()
+                .serializeNulls()
                 .create();
     }
 

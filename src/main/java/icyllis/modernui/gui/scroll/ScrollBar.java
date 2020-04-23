@@ -19,10 +19,6 @@
 package icyllis.modernui.gui.scroll;
 
 import icyllis.modernui.gui.master.*;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import org.lwjgl.opengl.GL11;
 
 /**
  * This is a part of scroll window
@@ -42,7 +38,7 @@ public class ScrollBar implements IDrawable, IMouseListener, IDraggable {
 
     private float barLength;
 
-    private float maxLength;
+    private float height;
 
     private boolean visible;
 
@@ -72,7 +68,7 @@ public class ScrollBar implements IDrawable, IMouseListener, IDraggable {
             return;
         }
         canvas.setRGBA(0.063f, 0.063f, 0.063f, 0.157f);
-        canvas.drawRect(x, y, x + barThickness, y + maxLength);
+        canvas.drawRect(x, y, x + barThickness, y + height);
         canvas.setRGBA(brightness, brightness, brightness, 0.5f);
         canvas.drawRect(x, barY, x + barThickness, barY + barLength);
     }
@@ -119,7 +115,7 @@ public class ScrollBar implements IDrawable, IMouseListener, IDraggable {
     }
 
     public void setBarLength(float percentage) {
-        this.barLength = (int) (maxLength * percentage);
+        this.barLength = (int) (height * percentage);
     }
 
     public void setVisible(boolean visible) {
@@ -127,7 +123,7 @@ public class ScrollBar implements IDrawable, IMouseListener, IDraggable {
     }
 
     public float getMaxDragLength() {
-        return maxLength - barLength;
+        return height - barLength;
     }
 
     public void setBarOffset(float percentage) {
@@ -179,7 +175,7 @@ public class ScrollBar implements IDrawable, IMouseListener, IDraggable {
                         float mov = transformPosToAmount((float) (barY - mouseY));
                         window.scrollSmooth(-Math.min(60f, mov));
                         return true;
-                    } else if (mouseY > barY + barLength && mouseY <= y + maxLength) {
+                    } else if (mouseY > barY + barLength && mouseY <= y + height) {
                         float mov = transformPosToAmount((float) (mouseY - barY - barLength));
                         window.scrollSmooth(Math.min(60f, mov));
                         return true;
@@ -204,7 +200,7 @@ public class ScrollBar implements IDrawable, IMouseListener, IDraggable {
     }
 
     @Override
-    public void stopDragging(double mouseX, double mouseY) {
+    public void stopMouseDragging(double mouseX, double mouseY) {
         if (visible && isDragging) {
             isDragging = false;
             window.getModule().setDraggable(null);
@@ -221,7 +217,9 @@ public class ScrollBar implements IDrawable, IMouseListener, IDraggable {
             if (mouseY == draggingY) {
                 window.scrollDirect(transformPosToAmount((float) deltaY));
             }*/
-            window.scrollDirect(transformPosToAmount((float) deltaY));
+            if (mouseY >= y && mouseY <= y + height) {
+                window.scrollDirect(transformPosToAmount((float) deltaY));
+            }
             return true;
         }
         return false;
@@ -235,8 +233,8 @@ public class ScrollBar implements IDrawable, IMouseListener, IDraggable {
         return window.getMaxScrollAmount() * relativePos / getMaxDragLength();
     }
 
-    public void setMaxLength(float maxLength) {
-        this.maxLength = maxLength;
+    public void setHeight(float height) {
+        this.height = height;
     }
 
 }

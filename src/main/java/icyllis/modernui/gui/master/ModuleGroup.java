@@ -19,7 +19,7 @@
 package icyllis.modernui.gui.master;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.gui.math.DelayedRunnable;
+import icyllis.modernui.gui.math.DelayedTask;
 import icyllis.modernui.system.ModernUI;
 
 import javax.annotation.Nullable;
@@ -74,7 +74,7 @@ public abstract class ModuleGroup extends Module {
         }
         int[] op = new int[]{0, 0};
         if (child != null) {
-            if (child.onBack()) {
+            if (child.back()) {
                 return;
             }
             op = child.changingModule();
@@ -85,7 +85,7 @@ public abstract class ModuleGroup extends Module {
         tid = id;
         int cKeep = op[1];
         if (op[0] > 0) {
-            GlobalModuleManager.INSTANCE.scheduleRunnable(new DelayedRunnable(() -> switchToTid(cKeep), op[0]));
+            GlobalModuleManager.INSTANCE.scheduleTask(new DelayedTask(() -> switchToTid(cKeep), op[0]));
             return;
         }
         switchToTid(cKeep);
@@ -94,7 +94,7 @@ public abstract class ModuleGroup extends Module {
     private void switchToTid(int cKeep) {
         if (cKeep > 0) {
             shadow = child;
-            GlobalModuleManager.INSTANCE.scheduleRunnable(new DelayedRunnable(() -> shadow = null, cKeep));
+            GlobalModuleManager.INSTANCE.scheduleTask(new DelayedTask(() -> shadow = null, cKeep));
         }
         child = childModules.getOrDefault(tid, () -> null).get();
         if (child != null) {
@@ -163,9 +163,9 @@ public abstract class ModuleGroup extends Module {
     }
 
     @Override
-    public boolean onBack() {
+    public boolean back() {
         if (child != null) {
-            return child.onBack();
+            return child.back();
         }
         return false;
     }

@@ -67,7 +67,7 @@ public class DropdownSettingEntry extends SettingEntry {
     public void setAvailable(boolean b) {
         available = b;
         if (b) {
-            optionBrightness = mouseHovered ? 1.0f : 0.85f;
+            optionBrightness = isMouseHovered() ? 1.0f : 0.85f;
         } else {
             optionBrightness = 0.5f;
         }
@@ -119,11 +119,11 @@ public class DropdownSettingEntry extends SettingEntry {
             if (available && !drawOptionFrame && optionNames.size() > 1) {
                 if (mouseInOption(mouseX, mouseY)) {
                     drawOptionFrame = true;
-                    module.addAnimation(new Animation(2)
+                    getModule().addAnimation(new Animation(2)
                             .applyTo(new Applier(0.25f, this::setFrameAlpha)));
                 }
             } else if (!mouseInOption(mouseX, mouseY)) {
-                module.addAnimation(new Animation(2)
+                getModule().addAnimation(new Animation(2)
                         .applyTo(new Applier(0.25f, 0, this::setFrameAlpha))
                         .onFinish(() -> drawOptionFrame = false));
             }
@@ -140,7 +140,7 @@ public class DropdownSettingEntry extends SettingEntry {
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if (drawOptionFrame && mouseButton == 0) {
             DropDownMenu menu = new DropDownMenu(window.getModule(), optionNames, currentOptionIndex, 16, this::onValueChanged, DropDownMenu.Align.RIGHT);
-            menu.setPos(x2 - 4, y1 + 18 - window.getVisibleOffset());
+            menu.locate(x2 - 4, y1 + 18 - window.getVisibleOffset());
             GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(menu), false);
             return true;
         }
