@@ -33,12 +33,11 @@ import javax.annotation.Nullable;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 /**
  * Single line text input box
  */
-//FIXME vanilla has many bugs, fuck
+//FIXME some bugs?
 public class TextField extends Widget implements IKeyboardListener {
 
     // previous text, new text, filtered text
@@ -68,13 +67,18 @@ public class TextField extends Widget implements IKeyboardListener {
 
     protected boolean runtimeUpdate;
 
+    private Runnable enterOperation = () -> getModule().setKeyboardListener(null);
+
     public TextField(Module module, float width, float height) {
         super(module, width, height);
     }
 
     public void setDecoration(@Nonnull Function<TextField, Decoration> function) {
-        this.decoration = function.apply(this);
-        width -= decoration.getHeaderLength();
+        if (decoration == null) {
+            this.decoration = function.apply(this);
+            width -= decoration.getHeaderLength();
+            width -= decoration.getTrailerLength();
+        }
     }
 
     public void setListener(@Nonnull Consumer<TextField> listener, boolean runtime) {
@@ -86,6 +90,7 @@ public class TextField extends Widget implements IKeyboardListener {
         this.filter = filter;
     }
 
+    // experimental
     private void setMargin(float left, float right) {
         this.leftMargin = left;
         this.rightMargin = right;
@@ -97,6 +102,10 @@ public class TextField extends Widget implements IKeyboardListener {
             this.text = this.text.substring(0, length);
             this.onTextChanged();
         }
+    }
+
+    public void setEnterOperation(Runnable enterOperation) {
+        this.enterOperation = enterOperation;
     }
 
     @Override
@@ -241,6 +250,7 @@ public class TextField extends Widget implements IKeyboardListener {
             setCursorPos(i + l);
             setSelectionPos(cursorPosition);
             this.onTextChanged();
+            timer = 0;
         }
     }
 
@@ -383,9 +393,13 @@ public class TextField extends Widget implements IKeyboardListener {
                 case GLFW.GLFW_KEY_END:
                     this.setCursorToEnd();
                     return true;
+                case GLFW.GLFW_KEY_ENTER:
+                case GLFW.GLFW_KEY_KP_ENTER:
+                    this.enterOperation.run();
+                    return true;
             }
         }
-        return false;
+        return true;
     }
 
     @Override
@@ -420,10 +434,10 @@ public class TextField extends Widget implements IKeyboardListener {
             if (this.selectionEnd != this.cursorPosition) {
                 this.writeText("");
             } else {
-                boolean deleteLeft = num < 0;
+                boolean reverse = num < 0;
 
-                int left = deleteLeft ? this.cursorPosition + num : this.cursorPosition;
-                int right = deleteLeft ? this.cursorPosition : this.cursorPosition + num;
+                int left = reverse ? this.cursorPosition + num : this.cursorPosition;
+                int right = reverse ? this.cursorPosition : this.cursorPosition + num;
 
                 String result = "";
 
@@ -438,10 +452,11 @@ public class TextField extends Widget implements IKeyboardListener {
                 result = filter.apply(text, result);
                 if (!result.equals(text)) {
                     this.text = result;
-                    if (deleteLeft) {
+                    if (reverse) {
                         this.moveCursorBy(result.length() - text.length());
                     }
                     this.onTextChanged();
+                    timer = 0;
                 }
             }
         }
@@ -523,6 +538,8 @@ public class TextField extends Widget implements IKeyboardListener {
         public abstract void draw(@Nonnull Canvas canvas, float time);
 
         public abstract float getHeaderLength();
+
+        public abstract float getTrailerLength();
     }
 
     public static class Frame extends Decoration {
@@ -543,7 +560,7 @@ public class TextField extends Widget implements IKeyboardListener {
 
         @Override
         public void draw(@Nonnull Canvas canvas, float time) {
-            canvas.setRGBA(0, 0, 0, 0.5f);
+            canvas.setRGBA(0, 0, 0, 0.25f);
             canvas.drawRect(instance.x1 - getHeaderLength(), instance.y1, instance.x2, instance.y2);
             canvas.setRGBA(r, g, b, a);
             canvas.drawRectOutline(instance.x1 - getHeaderLength(), instance.y1, instance.x2, instance.y2, 0.51f);
@@ -559,6 +576,11 @@ public class TextField extends Widget implements IKeyboardListener {
                 return 0;
             }
             return titleLength + 2;
+        }
+
+        @Override
+        public float getTrailerLength() {
+            return 0;
         }
 
         public void setColor(int color) {

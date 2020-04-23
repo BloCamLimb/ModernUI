@@ -37,6 +37,7 @@ public abstract class UniformScrollEntry extends Widget {
         this.height = height;
     }
 
+    @Deprecated
     @Override
     public final void locate(float px, float py) {
         throw new RuntimeException();
