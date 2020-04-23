@@ -62,13 +62,6 @@ public abstract class UniformScrollGroup<T extends UniformScrollEntry> extends S
     }
 
     @Override
-    public void drawForegroundLayer(Canvas canvas, float mouseX, float mouseY, float time) {
-        for (UniformScrollEntry entry : visible) {
-            entry.drawForegroundLayer(canvas, mouseX, mouseY, time);
-        }
-    }
-
-    @Override
     public boolean updateMouseHover(double mouseX, double mouseY) {
         if (super.updateMouseHover(mouseX, mouseY)) {
             boolean result = false;

@@ -157,7 +157,7 @@ public class DynamicFrameButton extends Widget {
                 displayCount = countdown - (ticks - startTick) / 20;
                 if (!counting) {
                     listening = true;
-                    module.refocusCursor();
+                    getModule().refocusCursor();
                 }
             }
         }

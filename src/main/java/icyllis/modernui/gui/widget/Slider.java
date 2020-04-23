@@ -105,7 +105,7 @@ public abstract class Slider extends Widget implements IDraggable {
         if (mouseButton == 0) {
             if (thumbHovered) {
                 isDragging = true;
-                module.setDraggable(this);
+                getModule().setDraggable(this);
                 return true;
             } else {
                 if (mouseX >= x1 && mouseX <= x1 + slideOffset) {
@@ -113,7 +113,7 @@ public abstract class Slider extends Widget implements IDraggable {
                     checkThumb(mouseX, mouseY);
                     if (thumbHovered) {
                         isDragging = true;
-                        module.setDraggable(this);
+                        getModule().setDraggable(this);
                     } else {
                         onFinalChange();
                     }
@@ -123,7 +123,7 @@ public abstract class Slider extends Widget implements IDraggable {
                     checkThumb(mouseX, mouseY);
                     if (thumbHovered) {
                         isDragging = true;
-                        module.setDraggable(this);
+                        getModule().setDraggable(this);
                     } else {
                         onFinalChange();
                     }
@@ -149,10 +149,10 @@ public abstract class Slider extends Widget implements IDraggable {
     }
 
     @Override
-    public void stopDragging(double mouseX, double mouseY) {
+    public void stopMouseDragging(double mouseX, double mouseY) {
         if (isDragging) {
             isDragging = false;
-            module.setDraggable(null);
+            getModule().setDraggable(null);
             //checkThumb(mouseX, mouseY); pos is not accurate
             onFinalChange();
         }

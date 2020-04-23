@@ -23,8 +23,8 @@ import icyllis.modernui.system.ConstantsLibrary;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 
 public class NumberInputField extends TextField {
 
@@ -35,12 +35,19 @@ public class NumberInputField extends TextField {
 
     public NumberInputField(Module module, float width, float height) {
         super(module, width, height);
-        super.setFilter(ConstantsLibrary.DIGIT_FILTER);
+        super.setText("0");
+        super.setFilter((s, t) -> {
+            if (ConstantsLibrary.DIGIT_FILTER.test(t)) {
+                return t;
+            } else {
+                return s;
+            }
+        });
     }
 
     @Deprecated
     @Override
-    public void setFilter(Predicate<String> filter) {
+    public void setFilter(BiFunction<String, String, String> filter) {
         throw new RuntimeException();
     }
 
@@ -70,34 +77,50 @@ public class NumberInputField extends TextField {
             int i = (int) Math.ceil(Math.log10(cLimit));
             allowNegative = min < 0;
             if (allowNegative) {
-                super.setMaxStringLength(i + 1);
+                super.setMaxStringLength(i + 2);
             } else {
-                super.setMaxStringLength(i);
+                super.setMaxStringLength(i + 1);
             }
-            super.setFilter(s -> testValid(s, min, max));
+            super.setFilter((s, t) -> testValid(s, t, min, max));
         }
     }
 
-    private boolean testValid(String t, long min, long max) {
-        if (ConstantsLibrary.INTEGER_FILTER.test(t) || t.equals("0")) {
-            long n = Long.parseLong(t);
-            if (n < min || n > max) {
-                /*if (n > max) {
-                    setText(String.valueOf(max));
-                } else {
-                    setText(String.valueOf(min));
-                }*/
-                return false;
-            }
-            return true;
+    private String testValid(String previousText, @Nonnull String newText, long min, long max) {
+        if (newText.startsWith("0")) {
+            newText = newText.substring(1);
         }
-        return false;
+        if (newText.equals("-0") || newText.equals("-")) {
+            return "-";
+        }
+        if (newText.isEmpty()) {
+            return "0";
+        }
+        if (ConstantsLibrary.INTEGER_FILTER.test(newText) || newText.equals("0")) {
+            long n = Long.parseLong(newText);
+            if (n < min || n > max) {
+                if (n > max) {
+                    return String.valueOf(max);
+                } else {
+                    return String.valueOf(min);
+                }
+            }
+            return newText;
+        }
+        return previousText;
     }
 
     @Override
     protected void onTextChanged(boolean force) {
+        boolean c = getText().equals("-");
+        if (force && c) {
+            setText("0");
+            return;
+        }
         if (listener != null && (runtimeUpdate || force)) {
-            listener.accept(this);
+            if (!c) {
+                listener.accept(this);
+                getLongFromText();
+            }
         }
     }
 
@@ -114,11 +137,13 @@ public class NumberInputField extends TextField {
         if (codePoint == '-' && allowNegative) {
             if (!getText().contains("-")) {
                 setText("-" + getText());
+            } else {
+                setText(getText().replace("-", ""));
             }
             return true;
         }
         if (codePoint == '+') {
-            if (getText().contains("-")){
+            if (getText().contains("-")) {
                 setText(getText().replace("-", ""));
             }
             return true;

@@ -24,7 +24,6 @@ import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.master.Widget;
-import icyllis.modernui.system.ModernUI;
 
 import javax.annotation.Nonnull;
 
@@ -59,14 +58,14 @@ public class StaticFrameButton extends Widget {
     @Override
     protected void onMouseHoverEnter() {
         super.onMouseHoverEnter();
-        module.addAnimation(new Animation(2)
+        getModule().addAnimation(new Animation(2)
                 .applyTo(new Applier(brightness, 1.0f, this::setBrightness)));
     }
 
     @Override
     protected void onMouseHoverExit() {
         super.onMouseHoverExit();
-        module.addAnimation(new Animation(2)
+        getModule().addAnimation(new Animation(2)
                 .applyTo(new Applier(brightness, 0.7f, this::setBrightness)));
     }
 
@@ -93,7 +92,7 @@ public class StaticFrameButton extends Widget {
         if (this.listening != listening) {
             this.listening = listening;
             if (listening) {
-                module.addAnimation(new Animation(2)
+                getModule().addAnimation(new Animation(2)
                         .applyTo(new Applier(brightness, 0.7f, this::setBrightness)));
             } else {
                 brightness = 0.3f;

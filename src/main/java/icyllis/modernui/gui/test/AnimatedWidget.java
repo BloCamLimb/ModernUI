@@ -46,11 +46,11 @@ public abstract class AnimatedWidget extends AnimationControl implements IWidget
     }
 
     @Override
-    public void setPos(float x, float y) {
-        this.x1 = x;
-        this.x2 = x + width;
-        this.y1 = y;
-        this.y2 = y + height;
+    public void locate(float px, float py) {
+        this.x1 = px;
+        this.x2 = px + width;
+        this.y1 = py;
+        this.y2 = py + height;
     }
 
     @Override

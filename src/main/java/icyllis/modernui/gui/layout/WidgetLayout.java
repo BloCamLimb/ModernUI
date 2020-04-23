@@ -44,7 +44,7 @@ public class WidgetLayout {
         switch (direction) {
             case HORIZONTAL_POSITIVE:
                 for (IWidget widget : widgets) {
-                    widget.setPos(x1, y1);
+                    widget.locate(x1, y1);
                     x1 = widget.getRight() + spacing;
                 }
                 break;
@@ -55,7 +55,7 @@ public class WidgetLayout {
                 t -= spacing;
                 x1 -= t / 2f;
                 for (IWidget widget : widgets) {
-                    widget.setPos(x1, y1);
+                    widget.locate(x1, y1);
                     x1 += widget.getWidth() + spacing;
                 }
                 break;
@@ -63,13 +63,13 @@ public class WidgetLayout {
                 Collections.reverse(widgets);
                 for (IWidget widget : widgets) {
                     x1 -= widget.getWidth();
-                    widget.setPos(x1, y1);
+                    widget.locate(x1, y1);
                     x1 = widget.getLeft() - spacing;
                 }
                 break;
             case VERTICAL_POSITIVE:
                 for (IWidget widget : widgets) {
-                    widget.setPos(x1, y1);
+                    widget.locate(x1, y1);
                     y1 = widget.getBottom() + spacing;
                 }
                 break;
@@ -80,7 +80,7 @@ public class WidgetLayout {
                 t -= spacing;
                 y1 -= t / 2f;
                 for (IWidget widget : widgets) {
-                    widget.setPos(x1, y1);
+                    widget.locate(x1, y1);
                     y1 += widget.getHeight() + spacing;
                 }
                 break;
@@ -88,7 +88,7 @@ public class WidgetLayout {
                 Collections.reverse(widgets);
                 for (IWidget widget : widgets) {
                     y1 -= widget.getHeight();
-                    widget.setPos(x1, y1);
+                    widget.locate(x1, y1);
                     y1 = widget.getTop() - spacing;
                 }
                 break;

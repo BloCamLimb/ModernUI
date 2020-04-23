@@ -171,11 +171,6 @@ public class ItemStatsGroup extends UniformScrollGroup<ItemStatsEntry> {
         }
     }
 
-    @Override
-    public void drawForegroundLayer(Canvas canvas, float mouseX, float mouseY, float time) {
-        super.drawForegroundLayer(canvas, mouseX, mouseY, time);
-    }
-
     public enum Type {
         BLOCKS,
         ITEMS

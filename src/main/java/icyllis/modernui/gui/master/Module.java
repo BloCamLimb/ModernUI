@@ -72,9 +72,6 @@ public abstract class Module implements IModule, IFocuser {
             }
             drawChild(time);
         }
-        for (IDrawable drawable : drawables) {
-            drawable.drawForegroundLayer(canvas, (float) getMouseX(), (float) getMouseY(), time);
-        }
         RenderSystem.popMatrix();
     }
 
@@ -86,6 +83,11 @@ public abstract class Module implements IModule, IFocuser {
         overDraw = true;
     }
 
+    /**
+     * Parse widgets from json file
+     * @param modid modid
+     * @param containerConsumer for editor
+     */
     protected void parseWidgets(String modid, Consumer<WidgetContainer> containerConsumer) {
         String[] names = ConstantsLibrary.SPLIT_BY_CAPS.apply(getClass().getSimpleName());
 
@@ -257,7 +259,7 @@ public abstract class Module implements IModule, IFocuser {
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
         if (draggable != null) {
-            draggable.stopDragging(mouseX, mouseY);
+            draggable.stopMouseDragging(mouseX, mouseY);
             return true;
         }
         for (IMouseListener listener : mouseListeners) {

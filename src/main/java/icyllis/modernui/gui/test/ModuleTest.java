@@ -38,15 +38,16 @@ public class ModuleTest extends Module {
         addWidget(b = new SlidingToggleButton(this, 4, b -> {}, 0x8020a0e0, 0x40808080, false));
         addWidget(h = new NumberInputField(this, 90, 12));
         h.setLimit(-997, 600);
-        h.setDecoration(f -> new TextField.Frame(f, "Limit", -1));
+        h.setDecoration(f -> new TextField.Frame(f, "Limit:", -1));
+        h.setNumberListener(e -> {}, true);
         addDrawable(new TestDraw());
     }
 
     @Override
     public void resize(int width, int height) {
         super.resize(width, height);
-        b.setPos(width / 2f - 10, height / 2f - 60);
-        h.setPos(width / 2f - 10, height / 2f - 44);
+        b.locate(width / 2f - 10, height / 2f - 60);
+        h.locate(width / 2f - 10, height / 2f - 44);
     }
 
     public void create() {

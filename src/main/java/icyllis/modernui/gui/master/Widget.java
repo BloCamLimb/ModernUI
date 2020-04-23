@@ -18,29 +18,35 @@
 
 package icyllis.modernui.gui.master;
 
-import icyllis.modernui.gui.master.IWidget;
-import icyllis.modernui.gui.master.Module;
+import com.google.gson.annotations.Expose;
+import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.math.Locator;
+import net.minecraft.util.text.ITextComponent;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public abstract class Widget implements IWidget {
 
-    protected final Module module;
+    private final Module module;
 
+    @Expose
     @Nullable
     private Locator locator;
+
+    @Expose
+    private Align9D align = Align9D.TOP_LEFT;
 
     protected float x1, y1;
 
     protected float x2, y2;
 
+    @Expose
     protected float width, height;
 
     protected boolean listening = true;
 
-    protected boolean mouseHovered = false;
+    private boolean mouseHovered = false;
 
     public Widget(Module module) {
         this.module = module;
@@ -53,15 +59,42 @@ public abstract class Widget implements IWidget {
     }
 
     @Override
-    public void setPos(float x, float y) {
-        this.x1 = x;
-        this.x2 = x + width;
-        this.y1 = y;
-        this.y2 = y + height;
+    public void locate(float px, float py) {
+        int horizontalAlign = align.ordinal() % 3;
+        switch (horizontalAlign) {
+            case 0:
+                x1 = px;
+                break;
+            case 1:
+                x1 = px - width / 2f;
+                break;
+            case 2:
+                x1 = px - width;
+                break;
+        }
+        x2 = x1 + width;
+
+        int verticalAlign = align.ordinal() / 3;
+        switch (verticalAlign) {
+            case 0:
+                y1 = py;
+                break;
+            case 1:
+                y1 = py - height / 2f;
+                break;
+            case 2:
+                y1 = py - height;
+                break;
+        }
+        y2 = y1 + height;
     }
 
     public void setLocator(@Nonnull Locator locator) {
         this.locator = locator;
+    }
+
+    public void setAlign(Align9D align) {
+        this.align = align;
     }
 
     @Override
@@ -104,24 +137,24 @@ public abstract class Widget implements IWidget {
     @Override
     public boolean updateMouseHover(double mouseX, double mouseY) {
         if (listening) {
-            boolean prev = mouseHovered;
-            mouseHovered = isMouseInArea(mouseX, mouseY);
-            if (prev != mouseHovered) {
-                if (mouseHovered) {
+            boolean prev = isMouseHovered();
+            setMouseHovered(isMouseInArea(mouseX, mouseY));
+            if (prev != isMouseHovered()) {
+                if (isMouseHovered()) {
                     onMouseHoverEnter();
                 } else {
                     onMouseHoverExit();
                 }
             }
-            return mouseHovered;
+            return isMouseHovered();
         }
         return false;
     }
 
     @Override
     public final void setMouseHoverExit() {
-        if (mouseHovered) {
-            mouseHovered = false;
+        if (isMouseHovered()) {
+            setMouseHovered(false);
             onMouseHoverExit();
         }
     }
@@ -145,5 +178,9 @@ public abstract class Widget implements IWidget {
 
     public Module getModule() {
         return module;
+    }
+
+    public void setMouseHovered(boolean mouseHovered) {
+        this.mouseHovered = mouseHovered;
     }
 }

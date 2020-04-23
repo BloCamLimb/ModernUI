@@ -63,10 +63,10 @@ public class TriangleButton extends Widget {
     public void setClickable(boolean clickable) {
         this.clickable = clickable;
         if (clickable) {
-            module.addAnimation(new Animation(2)
+            getModule().addAnimation(new Animation(2)
                     .applyTo(new Applier(brightness, 0.8f, this::setBrightness)));
         } else {
-            module.addAnimation(new Animation(2)
+            getModule().addAnimation(new Animation(2)
                     .applyTo(new Applier(brightness, 0.3f, this::setBrightness)));
         }
     }

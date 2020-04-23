@@ -96,7 +96,7 @@ public class ResourcePackEntry extends UniformScrollEntry {
             tessellator.draw();
             GL11.glDisable(GL11.GL_LINE_SMOOTH);
             RenderSystem.enableTexture();*/
-        } else if (mouseHovered) {
+        } else if (isMouseHovered()) {
             canvas.setLineAntiAliasing(true);
             canvas.setRGBA(0.879f, 0.879f, 0.879f, 0.7f);
             canvas.drawRectLines(x1 + 1, y1, x2 - 1, y2);

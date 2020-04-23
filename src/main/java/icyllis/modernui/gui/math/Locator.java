@@ -19,7 +19,6 @@
 package icyllis.modernui.gui.math;
 
 import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
 import icyllis.modernui.gui.master.Widget;
 
 public class Locator {
@@ -27,78 +26,58 @@ public class Locator {
     public static final Locator CENTER = new Locator();
 
     @Expose
-    @SerializedName("horizontalAlignment")
-    private HorizontalAlign horizontalAlign = HorizontalAlign.CENTER;
+    private Align9D align = Align9D.CENTER;
 
     @Expose
-    @SerializedName("verticalAlignment")
-    private VerticalAlign verticalAlign = VerticalAlign.CENTER;
+    private float xOffset = 0;
 
     @Expose
-    @SerializedName("xOffset")
-    private float horizontalOffset = 0;
-
-    @Expose
-    @SerializedName("yOffset")
-    private float verticalOffset = 0;
+    private float yOffset = 0;
 
     public Locator() {
 
     }
 
-    public void setHorizontalAlign(HorizontalAlign horizontalAlign) {
-        this.horizontalAlign = horizontalAlign;
-    }
-
-    public void setVerticalAlign(VerticalAlign verticalAlign) {
-        this.verticalAlign = verticalAlign;
+    public void setAlign(Align9D align) {
+        this.align = align;
     }
 
     public void setHorizontalOffset(float horizontalOffset) {
-        this.horizontalOffset = horizontalOffset;
+        this.xOffset = horizontalOffset;
     }
 
     public void setVerticalOffset(float verticalOffset) {
-        this.verticalOffset = verticalOffset;
+        this.yOffset = verticalOffset;
     }
 
     public void locate(Widget widget, int width, int height) {
         float x = 0;
+        int horizontalAlign = align.ordinal() % 3;
         switch (horizontalAlign) {
-            case LEFT:
-                x += horizontalOffset;
+            case 0:
+                x += xOffset;
                 break;
-            case CENTER:
-                x += width / 2f + horizontalOffset;
+            case 1:
+                x += width / 2f + xOffset;
                 break;
-            case RIGHT:
-                x += width + horizontalOffset;
+            case 2:
+                x += width + xOffset;
                 break;
         }
         float y = 0;
+        int verticalAlign = align.ordinal() / 3;
         switch (verticalAlign) {
-            case TOP:
-                y += verticalOffset;
+            case 0:
+                y += yOffset;
                 break;
-            case CENTER:
-                y += height / 2f + verticalOffset;
+            case 1:
+                y += height / 2f + yOffset;
                 break;
-            case BOTTOM:
-                y += height + verticalOffset;
+            case 2:
+                y += height + yOffset;
                 break;
         }
-        widget.setPos(x, y);
+        widget.locate(x, y);
     }
 
-    public enum HorizontalAlign {
-        LEFT,
-        CENTER,
-        RIGHT
-    }
-
-    public enum VerticalAlign {
-        TOP,
-        CENTER,
-        BOTTOM
-    }
 }

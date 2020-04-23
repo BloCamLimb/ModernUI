@@ -139,7 +139,7 @@ public class KeyInputBox extends Widget implements IKeyboardListener {
     @Override
     public void stopKeyboardListening() {
         editing = false;
-        if (!mouseHovered) {
+        if (!isMouseHovered()) {
             MouseTools.useDefaultCursor();
             backAlpha = 0.063f;
         }
@@ -150,12 +150,12 @@ public class KeyInputBox extends Widget implements IKeyboardListener {
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if (editing) {
             keyBinder.accept(InputMappings.Type.MOUSE.getOrMakeInput(mouseButton));
-            module.setKeyboardListener(null);
+            getModule().setKeyboardListener(null);
             return true;
         }
         if (mouseButton == 0) {
             editing = true;
-            module.setKeyboardListener(this);
+            getModule().setKeyboardListener(this);
             backAlpha = 0.25f;
             return true;
         }
@@ -167,14 +167,14 @@ public class KeyInputBox extends Widget implements IKeyboardListener {
         if (editing) {
             if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
                 keyBinder.accept(InputMappings.INPUT_INVALID);
-                module.setKeyboardListener(null);
+                getModule().setKeyboardListener(null);
                 return true;
             }
             InputMappings.Input input = InputMappings.getInputByCode(keyCode, scanCode);
             if (!KeyModifier.isKeyCodeModifier(input)) {
                 // a combo key or a single non-modifier key
                 keyBinder.accept(input);
-                module.setKeyboardListener(null);
+                getModule().setKeyboardListener(null);
             } else {
                 if (pressing == null) {
                     // this is the modifier key that has already pressed, and can't be changed
@@ -194,7 +194,7 @@ public class KeyInputBox extends Widget implements IKeyboardListener {
             // this used for single modifier key input, not for combo key
             if (input.equals(pressing)) {
                 keyBinder.accept(input);
-                module.setKeyboardListener(null);
+                getModule().setKeyboardListener(null);
                 return true;
             }
         }

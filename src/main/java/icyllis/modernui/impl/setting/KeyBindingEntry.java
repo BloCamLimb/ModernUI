@@ -63,7 +63,7 @@ public class KeyBindingEntry extends SettingEntry {
     @Override
     public void onLayout(float left, float right, float y) {
         super.onLayout(left, right, y);
-        inputBox.setPos(centerX + 70, y + 2);
+        inputBox.locate(centerX + 70, y + 2);
     }
 
     @Override
@@ -90,8 +90,8 @@ public class KeyBindingEntry extends SettingEntry {
             //DropDownMenu list = new DropDownMenu(Lists.newArrayList("WIP =w="), -1, 16, this::menuActions);
             //list.setPos((float) mouseX, (float) (mouseY - deltaY + 18), GlobalModuleManager.INSTANCE.getWindowHeight());
             //GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(list), false);
-            DropDownMenu menu = new DropDownMenu(module, Lists.newArrayList(I18n.format("controls.reset")), -1, 12, this::menuActions, DropDownMenu.Align.LEFT);
-            menu.setPos((float) module.getMouseX() + 1, (float) module.getMouseY() + 1);
+            DropDownMenu menu = new DropDownMenu(getModule(), Lists.newArrayList(I18n.format("controls.reset")), -1, 12, this::menuActions, DropDownMenu.Align.LEFT);
+            menu.locate((float) getModule().getMouseX() + 1, (float) getModule().getMouseY() + 1);
             GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(menu), false);
             lightUp();
             return true;
@@ -113,7 +113,7 @@ public class KeyBindingEntry extends SettingEntry {
     }
 
     public void lightUp() {
-        module.addAnimation(new Animation(20).applyTo(new Applier(0.5f, 0, v -> light = v)));
+        getModule().addAnimation(new Animation(20).applyTo(new Applier(0.5f, 0, v -> light = v)));
     }
 
     // vanilla call this every frame... but we don't

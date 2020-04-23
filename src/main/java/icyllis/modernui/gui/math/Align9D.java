@@ -18,29 +18,14 @@
 
 package icyllis.modernui.gui.math;
 
-import icyllis.modernui.gui.master.GlobalModuleManager;
-
-public class DelayedRunnable {
-
-    private final Runnable runnable;
-
-    private final int finishTick;
-
-    private boolean finish = false;
-
-    public DelayedRunnable(Runnable runnable, int delayedTick) {
-        this.runnable = runnable;
-        this.finishTick = GlobalModuleManager.INSTANCE.getTicks() + delayedTick;
-    }
-
-    public void tick(int ticks) {
-        if (ticks >= finishTick) {
-            runnable.run();
-            finish = true;
-        }
-    }
-
-    public boolean shouldRemove() {
-        return finish;
-    }
+public enum Align9D {
+    TOP_LEFT,
+    TOP_CENTER,
+    TOP_RIGHT,
+    CENTER_LEFT,
+    CENTER,
+    CENTER_RIGHT,
+    BOTTOM_LEFT,
+    BOTTOM_CENTER,
+    BOTTOM_RIGHT
 }

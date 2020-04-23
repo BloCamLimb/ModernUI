@@ -43,7 +43,7 @@ public abstract class ScrollGroup extends Widget {
     }
 
     @Override
-    public final void setPos(float x, float y) {
+    public final void locate(float px, float py) {
         throw new RuntimeException();
     }
 

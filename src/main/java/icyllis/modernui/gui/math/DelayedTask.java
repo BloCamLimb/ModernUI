@@ -16,30 +16,31 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.master;
+package icyllis.modernui.gui.math;
 
-/**
- * Used for a draggable widget, use {@link IFocuser} to focus this
- */
-public interface IDraggable {
+import icyllis.modernui.gui.master.GlobalModuleManager;
 
-    /**
-     * Called when mouse moved
-     * @param mouseX mouse x pos
-     * @param mouseY mouse y pos
-     * @param deltaX mouse x change
-     * @param deltaY mouse y change
-     * @return true to cancel event
-     */
-    default boolean mouseDragged(double mouseX, double mouseY, double deltaX, double deltaY) {
-        return false;
+public class DelayedTask {
+
+    private final Runnable runnable;
+
+    private final int finishTick;
+
+    private boolean finish = false;
+
+    public DelayedTask(Runnable runnable, int delayedTick) {
+        this.runnable = runnable;
+        this.finishTick = GlobalModuleManager.INSTANCE.getTicks() + delayedTick;
     }
 
-    /**
-     * Called when mouse released
-     * Check if is dragging first
-     * @param mouseX mouse x pos
-     * @param mouseY mouse y pos
-     */
-    default void stopMouseDragging(double mouseX, double mouseY) {}
+    public void tick(int ticks) {
+        if (ticks >= finishTick) {
+            runnable.run();
+            finish = true;
+        }
+    }
+
+    public boolean shouldRemove() {
+        return finish;
+    }
 }

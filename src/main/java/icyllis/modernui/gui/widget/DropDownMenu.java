@@ -25,7 +25,9 @@ import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.master.Widget;
+import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.math.Color3f;
+import icyllis.modernui.gui.math.Locator;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -111,6 +113,18 @@ public class DropDownMenu extends Widget {
         }
     }
 
+    @Deprecated
+    @Override
+    public void setAlign(Align9D align) {
+        throw new RuntimeException();
+    }
+
+    @Deprecated
+    @Override
+    public void setLocator(@Nonnull Locator locator) {
+        throw new RuntimeException();
+    }
+
     /*@Override
     public void draw(float time) {
         RenderSystem.enableBlend();
@@ -176,20 +190,20 @@ public class DropDownMenu extends Widget {
     }*/
 
     @Override
-    public void setPos(float x, float y) {
-        int gWidth = module.getWindowWidth();
-        int gHeight = module.getWindowHeight();
+    public void locate(float px, float py) {
+        int gWidth = getModule().getWindowWidth();
+        int gHeight = getModule().getWindowHeight();
         if (align == Align.LEFT) {
-            this.x2 = Math.min(x + width, gWidth);
+            this.x2 = Math.min(px + width, gWidth);
             this.x1 = x2 - width;
         } else {
-            this.x1 = Math.max(x - width, 0);
+            this.x1 = Math.max(px - width, 0);
             this.x2 = x1 + width;
         }
-        this.y1 = y;
-        this.y2 = y + height;
+        this.y1 = py;
+        this.y2 = py + height;
         float vH = height + space;
-        this.upward = y + vH >= gHeight;
+        this.upward = py + vH >= gHeight;
         if (upward) {
             this.y1 -= vH;
             this.y2 -= vH;

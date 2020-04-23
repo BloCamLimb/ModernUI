@@ -25,6 +25,7 @@ import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.*;
 import icyllis.modernui.gui.popup.PopupMenu;
 import icyllis.modernui.system.ConstantsLibrary;
+import net.minecraft.util.text.ITextComponent;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -32,6 +33,7 @@ import java.util.function.Consumer;
 
 /**
  * The widget used to open a drop down menu
+ * and show the current option
  */
 public class DropDownWidget extends Widget {
 
@@ -70,13 +72,13 @@ public class DropDownWidget extends Widget {
     }
 
     @Override
-    public void setPos(float x, float y) {
-        super.setPos(x, y);
+    public void locate(float px, float py) {
+        super.locate(px, py);
         if (align == DropDownMenu.Align.LEFT) {
-            this.x2 = x + width;
+            this.x2 = px + width;
             this.x1 = x2 - width;
         } else {
-            this.x1 = x - width;
+            this.x1 = px - width;
             this.x2 = x1 + width;
         }
     }
@@ -84,8 +86,8 @@ public class DropDownWidget extends Widget {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if (listening && mouseButton == 0) {
-            DropDownMenu menu = new DropDownMenu(module, list, index, 16, this::updateValue, align);
-            menu.setPos(x2 - 4, (float) (y2 - (mouseY - module.getMouseY())));
+            DropDownMenu menu = new DropDownMenu(getModule(), list, index, 16, this::updateValue, align);
+            menu.locate(x2 - 4, (float) (y2 - (mouseY - getModule().getMouseY())));
             GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(menu), false);
             return true;
         }
@@ -95,14 +97,14 @@ public class DropDownWidget extends Widget {
     @Override
     protected void onMouseHoverEnter() {
         super.onMouseHoverEnter();
-        module.addAnimation(new Animation(2)
+        getModule().addAnimation(new Animation(2)
                 .applyTo(new Applier(0.25f, this::setBackAlpha)));
     }
 
     @Override
     protected void onMouseHoverExit() {
         super.onMouseHoverExit();
-        module.addAnimation(new Animation(2)
+        getModule().addAnimation(new Animation(2)
                 .applyTo(new Applier(0.25f, 0, this::setBackAlpha)));
     }
 
@@ -136,9 +138,9 @@ public class DropDownWidget extends Widget {
         float textLength = FontTools.getStringWidth(text) + 3;
         width = textLength + 6 + 4;
         if (align == DropDownMenu.Align.LEFT) {
-            setPos(x1, y1);
+            locate(x1, y1);
         } else {
-            setPos(x2, y1);
+            locate(x2, y1);
         }
         operation.accept(index);
     }

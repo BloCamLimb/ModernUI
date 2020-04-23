@@ -20,7 +20,7 @@ package icyllis.modernui.gui.master;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.animation.IAnimation;
-import icyllis.modernui.gui.math.DelayedRunnable;
+import icyllis.modernui.gui.math.DelayedTask;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IHasContainer;
@@ -28,11 +28,9 @@ import net.minecraft.client.gui.ScreenManager;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.inventory.container.ContainerType;
-import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.text.ITextComponent;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
-import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -84,7 +82,7 @@ public enum GlobalModuleManager {
 
     private List<IAnimation> animations = new ArrayList<>();
 
-    private List<DelayedRunnable> runnables = new CopyOnWriteArrayList<>();
+    private List<DelayedTask> tasks = new CopyOnWriteArrayList<>();
 
     private int ticks = 0;
 
@@ -156,6 +154,8 @@ public enum GlobalModuleManager {
      * Open a popup module, a special module
      * @param popup popup module
      * @param resetMouse true will post mouseMoved(-1, -1) to root module
+     *                   confirm window should reset mouse
+     *                   context menu should not reset mouse
      */
     public void openPopup(IModule popup, boolean resetMouse) {
         if (root == null) {
@@ -197,8 +197,8 @@ public enum GlobalModuleManager {
         animations.add(animation);
     }
 
-    public void scheduleRunnable(DelayedRunnable runnable) {
-        runnables.add(runnable);
+    public void scheduleTask(DelayedTask task) {
+        tasks.add(task);
     }
 
     protected void mouseMoved(double mouseX, double mouseY) {
@@ -277,7 +277,7 @@ public enum GlobalModuleManager {
             closePopup();
             return true;
         }
-        return root.onBack();
+        return root.back();
     }
 
     /**
@@ -319,7 +319,7 @@ public enum GlobalModuleManager {
         // Hotfix 1.4.7
         if (guiToOpen == null) {
             animations.clear();
-            runnables.clear();
+            tasks.clear();
             root = null;
             popup = null;
             //extraData = null;
@@ -337,10 +337,10 @@ public enum GlobalModuleManager {
             popup.tick(ticks);
         }
         // tick listeners are always called before runnables
-        for (DelayedRunnable runnable : runnables) {
+        for (DelayedTask runnable : tasks) {
             runnable.tick(ticks);
         }
-        runnables.removeIf(DelayedRunnable::shouldRemove);
+        tasks.removeIf(DelayedTask::shouldRemove);
     }
 
     public void onRenderTick(float partialTick) {

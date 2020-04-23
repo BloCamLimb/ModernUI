@@ -111,7 +111,7 @@ public class IngameMenuSettings extends ModuleGroup {
         }
         DropDownMenu menu = new DropDownMenu(this, tabs, getCid() - 5, 12, this::assetsButtonMenuActions, DropDownMenu.Align.RIGHT);
         LineTextButton t = buttons.get(4);
-        menu.setPos(t.getRight() - 8, t.getBottom() + 1);
+        menu.locate(t.getRight() - 8, t.getBottom() + 1);
         GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(menu), false);
     }
 

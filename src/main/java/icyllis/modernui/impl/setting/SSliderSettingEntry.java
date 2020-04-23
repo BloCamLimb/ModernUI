@@ -70,7 +70,7 @@ public class SSliderSettingEntry extends SettingEntry implements ISmoothSliderRe
     @Override
     public void onLayout(float left, float right, float y) {
         super.onLayout(left, right, y);
-        slider.setPos(centerX + 40, y + 9);
+        slider.locate(centerX + 40, y + 9);
     }
 
     @Override

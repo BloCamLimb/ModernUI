@@ -20,17 +20,14 @@ package icyllis.modernui.impl.module;
 
 import com.google.common.collect.Lists;
 import icyllis.modernui.gui.layout.WidgetLayout;
-import icyllis.modernui.gui.master.Icon;
 import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.master.Widget;
 import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.gui.widget.StaticFrameButton;
-import icyllis.modernui.gui.widget.TextIconButton;
 import icyllis.modernui.gui.widget.TriangleButton;
 import icyllis.modernui.impl.background.ResourcePackBG;
 import icyllis.modernui.impl.setting.ResourcePackEntry;
 import icyllis.modernui.impl.setting.ResourcePackGroup;
-import icyllis.modernui.system.ConstantsLibrary;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.ClientResourcePackInfo;
@@ -109,7 +106,7 @@ public class SettingResourcePack extends Module {
     public void resize(int width, int height) {
         super.resize(width, height);
         arrowsLayout.layout(width / 2f - 6, height * 0.25f);
-        applyButton.setPos(width / 2f - 24, height - 32);
+        applyButton.locate(width / 2f - 24, height - 32);
     }
 
     private void applyResourcePacks() {

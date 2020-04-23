@@ -18,18 +18,12 @@
 
 package icyllis.modernui.impl.setting;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.TextAlign;
-import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.impl.module.SettingLanguage;
 import icyllis.modernui.gui.scroll.UniformScrollEntry;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.resources.Language;
-import org.lwjgl.opengl.GL11;
 
 public class LanguageEntry extends UniformScrollEntry {
 
@@ -74,7 +68,7 @@ public class LanguageEntry extends UniformScrollEntry {
             tessellator.draw();
             GL11.glDisable(GL11.GL_LINE_SMOOTH);
             RenderSystem.enableTexture();*/
-        } else if (mouseHovered) {
+        } else if (isMouseHovered()) {
 
             canvas.setLineAntiAliasing(true);
             canvas.setRGBA(0.879f, 0.879f, 0.879f, 0.7f);

@@ -113,14 +113,14 @@ public class SlidingToggleButton extends Widget {
     @Override
     protected void onMouseHoverEnter() {
         super.onMouseHoverEnter();
-        module.addAnimation(new Animation(3)
+        getModule().addAnimation(new Animation(3)
                 .applyTo(new Applier(brightness, 1.0f, this::setBrightness)));
     }
 
     @Override
     protected void onMouseHoverExit() {
         super.onMouseHoverExit();
-        module.addAnimation(new Animation(3)
+        getModule().addAnimation(new Animation(3)
                 .applyTo(new Applier(brightness, 0.7f, this::setBrightness)));
     }
 

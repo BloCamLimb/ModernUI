@@ -25,12 +25,11 @@ public interface IWidget extends IDrawable, IMouseListener {
 
     /**
      * Set widget position, or use layout for multiple widgets
-     * This position is always left top position
      *
-     * @param x x pos
-     * @param y y pos
+     * @param px pivot x pos
+     * @param py pivot y pos
      */
-    void setPos(float x, float y);
+    void locate(float px, float py);
 
     /**
      * Get width
