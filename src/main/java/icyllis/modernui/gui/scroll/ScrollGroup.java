@@ -42,6 +42,7 @@ public abstract class ScrollGroup extends Widget {
         this.height = height;
     }
 
+    @Deprecated
     @Override
     public final void locate(float px, float py) {
         throw new RuntimeException();

@@ -26,6 +26,9 @@ import javax.annotation.Nullable;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
+/**
+ * For input integers
+ */
 public class NumberInputField extends TextField {
 
     @Nullable
@@ -119,7 +122,6 @@ public class NumberInputField extends TextField {
         if (listener != null && (runtimeUpdate || force)) {
             if (!c) {
                 listener.accept(this);
-                getLongFromText();
             }
         }
     }

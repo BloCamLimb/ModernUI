@@ -79,11 +79,11 @@ public class SettingControls extends Module {
         addWidget(window);
 
         filterConflictButton = new TextIconButton(this, I18n.format("gui.modernui.button.filterConflicts"), 12, 12,
-                new Icon(ConstantsLibrary.ICONS, 0.5f, 0.25f, 0.625f, 0.375f, true), this::filterConflicts, TextIconButton.Direction.UP);
+                new Icon(ConstantsLibrary.ICONS, 0.5f, 0.25f, 0.625f, 0.375f, true), this::filterConflicts, TextIconButton.Direction.LEFT);
         addWidget(filterConflictButton);
 
         resetAllButton = new TextIconButton(this, I18n.format("controls.resetAll"), 12, 12,
-                new Icon(ConstantsLibrary.ICONS, 0.625f, 0.25f, 0.75f, 0.375f, true), this::resetAllKey, TextIconButton.Direction.UP);
+                new Icon(ConstantsLibrary.ICONS, 0.625f, 0.25f, 0.75f, 0.375f, true), this::resetAllKey, TextIconButton.Direction.RIGHT);
         addWidget(resetAllButton);
 
         searchBox = new SearchBox(this, 100);

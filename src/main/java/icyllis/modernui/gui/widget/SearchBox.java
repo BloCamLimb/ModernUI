@@ -29,8 +29,6 @@ import java.util.function.Function;
 
 public class SearchBox extends TextField {
 
-    private Runnable enterOperation = () -> {};
-
     @Nullable
     private Function<String, Boolean> listener;
 
@@ -59,10 +57,6 @@ public class SearchBox extends TextField {
         this.listener = listener;
     }
 
-    public void setEnterOperation(Runnable enterOperation) {
-        this.enterOperation = enterOperation;
-    }
-
     public void onTextChanged() {
         onTextChanged(false);
     }
@@ -85,17 +79,5 @@ public class SearchBox extends TextField {
     public void stopKeyboardListening() {
         editing = false;
         timer = 0;
-    }
-
-    @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (super.keyPressed(keyCode, scanCode, modifiers)) {
-            return true;
-        }
-        if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
-            enterOperation.run();
-            return true;
-        }
-        return false;
     }
 }
