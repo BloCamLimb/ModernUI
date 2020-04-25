@@ -19,7 +19,7 @@
 package icyllis.modernui.gui.widget;
 
 import icyllis.modernui.font.FontTools;
-import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.Canvas;
@@ -104,10 +104,10 @@ public class DropDownMenu extends Widget {
                 canvas.setColor(Color3f.WHILE);
             }
             if (align == Align.LEFT) {
-                canvas.setTextAlign(TextAlign.LEFT);
+                canvas.setTextAlign(Align3H.LEFT);
                 canvas.drawText(text, x1 + 3, cy + 2);
             } else {
-                canvas.setTextAlign(TextAlign.RIGHT);
+                canvas.setTextAlign(Align3H.RIGHT);
                 canvas.drawText(text, x2 - 3, cy + 2);
             }
         }

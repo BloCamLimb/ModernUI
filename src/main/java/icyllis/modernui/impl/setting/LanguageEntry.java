@@ -18,7 +18,7 @@
 
 package icyllis.modernui.impl.setting;
 
-import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.impl.module.SettingLanguage;
@@ -89,7 +89,7 @@ public class LanguageEntry extends UniformScrollEntry {
             RenderSystem.enableTexture();*/
         }
 
-        canvas.setTextAlign(TextAlign.CENTER);
+        canvas.setTextAlign(Align3H.CENTER);
         canvas.resetColor();
         canvas.drawText(language.toString(), centerX, y1 + 4);
     }

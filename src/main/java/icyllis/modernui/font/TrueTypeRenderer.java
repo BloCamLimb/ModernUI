@@ -27,6 +27,7 @@ package icyllis.modernui.font;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.math.Color3f;
+import icyllis.modernui.gui.math.Align3H;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
@@ -93,7 +94,7 @@ public class TrueTypeRenderer implements IFontRenderer {
     //TODO Pre-sort by texture to minimize binds; can store colors per glyph in string cache (?)
     //TODO Optimize the underline/strikethrough drawing to draw a single line for each run
     @Override
-    public float drawString(String str, float startX, float startY, float r, float g, float b, float a, TextAlign align) {
+    public float drawString(String str, float startX, float startY, float r, float g, float b, float a, Align3H align) {
         /* Check for invalid arguments */
         if (str == null || str.isEmpty()) {
             return 0;

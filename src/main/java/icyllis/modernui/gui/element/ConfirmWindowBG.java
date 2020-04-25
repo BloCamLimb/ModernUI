@@ -18,7 +18,7 @@
 
 package icyllis.modernui.gui.element;
 
-import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.Canvas;
@@ -53,10 +53,10 @@ public class ConfirmWindowBG implements IDrawable {
         canvas.drawRectOutline(x, y, x + 180, y + frameSizeHOffset, 0.51f);
 
         canvas.resetColor();
-        canvas.setTextAlign(TextAlign.CENTER);
+        canvas.setTextAlign(Align3H.CENTER);
         canvas.drawText(title, x + 90, y + 4);
 
-        canvas.setTextAlign(TextAlign.LEFT);
+        canvas.setTextAlign(Align3H.LEFT);
         int i = 0;
         for (String t : desc) {
             canvas.drawText(t, x + 8, y + 24 + i++ * 12);

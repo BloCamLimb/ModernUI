@@ -18,7 +18,7 @@
 
 package icyllis.modernui.gui.widget;
 
-import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.Canvas;
@@ -58,19 +58,19 @@ public class TextIconButton extends IconButton {
             canvas.setRGBA(1, 1, 1, textAlpha);
             switch (direction) {
                 case UP:
-                    canvas.setTextAlign(TextAlign.CENTER);
+                    canvas.setTextAlign(Align3H.CENTER);
                     canvas.drawText(text, x1 + width / 2f, y1 - 12);
                     break;
                 case DOWN:
-                    canvas.setTextAlign(TextAlign.CENTER);
+                    canvas.setTextAlign(Align3H.CENTER);
                     canvas.drawText(text, x1 + width / 2f, y2 + 3);
                     break;
                 case LEFT:
-                    canvas.setTextAlign(TextAlign.RIGHT);
+                    canvas.setTextAlign(Align3H.RIGHT);
                     canvas.drawText(text, x1 - 4, y1 + (height - 8) / 2f);
                     break;
                 case RIGHT:
-                    canvas.setTextAlign(TextAlign.LEFT);
+                    canvas.setTextAlign(Align3H.LEFT);
                     canvas.drawText(text, x2 + 4, y1 + (height - 8) / 2f);
                     break;
             }

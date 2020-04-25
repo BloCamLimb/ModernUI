@@ -19,7 +19,7 @@
 package icyllis.modernui.impl.module;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.element.TextElement;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.IKeyboardListener;
@@ -67,7 +67,7 @@ public class SettingControls extends Module {
 
     private DropDownWidget searchModeButton;
 
-    private TextElement resultCounter = new TextElement(TextAlign.CENTER);
+    private TextElement resultCounter = new TextElement(Align3H.CENTER);
 
     public SettingControls() {
         this.minecraft = Minecraft.getInstance();
@@ -79,11 +79,11 @@ public class SettingControls extends Module {
         addWidget(window);
 
         filterConflictButton = new TextIconButton(this, I18n.format("gui.modernui.button.filterConflicts"), 12, 12,
-                new Icon(ConstantsLibrary.ICONS, 0.5f, 0.25f, 0.625f, 0.375f, true), this::filterConflicts, TextIconButton.Direction.LEFT);
+                new Icon(ConstantsLibrary.ICONS, 0.5f, 0.25f, 0.625f, 0.375f, true), this::filterConflicts, TextIconButton.Direction.DOWN);
         addWidget(filterConflictButton);
 
         resetAllButton = new TextIconButton(this, I18n.format("controls.resetAll"), 12, 12,
-                new Icon(ConstantsLibrary.ICONS, 0.625f, 0.25f, 0.75f, 0.375f, true), this::resetAllKey, TextIconButton.Direction.RIGHT);
+                new Icon(ConstantsLibrary.ICONS, 0.625f, 0.25f, 0.75f, 0.375f, true), this::resetAllKey, TextIconButton.Direction.DOWN);
         addWidget(resetAllButton);
 
         searchBox = new SearchBox(this, 100);

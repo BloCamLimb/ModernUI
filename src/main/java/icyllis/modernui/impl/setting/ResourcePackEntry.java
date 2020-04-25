@@ -20,7 +20,7 @@ package icyllis.modernui.impl.setting;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.FontTools;
-import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.impl.module.SettingResourcePack;
@@ -120,7 +120,7 @@ public class ResourcePackEntry extends UniformScrollEntry {
         blitIcon(x1 + 3, y1 + 2);
 
         canvas.resetColor();
-        canvas.setTextAlign(TextAlign.LEFT);
+        canvas.setTextAlign(Align3H.LEFT);
         canvas.drawText(title, x1 + 39, y1 + 4);
 
         canvas.setColor(Color3f.GRAY);

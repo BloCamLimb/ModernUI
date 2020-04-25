@@ -23,6 +23,7 @@ import icyllis.modernui.editor.WidgetParser;
 import icyllis.modernui.editor.WidgetContainer;
 import icyllis.modernui.gui.animation.IAnimation;
 import icyllis.modernui.system.ConstantsLibrary;
+import icyllis.modernui.system.ModernUI;
 import net.minecraft.util.ResourceLocation;
 
 import javax.annotation.Nullable;
@@ -31,6 +32,17 @@ import java.util.*;
 import java.util.function.Consumer;
 
 public abstract class Module implements IModule, IFocuser {
+
+    private static Field MODULE;
+
+    static {
+        try {
+            MODULE = Widget.class.getDeclaredField("module");
+            MODULE.setAccessible(true);
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        }
+    }
 
     private final GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
 
@@ -112,6 +124,13 @@ public abstract class Module implements IModule, IFocuser {
                 field.set(this, e.widget);
             } catch (NoSuchFieldException | IllegalAccessException ignored) {
 
+            }
+            //TODO use builder
+            try {
+                MODULE.set(e.widget, this);
+            } catch (IllegalAccessException ex) {
+                ModernUI.LOGGER.fatal(GlobalModuleManager.MARKER, "I'm fine");
+                ex.printStackTrace();
             }
             addWidget(e.widget);
             containerConsumer.accept(e);

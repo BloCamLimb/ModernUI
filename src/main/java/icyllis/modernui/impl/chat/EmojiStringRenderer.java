@@ -20,8 +20,7 @@ package icyllis.modernui.impl.chat;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.font.TextAlign;
-import icyllis.modernui.font.FontTools;
+import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.gui.math.Color3f;
@@ -54,7 +53,7 @@ public class EmojiStringRenderer implements IFontRenderer {
     private WeakHashMap<String, EmojiText> MAPS = new WeakHashMap<>();
 
     @Override
-    public float drawString(String str, float startX, float startY, Color3f color, float alpha, TextAlign align) {
+    public float drawString(String str, float startX, float startY, Color3f color, float alpha, Align3H align) {
         EmojiText entry = MAPS.get(str);
         if (entry == null) {
             entry = cache(str);
@@ -69,12 +68,12 @@ public class EmojiStringRenderer implements IFontRenderer {
     }
 
     @Override
-    public float drawString(String str, float startX, float startY, float r, float g, float b, float a, TextAlign align) {
+    public float drawString(String str, float startX, float startY, float r, float g, float b, float a, Align3H align) {
         return 0;
     }
 
     @Override
-    public float drawString(String str, float startX, float startY, float brightness, float alpha, TextAlign align) {
+    public float drawString(String str, float startX, float startY, float brightness, float alpha, Align3H align) {
         return 0;
     }
 

@@ -16,8 +16,10 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.master;
+package icyllis.modernui.gui.widget;
 
+import icyllis.modernui.gui.master.Module;
+import icyllis.modernui.gui.master.Widget;
 import icyllis.modernui.gui.math.Locator;
 
 import javax.annotation.Nonnull;

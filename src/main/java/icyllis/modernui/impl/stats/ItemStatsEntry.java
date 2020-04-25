@@ -19,7 +19,7 @@
 package icyllis.modernui.impl.stats;
 
 import icyllis.modernui.font.FontTools;
-import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.math.Color3f;
 import icyllis.modernui.gui.scroll.ScrollWindow;
@@ -66,7 +66,7 @@ public class ItemStatsEntry extends UniformScrollEntry {
     public void draw(Canvas canvas, float time) {
         itemRenderer.renderItemIntoGUI(item.getDefaultInstance(), (int) x1 + 2, (int) y1 + 2);
         canvas.setColor(color, 1);
-        canvas.setTextAlign(TextAlign.RIGHT);
+        canvas.setTextAlign(Align3H.RIGHT);
         int i = 0;
         for (String var : vars) {
             canvas.drawText(var, x1 + 80 + i * 50, y1 + 6);
@@ -78,7 +78,7 @@ public class ItemStatsEntry extends UniformScrollEntry {
             float l = FontTools.getStringWidth(itemName);
             canvas.setRGBA(0, 0, 0, 0.5f);
             canvas.drawRect(x1 + 22, y1 + 3, x1 + 28 + l, y2 - 3);
-            canvas.setTextAlign(TextAlign.LEFT);
+            canvas.setTextAlign(Align3H.LEFT);
             canvas.resetColor();
             canvas.drawText(itemName, x1 + 25, y1 + 6);
         }

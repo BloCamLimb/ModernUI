@@ -19,7 +19,7 @@
 package icyllis.modernui.impl.setting;
 
 import icyllis.modernui.font.FontTools;
-import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.Canvas;
@@ -90,7 +90,7 @@ public class DropdownSettingEntry extends SettingEntry {
             canvas.setRGBA(0.377f, 0.377f, 0.377f, frameAlpha);
             canvas.drawRect(bl, y1 + 2, x2, y1 + 18);
         }
-        canvas.setTextAlign(TextAlign.RIGHT);
+        canvas.setTextAlign(Align3H.RIGHT);
         canvas.setRGBA(optionBrightness, optionBrightness, optionBrightness, 1);
         canvas.drawText(optionText, x2 - 10, y1 + 6);
         //fontRenderer.drawString(optionText, x2 - 10, y1 + 6, optionBrightness, 1, TextAlign.RIGHT);

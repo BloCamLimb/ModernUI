@@ -19,9 +19,7 @@
 package icyllis.modernui.impl.setting;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.font.FontTools;
-import icyllis.modernui.font.IFontRenderer;
-import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.impl.module.SettingResourcePack;
 import icyllis.modernui.gui.scroll.ScrollWindow;
@@ -111,7 +109,7 @@ public class ResourcePackGroup extends UniformScrollGroup<ResourcePackEntry> {
     @Override
     public void draw(Canvas canvas, float time) {
         canvas.resetColor();
-        canvas.setTextAlign(TextAlign.CENTER);
+        canvas.setTextAlign(Align3H.CENTER);
         canvas.drawText(title, titleCenterX, y1 + 2);
         super.draw(canvas, time);
     }

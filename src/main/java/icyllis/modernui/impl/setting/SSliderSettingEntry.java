@@ -18,7 +18,7 @@
 
 package icyllis.modernui.impl.setting;
 
-import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.widget.ISmoothSliderReceiver;
 import icyllis.modernui.gui.widget.SliderSmooth;
@@ -77,7 +77,7 @@ public class SSliderSettingEntry extends SettingEntry implements ISmoothSliderRe
     public void drawExtra(Canvas canvas, float time) {
         slider.draw(canvas, time);
         canvas.setRGBA(titleBrightness, titleBrightness, titleBrightness, 1);
-        canvas.setTextAlign(TextAlign.RIGHT);
+        canvas.setTextAlign(Align3H.RIGHT);
         canvas.drawText(displayString, x2 - 6, y1 + 6);
         //fontRenderer.drawString(displayString, x2 - 6, y1 + 6, titleBrightness, 1.0f, TextAlign.RIGHT);
     }
