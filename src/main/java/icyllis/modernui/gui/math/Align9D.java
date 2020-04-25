@@ -18,6 +18,8 @@
 
 package icyllis.modernui.gui.math;
 
+// NatsuiroMatsuri: Ore ga hololive da!
+// yagoo!
 public enum Align9D {
     TOP_LEFT,
     TOP_CENTER,
@@ -27,5 +29,26 @@ public enum Align9D {
     CENTER_RIGHT,
     BOTTOM_LEFT,
     BOTTOM_CENTER,
-    BOTTOM_RIGHT
+    BOTTOM_RIGHT;
+
+    private Align3H align3H;
+
+    private Align3V align3V;
+
+    Align9D() {
+        this.align3H = Align3H.getFrom9D(this);
+        this.align3V = Align3V.getFrom9D(this);
+    }
+
+    public Align3H getAlign3H() {
+        return align3H;
+    }
+
+    public Align3V getAlign3V() {
+        return align3V;
+    }
+
+    public static Align9D combineWith(Align3H align3H, Align3V align3V) {
+        return values()[align3H.ordinal() + align3V.ordinal() * 3];
+    }
 }

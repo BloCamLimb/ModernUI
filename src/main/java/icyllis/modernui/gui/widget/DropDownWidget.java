@@ -19,13 +19,13 @@
 package icyllis.modernui.gui.widget;
 
 import icyllis.modernui.font.FontTools;
-import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.*;
+import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.popup.PopupMenu;
 import icyllis.modernui.system.ConstantsLibrary;
-import net.minecraft.util.text.ITextComponent;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -57,6 +57,17 @@ public class DropDownWidget extends Widget {
         this.operation = operation;
         this.align = align;
         updateList(list, index);
+        if (align == DropDownMenu.Align.LEFT) {
+            super.setAlign(Align9D.TOP_LEFT);
+        } else {
+            super.setAlign(Align9D.TOP_RIGHT);
+        }
+    }
+
+    @Deprecated
+    @Override
+    public void setAlign(Align9D align) {
+        throw new RuntimeException();
     }
 
     @Override
@@ -65,7 +76,7 @@ public class DropDownWidget extends Widget {
             canvas.setRGBA(0.377f, 0.377f, 0.377f, backAlpha);
             canvas.drawRect(x1, y1, x2, y2);
         }
-        canvas.setTextAlign(TextAlign.RIGHT);
+        canvas.setTextAlign(Align3H.RIGHT);
         canvas.setRGBA(brightness, brightness, brightness, 1);
         canvas.drawText(text, x2 - 10, y1 + 4);
         canvas.drawIcon(icon, x2 - 8, y1 + 5, x2, y2 - 3);
@@ -74,13 +85,6 @@ public class DropDownWidget extends Widget {
     @Override
     public void locate(float px, float py) {
         super.locate(px, py);
-        if (align == DropDownMenu.Align.LEFT) {
-            this.x2 = px + width;
-            this.x1 = x2 - width;
-        } else {
-            this.x1 = px - width;
-            this.x2 = x1 + width;
-        }
     }
 
     @Override
@@ -108,14 +112,8 @@ public class DropDownWidget extends Widget {
                 .applyTo(new Applier(0.25f, 0, this::setBackAlpha)));
     }
 
-    public void setBackAlpha(float a) {
+    private void setBackAlpha(float a) {
         backAlpha = a;
-    }
-
-    public void setBrightness(float b) {
-        if (listening) {
-            brightness = b;
-        }
     }
 
     public void setListening(boolean listening) {

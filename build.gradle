@@ -147,3 +147,17 @@ sourceSets {
         runtimeClasspath += sourceSets.api.output
     }
 }
+
+jar {
+    from sourceSets.main.output
+    from sourceSets.api.output
+}
+
+task apiJar(type: Jar) {
+    archiveName = "ModernUI-${minecraft_version}-${mod_version}-api.jar"
+    from sourceSets.api.output
+}
+
+artifacts {
+    archives apiJar
+}

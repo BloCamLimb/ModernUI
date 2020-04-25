@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+//TODO WIP
 public enum WidgetParser {
     INSTANCE;
 
@@ -45,7 +46,6 @@ public enum WidgetParser {
                 .setPrettyPrinting()
                 .registerTypeAdapter(WidgetContainer.class, new WidgetAdaptor())
                 .excludeFieldsWithoutExposeAnnotation()
-                .serializeNulls()
                 .create();
     }
 

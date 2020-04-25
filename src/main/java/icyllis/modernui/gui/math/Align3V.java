@@ -16,41 +16,16 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.element;
-
-import icyllis.modernui.gui.math.Align3H;
-import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.master.IDrawable;
+package icyllis.modernui.gui.math;
 
 import javax.annotation.Nonnull;
 
-public class TextElement implements IDrawable {
+public enum Align3V {
+    TOP,
+    CENTER,
+    BOTTOM;
 
-    private String text = "";
-
-    private float x, y;
-
-    private final Align3H align;
-
-    public TextElement(Align3H align) {
-        this.align = align;
+    public static Align3V getFrom9D(@Nonnull Align9D align9D) {
+        return values()[align9D.ordinal() / 3];
     }
-
-    @Override
-    public void draw(@Nonnull Canvas canvas, float time) {
-        canvas.resetColor();
-        canvas.setTextAlign(align);
-        canvas.drawText(text, x, y);
-    }
-
-    public void setText(String text) {
-        this.text = text;
-    }
-
-    public void setPos(float x, float y) {
-        this.x = x;
-        this.y = y;
-    }
-
-
 }

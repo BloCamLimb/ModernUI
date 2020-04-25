@@ -19,9 +19,10 @@
 package icyllis.modernui.gui.master;
 
 import com.google.gson.annotations.Expose;
+import icyllis.modernui.gui.math.Align3H;
+import icyllis.modernui.gui.math.Align3V;
 import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.math.Locator;
-import net.minecraft.util.text.ITextComponent;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -60,29 +61,29 @@ public abstract class Widget implements IWidget {
 
     @Override
     public void locate(float px, float py) {
-        int horizontalAlign = align.ordinal() % 3;
+        Align3H horizontalAlign = align.getAlign3H();
         switch (horizontalAlign) {
-            case 0:
+            case LEFT:
                 x1 = px;
                 break;
-            case 1:
+            case CENTER:
                 x1 = px - width / 2f;
                 break;
-            case 2:
+            case RIGHT:
                 x1 = px - width;
                 break;
         }
         x2 = x1 + width;
 
-        int verticalAlign = align.ordinal() / 3;
+        Align3V verticalAlign = align.getAlign3V();
         switch (verticalAlign) {
-            case 0:
+            case TOP:
                 y1 = py;
                 break;
-            case 1:
+            case CENTER:
                 y1 = py - height / 2f;
                 break;
-            case 2:
+            case BOTTOM:
                 y1 = py - height;
                 break;
         }
@@ -137,24 +138,24 @@ public abstract class Widget implements IWidget {
     @Override
     public boolean updateMouseHover(double mouseX, double mouseY) {
         if (listening) {
-            boolean prev = isMouseHovered();
-            setMouseHovered(isMouseInArea(mouseX, mouseY));
-            if (prev != isMouseHovered()) {
-                if (isMouseHovered()) {
+            boolean prev = mouseHovered;
+            mouseHovered = isMouseInArea(mouseX, mouseY);
+            if (prev != mouseHovered) {
+                if (mouseHovered) {
                     onMouseHoverEnter();
                 } else {
                     onMouseHoverExit();
                 }
             }
-            return isMouseHovered();
+            return mouseHovered;
         }
         return false;
     }
 
     @Override
     public final void setMouseHoverExit() {
-        if (isMouseHovered()) {
-            setMouseHovered(false);
+        if (mouseHovered) {
+            mouseHovered = false;
             onMouseHoverExit();
         }
     }
@@ -176,11 +177,32 @@ public abstract class Widget implements IWidget {
 
     }
 
-    public Module getModule() {
+    public final Module getModule() {
         return module;
     }
 
-    public void setMouseHovered(boolean mouseHovered) {
-        this.mouseHovered = mouseHovered;
+    public Class<? extends Builder> getBuilder() {
+        return Builder.class;
+    }
+
+    public static abstract class Builder {
+
+        private float width;
+
+        private float height;
+
+        public Builder() {
+
+        }
+
+        public void setWidth(float width) {
+            this.width = width;
+        }
+
+        public void setHeight(float height) {
+            this.height = height;
+        }
+
+        public abstract Widget build(Module module);
     }
 }

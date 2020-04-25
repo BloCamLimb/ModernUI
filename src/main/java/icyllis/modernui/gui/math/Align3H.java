@@ -16,20 +16,26 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.font;
+package icyllis.modernui.gui.math;
 
-public enum TextAlign {
+import javax.annotation.Nonnull;
+
+public enum Align3H {
     LEFT(0.0f),
     CENTER(0.25f),
     RIGHT(0.5f);
 
     private float textOffset;
 
-    TextAlign(float textOffset) {
+    Align3H(float textOffset) {
         this.textOffset = textOffset;
     }
 
     public float getTextOffset() {
         return textOffset;
+    }
+
+    public static Align3H getFrom9D(@Nonnull Align9D align9D) {
+        return values()[align9D.ordinal() % 3];
     }
 }

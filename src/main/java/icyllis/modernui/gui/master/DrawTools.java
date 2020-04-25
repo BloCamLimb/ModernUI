@@ -20,7 +20,7 @@ package icyllis.modernui.gui.master;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.IFontRenderer;
-import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.graphics.shader.ShaderTools;
 import icyllis.modernui.gui.math.Color3f;
@@ -91,7 +91,7 @@ public class DrawTools {
     /**
      * Text align
      */
-    private TextAlign textAlign = TextAlign.LEFT;
+    private Align3H textAlign = Align3H.LEFT;
 
 
     /**
@@ -185,7 +185,7 @@ public class DrawTools {
         this.z = z;
     }
 
-    public void setTextAlign(TextAlign align) {
+    public void setTextAlign(Align3H align) {
         this.textAlign = align;
     }
 

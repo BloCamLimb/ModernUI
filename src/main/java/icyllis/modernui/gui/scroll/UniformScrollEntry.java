@@ -37,6 +37,9 @@ public abstract class UniformScrollEntry extends Widget {
         this.height = height;
     }
 
+    /**
+     * Use {@link #onLayout(float, float, float)}
+     */
     @Deprecated
     @Override
     public final void locate(float px, float py) {

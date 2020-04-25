@@ -18,7 +18,7 @@
 
 package icyllis.modernui.gui.widget;
 
-import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.master.*;
 import icyllis.modernui.gui.math.Color3f;
 import net.minecraft.client.resources.I18n;
@@ -31,6 +31,9 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.function.Consumer;
 
+/**
+ * Go'in my way
+ */
 public class KeyInputBox extends Widget implements IKeyboardListener {
 
     private String keyText;
@@ -64,7 +67,7 @@ public class KeyInputBox extends Widget implements IKeyboardListener {
             canvas.drawRectLines(x1, y1, x2, y2);
             canvas.setLineAntiAliasing(false);
         }
-        canvas.setTextAlign(TextAlign.CENTER);
+        canvas.setTextAlign(Align3H.CENTER);
         canvas.setRGBA(textBrightness, textBrightness, textBrightness, 1.0f);
         canvas.drawText(keyText, x1 + 42, y1 + 4);
     }
@@ -103,9 +106,8 @@ public class KeyInputBox extends Widget implements IKeyboardListener {
     }
 
     public void setTextColor(int tier) {
-        if (keyText.indexOf('\u00a7') != -1) {
-            keyText = keyText.substring(2);
-        }
+        keyText = TextFormatting.getTextWithoutFormattingCodes(keyText);
+
         switch (tier) {
             case 1:
                 keyText = TextFormatting.GOLD + keyText;

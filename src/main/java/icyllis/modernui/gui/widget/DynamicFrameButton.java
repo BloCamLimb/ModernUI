@@ -19,7 +19,7 @@
 package icyllis.modernui.gui.widget;
 
 import icyllis.modernui.font.FontTools;
-import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.*;
@@ -58,7 +58,7 @@ public class DynamicFrameButton extends Widget {
     public void draw(@Nonnull Canvas canvas, float time) {
         ac.update();
         canvas.setRGBA(textBrightness, textBrightness, textBrightness, 1.0f);
-        canvas.setTextAlign(TextAlign.CENTER);
+        canvas.setTextAlign(Align3H.CENTER);
         canvas.drawText(text, x1 + width / 2f, y1 + 2);
         if (frameAlpha > 0) {
             canvas.setRGBA(0.5f, 0.5f, 0.5f, frameAlpha);

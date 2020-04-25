@@ -19,11 +19,14 @@
 package icyllis.modernui.gui.master;
 
 import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.SimpleTexture;
 import net.minecraft.client.renderer.texture.Texture;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.util.ResourceLocation;
+
+import javax.annotation.Nullable;
 
 /**
  * Icon is a full texture or a part of texture specially used in gui
@@ -33,6 +36,7 @@ public class Icon {
     @Expose
     private final ResourceLocation resource;
 
+    @Nullable
     private Texture texture;
 
     @Expose
@@ -48,6 +52,7 @@ public class Icon {
     private final float t;
 
     @Expose
+    @SerializedName("antiAliasing")
     private final boolean aa;
 
     /**
@@ -67,11 +72,9 @@ public class Icon {
         this.s = s;
         this.t = t;
         this.aa = aa;
-        onCreate();
-        //TODO on create
     }
 
-    public void onCreate() {
+    private void loadTexture() {
         TextureManager textureManager = Minecraft.getInstance().getTextureManager();
         Texture texture = textureManager.getTexture(resource);
         if (texture == null) {
@@ -82,6 +85,9 @@ public class Icon {
     }
 
     public void bindTexture() {
+        if (texture == null) {
+            loadTexture();
+        }
         texture.bindTexture();
         if (aa) {
             texture.setBlurMipmapDirect(true, true);

@@ -18,7 +18,7 @@
 
 package icyllis.modernui.gui.widget;
 
-import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.AnimationControl;
@@ -53,7 +53,7 @@ public class LineTextButton extends Widget {
     public void draw(@Nonnull Canvas canvas, float time) {
         ac.update();
         canvas.setRGBA(textBrightness, textBrightness, textBrightness, 1.0f);
-        canvas.setTextAlign(TextAlign.CENTER);
+        canvas.setTextAlign(Align3H.CENTER);
         canvas.drawText(text, x1 + width / 2f, y1 + 2);
         canvas.resetColor();
         canvas.drawRect(x1 + sizeWOffset, y1 + 11, x2 - sizeWOffset, y1 + 12);

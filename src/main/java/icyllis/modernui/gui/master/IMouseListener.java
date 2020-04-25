@@ -24,8 +24,8 @@ public interface IMouseListener {
 
     /**
      * Check if mouse hover this widget, and update member variable for mouse event
-     * @param mouseX scaled mouse X pos
-     * @param mouseY scaled mouse Y pos
+     * @param mouseX relative mouse X pos
+     * @param mouseY relative mouse Y pos
      * @return return true to cancel the event
      */
     default boolean updateMouseHover(double mouseX, double mouseY) {
@@ -50,8 +50,8 @@ public interface IMouseListener {
      * Called when mouse hover and a mouse button clicked
      * See {@link #isMouseHovered()}
      *
-     * @param mouseX scaled mouse X pos
-     * @param mouseY scaled mouse Y pos
+     * @param mouseX relative mouse X pos
+     * @param mouseY relative mouse Y pos
      * @param mouseButton See {@link GLFW}
      * @return return true to cancel the event
      */
@@ -63,8 +63,8 @@ public interface IMouseListener {
      * Called when mouse hover and a mouse button released
      * See {@link #isMouseHovered()}
      *
-     * @param mouseX scaled mouse X pos
-     * @param mouseY scaled mouse Y pos
+     * @param mouseX relative mouse X pos
+     * @param mouseY relative mouse Y pos
      * @param mouseButton See {@link GLFW}
      * @return return true to cancel the event
      */

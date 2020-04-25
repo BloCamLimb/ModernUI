@@ -18,7 +18,7 @@
 
 package icyllis.modernui.gui.widget;
 
-import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.Canvas;
@@ -51,7 +51,7 @@ public class StaticFrameButton extends Widget {
     public void draw(@Nonnull Canvas canvas, float time) {
         canvas.setRGBA(brightness, brightness, brightness, 1.0f);
         canvas.drawRectOutline(x1, y1, x2, y2, 0.51f);
-        canvas.setTextAlign(TextAlign.CENTER);
+        canvas.setTextAlign(Align3H.CENTER);
         canvas.drawText(text, x1 + width / 2f, y1 + 2);
     }
 

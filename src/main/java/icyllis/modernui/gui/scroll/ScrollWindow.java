@@ -20,7 +20,7 @@ package icyllis.modernui.gui.scroll;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.master.FlexibleWidget;
+import icyllis.modernui.gui.widget.FlexibleWidget;
 import icyllis.modernui.gui.master.Module;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
