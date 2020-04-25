@@ -23,41 +23,62 @@ import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.math.Align3V;
 import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.math.Locator;
+import icyllis.modernui.gui.widget.MenuButton;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import java.util.function.BiFunction;
 
+/**
+ * Almost all gui elements extends this.
+ *
+ * Widget has its own precise position and a rect area
+ * which is used for listening mouse and keyboard events.
+ *
+ * All widgets should be created by Builder or Json
+ *
+ * @since 1.5 reworked
+ */
 public abstract class Widget implements IWidget {
 
     private final Module module;
 
-    @Expose
-    @Nullable
-    private Locator locator;
+    private final Locator locator;
 
-    @Expose
-    private Align9D align = Align9D.TOP_LEFT;
+    private final Align9D align;
 
     protected float x1, y1;
 
     protected float x2, y2;
 
-    @Expose
     protected float width, height;
 
-    protected boolean listening = true;
+    private WidgetStatus status = WidgetStatus.ACTIVE;
 
     private boolean mouseHovered = false;
 
-    public Widget(Module module) {
+    private int dClickTime = -10;
+
+    /**
+     * A mandatory alpha, for global shader uniform
+     */
+    private float finalAlpha = 1.0f;
+
+    public Widget(Module module, @Nonnull Builder builder) {
         this.module = module;
+        this.width = builder.width;
+        this.height = builder.height;
+        this.locator = builder.locator;
+        this.align = builder.align;
     }
 
-    public Widget(Module module, float width, float height) {
-        this.module = module;
-        this.width = width;
-        this.height = height;
+    @Override
+    public final void draw(Canvas canvas, float time) {
+        if (status.isDrawing()) {
+            onDraw(canvas, time);
+        }
     }
+
+    protected abstract void onDraw(Canvas canvas, float time);
 
     @Override
     public void locate(float px, float py) {
@@ -88,14 +109,6 @@ public abstract class Widget implements IWidget {
                 break;
         }
         y2 = y1 + height;
-    }
-
-    public void setLocator(@Nonnull Locator locator) {
-        this.locator = locator;
-    }
-
-    public void setAlign(Align9D align) {
-        this.align = align;
     }
 
     @Override
@@ -136,8 +149,33 @@ public abstract class Widget implements IWidget {
     }
 
     @Override
+    public float getFinalAlpha() {
+        return finalAlpha;
+    }
+
+    @Override
+    public void setFinalAlpha(float alpha) {
+        this.finalAlpha = alpha;
+    }
+
+    /**
+     * Change status maybe create some animations
+     * But builder gives you a default status, so you
+     * shouldn't call this in constructor
+     */
+    public void setStatus(WidgetStatus status) {
+        WidgetStatus prev = this.status;
+        this.status = status;
+        if (prev != status) {
+            onStatusChanged(status);
+        }
+    }
+
+    protected void onStatusChanged(WidgetStatus status) {}
+
+    @Override
     public boolean updateMouseHover(double mouseX, double mouseY) {
-        if (listening) {
+        if (status.isListening()) {
             boolean prev = mouseHovered;
             mouseHovered = isMouseInArea(mouseX, mouseY);
             if (prev != mouseHovered) {
@@ -169,38 +207,128 @@ public abstract class Widget implements IWidget {
         return mouseHovered;
     }
 
-    protected void onMouseHoverEnter() {
-
+    @Override
+    public final boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        if (status.isListening()) {
+            if (mouseButton == 0) {
+                int c = module.getTicks();
+                int d = c - dClickTime;
+                dClickTime = c;
+                if (d < 10) {
+                    if (onMouseDoubleClick(mouseX, mouseY)) {
+                        return true;
+                    }
+                }
+                return onMouseLeftClick(mouseX, mouseY);
+            } else if (mouseButton == 1) {
+                return onMouseRightClick(mouseX, mouseY);
+            }
+        }
+        return false;
     }
 
-    protected void onMouseHoverExit() {
-
+    @Override
+    public final boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
+        if (status.isListening()) {
+            if (mouseButton == 0) {
+                return onMouseLeftRelease(mouseX, mouseY);
+            } else if (mouseButton == 1) {
+                return onMouseRightRelease(mouseX, mouseY);
+            }
+        }
+        return false;
     }
+
+    @Override
+    public final boolean mouseScrolled(double amount) {
+        if (status.isListening()) {
+            return onMouseScrolled(amount);
+        }
+        return false;
+    }
+
+    protected boolean onMouseLeftClick(double mouseX, double mouseY) {
+        return false;
+    }
+
+    protected boolean onMouseLeftRelease(double mouseX, double mouseY) {
+        return false;
+    }
+
+    protected boolean onMouseDoubleClick(double mouseX, double mouseY) {
+        return false;
+    }
+
+    protected boolean onMouseRightClick(double mouseX, double mouseY) {
+        return false;
+    }
+
+    protected boolean onMouseRightRelease(double mouseX, double mouseY) {
+        return false;
+    }
+
+    protected boolean onMouseScrolled(double amount) {
+        return false;
+    }
+
+    protected void onMouseHoverEnter() {}
+
+    protected void onMouseHoverExit() {}
 
     public final Module getModule() {
         return module;
     }
 
-    public Class<? extends Builder> getBuilder() {
-        return Builder.class;
+    public final WidgetStatus getStatus() {
+        return status;
     }
+
+    /**
+     * Called if width or height changed after build
+     */
+    protected final void relocate() {
+        locator.locate(this, module.getWindowWidth(), module.getWindowHeight());
+    }
+
+    @Nonnull
+    public abstract Class<? extends Builder> getBuilder();
 
     public static abstract class Builder {
 
-        private float width;
+        @Expose
+        public float width;
 
-        private float height;
+        @Expose
+        public float height;
+
+        @Expose
+        public Locator locator = Locator.CENTER;
+
+        @Expose
+        public Align9D align = Align9D.TOP_LEFT;
 
         public Builder() {
 
         }
 
-        public void setWidth(float width) {
+        public Builder setWidth(float width) {
             this.width = width;
+            return this;
         }
 
-        public void setHeight(float height) {
+        public Builder setHeight(float height) {
             this.height = height;
+            return this;
+        }
+
+        public Builder setLocator(@Nonnull Locator locator) {
+            this.locator = locator;
+            return this;
+        }
+
+        public Builder setAlign(@Nonnull Align9D align) {
+            this.align = align;
+            return this;
         }
 
         public abstract Widget build(Module module);
