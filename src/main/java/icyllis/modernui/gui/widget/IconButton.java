@@ -18,48 +18,49 @@
 
 package icyllis.modernui.gui.widget;
 
+import com.google.gson.annotations.Expose;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.*;
+import icyllis.modernui.gui.math.Align9D;
+import icyllis.modernui.gui.math.Locator;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.function.BiFunction;
 
 public class IconButton extends Widget {
 
     protected final AnimationControl iconAC = new Control(this);
 
     private final Icon icon;
-    private final Runnable leftClickFunc;
 
-    private float brightness = 0.5f;
+    private Runnable leftClickFunc = () -> {};
 
-    public IconButton(Module module, float width, float height, Icon icon, Runnable leftClick) {
-        super(module, width, height);
-        this.icon = icon;
-        this.leftClickFunc = leftClick;
+    private float brightness = 0.7f;
+
+    public IconButton(Module module, Builder builder) {
+        super(module, builder);
+        this.icon = builder.icon;
     }
 
-    public IconButton(Module module, Icon icon, Runnable leftClick) {
-        super(module);
-        this.icon = icon;
-        this.leftClickFunc = leftClick;
+    public IconButton setCallback(Runnable r) {
+        this.leftClickFunc = r;
+        return this;
     }
 
     @Override
-    public void draw(@Nonnull Canvas canvas, float time) {
+    public void onDraw(@Nonnull Canvas canvas, float time) {
         iconAC.update();
         canvas.setRGBA(brightness, brightness, brightness, 1.0f);
         canvas.drawIcon(icon, x1, y1, x2, y2);
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        if (listening && mouseButton == 0) {
-            if (iconAC.canChangeState()) {
-                leftClickFunc.run();
-                return true;
-            }
+    protected boolean onMouseLeftClick(double mouseX, double mouseY) {
+        if (iconAC.canChangeState()) {
+            leftClickFunc.run();
+            return true;
         }
         return false;
     }
@@ -76,8 +77,53 @@ public class IconButton extends Widget {
         iconAC.startCloseAnimation();
     }
 
-    public void setIconBrightness(float brightness) {
+    private void setIconBrightness(float brightness) {
         this.brightness = brightness;
+    }
+
+    @Nonnull
+    @Override
+    public Class<? extends Widget.Builder> getBuilder() {
+        return Builder.class;
+    }
+
+    public static class Builder extends Widget.Builder {
+
+        @Expose
+        public final Icon icon;
+
+        public Builder(@Nonnull Icon icon) {
+            this.icon = icon;
+        }
+
+        @Override
+        public Builder setWidth(float width) {
+            super.setWidth(width);
+            return this;
+        }
+
+        @Override
+        public Builder setHeight(float height) {
+            super.setHeight(height);
+            return this;
+        }
+
+        @Override
+        public Builder setLocator(@Nonnull Locator locator) {
+            super.setLocator(locator);
+            return this;
+        }
+
+        @Override
+        public Builder setAlign(@Nonnull Align9D align) {
+            super.setAlign(align);
+            return this;
+        }
+
+        @Override
+        public IconButton build(Module module) {
+            return new IconButton(module, this);
+        }
     }
 
     private static class Control extends AnimationControl {
@@ -97,7 +143,7 @@ public class IconButton extends Widget {
         @Override
         protected void createCloseAnimations(@Nonnull List<Animation> list) {
             list.add(new Animation(4)
-                    .applyTo(new Applier(instance.brightness, 0.5f, instance::setIconBrightness)));
+                    .applyTo(new Applier(instance.brightness, 0.7f, instance::setIconBrightness)));
         }
     }
 }

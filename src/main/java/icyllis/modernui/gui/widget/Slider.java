@@ -22,6 +22,7 @@ import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.IDraggable;
 import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.master.Widget;
+import net.minecraft.client.renderer.Rectangle2d;
 
 import javax.annotation.Nonnull;
 

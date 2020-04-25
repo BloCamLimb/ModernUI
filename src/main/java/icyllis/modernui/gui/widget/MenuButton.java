@@ -18,14 +18,20 @@
 
 package icyllis.modernui.gui.widget;
 
+import com.google.gson.annotations.Expose;
 import icyllis.modernui.font.FontTools;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.*;
+import icyllis.modernui.gui.math.Align9D;
+import icyllis.modernui.gui.math.Locator;
+import icyllis.modernui.impl.module.SettingAudio;
 import icyllis.modernui.system.ConstantsLibrary;
+import net.minecraft.client.resources.I18n;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.function.BiFunction;
 
 public class MenuButton extends IconButton {
 
@@ -38,15 +44,14 @@ public class MenuButton extends IconButton {
     private float textAlpha = 0;
     private float frameSizeW = 5;
 
-    public MenuButton(Module module, String text, int uIndex, Runnable leftClick, int id) {
-        super(module, 16, 16,
-                new Icon(ConstantsLibrary.ICONS, uIndex * 64 / 512f, 0, (uIndex + 1) * 64 / 512f, 64 / 512f, true), leftClick);
-        this.text = text;
-        this.id = id;
+    public MenuButton(Module module, Builder builder) {
+        super(module, builder);
+        this.text = I18n.format(builder.text);
+        this.id = builder.id;
     }
 
     @Override
-    public void draw(@Nonnull Canvas canvas, float time) {
+    public void onDraw(@Nonnull Canvas canvas, float time) {
         super.draw(canvas, time);
         sideTextAC.update();
         if (sideTextAC.isAnimationOpen()) {
@@ -124,6 +129,56 @@ public class MenuButton extends IconButton {
             if (!isMouseHovered()) {
                 iconAC.startCloseAnimation();
             }
+        }
+    }
+
+    @Nonnull
+    @Override
+    public Class<? extends Widget.Builder> getBuilder() {
+        return Builder.class;
+    }
+
+    public static class Builder extends IconButton.Builder {
+
+        @Expose
+        public final String text;
+
+        @Expose
+        public final int id;
+
+        public Builder(String text, int uIndex, int id) {
+            super(new Icon(ConstantsLibrary.ICONS, uIndex * 64 / 512f, 0, (uIndex + 1) * 64 / 512f, 64 / 512f, true));
+            this.text = text;
+            this.id = id;
+        }
+
+        @Override
+        public Builder setWidth(float width) {
+            super.setWidth(width);
+            return this;
+        }
+
+        @Override
+        public Builder setHeight(float height) {
+            super.setHeight(height);
+            return this;
+        }
+
+        @Override
+        public Builder setLocator(@Nonnull Locator locator) {
+            super.setLocator(locator);
+            return this;
+        }
+
+        @Override
+        public Builder setAlign(@Nonnull Align9D align) {
+            super.setAlign(align);
+            return this;
+        }
+
+        @Override
+        public MenuButton build(Module module) {
+            return new MenuButton(module, this);
         }
     }
 

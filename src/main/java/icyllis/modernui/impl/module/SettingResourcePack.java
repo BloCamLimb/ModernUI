@@ -22,6 +22,9 @@ import com.google.common.collect.Lists;
 import icyllis.modernui.gui.layout.WidgetLayout;
 import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.master.Widget;
+import icyllis.modernui.gui.master.WidgetStatus;
+import icyllis.modernui.gui.math.Align9D;
+import icyllis.modernui.gui.math.Locator;
 import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.gui.widget.StaticFrameButton;
 import icyllis.modernui.gui.widget.TriangleButton;
@@ -31,7 +34,6 @@ import icyllis.modernui.impl.setting.ResourcePackGroup;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.ClientResourcePackInfo;
-import net.minecraft.client.resources.I18n;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nullable;
@@ -89,10 +91,12 @@ public class SettingResourcePack extends Module {
         list.add(upArrow);
         list.add(downArrow);
 
-        applyButton = new StaticFrameButton(this, 48, I18n.format("gui.modernui.button.apply"), this::applyResourcePacks, false);
-
-        //list.add(new SlidingToggleButton(this, 4, b -> {}, 0xb020a0d0, 0x40808080, false)); // test
-        //list.add(new DropDownWidget(this, Lists.newArrayList("1", "233333"), 0, i -> {}, DropDownMenu.Align.RIGHT));
+        applyButton = new StaticFrameButton.Builder("gui.modernui.button.apply")
+                .setWidth(48)
+                .setAlign(Align9D.TOP_CENTER)
+                .setLocator(new Locator(Align9D.BOTTOM_CENTER, 0, -32))
+                .build(this)
+                .setCallback(this::applyResourcePacks);
 
         arrowsLayout = new WidgetLayout(list, WidgetLayout.Direction.VERTICAL_POSITIVE, 4);
 
@@ -106,7 +110,6 @@ public class SettingResourcePack extends Module {
     public void resize(int width, int height) {
         super.resize(width, height);
         arrowsLayout.layout(width / 2f - 6, height * 0.25f);
-        applyButton.locate(width / 2f - 24, height - 32);
     }
 
     private void applyResourcePacks() {
@@ -133,7 +136,7 @@ public class SettingResourcePack extends Module {
 
         gameSettings.saveOptions();
         minecraft.reloadResources();
-        applyButton.setListening(false);
+        applyButton.setStatus(WidgetStatus.INACTIVE);
     }
 
     @Override
@@ -158,7 +161,7 @@ public class SettingResourcePack extends Module {
             highlightEntry.setMouseHoverExit();
             refocusCursor();
             setHighlightEntry(highlightEntry);
-            applyButton.setListening(true);
+            applyButton.setStatus(WidgetStatus.ACTIVE);
         }
     }
 
@@ -172,7 +175,7 @@ public class SettingResourcePack extends Module {
             highlightEntry.setMouseHoverExit();
             refocusCursor();
             setHighlightEntry(highlightEntry);
-            applyButton.setListening(true);
+            applyButton.setStatus(WidgetStatus.ACTIVE);
         }
     }
 
@@ -183,7 +186,7 @@ public class SettingResourcePack extends Module {
             //selectedGroup.followEntry(highlightEntry);
             setHighlightEntry(highlightEntry);
             refocusCursor();
-            applyButton.setListening(true);
+            applyButton.setStatus(WidgetStatus.ACTIVE);
         }
     }
 
@@ -194,7 +197,7 @@ public class SettingResourcePack extends Module {
             //selectedGroup.followEntry(highlightEntry);
             setHighlightEntry(highlightEntry);
             refocusCursor();
-            applyButton.setListening(true);
+            applyButton.setStatus(WidgetStatus.ACTIVE);
         }
     }
 

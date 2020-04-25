@@ -38,42 +38,61 @@ public class Locator {
 
     }
 
+    public Locator(Align9D align, float xOffset, float yOffset) {
+        this.align = align;
+        this.xOffset = xOffset;
+        this.yOffset = yOffset;
+    }
+
+    public Locator(float xOffset, float yOffset) {
+        this.xOffset = xOffset;
+        this.yOffset = yOffset;
+    }
+
     public void setAlign(Align9D align) {
         this.align = align;
     }
 
-    public void setHorizontalOffset(float horizontalOffset) {
-        this.xOffset = horizontalOffset;
+    public void setXOffset(float offset) {
+        xOffset = offset;
     }
 
-    public void setVerticalOffset(float verticalOffset) {
-        this.yOffset = verticalOffset;
+    public void setYOffset(float offset) {
+        yOffset = offset;
+    }
+
+    public void translateXOffset(float delta) {
+        xOffset += delta;
+    }
+
+    public void translateYOffset(float delta) {
+        yOffset += delta;
     }
 
     public void locate(Widget widget, int width, int height) {
         float x = 0;
-        int horizontalAlign = align.ordinal() % 3;
+        Align3H horizontalAlign = align.getAlign3H();
         switch (horizontalAlign) {
-            case 0:
+            case LEFT:
                 x += xOffset;
                 break;
-            case 1:
+            case CENTER:
                 x += width / 2f + xOffset;
                 break;
-            case 2:
+            case RIGHT:
                 x += width + xOffset;
                 break;
         }
         float y = 0;
-        int verticalAlign = align.ordinal() / 3;
+        Align3V verticalAlign = align.getAlign3V();
         switch (verticalAlign) {
-            case 0:
+            case TOP:
                 y += yOffset;
                 break;
-            case 1:
+            case CENTER:
                 y += height / 2f + yOffset;
                 break;
-            case 2:
+            case BOTTOM:
                 y += height + yOffset;
                 break;
         }

@@ -24,7 +24,10 @@ import icyllis.modernui.editor.WidgetContainer;
 import icyllis.modernui.gui.animation.IAnimation;
 import icyllis.modernui.system.ConstantsLibrary;
 import icyllis.modernui.system.ModernUI;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.audio.SimpleSound;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.SoundEvent;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
@@ -208,8 +211,16 @@ public abstract class Module implements IModule, IFocuser {
         return manager.getMouseY();
     }
 
+    public int getTicks() {
+        return manager.getTicks();
+    }
+
     public void refocusCursor() {
         manager.refreshMouse();
+    }
+
+    public void playSound(SoundEvent soundEvent) {
+        Minecraft.getInstance().getSoundHandler().play(SimpleSound.master(soundEvent, 1.0f));
     }
 
     /**

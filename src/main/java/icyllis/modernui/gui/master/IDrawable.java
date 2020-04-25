@@ -50,4 +50,20 @@ public interface IDrawable {
      */
     default void tick(int ticks) {}
 
+    /**
+     * Get current alpha for global shader uniform
+     *
+     * @return alpha
+     */
+    default float getFinalAlpha() {
+        return 1.0f;
+    }
+
+    /**
+     * Set current alpha, which called from module
+     *
+     * @param alpha specific alpha
+     */
+    default void setFinalAlpha(float alpha) {}
+
 }

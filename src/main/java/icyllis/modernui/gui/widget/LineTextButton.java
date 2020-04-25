@@ -18,13 +18,15 @@
 
 package icyllis.modernui.gui.widget;
 
-import icyllis.modernui.gui.math.Align3H;
+import com.google.gson.annotations.Expose;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.AnimationControl;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.master.Widget;
+import icyllis.modernui.gui.math.Align3H;
+import net.minecraft.client.resources.I18n;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -35,22 +37,31 @@ public class LineTextButton extends Widget {
     private final AnimationControl ac = new Control(this);
 
     private final String text;
-    private final Runnable leftClickFunc;
-    private final Predicate<Integer> isSelectedFunc;
+
+    private Runnable leftClickFunc = () -> {};
+    private Predicate<Integer> selected = i -> false;
 
     private float sizeWOffset;
     private float textBrightness = 0.7f;
 
-    public LineTextButton(Module module, String text, float width, Runnable leftClick, Predicate<Integer> isSelected) {
-        super(module, width, 12);
-        this.text = text;
+    public LineTextButton(Module module, Builder builder) {
+        super(module, builder);
+        this.text = I18n.format(builder.text);
         this.sizeWOffset = width / 2f;
-        this.leftClickFunc = leftClick;
-        this.isSelectedFunc = isSelected;
+    }
+
+    public LineTextButton setCallback(Runnable r) {
+        leftClickFunc = r;
+        return this;
+    }
+
+    public LineTextButton setSelected(Predicate<Integer> q) {
+        selected = q;
+        return this;
     }
 
     @Override
-    public void draw(@Nonnull Canvas canvas, float time) {
+    public void onDraw(@Nonnull Canvas canvas, float time) {
         ac.update();
         canvas.setRGBA(textBrightness, textBrightness, textBrightness, 1.0f);
         canvas.setTextAlign(Align3H.CENTER);
@@ -77,7 +88,7 @@ public class LineTextButton extends Widget {
         super.onMouseHoverEnter();
         if (ac.canChangeState()) {
             getModule().addAnimation(new Animation(3)
-                    .applyTo(new Applier(getTextBrightness(), 1, this::setTextBrightness)));
+                    .applyTo(new Applier(textBrightness, 1, this::setTextBrightness)));
         }
     }
 
@@ -86,21 +97,18 @@ public class LineTextButton extends Widget {
         super.onMouseHoverExit();
         if (ac.canChangeState()) {
             getModule().addAnimation(new Animation(3)
-                    .applyTo(new Applier(getTextBrightness(), 0.7f, this::setTextBrightness)));
+                    .applyTo(new Applier(textBrightness, 0.7f, this::setTextBrightness)));
         }
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        if (listening && mouseButton == 0) {
-            leftClickFunc.run();
-            return true;
-        }
-        return false;
+    protected boolean onMouseLeftClick(double mouseX, double mouseY) {
+        leftClickFunc.run();
+        return true;
     }
 
     public void onModuleChanged(int id) {
-        if (isSelectedFunc.test(id)) {
+        if (selected.test(id)) {
             ac.startOpenAnimation();
             ac.setLockState(true);
         } else {
@@ -113,12 +121,36 @@ public class LineTextButton extends Widget {
         this.textBrightness = textBrightness;
     }
 
-    private float getTextBrightness() {
-        return textBrightness;
+    private void setSizeWOffset(float sizeWOffset) {
+        this.sizeWOffset = sizeWOffset;
     }
 
-    public void setSizeWOffset(float sizeWOffset) {
-        this.sizeWOffset = sizeWOffset;
+    @Nonnull
+    @Override
+    public Class<? extends Widget.Builder<?, ?>> getBuilder() {
+        return Builder.class;
+    }
+
+    public static class Builder extends Widget.Builder<Builder, LineTextButton> {
+
+        @Expose
+        public final String text;
+
+        public Builder(@Nonnull String text) {
+            this.text = text;
+            super.setHeight(12);
+        }
+
+        @Deprecated
+        @Override
+        public Widget.Builder<Builder, LineTextButton> setHeight(float height) {
+            return super.setHeight(height);
+        }
+
+        @Override
+        public LineTextButton build(Module module) {
+            return new LineTextButton(module, this);
+        }
     }
 
     private static class Control extends AnimationControl {
@@ -133,14 +165,14 @@ public class LineTextButton extends Widget {
         protected void createOpenAnimations(@Nonnull List<Animation> list) {
             list.add(new Animation(3)
                     .applyTo(new Applier(instance.getWidth() / 2f, 0, instance::setSizeWOffset),
-                            new Applier(instance.getTextBrightness(), 1, instance::setTextBrightness)));
+                            new Applier(instance.textBrightness, 1, instance::setTextBrightness)));
         }
 
         @Override
         protected void createCloseAnimations(@Nonnull List<Animation> list) {
             list.add(new Animation(3)
                     .applyTo(new Applier(0, instance.getWidth() / 2f, instance::setSizeWOffset),
-                            new Applier(instance.getTextBrightness(), 0.7f, instance::setTextBrightness)));
+                            new Applier(instance.textBrightness, 0.7f, instance::setTextBrightness)));
         }
     }
 

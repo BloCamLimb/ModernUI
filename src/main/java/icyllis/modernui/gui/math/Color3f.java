@@ -85,4 +85,16 @@ public enum Color3f {
         }
         return null;
     }
+
+    public static float getRedFrom(int color) {
+        return (color >> 16 & 0xff) / 255.0f;
+    }
+
+    public static float getGreenFrom(int color) {
+        return (color >> 8 & 0xff) / 255.0f;
+    }
+
+    public static float getBlueFrom(int color) {
+        return (color & 0xff) / 255.0f;
+    }
 }

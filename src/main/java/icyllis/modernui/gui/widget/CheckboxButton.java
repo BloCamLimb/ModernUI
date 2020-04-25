@@ -20,10 +20,9 @@ package icyllis.modernui.gui.widget;
 
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.master.Icon;
-import icyllis.modernui.gui.master.Module;
-import icyllis.modernui.gui.master.Widget;
+import icyllis.modernui.gui.master.*;
+import icyllis.modernui.gui.math.Align9D;
+import icyllis.modernui.gui.math.Locator;
 import icyllis.modernui.system.ConstantsLibrary;
 
 import javax.annotation.Nonnull;
@@ -33,7 +32,7 @@ public class CheckboxButton extends Widget {
 
     private final Icon icon;
 
-    private final Consumer<Boolean> leftClickFunc;
+    private Consumer<Boolean> callback = b -> {};
 
     private boolean checked;
 
@@ -41,20 +40,31 @@ public class CheckboxButton extends Widget {
 
     private float brightness = 0.7f;
 
-    public CheckboxButton(Module module, float size, Consumer<Boolean> leftClick, boolean checked) {
-        super(module, size, size);
+    public CheckboxButton(Module module, Builder builder) {
+        super(module, builder);
         this.icon = new Icon(ConstantsLibrary.ICONS, 0, 0.125f, 0.125f, 0.25f, true);
-        this.leftClickFunc = leftClick;
-        this.checked = checked;
+    }
+
+    public CheckboxButton setDefaultChecked(boolean b) {
+        this.checked = b;
+        if (b) {
+            markAlpha = 1;
+        }
+        return this;
+    }
+
+    public CheckboxButton setCallback(Consumer<Boolean> c) {
+        this.callback = c;
+        return this;
     }
 
     @Override
-    public void draw(@Nonnull Canvas canvas, float time) {
+    public void onDraw(@Nonnull Canvas canvas, float time) {
         canvas.setRGBA(brightness, brightness, brightness, 1.0f);
         canvas.drawRectOutline(x1, y1, x2, y2, 0.51f);
         if (markAlpha > 0) {
             canvas.setAlpha(markAlpha);
-            if (listening) {
+            if (getStatus().isListening()) {
                 canvas.setRGB(1, 1, 1);
             }
             canvas.drawIcon(icon, x1, y1, x2, y2);
@@ -76,25 +86,21 @@ public class CheckboxButton extends Widget {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        if (listening && mouseButton == 0) {
-            setChecked(!checked);
-            leftClickFunc.accept(isChecked());
-            return true;
-        }
-        return false;
+    protected boolean onMouseLeftClick(double mouseX, double mouseY) {
+        setChecked(!checked);
+        callback.accept(isChecked());
+        return true;
     }
 
-    public void setListening(boolean listening) {
-        if (this.listening != listening) {
-            this.listening = listening;
-            if (listening) {
-                getModule().addAnimation(new Animation(2)
-                        .applyTo(new Applier(brightness, 1.0f, this::setBrightness)));
-            } else {
-                getModule().addAnimation(new Animation(2)
-                        .applyTo(new Applier(brightness, 0.3f, this::setBrightness)));
-            }
+    @Override
+    protected void onStatusChanged(WidgetStatus status) {
+        super.onStatusChanged(status);
+        if (status.isListening()) {
+            getModule().addAnimation(new Animation(2)
+                    .applyTo(new Applier(brightness, 1.0f, this::setBrightness)));
+        } else {
+            getModule().addAnimation(new Animation(2)
+                    .applyTo(new Applier(brightness, 0.3f, this::setBrightness)));
         }
     }
 
@@ -119,6 +125,51 @@ public class CheckboxButton extends Widget {
 
     public boolean isChecked() {
         return checked;
+    }
+
+    @Nonnull
+    @Override
+    public Class<? extends Widget.Builder> getBuilder() {
+        return Builder.class;
+    }
+
+    public static class Builder extends Widget.Builder {
+
+        public Builder(int size) {
+            super.setWidth(size);
+            super.setHeight(size);
+        }
+
+        @Deprecated
+        @Override
+        public Builder setWidth(float width) {
+            super.setWidth(width);
+            return this;
+        }
+
+        @Deprecated
+        @Override
+        public Builder setHeight(float height) {
+            super.setHeight(height);
+            return this;
+        }
+
+        @Override
+        public Builder setLocator(@Nonnull Locator locator) {
+            super.setLocator(locator);
+            return this;
+        }
+
+        @Override
+        public Builder setAlign(@Nonnull Align9D align) {
+            super.setAlign(align);
+            return this;
+        }
+
+        @Override
+        public CheckboxButton build(Module module) {
+            return new CheckboxButton(module, this);
+        }
     }
 
     /*protected WidgetArea shape;

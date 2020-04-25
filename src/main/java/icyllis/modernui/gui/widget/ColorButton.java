@@ -18,9 +18,13 @@
 
 package icyllis.modernui.gui.widget;
 
+import com.google.gson.annotations.Expose;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.master.Widget;
+import icyllis.modernui.gui.math.Align9D;
+import icyllis.modernui.gui.math.Color3f;
+import icyllis.modernui.gui.math.Locator;
 
 import javax.annotation.Nonnull;
 import java.util.function.Consumer;
@@ -30,32 +34,27 @@ import java.util.function.Consumer;
  */
 public class ColorButton extends Widget {
 
-    private final float r, g, b;
+    private float r, g, b;
+    private int color;
 
-    private final int color;
+    private Consumer<ColorButton> callback = c -> {};
 
-    private final Consumer<ColorButton> leftClickFunc;
-
-    private boolean selected;
+    private boolean selected = false;
 
     private float frameAlpha = 0;
 
-    /**
-     * Constructor
-     * @param color RGB
-     */
-    public ColorButton(Module module, float size, int color, Consumer<ColorButton> leftClick, boolean selected) {
-        super(module, size, size);
-        this.r = (color >> 16 & 0xff) / 255f;
-        this.g = (color >> 8 & 0xff) / 255f;
-        this.b = (color & 0xff) / 255f;
-        this.color = color;
-        this.leftClickFunc = leftClick;
-        this.selected = selected;
+    public ColorButton(Module module, Builder builder) {
+        super(module, builder);
+        setColor(builder.color);
+    }
+
+    public ColorButton setCallback(Consumer<ColorButton> c) {
+        callback = c;
+        return this;
     }
 
     @Override
-    public void draw(@Nonnull Canvas canvas, float time) {
+    public void onDraw(@Nonnull Canvas canvas, float time) {
         canvas.setRGBA(r, g, b, 0.8f);
         canvas.drawRect(x1, y1, x2, y2);
         if (frameAlpha > 0) {
@@ -65,12 +64,9 @@ public class ColorButton extends Widget {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        if (listening && mouseButton == 0) {
-            leftClickFunc.accept(this);
-            return true;
-        }
-        return false;
+    protected boolean onMouseLeftClick(double mouseX, double mouseY) {
+        callback.accept(this);
+        return true;
     }
 
     @Override
@@ -104,5 +100,61 @@ public class ColorButton extends Widget {
 
     public int getColor() {
         return color;
+    }
+
+    public void setColor(int color) {
+        this.color = color;
+        this.r = Color3f.getRedFrom(color);
+        this.g = Color3f.getGreenFrom(color);
+        this.b = Color3f.getBlueFrom(color);
+    }
+
+    @Nonnull
+    @Override
+    public Class<? extends Widget.Builder> getBuilder() {
+        return Builder.class;
+    }
+
+    public static class Builder extends Widget.Builder {
+
+        @Expose
+        public final int color;
+
+        public Builder(int color, int size) {
+            this.color = color;
+            super.setWidth(size);
+            super.setHeight(size);
+        }
+
+        @Deprecated
+        @Override
+        public Builder setWidth(float width) {
+            super.setWidth(width);
+            return this;
+        }
+
+        @Deprecated
+        @Override
+        public Builder setHeight(float height) {
+            super.setHeight(height);
+            return this;
+        }
+
+        @Override
+        public Builder setLocator(@Nonnull Locator locator) {
+            super.setLocator(locator);
+            return this;
+        }
+
+        @Override
+        public Builder setAlign(@Nonnull Align9D align) {
+            super.setAlign(align);
+            return this;
+        }
+
+        @Override
+        public ColorButton build(Module module) {
+            return new ColorButton(module, this);
+        }
     }
 }
