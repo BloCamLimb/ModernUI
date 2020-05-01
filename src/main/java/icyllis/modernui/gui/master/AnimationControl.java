@@ -21,12 +21,20 @@ package icyllis.modernui.gui.master;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.math.DelayedTask;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
-public abstract class AnimationControl {
+public class AnimationControl {
 
-    private GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
+    @Nullable
+    private final List<Animation> openList;
+
+    @Nullable
+    private final List<Animation> closeList;
 
     // 0 = close, 1 = opening, 2 = open, 3 = closing
     private int openState = 0;
@@ -37,57 +45,51 @@ public abstract class AnimationControl {
 
     private boolean prepareToClose = false;
 
-    public AnimationControl() {
-
+    public AnimationControl(@Nullable List<Animation> openList, @Nullable List<Animation> closeList) {
+        this.openList = openList;
+        this.closeList = closeList;
+        Optional<Animation> d;
+        if (openList != null) {
+            d = openList.stream().max(Comparator.comparing(Animation::getDuration));
+            d.ifPresent(animation -> animation.addListener(new Animation.IAnimationListener() {
+                @Override
+                public void onAnimationEnd(Animation animation, boolean isReverse) {
+                    setOpenState(true);
+                }
+            }));
+        }
+        if (closeList != null) {
+            d = closeList.stream().max(Comparator.comparing(Animation::getDuration));
+            d.ifPresent(animation -> animation.addListener(new Animation.IAnimationListener() {
+                @Override
+                public void onAnimationEnd(Animation animation, boolean isReverse) {
+                    setOpenState(false);
+                }
+            }));
+        }
     }
 
     public void update() {
         if (prepareToOpen && openState == 0) {
             openState = 1;
-            List<Animation> list = new ArrayList<>();
-            createOpenAnimations(list);
-            float d = 0;
-            for (Animation animation : list) {
-                d = Math.max(d, animation.getDuration());
+            if (openList != null) {
+                openList.forEach(Animation::restart);
             }
-            if (d > 0) {
-                list.forEach(manager::addAnimation);
-                manager.scheduleTask(new DelayedTask(() -> setOpenState(true), (int) d));
-            } else {
+            if (openList == null || openList.isEmpty()) {
                 setOpenState(true);
             }
             prepareToOpen = false;
         } else if (prepareToClose && openState == 2) {
             openState = 3;
-            List<Animation> list = new ArrayList<>();
-            createCloseAnimations(list);
-            float d = 0;
-            for (Animation animation : list) {
-                d = Math.max(d, animation.getDuration());
+            if (closeList != null) {
+                closeList.forEach(Animation::restart);
             }
-            if (d > 0) {
-                list.forEach(manager::addAnimation);
-                manager.scheduleTask(new DelayedTask(() -> setOpenState(false), (int) d));
-            } else {
+            if (closeList == null || closeList.isEmpty()) {
                 setOpenState(false);
             }
             prepareToClose = false;
         }
     }
-
-    /**
-     * Create open animations and will be auto set open state to 2 on last animation finished
-     *
-     * @param list a list of animations
-     */
-    protected abstract void createOpenAnimations(List<Animation> list);
-
-    /**
-     * Create close animations and will be auto set open state to 0 on last animation finished
-     *
-     * @param list a list of animations
-     */
-    protected abstract void createCloseAnimations(List<Animation> list);
 
     public final void startOpenAnimation() {
         if (!lockState) {

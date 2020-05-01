@@ -18,6 +18,7 @@
 
 package icyllis.modernui.gui.widget;
 
+import icyllis.modernui.gui.master.IHost;
 import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.system.ConstantsLibrary;
 
@@ -36,8 +37,8 @@ public class NumberInputField extends TextField {
 
     private boolean allowNegative = true;
 
-    public NumberInputField(Module module, float width, float height) {
-        super(module, width, height);
+    public NumberInputField(IHost host, Builder builder) {
+        super(host, builder);
         super.setText("0");
         super.setFilter((s, t) -> {
             if (ConstantsLibrary.DIGIT_FILTER.test(t)) {

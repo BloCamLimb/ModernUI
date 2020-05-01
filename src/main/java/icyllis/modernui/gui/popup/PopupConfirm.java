@@ -19,8 +19,7 @@
 package icyllis.modernui.gui.popup;
 
 import icyllis.modernui.font.FontTools;
-import icyllis.modernui.gui.element.Background;
-import icyllis.modernui.gui.element.ConfirmWindowBG;
+import icyllis.modernui.gui.element.ConfirmPopupBG;
 import icyllis.modernui.gui.layout.WidgetLayout;
 import icyllis.modernui.gui.master.*;
 import icyllis.modernui.gui.widget.DynamicFrameButton;
@@ -32,7 +31,7 @@ import java.util.List;
 
 public class PopupConfirm extends Module {
 
-    private final ConfirmWindowBG bg;
+    private final ConfirmPopupBG bg;
 
     private WidgetLayout buttonLayout;
 
@@ -53,19 +52,39 @@ public class PopupConfirm extends Module {
      * @param alternative third button between confirm button and cancel button to perform another operation
      */
     public PopupConfirm(ConfirmCallback callback, int seconds, String confirmText, String cancelText, @Nullable String alternative) {
-        addDrawable(new Background(this, 4));
-        bg = new ConfirmWindowBG(this);
-        addDrawable(bg);
+        // add background layer
+        addDrawable(bg = new ConfirmPopupBG());
+
         List<IWidget> buttons = new ArrayList<>();
         if (seconds > 0) {
-            buttons.add(new DynamicFrameButton.Countdown(this, confirmText, () -> callback.call(ConfirmCallback.CONFIRM), seconds));
+            buttons.add(
+                    new DynamicFrameButton.Countdown.Builder(confirmText, seconds)
+                            .setWidth(64)
+                            .build(this)
+                            .buildCallback(() -> callback.call(ConfirmCallback.CONFIRM), false)
+            );
         } else {
-            buttons.add(new DynamicFrameButton(this, confirmText, () -> callback.call(ConfirmCallback.CONFIRM)));
+            buttons.add(
+                    new DynamicFrameButton.Builder(confirmText)
+                            .setWidth(64)
+                            .build(this)
+                            .buildCallback(true, () -> callback.call(ConfirmCallback.CONFIRM), false)
+            );
         }
         if (alternative != null) {
-            buttons.add(new DynamicFrameButton(this, alternative, () -> callback.call(ConfirmCallback.ALTERNATIVE)));
+            buttons.add(
+                    new DynamicFrameButton.Builder(alternative)
+                            .setWidth(64)
+                            .build(this)
+                            .buildCallback(true, () -> callback.call(ConfirmCallback.ALTERNATIVE), false)
+            );
         }
-        buttons.add(new DynamicFrameButton(this, cancelText, () -> callback.call(ConfirmCallback.CANCEL)));
+        buttons.add(
+                new DynamicFrameButton.Builder(cancelText)
+                        .setWidth(64)
+                        .build(this)
+                        .buildCallback(true, () -> callback.call(ConfirmCallback.CANCEL), false)
+        );
         buttons.forEach(this::addWidget);
         buttonLayout = new WidgetLayout(buttons, WidgetLayout.Direction.HORIZONTAL_NEGATIVE, 6);
     }

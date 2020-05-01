@@ -32,6 +32,7 @@ import icyllis.modernui.gui.math.Locator;
 import net.minecraft.client.resources.I18n;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class TextIconButton extends IconButton {
 
@@ -42,28 +43,20 @@ public class TextIconButton extends IconButton {
 
     private float textAlpha = 0;
 
+    private final Animation textAnimation;
+
     public TextIconButton(IHost host, Builder builder) {
         super(host, builder);
         this.text = I18n.format(builder.text);
         this.direction = builder.direction;
         this.id = builder.id;
+        textAnimation = new Animation(100)
+                .addAppliers(new Applier(0.0f, 1.0f, this::getTextAlpha, this::setTextAlpha));
     }
 
     @Override
-    public TextIconButton setDefaultClickable(boolean b) {
-        super.setDefaultClickable(b);
-        return this;
-    }
-
-    @Override
-    public TextIconButton setCallback(Runnable r) {
-        super.setCallback(r);
-        return this;
-    }
-
-    @Override
-    public TextIconButton setOnetimeCallback(Runnable r) {
-        super.setOnetimeCallback(r);
+    public TextIconButton buildCallback(boolean b, @Nullable Runnable r, boolean onetime) {
+        super.buildCallback(b, r, onetime);
         return this;
     }
 
@@ -96,26 +89,28 @@ public class TextIconButton extends IconButton {
     @Override
     protected void onMouseHoverEnter(double mouseX, double mouseY) {
         super.onMouseHoverEnter(mouseX, mouseY);
-        getHost().addAnimation(new Animation(4)
-                .applyTo(new Applier(0, 1, this::setTextAlpha)));
+        textAnimation.start();
     }
 
     @Override
     protected void onMouseHoverExit() {
         super.onMouseHoverExit();
-        getHost().addAnimation(new Animation(4)
-                .applyTo(new Applier(1, 0, this::setTextAlpha)));
+        textAnimation.invert();
     }
 
     private void setTextAlpha(float textAlpha) {
         this.textAlpha = textAlpha;
     }
 
+    private float getTextAlpha() {
+        return textAlpha;
+    }
+
     public void onModuleChanged(int id) {
-        brightAC.setLockState(this.id == id);
-        if (brightAC.canChangeState()) {
+        locked = this.id == id;
+        if (!locked) {
             if (!isMouseHovered()) {
-                brightAC.startCloseAnimation();
+                brightAnimation.invert();
             }
         }
     }

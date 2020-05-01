@@ -27,8 +27,12 @@ import icyllis.modernui.gui.master.GlobalModuleManager;
  */
 @Deprecated
 public class PartialAnimation implements IAnimation {
+    @Override
+    public void update(float time) {
 
-    private final float duration;
+    }
+
+    /*private final float duration;
 
     private final boolean useSine;
 
@@ -50,7 +54,7 @@ public class PartialAnimation implements IAnimation {
 
     public PartialAnimation applyTo(Applier applier, float currentValue) {
         this.applier = applier;
-        float p = 1 - (applier.targetValue - currentValue) / (applier.targetValue - applier.initValue);
+        float p = 1 - (applier.endValue - currentValue) / (applier.endValue - applier.startValue);
         if (useSine) {
             p = (float) (Math.asin(p) * 2 / Math.PI);
         }
@@ -64,7 +68,7 @@ public class PartialAnimation implements IAnimation {
         if (useSine) {
             p = (float) Math.sin(p * Math.PI / 2);
         }
-        applier.apply(p);
+        applier.update(p);
         if (p == 1) {
             finish = true;
         }
@@ -73,5 +77,5 @@ public class PartialAnimation implements IAnimation {
     @Override
     public boolean shouldRemove() {
         return finish;
-    }
+    }*/
 }

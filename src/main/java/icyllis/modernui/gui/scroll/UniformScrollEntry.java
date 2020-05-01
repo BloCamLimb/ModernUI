@@ -33,10 +33,19 @@ public abstract class UniformScrollEntry extends Widget {
     protected float centerX;
 
     public UniformScrollEntry(@Nonnull ScrollWindow<?> window, float width, float height) {
-        super(window, Align9D.TOP_CENTER);
+        super(window, new Widget.Builder().setWidth(width).setHeight(height).setAlign(Align9D.TOP_CENTER));
         this.window = window;
-        this.width = width;
-        this.height = height;
+    }
+
+    public UniformScrollEntry(@Nonnull ScrollWindow<?> window, float width, float height, Align9D align) {
+        super(window, new Widget.Builder().setWidth(width).setHeight(height).setAlign(align));
+        this.window = window;
+    }
+
+    @Override
+    public void locate(float px, float py) {
+        super.locate(px, py);
+        centerX = px;
     }
 
     /*public void onLayout(float left, float right, float y) {
@@ -48,7 +57,9 @@ public abstract class UniformScrollEntry extends Widget {
         this.y2 = y + height;
     }*/
 
-    protected abstract void onMouseHoverEnter(double mouseX, double mouseY);
-
-    protected abstract void onMouseHoverExit();
+    @Nonnull
+    @Override
+    public Class<? extends Builder> getBuilder() {
+        return Widget.Builder.class;
+    }
 }

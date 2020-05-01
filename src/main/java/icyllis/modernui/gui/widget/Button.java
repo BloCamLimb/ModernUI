@@ -20,58 +20,81 @@ package icyllis.modernui.gui.widget;
 
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.master.*;
+import icyllis.modernui.gui.master.Canvas;
+import icyllis.modernui.gui.master.IHost;
+import icyllis.modernui.gui.master.Widget;
+import icyllis.modernui.gui.master.WidgetStatus;
 
 import javax.annotation.Nonnull;
-import java.util.List;
+import javax.annotation.Nullable;
 
 public abstract class Button extends Widget {
 
-    protected final AnimationControl brightAC = new Control(this);
-
-    private Runnable callback = () -> {};
+    @Nullable
+    private Runnable callback;
 
     protected float brightness = 0.7f;
 
     private boolean playInactiveAnimation = true;
 
+    /*protected final AnimationControl brightAC = new AnimationControl(Lists.newArrayList(new Animation(4)
+            .applyTo(new Applier(0.7f, 1.0f, () -> brightness, this::setBrightness))),
+            Lists.newArrayList(new Animation(4)
+                    .applyTo(new Applier(0.7f, 0.7f, () -> brightness, this::setBrightness))));*/
+
+    protected boolean locked = false;
+
+    protected final Animation brightAnimation;
+    private final Animation inactiveAnimation;
+
     public Button(IHost host, @Nonnull Builder builder) {
         super(host, builder);
+        brightAnimation = new Animation(200)
+                .addAppliers(new Applier(0.7f, 1.0f, this::getBrightness, this::setBrightness));
+        inactiveAnimation = new Animation(100)
+                .addAppliers(new Applier(0.3f, 0.7f, this::getBrightness, this::setBrightness));
     }
 
-    public Button setDefaultClickable(boolean b) {
+    /**
+     * Callback constructor
+     * @param b default clickable, on or off
+     * @param r left click callback
+     * @param onetime make un-clickable after being pressed
+     * @return instance
+     */
+    public Button buildCallback(boolean b, @Nullable Runnable r, boolean onetime) {
         if (!b) {
             boolean p = playInactiveAnimation;
             playInactiveAnimation = false;
             setStatus(WidgetStatus.INACTIVE);
             playInactiveAnimation = p;
         }
-        return this;
-    }
-
-    public Button setCallback(Runnable r) {
-        callback = r;
-        return this;
-    }
-
-    public Button setOnetimeCallback(Runnable r) {
-        callback = () -> {
-          r.run();
-          setStatus(WidgetStatus.INACTIVE);
-        };
-        playInactiveAnimation = false;
+        if (onetime) {
+            if (r != null) {
+                callback = () -> {
+                    r.run();
+                    setStatus(WidgetStatus.INACTIVE);
+                };
+            }
+            playInactiveAnimation = false;
+        } else {
+            callback = r;
+            //playInactiveAnimation = true;
+        }
         return this;
     }
 
     @Override
     protected void onDraw(Canvas canvas, float time) {
-        brightAC.update();
+        //brightAC.update();
     }
 
     @Override
     protected boolean onMouseLeftClick(double mouseX, double mouseY) {
-        if (brightAC.canChangeState()) {
-            callback.run();
+        if (!locked) {
+            if (callback != null) {
+                callback.run();
+            }
             brightness = 0.85f;
             return true;
         }
@@ -80,7 +103,7 @@ public abstract class Button extends Widget {
 
     @Override
     protected boolean onMouseLeftRelease(double mouseX, double mouseY) {
-        if (brightAC.canChangeState()) {
+        if (!locked) {
             brightness = 1.0f;
             return true;
         }
@@ -90,25 +113,27 @@ public abstract class Button extends Widget {
     @Override
     protected void onMouseHoverEnter(double mouseX, double mouseY) {
         super.onMouseHoverEnter(mouseX, mouseY);
-        brightAC.startOpenAnimation();
+        if (!locked) {
+            brightAnimation.start();
+        }
     }
 
     @Override
     protected void onMouseHoverExit() {
         super.onMouseHoverExit();
-        brightAC.startCloseAnimation();
+        if (!locked) {
+            brightAnimation.invert();
+        }
     }
 
     @Override
     protected void onStatusChanged(WidgetStatus status) {
         super.onStatusChanged(status);
         if (status.isListening()) {
-            getHost().addAnimation(new Animation(2)
-                    .applyTo(new Applier(brightness, 1.0f, this::setBrightness)));
+            inactiveAnimation.start();
         } else {
             if (playInactiveAnimation) {
-                getHost().addAnimation(new Animation(2)
-                        .applyTo(new Applier(brightness, 0.3f, this::setBrightness)));
+                inactiveAnimation.invert();
             } else {
                 brightness = 0.3f;
             }
@@ -119,24 +144,7 @@ public abstract class Button extends Widget {
         brightness = f;
     }
 
-    private static class Control extends AnimationControl {
-
-        private final Button instance;
-
-        public Control(Button instance) {
-            this.instance = instance;
-        }
-
-        @Override
-        protected void createOpenAnimations(@Nonnull List<Animation> list) {
-            list.add(new Animation(4)
-                    .applyTo(new Applier(instance.brightness, 1.0f, instance::setBrightness)));
-        }
-
-        @Override
-        protected void createCloseAnimations(@Nonnull List<Animation> list) {
-            list.add(new Animation(4)
-                    .applyTo(new Applier(instance.brightness, 0.7f, instance::setBrightness)));
-        }
+    private float getBrightness() {
+        return brightness;
     }
 }

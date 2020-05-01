@@ -44,6 +44,17 @@ public class MobStatsGroup extends UniformScrollGroup<MobStatsEntry> {
     }
 
     @Override
+    public void locate(float px, float py) {
+        super.locate(px, py);
+        int i = 0;
+        for (MobStatsEntry entry : entries) {
+            float cy = py + i * entryHeight;
+            entry.locate(px, cy);
+            i++;
+        }
+    }
+
+    /*@Override
     public void onLayout(float left, float right, float y) {
         super.onLayout(left, right, y);
         left = centerX - 120;
@@ -54,7 +65,7 @@ public class MobStatsGroup extends UniformScrollGroup<MobStatsEntry> {
             entry.onLayout(left, right, cy);
             i++;
         }
-    }
+    }*/
 
     public void updateValues(StatisticsManager manager) {
         entries.forEach(e -> e.updateValue(manager));

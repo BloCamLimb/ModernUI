@@ -32,13 +32,13 @@ public class LanguageEntry extends UniformScrollEntry {
     private final Language language;
 
     public LanguageEntry(SettingLanguage module, ScrollWindow<?> window, Language language) {
-        super(window, LanguageGroup.ENTRY_HEIGHT);
+        super(window, 240, LanguageGroup.ENTRY_HEIGHT);
         this.module = module;
         this.language = language;
     }
 
     @Override
-    public final void draw(Canvas canvas, float time) {
+    public final void onDraw(Canvas canvas, float time) {
         /*Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();*/
 
@@ -94,13 +94,19 @@ public class LanguageEntry extends UniformScrollEntry {
         canvas.drawText(language.toString(), centerX, y1 + 4);
     }
 
-    @Override
+    /*@Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if (mouseButton == 0) {
             module.setHighlight(this);
             return true;
         }
         return false;
+    }*/
+
+    @Override
+    protected boolean onMouseLeftClick(double mouseX, double mouseY) {
+        module.setHighlight(this);
+        return true;
     }
 
     @Override

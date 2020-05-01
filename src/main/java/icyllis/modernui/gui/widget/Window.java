@@ -103,7 +103,7 @@ public abstract class Window implements IWidget, IHost {
     }
 
     @Override
-    public final boolean updateMouseHover(double mouseX, double mouseY) {
+    public boolean updateMouseHover(double mouseX, double mouseY) {
         boolean prev = mouseHovered;
         mouseHovered = isMouseInArea(mouseX, mouseY);
         if (prev != mouseHovered) {
@@ -136,11 +136,6 @@ public abstract class Window implements IWidget, IHost {
     protected void onMouseHoverEnter(double mouseX, double mouseY) {}
 
     protected void onMouseHoverExit() {}
-
-    @Override
-    public void addAnimation(IAnimation animation) {
-        host.addAnimation(animation);
-    }
 
     @Override
     public int getWindowWidth() {

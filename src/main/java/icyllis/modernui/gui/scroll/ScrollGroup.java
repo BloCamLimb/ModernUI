@@ -43,6 +43,13 @@ public abstract class ScrollGroup implements IWidget {
         this.window = window;
     }
 
+    @Override
+    public void locate(float px, float py) {
+        centerX = px;
+        y1 = py;
+        y2 = y1 + height;
+    }
+
     /*public void onLayout(float left, float right, float y) {
         this.x1 = left;
         this.x2 = right;
@@ -51,6 +58,36 @@ public abstract class ScrollGroup implements IWidget {
         this.y1 = y;
         this.y2 = y + height;
     }*/
+
+    @Override
+    public float getWidth() {
+        return 0;
+    }
+
+    @Override
+    public float getHeight() {
+        return height;
+    }
+
+    @Override
+    public float getLeft() {
+        return 0;
+    }
+
+    @Override
+    public float getRight() {
+        return 0;
+    }
+
+    @Override
+    public float getTop() {
+        return y1;
+    }
+
+    @Override
+    public float getBottom() {
+        return y2;
+    }
 
     public abstract void updateVisible(float top, float bottom);
 

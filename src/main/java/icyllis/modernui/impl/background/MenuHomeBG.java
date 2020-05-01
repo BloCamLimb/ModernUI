@@ -20,6 +20,7 @@ package icyllis.modernui.impl.background;
 
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
+import icyllis.modernui.gui.animation.IInterpolator;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.IDrawable;
 import icyllis.modernui.gui.master.Module;
@@ -32,9 +33,12 @@ public class MenuHomeBG implements IDrawable {
 
     private float xOffset = -32;
 
-    public MenuHomeBG(Module module) {
-        module.addAnimation(new Animation(4, true)
-                .applyTo(new Applier(xOffset, 0, v -> xOffset = v)));
+    public MenuHomeBG() {
+        new Animation(200)
+                .addAppliers(
+                        new Applier(xOffset, 0, () -> xOffset, v -> xOffset = v)
+                                .setInterpolator(IInterpolator.SINE))
+                .start();
     }
 
     /*@Override

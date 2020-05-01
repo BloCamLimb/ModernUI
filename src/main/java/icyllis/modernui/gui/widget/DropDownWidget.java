@@ -24,12 +24,15 @@ import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.*;
 import icyllis.modernui.gui.math.Align9D;
+import icyllis.modernui.gui.math.Locator;
 import icyllis.modernui.gui.popup.PopupMenu;
 import icyllis.modernui.system.ConstantsLibrary;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 
 /**
  * The widget used to open a drop down menu
@@ -39,7 +42,7 @@ public class DropDownWidget extends Widget {
 
     private final Icon icon = new Icon(ConstantsLibrary.ICONS, 0.25f, 0.125f, 0.375f, 0.25f, true);
 
-    public List<String> list;
+    private List<String> list;
 
     private String text;
 
@@ -48,30 +51,28 @@ public class DropDownWidget extends Widget {
     private float brightness = 0.85f;
     private float backAlpha = 0;
 
-    private final Consumer<Integer> operation;
+    @Nullable
+    private IntConsumer operation;
 
-    private final DropDownMenu.Align align;
+    private final Animation bgAnimation;
 
-    public DropDownWidget(Module module, @Nonnull List<String> list, int index, Consumer<Integer> operation, DropDownMenu.Align align) {
-        super(module, 0, 16);
-        this.operation = operation;
-        this.align = align;
+    public DropDownWidget(IHost host, Builder builder) {
+        super(host, builder);
+        list = builder.list;
+        index = builder.index;
         updateList(list, index);
-        if (align == DropDownMenu.Align.LEFT) {
-            super.setAlign(Align9D.TOP_LEFT);
-        } else {
-            super.setAlign(Align9D.TOP_RIGHT);
-        }
+
+        bgAnimation = new Animation(100)
+                .addAppliers(new Applier(0, 0.25f, () -> backAlpha, this::setBackAlpha));
     }
 
-    @Deprecated
-    @Override
-    public void setAlign(Align9D align) {
-        throw new RuntimeException();
+    public DropDownWidget buildCallback(IntConsumer c) {
+        this.operation = c;
+        return this;
     }
 
     @Override
-    public void draw(Canvas canvas, float time) {
+    public void onDraw(Canvas canvas, float time) {
         if (backAlpha > 0) {
             canvas.setRGBA(0.377f, 0.377f, 0.377f, backAlpha);
             canvas.drawRect(x1, y1, x2, y2);
@@ -88,37 +89,33 @@ public class DropDownWidget extends Widget {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        if (listening && mouseButton == 0) {
-            DropDownMenu menu = new DropDownMenu(getModule(), list, index, 16, this::updateValue, align);
-            menu.locate(x2 - 4, (float) (y2 - (mouseY - getModule().getMouseY())));
-            GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(menu), false);
-            return true;
-        }
-        return false;
+    protected boolean onMouseLeftClick(double mouseX, double mouseY) {
+        DropDownMenu menu = new DropDownMenu.Builder(list, index).setAlign(align).build(getHost()).buildCallback(operation);
+        menu.locate(getHost().toAbsoluteX(x2 - 4), getHost().toAbsoluteY(y2));
+        GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(menu), false);
+        return true;
     }
 
     @Override
     protected void onMouseHoverEnter(double mouseX, double mouseY) {
         super.onMouseHoverEnter(mouseX, mouseY);
-        getModule().addAnimation(new Animation(2)
-                .applyTo(new Applier(0.25f, this::setBackAlpha)));
+        bgAnimation.start();
     }
 
     @Override
     protected void onMouseHoverExit() {
         super.onMouseHoverExit();
-        getModule().addAnimation(new Animation(2)
-                .applyTo(new Applier(0.25f, 0, this::setBackAlpha)));
+        bgAnimation.invert();
     }
 
     private void setBackAlpha(float a) {
         backAlpha = a;
     }
 
-    public void setListening(boolean listening) {
-        this.listening = listening;
-        if (listening) {
+    @Override
+    protected void onStatusChanged(WidgetStatus status) {
+        super.onStatusChanged(status);
+        if (status.isListening()) {
             brightness = 0.85f;
         } else {
             brightness = 0.5f;
@@ -135,15 +132,62 @@ public class DropDownWidget extends Widget {
         text = list.get(index);
         float textLength = FontTools.getStringWidth(text) + 3;
         width = textLength + 6 + 4;
-        if (align == DropDownMenu.Align.LEFT) {
-            locate(x1, y1);
-        } else {
-            locate(x2, y1);
+        relocate();
+        if (operation != null) {
+            operation.accept(index);
         }
-        operation.accept(index);
     }
 
     public int getIndex() {
         return index;
+    }
+
+    @Nonnull
+    @Override
+    public Class<? extends Widget.Builder> getBuilder() {
+        return Builder.class;
+    }
+
+    public static class Builder extends Widget.Builder {
+
+        protected final List<String> list;
+        protected final int index;
+
+        public Builder(List<String> list, int index) {
+            this.list = list;
+            this.index = index;
+        }
+
+        @Deprecated
+        @Override
+        public Builder setWidth(float width) {
+            super.setWidth(width);
+            return this;
+        }
+
+        @Deprecated
+        @Override
+        public Builder setHeight(float height) {
+            super.setHeight(height);
+            return this;
+        }
+
+        @Override
+        public Builder setLocator(@Nonnull Locator locator) {
+            super.setLocator(locator);
+            return this;
+        }
+
+        @Override
+        public Builder setAlign(@Nonnull Align9D align) {
+            super.setAlign(align);
+            return this;
+        }
+
+        @Nonnull
+        @Override
+        public DropDownWidget build(IHost host) {
+            return new DropDownWidget(host, this);
+        }
     }
 }

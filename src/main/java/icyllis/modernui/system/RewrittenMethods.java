@@ -33,6 +33,8 @@ import java.util.Objects;
 @SuppressWarnings("unused")
 public class RewrittenMethods {
 
+    public static boolean loadCompleted = false;
+
     /** MainWindow **/
     public static int calcGuiScale(int guiScaleIn) {
         int r = RewrittenMethods.calcGuiScales();
@@ -45,7 +47,7 @@ public class RewrittenMethods {
             Minecraft minecraft = Minecraft.getInstance();
             if (minecraft.currentScreen == null) {
                 // If press F3 + Esc and is single player and not open LAN world
-                if (pauseGame && minecraft.isSingleplayer() && !Objects.requireNonNull(minecraft.getIntegratedServer()).getPublic()) {
+                if (!loadCompleted || (pauseGame && minecraft.isSingleplayer() && !Objects.requireNonNull(minecraft.getIntegratedServer()).getPublic())) {
                     minecraft.displayGuiScreen(new IngameMenuScreen(false));
                     minecraft.getSoundHandler().pause();
                 } else {

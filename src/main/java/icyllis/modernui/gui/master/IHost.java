@@ -18,8 +18,6 @@
 
 package icyllis.modernui.gui.master;
 
-import icyllis.modernui.gui.animation.IAnimation;
-
 import javax.annotation.Nullable;
 
 /**
@@ -28,8 +26,6 @@ import javax.annotation.Nullable;
  * Used to focus a draggable or keyboard listener
  */
 public interface IHost {
-
-    void addAnimation(IAnimation animation);
 
     int getWindowWidth();
 

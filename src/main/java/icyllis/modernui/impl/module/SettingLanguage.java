@@ -49,7 +49,7 @@ public class SettingLanguage extends Module {
     }
 
     @Override
-    public boolean back() {
+    public boolean onBack() {
         applyLanguage();
         return false;
     }

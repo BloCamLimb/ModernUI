@@ -193,7 +193,7 @@ public enum GlobalModuleManager {
         return root;
     }
 
-    protected void addAnimation(IAnimation animation) {
+    public void addAnimation(IAnimation animation) {
         animations.add(animation);
     }
 
@@ -277,7 +277,7 @@ public enum GlobalModuleManager {
             closePopup();
             return true;
         }
-        return root.back();
+        return root.onBack();
     }
 
     /**

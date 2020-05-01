@@ -44,6 +44,19 @@ public class LanguageGroup extends UniformScrollGroup<LanguageEntry> {
     }
 
     @Override
+    public void locate(float px, float py) {
+        super.locate(px, py);
+        int i = 0;
+        for (LanguageEntry entry : entries) {
+            float cy = py + i * entryHeight;
+            entry.locate(px, cy);
+            i++;
+        }
+
+        followEntry(module.getHighlight());
+    }
+
+    /*@Override
     public void onLayout(float left, float right, float y) {
         super.onLayout(left, right, y);
         left = centerX - 120;
@@ -56,6 +69,6 @@ public class LanguageGroup extends UniformScrollGroup<LanguageEntry> {
         }
 
         followEntry(module.getHighlight());
-    }
+    }*/
 
 }

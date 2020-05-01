@@ -20,6 +20,7 @@ package icyllis.modernui.gui.scroll;
 
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.IMouseListener;
+import icyllis.modernui.system.ModernUI;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -41,12 +42,6 @@ public abstract class UniformScrollGroup<T extends UniformScrollEntry> extends S
     public UniformScrollGroup(ScrollWindow<?> window, int entryHeight) {
         super(window);
         this.entryHeight = entryHeight;
-    }
-
-    @Override
-    public void locate(float px, float py) {
-        y1 = py - height / 2f;
-        y2 = y1 + height;
     }
 
     @Override
@@ -109,6 +104,16 @@ public abstract class UniformScrollGroup<T extends UniformScrollEntry> extends S
                 onMouseHoverExit();
             }
         }
+        if (mouseHovered) {
+            boolean result = false;
+            for (UniformScrollEntry entry : visible) {
+                if (!result && entry.updateMouseHover(mouseX, mouseY)) {
+                    result = true;
+                } else {
+                    entry.setMouseHoverExit();
+                }
+            }
+        }
         return mouseHovered;
     }
 
@@ -130,14 +135,7 @@ public abstract class UniformScrollGroup<T extends UniformScrollEntry> extends S
     }
 
     protected void onMouseHoverEnter(double mouseX, double mouseY) {
-        boolean result = false;
-        for (UniformScrollEntry entry : visible) {
-            if (!result && entry.updateMouseHover(mouseX, mouseY)) {
-                result = true;
-            } else {
-                entry.setMouseHoverExit();
-            }
-        }
+
     }
 
     protected void onMouseHoverExit() {

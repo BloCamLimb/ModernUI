@@ -46,7 +46,11 @@ public class DSliderSettingEntry extends SettingEntry implements SliderDiscrete.
 
     public DSliderSettingEntry(SettingScrollWindow window, String title, int minValue, int maxValue, int currentValue, Consumer<Integer> applyFunc, Function<Integer, String> displayStringFunc, boolean realtimeApply) {
         super(window, title);
-        this.slider = new SliderDiscrete(window.getModule(), 84, currentValue - minValue, maxValue - minValue, this);
+        //this.slider = new SliderDiscrete(window.getModule(), 84, currentValue - minValue, maxValue - minValue, this);
+        this.slider = new SliderDiscrete.Builder(minValue, maxValue)
+                .setWidth(84)
+                .build(window)
+                .buildCallback(currentValue, this);
         this.minValue = minValue;
         this.originalValue = currentValue;
         this.currentValue = currentValue;
@@ -56,10 +60,16 @@ public class DSliderSettingEntry extends SettingEntry implements SliderDiscrete.
         this.realtimeApply = realtimeApply;
     }
 
-    @Override
+    /*@Override
     public void onLayout(float left, float right, float y) {
         super.onLayout(left, right, y);
         slider.locate(centerX + 40, y + 9);
+    }*/
+
+    @Override
+    public void locate(float px, float py) {
+        super.locate(px, py);
+        slider.locate(centerX + 40, py + 9);
     }
 
     @Override
@@ -80,12 +90,12 @@ public class DSliderSettingEntry extends SettingEntry implements SliderDiscrete.
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+    public boolean onMouseClick(double mouseX, double mouseY, int mouseButton) {
         return slider.isMouseHovered() && slider.mouseClicked(mouseX, mouseY, mouseButton);
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
+    public boolean onMouseRelease(double mouseX, double mouseY, int mouseButton) {
         return slider.isMouseHovered() && slider.mouseReleased(mouseX, mouseY, mouseButton);
     }
 

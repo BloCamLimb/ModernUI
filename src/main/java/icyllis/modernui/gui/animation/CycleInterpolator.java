@@ -16,18 +16,18 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.popup;
+package icyllis.modernui.gui.animation;
 
-@FunctionalInterface
-public interface ConfirmCallback {
+public class CycleInterpolator implements IInterpolator {
 
-    int CONFIRM = 0;
-    int ALTERNATIVE = 1; // the second button
-    int CANCEL = 2;
+    private final float cycle;
 
-    /**
-     * Callback button operation
-     * @param i operation
-     */
-    void call(int i);
+    public CycleInterpolator(float cycle) {
+        this.cycle = cycle;
+    }
+
+    @Override
+    public float getInterpolation(float input) {
+        return (float) Math.sin(2 * Math.PI * cycle * input);
+    }
 }

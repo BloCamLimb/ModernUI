@@ -18,10 +18,12 @@
 
 package icyllis.modernui.gui.widget;
 
+import com.google.common.collect.Lists;
 import com.google.gson.annotations.Expose;
 import icyllis.modernui.font.FontTools;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
+import icyllis.modernui.gui.animation.IInterpolator;
 import icyllis.modernui.gui.master.*;
 import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.math.Locator;
@@ -29,11 +31,14 @@ import icyllis.modernui.system.ConstantsLibrary;
 import net.minecraft.client.resources.I18n;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.List;
 
 public class MenuButton extends IconButton {
 
-    private final AnimationControl sideTextAC = new SideTextControl(this);
+    @Nullable
+    private AnimationControl sideTextAC;
 
     private final String text;
     private final int id;
@@ -49,8 +54,42 @@ public class MenuButton extends IconButton {
     }
 
     @Override
+    public MenuButton buildCallback(boolean b, @Nullable Runnable r, boolean onetime) {
+        super.buildCallback(b, r, onetime);
+        return this;
+    }
+
+    @Override
     public void onDraw(@Nonnull Canvas canvas, float time) {
-        super.draw(canvas, time);
+        super.onDraw(canvas, time);
+        // call on render loop, because we called getTextLength
+        if (sideTextAC == null) {
+            List<Animation> openList = new ArrayList<>();
+            openList.add(new Animation(150)
+                    .addAppliers(
+                            new Applier(0.0f, 1.0f, () -> frameAlpha, this::setFrameAlpha),
+                            new Applier(0.0f, getTextLength() + 5.0f, () -> frameSizeW, this::setFrameSizeW)
+                                    .setInterpolator(IInterpolator.SINE)
+                    )
+            );
+            openList.add(new Animation(150)
+                    .addAppliers(
+                            new Applier(0.0f, 1.0f, () -> textAlpha, this::setTextAlpha))
+                    .setDelay(100)
+            );
+
+            sideTextAC = new AnimationControl(
+                    openList,
+                    Lists.newArrayList(new Animation(250)
+                            .addAppliers(
+                                    new Applier(1.0f, 0.0f, () -> textAlpha, v -> {
+                                        setTextAlpha(v);
+                                        setFrameAlpha(v);
+                                    })
+                            )
+                    )
+            );
+        }
         sideTextAC.update();
         if (sideTextAC.isAnimationOpen()) {
             canvas.setRGBA(0.0f, 0.0f, 0.0f, 0.5f * frameAlpha);
@@ -96,13 +135,17 @@ public class MenuButton extends IconButton {
     @Override
     protected void onMouseHoverEnter(double mouseX, double mouseY) {
         super.onMouseHoverEnter(mouseX, mouseY);
-        sideTextAC.startOpenAnimation();
+        if (sideTextAC != null) {
+            sideTextAC.startOpenAnimation();
+        }
     }
 
     @Override
     protected void onMouseHoverExit() {
         super.onMouseHoverExit();
-        sideTextAC.startCloseAnimation();
+        if (sideTextAC != null) {
+            sideTextAC.startCloseAnimation();
+        }
     }
 
     public float getTextLength() {
@@ -122,10 +165,10 @@ public class MenuButton extends IconButton {
     }
 
     public void onModuleChanged(int id) {
-        brightAC.setLockState(this.id == id);
-        if (brightAC.canChangeState()) {
+        locked = this.id == id;
+        if (!locked) {
             if (!isMouseHovered()) {
-                brightAC.startCloseAnimation();
+                brightAnimation.invert();
             }
         }
     }
@@ -181,32 +224,27 @@ public class MenuButton extends IconButton {
         }
     }
 
-    private static class SideTextControl extends AnimationControl {
+    /*private static class SideTextControl extends AnimationControl {
 
         private final MenuButton instance;
 
         public SideTextControl(MenuButton instance) {
+            super(openList, closeList);
             this.instance = instance;
         }
 
         @Override
         protected void createOpenAnimations(@Nonnull List<Animation> list) {
-            list.add(new Animation(3, true)
-                    .applyTo(new Applier(0.0f, instance.getTextLength() + 5.0f, instance::setFrameSizeW)));
-            list.add(new Animation(3)
-                    .applyTo(new Applier(1.0f, instance::setFrameAlpha)));
-            list.add(new Animation(3)
-                    .applyTo(new Applier(1.0f, instance::setTextAlpha))
-                    .withDelay(2));
+
         }
 
         @Override
         protected void createCloseAnimations(@Nonnull List<Animation> list) {
             list.add(new Animation(5)
-                    .applyTo(new Applier(1.0f, 0.0f, v -> {
+                    .addAppliers(new Applier(1.0f, 0.0f, getter, v -> {
                         instance.setTextAlpha(v);
                         instance.setFrameAlpha(v);
                     })));
         }
-    }
+    }*/
 }

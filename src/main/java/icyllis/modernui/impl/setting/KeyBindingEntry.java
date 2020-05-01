@@ -50,20 +50,24 @@ public class KeyBindingEntry extends SettingEntry {
 
     private int tier = 0;
 
+    private final Animation lightAnimation;
+
     public KeyBindingEntry(SettingScrollWindow window, @Nonnull KeyBinding keyBinding, Runnable conflictsCallback) {
         super(window, I18n.format(keyBinding.getKeyDescription()));
         this.keyBinding = keyBinding;
-        this.inputBox = new KeyInputBox(window.getModule(), this::bindKey);
+        this.inputBox = new KeyInputBox(window, this::bindKey);
         //TODO tint text by conflict context, or maybe not?
         //this.conflictContext = keyBinding.getKeyConflictContext().toString();
         this.conflictsCallback = conflictsCallback;
         updateKeyText();
+
+        lightAnimation = new Animation(1000).addAppliers(new Applier(0.5f, 0, () -> light, v -> light = v));
     }
 
     @Override
-    public void onLayout(float left, float right, float y) {
-        super.onLayout(left, right, y);
-        inputBox.locate(centerX + 70, y + 2);
+    public void locate(float px, float py) {
+        super.locate(px, py);
+        inputBox.locate(centerX + 70, py + 2);
     }
 
     @Override
@@ -84,7 +88,7 @@ public class KeyBindingEntry extends SettingEntry {
         return false;
     }
 
-    @Override
+    /*@Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if (mouseButton == 1) {
             //DropDownMenu list = new DropDownMenu(Lists.newArrayList("WIP =w="), -1, 16, this::menuActions);
@@ -97,6 +101,23 @@ public class KeyBindingEntry extends SettingEntry {
             return true;
         }
         return inputBox.isMouseHovered() && inputBox.mouseClicked(mouseX, mouseY, mouseButton);
+    }*/
+
+    @Override
+    protected boolean onMouseClick(double mouseX, double mouseY, int mouseButton) {
+        return inputBox.isMouseHovered() && inputBox.mouseClicked(mouseX, mouseY, mouseButton);
+    }
+
+    @Override
+    protected boolean onMouseRightClick(double mouseX, double mouseY) {
+        DropDownMenu menu = new DropDownMenu.Builder(Lists.newArrayList(I18n.format("controls.reset")), -1)
+                .build(window)
+                .buildCallback(this::menuActions);
+
+        menu.locate((float) getHost().getAbsoluteMouseX() + 1, (float) getHost().getAbsoluteMouseY() + 1);
+        GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(menu), false);
+        lightUp();
+        return true;
     }
 
     /**
@@ -113,7 +134,7 @@ public class KeyBindingEntry extends SettingEntry {
     }
 
     public void lightUp() {
-        getModule().addAnimation(new Animation(20).applyTo(new Applier(0.5f, 0, v -> light = v)));
+        lightAnimation.restart();
     }
 
     // vanilla call this every frame... but we don't

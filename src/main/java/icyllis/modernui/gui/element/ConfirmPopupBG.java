@@ -18,6 +18,7 @@
 
 package icyllis.modernui.gui.element;
 
+import icyllis.modernui.gui.animation.IInterpolator;
 import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
@@ -26,7 +27,7 @@ import icyllis.modernui.gui.master.*;
 
 import javax.annotation.Nonnull;
 
-public class ConfirmWindowBG implements IDrawable {
+public class ConfirmPopupBG extends Background {
 
     private String title = "";
 
@@ -34,23 +35,27 @@ public class ConfirmWindowBG implements IDrawable {
 
     private float x, y;
 
-    private float frameSizeHOffset = 16;
+    private float heightOffset = 16;
 
-    public ConfirmWindowBG(Module module) {
-        module.addAnimation(new Animation(3, true)
-                .applyTo(new Applier(frameSizeHOffset, 80, value -> frameSizeHOffset = value)));
+    public ConfirmPopupBG() {
+        super(200);
+        new Animation(150)
+                .addAppliers(
+                        new Applier(heightOffset, 80, () -> heightOffset, value -> heightOffset = value)
+                                .setInterpolator(IInterpolator.SINE))
+                .start();
     }
 
     @Override
     public void draw(@Nonnull Canvas canvas, float time) {
         canvas.setRGBA(0.064f, 0.064f, 0.064f, 0.7f);
-        canvas.drawRect(x, y, x + 180, y + frameSizeHOffset);
+        canvas.drawRect(x, y, x + 180, y + heightOffset);
 
         canvas.setRGBA(0.032f, 0.032f, 0.032f, 0.85f);
         canvas.drawRect(x, y, x + 180, y + 16);
 
         canvas.setRGBA(0.5f, 0.5f, 0.5f, 1.0f);
-        canvas.drawRectOutline(x, y, x + 180, y + frameSizeHOffset, 0.51f);
+        canvas.drawRectOutline(x, y, x + 180, y + heightOffset, 0.51f);
 
         canvas.resetColor();
         canvas.setTextAlign(Align3H.CENTER);

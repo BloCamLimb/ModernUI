@@ -41,14 +41,14 @@ public class GeneralStatsEntry extends UniformScrollEntry {
     private String value = "";
 
     public GeneralStatsEntry(ScrollWindow<?> window, @Nonnull Stat<ResourceLocation> stat, Color3f color) {
-        super(window, GeneralStatsGroup.ENTRY_HEIGHT);
+        super(window, 240, GeneralStatsGroup.ENTRY_HEIGHT);
         this.stat = stat;
         this.color = color;
         title = I18n.format("stat." + stat.getValue().toString().replace(':', '.'));
     }
 
     @Override
-    public void draw(Canvas canvas, float time) {
+    public void onDraw(@Nonnull Canvas canvas, float time) {
         canvas.setColor(color, 1);
         canvas.setTextAlign(Align3H.LEFT);
         canvas.drawText(title, x1 + 2, y1 + 1);

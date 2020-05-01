@@ -27,6 +27,7 @@ import icyllis.modernui.gui.math.Color3f;
 import icyllis.modernui.gui.math.Locator;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.function.Consumer;
 
 /**
@@ -37,7 +38,8 @@ public class ColorSelectButton extends Widget {
     private float r, g, b;
     private int color;
 
-    private Consumer<ColorSelectButton> callback = c -> {};
+    @Nullable
+    private Consumer<ColorSelectButton> callback;
 
     private boolean selected = false;
 
@@ -48,7 +50,7 @@ public class ColorSelectButton extends Widget {
         setColor(builder.color);
     }
 
-    public ColorSelectButton setCallback(Consumer<ColorSelectButton> c) {
+    public ColorSelectButton setCallback(@Nullable Consumer<ColorSelectButton> c) {
         callback = c;
         return this;
     }
@@ -65,7 +67,9 @@ public class ColorSelectButton extends Widget {
 
     @Override
     protected boolean onMouseLeftClick(double mouseX, double mouseY) {
-        callback.accept(this);
+        if (callback != null) {
+            callback.accept(this);
+        }
         return true;
     }
 

@@ -38,7 +38,7 @@ public class ModuleTest extends Module {
         addWidget(new SlidingToggleButton.Builder(0x8020a0e0, 0x40808080, 4)
                 .setLocator(new Locator(-10, -60))
                 .build(this));
-        addWidget(h = new NumberInputField(this, 90, 12));
+        addWidget(h = new NumberInputField(this, new NumberInputField.Builder().setWidth(120).setHeight(12)));
         h.setLimit(-997, 600);
         h.setDecoration(f -> new TextField.Frame(f, "Limit:", -1));
         h.setNumberListener(e -> {}, true);

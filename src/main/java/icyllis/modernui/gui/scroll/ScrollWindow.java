@@ -22,6 +22,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.widget.Window;
+import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -119,13 +120,21 @@ public class ScrollWindow<T extends ScrollGroup> extends Window {
     }
 
     @Override
+    public boolean updateMouseHover(double mouseX, double mouseY) {
+        if (super.updateMouseHover(mouseX, mouseY)) {
+            if (scrollbar.updateMouseHover(mouseX, mouseY)) {
+                scrollList.setMouseHoverExit();
+            } else {
+                scrollList.updateMouseHover(mouseX, mouseY + getVisibleOffset());
+            }
+            return true;
+        }
+        return false;
+    }
+
+    @Override
     protected void onMouseHoverEnter(double mouseX, double mouseY) {
         super.onMouseHoverEnter(mouseX, mouseY);
-        if (scrollbar.updateMouseHover(mouseX, mouseY)) {
-            scrollList.setMouseHoverExit();
-        } else {
-            scrollList.updateMouseHover(mouseX, mouseY + getVisibleOffset());
-        }
     }
 
     @Override
