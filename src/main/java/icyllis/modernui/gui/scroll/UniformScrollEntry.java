@@ -19,6 +19,7 @@
 package icyllis.modernui.gui.scroll;
 
 import icyllis.modernui.gui.master.Widget;
+import icyllis.modernui.gui.math.Align9D;
 
 import javax.annotation.Nonnull;
 
@@ -31,34 +32,23 @@ public abstract class UniformScrollEntry extends Widget {
 
     protected float centerX;
 
-    public UniformScrollEntry(@Nonnull ScrollWindow<?> window, float height) {
-        super(window.getModule());
+    public UniformScrollEntry(@Nonnull ScrollWindow<?> window, float width, float height) {
+        super(window, Align9D.TOP_CENTER);
         this.window = window;
+        this.width = width;
         this.height = height;
     }
 
-    /**
-     * Use {@link #onLayout(float, float, float)}
-     */
-    @Deprecated
-    @Override
-    public final void locate(float px, float py) {
-        throw new RuntimeException();
-    }
-
-    /**
-     * Called when layout
-     */
-    public void onLayout(float left, float right, float y) {
+    /*public void onLayout(float left, float right, float y) {
         this.x1 = left;
         this.x2 = right;
         this.width = right - left;
         this.centerX = (left + right) / 2f;
         this.y1 = y;
         this.y2 = y + height;
-    }
+    }*/
 
-    protected abstract void onMouseHoverEnter();
+    protected abstract void onMouseHoverEnter(double mouseX, double mouseY);
 
     protected abstract void onMouseHoverExit();
 }

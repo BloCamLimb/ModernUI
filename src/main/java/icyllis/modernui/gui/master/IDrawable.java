@@ -55,7 +55,7 @@ public interface IDrawable {
      *
      * @return alpha
      */
-    default float getFinalAlpha() {
+    default float getAlpha() {
         return 1.0f;
     }
 
@@ -64,6 +64,6 @@ public interface IDrawable {
      *
      * @param alpha specific alpha
      */
-    default void setFinalAlpha(float alpha) {}
+    default void setAlpha(float alpha) {}
 
 }

@@ -19,7 +19,7 @@
 package icyllis.modernui.gui.master;
 
 /**
- * Used for a draggable widget, use {@link IFocuser} to focus this
+ * Used for a draggable widget, use {@link IHost} to focus this
  */
 public interface IDraggable {
 
@@ -37,9 +37,7 @@ public interface IDraggable {
 
     /**
      * Called when mouse released
-     * Check if is dragging first
-     * @param mouseX mouse x pos
-     * @param mouseY mouse y pos
+     * Should call {@link IHost#setDraggable(IDraggable) null}
      */
-    default void stopMouseDragging(double mouseX, double mouseY) {}
+    default void stopDragging() {}
 }

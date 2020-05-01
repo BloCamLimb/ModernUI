@@ -195,8 +195,8 @@ public class KeyBindingEntry extends SettingEntry {
     }
 
     @Override
-    protected void onMouseHoverEnter() {
-        super.onMouseHoverEnter();
+    protected void onMouseHoverEnter(double mouseX, double mouseY) {
+        super.onMouseHoverEnter(mouseX, mouseY);
         inputBox.setTextBrightness(titleBrightness);
     }
 

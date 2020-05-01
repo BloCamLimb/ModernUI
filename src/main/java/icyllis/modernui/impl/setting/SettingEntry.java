@@ -65,7 +65,7 @@ public abstract class SettingEntry extends UniformScrollEntry {
     protected abstract void drawExtra(Canvas canvas, float time);
 
     @Override
-    protected void onMouseHoverEnter() {
+    protected void onMouseHoverEnter(double mouseX, double mouseY) {
         titleBrightness = 1.0f;
     }
 

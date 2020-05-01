@@ -111,7 +111,7 @@ processResources {
 jar {
     manifest {
         attributes([
-            "Specification-Title": "Modern UI",
+            "Specification-Title": "ModernUI",
             "Specification-Vendor": "BloCamLimb",
             "Specification-Version": "1",
             "Implementation-Title": project.name,
@@ -156,6 +156,7 @@ jar {
 task apiJar(type: Jar) {
     archiveName = "ModernUI-${minecraft_version}-${mod_version}-api.jar"
     from sourceSets.api.output
+    from sourceSets.api.allJava
 }
 
 artifacts {

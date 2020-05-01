@@ -18,11 +18,14 @@
 
 package icyllis.modernui.gui.widget;
 
-import icyllis.modernui.font.FontTools;
+import com.google.gson.annotations.Expose;
 import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.*;
+import icyllis.modernui.gui.math.Align9D;
+import icyllis.modernui.gui.math.Locator;
+import net.minecraft.client.resources.I18n;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -30,34 +33,46 @@ import java.util.List;
 /**
  * Used in confirm popup
  */
-public class DynamicFrameButton extends Widget {
+public class DynamicFrameButton extends Button {
 
-    private final AnimationControl ac = new Control(this);
+    private final AnimationControl frameAC = new Control(this);
 
     private String text;
-
-    private float textBrightness = 0.7f;
 
     private float frameAlpha = 0;
 
     private float fwo, fho;
 
-    private Runnable leftClickFunc;
-
-    public DynamicFrameButton(Module module, String text, Runnable onLeftClick) {
-        super(module);
-        this.text = text;
-        this.width = Math.max(28, FontTools.getStringWidth(text) + 6);
-        this.height = 13;
+    public DynamicFrameButton(IHost host, Builder builder) {
+        super(host, builder);
+        this.text = I18n.format(builder.text);
         this.fwo = width;
         this.fho = height;
-        this.leftClickFunc = onLeftClick;
     }
 
     @Override
-    public void draw(@Nonnull Canvas canvas, float time) {
-        ac.update();
-        canvas.setRGBA(textBrightness, textBrightness, textBrightness, 1.0f);
+    public DynamicFrameButton setDefaultClickable(boolean b) {
+        super.setDefaultClickable(b);
+        return this;
+    }
+
+    @Override
+    public DynamicFrameButton setCallback(Runnable r) {
+        super.setCallback(r);
+        return this;
+    }
+
+    @Override
+    public DynamicFrameButton setOnetimeCallback(Runnable r) {
+        super.setOnetimeCallback(r);
+        return this;
+    }
+
+    @Override
+    public void onDraw(@Nonnull Canvas canvas, float time) {
+        super.onDraw(canvas, time);
+        frameAC.update();
+        canvas.setRGBA(brightness, brightness, brightness, 1.0f);
         canvas.setTextAlign(Align3H.CENTER);
         canvas.drawText(text, x1 + width / 2f, y1 + 2);
         if (frameAlpha > 0) {
@@ -77,28 +92,21 @@ public class DynamicFrameButton extends Widget {
     }*/
 
     @Override
-    protected void onMouseHoverEnter() {
-        super.onMouseHoverEnter();
-        ac.startOpenAnimation();
+    protected void onMouseHoverEnter(double mouseX, double mouseY) {
+        super.onMouseHoverEnter(mouseX, mouseY);
+        frameAC.startOpenAnimation();
     }
 
     @Override
     protected void onMouseHoverExit() {
         super.onMouseHoverExit();
-        ac.startCloseAnimation();
+        frameAC.startCloseAnimation();
     }
 
+    @Nonnull
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        if (listening && mouseButton == 0) {
-            leftClickFunc.run();
-            return true;
-        }
-        return false;
-    }
-
-    public void setTextBrightness(float textBrightness) {
-        this.textBrightness = textBrightness;
+    public Class<? extends Widget.Builder> getBuilder() {
+        return Builder.class;
     }
 
     public void setFrameAlpha(float frameAlpha) {
@@ -123,10 +131,16 @@ public class DynamicFrameButton extends Widget {
 
         private int displayCount;
 
-        public Countdown(Module module, String text, Runnable leftClick, int countdown) {
-            super(module, text, leftClick);
-            this.displayCount = this.countdown = countdown;
-            listening = false;
+        public Countdown(IHost host, Builder builder) {
+            super(host, builder);
+            this.displayCount = this.countdown = builder.countdown;
+            super.setDefaultClickable(false);
+        }
+
+        @Deprecated
+        @Override
+        public DynamicFrameButton setDefaultClickable(boolean b) {
+            return super.setDefaultClickable(b);
         }
 
         /*@Override
@@ -140,8 +154,8 @@ public class DynamicFrameButton extends Widget {
         }*/
 
         @Override
-        public void draw(@Nonnull Canvas canvas, float time) {
-            super.draw(canvas, time);
+        public void onDraw(@Nonnull Canvas canvas, float time) {
+            super.onDraw(canvas, time);
             if (counting) {
                 canvas.setRGBA(0.03f, 0.03f, 0.03f, 0.7f);
                 canvas.drawRect(x1, y1, x2, y2);
@@ -156,10 +170,93 @@ public class DynamicFrameButton extends Widget {
                 counting = ticks < startTick + countdown * 20;
                 displayCount = countdown - (ticks - startTick) / 20;
                 if (!counting) {
-                    listening = true;
-                    getModule().refocusCursor();
+                    setStatus(WidgetStatus.ACTIVE);
+                    getHost().refocusMouseCursor();
                 }
             }
+        }
+
+        @Nonnull
+        @Override
+        public Class<? extends Widget.Builder> getBuilder() {
+            return Builder.class;
+        }
+
+        public static class Builder extends DynamicFrameButton.Builder {
+
+            @Expose
+            protected final int countdown;
+
+            public Builder(@Nonnull String text, int countdown) {
+                super(text);
+                this.countdown = countdown;
+            }
+
+            @Override
+            public Builder setWidth(float width) {
+                super.setWidth(width);
+                return this;
+            }
+
+            @Override
+            public Builder setLocator(@Nonnull Locator locator) {
+                super.setLocator(locator);
+                return this;
+            }
+
+            @Override
+            public Builder setAlign(@Nonnull Align9D align) {
+                super.setAlign(align);
+                return this;
+            }
+
+            @Nonnull
+            @Override
+            public DynamicFrameButton.Countdown build(IHost host) {
+                return new DynamicFrameButton.Countdown(host, this);
+            }
+        }
+    }
+
+    public static class Builder extends Widget.Builder {
+
+        @Expose
+        protected final String text;
+
+        public Builder(@Nonnull String text) {
+            this.text = text;
+            super.setHeight(13);
+        }
+
+        @Override
+        public Builder setWidth(float width) {
+            super.setWidth(width);
+            return this;
+        }
+
+        @Deprecated
+        @Override
+        public Builder setHeight(float height) {
+            super.setHeight(height);
+            return this;
+        }
+
+        @Override
+        public Builder setLocator(@Nonnull Locator locator) {
+            super.setLocator(locator);
+            return this;
+        }
+
+        @Override
+        public Builder setAlign(@Nonnull Align9D align) {
+            super.setAlign(align);
+            return this;
+        }
+
+        @Nonnull
+        @Override
+        public Widget build(IHost host) {
+            return new DynamicFrameButton(host, this);
         }
     }
 
@@ -177,15 +274,13 @@ public class DynamicFrameButton extends Widget {
                     .applyTo(new Applier(instance.getWidth() / 2f, 0, instance::setFwo),
                             new Applier(6, 0, instance::setFho)));
             list.add(new Animation(2)
-                    .applyTo(new Applier(0, 1, instance::setFrameAlpha),
-                            new Applier(0.7f, 1, instance::setTextBrightness)));
+                    .applyTo(new Applier(0, 1, instance::setFrameAlpha)));
         }
 
         @Override
         protected void createCloseAnimations(@Nonnull List<Animation> list) {
             list.add(new Animation(4)
-                    .applyTo(new Applier(1, 0, instance::setFrameAlpha),
-                            new Applier(1, 0.7f, instance::setTextBrightness)));
+                    .applyTo(new Applier(1, 0, instance::setFrameAlpha)));
         }
     }
 

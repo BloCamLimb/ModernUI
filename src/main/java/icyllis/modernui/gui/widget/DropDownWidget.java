@@ -99,8 +99,8 @@ public class DropDownWidget extends Widget {
     }
 
     @Override
-    protected void onMouseHoverEnter() {
-        super.onMouseHoverEnter();
+    protected void onMouseHoverEnter(double mouseX, double mouseY) {
+        super.onMouseHoverEnter(mouseX, mouseY);
         getModule().addAnimation(new Animation(2)
                 .applyTo(new Applier(0.25f, this::setBackAlpha)));
     }

@@ -144,7 +144,7 @@ public class ResourcePackEntry extends UniformScrollEntry {
     }
 
     @Override
-    protected void onMouseHoverEnter() {
+    protected void onMouseHoverEnter(double mouseX, double mouseY) {
 
     }
 

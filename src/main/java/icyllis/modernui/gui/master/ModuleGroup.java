@@ -102,7 +102,7 @@ public abstract class ModuleGroup extends Module {
         }
         cid = tid;
         onChildModuleChanged(cid);
-        refocusCursor();
+        refocusMouseCursor();
         MouseTools.useDefaultCursor();
     }
 

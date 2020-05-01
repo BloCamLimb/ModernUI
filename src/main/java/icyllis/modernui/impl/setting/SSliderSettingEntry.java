@@ -20,7 +20,6 @@ package icyllis.modernui.impl.setting;
 
 import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.widget.ISmoothSliderReceiver;
 import icyllis.modernui.gui.widget.SliderSmooth;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import net.minecraft.util.math.MathHelper;
@@ -29,7 +28,7 @@ import javax.annotation.Nonnull;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class SSliderSettingEntry extends SettingEntry implements ISmoothSliderReceiver {
+public class SSliderSettingEntry extends SettingEntry implements SliderSmooth.IListener {
 
     private final SliderSmooth slider;
 
@@ -115,8 +114,8 @@ public class SSliderSettingEntry extends SettingEntry implements ISmoothSliderRe
     }
 
     @Override
-    public void onSliderRealtimeChange(double percentage) {
-        currentValue = minValue + (maxValue - minValue) * percentage;
+    public void onSliderChanged(double value) {
+        currentValue = minValue + (maxValue - minValue) * value;
         currentValue = stepSize * (Math.round(currentValue / stepSize));
         displayString = displayStringFunc.apply(currentValue);
         if (realtimeApply) {
@@ -125,7 +124,7 @@ public class SSliderSettingEntry extends SettingEntry implements ISmoothSliderRe
     }
 
     @Override
-    public void onSliderFinalChange() {
+    public void onSliderStopChange() {
         if (!realtimeApply) {
             applyChange();
         }

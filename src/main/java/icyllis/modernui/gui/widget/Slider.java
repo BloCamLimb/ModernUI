@@ -18,16 +18,13 @@
 
 package icyllis.modernui.gui.widget;
 
-import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.master.IDraggable;
-import icyllis.modernui.gui.master.Module;
-import icyllis.modernui.gui.master.Widget;
-import net.minecraft.client.renderer.Rectangle2d;
+import icyllis.modernui.gui.master.*;
 
 import javax.annotation.Nonnull;
 
 /**
  * Horizontal slider
+ * Slider doesn't store current value
  */
 public abstract class Slider extends Widget implements IDraggable {
 
@@ -37,12 +34,12 @@ public abstract class Slider extends Widget implements IDraggable {
 
     protected boolean thumbHovered = false;
 
-    public Slider(Module module, float width) {
-        super(module, width, 3);
+    public Slider(IHost host, Builder builder) {
+        super(host, builder);
     }
 
     @Override
-    public void draw(@Nonnull Canvas canvas, float time) {
+    public void onDraw(@Nonnull Canvas canvas, float time) {
         float cx = (float) (x1 + slideOffset);
         canvas.setRGBA(0.63f, 0.63f, 0.63f, 1.0f);
         canvas.drawRect(x1, y1, cx, y2);
@@ -89,74 +86,60 @@ public abstract class Slider extends Widget implements IDraggable {
     }*/
 
     @Override
-    public boolean updateMouseHover(double mouseX, double mouseY) {
-        if (super.updateMouseHover(mouseX, mouseY)) {
-            checkThumb(mouseX, mouseY);
+    protected boolean onMouseLeftClick(double mouseX, double mouseY) {
+        if (thumbHovered) {
+            isDragging = true;
+            getHost().setDraggable(this);
             return true;
-        }
-        return false;
-    }
-
-    private void checkThumb(double mouseX, double mouseY) {
-        thumbHovered = mouseX >= x1 + slideOffset && mouseX <= x1 + slideOffset + 4 && mouseY >= y1 - 1 && mouseY <= y2 + 1;
-    }
-
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        if (mouseButton == 0) {
-            if (thumbHovered) {
-                isDragging = true;
-                getModule().setDraggable(this);
-                return true;
-            } else {
-                if (mouseX >= x1 && mouseX <= x1 + slideOffset) {
-                    slideToOffset((float) (mouseX - x1 - 2));
-                    checkThumb(mouseX, mouseY);
-                    if (thumbHovered) {
-                        isDragging = true;
-                        getModule().setDraggable(this);
-                    } else {
-                        onFinalChange();
-                    }
-                    return true;
-                } else if (mouseX >= x1 + slideOffset + 4 && mouseX <= x2) {
-                    slideToOffset((float) (mouseX - x1 - 2));
-                    checkThumb(mouseX, mouseY);
-                    if (thumbHovered) {
-                        isDragging = true;
-                        getModule().setDraggable(this);
-                    } else {
-                        onFinalChange();
-                    }
-                    return true;
+        } else {
+            if (mouseX >= x1 && mouseX <= x1 + slideOffset) {
+                slideToOffset(mouseX - x1 - 2);
+                checkThumb(mouseX, mouseY);
+                if (thumbHovered) {
+                    isDragging = true;
+                    getHost().setDraggable(this);
+                } else {
+                    onStopDragging();
                 }
+                return true;
+            } else if (mouseX >= x1 + slideOffset + 4 && mouseX <= x2) {
+                slideToOffset(mouseX - x1 - 2);
+                checkThumb(mouseX, mouseY);
+                if (thumbHovered) {
+                    isDragging = true;
+                    getHost().setDraggable(this);
+                } else {
+                    onStopDragging();
+                }
+                return true;
             }
         }
-        return false;
-    }
-
-    @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
-        return false;
+        return super.onMouseLeftClick(mouseX, mouseY);
     }
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, double deltaX, double deltaY) {
         if (isDragging) {
-            slideToOffset((float) (mouseX - x1 - 2));
+            slideToOffset(mouseX - x1 - 2);
             return true;
         }
         return false;
     }
 
     @Override
-    public void stopMouseDragging(double mouseX, double mouseY) {
+    public final void stopDragging() {
         if (isDragging) {
             isDragging = false;
-            getModule().setDraggable(null);
-            //checkThumb(mouseX, mouseY); pos is not accurate
-            onFinalChange();
+            getHost().setDraggable(null);
+            checkThumb(getHost().getRelativeMouseX(), getHost().getRelativeMouseY());
+            onStopDragging();
         }
+    }
+
+    @Override
+    protected void onMouseHoverEnter(double mouseX, double mouseY) {
+        super.onMouseHoverEnter(mouseX, mouseY);
+        checkThumb(mouseX, mouseY);
     }
 
     @Override
@@ -165,11 +148,15 @@ public abstract class Slider extends Widget implements IDraggable {
         thumbHovered = false;
     }
 
-    protected abstract void onFinalChange();
+    private void checkThumb(double mouseX, double mouseY) {
+        thumbHovered = mouseX >= x1 + slideOffset && mouseX <= x1 + slideOffset + 4 && mouseY >= y1 - 1 && mouseY <= y2 + 1;
+    }
 
-    protected abstract void slideToOffset(float offset);
+    protected abstract void onStopDragging();
 
-    protected float getMaxSlideOffset() {
+    protected abstract void slideToOffset(double offset);
+
+    protected double getMaxSlideOffset() {
         return width - 4;
     }
 }

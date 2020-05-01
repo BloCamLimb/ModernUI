@@ -25,13 +25,11 @@ import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.*;
 import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.math.Locator;
-import icyllis.modernui.impl.module.SettingAudio;
 import icyllis.modernui.system.ConstantsLibrary;
 import net.minecraft.client.resources.I18n;
 
 import javax.annotation.Nonnull;
 import java.util.List;
-import java.util.function.BiFunction;
 
 public class MenuButton extends IconButton {
 
@@ -44,8 +42,8 @@ public class MenuButton extends IconButton {
     private float textAlpha = 0;
     private float frameSizeW = 5;
 
-    public MenuButton(Module module, Builder builder) {
-        super(module, builder);
+    public MenuButton(IHost host, Builder builder) {
+        super(host, builder);
         this.text = I18n.format(builder.text);
         this.id = builder.id;
     }
@@ -96,8 +94,8 @@ public class MenuButton extends IconButton {
     }*/
 
     @Override
-    protected void onMouseHoverEnter() {
-        super.onMouseHoverEnter();
+    protected void onMouseHoverEnter(double mouseX, double mouseY) {
+        super.onMouseHoverEnter(mouseX, mouseY);
         sideTextAC.startOpenAnimation();
     }
 
@@ -124,10 +122,10 @@ public class MenuButton extends IconButton {
     }
 
     public void onModuleChanged(int id) {
-        iconAC.setLockState(this.id == id);
-        if (iconAC.canChangeState()) {
+        brightAC.setLockState(this.id == id);
+        if (brightAC.canChangeState()) {
             if (!isMouseHovered()) {
-                iconAC.startCloseAnimation();
+                brightAC.startCloseAnimation();
             }
         }
     }
@@ -176,9 +174,10 @@ public class MenuButton extends IconButton {
             return this;
         }
 
+        @Nonnull
         @Override
-        public MenuButton build(Module module) {
-            return new MenuButton(module, this);
+        public MenuButton build(IHost host) {
+            return new MenuButton(host, this);
         }
     }
 

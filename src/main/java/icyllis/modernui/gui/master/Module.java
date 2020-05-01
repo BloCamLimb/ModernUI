@@ -34,13 +34,13 @@ import java.lang.reflect.Field;
 import java.util.*;
 import java.util.function.Consumer;
 
-public abstract class Module implements IModule, IFocuser {
+public abstract class Module implements IModule, IHost {
 
     private static Field MODULE;
 
     static {
         try {
-            MODULE = Widget.class.getDeclaredField("module");
+            MODULE = Widget.class.getDeclaredField("host");
             MODULE.setAccessible(true);
         } catch (NoSuchFieldException e) {
             e.printStackTrace();
@@ -182,7 +182,7 @@ public abstract class Module implements IModule, IFocuser {
         }
     }
 
-    protected void addDrawable(IDrawable drawable) {
+    public void addDrawable(IDrawable drawable) {
         drawables.add(drawable);
     }
 
@@ -191,31 +191,58 @@ public abstract class Module implements IModule, IFocuser {
         mouseListeners.add(widget);
     }
 
+    @Override
     public void addAnimation(IAnimation animation) {
         manager.addAnimation(animation);
     }
 
+    @Override
     public int getWindowWidth() {
         return manager.getWindowWidth();
     }
 
+    @Override
     public int getWindowHeight() {
         return manager.getWindowHeight();
     }
 
-    public double getMouseX() {
+    @Override
+    public double getAbsoluteMouseX() {
         return manager.getMouseX();
     }
 
-    public double getMouseY() {
+    @Override
+    public double getAbsoluteMouseY() {
         return manager.getMouseY();
     }
 
-    public int getTicks() {
+    @Override
+    public double getRelativeMouseX() {
+        return manager.getMouseX();
+    }
+
+    @Override
+    public double getRelativeMouseY() {
+        return manager.getMouseY();
+    }
+
+    @Override
+    public float toAbsoluteX(float rx) {
+        return rx;
+    }
+
+    @Override
+    public float toAbsoluteY(float ry) {
+        return ry;
+    }
+
+    @Override
+    public int getElapsedTicks() {
         return manager.getTicks();
     }
 
-    public void refocusCursor() {
+    @Override
+    public void refocusMouseCursor() {
         manager.refreshMouse();
     }
 
@@ -289,7 +316,7 @@ public abstract class Module implements IModule, IFocuser {
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
         if (draggable != null) {
-            draggable.stopMouseDragging(mouseX, mouseY);
+            draggable.stopDragging();
             return true;
         }
         for (IMouseListener listener : mouseListeners) {

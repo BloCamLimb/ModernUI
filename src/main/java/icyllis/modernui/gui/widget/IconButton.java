@@ -19,66 +19,44 @@
 package icyllis.modernui.gui.widget;
 
 import com.google.gson.annotations.Expose;
-import icyllis.modernui.gui.animation.Animation;
-import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.*;
 import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.math.Locator;
 
 import javax.annotation.Nonnull;
-import java.util.List;
-import java.util.function.BiFunction;
 
-public class IconButton extends Widget {
-
-    protected final AnimationControl iconAC = new Control(this);
+public class IconButton extends Button {
 
     private final Icon icon;
 
-    private Runnable leftClickFunc = () -> {};
-
-    private float brightness = 0.7f;
-
-    public IconButton(Module module, Builder builder) {
-        super(module, builder);
+    public IconButton(IHost host, Builder builder) {
+        super(host, builder);
         this.icon = builder.icon;
     }
 
+    @Override
+    public IconButton setDefaultClickable(boolean b) {
+        super.setDefaultClickable(b);
+        return this;
+    }
+
+    @Override
     public IconButton setCallback(Runnable r) {
-        this.leftClickFunc = r;
+        super.setCallback(r);
+        return this;
+    }
+
+    @Override
+    public IconButton setOnetimeCallback(Runnable r) {
+        super.setOnetimeCallback(r);
         return this;
     }
 
     @Override
     public void onDraw(@Nonnull Canvas canvas, float time) {
-        iconAC.update();
+        super.onDraw(canvas, time);
         canvas.setRGBA(brightness, brightness, brightness, 1.0f);
         canvas.drawIcon(icon, x1, y1, x2, y2);
-    }
-
-    @Override
-    protected boolean onMouseLeftClick(double mouseX, double mouseY) {
-        if (iconAC.canChangeState()) {
-            leftClickFunc.run();
-            return true;
-        }
-        return false;
-    }
-
-    @Override
-    protected void onMouseHoverEnter() {
-        super.onMouseHoverEnter();
-        iconAC.startOpenAnimation();
-    }
-
-    @Override
-    protected void onMouseHoverExit() {
-        super.onMouseHoverExit();
-        iconAC.startCloseAnimation();
-    }
-
-    private void setIconBrightness(float brightness) {
-        this.brightness = brightness;
     }
 
     @Nonnull
@@ -90,7 +68,7 @@ public class IconButton extends Widget {
     public static class Builder extends Widget.Builder {
 
         @Expose
-        public final Icon icon;
+        protected final Icon icon;
 
         public Builder(@Nonnull Icon icon) {
             this.icon = icon;
@@ -120,30 +98,10 @@ public class IconButton extends Widget {
             return this;
         }
 
+        @Nonnull
         @Override
-        public IconButton build(Module module) {
-            return new IconButton(module, this);
-        }
-    }
-
-    private static class Control extends AnimationControl {
-
-        private final IconButton instance;
-
-        public Control(IconButton instance) {
-            this.instance = instance;
-        }
-
-        @Override
-        protected void createOpenAnimations(@Nonnull List<Animation> list) {
-            list.add(new Animation(4)
-                    .applyTo(new Applier(instance.brightness, 1.0f, instance::setIconBrightness)));
-        }
-
-        @Override
-        protected void createCloseAnimations(@Nonnull List<Animation> list) {
-            list.add(new Animation(4)
-                    .applyTo(new Applier(instance.brightness, 0.7f, instance::setIconBrightness)));
+        public IconButton build(IHost host) {
+            return new IconButton(host, this);
         }
     }
 }

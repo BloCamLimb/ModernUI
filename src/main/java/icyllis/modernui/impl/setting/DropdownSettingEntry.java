@@ -148,8 +148,8 @@ public class DropdownSettingEntry extends SettingEntry {
     }
 
     @Override
-    protected void onMouseHoverEnter() {
-        super.onMouseHoverEnter();
+    protected void onMouseHoverEnter(double mouseX, double mouseY) {
+        super.onMouseHoverEnter(mouseX, mouseY);
         if (available) {
             optionBrightness = 1.0f;
         }

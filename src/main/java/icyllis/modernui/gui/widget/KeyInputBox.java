@@ -119,8 +119,8 @@ public class KeyInputBox extends Widget implements IKeyboardListener {
     }
 
     @Override
-    protected void onMouseHoverEnter() {
-        super.onMouseHoverEnter();
+    protected void onMouseHoverEnter(double mouseX, double mouseY) {
+        super.onMouseHoverEnter(mouseX, mouseY);
         MouseTools.useIBeamCursor();
         backAlpha = 0.25f;
     }
