@@ -20,10 +20,12 @@ package icyllis.modernui.impl.background;
 
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
+import icyllis.modernui.gui.animation.IInterpolator;
 import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.IDrawable;
 import icyllis.modernui.impl.module.IngameMenuHome;
+
+import javax.annotation.Nonnull;
 
 public class MenuSettingsBG implements IDrawable {
 
@@ -31,14 +33,20 @@ public class MenuSettingsBG implements IDrawable {
 
     private float xOffset;
 
-    public MenuSettingsBG(IngameMenuHome home) {
+    public MenuSettingsBG(@Nonnull IngameMenuHome home) {
         int c = home.getWindowWidth();
         if (home.getTransitionDirection(true)) {
-            home.addAnimation(new Animation(4, true)
-                    .applyTo(new Applier(-c, 0, v -> xOffset = v)));
+            new Animation(200)
+                    .addAppliers(
+                            new Applier(-c, 0, this::getXOffset, this::setXOffset)
+                                    .setInterpolator(IInterpolator.SINE))
+                    .restart();
         } else {
-            home.addAnimation(new Animation(4, true)
-                    .applyTo(new Applier(c, 0, v -> xOffset = v)));
+            new Animation(200)
+                    .addAppliers(
+                            new Applier(c, 0, this::getXOffset, this::setXOffset)
+                                    .setInterpolator(IInterpolator.SINE))
+                    .restart();
         }
     }
 
@@ -102,5 +110,9 @@ public class MenuSettingsBG implements IDrawable {
 
     public void setXOffset(float xOffset) {
         this.xOffset = xOffset;
+    }
+
+    public float getXOffset() {
+        return xOffset;
     }
 }

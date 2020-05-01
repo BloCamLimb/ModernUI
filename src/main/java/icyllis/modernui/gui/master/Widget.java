@@ -44,7 +44,7 @@ public abstract class Widget implements IWidget {
     @Nullable
     private final Locator locator;
 
-    private final Align9D align;
+    protected final Align9D align;
 
     protected float x1, y1;
 
@@ -69,12 +69,6 @@ public abstract class Widget implements IWidget {
         this.height = builder.height;
         this.locator = builder.locator;
         this.align = builder.align;
-    }
-
-    public Widget(IHost host, Align9D align) {
-        this.host = host;
-        this.locator = null;
-        this.align = align;
     }
 
     @Override
@@ -216,6 +210,9 @@ public abstract class Widget implements IWidget {
     @Override
     public final boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if (status.isListening()) {
+            if (onMouseClick(mouseX, mouseY, mouseButton)) {
+                return true;
+            }
             if (mouseButton == 0) {
                 int c = getHost().getElapsedTicks();
                 int d = c - dClickTime;
@@ -236,6 +233,9 @@ public abstract class Widget implements IWidget {
     @Override
     public final boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
         if (status.isListening()) {
+            if (onMouseRelease(mouseX, mouseY, mouseButton)) {
+                return true;
+            }
             if (mouseButton == 0) {
                 return onMouseLeftRelease(mouseX, mouseY);
             } else if (mouseButton == 1) {
@@ -250,6 +250,14 @@ public abstract class Widget implements IWidget {
         if (status.isListening()) {
             return onMouseScrolled(amount);
         }
+        return false;
+    }
+
+    protected boolean onMouseClick(double mouseX, double mouseY, int mouseButton) {
+        return false;
+    }
+
+    protected boolean onMouseRelease(double mouseX, double mouseY, int mouseButton) {
         return false;
     }
 
@@ -298,10 +306,26 @@ public abstract class Widget implements IWidget {
         }
     }
 
+    public void setSize(float width, float height) {
+        this.width = width;
+        this.height = height;
+        relocate();
+    }
+
+    public void setWidth(float width) {
+        this.width = width;
+        relocate();
+    }
+
+    public void setHeight(float height) {
+        this.height = height;
+        relocate();
+    }
+
     @Nonnull
     public abstract Class<? extends Builder> getBuilder();
 
-    public static abstract class Builder {
+    public static class Builder {
 
         @Expose
         protected float width = 16;
@@ -340,6 +364,8 @@ public abstract class Widget implements IWidget {
         }
 
         @Nonnull
-        public abstract Widget build(IHost host);
+        public Widget build(IHost host) {
+            throw new RuntimeException();
+        }
     }
 }

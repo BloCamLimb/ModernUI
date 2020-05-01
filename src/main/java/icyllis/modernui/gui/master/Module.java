@@ -192,11 +192,6 @@ public abstract class Module implements IModule, IHost {
     }
 
     @Override
-    public void addAnimation(IAnimation animation) {
-        manager.addAnimation(animation);
-    }
-
-    @Override
     public int getWindowWidth() {
         return manager.getWindowWidth();
     }

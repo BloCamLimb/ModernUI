@@ -21,7 +21,9 @@ package icyllis.modernui.gui.widget;
 import icyllis.modernui.font.FontTools;
 import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.master.*;
+import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.math.Color3f;
+import icyllis.modernui.gui.math.Locator;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.SharedConstants;
@@ -67,10 +69,10 @@ public class TextField extends Widget implements IKeyboardListener {
 
     protected boolean runtimeUpdate;
 
-    private Runnable enterOperation = () -> getModule().setKeyboardListener(null);
+    private Runnable enterOperation = () -> getHost().setKeyboardListener(null);
 
-    public TextField(Module module, float width, float height) {
-        super(module, width, height);
+    public TextField(IHost host, Builder builder) {
+        super(host, builder);
     }
 
     public void setDecoration(@Nonnull Function<TextField, Decoration> function) {
@@ -109,7 +111,7 @@ public class TextField extends Widget implements IKeyboardListener {
     }
 
     @Override
-    public void draw(@Nonnull Canvas canvas, float time) {
+    public void onDraw(@Nonnull Canvas canvas, float time) {
         if (decoration != null) {
             decoration.draw(canvas, time);
         }
@@ -311,25 +313,22 @@ public class TextField extends Widget implements IKeyboardListener {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        if (listening && mouseButton == 0) {
-            if (!editing) {
-                startEditing();
-            }
-            if (mouseX >= x1 + leftMargin && mouseX <= x2 - rightMargin) {
-                float i = (float) (mouseX - x1 - leftMargin);
-                String s = FontTools.trimStringToWidth(this.text.substring(this.lineScrollOffset), getVisibleWidth(), false);
-                shiftDown = Screen.hasShiftDown();
-                // FIX vanilla's bug
-                this.setCursorPos(FontTools.trimStringToWidth(s, i, false).length() + this.lineScrollOffset);
-            }
-            return true;
+    protected boolean onMouseLeftClick(double mouseX, double mouseY) {
+        if (!editing) {
+            startEditing();
         }
-        return false;
+        if (mouseX >= x1 + leftMargin && mouseX <= x2 - rightMargin) {
+            float i = (float) (mouseX - x1 - leftMargin);
+            String s = FontTools.trimStringToWidth(this.text.substring(this.lineScrollOffset), getVisibleWidth(), false);
+            shiftDown = Screen.hasShiftDown();
+            // FIX vanilla's bug
+            this.setCursorPos(FontTools.trimStringToWidth(s, i, false).length() + this.lineScrollOffset);
+        }
+        return true;
     }
 
     private void startEditing() {
-        getModule().setKeyboardListener(this);
+        getHost().setKeyboardListener(this);
         editing = true;
         timer = 0;
     }
@@ -361,7 +360,7 @@ public class TextField extends Widget implements IKeyboardListener {
         } else {
             switch (keyCode) {
                 case GLFW.GLFW_KEY_ESCAPE:
-                    getModule().setKeyboardListener(null);
+                    getHost().setKeyboardListener(null);
                     return true;
                 case GLFW.GLFW_KEY_BACKSPACE:
                     this.shiftDown = false;
@@ -525,6 +524,49 @@ public class TextField extends Widget implements IKeyboardListener {
         }
 
         return i;
+    }
+
+    @Nonnull
+    @Override
+    public Class<? extends Widget.Builder> getBuilder() {
+        return Builder.class;
+    }
+
+    public static class Builder extends Widget.Builder {
+
+        public Builder() {
+
+        }
+
+        @Override
+        public Builder setWidth(float width) {
+            super.setWidth(width);
+            return this;
+        }
+
+        @Override
+        public Builder setHeight(float height) {
+            super.setHeight(height);
+            return this;
+        }
+
+        @Override
+        public Builder setLocator(@Nonnull Locator locator) {
+            super.setLocator(locator);
+            return this;
+        }
+
+        @Override
+        public Builder setAlign(@Nonnull Align9D align) {
+            super.setAlign(align);
+            return this;
+        }
+
+        @Nonnull
+        @Override
+        public TextField build(IHost host) {
+            return new TextField(host, this);
+        }
     }
 
     public static abstract class Decoration {

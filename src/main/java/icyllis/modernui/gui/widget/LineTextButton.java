@@ -18,6 +18,7 @@
 
 package icyllis.modernui.gui.widget;
 
+import com.google.common.collect.Lists;
 import com.google.gson.annotations.Expose;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
@@ -28,34 +29,50 @@ import icyllis.modernui.gui.math.Locator;
 import net.minecraft.client.resources.I18n;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.function.Predicate;
 
 public class LineTextButton extends Widget {
 
-    private final AnimationControl lineAC = new Control(this);
+    private final AnimationControl lineAC;
 
     private final String text;
 
-    private Runnable callback = () -> {};
-    private Predicate<Integer> selected = i -> false;
+    @Nullable
+    private Runnable callback;
+
+    @Nonnull
+    private Predicate<Integer> selected = b -> true;
 
     private float lineOffset;
     private float textBrightness = 0.7f;
+
+    private final Animation textAnimation;
 
     public LineTextButton(IHost host, Builder builder) {
         super(host, builder);
         this.text = I18n.format(builder.text);
         this.lineOffset = width / 2f;
+
+        textAnimation = new Animation(150)
+                .addAppliers(new Applier(0.7f, 1, () -> textBrightness, this::setTextBrightness));
+
+        lineAC = new AnimationControl(
+                Lists.newArrayList(new Animation(150)
+                        .addAppliers(new Applier(width / 2f, 0, () -> lineOffset, this::setLineOffset),
+                                new Applier(textBrightness, 1, () -> textBrightness, this::setTextBrightness))),
+                Lists.newArrayList(new Animation(150)
+                        .addAppliers(new Applier(0, width / 2f, () -> lineOffset, this::setLineOffset),
+                                new Applier(textBrightness, 0.7f, () -> textBrightness, this::setTextBrightness)))
+        );
     }
 
-    public LineTextButton setCallback(Runnable r) {
+    public LineTextButton buildCallback(@Nullable Runnable r, @Nullable Predicate<Integer> q) {
         callback = r;
-        return this;
-    }
-
-    public LineTextButton setSelected(Predicate<Integer> q) {
-        selected = q;
+        if (q != null) {
+            selected = q;
+        }
         return this;
     }
 
@@ -86,8 +103,7 @@ public class LineTextButton extends Widget {
     protected void onMouseHoverEnter(double mouseX, double mouseY) {
         super.onMouseHoverEnter(mouseX, mouseY);
         if (lineAC.canChangeState()) {
-            getHost().addAnimation(new Animation(3)
-                    .applyTo(new Applier(textBrightness, 1, this::setTextBrightness)));
+            textAnimation.start();
         }
     }
 
@@ -95,14 +111,15 @@ public class LineTextButton extends Widget {
     protected void onMouseHoverExit() {
         super.onMouseHoverExit();
         if (lineAC.canChangeState()) {
-            getHost().addAnimation(new Animation(3)
-                    .applyTo(new Applier(textBrightness, 0.7f, this::setTextBrightness)));
+            textAnimation.invert();
         }
     }
 
     @Override
     protected boolean onMouseLeftClick(double mouseX, double mouseY) {
-        callback.run();
+        if (callback != null) {
+            callback.run();
+        }
         return true;
     }
 
@@ -172,27 +189,26 @@ public class LineTextButton extends Widget {
         }
     }
 
-    private static class Control extends AnimationControl {
+    /*private static class Control extends AnimationControl {
 
         private final LineTextButton instance;
 
         public Control(LineTextButton instance) {
+            super(openList, closeList);
             this.instance = instance;
         }
 
         @Override
         protected void createOpenAnimations(@Nonnull List<Animation> list) {
-            list.add(new Animation(3)
-                    .applyTo(new Applier(instance.width / 2f, 0, instance::setLineOffset),
-                            new Applier(instance.textBrightness, 1, instance::setTextBrightness)));
+
         }
 
         @Override
         protected void createCloseAnimations(@Nonnull List<Animation> list) {
             list.add(new Animation(3)
-                    .applyTo(new Applier(0, instance.width / 2f, instance::setLineOffset),
-                            new Applier(instance.textBrightness, 0.7f, instance::setTextBrightness)));
+                    .addAppliers(new Applier(0, instance.width / 2f, getter, instance::setLineOffset),
+                            new Applier(instance.textBrightness, 0.7f, getter, instance::setTextBrightness)));
         }
-    }
+    }*/
 
 }

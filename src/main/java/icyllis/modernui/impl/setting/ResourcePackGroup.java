@@ -21,6 +21,7 @@ package icyllis.modernui.impl.setting;
 import com.google.common.collect.Lists;
 import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.master.Canvas;
+import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.impl.module.SettingResourcePack;
 import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.gui.scroll.UniformScrollGroup;
@@ -58,7 +59,7 @@ public class ResourcePackGroup extends UniformScrollGroup<ResourcePackEntry> {
             infoList.removeAll(list.getEnabledPacks());
             infoList.removeIf(ClientResourcePackInfo::isHidden);
 
-            infoList.forEach(t -> entries.add(new ResourcePackEntry(module, window, t)));
+            infoList.forEach(t -> entries.add(new ResourcePackEntry(module, window, t, Align9D.TOP_RIGHT)));
         } else {
             this.title = TextFormatting.BOLD + I18n.format("resourcePack.selected.title");
 
@@ -66,16 +67,48 @@ public class ResourcePackGroup extends UniformScrollGroup<ResourcePackEntry> {
             enabledList.removeIf(ClientResourcePackInfo::isHidden);
             Collections.reverse(enabledList);
 
-            enabledList.forEach(t -> entries.add(new ResourcePackEntry(module, window, t)));
+            enabledList.forEach(t -> entries.add(new ResourcePackEntry(module, window, t, Align9D.TOP_LEFT)));
         }
         // 14 for title, 4 for end space
         height = 18 + entries.size() * entryHeight;
     }
 
-    /**
-     * Layout entries and group
-     */
     @Override
+    public void locate(float px, float py) {
+        super.locate(px, py);
+        float pw = Math.min(window.getWidth(), 240);
+        float cw = pw - window.borderThickness;
+        entries.forEach(e -> e.setWidth(cw));
+        py += 14;
+        float left = window.getLeft(), right = window.getRight();
+        if (type == Type.AVAILABLE) {
+            left = right - pw;
+        } else {
+            right = left + pw;
+        }
+        titleCenterX = (int) ((left + right) / 2f);
+        int i = 0;
+        right -= window.borderThickness;
+        if (type == Type.AVAILABLE) {
+            for (ResourcePackEntry entry : entries) {
+                float cy = py + i * entryHeight;
+                entry.locate(right, cy);
+                i++;
+            }
+        } else {
+            for (ResourcePackEntry entry : entries) {
+                float cy = py + i * entryHeight;
+                entry.locate(left, cy);
+                i++;
+            }
+        }
+
+        if (module.getHighlightEntry() != null && entries.contains(module.getHighlightEntry())) {
+            followEntry(module.getHighlightEntry());
+        }
+    }
+
+    /*@Override
     public void onLayout(float left, float right, float y) {
         super.onLayout(left, right, y);
         float pw = (int) Math.floor(right - left);
@@ -98,7 +131,7 @@ public class ResourcePackGroup extends UniformScrollGroup<ResourcePackEntry> {
         if (module.getHighlightEntry() != null && entries.contains(module.getHighlightEntry())) {
             followEntry(module.getHighlightEntry());
         }
-    }
+    }*/
 
     /*@Override
     public void draw(float time) {

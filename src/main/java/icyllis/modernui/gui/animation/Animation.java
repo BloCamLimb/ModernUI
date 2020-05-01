@@ -21,69 +21,132 @@ package icyllis.modernui.gui.animation;
 import com.google.common.collect.Lists;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 
-import java.util.Arrays;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.Collections;
 import java.util.List;
 
 public class Animation implements IAnimation {
 
     private final float duration;
 
-    private final boolean useSine;
-
     private float startTime;
 
+    private float delayTime;
+
+    @Nullable
     private List<Applier> appliers;
 
-    private boolean finish = false;
+    @Nullable
+    private List<IAnimationListener> listeners;
 
-    private Runnable finishRunnable = () -> {};
+    private boolean waiting = true;
+
+    private boolean started = false;
+
+    private boolean reversed = false;
 
     /**
      * New animation use uniform motion
-     * @param duration floating point ticks
+     * @param duration milliseconds
      */
-    public Animation(float duration) {
-        this(duration, false);
+    public Animation(int duration) {
+        this.duration = duration / 50.0f;
     }
 
-    public Animation(float duration, boolean useSine) {
-        this.duration = duration;
-        this.useSine = useSine;
-        startTime = GlobalModuleManager.INSTANCE.getAnimationTime();
-    }
-
-    public Animation applyTo(Applier... appliers) {
-        this.appliers = Lists.newArrayList(appliers);
-        return this;
-    }
-
-    public Animation withDelay(float delay) {
-        startTime += delay;
-        return this;
-    }
-
-    public Animation onFinish(Runnable runnable) {
-        finishRunnable = runnable;
+    public Animation addApplier(@Nonnull Applier applier) {
         if (appliers == null) {
             appliers = Lists.newArrayList();
         }
+        appliers.add(applier);
         return this;
+    }
+
+    public Animation addAppliers(@Nonnull Applier... appliers) {
+        if (this.appliers == null) {
+            this.appliers = Lists.newArrayList();
+        }
+        Collections.addAll(this.appliers, appliers);
+        return this;
+    }
+
+    public Animation setDelay(int delay) {
+        delayTime = delay / 50.0f;
+        return this;
+    }
+
+    public Animation addListener(IAnimationListener listener) {
+        if (listeners == null) {
+            listeners = Lists.newArrayList();
+        }
+        listeners.add(listener);
+        return this;
+    }
+
+    /**
+     * Play the animation depends on current value with full duration
+     */
+    public void start() {
+        start(false);
+    }
+
+    /**
+     * Play the animation depends on applier original properties
+     */
+    public void restart() {
+        start(true);
+    }
+
+    private void start(boolean restart) {
+        startTime = GlobalModuleManager.INSTANCE.getAnimationTime() + delayTime;
+        waiting = false;
+        reversed = false;
+        started = false;
+        if (appliers != null) {
+            appliers.forEach(e -> e.record(reversed, restart));
+        }
+        GlobalModuleManager.INSTANCE.addAnimation(this);
+    }
+
+    /**
+     * Play the inverted animation whose appliers depending on current value with full duration
+     * For example, an applier with
+     * 0 -> 1, duration: 400ms with standard accelerate interpolator (slow -> fast),
+     * call invert() at 200ms after start(), it will change to 0.25 -> 0,
+     * duration: 400ms (slow -> fast, as well. not fast -> slow because it's not reversed)
+     */
+    public void invert() {
+        startTime = GlobalModuleManager.INSTANCE.getAnimationTime();
+        waiting = false;
+        reversed = true;
+        started = false;
+        if (appliers != null) {
+            appliers.forEach(e -> e.record(reversed, false));
+        }
+        GlobalModuleManager.INSTANCE.addAnimation(this);
     }
 
     @Override
     public void update(float time) {
-        if (time <= startTime) {
+        if (waiting || time <= startTime) {
             return;
         }
-        float p = Math.min((time - startTime) / duration, 1);
-        if (useSine) {
-            p = (float) Math.sin(p * Math.PI / 2);
+        if (!started) {
+            started = true;
+            if (listeners != null) {
+                listeners.forEach(e -> e.onAnimationStart(this, reversed));
+            }
         }
-        float progress = p;
-        appliers.forEach(e -> e.apply(progress));
-        if (progress == 1) {
-            finish = true;
-            finishRunnable.run();
+        float p = Math.min((time - startTime) / duration, 1);
+        if (appliers != null) {
+            appliers.forEach(e -> e.update(p));
+        }
+        if (p == 1) {
+            waiting = true;
+            started = false;
+            if (listeners != null) {
+                listeners.forEach(e -> e.onAnimationEnd(this, reversed));
+            }
         }
     }
 
@@ -93,6 +156,24 @@ public class Animation implements IAnimation {
 
     @Override
     public boolean shouldRemove() {
-        return finish;
+        return waiting;
+    }
+
+    public interface IAnimationListener {
+
+        /**
+         * Called when animation started by user
+         * @param animation started animation
+         * @param isReverse whether to play reverse animation
+         */
+        default void onAnimationStart(Animation animation, boolean isReverse) {}
+
+        /**
+         * Called at the end of the animation
+         * @param animation ended animation
+         * @param isReverse whether to play reverse animation
+         */
+        default void onAnimationEnd(Animation animation, boolean isReverse) {}
+
     }
 }

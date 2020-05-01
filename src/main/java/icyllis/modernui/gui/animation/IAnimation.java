@@ -27,7 +27,7 @@ public interface IAnimation {
     void update(float time);
 
     /**
-     * If return true, this instance should be removed from render loop
+     * If return true, this instance should be removed from render loop temporarily
      * @return whether to remove
      */
     default boolean shouldRemove() {

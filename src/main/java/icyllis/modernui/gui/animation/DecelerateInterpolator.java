@@ -16,18 +16,21 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.popup;
+package icyllis.modernui.gui.animation;
 
-@FunctionalInterface
-public interface ConfirmCallback {
+public class DecelerateInterpolator implements IInterpolator {
 
-    int CONFIRM = 0;
-    int ALTERNATIVE = 1; // the second button
-    int CANCEL = 2;
+    private final float factor;
 
-    /**
-     * Callback button operation
-     * @param i operation
-     */
-    void call(int i);
+    public DecelerateInterpolator(float factor) {
+        this.factor = factor;
+    }
+
+    @Override
+    public float getInterpolation(float input) {
+        if (factor == 1.0f) {
+            return 1.0f - (1.0f - input) * (1.0f - input);
+        }
+        return (float) (1.0f - Math.pow((1.0f - input), factor * 2));
+    }
 }

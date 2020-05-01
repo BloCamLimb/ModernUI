@@ -52,13 +52,13 @@ public class KeyInputBox extends Widget implements IKeyboardListener {
 
     private Consumer<InputMappings.Input> keyBinder;
 
-    public KeyInputBox(Module module, Consumer<InputMappings.Input> keyBinder) {
-        super(module, 84, 16);
+    public KeyInputBox(IHost host, Consumer<InputMappings.Input> keyBinder) {
+        super(host, new TextField.Builder().setWidth(84));
         this.keyBinder = keyBinder;
     }
 
     @Override
-    public void draw(@Nonnull Canvas canvas, float time) {
+    public void onDraw(@Nonnull Canvas canvas, float time) {
         canvas.setRGBA(0.377f, 0.377f, 0.377f, backAlpha);
         canvas.drawRect(x1, y1, x2, y2);
         if (editing) {
@@ -134,6 +134,12 @@ public class KeyInputBox extends Widget implements IKeyboardListener {
         }
     }
 
+    @Nonnull
+    @Override
+    public Class<? extends Builder> getBuilder() {
+        return TextField.Builder.class;
+    }
+
     public void setTextBrightness(float s) {
         this.textBrightness = s;
     }
@@ -149,19 +155,21 @@ public class KeyInputBox extends Widget implements IKeyboardListener {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+    protected boolean onMouseClick(double mouseX, double mouseY, int mouseButton) {
         if (editing) {
             keyBinder.accept(InputMappings.Type.MOUSE.getOrMakeInput(mouseButton));
-            getModule().setKeyboardListener(null);
+            getHost().setKeyboardListener(null);
             return true;
         }
-        if (mouseButton == 0) {
-            editing = true;
-            getModule().setKeyboardListener(this);
-            backAlpha = 0.25f;
-            return true;
-        }
-        return false;
+        return super.onMouseClick(mouseX, mouseY, mouseButton);
+    }
+
+    @Override
+    protected boolean onMouseLeftClick(double mouseX, double mouseY) {
+        editing = true;
+        getHost().setKeyboardListener(this);
+        backAlpha = 0.25f;
+        return true;
     }
 
     @Override
@@ -169,14 +177,14 @@ public class KeyInputBox extends Widget implements IKeyboardListener {
         if (editing) {
             if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
                 keyBinder.accept(InputMappings.INPUT_INVALID);
-                getModule().setKeyboardListener(null);
+                getHost().setKeyboardListener(null);
                 return true;
             }
             InputMappings.Input input = InputMappings.getInputByCode(keyCode, scanCode);
             if (!KeyModifier.isKeyCodeModifier(input)) {
                 // a combo key or a single non-modifier key
                 keyBinder.accept(input);
-                getModule().setKeyboardListener(null);
+                getHost().setKeyboardListener(null);
             } else {
                 if (pressing == null) {
                     // this is the modifier key that has already pressed, and can't be changed
@@ -196,7 +204,7 @@ public class KeyInputBox extends Widget implements IKeyboardListener {
             // this used for single modifier key input, not for combo key
             if (input.equals(pressing)) {
                 keyBinder.accept(input);
-                getModule().setKeyboardListener(null);
+                getHost().setKeyboardListener(null);
                 return true;
             }
         }

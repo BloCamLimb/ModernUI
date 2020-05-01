@@ -18,7 +18,9 @@
 
 package icyllis.modernui.gui.widget;
 
+import com.google.common.collect.Lists;
 import com.google.gson.annotations.Expose;
+import icyllis.modernui.gui.animation.IInterpolator;
 import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
@@ -28,6 +30,7 @@ import icyllis.modernui.gui.math.Locator;
 import net.minecraft.client.resources.I18n;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 
 /**
@@ -35,7 +38,7 @@ import java.util.List;
  */
 public class DynamicFrameButton extends Button {
 
-    private final AnimationControl frameAC = new Control(this);
+    private final AnimationControl frameAC;
 
     private String text;
 
@@ -48,23 +51,26 @@ public class DynamicFrameButton extends Button {
         this.text = I18n.format(builder.text);
         this.fwo = width;
         this.fho = height;
+
+        frameAC = new AnimationControl(
+                Lists.newArrayList(new Animation(100)
+                        .addAppliers(
+                                new Applier(width / 2f, 0, () -> fwo, this::setFwo)
+                                        .setInterpolator(IInterpolator.SINE),
+                                new Applier(6, 0, () -> fho, this::setFho)
+                                        .setInterpolator(IInterpolator.SINE),
+                                new Applier(0.0f, 1.0f, () -> frameAlpha, this::setFrameAlpha))
+                ),
+                Lists.newArrayList(new Animation(200)
+                        .addAppliers(
+                                new Applier(1.0f, 0.0f, () -> frameAlpha, this::setFrameAlpha))
+                )
+        );
     }
 
     @Override
-    public DynamicFrameButton setDefaultClickable(boolean b) {
-        super.setDefaultClickable(b);
-        return this;
-    }
-
-    @Override
-    public DynamicFrameButton setCallback(Runnable r) {
-        super.setCallback(r);
-        return this;
-    }
-
-    @Override
-    public DynamicFrameButton setOnetimeCallback(Runnable r) {
-        super.setOnetimeCallback(r);
+    public DynamicFrameButton buildCallback(boolean b, @Nullable Runnable r, boolean onetime) {
+        super.buildCallback(b, r, onetime);
         return this;
     }
 
@@ -134,13 +140,17 @@ public class DynamicFrameButton extends Button {
         public Countdown(IHost host, Builder builder) {
             super(host, builder);
             this.displayCount = this.countdown = builder.countdown;
-            super.setDefaultClickable(false);
+        }
+
+        public DynamicFrameButton.Countdown buildCallback(@Nullable Runnable r, boolean onetime) {
+            super.buildCallback(false, r, onetime);
+            return this;
         }
 
         @Deprecated
         @Override
-        public DynamicFrameButton setDefaultClickable(boolean b) {
-            return super.setDefaultClickable(b);
+        public DynamicFrameButton buildCallback(boolean b, @Nullable Runnable r, boolean onetime) {
+            throw new RuntimeException();
         }
 
         /*@Override
@@ -255,33 +265,34 @@ public class DynamicFrameButton extends Button {
 
         @Nonnull
         @Override
-        public Widget build(IHost host) {
+        public DynamicFrameButton build(IHost host) {
             return new DynamicFrameButton(host, this);
         }
     }
 
-    private static class Control extends AnimationControl {
+    /*private static class Control extends AnimationControl {
 
         private final DynamicFrameButton instance;
 
         public Control(DynamicFrameButton instance) {
+            super(openList, closeList);
             this.instance = instance;
         }
 
         @Override
         protected void createOpenAnimations(@Nonnull List<Animation> list) {
             list.add(new Animation(2, true)
-                    .applyTo(new Applier(instance.getWidth() / 2f, 0, instance::setFwo),
-                            new Applier(6, 0, instance::setFho)));
+                    .addAppliers(new Applier(instance.getWidth() / 2f, 0, getter, instance::setFwo),
+                            new Applier(6, 0, getter, instance::setFho)));
             list.add(new Animation(2)
-                    .applyTo(new Applier(0, 1, instance::setFrameAlpha)));
+                    .addAppliers(new Applier(0, 1, getter, instance::setFrameAlpha)));
         }
 
         @Override
         protected void createCloseAnimations(@Nonnull List<Animation> list) {
             list.add(new Animation(4)
-                    .applyTo(new Applier(1, 0, instance::setFrameAlpha)));
+                    .addAppliers(new Applier(1, 0, getter, instance::setFrameAlpha)));
         }
     }
-
+*/
 }

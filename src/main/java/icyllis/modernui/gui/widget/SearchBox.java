@@ -18,6 +18,7 @@
 
 package icyllis.modernui.gui.widget;
 
+import icyllis.modernui.gui.master.IHost;
 import icyllis.modernui.gui.master.Module;
 import org.lwjgl.glfw.GLFW;
 
@@ -32,8 +33,8 @@ public class SearchBox extends TextField {
     @Nullable
     private Function<String, Boolean> listener;
 
-    public SearchBox(Module module, float width) {
-        super(module, width, 12);
+    public SearchBox(IHost host, float width) {
+        super(host, new Builder().setWidth(width).setHeight(12));
         super.setDecoration(f -> new Frame(this, null, 0xffc0c0c0));
     }
 

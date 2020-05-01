@@ -18,8 +18,6 @@
 
 package icyllis.modernui.gui.test;
 
-import icyllis.modernui.font.FontTools;
-import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.gui.master.AnimationControl;
 import icyllis.modernui.gui.master.IWidget;
 
@@ -38,9 +36,11 @@ public abstract class AnimatedWidget extends AnimationControl implements IWidget
 
     public AnimatedWidget() {
 
+        super(null, null);
     }
 
     public AnimatedWidget(float width, float height) {
+        super(null, null);
         this.width = width;
         this.height = height;
     }

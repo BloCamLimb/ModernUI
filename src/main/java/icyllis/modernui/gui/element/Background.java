@@ -30,10 +30,12 @@ public class Background implements IDrawable {
 
     private int width, height;
 
-    public Background(Module module, float fadeInTime) {
+    public Background(int fadeInTime) {
         if (fadeInTime > 0) {
-            module.addAnimation(new Animation(fadeInTime)
-                    .applyTo(new Applier(0.5f, value -> alpha = value)));
+            new Animation(fadeInTime)
+                    .addAppliers(
+                            new Applier(0, 0.5f, () -> alpha, value -> alpha = value))
+                    .start();
         } else {
             alpha = 0.5f;
         }

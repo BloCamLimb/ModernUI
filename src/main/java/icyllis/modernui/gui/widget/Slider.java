@@ -86,6 +86,15 @@ public abstract class Slider extends Widget implements IDraggable {
     }*/
 
     @Override
+    public boolean updateMouseHover(double mouseX, double mouseY) {
+        if (super.updateMouseHover(mouseX, mouseY)) {
+            checkThumb(mouseX, mouseY);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
     protected boolean onMouseLeftClick(double mouseX, double mouseY) {
         if (thumbHovered) {
             isDragging = true;
@@ -134,12 +143,6 @@ public abstract class Slider extends Widget implements IDraggable {
             checkThumb(getHost().getRelativeMouseX(), getHost().getRelativeMouseY());
             onStopDragging();
         }
-    }
-
-    @Override
-    protected void onMouseHoverEnter(double mouseX, double mouseY) {
-        super.onMouseHoverEnter(mouseX, mouseY);
-        checkThumb(mouseX, mouseY);
     }
 
     @Override

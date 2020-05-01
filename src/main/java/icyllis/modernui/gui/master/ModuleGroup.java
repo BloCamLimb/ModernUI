@@ -74,7 +74,7 @@ public abstract class ModuleGroup extends Module {
         }
         int[] op = new int[]{0, 0};
         if (child != null) {
-            if (child.back()) {
+            if (child.onBack()) {
                 return;
             }
             op = child.changingModule();
@@ -163,9 +163,9 @@ public abstract class ModuleGroup extends Module {
     }
 
     @Override
-    public boolean back() {
+    public boolean onBack() {
         if (child != null) {
-            return child.back();
+            return child.onBack();
         }
         return false;
     }

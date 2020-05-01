@@ -23,6 +23,7 @@ import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.test.ContainerTest;
 import icyllis.modernui.gui.test.ModuleTest;
+import net.minecraft.client.gui.screen.MainMenuScreen;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.container.ContainerType;
 import net.minecraft.item.Items;
@@ -38,6 +39,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.minecraftforge.fml.network.NetworkHooks;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -125,6 +127,11 @@ public class EventsHandler {
         @SubscribeEvent
         public static void onConfigChange(@Nonnull ModConfig.ModConfigEvent event) {
             ConfigManager.load(event.getConfig().getSpec());
+        }
+
+        @SubscribeEvent
+        public static void onLoadComplete(FMLLoadCompleteEvent event) {
+            RewrittenMethods.loadCompleted = true;
         }
 
     }

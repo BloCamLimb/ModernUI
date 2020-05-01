@@ -21,11 +21,14 @@ package icyllis.modernui.gui.widget;
 import com.google.gson.annotations.Expose;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
+import icyllis.modernui.gui.animation.IInterpolator;
 import icyllis.modernui.gui.master.*;
 import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.math.Locator;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -34,13 +37,14 @@ import java.util.function.Consumer;
  */
 public class SlidingToggleButton extends Widget {
 
-    private final AnimationControl ac = new Control(this);
+    private final AnimationControl ac;
 
     private final int onColor;
 
-    private final int offColor;
+    /*private final int offColor;*/
 
-    private Consumer<Boolean> callback = b -> {};
+    @Nullable
+    private Consumer<Boolean> callback;
 
     /**
      * Current status, on or off
@@ -59,31 +63,64 @@ public class SlidingToggleButton extends Widget {
 
     private float circleOffset;
 
+    private final Animation frameAnimation;
+
     public SlidingToggleButton(IHost host, Builder builder) {
         super(host, builder);
-        this.onColor = builder.onColor;
-        this.offColor = builder.offColor;
+        onColor = builder.onColor;
+        int offColor = builder.offColor;
+
         a = (offColor >> 24 & 0xff) / 255f;
         r = (offColor >> 16 & 0xff) / 255f;
         g = (offColor >> 8 & 0xff) / 255f;
         b = (offColor & 0xff) / 255f;
+
         circleOffset = height / 2f;
+
+        frameAnimation = new Animation(150)
+                .addAppliers(new Applier(0.7f, 1.0f, this::getBrightness, this::setBrightness));
+
+        List<Animation> openList = new ArrayList<>();
+
+        float ta = (onColor >> 24 & 0xff) / 255f;
+        float tr = (onColor >> 16 & 0xff) / 255f;
+        float tg = (onColor >> 8 & 0xff) / 255f;
+        float tb = (onColor & 0xff) / 255f;
+
+        float c = width - height / 2f;
+        openList.add(new Animation(200)
+                .addAppliers(
+                        new Applier(a, ta, () -> a, this::setA),
+                        new Applier(r, tr, () -> r, this::setR),
+                        new Applier(g, tg, () -> g, this::setG),
+                        new Applier(b, tb, () -> b, this::setB),
+                        new Applier(circleOffset, c, () -> circleOffset, this::setCircleOffset)
+                                .setInterpolator(IInterpolator.SINE)
+                ));
+
+        List<Animation> closeList = new ArrayList<>();
+        closeList.add(new Animation(200)
+                .addAppliers(
+                        new Applier(ta, a, () -> a, this::setA),
+                        new Applier(tr, r, () -> r, this::setR),
+                        new Applier(tg, g, () -> g, this::setG),
+                        new Applier(tb, b, () -> b, this::setB),
+                        new Applier(c, circleOffset, () -> circleOffset, this::setCircleOffset)
+                                .setInterpolator(IInterpolator.SINE)
+                ));
+        ac = new AnimationControl(openList, closeList);
     }
 
-    public SlidingToggleButton setDefaultToggled(boolean v) {
+    public SlidingToggleButton buildCallback(boolean v, @Nullable Consumer<Boolean> r) {
         if (v) {
             this.checked = true;
             this.circleOffset = width - height / 2f;
             a = (onColor >> 24 & 0xff) / 255f;
-            r = (onColor >> 16 & 0xff) / 255f;
+            this.r = (onColor >> 16 & 0xff) / 255f;
             g = (onColor >> 8 & 0xff) / 255f;
             b = (onColor & 0xff) / 255f;
         }
-        return this;
-    }
-
-    public SlidingToggleButton setCallback(Consumer<Boolean> r) {
-        this.callback = r;
+        callback = r;
         return this;
     }
 
@@ -110,22 +147,22 @@ public class SlidingToggleButton extends Widget {
     @Override
     protected boolean onMouseLeftClick(double mouseX, double mouseY) {
         setChecked(!checked);
-        callback.accept(checked);
+        if (callback != null) {
+            callback.accept(checked);
+        }
         return true;
     }
 
     @Override
     protected void onMouseHoverEnter(double mouseX, double mouseY) {
         super.onMouseHoverEnter(mouseX, mouseY);
-        getHost().addAnimation(new Animation(3)
-                .applyTo(new Applier(brightness, 1.0f, this::setBrightness)));
+        frameAnimation.start();
     }
 
     @Override
     protected void onMouseHoverExit() {
         super.onMouseHoverExit();
-        getHost().addAnimation(new Animation(3)
-                .applyTo(new Applier(brightness, 0.7f, this::setBrightness)));
+        frameAnimation.invert();
     }
 
     @Nonnull
@@ -170,6 +207,10 @@ public class SlidingToggleButton extends Widget {
 
     private void setBrightness(float brightness) {
         this.brightness = brightness;
+    }
+
+    private float getBrightness() {
+        return brightness;
     }
 
     public static class Builder extends Widget.Builder {
@@ -226,11 +267,12 @@ public class SlidingToggleButton extends Widget {
         }
     }
 
-    private static class Control extends AnimationControl {
+    /*private static class Control extends AnimationControl {
 
         private final SlidingToggleButton instance;
 
         public Control(SlidingToggleButton instance) {
+            super(openList, closeList);
             this.instance = instance;
         }
 
@@ -241,13 +283,13 @@ public class SlidingToggleButton extends Widget {
             float g = (instance.onColor >> 8 & 0xff) / 255f;
             float b = (instance.onColor & 0xff) / 255f;
             list.add(new Animation(4)
-                    .applyTo(new Applier(instance.a, a, instance::setA),
-                            new Applier(instance.r, r, instance::setR),
-                            new Applier(instance.g, g, instance::setG),
-                            new Applier(instance.b, b, instance::setB)));
+                    .addAppliers(new Applier(instance.a, a, getter, instance::setA),
+                            new Applier(instance.r, r, getter, instance::setR),
+                            new Applier(instance.g, g, getter, instance::setG),
+                            new Applier(instance.b, b, getter, instance::setB)));
             float c = instance.width - instance.height / 2f;
             list.add(new Animation(4, true)
-                    .applyTo(new Applier(instance.circleOffset, c, instance::setCircleOffset)));
+                    .addAppliers(new Applier(instance.circleOffset, c, getter, instance::setCircleOffset)));
         }
 
         @Override
@@ -257,13 +299,13 @@ public class SlidingToggleButton extends Widget {
             float g = (instance.offColor >> 8 & 0xff) / 255f;
             float b = (instance.offColor & 0xff) / 255f;
             list.add(new Animation(4)
-                    .applyTo(new Applier(instance.a, a, instance::setA),
-                            new Applier(instance.r, r, instance::setR),
-                            new Applier(instance.g, g, instance::setG),
-                            new Applier(instance.b, b, instance::setB)));
+                    .addAppliers(new Applier(instance.a, a, getter, instance::setA),
+                            new Applier(instance.r, r, getter, instance::setR),
+                            new Applier(instance.g, g, getter, instance::setG),
+                            new Applier(instance.b, b, getter, instance::setB)));
             float c = instance.height / 2f;
             list.add(new Animation(4, true)
-                    .applyTo(new Applier(instance.circleOffset, c, instance::setCircleOffset)));
+                    .addAppliers(new Applier(instance.circleOffset, c, getter, instance::setCircleOffset)));
         }
-    }
+    }*/
 }

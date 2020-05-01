@@ -24,6 +24,7 @@ import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.gui.scroll.UniformScrollGroup;
 import net.minecraft.util.text.TextFormatting;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 
 public class SettingCategoryGroup extends UniformScrollGroup<SettingEntry> {
@@ -32,7 +33,7 @@ public class SettingCategoryGroup extends UniformScrollGroup<SettingEntry> {
 
     private String title;
 
-    public SettingCategoryGroup(ScrollWindow<?> window, String title, List<SettingEntry> entries) {
+    public SettingCategoryGroup(ScrollWindow<?> window, String title, @Nonnull List<SettingEntry> entries) {
         super(window, ENTRY_HEIGHT);
         this.title = TextFormatting.BOLD + title;
         this.entries = entries;
@@ -41,6 +42,18 @@ public class SettingCategoryGroup extends UniformScrollGroup<SettingEntry> {
     }
 
     @Override
+    public void locate(float px, float py) {
+        super.locate(px, py);
+        py += 30;
+        int i = 0;
+        for (SettingEntry entry : entries) {
+            float cy = py + i * entryHeight;
+            entry.locate(px, cy);
+            i++;
+        }
+    }
+
+    /*@Override
     public void onLayout(float left, float right, float y) {
         super.onLayout(left, right, y);
         left = centerX - 160;
@@ -52,7 +65,7 @@ public class SettingCategoryGroup extends UniformScrollGroup<SettingEntry> {
             entry.onLayout(left, right, cy);
             i++;
         }
-    }
+    }*/
 
     /*@Override
     public void draw(float time) {
@@ -61,7 +74,7 @@ public class SettingCategoryGroup extends UniformScrollGroup<SettingEntry> {
     }*/
 
     @Override
-    public void draw(Canvas canvas, float time) {
+    public void draw(@Nonnull Canvas canvas, float time) {
         canvas.resetColor();
         canvas.setTextAlign(Align3H.LEFT);
         canvas.drawText(title, centerX - 160, y1 + 14);

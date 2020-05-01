@@ -25,6 +25,7 @@ import icyllis.modernui.gui.math.Locator;
 import icyllis.modernui.system.ConstantsLibrary;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class TriangleButton extends IconButton {
 
@@ -33,20 +34,8 @@ public class TriangleButton extends IconButton {
     }
 
     @Override
-    public TriangleButton setDefaultClickable(boolean b) {
-        super.setDefaultClickable(b);
-        return this;
-    }
-
-    @Override
-    public TriangleButton setCallback(Runnable r) {
-        super.setCallback(r);
-        return this;
-    }
-
-    @Override
-    public TriangleButton setOnetimeCallback(Runnable r) {
-        super.setOnetimeCallback(r);
+    public TriangleButton buildCallback(boolean b, @Nullable Runnable r, boolean onetime) {
+        super.buildCallback(b, r, onetime);
         return this;
     }
 

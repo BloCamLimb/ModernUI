@@ -18,29 +18,60 @@
 
 package icyllis.modernui.gui.animation;
 
-import java.util.function.Consumer;
+import net.minecraft.util.math.MathHelper;
 
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
+/**
+ * Smooth applier without value changed suddenly
+ */
 public class Applier {
 
-    public float initValue;
+    private final float startValue;
+    private final float endValue;
 
-    public float targetValue;
+    private float initValue;
+    private float targetValue;
 
-    private Consumer<Float> receiver;
+    private final Supplier<Float> getter;
+    private final Consumer<Float> setter;
 
-    public Applier(float initValue, float targetValue, Consumer<Float> receiver) {
-        this.initValue = initValue;
-        this.targetValue = targetValue;
-        this.receiver = receiver;
+    private IInterpolator interpolator = IInterpolator.LINEAR;
+
+    public Applier(float startValue, float endValue, Supplier<Float> getter, Consumer<Float> setter) {
+        this.startValue = startValue;
+        this.endValue = endValue;
+        this.getter = getter;
+        this.setter = setter;
     }
 
-    public Applier(float targetValue, Consumer<Float> receiver) {
-        this(0, targetValue, receiver);
+    public Applier setInterpolator(IInterpolator interpolator) {
+        this.interpolator = interpolator;
+        return this;
     }
 
-    public void apply(float progress) {
-        float value = initValue + (targetValue - initValue) * progress;
-        receiver.accept(value);
+    public void record(boolean inverted, boolean restart) {
+        if (restart) {
+            if (inverted) {
+                initValue = endValue;
+            } else {
+                initValue = startValue;
+            }
+        } else {
+            initValue = getter.get();
+        }
+        if (inverted) {
+            targetValue = startValue;
+        } else {
+            targetValue = endValue;
+        }
+    }
+
+    public void update(float progress) {
+        progress = interpolator.getInterpolation(progress);
+        float value = MathHelper.lerp(progress, initValue, targetValue);
+        setter.accept(value);
     }
 
     /*public static class Resizable extends Applier {

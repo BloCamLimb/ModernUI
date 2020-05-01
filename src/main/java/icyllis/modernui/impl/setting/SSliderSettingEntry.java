@@ -52,8 +52,13 @@ public class SSliderSettingEntry extends SettingEntry implements SliderSmooth.IL
 
     public SSliderSettingEntry(SettingScrollWindow window, String optionTitle, double minValue, double maxValue, float stepSize, double currentValue, Consumer<Double> applyFunc, @Nonnull Function<Double, String> displayStringFunc, boolean realtimeApply) {
         super(window, optionTitle);
-        currentValue = MathHelper.clamp(currentValue, minValue, maxValue);
-        this.slider = new SliderSmooth(window.getModule(), 84, (currentValue - minValue) / (maxValue - minValue), this);
+        //currentValue = MathHelper.clamp(currentValue, minValue, maxValue);
+        //this.slider = new SliderSmooth(window.getModule(), 84, (currentValue - minValue) / (maxValue - minValue), this);
+        this.slider = new SliderSmooth.Builder(minValue, maxValue)
+                .setStepSize(stepSize)
+                .setWidth(84)
+                .build(window)
+                .buildCallback(currentValue, this);
         this.minValue = minValue;
         this.maxValue = maxValue;
         this.stepSize = stepSize == 0 ? 0.01f / (float) (maxValue - minValue) : stepSize;
@@ -66,10 +71,16 @@ public class SSliderSettingEntry extends SettingEntry implements SliderSmooth.IL
         
     }
 
-    @Override
+    /*@Override
     public void onLayout(float left, float right, float y) {
         super.onLayout(left, right, y);
         slider.locate(centerX + 40, y + 9);
+    }*/
+
+    @Override
+    public void locate(float px, float py) {
+        super.locate(px, py);
+        slider.locate(centerX + 40, py + 9);
     }
 
     @Override
@@ -82,6 +93,16 @@ public class SSliderSettingEntry extends SettingEntry implements SliderSmooth.IL
     }
 
     @Override
+    protected boolean onMouseClick(double mouseX, double mouseY, int mouseButton) {
+        return slider.isMouseHovered() && slider.mouseClicked(mouseX, mouseY, mouseButton);
+    }
+
+    @Override
+    protected boolean onMouseRelease(double mouseX, double mouseY, int mouseButton) {
+        return slider.isMouseHovered() && slider.mouseReleased(mouseX, mouseY, mouseButton);
+    }
+
+    @Override
     public boolean updateMouseHover(double mouseX, double mouseY) {
         if (super.updateMouseHover(mouseX, mouseY)) {
             slider.updateMouseHover(mouseX, mouseY);
@@ -91,13 +112,8 @@ public class SSliderSettingEntry extends SettingEntry implements SliderSmooth.IL
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        return slider.isMouseHovered() && slider.mouseClicked(mouseX, mouseY, mouseButton);
-    }
-
-    @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
-        return slider.isMouseHovered() && slider.mouseReleased(mouseX, mouseY, mouseButton);
+    protected void onMouseHoverEnter(double mouseX, double mouseY) {
+        super.onMouseHoverEnter(mouseX, mouseY);
     }
 
     @Override

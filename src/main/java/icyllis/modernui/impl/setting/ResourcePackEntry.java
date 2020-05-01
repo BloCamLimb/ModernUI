@@ -22,6 +22,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.FontTools;
 import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.master.Canvas;
+import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.impl.module.SettingResourcePack;
 import icyllis.modernui.gui.scroll.UniformScrollEntry;
@@ -45,28 +46,33 @@ public class ResourcePackEntry extends UniformScrollEntry {
 
     private final SettingResourcePack module;
 
-    private float width;
-
     private String title = "";
 
     private String[] desc = new String[0];
 
-    public ResourcePackEntry(SettingResourcePack module, ScrollWindow<?> window, ClientResourcePackInfo resourcePack) {
-        super(window, ResourcePackGroup.ENTRY_HEIGHT);
+    public ResourcePackEntry(SettingResourcePack module, ScrollWindow<?> window, ClientResourcePackInfo resourcePack, Align9D align) {
+        super(window, 200, ResourcePackGroup.ENTRY_HEIGHT, align);
         this.module = module;
         this.resourcePack = resourcePack;
     }
 
-    @Override
+    /*@Override
     public final void onLayout(float left, float right, float y) {
         super.onLayout(left, right, y);
         this.width = right - left;
         updateTitle();
         updateDescription();
+    }*/
+
+    @Override
+    public void locate(float px, float py) {
+        super.locate(px, py);
+        updateTitle();
+        updateDescription();
     }
 
     @Override
-    public final void draw(Canvas canvas, float time) {
+    public final void onDraw(Canvas canvas, float time) {
         /*Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();*/
 
@@ -134,13 +140,19 @@ public class ResourcePackEntry extends UniformScrollEntry {
         }
     }
 
-    @Override
+    /*@Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if (mouseButton == 0) {
             module.setHighlightEntry(this);
             return true;
         }
         return false;
+    }*/
+
+    @Override
+    protected boolean onMouseLeftClick(double mouseX, double mouseY) {
+        module.setHighlightEntry(this);
+        return true;
     }
 
     @Override

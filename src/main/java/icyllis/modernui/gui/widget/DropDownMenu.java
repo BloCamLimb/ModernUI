@@ -19,6 +19,8 @@
 package icyllis.modernui.gui.widget;
 
 import icyllis.modernui.font.FontTools;
+import icyllis.modernui.gui.animation.IInterpolator;
+import icyllis.modernui.gui.master.IHost;
 import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
@@ -30,6 +32,7 @@ import icyllis.modernui.gui.math.Color3f;
 import icyllis.modernui.gui.math.Locator;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.function.IntConsumer;
 
@@ -53,32 +56,38 @@ public class DropDownMenu extends Widget {
 
     private boolean upward = false;
 
-    private final Align align;
-
-    private final IntConsumer callback;
+    @Nullable
+    private IntConsumer callback;
 
     private float heightOffset = 0;
 
     private float textAlpha = 0;
 
-    public DropDownMenu(Module module, List<String> list, int index, float space, IntConsumer callback, Align align) {
-        super(module);
-        this.list = list;
-        this.selected = index;
+    public DropDownMenu(IHost host, Builder builder) {
+        super(host, builder);
+        this.list = builder.list;
+        this.selected = builder.index;
         this.width = this.list.stream().distinct().mapToInt(s -> (int) Math.ceil(FontTools.getStringWidth(s))).max().orElse(0) + 7;
         this.height = this.list.size() * ENTRY_HEIGHT;
-        this.space = space;
-        this.align = align;
+        this.space = 16;
+        new Animation(200)
+                .addAppliers(
+                        new Applier(0, height, () -> heightOffset, value -> heightOffset = value)
+                                .setInterpolator(IInterpolator.SINE))
+                .start();
+        new Animation(150)
+                .addAppliers(new Applier(0, 1, () -> textAlpha, value -> textAlpha = value))
+                .setDelay(150)
+                .start();
+    }
+
+    public DropDownMenu buildCallback(@Nullable IntConsumer callback) {
         this.callback = callback;
-        module.addAnimation(new Animation(4, true)
-                .applyTo(new Applier(0, height, value -> heightOffset = value)));
-        module.addAnimation(new Animation(3)
-                .applyTo(new Applier(1, value -> textAlpha = value))
-                .withDelay(3));
+        return this;
     }
 
     @Override
-    public void draw(@Nonnull Canvas canvas, float time) {
+    public void onDraw(@Nonnull Canvas canvas, float time) {
         float top = upward ? y2 - heightOffset : y1;
         float bottom = upward ? y2 : y1 + heightOffset;
 
@@ -103,7 +112,7 @@ public class DropDownMenu extends Widget {
             } else {
                 canvas.setColor(Color3f.WHILE);
             }
-            if (align == Align.LEFT) {
+            if (align.getAlign3H() == Align3H.LEFT) {
                 canvas.setTextAlign(Align3H.LEFT);
                 canvas.drawText(text, x1 + 3, cy + 2);
             } else {
@@ -111,18 +120,6 @@ public class DropDownMenu extends Widget {
                 canvas.drawText(text, x2 - 3, cy + 2);
             }
         }
-    }
-
-    @Deprecated
-    @Override
-    public void setAlign(Align9D align) {
-        throw new RuntimeException();
-    }
-
-    @Deprecated
-    @Override
-    public void setLocator(@Nonnull Locator locator) {
-        throw new RuntimeException();
     }
 
     /*@Override
@@ -191,9 +188,9 @@ public class DropDownMenu extends Widget {
 
     @Override
     public void locate(float px, float py) {
-        int gWidth = getModule().getWindowWidth();
-        int gHeight = getModule().getWindowHeight();
-        if (align == Align.LEFT) {
+        int gWidth = getHost().getWindowWidth();
+        int gHeight = getHost().getWindowHeight();
+        if (align.getAlign3H() == Align3H.LEFT) {
             this.x2 = Math.min(px + width, gWidth);
             this.x1 = x2 - width;
         } else {
@@ -226,21 +223,68 @@ public class DropDownMenu extends Widget {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        if (listening && mouseButton == 0 && hovered != -1 && hovered != selected) {
-            callback.accept(hovered);
+    protected boolean onMouseLeftClick(double mouseX, double mouseY) {
+        if (hovered != -1 && hovered != selected) {
+            if (callback != null) {
+                callback.accept(hovered);
+            }
             return true;
         }
-        return false;
+        return super.onMouseLeftClick(mouseX, mouseY);
     }
 
+    @Nonnull
     @Override
+    public Class<? extends Widget.Builder> getBuilder() {
+        return Builder.class;
+    }
+
+    /*@Override
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
         return false;
-    }
+    }*/
 
-    public enum Align {
-        LEFT,
-        RIGHT
+    public static class Builder extends Widget.Builder {
+
+        protected final List<String> list;
+        protected final int index;
+
+        public Builder(List<String> list, int index) {
+            this.list = list;
+            this.index = index;
+        }
+
+        @Deprecated
+        @Override
+        public Builder setWidth(float width) {
+            super.setWidth(width);
+            return this;
+        }
+
+        @Deprecated
+        @Override
+        public Builder setHeight(float height) {
+            super.setHeight(height);
+            return this;
+        }
+
+        @Deprecated
+        @Override
+        public Builder setLocator(@Nonnull Locator locator) {
+            super.setLocator(locator);
+            return this;
+        }
+
+        @Override
+        public Builder setAlign(@Nonnull Align9D align) {
+            super.setAlign(align);
+            return this;
+        }
+
+        @Nonnull
+        @Override
+        public DropDownMenu build(IHost host) {
+            return new DropDownMenu(host, this);
+        }
     }
 }

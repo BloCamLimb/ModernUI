@@ -42,13 +42,13 @@ public class MobStatsEntry extends UniformScrollEntry {
     private String death = "";
 
     public MobStatsEntry(ScrollWindow<?> window, EntityType<?> entity) {
-        super(window, MobStatsGroup.ENTRY_HEIGHT);
+        super(window, 240, MobStatsGroup.ENTRY_HEIGHT);
         this.entity = entity;
         entityName = I18n.format(Util.makeTranslationKey("entity", EntityType.getKey(entity)));
     }
 
     @Override
-    public void draw(Canvas canvas, float time) {
+    public void onDraw(@Nonnull Canvas canvas, float time) {
         canvas.setTextAlign(Align3H.LEFT);
         canvas.resetColor();
         canvas.drawText(entityName, x1 + 2, y1 + 1);

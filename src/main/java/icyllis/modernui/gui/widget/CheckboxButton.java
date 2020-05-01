@@ -26,13 +26,16 @@ import icyllis.modernui.gui.math.Locator;
 import icyllis.modernui.system.ConstantsLibrary;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.function.Consumer;
 
 public class CheckboxButton extends Widget {
 
+    @Nonnull
     private final Icon icon;
 
-    private Consumer<Boolean> callback = b -> {};
+    @Nullable
+    private Consumer<Boolean> callback;
 
     private boolean checked;
 
@@ -40,21 +43,30 @@ public class CheckboxButton extends Widget {
 
     private float brightness = 0.7f;
 
+    /**
+     * Color/alpha animations
+     */
+    private final Animation brightAnimation;
+    private final Animation inactiveAnimation;
+    private final Animation markAnimation;
+
     public CheckboxButton(IHost host, Builder builder) {
         super(host, builder);
         this.icon = new Icon(ConstantsLibrary.ICONS, 0, 0.125f, 0.125f, 0.25f, true);
+        brightAnimation = new Animation(100)
+                .addAppliers(new Applier(0.7f, 1.0f, this::getBrightness, this::setBrightness));
+        inactiveAnimation = new Animation(100)
+                .addAppliers(new Applier(0.3f, 1.0f, this::getBrightness, this::setBrightness));
+        markAnimation = new Animation(100)
+                .addAppliers(new Applier(0.0f, 1.0f, this::getMarkAlpha, this::setMarkAlpha));
     }
 
-    public CheckboxButton setDefaultChecked(boolean b) {
+    public CheckboxButton buildCallback(boolean b, @Nullable Consumer<Boolean> c) {
         this.checked = b;
         if (b) {
             markAlpha = 1;
         }
-        return this;
-    }
-
-    public CheckboxButton setCallback(Consumer<Boolean> c) {
-        this.callback = c;
+        callback = c;
         return this;
     }
 
@@ -74,21 +86,21 @@ public class CheckboxButton extends Widget {
     @Override
     protected void onMouseHoverEnter(double mouseX, double mouseY) {
         super.onMouseHoverEnter(mouseX, mouseY);
-        getHost().addAnimation(new Animation(2)
-                .applyTo(new Applier(brightness, 1.0f, this::setBrightness)));
+        brightAnimation.start();
     }
 
     @Override
     protected void onMouseHoverExit() {
         super.onMouseHoverExit();
-        getHost().addAnimation(new Animation(2)
-                .applyTo(new Applier(brightness, 0.7f, this::setBrightness)));
+        brightAnimation.invert();
     }
 
     @Override
     protected boolean onMouseLeftClick(double mouseX, double mouseY) {
         setChecked(!checked);
-        callback.accept(isChecked());
+        if (callback != null) {
+            callback.accept(isChecked());
+        }
         return true;
     }
 
@@ -96,22 +108,18 @@ public class CheckboxButton extends Widget {
     protected void onStatusChanged(WidgetStatus status) {
         super.onStatusChanged(status);
         if (status.isListening()) {
-            getHost().addAnimation(new Animation(2)
-                    .applyTo(new Applier(brightness, 1.0f, this::setBrightness)));
+            inactiveAnimation.start();
         } else {
-            getHost().addAnimation(new Animation(2)
-                    .applyTo(new Applier(brightness, 0.3f, this::setBrightness)));
+            inactiveAnimation.invert();
         }
     }
 
     public void setChecked(boolean checked) {
         this.checked = checked;
         if (checked) {
-            getHost().addAnimation(new Animation(2)
-                    .applyTo(new Applier(0, 1, this::setMarkAlpha)));
+            markAnimation.start();
         } else {
-            getHost().addAnimation(new Animation(2)
-                    .applyTo(new Applier(1, 0, this::setMarkAlpha)));
+            markAnimation.invert();
         }
     }
 
@@ -121,6 +129,14 @@ public class CheckboxButton extends Widget {
 
     private void setBrightness(float brightness) {
         this.brightness = brightness;
+    }
+
+    private float getMarkAlpha() {
+        return markAlpha;
+    }
+
+    private float getBrightness() {
+        return brightness;
     }
 
     public boolean isChecked() {

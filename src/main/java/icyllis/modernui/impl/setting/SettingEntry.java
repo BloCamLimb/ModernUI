@@ -23,6 +23,8 @@ import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import icyllis.modernui.gui.scroll.UniformScrollEntry;
 
+import javax.annotation.Nonnull;
+
 /**
  * Single option line in settings interface
  */
@@ -33,7 +35,7 @@ public abstract class SettingEntry extends UniformScrollEntry {
     protected float titleBrightness = 0.85f;
 
     public SettingEntry(SettingScrollWindow window, String title) {
-        super(window, SettingCategoryGroup.ENTRY_HEIGHT);
+        super(window, 320, SettingCategoryGroup.ENTRY_HEIGHT);
         this.title = title;
         //TODO tooltip description lines
         /*if (desc != null)
@@ -41,7 +43,7 @@ public abstract class SettingEntry extends UniformScrollEntry {
     }
 
     @Override
-    public final void draw(Canvas canvas, float time) {
+    public final void onDraw(@Nonnull Canvas canvas, float time) {
         /*Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();*/
         canvas.setRGBA(titleBrightness, titleBrightness, titleBrightness, 1);
@@ -66,11 +68,13 @@ public abstract class SettingEntry extends UniformScrollEntry {
 
     @Override
     protected void onMouseHoverEnter(double mouseX, double mouseY) {
+        super.onMouseHoverEnter(mouseX, mouseY);
         titleBrightness = 1.0f;
     }
 
     @Override
     protected void onMouseHoverExit() {
+        super.onMouseHoverExit();
         titleBrightness = 0.85f;
     }
 

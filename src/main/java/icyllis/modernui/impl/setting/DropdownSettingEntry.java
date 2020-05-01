@@ -25,6 +25,7 @@ import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.Icon;
+import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.popup.PopupMenu;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import icyllis.modernui.gui.widget.DropDownMenu;
@@ -53,6 +54,8 @@ public class DropdownSettingEntry extends SettingEntry {
 
     protected boolean available = true;
 
+    private final Animation frameAnimation;
+
     private final Icon icon = new Icon(ConstantsLibrary.ICONS, 0.25f, 0.125f, 0.375f, 0.25f, true);
 
     public DropdownSettingEntry(SettingScrollWindow window, String optionTitle, @Nonnull List<String> optionNames, int originalIndex, Consumer<Integer> saveOption) {
@@ -62,6 +65,17 @@ public class DropdownSettingEntry extends SettingEntry {
         this.saveOption = saveOption;
         optionText = optionNames.get(originalIndex);
         textLength = FontTools.getStringWidth(optionText) + 3;
+
+        frameAnimation = new Animation(100)
+                .addAppliers(new Applier(0, 0.25f, () -> frameAlpha, this::setFrameAlpha))
+                .addListener(new Animation.IAnimationListener() {
+                    @Override
+                    public void onAnimationEnd(Animation animation, boolean isReverse) {
+                        if (isReverse) {
+                            drawOptionFrame = false;
+                        }
+                    }
+                });
     }
 
     public void setAvailable(boolean b) {
@@ -119,13 +133,15 @@ public class DropdownSettingEntry extends SettingEntry {
             if (available && !drawOptionFrame && optionNames.size() > 1) {
                 if (mouseInOption(mouseX, mouseY)) {
                     drawOptionFrame = true;
-                    getModule().addAnimation(new Animation(2)
-                            .applyTo(new Applier(0.25f, this::setFrameAlpha)));
+                    /*getModule().addAnimation(new Animation(2)
+                            .addAppliers(new Applier(0.25f, this::setFrameAlpha)));*/
+                    frameAnimation.start();
                 }
             } else if (!mouseInOption(mouseX, mouseY)) {
-                getModule().addAnimation(new Animation(2)
-                        .applyTo(new Applier(0.25f, 0, this::setFrameAlpha))
-                        .onFinish(() -> drawOptionFrame = false));
+                /*getModule().addAnimation(new Animation(2)
+                        .addAppliers(new Applier(0.25f, 0, getter, this::setFrameAlpha))
+                        .onFinish(() -> drawOptionFrame = false));*/
+                frameAnimation.invert();
             }
             return true;
         }
@@ -136,7 +152,7 @@ public class DropdownSettingEntry extends SettingEntry {
         return mouseX >= x2 - 10 - textLength && mouseX <= x2 - 4 && mouseY >= y1 + 2 && mouseY <= y1 + 18;
     }
 
-    @Override
+    /*@Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if (drawOptionFrame && mouseButton == 0) {
             DropDownMenu menu = new DropDownMenu(window.getModule(), optionNames, currentOptionIndex, 16, this::onValueChanged, DropDownMenu.Align.RIGHT);
@@ -145,6 +161,20 @@ public class DropdownSettingEntry extends SettingEntry {
             return true;
         }
         return false;
+    }*/
+
+    @Override
+    protected boolean onMouseLeftClick(double mouseX, double mouseY) {
+        if (drawOptionFrame) {
+            DropDownMenu menu = new DropDownMenu.Builder(optionNames, currentOptionIndex)
+                    .setAlign(Align9D.TOP_RIGHT)
+                    .build(window)
+                    .buildCallback(this::onValueChanged);
+            menu.locate(window.toAbsoluteX(x2 - 4), window.toAbsoluteY(y1 + 18));
+            GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(menu), false);
+            return true;
+        }
+        return super.onMouseLeftClick(mouseX, mouseY);
     }
 
     @Override

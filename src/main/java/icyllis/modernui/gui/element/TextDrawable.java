@@ -24,7 +24,7 @@ import icyllis.modernui.gui.master.IDrawable;
 
 import javax.annotation.Nonnull;
 
-public class TextElement implements IDrawable {
+public class TextDrawable implements IDrawable {
 
     private String text = "";
 
@@ -32,7 +32,7 @@ public class TextElement implements IDrawable {
 
     private final Align3H align;
 
-    public TextElement(Align3H align) {
+    public TextDrawable(Align3H align) {
         this.align = align;
     }
 

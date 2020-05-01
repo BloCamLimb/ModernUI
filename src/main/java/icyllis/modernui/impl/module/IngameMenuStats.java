@@ -20,6 +20,7 @@ package icyllis.modernui.impl.module;
 
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
+import icyllis.modernui.gui.animation.IInterpolator;
 import icyllis.modernui.impl.background.MenuSettingsBG;
 import icyllis.modernui.gui.layout.WidgetLayout;
 import icyllis.modernui.gui.master.ModuleGroup;
@@ -60,14 +61,39 @@ public class IngameMenuStats extends ModuleGroup {
             addWidget(s);
             buttons.add(s);
         };
-        consumer.accept(new LineTextButton(this, I18n.format("stat.generalButton"), 48f,
+        /*consumer.accept(new LineTextButton(this, I18n.format("stat.generalButton"), 48f,
                 () -> switchChildModule(1), i -> i == 1));
         consumer.accept(new LineTextButton(this, I18n.format("stat.blocksButton"), 48f,
                 () -> switchChildModule(2), i -> i == 2));
         consumer.accept(new LineTextButton(this, I18n.format("stat.itemsButton"), 48f,
                 () -> switchChildModule(3), i -> i == 3));
         consumer.accept(new LineTextButton(this, I18n.format("stat.mobsButton"), 48f,
-                () -> switchChildModule(4), i -> i == 4));
+                () -> switchChildModule(4), i -> i == 4));*/
+
+        consumer.accept(
+                new LineTextButton.Builder(I18n.format("stat.generalButton"))
+                        .setWidth(48f)
+                        .build(this)
+                        .buildCallback(() -> switchChildModule(1), i -> i == 1)
+        );
+        consumer.accept(
+                new LineTextButton.Builder(I18n.format("stat.blocksButton"))
+                        .setWidth(48f)
+                        .build(this)
+                        .buildCallback(() -> switchChildModule(2), i -> i == 2)
+        );
+        consumer.accept(
+                new LineTextButton.Builder(I18n.format("stat.itemsButton"))
+                        .setWidth(48f)
+                        .build(this)
+                        .buildCallback(() -> switchChildModule(3), i -> i == 3)
+        );
+        consumer.accept(
+                new LineTextButton.Builder(I18n.format("stat.mobsButton"))
+                        .setWidth(48f)
+                        .build(this)
+                        .buildCallback(() -> switchChildModule(4), i -> i == 4)
+        );
 
         int i = 0;
         addChildModule(++i, StatsGeneral::new);
@@ -90,11 +116,17 @@ public class IngameMenuStats extends ModuleGroup {
     public int[] changingModule() {
         int c = home.getWindowWidth();
         if (home.getTransitionDirection(false)) {
-            home.addAnimation(new Animation(4, true)
-                    .applyTo(new Applier(0, c, bg::setXOffset)));
+            new Animation(200)
+                    .addAppliers(
+                            new Applier(0, c, bg::getXOffset, bg::setXOffset)
+                                    .setInterpolator(IInterpolator.SINE))
+                    .start();
         } else {
-            home.addAnimation(new Animation(4, true)
-                    .applyTo(new Applier(0, -c, bg::setXOffset)));
+            new Animation(200)
+                    .addAppliers(
+                            new Applier(0, -c, bg::getXOffset, bg::setXOffset)
+                                    .setInterpolator(IInterpolator.SINE))
+                    .start();
         }
         return new int[]{1, 4};
     }

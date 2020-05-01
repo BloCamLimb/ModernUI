@@ -26,6 +26,7 @@ import icyllis.modernui.gui.math.Locator;
 import net.minecraft.client.resources.I18n;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Text, Frame, Click, Repeatability
@@ -40,20 +41,8 @@ public class StaticFrameButton extends Button {
     }
 
     @Override
-    public StaticFrameButton setDefaultClickable(boolean b) {
-        super.setDefaultClickable(b);
-        return this;
-    }
-
-    @Override
-    public StaticFrameButton setCallback(Runnable r) {
-        super.setCallback(r);
-        return this;
-    }
-
-    @Override
-    public StaticFrameButton setOnetimeCallback(Runnable r) {
-        super.setOnetimeCallback(r);
+    public StaticFrameButton buildCallback(boolean b, @Nullable Runnable r, boolean onetime) {
+        super.buildCallback(b, r, onetime);
         return this;
     }
 

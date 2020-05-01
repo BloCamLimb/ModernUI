@@ -24,6 +24,7 @@ import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.math.Locator;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class IconButton extends Button {
 
@@ -35,20 +36,8 @@ public class IconButton extends Button {
     }
 
     @Override
-    public IconButton setDefaultClickable(boolean b) {
-        super.setDefaultClickable(b);
-        return this;
-    }
-
-    @Override
-    public IconButton setCallback(Runnable r) {
-        super.setCallback(r);
-        return this;
-    }
-
-    @Override
-    public IconButton setOnetimeCallback(Runnable r) {
-        super.setOnetimeCallback(r);
+    public IconButton buildCallback(boolean b, @Nullable Runnable r, boolean onetime) {
+        super.buildCallback(b, r, onetime);
         return this;
     }
 

@@ -19,12 +19,11 @@
 package icyllis.modernui.impl.module;
 
 import com.google.common.collect.Lists;
+import icyllis.modernui.gui.master.*;
 import icyllis.modernui.gui.math.Align3H;
-import icyllis.modernui.gui.element.TextElement;
-import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.gui.master.IKeyboardListener;
-import icyllis.modernui.gui.master.Icon;
-import icyllis.modernui.gui.master.Module;
+import icyllis.modernui.gui.element.TextDrawable;
+import icyllis.modernui.gui.math.Align9D;
+import icyllis.modernui.gui.math.Direction4D;
 import icyllis.modernui.gui.widget.*;
 import icyllis.modernui.impl.setting.SettingCategoryGroup;
 import icyllis.modernui.impl.setting.SettingEntry;
@@ -67,7 +66,7 @@ public class SettingControls extends Module {
 
     private DropDownWidget searchModeButton;
 
-    private TextElement resultCounter = new TextElement(Align3H.CENTER);
+    private TextDrawable resultCounter = new TextDrawable(Align3H.CENTER);
 
     public SettingControls() {
         this.minecraft = Minecraft.getInstance();
@@ -78,12 +77,28 @@ public class SettingControls extends Module {
         addDrawable(resultCounter);
         addWidget(window);
 
-        filterConflictButton = new TextIconButton(this, I18n.format("gui.modernui.button.filterConflicts"), 12, 12,
-                new Icon(ConstantsLibrary.ICONS, 0.5f, 0.25f, 0.625f, 0.375f, true), this::filterConflicts, TextIconButton.Direction.DOWN);
+        filterConflictButton = new TextIconButton.Builder(
+                new Icon(ConstantsLibrary.ICONS, 0.5f, 0.25f, 0.625f, 0.375f, true),
+                I18n.format("gui.modernui.button.filterConflicts"))
+                .setWidth(12)
+                .setHeight(12)
+                .setTextDirection(Direction4D.DOWN)
+                .build(this)
+                .buildCallback(true, this::filterConflicts, false);
+        /*filterConflictButton = new TextIconButton(this, I18n.format("gui.modernui.button.filterConflicts"), 12, 12,
+                new Icon(ConstantsLibrary.ICONS, 0.5f, 0.25f, 0.625f, 0.375f, true), this::filterConflicts, TextIconButton.Direction.DOWN);*/
         addWidget(filterConflictButton);
 
-        resetAllButton = new TextIconButton(this, I18n.format("controls.resetAll"), 12, 12,
-                new Icon(ConstantsLibrary.ICONS, 0.625f, 0.25f, 0.75f, 0.375f, true), this::resetAllKey, TextIconButton.Direction.DOWN);
+        resetAllButton = new TextIconButton.Builder(
+                new Icon(ConstantsLibrary.ICONS, 0.625f, 0.25f, 0.75f, 0.375f, true),
+                I18n.format("controls.resetAll"))
+                .setWidth(12)
+                .setHeight(12)
+                .setTextDirection(Direction4D.DOWN)
+                .build(this)
+                .buildCallback(true, this::resetAllKey, false);
+        /*resetAllButton = new TextIconButton(this, I18n.format("controls.resetAll"), 12, 12,
+                new Icon(ConstantsLibrary.ICONS, 0.625f, 0.25f, 0.75f, 0.375f, true), this::resetAllKey, TextIconButton.Direction.DOWN);*/
         addWidget(resetAllButton);
 
         searchBox = new SearchBox(this, 100);
@@ -91,15 +106,27 @@ public class SettingControls extends Module {
         searchBox.setEnterOperation(this::locateNextResult);
         addWidget(searchBox);
 
-        nextButton = new TriangleButton(this, TriangleButton.Direction.DOWN, 12, this::locateNextResult, false);
-        previousButton = new TriangleButton(this, TriangleButton.Direction.UP, 12, this::locatePreviousResult, false);
+        nextButton = new TriangleButton.Builder(Direction4D.DOWN, 12)
+                .build(this)
+                .buildCallback(false, this::locateNextResult, false);
+        previousButton = new TriangleButton.Builder(Direction4D.UP, 12)
+                .build(this)
+                .buildCallback(false, this::locatePreviousResult, false);
+        //nextButton = new TriangleButton(this, TriangleButton.Direction.DOWN, 12, this::locateNextResult, false);
+        //previousButton = new TriangleButton(this, TriangleButton.Direction.UP, 12, this::locatePreviousResult, false);
         addWidget(nextButton);
         addWidget(previousButton);
 
-        searchModeButton = new DropDownWidget(this, Lists.newArrayList(
+        /*searchModeButton = new DropDownWidget(this, Lists.newArrayList(
                 I18n.format("gui.modernui.settings.entry.name"),
                 I18n.format("gui.modernui.settings.entry.key")), 0,
-                i -> searchBox.setText(""), DropDownMenu.Align.RIGHT);
+                i -> searchBox.setText(""), DropDownMenu.Align.RIGHT);*/
+        searchModeButton = new DropDownWidget.Builder(Lists.newArrayList(
+                I18n.format("gui.modernui.settings.entry.name"),
+                I18n.format("gui.modernui.settings.entry.key")), 0)
+                .setAlign(Align9D.TOP_RIGHT)
+                .build(this)
+                .buildCallback(i -> searchBox.setText(""));
         addWidget(searchModeButton);
 
         addMouseCategory(groups);
@@ -146,16 +173,16 @@ public class SettingControls extends Module {
             if (!searchResults.isEmpty()) {
                 KeyBindingEntry prev = currentResult;
                 if (searchResults.size() > 1) {
-                    nextButton.setClickable(true);
-                    previousButton.setClickable(true);
+                    nextButton.setStatus(WidgetStatus.ACTIVE);
+                    previousButton.setStatus(WidgetStatus.ACTIVE);
                     // get the closest result
                     if (prev == null) {
                         searchResults.stream().min(Comparator.comparing(e ->
                                 Math.abs(e.getTop() - window.getTop() - window.getVisibleOffset()))).ifPresent(e -> currentResult = e);
                     }
                 } else {
-                    nextButton.setClickable(false);
-                    previousButton.setClickable(false);
+                    nextButton.setStatus(WidgetStatus.INACTIVE);
+                    previousButton.setStatus(WidgetStatus.INACTIVE);
                     if (prev == null) {
                         currentResult = searchResults.get(0);
                     }
@@ -167,15 +194,15 @@ public class SettingControls extends Module {
                 updateResultCounter();
                 return true;
             } else {
-                nextButton.setClickable(false);
-                previousButton.setClickable(false);
+                nextButton.setStatus(WidgetStatus.INACTIVE);
+                previousButton.setStatus(WidgetStatus.INACTIVE);
                 currentResult = null;
                 updateResultCounter();
                 return false;
             }
         } else {
-            nextButton.setClickable(false);
-            previousButton.setClickable(false);
+            nextButton.setStatus(WidgetStatus.INACTIVE);
+            previousButton.setStatus(WidgetStatus.INACTIVE);
             currentResult = null;
             updateResultCounter();
             return true;

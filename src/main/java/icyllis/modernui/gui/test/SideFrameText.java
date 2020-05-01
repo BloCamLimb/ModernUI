@@ -25,15 +25,10 @@ import java.util.List;
 
 @Deprecated
 public class SideFrameText extends AnimationControl {
-    @Override
-    protected void createOpenAnimations(List<Animation> list) {
-
+    public SideFrameText() {
+        super(null, null);
     }
 
-    @Override
-    protected void createCloseAnimations(List<Animation> list) {
-
-    }
 
     /*private String text;
 

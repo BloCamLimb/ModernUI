@@ -18,6 +18,8 @@
 
 package icyllis.modernui.impl.module;
 
+import icyllis.modernui.gui.math.Align9D;
+import icyllis.modernui.gui.math.Locator;
 import icyllis.modernui.impl.background.MenuHomeBG;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.IModule;
@@ -35,6 +37,7 @@ import net.minecraftforge.fml.client.gui.screen.ModListScreen;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 import java.util.function.Consumer;
 
@@ -44,29 +47,64 @@ public class IngameMenuHome extends ModuleGroup {
 
     private List<MenuButton> buttons = new ArrayList<>();
 
-    // true = right false = left
+    // true = right, false = left
     private boolean moduleTransitionDirection = true;
 
     private Random random = new Random();
 
     public IngameMenuHome() {
-        addDrawable(new MenuHomeBG(this));
+        // add background layer
+        addDrawable(new MenuHomeBG());
+
         Consumer<MenuButton> consumer = s -> {
             addWidget(s);
             buttons.add(s);
         };
-        consumer.accept(new MenuButton(this, I18n.format("gui.modernui.menu.back"), 4,
-                GlobalModuleManager.INSTANCE::closeGuiScreen, -1));
-        consumer.accept(new MenuButton(this, I18n.format("gui.advancements") + " (WIP)", 1,
-                () -> minecraft.displayGuiScreen(new AdvancementsScreen(minecraft.player.connection.getAdvancementManager())), 1));
-        consumer.accept(new MenuButton(this, I18n.format("gui.stats"), 2,
-                () -> switchChildModule(2), 2));
-        consumer.accept(new MenuButton(this, I18n.format("gui.modernui.menu.mods"), 6,
-                () -> minecraft.displayGuiScreen(new ModListScreen(null)), 3)); // Forge's GUI is buggy, so null
-        consumer.accept(new MenuButton(this, I18n.format("gui.modernui.menu.settings"), 0,
-                () -> switchChildModule(4), 4));
-        consumer.accept(new MenuButton(this, I18n.format("gui.modernui.menu.exit"), 5,
-                this::exit, -1));
+        consumer.accept(
+                new MenuButton.Builder(I18n.format("gui.modernui.menu.back"), 4, -1)
+                        .setLocator(new Locator(Align9D.TOP_LEFT, 8, 8))
+                        .build(this)
+                        .buildCallback(true, GlobalModuleManager.INSTANCE::closeGuiScreen, false)
+        );
+        consumer.accept(
+                new MenuButton.Builder(I18n.format("gui.advancements") + " (WIP)", 1, 1)
+                        .setLocator(new Locator(Align9D.TOP_LEFT, 8, 44))
+                        .build(this)
+                        .buildCallback(true,
+                                () -> minecraft.displayGuiScreen(
+                                        new AdvancementsScreen(Objects.requireNonNull(minecraft.player).connection.getAdvancementManager())),
+                                false)
+        );
+        consumer.accept(
+                new MenuButton.Builder(I18n.format("gui.stats"), 2, 2)
+                        .setLocator(new Locator(Align9D.TOP_LEFT, 8, 72))
+                        .build(this)
+                        .buildCallback(true,
+                                () -> switchChildModule(2),
+                                false)
+        );
+        consumer.accept(
+                new MenuButton.Builder(I18n.format("gui.modernui.menu.mods"), 6, 3)
+                        .setLocator(new Locator(Align9D.BOTTOM_LEFT, 8, -92))
+                        .build(this)
+                        .buildCallback(true,
+                                () -> minecraft.displayGuiScreen(new ModListScreen(null)),
+                                false)
+        ); // Forge's GUI is buggy, so null
+        consumer.accept(
+                new MenuButton.Builder(I18n.format("gui.modernui.menu.settings"), 0, 4)
+                        .setLocator(new Locator(Align9D.BOTTOM_LEFT, 8, -64))
+                        .build(this)
+                        .buildCallback(true,
+                                () -> switchChildModule(4),
+                                false)
+        );
+        consumer.accept(
+                new MenuButton.Builder(I18n.format("gui.modernui.menu.exit"), 5, -1)
+                        .setLocator(new Locator(Align9D.BOTTOM_LEFT, 8, -28))
+                        .build(this)
+                        .buildCallback(true, this::exitToTitle, false)
+        );
 
         // advancements
         addChildModule(2, () -> new IngameMenuStats(this));
@@ -80,12 +118,6 @@ public class IngameMenuHome extends ModuleGroup {
     @Override
     public void resize(int width, int height) {
         super.resize(width, height);
-        buttons.get(0).locate(8, 8);
-        buttons.get(1).locate(8, 44);
-        buttons.get(2).locate(8, 72);
-        buttons.get(3).locate(8, height - 92);
-        buttons.get(4).locate(8, height - 64);
-        buttons.get(5).locate(8, height - 28);
     }
 
     /**
@@ -101,8 +133,8 @@ public class IngameMenuHome extends ModuleGroup {
     }
 
     @Override
-    public boolean back() {
-        if (super.back()) {
+    public boolean onBack() {
+        if (super.onBack()) {
             return true;
         }
         if (getCid() != 0) {
@@ -115,7 +147,7 @@ public class IngameMenuHome extends ModuleGroup {
         return false;
     }
 
-    private void exit() {
+    private void exitToTitle() {
         IModule popup = new PopupConfirm(this::confirmExit)
                 .setConfirmTitle(I18n.format("gui.modernui.button.exit"))
                 .setDescription(I18n.format("gui.modernui.popup.exit"));

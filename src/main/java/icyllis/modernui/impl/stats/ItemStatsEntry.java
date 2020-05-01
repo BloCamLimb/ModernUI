@@ -51,19 +51,14 @@ public class ItemStatsEntry extends UniformScrollEntry {
     private boolean drawTooltip = false;
 
     public ItemStatsEntry(ScrollWindow<?> window, @Nonnull Item item, Color3f color) {
-        super(window, ItemStatsGroup.ENTRY_HEIGHT);
+        super(window, 288, ItemStatsGroup.ENTRY_HEIGHT);
         this.item = item;
         this.itemName = item.getName().getFormattedText();
         this.color = color;
     }
 
     @Override
-    public void onLayout(float left, float right, float y) {
-        super.onLayout(left, right, y);
-    }
-
-    @Override
-    public void draw(Canvas canvas, float time) {
+    public void onDraw(@Nonnull Canvas canvas, float time) {
         itemRenderer.renderItemIntoGUI(item.getDefaultInstance(), (int) x1 + 2, (int) y1 + 2);
         canvas.setColor(color, 1);
         canvas.setTextAlign(Align3H.RIGHT);
