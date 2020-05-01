@@ -19,6 +19,7 @@
 package icyllis.modernui.gui.test;
 
 import icyllis.modernui.gui.master.Module;
+import icyllis.modernui.gui.math.Locator;
 import icyllis.modernui.gui.widget.NumberInputField;
 import icyllis.modernui.gui.widget.SlidingToggleButton;
 import icyllis.modernui.gui.widget.TextField;
@@ -31,11 +32,12 @@ public class ModuleTest extends Module {
     public static final ResourceLocation FRAME = new ResourceLocation(ModernUI.MODID, "textures/gui/gui_default_frame.png");
     public static final ResourceLocation BUTTON = new ResourceLocation(ModernUI.MODID, "textures/gui/gui_button.png");
 
-    private final SlidingToggleButton b;
     private final NumberInputField h;
 
     public ModuleTest() {
-        addWidget(b = new SlidingToggleButton(this, 4, b -> {}, 0x8020a0e0, 0x40808080, false));
+        addWidget(new SlidingToggleButton.Builder(0x8020a0e0, 0x40808080, 4)
+                .setLocator(new Locator(-10, -60))
+                .build(this));
         addWidget(h = new NumberInputField(this, 90, 12));
         h.setLimit(-997, 600);
         h.setDecoration(f -> new TextField.Frame(f, "Limit:", -1));
@@ -46,7 +48,6 @@ public class ModuleTest extends Module {
     @Override
     public void resize(int width, int height) {
         super.resize(width, height);
-        b.locate(width / 2f - 10, height / 2f - 60);
         h.locate(width / 2f - 10, height / 2f - 44);
     }
 

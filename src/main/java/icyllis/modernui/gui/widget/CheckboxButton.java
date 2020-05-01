@@ -40,8 +40,8 @@ public class CheckboxButton extends Widget {
 
     private float brightness = 0.7f;
 
-    public CheckboxButton(Module module, Builder builder) {
-        super(module, builder);
+    public CheckboxButton(IHost host, Builder builder) {
+        super(host, builder);
         this.icon = new Icon(ConstantsLibrary.ICONS, 0, 0.125f, 0.125f, 0.25f, true);
     }
 
@@ -72,16 +72,16 @@ public class CheckboxButton extends Widget {
     }
 
     @Override
-    protected void onMouseHoverEnter() {
-        super.onMouseHoverEnter();
-        getModule().addAnimation(new Animation(2)
+    protected void onMouseHoverEnter(double mouseX, double mouseY) {
+        super.onMouseHoverEnter(mouseX, mouseY);
+        getHost().addAnimation(new Animation(2)
                 .applyTo(new Applier(brightness, 1.0f, this::setBrightness)));
     }
 
     @Override
     protected void onMouseHoverExit() {
         super.onMouseHoverExit();
-        getModule().addAnimation(new Animation(2)
+        getHost().addAnimation(new Animation(2)
                 .applyTo(new Applier(brightness, 0.7f, this::setBrightness)));
     }
 
@@ -96,10 +96,10 @@ public class CheckboxButton extends Widget {
     protected void onStatusChanged(WidgetStatus status) {
         super.onStatusChanged(status);
         if (status.isListening()) {
-            getModule().addAnimation(new Animation(2)
+            getHost().addAnimation(new Animation(2)
                     .applyTo(new Applier(brightness, 1.0f, this::setBrightness)));
         } else {
-            getModule().addAnimation(new Animation(2)
+            getHost().addAnimation(new Animation(2)
                     .applyTo(new Applier(brightness, 0.3f, this::setBrightness)));
         }
     }
@@ -107,10 +107,10 @@ public class CheckboxButton extends Widget {
     public void setChecked(boolean checked) {
         this.checked = checked;
         if (checked) {
-            getModule().addAnimation(new Animation(2)
+            getHost().addAnimation(new Animation(2)
                     .applyTo(new Applier(0, 1, this::setMarkAlpha)));
         } else {
-            getModule().addAnimation(new Animation(2)
+            getHost().addAnimation(new Animation(2)
                     .applyTo(new Applier(1, 0, this::setMarkAlpha)));
         }
     }
@@ -166,9 +166,10 @@ public class CheckboxButton extends Widget {
             return this;
         }
 
+        @Nonnull
         @Override
-        public CheckboxButton build(Module module) {
-            return new CheckboxButton(module, this);
+        public CheckboxButton build(IHost host) {
+            return new CheckboxButton(host, this);
         }
     }
 

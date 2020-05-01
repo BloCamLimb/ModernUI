@@ -18,12 +18,38 @@
 
 package icyllis.modernui.gui.master;
 
+import icyllis.modernui.gui.animation.IAnimation;
+
 import javax.annotation.Nullable;
 
 /**
- * Used to focus a draggable widget or keyboard listener
+ * Used to host a widget
+ * Used to access core logic methods
+ * Used to focus a draggable or keyboard listener
  */
-public interface IFocuser {
+public interface IHost {
+
+    void addAnimation(IAnimation animation);
+
+    int getWindowWidth();
+
+    int getWindowHeight();
+
+    double getAbsoluteMouseX();
+
+    double getAbsoluteMouseY();
+
+    double getRelativeMouseX();
+
+    double getRelativeMouseY();
+
+    float toAbsoluteX(float rx);
+
+    float toAbsoluteY(float ry);
+
+    int getElapsedTicks();
+
+    void refocusMouseCursor();
 
     void setDraggable(@Nullable IDraggable draggable);
 

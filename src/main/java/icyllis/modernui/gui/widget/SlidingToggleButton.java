@@ -18,12 +18,12 @@
 
 package icyllis.modernui.gui.widget;
 
+import com.google.gson.annotations.Expose;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.master.AnimationControl;
-import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.master.Module;
-import icyllis.modernui.gui.master.Widget;
+import icyllis.modernui.gui.master.*;
+import icyllis.modernui.gui.math.Align9D;
+import icyllis.modernui.gui.math.Locator;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -36,16 +36,16 @@ public class SlidingToggleButton extends Widget {
 
     private final AnimationControl ac = new Control(this);
 
-    private final Consumer<Boolean> leftClickFunc;
-
     private final int onColor;
 
     private final int offColor;
 
+    private Consumer<Boolean> callback = b -> {};
+
     /**
      * Current status, on or off
      */
-    private boolean checked;
+    private boolean checked = false;
 
     /**
      * Background color
@@ -59,38 +59,36 @@ public class SlidingToggleButton extends Widget {
 
     private float circleOffset;
 
-    /**
-     * Main constructor
-     *
-     * @param module parent module
-     * @param size size multiplier, 4 is middle size
-     * @param leftClickFunc left click function
-     * @param onColor background color when is on (RGBA)
-     * @param offColor background color when is off (RGBA)
-     * @param isOn current status, on or off
-     */
-    public SlidingToggleButton(Module module, float size, Consumer<Boolean> leftClickFunc, int onColor, int offColor, boolean isOn) {
-        super(module, size * 5, size * 2);
-        this.leftClickFunc = leftClickFunc;
-        this.onColor = onColor;
-        this.offColor = offColor;
-        this.checked = isOn;
-        this.circleOffset = isOn ? width - height / 2f : height / 2f;
-        if (isOn) {
+    public SlidingToggleButton(IHost host, Builder builder) {
+        super(host, builder);
+        this.onColor = builder.onColor;
+        this.offColor = builder.offColor;
+        a = (offColor >> 24 & 0xff) / 255f;
+        r = (offColor >> 16 & 0xff) / 255f;
+        g = (offColor >> 8 & 0xff) / 255f;
+        b = (offColor & 0xff) / 255f;
+        circleOffset = height / 2f;
+    }
+
+    public SlidingToggleButton setDefaultToggled(boolean v) {
+        if (v) {
+            this.checked = true;
+            this.circleOffset = width - height / 2f;
             a = (onColor >> 24 & 0xff) / 255f;
             r = (onColor >> 16 & 0xff) / 255f;
             g = (onColor >> 8 & 0xff) / 255f;
             b = (onColor & 0xff) / 255f;
-        } else {
-            a = (offColor >> 24 & 0xff) / 255f;
-            r = (offColor >> 16 & 0xff) / 255f;
-            g = (offColor >> 8 & 0xff) / 255f;
-            b = (offColor & 0xff) / 255f;
         }
+        return this;
+    }
+
+    public SlidingToggleButton setCallback(Consumer<Boolean> r) {
+        this.callback = r;
+        return this;
     }
 
     @Override
-    public void draw(@Nonnull Canvas canvas, float time) {
+    public void onDraw(@Nonnull Canvas canvas, float time) {
         ac.update();
         canvas.setRGBA(r, g, b, a);
         canvas.drawRoundedRect(x1, y1, x2, y2, height / 2f);
@@ -100,28 +98,40 @@ public class SlidingToggleButton extends Widget {
         canvas.drawCircle(x1 + circleOffset, y1 + height / 2f, height / 2f - 0.5f);
     }
 
-    @Override
+    /*@Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if (listening && mouseButton == 0) {
-            setChecked(!checked);
-            leftClickFunc.accept(checked);
+
             return true;
         }
         return false;
+    }*/
+
+    @Override
+    protected boolean onMouseLeftClick(double mouseX, double mouseY) {
+        setChecked(!checked);
+        callback.accept(checked);
+        return true;
     }
 
     @Override
-    protected void onMouseHoverEnter() {
-        super.onMouseHoverEnter();
-        getModule().addAnimation(new Animation(3)
+    protected void onMouseHoverEnter(double mouseX, double mouseY) {
+        super.onMouseHoverEnter(mouseX, mouseY);
+        getHost().addAnimation(new Animation(3)
                 .applyTo(new Applier(brightness, 1.0f, this::setBrightness)));
     }
 
     @Override
     protected void onMouseHoverExit() {
         super.onMouseHoverExit();
-        getModule().addAnimation(new Animation(3)
+        getHost().addAnimation(new Animation(3)
                 .applyTo(new Applier(brightness, 0.7f, this::setBrightness)));
+    }
+
+    @Nonnull
+    @Override
+    public Class<? extends Widget.Builder> getBuilder() {
+        return Builder.class;
     }
 
     private void setChecked(boolean checked) {
@@ -134,7 +144,7 @@ public class SlidingToggleButton extends Widget {
         }
     }
 
-    public boolean isChecked() {
+    public boolean isToggledOn() {
         return checked;
     }
 
@@ -160,6 +170,60 @@ public class SlidingToggleButton extends Widget {
 
     private void setBrightness(float brightness) {
         this.brightness = brightness;
+    }
+
+    public static class Builder extends Widget.Builder {
+
+        @Expose
+        private final int onColor;
+
+        @Expose
+        private final int offColor;
+
+        /**
+         * Builder, RGBA color
+         * @param size size multiplier, 4 is middle size
+         * @param onColor background color when is on (RGBA)
+         * @param offColor background color when is off (RGBA)
+         */
+        public Builder(int onColor, int offColor, int size) {
+            this.onColor = onColor;
+            this.offColor = offColor;
+            super.setWidth(size * 5);
+            super.setHeight(size * 2);
+        }
+
+        @Deprecated
+        @Override
+        public Builder setWidth(float width) {
+            super.setWidth(width);
+            return this;
+        }
+
+        @Deprecated
+        @Override
+        public Builder setHeight(float height) {
+            super.setHeight(height);
+            return this;
+        }
+
+        @Override
+        public Builder setLocator(@Nonnull Locator locator) {
+            super.setLocator(locator);
+            return this;
+        }
+
+        @Override
+        public Builder setAlign(@Nonnull Align9D align) {
+            super.setAlign(align);
+            return this;
+        }
+
+        @Nonnull
+        @Override
+        public SlidingToggleButton build(IHost host) {
+            return new SlidingToggleButton(host, this);
+        }
     }
 
     private static class Control extends AnimationControl {

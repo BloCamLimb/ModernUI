@@ -18,50 +18,39 @@
 
 package icyllis.modernui.gui.scroll;
 
+import icyllis.modernui.gui.master.IWidget;
 import icyllis.modernui.gui.master.Widget;
+import icyllis.modernui.gui.math.Align3H;
+import icyllis.modernui.gui.math.Align3V;
+import icyllis.modernui.gui.math.Align9D;
 
 import javax.annotation.Nonnull;
 
-public abstract class ScrollGroup extends Widget {
+public abstract class ScrollGroup implements IWidget {
 
     protected final ScrollWindow<?> window;
 
     protected float centerX;
 
+    protected float y1, y2;
+
+    protected float height;
+
     /**
      * Must specify height in constructor
      */
     public ScrollGroup(@Nonnull ScrollWindow<?> window) {
-        super(window.getModule());
         this.window = window;
     }
 
-    public ScrollGroup(@Nonnull ScrollWindow<?> window, int height) {
-        super(window.getModule());
-        this.window = window;
-        this.height = height;
-    }
-
-    /**
-     * Use {@link #onLayout(float, float, float)}
-     */
-    @Deprecated
-    @Override
-    public final void locate(float px, float py) {
-        throw new RuntimeException();
-    }
-
-    /**
-     * Called when layout
-     */
-    public void onLayout(float left, float right, float y) {
+    /*public void onLayout(float left, float right, float y) {
         this.x1 = left;
         this.x2 = right;
         this.width = right - left;
         this.centerX = (left + right) / 2f;
         this.y1 = y;
         this.y2 = y + height;
-    }
+    }*/
 
     public abstract void updateVisible(float top, float bottom);
 

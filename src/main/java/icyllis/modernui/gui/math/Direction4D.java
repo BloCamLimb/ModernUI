@@ -16,21 +16,11 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.widget;
+package icyllis.modernui.gui.math;
 
-/**
- * Receive slider values
- */
-public interface ISmoothSliderReceiver {
-
-    /**
-     * Called as long as slider was dragged
-     * @param percentage new value
-     */
-    void onSliderRealtimeChange(double percentage);
-
-    /**
-     * Called when stopped dragging
-     */
-    void onSliderFinalChange();
+public enum Direction4D {
+    LEFT,
+    RIGHT,
+    UP,
+    DOWN
 }

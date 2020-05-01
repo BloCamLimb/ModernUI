@@ -166,7 +166,7 @@ public class ScrollBar implements IDrawable, IMouseListener, IDraggable {
             if (barHovered) {
                 isDragging = true;
                 //draggingY = mouseY;
-                window.getModule().setDraggable(this);
+                window.setDraggable(this);
                 return true;
             } else {
                 boolean inWidth = mouseX >= x && mouseX <= x + barThickness;
@@ -200,10 +200,10 @@ public class ScrollBar implements IDrawable, IMouseListener, IDraggable {
     }
 
     @Override
-    public void stopMouseDragging(double mouseX, double mouseY) {
+    public void stopDragging() {
         if (visible && isDragging) {
             isDragging = false;
-            window.getModule().setDraggable(null);
+            window.setDraggable(null);
             startTime = manager.getAnimationTime() + 10.0f;
         }
     }

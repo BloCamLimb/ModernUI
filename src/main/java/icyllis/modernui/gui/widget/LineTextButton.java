@@ -21,11 +21,10 @@ package icyllis.modernui.gui.widget;
 import com.google.gson.annotations.Expose;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.master.AnimationControl;
-import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.master.Module;
-import icyllis.modernui.gui.master.Widget;
+import icyllis.modernui.gui.master.*;
 import icyllis.modernui.gui.math.Align3H;
+import icyllis.modernui.gui.math.Align9D;
+import icyllis.modernui.gui.math.Locator;
 import net.minecraft.client.resources.I18n;
 
 import javax.annotation.Nonnull;
@@ -34,24 +33,24 @@ import java.util.function.Predicate;
 
 public class LineTextButton extends Widget {
 
-    private final AnimationControl ac = new Control(this);
+    private final AnimationControl lineAC = new Control(this);
 
     private final String text;
 
-    private Runnable leftClickFunc = () -> {};
+    private Runnable callback = () -> {};
     private Predicate<Integer> selected = i -> false;
 
-    private float sizeWOffset;
+    private float lineOffset;
     private float textBrightness = 0.7f;
 
-    public LineTextButton(Module module, Builder builder) {
-        super(module, builder);
+    public LineTextButton(IHost host, Builder builder) {
+        super(host, builder);
         this.text = I18n.format(builder.text);
-        this.sizeWOffset = width / 2f;
+        this.lineOffset = width / 2f;
     }
 
     public LineTextButton setCallback(Runnable r) {
-        leftClickFunc = r;
+        callback = r;
         return this;
     }
 
@@ -62,12 +61,12 @@ public class LineTextButton extends Widget {
 
     @Override
     public void onDraw(@Nonnull Canvas canvas, float time) {
-        ac.update();
+        lineAC.update();
         canvas.setRGBA(textBrightness, textBrightness, textBrightness, 1.0f);
         canvas.setTextAlign(Align3H.CENTER);
         canvas.drawText(text, x1 + width / 2f, y1 + 2);
         canvas.resetColor();
-        canvas.drawRect(x1 + sizeWOffset, y1 + 11, x2 - sizeWOffset, y1 + 12);
+        canvas.drawRect(x1 + lineOffset, y1 + 11, x2 - lineOffset, y1 + 12);
     }
 
     /*@Override
@@ -84,10 +83,10 @@ public class LineTextButton extends Widget {
     }*/
 
     @Override
-    protected void onMouseHoverEnter() {
-        super.onMouseHoverEnter();
-        if (ac.canChangeState()) {
-            getModule().addAnimation(new Animation(3)
+    protected void onMouseHoverEnter(double mouseX, double mouseY) {
+        super.onMouseHoverEnter(mouseX, mouseY);
+        if (lineAC.canChangeState()) {
+            getHost().addAnimation(new Animation(3)
                     .applyTo(new Applier(textBrightness, 1, this::setTextBrightness)));
         }
     }
@@ -95,25 +94,25 @@ public class LineTextButton extends Widget {
     @Override
     protected void onMouseHoverExit() {
         super.onMouseHoverExit();
-        if (ac.canChangeState()) {
-            getModule().addAnimation(new Animation(3)
+        if (lineAC.canChangeState()) {
+            getHost().addAnimation(new Animation(3)
                     .applyTo(new Applier(textBrightness, 0.7f, this::setTextBrightness)));
         }
     }
 
     @Override
     protected boolean onMouseLeftClick(double mouseX, double mouseY) {
-        leftClickFunc.run();
+        callback.run();
         return true;
     }
 
     public void onModuleChanged(int id) {
         if (selected.test(id)) {
-            ac.startOpenAnimation();
-            ac.setLockState(true);
+            lineAC.startOpenAnimation();
+            lineAC.setLockState(true);
         } else {
-            ac.setLockState(false);
-            ac.startCloseAnimation();
+            lineAC.setLockState(false);
+            lineAC.startCloseAnimation();
         }
     }
 
@@ -121,17 +120,17 @@ public class LineTextButton extends Widget {
         this.textBrightness = textBrightness;
     }
 
-    private void setSizeWOffset(float sizeWOffset) {
-        this.sizeWOffset = sizeWOffset;
+    private void setLineOffset(float lineOffset) {
+        this.lineOffset = lineOffset;
     }
 
     @Nonnull
     @Override
-    public Class<? extends Widget.Builder<?, ?>> getBuilder() {
+    public Class<? extends Widget.Builder> getBuilder() {
         return Builder.class;
     }
 
-    public static class Builder extends Widget.Builder<Builder, LineTextButton> {
+    public static class Builder extends Widget.Builder {
 
         @Expose
         public final String text;
@@ -141,15 +140,35 @@ public class LineTextButton extends Widget {
             super.setHeight(12);
         }
 
+        @Override
+        public Builder setWidth(float width) {
+            super.setWidth(width);
+            return this;
+        }
+
         @Deprecated
         @Override
-        public Widget.Builder<Builder, LineTextButton> setHeight(float height) {
-            return super.setHeight(height);
+        public Builder setHeight(float height) {
+            super.setHeight(height);
+            return this;
         }
 
         @Override
-        public LineTextButton build(Module module) {
-            return new LineTextButton(module, this);
+        public Builder setLocator(@Nonnull Locator locator) {
+            super.setLocator(locator);
+            return this;
+        }
+
+        @Override
+        public Builder setAlign(@Nonnull Align9D align) {
+            super.setAlign(align);
+            return this;
+        }
+
+        @Nonnull
+        @Override
+        public LineTextButton build(IHost host) {
+            return new LineTextButton(host, this);
         }
     }
 
@@ -164,14 +183,14 @@ public class LineTextButton extends Widget {
         @Override
         protected void createOpenAnimations(@Nonnull List<Animation> list) {
             list.add(new Animation(3)
-                    .applyTo(new Applier(instance.getWidth() / 2f, 0, instance::setSizeWOffset),
+                    .applyTo(new Applier(instance.width / 2f, 0, instance::setLineOffset),
                             new Applier(instance.textBrightness, 1, instance::setTextBrightness)));
         }
 
         @Override
         protected void createCloseAnimations(@Nonnull List<Animation> list) {
             list.add(new Animation(3)
-                    .applyTo(new Applier(0, instance.getWidth() / 2f, instance::setSizeWOffset),
+                    .applyTo(new Applier(0, instance.width / 2f, instance::setLineOffset),
                             new Applier(instance.textBrightness, 0.7f, instance::setTextBrightness)));
         }
     }

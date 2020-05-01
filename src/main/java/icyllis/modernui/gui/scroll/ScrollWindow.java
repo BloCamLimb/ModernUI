@@ -20,8 +20,9 @@ package icyllis.modernui.gui.scroll;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.widget.FlexibleWidget;
 import icyllis.modernui.gui.master.Module;
+import icyllis.modernui.gui.widget.Window;
+import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
@@ -33,11 +34,7 @@ import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.function.Function;
 
-public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget {
-
-    protected final Minecraft minecraft;
-
-    private int gameWindowWidth;
+public class ScrollWindow<T extends ScrollGroup> extends Window {
 
     public final int borderThickness = 6;
 
@@ -55,7 +52,6 @@ public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget {
 
     public ScrollWindow(Module module, Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, Function<Integer, Float> wResizer, Function<Integer, Float> hResizer) {
         super(module, xResizer, yResizer, wResizer, hResizer);
-        this.minecraft = Minecraft.getInstance();
         this.scrollbar = new ScrollBar(this);
         this.controller = new ScrollController(this::callbackScrollAmount);
         this.scrollList = new ScrollList<>(this);
@@ -68,10 +64,10 @@ public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();
 
-        double scale = minecraft.getMainWindow().getGuiScaleFactor();
+        double scale = mainWindow.getGuiScaleFactor();
         GL11.glEnable(GL11.GL_SCISSOR_TEST);
-        GL11.glScissor(0, (int) (minecraft.getMainWindow().getFramebufferHeight() - (y2 * scale)),
-                    (int) (gameWindowWidth * scale), (int) (height * scale));
+        GL11.glScissor(0, (int) (mainWindow.getFramebufferHeight() - (y2 * scale)),
+                    (int) (getWindowWidth() * scale), (int) (height * scale));
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -114,7 +110,6 @@ public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget {
     @Override
     public void resize(int width, int height) {
         super.resize(width, height);
-        this.gameWindowWidth = width;
         this.centerX = x1 + this.width / 2f;
         this.visibleHeight = this.height - borderThickness * 2;
         this.scrollbar.setPos(this.x2 - scrollbar.barThickness - 1, y1 + 1);
@@ -124,16 +119,13 @@ public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget {
     }
 
     @Override
-    public boolean updateMouseHover(double mouseX, double mouseY) {
-        if (super.updateMouseHover(mouseX, mouseY)) {
-            if (scrollbar.updateMouseHover(mouseX, mouseY)) {
-                scrollList.setMouseHoverExit();
-            } else {
-                scrollList.updateMouseHover(mouseX, mouseY + getVisibleOffset());
-            }
-            return true;
+    protected void onMouseHoverEnter(double mouseX, double mouseY) {
+        super.onMouseHoverEnter(mouseX, mouseY);
+        if (scrollbar.updateMouseHover(mouseX, mouseY)) {
+            scrollList.setMouseHoverExit();
+        } else {
+            scrollList.updateMouseHover(mouseX, mouseY + getVisibleOffset());
         }
-        return false;
     }
 
     @Override
@@ -171,6 +163,16 @@ public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget {
         return true;
     }
 
+    @Override
+    public double getRelativeMouseY() {
+        return super.getRelativeMouseY() + getVisibleOffset();
+    }
+
+    @Override
+    public float toAbsoluteY(float ry) {
+        return super.toAbsoluteY(ry) - getVisibleOffset();
+    }
+
     public void scrollSmooth(float delta) {
         float amount = MathHelper.clamp(controller.getTargetValue() + delta, 0, getMaxScrollAmount());
         controller.setTargetValue(amount);
@@ -189,7 +191,7 @@ public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget {
         this.scrollAmount = scrollAmount;
         updateScrollBarOffset();
         updateScrollList();
-        getModule().refocusCursor();
+        refocusMouseCursor();
     }
 
     /**
@@ -242,7 +244,7 @@ public class ScrollWindow<T extends ScrollGroup> extends FlexibleWidget {
     }
 
     public void layoutList() {
-        scrollList.layoutGroups(getLeft(), getRight(), getTop());
+        scrollList.layoutGroups(centerX, getTop());
         onTotalHeightChanged();
     }
 

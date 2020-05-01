@@ -20,7 +20,6 @@ package icyllis.modernui.gui.scroll;
 
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.IMouseListener;
-import icyllis.modernui.system.ModernUI;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -37,9 +36,17 @@ public abstract class UniformScrollGroup<T extends UniformScrollEntry> extends S
 
     protected final int entryHeight;
 
+    private boolean mouseHovered = false;
+
     public UniformScrollGroup(ScrollWindow<?> window, int entryHeight) {
         super(window);
         this.entryHeight = entryHeight;
+    }
+
+    @Override
+    public void locate(float px, float py) {
+        y1 = py - height / 2f;
+        y2 = y1 + height;
     }
 
     @Override
@@ -59,22 +66,6 @@ public abstract class UniformScrollGroup<T extends UniformScrollEntry> extends S
         for (UniformScrollEntry entry : visible) {
             entry.draw(canvas, time);
         }
-    }
-
-    @Override
-    public boolean updateMouseHover(double mouseX, double mouseY) {
-        if (super.updateMouseHover(mouseX, mouseY)) {
-            boolean result = false;
-            for (UniformScrollEntry entry : visible) {
-                if (!result && entry.updateMouseHover(mouseX, mouseY)) {
-                    result = true;
-                } else {
-                    entry.setMouseHoverExit();
-                }
-            }
-            return true;
-        }
-        return false;
     }
 
     @Override
@@ -108,8 +99,48 @@ public abstract class UniformScrollGroup<T extends UniformScrollEntry> extends S
     }
 
     @Override
+    public final boolean updateMouseHover(double mouseX, double mouseY) {
+        boolean prev = mouseHovered;
+        mouseHovered = isMouseInArea(mouseY);
+        if (prev != mouseHovered) {
+            if (mouseHovered) {
+                onMouseHoverEnter(mouseX, mouseY);
+            } else {
+                onMouseHoverExit();
+            }
+        }
+        return mouseHovered;
+    }
+
+    private boolean isMouseInArea(double mouseY) {
+        return mouseY >= y1 && mouseY <= y2;
+    }
+
+    @Override
+    public boolean isMouseHovered() {
+        return mouseHovered;
+    }
+
+    @Override
+    public final void setMouseHoverExit() {
+        if (mouseHovered) {
+            mouseHovered = false;
+            onMouseHoverExit();
+        }
+    }
+
+    protected void onMouseHoverEnter(double mouseX, double mouseY) {
+        boolean result = false;
+        for (UniformScrollEntry entry : visible) {
+            if (!result && entry.updateMouseHover(mouseX, mouseY)) {
+                result = true;
+            } else {
+                entry.setMouseHoverExit();
+            }
+        }
+    }
+
     protected void onMouseHoverExit() {
-        super.onMouseHoverExit();
         visible.forEach(IMouseListener::setMouseHoverExit);
     }
 

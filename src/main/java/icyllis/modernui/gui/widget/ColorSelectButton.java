@@ -20,7 +20,7 @@ package icyllis.modernui.gui.widget;
 
 import com.google.gson.annotations.Expose;
 import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.master.Module;
+import icyllis.modernui.gui.master.IHost;
 import icyllis.modernui.gui.master.Widget;
 import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.math.Color3f;
@@ -32,23 +32,23 @@ import java.util.function.Consumer;
 /**
  * Used for selecting a color
  */
-public class ColorButton extends Widget {
+public class ColorSelectButton extends Widget {
 
     private float r, g, b;
     private int color;
 
-    private Consumer<ColorButton> callback = c -> {};
+    private Consumer<ColorSelectButton> callback = c -> {};
 
     private boolean selected = false;
 
     private float frameAlpha = 0;
 
-    public ColorButton(Module module, Builder builder) {
-        super(module, builder);
+    public ColorSelectButton(IHost host, Builder builder) {
+        super(host, builder);
         setColor(builder.color);
     }
 
-    public ColorButton setCallback(Consumer<ColorButton> c) {
+    public ColorSelectButton setCallback(Consumer<ColorSelectButton> c) {
         callback = c;
         return this;
     }
@@ -70,8 +70,8 @@ public class ColorButton extends Widget {
     }
 
     @Override
-    protected void onMouseHoverEnter() {
-        super.onMouseHoverEnter();
+    protected void onMouseHoverEnter(double mouseX, double mouseY) {
+        super.onMouseHoverEnter(mouseX, mouseY);
         if (!selected) {
             frameAlpha = 0.5f;
         }
@@ -152,9 +152,10 @@ public class ColorButton extends Widget {
             return this;
         }
 
+        @Nonnull
         @Override
-        public ColorButton build(Module module) {
-            return new ColorButton(module, this);
+        public ColorSelectButton build(IHost host) {
+            return new ColorSelectButton(host, this);
         }
     }
 }

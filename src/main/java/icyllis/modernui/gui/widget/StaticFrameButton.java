@@ -19,13 +19,8 @@
 package icyllis.modernui.gui.widget;
 
 import com.google.gson.annotations.Expose;
-import icyllis.modernui.gui.master.WidgetStatus;
+import icyllis.modernui.gui.master.*;
 import icyllis.modernui.gui.math.Align3H;
-import icyllis.modernui.gui.animation.Animation;
-import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.master.Module;
-import icyllis.modernui.gui.master.Widget;
 import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.math.Locator;
 import net.minecraft.client.resources.I18n;
@@ -35,78 +30,40 @@ import javax.annotation.Nonnull;
 /**
  * Text, Frame, Click, Repeatability
  */
-public class StaticFrameButton extends Widget {
+public class StaticFrameButton extends Button {
 
     private final String text;
 
-    private Runnable callback = () -> {};
-    private float brightness = 0.7f;
-
-    public StaticFrameButton(Module module, Builder builder) {
-        super(module, builder);
+    public StaticFrameButton(IHost host, Builder builder) {
+        super(host, builder);
         this.text = I18n.format(builder.text);
     }
 
+    @Override
     public StaticFrameButton setDefaultClickable(boolean b) {
-        if (!b) {
-            brightness = 0.3f;
-        }
+        super.setDefaultClickable(b);
         return this;
     }
 
+    @Override
     public StaticFrameButton setCallback(Runnable r) {
-        this.callback = r;
+        super.setCallback(r);
+        return this;
+    }
+
+    @Override
+    public StaticFrameButton setOnetimeCallback(Runnable r) {
+        super.setOnetimeCallback(r);
         return this;
     }
 
     @Override
     public void onDraw(@Nonnull Canvas canvas, float time) {
+        super.onDraw(canvas, time);
         canvas.setRGBA(brightness, brightness, brightness, 1.0f);
         canvas.drawRectOutline(x1, y1, x2, y2, 0.51f);
         canvas.setTextAlign(Align3H.CENTER);
         canvas.drawText(text, x1 + width / 2f, y1 + 2);
-    }
-
-    @Override
-    protected void onMouseHoverEnter() {
-        super.onMouseHoverEnter();
-        getModule().addAnimation(new Animation(2)
-                .applyTo(new Applier(brightness, 1.0f, this::setBrightness)));
-    }
-
-    @Override
-    protected void onMouseHoverExit() {
-        super.onMouseHoverExit();
-        getModule().addAnimation(new Animation(2)
-                .applyTo(new Applier(brightness, 0.7f, this::setBrightness)));
-    }
-
-    @Override
-    protected boolean onMouseLeftClick(double mouseX, double mouseY) {
-        callback.run();
-        brightness = 0.85f;
-        return true;
-    }
-
-    @Override
-    protected boolean onMouseLeftRelease(double mouseX, double mouseY) {
-        brightness = 1.0f;
-        return true;
-    }
-
-    @Override
-    protected void onStatusChanged(WidgetStatus status) {
-        super.onStatusChanged(status);
-        if (status.isListening()) {
-            getModule().addAnimation(new Animation(2)
-                    .applyTo(new Applier(brightness, 0.7f, this::setBrightness)));
-        } else {
-            brightness = 0.3f;
-        }
-    }
-
-    private void setBrightness(float brightness) {
-        this.brightness = brightness;
     }
 
     @Nonnull
@@ -150,9 +107,10 @@ public class StaticFrameButton extends Widget {
             return this;
         }
 
+        @Nonnull
         @Override
-        public StaticFrameButton build(Module module) {
-            return new StaticFrameButton(module, this);
+        public StaticFrameButton build(IHost host) {
+            return new StaticFrameButton(host, this);
         }
     }
 }

@@ -18,40 +18,41 @@
 
 package icyllis.modernui.gui.widget;
 
-import icyllis.modernui.gui.animation.Animation;
-import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.*;
+import icyllis.modernui.gui.math.Align9D;
+import icyllis.modernui.gui.math.Direction4D;
+import icyllis.modernui.gui.math.Locator;
 import icyllis.modernui.system.ConstantsLibrary;
 
 import javax.annotation.Nonnull;
-import java.util.List;
 
-public class TriangleButton extends Widget {
+public class TriangleButton extends IconButton {
 
-    private final AnimationControl ac = new Control(this);
-
-    private final Runnable leftClickFunc;
-    private final Icon icon;
-
-    private boolean clickable;
-    private float brightness = 0.8f;
-
-    public TriangleButton(Module module, @Nonnull Direction direction, float size, Runnable leftClick, boolean clickable) {
-        super(module, size, size);
-        int i = direction.ordinal();
-        this.icon = new Icon(ConstantsLibrary.ICONS, 64 * i / 512f, 0.25f, (i + 1) * 64 / 512f, 0.375f, true);
-        this.leftClickFunc = leftClick;
-        this.clickable = clickable;
-        if (!clickable) {
-            brightness = 0.3f;
-        }
+    public TriangleButton(IHost host, Builder builder) {
+        super(host, builder);
     }
 
     @Override
-    public void draw(@Nonnull Canvas canvas, float time) {
-        ac.update();
-        canvas.setRGBA(brightness, brightness, brightness, 1.0f);
-        canvas.drawIcon(icon, x1, y1, x2, y2);
+    public TriangleButton setDefaultClickable(boolean b) {
+        super.setDefaultClickable(b);
+        return this;
+    }
+
+    @Override
+    public TriangleButton setCallback(Runnable r) {
+        super.setCallback(r);
+        return this;
+    }
+
+    @Override
+    public TriangleButton setOnetimeCallback(Runnable r) {
+        super.setOnetimeCallback(r);
+        return this;
+    }
+
+    @Override
+    public void onDraw(@Nonnull Canvas canvas, float time) {
+        super.onDraw(canvas, time);
         /*RenderSystem.pushMatrix();
         RenderSystem.scalef(0.375f, 0.375f, 1);
         RenderSystem.color3f(brightness, brightness, brightness);
@@ -60,7 +61,7 @@ public class TriangleButton extends Widget {
         RenderSystem.popMatrix();*/
     }
 
-    public void setClickable(boolean clickable) {
+    /*public void setClickable(boolean clickable) {
         this.clickable = clickable;
         if (clickable) {
             getModule().addAnimation(new Animation(2)
@@ -108,33 +109,46 @@ public class TriangleButton extends Widget {
 
     private void setBrightness(float b) {
         brightness = b;
-    }
+    }*/
 
-    private static class Control extends AnimationControl {
+    public static class Builder extends IconButton.Builder {
 
-        private final TriangleButton instance;
+        public Builder(@Nonnull Direction4D direction, float size) {
+            super(new Icon(ConstantsLibrary.ICONS, 64 * direction.ordinal() / 512f, 0.25f, (direction.ordinal() + 1) * 64 / 512f, 0.375f, true));
+            super.setWidth(size);
+            super.setHeight(size);
+        }
 
-        public Control(TriangleButton instance) {
-            this.instance = instance;
+        @Deprecated
+        @Override
+        public Builder setWidth(float width) {
+            super.setWidth(width);
+            return this;
+        }
+
+        @Deprecated
+        @Override
+        public Builder setHeight(float height) {
+            super.setHeight(height);
+            return this;
         }
 
         @Override
-        protected void createOpenAnimations(@Nonnull List<Animation> list) {
-            list.add(new Animation(3)
-                    .applyTo(new Applier(0.8f, 1.0f, instance::setBrightness)));
+        public Builder setLocator(@Nonnull Locator locator) {
+            super.setLocator(locator);
+            return this;
         }
 
         @Override
-        protected void createCloseAnimations(@Nonnull List<Animation> list) {
-            list.add(new Animation(3)
-                    .applyTo(new Applier(1.0f, 0.8f, instance::setBrightness)));
+        public Builder setAlign(@Nonnull Align9D align) {
+            super.setAlign(align);
+            return this;
         }
-    }
 
-    public enum Direction {
-        LEFT,
-        RIGHT,
-        UP,
-        DOWN
+        @Nonnull
+        @Override
+        public TriangleButton build(IHost host) {
+            return new TriangleButton(host, this);
+        }
     }
 }

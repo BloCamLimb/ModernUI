@@ -23,10 +23,9 @@ import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.math.Align3V;
 import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.math.Locator;
-import icyllis.modernui.gui.widget.MenuButton;
 
 import javax.annotation.Nonnull;
-import java.util.function.BiFunction;
+import javax.annotation.Nullable;
 
 /**
  * Almost all gui elements extends this.
@@ -36,12 +35,13 @@ import java.util.function.BiFunction;
  *
  * All widgets should be created by Builder or Json
  *
- * @since 1.5 reworked
+ * @since 1.6 reworked
  */
 public abstract class Widget implements IWidget {
 
-    private final Module module;
+    private final IHost host;
 
+    @Nullable
     private final Locator locator;
 
     private final Align9D align;
@@ -61,14 +61,20 @@ public abstract class Widget implements IWidget {
     /**
      * A mandatory alpha, for global shader uniform
      */
-    private float finalAlpha = 1.0f;
+    private float widgetAlpha = 1.0f;
 
-    public Widget(Module module, @Nonnull Builder builder) {
-        this.module = module;
+    public Widget(IHost host, @Nonnull Builder builder) {
+        this.host = host;
         this.width = builder.width;
         this.height = builder.height;
         this.locator = builder.locator;
         this.align = builder.align;
+    }
+
+    public Widget(IHost host, Align9D align) {
+        this.host = host;
+        this.locator = null;
+        this.align = align;
     }
 
     @Override
@@ -149,17 +155,17 @@ public abstract class Widget implements IWidget {
     }
 
     @Override
-    public float getFinalAlpha() {
-        return finalAlpha;
+    public float getAlpha() {
+        return widgetAlpha;
     }
 
     @Override
-    public void setFinalAlpha(float alpha) {
-        this.finalAlpha = alpha;
+    public void setAlpha(float alpha) {
+        this.widgetAlpha = alpha;
     }
 
     /**
-     * Change status maybe create some animations
+     * Change status maybe creates some animations
      * But builder gives you a default status, so you
      * shouldn't call this in constructor
      */
@@ -180,7 +186,7 @@ public abstract class Widget implements IWidget {
             mouseHovered = isMouseInArea(mouseX, mouseY);
             if (prev != mouseHovered) {
                 if (mouseHovered) {
-                    onMouseHoverEnter();
+                    onMouseHoverEnter(mouseX, mouseY);
                 } else {
                     onMouseHoverExit();
                 }
@@ -211,7 +217,7 @@ public abstract class Widget implements IWidget {
     public final boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if (status.isListening()) {
             if (mouseButton == 0) {
-                int c = module.getTicks();
+                int c = getHost().getElapsedTicks();
                 int d = c - dClickTime;
                 dClickTime = c;
                 if (d < 10) {
@@ -271,12 +277,12 @@ public abstract class Widget implements IWidget {
         return false;
     }
 
-    protected void onMouseHoverEnter() {}
+    protected void onMouseHoverEnter(double mouseX, double mouseY) {}
 
     protected void onMouseHoverExit() {}
 
-    public final Module getModule() {
-        return module;
+    public final IHost getHost() {
+        return host;
     }
 
     public final WidgetStatus getStatus() {
@@ -287,7 +293,9 @@ public abstract class Widget implements IWidget {
      * Called if width or height changed after build
      */
     protected final void relocate() {
-        locator.locate(this, module.getWindowWidth(), module.getWindowHeight());
+        if (locator != null) {
+            locator.locate(this, getHost().getWindowWidth(), getHost().getWindowHeight());
+        }
     }
 
     @Nonnull
@@ -296,16 +304,16 @@ public abstract class Widget implements IWidget {
     public static abstract class Builder {
 
         @Expose
-        public float width;
+        protected float width = 16;
 
         @Expose
-        public float height;
+        protected float height = 16;
 
         @Expose
-        public Locator locator = Locator.CENTER;
+        protected Locator locator;
 
         @Expose
-        public Align9D align = Align9D.TOP_LEFT;
+        protected Align9D align = Align9D.TOP_LEFT;
 
         public Builder() {
 
@@ -331,6 +339,7 @@ public abstract class Widget implements IWidget {
             return this;
         }
 
-        public abstract Widget build(Module module);
+        @Nonnull
+        public abstract Widget build(IHost host);
     }
 }

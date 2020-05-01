@@ -20,14 +20,13 @@ package icyllis.modernui.impl.setting;
 
 import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.widget.IDiscreteSliderReceiver;
 import icyllis.modernui.gui.widget.SliderDiscrete;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class DSliderSettingEntry extends SettingEntry implements IDiscreteSliderReceiver {
+public class DSliderSettingEntry extends SettingEntry implements SliderDiscrete.IListener {
 
     private final SliderDiscrete slider;
 
@@ -104,8 +103,8 @@ public class DSliderSettingEntry extends SettingEntry implements IDiscreteSlider
     }
 
     @Override
-    public void onSliderRealtimeChange(int offset) {
-        currentValue = minValue + offset;
+    public void onSliderChanged(int value) {
+        currentValue = minValue + value;
         displayString = displayStringFunc.apply(currentValue);
         if (realtimeApply) {
             applyChange();
@@ -113,7 +112,7 @@ public class DSliderSettingEntry extends SettingEntry implements IDiscreteSlider
     }
 
     @Override
-    public void onSliderFinalChange() {
+    public void onSliderStopChange() {
         if (!realtimeApply) {
             applyChange();
         }

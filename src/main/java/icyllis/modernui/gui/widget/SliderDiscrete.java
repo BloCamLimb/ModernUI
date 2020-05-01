@@ -18,49 +18,67 @@
 
 package icyllis.modernui.gui.widget;
 
-import icyllis.modernui.gui.master.Module;
-import icyllis.modernui.gui.test.IElement;
-import icyllis.modernui.gui.master.IFocuser;
-import net.minecraft.client.gui.IGuiEventListener;
+import com.google.gson.annotations.Expose;
+import icyllis.modernui.gui.master.IHost;
+import icyllis.modernui.gui.master.Widget;
+import icyllis.modernui.gui.math.Align9D;
+import icyllis.modernui.gui.math.Locator;
 import net.minecraft.util.math.MathHelper;
+
+import javax.annotation.Nonnull;
 
 public class SliderDiscrete extends Slider {
 
     private int segment;
 
-    private int maxSegment;
+    private final int maxSegment;
 
-    private IDiscreteSliderReceiver receiver;
+    private final int minValue;
+
+    private final int maxValue;
+
+    private IListener listener;
 
     /**
      * Constructor
-     * @param width render width
-     * @param segment current value, range [0, maxSegment], must be integer
-     * @param maxSegment max segment, if you need 3 values, so there are 2 segments
-     * @param receiver receive new segment value
      */
-    public SliderDiscrete(Module module, float width, int segment, int maxSegment, IDiscreteSliderReceiver receiver) {
-        super(module, width);
-        this.segment = segment;
-        this.maxSegment = maxSegment;
-        this.receiver = receiver;
+    public SliderDiscrete(IHost host, Builder builder) {
+        super(host, builder);
+        minValue = builder.minValue;
+        maxValue = builder.maxValue;
+        this.maxSegment = (maxValue - minValue) / builder.stepSize;
+    }
+
+    /**
+     * Callback constructor
+     * @param value init value
+     * @param listener value listener
+     * @return instance
+     */
+    public SliderDiscrete buildCallback(int value, @Nonnull IListener listener) {
+        value = MathHelper.clamp(value, minValue, maxValue);
+        double p = (value - minValue) / (double) (maxValue - minValue);
+        segment = (int) Math.round(p * maxSegment);
+        this.listener = listener;
         updateSlideOffset();
+        return this;
     }
 
     @Override
-    protected void slideToOffset(float offset) {
+    protected void slideToOffset(double offset) {
         int prev = segment;
-        float p = MathHelper.clamp(offset / getMaxSlideOffset(), 0, 1);
-        segment = Math.round(p * maxSegment);
+        double p = MathHelper.clamp(offset / getMaxSlideOffset(), 0.0, 1.0);
+        segment = (int) Math.round(p * maxSegment);
         if (prev != segment) {
             updateSlideOffset();
-            receiver.onSliderRealtimeChange(segment);
+            int value = (int) MathHelper.lerp(p, minValue, maxValue);
+            listener.onSliderChanged(value);
         }
     }
 
     @Override
-    protected void onFinalChange() {
-        receiver.onSliderFinalChange();
+    protected void onStopDragging() {
+        listener.onSliderStopChange();
     }
 
     private void updateSlideOffset() {
@@ -69,5 +87,81 @@ public class SliderDiscrete extends Slider {
         } else {
             slideOffset = getMaxSlideOffset() * segment / maxSegment;
         }
+    }
+
+    @Nonnull
+    @Override
+    public Class<? extends Widget.Builder> getBuilder() {
+        return Builder.class;
+    }
+
+    public static class Builder extends Widget.Builder {
+
+        @Expose
+        private final int minValue;
+
+        @Expose
+        private final int maxValue;
+
+        @Expose
+        private int stepSize = 1;
+
+        public Builder(int minValue, int maxValue) {
+            this.minValue = minValue;
+            this.maxValue = maxValue;
+            super.setHeight(3);
+        }
+
+        public Builder setStepSize(int stepSize) {
+            this.stepSize = Math.max(1, stepSize);
+            return this;
+        }
+
+        @Override
+        public Builder setWidth(float width) {
+            super.setWidth(width);
+            return this;
+        }
+
+        @Deprecated
+        @Override
+        public Builder setHeight(float height) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Builder setLocator(@Nonnull Locator locator) {
+            super.setLocator(locator);
+            return this;
+        }
+
+        @Override
+        public Builder setAlign(@Nonnull Align9D align) {
+            super.setAlign(align);
+            return this;
+        }
+
+        @Nonnull
+        @Override
+        public SliderDiscrete build(IHost host) {
+            return new SliderDiscrete(host, this);
+        }
+    }
+
+    /**
+     * Receive slider values
+     */
+    public interface IListener {
+
+        /**
+         * Called as long as slider was dragged
+         * @param value new value
+         */
+        void onSliderChanged(int value);
+
+        /**
+         * Called when stopped dragging
+         */
+        void onSliderStopChange();
     }
 }
