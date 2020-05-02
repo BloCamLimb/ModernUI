@@ -100,9 +100,19 @@ public class NumberInputField extends TextField {
             return "0";
         }
         if (ConstantsLibrary.INTEGER_FILTER.test(newText) || newText.equals("0")) {
-            long n = Long.parseLong(newText);
-            if (n < min || n > max) {
-                if (n > max) {
+            long n;
+            try {
+                n = Long.parseLong(newText);
+            } catch (NumberFormatException e) {
+                n = getLongFromText();
+                if (n > 0) {
+                    n = Long.MAX_VALUE;
+                } else {
+                    n = Long.MIN_VALUE;
+                }
+            }
+            if (n <= min || n >= max) {
+                if (n >= max) {
                     return String.valueOf(max);
                 } else {
                     return String.valueOf(min);

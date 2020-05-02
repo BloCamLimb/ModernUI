@@ -20,10 +20,7 @@ package icyllis.modernui.gui.test;
 
 import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.math.Locator;
-import icyllis.modernui.gui.widget.NumberInputField;
-import icyllis.modernui.gui.widget.SlidingToggleButton;
-import icyllis.modernui.gui.widget.StaticFrameButton;
-import icyllis.modernui.gui.widget.TextField;
+import icyllis.modernui.gui.widget.*;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.util.ResourceLocation;
 
@@ -40,10 +37,11 @@ public class ModuleTest extends Module {
 
         addWidget(new SlidingToggleButton.Builder(0x8020a0e0, 0x40808080, 4)
                 .setLocator(new Locator(-10, -60))
-                .build(this));
+                .build(this)
+                .buildCallback(true, null));
 
         addWidget(h = new NumberInputField(this, new NumberInputField.Builder().setWidth(120).setHeight(12)));
-        h.setLimit(-997, 600);
+        h.setLimit(-997, Long.MAX_VALUE);
         h.setDecoration(f -> new TextField.Frame(f, "Limit:", -1));
         h.setNumberListener(e -> {}, true);
 
@@ -52,6 +50,8 @@ public class ModuleTest extends Module {
                 .setLocator(new Locator(-100, -12))
                 .build(this)
                 .buildCallback(true, null, true));
+
+        //addWidget(new TextIconButton.Builder());
     }
 
     @Override

@@ -84,7 +84,7 @@ public class SettingControls extends Module {
                 .setHeight(12)
                 .setTextDirection(Direction4D.DOWN)
                 .build(this)
-                .buildCallback(true, this::filterConflicts, false);
+                .buildCallback(true, false, this::filterConflicts, false);
         /*filterConflictButton = new TextIconButton(this, I18n.format("gui.modernui.button.filterConflicts"), 12, 12,
                 new Icon(ConstantsLibrary.ICONS, 0.5f, 0.25f, 0.625f, 0.375f, true), this::filterConflicts, TextIconButton.Direction.DOWN);*/
         addWidget(filterConflictButton);
@@ -96,7 +96,7 @@ public class SettingControls extends Module {
                 .setHeight(12)
                 .setTextDirection(Direction4D.DOWN)
                 .build(this)
-                .buildCallback(true, this::resetAllKey, false);
+                .buildCallback(true, false, this::resetAllKey, false);
         /*resetAllButton = new TextIconButton(this, I18n.format("controls.resetAll"), 12, 12,
                 new Icon(ConstantsLibrary.ICONS, 0.625f, 0.25f, 0.75f, 0.375f, true), this::resetAllKey, TextIconButton.Direction.DOWN);*/
         addWidget(resetAllButton);

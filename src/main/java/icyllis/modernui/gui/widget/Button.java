@@ -35,6 +35,7 @@ public abstract class Button extends Widget {
     private Runnable callback;
 
     protected float brightness = 0.7f;
+    private float brightnessOffset = 0;
 
     private boolean playInactiveAnimation = true;
 
@@ -95,7 +96,7 @@ public abstract class Button extends Widget {
     @Override
     protected boolean onMouseLeftClick(double mouseX, double mouseY) {
         if (!locked) {
-            brightness = 0.85f;
+            brightnessOffset = -0.15f;
             if (callback != null) {
                 callback.run();
             }
@@ -106,7 +107,7 @@ public abstract class Button extends Widget {
 
     @Override
     protected boolean onMouseLeftRelease(double mouseX, double mouseY) {
-        brightness = 1.0f;
+        brightnessOffset = 0;
         return true;
     }
 
@@ -138,6 +139,7 @@ public abstract class Button extends Widget {
                 brightness = 0.3f;
             }
         }
+        brightnessOffset = 0;
     }
 
     private void setBrightness(float f) {
@@ -146,5 +148,9 @@ public abstract class Button extends Widget {
 
     private float getBrightness() {
         return brightness;
+    }
+
+    protected float getModulatedBrightness() {
+        return brightness + brightnessOffset;
     }
 }

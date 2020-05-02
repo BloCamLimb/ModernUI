@@ -49,7 +49,7 @@ public class StaticFrameButton extends Button {
     @Override
     public void onDraw(@Nonnull Canvas canvas, float time) {
         super.onDraw(canvas, time);
-        canvas.setRGBA(brightness, brightness, brightness, 1.0f);
+        canvas.setRGBA(getModulatedBrightness(), getModulatedBrightness(), getModulatedBrightness(), 1.0f);
         canvas.drawRectOutline(x1, y1, x2, y2, 0.51f);
         canvas.setTextAlign(Align3H.CENTER);
         canvas.drawText(text, x1 + width / 2f, y1 + 2);

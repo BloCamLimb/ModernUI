@@ -105,7 +105,7 @@ public class AnimationControl {
         }
     }
 
-    private void setOpenState(boolean fullOpen) {
+    public void setOpenState(boolean fullOpen) {
         this.openState = fullOpen ? 2 : 0;
     }
 
