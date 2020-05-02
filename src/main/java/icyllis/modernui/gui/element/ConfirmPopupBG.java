@@ -48,6 +48,7 @@ public class ConfirmPopupBG extends Background {
 
     @Override
     public void draw(@Nonnull Canvas canvas, float time) {
+        super.draw(canvas, time);
         canvas.setRGBA(0.064f, 0.064f, 0.064f, 0.7f);
         canvas.drawRect(x, y, x + 180, y + heightOffset);
 
@@ -70,6 +71,7 @@ public class ConfirmPopupBG extends Background {
 
     @Override
     public void resize(int width, int height) {
+        super.resize(width, height);
         this.x = width / 2f - 90;
         this.y = height / 2f - 40;
     }

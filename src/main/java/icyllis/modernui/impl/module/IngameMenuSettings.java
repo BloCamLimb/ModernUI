@@ -111,7 +111,7 @@ public class IngameMenuSettings extends ModuleGroup {
     }
 
     @Override
-    public int[] changingModule() {
+    public int[] onChangingModule() {
         int c = home.getWindowWidth();
         if (home.getTransitionDirection(false)) {
             new Animation(200)

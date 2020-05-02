@@ -1,0 +1,18 @@
+{
+  "button1": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "modernui:button1", "stream": false
+      }
+    ]
+  },
+  "button2": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "modernui:button2", "stream": false
+      }
+    ]
+  }
+}

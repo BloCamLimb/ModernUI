@@ -22,7 +22,6 @@ import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.widget.SliderSmooth;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
-import net.minecraft.util.math.MathHelper;
 
 import javax.annotation.Nonnull;
 import java.util.function.Consumer;
@@ -38,7 +37,7 @@ public class SSliderSettingEntry extends SettingEntry implements SliderSmooth.IL
 
     private final boolean realtimeApply;
 
-    private double minValue;
+    /*private double minValue;
 
     private double maxValue;
 
@@ -46,7 +45,7 @@ public class SSliderSettingEntry extends SettingEntry implements SliderSmooth.IL
 
     private double currentValue;
 
-    private double originalValue;
+    private double originalValue;*/
 
     private String displayString;
 
@@ -59,11 +58,11 @@ public class SSliderSettingEntry extends SettingEntry implements SliderSmooth.IL
                 .setWidth(84)
                 .build(window)
                 .buildCallback(currentValue, this);
-        this.minValue = minValue;
+        /*this.minValue = minValue;
         this.maxValue = maxValue;
         this.stepSize = stepSize == 0 ? 0.01f / (float) (maxValue - minValue) : stepSize;
         this.currentValue = stepSize * (Math.round(currentValue / stepSize));
-        this.originalValue = currentValue;
+        this.originalValue = currentValue;*/
         this.applyFunc = applyFunc;
         this.displayStringFunc = displayStringFunc;
         this.displayString = displayStringFunc.apply(currentValue);
@@ -122,27 +121,25 @@ public class SSliderSettingEntry extends SettingEntry implements SliderSmooth.IL
         slider.setMouseHoverExit();
     }
 
-    private void applyChange() {
+    /*private void applyChange() {
         if (currentValue != originalValue) {
             applyFunc.accept(currentValue);
             originalValue = currentValue;
         }
-    }
+    }*/
 
     @Override
     public void onSliderChanged(double value) {
-        currentValue = minValue + (maxValue - minValue) * value;
-        currentValue = stepSize * (Math.round(currentValue / stepSize));
-        displayString = displayStringFunc.apply(currentValue);
+        displayString = displayStringFunc.apply(value);
         if (realtimeApply) {
-            applyChange();
+            applyFunc.accept(value);
         }
     }
 
     @Override
-    public void onSliderStopChange() {
+    public void onSliderStopChange(double value) {
         if (!realtimeApply) {
-            applyChange();
+            applyFunc.accept(value);
         }
     }
 }

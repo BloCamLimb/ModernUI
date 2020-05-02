@@ -23,10 +23,10 @@ import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.test.ContainerTest;
 import icyllis.modernui.gui.test.ModuleTest;
-import net.minecraft.client.gui.screen.MainMenuScreen;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.container.ContainerType;
 import net.minecraft.item.Items;
+import net.minecraft.util.SoundEvent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.GuiOpenEvent;
@@ -122,6 +122,12 @@ public class EventsHandler {
         @SubscribeEvent
         public static void registerContainers(@Nonnull RegistryEvent.Register<ContainerType<?>> event) {
             event.getRegistry().register(ContainerTest.CONTAINER);
+        }
+
+        @OnlyIn(Dist.CLIENT)
+        @SubscribeEvent
+        public static void registerSounds(@Nonnull RegistryEvent.Register<SoundEvent> event) {
+            RegistrySounds.registerSounds(event.getRegistry());
         }
 
         @SubscribeEvent

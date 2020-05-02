@@ -103,11 +103,8 @@ public abstract class Button extends Widget {
 
     @Override
     protected boolean onMouseLeftRelease(double mouseX, double mouseY) {
-        if (!locked) {
-            brightness = 1.0f;
-            return true;
-        }
-        return false;
+        brightness = 1.0f;
+        return true;
     }
 
     @Override
@@ -121,7 +118,7 @@ public abstract class Button extends Widget {
     @Override
     protected void onMouseHoverExit() {
         super.onMouseHoverExit();
-        if (!locked) {
+        if (!locked && getStatus().isListening()) {
             brightAnimation.invert();
         }
     }

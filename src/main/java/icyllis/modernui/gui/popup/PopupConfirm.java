@@ -59,14 +59,14 @@ public class PopupConfirm extends Module {
         if (seconds > 0) {
             buttons.add(
                     new DynamicFrameButton.Countdown.Builder(confirmText, seconds)
-                            .setWidth(64)
+                            .setWidth(32)
                             .build(this)
                             .buildCallback(() -> callback.call(ConfirmCallback.CONFIRM), false)
             );
         } else {
             buttons.add(
                     new DynamicFrameButton.Builder(confirmText)
-                            .setWidth(64)
+                            .setWidth(32)
                             .build(this)
                             .buildCallback(true, () -> callback.call(ConfirmCallback.CONFIRM), false)
             );
@@ -74,14 +74,14 @@ public class PopupConfirm extends Module {
         if (alternative != null) {
             buttons.add(
                     new DynamicFrameButton.Builder(alternative)
-                            .setWidth(64)
+                            .setWidth(32)
                             .build(this)
                             .buildCallback(true, () -> callback.call(ConfirmCallback.ALTERNATIVE), false)
             );
         }
         buttons.add(
                 new DynamicFrameButton.Builder(cancelText)
-                        .setWidth(64)
+                        .setWidth(32)
                         .build(this)
                         .buildCallback(true, () -> callback.call(ConfirmCallback.CANCEL), false)
         );

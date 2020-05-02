@@ -285,8 +285,14 @@ public abstract class Widget implements IWidget {
         return false;
     }
 
+    /**
+     * Called when widget is listening and mouse hovered in area
+     */
     protected void onMouseHoverEnter(double mouseX, double mouseY) {}
 
+    /**
+     * Called whenever widget is not mouse hovered
+     */
     protected void onMouseHoverExit() {}
 
     public final IHost getHost() {

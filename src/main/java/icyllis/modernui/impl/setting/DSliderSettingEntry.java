@@ -36,11 +36,9 @@ public class DSliderSettingEntry extends SettingEntry implements SliderDiscrete.
 
     private final boolean realtimeApply;
 
-    private int minValue;
+    //private int currentValue;
 
-    private int currentValue;
-
-    private int originalValue;
+    //private int originalValue;
 
     private String displayString;
 
@@ -51,9 +49,8 @@ public class DSliderSettingEntry extends SettingEntry implements SliderDiscrete.
                 .setWidth(84)
                 .build(window)
                 .buildCallback(currentValue, this);
-        this.minValue = minValue;
-        this.originalValue = currentValue;
-        this.currentValue = currentValue;
+        //this.originalValue = currentValue;
+        //this.currentValue = currentValue;
         this.applyFunc = applyFunc;
         this.displayStringFunc = displayStringFunc;
         this.displayString = displayStringFunc.apply(currentValue);
@@ -105,26 +102,26 @@ public class DSliderSettingEntry extends SettingEntry implements SliderDiscrete.
         slider.setMouseHoverExit();
     }
 
-    private void applyChange() {
+    /*private void applyChange() {
         if (currentValue != originalValue) {
             applyFunc.accept(currentValue);
             originalValue = currentValue;
         }
-    }
+    }*/
 
     @Override
     public void onSliderChanged(int value) {
-        currentValue = minValue + value;
-        displayString = displayStringFunc.apply(currentValue);
+        //currentValue = value;
+        displayString = displayStringFunc.apply(value);
         if (realtimeApply) {
-            applyChange();
+            applyFunc.accept(value);
         }
     }
 
     @Override
-    public void onSliderStopChange() {
+    public void onSliderStopChange(int value) {
         if (!realtimeApply) {
-            applyChange();
+            applyFunc.accept(value);
         }
     }
 }

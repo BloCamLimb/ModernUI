@@ -27,7 +27,7 @@ public class CycleInterpolator implements IInterpolator {
     }
 
     @Override
-    public float getInterpolation(float input) {
-        return (float) Math.sin(2 * Math.PI * cycle * input);
+    public float getInterpolation(float progress) {
+        return (float) Math.sin(2 * Math.PI * cycle * progress);
     }
 }

@@ -48,7 +48,7 @@ public class ModuleTest extends Module {
     @Override
     public void resize(int width, int height) {
         super.resize(width, height);
-        h.locate(width / 2f - 10, height / 2f - 44);
+        h.locate(width / 2f - 60, height / 2f - 44);
     }
 
     public void create() {

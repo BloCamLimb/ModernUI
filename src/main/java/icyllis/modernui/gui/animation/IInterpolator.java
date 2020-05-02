@@ -31,5 +31,10 @@ public interface IInterpolator {
 
     IInterpolator SINE = in -> (float) Math.sin(Math.PI / 2 * in);
 
-    float getInterpolation(float input);
+    /**
+     * Get interpolation value
+     * @param progress [0-1], determined by time
+     * @return new value
+     */
+    float getInterpolation(float progress);
 }

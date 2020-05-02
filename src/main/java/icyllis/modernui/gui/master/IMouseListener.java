@@ -24,8 +24,8 @@ public interface IMouseListener {
 
     /**
      * Check if mouse hover this widget, and update member variable for mouse event
-     * @param mouseX Relative mouse X pos
-     * @param mouseY Relative mouse Y pos
+     * @param mouseX relative mouse X pos
+     * @param mouseY relative mouse Y pos
      * @return return true to cancel the event
      */
     default boolean updateMouseHover(double mouseX, double mouseY) {
@@ -34,12 +34,13 @@ public interface IMouseListener {
 
     /**
      * If update mouse hover event is canceled, the rest listeners will be called this method
-     * Must check if mouseHovered and set mouse hovered to false
+     * Must check if mouseHovered manually and set mouse hovered to false
      */
     default void setMouseHoverExit() {}
 
     /**
-     * Get if mouse hover this widget
+     * Get if mouse hovered this widget
+     * Do not check if mouse hovered
      * @return mouse hovered state
      */
     default boolean isMouseHovered() {
@@ -50,9 +51,9 @@ public interface IMouseListener {
      * Called when mouse hover and a mouse button clicked
      * See {@link #isMouseHovered()}
      *
-     * @param mouseX Relative mouse X pos
-     * @param mouseY Relative mouse Y pos
-     * @param mouseButton See {@link GLFW}
+     * @param mouseX relative mouse X pos
+     * @param mouseY relative mouse Y pos
+     * @param mouseButton see {@link GLFW}
      * @return return true to cancel the event
      */
     default boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
@@ -63,9 +64,9 @@ public interface IMouseListener {
      * Called when mouse hover and a mouse button released
      * See {@link #isMouseHovered()}
      *
-     * @param mouseX Relative mouse X pos
-     * @param mouseY Relative mouse Y pos
-     * @param mouseButton See {@link GLFW}
+     * @param mouseX relative mouse X pos
+     * @param mouseY relative mouse Y pos
+     * @param mouseButton see {@link GLFW}
      * @return return true to cancel the event
      */
     default boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
