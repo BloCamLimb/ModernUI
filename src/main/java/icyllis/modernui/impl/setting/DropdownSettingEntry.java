@@ -28,7 +28,7 @@ import icyllis.modernui.gui.master.Icon;
 import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.popup.PopupMenu;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
-import icyllis.modernui.gui.widget.DropDownMenu;
+import icyllis.modernui.gui.popup.DropDownMenu;
 import icyllis.modernui.system.ConstantsLibrary;
 
 import javax.annotation.Nonnull;

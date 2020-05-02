@@ -30,20 +30,32 @@ public class ConfigManager {
     public static final Client CLIENT;
     private static final ForgeConfigSpec CLIENT_SPEC;
 
+    public static final Common COMMON;
+    private static final ForgeConfigSpec COMMON_SPEC;
+
     static {
-        ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
+        ForgeConfigSpec.Builder builder;
+
+        builder = new ForgeConfigSpec.Builder();
         CLIENT = new Client(builder);
         CLIENT_SPEC = builder.build();
+
+        builder = new ForgeConfigSpec.Builder();
+        COMMON = new Common(builder);
+        COMMON_SPEC = builder.build();
     }
 
     public static void register() {
         FMLPaths.getOrCreateGameRelativePath(FMLPaths.CONFIGDIR.get().resolve("ModernUI"), "ModernUI");
         ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ConfigManager.CLIENT_SPEC, "ModernUI/client.toml");
+        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ConfigManager.COMMON_SPEC, "ModernUI/common.toml");
     }
 
     public static void load(ForgeConfigSpec spec) {
         if (spec == CLIENT_SPEC) {
             CLIENT.load();
+        } else if (spec == COMMON_SPEC) {
+            COMMON.load();
         }
     }
 
@@ -65,6 +77,27 @@ public class ConfigManager {
 
         private void load() {
             preferredFontName = preferredFontNameV.get();
+        }
+    }
+
+    public static class Common {
+
+        public boolean enableDeveloperMode;
+
+        private final ForgeConfigSpec.BooleanValue enableDeveloperModeV;
+
+        public Common(@Nonnull ForgeConfigSpec.Builder builder) {
+            builder.comment("Developer Config")
+                    .push("developer");
+
+            enableDeveloperModeV = builder.comment("To assist debugging and edit modules in-game if enabled")
+                    .define("enableDeveloperMode", false);
+
+            builder.pop();
+        }
+
+        private void load() {
+            enableDeveloperMode = enableDeveloperModeV.get();
         }
     }
 }

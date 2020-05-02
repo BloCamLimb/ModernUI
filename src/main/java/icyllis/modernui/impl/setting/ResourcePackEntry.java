@@ -36,6 +36,7 @@ import net.minecraft.client.resources.ClientResourcePackInfo;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.text.TextFormatting;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 
 public class ResourcePackEntry extends UniformScrollEntry {
@@ -211,7 +212,7 @@ public class ResourcePackEntry extends UniformScrollEntry {
         return resourcePack;
     }
 
-    public final void intoSelected(ResourcePackGroup selectedGroup) {
+    public final void intoSelected(@Nonnull ResourcePackGroup selectedGroup) {
         resourcePack.getPriority().insert(selectedGroup.getEntries(), this, ResourcePackEntry::getResourcePack, true);
     }
 

@@ -19,7 +19,7 @@
 package icyllis.modernui.gui.popup;
 
 import icyllis.modernui.font.FontTools;
-import icyllis.modernui.gui.element.ConfirmPopupBG;
+import icyllis.modernui.gui.background.ConfirmPopupBG;
 import icyllis.modernui.gui.layout.WidgetLayout;
 import icyllis.modernui.gui.master.*;
 import icyllis.modernui.gui.widget.DynamicFrameButton;

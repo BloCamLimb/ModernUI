@@ -28,7 +28,7 @@ import icyllis.modernui.gui.layout.WidgetLayout;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.ModuleGroup;
 import icyllis.modernui.gui.popup.PopupMenu;
-import icyllis.modernui.gui.widget.DropDownMenu;
+import icyllis.modernui.gui.popup.DropDownMenu;
 import icyllis.modernui.gui.widget.LineTextButton;
 import icyllis.modernui.system.ModIntegration;
 import net.minecraft.client.GameSettings;
