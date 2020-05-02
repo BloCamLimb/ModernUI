@@ -44,7 +44,8 @@ public abstract class Widget implements IWidget {
     @Nullable
     private final Locator locator;
 
-    protected final Align9D align;
+    @Nonnull
+    protected Align9D align;
 
     protected float x1, y1;
 
@@ -164,9 +165,8 @@ public abstract class Widget implements IWidget {
      * shouldn't call this in constructor
      */
     public void setStatus(WidgetStatus status) {
-        WidgetStatus prev = this.status;
-        this.status = status;
-        if (prev != status) {
+        if (this.status != status) {
+            this.status = status;
             onStatusChanged(status);
         }
     }
@@ -325,6 +325,11 @@ public abstract class Widget implements IWidget {
 
     public void setHeight(float height) {
         this.height = height;
+        relocate();
+    }
+
+    public void setAlign(@Nonnull Align9D align) {
+        this.align = align;
         relocate();
     }
 

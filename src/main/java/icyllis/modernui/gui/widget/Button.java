@@ -24,6 +24,7 @@ import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.IHost;
 import icyllis.modernui.gui.master.Widget;
 import icyllis.modernui.gui.master.WidgetStatus;
+import icyllis.modernui.system.ModernUI;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -75,6 +76,8 @@ public abstract class Button extends Widget {
                     r.run();
                     setStatus(WidgetStatus.INACTIVE);
                 };
+            } else {
+                callback = () -> setStatus(WidgetStatus.INACTIVE);
             }
             playInactiveAnimation = false;
         } else {
@@ -92,10 +95,10 @@ public abstract class Button extends Widget {
     @Override
     protected boolean onMouseLeftClick(double mouseX, double mouseY) {
         if (!locked) {
+            brightness = 0.85f;
             if (callback != null) {
                 callback.run();
             }
-            brightness = 0.85f;
             return true;
         }
         return false;

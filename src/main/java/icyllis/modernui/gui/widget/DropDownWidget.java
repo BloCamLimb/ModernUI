@@ -25,13 +25,13 @@ import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.*;
 import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.math.Locator;
+import icyllis.modernui.gui.popup.DropDownMenu;
 import icyllis.modernui.gui.popup.PopupMenu;
 import icyllis.modernui.system.ConstantsLibrary;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
 /**
@@ -90,7 +90,7 @@ public class DropDownWidget extends Widget {
 
     @Override
     protected boolean onMouseLeftClick(double mouseX, double mouseY) {
-        DropDownMenu menu = new DropDownMenu.Builder(list, index).setAlign(align).build(getHost()).buildCallback(operation);
+        DropDownMenu menu = new DropDownMenu.Builder(list, index).setAlign(align).build(getHost()).buildCallback(this::updateValue);
         menu.locate(getHost().toAbsoluteX(x2 - 4), getHost().toAbsoluteY(y2));
         GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(menu), false);
         return true;

@@ -24,7 +24,7 @@ import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.popup.PopupMenu;
-import icyllis.modernui.gui.widget.DropDownMenu;
+import icyllis.modernui.gui.popup.DropDownMenu;
 import icyllis.modernui.gui.widget.KeyInputBox;
 import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import net.minecraft.client.GameSettings;

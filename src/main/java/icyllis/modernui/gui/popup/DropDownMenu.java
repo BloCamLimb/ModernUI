@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.widget;
+package icyllis.modernui.gui.popup;
 
 import icyllis.modernui.font.FontTools;
 import icyllis.modernui.gui.animation.IInterpolator;
@@ -25,7 +25,6 @@ import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.master.Widget;
 import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.math.Color3f;

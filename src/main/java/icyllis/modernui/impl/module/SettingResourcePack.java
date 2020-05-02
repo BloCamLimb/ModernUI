@@ -36,6 +36,7 @@ import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.ClientResourcePackInfo;
+import net.minecraft.client.resources.I18n;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nullable;
@@ -105,7 +106,7 @@ public class SettingResourcePack extends Module {
         list.add(upArrow);
         list.add(downArrow);
 
-        applyButton = new StaticFrameButton.Builder("gui.modernui.button.apply")
+        applyButton = new StaticFrameButton.Builder(I18n.format("gui.modernui.button.apply"))
                 .setWidth(48)
                 .setAlign(Align9D.TOP_CENTER)
                 .setLocator(new Locator(Align9D.BOTTOM_CENTER, 0, -32))
@@ -167,6 +168,7 @@ public class SettingResourcePack extends Module {
 
     private void intoSelected() {
         if (highlightEntry != null && highlightEntry.canIntoSelected()) {
+            highlightEntry.setAlign(Align9D.TOP_LEFT);
             availableGroup.getEntries().remove(highlightEntry);
             availableGroup.layoutGroup();
             highlightEntry.intoSelected(selectedGroup);
@@ -181,6 +183,7 @@ public class SettingResourcePack extends Module {
 
     private void intoAvailable() {
         if (highlightEntry != null && highlightEntry.canIntoAvailable()) {
+            highlightEntry.setAlign(Align9D.TOP_RIGHT);
             selectedGroup.getEntries().remove(highlightEntry);
             selectedGroup.layoutGroup();
             availableGroup.getEntries().add(highlightEntry);
