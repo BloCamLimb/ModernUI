@@ -71,14 +71,14 @@ public class SliderDiscrete extends Slider {
         segment = (int) Math.round(p * maxSegment);
         if (prev != segment) {
             updateSlideOffset();
-            int value = (int) MathHelper.lerp(p, minValue, maxValue);
+            int value = minValue + segment;
             listener.onSliderChanged(value);
         }
     }
 
     @Override
     protected void onStopDragging() {
-        listener.onSliderStopChange();
+        listener.onSliderStopChange(minValue + segment);
     }
 
     private void updateSlideOffset() {
@@ -161,7 +161,8 @@ public class SliderDiscrete extends Slider {
 
         /**
          * Called when stopped dragging
+         * @param value
          */
-        void onSliderStopChange();
+        void onSliderStopChange(int value);
     }
 }

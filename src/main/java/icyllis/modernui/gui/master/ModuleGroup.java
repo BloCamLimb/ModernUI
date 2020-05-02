@@ -77,7 +77,7 @@ public abstract class ModuleGroup extends Module {
             if (child.onBack()) {
                 return;
             }
-            op = child.changingModule();
+            op = child.onChangingModule();
         }
         if (op.length != 2 || op[0] < 0 || op[1] < 0) {
             return;

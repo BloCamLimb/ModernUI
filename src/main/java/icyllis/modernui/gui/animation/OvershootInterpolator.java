@@ -18,19 +18,17 @@
 
 package icyllis.modernui.gui.animation;
 
-public class AccelerateInterpolator implements IInterpolator {
+public class OvershootInterpolator implements IInterpolator {
 
-    private final float factor;
+    private final float tension;
 
-    public AccelerateInterpolator(float factor) {
-        this.factor = factor;
+    public OvershootInterpolator(float tension) {
+        this.tension = tension;
     }
 
     @Override
     public float getInterpolation(float progress) {
-        if (factor == 1.0f) {
-            return progress * progress;
-        }
-        return (float) Math.pow(progress, factor * 2);
+        progress -= 1.0f;
+        return progress * progress * ((tension + 1) * progress + tension) + 1.0f;
     }
 }

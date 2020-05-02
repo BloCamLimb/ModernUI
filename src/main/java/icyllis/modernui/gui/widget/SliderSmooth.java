@@ -29,6 +29,8 @@ import javax.annotation.Nonnull;
 
 public class SliderSmooth extends Slider {
 
+    private double value;
+
     private final double minValue;
 
     private final double maxValue;
@@ -60,7 +62,7 @@ public class SliderSmooth extends Slider {
 
     @Override
     protected void onStopDragging() {
-        listener.onSliderStopChange();
+        listener.onSliderStopChange(value);
     }
 
     @Override
@@ -69,7 +71,7 @@ public class SliderSmooth extends Slider {
         slideOffset = MathHelper.clamp(offset, 0, getMaxSlideOffset());
         if (prev != slideOffset) {
             double slidePercent = slideOffset / getMaxSlideOffset();
-            double value = MathHelper.lerp(slidePercent, minValue, maxValue);
+            value = MathHelper.lerp(slidePercent, minValue, maxValue);
             if (stepSize > 0) {
                 value = stepSize * (Math.round(value / stepSize));
             }
@@ -150,7 +152,8 @@ public class SliderSmooth extends Slider {
 
         /**
          * Called when stopped dragging
+         * @param value
          */
-        void onSliderStopChange();
+        void onSliderStopChange(double value);
     }
 }

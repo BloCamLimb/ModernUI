@@ -30,6 +30,7 @@ import net.minecraft.client.resources.I18n;
 import net.minecraft.resources.ResourcePackList;
 import net.minecraft.util.text.TextFormatting;
 
+import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.List;
 
@@ -140,7 +141,7 @@ public class ResourcePackGroup extends UniformScrollGroup<ResourcePackEntry> {
     }*/
 
     @Override
-    public void draw(Canvas canvas, float time) {
+    public void draw(@Nonnull Canvas canvas, float time) {
         canvas.resetColor();
         canvas.setTextAlign(Align3H.CENTER);
         canvas.drawText(title, titleCenterX, y1 + 2);

@@ -18,18 +18,56 @@
 
 package icyllis.modernui.gui.test;
 
+import icyllis.modernui.gui.animation.*;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.IDrawable;
+import icyllis.modernui.gui.math.Color3f;
 
 import javax.annotation.Nonnull;
 
 public class TestDraw implements IDrawable {
 
+    private float xOffset;
+
+    private float yOffset;
+
+    private Animation animation;
+
+    public TestDraw() {
+        animation = new Animation(600)
+                .addAppliers(
+                        new Applier(-70, 100, () -> xOffset, v -> xOffset = v)
+                                .setInterpolator(new OvershootInterpolator(2)),
+                        new Applier(0, 100, () -> yOffset, v -> yOffset = v)
+                                .setInterpolator(IInterpolator.SINE)
+                );
+        animation.restart();
+    }
+
     @Override
     public void draw(@Nonnull Canvas canvas, float time) {
-        canvas.setLineWidth(2);
+        canvas.save();
+        canvas.translate(xOffset, 0);
+        /*canvas.setLineWidth(2);
         canvas.setLineAntiAliasing(true);
         canvas.drawOctagonRectFrame(100, 40, 200, 60, 3);
-        canvas.setLineAntiAliasing(false);
+        canvas.setLineAntiAliasing(false);*/
+        canvas.setColor(Color3f.BLUE_C, 0.5f);
+        canvas.drawCircle(150, 50, 11);
+        canvas.restore();
+
+        canvas.save();
+        canvas.translate(yOffset / 2.0f, yOffset);
+        canvas.drawCircle(100, 80, 6);
+        canvas.restore();
+    }
+
+    @Override
+    public void tick(int ticks) {
+        if ((ticks + 16) % 32 == 0) {
+            animation.invert();
+        } else if ((ticks) % 32 == 0) {
+            animation.restart();
+        }
     }
 }

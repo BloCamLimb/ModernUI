@@ -27,10 +27,10 @@ public class DecelerateInterpolator implements IInterpolator {
     }
 
     @Override
-    public float getInterpolation(float input) {
+    public float getInterpolation(float progress) {
         if (factor == 1.0f) {
-            return 1.0f - (1.0f - input) * (1.0f - input);
+            return 1.0f - (1.0f - progress) * (1.0f - progress);
         }
-        return (float) (1.0f - Math.pow((1.0f - input), factor * 2));
+        return (float) (1.0f - Math.pow((1.0f - progress), factor * 2));
     }
 }

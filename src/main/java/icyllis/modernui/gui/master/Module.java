@@ -256,7 +256,7 @@ public abstract class Module implements IModule, IHost {
      *
      * @return a array with length of 2
      */
-    public int[] changingModule() {
+    public int[] onChangingModule() {
         return new int[]{0, 0};
     }
 

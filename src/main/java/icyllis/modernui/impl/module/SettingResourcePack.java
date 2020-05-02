@@ -198,8 +198,8 @@ public class SettingResourcePack extends Module {
             highlightEntry.goUp();
             selectedGroup.layoutGroup();
             //selectedGroup.followEntry(highlightEntry);
-            setHighlightEntry(highlightEntry);
             refocusMouseCursor();
+            setHighlightEntry(highlightEntry);
             applyButton.setStatus(WidgetStatus.ACTIVE);
         }
     }
@@ -209,8 +209,8 @@ public class SettingResourcePack extends Module {
             highlightEntry.goDown();
             selectedGroup.layoutGroup();
             //selectedGroup.followEntry(highlightEntry);
-            setHighlightEntry(highlightEntry);
             refocusMouseCursor();
+            setHighlightEntry(highlightEntry);
             applyButton.setStatus(WidgetStatus.ACTIVE);
         }
     }

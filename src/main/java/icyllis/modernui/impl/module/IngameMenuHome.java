@@ -27,6 +27,7 @@ import icyllis.modernui.gui.master.ModuleGroup;
 import icyllis.modernui.gui.popup.ConfirmCallback;
 import icyllis.modernui.gui.popup.PopupConfirm;
 import icyllis.modernui.gui.widget.MenuButton;
+import icyllis.modernui.system.RegistrySounds;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.advancements.AdvancementsScreen;
 import net.minecraft.client.gui.screen.*;
@@ -64,15 +65,21 @@ public class IngameMenuHome extends ModuleGroup {
                 new MenuButton.Builder(I18n.format("gui.modernui.menu.back"), 4, -1)
                         .setLocator(new Locator(Align9D.TOP_LEFT, 8, 8))
                         .build(this)
-                        .buildCallback(true, GlobalModuleManager.INSTANCE::closeGuiScreen, false)
+                        .buildCallback(true, () -> {
+                            GlobalModuleManager.INSTANCE.closeGuiScreen();
+                            playSound(RegistrySounds.BUTTON_CLICK_2);
+                        }, false)
         );
         consumer.accept(
                 new MenuButton.Builder(I18n.format("gui.advancements") + " (WIP)", 1, 1)
                         .setLocator(new Locator(Align9D.TOP_LEFT, 8, 44))
                         .build(this)
                         .buildCallback(true,
-                                () -> minecraft.displayGuiScreen(
-                                        new AdvancementsScreen(Objects.requireNonNull(minecraft.player).connection.getAdvancementManager())),
+                                () -> {
+                            minecraft.displayGuiScreen(
+                                    new AdvancementsScreen(Objects.requireNonNull(minecraft.player).connection.getAdvancementManager()));
+                            playSound(RegistrySounds.BUTTON_CLICK_2);
+                                },
                                 false)
         );
         consumer.accept(
@@ -80,7 +87,10 @@ public class IngameMenuHome extends ModuleGroup {
                         .setLocator(new Locator(Align9D.TOP_LEFT, 8, 72))
                         .build(this)
                         .buildCallback(true,
-                                () -> switchChildModule(2),
+                                () -> {
+                            switchChildModule(2);
+                            playSound(RegistrySounds.BUTTON_CLICK_2);
+                                },
                                 false)
         );
         consumer.accept(
@@ -88,15 +98,21 @@ public class IngameMenuHome extends ModuleGroup {
                         .setLocator(new Locator(Align9D.BOTTOM_LEFT, 8, -92))
                         .build(this)
                         .buildCallback(true,
-                                () -> minecraft.displayGuiScreen(new ModListScreen(null)),
+                                () -> {
+                            minecraft.displayGuiScreen(new ModListScreen(GlobalModuleManager.INSTANCE.getModernScreen()));
+                            playSound(RegistrySounds.BUTTON_CLICK_2);
+                                },
                                 false)
-        ); // Forge's GUI is buggy, so null
+        ); // Forge's GUI is a little buggy, but we fixed that
         consumer.accept(
                 new MenuButton.Builder(I18n.format("gui.modernui.menu.settings"), 0, 4)
                         .setLocator(new Locator(Align9D.BOTTOM_LEFT, 8, -64))
                         .build(this)
                         .buildCallback(true,
-                                () -> switchChildModule(4),
+                                () -> {
+                            switchChildModule(4);
+                            playSound(RegistrySounds.BUTTON_CLICK_2);
+                                },
                                 false)
         );
         consumer.accept(
@@ -148,6 +164,7 @@ public class IngameMenuHome extends ModuleGroup {
     }
 
     private void exitToTitle() {
+        playSound(RegistrySounds.BUTTON_CLICK_2);
         IModule popup = new PopupConfirm(this::confirmExit)
                 .setConfirmTitle(I18n.format("gui.modernui.button.exit"))
                 .setDescription(I18n.format("gui.modernui.popup.exit"));
