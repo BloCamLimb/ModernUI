@@ -54,6 +54,16 @@ public class TextIconButton extends IconButton {
                 .addAppliers(new Applier(0.0f, 1.0f, this::getTextAlpha, this::setTextAlpha));
     }
 
+    public TextIconButton buildCallback(boolean clickable, boolean selected, @Nullable Runnable r, boolean onetime) {
+        super.buildCallback(clickable, r, onetime);
+        if (selected) {
+            locked = true;
+            brightness = 1.0f;
+        }
+        return this;
+    }
+
+    @Deprecated
     @Override
     public TextIconButton buildCallback(boolean b, @Nullable Runnable r, boolean onetime) {
         super.buildCallback(b, r, onetime);

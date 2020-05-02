@@ -18,6 +18,7 @@
 
 package icyllis.modernui.gui.test;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.animation.*;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.IDrawable;
@@ -60,6 +61,16 @@ public class TestDraw implements IDrawable {
         canvas.translate(yOffset / 2.0f, yOffset);
         canvas.drawCircle(100, 80, 6);
         canvas.restore();
+
+        RenderSystem.enableDepthTest();
+        RenderSystem.depthMask(false);
+        canvas.setZ(20);
+        canvas.drawCircle(20, 120, 8);
+        RenderSystem.depthMask(true);
+        canvas.setZ(0);
+        canvas.setRGB(1, 1, 1);
+        canvas.drawCircle(20, 130, 8);
+        RenderSystem.disableDepthTest();
     }
 
     @Override

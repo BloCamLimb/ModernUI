@@ -162,8 +162,8 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
     @Override
     public String toString() {
         if (manager.getRootModule() != null) {
-            return getClass().getSimpleName() + " - " + manager.getRootModule().getClass().getSimpleName() + " (" + hashCode() + ")";
+            return getClass().getSimpleName() + "-" + manager.getRootModule().getClass().getSimpleName() + "(" + hashCode() + ")";
         }
-        return getClass().getSimpleName() + " (" + hashCode() + ")";
+        return getClass().getSimpleName() + "(" + hashCode() + ")";
     }
 }

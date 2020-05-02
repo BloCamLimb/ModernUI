@@ -149,8 +149,8 @@ public final class ModernScreen extends Screen {
     @Override
     public String toString() {
         if (manager.getRootModule() != null) {
-            return getClass().getSimpleName() + " - " + manager.getRootModule().getClass().getSimpleName() + " (" + hashCode() + ")";
+            return getClass().getSimpleName() + "-" + manager.getRootModule().getClass().getSimpleName() + "(" + hashCode() + ")";
         }
-        return getClass().getSimpleName() + " (" + hashCode() + ")";
+        return getClass().getSimpleName() + "(" + hashCode() + ")";
     }
 }

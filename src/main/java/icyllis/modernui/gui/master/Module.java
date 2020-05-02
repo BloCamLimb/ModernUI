@@ -21,7 +21,6 @@ package icyllis.modernui.gui.master;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.editor.WidgetParser;
 import icyllis.modernui.editor.WidgetContainer;
-import icyllis.modernui.gui.animation.IAnimation;
 import icyllis.modernui.system.ConstantsLibrary;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
@@ -36,12 +35,12 @@ import java.util.function.Consumer;
 
 public abstract class Module implements IModule, IHost {
 
-    private static Field MODULE;
+    private static Field HOST;
 
     static {
         try {
-            MODULE = Widget.class.getDeclaredField("host");
-            MODULE.setAccessible(true);
+            HOST = Widget.class.getDeclaredField("host");
+            HOST.setAccessible(true);
         } catch (NoSuchFieldException e) {
             e.printStackTrace();
         }
@@ -130,7 +129,7 @@ public abstract class Module implements IModule, IHost {
             }
             //TODO use builder
             try {
-                MODULE.set(e.widget, this);
+                HOST.set(e.widget, this);
             } catch (IllegalAccessException ex) {
                 ModernUI.LOGGER.fatal(GlobalModuleManager.MARKER, "I'm fine");
                 ex.printStackTrace();

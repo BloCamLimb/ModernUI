@@ -78,7 +78,7 @@ public class DynamicFrameButton extends Button {
     public void onDraw(@Nonnull Canvas canvas, float time) {
         super.onDraw(canvas, time);
         frameAC.update();
-        canvas.setRGBA(brightness, brightness, brightness, 1.0f);
+        canvas.setRGBA(getModulatedBrightness(), getModulatedBrightness(), getModulatedBrightness(), 1.0f);
         canvas.setTextAlign(Align3H.CENTER);
         canvas.drawText(text, x1 + width / 2f, y1 + 2);
         if (frameAlpha > 0) {

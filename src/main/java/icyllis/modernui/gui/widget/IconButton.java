@@ -44,7 +44,7 @@ public class IconButton extends Button {
     @Override
     public void onDraw(@Nonnull Canvas canvas, float time) {
         super.onDraw(canvas, time);
-        canvas.setRGBA(brightness, brightness, brightness, 1.0f);
+        canvas.setRGBA(getModulatedBrightness(), getModulatedBrightness(), getModulatedBrightness(), 1.0f);
         canvas.drawIcon(icon, x1, y1, x2, y2);
     }
 

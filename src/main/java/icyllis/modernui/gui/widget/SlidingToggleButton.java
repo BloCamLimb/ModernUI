@@ -119,6 +119,7 @@ public class SlidingToggleButton extends Widget {
             this.r = (onColor >> 16 & 0xff) / 255f;
             g = (onColor >> 8 & 0xff) / 255f;
             b = (onColor & 0xff) / 255f;
+            ac.setOpenState(true);
         }
         callback = r;
         return this;

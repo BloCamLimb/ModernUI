@@ -18,6 +18,7 @@
 
 package icyllis.modernui.impl.stats;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.FontTools;
 import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.master.Canvas;
@@ -38,8 +39,6 @@ import java.util.List;
 
 public class ItemStatsEntry extends UniformScrollEntry {
 
-    private final ItemRenderer itemRenderer = Minecraft.getInstance().getItemRenderer();
-
     private final Item item;
 
     private final Color3f color;
@@ -59,7 +58,7 @@ public class ItemStatsEntry extends UniformScrollEntry {
 
     @Override
     public void onDraw(@Nonnull Canvas canvas, float time) {
-        itemRenderer.renderItemIntoGUI(item.getDefaultInstance(), (int) x1 + 2, (int) y1 + 2);
+        //itemRenderer.renderItemIntoGUI(item.getDefaultInstance(), (int) x1 + 2, (int) y1 + 2);
         canvas.setColor(color, 1);
         canvas.setTextAlign(Align3H.RIGHT);
         int i = 0;
@@ -77,6 +76,7 @@ public class ItemStatsEntry extends UniformScrollEntry {
             canvas.resetColor();
             canvas.drawText(itemName, x1 + 25, y1 + 6);
         }
+        canvas.drawItem(item, x1 + 2, y1 + 2);
     }
 
     public void updateValue(StatisticsManager manager) {
