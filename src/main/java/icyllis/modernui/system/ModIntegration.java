@@ -18,7 +18,10 @@
 
 package icyllis.modernui.system;
 
+import icyllis.modernui.gui.master.GlobalModuleManager;
+import net.minecraft.client.Minecraft;
 import net.minecraftforge.fml.ModList;
+import net.optifine.shaders.gui.GuiShaders;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -45,5 +48,13 @@ public class ModIntegration {
     public static void init() {
         ModList modList = ModList.get();
 
+    }
+
+    public static class OptiFine {
+
+        public static void openShadersGui() {
+            Minecraft.getInstance().displayGuiScreen(
+                    new GuiShaders(GlobalModuleManager.INSTANCE.getModernScreen(), Minecraft.getInstance().gameSettings));
+        }
     }
 }

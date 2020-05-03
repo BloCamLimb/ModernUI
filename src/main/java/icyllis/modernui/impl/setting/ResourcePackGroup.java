@@ -78,7 +78,7 @@ public class ResourcePackGroup extends UniformScrollGroup<ResourcePackEntry> {
     public void locate(float px, float py) {
         super.locate(px, py);
         float pw = Math.min(window.getWidth(), 240);
-        float cw = pw - window.borderThickness;
+        float cw = pw - window.getMargin();
         entries.forEach(e -> e.setWidth(cw));
         py += 14;
         float left = window.getLeft(), right = window.getRight();
@@ -89,7 +89,7 @@ public class ResourcePackGroup extends UniformScrollGroup<ResourcePackEntry> {
         }
         titleCenterX = (int) ((left + right) / 2f);
         int i = 0;
-        right -= window.borderThickness;
+        right -= window.getMargin();
         if (type == Type.AVAILABLE) {
             for (ResourcePackEntry entry : entries) {
                 float cy = py + i * entryHeight;

@@ -19,16 +19,18 @@
 package icyllis.modernui.gui.test;
 
 import icyllis.modernui.gui.master.Module;
+import icyllis.modernui.gui.master.Widget;
 import icyllis.modernui.gui.math.Locator;
+import icyllis.modernui.gui.scroll.ScrollPanel;
 import icyllis.modernui.gui.widget.*;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.util.ResourceLocation;
 
 public class ModuleTest extends Module {
 
-    public static final ResourceLocation BACKGROUND = new ResourceLocation(ModernUI.MODID, "textures/gui/gui_default_background.png");
+    /*public static final ResourceLocation BACKGROUND = new ResourceLocation(ModernUI.MODID, "textures/gui/gui_default_background.png");
     public static final ResourceLocation FRAME = new ResourceLocation(ModernUI.MODID, "textures/gui/gui_default_frame.png");
-    public static final ResourceLocation BUTTON = new ResourceLocation(ModernUI.MODID, "textures/gui/gui_button.png");
+    public static final ResourceLocation BUTTON = new ResourceLocation(ModernUI.MODID, "textures/gui/gui_button.png");*/
 
     private final NumberInputField h;
 
@@ -47,10 +49,12 @@ public class ModuleTest extends Module {
 
         addWidget(new StaticFrameButton.Builder("A Button")
                 .setWidth(48)
-                .setLocator(new Locator(-100, -12))
+                .setLocator(new Locator(-100, -20))
                 .build(this)
                 .buildCallback(true, null, true));
 
+        ScrollPanel<TestScrollGr> panel = new ScrollPanel<>(this, new Widget.Builder().setWidth(120).setHeight(70).setLocator(new Locator(-60, 0)), TestScrollGr::new);
+        addWidget(panel);
         //addWidget(new TextIconButton.Builder());
     }
 

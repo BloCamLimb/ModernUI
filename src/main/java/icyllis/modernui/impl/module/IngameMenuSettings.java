@@ -22,24 +22,17 @@ import com.google.common.collect.Lists;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.animation.IInterpolator;
-import icyllis.modernui.gui.math.Align9D;
-import icyllis.modernui.impl.background.MenuSettingsBG;
 import icyllis.modernui.gui.layout.WidgetLayout;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.ModuleGroup;
-import icyllis.modernui.gui.popup.PopupMenu;
+import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.popup.DropDownMenu;
+import icyllis.modernui.gui.popup.PopupMenu;
 import icyllis.modernui.gui.widget.LineTextButton;
+import icyllis.modernui.impl.background.MenuSettingsBG;
 import icyllis.modernui.system.ModIntegration;
-import net.minecraft.client.GameSettings;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.resources.I18n;
-import net.minecraft.client.settings.AbstractOption;
-import net.optifine.shaders.gui.GuiShaders;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -157,8 +150,7 @@ public class IngameMenuSettings extends ModuleGroup {
                 } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException | ClassCastException e) {
                     e.printStackTrace();
                 }*/
-                Minecraft.getInstance().displayGuiScreen(
-                        new GuiShaders(GlobalModuleManager.INSTANCE.getModernScreen(), Minecraft.getInstance().gameSettings));
+                ModIntegration.OptiFine.openShadersGui();
                 return;
             }
             switchChildModule(5 + index);
