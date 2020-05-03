@@ -30,16 +30,9 @@ public class TestScrollGr extends UniformScrollGroup<TestScrollGr.TestScrollEn> 
 
     public TestScrollGr(IScrollHost window) {
         super(window, 18);
-        entries.add(new TestScrollEn(window));
-        entries.add(new TestScrollEn(window));
-        entries.add(new TestScrollEn(window));
-        entries.add(new TestScrollEn(window));
-        entries.add(new TestScrollEn(window));
-        entries.add(new TestScrollEn(window));
-        entries.add(new TestScrollEn(window));
-        entries.add(new TestScrollEn(window));
-        entries.add(new TestScrollEn(window));
-        entries.add(new TestScrollEn(window));
+        for (int i = 0; i < 10; i++) {
+            entries.add(new TestScrollEn(window));
+        }
         height = entries.size() * entryHeight;
     }
 

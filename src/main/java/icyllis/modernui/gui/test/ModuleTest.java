@@ -20,6 +20,7 @@ package icyllis.modernui.gui.test;
 
 import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.master.Widget;
+import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.math.Locator;
 import icyllis.modernui.gui.scroll.ScrollPanel;
 import icyllis.modernui.gui.widget.*;
@@ -42,7 +43,9 @@ public class ModuleTest extends Module {
                 .build(this)
                 .buildCallback(true, null));
 
-        addWidget(h = new NumberInputField(this, new NumberInputField.Builder().setWidth(120).setHeight(12)));
+        addWidget(h = new NumberInputField(this, new NumberInputField.Builder()
+                .setWidth(120)
+                .setHeight(12)));
         h.setLimit(-54996, Long.MAX_VALUE);
         h.setDecoration(f -> new TextField.Frame(f, "Limit:", -1));
         h.setNumberListener(e -> {}, true);
@@ -53,8 +56,11 @@ public class ModuleTest extends Module {
                 .build(this)
                 .buildCallback(true, null, true));
 
-        ScrollPanel<TestScrollGr> panel = new ScrollPanel<>(this, new Widget.Builder().setWidth(120).setHeight(70).setLocator(new Locator(-60, 0)), TestScrollGr::new);
-        addWidget(panel);
+        addWidget(new ScrollPanel<>(this, new Widget.Builder()
+                .setWidth(120)
+                .setHeight(70)
+                .setLocator(new Locator(Align9D.TOP_CENTER, 0, 0)),
+                TestScrollGr::new));
         //addWidget(new TextIconButton.Builder());
     }
 
