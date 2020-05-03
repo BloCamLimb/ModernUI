@@ -20,15 +20,30 @@ package icyllis.modernui.system;
 
 import net.minecraftforge.fml.ModList;
 
+import java.lang.reflect.InvocationTargetException;
+
 public class ModIntegration {
 
-    public static final String OPTIFINE_MODID = "optifine";
-    public static final String OPTIFORGE_MODID = "optiforge";
+    // client only
+    public static final boolean optifineLoaded;
 
-    public static boolean optifineLoaded = false;
+    static {
+        boolean of = false;
+        try {
+            Class<?> clazz = Class.forName("optifine.Installer");
+            of = true;
+            String ver = (String) clazz.getMethod("getOptiFineVersion").invoke(null);
+            ModernUI.LOGGER.info(ModernUI.MARKER, "OptiFine loaded, version : {}", ver);
+        } catch (ClassNotFoundException | NoSuchMethodException ignored) {
+
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            e.printStackTrace();
+        }
+        optifineLoaded = of;
+    }
 
     public static void init() {
         ModList modList = ModList.get();
-        optifineLoaded = modList.isLoaded(OPTIFINE_MODID) || modList.isLoaded(OPTIFORGE_MODID);
+
     }
 }

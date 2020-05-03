@@ -35,6 +35,9 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lwjgl.opengl.GL11;
 
+/**
+ * Font renderer can only be called in render loop and render thread
+ */
 @OnlyIn(Dist.CLIENT)
 public class TrueTypeRenderer implements IFontRenderer {
 

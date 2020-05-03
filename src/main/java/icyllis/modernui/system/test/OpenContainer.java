@@ -25,6 +25,7 @@ import net.minecraftforge.fml.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
+@Deprecated
 public class OpenContainer {
 
     /*private final ResourceLocation id;

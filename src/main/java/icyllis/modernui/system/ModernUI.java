@@ -37,19 +37,23 @@ public class ModernUI {
     public static final Marker MARKER = MarkerManager.getMarker("MAIN");
 
     public ModernUI() {
-        String javaVersion = System.getProperty("java.version");
-        if (javaVersion.startsWith("1.8")) {
-            String[] s = javaVersion.split("_");
-            if (Integer.parseInt(s[1]) < 60) {
-                ModernUI.LOGGER.fatal(MARKER, "You're using java {} which is an outdated java version, please update it to java 1.8.0_200 or above", javaVersion);
-                throw new RuntimeException("Outdated java version found, please update it to java 1.8.0_200 or above");
-            }
-        }
+        checkJava();
 
+        ModIntegration.init();
         ConfigManager.register();
 
         if (FMLEnvironment.dist == Dist.CLIENT) {
             ShaderTools.addResourceListener();
+        }
+    }
+
+    private void checkJava() {
+        String javaVersion = System.getProperty("java.version");
+        if (javaVersion.startsWith("1.8")) {
+            String[] s = javaVersion.split("_");
+            if (Integer.parseInt(s[1]) < 60) {
+                throw new RuntimeException("You're using java {} which is not compatible with Modern UI, a minimum of java 1.8.0_200 or above is required");
+            }
         }
     }
 

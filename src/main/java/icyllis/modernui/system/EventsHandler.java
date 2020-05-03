@@ -111,7 +111,7 @@ public class EventsHandler {
 
         @SubscribeEvent
         public static void setupCommon(FMLCommonSetupEvent event) {
-            ModIntegration.init();
+
         }
 
         @OnlyIn(Dist.CLIENT)

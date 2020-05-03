@@ -144,6 +144,10 @@ public enum GlobalModuleManager {
             }
             resetTicks();
         }
+        // hotfix 1.5.2, but no idea with screens that will pause game
+        if (rootScreen != gui && rootScreen != null) {
+            mouseMoved(-1, -1);
+        }
         // for non-modernui screens
         if (rootScreen == null) {
             resetTicks();

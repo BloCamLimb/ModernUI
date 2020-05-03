@@ -17,7 +17,7 @@ logoFile="modernui_logo.png"
 [[dependencies.modernui]]
     modId="forge"
     mandatory=true
-    versionRange="[31.1.25,)"
+    versionRange="[31.1.63,)"
     ordering="NONE"
     side="BOTH"
 [[dependencies.modernui]]

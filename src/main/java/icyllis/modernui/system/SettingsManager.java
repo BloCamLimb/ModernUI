@@ -33,6 +33,8 @@ import net.minecraft.util.HandSide;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
+import net.optifine.*;
+import net.optifine.util.FontUtils;
 import org.apache.commons.lang3.tuple.Triple;
 
 import javax.annotation.Nonnull;
@@ -787,6 +789,7 @@ public enum SettingsManager {
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
+
         try {
             Class<?> clazz = Class.forName("net.optifine.DynamicLights");
             Method method = clazz.getDeclaredMethod("removeLights", WorldRenderer.class);
@@ -897,12 +900,13 @@ public enum SettingsManager {
             e.printStackTrace();
         }
 
-        try {
+        RandomEntities.update();
+        /*try {
             // FaQ
             Class.forName("net.optifine.RandomEntities").getDeclaredMethod("update").invoke(null);
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException | ClassNotFoundException e) {
             e.printStackTrace();
-        }
+        }*/
     }
 
     public int getBetterGrassIndex() {
@@ -956,11 +960,12 @@ public enum SettingsManager {
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
-        try {
+        FontUtils.reloadFonts();
+        /*try {
             Class.forName("net.optifine.util.FontUtils").getDeclaredMethod("reloadFonts").invoke(null);
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException | ClassNotFoundException e) {
             e.printStackTrace();
-        }
+        }*/
     }
 
     public boolean getCustomColors() {
@@ -978,11 +983,12 @@ public enum SettingsManager {
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
-        try {
+        CustomColors.update();
+        /*try {
             Class.forName("net.optifine.CustomColors").getDeclaredMethod("update").invoke(null);
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException | ClassNotFoundException e) {
             e.printStackTrace();
-        }
+        }*/
         minecraft.worldRenderer.loadRenderers();
     }
 
@@ -1023,11 +1029,12 @@ public enum SettingsManager {
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
-        try {
+        NaturalTextures.update();
+        /*try {
             Class.forName("net.optifine.NaturalTextures").getDeclaredMethod("update").invoke(null);
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException | ClassNotFoundException e) {
             e.printStackTrace();
-        }
+        }*/
         minecraft.worldRenderer.loadRenderers();
     }
 
@@ -1046,11 +1053,12 @@ public enum SettingsManager {
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
-        try {
+        CustomSky.update();
+        /*try {
             Class.forName("net.optifine.CustomSky").getDeclaredMethod("update").invoke(null);
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException | ClassNotFoundException e) {
             e.printStackTrace();
-        }
+        }*/
     }
 
     public boolean getCustomItems() {
@@ -1104,11 +1112,12 @@ public enum SettingsManager {
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
-        try {
+        CustomGuis.update();
+        /*try {
             Class.forName("net.optifine.CustomGuis").getDeclaredMethod("update").invoke(null);
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException | ClassNotFoundException e) {
             e.printStackTrace();
-        }
+        }*/
     }
 
 }

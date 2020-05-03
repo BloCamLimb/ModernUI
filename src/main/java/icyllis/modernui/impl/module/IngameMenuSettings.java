@@ -35,6 +35,8 @@ import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.client.settings.AbstractOption;
+import net.optifine.shaders.gui.GuiShaders;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -133,9 +135,8 @@ public class IngameMenuSettings extends ModuleGroup {
     private void openAssetsMenu() {
         List<String> tabs = Lists.newArrayList(I18n.format("gui.modernui.settings.tab.resourcePacks"),
                 I18n.format("gui.modernui.settings.tab.language"));
-        //TODO optifine shaders
         if (ModIntegration.optifineLoaded) {
-            tabs.add(I18n.format("of.options.shadersTitle") + " (WIP)");
+            tabs.add(I18n.format("of.options.shadersTitle"));
         }
         DropDownMenu menu = new DropDownMenu.Builder(
                 tabs, getCid() - 5)
@@ -147,15 +148,17 @@ public class IngameMenuSettings extends ModuleGroup {
 
     private void assetsButtonMenuActions(int index) {
         if (index >= 0 && index <= 2) {
-            if (ModIntegration.optifineLoaded && index == 2) {
-                try {
+            if (index == 2) {
+                /*try {
                     Class<?> clazz = Class.forName("net.optifine.shaders.gui.GuiShaders");
                     Constructor<?> constructor = clazz.getConstructor(Screen.class, GameSettings.class);
-                    Screen screen = (Screen) constructor.newInstance(null, Minecraft.getInstance().gameSettings);
+                    Screen screen = (Screen) constructor.newInstance(GlobalModuleManager.INSTANCE.getModernScreen(), Minecraft.getInstance().gameSettings);
                     Minecraft.getInstance().displayGuiScreen(screen);
                 } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException | ClassCastException e) {
                     e.printStackTrace();
-                }
+                }*/
+                Minecraft.getInstance().displayGuiScreen(
+                        new GuiShaders(GlobalModuleManager.INSTANCE.getModernScreen(), Minecraft.getInstance().gameSettings));
                 return;
             }
             switchChildModule(5 + index);
