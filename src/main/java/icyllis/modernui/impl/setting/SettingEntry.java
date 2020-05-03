@@ -34,12 +34,20 @@ public abstract class SettingEntry extends UniformScrollEntry {
 
     protected float titleBrightness = 0.85f;
 
+    protected float centerX;
+
     public SettingEntry(SettingScrollWindow window, String title) {
         super(window, 320, SettingCategoryGroup.ENTRY_HEIGHT);
         this.title = title;
         //TODO tooltip description lines
         /*if (desc != null)
             this.desc = FontRendererTools.splitStringToWidth(desc, 150);*/
+    }
+
+    @Override
+    public void locate(float px, float py) {
+        super.locate(px, py);
+        centerX = px;
     }
 
     @Override

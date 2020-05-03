@@ -59,7 +59,7 @@ public class ScrollPanel<G extends UniformScrollGroup<?>> extends Widget impleme
         double scale = mainWindow.getGuiScaleFactor();
         GL11.glEnable(GL11.GL_SCISSOR_TEST);
         GL11.glScissor((int) (x1 * scale), (int) (mainWindow.getFramebufferHeight() - (y2 * scale)),
-                (int) (getWindowWidth() * scale), (int) (height * scale));
+                (int) (width * scale), (int) (height * scale));
 
         canvas.save();
         canvas.translate(0, -getVisibleOffset());

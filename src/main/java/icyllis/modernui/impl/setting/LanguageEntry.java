@@ -31,10 +31,18 @@ public class LanguageEntry extends UniformScrollEntry {
 
     private final Language language;
 
+    private float centerX;
+
     public LanguageEntry(SettingLanguage module, ScrollWindow<?> window, Language language) {
         super(window, 240, LanguageGroup.ENTRY_HEIGHT);
         this.module = module;
         this.language = language;
+    }
+
+    @Override
+    public void locate(float px, float py) {
+        super.locate(px, py);
+        centerX = px;
     }
 
     @Override
