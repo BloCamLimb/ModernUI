@@ -34,6 +34,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import net.optifine.*;
+import net.optifine.config.IteratableOptionOF;
 import net.optifine.util.FontUtils;
 import org.apache.commons.lang3.tuple.Triple;
 
@@ -191,6 +192,11 @@ public enum SettingsManager {
     public static Function<SettingScrollWindow, DropdownSettingEntry> BETTER_GRASS;
 
     public static Function<SettingScrollWindow, DropdownSettingEntry> CONNECTED_TEXTURES;
+
+
+
+
+
 
 
 
@@ -517,6 +523,7 @@ public enum SettingsManager {
 
             CUSTOM_GUIS = window -> new BooleanSettingEntry(window, I18n.format("of.options.CUSTOM_GUIS"),
                     getCustomGuis(), this::setCustomGuis);
+
         }
     }
 
@@ -561,6 +568,16 @@ public enum SettingsManager {
                 return window -> new SSliderSettingEntry(window, I18n.format(translationKey), minValue, maxValue,
                         stepSize, getter.apply(gameSettings), v -> setter.accept(gameSettings, v), stringFunction, true);
             }
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        throw new RuntimeException();
+    }
+
+    @Nonnull
+    public OptiFineSettingEntry transformToOptiFine(SettingScrollWindow window, IteratableOptionOF instance) {
+        try {
+            return new OptiFineSettingEntry(window, I18n.format((String) option_translateKey.get(instance)), instance);
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }

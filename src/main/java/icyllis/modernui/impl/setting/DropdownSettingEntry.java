@@ -56,7 +56,7 @@ public class DropdownSettingEntry extends SettingEntry {
 
     private final Animation frameAnimation;
 
-    private final Icon icon = new Icon(ConstantsLibrary.ICONS, 0.25f, 0.125f, 0.375f, 0.25f, true);
+    private static final Icon ICON = new Icon(ConstantsLibrary.ICONS, 0.25f, 0.125f, 0.375f, 0.25f, true);
 
     public DropdownSettingEntry(SettingScrollWindow window, String optionTitle, @Nonnull List<String> optionNames, int originalIndex, Consumer<Integer> saveOption) {
         super(window, optionTitle);
@@ -108,7 +108,7 @@ public class DropdownSettingEntry extends SettingEntry {
         canvas.setRGBA(optionBrightness, optionBrightness, optionBrightness, 1);
         canvas.drawText(optionText, x2 - 10, y1 + 6);
         //fontRenderer.drawString(optionText, x2 - 10, y1 + 6, optionBrightness, 1, TextAlign.RIGHT);
-        canvas.drawIcon(icon, x2 - 8, y1 + 7, x2, y1 + 15);
+        canvas.drawIcon(ICON, x2 - 8, y1 + 6, x2, y1 + 14);
         /*RenderSystem.pushMatrix();
         GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
         GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
