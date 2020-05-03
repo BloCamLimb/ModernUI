@@ -41,12 +41,12 @@ public class ModuleTest extends Module {
                 .buildCallback(true, null));
 
         addWidget(h = new NumberInputField(this, new NumberInputField.Builder().setWidth(120).setHeight(12)));
-        h.setLimit(-997, Long.MAX_VALUE);
+        h.setLimit(-54996, Long.MAX_VALUE);
         h.setDecoration(f -> new TextField.Frame(f, "Limit:", -1));
         h.setNumberListener(e -> {}, true);
 
         addWidget(new StaticFrameButton.Builder("A Button")
-                .setWidth(40)
+                .setWidth(48)
                 .setLocator(new Locator(-100, -12))
                 .build(this)
                 .buildCallback(true, null, true));
