@@ -29,15 +29,16 @@ import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.math.MathHelper;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.function.Function;
 
-public class ScrollWindow<T extends ScrollGroup> extends Window {
+public class ScrollWindow<T extends ScrollGroup> extends Window implements IScrollHost {
 
-    public final int borderThickness = 6;
+    protected final int borderThickness = 6;
 
     protected float centerX;
 
@@ -217,10 +218,17 @@ public class ScrollWindow<T extends ScrollGroup> extends Window {
     /**
      * Get scroll amount for drawing
      */
+    @Override
     public float getVisibleOffset() {
         return scrollAmount - borderThickness;
     }
 
+    @Override
+    public float getMargin() {
+        return borderThickness;
+    }
+
+    @Override
     public float getMaxScrollAmount() {
         return Math.max(0, getTotalHeight() - getVisibleHeight());
     }

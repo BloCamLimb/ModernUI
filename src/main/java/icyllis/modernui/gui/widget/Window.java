@@ -18,7 +18,6 @@
 
 package icyllis.modernui.gui.widget;
 
-import icyllis.modernui.gui.animation.IAnimation;
 import icyllis.modernui.gui.master.IDraggable;
 import icyllis.modernui.gui.master.IHost;
 import icyllis.modernui.gui.master.IKeyboardListener;

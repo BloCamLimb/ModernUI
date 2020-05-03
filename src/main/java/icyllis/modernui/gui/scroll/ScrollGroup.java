@@ -19,16 +19,12 @@
 package icyllis.modernui.gui.scroll;
 
 import icyllis.modernui.gui.master.IWidget;
-import icyllis.modernui.gui.master.Widget;
-import icyllis.modernui.gui.math.Align3H;
-import icyllis.modernui.gui.math.Align3V;
-import icyllis.modernui.gui.math.Align9D;
 
 import javax.annotation.Nonnull;
 
 public abstract class ScrollGroup implements IWidget {
 
-    protected final ScrollWindow<?> window;
+    protected final IScrollHost window;
 
     protected float centerX;
 
@@ -39,7 +35,7 @@ public abstract class ScrollGroup implements IWidget {
     /**
      * Must specify height in constructor
      */
-    public ScrollGroup(@Nonnull ScrollWindow<?> window) {
+    public ScrollGroup(@Nonnull IScrollHost window) {
         this.window = window;
     }
 

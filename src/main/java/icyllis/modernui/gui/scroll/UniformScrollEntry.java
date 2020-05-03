@@ -28,16 +28,16 @@ import javax.annotation.Nonnull;
  */
 public abstract class UniformScrollEntry extends Widget {
 
-    protected final ScrollWindow<?> window;
+    protected final IScrollHost window;
 
     protected float centerX;
 
-    public UniformScrollEntry(@Nonnull ScrollWindow<?> window, float width, float height) {
+    public UniformScrollEntry(@Nonnull IScrollHost window, float width, float height) {
         super(window, new Widget.Builder().setWidth(width).setHeight(height).setAlign(Align9D.TOP_CENTER));
         this.window = window;
     }
 
-    public UniformScrollEntry(@Nonnull ScrollWindow<?> window, float width, float height, Align9D align) {
+    public UniformScrollEntry(@Nonnull IScrollHost window, float width, float height, Align9D align) {
         super(window, new Widget.Builder().setWidth(width).setHeight(height).setAlign(align));
         this.window = window;
     }
