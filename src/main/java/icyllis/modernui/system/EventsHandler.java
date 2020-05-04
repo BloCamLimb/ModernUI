@@ -18,13 +18,11 @@
 
 package icyllis.modernui.system;
 
-import icyllis.modernui.font.ModernFontRenderer;
 import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.test.ContainerTest;
 import icyllis.modernui.gui.test.ModuleTest;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.MainMenuScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.entity.player.ServerPlayerEntity;
@@ -34,7 +32,6 @@ import net.minecraft.util.SoundEvent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.GuiOpenEvent;
-import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.event.RegistryEvent;
@@ -52,7 +49,6 @@ import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
-import java.lang.reflect.Field;
 
 @SuppressWarnings("unused")
 @Mod.EventBusSubscriber
@@ -119,7 +115,7 @@ public class EventsHandler {
             if (ConfigManager.COMMON.enableDeveloperMode && e.getAction() == GLFW.GLFW_PRESS) {
                 if (Screen.hasControlDown() && Screen.hasAltDown()) {
                     if (e.getKey() == GLFW.GLFW_KEY_K) {
-                        TrueTypeRenderer.INSTANCE.clearCaches();
+                        TrueTypeRenderer.INSTANCE.refreshCache();
                     }
                 }
             }

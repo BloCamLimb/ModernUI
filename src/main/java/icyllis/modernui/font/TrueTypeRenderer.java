@@ -26,17 +26,23 @@ package icyllis.modernui.font;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.math.Color3f;
 import icyllis.modernui.gui.math.Align3H;
+import icyllis.modernui.gui.math.DelayedTask;
 import icyllis.modernui.system.ConfigManager;
+import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import org.lwjgl.opengl.GL11;
 
+import javax.annotation.Nonnull;
 import java.lang.reflect.Field;
 
 /**
@@ -83,10 +89,10 @@ public class TrueTypeRenderer implements IFontRenderer {
 
         if (ConfigManager.CLIENT.enableGlobalFontRenderer) {
             try {
-                Field field = Minecraft.class.getDeclaredField("fontRenderer");
-                field.setAccessible(true);
-                field.set(Minecraft.getInstance(), new ModernFontRenderer(this));
-            } catch (NoSuchFieldException | IllegalAccessException e) {
+                ObfuscationReflectionHelper.findField(Minecraft.class, "field_71466_p").set(Minecraft.getInstance(), new ModernFontRenderer(this));
+                // hotfix 1.5.3
+                GlobalModuleManager.INSTANCE.scheduleTask(new DelayedTask(this::refreshCache, 1));
+            } catch (IllegalAccessException e) {
                 e.printStackTrace();
             }
         }
@@ -96,8 +102,16 @@ public class TrueTypeRenderer implements IFontRenderer {
 
     }
 
-    public void clearCaches() {
+    public void refreshCache() {
         cache.clearStringCache();
+        if (Minecraft.getInstance().player != null) {
+            Minecraft.getInstance().player.sendMessage(new StringTextComponent("[Modern UI] String Cache and Glyph Cache are cleared."));
+        }
+    }
+
+    @Override
+    public float drawString(String str, float startX, float startY, float r, float g, float b, float a, Align3H align) {
+        return drawString(str, startX, startY, r, g, b, a, align, TransformationMatrix.identity().getMatrix(), 0x00f000f0);
     }
 
     /**
@@ -114,8 +128,7 @@ public class TrueTypeRenderer implements IFontRenderer {
     //TODO Add support for the "k" code which randomly replaces letters on each render (used on
     //TODO Pre-sort by texture to minimize binds; can store colors per glyph in string cache (?)
     //TODO Optimize the underline/strikethrough drawing to draw a single line for each run
-    @Override
-    public float drawString(String str, float startX, float startY, float r, float g, float b, float a, Align3H align) {
+    protected float drawString(String str, float startX, float startY, float r, float g, float b, float a, Align3H align, Matrix4f matrix, int packedLight) {
         /* Check for invalid arguments */
         if (str == null || str.isEmpty()) {
             return 0;
@@ -124,7 +137,6 @@ public class TrueTypeRenderer implements IFontRenderer {
         // Fix for what RenderLivingBase#setBrightness does
         GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL11.GL_MODULATE);
 
-        //TODO remove this state control
         RenderSystem.enableTexture();
 
         /* Make sure the entire string is cached before rendering and return its glyph representation */
@@ -208,22 +220,22 @@ public class TrueTypeRenderer implements IFontRenderer {
             float y1 = startY + (glyph.y) / 2.0F;
             float y2 = startY + (glyph.y + texture.height) / 2.0F;
 
-            buffer.begin(7, DefaultVertexFormats.POSITION_COLOR_TEX);
+            buffer.begin(7, DefaultVertexFormats.POSITION_COLOR_TEX_LIGHTMAP);
             GlStateManager.bindTexture(texture.textureName);
 
             if (rColor != null) {
                 int rr = rColor.getIntRed();
                 int rg = rColor.getIntGreen();
                 int rb = rColor.getIntBlue();
-                buffer.pos(x1, y1, 0).color(rr, rg, rb, alpha).tex(texture.u1, texture.v1).endVertex();
-                buffer.pos(x1, y2, 0).color(rr, rg, rb, alpha).tex(texture.u1, texture.v2).endVertex();
-                buffer.pos(x2, y2, 0).color(rr, rg, rb, alpha).tex(texture.u2, texture.v2).endVertex();
-                buffer.pos(x2, y1, 0).color(rr, rg, rb, alpha).tex(texture.u2, texture.v1).endVertex();
+                buffer.pos(matrix, x1, y1, 0).color(rr, rg, rb, alpha).tex(texture.u1, texture.v1).lightmap(packedLight).endVertex();
+                buffer.pos(matrix, x1, y2, 0).color(rr, rg, rb, alpha).tex(texture.u1, texture.v2).lightmap(packedLight).endVertex();
+                buffer.pos(matrix, x2, y2, 0).color(rr, rg, rb, alpha).tex(texture.u2, texture.v2).lightmap(packedLight).endVertex();
+                buffer.pos(matrix, x2, y1, 0).color(rr, rg, rb, alpha).tex(texture.u2, texture.v1).lightmap(packedLight).endVertex();
             } else {
-                buffer.pos(x1, y1, 0).color(red, green, blue, alpha).tex(texture.u1, texture.v1).endVertex();
-                buffer.pos(x1, y2, 0).color(red, green, blue, alpha).tex(texture.u1, texture.v2).endVertex();
-                buffer.pos(x2, y2, 0).color(red, green, blue, alpha).tex(texture.u2, texture.v2).endVertex();
-                buffer.pos(x2, y1, 0).color(red, green, blue, alpha).tex(texture.u2, texture.v1).endVertex();
+                buffer.pos(matrix, x1, y1, 0).color(red, green, blue, alpha).tex(texture.u1, texture.v1).lightmap(packedLight).endVertex();
+                buffer.pos(matrix, x1, y2, 0).color(red, green, blue, alpha).tex(texture.u1, texture.v2).lightmap(packedLight).endVertex();
+                buffer.pos(matrix, x2, y2, 0).color(red, green, blue, alpha).tex(texture.u2, texture.v2).lightmap(packedLight).endVertex();
+                buffer.pos(matrix, x2, y1, 0).color(red, green, blue, alpha).tex(texture.u2, texture.v1).lightmap(packedLight).endVertex();
             }
 
             tessellator.draw();
@@ -257,13 +269,13 @@ public class TrueTypeRenderer implements IFontRenderer {
                 /* Draw underline under glyph if the style is enabled */
                 if ((renderStyle & StringCache.FormattingCode.UNDERLINE) != 0) {
                     /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
-                    drawI1(startX, startY, buffer, glyph, glyphSpace, alpha, red, green, blue, UNDERLINE_OFFSET, UNDERLINE_THICKNESS);
+                    drawI1(matrix, startX, startY, buffer, glyph, glyphSpace, alpha, red, green, blue, UNDERLINE_OFFSET, UNDERLINE_THICKNESS);
                 }
 
                 /* Draw strikethrough in the middle of glyph if the style is enabled */
                 if ((renderStyle & StringCache.FormattingCode.STRIKETHROUGH) != 0) {
                     /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
-                    drawI1(startX, startY, buffer, glyph, glyphSpace, alpha, red, green, blue, STRIKETHROUGH_OFFSET, STRIKETHROUGH_THICKNESS);
+                    drawI1(matrix, startX, startY, buffer, glyph, glyphSpace, alpha, red, green, blue, STRIKETHROUGH_OFFSET, STRIKETHROUGH_THICKNESS);
                 }
             }
 
@@ -277,16 +289,16 @@ public class TrueTypeRenderer implements IFontRenderer {
         return entry.advance / 2;
     }
 
-    private void drawI1(float startX, float startY, BufferBuilder buffer, GlyphCache.Glyph glyph, float glyphSpace, int a, int r, int g, int b, int underlineOffset, int underlineThickness) {
+    private void drawI1(Matrix4f matrix, float startX, float startY, BufferBuilder buffer, GlyphCache.Glyph glyph, float glyphSpace, int a, int r, int g, int b, int underlineOffset, int underlineThickness) {
         float x1 = startX + (glyph.x - glyphSpace) / 2.0F;
         float x2 = startX + (glyph.x + glyph.advance) / 2.0F;
         float y1 = startY + (underlineOffset) / 2.0F;
         float y2 = startY + (underlineOffset + underlineThickness) / 2.0F;
 
-        buffer.pos(x1, y1, 0).color(r, g, b, a).endVertex();
-        buffer.pos(x1, y2, 0).color(r, g, b, a).endVertex();
-        buffer.pos(x2, y2, 0).color(r, g, b, a).endVertex();
-        buffer.pos(x2, y1, 0).color(r, g, b, a).endVertex();
+        buffer.pos(matrix, x1, y1, 0).color(r, g, b, a).endVertex();
+        buffer.pos(matrix, x1, y2, 0).color(r, g, b, a).endVertex();
+        buffer.pos(matrix, x2, y2, 0).color(r, g, b, a).endVertex();
+        buffer.pos(matrix, x2, y1, 0).color(r, g, b, a).endVertex();
     }
 
     /**

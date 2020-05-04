@@ -73,11 +73,6 @@ public class EmojiStringRenderer implements IFontRenderer {
     }
 
     @Override
-    public float drawString(String str, float startX, float startY, float brightness, float alpha, Align3H align) {
-        return 0;
-    }
-
-    @Override
     public float getStringWidth(String str) {
         EmojiText entry = MAPS.get(str);
         if (entry == null) {

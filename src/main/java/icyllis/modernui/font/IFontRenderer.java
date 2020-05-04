@@ -40,18 +40,6 @@ public interface IFontRenderer {
         return drawString(str, startX, startY, color.getFloatRed(), color.getFloatGreen(), color.getFloatBlue(), alpha, align);
     }
 
-    default float drawString(String str, float startX, float startY, Color3f color, float alpha) {
-        return drawString(str, startX, startY, color, alpha, Align3H.LEFT);
-    }
-
-    default float drawString(String str, float startX, float startY, Color3f color, Align3H align) {
-        return drawString(str, startX, startY, color, 1.0f, align);
-    }
-
-    default float drawString(String str, float startX, float startY, Color3f color) {
-        return drawString(str, startX, startY, color, 1.0f, Align3H.LEFT);
-    }
-
     /**
      * Render a single-line string to the screen using the current OpenGL color. The (x,y) coordinates are of the upper-left
      * corner of the string's bounding box, rather than the baseline position as is typical with fonts. This function will also
@@ -71,41 +59,6 @@ public interface IFontRenderer {
 
     default float drawString(String str, float startX, float startY, float r, float g, float b, float a) {
         return drawString(str, startX, startY, r, g, b, a, Align3H.LEFT);
-    }
-
-    /**
-     * Use brightness color to render
-     *
-     * @param str string to draw
-     * @param startX start x pos
-     * @param startY start y pos
-     * @param brightness black-to-white 0-1
-     * @param alpha alpha 0-1
-     * @param align 0-left 0.25-center 0.5-right
-     * @return formatted text width
-     */
-    default float drawString(String str, float startX, float startY, float brightness, float alpha, Align3H align) {
-        return drawString(str, startX, startY, brightness, brightness, brightness, alpha, align);
-    }
-
-    default float drawString(String str, float startX, float startY, float brightness, float alpha) {
-        return drawString(str, startX, startY, brightness, alpha, Align3H.LEFT);
-    }
-
-    default float drawString(String str, float startX, float startY, float brightness, Align3H align) {
-        return drawString(str, startX, startY, brightness, 1.0f, align);
-    }
-
-    default float drawString(String str, float startX, float startY, Align3H align) {
-        return drawString(str, startX, startY, 1.0f, 1.0f, align);
-    }
-
-    default float drawString(String str, float startX, float startY, float brightness) {
-        return drawString(str, startX, startY, brightness, 1.0f, Align3H.LEFT);
-    }
-
-    default float drawString(String str, float startX, float startY) {
-        return drawString(str, startX, startY, 1.0f, 1.0f, Align3H.LEFT);
     }
 
     /**

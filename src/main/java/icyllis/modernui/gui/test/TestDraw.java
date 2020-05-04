@@ -19,6 +19,7 @@
 package icyllis.modernui.gui.test;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.font.FontTools;
 import icyllis.modernui.gui.animation.*;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.IDrawable;
@@ -71,6 +72,9 @@ public class TestDraw implements IDrawable {
         canvas.setRGB(1, 1, 1);
         canvas.drawCircle(20, 130, 8);
         RenderSystem.disableDepthTest();
+
+        canvas.resetColor();
+        canvas.drawText("Symbolic test", 20, 50);
     }
 
     @Override
