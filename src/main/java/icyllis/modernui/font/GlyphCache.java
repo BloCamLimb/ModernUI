@@ -27,6 +27,7 @@ package icyllis.modernui.font;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.mojang.blaze3d.platform.GlStateManager;
+import icyllis.modernui.system.ConfigManager;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.renderer.GLAllocation;
 import org.apache.logging.log4j.Marker;
@@ -91,7 +92,7 @@ class GlyphCache {
     private float fontSize = 18;
 
     /**
-     * If true, then enble anti-aliasing when rendering the font glyph
+     * If true, then enable anti-aliasing when rendering the font glyph
      */
     private boolean antiAliasEnabled = false;
 
@@ -264,17 +265,27 @@ class GlyphCache {
     void setDefaultFont(float size) {
         usedFonts.clear();
         //usedFonts.add(new Font(name, Font.PLAIN, 72)); //size 1 > 72
+        if (!ConfigManager.CLIENT.preferredFontName.isEmpty()) {
+            allFonts.stream().filter(f -> f.getName().contains(ConfigManager.CLIENT.preferredFontName)).findFirst().ifPresent(e -> {
+                usedFonts.add(e);
+                ModernUI.LOGGER.info(MARKER, "{} has been loaded", e.getName());
+            });
+        }
         try {
             Font f = Font.createFont(Font.TRUETYPE_FONT, getClass().getResourceAsStream("/assets/modernui/font/biliw.otf"));
             usedFonts.add(f);
             ModernUI.LOGGER.info(MARKER, "{} has been loaded", f.getName());
         } catch (FontFormatException | IOException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
 
         fontSize = size;
         antiAliasEnabled = true;
         setRenderingHints();
+    }
+
+    void clearGlyphCache() {
+        glyphCache.clear();
     }
 
     /**

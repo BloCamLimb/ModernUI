@@ -308,6 +308,11 @@ public class StringCache {
         //cacheDigitGlyphs(); // called by below
     }
 
+    void clearStringCache() {
+        stringCache.invalidateAll();
+        glyphCache.clearGlyphCache();
+    }
+
     /**
      * Change the default font used to pre-render glyph images. If this method is called at runtime, the string cache is flushed so that
      * all visible strings will be immediately re-laid out using the new font selection.

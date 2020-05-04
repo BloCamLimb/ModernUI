@@ -62,14 +62,18 @@ public class ConfigManager {
     public static class Client {
 
         public String preferredFontName;
+        public boolean enableGlobalFontRenderer;
 
         private final ForgeConfigSpec.ConfigValue<String> preferredFontNameV;
+        private final ForgeConfigSpec.BooleanValue enableGlobalFontRendererV;
 
         private Client(@Nonnull ForgeConfigSpec.Builder builder) {
             builder.comment("Fonts Config")
                     .push("fonts");
 
-            preferredFontNameV = builder.comment("The name of font to use with highest priority.")
+            enableGlobalFontRendererV = builder.comment("Replace vanilla's font renderer to Modern UI's. This won't affect the font renderer which in Modern UI's GUIs.")
+                    .define("enableGlobalFontRenderer", true);
+            preferredFontNameV = builder.comment("The name of font to use with highest priority if Modern UI's font renderer is enabled. The default font is included in Modern UI.")
                     .define("preferredFontName", "");
 
             builder.pop();
@@ -77,6 +81,7 @@ public class ConfigManager {
 
         private void load() {
             preferredFontName = preferredFontNameV.get();
+            enableGlobalFontRenderer = enableGlobalFontRendererV.get();
         }
     }
 

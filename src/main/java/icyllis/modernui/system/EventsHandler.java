@@ -18,11 +18,15 @@
 
 package icyllis.modernui.system;
 
+import icyllis.modernui.font.ModernFontRenderer;
 import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.test.ContainerTest;
 import icyllis.modernui.gui.test.ModuleTest;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screen.MainMenuScreen;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.container.ContainerType;
 import net.minecraft.item.Items;
@@ -30,6 +34,8 @@ import net.minecraft.util.SoundEvent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.GuiOpenEvent;
+import net.minecraftforge.client.event.GuiScreenEvent;
+import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.TickEvent;
@@ -43,8 +49,10 @@ import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.minecraftforge.fml.network.NetworkHooks;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
+import java.lang.reflect.Field;
 
 @SuppressWarnings("unused")
 @Mod.EventBusSubscriber
@@ -71,7 +79,7 @@ public class EventsHandler {
         @SubscribeEvent
         public static void onRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
             if (event.phase == TickEvent.Phase.START) {
-                TrueTypeRenderer.INSTANCE.init();
+                //TrueTypeRenderer.INSTANCE.init();
                 GlobalModuleManager.INSTANCE.onRenderTick(event.renderTickTime);
             } else {
                 BlurHandler.INSTANCE.renderTick();
@@ -87,6 +95,9 @@ public class EventsHandler {
 
         @SubscribeEvent
         public static void onGuiOpen(@Nonnull GuiOpenEvent event) {
+            if (event.getGui() instanceof MainMenuScreen) {
+                TrueTypeRenderer.INSTANCE.init();
+            }
             GlobalModuleManager.INSTANCE.onOpenGui(event.getGui(), event::setCanceled);
             BlurHandler.INSTANCE.blur(event.getGui());
         }
@@ -102,6 +113,17 @@ public class EventsHandler {
         public static void onGuiInit(GuiScreenEvent.InitGuiEvent event) {
 
         }*/
+
+        @SubscribeEvent
+        public static void onKeyInput(InputEvent.KeyInputEvent e) {
+            if (ConfigManager.COMMON.enableDeveloperMode && e.getAction() == GLFW.GLFW_PRESS) {
+                if (Screen.hasControlDown() && Screen.hasAltDown()) {
+                    if (e.getKey() == GLFW.GLFW_KEY_K) {
+                        TrueTypeRenderer.INSTANCE.clearCaches();
+                    }
+                }
+            }
+        }
     }
 
     @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
