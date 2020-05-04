@@ -72,7 +72,7 @@ public class ConfigManager {
                     .push("fonts");
 
             enableGlobalFontRendererV = builder.comment("Replace vanilla's font renderer to Modern UI's. This won't affect the font renderer which in Modern UI's GUIs.")
-                    .define("enableGlobalFontRenderer", true);
+                    .define("enableGlobalFontRenderer", false);
             preferredFontNameV = builder.comment("The name of font to use with highest priority if Modern UI's font renderer is enabled. The default font is included in Modern UI.")
                     .define("preferredFontName", "");
 

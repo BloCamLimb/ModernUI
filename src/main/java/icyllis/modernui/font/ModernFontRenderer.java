@@ -19,13 +19,14 @@
 package icyllis.modernui.font;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.datafixers.FunctionType;
+import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.math.Color3f;
+import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.fonts.providers.IGlyphProvider;
-import net.minecraft.client.renderer.IRenderTypeBuffer;
-import net.minecraft.client.renderer.Matrix4f;
-import net.minecraft.client.renderer.TransformationMatrix;
-import net.minecraft.client.renderer.Vector4f;
+import net.minecraft.client.renderer.*;
+import net.minecraft.client.renderer.tileentity.SignTileEntityRenderer;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -34,32 +35,43 @@ import java.util.List;
 /**
  * Use modern ui font renderer to replace vanilla's renderer
  */
+//TODO this has bugs in SignTileEntityRenderer, EditBookScreen(OpColor) etc
 public class ModernFontRenderer extends FontRenderer {
 
-    private final IFontRenderer fontRenderer;
+    private final TrueTypeRenderer fontRenderer;
 
-    public ModernFontRenderer(IFontRenderer fontRenderer) {
+    public ModernFontRenderer(TrueTypeRenderer fontRenderer) {
         super(null, null);
         this.fontRenderer = fontRenderer;
     }
 
     @Override
     public int drawString(@Nullable String text, float x, float y, int color) {
-        return drawStringInternal(text, x, y, color, false, TransformationMatrix.identity().getMatrix());
+        return drawString(text, x, y, color, TransformationMatrix.identity().getMatrix(), false);
     }
 
     @Override
     public int drawStringWithShadow(@Nullable String text, float x, float y, int color) {
-        return drawStringInternal(text, x, y, color, true, TransformationMatrix.identity().getMatrix());
+        return drawString(text, x, y, color, TransformationMatrix.identity().getMatrix(), true);
+    }
+
+    private int drawString(@Nullable String text, float x, float y, int color, Matrix4f matrix, boolean dropShadow) {
+        if (text == null) {
+            return 0;
+        } else {
+            IRenderTypeBuffer.Impl impl = IRenderTypeBuffer.getImpl(Tessellator.getInstance().getBuffer());
+            int i = renderString(text, x, y, color, dropShadow, matrix, impl, false, 0, 0x00f000f0);
+            impl.finish();
+            return i;
+        }
     }
 
     @Override
-    //TODO last 4 params is not supported
     public int renderString(@Nullable String text, float x, float y, int color, boolean dropShadow, Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, boolean transparentIn, int colorBackgroundIn, int packedLight) {
-        return drawStringInternal(text, x, y, color, dropShadow, matrix);
+        return drawStringInternal(text, x, y, color, dropShadow, matrix, packedLight);
     }
 
-    private int drawStringInternal(@Nullable String text, float x, float y, int color, boolean dropShadow, Matrix4f matrix) {
+    private int drawStringInternal(@Nullable String text, float x, float y, int color, boolean dropShadow, Matrix4f matrix, int packedLight) {
         // alpha test
 
         if ((color & 0xfe000000) == 0) {
@@ -81,13 +93,8 @@ public class ModernFontRenderer extends FontRenderer {
         Matrix4f matrix4f = matrix.copy();
         matrix4f.translate(new Vector3f(0.0F, 0.0F, 0.001F));*/
 
-        Vector4f vector4f = new Vector4f(x, y, 0.001f, 1.0f);
-        vector4f.transform(matrix);
-        RenderSystem.pushMatrix();
-        RenderSystem.translatef(0, 0, vector4f.getZ());
-        float w = fontRenderer.drawString(text, vector4f.getX(), vector4f.getY(), r, g, b, a);
-        RenderSystem.popMatrix();
-        return text == null ? 0 : (int) (x + w + (dropShadow ? 1.0f : 0.0f));
+        x += fontRenderer.drawString(text, x, y, r, g, b, a, Align3H.LEFT, matrix, packedLight);
+        return text == null ? 0 : (int) (x + (dropShadow ? 1.0f : 0.0f));
     }
 
     @Override
@@ -117,7 +124,7 @@ public class ModernFontRenderer extends FontRenderer {
         List<String> list = listFormattedStringToWidth(text, wrapWidth);
         Matrix4f matrix4f = TransformationMatrix.identity().getMatrix();
         for (String s : list) {
-            drawStringInternal(s, x, y, textColor, false, matrix4f);
+            drawString(s, x, y, textColor, matrix4f, false);
             y += 9;
         }
     }

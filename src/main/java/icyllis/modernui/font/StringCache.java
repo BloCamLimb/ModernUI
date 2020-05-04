@@ -311,6 +311,7 @@ public class StringCache {
     void clearStringCache() {
         stringCache.invalidateAll();
         glyphCache.clearGlyphCache();
+        cacheDigitGlyphs();
     }
 
     /**
