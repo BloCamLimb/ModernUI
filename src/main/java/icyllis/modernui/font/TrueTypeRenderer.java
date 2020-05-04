@@ -28,12 +28,16 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.math.Color3f;
 import icyllis.modernui.gui.math.Align3H;
+import icyllis.modernui.system.ConfigManager;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lwjgl.opengl.GL11;
+
+import java.lang.reflect.Field;
 
 /**
  * Font renderer can only be called in render loop and render thread
@@ -76,10 +80,24 @@ public class TrueTypeRenderer implements IFontRenderer {
     private TrueTypeRenderer() {
         cache = new StringCache();
         cache.setDefaultFont(14.0f);
+
+        if (ConfigManager.CLIENT.enableGlobalFontRenderer) {
+            try {
+                Field field = Minecraft.class.getDeclaredField("fontRenderer");
+                field.setAccessible(true);
+                field.set(Minecraft.getInstance(), new ModernFontRenderer(this));
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public void init() {
 
+    }
+
+    public void clearCaches() {
+        cache.clearStringCache();
     }
 
     /**

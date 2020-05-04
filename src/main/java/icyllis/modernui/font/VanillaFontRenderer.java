@@ -22,6 +22,9 @@ import icyllis.modernui.gui.math.Align3H;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 
+/**
+ * Use vanilla's font renderer to replace modern ui renderer
+ */
 public class VanillaFontRenderer implements IFontRenderer {
 
     public static final VanillaFontRenderer INSTANCE = new VanillaFontRenderer();

@@ -59,7 +59,8 @@ public class ModuleTest extends Module {
         addWidget(new ScrollPanel<>(this, new Widget.Builder()
                 .setWidth(120)
                 .setHeight(70)
-                .setLocator(new Locator(Align9D.TOP_CENTER, 0, 0)),
+                .setAlign(Align9D.TOP_CENTER)
+                .setLocator(new Locator(0, 0)),
                 TestScrollGr::new));
         //addWidget(new TextIconButton.Builder());
     }

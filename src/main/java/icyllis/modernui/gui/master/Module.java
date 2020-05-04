@@ -272,6 +272,7 @@ public abstract class Module implements IModule, IHost {
 
     @Override
     public void setKeyboardListener(@Nullable IKeyboardListener keyboardListener) {
+        Minecraft.getInstance().keyboardListener.enableRepeatEvents(keyboardListener != null);
         if (this.keyboardListener != null) {
             this.keyboardListener.stopKeyboardListening();
         }
