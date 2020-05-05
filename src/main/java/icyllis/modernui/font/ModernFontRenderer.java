@@ -18,15 +18,11 @@
 
 package icyllis.modernui.font;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.datafixers.FunctionType;
-import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.math.Color3f;
-import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.fonts.providers.IGlyphProvider;
 import net.minecraft.client.renderer.*;
-import net.minecraft.client.renderer.tileentity.SignTileEntityRenderer;
+import net.minecraft.util.math.MathHelper;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -35,7 +31,6 @@ import java.util.List;
 /**
  * Use modern ui font renderer to replace vanilla's renderer
  */
-//TODO this has bugs in SignTileEntityRenderer, EditBookScreen(OpColor) etc
 public class ModernFontRenderer extends FontRenderer {
 
     private final TrueTypeRenderer fontRenderer;
@@ -68,10 +63,10 @@ public class ModernFontRenderer extends FontRenderer {
 
     @Override
     public int renderString(@Nullable String text, float x, float y, int color, boolean dropShadow, Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, boolean transparentIn, int colorBackgroundIn, int packedLight) {
-        return drawStringInternal(text, x, y, color, dropShadow, matrix, packedLight);
+        return drawStringInternal(text, x, y, color, dropShadow, buffer, matrix, packedLight);
     }
 
-    private int drawStringInternal(@Nullable String text, float x, float y, int color, boolean dropShadow, Matrix4f matrix, int packedLight) {
+    private int drawStringInternal(@Nullable String text, float x, float y, int color, boolean dropShadow, @Nonnull IRenderTypeBuffer buffer, Matrix4f matrix, int packedLight) {
         // alpha test
 
         if ((color & 0xfe000000) == 0) {
@@ -83,28 +78,24 @@ public class ModernFontRenderer extends FontRenderer {
         float g = Color3f.getGreenFrom(color);
         float b = Color3f.getBlueFrom(color);
 
-        /*Vector4f vector4f = new Vector4f(x, y, 0, 1.0f);
-        vector4f.transform(matrix);
         if (dropShadow) {
-            //this.renderStringAtPos(text, x, y, color, true, matrix, buffer, transparentIn, colorBackgroundIn, packedLight);
-            fontRenderer.drawString(text, vector4f.getX() + 1, vector4f.getY() + 1, r * 0.25f, g * 0.25f, b * 0.25f, a);
+            fontRenderer.drawStringGlobal(text, x + 1, y + 1, r, g, b, a, true, matrix, buffer, packedLight);
         }
 
         Matrix4f matrix4f = matrix.copy();
-        matrix4f.translate(new Vector3f(0.0F, 0.0F, 0.001F));*/
-
-        x += fontRenderer.drawString(text, x, y, r, g, b, a, Align3H.LEFT, matrix, packedLight);
+        matrix4f.translate(new Vector3f(0.0F, 0.0F, 0.001F));
+        x += fontRenderer.drawStringGlobal(text, x, y, r, g, b, a, false, matrix4f, buffer, packedLight);
         return text == null ? 0 : (int) (x + (dropShadow ? 1.0f : 0.0f));
     }
 
     @Override
     public int getStringWidth(@Nullable String text) {
-        return (int) fontRenderer.getStringWidth(text);
+        return MathHelper.ceil(fontRenderer.getStringWidth(text));
     }
 
     @Override
     public float getCharWidth(char character) {
-        return (int) fontRenderer.getStringWidth(String.valueOf(character));
+        return fontRenderer.getStringWidth(String.valueOf(character));
     }
 
     @Nonnull
@@ -151,17 +142,5 @@ public class ModernFontRenderer extends FontRenderer {
     @Override
     public String bidiReorder(@Nonnull String text) {
         throw new RuntimeException();
-    }
-
-    @Deprecated
-    @Override
-    public void setBidiFlag(boolean bidiFlagIn) {
-
-    }
-
-    @Deprecated
-    @Override
-    public boolean getBidiFlag() {
-        return false;
     }
 }
