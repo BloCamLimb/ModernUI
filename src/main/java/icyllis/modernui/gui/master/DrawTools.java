@@ -20,6 +20,7 @@ package icyllis.modernui.gui.master;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.IFontRenderer;
+import icyllis.modernui.graphics.renderer.ModernTextRenderType;
 import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.graphics.shader.ShaderTools;
@@ -40,13 +41,23 @@ import org.lwjgl.opengl.GL11;
 import javax.annotation.Nonnull;
 
 /**
- * Use paint brush and drawing board to draw everything!
+ * Use paint brush and drawing board to draw things in or especially for ModernUI's GUI:
+ *      likes rect, rounded rect, circle, ring, line, point
+ *      textured icon, etc.
+ * This avoided RenderType being used in gui, for better performance
+ * (reduces GL callings, because render states changed little)
+ *
+ * The font renderer uses another system, which has two parts, one for ModernUI's GUI, and
+ * the global one is using RenderType, make ModernUI's font renderer work everywhere,
+ * because it's not always called in gui, likes non-ModernUI GUI, TileEntityRenderer
+ * or in world renderer, that also need matrix transformation to be compatible with vanilla
+ *
+ * {@link net.minecraft.client.renderer.RenderType}
+ * {@link ModernTextRenderType}
  */
 public class DrawTools {
 
-    /**
-     * Internal use, oh, no longer use...
-     */
+
     //protected static final DrawTools INSTANCE = new DrawTools();
 
     /**

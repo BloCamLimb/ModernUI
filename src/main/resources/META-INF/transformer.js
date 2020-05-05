@@ -107,6 +107,26 @@ function initializeCoreMod() {
                 list.insertBefore(invoke, cast);
                 return methodNode;
             }
+        },
+        'replaceScreenPauseGame': {
+            'target': {
+                'type': 'METHOD',
+                'class': 'net.minecraft.client.gui.screen.Screen',
+                'methodName': 'isPauseScreen',
+                'methodDesc': '()Z'
+            },
+            'transformer': function (methodNode) {
+                var list = methodNode.instructions;
+                var iterator = list.iterator();
+                while(iterator.hasNext()) {
+                    var inst = iterator.next();
+                    if (inst.getType() === AbstractInsnNode.INSN) {
+                        list.set(inst, new InsnNode(Opcodes.ICONST_0));
+                        break;
+                    }
+                }
+                return methodNode;
+            }
         }
     })
 }
