@@ -1011,7 +1011,12 @@ public enum SettingsManager {
 
     public int getConnectedTexturesIndex() {
         try {
-            return of_connected_textures.getInt(gameSettings);
+            int i = of_connected_textures.getInt(gameSettings);
+            if (i == 3) {
+                return 0;
+            } else {
+                return i;
+            }
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
@@ -1020,11 +1025,14 @@ public enum SettingsManager {
 
     public void setConnectedTexturesIndex(int i) {
         try {
+            if (i == 0) {
+                i = 3;
+            }
             of_connected_textures.set(gameSettings, i);
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
-        if (i == 2) {
+        if ((getConnectedTexturesIndex() == 1 || getConnectedTexturesIndex() == 2) && (i == 1 || i == 2)) {
             minecraft.worldRenderer.loadRenderers();
         } else {
             minecraft.scheduleResourcesRefresh();
