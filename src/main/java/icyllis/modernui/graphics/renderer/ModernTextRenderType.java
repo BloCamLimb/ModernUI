@@ -19,20 +19,24 @@
 package icyllis.modernui.graphics.renderer;
 
 import com.google.common.collect.ImmutableList;
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.renderer.RenderState;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import org.lwjgl.opengl.GL11;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 public class ModernTextRenderType extends RenderType {
 
-    public static final RenderType MODERN_TEXT;
+    private static final Map<Integer, RenderType> TYPES = new HashMap<>();
+
+    private static final ImmutableList<RenderState> GENERAL_STATES;
 
     static {
-        ImmutableList<RenderState> renderStates;
-        renderStates = ImmutableList.of(
+        GENERAL_STATES = ImmutableList.of(
                 RenderState.TRANSLUCENT_TRANSPARENCY,
                 RenderState.DIFFUSE_LIGHTING_DISABLED,
                 RenderState.SHADE_DISABLED,
@@ -47,18 +51,25 @@ public class ModernTextRenderType extends RenderType {
                 RenderState.DEFAULT_TEXTURING,
                 RenderState.COLOR_DEPTH_WRITE,
                 RenderState.DEFAULT_LINE);
-        MODERN_TEXT = new ModernTextRenderType(renderStates);
     }
 
     private final int hashCode;
 
-    private ModernTextRenderType(ImmutableList<RenderState> list) {
+    private ModernTextRenderType(int textureName) {
         super("modern_text",
                 DefaultVertexFormats.POSITION_COLOR_TEX_LIGHTMAP,
                 GL11.GL_QUADS, 256, false, true,
-                () -> list.forEach(RenderState::setupRenderState),
-                () -> list.forEach(RenderState::clearRenderState));
-        this.hashCode = Objects.hash(super.hashCode(), list, 1);
+                () -> {
+                    GENERAL_STATES.forEach(RenderState::setupRenderState);
+                    RenderSystem.enableTexture();
+                    RenderSystem.bindTexture(textureName);
+                },
+                () -> GENERAL_STATES.forEach(RenderState::clearRenderState));
+        this.hashCode = Objects.hash(super.hashCode(), textureName);
+    }
+
+    public static RenderType getOrCacheType(int textureName) {
+        return TYPES.computeIfAbsent(textureName, ModernTextRenderType::new);
     }
 
     @Override

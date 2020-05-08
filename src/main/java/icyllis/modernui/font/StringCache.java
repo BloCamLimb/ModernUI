@@ -27,7 +27,6 @@ package icyllis.modernui.font;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.system.ModernUI;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
@@ -389,6 +388,7 @@ public class StringCache {
 
             /* Layout the entire string, splitting it up by formatting codes and the Unicode bidirectional algorithm */
             List<GlyphCache.Glyph> glyphList = new ArrayList<>();
+
             entry.advance = layoutBidiString(glyphList, text, 0, length, entry.codes);
 
             /* Convert the accumulated Glyph list to an array for efficient storage */

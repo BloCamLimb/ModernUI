@@ -27,13 +27,17 @@ package icyllis.modernui.font;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.graphics.renderer.ModernTextRenderType;
 import icyllis.modernui.system.ConfigManager;
 import icyllis.modernui.system.ModernUI;
-import net.minecraft.client.renderer.GLAllocation;
+import net.minecraft.client.renderer.RenderType;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL30;
 
+import javax.annotation.Nullable;
 import java.awt.*;
 import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
@@ -139,7 +143,7 @@ class GlyphCache {
     /**
      * A single integer direct buffer with native byte ordering used for returning values from glGenTextures().
      */
-    private IntBuffer singleIntBuffer = GLAllocation.createDirectByteBuffer(4).asIntBuffer();
+    private IntBuffer singleIntBuffer = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer();
 
     /**
      * List of all available physical fonts on the system. Used by lookupFont() to find alternate fonts.
@@ -205,6 +209,8 @@ class GlyphCache {
          * The OpenGL texture ID that contains this glyph image.
          */
         int textureName;
+
+        RenderType renderType;
 
         /**
          * The width in pixels of the glyph image.
@@ -498,6 +504,7 @@ class GlyphCache {
              */
             Entry entry = new Entry();
             entry.textureName = textureName;
+            entry.renderType = ModernTextRenderType.getOrCacheType(textureName);
             entry.width = rect.width;
             entry.height = rect.height;
             entry.u1 = ((float) rect.x) / TEXTURE_WIDTH;
@@ -537,9 +544,8 @@ class GlyphCache {
      * @param dirty The rectangular region in glyphCacheImage that has changed and needs to be copied into the texture
      *              bleedover when interpolation is active or add a small "fudge factor" to the UV coordinates like already n FontRenderer
      */
-    //todo Add mip-mapping support here
     //todo Test with bilinear texture interpolation and possibly add a 1 pixel transparent border around each glyph to avoid
-    private void updateTexture(Rectangle dirty) {
+    private void updateTexture(@Nullable Rectangle dirty) {
         /* Only update OpenGL texture if changes were made to the texture */
         if (dirty != null) {
             /* Load imageBuffer with pixel data ready for transfer to OpenGL texture */
@@ -548,6 +554,8 @@ class GlyphCache {
             GlStateManager.bindTexture(textureName);
             GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, dirty.x, dirty.y, dirty.width, dirty.height,
                     GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, imageBuffer);
+
+            GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
         }
     }
 
@@ -589,7 +597,6 @@ class GlyphCache {
      * white so the individual glyphs images within can have a transparent border between them. The new texture remains bound
      * after returning from the function.
      */
-    //TODO?(may never) use GL_ALPHA4 if anti-alias is turned off for even smaller textures
     private void allocateGlyphCacheTexture() {
         /* Initialize the background to all white but fully transparent. */
         glyphCacheGraphics.clearRect(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
@@ -611,8 +618,11 @@ class GlyphCache {
                 GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, imageBuffer);
 
         /* Explicitely disable mipmap support becuase updateTexture() will only update the base level 0 */
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+
+        GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+
     }
 
     /**
