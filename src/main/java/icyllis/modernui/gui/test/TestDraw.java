@@ -19,8 +19,10 @@
 package icyllis.modernui.gui.test;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.font.FontTools;
-import icyllis.modernui.gui.animation.*;
+import icyllis.modernui.gui.animation.Animation;
+import icyllis.modernui.gui.animation.Applier;
+import icyllis.modernui.gui.animation.IInterpolator;
+import icyllis.modernui.gui.animation.OvershootInterpolator;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.IDrawable;
 import icyllis.modernui.gui.math.Color3f;

@@ -324,9 +324,13 @@ public class TrueTypeRenderer implements IFontRenderer {
         }
 
         // Fix for what RenderLivingBase#setBrightness does
-        GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL11.GL_MODULATE);
+        //GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL11.GL_MODULATE);
 
-        RenderSystem.enableTexture();
+        //RenderSystem.enableTexture();
+
+        if (typeBuffer instanceof IRenderTypeBuffer.Impl) {
+            ((IRenderTypeBuffer.Impl) typeBuffer).finish();
+        }
 
         /* Make sure the entire string is cached before rendering and return its glyph representation */
         StringCache.Entry entry = cache.getOrCacheString(str);
@@ -339,7 +343,7 @@ public class TrueTypeRenderer implements IFontRenderer {
          * array), however GuiEditSign of all things depends on having the current color set to white when it renders its
          * "Edit sign message:" text. Otherwise, the sign which is rendered underneath would look too dark.
          */
-        RenderSystem.color3f(r, g, b);
+        //RenderSystem.color3f(r, g, b);
 
         int red = (int) (r * 255);
         int green = (int) (g * 255);
@@ -365,10 +369,8 @@ public class TrueTypeRenderer implements IFontRenderer {
             GlStateManager.enableBlend();
             GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         }*/
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-
-        IVertexBuilder builder = typeBuffer.getBuffer(ModernTextRenderType.MODERN_TEXT);
+        /*RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();*/
 
         /* The currently active font style is needed to select the proper ASCII digit style for fast replacement */
         int fontStyle = StringCache.FormattingCode.PLAIN;
@@ -412,7 +414,9 @@ public class TrueTypeRenderer implements IFontRenderer {
             float y1 = startY + (glyph.y) / 2.0F;
             float y2 = startY + (glyph.y + texture.height) / 2.0F;
 
-            GlStateManager.bindTexture(texture.textureName);
+            //GlStateManager.bindTexture(texture.textureName);
+
+            IVertexBuilder builder = typeBuffer.getBuffer(texture.renderType);
 
             if (rColor != null) {
                 int rr = rColor.getIntRed();
@@ -437,12 +441,15 @@ public class TrueTypeRenderer implements IFontRenderer {
             //tessellator.draw();
         }
 
-        if (typeBuffer instanceof IRenderTypeBuffer.Impl) {
-            ((IRenderTypeBuffer.Impl) typeBuffer).finish(ModernTextRenderType.MODERN_TEXT);
-        }
-
         /* Draw strikethrough and underlines if the string uses them anywhere */
         if (entry.needExtraRender) {
+
+            // we use default buffer builder now, so we must finish the render type buffer manually
+            if (typeBuffer instanceof IRenderTypeBuffer.Impl) {
+                ((IRenderTypeBuffer.Impl) typeBuffer).finish();
+            }
+
+
             int renderStyle = 0;
 
             Tessellator tessellator = Tessellator.getInstance();
