@@ -27,15 +27,15 @@ package icyllis.modernui.font;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
-import icyllis.modernui.graphics.renderer.ModernTextRenderType;
-import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.math.Color3f;
-import icyllis.modernui.gui.math.DelayedTask;
 import icyllis.modernui.system.ConfigManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.renderer.*;
+import net.minecraft.client.renderer.BufferBuilder;
+import net.minecraft.client.renderer.IRenderTypeBuffer;
+import net.minecraft.client.renderer.Matrix4f;
+import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.entity.EntityRendererManager;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.text.StringTextComponent;
@@ -93,8 +93,7 @@ public class TrueTypeRenderer implements IFontRenderer {
                 FontRenderer fontRenderer = new ModernFontRenderer(this);
                 ObfuscationReflectionHelper.findField(Minecraft.class, "field_71466_p").set(Minecraft.getInstance(), fontRenderer);
                 ObfuscationReflectionHelper.findField(EntityRendererManager.class, "field_78736_p").set(Minecraft.getInstance().getRenderManager(), fontRenderer);
-                // hotfix 1.5.3
-                GlobalModuleManager.INSTANCE.scheduleTask(new DelayedTask(this::refreshCache, 1));
+                //GlobalModuleManager.INSTANCE.scheduleTask(new DelayedTask(this::refreshCache, 1));
             } catch (IllegalAccessException e) {
                 e.printStackTrace();
             }
@@ -458,6 +457,8 @@ public class TrueTypeRenderer implements IFontRenderer {
             RenderSystem.enableBlend();
             RenderSystem.defaultBlendFunc();
 
+            RenderSystem.enableCull();
+
             /* Use initial color passed to renderString(); disable texturing to draw solid color lines */
             GlStateManager.disableTexture();
             buffer.begin(7, DefaultVertexFormats.POSITION_COLOR);
@@ -521,6 +522,7 @@ public class TrueTypeRenderer implements IFontRenderer {
             /* Finish drawing the last strikethrough/underline segments */
             tessellator.draw();
             GlStateManager.enableTexture();
+            RenderSystem.disableCull();
         }
 
 
