@@ -27,7 +27,6 @@ package icyllis.modernui.font;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.mojang.blaze3d.platform.GlStateManager;
-import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.graphics.renderer.ModernTextRenderType;
 import icyllis.modernui.system.ConfigManager;
 import icyllis.modernui.system.ModernUI;
@@ -552,9 +551,17 @@ class GlyphCache {
             updateImageBuffer(dirty.x, dirty.y, dirty.width, dirty.height);
 
             GlStateManager.bindTexture(textureName);
+
+            /* Due to changes in 1.14+, so this ensure pixels are correctly stored from CPU to GPU */
+            GlStateManager.pixelStore(GL11.GL_UNPACK_ROW_LENGTH, dirty.width);
+            GlStateManager.pixelStore(GL11.GL_UNPACK_SKIP_ROWS, 0);
+            GlStateManager.pixelStore(GL11.GL_UNPACK_SKIP_PIXELS, 0);
+            GlStateManager.pixelStore(GL11.GL_UNPACK_ALIGNMENT, 4); // 4 is RGBA
+
             GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, dirty.x, dirty.y, dirty.width, dirty.height,
                     GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, imageBuffer);
 
+            /* Auto generate mipmap texture */
             GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
         }
     }
@@ -601,7 +608,7 @@ class GlyphCache {
         /* Initialize the background to all white but fully transparent. */
         glyphCacheGraphics.clearRect(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
 
-        /* Allocate new OpenGL texure */
+        /* Allocate new OpenGL texture */
         singleIntBuffer.clear();
         GL11.glGenTextures(singleIntBuffer);
         textureName = singleIntBuffer.get(0);
@@ -614,10 +621,17 @@ class GlyphCache {
          * faster rendering since the GPU has to only fetch 1 byte per texel instead of 4 with a regular RGBA texture.
          */
         GlStateManager.bindTexture(textureName);
+
+        /* Due to changes in 1.14+, so this ensure pixels are correctly stored from CPU to GPU */
+        GlStateManager.pixelStore(GL11.GL_UNPACK_ROW_LENGTH, 0); // 0 is unspecific
+        GlStateManager.pixelStore(GL11.GL_UNPACK_SKIP_ROWS, 0);
+        GlStateManager.pixelStore(GL11.GL_UNPACK_SKIP_PIXELS, 0);
+        GlStateManager.pixelStore(GL11.GL_UNPACK_ALIGNMENT, 4); // 4 is RGBA, has 4 channels
+
         GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_ALPHA8, TEXTURE_WIDTH, TEXTURE_HEIGHT, 0,
                 GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, imageBuffer);
 
-        /* Explicitely disable mipmap support becuase updateTexture() will only update the base level 0 */
+        /* Mipmap is supported here */
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
 

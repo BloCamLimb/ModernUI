@@ -37,7 +37,6 @@ import java.util.List;
 
 public class MenuButton extends IconButton {
 
-    @Nullable
     private AnimationControl sideTextAC;
 
     private final String text;
@@ -51,18 +50,7 @@ public class MenuButton extends IconButton {
         super(host, builder);
         this.text = I18n.format(builder.text);
         this.id = builder.id;
-    }
 
-    @Override
-    public MenuButton buildCallback(boolean b, @Nullable Runnable r, boolean onetime) {
-        super.buildCallback(b, r, onetime);
-        return this;
-    }
-
-    @Override
-    public void onDraw(@Nonnull Canvas canvas, float time) {
-        super.onDraw(canvas, time);
-        // call on render loop, because we called getTextLength
         if (sideTextAC == null) {
             List<Animation> openList = new ArrayList<>();
             openList.add(new Animation(150)
@@ -90,6 +78,17 @@ public class MenuButton extends IconButton {
                     )
             );
         }
+    }
+
+    @Override
+    public MenuButton buildCallback(boolean b, @Nullable Runnable r, boolean onetime) {
+        super.buildCallback(b, r, onetime);
+        return this;
+    }
+
+    @Override
+    public void onDraw(@Nonnull Canvas canvas, float time) {
+        super.onDraw(canvas, time);
         sideTextAC.update();
         if (sideTextAC.isAnimationOpen()) {
             canvas.setRGBA(0.0f, 0.0f, 0.0f, 0.5f * frameAlpha);
