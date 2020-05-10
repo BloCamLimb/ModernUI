@@ -19,6 +19,7 @@
 package icyllis.modernui.font;
 
 import icyllis.modernui.gui.math.Color3f;
+import icyllis.modernui.system.ConfigManager;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.fonts.providers.IGlyphProvider;
 import net.minecraft.client.renderer.*;
@@ -78,7 +79,7 @@ public class ModernFontRenderer extends FontRenderer {
         float g = Color3f.getGreenFrom(color);
         float b = Color3f.getBlueFrom(color);
 
-        if (dropShadow) {
+        if (dropShadow && ConfigManager.CLIENT.allowFontShadow) {
             fontRenderer.drawStringGlobal(text, x + 1, y + 1, r, g, b, a, true, matrix, buffer, packedLight);
         }
 

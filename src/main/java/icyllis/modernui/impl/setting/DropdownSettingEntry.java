@@ -67,8 +67,8 @@ public class DropdownSettingEntry extends SettingEntry {
         textLength = FontTools.getStringWidth(optionText) + 3;
 
         frameAnimation = new Animation(100)
-                .addAppliers(new Applier(0, 0.25f, () -> frameAlpha, this::setFrameAlpha))
-                .addListener(new Animation.IAnimationListener() {
+                .applyTo(new Applier(0, 0.25f, () -> frameAlpha, this::setFrameAlpha))
+                .listen(new Animation.IAnimationListener() {
                     @Override
                     public void onAnimationEnd(Animation animation, boolean isReverse) {
                         if (isReverse) {

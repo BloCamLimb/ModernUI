@@ -61,6 +61,11 @@ public class RewrittenMethods {
         return (int) (BlurHandler.INSTANCE.getBackgroundAlpha() * 255.0f) << 24;
     }
 
+    /** Screen **/
+    public static boolean isPauseScreen() {
+        return !ConfigManager.CLIENT.keepRunningInScreen;
+    }
+
     public static int calcGuiScales() {
         MainWindow mainWindow = Minecraft.getInstance().getMainWindow();
         int framebufferWidth = mainWindow.getFramebufferWidth();

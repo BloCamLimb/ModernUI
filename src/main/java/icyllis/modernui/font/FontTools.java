@@ -24,7 +24,7 @@ import java.util.List;
 
 public class FontTools {
 
-    private static IFontRenderer FONT_RENDERER;
+    private static final IFontRenderer FONT_RENDERER;
 
     static {
         FONT_RENDERER = TrueTypeRenderer.INSTANCE;

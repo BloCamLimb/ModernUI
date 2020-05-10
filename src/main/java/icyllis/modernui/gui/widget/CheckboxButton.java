@@ -54,11 +54,11 @@ public class CheckboxButton extends Widget {
         super(host, builder);
         this.icon = new Icon(ConstantsLibrary.ICONS, 0, 0.125f, 0.125f, 0.25f, true);
         brightAnimation = new Animation(100)
-                .addAppliers(new Applier(0.7f, 1.0f, this::getBrightness, this::setBrightness));
+                .applyTo(new Applier(0.7f, 1.0f, this::getBrightness, this::setBrightness));
         inactiveAnimation = new Animation(100)
-                .addAppliers(new Applier(0.3f, 1.0f, this::getBrightness, this::setBrightness));
+                .applyTo(new Applier(0.3f, 1.0f, this::getBrightness, this::setBrightness));
         markAnimation = new Animation(100)
-                .addAppliers(new Applier(0.0f, 1.0f, this::getMarkAlpha, this::setMarkAlpha));
+                .applyTo(new Applier(0.0f, 1.0f, this::getMarkAlpha, this::setMarkAlpha));
     }
 
     public CheckboxButton buildCallback(boolean b, @Nullable Consumer<Boolean> c) {
@@ -141,12 +141,6 @@ public class CheckboxButton extends Widget {
 
     public boolean isChecked() {
         return checked;
-    }
-
-    @Nonnull
-    @Override
-    public Class<? extends Widget.Builder> getBuilder() {
-        return Builder.class;
     }
 
     public static class Builder extends Widget.Builder {

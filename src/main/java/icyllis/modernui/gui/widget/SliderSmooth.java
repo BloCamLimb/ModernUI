@@ -79,12 +79,6 @@ public class SliderSmooth extends Slider {
         }
     }
 
-    @Nonnull
-    @Override
-    public Class<? extends Widget.Builder> getBuilder() {
-        return Builder.class;
-    }
-
     public static class Builder extends Widget.Builder {
 
         @Expose

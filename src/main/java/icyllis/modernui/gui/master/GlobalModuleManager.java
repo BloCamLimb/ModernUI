@@ -198,7 +198,9 @@ public enum GlobalModuleManager {
     }
 
     public void addAnimation(IAnimation animation) {
-        animations.add(animation);
+        if (!animations.contains(animation)) {
+            animations.add(animation);
+        }
     }
 
     public void scheduleTask(DelayedTask task) {
@@ -349,8 +351,8 @@ public enum GlobalModuleManager {
 
     public void onRenderTick(float partialTick) {
         animationTime = ticks + partialTick;
-        animations.forEach(e -> e.update(animationTime));
         animations.removeIf(IAnimation::shouldRemove);
+        animations.forEach(e -> e.update(animationTime));
     }
 
     private void resetTicks() {

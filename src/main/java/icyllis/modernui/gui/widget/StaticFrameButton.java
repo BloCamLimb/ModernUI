@@ -55,12 +55,6 @@ public class StaticFrameButton extends Button {
         canvas.drawText(text, x1 + width / 2f, y1 + 2);
     }
 
-    @Nonnull
-    @Override
-    public Class<? extends Widget.Builder> getBuilder() {
-        return Builder.class;
-    }
-
     public static class Builder extends Widget.Builder {
 
         @Expose

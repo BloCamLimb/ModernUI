@@ -31,8 +31,8 @@ public class Applier {
     private final float startValue;
     private final float endValue;
 
-    private float initValue;
-    private float targetValue;
+    private float logicStart;
+    private float logicEnd;
 
     private final Supplier<Float> getter;
     private final Consumer<Float> setter;
@@ -54,23 +54,23 @@ public class Applier {
     public void record(boolean inverted, boolean restart) {
         if (restart) {
             if (inverted) {
-                initValue = endValue;
+                logicStart = endValue;
             } else {
-                initValue = startValue;
+                logicStart = startValue;
             }
         } else {
-            initValue = getter.get();
+            logicStart = getter.get();
         }
         if (inverted) {
-            targetValue = startValue;
+            logicEnd = startValue;
         } else {
-            targetValue = endValue;
+            logicEnd = endValue;
         }
     }
 
     public void update(float progress) {
         progress = interpolator.getInterpolation(progress);
-        float value = MathHelper.lerp(progress, initValue, targetValue);
+        float value = MathHelper.lerp(progress, logicStart, logicEnd);
         setter.accept(value);
     }
 

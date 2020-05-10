@@ -117,13 +117,13 @@ public class IngameMenuStats extends ModuleGroup {
         int c = home.getWindowWidth();
         if (home.getTransitionDirection(false)) {
             new Animation(200)
-                    .addAppliers(
+                    .applyTo(
                             new Applier(0, c, bg::getXOffset, bg::setXOffset)
                                     .setInterpolator(IInterpolator.SINE))
                     .start();
         } else {
             new Animation(200)
-                    .addAppliers(
+                    .applyTo(
                             new Applier(0, -c, bg::getXOffset, bg::setXOffset)
                                     .setInterpolator(IInterpolator.SINE))
                     .start();

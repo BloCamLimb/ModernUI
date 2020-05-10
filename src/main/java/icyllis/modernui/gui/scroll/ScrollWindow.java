@@ -22,14 +22,10 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.widget.Window;
-import icyllis.modernui.system.ModernUI;
-import net.minecraft.client.MainWindow;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.math.MathHelper;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
@@ -63,13 +59,8 @@ public class ScrollWindow<T extends ScrollGroup> extends Window implements IScro
     public final void draw(@Nonnull Canvas canvas, float time) {
         controller.update(time);
 
-        Tessellator tessellator = Tessellator.getInstance();
-        BufferBuilder bufferBuilder = tessellator.getBuffer();
-
-        double scale = mainWindow.getGuiScaleFactor();
-        GL11.glEnable(GL11.GL_SCISSOR_TEST);
-        GL11.glScissor(0, (int) (mainWindow.getFramebufferHeight() - (y2 * scale)),
-                    (int) (getWindowWidth() * scale), (int) (height * scale));
+        /* For horizontal transition animation */
+        canvas.startClip(0, y1, getWindowWidth(), height);
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -88,6 +79,10 @@ public class ScrollWindow<T extends ScrollGroup> extends Window implements IScro
 
         RenderSystem.disableTexture();
         RenderSystem.shadeModel(GL11.GL_SMOOTH);
+
+        Tessellator tessellator = Tessellator.getInstance();
+        BufferBuilder bufferBuilder = tessellator.getBuffer();
+
         bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
         bufferBuilder.pos(x1, y1 + borderThickness, 0.0D).color(0, 0, 0, 0).endVertex();
         bufferBuilder.pos(x2, y1 + borderThickness, 0.0D).color(0, 0, 0, 0).endVertex();
@@ -100,13 +95,14 @@ public class ScrollWindow<T extends ScrollGroup> extends Window implements IScro
         bufferBuilder.pos(x2, y2 - borderThickness, 0.0D).color(0, 0, 0, 0).endVertex();
         bufferBuilder.pos(x1, y2 - borderThickness, 0.0D).color(0, 0, 0, 0).endVertex();
         tessellator.draw();
+
         RenderSystem.shadeModel(GL11.GL_FLAT);
 
         scrollbar.draw(canvas, time);
 
         RenderSystem.enableTexture();
 
-        GL11.glDisable(GL11.GL_SCISSOR_TEST);
+        canvas.endClip();
     }
 
     @Override

@@ -23,7 +23,6 @@ import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.animation.IInterpolator;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.IDrawable;
-import icyllis.modernui.gui.master.Module;
 
 import javax.annotation.Nonnull;
 
@@ -35,7 +34,7 @@ public class MenuHomeBG implements IDrawable {
 
     public MenuHomeBG() {
         new Animation(200)
-                .addAppliers(
+                .applyTo(
                         new Applier(xOffset, 0, () -> xOffset, v -> xOffset = v)
                                 .setInterpolator(IInterpolator.SINE))
                 .start();

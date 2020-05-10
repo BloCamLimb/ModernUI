@@ -113,12 +113,6 @@ public class ColorSelectButton extends Widget {
         this.b = Color3f.getBlueFrom(color);
     }
 
-    @Nonnull
-    @Override
-    public Class<? extends Widget.Builder> getBuilder() {
-        return Builder.class;
-    }
-
     public static class Builder extends Widget.Builder {
 
         @Expose

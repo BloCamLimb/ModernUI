@@ -31,7 +31,6 @@ import net.minecraft.client.resources.I18n;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.List;
 
 /**
  * Used in confirm popup
@@ -54,7 +53,7 @@ public class DynamicFrameButton extends Button {
 
         frameAC = new AnimationControl(
                 Lists.newArrayList(new Animation(100)
-                        .addAppliers(
+                        .applyTo(
                                 new Applier(width / 2f, 0, () -> fwo, this::setFwo)
                                         .setInterpolator(IInterpolator.SINE),
                                 new Applier(6, 0, () -> fho, this::setFho)
@@ -62,7 +61,7 @@ public class DynamicFrameButton extends Button {
                                 new Applier(0.0f, 1.0f, () -> frameAlpha, this::setFrameAlpha))
                 ),
                 Lists.newArrayList(new Animation(200)
-                        .addAppliers(
+                        .applyTo(
                                 new Applier(1.0f, 0.0f, () -> frameAlpha, this::setFrameAlpha))
                 )
         );
@@ -107,12 +106,6 @@ public class DynamicFrameButton extends Button {
     protected void onMouseHoverExit() {
         super.onMouseHoverExit();
         frameAC.startCloseAnimation();
-    }
-
-    @Nonnull
-    @Override
-    public Class<? extends Widget.Builder> getBuilder() {
-        return Builder.class;
     }
 
     public void setFrameAlpha(float frameAlpha) {
@@ -184,12 +177,6 @@ public class DynamicFrameButton extends Button {
                     getHost().refocusMouseCursor();
                 }
             }
-        }
-
-        @Nonnull
-        @Override
-        public Class<? extends Widget.Builder> getBuilder() {
-            return Builder.class;
         }
 
         public static class Builder extends DynamicFrameButton.Builder {

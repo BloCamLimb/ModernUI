@@ -19,10 +19,7 @@
 package icyllis.modernui.gui.scroll;
 
 import icyllis.modernui.gui.master.*;
-import net.minecraft.client.MainWindow;
-import net.minecraft.client.Minecraft;
 import net.minecraft.util.math.MathHelper;
-import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -31,12 +28,10 @@ import java.util.function.Function;
 /**
  * Light-weighted scroll window with fixed size, and can only use single uniform scroll group
  */
-public class ScrollPanel<G extends UniformScrollGroup<?>> extends Widget implements IScrollHost {
+public class ScrollPanel<E extends UniformScrollEntry, G extends UniformScrollGroup<E>> extends Widget implements IScrollHost {
 
     @Nonnull
     protected final G group;
-
-    protected final MainWindow mainWindow;
 
     protected float scrollAmount = 0f;
 
@@ -44,9 +39,8 @@ public class ScrollPanel<G extends UniformScrollGroup<?>> extends Widget impleme
 
     protected final ScrollController controller;
 
-    public ScrollPanel(IHost host, @Nonnull Builder builder, @Nonnull Function<ScrollPanel<G>, G> group) {
+    public ScrollPanel(IHost host, @Nonnull Builder builder, @Nonnull Function<ScrollPanel<E, G>, G> group) {
         super(host, builder);
-        mainWindow = Minecraft.getInstance().getMainWindow();
         this.group = group.apply(this);
         this.scrollbar = new ScrollBar(this);
         this.controller = new ScrollController(this::callbackScrollAmount);
@@ -56,10 +50,7 @@ public class ScrollPanel<G extends UniformScrollGroup<?>> extends Widget impleme
     protected void onDraw(@Nonnull Canvas canvas, float time) {
         controller.update(time);
 
-        double scale = mainWindow.getGuiScaleFactor();
-        GL11.glEnable(GL11.GL_SCISSOR_TEST);
-        GL11.glScissor((int) (x1 * scale), (int) (mainWindow.getFramebufferHeight() - (y2 * scale)),
-                (int) (width * scale), (int) (height * scale));
+        canvas.startClip(x1, y1, width, height);
 
         canvas.save();
         canvas.translate(0, -getVisibleOffset());
@@ -68,7 +59,7 @@ public class ScrollPanel<G extends UniformScrollGroup<?>> extends Widget impleme
 
         scrollbar.draw(canvas, time);
 
-        GL11.glDisable(GL11.GL_SCISSOR_TEST);
+        canvas.endClip();
     }
 
     @Override
@@ -116,8 +107,12 @@ public class ScrollPanel<G extends UniformScrollGroup<?>> extends Widget impleme
         if (group.mouseScrolled(amount)) {
             return true;
         }
-        scrollSmooth(Math.round(amount * -20f));
+        onScrollPanel(amount);
         return true;
+    }
+
+    protected void onScrollPanel(double amount) {
+        scrollSmooth(Math.round(amount * -20f));
     }
 
     @Override
@@ -127,7 +122,7 @@ public class ScrollPanel<G extends UniformScrollGroup<?>> extends Widget impleme
         group.setMouseHoverExit();
     }
 
-    private void callbackScrollAmount(float scrollAmount) {
+    protected void callbackScrollAmount(float scrollAmount) {
         this.scrollAmount = scrollAmount;
         updateScrollBarOffset();
         updateScrollList();
@@ -162,12 +157,6 @@ public class ScrollPanel<G extends UniformScrollGroup<?>> extends Widget impleme
     @Override
     public float getMaxScrollAmount() {
         return Math.max(0, group.getHeight() - getHeight());
-    }
-
-    @Nonnull
-    @Override
-    public Class<? extends Builder> getBuilder() {
-        return Widget.Builder.class;
     }
 
     @Override

@@ -51,14 +51,14 @@ public class TextIconButton extends IconButton {
         this.direction = builder.direction;
         this.id = builder.id;
         textAnimation = new Animation(100)
-                .addAppliers(new Applier(0.0f, 1.0f, this::getTextAlpha, this::setTextAlpha));
+                .applyTo(new Applier(0.0f, 1.0f, this::getTextAlpha, this::setTextAlpha));
     }
 
     public TextIconButton buildCallback(boolean clickable, boolean selected, @Nullable Runnable r, boolean onetime) {
         super.buildCallback(clickable, r, onetime);
         if (selected) {
             locked = true;
-            brightness = 1.0f;
+            activeAnimation.skipToEnd();
         }
         return this;
     }
@@ -120,7 +120,7 @@ public class TextIconButton extends IconButton {
         locked = this.id == id;
         if (!locked) {
             if (!isMouseHovered()) {
-                brightAnimation.invert();
+                activeAnimation.invert();
             }
         }
     }

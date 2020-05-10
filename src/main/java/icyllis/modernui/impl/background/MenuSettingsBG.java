@@ -37,16 +37,16 @@ public class MenuSettingsBG implements IDrawable {
         int c = home.getWindowWidth();
         if (home.getTransitionDirection(true)) {
             new Animation(200)
-                    .addAppliers(
+                    .applyTo(
                             new Applier(-c, 0, this::getXOffset, this::setXOffset)
                                     .setInterpolator(IInterpolator.SINE))
-                    .restart();
+                    .startFull();
         } else {
             new Animation(200)
-                    .addAppliers(
+                    .applyTo(
                             new Applier(c, 0, this::getXOffset, this::setXOffset)
                                     .setInterpolator(IInterpolator.SINE))
-                    .restart();
+                    .startFull();
         }
     }
 

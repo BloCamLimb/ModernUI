@@ -32,7 +32,7 @@ public abstract class UniformScrollGroup<T extends UniformScrollEntry> extends S
 
     protected List<T> entries = new ArrayList<>();
 
-    private List<T> visible = new ArrayList<>();
+    protected List<T> visible = new ArrayList<>();
 
     protected final int entryHeight;
 
