@@ -32,7 +32,7 @@ public class Background implements IDrawable {
     public Background(int fadeInTime) {
         if (fadeInTime > 0) {
             new Animation(fadeInTime)
-                    .addAppliers(
+                    .applyTo(
                             new Applier(0, 0.5f, () -> alpha, value -> alpha = value))
                     .start();
         } else {

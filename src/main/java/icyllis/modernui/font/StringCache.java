@@ -27,6 +27,10 @@ package icyllis.modernui.font;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.system.ModernUI;
+import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.Style;
+import net.minecraft.util.text.TextFormatting;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
@@ -307,6 +311,7 @@ public class StringCache {
         //cacheDigitGlyphs(); // called by below
     }
 
+    @Deprecated
     void clearStringCache() {
         stringCache.invalidateAll();
         glyphCache.clearGlyphCache();
@@ -339,9 +344,9 @@ public class StringCache {
         /* Need to cache each font style combination; the digitGlyphsReady = false disabled the normal glyph substitution mechanism */
         digitGlyphsReady = false;
         digitGlyphs[FormattingCode.PLAIN] = getOrCacheString("0123456789").glyphs;
-        digitGlyphs[FormattingCode.BOLD] = getOrCacheString("\u00A7l0123456789").glyphs;
-        digitGlyphs[FormattingCode.ITALIC] = getOrCacheString("\u00A7o0123456789").glyphs;
-        digitGlyphs[FormattingCode.BOLD | FormattingCode.ITALIC] = getOrCacheString("\u00A7l\u00A7o0123456789").glyphs;
+        digitGlyphs[FormattingCode.BOLD] = getOrCacheString(TextFormatting.BOLD + "0123456789").glyphs;
+        digitGlyphs[FormattingCode.ITALIC] = getOrCacheString(TextFormatting.ITALIC + "0123456789").glyphs;
+        digitGlyphs[FormattingCode.BOLD | FormattingCode.ITALIC] = getOrCacheString(new StringTextComponent("0123456789").setStyle(new Style().setBold(true).setItalic(true)).getFormattedText()).glyphs;
         digitGlyphsReady = true;
     }
 

@@ -204,11 +204,15 @@ class GlyphCache {
      * this class are normalized in the standard 0.0 - 1.0 OpenGL range.
      */
     static class Entry {
+
         /**
          * The OpenGL texture ID that contains this glyph image.
          */
         int textureName;
 
+        /**
+         * Cached render type for render type buffer system.
+         */
         RenderType renderType;
 
         /**
@@ -289,6 +293,7 @@ class GlyphCache {
         setRenderingHints();
     }
 
+    @Deprecated
     void clearGlyphCache() {
         glyphCache.clear();
     }
@@ -469,12 +474,17 @@ class GlyphCache {
              */
             if (cachePosY + rect.height + GLYPH_BORDER > TEXTURE_HEIGHT) {
                 updateTexture(dirty);
-                dirty = null;
 
                 /* Note that allocateAndSetupTexture() will leave the GL texture already bound */
                 allocateGlyphCacheTexture();
+                allocateStringImage(STRING_WIDTH, STRING_HEIGHT);
+
                 cachePosY = cachePosX = GLYPH_BORDER;
                 cacheLineHeight = 0;
+
+                /* re-draw glyph layout to ensure rest chars be rendered correctly on the new texture */
+                cacheGlyphs(font, text, start + index, limit, layoutFlags);
+                return;
             }
 
             /* The tallest glyph on this line determines the total vertical advance in the texture */
@@ -567,7 +577,7 @@ class GlyphCache {
     }
 
     /**
-     * Allocte and initialize a new BufferedImage and Graphics2D context for rendering strings into. May need to be called
+     * Allocate and initialize a new BufferedImage and Graphics2D context for rendering strings into. May need to be called
      * at runtime to re-allocate a bigger BufferedImage if cacheGlyphs() is called with a very long string.
      */
     private void allocateStringImage(int width, int height) {

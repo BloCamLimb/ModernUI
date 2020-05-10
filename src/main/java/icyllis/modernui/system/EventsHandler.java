@@ -114,9 +114,9 @@ public class EventsHandler {
         public static void onKeyInput(InputEvent.KeyInputEvent e) {
             if (ConfigManager.COMMON.enableDeveloperMode && e.getAction() == GLFW.GLFW_PRESS) {
                 if (Screen.hasControlDown() && Screen.hasAltDown()) {
-                    if (e.getKey() == GLFW.GLFW_KEY_K) {
+                    /*if (e.getKey() == GLFW.GLFW_KEY_K) {
                         TrueTypeRenderer.INSTANCE.refreshCache();
-                    }
+                    }*/
                 }
             }
         }

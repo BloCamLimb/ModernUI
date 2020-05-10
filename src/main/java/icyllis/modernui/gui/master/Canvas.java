@@ -20,8 +20,13 @@ package icyllis.modernui.gui.master;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.master.DrawTools;
+import net.minecraft.client.MainWindow;
+import net.minecraft.client.Minecraft;
+import org.lwjgl.opengl.GL11;
 
 public class Canvas extends DrawTools {
+
+    private final MainWindow mainWindow = Minecraft.getInstance().getMainWindow();
 
     public void save() {
         RenderSystem.pushMatrix();
@@ -56,5 +61,16 @@ public class Canvas extends DrawTools {
         }
         ky *= py;
         RenderSystem.translatef(kx, ky, 0.0f);
+    }
+
+    public void startClip(float x, float y, float width, float height) {
+        double scale = mainWindow.getGuiScaleFactor();
+        GL11.glEnable(GL11.GL_SCISSOR_TEST);
+        GL11.glScissor((int) (x * scale), (int) (mainWindow.getFramebufferHeight() - ((y + height) * scale)),
+                (int) (width * scale), (int) (height * scale));
+    }
+
+    public void endClip() {
+        GL11.glDisable(GL11.GL_SCISSOR_TEST);
     }
 }

@@ -104,12 +104,13 @@ public class TrueTypeRenderer implements IFontRenderer {
 
     }
 
-    // WARNING: memory leak
+    @Deprecated
     public void refreshCache() {
         cache.clearStringCache();
         if (Minecraft.getInstance().player != null) {
             Minecraft.getInstance().player.sendMessage(new StringTextComponent("[Modern UI] String Cache and Glyph Cache are cleared."));
         }
+        throw new RuntimeException("Deprecated");
     }
 
     @Override

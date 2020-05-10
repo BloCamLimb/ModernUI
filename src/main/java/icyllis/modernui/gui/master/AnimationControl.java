@@ -19,11 +19,8 @@
 package icyllis.modernui.gui.master;
 
 import icyllis.modernui.gui.animation.Animation;
-import icyllis.modernui.gui.math.DelayedTask;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -51,7 +48,7 @@ public class AnimationControl {
         Optional<Animation> d;
         if (openList != null) {
             d = openList.stream().max(Comparator.comparing(Animation::getDuration));
-            d.ifPresent(animation -> animation.addListener(new Animation.IAnimationListener() {
+            d.ifPresent(animation -> animation.listen(new Animation.IAnimationListener() {
                 @Override
                 public void onAnimationEnd(Animation animation, boolean isReverse) {
                     setOpenState(true);
@@ -60,7 +57,7 @@ public class AnimationControl {
         }
         if (closeList != null) {
             d = closeList.stream().max(Comparator.comparing(Animation::getDuration));
-            d.ifPresent(animation -> animation.addListener(new Animation.IAnimationListener() {
+            d.ifPresent(animation -> animation.listen(new Animation.IAnimationListener() {
                 @Override
                 public void onAnimationEnd(Animation animation, boolean isReverse) {
                     setOpenState(false);
@@ -73,7 +70,7 @@ public class AnimationControl {
         if (prepareToOpen && openState == 0) {
             openState = 1;
             if (openList != null) {
-                openList.forEach(Animation::restart);
+                openList.forEach(Animation::startFull);
             }
             if (openList == null || openList.isEmpty()) {
                 setOpenState(true);
@@ -82,7 +79,7 @@ public class AnimationControl {
         } else if (prepareToClose && openState == 2) {
             openState = 3;
             if (closeList != null) {
-                closeList.forEach(Animation::restart);
+                closeList.forEach(Animation::startFull);
             }
             if (closeList == null || closeList.isEmpty()) {
                 setOpenState(false);

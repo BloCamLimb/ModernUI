@@ -39,7 +39,7 @@ public class ConfirmPopupBG extends Background {
     public ConfirmPopupBG() {
         super(200);
         new Animation(150)
-                .addAppliers(
+                .applyTo(
                         new Applier(heightOffset, 80, () -> heightOffset, value -> heightOffset = value)
                                 .setInterpolator(IInterpolator.SINE))
                 .start();

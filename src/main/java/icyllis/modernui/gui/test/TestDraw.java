@@ -39,13 +39,13 @@ public class TestDraw implements IDrawable {
 
     public TestDraw() {
         animation = new Animation(600)
-                .addAppliers(
+                .applyTo(
                         new Applier(-70, 100, () -> xOffset, v -> xOffset = v)
                                 .setInterpolator(new OvershootInterpolator(2)),
                         new Applier(0, 100, () -> yOffset, v -> yOffset = v)
                                 .setInterpolator(IInterpolator.SINE)
                 );
-        animation.restart();
+        animation.startFull();
     }
 
     @Override
@@ -84,7 +84,7 @@ public class TestDraw implements IDrawable {
         if ((ticks + 16) % 32 == 0) {
             animation.invert();
         } else if ((ticks) % 32 == 0) {
-            animation.restart();
+            animation.startFull();
         }
     }
 }

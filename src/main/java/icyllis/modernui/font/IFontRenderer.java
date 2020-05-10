@@ -57,10 +57,6 @@ public interface IFontRenderer {
      */
     float drawString(String str, float startX, float startY, float r, float g, float b, float a, Align3H align);
 
-    default float drawString(String str, float startX, float startY, float r, float g, float b, float a) {
-        return drawString(str, startX, startY, r, g, b, a, Align3H.LEFT);
-    }
-
     /**
      * Return the width of a string in pixels. Used for centering strings.
      *

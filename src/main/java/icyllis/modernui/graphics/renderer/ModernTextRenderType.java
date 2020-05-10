@@ -65,7 +65,7 @@ public class ModernTextRenderType extends RenderType {
                     RenderSystem.bindTexture(textureName);
                 },
                 () -> GENERAL_STATES.forEach(RenderState::clearRenderState));
-        this.hashCode = Objects.hash(super.hashCode(), textureName);
+        this.hashCode = Objects.hash(super.hashCode(), GENERAL_STATES, textureName);
     }
 
     public static RenderType getOrCacheType(int textureName) {
@@ -77,4 +77,8 @@ public class ModernTextRenderType extends RenderType {
         return hashCode;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        return this == o;
+    }
 }

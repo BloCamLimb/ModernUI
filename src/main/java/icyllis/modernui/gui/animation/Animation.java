@@ -54,7 +54,7 @@ public class Animation implements IAnimation {
         this.duration = duration / 50.0f;
     }
 
-    public Animation addApplier(@Nonnull Applier applier) {
+    public Animation applyTo(@Nonnull Applier applier) {
         if (appliers == null) {
             appliers = Lists.newArrayList();
         }
@@ -62,7 +62,7 @@ public class Animation implements IAnimation {
         return this;
     }
 
-    public Animation addAppliers(@Nonnull Applier... appliers) {
+    public Animation applyTo(@Nonnull Applier... appliers) {
         if (this.appliers == null) {
             this.appliers = Lists.newArrayList();
         }
@@ -70,12 +70,15 @@ public class Animation implements IAnimation {
         return this;
     }
 
-    public Animation setDelay(int delay) {
+    /**
+     * Milliseconds
+     */
+    public Animation withDelay(int delay) {
         delayTime = delay / 50.0f;
         return this;
     }
 
-    public Animation addListener(IAnimationListener listener) {
+    public Animation listen(IAnimationListener listener) {
         if (listeners == null) {
             listeners = Lists.newArrayList();
         }
@@ -87,17 +90,17 @@ public class Animation implements IAnimation {
      * Play the animation depends on current value with full duration
      */
     public void start() {
-        start(false);
+        startInternal(false);
     }
 
     /**
      * Play the animation depends on applier original properties
      */
-    public void restart() {
-        start(true);
+    public void startFull() {
+        startInternal(true);
     }
 
-    private void start(boolean restart) {
+    private void startInternal(boolean restart) {
         startTime = GlobalModuleManager.INSTANCE.getAnimationTime() + delayTime;
         waiting = false;
         reversed = false;
@@ -124,6 +127,34 @@ public class Animation implements IAnimation {
             appliers.forEach(e -> e.record(reversed, false));
         }
         GlobalModuleManager.INSTANCE.addAnimation(this);
+    }
+
+    /**
+     * Cancel the animation
+     */
+    public void cancel() {
+        waiting = true;
+        started = false;
+    }
+
+    public void skipToStart() {
+        cancel();
+        if (appliers != null) {
+            appliers.forEach(e -> {
+                e.record(true, false);
+                e.update(1);
+            });
+        }
+    }
+
+    public void skipToEnd() {
+        cancel();
+        if (appliers != null) {
+            appliers.forEach(e -> {
+                e.record(false, false);
+                e.update(1);
+            });
+        }
     }
 
     @Override

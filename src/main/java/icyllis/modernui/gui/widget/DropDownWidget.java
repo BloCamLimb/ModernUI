@@ -63,7 +63,7 @@ public class DropDownWidget extends Widget {
         updateList(list, index);
 
         bgAnimation = new Animation(100)
-                .addAppliers(new Applier(0, 0.25f, () -> backAlpha, this::setBackAlpha));
+                .applyTo(new Applier(0, 0.25f, () -> backAlpha, this::setBackAlpha));
     }
 
     public DropDownWidget buildCallback(IntConsumer c) {
@@ -140,12 +140,6 @@ public class DropDownWidget extends Widget {
 
     public int getIndex() {
         return index;
-    }
-
-    @Nonnull
-    @Override
-    public Class<? extends Widget.Builder> getBuilder() {
-        return Builder.class;
     }
 
     public static class Builder extends Widget.Builder {

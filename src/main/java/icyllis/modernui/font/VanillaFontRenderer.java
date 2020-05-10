@@ -22,9 +22,12 @@ import icyllis.modernui.gui.math.Align3H;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 
+import javax.annotation.Nonnull;
+
 /**
  * Use vanilla's font renderer to replace modern ui renderer
  */
+@Deprecated
 public class VanillaFontRenderer implements IFontRenderer {
 
     public static final VanillaFontRenderer INSTANCE = new VanillaFontRenderer();
@@ -36,7 +39,7 @@ public class VanillaFontRenderer implements IFontRenderer {
     }
 
     @Override
-    public float drawString(String str, float startX, float startY, float r, float g, float b, float a, Align3H align) {
+    public float drawString(String str, float startX, float startY, float r, float g, float b, float a, @Nonnull Align3H align) {
         startX = startX - FONT.getStringWidth(str) * align.getTextOffset() * 2;
         return FONT.drawString(str, startX, startY, (int) (a * 0xff) << 24 | (int) (r * 0xff) << 16 | (int) (g * 0xff) << 8 | (int) (b * 0xff));
     }

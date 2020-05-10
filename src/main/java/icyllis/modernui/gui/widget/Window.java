@@ -22,15 +22,11 @@ import icyllis.modernui.gui.master.IDraggable;
 import icyllis.modernui.gui.master.IHost;
 import icyllis.modernui.gui.master.IKeyboardListener;
 import icyllis.modernui.gui.master.IWidget;
-import net.minecraft.client.MainWindow;
-import net.minecraft.client.Minecraft;
 
 import javax.annotation.Nullable;
 import java.util.function.Function;
 
 public abstract class Window implements IWidget, IHost {
-
-    protected final MainWindow mainWindow;
 
     private final IHost host;
 
@@ -47,7 +43,6 @@ public abstract class Window implements IWidget, IHost {
     private boolean mouseHovered = false;
 
     public Window(IHost host, Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, Function<Integer, Float> wResizer, Function<Integer, Float> hResizer) {
-        this.mainWindow = Minecraft.getInstance().getMainWindow();
         this.host = host;
         this.xResizer = xResizer;
         this.yResizer = yResizer;

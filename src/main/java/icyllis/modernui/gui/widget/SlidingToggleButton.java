@@ -78,7 +78,7 @@ public class SlidingToggleButton extends Widget {
         circleOffset = height / 2f;
 
         frameAnimation = new Animation(150)
-                .addAppliers(new Applier(0.7f, 1.0f, this::getBrightness, this::setBrightness));
+                .applyTo(new Applier(0.7f, 1.0f, this::getBrightness, this::setBrightness));
 
         List<Animation> openList = new ArrayList<>();
 
@@ -89,7 +89,7 @@ public class SlidingToggleButton extends Widget {
 
         float c = width - height / 2f;
         openList.add(new Animation(200)
-                .addAppliers(
+                .applyTo(
                         new Applier(a, ta, () -> a, this::setA),
                         new Applier(r, tr, () -> r, this::setR),
                         new Applier(g, tg, () -> g, this::setG),
@@ -100,7 +100,7 @@ public class SlidingToggleButton extends Widget {
 
         List<Animation> closeList = new ArrayList<>();
         closeList.add(new Animation(200)
-                .addAppliers(
+                .applyTo(
                         new Applier(ta, a, () -> a, this::setA),
                         new Applier(tr, r, () -> r, this::setR),
                         new Applier(tg, g, () -> g, this::setG),
@@ -164,12 +164,6 @@ public class SlidingToggleButton extends Widget {
     protected void onMouseHoverExit() {
         super.onMouseHoverExit();
         frameAnimation.invert();
-    }
-
-    @Nonnull
-    @Override
-    public Class<? extends Widget.Builder> getBuilder() {
-        return Builder.class;
     }
 
     private void setChecked(boolean checked) {

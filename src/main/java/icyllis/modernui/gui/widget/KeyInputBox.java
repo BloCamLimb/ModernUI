@@ -134,12 +134,6 @@ public class KeyInputBox extends Widget implements IKeyboardListener {
         }
     }
 
-    @Nonnull
-    @Override
-    public Class<? extends Builder> getBuilder() {
-        return TextField.Builder.class;
-    }
-
     public void setTextBrightness(float s) {
         this.textBrightness = s;
     }

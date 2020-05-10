@@ -24,7 +24,6 @@ import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.IHost;
 import icyllis.modernui.gui.master.Widget;
 import icyllis.modernui.gui.master.WidgetStatus;
-import icyllis.modernui.system.ModernUI;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -34,7 +33,7 @@ public abstract class Button extends Widget {
     @Nullable
     private Runnable callback;
 
-    protected float brightness = 0.7f;
+    private float brightness = 0.7f;
     private float brightnessOffset = 0;
 
     private boolean playInactiveAnimation = true;
@@ -46,15 +45,15 @@ public abstract class Button extends Widget {
 
     protected boolean locked = false;
 
-    protected final Animation brightAnimation;
+    protected final Animation activeAnimation;
     private final Animation inactiveAnimation;
 
     public Button(IHost host, @Nonnull Builder builder) {
         super(host, builder);
-        brightAnimation = new Animation(200)
-                .addAppliers(new Applier(0.7f, 1.0f, this::getBrightness, this::setBrightness));
+        activeAnimation = new Animation(200)
+                .applyTo(new Applier(0.7f, 1.0f, this::getBrightness, this::setBrightness));
         inactiveAnimation = new Animation(100)
-                .addAppliers(new Applier(0.3f, 0.7f, this::getBrightness, this::setBrightness));
+                .applyTo(new Applier(0.3f, 0.7f, this::getBrightness, this::setBrightness));
     }
 
     /**
@@ -115,7 +114,7 @@ public abstract class Button extends Widget {
     protected void onMouseHoverEnter(double mouseX, double mouseY) {
         super.onMouseHoverEnter(mouseX, mouseY);
         if (!locked) {
-            brightAnimation.start();
+            activeAnimation.start();
         }
     }
 
@@ -123,20 +122,21 @@ public abstract class Button extends Widget {
     protected void onMouseHoverExit() {
         super.onMouseHoverExit();
         if (!locked && getStatus().isListening()) {
-            brightAnimation.invert();
+            activeAnimation.invert();
         }
     }
 
     @Override
     protected void onStatusChanged(WidgetStatus status) {
         super.onStatusChanged(status);
+        activeAnimation.cancel();
         if (status.isListening()) {
             inactiveAnimation.start();
         } else {
             if (playInactiveAnimation) {
                 inactiveAnimation.invert();
             } else {
-                brightness = 0.3f;
+                inactiveAnimation.skipToStart();
             }
         }
         brightnessOffset = 0;

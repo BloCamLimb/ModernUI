@@ -118,13 +118,13 @@ function initializeCoreMod() {
             'transformer': function (methodNode) {
                 var list = methodNode.instructions;
                 var iterator = list.iterator();
-                /*while(iterator.hasNext()) {
+                while(iterator.hasNext()) {
                     var inst = iterator.next();
                     if (inst.getType() === AbstractInsnNode.INSN) {
-                        list.set(inst, new InsnNode(Opcodes.ICONST_0));
+                        list.set(inst, new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/RewrittenMethods", "isPauseScreen", "()Z", false));
                         break;
                     }
-                }*/
+                }
                 return methodNode;
             }
         }

@@ -61,27 +61,46 @@ public class ConfigManager {
 
     public static class Client {
 
+        public boolean keepRunningInScreen;
+
         public String preferredFontName;
         public boolean enableGlobalFontRenderer;
+        public boolean allowFontShadow;
+
+        private final ForgeConfigSpec.BooleanValue keepRunningInScreenV;
 
         private final ForgeConfigSpec.ConfigValue<String> preferredFontNameV;
         private final ForgeConfigSpec.BooleanValue enableGlobalFontRendererV;
+        private final ForgeConfigSpec.BooleanValue allowFontShadowV;
 
         private Client(@Nonnull ForgeConfigSpec.Builder builder) {
+            builder.comment("Screen Config")
+                    .push("screen");
+
+            keepRunningInScreenV = builder.comment("Keep game running no matter what screen is open. Modern UI's GUIs will never pause game.")
+                    .define("keepRunningGame", true);
+
+            builder.pop();
+
             builder.comment("Fonts Config")
                     .push("fonts");
 
             enableGlobalFontRendererV = builder.comment("Replace vanilla's font renderer to Modern UI's. This won't affect the font renderer which in Modern UI's GUIs.")
-                    .define("enableGlobalFontRenderer", true);
-            preferredFontNameV = builder.comment("The name of font to use with highest priority if Modern UI's font renderer is enabled. The default font is included in Modern UI.")
+                    .define("enableGlobalRenderer", true);
+            preferredFontNameV = builder.comment("The name of font to use with highest priority. The default font that included in Modern UI is always the alternative one to use.")
                     .define("preferredFontName", "");
+            allowFontShadowV = builder.comment("Allow font renderer to draw text with shadow, set to false if you can't read the font clearly.")
+                    .define("allowFontShadow", true);
 
             builder.pop();
         }
 
         private void load() {
+            keepRunningInScreen = keepRunningInScreenV.get();
+
             preferredFontName = preferredFontNameV.get();
             enableGlobalFontRenderer = enableGlobalFontRendererV.get();
+            allowFontShadow = allowFontShadowV.get();
         }
     }
 
@@ -95,7 +114,7 @@ public class ConfigManager {
             builder.comment("Developer Config")
                     .push("developer");
 
-            enableDeveloperModeV = builder.comment("To assist debugging and edit modules in-game if enabled")
+            enableDeveloperModeV = builder.comment("For assisting developer to debug mod and edit modules in-game")
                     .define("enableDeveloperMode", false);
 
             builder.pop();

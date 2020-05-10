@@ -30,7 +30,6 @@ import net.minecraft.client.resources.I18n;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.List;
 import java.util.function.Predicate;
 
 public class LineTextButton extends Widget {
@@ -56,14 +55,14 @@ public class LineTextButton extends Widget {
         this.lineOffset = width / 2f;
 
         textAnimation = new Animation(150)
-                .addAppliers(new Applier(0.7f, 1, () -> textBrightness, this::setTextBrightness));
+                .applyTo(new Applier(0.7f, 1, () -> textBrightness, this::setTextBrightness));
 
         lineAC = new AnimationControl(
                 Lists.newArrayList(new Animation(150)
-                        .addAppliers(new Applier(width / 2f, 0, () -> lineOffset, this::setLineOffset),
+                        .applyTo(new Applier(width / 2f, 0, () -> lineOffset, this::setLineOffset),
                                 new Applier(textBrightness, 1, () -> textBrightness, this::setTextBrightness))),
                 Lists.newArrayList(new Animation(150)
-                        .addAppliers(new Applier(0, width / 2f, () -> lineOffset, this::setLineOffset),
+                        .applyTo(new Applier(0, width / 2f, () -> lineOffset, this::setLineOffset),
                                 new Applier(textBrightness, 0.7f, () -> textBrightness, this::setTextBrightness)))
         );
     }
@@ -139,12 +138,6 @@ public class LineTextButton extends Widget {
 
     private void setLineOffset(float lineOffset) {
         this.lineOffset = lineOffset;
-    }
-
-    @Nonnull
-    @Override
-    public Class<? extends Widget.Builder> getBuilder() {
-        return Builder.class;
     }
 
     public static class Builder extends Widget.Builder {

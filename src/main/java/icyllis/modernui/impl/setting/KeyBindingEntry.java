@@ -61,7 +61,7 @@ public class KeyBindingEntry extends SettingEntry {
         this.conflictsCallback = conflictsCallback;
         updateKeyText();
 
-        lightAnimation = new Animation(1000).addAppliers(new Applier(0.5f, 0, () -> light, v -> light = v));
+        lightAnimation = new Animation(1000).applyTo(new Applier(0.5f, 0, () -> light, v -> light = v));
     }
 
     @Override
@@ -134,7 +134,7 @@ public class KeyBindingEntry extends SettingEntry {
     }
 
     public void lightUp() {
-        lightAnimation.restart();
+        lightAnimation.startFull();
     }
 
     // vanilla call this every frame... but we don't

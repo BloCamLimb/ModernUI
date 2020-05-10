@@ -49,9 +49,4 @@ public abstract class UniformScrollEntry extends Widget {
         this.y2 = y + height;
     }*/
 
-    @Nonnull
-    @Override
-    public Class<? extends Builder> getBuilder() {
-        return Widget.Builder.class;
-    }
 }

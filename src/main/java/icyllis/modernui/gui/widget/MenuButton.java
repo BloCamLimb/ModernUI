@@ -54,22 +54,22 @@ public class MenuButton extends IconButton {
         if (sideTextAC == null) {
             List<Animation> openList = new ArrayList<>();
             openList.add(new Animation(150)
-                    .addAppliers(
+                    .applyTo(
                             new Applier(0.0f, 1.0f, () -> frameAlpha, this::setFrameAlpha),
                             new Applier(0.0f, getTextLength() + 5.0f, () -> frameSizeW, this::setFrameSizeW)
                                     .setInterpolator(IInterpolator.SINE)
                     )
             );
             openList.add(new Animation(150)
-                    .addAppliers(
+                    .applyTo(
                             new Applier(0.0f, 1.0f, () -> textAlpha, this::setTextAlpha))
-                    .setDelay(100)
+                    .withDelay(100)
             );
 
             sideTextAC = new AnimationControl(
                     openList,
                     Lists.newArrayList(new Animation(250)
-                            .addAppliers(
+                            .applyTo(
                                     new Applier(1.0f, 0.0f, () -> textAlpha, v -> {
                                         setTextAlpha(v);
                                         setFrameAlpha(v);
@@ -167,15 +167,9 @@ public class MenuButton extends IconButton {
         locked = this.id == id;
         if (!locked) {
             if (!isMouseHovered()) {
-                brightAnimation.invert();
+                activeAnimation.invert();
             }
         }
-    }
-
-    @Nonnull
-    @Override
-    public Class<? extends Widget.Builder> getBuilder() {
-        return Builder.class;
     }
 
     public static class Builder extends IconButton.Builder {

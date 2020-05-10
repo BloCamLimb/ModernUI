@@ -333,9 +333,6 @@ public abstract class Widget implements IWidget {
         relocate();
     }
 
-    @Nonnull
-    public abstract Class<? extends Builder> getBuilder();
-
     public static class Builder {
 
         @Expose

@@ -70,13 +70,13 @@ public class DropDownMenu extends Widget {
         this.height = this.list.size() * ENTRY_HEIGHT;
         this.space = 16;
         new Animation(200)
-                .addAppliers(
+                .applyTo(
                         new Applier(0, height, () -> heightOffset, value -> heightOffset = value)
                                 .setInterpolator(IInterpolator.SINE))
                 .start();
         new Animation(150)
-                .addAppliers(new Applier(0, 1, () -> textAlpha, value -> textAlpha = value))
-                .setDelay(150)
+                .applyTo(new Applier(0, 1, () -> textAlpha, value -> textAlpha = value))
+                .withDelay(150)
                 .start();
     }
 
@@ -230,12 +230,6 @@ public class DropDownMenu extends Widget {
             return true;
         }
         return super.onMouseLeftClick(mouseX, mouseY);
-    }
-
-    @Nonnull
-    @Override
-    public Class<? extends Widget.Builder> getBuilder() {
-        return Builder.class;
     }
 
     /*@Override

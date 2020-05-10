@@ -48,12 +48,6 @@ public class IconButton extends Button {
         canvas.drawIcon(icon, x1, y1, x2, y2);
     }
 
-    @Nonnull
-    @Override
-    public Class<? extends Widget.Builder> getBuilder() {
-        return Builder.class;
-    }
-
     public static class Builder extends Widget.Builder {
 
         @Expose

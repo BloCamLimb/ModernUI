@@ -39,7 +39,6 @@ import java.util.function.Function;
 /**
  * Single line text input box
  */
-//FIXME some bugs?
 public class TextField extends Widget implements IKeyboardListener {
 
     // previous text, new text, filtered text
@@ -524,12 +523,6 @@ public class TextField extends Widget implements IKeyboardListener {
         }
 
         return i;
-    }
-
-    @Nonnull
-    @Override
-    public Class<? extends Widget.Builder> getBuilder() {
-        return Builder.class;
     }
 
     public static class Builder extends Widget.Builder {
