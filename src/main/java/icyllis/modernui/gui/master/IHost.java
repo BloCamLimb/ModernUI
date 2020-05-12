@@ -18,6 +18,7 @@
 
 package icyllis.modernui.gui.master;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
@@ -47,7 +48,7 @@ public interface IHost {
 
     void refocusMouseCursor();
 
-    void setDraggable(@Nullable IDraggable draggable);
+    void setDraggable(@Nonnull IDraggable draggable);
 
     @Nullable
     IDraggable getDraggable();

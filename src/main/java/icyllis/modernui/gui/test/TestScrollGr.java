@@ -30,10 +30,9 @@ public class TestScrollGr extends UniformScrollGroup<TestScrollGr.TestScrollEn> 
 
     public TestScrollGr(IScrollHost window) {
         super(window, 18);
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 20; i++) {
             entries.add(new TestScrollEn(window));
         }
-        height = entries.size() * entryHeight;
     }
 
     @Override
@@ -59,7 +58,7 @@ public class TestScrollGr extends UniformScrollGroup<TestScrollGr.TestScrollEn> 
             canvas.drawRect(x1, y1 + 1, x2, y2 - 1);
             canvas.resetColor();
             canvas.setTextAlign(Align3H.LEFT);
-            canvas.drawText(String.valueOf(hashCode()), x1 + 10, y1 + 6);
+            canvas.drawText(String.valueOf(hashCode()), x1 + 10, y1 + 5);
         }
     }
 }

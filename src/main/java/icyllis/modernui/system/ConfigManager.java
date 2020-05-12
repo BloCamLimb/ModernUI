@@ -78,14 +78,14 @@ public class ConfigManager {
                     .push("screen");
 
             keepRunningInScreenV = builder.comment("Keep game running no matter what screen is open. Modern UI's GUIs will never pause game.")
-                    .define("keepRunningGame", true);
+                    .define("keepGameRunning", true);
 
             builder.pop();
 
             builder.comment("Fonts Config")
                     .push("fonts");
 
-            enableGlobalFontRendererV = builder.comment("Replace vanilla's font renderer to Modern UI's. This won't affect the font renderer which in Modern UI's GUIs.")
+            enableGlobalFontRendererV = builder.comment("Replace vanilla's font renderer to Modern UI's. This won't affect the font renderer which is used in Modern UI's GUIs.")
                     .define("enableGlobalRenderer", true);
             preferredFontNameV = builder.comment("The name of font to use with highest priority. The default font that included in Modern UI is always the alternative one to use.")
                     .define("preferredFontName", "");
@@ -106,9 +106,11 @@ public class ConfigManager {
 
     public static class Common {
 
-        public boolean enableDeveloperMode;
+        private boolean enableDeveloperMode;
+        private boolean enableLibOnlyMode;
 
         private final ForgeConfigSpec.BooleanValue enableDeveloperModeV;
+        private final ForgeConfigSpec.BooleanValue enableLibOnlyModeV;
 
         public Common(@Nonnull ForgeConfigSpec.Builder builder) {
             builder.comment("Developer Config")
@@ -116,12 +118,23 @@ public class ConfigManager {
 
             enableDeveloperModeV = builder.comment("For assisting developer to debug mod and edit modules in-game")
                     .define("enableDeveloperMode", false);
+            enableLibOnlyModeV = builder.comment("Make Modern UI only as a library mod to work.")
+                    .define("enableLibOnlyMode", false);
 
             builder.pop();
         }
 
         private void load() {
             enableDeveloperMode = enableDeveloperModeV.get();
+            enableLibOnlyMode = enableLibOnlyModeV.get();
+        }
+
+        public boolean isEnableDeveloperMode() {
+            return enableDeveloperMode;
+        }
+
+        public boolean isEnableLibOnlyMode() {
+            return enableLibOnlyMode;
         }
     }
 }

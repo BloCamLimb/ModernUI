@@ -164,14 +164,14 @@ public abstract class Widget implements IWidget {
      * But builder gives you a default status, so you
      * shouldn't call this in constructor
      */
-    public void setStatus(WidgetStatus status) {
+    public void setStatus(WidgetStatus status, boolean allowAnimation) {
         if (this.status != status) {
             this.status = status;
-            onStatusChanged(status);
+            onStatusChanged(status, allowAnimation);
         }
     }
 
-    protected void onStatusChanged(WidgetStatus status) {}
+    protected void onStatusChanged(WidgetStatus status, boolean allowAnimation) {}
 
     @Override
     public boolean updateMouseHover(double mouseX, double mouseY) {
@@ -219,6 +219,7 @@ public abstract class Widget implements IWidget {
                 dClickTime = c;
                 if (d < 10) {
                     if (onMouseDoubleClick(mouseX, mouseY)) {
+                        dClickTime = -10;
                         return true;
                     }
                 }
@@ -293,7 +294,9 @@ public abstract class Widget implements IWidget {
     /**
      * Called whenever widget is not mouse hovered
      */
-    protected void onMouseHoverExit() {}
+    protected void onMouseHoverExit() {
+        dClickTime = -10;
+    }
 
     public final IHost getHost() {
         return host;

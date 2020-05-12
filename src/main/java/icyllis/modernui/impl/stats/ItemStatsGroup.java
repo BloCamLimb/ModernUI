@@ -135,14 +135,15 @@ public class ItemStatsGroup extends UniformScrollGroup<ItemStatsEntry> {
             entries.add(new ItemStatsEntry(window, item, (i & 1) == 0 ? Color3f.WHILE : Color3f.GRAY));
             i++;
         }
-
-        // 20 for labels header
-        height = 20 + entries.size() * entryHeight;
     }
 
     @Override
     public void locate(float px, float py) {
         super.locate(px, py);
+        // 20 for labels header
+        height += 20;
+        y2 += 20;
+
         py += 20;
         int i = 0;
         for (ItemStatsEntry entry : entries) {

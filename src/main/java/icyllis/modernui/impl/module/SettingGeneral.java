@@ -25,7 +25,7 @@ import icyllis.modernui.impl.setting.*;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.popup.ConfirmCallback;
 import icyllis.modernui.gui.popup.PopupConfirm;
-import icyllis.modernui.gui.scroll.SettingScrollWindow;
+import icyllis.modernui.impl.setting.SettingScrollWindow;
 import icyllis.modernui.system.ModIntegration;
 import icyllis.modernui.system.SettingsManager;
 import net.minecraft.client.GameSettings;

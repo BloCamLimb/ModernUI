@@ -16,9 +16,10 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.scroll;
+package icyllis.modernui.impl.setting;
 
 import icyllis.modernui.gui.master.Module;
+import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.impl.setting.SettingCategoryGroup;
 
 public class SettingScrollWindow extends ScrollWindow<SettingCategoryGroup> {

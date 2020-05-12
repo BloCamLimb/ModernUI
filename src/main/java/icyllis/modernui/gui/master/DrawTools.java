@@ -19,10 +19,11 @@
 package icyllis.modernui.gui.master;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.font.IFontRenderer;
+import icyllis.modernui.graphics.font.IFontRenderer;
+import icyllis.modernui.graphics.font.ModernFontRenderer;
 import icyllis.modernui.graphics.renderer.ModernTextRenderType;
 import icyllis.modernui.gui.math.Align3H;
-import icyllis.modernui.font.TrueTypeRenderer;
+import icyllis.modernui.graphics.font.TrueTypeRenderer;
 import icyllis.modernui.graphics.shader.ShaderTools;
 import icyllis.modernui.gui.math.Color3f;
 import icyllis.modernui.gui.shader.CircleShader;
@@ -444,10 +445,9 @@ public class DrawTools {
         RenderSystem.disableDepthTest();
     }
 
-    @Deprecated
     public void drawItemStackWithOverlays(@Nonnull ItemStack stack, float x, float y) {
         itemRenderer.renderItemAndEffectIntoGUI(stack, (int) x, (int) y);
-        itemRenderer.renderItemOverlays(Minecraft.getInstance().fontRenderer, stack, (int) x, (int) y);
+        itemRenderer.renderItemOverlays(ModernFontRenderer.INSTANCE, stack, (int) x, (int) y);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableDepthTest();

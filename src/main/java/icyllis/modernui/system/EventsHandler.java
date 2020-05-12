@@ -18,7 +18,7 @@
 
 package icyllis.modernui.system;
 
-import icyllis.modernui.font.TrueTypeRenderer;
+import icyllis.modernui.graphics.font.TrueTypeRenderer;
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.test.ContainerTest;
@@ -50,13 +50,12 @@ import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
 
-@SuppressWarnings("unused")
 @Mod.EventBusSubscriber
 public class EventsHandler {
 
     @SubscribeEvent
     public static void rightClickItem(@Nonnull PlayerInteractEvent.RightClickItem event) {
-        if (ConfigManager.COMMON.enableDeveloperMode) {
+        if (ConfigManager.COMMON.isEnableDeveloperMode()) {
             if (event.getSide().isServer() && event.getItemStack().getItem().equals(Items.DIAMOND)) {
                 NetworkHooks.openGui((ServerPlayerEntity) event.getPlayer(), new ContainerTest.Provider());
             }
@@ -111,10 +110,10 @@ public class EventsHandler {
         }*/
 
         @SubscribeEvent
-        public static void onKeyInput(InputEvent.KeyInputEvent e) {
-            if (ConfigManager.COMMON.enableDeveloperMode && e.getAction() == GLFW.GLFW_PRESS) {
+        public static void onKeyInput(InputEvent.KeyInputEvent event) {
+            if (ConfigManager.COMMON.isEnableDeveloperMode() && event.getAction() == GLFW.GLFW_PRESS) {
                 if (Screen.hasControlDown() && Screen.hasAltDown()) {
-                    /*if (e.getKey() == GLFW.GLFW_KEY_K) {
+                    /*if (event.getKey() == GLFW.GLFW_KEY_K) {
                         TrueTypeRenderer.INSTANCE.refreshCache();
                     }*/
                 }

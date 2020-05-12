@@ -37,7 +37,6 @@ public interface IDraggable {
 
     /**
      * Called when mouse released
-     * Should call {@link IHost#setDraggable(IDraggable) null}
      */
-    default void stopDragging() {}
+    default void stopMouseDragging() {}
 }

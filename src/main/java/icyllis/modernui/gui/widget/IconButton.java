@@ -36,8 +36,8 @@ public class IconButton extends Button {
     }
 
     @Override
-    public IconButton buildCallback(boolean b, @Nullable Runnable r, boolean onetime) {
-        super.buildCallback(b, r, onetime);
+    public IconButton buildCallback(@Nullable Runnable r) {
+        super.buildCallback(r);
         return this;
     }
 

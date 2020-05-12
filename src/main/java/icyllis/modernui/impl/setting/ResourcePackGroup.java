@@ -70,13 +70,14 @@ public class ResourcePackGroup extends UniformScrollGroup<ResourcePackEntry> {
 
             enabledList.forEach(t -> entries.add(new ResourcePackEntry(module, window, t, Align9D.TOP_LEFT)));
         }
-        // 14 for title, 4 for end space
-        height = 18 + entries.size() * entryHeight;
     }
 
     @Override
     public void locate(float px, float py) {
         super.locate(px, py);
+        // 14 for title, 4 for end space
+        height += 18;
+        y2 += 18;
         float pw = Math.min(window.getWidth(), 240);
         float cw = pw - window.getMargin();
         entries.forEach(e -> e.setWidth(cw));

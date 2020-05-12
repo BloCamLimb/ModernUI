@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.font;
+package icyllis.modernui.graphics.font;
 
 import icyllis.modernui.gui.math.Color3f;
 import icyllis.modernui.gui.math.Align3H;

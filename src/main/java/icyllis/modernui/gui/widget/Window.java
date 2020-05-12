@@ -23,6 +23,7 @@ import icyllis.modernui.gui.master.IHost;
 import icyllis.modernui.gui.master.IKeyboardListener;
 import icyllis.modernui.gui.master.IWidget;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.function.Function;
 
@@ -182,7 +183,7 @@ public abstract class Window implements IWidget, IHost {
     }
 
     @Override
-    public void setDraggable(@Nullable IDraggable draggable) {
+    public void setDraggable(@Nonnull IDraggable draggable) {
         host.setDraggable(draggable);
     }
 

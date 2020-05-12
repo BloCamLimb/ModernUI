@@ -59,18 +59,18 @@ public class Icon {
      * Constructor
      *
      * @param resource texture location
-     * @param p texture left pos [0,1]
-     * @param q texture top pos [0,1]
-     * @param s texture right pos [0,1]
-     * @param t texture bottom pos [0,1]
+     * @param u1 texture left pos [0,1]
+     * @param v1 texture top pos [0,1]
+     * @param u2 texture right pos [0,1]
+     * @param v2 texture bottom pos [0,1]
      * @param aa enable anti-aliasing for HD textures
      */
-    public Icon(ResourceLocation resource, float p, float q, float s, float t, boolean aa) {
+    public Icon(ResourceLocation resource, float u1, float v1, float u2, float v2, boolean aa) {
         this.resource = resource;
-        this.p = p;
-        this.q = q;
-        this.s = s;
-        this.t = t;
+        this.p = u1;
+        this.q = v1;
+        this.s = u2;
+        this.t = v2;
         this.aa = aa;
     }
 

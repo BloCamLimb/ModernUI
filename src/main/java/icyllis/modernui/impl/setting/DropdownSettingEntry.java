@@ -18,7 +18,7 @@
 
 package icyllis.modernui.impl.setting;
 
-import icyllis.modernui.font.FontTools;
+import icyllis.modernui.graphics.font.FontTools;
 import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
@@ -27,7 +27,6 @@ import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.Icon;
 import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.popup.PopupMenu;
-import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import icyllis.modernui.gui.popup.DropDownMenu;
 import icyllis.modernui.system.ConstantsLibrary;
 
@@ -68,7 +67,7 @@ public class DropdownSettingEntry extends SettingEntry {
 
         frameAnimation = new Animation(100)
                 .applyTo(new Applier(0, 0.25f, () -> frameAlpha, this::setFrameAlpha))
-                .listen(new Animation.IAnimationListener() {
+                .listen(new Animation.IListener() {
                     @Override
                     public void onAnimationEnd(Animation animation, boolean isReverse) {
                         if (isReverse) {

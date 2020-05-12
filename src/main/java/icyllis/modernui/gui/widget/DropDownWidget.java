@@ -18,7 +18,7 @@
 
 package icyllis.modernui.gui.widget;
 
-import icyllis.modernui.font.FontTools;
+import icyllis.modernui.graphics.font.FontTools;
 import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
@@ -113,8 +113,8 @@ public class DropDownWidget extends Widget {
     }
 
     @Override
-    protected void onStatusChanged(WidgetStatus status) {
-        super.onStatusChanged(status);
+    protected void onStatusChanged(WidgetStatus status, boolean allowAnimation) {
+        super.onStatusChanged(status, allowAnimation);
         if (status.isListening()) {
             brightness = 0.85f;
         } else {

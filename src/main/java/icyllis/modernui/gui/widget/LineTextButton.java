@@ -42,7 +42,7 @@ public class LineTextButton extends Widget {
     private Runnable callback;
 
     @Nonnull
-    private Predicate<Integer> selected = b -> true;
+    private Predicate<Integer> lockedFunc = b -> true;
 
     private float lineOffset;
     private float textBrightness = 0.7f;
@@ -67,10 +67,10 @@ public class LineTextButton extends Widget {
         );
     }
 
-    public LineTextButton buildCallback(@Nullable Runnable r, @Nullable Predicate<Integer> q) {
-        callback = r;
-        if (q != null) {
-            selected = q;
+    public LineTextButton buildCallback(@Nullable Runnable callback, @Nullable Predicate<Integer> locked) {
+        this.callback = callback;
+        if (locked != null) {
+            lockedFunc = locked;
         }
         return this;
     }
@@ -123,7 +123,7 @@ public class LineTextButton extends Widget {
     }
 
     public void onModuleChanged(int id) {
-        if (selected.test(id)) {
+        if (lockedFunc.test(id)) {
             lineAC.startOpenAnimation();
             lineAC.setLockState(true);
         } else {

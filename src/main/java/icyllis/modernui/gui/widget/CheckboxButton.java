@@ -61,9 +61,9 @@ public class CheckboxButton extends Widget {
                 .applyTo(new Applier(0.0f, 1.0f, this::getMarkAlpha, this::setMarkAlpha));
     }
 
-    public CheckboxButton buildCallback(boolean b, @Nullable Consumer<Boolean> c) {
-        this.checked = b;
-        if (b) {
+    public CheckboxButton buildCallback(boolean checked, @Nullable Consumer<Boolean> c) {
+        this.checked = checked;
+        if (checked) {
             markAlpha = 1;
         }
         callback = c;
@@ -105,8 +105,8 @@ public class CheckboxButton extends Widget {
     }
 
     @Override
-    protected void onStatusChanged(WidgetStatus status) {
-        super.onStatusChanged(status);
+    protected void onStatusChanged(WidgetStatus status, boolean allowAnimation) {
+        super.onStatusChanged(status, allowAnimation);
         if (status.isListening()) {
             inactiveAnimation.start();
         } else {

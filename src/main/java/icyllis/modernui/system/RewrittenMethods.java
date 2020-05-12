@@ -26,6 +26,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.IngameMenuScreen;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraftforge.common.MinecraftForge;
 
 import java.util.Objects;
 
@@ -35,13 +36,13 @@ public class RewrittenMethods {
     // prevent ingame menu be opened before game load complete
     public static boolean loadCompleted = false;
 
-    /** MainWindow **/
+    /* MainWindow */
     public static int calcGuiScale(int guiScaleIn) {
         int r = RewrittenMethods.calcGuiScales();
         return guiScaleIn > 0 ? MathHelper.clamp(guiScaleIn, r >> 8 & 0xf, r & 0xf) : r >> 4 & 0xf;
     }
 
-    /** Minecraft **/
+    /* Minecraft */
     public static void displayInGameMenu(boolean pauseGame) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.currentScreen == null) {
@@ -50,18 +51,21 @@ public class RewrittenMethods {
                 minecraft.displayGuiScreen(new IngameMenuScreen(false));
                 minecraft.getSoundHandler().pause();
             } else {
-                GlobalModuleManager.INSTANCE.openGuiScreen(new TranslationTextComponent("menu.game"), IngameMenuHome::new);
-                //minecraft.displayGuiScreen(new IngameMenuScreen(true));
+                if (ConfigManager.COMMON.isEnableLibOnlyMode()) {
+                    minecraft.displayGuiScreen(new IngameMenuScreen(true));
+                } else {
+                    GlobalModuleManager.INSTANCE.openGuiScreen(new TranslationTextComponent("menu.game"), IngameMenuHome::new);
+                }
             }
         }
     }
 
-    /** Screen **/
+    /* Screen */
     public static int getScreenBackgroundColor() {
         return (int) (BlurHandler.INSTANCE.getBackgroundAlpha() * 255.0f) << 24;
     }
 
-    /** Screen **/
+    /* Screen */
     public static boolean isPauseScreen() {
         return !ConfigManager.CLIENT.keepRunningInScreen;
     }

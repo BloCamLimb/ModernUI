@@ -29,7 +29,7 @@ public interface IGuiManager {
 
     /**
      * Register a gui with container on client side
-     *  @param id registry name
+     * @param id registry name
      * @param title screen title
      * @param containerFactory factory to create container
      * @param moduleFactory gui modules

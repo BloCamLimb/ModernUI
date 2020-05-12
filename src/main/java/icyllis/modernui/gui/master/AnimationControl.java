@@ -48,7 +48,7 @@ public class AnimationControl {
         Optional<Animation> d;
         if (openList != null) {
             d = openList.stream().max(Comparator.comparing(Animation::getDuration));
-            d.ifPresent(animation -> animation.listen(new Animation.IAnimationListener() {
+            d.ifPresent(animation -> animation.listen(new Animation.IListener() {
                 @Override
                 public void onAnimationEnd(Animation animation, boolean isReverse) {
                     setOpenState(true);
@@ -57,7 +57,7 @@ public class AnimationControl {
         }
         if (closeList != null) {
             d = closeList.stream().max(Comparator.comparing(Animation::getDuration));
-            d.ifPresent(animation -> animation.listen(new Animation.IAnimationListener() {
+            d.ifPresent(animation -> animation.listen(new Animation.IListener() {
                 @Override
                 public void onAnimationEnd(Animation animation, boolean isReverse) {
                     setOpenState(false);

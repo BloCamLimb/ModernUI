@@ -63,6 +63,13 @@ public abstract class UniformScrollGroup<T extends UniformScrollEntry> extends S
     }
 
     @Override
+    public void locate(float px, float py) {
+        super.locate(px, py);
+        height = entries.size() * entryHeight;
+        y2 = y1 + height;
+    }
+
+    @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         for (UniformScrollEntry entry : visible) {
             if (entry.isMouseHovered() && entry.mouseClicked(mouseX, mouseY, mouseButton)) {

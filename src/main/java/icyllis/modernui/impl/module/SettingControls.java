@@ -28,7 +28,7 @@ import icyllis.modernui.gui.widget.*;
 import icyllis.modernui.impl.setting.SettingCategoryGroup;
 import icyllis.modernui.impl.setting.SettingEntry;
 import icyllis.modernui.impl.setting.KeyBindingEntry;
-import icyllis.modernui.gui.scroll.SettingScrollWindow;
+import icyllis.modernui.impl.setting.SettingScrollWindow;
 import icyllis.modernui.system.ConstantsLibrary;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.system.SettingsManager;
@@ -84,7 +84,7 @@ public class SettingControls extends Module {
                 .setHeight(12)
                 .setTextDirection(Direction4D.DOWN)
                 .build(this)
-                .buildCallback(true, false, this::filterConflicts, false);
+                .buildCallback(false, this::filterConflicts);
         /*filterConflictButton = new TextIconButton(this, I18n.format("gui.modernui.button.filterConflicts"), 12, 12,
                 new Icon(ConstantsLibrary.ICONS, 0.5f, 0.25f, 0.625f, 0.375f, true), this::filterConflicts, TextIconButton.Direction.DOWN);*/
         addWidget(filterConflictButton);
@@ -96,7 +96,7 @@ public class SettingControls extends Module {
                 .setHeight(12)
                 .setTextDirection(Direction4D.DOWN)
                 .build(this)
-                .buildCallback(true, false, this::resetAllKey, false);
+                .buildCallback(false, this::resetAllKey);
         /*resetAllButton = new TextIconButton(this, I18n.format("controls.resetAll"), 12, 12,
                 new Icon(ConstantsLibrary.ICONS, 0.625f, 0.25f, 0.75f, 0.375f, true), this::resetAllKey, TextIconButton.Direction.DOWN);*/
         addWidget(resetAllButton);
@@ -108,10 +108,12 @@ public class SettingControls extends Module {
 
         nextButton = new TriangleButton.Builder(Direction4D.DOWN, 12)
                 .build(this)
-                .buildCallback(false, this::locateNextResult, false);
+                .buildCallback(this::locateNextResult);
+        nextButton.setStatus(WidgetStatus.INACTIVE, false);
         previousButton = new TriangleButton.Builder(Direction4D.UP, 12)
                 .build(this)
-                .buildCallback(false, this::locatePreviousResult, false);
+                .buildCallback(this::locatePreviousResult);
+        previousButton.setStatus(WidgetStatus.INACTIVE, false);
         //nextButton = new TriangleButton(this, TriangleButton.Direction.DOWN, 12, this::locateNextResult, false);
         //previousButton = new TriangleButton(this, TriangleButton.Direction.UP, 12, this::locatePreviousResult, false);
         addWidget(nextButton);
@@ -173,16 +175,16 @@ public class SettingControls extends Module {
             if (!searchResults.isEmpty()) {
                 KeyBindingEntry prev = currentResult;
                 if (searchResults.size() > 1) {
-                    nextButton.setStatus(WidgetStatus.ACTIVE);
-                    previousButton.setStatus(WidgetStatus.ACTIVE);
+                    nextButton.setStatus(WidgetStatus.ACTIVE, true);
+                    previousButton.setStatus(WidgetStatus.ACTIVE, true);
                     // get the closest result
                     if (prev == null) {
                         searchResults.stream().min(Comparator.comparing(e ->
                                 Math.abs(e.getTop() - window.getTop() - window.getVisibleOffset()))).ifPresent(e -> currentResult = e);
                     }
                 } else {
-                    nextButton.setStatus(WidgetStatus.INACTIVE);
-                    previousButton.setStatus(WidgetStatus.INACTIVE);
+                    nextButton.setStatus(WidgetStatus.INACTIVE, true);
+                    previousButton.setStatus(WidgetStatus.INACTIVE, true);
                     if (prev == null) {
                         currentResult = searchResults.get(0);
                     }
@@ -194,15 +196,15 @@ public class SettingControls extends Module {
                 updateResultCounter();
                 return true;
             } else {
-                nextButton.setStatus(WidgetStatus.INACTIVE);
-                previousButton.setStatus(WidgetStatus.INACTIVE);
+                nextButton.setStatus(WidgetStatus.INACTIVE, true);
+                previousButton.setStatus(WidgetStatus.INACTIVE, true);
                 currentResult = null;
                 updateResultCounter();
                 return false;
             }
         } else {
-            nextButton.setStatus(WidgetStatus.INACTIVE);
-            previousButton.setStatus(WidgetStatus.INACTIVE);
+            nextButton.setStatus(WidgetStatus.INACTIVE, true);
+            previousButton.setStatus(WidgetStatus.INACTIVE, true);
             currentResult = null;
             updateResultCounter();
             return true;

@@ -50,7 +50,7 @@ public class ScrollPanel<E extends UniformScrollEntry, G extends UniformScrollGr
     protected void onDraw(@Nonnull Canvas canvas, float time) {
         controller.update(time);
 
-        canvas.startClip(x1, y1, width, height);
+        canvas.clipStart(x1, y1, width, height);
 
         canvas.save();
         canvas.translate(0, -getVisibleOffset());
@@ -59,7 +59,7 @@ public class ScrollPanel<E extends UniformScrollEntry, G extends UniformScrollGr
 
         scrollbar.draw(canvas, time);
 
-        canvas.endClip();
+        canvas.clipEnd();
     }
 
     @Override
@@ -244,7 +244,7 @@ public class ScrollPanel<E extends UniformScrollEntry, G extends UniformScrollGr
     }
 
     @Override
-    public void setDraggable(@Nullable IDraggable draggable) {
+    public void setDraggable(@Nonnull IDraggable draggable) {
         getHost().setDraggable(draggable);
     }
 

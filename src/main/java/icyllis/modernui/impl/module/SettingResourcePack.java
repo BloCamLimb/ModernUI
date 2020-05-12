@@ -32,7 +32,6 @@ import icyllis.modernui.gui.widget.TriangleButton;
 import icyllis.modernui.impl.background.ResourcePackBG;
 import icyllis.modernui.impl.setting.ResourcePackEntry;
 import icyllis.modernui.impl.setting.ResourcePackGroup;
-import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.ClientResourcePackInfo;
@@ -90,28 +89,31 @@ public class SettingResourcePack extends Module {
         downArrow = new TriangleButton(this, TriangleButton.Direction.DOWN, 12, this::goDown, false);*/
         leftArrow = new TriangleButton.Builder(Direction4D.LEFT, 12)
                 .build(this)
-                .buildCallback(false, this::intoAvailable, false);
+                .buildCallback(this::intoAvailable);
         rightArrow = new TriangleButton.Builder(Direction4D.RIGHT, 12)
                 .build(this)
-                .buildCallback(false, this::intoSelected, false);
+                .buildCallback(this::intoSelected);
         upArrow = new TriangleButton.Builder(Direction4D.UP, 12)
                 .build(this)
-                .buildCallback(false, this::goUp, false);
+                .buildCallback(this::goUp);
         downArrow = new TriangleButton.Builder(Direction4D.DOWN, 12)
                 .build(this)
-                .buildCallback(false, this::goDown, false);
+                .buildCallback(this::goDown);
 
         list.add(leftArrow);
         list.add(rightArrow);
         list.add(upArrow);
         list.add(downArrow);
 
+        list.forEach(e -> e.setStatus(WidgetStatus.INACTIVE, false));
+
         applyButton = new StaticFrameButton.Builder(I18n.format("gui.modernui.button.apply"))
                 .setWidth(48)
                 .setAlign(Align9D.TOP_CENTER)
                 .setLocator(new Locator(Align9D.BOTTOM_CENTER, 0, -32))
                 .build(this)
-                .buildCallback(false, this::applyResourcePacks, true);
+                .buildCallback(this::applyResourcePacks);
+        applyButton.setStatus(WidgetStatus.INACTIVE, false);
 
         arrowsLayout = new WidgetLayout(list, WidgetLayout.Direction.VERTICAL_POSITIVE, 4);
 
@@ -151,7 +153,7 @@ public class SettingResourcePack extends Module {
 
         gameSettings.saveOptions();
         minecraft.reloadResources();
-        //applyButton.setStatus(WidgetStatus.INACTIVE);
+        applyButton.setStatus(WidgetStatus.INACTIVE, false);
     }
 
     @Override
@@ -166,7 +168,7 @@ public class SettingResourcePack extends Module {
         return false;
     }
 
-    private void intoSelected() {
+    public void intoSelected() {
         if (highlightEntry != null && highlightEntry.canIntoSelected()) {
             highlightEntry.setAlign(Align9D.TOP_LEFT);
             availableGroup.getEntries().remove(highlightEntry);
@@ -177,11 +179,11 @@ public class SettingResourcePack extends Module {
             highlightEntry.setMouseHoverExit();
             refocusMouseCursor();
             setHighlightEntry(highlightEntry);
-            applyButton.setStatus(WidgetStatus.ACTIVE);
+            applyButton.setStatus(WidgetStatus.ACTIVE, true);
         }
     }
 
-    private void intoAvailable() {
+    public void intoAvailable() {
         if (highlightEntry != null && highlightEntry.canIntoAvailable()) {
             highlightEntry.setAlign(Align9D.TOP_RIGHT);
             selectedGroup.getEntries().remove(highlightEntry);
@@ -192,7 +194,7 @@ public class SettingResourcePack extends Module {
             highlightEntry.setMouseHoverExit();
             refocusMouseCursor();
             setHighlightEntry(highlightEntry);
-            applyButton.setStatus(WidgetStatus.ACTIVE);
+            applyButton.setStatus(WidgetStatus.ACTIVE, true);
         }
     }
 
@@ -203,7 +205,7 @@ public class SettingResourcePack extends Module {
             //selectedGroup.followEntry(highlightEntry);
             refocusMouseCursor();
             setHighlightEntry(highlightEntry);
-            applyButton.setStatus(WidgetStatus.ACTIVE);
+            applyButton.setStatus(WidgetStatus.ACTIVE, true);
         }
     }
 
@@ -214,7 +216,7 @@ public class SettingResourcePack extends Module {
             //selectedGroup.followEntry(highlightEntry);
             refocusMouseCursor();
             setHighlightEntry(highlightEntry);
-            applyButton.setStatus(WidgetStatus.ACTIVE);
+            applyButton.setStatus(WidgetStatus.ACTIVE, true);
         }
     }
 
@@ -248,18 +250,18 @@ public class SettingResourcePack extends Module {
         this.highlightEntry = highlightEntry;
         if (highlightEntry != null) {
             leftArrow.setStatus(highlightEntry.canIntoAvailable() ?
-                    WidgetStatus.ACTIVE : WidgetStatus.INACTIVE);
+                    WidgetStatus.ACTIVE : WidgetStatus.INACTIVE, true);
             rightArrow.setStatus(highlightEntry.canIntoSelected() ?
-                    WidgetStatus.ACTIVE : WidgetStatus.INACTIVE);
+                    WidgetStatus.ACTIVE : WidgetStatus.INACTIVE, true);
             upArrow.setStatus(highlightEntry.canGoUp() ?
-                    WidgetStatus.ACTIVE : WidgetStatus.INACTIVE);
+                    WidgetStatus.ACTIVE : WidgetStatus.INACTIVE, true);
             downArrow.setStatus(highlightEntry.canGoDown() ?
-                    WidgetStatus.ACTIVE : WidgetStatus.INACTIVE);
+                    WidgetStatus.ACTIVE : WidgetStatus.INACTIVE, true);
         } else {
-            leftArrow.setStatus(WidgetStatus.INACTIVE);
-            rightArrow.setStatus(WidgetStatus.INACTIVE);
-            upArrow.setStatus(WidgetStatus.INACTIVE);
-            downArrow.setStatus(WidgetStatus.INACTIVE);
+            leftArrow.setStatus(WidgetStatus.INACTIVE, true);
+            rightArrow.setStatus(WidgetStatus.INACTIVE, true);
+            upArrow.setStatus(WidgetStatus.INACTIVE, true);
+            downArrow.setStatus(WidgetStatus.INACTIVE, true);
         }
     }
 

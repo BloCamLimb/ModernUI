@@ -146,7 +146,7 @@ public class SliderSmooth extends Slider {
 
         /**
          * Called when stopped dragging
-         * @param value
+         * @param value current value
          */
         void onSliderStopChange(double value);
     }

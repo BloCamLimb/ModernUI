@@ -136,10 +136,9 @@ public abstract class Slider extends Widget implements IDraggable {
     }
 
     @Override
-    public final void stopDragging() {
+    public final void stopMouseDragging() {
         if (isDragging) {
             isDragging = false;
-            getHost().setDraggable(null);
             checkThumb(getHost().getRelativeMouseX(), getHost().getRelativeMouseY());
             onStopDragging();
         }

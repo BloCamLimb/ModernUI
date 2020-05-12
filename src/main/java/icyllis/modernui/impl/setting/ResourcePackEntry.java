@@ -19,7 +19,7 @@
 package icyllis.modernui.impl.setting;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.font.FontTools;
+import icyllis.modernui.graphics.font.FontTools;
 import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.math.Align9D;
@@ -157,13 +157,23 @@ public class ResourcePackEntry extends UniformScrollEntry {
     }
 
     @Override
-    protected void onMouseHoverEnter(double mouseX, double mouseY) {
+    protected boolean onMouseDoubleClick(double mouseX, double mouseY) {
+        if (canIntoSelected()) {
+            module.intoSelected();
+        } else if (canIntoAvailable()) {
+            module.intoAvailable();
+        }
+        return true;
+    }
 
+    @Override
+    protected void onMouseHoverEnter(double mouseX, double mouseY) {
+        super.onMouseHoverEnter(mouseX, mouseY);
     }
 
     @Override
     protected void onMouseHoverExit() {
-
+        super.onMouseHoverExit();
     }
 
     public void updateTitle() {

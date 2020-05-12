@@ -21,7 +21,7 @@ package icyllis.modernui.impl.chat;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.math.Align3H;
-import icyllis.modernui.font.TrueTypeRenderer;
+import icyllis.modernui.graphics.font.TrueTypeRenderer;
 import icyllis.modernui.gui.math.Color3f;
 import icyllis.modernui.system.HistoryRecorder;
 import icyllis.modernui.system.ConstantsLibrary;
