@@ -51,8 +51,8 @@ public class Applier {
         return this;
     }
 
-    public void record(boolean inverted, boolean restart) {
-        if (restart) {
+    public void record(boolean inverted, boolean full) {
+        if (full) {
             if (inverted) {
                 logicStart = endValue;
             } else {

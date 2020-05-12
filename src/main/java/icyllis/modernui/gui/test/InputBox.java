@@ -18,10 +18,6 @@
 
 package icyllis.modernui.gui.test;
 
-import icyllis.modernui.font.IFontRenderer;
-import icyllis.modernui.font.FontTools;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-
 import java.util.function.Predicate;
 
 @Deprecated

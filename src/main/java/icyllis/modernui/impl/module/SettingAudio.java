@@ -23,7 +23,7 @@ import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.impl.setting.SettingCategoryGroup;
 import icyllis.modernui.impl.setting.SettingEntry;
 import icyllis.modernui.impl.setting.SSliderSettingEntry;
-import icyllis.modernui.gui.scroll.SettingScrollWindow;
+import icyllis.modernui.impl.setting.SettingScrollWindow;
 import icyllis.modernui.system.ConstantsLibrary;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;

@@ -20,7 +20,7 @@ package icyllis.modernui.gui.widget;
 
 import com.google.common.collect.Lists;
 import com.google.gson.annotations.Expose;
-import icyllis.modernui.font.FontTools;
+import icyllis.modernui.graphics.font.FontTools;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.animation.IInterpolator;
@@ -81,8 +81,8 @@ public class MenuButton extends IconButton {
     }
 
     @Override
-    public MenuButton buildCallback(boolean b, @Nullable Runnable r, boolean onetime) {
-        super.buildCallback(b, r, onetime);
+    public MenuButton buildCallback(@Nullable Runnable r) {
+        super.buildCallback(r);
         return this;
     }
 

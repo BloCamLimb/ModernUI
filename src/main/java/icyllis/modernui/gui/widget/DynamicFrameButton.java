@@ -68,8 +68,8 @@ public class DynamicFrameButton extends Button {
     }
 
     @Override
-    public DynamicFrameButton buildCallback(boolean b, @Nullable Runnable r, boolean onetime) {
-        super.buildCallback(b, r, onetime);
+    public DynamicFrameButton buildCallback(@Nullable Runnable r) {
+        super.buildCallback(r);
         return this;
     }
 
@@ -136,13 +136,13 @@ public class DynamicFrameButton extends Button {
         }
 
         public DynamicFrameButton.Countdown buildCallback(@Nullable Runnable r, boolean onetime) {
-            super.buildCallback(false, r, onetime);
+            super.buildCallback(r);
             return this;
         }
 
         @Deprecated
         @Override
-        public DynamicFrameButton buildCallback(boolean b, @Nullable Runnable r, boolean onetime) {
+        public DynamicFrameButton buildCallback(@Nullable Runnable r) {
             throw new RuntimeException();
         }
 
@@ -173,7 +173,7 @@ public class DynamicFrameButton extends Button {
                 counting = ticks < startTick + countdown * 20;
                 displayCount = countdown - (ticks - startTick) / 20;
                 if (!counting) {
-                    setStatus(WidgetStatus.ACTIVE);
+                    setStatus(WidgetStatus.ACTIVE, true);
                     getHost().refocusMouseCursor();
                 }
             }

@@ -65,61 +65,61 @@ public class IngameMenuHome extends ModuleGroup {
                 new MenuButton.Builder(I18n.format("gui.modernui.menu.back"), 4, -1)
                         .setLocator(new Locator(Align9D.TOP_LEFT, 8, 8))
                         .build(this)
-                        .buildCallback(true, () -> {
+                        .buildCallback(() -> {
                             GlobalModuleManager.INSTANCE.closeGuiScreen();
                             playSound(RegistrySounds.BUTTON_CLICK_2);
-                        }, false)
+                        })
         );
         consumer.accept(
                 new MenuButton.Builder(I18n.format("gui.advancements") + " (WIP)", 1, 1)
                         .setLocator(new Locator(Align9D.TOP_LEFT, 8, 44))
                         .build(this)
-                        .buildCallback(true,
+                        .buildCallback(
                                 () -> {
                             minecraft.displayGuiScreen(
                                     new AdvancementsScreen(Objects.requireNonNull(minecraft.player).connection.getAdvancementManager()));
                             playSound(RegistrySounds.BUTTON_CLICK_2);
-                                },
-                                false)
+                                }
+                        )
         );
         consumer.accept(
                 new MenuButton.Builder(I18n.format("gui.stats"), 2, 2)
                         .setLocator(new Locator(Align9D.TOP_LEFT, 8, 72))
                         .build(this)
-                        .buildCallback(true,
+                        .buildCallback(
                                 () -> {
                             switchChildModule(2);
                             playSound(RegistrySounds.BUTTON_CLICK_2);
-                                },
-                                false)
+                                }
+                        )
         );
         consumer.accept(
                 new MenuButton.Builder(I18n.format("gui.modernui.menu.mods"), 6, 3)
                         .setLocator(new Locator(Align9D.BOTTOM_LEFT, 8, -92))
                         .build(this)
-                        .buildCallback(true,
+                        .buildCallback(
                                 () -> {
                             minecraft.displayGuiScreen(new ModListScreen(GlobalModuleManager.INSTANCE.getModernScreen()));
                             playSound(RegistrySounds.BUTTON_CLICK_2);
-                                },
-                                false)
+                                }
+                        )
         ); // Forge's GUI is a little buggy, but we fixed that
         consumer.accept(
                 new MenuButton.Builder(I18n.format("gui.modernui.menu.settings"), 0, 4)
                         .setLocator(new Locator(Align9D.BOTTOM_LEFT, 8, -64))
                         .build(this)
-                        .buildCallback(true,
+                        .buildCallback(
                                 () -> {
                             switchChildModule(4);
                             playSound(RegistrySounds.BUTTON_CLICK_2);
-                                },
-                                false)
+                                }
+                        )
         );
         consumer.accept(
                 new MenuButton.Builder(I18n.format("gui.modernui.menu.exit"), 5, -1)
                         .setLocator(new Locator(Align9D.BOTTOM_LEFT, 8, -28))
                         .build(this)
-                        .buildCallback(true, this::exitToTitle, false)
+                        .buildCallback(this::exitToTitle)
         );
 
         // advancements

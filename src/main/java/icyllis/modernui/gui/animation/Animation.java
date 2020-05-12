@@ -38,7 +38,7 @@ public class Animation implements IAnimation {
     private List<Applier> appliers;
 
     @Nullable
-    private List<IAnimationListener> listeners;
+    private List<IListener> listeners;
 
     private boolean waiting = true;
 
@@ -78,7 +78,7 @@ public class Animation implements IAnimation {
         return this;
     }
 
-    public Animation listen(IAnimationListener listener) {
+    public Animation listen(IListener listener) {
         if (listeners == null) {
             listeners = Lists.newArrayList();
         }
@@ -90,23 +90,23 @@ public class Animation implements IAnimation {
      * Play the animation depends on current value with full duration
      */
     public void start() {
-        startInternal(false);
+        start0(false);
     }
 
     /**
      * Play the animation depends on applier original properties
      */
     public void startFull() {
-        startInternal(true);
+        start0(true);
     }
 
-    private void startInternal(boolean restart) {
+    private void start0(boolean full) {
         startTime = GlobalModuleManager.INSTANCE.getAnimationTime() + delayTime;
         waiting = false;
         reversed = false;
         started = false;
         if (appliers != null) {
-            appliers.forEach(e -> e.record(reversed, restart));
+            appliers.forEach(e -> e.record(reversed, full));
         }
         GlobalModuleManager.INSTANCE.addAnimation(this);
     }
@@ -119,12 +119,20 @@ public class Animation implements IAnimation {
      * duration: 400ms (slow -> fast, as well. not fast -> slow because it's not reversed)
      */
     public void invert() {
-        startTime = GlobalModuleManager.INSTANCE.getAnimationTime();
+        invert0(false);
+    }
+
+    public void invertFull() {
+        invert0(true);
+    }
+
+    private void invert0(boolean full) {
+        startTime = GlobalModuleManager.INSTANCE.getAnimationTime() + delayTime;
         waiting = false;
         reversed = true;
         started = false;
         if (appliers != null) {
-            appliers.forEach(e -> e.record(reversed, false));
+            appliers.forEach(e -> e.record(reversed, full));
         }
         GlobalModuleManager.INSTANCE.addAnimation(this);
     }
@@ -190,7 +198,7 @@ public class Animation implements IAnimation {
         return waiting;
     }
 
-    public interface IAnimationListener {
+    public interface IListener {
 
         /**
          * Called when animation started by user

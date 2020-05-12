@@ -63,14 +63,14 @@ public class Canvas extends DrawTools {
         RenderSystem.translatef(kx, ky, 0.0f);
     }
 
-    public void startClip(float x, float y, float width, float height) {
+    public void clipStart(float x, float y, float width, float height) {
         double scale = mainWindow.getGuiScaleFactor();
         GL11.glEnable(GL11.GL_SCISSOR_TEST);
         GL11.glScissor((int) (x * scale), (int) (mainWindow.getFramebufferHeight() - ((y + height) * scale)),
                 (int) (width * scale), (int) (height * scale));
     }
 
-    public void endClip() {
+    public void clipEnd() {
         GL11.glDisable(GL11.GL_SCISSOR_TEST);
     }
 }

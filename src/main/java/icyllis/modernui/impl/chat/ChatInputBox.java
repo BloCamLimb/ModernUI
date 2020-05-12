@@ -21,7 +21,7 @@ package icyllis.modernui.impl.chat;
 import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.math.Color3f;
 import icyllis.modernui.gui.test.StandardEventListener;
-import icyllis.modernui.font.IFontRenderer;
+import icyllis.modernui.graphics.font.IFontRenderer;
 import icyllis.modernui.gui.master.DrawTools;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;

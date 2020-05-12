@@ -20,7 +20,7 @@ package icyllis.modernui.system;
 
 import com.google.common.collect.Lists;
 import icyllis.modernui.impl.setting.*;
-import icyllis.modernui.gui.scroll.SettingScrollWindow;
+import icyllis.modernui.impl.setting.SettingScrollWindow;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.NewChatGui;
@@ -692,7 +692,7 @@ public enum SettingsManager {
     }
 
 
-    /** All belows are OptiFine soft compatibility **/
+    /* All belows are OptiFine soft compatibility */
 
     public boolean getDynamicFov() {
         try {

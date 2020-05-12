@@ -20,10 +20,9 @@ package icyllis.modernui.impl.module;
 
 import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.impl.setting.GuiScaleSettingEntry;
-import icyllis.modernui.impl.setting.OptiFineSettingEntry;
 import icyllis.modernui.impl.setting.SettingCategoryGroup;
 import icyllis.modernui.impl.setting.SettingEntry;
-import icyllis.modernui.gui.scroll.SettingScrollWindow;
+import icyllis.modernui.impl.setting.SettingScrollWindow;
 import icyllis.modernui.system.ModIntegration;
 import icyllis.modernui.system.SettingsManager;
 import net.minecraft.client.resources.I18n;
@@ -31,12 +30,10 @@ import net.minecraft.client.settings.AbstractOption;
 import net.optifine.config.IteratableOptionOF;
 import net.optifine.gui.GuiAnimationSettingsOF;
 import net.optifine.gui.GuiDetailSettingsOF;
-import net.optifine.gui.GuiOtherSettingsOF;
 import net.optifine.gui.GuiPerformanceSettingsOF;
 
 import javax.annotation.Nonnull;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 

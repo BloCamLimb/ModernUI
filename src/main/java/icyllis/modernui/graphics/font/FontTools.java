@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.font;
+package icyllis.modernui.graphics.font;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -24,7 +24,7 @@ import java.util.List;
 
 public class FontTools {
 
-    private static final IFontRenderer FONT_RENDERER;
+    private static final TrueTypeRenderer FONT_RENDERER;
 
     static {
         FONT_RENDERER = TrueTypeRenderer.INSTANCE;

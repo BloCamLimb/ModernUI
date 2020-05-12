@@ -22,7 +22,7 @@
  * USA
  */
 
-package icyllis.modernui.font;
+package icyllis.modernui.graphics.font;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -31,14 +31,12 @@ import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.math.Color3f;
 import icyllis.modernui.system.ConfigManager;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.Matrix4f;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.entity.EntityRendererManager;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
@@ -46,9 +44,6 @@ import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nullable;
 
-/**
- * Font renderer can only be called in render loop and render thread
- */
 @OnlyIn(Dist.CLIENT)
 public class TrueTypeRenderer implements IFontRenderer {
 
@@ -88,11 +83,12 @@ public class TrueTypeRenderer implements IFontRenderer {
         cache = new StringCache();
         cache.setDefaultFont(14.0f);
 
+        ModernFontRenderer.INSTANCE = new ModernFontRenderer(this);
+
         if (ConfigManager.CLIENT.enableGlobalFontRenderer) {
             try {
-                FontRenderer fontRenderer = new ModernFontRenderer(this);
-                ObfuscationReflectionHelper.findField(Minecraft.class, "field_71466_p").set(Minecraft.getInstance(), fontRenderer);
-                ObfuscationReflectionHelper.findField(EntityRendererManager.class, "field_78736_p").set(Minecraft.getInstance().getRenderManager(), fontRenderer);
+                ObfuscationReflectionHelper.findField(Minecraft.class, "field_71466_p").set(Minecraft.getInstance(), ModernFontRenderer.INSTANCE);
+                ObfuscationReflectionHelper.findField(EntityRendererManager.class, "field_78736_p").set(Minecraft.getInstance().getRenderManager(), ModernFontRenderer.INSTANCE);
                 //GlobalModuleManager.INSTANCE.scheduleTask(new DelayedTask(this::refreshCache, 1));
             } catch (IllegalAccessException e) {
                 e.printStackTrace();
@@ -106,10 +102,10 @@ public class TrueTypeRenderer implements IFontRenderer {
 
     @Deprecated
     public void refreshCache() {
-        cache.clearStringCache();
+        /*cache.clearStringCache();
         if (Minecraft.getInstance().player != null) {
             Minecraft.getInstance().player.sendMessage(new StringTextComponent("[Modern UI] String Cache and Glyph Cache are cleared."));
-        }
+        }*/
         throw new RuntimeException("Deprecated");
     }
 
@@ -233,7 +229,7 @@ public class TrueTypeRenderer implements IFontRenderer {
 
             /* Use initial color passed to renderString(); disable texturing to draw solid color lines */
             GlStateManager.disableTexture();
-            buffer.begin(7, DefaultVertexFormats.POSITION_COLOR);
+            buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
 
             for (int glyphIndex = 0, colorIndex = 0; glyphIndex < entry.glyphs.length; glyphIndex++) {
                 /*

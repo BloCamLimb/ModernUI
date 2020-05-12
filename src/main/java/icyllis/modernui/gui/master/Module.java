@@ -28,6 +28,7 @@ import net.minecraft.client.audio.SimpleSound;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundEvent;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
 import java.util.*;
@@ -260,7 +261,7 @@ public abstract class Module implements IModule, IHost {
     }
 
     @Override
-    public void setDraggable(@Nullable IDraggable draggable) {
+    public void setDraggable(@Nonnull IDraggable draggable) {
         this.draggable = draggable;
     }
 
@@ -311,7 +312,8 @@ public abstract class Module implements IModule, IHost {
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
         if (draggable != null) {
-            draggable.stopDragging();
+            draggable.stopMouseDragging();
+            draggable = null;
             return true;
         }
         for (IMouseListener listener : mouseListeners) {

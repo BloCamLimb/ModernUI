@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.font;
+package icyllis.modernui.graphics.font;
 
 import icyllis.modernui.gui.math.Color3f;
 import icyllis.modernui.system.ConfigManager;
@@ -33,6 +33,8 @@ import java.util.List;
  * Use modern ui font renderer to replace vanilla's renderer
  */
 public class ModernFontRenderer extends FontRenderer {
+
+    public static ModernFontRenderer INSTANCE;
 
     private final TrueTypeRenderer fontRenderer;
 
@@ -107,7 +109,7 @@ public class ModernFontRenderer extends FontRenderer {
 
     @Override
     public void drawSplitString(@Nullable String text, int x, int y, int wrapWidth, int textColor) {
-        if (text == null) {
+        if (text == null || text.isEmpty()) {
             return;
         }
         while (text.endsWith("\n")) {

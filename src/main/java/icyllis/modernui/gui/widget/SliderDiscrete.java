@@ -39,9 +39,6 @@ public class SliderDiscrete extends Slider {
 
     private IListener listener;
 
-    /**
-     * Constructor
-     */
     public SliderDiscrete(IHost host, Builder builder) {
         super(host, builder);
         minValue = builder.minValue;
@@ -155,7 +152,7 @@ public class SliderDiscrete extends Slider {
 
         /**
          * Called when stopped dragging
-         * @param value
+         * @param value current value
          */
         void onSliderStopChange(int value);
     }

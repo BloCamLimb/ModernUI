@@ -33,6 +33,12 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
 
+/**
+ * Multi-paged scroll panel, each page has a fixed number of entries, and can sort them
+ * All entries should be added by this class, or in constructor of scroll group
+ * @param <E> entry type
+ * @param <G> group type
+ */
 public class MultiPageScrollPanel<E extends UniformScrollEntry, G extends UniformScrollGroup<E>> extends ScrollPanel<E, G> {
 
     protected final int maxEntry;
@@ -86,7 +92,7 @@ public class MultiPageScrollPanel<E extends UniformScrollEntry, G extends Unifor
 
     private void sortAndPaging() {
         maxPage = MathHelper.ceil((float) allEntries.size() / maxEntry);
-        cPage = MathHelper.clamp(cPage, 0, maxPage);
+        cPage = MathHelper.clamp(cPage, 1, maxPage);
         sort();
     }
 
@@ -102,6 +108,7 @@ public class MultiPageScrollPanel<E extends UniformScrollEntry, G extends Unifor
         if (scrollToTop) {
             scrollDirect(-getMaxScrollAmount());
         }
+        hasScrolled = true;
     }
 
     public void sort() {
@@ -121,17 +128,17 @@ public class MultiPageScrollPanel<E extends UniformScrollEntry, G extends Unifor
     }
 
     public void addEntry(@Nonnull E entry) {
-        if (addEntryDirectly(entry)) {
+        if (addEntry0(entry)) {
             sortAndPaging();
         }
     }
 
     public void addEntries(@Nonnull Collection<E> collection) {
-        collection.forEach(this::addEntryDirectly);
+        collection.forEach(this::addEntry0);
         sortAndPaging();
     }
 
-    private boolean addEntryDirectly(E entry) {
+    private boolean addEntry0(E entry) {
         if (!allEntries.contains(entry)) {
             allEntries.add(entry);
             return true;
@@ -150,6 +157,10 @@ public class MultiPageScrollPanel<E extends UniformScrollEntry, G extends Unifor
         sortAndPaging();
     }
 
+    /**
+     * Always greater than or equal to 1
+     * @return c
+     */
     public int getCurrentPage() {
         return cPage;
     }
@@ -166,14 +177,14 @@ public class MultiPageScrollPanel<E extends UniformScrollEntry, G extends Unifor
     }
 
     public void gotoPreviousPage() {
-        if (cPage > 0) {
+        if (cPage > 1) {
             --cPage;
             refreshPage(true);
         }
     }
 
     public void gotoSpecificPage(int page) {
-        if (page != cPage && page >= 0 && page <= maxPage) {
+        if (page != cPage && page >= 1 && page <= maxPage) {
             cPage = page;
             refreshPage(true);
         }
@@ -193,7 +204,6 @@ public class MultiPageScrollPanel<E extends UniformScrollEntry, G extends Unifor
             return this;
         }
 
-        @Deprecated
         @Override
         public Builder setHeight(float height) {
             super.setHeight(height);

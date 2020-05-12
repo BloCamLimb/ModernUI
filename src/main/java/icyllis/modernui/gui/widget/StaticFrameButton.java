@@ -41,8 +41,8 @@ public class StaticFrameButton extends Button {
     }
 
     @Override
-    public StaticFrameButton buildCallback(boolean clickable, @Nullable Runnable r, boolean onetime) {
-        super.buildCallback(clickable, r, onetime);
+    public StaticFrameButton buildCallback(@Nullable Runnable r) {
+        super.buildCallback(r);
         return this;
     }
 

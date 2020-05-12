@@ -34,8 +34,8 @@ public class TriangleButton extends IconButton {
     }
 
     @Override
-    public TriangleButton buildCallback(boolean b, @Nullable Runnable r, boolean onetime) {
-        super.buildCallback(b, r, onetime);
+    public TriangleButton buildCallback(@Nullable Runnable r) {
+        super.buildCallback(r);
         return this;
     }
 

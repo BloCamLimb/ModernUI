@@ -18,11 +18,10 @@
 
 package icyllis.modernui.impl.setting;
 
-import icyllis.modernui.font.FontTools;
+import icyllis.modernui.graphics.font.FontTools;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.Icon;
 import icyllis.modernui.gui.math.Align3H;
-import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import icyllis.modernui.system.ConstantsLibrary;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;

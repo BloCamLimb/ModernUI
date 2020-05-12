@@ -19,7 +19,6 @@
 package icyllis.modernui.impl.setting;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import icyllis.modernui.system.RewrittenMethods;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.I18n;

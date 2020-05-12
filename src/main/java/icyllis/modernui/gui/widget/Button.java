@@ -36,8 +36,6 @@ public abstract class Button extends Widget {
     private float brightness = 0.7f;
     private float brightnessOffset = 0;
 
-    private boolean playInactiveAnimation = true;
-
     /*protected final AnimationControl brightAC = new AnimationControl(Lists.newArrayList(new Animation(4)
             .applyTo(new Applier(0.7f, 1.0f, () -> brightness, this::setBrightness))),
             Lists.newArrayList(new Animation(4)
@@ -58,32 +56,30 @@ public abstract class Button extends Widget {
 
     /**
      * Callback constructor
-     * @param b default clickable, on or off
      * @param r left click callback
-     * @param onetime make un-clickable after being pressed
      * @return instance
      */
-    public Button buildCallback(boolean b, @Nullable Runnable r, boolean onetime) {
-        if (!b) {
+    public Button buildCallback(@Nullable Runnable r) {
+        /*if (!b) {
             boolean p = playInactiveAnimation;
             playInactiveAnimation = false;
-            setStatus(WidgetStatus.INACTIVE);
+            setStatus(WidgetStatus.INACTIVE, true);
             playInactiveAnimation = p;
-        }
-        if (onetime) {
+        }*/
+        /*if (onetime) {
             if (r != null) {
                 callback = () -> {
                     r.run();
-                    setStatus(WidgetStatus.INACTIVE);
+                    setStatus(WidgetStatus.INACTIVE, true);
                 };
             } else {
-                callback = () -> setStatus(WidgetStatus.INACTIVE);
+                callback = () -> setStatus(WidgetStatus.INACTIVE, true);
             }
             playInactiveAnimation = false;
-        } else {
-            callback = r;
-            //playInactiveAnimation = true;
-        }
+        } else {*/
+        callback = r;
+            /*//playInactiveAnimation = true;
+        }*/
         return this;
     }
 
@@ -127,13 +123,13 @@ public abstract class Button extends Widget {
     }
 
     @Override
-    protected void onStatusChanged(WidgetStatus status) {
-        super.onStatusChanged(status);
+    protected void onStatusChanged(WidgetStatus status, boolean allowAnimation) {
+        super.onStatusChanged(status, allowAnimation);
         activeAnimation.cancel();
         if (status.isListening()) {
             inactiveAnimation.start();
         } else {
-            if (playInactiveAnimation) {
+            if (allowAnimation) {
                 inactiveAnimation.invert();
             } else {
                 inactiveAnimation.skipToStart();

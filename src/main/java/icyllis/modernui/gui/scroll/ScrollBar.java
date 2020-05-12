@@ -20,6 +20,7 @@ package icyllis.modernui.gui.scroll;
 
 import icyllis.modernui.gui.master.*;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
@@ -202,10 +203,9 @@ public class ScrollBar implements IDrawable, IMouseListener, IDraggable {
     }
 
     @Override
-    public void stopDragging() {
+    public void stopMouseDragging() {
         if (visible && isDragging) {
             isDragging = false;
-            master.setDraggable(null);
             startTime = manager.getAnimationTime() + 10.0f;
         }
     }
@@ -241,7 +241,7 @@ public class ScrollBar implements IDrawable, IMouseListener, IDraggable {
 
     public interface IScrollable {
 
-        void setDraggable(@Nullable IDraggable draggable);
+        void setDraggable(@Nonnull IDraggable draggable);
 
         void scrollSmooth(float delta);
 

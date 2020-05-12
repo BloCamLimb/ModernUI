@@ -20,7 +20,6 @@ package icyllis.modernui.impl.setting;
 
 import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import icyllis.modernui.gui.scroll.UniformScrollEntry;
 
 import javax.annotation.Nonnull;

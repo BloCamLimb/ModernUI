@@ -21,7 +21,6 @@ package icyllis.modernui.impl.setting;
 import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.widget.SliderDiscrete;
-import icyllis.modernui.gui.scroll.SettingScrollWindow;
 
 import java.util.function.Consumer;
 import java.util.function.Function;

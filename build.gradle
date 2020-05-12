@@ -15,11 +15,45 @@ apply plugin: 'eclipse'
 apply plugin: 'java-library'
 apply plugin: 'maven-publish'
 
-version = "${minecraft_version}-${mod_version}-universal"
+version = "${minecraft_version}-${mod_version}"
 group = 'icyllis.modernui'
 archivesBaseName = 'ModernUI'
 
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
+
+sourceSets {
+    api {
+        java {
+            srcDir 'src/api/java'
+        }
+    }
+    main {
+        java {
+            srcDir 'src/main/java'
+        }
+        compileClasspath += sourceSets.api.output
+        runtimeClasspath += sourceSets.api.output
+    }
+    test {
+        compileClasspath += sourceSets.api.output + sourceSets.main.output
+        runtimeClasspath += sourceSets.api.output + sourceSets.main.output
+    }
+}
+
+configurations {
+    def compileExtenders = [apiCompile, testCompile]
+    def compileOnlyExtenders = [apiCompileOnly, testCompileOnly]
+    def runtimeOnlyExtenders = [apiRuntimeOnly]
+    for (def compileExtender : compileExtenders) {
+        compileExtender.extendsFrom(compile)
+    }
+    for (def compileOnlyExtender : compileOnlyExtenders) {
+        compileOnlyExtender.extendsFrom(compileOnly)
+    }
+    for (def runtimeOnlyExtender : runtimeOnlyExtenders) {
+        runtimeOnlyExtender.extendsFrom(runtimeOnly)
+    }
+}
 
 minecraft {
     mappings channel: 'snapshot', version: '20200502-1.15.1'
@@ -35,7 +69,7 @@ minecraft {
 
             mods {
                 modernui {
-                    source sourceSets.main
+                    sources (sourceSets.main, sourceSets.api)
                 }
             }
         }
@@ -48,7 +82,7 @@ minecraft {
 
             mods {
                 modernui {
-                    source sourceSets.main
+                    sources (sourceSets.main, sourceSets.api)
                 }
             }
         }
@@ -63,7 +97,7 @@ minecraft {
 
             mods {
                 modernui {
-                    source sourceSets.main
+                    sources (sourceSets.main, sourceSets.api)
                 }
             }
         }
@@ -93,18 +127,15 @@ dependencies {
 }
 
 processResources {
-    // this will ensure that this task is redone when the versions change.
+
     inputs.property 'version', mod_version
 
-    // replace stuff in mcmod.info, nothing else
     from(sourceSets.main.resources.srcDirs) {
         include 'META-INF/mods.toml'
 
-        // replace version
         expand 'version': mod_version
     }
 
-    // copy everything else except the mods.toml and .psd
     from(sourceSets.main.resources.srcDirs) {
         exclude 'META-INF/mods.toml'
     }
@@ -124,43 +155,27 @@ jar {
     }
 }
 
-/*def reobfFile = file("$buildDir/reobfJar/output.jar")
-def reobfArtifact = artifacts.add('default', reobfFile) {
-    type 'jar'
-    builtBy 'reobfJar'
-}
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            artifact reobfArtifact
-        }
-    }
-    repositories {
-        maven {
-            url "file:///${project.projectDir}/mcmodsrepo"
-        }
-    }
-}*/
-
-sourceSets {
-    api
-    main {
-        compileClasspath += sourceSets.api.output
-        runtimeClasspath += sourceSets.api.output
-    }
-}
-
 jar {
+    classifier("universal")
     from sourceSets.main.output
     from sourceSets.api.output
 }
 
 task apiJar(type: Jar) {
-    archiveName = "ModernUI-${minecraft_version}-${mod_version}-api.jar"
+    classifier("api")
+    from sourceSets.api.output
+    from sourceSets.api.allJava
+}
+
+task devJar(type: Jar) {
+    classifier("dev")
+    from sourceSets.main.output
+    from sourceSets.main.allJava
     from sourceSets.api.output
     from sourceSets.api.allJava
 }
 
 artifacts {
     archives apiJar
+    archives devJar
 }

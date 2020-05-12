@@ -37,13 +37,15 @@ public class SettingCategoryGroup extends UniformScrollGroup<SettingEntry> {
         super(window, ENTRY_HEIGHT);
         this.title = TextFormatting.BOLD + title;
         this.entries = entries;
-        // 30 for title, 6 for end space.
-        height = 36 + entries.size() * entryHeight;
     }
 
     @Override
     public void locate(float px, float py) {
         super.locate(px, py);
+        // 30 for title, 6 for end space.
+        height += 36;
+        y2 += 36;
+
         py += 30;
         int i = 0;
         for (SettingEntry entry : entries) {

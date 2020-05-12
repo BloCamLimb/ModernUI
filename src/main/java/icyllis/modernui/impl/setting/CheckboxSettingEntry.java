@@ -19,7 +19,6 @@
 package icyllis.modernui.impl.setting;
 
 import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.scroll.SettingScrollWindow;
 
 public class CheckboxSettingEntry extends SettingEntry {
 

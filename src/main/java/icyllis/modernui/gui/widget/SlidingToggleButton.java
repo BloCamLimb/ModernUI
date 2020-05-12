@@ -111,17 +111,17 @@ public class SlidingToggleButton extends Widget {
         ac = new AnimationControl(openList, closeList);
     }
 
-    public SlidingToggleButton buildCallback(boolean v, @Nullable Consumer<Boolean> r) {
-        if (v) {
+    public SlidingToggleButton buildCallback(boolean toggled, @Nullable Consumer<Boolean> callback) {
+        if (toggled) {
             this.checked = true;
             this.circleOffset = width - height / 2f;
             a = (onColor >> 24 & 0xff) / 255f;
-            this.r = (onColor >> 16 & 0xff) / 255f;
+            r = (onColor >> 16 & 0xff) / 255f;
             g = (onColor >> 8 & 0xff) / 255f;
             b = (onColor & 0xff) / 255f;
             ac.setOpenState(true);
         }
-        callback = r;
+        this.callback = callback;
         return this;
     }
 

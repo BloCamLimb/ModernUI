@@ -59,6 +59,9 @@ public interface WidgetArea {
 
         /**
          * Use radian, and clockwise direction
+         * @param radius radius
+         * @param clockwise start angle
+         * @param flare flare angle
          */
         public Sector(float radius, double clockwise, double flare) {
             this.radius = radius;

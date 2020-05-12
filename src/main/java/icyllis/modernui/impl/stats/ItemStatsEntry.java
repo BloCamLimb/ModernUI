@@ -18,15 +18,12 @@
 
 package icyllis.modernui.impl.stats;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.font.FontTools;
+import icyllis.modernui.graphics.font.FontTools;
 import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.math.Color3f;
 import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.gui.scroll.UniformScrollEntry;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.ItemRenderer;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.stats.Stat;

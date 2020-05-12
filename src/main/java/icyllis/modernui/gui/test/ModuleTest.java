@@ -20,12 +20,12 @@ package icyllis.modernui.gui.test;
 
 import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.master.Widget;
+import icyllis.modernui.gui.master.WidgetStatus;
 import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.math.Locator;
+import icyllis.modernui.gui.scroll.MultiPageScrollPanel;
 import icyllis.modernui.gui.scroll.ScrollPanel;
 import icyllis.modernui.gui.widget.*;
-import icyllis.modernui.system.ModernUI;
-import net.minecraft.util.ResourceLocation;
 
 public class ModuleTest extends Module {
 
@@ -50,17 +50,25 @@ public class ModuleTest extends Module {
         h.setDecoration(f -> new TextField.Frame(f, "Limit:", -1));
         h.setNumberListener(e -> {}, true);
 
-        addWidget(new StaticFrameButton.Builder("A Button")
-                .setWidth(48)
+        addWidget(new StaticFrameButton.Builder("Repeatable Btn")
+                .setWidth(64)
                 .setLocator(new Locator(-100, -20))
                 .build(this)
-                .buildCallback(true, null, true));
+                .buildCallback(null));
 
-        addWidget(new ScrollPanel<>(this, new Widget.Builder()
-                .setWidth(120)
-                .setHeight(70)
-                .setAlign(Align9D.TOP_CENTER)
-                .setLocator(new Locator(0, 0)),
+        StaticFrameButton a = new StaticFrameButton.Builder("Onetime Btn")
+                .setWidth(64)
+                .setLocator(new Locator(-20, -20))
+                .build(this);
+        a.buildCallback(() -> a.setStatus(WidgetStatus.INACTIVE, false));
+        addWidget(a);
+
+        addWidget(new MultiPageScrollPanel<>(this,
+                new MultiPageScrollPanel.Builder(7)
+                        .setWidth(120)
+                        .setHeight(70)
+                        .setAlign(Align9D.TOP_CENTER)
+                        .setLocator(new Locator(0, 0)),
                 TestScrollGr::new));
         //addWidget(new TextIconButton.Builder());
     }

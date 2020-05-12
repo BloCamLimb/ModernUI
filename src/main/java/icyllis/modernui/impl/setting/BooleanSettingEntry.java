@@ -19,7 +19,6 @@
 package icyllis.modernui.impl.setting;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.gui.scroll.SettingScrollWindow;
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
 import net.minecraft.client.resources.I18n;
 

@@ -18,7 +18,7 @@
 
 package icyllis.modernui.gui.popup;
 
-import icyllis.modernui.font.FontTools;
+import icyllis.modernui.graphics.font.FontTools;
 import icyllis.modernui.gui.background.ConfirmPopupBG;
 import icyllis.modernui.gui.layout.WidgetLayout;
 import icyllis.modernui.gui.master.*;
@@ -68,7 +68,7 @@ public class PopupConfirm extends Module {
                     new DynamicFrameButton.Builder(confirmText)
                             .setWidth(32)
                             .build(this)
-                            .buildCallback(true, () -> callback.call(ConfirmCallback.CONFIRM), false)
+                            .buildCallback(() -> callback.call(ConfirmCallback.CONFIRM))
             );
         }
         if (alternative != null) {
@@ -76,14 +76,14 @@ public class PopupConfirm extends Module {
                     new DynamicFrameButton.Builder(alternative)
                             .setWidth(32)
                             .build(this)
-                            .buildCallback(true, () -> callback.call(ConfirmCallback.ALTERNATIVE), false)
+                            .buildCallback(() -> callback.call(ConfirmCallback.ALTERNATIVE))
             );
         }
         buttons.add(
                 new DynamicFrameButton.Builder(cancelText)
                         .setWidth(32)
                         .build(this)
-                        .buildCallback(true, () -> callback.call(ConfirmCallback.CANCEL), false)
+                        .buildCallback(() -> callback.call(ConfirmCallback.CANCEL))
         );
         buttons.forEach(this::addWidget);
         buttonLayout = new WidgetLayout(buttons, WidgetLayout.Direction.HORIZONTAL_NEGATIVE, 6);

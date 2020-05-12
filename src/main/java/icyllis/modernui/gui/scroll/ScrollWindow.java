@@ -60,7 +60,7 @@ public class ScrollWindow<T extends ScrollGroup> extends Window implements IScro
         controller.update(time);
 
         /* For horizontal transition animation */
-        canvas.startClip(0, y1, getWindowWidth(), height);
+        canvas.clipStart(0, y1, getWindowWidth(), height);
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -102,7 +102,7 @@ public class ScrollWindow<T extends ScrollGroup> extends Window implements IScro
 
         RenderSystem.enableTexture();
 
-        canvas.endClip();
+        canvas.clipEnd();
     }
 
     @Override

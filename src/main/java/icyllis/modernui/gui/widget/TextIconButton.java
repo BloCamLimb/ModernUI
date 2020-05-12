@@ -54,10 +54,10 @@ public class TextIconButton extends IconButton {
                 .applyTo(new Applier(0.0f, 1.0f, this::getTextAlpha, this::setTextAlpha));
     }
 
-    public TextIconButton buildCallback(boolean clickable, boolean selected, @Nullable Runnable r, boolean onetime) {
-        super.buildCallback(clickable, r, onetime);
-        if (selected) {
-            locked = true;
+    public TextIconButton buildCallback(boolean locked, @Nullable Runnable r) {
+        super.buildCallback(r);
+        if (locked) {
+            this.locked = true;
             activeAnimation.skipToEnd();
         }
         return this;
@@ -65,8 +65,8 @@ public class TextIconButton extends IconButton {
 
     @Deprecated
     @Override
-    public TextIconButton buildCallback(boolean b, @Nullable Runnable r, boolean onetime) {
-        super.buildCallback(b, r, onetime);
+    public TextIconButton buildCallback(@Nullable Runnable r) {
+        super.buildCallback(r);
         return this;
     }
 
