@@ -62,12 +62,14 @@ public class ConfigManager {
     public static class Client {
 
         public boolean keepRunningInScreen;
+        public boolean blurScreenBackground;
 
         public String preferredFontName;
         public boolean enableGlobalFontRenderer;
         public boolean allowFontShadow;
 
         private final ForgeConfigSpec.BooleanValue keepRunningInScreenV;
+        private final ForgeConfigSpec.BooleanValue blurScreenBackgroundV;
 
         private final ForgeConfigSpec.ConfigValue<String> preferredFontNameV;
         private final ForgeConfigSpec.BooleanValue enableGlobalFontRendererV;
@@ -79,6 +81,8 @@ public class ConfigManager {
 
             keepRunningInScreenV = builder.comment("Keep game running no matter what screen is open. Modern UI's GUIs will never pause game.")
                     .define("keepGameRunning", true);
+            blurScreenBackgroundV = builder.comment("Blur GUI background when opening a gui screen, this is incompatible with OptiFine's FXAA shader or some mods.")
+                    .define("blurGuiBackground", true);
 
             builder.pop();
 
@@ -97,6 +101,7 @@ public class ConfigManager {
 
         private void load() {
             keepRunningInScreen = keepRunningInScreenV.get();
+            blurScreenBackground = blurScreenBackgroundV.get();
 
             preferredFontName = preferredFontNameV.get();
             enableGlobalFontRenderer = enableGlobalFontRendererV.get();

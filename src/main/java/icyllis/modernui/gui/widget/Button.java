@@ -120,6 +120,8 @@ public abstract class Button extends Widget {
         if (!locked && getStatus().isListening()) {
             activeAnimation.invert();
         }
+        // hotfix
+        brightnessOffset = 0;
     }
 
     @Override

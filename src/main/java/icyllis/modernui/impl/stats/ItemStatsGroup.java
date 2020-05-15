@@ -135,6 +135,7 @@ public class ItemStatsGroup extends UniformScrollGroup<ItemStatsEntry> {
             entries.add(new ItemStatsEntry(window, item, (i & 1) == 0 ? Color3f.WHILE : Color3f.GRAY));
             i++;
         }
+        height = entries.size() * entryHeight + 20;
     }
 
     @Override

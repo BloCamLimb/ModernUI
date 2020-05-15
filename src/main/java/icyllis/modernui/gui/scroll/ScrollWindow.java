@@ -179,11 +179,13 @@ public class ScrollWindow<T extends ScrollGroup> extends Window implements IScro
         return super.toAbsoluteY(ry) - getVisibleOffset();
     }
 
+    @Override
     public void scrollSmooth(float delta) {
         float amount = MathHelper.clamp(controller.getTargetValue() + delta, 0, getMaxScrollAmount());
         controller.setTargetValue(amount);
     }
 
+    @Override
     public void scrollDirect(float delta) {
         float amount = Math.round(MathHelper.clamp(controller.getTargetValue() + delta, 0, getMaxScrollAmount()));
         controller.setTargetValueDirect(amount);
@@ -237,7 +239,7 @@ public class ScrollWindow<T extends ScrollGroup> extends Window implements IScro
         return scrollAmount / max;
     }
 
-    public void updateScrollBarOffset() {
+    private void updateScrollBarOffset() {
         scrollbar.setBarOffset(getScrollPercentage());
     }
 
@@ -252,20 +254,13 @@ public class ScrollWindow<T extends ScrollGroup> extends Window implements IScro
         }
     }
 
-    public void updateScrollList() {
+    private void updateScrollList() {
         scrollList.updateVisible(y1, getVisibleOffset(), y2);
     }
 
+    @Override
     public void layoutList() {
         scrollList.layoutGroups(centerX, getTop());
-        onTotalHeightChanged();
-    }
-
-    private void onTotalHeightChanged() {
-        updateScrollBarLength();
-        updateScrollBarOffset();
-        updateScrollList();
-        scrollSmooth(0);
     }
 
     public void addGroups(Collection<T> collection) {

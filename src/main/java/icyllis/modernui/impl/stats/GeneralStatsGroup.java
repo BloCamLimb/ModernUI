@@ -40,6 +40,7 @@ public class GeneralStatsGroup extends UniformScrollGroup<GeneralStatsEntry> {
             entries.add(new GeneralStatsEntry(window, stat, (i & 1) == 0 ? Color3f.WHILE : Color3f.GRAY));
             i++;
         }
+        height = entries.size() * entryHeight;
     }
 
     @Override

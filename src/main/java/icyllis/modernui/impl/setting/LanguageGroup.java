@@ -39,6 +39,7 @@ public class LanguageGroup extends UniformScrollGroup<LanguageEntry> {
                 module.setHighlight(entry);
             }
         });
+        height = entries.size() * entryHeight;
     }
 
     @Override

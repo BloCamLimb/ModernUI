@@ -131,5 +131,8 @@ public class ScrollList<T extends ScrollGroup> implements IMouseListener {
             ay += group.getHeight();
         }
         maxHeight = (float) groups.stream().mapToDouble(ScrollGroup::getHeight).sum();
+        window.updateScrollBarLength();
+        // update all scroll data
+        window.scrollDirect(0);
     }
 }
