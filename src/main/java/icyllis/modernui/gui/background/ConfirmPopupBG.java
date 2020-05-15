@@ -23,6 +23,7 @@ import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.Canvas;
+import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 
@@ -34,15 +35,15 @@ public class ConfirmPopupBG extends Background {
 
     private float x, y;
 
-    private float heightOffset = 16;
+    private float heightOffset;
 
     public ConfirmPopupBG() {
         super(200);
         new Animation(150)
                 .applyTo(
-                        new Applier(heightOffset, 80, () -> heightOffset, value -> heightOffset = value)
+                        new Applier(16, 80, () -> heightOffset, value -> heightOffset = value)
                                 .setInterpolator(IInterpolator.SINE))
-                .start();
+                .startFull();
     }
 
     @Override
@@ -55,7 +56,12 @@ public class ConfirmPopupBG extends Background {
         canvas.drawRect(x, y, x + 180, y + 16);
 
         canvas.setRGBA(0.5f, 0.5f, 0.5f, 1.0f);
+        GL11.glEnable(GL11.GL_POLYGON_SMOOTH);
+        GL11.glHint(GL11.GL_POLYGON_SMOOTH_HINT, GL11.GL_NICEST);
         canvas.drawRectOutline(x, y, x + 180, y + heightOffset, 0.51f);
+        GL11.glDisable(GL11.GL_POLYGON_SMOOTH);
+
+        //canvas.drawRectLines(x, y, x + 180f, y + heightOffset);
 
         canvas.resetColor();
         canvas.setTextAlign(Align3H.CENTER);

@@ -18,10 +18,7 @@
 
 package icyllis.modernui.graphics.shader;
 
-import icyllis.modernui.gui.shader.CircleShader;
-import icyllis.modernui.gui.shader.RingShader;
-import icyllis.modernui.gui.shader.RoundedRectFrameShader;
-import icyllis.modernui.gui.shader.RoundedRectShader;
+import icyllis.modernui.gui.shader.*;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.shader.ShaderLinkHelper;
@@ -48,6 +45,7 @@ public class ShaderTools {
         RoundedRectShader.INSTANCE.compile(manager);
         RoundedRectFrameShader.INSTANCE.compile(manager);
         CircleShader.INSTANCE.compile(manager);
+        FeatheredRectShader.INSTANCE.compile(manager);
         ModernUI.LOGGER.debug(ShaderProgram.MARKER, "Shaders have been compiled");
     }
 

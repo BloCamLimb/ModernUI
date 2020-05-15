@@ -45,6 +45,8 @@ public class TextField extends Widget implements IKeyboardListener {
     private BiFunction<String, String, String> filter = (s, t) -> t;
 
     private String text = "";
+    private String disText = "";
+    private char echoChar = 0;
 
     private int maxStringLength = 32;
 
@@ -101,7 +103,20 @@ public class TextField extends Widget implements IKeyboardListener {
         this.maxStringLength = length;
         if (this.text.length() > length) {
             this.text = this.text.substring(0, length);
+            this.updateDisplayText();
             this.onTextChanged();
+        }
+    }
+
+    public void updateDisplayText() {
+        if (echoChar != 0) {
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < text.length(); i++) {
+                builder.append(echoChar);
+            }
+            disText = builder.toString();
+        } else {
+            disText = text;
         }
     }
 
@@ -117,7 +132,7 @@ public class TextField extends Widget implements IKeyboardListener {
 
         int ds = this.cursorPosition - this.lineScrollOffset;
         int de = this.selectionEnd - this.lineScrollOffset;
-        String s = FontTools.trimStringToWidth(this.text.substring(this.lineScrollOffset), getVisibleWidth(), false);
+        String s = FontTools.trimStringToWidth(disText.substring(this.lineScrollOffset), getVisibleWidth(), false);
         boolean b = ds >= 0 && ds <= s.length();
 
         float lx = x1 + leftMargin;
@@ -169,6 +184,10 @@ public class TextField extends Widget implements IKeyboardListener {
         }
     }
 
+    public void setEchoChar(char c) {
+        this.echoChar = c;
+    }
+
     /**
      * Sets the text of the text box, and moves the cursor to the end.
      */
@@ -180,6 +199,7 @@ public class TextField extends Widget implements IKeyboardListener {
             } else {
                 this.text = result;
             }
+            this.updateDisplayText();
 
             this.setCursorToEnd();
             this.setSelectionPos(this.cursorPosition);
@@ -248,6 +268,7 @@ public class TextField extends Widget implements IKeyboardListener {
         result = filter.apply(text, result);
         if (!result.equals(text)) {
             this.text = result;
+            this.updateDisplayText();
             setCursorPos(i + l);
             setSelectionPos(cursorPosition);
             this.onTextChanged();
@@ -263,10 +284,10 @@ public class TextField extends Widget implements IKeyboardListener {
             this.lineScrollOffset = i;
         }
 
-        String s = FontTools.trimStringToWidth(this.text.substring(this.lineScrollOffset), getVisibleWidth(), false);
+        String s = FontTools.trimStringToWidth(this.disText.substring(this.lineScrollOffset), getVisibleWidth(), false);
         int k = s.length() + this.lineScrollOffset;
         if (this.selectionEnd == this.lineScrollOffset) {
-            this.lineScrollOffset -= FontTools.trimStringToWidth(this.text, getVisibleWidth(), true).length();
+            this.lineScrollOffset -= FontTools.trimStringToWidth(this.disText, getVisibleWidth(), true).length();
         }
 
         if (this.selectionEnd > k) {
@@ -318,9 +339,9 @@ public class TextField extends Widget implements IKeyboardListener {
         }
         if (mouseX >= x1 + leftMargin && mouseX <= x2 - rightMargin) {
             float i = (float) (mouseX - x1 - leftMargin);
-            String s = FontTools.trimStringToWidth(this.text.substring(this.lineScrollOffset), getVisibleWidth(), false);
+            String s = FontTools.trimStringToWidth(this.disText.substring(this.lineScrollOffset), getVisibleWidth(), false);
             shiftDown = Screen.hasShiftDown();
-            // FIX vanilla's bug
+            // Fixed vanilla's bug
             this.setCursorPos(FontTools.trimStringToWidth(s, i, false).length() + this.lineScrollOffset);
         }
         return true;
@@ -450,6 +471,7 @@ public class TextField extends Widget implements IKeyboardListener {
                 result = filter.apply(text, result);
                 if (!result.equals(text)) {
                     this.text = result;
+                    this.updateDisplayText();
                     if (reverse) {
                         this.moveCursorBy(result.length() - text.length());
                     }
@@ -596,9 +618,9 @@ public class TextField extends Widget implements IKeyboardListener {
         @Override
         public void draw(@Nonnull Canvas canvas, float time) {
             canvas.setRGBA(0, 0, 0, 0.25f);
-            canvas.drawRect(instance.x1 - getHeaderLength(), instance.y1, instance.x2, instance.y2);
+            canvas.drawRect(instance.x1 - getHeaderLength(), instance.y1, instance.x2 + getTrailerLength(), instance.y2);
             canvas.setRGBA(r, g, b, a);
-            canvas.drawRectOutline(instance.x1 - getHeaderLength(), instance.y1, instance.x2, instance.y2, 0.51f);
+            canvas.drawRoundedRectFrame(instance.x1 - getHeaderLength() - 1, instance.y1 - 1, instance.x2 + 1 + getTrailerLength(), instance.y2 + 1, 1.5f);
             if (title != null) {
                 canvas.setTextAlign(Align3H.LEFT);
                 canvas.drawText(title, instance.x1 - titleLength, instance.y1 + (instance.height - 8) / 2f);

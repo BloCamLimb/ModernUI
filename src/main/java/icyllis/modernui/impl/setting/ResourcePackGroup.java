@@ -70,6 +70,8 @@ public class ResourcePackGroup extends UniformScrollGroup<ResourcePackEntry> {
 
             enabledList.forEach(t -> entries.add(new ResourcePackEntry(module, window, t, Align9D.TOP_LEFT)));
         }
+
+        height = entries.size() * entryHeight + 18;
     }
 
     @Override

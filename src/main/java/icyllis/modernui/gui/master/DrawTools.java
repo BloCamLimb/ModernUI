@@ -26,10 +26,7 @@ import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.graphics.font.TrueTypeRenderer;
 import icyllis.modernui.graphics.shader.ShaderTools;
 import icyllis.modernui.gui.math.Color3f;
-import icyllis.modernui.gui.shader.CircleShader;
-import icyllis.modernui.gui.shader.RingShader;
-import icyllis.modernui.gui.shader.RoundedRectFrameShader;
-import icyllis.modernui.gui.shader.RoundedRectShader;
+import icyllis.modernui.gui.shader.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.ItemRenderer;
@@ -37,6 +34,7 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.math.MathHelper;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
@@ -83,6 +81,8 @@ public class DrawTools {
     private final RoundedRectFrameShader roundedRectFrame = RoundedRectFrameShader.INSTANCE;
 
     private final CircleShader circle = CircleShader.INSTANCE;
+
+    private final FeatheredRectShader featheredRect = FeatheredRectShader.INSTANCE;
 
 
     /**
@@ -238,10 +238,15 @@ public class DrawTools {
      * @param top rect top
      * @param right rect right
      * @param bottom rect bottom
-     * @param thickness thickness
+     * @param thickness thickness, must be integral multiple of 0.5f
      */
     public void drawRectOutline(float left, float top, float right, float bottom, float thickness) {
         RenderSystem.disableTexture();
+
+        /*ShaderTools.useShader(featheredRect);
+        featheredRect.setThickness(0.25f);
+
+        featheredRect.setInnerRect(left - thickness + 0.25f, top - thickness + 0.25f, right - 0.25f, top - 0.25f);*/
 
         bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
         bufferBuilder.pos(left - thickness, top, z).color(r, g, b, a).endVertex();
@@ -250,12 +255,16 @@ public class DrawTools {
         bufferBuilder.pos(left - thickness, top - thickness, z).color(r, g, b, a).endVertex();
         tessellator.draw();
 
+        //featheredRect.setInnerRect(right + 0.25f, top - thickness + 0.25f, right + thickness - 0.25f, bottom - 0.25f);
+
         bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
         bufferBuilder.pos(right, bottom, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(right + thickness, bottom, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(right + thickness, top - thickness, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(right, top - thickness, z).color(r, g, b, a).endVertex();
         tessellator.draw();
+
+        //featheredRect.setInnerRect(left + 0.25f, bottom + 0.25f, right + thickness - 0.25f, bottom + thickness - 0.25f);
 
         bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
         bufferBuilder.pos(left, bottom + thickness, z).color(r, g, b, a).endVertex();
@@ -264,12 +273,16 @@ public class DrawTools {
         bufferBuilder.pos(left, bottom, z).color(r, g, b, a).endVertex();
         tessellator.draw();
 
+        //featheredRect.setInnerRect(left - thickness + 0.25f, top + 0.25f, left - 0.25f, bottom + thickness - 0.25f);
+
         bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
         bufferBuilder.pos(left - thickness, bottom + thickness, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(left, bottom + thickness, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(left, top, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(left - thickness, top, z).color(r, g, b, a).endVertex();
         tessellator.draw();
+
+        //ShaderTools.releaseShader();
     }
 
     /**
@@ -401,12 +414,31 @@ public class DrawTools {
      * @param top rect top
      * @param right rect right
      * @param bottom rect bottom
-     * @param radius rounded radius, actually must >= 2
+     * @param radius rounded radius, must >= 1.5
      */
     public void drawRoundedRectFrame(float left, float top, float right, float bottom, float radius) {
         ShaderTools.useShader(roundedRectFrame);
         roundedRect.setRadius(radius - 1);
         roundedRect.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
+        drawRect(left, top, right, bottom);
+        ShaderTools.releaseShader();
+    }
+
+    /**
+     * Draw feathered rectangle frame in a rounded rect on screen
+     * with given rect area and feather thickness (not radius)
+     * A replacement for rounded rect when radius is too small.
+     *
+     * @param left rect left
+     * @param top rect top
+     * @param right rect right
+     * @param bottom rect bottom
+     * @param thickness feather thickness (>= 0.5 is better)
+     */
+    public void drawFeatheredRect(float left, float top, float right, float bottom, float thickness) {
+        ShaderTools.useShader(featheredRect);
+        featheredRect.setThickness(thickness);
+        featheredRect.setInnerRect(left + thickness, top + thickness, right - thickness, bottom - thickness);
         drawRect(left, top, right, bottom);
         ShaderTools.releaseShader();
     }
@@ -431,6 +463,14 @@ public class DrawTools {
         tessellator.draw();
     }
 
+    /**
+     * Draw item default instance, without any NBT data
+     * Size: 16 * 16 (* GuiScale)
+     *
+     * @param item item
+     * @param x x1
+     * @param y y1
+     */
     public void drawItem(@Nonnull Item item, float x, float y) {
         itemRenderer.renderItemIntoGUI(item.getDefaultInstance(), (int) x, (int) y);
         RenderSystem.enableBlend();
@@ -445,6 +485,13 @@ public class DrawTools {
         RenderSystem.disableDepthTest();
     }
 
+    /**
+     * Draw item stack with NBT and their damage, amount
+     *
+     * @param stack item stack
+     * @param x x1
+     * @param y y1
+     */
     public void drawItemStackWithOverlays(@Nonnull ItemStack stack, float x, float y) {
         itemRenderer.renderItemAndEffectIntoGUI(stack, (int) x, (int) y);
         itemRenderer.renderItemOverlays(ModernFontRenderer.INSTANCE, stack, (int) x, (int) y);

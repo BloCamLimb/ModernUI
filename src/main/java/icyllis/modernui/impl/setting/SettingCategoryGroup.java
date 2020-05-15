@@ -37,6 +37,7 @@ public class SettingCategoryGroup extends UniformScrollGroup<SettingEntry> {
         super(window, ENTRY_HEIGHT);
         this.title = TextFormatting.BOLD + title;
         this.entries = entries;
+        height = entries.size() * entryHeight + 36;
     }
 
     @Override

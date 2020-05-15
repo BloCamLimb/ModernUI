@@ -21,19 +21,24 @@ package icyllis.modernui.system;
 import icyllis.modernui.graphics.font.TrueTypeRenderer;
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.gui.master.GlobalModuleManager;
+import icyllis.modernui.gui.master.LayoutEditingGui;
 import icyllis.modernui.gui.test.ContainerTest;
 import icyllis.modernui.gui.test.ModuleTest;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.MainMenuScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.container.ContainerType;
 import net.minecraft.item.Items;
 import net.minecraft.util.SoundEvent;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.GuiOpenEvent;
+import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -116,8 +121,34 @@ public class EventsHandler {
                     /*if (event.getKey() == GLFW.GLFW_KEY_K) {
                         TrueTypeRenderer.INSTANCE.refreshCache();
                     }*/
+                    if (event.getKey() == GLFW.GLFW_KEY_T) {
+                        boolean w = LayoutEditingGui.INSTANCE.iterateWorking();
+                        if (Minecraft.getInstance().player != null) {
+                            Minecraft.getInstance().player.sendMessage(new StringTextComponent("Gui Editing Mode: " + (w ? "ON" : "OFF")));
+                        }
+                    }
                 }
             }
+        }
+
+        @SubscribeEvent
+        public static void onScreenDrawPost(GuiScreenEvent.DrawScreenEvent.Post event) {
+            LayoutEditingGui.INSTANCE.draw();
+        }
+
+        @SubscribeEvent
+        public static void onScreenMouseClickPre(@Nonnull GuiScreenEvent.MouseClickedEvent.Pre event) {
+            event.setCanceled(LayoutEditingGui.INSTANCE.mouseClick(event.getButton()));
+        }
+
+        @SubscribeEvent
+        public static void onScreenMouseReleasePre(@Nonnull GuiScreenEvent.MouseReleasedEvent.Pre event) {
+            LayoutEditingGui.INSTANCE.mouseRelease();
+        }
+
+        @SubscribeEvent
+        public static void onScreenMouseDragPre(@Nonnull GuiScreenEvent.MouseDragEvent.Pre event) {
+            event.setCanceled(LayoutEditingGui.INSTANCE.mouseDrag(event.getDragX(), event.getDragY()));
         }
     }
 

@@ -330,6 +330,7 @@ public enum GlobalModuleManager {
             popup = null;
             //extraData = null;
             rootScreen = null;
+            LayoutEditingGui.INSTANCE.setHoveredWidget(null);
             MouseTools.useDefaultCursor();
         }
     }
@@ -349,10 +350,14 @@ public enum GlobalModuleManager {
         tasks.removeIf(DelayedTask::shouldRemove);
     }
 
+    @SuppressWarnings("ForLoopReplaceableByForEach")
     public void onRenderTick(float partialTick) {
         animationTime = ticks + partialTick;
         animations.removeIf(IAnimation::shouldRemove);
-        animations.forEach(e -> e.update(animationTime));
+        // list size is dynamically changeable
+        for (int i = 0; i < animations.size(); i++) {
+            animations.get(i).update(animationTime);
+        }
     }
 
     private void resetTicks() {
@@ -388,10 +393,7 @@ public enum GlobalModuleManager {
         this.extraData = extraData;
     }
 
-    *//**
-     * Get extra data from server side
-     * @return packet buffer
-     *//*
+
     @Nullable
     public PacketBuffer getExtraData() {
         return extraData;

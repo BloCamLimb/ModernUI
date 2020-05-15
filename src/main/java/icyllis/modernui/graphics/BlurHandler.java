@@ -19,6 +19,7 @@
 package icyllis.modernui.graphics;
 
 import icyllis.modernui.gui.master.GlobalModuleManager;
+import icyllis.modernui.system.ConfigManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraft.client.gui.screen.Screen;
@@ -50,6 +51,10 @@ public enum BlurHandler {
     }
 
     public void blur(Screen gui) {
+        if (!ConfigManager.CLIENT.blurScreenBackground) {
+            backAlpha = 0.5f;
+            return;
+        }
         boolean hasGui = gui != null && !(gui instanceof ChatScreen);
         if (Minecraft.getInstance().world != null) {
             GameRenderer gr = Minecraft.getInstance().gameRenderer;
@@ -72,6 +77,9 @@ public enum BlurHandler {
      * Mainly for ingame menu gui, re-blur after resources reloaded
      */
     public void forceBlur() {
+        if (!ConfigManager.CLIENT.blurScreenBackground) {
+            return;
+        }
         if (Minecraft.getInstance().world != null) {
             GameRenderer gr = Minecraft.getInstance().gameRenderer;
             if (gr.getShaderGroup() == null) {

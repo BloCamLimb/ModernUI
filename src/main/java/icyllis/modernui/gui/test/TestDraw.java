@@ -42,7 +42,7 @@ public class TestDraw implements IDrawable {
                 .applyTo(
                         new Applier(-70, 100, () -> xOffset, v -> xOffset = v)
                                 .setInterpolator(new OvershootInterpolator(2)),
-                        new Applier(0, 100, () -> yOffset, v -> yOffset = v)
+                        new Applier(0, 50, () -> yOffset, v -> yOffset = v)
                                 .setInterpolator(IInterpolator.SINE)
                 );
         animation.startFull();
@@ -77,6 +77,8 @@ public class TestDraw implements IDrawable {
 
         canvas.resetColor();
         canvas.drawText("Symbolic test", 20, 50);
+
+        canvas.drawFeatheredRect(90, 104, 120, 106, 0.5f);
     }
 
     @Override

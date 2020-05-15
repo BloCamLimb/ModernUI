@@ -113,6 +113,12 @@ public abstract class Widget implements IWidget {
     }
 
     @Override
+    @Nullable
+    public Locator getLocator() {
+        return locator;
+    }
+
+    @Override
     public final float getWidth() {
         return width;
     }

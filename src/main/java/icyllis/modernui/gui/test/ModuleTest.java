@@ -18,14 +18,17 @@
 
 package icyllis.modernui.gui.test;
 
+import icyllis.modernui.gui.background.SSExpandableBox;
 import icyllis.modernui.gui.master.Module;
-import icyllis.modernui.gui.master.Widget;
 import icyllis.modernui.gui.master.WidgetStatus;
 import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.math.Locator;
 import icyllis.modernui.gui.scroll.MultiPageScrollPanel;
-import icyllis.modernui.gui.scroll.ScrollPanel;
-import icyllis.modernui.gui.widget.*;
+import icyllis.modernui.gui.widget.NumberInputField;
+import icyllis.modernui.gui.widget.SlidingToggleButton;
+import icyllis.modernui.gui.widget.StaticFrameButton;
+import icyllis.modernui.gui.widget.TextField;
+import icyllis.modernui.system.ConstantsLibrary;
 
 public class ModuleTest extends Module {
 
@@ -49,12 +52,22 @@ public class ModuleTest extends Module {
         h.setLimit(-54996, Long.MAX_VALUE);
         h.setDecoration(f -> new TextField.Frame(f, "Limit:", -1));
         h.setNumberListener(e -> {}, true);
+        TextField password;
+        addWidget(password = new TextField(this, new TextField.Builder()
+                .setHeight(12)
+                .setWidth(120)
+                .setLocator(new Locator(-60, 4))));
+        password.setDecoration(f -> new TextField.Frame(f, "Password:", -1));
+        password.setEchoChar(ConstantsLibrary.BLACK_CIRCLE);
+
+        SSExpandableBox sse = new SSExpandableBox(60, 80, SSExpandableBox.RIGHT_TOP_BOTTOM);
+        addDrawable(sse);
 
         addWidget(new StaticFrameButton.Builder("Repeatable Btn")
                 .setWidth(64)
                 .setLocator(new Locator(-100, -20))
                 .build(this)
-                .buildCallback(null));
+                .buildCallback(sse::iterateOpen));
 
         StaticFrameButton a = new StaticFrameButton.Builder("Onetime Btn")
                 .setWidth(64)
@@ -68,7 +81,7 @@ public class ModuleTest extends Module {
                         .setWidth(120)
                         .setHeight(70)
                         .setAlign(Align9D.TOP_CENTER)
-                        .setLocator(new Locator(0, 0)),
+                        .setLocator(new Locator(0, 20)),
                 TestScrollGr::new));
         //addWidget(new TextIconButton.Builder());
     }
