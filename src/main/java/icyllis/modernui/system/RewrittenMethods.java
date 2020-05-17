@@ -44,7 +44,7 @@ public class RewrittenMethods {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.currentScreen == null) {
             // If press F3 + Esc and is single player and not open LAN world
-            if (!loadCompleted || (pauseGame && minecraft.isSingleplayer() && minecraft.getIntegratedServer() != null && minecraft.getIntegratedServer().getPublic())) {
+            if (!loadCompleted || (pauseGame && minecraft.isIntegratedServerRunning() && minecraft.getIntegratedServer() != null && !minecraft.getIntegratedServer().getPublic())) {
                 minecraft.displayGuiScreen(new IngameMenuScreen(false));
                 minecraft.getSoundHandler().pause();
             } else {

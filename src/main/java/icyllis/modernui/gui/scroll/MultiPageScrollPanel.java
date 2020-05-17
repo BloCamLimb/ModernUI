@@ -90,9 +90,18 @@ public class MultiPageScrollPanel<E extends UniformScrollEntry, G extends Unifor
 
     }
 
+    protected void onPageChanged() {
+
+    }
+
     private void sortAndPaging() {
+        int c = cPage;
+        int m = maxPage;
         maxPage = MathHelper.ceil((float) allEntries.size() / maxEntry);
         cPage = MathHelper.clamp(cPage, 1, maxPage);
+        if (c != cPage || m != maxPage) {
+            onPageChanged();
+        }
         sort();
     }
 

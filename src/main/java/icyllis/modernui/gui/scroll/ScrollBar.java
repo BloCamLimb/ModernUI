@@ -55,6 +55,8 @@ public class ScrollBar implements IDrawable, IMouseListener, IDraggable {
 
     //private double draggingY = 0;
 
+    private float accDelta = 0;
+
     public ScrollBar(IScrollable scrollable) {
         this.master = scrollable;
     }
@@ -220,7 +222,12 @@ public class ScrollBar implements IDrawable, IMouseListener, IDraggable {
                 window.scrollDirect(transformPosToAmount((float) deltaY));
             }*/
             if (mouseY >= y && mouseY <= y + height) {
-                master.scrollDirect(transformPosToAmount((float) deltaY));
+                accDelta += deltaY;
+                int i = (int) (accDelta * 2);
+                if (i != 0) {
+                    master.scrollDirect(transformPosToAmount(i / 2f));
+                    accDelta -= i / 2f;
+                }
             }
             return true;
         }
