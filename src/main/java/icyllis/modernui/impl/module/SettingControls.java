@@ -307,26 +307,6 @@ public class SettingControls extends Module {
     }
 
     /**
-     * Mark mark
-     * This is a general logic for keyboard listeners, copy me!
-     */
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        IKeyboardListener k = getKeyboardListener();
-        if (super.mouseClicked(mouseX, mouseY, mouseButton)) {
-            if (k != null && getKeyboardListener() != k) {
-                setKeyboardListener(null);
-            }
-            return true;
-        }
-        if (getKeyboardListener() != null) {
-            setKeyboardListener(null);
-            return true;
-        }
-        return false;
-    }
-
-    /**
      * If a key conflicts with another key, they both are conflicted
      * Called when a key binding changed, but vanilla does this every frame
      * so it's much better than vanilla, I don't have to do more optimization

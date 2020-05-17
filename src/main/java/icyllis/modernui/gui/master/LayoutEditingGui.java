@@ -63,7 +63,7 @@ public enum LayoutEditingGui {
         }
     }
 
-    public boolean mouseClick(int button) {
+    public boolean mouseClicked(int button) {
         if (working && button == 0) {
             if (hoveredWidget != null) {
                 dragging = true;
@@ -73,17 +73,17 @@ public enum LayoutEditingGui {
         return false;
     }
 
-    public void mouseRelease() {
+    public void mouseReleased() {
         dragging = false;
     }
 
-    public boolean mouseDrag(double dx, double dy) {
+    public boolean mouseDragged(double dx, double dy) {
         if (dragging && hoveredWidget != null) {
             Locator l = hoveredWidget.getLocator();
             if (l != null) {
                 l.translateXOffset((float) dx);
                 l.translateYOffset((float) dy);
-                l.locate(hoveredWidget, GlobalModuleManager.INSTANCE.getWindowWidth(), GlobalModuleManager.INSTANCE.getWindowHeight());
+                hoveredWidget.relocate();
                 return true;
             }
         }

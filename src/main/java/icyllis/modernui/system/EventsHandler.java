@@ -38,7 +38,6 @@ import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -98,7 +97,7 @@ public class EventsHandler {
             if (event.getGui() instanceof MainMenuScreen) {
                 TrueTypeRenderer.INSTANCE.init();
             }
-            GlobalModuleManager.INSTANCE.onOpenGui(event.getGui(), event::setCanceled);
+            GlobalModuleManager.INSTANCE.onGuiOpen(event.getGui(), event::setCanceled);
             BlurHandler.INSTANCE.blur(event.getGui());
         }
 
@@ -117,7 +116,7 @@ public class EventsHandler {
         @SubscribeEvent
         public static void onKeyInput(InputEvent.KeyInputEvent event) {
             if (ConfigManager.COMMON.isEnableDeveloperMode() && event.getAction() == GLFW.GLFW_PRESS) {
-                if (Screen.hasControlDown() && Screen.hasAltDown()) {
+                if (Screen.hasControlDown() && Screen.hasShiftDown()) {
                     /*if (event.getKey() == GLFW.GLFW_KEY_K) {
                         TrueTypeRenderer.INSTANCE.refreshCache();
                     }*/
@@ -138,17 +137,17 @@ public class EventsHandler {
 
         @SubscribeEvent
         public static void onScreenMouseClickPre(@Nonnull GuiScreenEvent.MouseClickedEvent.Pre event) {
-            event.setCanceled(LayoutEditingGui.INSTANCE.mouseClick(event.getButton()));
+            event.setCanceled(LayoutEditingGui.INSTANCE.mouseClicked(event.getButton()));
         }
 
         @SubscribeEvent
         public static void onScreenMouseReleasePre(@Nonnull GuiScreenEvent.MouseReleasedEvent.Pre event) {
-            LayoutEditingGui.INSTANCE.mouseRelease();
+            LayoutEditingGui.INSTANCE.mouseReleased();
         }
 
         @SubscribeEvent
         public static void onScreenMouseDragPre(@Nonnull GuiScreenEvent.MouseDragEvent.Pre event) {
-            event.setCanceled(LayoutEditingGui.INSTANCE.mouseDrag(event.getDragX(), event.getDragY()));
+            event.setCanceled(LayoutEditingGui.INSTANCE.mouseDragged(event.getDragX(), event.getDragY()));
         }
     }
 

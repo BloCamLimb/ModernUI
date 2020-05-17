@@ -21,7 +21,7 @@ package icyllis.modernui.gui.scroll;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.Module;
-import icyllis.modernui.gui.widget.Window;
+import icyllis.modernui.gui.master.Window;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;

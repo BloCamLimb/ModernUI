@@ -21,10 +21,9 @@ package icyllis.modernui.gui.master;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.graphics.font.IFontRenderer;
 import icyllis.modernui.graphics.font.ModernFontRenderer;
-import icyllis.modernui.graphics.renderer.ModernTextRenderType;
-import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.graphics.font.TrueTypeRenderer;
 import icyllis.modernui.graphics.shader.ShaderTools;
+import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.math.Color3f;
 import icyllis.modernui.gui.shader.*;
 import net.minecraft.client.Minecraft;
@@ -34,7 +33,6 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.MathHelper;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
@@ -52,7 +50,7 @@ import javax.annotation.Nonnull;
  * or in world renderer, that also need matrix transformation to be compatible with vanilla
  *
  * {@link net.minecraft.client.renderer.RenderType}
- * {@link ModernTextRenderType}
+ * {@link icyllis.modernui.graphics.renderer.ModernTextRenderType}
  */
 public class DrawTools {
 

@@ -19,7 +19,6 @@
 package icyllis.modernui.gui.test;
 
 import icyllis.modernui.gui.background.SSExpandableBox;
-import icyllis.modernui.gui.master.IKeyboardListener;
 import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.master.WidgetStatus;
 import icyllis.modernui.gui.math.Align9D;
@@ -37,8 +36,6 @@ public class ModuleTest extends Module {
     public static final ResourceLocation FRAME = new ResourceLocation(ModernUI.MODID, "textures/gui/gui_default_frame.png");
     public static final ResourceLocation BUTTON = new ResourceLocation(ModernUI.MODID, "textures/gui/gui_button.png");*/
 
-    private final NumberInputField h;
-
     public ModuleTest() {
         addDrawable(new TestDraw());
 
@@ -47,9 +44,11 @@ public class ModuleTest extends Module {
                 .build(this)
                 .buildCallback(true, null));
 
+        NumberInputField h;
         addWidget(h = new NumberInputField(this, new NumberInputField.Builder()
                 .setWidth(120)
-                .setHeight(12)));
+                .setHeight(12)
+                .setLocator(new Locator(-60, -44))));
         h.setLimit(-54996, Long.MAX_VALUE);
         h.setDecoration(f -> new TextField.Frame(f, "Limit:", -1));
         h.setNumberListener(e -> {}, true);
@@ -84,34 +83,11 @@ public class ModuleTest extends Module {
                         .setAlign(Align9D.TOP_CENTER)
                         .setLocator(new Locator(0, 20)),
                 TestScrollGr::new));
-        //addWidget(new TextIconButton.Builder());
     }
 
-    @Override
-    public void resize(int width, int height) {
-        super.resize(width, height);
-        h.locate(width / 2f - 60, height / 2f - 44);
-    }
+    /*public void create() {
 
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        IKeyboardListener k = getKeyboardListener();
-        if (super.mouseClicked(mouseX, mouseY, mouseButton)) {
-            if (k != null && getKeyboardListener() != k) {
-                setKeyboardListener(null);
-            }
-            return true;
-        }
-        if (getKeyboardListener() != null) {
-            setKeyboardListener(null);
-            return true;
-        }
-        return false;
-    }
-
-    public void create() {
-
-        /*builder.texture()
+        builder.texture()
                 .setTexture(BACKGROUND)
                 .setPos(-128, -128)
                 .setUV(0, 0)
@@ -161,8 +137,8 @@ public class ModuleTest extends Module {
                         .align(0.25f)
                         .setRelPos(68, -109)
                 )
-                .setTarget(7);*/
+                .setTarget(7);
 
-    }
+    }*/
 
 }

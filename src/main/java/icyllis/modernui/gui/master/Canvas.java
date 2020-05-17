@@ -44,6 +44,14 @@ public class Canvas extends DrawTools {
         RenderSystem.scalef(sx, sy, 1.0f);
     }
 
+    /**
+     * Scale the canvas and translate to pos
+     *
+     * @param sx x scale
+     * @param sy y scale
+     * @param px pivot x pos
+     * @param py pivot y pos
+     */
     public void scale(float sx, float sy, float px, float py) {
         RenderSystem.scalef(sx, sy, 1.0f);
         float kx;

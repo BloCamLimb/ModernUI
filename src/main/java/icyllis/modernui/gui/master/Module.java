@@ -69,6 +69,8 @@ public abstract class Module implements IModule, IHost {
      */
     private boolean overDraw = false;
 
+    private boolean autoLoseFocus = true;
+
     public Module() {
 
     }
@@ -94,8 +96,19 @@ public abstract class Module implements IModule, IHost {
 
     }
 
+    /**
+     * Make this module draw over child module
+     */
     protected void makeOverDraw() {
         overDraw = true;
+    }
+
+    /**
+     * Keyboard listeners will auto lose their focus when click on other place
+     * Call this to disable the function
+     */
+    protected void disableAutoLoseFocus() {
+        autoLoseFocus = false;
     }
 
     /**
@@ -307,9 +320,30 @@ public abstract class Module implements IModule, IHost {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        for (IMouseListener listener : mouseListeners) {
-            if (listener.isMouseHovered() && listener.mouseClicked(mouseX, mouseY, mouseButton)) {
+        if (autoLoseFocus) {
+            IKeyboardListener k = getKeyboardListener();
+            IMouseListener m = null;
+            for (IMouseListener listener : mouseListeners) {
+                if (listener.isMouseHovered() && listener.mouseClicked(mouseX, mouseY, mouseButton)) {
+                    m = listener;
+                    break;
+                }
+            }
+            if (m != null) {
+                if (k != null && (getKeyboardListener() != k || m != k)) {
+                    setKeyboardListener(null);
+                }
                 return true;
+            }
+            if (getKeyboardListener() != null) {
+                setKeyboardListener(null);
+                return true;
+            }
+        } else {
+            for (IMouseListener listener : mouseListeners) {
+                if (listener.isMouseHovered() && listener.mouseClicked(mouseX, mouseY, mouseButton)) {
+                    return true;
+                }
             }
         }
         return false;

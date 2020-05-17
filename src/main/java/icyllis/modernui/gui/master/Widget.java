@@ -315,10 +315,8 @@ public abstract class Widget implements IWidget {
     /**
      * Called if width or height changed after build
      */
-    protected final void relocate() {
-        if (locator != null) {
-            locator.locate(this, getHost().getWindowWidth(), getHost().getWindowHeight());
-        }
+    public final void relocate() {
+        resize(getHost().getWindowWidth(), getHost().getWindowHeight());
     }
 
     public void setSize(float width, float height) {
