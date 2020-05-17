@@ -1,3 +1,12 @@
+### 1.15.5-1.5.8.55
+* Fix keyboard listener auto lose focus, and integrated in module
+* Fix widget relocate method
+* Fix pause only main menu screen logic
+* Fix scroller minimum precision
+* Fix not disable keyboard listener repeat mode on gui closed
+* Change layout editor shortcut key
+* Update icon textures
+
 ### 1.15.2-1.5.7.54 (2020-05-15)
 * Reimplement double click event, make it work in resource packs GUI  
 * Adjust status changing behaviour (API broken)  

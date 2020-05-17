@@ -130,7 +130,7 @@ public enum GlobalModuleManager {
         resize(width, height);
     }
 
-    public void onOpenGui(Screen gui, Consumer<Boolean> cancel) {
+    public void onGuiOpen(Screen gui, Consumer<Boolean> cancel) {
         this.guiToOpen = gui;
         if (gui == null) {
             clear();
@@ -332,6 +332,8 @@ public enum GlobalModuleManager {
             rootScreen = null;
             LayoutEditingGui.INSTANCE.setHoveredWidget(null);
             MouseTools.useDefaultCursor();
+            // Hotfix 1.5.8
+            minecraft.keyboardListener.enableRepeatEvents(false);
         }
     }
 

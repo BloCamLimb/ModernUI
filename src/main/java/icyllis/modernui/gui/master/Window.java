@@ -16,12 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.widget;
-
-import icyllis.modernui.gui.master.IDraggable;
-import icyllis.modernui.gui.master.IHost;
-import icyllis.modernui.gui.master.IKeyboardListener;
-import icyllis.modernui.gui.master.IWidget;
+package icyllis.modernui.gui.master;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

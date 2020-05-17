@@ -39,6 +39,9 @@ public class ScrollPanel<E extends UniformScrollEntry, G extends UniformScrollGr
 
     protected final ScrollController controller;
 
+    /**
+     * This cannot used in inner class
+     */
     public ScrollPanel(IHost host, @Nonnull Builder builder, @Nonnull Function<ScrollPanel<E, G>, G> group) {
         super(host, builder);
         this.group = group.apply(this);
