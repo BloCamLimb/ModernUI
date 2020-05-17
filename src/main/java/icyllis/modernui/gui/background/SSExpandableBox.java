@@ -26,7 +26,7 @@ import icyllis.modernui.gui.master.IDrawable;
 
 import javax.annotation.Nonnull;
 
-public class SSExpandableBox implements IDrawable {
+public class SSExpandableBox implements IDrawable, Animation.IListener {
 
     public static final int RIGHT_TOP_BOTTOM = 0;
 
@@ -48,34 +48,11 @@ public class SSExpandableBox implements IDrawable {
         barAnimation = new Animation(200)
                 .applyTo(new Applier(0, height, () -> barLength, v -> barLength = v)
                         .setInterpolator(IInterpolator.DECELERATE))
-                .listen(new Animation.IListener() {
-                    @Override
-                    public void onAnimationEnd(Animation animation, boolean isReverse) {
-                        if (!isReverse) {
-                            panelAnimation.start();
-                        }
-                    }
-                });
+                .listen(this);
         panelAnimation = new Animation(200)
                 .applyTo(new Applier(0, width - 4, () -> panelLength, v -> panelLength = v)
                         .setInterpolator(IInterpolator.DECELERATE))
-                .listen(new Animation.IListener() {
-                    @Override
-                    public void onAnimationStart(Animation animation, boolean isReverse) {
-                        if (isReverse) {
-                            onPanelClose();
-                        }
-                    }
-
-                    @Override
-                    public void onAnimationEnd(Animation animation, boolean isReverse) {
-                        if (isReverse) {
-                            barAnimation.invert();
-                        } else {
-                            onPanelFullOpen();
-                        }
-                    }
-                });
+                .listen(this);
     }
 
     @Override
@@ -96,6 +73,30 @@ public class SSExpandableBox implements IDrawable {
     public void resize(int width, int height) {
         x = width / 2f - 140;
         y = height / 2f;
+    }
+
+    @Override
+    public void onAnimationStart(Animation animation, boolean isReverse) {
+        if (animation == panelAnimation) {
+            if (isReverse) {
+                onPanelClose();
+            }
+        }
+    }
+
+    @Override
+    public void onAnimationEnd(Animation animation, boolean isReverse) {
+        if (animation == panelAnimation) {
+            if (isReverse) {
+                barAnimation.invert();
+            } else {
+                onPanelFullOpen();
+            }
+        } else if (animation == barAnimation) {
+            if (!isReverse) {
+                panelAnimation.start();
+            }
+        }
     }
 
     public void iterateOpen() {

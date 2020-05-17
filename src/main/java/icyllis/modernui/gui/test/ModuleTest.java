@@ -19,6 +19,7 @@
 package icyllis.modernui.gui.test;
 
 import icyllis.modernui.gui.background.SSExpandableBox;
+import icyllis.modernui.gui.master.IKeyboardListener;
 import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.master.WidgetStatus;
 import icyllis.modernui.gui.math.Align9D;
@@ -90,6 +91,22 @@ public class ModuleTest extends Module {
     public void resize(int width, int height) {
         super.resize(width, height);
         h.locate(width / 2f - 60, height / 2f - 44);
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        IKeyboardListener k = getKeyboardListener();
+        if (super.mouseClicked(mouseX, mouseY, mouseButton)) {
+            if (k != null && getKeyboardListener() != k) {
+                setKeyboardListener(null);
+            }
+            return true;
+        }
+        if (getKeyboardListener() != null) {
+            setKeyboardListener(null);
+            return true;
+        }
+        return false;
     }
 
     public void create() {

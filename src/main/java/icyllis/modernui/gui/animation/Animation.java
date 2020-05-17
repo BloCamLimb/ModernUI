@@ -47,10 +47,11 @@ public class Animation implements IAnimation {
     private boolean reversed = false;
 
     /**
-     * New animation use uniform motion
+     * New animation with fixed duration
      * @param duration milliseconds
      */
     public Animation(int duration) {
+        // convert ms to tick
         this.duration = duration / 50.0f;
     }
 
