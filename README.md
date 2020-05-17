@@ -3,6 +3,7 @@
 ### License
 * Modern UI
   - Copyright (C) 2019 BloCamLimb et al. All rights reserved. 
+  - (The beginning of each file specifies which license it is under)
   - [![License](https://img.shields.io/badge/License-GPLv3-blue.svg?style=flat-square)](https://raw.githubusercontent.com/BloCamLimb/ModernUI/1.15/LICENSE)
   - [![License](https://img.shields.io/badge/License-LGPLv3-lightblue.svg?style=flat-square)](https://www.gnu.org/licenses/lgpl-3.0.en.html)
 * Textures, Models, Shaders
