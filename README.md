@@ -8,7 +8,7 @@
   - [![License](https://img.shields.io/badge/License-LGPLv3-lightblue.svg?style=flat-square)](https://www.gnu.org/licenses/lgpl-3.0.en.html)
 * Textures, Models, Shaders
   - Copyright (C) 2019 BloCamLimb et al. All rights reserved. 
-  - [![License](https://img.shields.io/badge/License-CC%20BY--NC--SA%203.0-yellow.svg?style=flat-square)](https://creativecommons.org/licenses/by-nc-sa/3.0/)
+  - [![License](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-yellow.svg?style=flat-square)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 * Fonts
   - Copyright © 2014, 2015 Adobe Systems Incorporated.
   - [![License](https://img.shields.io/badge/License-OFL-pink.svg?style=flat-square)](http://scripts.sil.org/OFL)
