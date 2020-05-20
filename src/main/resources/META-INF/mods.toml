@@ -9,7 +9,7 @@ logoFile="modernui_logo.png"
     displayName="Modern UI"
     displayURL="https://curseforge.com/minecraft/mc-mods/modern-ui"
     authors="BloCamLimb"
-    credits="BloCamLimb, mosquitozzi"
+    credits="BloCamLimb"
     description='''
     Creates fancy UI with better menu, fonts, animations, optimization and many utility functions, also a gui library for other mods.
     '''
@@ -17,7 +17,7 @@ logoFile="modernui_logo.png"
 [[dependencies.modernui]]
     modId="forge"
     mandatory=true
-    versionRange="[31.1.25,)"
+    versionRange="[31.2.0,)"
     ordering="NONE"
     side="BOTH"
 [[dependencies.modernui]]

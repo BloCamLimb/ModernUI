@@ -18,8 +18,6 @@
 
 package icyllis.modernui.gui.master;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.function.Function;
 
 public abstract class Window implements IWidget, IHost {
@@ -128,74 +126,7 @@ public abstract class Window implements IWidget, IHost {
     protected void onMouseHoverExit() {}
 
     @Override
-    public int getWindowWidth() {
-        return host.getWindowWidth();
-    }
-
-    @Override
-    public int getWindowHeight() {
-        return host.getWindowHeight();
-    }
-
-    @Override
-    public double getAbsoluteMouseX() {
-        return host.getAbsoluteMouseX();
-    }
-
-    @Override
-    public double getAbsoluteMouseY() {
-        return host.getAbsoluteMouseY();
-    }
-
-    @Override
-    public double getRelativeMouseX() {
-        return host.getRelativeMouseX();
-    }
-
-    @Override
-    public double getRelativeMouseY() {
-        return host.getRelativeMouseY();
-    }
-
-    @Override
-    public float toAbsoluteX(float rx) {
-        return host.toAbsoluteX(rx);
-    }
-
-    @Override
-    public float toAbsoluteY(float ry) {
-        return host.toAbsoluteY(ry);
-    }
-
-    @Override
-    public int getElapsedTicks() {
-        return host.getElapsedTicks();
-    }
-
-    @Override
-    public void refocusMouseCursor() {
-        host.refocusMouseCursor();
-    }
-
-    @Override
-    public void setDraggable(@Nonnull IDraggable draggable) {
-        host.setDraggable(draggable);
-    }
-
-    @Nullable
-    @Override
-    public IDraggable getDraggable() {
-        return host.getDraggable();
-    }
-
-    @Override
-    public void setKeyboardListener(@Nullable IKeyboardListener keyboardListener) {
-        host.setKeyboardListener(keyboardListener);
-    }
-
-    @Nullable
-    @Override
-    public IKeyboardListener getKeyboardListener() {
-        return host.getKeyboardListener();
+    public final IHost getHost() {
+        return host;
     }
 }

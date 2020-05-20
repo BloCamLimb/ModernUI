@@ -18,20 +18,18 @@
 
 package icyllis.modernui.system;
 
-import icyllis.modernui.graphics.font.TrueTypeRenderer;
 import icyllis.modernui.graphics.BlurHandler;
+import icyllis.modernui.graphics.font.TrueTypeRenderer;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.LayoutEditingGui;
 import icyllis.modernui.gui.test.ContainerTest;
 import icyllis.modernui.gui.test.ModuleTest;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.MainMenuScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.container.ContainerType;
 import net.minecraft.item.Items;
 import net.minecraft.util.SoundEvent;
-import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.GuiOpenEvent;
@@ -40,6 +38,7 @@ import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.player.PlayerContainerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -54,6 +53,9 @@ import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
 
+/**
+ * Listens global common events
+ */
 @Mod.EventBusSubscriber
 public class EventsHandler {
 
@@ -66,11 +68,14 @@ public class EventsHandler {
         }
     }
 
-    /*@SubscribeEvent
+    @SubscribeEvent
     public static void onContainerClosed(PlayerContainerEvent.Close event) {
 
-    }*/
+    }
 
+    /**
+     * Listens global client events
+     */
     @OnlyIn(Dist.CLIENT)
     @Mod.EventBusSubscriber(Dist.CLIENT)
     public static class ClientEventHandler {
@@ -78,7 +83,6 @@ public class EventsHandler {
         @SubscribeEvent
         public static void onRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
             if (event.phase == TickEvent.Phase.START) {
-                //TrueTypeRenderer.INSTANCE.init();
                 GlobalModuleManager.INSTANCE.onRenderTick(event.renderTickTime);
             } else {
                 BlurHandler.INSTANCE.renderTick();
@@ -120,11 +124,8 @@ public class EventsHandler {
                     /*if (event.getKey() == GLFW.GLFW_KEY_K) {
                         TrueTypeRenderer.INSTANCE.refreshCache();
                     }*/
-                    if (event.getKey() == GLFW.GLFW_KEY_T) {
-                        boolean w = LayoutEditingGui.INSTANCE.iterateWorking();
-                        if (Minecraft.getInstance().player != null) {
-                            Minecraft.getInstance().player.sendMessage(new StringTextComponent("Gui Editing Mode: " + (w ? "ON" : "OFF")));
-                        }
+                    if (event.getKey() == GLFW.GLFW_KEY_T && GlobalModuleManager.INSTANCE.getModernScreen() != null) {
+                        LayoutEditingGui.INSTANCE.iterateWorking();
                     }
                 }
             }
@@ -151,6 +152,9 @@ public class EventsHandler {
         }
     }
 
+    /**
+     * Listens Modern UI events on both sides
+     */
     @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
     public static class ModEventHandler {
 
@@ -166,17 +170,20 @@ public class EventsHandler {
         public static void setupClient(FMLClientSetupEvent event) {
             SettingsManager.INSTANCE.buildAllSettings();
             GlobalModuleManager.INSTANCE.registerContainerScreen(ContainerTest.CONTAINER, c -> ModuleTest::new);
-        }
-
-        @SubscribeEvent
-        public static void registerContainers(@Nonnull RegistryEvent.Register<ContainerType<?>> event) {
-            event.getRegistry().register(ContainerTest.CONTAINER);
+            ModernUI.LOGGER.info(MARKER, "Client setup finished");
         }
 
         @OnlyIn(Dist.CLIENT)
         @SubscribeEvent
         public static void registerSounds(@Nonnull RegistryEvent.Register<SoundEvent> event) {
-            RegistrySounds.registerSounds(event.getRegistry());
+            RegistryLibrary.registerSounds(event.getRegistry());
+            ModernUI.LOGGER.info(MARKER, "Sounds registration finished");
+        }
+
+        @SubscribeEvent
+        public static void registerContainers(@Nonnull RegistryEvent.Register<ContainerType<?>> event) {
+            event.getRegistry().register(ContainerTest.CONTAINER);
+            ModernUI.LOGGER.info(MARKER, "Containers registration finished");
         }
 
         @SubscribeEvent
@@ -186,8 +193,7 @@ public class EventsHandler {
 
         @SubscribeEvent
         public static void onLoadComplete(FMLLoadCompleteEvent event) {
-            RewrittenMethods.loadCompleted = true;
-        }
 
+        }
     }
 }

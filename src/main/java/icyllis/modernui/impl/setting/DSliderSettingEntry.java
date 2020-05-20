@@ -109,7 +109,7 @@ public class DSliderSettingEntry extends SettingEntry implements SliderDiscrete.
     }*/
 
     @Override
-    public void onSliderChanged(int value) {
+    public void onSliderChanged(SliderDiscrete slider, int value) {
         //currentValue = value;
         displayString = displayStringFunc.apply(value);
         if (realtimeApply) {
@@ -118,7 +118,7 @@ public class DSliderSettingEntry extends SettingEntry implements SliderDiscrete.
     }
 
     @Override
-    public void onSliderStopChange(int value) {
+    public void onSliderStopChange(SliderDiscrete slider, int value) {
         if (!realtimeApply) {
             applyFunc.accept(value);
         }

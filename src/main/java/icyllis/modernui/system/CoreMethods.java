@@ -27,15 +27,15 @@ import net.minecraft.client.gui.screen.IngameMenuScreen;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.TranslationTextComponent;
 
+/**
+ * Core mods
+ */
 @SuppressWarnings("unused")
-public class RewrittenMethods {
-
-    // prevent ingame menu be opened before game load complete
-    public static boolean loadCompleted = false;
+public class CoreMethods {
 
     /* MainWindow */
     public static int calcGuiScale(int guiScaleIn) {
-        int r = RewrittenMethods.calcGuiScales();
+        int r = CoreMethods.calcGuiScales();
         return guiScaleIn > 0 ? MathHelper.clamp(guiScaleIn, r >> 8 & 0xf, r & 0xf) : r >> 4 & 0xf;
     }
 
@@ -44,7 +44,7 @@ public class RewrittenMethods {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.currentScreen == null) {
             // If press F3 + Esc and is single player and not open LAN world
-            if (!loadCompleted || (pauseGame && minecraft.isIntegratedServerRunning() && minecraft.getIntegratedServer() != null && !minecraft.getIntegratedServer().getPublic())) {
+            if (pauseGame && minecraft.isIntegratedServerRunning() && minecraft.getIntegratedServer() != null && !minecraft.getIntegratedServer().getPublic()) {
                 minecraft.displayGuiScreen(new IngameMenuScreen(false));
                 minecraft.getSoundHandler().pause();
             } else {

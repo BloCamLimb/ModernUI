@@ -29,8 +29,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@OnlyIn(Dist.CLIENT)
-public class HistoryRecorder {
+public enum LocalDataManager {
+    INSTANCE;
 
     private static final Object2IntArrayMap<String> EMOJI_MAP = new Object2IntArrayMap<>();
     private static final List<Pair<String, Integer>> EMOJI_HISTORY = new ArrayList<>();

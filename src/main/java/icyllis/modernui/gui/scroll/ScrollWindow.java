@@ -25,7 +25,6 @@ import icyllis.modernui.gui.master.Window;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.util.math.MathHelper;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
@@ -51,7 +50,7 @@ public class ScrollWindow<T extends ScrollGroup> extends Window implements IScro
     public ScrollWindow(Module module, Function<Integer, Float> xResizer, Function<Integer, Float> yResizer, Function<Integer, Float> wResizer, Function<Integer, Float> hResizer) {
         super(module, xResizer, yResizer, wResizer, hResizer);
         this.scrollbar = new ScrollBar(this);
-        this.controller = new ScrollController(this::callbackScrollAmount);
+        this.controller = new ScrollController(this);
         this.scrollList = new ScrollList<>(this);
     }
 
@@ -165,7 +164,7 @@ public class ScrollWindow<T extends ScrollGroup> extends Window implements IScro
         if (scrollList.mouseScrolled(amount)) {
             return true;
         }
-        scrollSmooth(Math.round(amount * -20f));
+        controller.scrollSmooth(Math.round(amount * -20f));
         return true;
     }
 
@@ -179,26 +178,14 @@ public class ScrollWindow<T extends ScrollGroup> extends Window implements IScro
         return super.toAbsoluteY(ry) - getVisibleOffset();
     }
 
-    @Override
-    public void scrollSmooth(float delta) {
-        float amount = MathHelper.clamp(controller.getTargetValue() + delta, 0, getMaxScrollAmount());
-        controller.setTargetValue(amount);
-    }
-
-    @Override
-    public void scrollDirect(float delta) {
-        float amount = Math.round(MathHelper.clamp(controller.getTargetValue() + delta, 0, getMaxScrollAmount()));
-        controller.setTargetValueDirect(amount);
-        callbackScrollAmount(amount);
-    }
-
     /**
      * Controlled by scroll controller, do not call this manually
      */
-    private void callbackScrollAmount(float scrollAmount) {
+    @Override
+    public void callbackScrollAmount(float scrollAmount) {
         this.scrollAmount = scrollAmount;
         updateScrollBarOffset();
-        updateScrollList();
+        scrollList.updateVisible(y1, getVisibleOffset(), y2);
         refocusMouseCursor();
     }
 
@@ -231,6 +218,11 @@ public class ScrollWindow<T extends ScrollGroup> extends Window implements IScro
         return Math.max(0, getTotalHeight() - getVisibleHeight());
     }
 
+    @Override
+    public ScrollController getScrollController() {
+        return controller;
+    }
+
     public float getScrollPercentage() {
         float max = getMaxScrollAmount();
         if (max == 0) {
@@ -254,13 +246,12 @@ public class ScrollWindow<T extends ScrollGroup> extends Window implements IScro
         }
     }
 
-    private void updateScrollList() {
-        scrollList.updateVisible(y1, getVisibleOffset(), y2);
-    }
-
     @Override
     public void layoutList() {
         scrollList.layoutGroups(centerX, getTop());
+        updateScrollBarLength();
+        // update all scroll data
+        controller.scrollDirect(0);
     }
 
     public void addGroups(Collection<T> collection) {

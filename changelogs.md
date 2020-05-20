@@ -3,7 +3,7 @@
 * Fix widget relocate method
 * Fix pause only main menu screen logic
 * Fix scroller minimum precision
-* Fix not disable keyboard listener repeat mode on gui closed
+* Fix not disable keyboard listener repeat mode when gui closed
 * Change layout editor shortcut key
 * Update icon textures
 

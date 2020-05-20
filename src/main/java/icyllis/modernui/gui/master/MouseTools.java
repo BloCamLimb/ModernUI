@@ -48,4 +48,8 @@ public class MouseTools {
     public static void useIBeamCursor() {
         GLFW.glfwSetCursor(Minecraft.getInstance().getMainWindow().getHandle(), IBEAM_CURSOR);
     }
+
+    public static void useHandCursor() {
+        GLFW.glfwSetCursor(Minecraft.getInstance().getMainWindow().getHandle(), HAND_CURSOR);
+    }
 }

@@ -24,6 +24,7 @@ import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import org.lwjgl.opengl.GL11;
 
+//TODO use custom MVP matrix loaded to shader
 public class Canvas extends DrawTools {
 
     private final MainWindow mainWindow = Minecraft.getInstance().getMainWindow();

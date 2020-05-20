@@ -250,6 +250,11 @@ public abstract class Module implements IModule, IHost {
     }
 
     @Override
+    public float getAnimationTime() {
+        return manager.getAnimationTime();
+    }
+
+    @Override
     public void refocusMouseCursor() {
         manager.refreshMouse();
     }

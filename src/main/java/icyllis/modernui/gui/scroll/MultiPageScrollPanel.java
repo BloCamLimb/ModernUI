@@ -73,7 +73,7 @@ public class MultiPageScrollPanel<E extends UniformScrollEntry, G extends Unifor
     }
 
     @Override
-    protected void callbackScrollAmount(float scrollAmount) {
+    public void callbackScrollAmount(float scrollAmount) {
         super.callbackScrollAmount(scrollAmount);
         hasScrolled = true;
     }
@@ -115,7 +115,7 @@ public class MultiPageScrollPanel<E extends UniformScrollEntry, G extends Unifor
         }
         layoutList();
         if (scrollToTop) {
-            scrollDirect(-getMaxScrollAmount());
+            controller.scrollDirect(-getMaxScrollAmount());
         }
         hasScrolled = true;
     }

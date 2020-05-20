@@ -20,6 +20,7 @@ package icyllis.modernui.gui.master;
 
 import icyllis.modernui.gui.math.Color3f;
 import icyllis.modernui.gui.math.Locator;
+import net.minecraft.util.text.TextFormatting;
 
 import javax.annotation.Nullable;
 
@@ -37,28 +38,35 @@ public enum LayoutEditingGui {
     private boolean dragging = false;
 
     public void setHoveredWidget(@Nullable Object obj) {
-        if (!dragging) {
+        if (working && !dragging) {
             if (obj == null) {
                 hoveredWidget = null;
+                MouseTools.useDefaultCursor();
             } else if (obj instanceof Widget) {
                 hoveredWidget = (Widget) obj;
+                MouseTools.useHandCursor();
             }
         }
     }
 
-    public boolean iterateWorking() {
+    public void iterateWorking() {
         working = !working;
-        return working;
     }
 
     public void draw() {
         if (!working) {
             return;
         }
+        canvas.drawText(TextFormatting.GOLD + "Gui Editing Mode: ON", 4, 2);
         if (hoveredWidget != null) {
+            Locator l = hoveredWidget.getLocator();
+            if (l != null) {
+                canvas.drawText("X-Offset: " + l.getXOffset(), 4, 11);
+                canvas.drawText("Y-Offset: " + l.getYOffset(), 4, 20);
+            }
             canvas.setLineAntiAliasing(true);
             canvas.setColor(Color3f.BLUE_C);
-            canvas.drawRectLines(hoveredWidget.getLeft() - 2, hoveredWidget.getTop() - 2, hoveredWidget.getRight() + 2, hoveredWidget.getBottom() + 2);
+            canvas.drawRectLines(hoveredWidget.getLeft() - 1, hoveredWidget.getTop() - 1, hoveredWidget.getRight() + 1, hoveredWidget.getBottom() + 1);
             canvas.setLineAntiAliasing(false);
         }
     }
