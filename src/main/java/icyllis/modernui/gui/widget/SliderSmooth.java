@@ -62,7 +62,7 @@ public class SliderSmooth extends Slider {
 
     @Override
     protected void onStopDragging() {
-        listener.onSliderStopChange(value);
+        listener.onSliderStopChange(this, value);
     }
 
     @Override
@@ -75,7 +75,7 @@ public class SliderSmooth extends Slider {
             if (stepSize > 0) {
                 value = stepSize * (Math.round(value / stepSize));
             }
-            listener.onSliderChanged(value);
+            listener.onSliderChanged(this, value);
         }
     }
 
@@ -140,14 +140,16 @@ public class SliderSmooth extends Slider {
 
         /**
          * Called as long as slider was dragged
+         * @param slider slider
          * @param value new value
          */
-        void onSliderChanged(double value);
+        void onSliderChanged(SliderSmooth slider, double value);
 
         /**
          * Called when stopped dragging
+         * @param slider slider
          * @param value current value
          */
-        void onSliderStopChange(double value);
+        void onSliderStopChange(SliderSmooth slider, double value);
     }
 }

@@ -69,13 +69,13 @@ public class SliderDiscrete extends Slider {
         if (prev != segment) {
             updateSlideOffset();
             int value = minValue + segment;
-            listener.onSliderChanged(value);
+            listener.onSliderChanged(this, value);
         }
     }
 
     @Override
     protected void onStopDragging() {
-        listener.onSliderStopChange(minValue + segment);
+        listener.onSliderStopChange(this, minValue + segment);
     }
 
     private void updateSlideOffset() {
@@ -146,14 +146,16 @@ public class SliderDiscrete extends Slider {
 
         /**
          * Called as long as slider was dragged
+         * @param slider slider
          * @param value new value
          */
-        void onSliderChanged(int value);
+        void onSliderChanged(SliderDiscrete slider, int value);
 
         /**
          * Called when stopped dragging
+         * @param slider slider
          * @param value current value
          */
-        void onSliderStopChange(int value);
+        void onSliderStopChange(SliderDiscrete slider, int value);
     }
 }

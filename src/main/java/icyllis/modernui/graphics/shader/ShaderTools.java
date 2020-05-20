@@ -26,6 +26,7 @@ import net.minecraft.resources.IReloadableResourceManager;
 import net.minecraft.resources.IResourceManager;
 import net.minecraftforge.resource.IResourceType;
 import net.minecraftforge.resource.ISelectiveResourceReloadListener;
+import net.minecraftforge.resource.VanillaResourceType;
 
 import javax.annotation.Nonnull;
 import java.util.function.Predicate;
@@ -40,13 +41,16 @@ public class ShaderTools {
         }
     }
 
-    private static void compileShaders(IResourceManager manager, Predicate<IResourceType> typePredicate) {
-        RingShader.INSTANCE.compile(manager);
-        RoundedRectShader.INSTANCE.compile(manager);
-        RoundedRectFrameShader.INSTANCE.compile(manager);
-        CircleShader.INSTANCE.compile(manager);
-        FeatheredRectShader.INSTANCE.compile(manager);
-        ModernUI.LOGGER.debug(ShaderProgram.MARKER, "Shaders have been compiled");
+    private static void compileShaders(IResourceManager manager, @Nonnull Predicate<IResourceType> typePredicate) {
+        if (typePredicate.test(VanillaResourceType.SHADERS)) {
+            RingShader.INSTANCE.compile(manager);
+            RoundedRectShader.INSTANCE.compile(manager);
+            RoundedRectFrameShader.INSTANCE.compile(manager);
+            CircleShader.INSTANCE.compile(manager);
+            FeatheredRectShader.INSTANCE.compile(manager);
+            ModernUI.LOGGER.info(ShaderProgram.MARKER, "{} shaders have been compiled", ShaderProgram.compileCount);
+            ShaderProgram.compileCount = 0;
+        }
     }
 
     public static <T extends ShaderProgram> void useShader(@Nonnull T shader) {

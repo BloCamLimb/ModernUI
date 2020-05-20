@@ -36,6 +36,8 @@ public class ShaderProgram implements IShaderManager {
 
     public static final Marker MARKER = MarkerManager.getMarker("SHADER");
 
+    protected static int compileCount = 0;
+
     private int program;
 
     private ShaderLoader vertex;
@@ -60,14 +62,15 @@ public class ShaderProgram implements IShaderManager {
             this.fragment = createShader(manager, new ResourceLocation(ModernUI.MODID, String.format("shaders/%s.%s", frag, "frag")), ShaderLoader.ShaderType.FRAGMENT);
             this.program = ShaderLinkHelper.createProgram();
             ShaderLinkHelper.linkProgram(this);
+            ++compileCount;
         } catch (IOException e) {
-            ModernUI.LOGGER.fatal(MARKER, "Can't create program, please report this issue");
+            ModernUI.LOGGER.fatal(MARKER, "Can't create program {}, please report this issue", getClass().getSimpleName());
             e.printStackTrace();
         }
     }
 
     @Nonnull
-    private ShaderLoader createShader(IResourceManager manager, @Nonnull ResourceLocation location, ShaderLoader.ShaderType type) throws IOException {
+    private static ShaderLoader createShader(IResourceManager manager, @Nonnull ResourceLocation location, ShaderLoader.ShaderType type) throws IOException {
         try (InputStream is = new BufferedInputStream(manager.getResource(location).getInputStream())) {
             return ShaderLoader.func_216534_a(type, location.toString(), is);
         }

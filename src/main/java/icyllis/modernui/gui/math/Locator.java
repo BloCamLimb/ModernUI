@@ -69,6 +69,14 @@ public class Locator {
         yOffset += delta;
     }
 
+    public float getXOffset() {
+        return xOffset;
+    }
+
+    public float getYOffset() {
+        return yOffset;
+    }
+
     public void locate(Widget widget, int width, int height) {
         float x = 0;
         Align3H horizontalAlign = align.getAlign3H();

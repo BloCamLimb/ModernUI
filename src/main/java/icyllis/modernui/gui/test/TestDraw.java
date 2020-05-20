@@ -76,7 +76,7 @@ public class TestDraw implements IDrawable {
         RenderSystem.disableDepthTest();
 
         canvas.resetColor();
-        canvas.drawText("Symbolic test", 20, 50);
+        canvas.drawText("Font Renderer", 20, 60);
 
         canvas.drawFeatheredRect(90, 104, 120, 106, 0.5f);
     }

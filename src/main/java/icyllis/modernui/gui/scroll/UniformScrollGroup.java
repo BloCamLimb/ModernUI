@@ -162,18 +162,18 @@ public abstract class UniformScrollGroup<T extends UniformScrollEntry> extends S
         float c = entry.getTop() - window.getTop() - window.getVisibleOffset() - window.getMargin();
         if (c < 0) {
             if (c < -240) {
-                window.scrollDirect(c);
+                window.getScrollController().scrollDirect(c);
             } else {
-                window.scrollSmooth(c);
+                window.getScrollController().scrollSmooth(c);
             }
             return;
         }
         float d = entry.getBottom() - window.getBottom() - window.getVisibleOffset() + window.getMargin();
         if (d > 0) {
             if (d > 240) {
-                window.scrollDirect(d);
+                window.getScrollController().scrollDirect(d);
             } else {
-                window.scrollSmooth(d);
+                window.getScrollController().scrollSmooth(d);
             }
         }
     }

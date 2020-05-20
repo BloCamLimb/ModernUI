@@ -28,33 +28,90 @@ import javax.annotation.Nullable;
  */
 public interface IHost {
 
-    int getWindowWidth();
+    /**
+     * Get parent host if present
+     */
+    default IHost getHost() {
+        throw new IllegalStateException();
+    }
 
-    int getWindowHeight();
+    default int getWindowWidth() {
+        return getHost().getWindowWidth();
+    }
 
-    double getAbsoluteMouseX();
+    default int getWindowHeight() {
+        return getHost().getWindowHeight();
+    }
 
-    double getAbsoluteMouseY();
+    /**
+     * Get mouse x relative to global coordinate system
+     */
+    default double getAbsoluteMouseX() {
+        return getHost().getAbsoluteMouseX();
+    }
 
-    double getRelativeMouseX();
+    /**
+     * Get mouse y relative to global coordinate system
+     */
+    default double getAbsoluteMouseY() {
+        return getHost().getAbsoluteMouseY();
+    }
 
-    double getRelativeMouseY();
+    /**
+     * Get mouse x relative to current coordinate system
+     */
+    default double getRelativeMouseX() {
+        return getHost().getRelativeMouseX();
+    }
 
-    float toAbsoluteX(float rx);
+    /**
+     * Get mouse y relative to current coordinate system
+     */
+    default double getRelativeMouseY() {
+        return getHost().getRelativeMouseY();
+    }
 
-    float toAbsoluteY(float ry);
+    /**
+     * Transform relative x to absolute x
+     */
+    default float toAbsoluteX(float rx) {
+        return getHost().toAbsoluteX(rx);
+    }
 
-    int getElapsedTicks();
+    /**
+     * Transform relative y to absolute y
+     */
+    default float toAbsoluteY(float ry) {
+        return getHost().toAbsoluteY(ry);
+    }
 
-    void refocusMouseCursor();
+    default int getElapsedTicks() {
+        return getHost().getElapsedTicks();
+    }
 
-    void setDraggable(@Nonnull IDraggable draggable);
+    default float getAnimationTime() {
+        return getHost().getAnimationTime();
+    }
+
+    default void refocusMouseCursor() {
+        getHost().refocusMouseCursor();
+    }
+
+    default void setDraggable(@Nonnull IDraggable draggable) {
+        getHost().setDraggable(draggable);
+    }
 
     @Nullable
-    IDraggable getDraggable();
+    default IDraggable getDraggable() {
+        return getHost().getDraggable();
+    }
 
-    void setKeyboardListener(@Nullable IKeyboardListener keyboardListener);
+    default void setKeyboardListener(@Nullable IKeyboardListener keyboardListener) {
+        getHost().setKeyboardListener(keyboardListener);
+    }
 
     @Nullable
-    IKeyboardListener getKeyboardListener();
+    default IKeyboardListener getKeyboardListener() {
+        return getHost().getKeyboardListener();
+    }
 }

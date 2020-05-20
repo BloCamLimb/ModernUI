@@ -23,7 +23,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.graphics.font.TrueTypeRenderer;
 import icyllis.modernui.gui.math.Color3f;
-import icyllis.modernui.system.HistoryRecorder;
+import icyllis.modernui.system.LocalDataManager;
 import icyllis.modernui.system.ConstantsLibrary;
 import icyllis.modernui.gui.master.DrawTools;
 import javafx.util.Pair;
@@ -49,7 +49,7 @@ public class EmojiTab implements IGuiEventListener {
 
     EmojiTab(ChatInputBox inputBox) {
         this.inputBox = inputBox;
-        cachedEmoji = HistoryRecorder.findEmoji("");
+        cachedEmoji = LocalDataManager.findEmoji("");
     }
 
     public void draw(int mouseX, int mouseY) {
@@ -73,12 +73,12 @@ public class EmojiTab implements IGuiEventListener {
             for(int y = 0; y < 3; y++) {
                 for(int x = 0; x < 5; x++) {
                     int index = y * 5 + x;
-                    if(index >= HistoryRecorder.getEmojiHistory().size()) {
+                    if(index >= LocalDataManager.getEmojiHistory().size()) {
                         break CYCLE;
                     }
                     int rx = 4 + x * 13;
                     int ry = hisY1 + 2 + y * 13;
-                    anyFound = isAnyFound(mouseX, mouseY, anyFound, rx, ry, HistoryRecorder.getEmojiHistory().get(index));
+                    anyFound = isAnyFound(mouseX, mouseY, anyFound, rx, ry, LocalDataManager.getEmojiHistory().get(index));
                 }
             }
             if(!anyFound) {
@@ -178,7 +178,7 @@ public class EmojiTab implements IGuiEventListener {
             if(showMode == 1) {
                 if(hoverEmoji != null) {
                     inputBox.writeText("\u256a" + Integer.toHexString(hoverEmoji.getValue() | 0x10000).substring(1) + "\u256a");
-                    HistoryRecorder.addToEmojiHistory(hoverEmoji);
+                    LocalDataManager.addToEmojiHistory(hoverEmoji);
                     return true;
                 }
             }
@@ -190,7 +190,7 @@ public class EmojiTab implements IGuiEventListener {
             if(showMode == 2) {
                 if(hoverEmoji != null) {
                     inputBox.writeText("\u256a" + Integer.toHexString(hoverEmoji.getValue() | 0x10000).substring(1) + "\u256a");
-                    HistoryRecorder.addToEmojiHistory(hoverEmoji);
+                    LocalDataManager.addToEmojiHistory(hoverEmoji);
                     return true;
                 }
                 if(mouseX < 2 || mouseX > selX2 || mouseY > hisY2 || mouseY < selY1) {

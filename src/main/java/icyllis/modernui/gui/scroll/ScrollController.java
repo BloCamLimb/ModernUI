@@ -18,14 +18,19 @@
 
 package icyllis.modernui.gui.scroll;
 
+import icyllis.modernui.gui.animation.IInterpolator;
 import icyllis.modernui.gui.master.GlobalModuleManager;
+import net.minecraft.util.math.MathHelper;
 
-import java.util.function.Consumer;
+import javax.annotation.Nonnull;
 
 /**
  * Control scroll window to scroll smoothly
  */
 public class ScrollController {
+
+    @Nonnull
+    private final IScrollHost master;
 
     private float startValue;
 
@@ -37,22 +42,20 @@ public class ScrollController {
 
     private float duration = 2f;
 
-    private Consumer<Float> receiver;
-
-    public ScrollController(Consumer<Float> receiver) {
-        this.receiver = receiver;
+    public ScrollController(@Nonnull IScrollHost host) {
+        this.master = host;
     }
 
     public void update(float currentTime) {
         if (value != targetValue) {
             float p = Math.min((currentTime - startTime) / duration, 1);
-            p = (float) Math.sin(p * Math.PI / 2);
-            value = startValue + (targetValue - startValue) * p;
-            receiver.accept(value);
+            p = IInterpolator.DECELERATE.getInterpolation(p);
+            value = MathHelper.lerp(p, startValue, targetValue);
+            master.callbackScrollAmount(value);
         }
     }
 
-    public void setTargetValue(float newTargetValue) {
+    private void setTargetValue(float newTargetValue) {
         startTime = GlobalModuleManager.INSTANCE.getAnimationTime();
         startValue = value;
         targetValue = Math.round(newTargetValue);
@@ -64,11 +67,18 @@ public class ScrollController {
         }
     }
 
-    public void setTargetValueDirect(float newTargetValue) {
+    private void setTargetValueDirect(float newTargetValue) {
         startValue = value = targetValue = newTargetValue;
+        master.callbackScrollAmount(value);
     }
 
-    public float getTargetValue() {
-        return targetValue;
+    public void scrollSmooth(float delta) {
+        float amount = MathHelper.clamp(targetValue + delta, 0, master.getMaxScrollAmount());
+        setTargetValue(amount);
+    }
+
+    public void scrollDirect(float delta) {
+        float amount = Math.round(MathHelper.clamp(targetValue + delta, 0, master.getMaxScrollAmount()) * 2.0f) / 2.0f;
+        setTargetValueDirect(amount);
     }
 }

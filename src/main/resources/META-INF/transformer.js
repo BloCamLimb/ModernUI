@@ -46,7 +46,7 @@ function initializeCoreMod() {
                     } else if (inst.getType() === AbstractInsnNode.LINE) {
                         var cast = ASMAPI.listOf(
                             new VarInsnNode(Opcodes.ILOAD, 1),
-                            new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/RewrittenMethods", "displayInGameMenu", "(Z)V", false),
+                            new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/CoreMethods", "displayInGameMenu", "(Z)V", false),
                             new InsnNode(Opcodes.RETURN));
                         list.insert(inst, cast);
                         finish = true;
@@ -77,7 +77,7 @@ function initializeCoreMod() {
                             new FieldInsnNode(Opcodes.GETFIELD, "net/minecraft/client/MainWindow", "field_198131_r", "I"), // framebufferWidth
                             new VarInsnNode(Opcodes.ALOAD, 0),
                             new FieldInsnNode(Opcodes.GETFIELD, "net/minecraft/client/MainWindow", "field_198132_s", "I"), // framebufferHeight*/
-                            new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/RewrittenMethods", "calcGuiScale", "(I)I", false),
+                            new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/CoreMethods", "calcGuiScale", "(I)I", false),
                             new InsnNode(Opcodes.IRETURN));
                         list.insert(inst, cast);
                         finish = true;
@@ -101,8 +101,8 @@ function initializeCoreMod() {
                 list.remove(ldc1);
                 list.remove(ldc2);
                 var cast = ASMAPI.listOf(
-                    new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/RewrittenMethods", "getScreenBackgroundColor", "()I", false),
-                    new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/RewrittenMethods", "getScreenBackgroundColor", "()I", false)
+                    new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/CoreMethods", "getScreenBackgroundColor", "()I", false),
+                    new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/CoreMethods", "getScreenBackgroundColor", "()I", false)
                 );
                 list.insertBefore(invoke, cast);
                 return methodNode;
@@ -121,7 +121,7 @@ function initializeCoreMod() {
                 while(iterator.hasNext()) {
                     var inst = iterator.next();
                     if (inst.getType() === AbstractInsnNode.INSN) {
-                        list.set(inst, new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/RewrittenMethods", "isPauseScreen", "()Z", false));
+                        list.set(inst, new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/CoreMethods", "isPauseScreen", "()Z", false));
                         break;
                     }
                 }

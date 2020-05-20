@@ -128,7 +128,7 @@ public class SSliderSettingEntry extends SettingEntry implements SliderSmooth.IL
     }*/
 
     @Override
-    public void onSliderChanged(double value) {
+    public void onSliderChanged(SliderSmooth slider, double value) {
         displayString = displayStringFunc.apply(value);
         if (realtimeApply) {
             applyFunc.accept(value);
@@ -136,7 +136,7 @@ public class SSliderSettingEntry extends SettingEntry implements SliderSmooth.IL
     }
 
     @Override
-    public void onSliderStopChange(double value) {
+    public void onSliderStopChange(SliderSmooth slider, double value) {
         if (!realtimeApply) {
             applyFunc.accept(value);
         }

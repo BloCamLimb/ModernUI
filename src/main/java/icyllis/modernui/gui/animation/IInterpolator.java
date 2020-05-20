@@ -21,20 +21,33 @@ package icyllis.modernui.gui.animation;
 @FunctionalInterface
 public interface IInterpolator {
 
+    /**
+     * Default interpolator, you don't need to call this
+     */
     IInterpolator LINEAR = in -> in;
 
+    /**
+     * From slow to fast, seldom used
+     */
     IInterpolator ACCELERATE = in -> in * in;
 
+    /**
+     * From fast to slow, commonly used
+     */
     IInterpolator DECELERATE = in -> 1.0f - (1.0f - in) * (1.0f - in);
 
     IInterpolator ACC_DEC = in -> (float) (Math.cos((in + 1) * Math.PI) / 2.0f) + 0.5f;
 
+    /**
+     * From fast to slow, harmonic motion, you'd better use DECELERATE, they are similar
+     */
     IInterpolator SINE = in -> (float) Math.sin(Math.PI / 2 * in);
 
     /**
      * Get interpolation value
+     *
      * @param progress [0-1], determined by time
-     * @return new value
+     * @return interpolated value
      */
     float getInterpolation(float progress);
 }

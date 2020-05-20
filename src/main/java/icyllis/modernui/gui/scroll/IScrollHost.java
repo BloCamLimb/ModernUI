@@ -21,11 +21,22 @@ package icyllis.modernui.gui.scroll;
 import icyllis.modernui.gui.master.IHost;
 import icyllis.modernui.gui.master.IWidget;
 
-public interface IScrollHost extends IHost, IWidget, ScrollBar.IScrollable {
+public interface IScrollHost extends IHost, IWidget {
 
+    /**
+     * Get scroll offset without top and bottom margin
+     *
+     * @return scroll amount (gt 0)
+     */
     float getVisibleOffset();
 
     float getMargin();
 
     void layoutList();
+
+    float getMaxScrollAmount();
+
+    void callbackScrollAmount(float scrollAmount);
+
+    ScrollController getScrollController();
 }

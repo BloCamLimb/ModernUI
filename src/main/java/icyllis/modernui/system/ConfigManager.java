@@ -54,8 +54,10 @@ public class ConfigManager {
     public static void load(ForgeConfigSpec spec) {
         if (spec == CLIENT_SPEC) {
             CLIENT.load();
+            ModernUI.LOGGER.info(ModernUI.MARKER, "Client configs reloaded");
         } else if (spec == COMMON_SPEC) {
             COMMON.load();
+            ModernUI.LOGGER.info(ModernUI.MARKER, "Common configs reloaded");
         }
     }
 

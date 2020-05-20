@@ -18,10 +18,12 @@
 
 package icyllis.modernui.gui.scroll;
 
-import icyllis.modernui.gui.master.*;
+import icyllis.modernui.gui.master.Canvas;
+import icyllis.modernui.gui.master.IDraggable;
+import icyllis.modernui.gui.master.IDrawable;
+import icyllis.modernui.gui.master.IMouseListener;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * This is a part of scroll window
@@ -29,9 +31,8 @@ import javax.annotation.Nullable;
  */
 public class ScrollBar implements IDrawable, IMouseListener, IDraggable {
 
-    private final GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
-
-    private final IScrollable master;
+    @Nonnull
+    private final IScrollHost master;
 
     public final int barThickness = 5;
 
@@ -55,10 +56,10 @@ public class ScrollBar implements IDrawable, IMouseListener, IDraggable {
 
     //private double draggingY = 0;
 
-    private float accDelta = 0;
+    private double accDelta = 0;
 
-    public ScrollBar(IScrollable scrollable) {
-        this.master = scrollable;
+    public ScrollBar(@Nonnull IScrollHost host) {
+        this.master = host;
     }
 
     @Override
@@ -116,7 +117,7 @@ public class ScrollBar implements IDrawable, IMouseListener, IDraggable {
 
     protected void wake() {
         brightness = 0.75f;
-        startTime = manager.getAnimationTime() + 10.0f;
+        startTime = master.getAnimationTime() + 10.0f;
     }
 
     public void setBarLength(float percentage) {
@@ -145,7 +146,7 @@ public class ScrollBar implements IDrawable, IMouseListener, IDraggable {
                 if (barHovered) {
                     wake();
                 } else {
-                    startTime = manager.getAnimationTime() + 10.0f;
+                    startTime = master.getAnimationTime() + 10.0f;
                 }
             }
             return barHovered;
@@ -157,7 +158,7 @@ public class ScrollBar implements IDrawable, IMouseListener, IDraggable {
     public void setMouseHoverExit() {
         if (barHovered) {
             barHovered = false;
-            startTime = manager.getAnimationTime() + 10.0f;
+            startTime = master.getAnimationTime() + 10.0f;
         }
     }
 
@@ -178,11 +179,11 @@ public class ScrollBar implements IDrawable, IMouseListener, IDraggable {
                 if (inWidth) {
                     if (mouseY >= y && mouseY < barY) {
                         float mov = transformPosToAmount((float) (barY - mouseY));
-                        master.scrollSmooth(-Math.min(60f, mov));
+                        master.getScrollController().scrollSmooth(-Math.min(60f, mov));
                         return true;
                     } else if (mouseY > barY + barLength && mouseY <= y + height) {
                         float mov = transformPosToAmount((float) (mouseY - barY - barLength));
-                        master.scrollSmooth(Math.min(60f, mov));
+                        master.getScrollController().scrollSmooth(Math.min(60f, mov));
                         return true;
                     }
                 }
@@ -208,7 +209,7 @@ public class ScrollBar implements IDrawable, IMouseListener, IDraggable {
     public void stopMouseDragging() {
         if (visible && isDragging) {
             isDragging = false;
-            startTime = manager.getAnimationTime() + 10.0f;
+            startTime = master.getAnimationTime() + 10.0f;
         }
     }
 
@@ -223,10 +224,10 @@ public class ScrollBar implements IDrawable, IMouseListener, IDraggable {
             }*/
             if (mouseY >= y && mouseY <= y + height) {
                 accDelta += deltaY;
-                int i = (int) (accDelta * 2);
+                int i = (int) (accDelta * 2.0);
                 if (i != 0) {
-                    master.scrollDirect(transformPosToAmount(i / 2f));
-                    accDelta -= i / 2f;
+                    master.getScrollController().scrollDirect(transformPosToAmount(i / 2.0f));
+                    accDelta -= i / 2.0f;
                 }
             }
             return true;
@@ -239,21 +240,10 @@ public class ScrollBar implements IDrawable, IMouseListener, IDraggable {
      * @param relativePos relative move (pos)
      */
     public float transformPosToAmount(float relativePos) {
-        return master.getMaxScrollAmount() * relativePos / getMaxDragLength();
+        return master.getMaxScrollAmount() / getMaxDragLength() * relativePos;
     }
 
     public void setHeight(float height) {
         this.height = height;
-    }
-
-    public interface IScrollable {
-
-        void setDraggable(@Nonnull IDraggable draggable);
-
-        void scrollSmooth(float delta);
-
-        void scrollDirect(float delta);
-
-        float getMaxScrollAmount();
     }
 }
