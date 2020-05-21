@@ -19,23 +19,20 @@
 package icyllis.modernui.impl.stats;
 
 import com.google.common.collect.Sets;
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.master.DrawTools;
+import icyllis.modernui.gui.test.DrawTools;
 import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.gui.scroll.UniformScrollGroup;
-import icyllis.modernui.gui.math.Color3f;
+import icyllis.modernui.gui.math.Color3i;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.AbstractGui;
-import net.minecraft.client.gui.screen.StatsScreen;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 import net.minecraft.stats.StatisticsManager;
 import net.minecraft.stats.Stats;
-import org.lwjgl.opengl.GL11;
 
 import java.util.Set;
 
@@ -132,7 +129,7 @@ public class ItemStatsGroup extends UniformScrollGroup<ItemStatsEntry> {
         set.remove(Items.AIR);
         int i = 0;
         for (Item item : set) {
-            entries.add(new ItemStatsEntry(window, item, (i & 1) == 0 ? Color3f.WHILE : Color3f.GRAY));
+            entries.add(new ItemStatsEntry(window, item, (i & 1) == 0 ? Color3i.WHITE : Color3i.GRAY));
             i++;
         }
         height = entries.size() * entryHeight + 20;

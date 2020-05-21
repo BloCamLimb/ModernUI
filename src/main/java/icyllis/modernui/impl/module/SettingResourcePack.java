@@ -19,10 +19,9 @@
 package icyllis.modernui.impl.module;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.gui.layout.WidgetLayout;
+import icyllis.modernui.gui.test.WidgetLayout;
 import icyllis.modernui.gui.master.Module;
 import icyllis.modernui.gui.master.Widget;
-import icyllis.modernui.gui.master.WidgetStatus;
 import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.math.Direction4D;
 import icyllis.modernui.gui.math.Locator;
@@ -105,7 +104,7 @@ public class SettingResourcePack extends Module {
         list.add(upArrow);
         list.add(downArrow);
 
-        list.forEach(e -> e.setStatus(WidgetStatus.INACTIVE, false));
+        list.forEach(e -> e.setStatus(Widget.Status.INACTIVE, false));
 
         applyButton = new StaticFrameButton.Builder(I18n.format("gui.modernui.button.apply"))
                 .setWidth(48)
@@ -113,7 +112,7 @@ public class SettingResourcePack extends Module {
                 .setLocator(new Locator(Align9D.BOTTOM_CENTER, 0, -32))
                 .build(this)
                 .buildCallback(this::applyResourcePacks);
-        applyButton.setStatus(WidgetStatus.INACTIVE, false);
+        applyButton.setStatus(Widget.Status.INACTIVE, false);
 
         arrowsLayout = new WidgetLayout(list, WidgetLayout.Direction.VERTICAL_POSITIVE, 4);
 
@@ -153,7 +152,7 @@ public class SettingResourcePack extends Module {
 
         gameSettings.saveOptions();
         minecraft.reloadResources();
-        applyButton.setStatus(WidgetStatus.INACTIVE, false);
+        applyButton.setStatus(Widget.Status.INACTIVE, false);
     }
 
     @Override
@@ -179,7 +178,7 @@ public class SettingResourcePack extends Module {
             highlightEntry.setMouseHoverExit();
             refocusMouseCursor();
             setHighlightEntry(highlightEntry);
-            applyButton.setStatus(WidgetStatus.ACTIVE, true);
+            applyButton.setStatus(Widget.Status.ACTIVE, true);
         }
     }
 
@@ -194,7 +193,7 @@ public class SettingResourcePack extends Module {
             highlightEntry.setMouseHoverExit();
             refocusMouseCursor();
             setHighlightEntry(highlightEntry);
-            applyButton.setStatus(WidgetStatus.ACTIVE, true);
+            applyButton.setStatus(Widget.Status.ACTIVE, true);
         }
     }
 
@@ -205,7 +204,7 @@ public class SettingResourcePack extends Module {
             //selectedGroup.followEntry(highlightEntry);
             refocusMouseCursor();
             setHighlightEntry(highlightEntry);
-            applyButton.setStatus(WidgetStatus.ACTIVE, true);
+            applyButton.setStatus(Widget.Status.ACTIVE, true);
         }
     }
 
@@ -216,7 +215,7 @@ public class SettingResourcePack extends Module {
             //selectedGroup.followEntry(highlightEntry);
             refocusMouseCursor();
             setHighlightEntry(highlightEntry);
-            applyButton.setStatus(WidgetStatus.ACTIVE, true);
+            applyButton.setStatus(Widget.Status.ACTIVE, true);
         }
     }
 
@@ -250,18 +249,18 @@ public class SettingResourcePack extends Module {
         this.highlightEntry = highlightEntry;
         if (highlightEntry != null) {
             leftArrow.setStatus(highlightEntry.canIntoAvailable() ?
-                    WidgetStatus.ACTIVE : WidgetStatus.INACTIVE, true);
+                    Widget.Status.ACTIVE : Widget.Status.INACTIVE, true);
             rightArrow.setStatus(highlightEntry.canIntoSelected() ?
-                    WidgetStatus.ACTIVE : WidgetStatus.INACTIVE, true);
+                    Widget.Status.ACTIVE : Widget.Status.INACTIVE, true);
             upArrow.setStatus(highlightEntry.canGoUp() ?
-                    WidgetStatus.ACTIVE : WidgetStatus.INACTIVE, true);
+                    Widget.Status.ACTIVE : Widget.Status.INACTIVE, true);
             downArrow.setStatus(highlightEntry.canGoDown() ?
-                    WidgetStatus.ACTIVE : WidgetStatus.INACTIVE, true);
+                    Widget.Status.ACTIVE : Widget.Status.INACTIVE, true);
         } else {
-            leftArrow.setStatus(WidgetStatus.INACTIVE, true);
-            rightArrow.setStatus(WidgetStatus.INACTIVE, true);
-            upArrow.setStatus(WidgetStatus.INACTIVE, true);
-            downArrow.setStatus(WidgetStatus.INACTIVE, true);
+            leftArrow.setStatus(Widget.Status.INACTIVE, true);
+            rightArrow.setStatus(Widget.Status.INACTIVE, true);
+            upArrow.setStatus(Widget.Status.INACTIVE, true);
+            downArrow.setStatus(Widget.Status.INACTIVE, true);
         }
     }
 

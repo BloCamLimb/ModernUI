@@ -28,7 +28,7 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import icyllis.modernui.gui.math.Align3H;
-import icyllis.modernui.gui.math.Color3f;
+import icyllis.modernui.gui.math.Color3i;
 import icyllis.modernui.system.ConfigManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -140,7 +140,7 @@ public class TrueTypeRenderer implements IFontRenderer {
         int alpha = (int) (a * 255);
 
         /* formatting color will replace parameter color */
-        Color3f rColor = null;
+        Color3i rColor = null;
 
         /*
          * Enable GL_BLEND in case the font is drawn anti-aliased because Minecraft itself only enables blending for chat text
@@ -171,8 +171,7 @@ public class TrueTypeRenderer implements IFontRenderer {
              * in which case only the last such color code takes effect.
              */
             while (colorIndex < entry.codes.length && entry.glyphs[glyphIndex].stringIndex >= entry.codes[colorIndex].stringIndex) {
-                int colorCode = entry.codes[colorIndex].colorCode;
-                rColor = Color3f.getFormattingColor(colorCode);
+                rColor = entry.codes[colorIndex].color;
                 fontStyle = entry.codes[colorIndex].fontStyle;
                 colorIndex++;
             }
@@ -238,8 +237,7 @@ public class TrueTypeRenderer implements IFontRenderer {
                  * color code takes effect.
                  */
                 while (colorIndex < entry.codes.length && entry.glyphs[glyphIndex].stringIndex >= entry.codes[colorIndex].stringIndex) {
-                    int colorCode = entry.codes[colorIndex].colorCode;
-                    rColor = Color3f.getFormattingColor(colorCode);
+                    rColor = entry.codes[colorIndex].color;
                     renderStyle = entry.codes[colorIndex].renderStyle;
                     colorIndex++;
                 }
@@ -352,7 +350,7 @@ public class TrueTypeRenderer implements IFontRenderer {
         }
 
         /* formatting color will replace parameter color */
-        Color3f rColor = null;
+        Color3i rColor = null;
 
         /*
          * Enable GL_BLEND in case the font is drawn anti-aliased because Minecraft itself only enables blending for chat text
@@ -379,8 +377,7 @@ public class TrueTypeRenderer implements IFontRenderer {
              * in which case only the last such color code takes effect.
              */
             while (colorIndex < entry.codes.length && entry.glyphs[glyphIndex].stringIndex >= entry.codes[colorIndex].stringIndex) {
-                int colorCode = entry.codes[colorIndex].colorCode;
-                rColor = Color3f.getFormattingColor(colorCode);
+                rColor = entry.codes[colorIndex].color;
                 fontStyle = entry.codes[colorIndex].fontStyle;
                 colorIndex++;
             }
@@ -467,8 +464,7 @@ public class TrueTypeRenderer implements IFontRenderer {
                  * color code takes effect.
                  */
                 while (colorIndex < entry.codes.length && entry.glyphs[glyphIndex].stringIndex >= entry.codes[colorIndex].stringIndex) {
-                    int colorCode = entry.codes[colorIndex].colorCode;
-                    rColor = Color3f.getFormattingColor(colorCode);
+                    rColor = entry.codes[colorIndex].color;
                     renderStyle = entry.codes[colorIndex].renderStyle;
                     colorIndex++;
                 }

@@ -16,22 +16,23 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.layout;
+package icyllis.modernui.gui.test;
 
 import icyllis.modernui.gui.master.IWidget;
+import icyllis.modernui.gui.master.Widget;
 
 import java.util.Collections;
 import java.util.List;
 
 public class WidgetLayout {
 
-    private List<? extends IWidget> widgets;
+    private List<? extends Widget> widgets;
 
     private Direction direction;
 
     private float spacing;
 
-    public WidgetLayout(List<? extends IWidget> widgets, Direction direction, float spacing) {
+    public WidgetLayout(List<? extends Widget> widgets, Direction direction, float spacing) {
         this.widgets = widgets;
         this.direction = direction;
         this.spacing = spacing;
@@ -43,32 +44,32 @@ public class WidgetLayout {
         float t = 0;
         switch (direction) {
             case HORIZONTAL_POSITIVE:
-                for (IWidget widget : widgets) {
+                for (Widget widget : widgets) {
                     widget.locate(x1, y1);
                     x1 = widget.getRight() + spacing;
                 }
                 break;
             case HORIZONTAL_CENTER:
-                for (IWidget widget : widgets) {
+                for (Widget widget : widgets) {
                     t += widget.getWidth() + spacing;
                 }
                 t -= spacing;
                 x1 -= t / 2f;
-                for (IWidget widget : widgets) {
+                for (Widget widget : widgets) {
                     widget.locate(x1, y1);
                     x1 += widget.getWidth() + spacing;
                 }
                 break;
             case HORIZONTAL_NEGATIVE:
                 Collections.reverse(widgets);
-                for (IWidget widget : widgets) {
+                for (Widget widget : widgets) {
                     x1 -= widget.getWidth();
                     widget.locate(x1, y1);
                     x1 = widget.getLeft() - spacing;
                 }
                 break;
             case VERTICAL_POSITIVE:
-                for (IWidget widget : widgets) {
+                for (Widget widget : widgets) {
                     widget.locate(x1, y1);
                     y1 = widget.getBottom() + spacing;
                 }
@@ -79,14 +80,14 @@ public class WidgetLayout {
                 }
                 t -= spacing;
                 y1 -= t / 2f;
-                for (IWidget widget : widgets) {
+                for (Widget widget : widgets) {
                     widget.locate(x1, y1);
                     y1 += widget.getHeight() + spacing;
                 }
                 break;
             case VERTICAL_NEGATIVE:
                 Collections.reverse(widgets);
-                for (IWidget widget : widgets) {
+                for (Widget widget : widgets) {
                     y1 -= widget.getHeight();
                     widget.locate(x1, y1);
                     y1 = widget.getTop() - spacing;

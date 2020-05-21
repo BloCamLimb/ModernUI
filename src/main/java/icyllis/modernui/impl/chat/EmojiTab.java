@@ -22,10 +22,10 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.graphics.font.TrueTypeRenderer;
-import icyllis.modernui.gui.math.Color3f;
-import icyllis.modernui.system.LocalDataManager;
+import icyllis.modernui.gui.math.Color3i;
+import icyllis.modernui.system.StorageManager;
 import icyllis.modernui.system.ConstantsLibrary;
-import icyllis.modernui.gui.master.DrawTools;
+import icyllis.modernui.gui.test.DrawTools;
 import javafx.util.Pair;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
@@ -49,7 +49,7 @@ public class EmojiTab implements IGuiEventListener {
 
     EmojiTab(ChatInputBox inputBox) {
         this.inputBox = inputBox;
-        cachedEmoji = LocalDataManager.findEmoji("");
+        cachedEmoji = StorageManager.findEmoji("");
     }
 
     public void draw(int mouseX, int mouseY) {
@@ -73,12 +73,12 @@ public class EmojiTab implements IGuiEventListener {
             for(int y = 0; y < 3; y++) {
                 for(int x = 0; x < 5; x++) {
                     int index = y * 5 + x;
-                    if(index >= LocalDataManager.getEmojiHistory().size()) {
+                    if(index >= StorageManager.getEmojiHistory().size()) {
                         break CYCLE;
                     }
                     int rx = 4 + x * 13;
                     int ry = hisY1 + 2 + y * 13;
-                    anyFound = isAnyFound(mouseX, mouseY, anyFound, rx, ry, LocalDataManager.getEmojiHistory().get(index));
+                    anyFound = isAnyFound(mouseX, mouseY, anyFound, rx, ry, StorageManager.getEmojiHistory().get(index));
                 }
             }
             if(!anyFound) {
@@ -131,7 +131,7 @@ public class EmojiTab implements IGuiEventListener {
             GlStateManager.enableBlend();
             GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
             DrawTools.fillRectWithColor(rx, ry, rx + 11.5f, ry + 11.5f, 0x40d0d0d0);
-            TrueTypeRenderer.INSTANCE.drawString(name, 18, y - 11, Color3f.GRAY_224, 1.0f, Align3H.LEFT);
+            TrueTypeRenderer.INSTANCE.drawString(name, 18, y - 11, Color3i.GRAY_224, 1.0f, Align3H.LEFT);
             GlStateManager.disableBlend();
             GlStateManager.enableBlend();
             hoverEmoji = emoji;
@@ -178,7 +178,7 @@ public class EmojiTab implements IGuiEventListener {
             if(showMode == 1) {
                 if(hoverEmoji != null) {
                     inputBox.writeText("\u256a" + Integer.toHexString(hoverEmoji.getValue() | 0x10000).substring(1) + "\u256a");
-                    LocalDataManager.addToEmojiHistory(hoverEmoji);
+                    StorageManager.addToEmojiHistory(hoverEmoji);
                     return true;
                 }
             }
@@ -190,7 +190,7 @@ public class EmojiTab implements IGuiEventListener {
             if(showMode == 2) {
                 if(hoverEmoji != null) {
                     inputBox.writeText("\u256a" + Integer.toHexString(hoverEmoji.getValue() | 0x10000).substring(1) + "\u256a");
-                    LocalDataManager.addToEmojiHistory(hoverEmoji);
+                    StorageManager.addToEmojiHistory(hoverEmoji);
                     return true;
                 }
                 if(mouseX < 2 || mouseX > selX2 || mouseY > hisY2 || mouseY < selY1) {

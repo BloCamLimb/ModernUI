@@ -20,23 +20,28 @@ package icyllis.modernui.system;
 
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.network.NetworkDirection;
 import net.minecraftforge.fml.network.NetworkRegistry;
 import net.minecraftforge.fml.network.simple.SimpleChannel;
 
+import javax.annotation.Nonnull;
+
 public enum NetworkManager {
     INSTANCE;
 
-    private final String protocol = "mui-net-1-1";
+    private final String protocol;
 
-    private SimpleChannel CHANNEL = NetworkRegistry.ChannelBuilder
-            .named(new ResourceLocation(ModernUI.MODID, "net-1"))
-            .networkProtocolVersion(() -> protocol)
-            .clientAcceptedVersions(protocol::equals)
-            .serverAcceptedVersions(protocol::equals)
-            .simpleChannel();
+    private final SimpleChannel CHANNEL;
+
     {
-        registerMessages();
+        protocol = ModList.get().getModFileById(ModernUI.MODID).getMods().get(0).getVersion().getQualifier();
+        CHANNEL = NetworkRegistry.ChannelBuilder
+                .named(new ResourceLocation(ModernUI.MODID, "network"))
+                .networkProtocolVersion(() -> protocol)
+                .clientAcceptedVersions(protocol::equals)
+                .serverAcceptedVersions(protocol::equals)
+                .simpleChannel();
     }
 
     public void registerMessages() {
@@ -48,7 +53,7 @@ public enum NetworkManager {
         CHANNEL.sendToServer(message);
     }
 
-    public <M> void sendTo(M message, ServerPlayerEntity playerMP) {
+    public <M> void sendTo(M message, @Nonnull ServerPlayerEntity playerMP) {
         CHANNEL.sendTo(message, playerMP.connection.netManager, NetworkDirection.PLAY_TO_CLIENT);
     }
 

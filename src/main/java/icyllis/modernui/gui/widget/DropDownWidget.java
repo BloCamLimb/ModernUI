@@ -113,7 +113,7 @@ public class DropDownWidget extends Widget {
     }
 
     @Override
-    protected void onStatusChanged(WidgetStatus status, boolean allowAnimation) {
+    protected void onStatusChanged(Status status, boolean allowAnimation) {
         super.onStatusChanged(status, allowAnimation);
         if (status.isListening()) {
             brightness = 0.85f;

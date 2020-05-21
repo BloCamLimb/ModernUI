@@ -18,10 +18,11 @@
 
 package icyllis.modernui.gui.scroll;
 
-import icyllis.modernui.gui.master.*;
+import icyllis.modernui.gui.master.Canvas;
+import icyllis.modernui.gui.master.IHost;
+import icyllis.modernui.gui.master.Widget;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.function.Function;
 
 /**

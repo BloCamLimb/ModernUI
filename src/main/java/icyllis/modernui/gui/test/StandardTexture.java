@@ -18,14 +18,6 @@
 
 package icyllis.modernui.gui.test;
 
-import com.mojang.blaze3d.platform.GlStateManager;
-import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.gui.master.DrawTools;
-import net.minecraft.util.ResourceLocation;
-import org.lwjgl.opengl.GL11;
-
-import java.util.function.Function;
-
 /**
  * Example
  */

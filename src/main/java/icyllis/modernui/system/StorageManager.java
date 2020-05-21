@@ -29,7 +29,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public enum LocalDataManager {
+/**
+ * Save and load data from local game files or world save
+ */
+public enum StorageManager {
     INSTANCE;
 
     private static final Object2IntArrayMap<String> EMOJI_MAP = new Object2IntArrayMap<>();

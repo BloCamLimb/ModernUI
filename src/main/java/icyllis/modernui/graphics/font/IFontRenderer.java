@@ -20,7 +20,7 @@
 
 package icyllis.modernui.graphics.font;
 
-import icyllis.modernui.gui.math.Color3f;
+import icyllis.modernui.gui.math.Color3i;
 import icyllis.modernui.gui.math.Align3H;
 
 public interface IFontRenderer {
@@ -38,7 +38,7 @@ public interface IFontRenderer {
      * @param align 0-left 0.25-center 0.5-right
      * @return formatted text width
      */
-    default float drawString(String str, float startX, float startY, Color3f color, float alpha, Align3H align) {
+    default float drawString(String str, float startX, float startY, Color3i color, float alpha, Align3H align) {
         return drawString(str, startX, startY, color.getFloatRed(), color.getFloatGreen(), color.getFloatBlue(), alpha, align);
     }
 

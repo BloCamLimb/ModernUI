@@ -22,7 +22,7 @@ import icyllis.modernui.graphics.font.FontTools;
 import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.master.*;
 import icyllis.modernui.gui.math.Align9D;
-import icyllis.modernui.gui.math.Color3f;
+import icyllis.modernui.gui.math.Color3i;
 import icyllis.modernui.gui.math.Locator;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
@@ -160,7 +160,7 @@ public class TextField extends Widget implements IKeyboardListener {
         // draw selection box
         if (de != ds) {
             float l1 = lx + FontTools.getStringWidth(s.substring(0, de));
-            canvas.setColor(Color3f.BLUE_C, 0.5f);
+            canvas.setColor(Color3i.BLUE_C, 0.5f);
             canvas.drawRect(kx, ty - 1, l1, ty + 10);
         }
 

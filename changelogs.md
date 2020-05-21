@@ -1,4 +1,7 @@
-### 1.15.5-1.5.8.55 (2020-05-17)
+### 1.15.2-???
+* Fix controls search bar crash
+
+### 1.15.2-1.5.8.55 (2020-05-17)
 * Fix keyboard listener auto lose focus, and integrated in module
 * Fix widget relocate method
 * Fix pause only main menu screen logic

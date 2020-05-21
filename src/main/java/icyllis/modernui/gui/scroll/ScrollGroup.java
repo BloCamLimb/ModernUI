@@ -39,7 +39,6 @@ public abstract class ScrollGroup implements IWidget {
         this.window = window;
     }
 
-    @Override
     public void locate(float px, float py) {
         centerX = px;
         y1 = py;

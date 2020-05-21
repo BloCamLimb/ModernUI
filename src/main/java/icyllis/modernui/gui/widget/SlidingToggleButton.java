@@ -28,8 +28,6 @@ import icyllis.modernui.gui.math.Locator;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.Consumer;
 
 /**
@@ -37,11 +35,11 @@ import java.util.function.Consumer;
  */
 public class SlidingToggleButton extends Widget {
 
-    private final AnimationControl ac;
+    /*private final AnimationControl ac;
 
     private final int onColor;
 
-    /*private final int offColor;*/
+    private final int offColor;*/
 
     @Nullable
     private Consumer<Boolean> callback;
@@ -49,7 +47,7 @@ public class SlidingToggleButton extends Widget {
     /**
      * Current status, on or off
      */
-    private boolean checked = false;
+    private boolean toggled = false;
 
     /**
      * Background color
@@ -59,35 +57,51 @@ public class SlidingToggleButton extends Widget {
     /**
      * Frame brightness
      */
-    private float brightness = 0.7f;
+    private float brightness;
 
     private float circleOffset;
 
     private final Animation frameAnimation;
+    private final Animation slideAnimation;
 
     public SlidingToggleButton(IHost host, Builder builder) {
         super(host, builder);
-        onColor = builder.onColor;
+        int onColor = builder.onColor;
         int offColor = builder.offColor;
 
-        a = (offColor >> 24 & 0xff) / 255f;
-        r = (offColor >> 16 & 0xff) / 255f;
-        g = (offColor >> 8 & 0xff) / 255f;
-        b = (offColor & 0xff) / 255f;
-
-        circleOffset = height / 2f;
-
-        frameAnimation = new Animation(150)
-                .applyTo(new Applier(0.7f, 1.0f, this::getBrightness, this::setBrightness));
-
-        List<Animation> openList = new ArrayList<>();
+        float ca = (offColor >> 24 & 0xff) / 255f;
+        float cr = (offColor >> 16 & 0xff) / 255f;
+        float cg = (offColor >> 8 & 0xff) / 255f;
+        float cb = (offColor & 0xff) / 255f;
 
         float ta = (onColor >> 24 & 0xff) / 255f;
         float tr = (onColor >> 16 & 0xff) / 255f;
         float tg = (onColor >> 8 & 0xff) / 255f;
         float tb = (onColor & 0xff) / 255f;
 
-        float c = width - height / 2f;
+        frameAnimation = new Animation(150)
+                .applyTo(new Applier(0.7f, 1.0f, this::getBrightness, this::setBrightness));
+
+        slideAnimation = new Animation(200)
+                .applyTo(
+                        new Applier(ca, ta, () -> a, this::setA),
+                        new Applier(cr, tr, () -> r, this::setR),
+                        new Applier(cg, tg, () -> g, this::setG),
+                        new Applier(cb, tb, () -> b, this::setB),
+                        new Applier(height / 2.0f, width - height / 2.0f, () -> circleOffset, this::setCircleOffset)
+                                .setInterpolator(IInterpolator.DECELERATE)
+                );
+
+        frameAnimation.skipToStart();
+        slideAnimation.skipToStart();
+
+        /*List<Animation> openList = new ArrayList<>();
+
+        float ta = (onColor >> 24 & 0xff) / 255f;
+        float tr = (onColor >> 16 & 0xff) / 255f;
+        float tg = (onColor >> 8 & 0xff) / 255f;
+        float tb = (onColor & 0xff) / 255f;
+
         openList.add(new Animation(200)
                 .applyTo(
                         new Applier(a, ta, () -> a, this::setA),
@@ -108,18 +122,19 @@ public class SlidingToggleButton extends Widget {
                         new Applier(c, circleOffset, () -> circleOffset, this::setCircleOffset)
                                 .setInterpolator(IInterpolator.SINE)
                 ));
-        ac = new AnimationControl(openList, closeList);
+        ac = new AnimationControl(openList, closeList);*/
     }
 
     public SlidingToggleButton buildCallback(boolean toggled, @Nullable Consumer<Boolean> callback) {
         if (toggled) {
-            this.checked = true;
-            this.circleOffset = width - height / 2f;
-            a = (onColor >> 24 & 0xff) / 255f;
+            this.toggled = true;
+            frameAnimation.skipToEnd();
+            slideAnimation.skipToEnd();
+            /*a = (onColor >> 24 & 0xff) / 255f;
             r = (onColor >> 16 & 0xff) / 255f;
             g = (onColor >> 8 & 0xff) / 255f;
             b = (onColor & 0xff) / 255f;
-            ac.setOpenState(true);
+            ac.setOpenState(true);*/
         }
         this.callback = callback;
         return this;
@@ -127,7 +142,7 @@ public class SlidingToggleButton extends Widget {
 
     @Override
     public void onDraw(@Nonnull Canvas canvas, float time) {
-        ac.update();
+        //ac.update();
         canvas.setRGBA(r, g, b, a);
         canvas.drawRoundedRect(x1, y1, x2, y2, height / 2f);
         canvas.setRGBA(brightness, brightness, brightness, 1);
@@ -147,9 +162,9 @@ public class SlidingToggleButton extends Widget {
 
     @Override
     protected boolean onMouseLeftClick(double mouseX, double mouseY) {
-        setChecked(!checked);
+        setToggled(!toggled);
         if (callback != null) {
-            callback.accept(checked);
+            callback.accept(toggled);
         }
         return true;
     }
@@ -166,18 +181,20 @@ public class SlidingToggleButton extends Widget {
         frameAnimation.invert();
     }
 
-    private void setChecked(boolean checked) {
-        if (checked) {
-            ac.startOpenAnimation();
-            this.checked = true;
+    private void setToggled(boolean toggled) {
+        if (toggled) {
+            //ac.startOpenAnimation();
+            slideAnimation.start();
+            this.toggled = true;
         } else {
-            ac.startCloseAnimation();
-            this.checked = false;
+            //ac.startCloseAnimation();
+            slideAnimation.invert();
+            this.toggled = false;
         }
     }
 
     public boolean isToggledOn() {
-        return checked;
+        return toggled;
     }
 
     private void setR(float r) {

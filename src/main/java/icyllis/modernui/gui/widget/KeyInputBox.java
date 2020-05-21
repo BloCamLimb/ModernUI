@@ -20,7 +20,7 @@ package icyllis.modernui.gui.widget;
 
 import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.master.*;
-import icyllis.modernui.gui.math.Color3f;
+import icyllis.modernui.gui.math.Color3i;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.util.InputMappings;
 import net.minecraft.util.text.TextFormatting;
@@ -63,7 +63,7 @@ public class KeyInputBox extends Widget implements IKeyboardListener {
         canvas.drawRect(x1, y1, x2, y2);
         if (editing) {
             canvas.setLineAntiAliasing(true);
-            canvas.setColor(Color3f.BLUE_C, 0.863f);
+            canvas.setColor(Color3i.BLUE_C, 0.863f);
             canvas.drawRectLines(x1, y1, x2, y2);
             canvas.setLineAntiAliasing(false);
         }

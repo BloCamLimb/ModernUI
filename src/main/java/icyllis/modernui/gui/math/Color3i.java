@@ -20,31 +20,34 @@ package icyllis.modernui.gui.math;
 
 import javax.annotation.Nullable;
 
-public enum Color3f {
-    BLACK(0, 0, 0),
-    DARK_BLUE(0, 0, 170),
-    DARK_GREEN(0, 170, 0),
-    DARK_AQUA(0, 170, 170),
-    DARK_RED(170, 0, 0),
-    DARK_PURPLE(170, 0, 170),
-    GOLD(255, 170, 0),
-    GRAY(170, 170, 170),
-    DARK_GRAY(85, 85, 85),
-    BLUE(85, 85, 255),
-    GREEN(85, 255, 85),
-    AQUA(85, 255, 255),
-    RED(255, 85, 85),
-    LIGHT_PURPLE(255, 85, 255),
-    YELLOW(255, 255, 85),
-    WHILE(255, 255, 255),
-    BLUE_C(170, 220, 240),
-    GRAY_224(224, 224, 224);
+public class Color3i {
+
+    public static final Color3i BLACK = new Color3i(0, 0, 0);
+    public static final Color3i DARK_BLUE = new Color3i(0, 0, 170);
+    public static final Color3i DARK_GREEN = new Color3i(0, 170, 0);
+    public static final Color3i DARK_AQUA = new Color3i(0, 170, 170);
+    public static final Color3i DARK_RED = new Color3i(170, 0, 0);
+    public static final Color3i DARK_PURPLE = new Color3i(170, 0, 170);
+    public static final Color3i GOLD = new Color3i(255, 170, 0);
+    public static final Color3i GRAY = new Color3i(170, 170, 170);
+    public static final Color3i DARK_GRAY = new Color3i(85, 85, 85);
+    public static final Color3i BLUE = new Color3i(85, 85, 255);
+    public static final Color3i GREEN = new Color3i(85, 255, 85);
+    public static final Color3i AQUA = new Color3i(85, 255, 255);
+    public static final Color3i RED = new Color3i(255, 85, 85);
+    public static final Color3i LIGHT_PURPLE = new Color3i(255, 85, 255);
+    public static final Color3i YELLOW = new Color3i(255, 255, 85);
+    public static final Color3i WHITE = new Color3i(255, 255, 255);
+    public static final Color3i BLUE_C = new Color3i(170, 220, 240);
+    public static final Color3i GRAY_224 = new Color3i(224, 224, 224);
+
+    private static final Color3i[] VANILLA_COLORS = new Color3i[]{BLACK, DARK_BLUE, DARK_GREEN, DARK_AQUA, DARK_RED, DARK_PURPLE, GOLD, GRAY, DARK_GRAY, BLUE, GREEN, AQUA, RED, LIGHT_PURPLE, YELLOW, WHITE};
 
     private int red, green, blue;
 
     private float redF, greenF, blueF;
 
-    Color3f(int red, int green, int blue) {
+    Color3i(int red, int green, int blue) {
         this.red = red;
         this.green = green;
         this.blue = blue;
@@ -79,9 +82,9 @@ public enum Color3f {
     }
 
     @Nullable
-    public static Color3f getFormattingColor(int code) {
+    public static Color3i getFormattingColor(int code) {
         if (code >= 0 && code <= 15) {
-            return values()[code];
+            return VANILLA_COLORS[code];
         }
         return null;
     }

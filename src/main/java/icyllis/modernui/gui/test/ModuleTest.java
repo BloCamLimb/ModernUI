@@ -20,7 +20,7 @@ package icyllis.modernui.gui.test;
 
 import icyllis.modernui.gui.background.SSExpandableBox;
 import icyllis.modernui.gui.master.Module;
-import icyllis.modernui.gui.master.WidgetStatus;
+import icyllis.modernui.gui.master.Widget;
 import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.math.Locator;
 import icyllis.modernui.gui.scroll.MultiPageScrollPanel;
@@ -73,7 +73,7 @@ public class ModuleTest extends Module {
                 .setWidth(64)
                 .setLocator(new Locator(-20, -20))
                 .build(this);
-        a.buildCallback(() -> a.setStatus(WidgetStatus.INACTIVE, false));
+        a.buildCallback(() -> a.setStatus(Widget.Status.INACTIVE, false));
         addWidget(a);
 
         addWidget(new MultiPageScrollPanel<>(this,

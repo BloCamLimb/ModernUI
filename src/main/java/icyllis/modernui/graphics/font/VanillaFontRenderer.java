@@ -35,6 +35,7 @@ public class VanillaFontRenderer implements IFontRenderer {
     private static final VanillaFontRenderer INSTANCE = new VanillaFontRenderer();
 
     private final FontRenderer FONT;
+
     {
         FONT = Minecraft.getInstance().fontRenderer;
         //FONT = Minecraft.getInstance().getFontResourceManager().getFontRenderer(new ResourceLocation(ModernUI.MODID, "unix"));

@@ -23,9 +23,9 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.graphics.font.IFontRenderer;
 import icyllis.modernui.graphics.font.TrueTypeRenderer;
-import icyllis.modernui.gui.math.Color3f;
+import icyllis.modernui.gui.math.Color3i;
 import icyllis.modernui.system.ModernUI;
-import icyllis.modernui.gui.master.DrawTools;
+import icyllis.modernui.gui.test.DrawTools;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.util.ResourceLocation;
@@ -53,7 +53,7 @@ public class EmojiStringRenderer implements IFontRenderer {
     private WeakHashMap<String, EmojiText> MAPS = new WeakHashMap<>();
 
     @Override
-    public float drawString(String str, float startX, float startY, Color3f color, float alpha, Align3H align) {
+    public float drawString(String str, float startX, float startY, Color3i color, float alpha, Align3H align) {
         EmojiText entry = MAPS.get(str);
         if (entry == null) {
             entry = cache(str);

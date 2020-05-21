@@ -101,7 +101,7 @@ public class LineTextButton extends Widget {
     @Override
     protected void onMouseHoverEnter(double mouseX, double mouseY) {
         super.onMouseHoverEnter(mouseX, mouseY);
-        if (lineAC.canChangeState()) {
+        if (lineAC.isUnlockState()) {
             textAnimation.start();
         }
     }
@@ -109,7 +109,7 @@ public class LineTextButton extends Widget {
     @Override
     protected void onMouseHoverExit() {
         super.onMouseHoverExit();
-        if (lineAC.canChangeState()) {
+        if (lineAC.isUnlockState()) {
             textAnimation.invert();
         }
     }

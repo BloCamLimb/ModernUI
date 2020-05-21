@@ -21,10 +21,9 @@ package icyllis.modernui.system;
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.font.TrueTypeRenderer;
 import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.gui.master.LayoutEditingGui;
+import icyllis.modernui.gui.master.LocationEditor;
 import icyllis.modernui.gui.test.ContainerTest;
 import icyllis.modernui.gui.test.ModuleTest;
-import net.minecraft.client.gui.screen.MainMenuScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.container.ContainerType;
@@ -47,14 +46,12 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.minecraftforge.fml.network.NetworkHooks;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
 
 /**
- * Listens global common events
+ * Listens global common events, and dispatch to child event handlers
  */
 @Mod.EventBusSubscriber
 public class EventsHandler {
@@ -98,9 +95,7 @@ public class EventsHandler {
 
         @SubscribeEvent
         public static void onGuiOpen(@Nonnull GuiOpenEvent event) {
-            if (event.getGui() instanceof MainMenuScreen) {
-                TrueTypeRenderer.INSTANCE.init();
-            }
+            TrueTypeRenderer.INSTANCE.init();
             GlobalModuleManager.INSTANCE.onGuiOpen(event.getGui(), event::setCanceled);
             BlurHandler.INSTANCE.blur(event.getGui());
         }
@@ -112,43 +107,40 @@ public class EventsHandler {
             }
         }
 
-        /*@SubscribeEvent
+        @SubscribeEvent
         public static void onGuiInit(GuiScreenEvent.InitGuiEvent event) {
 
-        }*/
+        }
 
         @SubscribeEvent
         public static void onKeyInput(InputEvent.KeyInputEvent event) {
             if (ConfigManager.COMMON.isEnableDeveloperMode() && event.getAction() == GLFW.GLFW_PRESS) {
                 if (Screen.hasControlDown() && Screen.hasShiftDown()) {
-                    /*if (event.getKey() == GLFW.GLFW_KEY_K) {
-                        TrueTypeRenderer.INSTANCE.refreshCache();
-                    }*/
                     if (event.getKey() == GLFW.GLFW_KEY_T && GlobalModuleManager.INSTANCE.getModernScreen() != null) {
-                        LayoutEditingGui.INSTANCE.iterateWorking();
+                        LocationEditor.INSTANCE.iterateWorking();
                     }
                 }
             }
         }
 
         @SubscribeEvent
-        public static void onScreenDrawPost(GuiScreenEvent.DrawScreenEvent.Post event) {
-            LayoutEditingGui.INSTANCE.draw();
+        public static void onScreenEndDraw(GuiScreenEvent.DrawScreenEvent.Post event) {
+            LocationEditor.INSTANCE.draw();
         }
 
         @SubscribeEvent
-        public static void onScreenMouseClickPre(@Nonnull GuiScreenEvent.MouseClickedEvent.Pre event) {
-            event.setCanceled(LayoutEditingGui.INSTANCE.mouseClicked(event.getButton()));
+        public static void onScreenStartMouseClicked(@Nonnull GuiScreenEvent.MouseClickedEvent.Pre event) {
+            event.setCanceled(LocationEditor.INSTANCE.mouseClicked(event.getButton()));
         }
 
         @SubscribeEvent
-        public static void onScreenMouseReleasePre(@Nonnull GuiScreenEvent.MouseReleasedEvent.Pre event) {
-            LayoutEditingGui.INSTANCE.mouseReleased();
+        public static void onScreenStartMouseReleased(@Nonnull GuiScreenEvent.MouseReleasedEvent.Pre event) {
+            LocationEditor.INSTANCE.mouseReleased();
         }
 
         @SubscribeEvent
-        public static void onScreenMouseDragPre(@Nonnull GuiScreenEvent.MouseDragEvent.Pre event) {
-            event.setCanceled(LayoutEditingGui.INSTANCE.mouseDragged(event.getDragX(), event.getDragY()));
+        public static void onScreenStartMouseDragged(@Nonnull GuiScreenEvent.MouseDragEvent.Pre event) {
+            event.setCanceled(LocationEditor.INSTANCE.mouseDragged(event.getDragX(), event.getDragY()));
         }
     }
 
@@ -158,37 +150,33 @@ public class EventsHandler {
     @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
     public static class ModEventHandler {
 
-        private static Marker MARKER = MarkerManager.getMarker("SETUP");
-
         @SubscribeEvent
         public static void setupCommon(FMLCommonSetupEvent event) {
-
+            NetworkManager.INSTANCE.registerMessages();
+            RegistryLibrary.INSTANCE = null;
         }
 
         @OnlyIn(Dist.CLIENT)
         @SubscribeEvent
         public static void setupClient(FMLClientSetupEvent event) {
             SettingsManager.INSTANCE.buildAllSettings();
-            GlobalModuleManager.INSTANCE.registerContainerScreen(ContainerTest.CONTAINER, c -> ModuleTest::new);
-            ModernUI.LOGGER.info(MARKER, "Client setup finished");
+            GlobalModuleManager.INSTANCE.registerContainerScreen(RegistryLibrary.TEST_CONTAINER, c -> ModuleTest::new);
         }
 
         @OnlyIn(Dist.CLIENT)
         @SubscribeEvent
         public static void registerSounds(@Nonnull RegistryEvent.Register<SoundEvent> event) {
-            RegistryLibrary.registerSounds(event.getRegistry());
-            ModernUI.LOGGER.info(MARKER, "Sounds registration finished");
+            RegistryLibrary.INSTANCE.registerSounds(event.getRegistry());
         }
 
         @SubscribeEvent
         public static void registerContainers(@Nonnull RegistryEvent.Register<ContainerType<?>> event) {
-            event.getRegistry().register(ContainerTest.CONTAINER);
-            ModernUI.LOGGER.info(MARKER, "Containers registration finished");
+            RegistryLibrary.INSTANCE.registerContainers(event.getRegistry());
         }
 
         @SubscribeEvent
         public static void onConfigChange(@Nonnull ModConfig.ModConfigEvent event) {
-            ConfigManager.load(event.getConfig().getSpec());
+            ConfigManager.reload(event.getConfig().getSpec());
         }
 
         @SubscribeEvent

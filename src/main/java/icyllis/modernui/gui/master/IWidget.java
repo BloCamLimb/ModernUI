@@ -18,33 +18,10 @@
 
 package icyllis.modernui.gui.master;
 
-import icyllis.modernui.gui.math.Locator;
-
-import javax.annotation.Nullable;
-
 /**
  * Widget has its rect area and position, also can listen mouse events as default, most widely used in gui
  */
 public interface IWidget extends IDrawable, IMouseListener {
-
-    /**
-     * Set widget position, or use layout for multiple widgets
-     *
-     * @param px pivot x pos
-     * @param py pivot y pos
-     */
-    void locate(float px, float py);
-
-    /**
-     * Get current locator
-     * It's Nullable because not all widgets are supported
-     *
-     * @return Current locator
-     */
-    @Nullable
-    default Locator getLocator() {
-        return null;
-    }
 
     /**
      * Get width

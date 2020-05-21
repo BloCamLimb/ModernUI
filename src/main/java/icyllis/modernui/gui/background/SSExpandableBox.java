@@ -76,7 +76,7 @@ public class SSExpandableBox implements IDrawable, Animation.IListener {
     }
 
     @Override
-    public void onAnimationStart(Animation animation, boolean isReverse) {
+    public void onAnimationStart(@Nonnull Animation animation, boolean isReverse) {
         if (animation == panelAnimation) {
             if (isReverse) {
                 onPanelClose();
@@ -85,7 +85,7 @@ public class SSExpandableBox implements IDrawable, Animation.IListener {
     }
 
     @Override
-    public void onAnimationEnd(Animation animation, boolean isReverse) {
+    public void onAnimationEnd(@Nonnull Animation animation, boolean isReverse) {
         if (animation == panelAnimation) {
             if (isReverse) {
                 barAnimation.invert();

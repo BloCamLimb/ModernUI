@@ -23,7 +23,7 @@ import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.IHost;
 import icyllis.modernui.gui.master.Widget;
 import icyllis.modernui.gui.math.Align9D;
-import icyllis.modernui.gui.math.Color3f;
+import icyllis.modernui.gui.math.Color3i;
 import icyllis.modernui.gui.math.Locator;
 
 import javax.annotation.Nonnull;
@@ -108,9 +108,9 @@ public class ColorSelectButton extends Widget {
 
     public void setColor(int color) {
         this.color = color;
-        this.r = Color3f.getRedFrom(color);
-        this.g = Color3f.getGreenFrom(color);
-        this.b = Color3f.getBlueFrom(color);
+        this.r = Color3i.getRedFrom(color);
+        this.g = Color3i.getGreenFrom(color);
+        this.b = Color3i.getBlueFrom(color);
     }
 
     public static class Builder extends Widget.Builder {
