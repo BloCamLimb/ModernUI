@@ -45,7 +45,6 @@ public abstract class AnimatedWidget extends AnimationControl implements IWidget
         this.height = height;
     }
 
-    @Override
     public void locate(float px, float py) {
         this.x1 = px;
         this.x2 = px + width;

@@ -310,14 +310,14 @@ public abstract class Module implements IModule, IHost {
         for (IMouseListener listener : mouseListeners) {
             if (!result) {
                 if (listener.updateMouseHover(mouseX, mouseY)) {
-                    LayoutEditingGui.INSTANCE.setHoveredWidget(listener);
+                    LocationEditor.INSTANCE.setHoveredWidget(listener);
                     result = true;
                 }
             } else {
                 listener.setMouseHoverExit();
             }
             if (!result) {
-                LayoutEditingGui.INSTANCE.setHoveredWidget(null);
+                LocationEditor.INSTANCE.setHoveredWidget(null);
             }
         }
         return result;

@@ -19,9 +19,7 @@
 package icyllis.modernui.impl.background;
 
 import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.master.DrawTools;
 import icyllis.modernui.gui.master.IDrawable;
-import icyllis.modernui.gui.test.IElement;
 
 public class ResourcePackBG implements IDrawable {
 

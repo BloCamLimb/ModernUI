@@ -27,11 +27,13 @@ package icyllis.modernui.graphics.font;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.gui.math.Color3i;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.Style;
 import net.minecraft.util.text.TextFormatting;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.text.Bidi;
@@ -275,7 +277,8 @@ public class StringCache {
         /**
          * The numeric color code (i.e. index into the colorCode[] array); -1 to reset default (original parameter) color
          */
-        public byte colorCode;
+        @Nullable
+        public Color3i color;
 
         /**
          * Combination of UNDERLINE and STRIKETHROUGH flags specifying effects performed by renderString()
@@ -537,7 +540,7 @@ public class StringCache {
             FormattingCode formatting = new FormattingCode();
             formatting.stringIndex = next;
             formatting.stripIndex = next - shift;
-            formatting.colorCode = colorCode;
+            formatting.color = Color3i.getFormattingColor(colorCode);
             formatting.fontStyle = fontStyle;
             formatting.renderStyle = renderStyle;
             codeList.add(formatting);

@@ -22,7 +22,7 @@ import icyllis.modernui.gui.math.Align3H;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.gui.scroll.UniformScrollEntry;
-import icyllis.modernui.gui.math.Color3f;
+import icyllis.modernui.gui.math.Color3i;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.stats.Stat;
 import net.minecraft.stats.StatisticsManager;
@@ -34,13 +34,13 @@ public class GeneralStatsEntry extends UniformScrollEntry {
 
     private final Stat<ResourceLocation> stat;
 
-    private final Color3f color;
+    private final Color3i color;
 
     private final String title;
 
     private String value = "";
 
-    public GeneralStatsEntry(ScrollWindow<?> window, @Nonnull Stat<ResourceLocation> stat, Color3f color) {
+    public GeneralStatsEntry(ScrollWindow<?> window, @Nonnull Stat<ResourceLocation> stat, Color3i color) {
         super(window, 240, GeneralStatsGroup.ENTRY_HEIGHT);
         this.stat = stat;
         this.color = color;

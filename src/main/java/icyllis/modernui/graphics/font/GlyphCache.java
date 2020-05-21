@@ -277,13 +277,13 @@ class GlyphCache {
         if (!ConfigManager.CLIENT.preferredFontName.isEmpty()) {
             allFonts.stream().filter(f -> f.getName().contains(ConfigManager.CLIENT.preferredFontName)).findFirst().ifPresent(e -> {
                 usedFonts.add(e);
-                ModernUI.LOGGER.info(MARKER, "{} has been loaded", e.getName());
+                ModernUI.LOGGER.debug(MARKER, "{} has been loaded", e.getName());
             });
         }
         try {
             Font f = Font.createFont(Font.TRUETYPE_FONT, getClass().getResourceAsStream("/assets/modernui/font/biliw.otf"));
             usedFonts.add(f);
-            ModernUI.LOGGER.info(MARKER, "{} has been loaded", f.getName());
+            ModernUI.LOGGER.debug(MARKER, "{} has been loaded", f.getName());
         } catch (FontFormatException | IOException e) {
             e.printStackTrace();
         }

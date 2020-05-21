@@ -18,40 +18,28 @@
 
 package icyllis.modernui.gui.test;
 
-import icyllis.modernui.system.ModernUI;
+import icyllis.modernui.system.RegistryLibrary;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.container.Container;
-import net.minecraft.inventory.container.ContainerType;
 import net.minecraft.inventory.container.INamedContainerProvider;
 import net.minecraft.network.PacketBuffer;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
-import net.minecraftforge.common.extensions.IForgeContainerType;
-import net.minecraftforge.fml.LogicalSide;
-import net.minecraftforge.fml.common.thread.EffectiveSide;
-import net.minecraftforge.fml.loading.FMLEnvironment;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public class ContainerTest extends Container {
 
-    public static ContainerType<ContainerTest> CONTAINER = IForgeContainerType.create(ContainerTest::new);
-
-    static {
-        CONTAINER.setRegistryName("test");
-    }
-
     // client
     public ContainerTest(int windowId, PlayerInventory inv, PacketBuffer buf) {
-        super(CONTAINER, windowId);
+        super(RegistryLibrary.TEST_CONTAINER, windowId);
     }
 
     // server
     public ContainerTest(int windowId, PlayerInventory inv, PlayerEntity player) {
-        super(CONTAINER, windowId);
+        super(RegistryLibrary.TEST_CONTAINER, windowId);
     }
 
     @Override

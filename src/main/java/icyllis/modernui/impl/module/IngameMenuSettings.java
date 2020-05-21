@@ -22,7 +22,7 @@ import com.google.common.collect.Lists;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.animation.IInterpolator;
-import icyllis.modernui.gui.layout.WidgetLayout;
+import icyllis.modernui.gui.test.WidgetLayout;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.ModuleGroup;
 import icyllis.modernui.gui.math.Align9D;

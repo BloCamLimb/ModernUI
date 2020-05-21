@@ -48,7 +48,7 @@ public class ShaderTools {
             RoundedRectFrameShader.INSTANCE.compile(manager);
             CircleShader.INSTANCE.compile(manager);
             FeatheredRectShader.INSTANCE.compile(manager);
-            ModernUI.LOGGER.info(ShaderProgram.MARKER, "{} shaders have been compiled", ShaderProgram.compileCount);
+            ModernUI.LOGGER.debug(ShaderProgram.MARKER, "Shaders have been compiled, total : {}", ShaderProgram.compileCount);
             ShaderProgram.compileCount = 0;
         }
     }

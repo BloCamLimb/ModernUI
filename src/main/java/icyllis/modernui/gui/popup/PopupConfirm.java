@@ -20,7 +20,7 @@ package icyllis.modernui.gui.popup;
 
 import icyllis.modernui.graphics.font.FontTools;
 import icyllis.modernui.gui.background.ConfirmPopupBG;
-import icyllis.modernui.gui.layout.WidgetLayout;
+import icyllis.modernui.gui.test.WidgetLayout;
 import icyllis.modernui.gui.master.*;
 import icyllis.modernui.gui.widget.DynamicFrameButton;
 import net.minecraft.client.resources.I18n;
@@ -55,7 +55,7 @@ public class PopupConfirm extends Module {
         // add background layer
         addDrawable(bg = new ConfirmPopupBG());
 
-        List<IWidget> buttons = new ArrayList<>();
+        List<DynamicFrameButton> buttons = new ArrayList<>();
         if (seconds > 0) {
             buttons.add(
                     new DynamicFrameButton.Countdown.Builder(confirmText, seconds)

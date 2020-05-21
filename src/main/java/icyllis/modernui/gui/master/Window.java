@@ -20,6 +20,9 @@ package icyllis.modernui.gui.master;
 
 import java.util.function.Function;
 
+/**
+ * Window defines an area with uncertain size and position
+ */
 public abstract class Window implements IWidget, IHost {
 
     private final IHost host;
@@ -42,12 +45,6 @@ public abstract class Window implements IWidget, IHost {
         this.yResizer = yResizer;
         this.wResizer = wResizer;
         this.hResizer = hResizer;
-    }
-
-    @Deprecated
-    @Override
-    public final void locate(float px, float py) {
-        throw new RuntimeException();
     }
 
     @Override

@@ -105,7 +105,7 @@ public class CheckboxButton extends Widget {
     }
 
     @Override
-    protected void onStatusChanged(WidgetStatus status, boolean allowAnimation) {
+    protected void onStatusChanged(Status status, boolean allowAnimation) {
         super.onStatusChanged(status, allowAnimation);
         if (status.isListening()) {
             inactiveAnimation.start();

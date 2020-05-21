@@ -109,11 +109,11 @@ public class SettingControls extends Module {
         nextButton = new TriangleButton.Builder(Direction4D.DOWN, 12)
                 .build(this)
                 .buildCallback(this::locateNextResult);
-        nextButton.setStatus(WidgetStatus.INACTIVE, false);
+        nextButton.setStatus(Widget.Status.INACTIVE, false);
         previousButton = new TriangleButton.Builder(Direction4D.UP, 12)
                 .build(this)
                 .buildCallback(this::locatePreviousResult);
-        previousButton.setStatus(WidgetStatus.INACTIVE, false);
+        previousButton.setStatus(Widget.Status.INACTIVE, false);
         //nextButton = new TriangleButton(this, TriangleButton.Direction.DOWN, 12, this::locateNextResult, false);
         //previousButton = new TriangleButton(this, TriangleButton.Direction.UP, 12, this::locatePreviousResult, false);
         addWidget(nextButton);
@@ -175,16 +175,16 @@ public class SettingControls extends Module {
             if (!searchResults.isEmpty()) {
                 KeyBindingEntry prev = currentResult;
                 if (searchResults.size() > 1) {
-                    nextButton.setStatus(WidgetStatus.ACTIVE, true);
-                    previousButton.setStatus(WidgetStatus.ACTIVE, true);
+                    nextButton.setStatus(Widget.Status.ACTIVE, true);
+                    previousButton.setStatus(Widget.Status.ACTIVE, true);
                     // get the closest result
                     if (prev == null) {
                         searchResults.stream().min(Comparator.comparing(e ->
                                 Math.abs(e.getTop() - window.getTop() - window.getVisibleOffset()))).ifPresent(e -> currentResult = e);
                     }
                 } else {
-                    nextButton.setStatus(WidgetStatus.INACTIVE, true);
-                    previousButton.setStatus(WidgetStatus.INACTIVE, true);
+                    nextButton.setStatus(Widget.Status.INACTIVE, true);
+                    previousButton.setStatus(Widget.Status.INACTIVE, true);
                     if (prev == null) {
                         currentResult = searchResults.get(0);
                     }
@@ -196,15 +196,15 @@ public class SettingControls extends Module {
                 updateResultCounter();
                 return true;
             } else {
-                nextButton.setStatus(WidgetStatus.INACTIVE, true);
-                previousButton.setStatus(WidgetStatus.INACTIVE, true);
+                nextButton.setStatus(Widget.Status.INACTIVE, true);
+                previousButton.setStatus(Widget.Status.INACTIVE, true);
                 currentResult = null;
                 updateResultCounter();
                 return false;
             }
         } else {
-            nextButton.setStatus(WidgetStatus.INACTIVE, true);
-            previousButton.setStatus(WidgetStatus.INACTIVE, true);
+            nextButton.setStatus(Widget.Status.INACTIVE, true);
+            previousButton.setStatus(Widget.Status.INACTIVE, true);
             currentResult = null;
             updateResultCounter();
             return true;
@@ -212,7 +212,7 @@ public class SettingControls extends Module {
     }
 
     private void resetAllKey() {
-        for(KeyBinding keybinding : minecraft.gameSettings.keyBindings) {
+        for (KeyBinding keybinding : minecraft.gameSettings.keyBindings) {
             keybinding.setToDefault();
         }
         KeyBinding.resetKeyBindingArrayAndHash();
@@ -221,6 +221,9 @@ public class SettingControls extends Module {
     }
 
     private void locateNextResult() {
+        if (searchResults.isEmpty()) {
+            return;
+        }
         int i = searchResults.indexOf(currentResult) + 1;
         if (i >= searchResults.size()) {
             currentResult = searchResults.get(0);
@@ -233,6 +236,9 @@ public class SettingControls extends Module {
     }
 
     private void locatePreviousResult() {
+        if (searchResults.isEmpty()) {
+            return;
+        }
         int i = searchResults.indexOf(currentResult) - 1;
         if (i < 0) {
             currentResult = searchResults.get(searchResults.size() - 1);

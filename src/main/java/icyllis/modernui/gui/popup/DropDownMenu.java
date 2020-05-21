@@ -27,7 +27,7 @@ import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.Widget;
 import icyllis.modernui.gui.math.Align9D;
-import icyllis.modernui.gui.math.Color3f;
+import icyllis.modernui.gui.math.Color3i;
 import icyllis.modernui.gui.math.Locator;
 
 import javax.annotation.Nonnull;
@@ -94,7 +94,7 @@ public class DropDownMenu extends Widget {
         canvas.drawRect(x1, top, x2, bottom);
 
         canvas.setLineAntiAliasing(true);
-        canvas.setColor(Color3f.WHILE, 0.315f);
+        canvas.setColor(Color3i.WHITE, 0.315f);
         canvas.drawRectLines(x1, top, x2, bottom);
         canvas.setLineAntiAliasing(false);
 
@@ -107,9 +107,9 @@ public class DropDownMenu extends Widget {
             }
             canvas.setAlpha(textAlpha);
             if (i == selected) {
-                canvas.setColor(Color3f.BLUE_C);
+                canvas.setColor(Color3i.BLUE_C);
             } else {
-                canvas.setColor(Color3f.WHILE);
+                canvas.setColor(Color3i.WHITE);
             }
             if (align.getAlign3H() == Align3H.LEFT) {
                 canvas.setTextAlign(Align3H.LEFT);

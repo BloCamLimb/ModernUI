@@ -18,14 +18,15 @@
 
 package icyllis.modernui.gui.master;
 
-import icyllis.modernui.gui.math.Color3f;
+import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.gui.math.Color3i;
 import icyllis.modernui.gui.math.Locator;
 import net.minecraft.util.text.TextFormatting;
 
 import javax.annotation.Nullable;
 
 //TODO Experimental
-public enum LayoutEditingGui {
+public enum LocationEditor {
     INSTANCE;
 
     @Nullable
@@ -37,38 +38,60 @@ public enum LayoutEditingGui {
 
     private boolean dragging = false;
 
+    private double accDragX = 0;
+    private double accDragY = 0;
+
     public void setHoveredWidget(@Nullable Object obj) {
         if (working && !dragging) {
             if (obj == null) {
                 hoveredWidget = null;
-                MouseTools.useDefaultCursor();
             } else if (obj instanceof Widget) {
                 hoveredWidget = (Widget) obj;
-                MouseTools.useHandCursor();
+                MouseTools.useDefaultCursor();
             }
         }
     }
 
     public void iterateWorking() {
         working = !working;
+        if (!working) {
+            hoveredWidget = null;
+        }
     }
 
     public void draw() {
         if (!working) {
             return;
         }
-        canvas.drawText(TextFormatting.GOLD + "Gui Editing Mode: ON", 4, 2);
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableAlphaTest();
+        RenderSystem.disableDepthTest();
+
+        canvas.setRGBA(0.5f, 0.5f, 0.5f, 0.25f);
+        if (hoveredWidget != null) {
+            canvas.drawRoundedRect(1, 1, 80, 32, 4);
+        } else {
+            canvas.drawRoundedRect(1, 1, 80, 14, 4);
+        }
+        canvas.setColor(Color3i.BLUE_C, 1);
+        canvas.drawText(TextFormatting.GOLD + "Gui Editing Mode: ON", 4, 3);
         if (hoveredWidget != null) {
             Locator l = hoveredWidget.getLocator();
             if (l != null) {
-                canvas.drawText("X-Offset: " + l.getXOffset(), 4, 11);
-                canvas.drawText("Y-Offset: " + l.getYOffset(), 4, 20);
+                canvas.drawText("X Offset: " + l.getXOffset(), 4, 12);
+                canvas.drawText("Y Offset: " + l.getYOffset(), 4, 21);
             }
             canvas.setLineAntiAliasing(true);
-            canvas.setColor(Color3f.BLUE_C);
+            canvas.setLineWidth(2.0f);
             canvas.drawRectLines(hoveredWidget.getLeft() - 1, hoveredWidget.getTop() - 1, hoveredWidget.getRight() + 1, hoveredWidget.getBottom() + 1);
             canvas.setLineAntiAliasing(false);
         }
+
+        Canvas.setLineAA0(false);
+        RenderSystem.lineWidth(1.0f);
+        RenderSystem.enableTexture();
+        RenderSystem.disableBlend();
     }
 
     public boolean mouseClicked(int button) {
@@ -87,11 +110,17 @@ public enum LayoutEditingGui {
 
     public boolean mouseDragged(double dx, double dy) {
         if (dragging && hoveredWidget != null) {
+            accDragX += dx;
+            accDragY += dy;
+            int x = (int) accDragX;
+            int y = (int) accDragY;
             Locator l = hoveredWidget.getLocator();
-            if (l != null) {
-                l.translateXOffset((float) dx);
-                l.translateYOffset((float) dy);
+            if (l != null && (x != 0 || y != 0)) {
+                l.translateXOffset(x);
+                l.translateYOffset(y);
                 hoveredWidget.relocate();
+                accDragX -= x;
+                accDragY -= y;
                 return true;
             }
         }

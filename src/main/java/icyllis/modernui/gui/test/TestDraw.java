@@ -25,7 +25,7 @@ import icyllis.modernui.gui.animation.IInterpolator;
 import icyllis.modernui.gui.animation.OvershootInterpolator;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.IDrawable;
-import icyllis.modernui.gui.math.Color3f;
+import icyllis.modernui.gui.math.Color3i;
 
 import javax.annotation.Nonnull;
 
@@ -56,7 +56,7 @@ public class TestDraw implements IDrawable {
         canvas.setLineAntiAliasing(true);
         canvas.drawOctagonRectFrame(100, 40, 200, 60, 3);
         canvas.setLineAntiAliasing(false);*/
-        canvas.setColor(Color3f.BLUE_C, 0.5f);
+        canvas.setColor(Color3i.BLUE_C, 0.5f);
         canvas.drawCircle(150, 50, 11);
         canvas.restore();
 

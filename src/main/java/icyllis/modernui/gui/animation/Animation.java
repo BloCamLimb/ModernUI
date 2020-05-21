@@ -206,14 +206,14 @@ public class Animation implements IAnimation {
          * @param animation started animation
          * @param isReverse whether to play reverse animation
          */
-        default void onAnimationStart(Animation animation, boolean isReverse) {}
+        default void onAnimationStart(@Nonnull Animation animation, boolean isReverse) {}
 
         /**
          * Called at the end of the animation
          * @param animation ended animation
          * @param isReverse whether to play reverse animation
          */
-        default void onAnimationEnd(Animation animation, boolean isReverse) {}
+        default void onAnimationEnd(@Nonnull Animation animation, boolean isReverse) {}
 
     }
 }

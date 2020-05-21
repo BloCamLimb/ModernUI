@@ -36,7 +36,7 @@ public class ModIntegration {
             Class<?> clazz = Class.forName("optifine.Installer");
             of = true;
             String ver = (String) clazz.getMethod("getOptiFineVersion").invoke(null);
-            ModernUI.LOGGER.info(ModernUI.MARKER, "OptiFine loaded, version : {}", ver);
+            ModernUI.LOGGER.debug(ModernUI.MARKER, "OptiFine loaded, version : {}", ver);
         } catch (ClassNotFoundException | NoSuchMethodException ignored) {
 
         } catch (IllegalAccessException | InvocationTargetException e) {

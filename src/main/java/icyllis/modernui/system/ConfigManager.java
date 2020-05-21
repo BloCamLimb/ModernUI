@@ -45,19 +45,17 @@ public class ConfigManager {
         COMMON_SPEC = builder.build();
     }
 
-    public static void register() {
+    protected static void register() {
         FMLPaths.getOrCreateGameRelativePath(FMLPaths.CONFIGDIR.get().resolve("ModernUI"), "ModernUI");
         ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ConfigManager.CLIENT_SPEC, "ModernUI/client.toml");
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ConfigManager.COMMON_SPEC, "ModernUI/common.toml");
     }
 
-    public static void load(ForgeConfigSpec spec) {
+    protected static void reload(ForgeConfigSpec spec) {
         if (spec == CLIENT_SPEC) {
             CLIENT.load();
-            ModernUI.LOGGER.info(ModernUI.MARKER, "Client configs reloaded");
         } else if (spec == COMMON_SPEC) {
             COMMON.load();
-            ModernUI.LOGGER.info(ModernUI.MARKER, "Common configs reloaded");
         }
     }
 

@@ -33,8 +33,6 @@ import javax.annotation.Nullable;
  * Widget has its own precise position and a rect area
  * which is used for listening mouse and keyboard events.
  *
- * All widgets should be created by Builder or Json
- *
  * @since 1.6 reworked
  */
 public abstract class Widget implements IWidget {
@@ -53,7 +51,7 @@ public abstract class Widget implements IWidget {
 
     protected float width, height;
 
-    private WidgetStatus status = WidgetStatus.ACTIVE;
+    private Status status = Status.ACTIVE;
 
     private boolean mouseHovered = false;
 
@@ -81,7 +79,12 @@ public abstract class Widget implements IWidget {
 
     protected abstract void onDraw(Canvas canvas, float time);
 
-    @Override
+    /**
+     * Set widget position, or use layout for multiple widgets
+     *
+     * @param px pivot x pos
+     * @param py pivot y pos
+     */
     public void locate(float px, float py) {
         Align3H horizontalAlign = align.getAlign3H();
         switch (horizontalAlign) {
@@ -112,7 +115,12 @@ public abstract class Widget implements IWidget {
         y2 = y1 + height;
     }
 
-    @Override
+    /**
+     * Get current locator
+     * It's Nullable because not all widgets are supported
+     *
+     * @return Current locator
+     */
     @Nullable
     public Locator getLocator() {
         return locator;
@@ -170,14 +178,14 @@ public abstract class Widget implements IWidget {
      * But builder gives you a default status, so you
      * shouldn't call this in constructor
      */
-    public void setStatus(WidgetStatus status, boolean allowAnimation) {
+    public void setStatus(Status status, boolean allowAnimation) {
         if (this.status != status) {
             this.status = status;
             onStatusChanged(status, allowAnimation);
         }
     }
 
-    protected void onStatusChanged(WidgetStatus status, boolean allowAnimation) {}
+    protected void onStatusChanged(Status status, boolean allowAnimation) {}
 
     @Override
     public boolean updateMouseHover(double mouseX, double mouseY) {
@@ -308,7 +316,7 @@ public abstract class Widget implements IWidget {
         return host;
     }
 
-    public final WidgetStatus getStatus() {
+    public final Status getStatus() {
         return status;
     }
 
@@ -381,6 +389,20 @@ public abstract class Widget implements IWidget {
         @Nonnull
         public Widget build(IHost host) {
             throw new RuntimeException();
+        }
+    }
+
+    public enum Status {
+        ACTIVE, // draw and listen events
+        INACTIVE, // draw darker and not listen events
+        INVISIBLE; // not draw and not listen events
+
+        public boolean isListening() {
+            return this == ACTIVE;
+        }
+
+        public boolean isDrawing() {
+            return this != INVISIBLE;
         }
     }
 }

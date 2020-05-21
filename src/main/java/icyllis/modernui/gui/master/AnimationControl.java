@@ -20,12 +20,18 @@ package icyllis.modernui.gui.master;
 
 import icyllis.modernui.gui.animation.Animation;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
-public class AnimationControl {
+/**
+ * Control animation in two states
+ * Any state cannot be cancelled when it is in progress
+ * This is not needed in most cases
+ */
+public class AnimationControl implements Animation.IListener {
 
     @Nullable
     private final List<Animation> openList;
@@ -42,30 +48,47 @@ public class AnimationControl {
 
     private boolean prepareToClose = false;
 
+    @Nullable
+    private final Animation lastOpenAnimation;
+
+    @Nullable
+    private final Animation lastCloseAnimation;
+
     public AnimationControl(@Nullable List<Animation> openList, @Nullable List<Animation> closeList) {
         this.openList = openList;
         this.closeList = closeList;
-        Optional<Animation> d;
         if (openList != null) {
-            d = openList.stream().max(Comparator.comparing(Animation::getDuration));
-            d.ifPresent(animation -> animation.listen(new Animation.IListener() {
-                @Override
-                public void onAnimationEnd(Animation animation, boolean isReverse) {
-                    setOpenState(true);
-                }
-            }));
+            Optional<Animation> d = openList.stream().max(Comparator.comparing(Animation::getDuration));
+            lastOpenAnimation = d.orElse(null);
+        } else {
+            lastOpenAnimation = null;
         }
         if (closeList != null) {
-            d = closeList.stream().max(Comparator.comparing(Animation::getDuration));
-            d.ifPresent(animation -> animation.listen(new Animation.IListener() {
-                @Override
-                public void onAnimationEnd(Animation animation, boolean isReverse) {
-                    setOpenState(false);
-                }
-            }));
+            Optional<Animation> d = closeList.stream().max(Comparator.comparing(Animation::getDuration));
+            lastCloseAnimation = d.orElse(null);
+        } else {
+            lastCloseAnimation = null;
+        }
+        if (lastOpenAnimation != null) {
+            lastOpenAnimation.listen(this);
+        }
+        if (lastCloseAnimation != null) {
+            lastCloseAnimation.listen(this);
         }
     }
 
+    @Override
+    public void onAnimationEnd(@Nonnull Animation animation, boolean isReverse) {
+        if (animation == lastOpenAnimation) {
+            openState = 2;
+        } else if (animation == lastCloseAnimation) {
+            openState = 0;
+        }
+    }
+
+    /**
+     * Call this at the beginning of draw()
+     */
     public void update() {
         if (prepareToOpen && openState == 0) {
             openState = 1;
@@ -73,7 +96,7 @@ public class AnimationControl {
                 openList.forEach(Animation::startFull);
             }
             if (openList == null || openList.isEmpty()) {
-                setOpenState(true);
+                openState = 2;
             }
             prepareToOpen = false;
         } else if (prepareToClose && openState == 2) {
@@ -82,7 +105,7 @@ public class AnimationControl {
                 closeList.forEach(Animation::startFull);
             }
             if (closeList == null || closeList.isEmpty()) {
-                setOpenState(false);
+                openState = 0;
             }
             prepareToClose = false;
         }
@@ -102,10 +125,6 @@ public class AnimationControl {
         }
     }
 
-    public void setOpenState(boolean fullOpen) {
-        this.openState = fullOpen ? 2 : 0;
-    }
-
     public final boolean isAnimationOpen() {
         return openState != 0;
     }
@@ -114,7 +133,7 @@ public class AnimationControl {
         this.lockState = lock;
     }
 
-    public final boolean canChangeState() {
+    public final boolean isUnlockState() {
         return !lockState;
     }
 }

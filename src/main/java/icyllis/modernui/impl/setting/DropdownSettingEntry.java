@@ -69,7 +69,7 @@ public class DropdownSettingEntry extends SettingEntry {
                 .applyTo(new Applier(0, 0.25f, () -> frameAlpha, this::setFrameAlpha))
                 .listen(new Animation.IListener() {
                     @Override
-                    public void onAnimationEnd(Animation animation, boolean isReverse) {
+                    public void onAnimationEnd(@Nonnull Animation animation, boolean isReverse) {
                         if (isReverse) {
                             drawOptionFrame = false;
                         }

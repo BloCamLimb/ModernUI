@@ -26,7 +26,7 @@ import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.impl.module.SettingResourcePack;
 import icyllis.modernui.gui.scroll.UniformScrollEntry;
-import icyllis.modernui.gui.math.Color3f;
+import icyllis.modernui.gui.math.Color3i;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
@@ -130,7 +130,7 @@ public class ResourcePackEntry extends UniformScrollEntry {
         canvas.setTextAlign(Align3H.LEFT);
         canvas.drawText(title, x1 + 39, y1 + 4);
 
-        canvas.setColor(Color3f.GRAY);
+        canvas.setColor(Color3i.GRAY);
         int i = 0;
         for (String d : desc) {
             canvas.drawText(d, x1 + 39, y1 + 14 + i * 10);

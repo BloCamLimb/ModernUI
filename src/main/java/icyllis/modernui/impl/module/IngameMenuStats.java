@@ -22,7 +22,7 @@ import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.animation.IInterpolator;
 import icyllis.modernui.impl.background.MenuSettingsBG;
-import icyllis.modernui.gui.layout.WidgetLayout;
+import icyllis.modernui.gui.test.WidgetLayout;
 import icyllis.modernui.gui.master.ModuleGroup;
 import icyllis.modernui.gui.widget.LineTextButton;
 import net.minecraft.client.Minecraft;

@@ -173,7 +173,7 @@ public class DynamicFrameButton extends Button {
                 counting = ticks < startTick + countdown * 20;
                 displayCount = countdown - (ticks - startTick) / 20;
                 if (!counting) {
-                    setStatus(WidgetStatus.ACTIVE, true);
+                    setStatus(Status.ACTIVE, true);
                     getHost().refocusMouseCursor();
                 }
             }
