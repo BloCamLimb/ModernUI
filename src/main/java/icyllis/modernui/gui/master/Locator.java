@@ -16,10 +16,12 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.math;
+package icyllis.modernui.gui.master;
 
 import com.google.gson.annotations.Expose;
-import icyllis.modernui.gui.master.Widget;
+import icyllis.modernui.gui.math.Align9D;
+
+import javax.annotation.Nonnull;
 
 public class Locator {
 
@@ -77,33 +79,9 @@ public class Locator {
         return yOffset;
     }
 
-    public void locate(Widget widget, int width, int height) {
-        float x = 0;
-        Align3H horizontalAlign = align.getAlign3H();
-        switch (horizontalAlign) {
-            case LEFT:
-                x += xOffset;
-                break;
-            case CENTER:
-                x += width / 2f + xOffset;
-                break;
-            case RIGHT:
-                x += width + xOffset;
-                break;
-        }
-        float y = 0;
-        Align3V verticalAlign = align.getAlign3V();
-        switch (verticalAlign) {
-            case TOP:
-                y += yOffset;
-                break;
-            case CENTER:
-                y += height / 2f + yOffset;
-                break;
-            case BOTTOM:
-                y += height + yOffset;
-                break;
-        }
+    public void locate(@Nonnull Widget widget, int width, int height) {
+        float x = align.getAlignedX(xOffset, width);
+        float y = align.getAlignedY(yOffset, height);
         widget.locate(x, y);
     }
 

@@ -43,7 +43,7 @@ public class TestDraw implements IDrawable {
                         new Applier(-70, 100, () -> xOffset, v -> xOffset = v)
                                 .setInterpolator(new OvershootInterpolator(2)),
                         new Applier(0, 50, () -> yOffset, v -> yOffset = v)
-                                .setInterpolator(IInterpolator.SINE)
+                                .setInterpolator(IInterpolator.DECELERATE)
                 );
         animation.startFull();
     }
@@ -76,9 +76,16 @@ public class TestDraw implements IDrawable {
         RenderSystem.disableDepthTest();
 
         canvas.resetColor();
-        canvas.drawText("Font Renderer", 20, 60);
+        canvas.drawText("Modern UI Library", 20, 64);
 
-        canvas.drawFeatheredRect(90, 104, 120, 106, 0.5f);
+        canvas.save();
+        canvas.translate((float) Math.sin(Math.sin(time / 4) * Math.PI) * 16, (float) Math.cos(Math.sin(time / 4) * Math.PI) * 16);
+        canvas.setColor(Color3i.LIGHT_PURPLE, 0.5f);
+        canvas.drawCircle(60, 160, 5);
+        canvas.restore();
+
+        canvas.resetColor();
+        canvas.drawFeatheredRect(80, 114, 110, 116, 0.5f);
     }
 
     @Override

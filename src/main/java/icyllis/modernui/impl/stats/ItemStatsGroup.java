@@ -34,6 +34,7 @@ import net.minecraft.item.Items;
 import net.minecraft.stats.StatisticsManager;
 import net.minecraft.stats.Stats;
 
+import javax.annotation.Nonnull;
 import java.util.Set;
 
 /**
@@ -170,7 +171,7 @@ public class ItemStatsGroup extends UniformScrollGroup<ItemStatsEntry> {
     }
 
     @Override
-    public void draw(Canvas canvas, float time) {
+    public void draw(@Nonnull Canvas canvas, float time) {
         super.draw(canvas, time);
         RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
         textureManager.bindTexture(AbstractGui.STATS_ICON_LOCATION);

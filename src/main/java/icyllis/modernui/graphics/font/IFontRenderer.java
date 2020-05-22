@@ -21,7 +21,7 @@
 package icyllis.modernui.graphics.font;
 
 import icyllis.modernui.gui.math.Color3i;
-import icyllis.modernui.gui.math.Align3H;
+import icyllis.modernui.gui.math.TextAlign;
 
 public interface IFontRenderer {
 
@@ -38,7 +38,7 @@ public interface IFontRenderer {
      * @param align 0-left 0.25-center 0.5-right
      * @return formatted text width
      */
-    default float drawString(String str, float startX, float startY, Color3i color, float alpha, Align3H align) {
+    default float drawString(String str, float startX, float startY, Color3i color, float alpha, TextAlign align) {
         return drawString(str, startX, startY, color.getFloatRed(), color.getFloatGreen(), color.getFloatBlue(), alpha, align);
     }
 
@@ -57,7 +57,7 @@ public interface IFontRenderer {
      * @param align 0-left 0.25-center 0.5-right
      * @return formatted text width
      */
-    float drawString(String str, float startX, float startY, float r, float g, float b, float a, Align3H align);
+    float drawString(String str, float startX, float startY, float r, float g, float b, float a, TextAlign align);
 
     /**
      * Return the width of a string in pixels. Used for centering strings.

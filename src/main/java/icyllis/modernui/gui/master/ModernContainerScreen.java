@@ -38,8 +38,8 @@ import java.util.Objects;
 
 /**
  * This is required, because ALL(?) mods check if instanceof {@link ContainerScreen} rather than {@link IHasContainer}, like JEI. However,
- * vanilla interface: IScreenFactory<T extends Container, U extends Screen & IHasContainer<T>>, see {@link ScreenManager.IScreenFactory}
- * is Screen & IHasContainer<T>, not ContainerScreen, emm, no one want to break the rules
+ * vanilla is IScreenFactory<T extends Container, U extends Screen & IHasContainer<T>>, see {@link ScreenManager.IScreenFactory}
+ * not ContainerScreen, emm...
  * @param <G> container
  */
 @OnlyIn(Dist.CLIENT)

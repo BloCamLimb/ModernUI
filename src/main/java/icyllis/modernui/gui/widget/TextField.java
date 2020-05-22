@@ -19,11 +19,11 @@
 package icyllis.modernui.gui.widget;
 
 import icyllis.modernui.graphics.font.FontTools;
-import icyllis.modernui.gui.math.Align3H;
+import icyllis.modernui.gui.math.TextAlign;
 import icyllis.modernui.gui.master.*;
 import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.math.Color3i;
-import icyllis.modernui.gui.math.Locator;
+import icyllis.modernui.gui.master.Locator;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.SharedConstants;
@@ -142,7 +142,7 @@ public class TextField extends Widget implements IKeyboardListener {
             de = s.length();
         }
 
-        canvas.setTextAlign(Align3H.LEFT);
+        canvas.setTextAlign(TextAlign.LEFT);
 
         if (!s.isEmpty()) {
             String s1 = b ? s.substring(0, ds) : s;
@@ -622,7 +622,7 @@ public class TextField extends Widget implements IKeyboardListener {
             canvas.setRGBA(r, g, b, a);
             canvas.drawRoundedRectFrame(instance.x1 - getHeaderLength() - 1, instance.y1 - 1, instance.x2 + 1 + getTrailerLength(), instance.y2 + 1, 1.5f);
             if (title != null) {
-                canvas.setTextAlign(Align3H.LEFT);
+                canvas.setTextAlign(TextAlign.LEFT);
                 canvas.drawText(title, instance.x1 - titleLength, instance.y1 + (instance.height - 8) / 2f);
             }
         }

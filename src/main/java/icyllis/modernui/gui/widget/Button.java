@@ -23,6 +23,7 @@ import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.IHost;
 import icyllis.modernui.gui.master.Widget;
+import icyllis.modernui.gui.master.WidgetStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -83,7 +84,7 @@ public abstract class Button extends Widget {
     }
 
     @Override
-    protected void onDraw(Canvas canvas, float time) {
+    protected void onDraw(@Nonnull Canvas canvas, float time) {
         //brightAC.update();
     }
 
@@ -124,7 +125,7 @@ public abstract class Button extends Widget {
     }
 
     @Override
-    protected void onStatusChanged(Status status, boolean allowAnimation) {
+    protected void onStatusChanged(WidgetStatus status, boolean allowAnimation) {
         super.onStatusChanged(status, allowAnimation);
         activeAnimation.cancel();
         if (status.isListening()) {

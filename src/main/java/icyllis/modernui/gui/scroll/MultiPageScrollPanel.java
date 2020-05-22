@@ -22,7 +22,7 @@ import com.google.common.collect.Lists;
 import icyllis.modernui.gui.master.IHost;
 import icyllis.modernui.gui.master.Widget;
 import icyllis.modernui.gui.math.Align9D;
-import icyllis.modernui.gui.math.Locator;
+import icyllis.modernui.gui.master.Locator;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.math.MathHelper;
 

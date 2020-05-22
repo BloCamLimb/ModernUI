@@ -20,7 +20,7 @@
 
 package icyllis.modernui.graphics.font;
 
-import icyllis.modernui.gui.math.Align3H;
+import icyllis.modernui.gui.math.TextAlign;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 
@@ -46,8 +46,8 @@ public class VanillaFontRenderer implements IFontRenderer {
     }
 
     @Override
-    public float drawString(String str, float startX, float startY, float r, float g, float b, float a, @Nonnull Align3H align) {
-        startX = startX - FONT.getStringWidth(str) * align.getTextOffset() * 2;
+    public float drawString(String str, float startX, float startY, float r, float g, float b, float a, @Nonnull TextAlign align) {
+        startX = startX - FONT.getStringWidth(str) * align.getOffsetFactor() * 2;
         return FONT.drawString(str, startX, startY, (int) (a * 0xff) << 24 | (int) (r * 0xff) << 16 | (int) (g * 0xff) << 8 | (int) (b * 0xff)) - startX;
     }
 

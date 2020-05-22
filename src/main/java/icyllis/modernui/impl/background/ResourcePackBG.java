@@ -21,6 +21,8 @@ package icyllis.modernui.impl.background;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.IDrawable;
 
+import javax.annotation.Nonnull;
+
 public class ResourcePackBG implements IDrawable {
 
     private float x1, x2, y1, y2;
@@ -30,7 +32,7 @@ public class ResourcePackBG implements IDrawable {
     private float x3, x4, x5, x6;
 
     @Override
-    public void draw(Canvas canvas, float time) {
+    public void draw(@Nonnull Canvas canvas, float time) {
         canvas.setRGBA(0, 0, 0, 0.27f);
         canvas.drawRect(x1, y1, x2, y2);
         if (drawSide) {

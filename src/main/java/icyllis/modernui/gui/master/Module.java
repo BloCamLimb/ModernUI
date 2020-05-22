@@ -49,6 +49,8 @@ public abstract class Module implements IModule, IHost {
 
     private final GlobalModuleManager manager = GlobalModuleManager.INSTANCE;
 
+    protected final Minecraft minecraft = Minecraft.getInstance();
+
     private final Canvas canvas = new Canvas();
 
     private final List<IDrawable> drawables = new ArrayList<>();
@@ -259,8 +261,8 @@ public abstract class Module implements IModule, IHost {
         manager.refreshMouse();
     }
 
-    public void playSound(SoundEvent soundEvent) {
-        Minecraft.getInstance().getSoundHandler().play(SimpleSound.master(soundEvent, 1.0f));
+    public void playSound(@Nonnull SoundEvent soundEvent) {
+        minecraft.getSoundHandler().play(SimpleSound.master(soundEvent, 1.0f));
     }
 
     /**
@@ -291,7 +293,7 @@ public abstract class Module implements IModule, IHost {
 
     @Override
     public void setKeyboardListener(@Nullable IKeyboardListener keyboardListener) {
-        Minecraft.getInstance().keyboardListener.enableRepeatEvents(keyboardListener != null);
+        minecraft.keyboardListener.enableRepeatEvents(keyboardListener != null);
         if (this.keyboardListener != null) {
             this.keyboardListener.stopKeyboardListening();
         }
@@ -310,14 +312,14 @@ public abstract class Module implements IModule, IHost {
         for (IMouseListener listener : mouseListeners) {
             if (!result) {
                 if (listener.updateMouseHover(mouseX, mouseY)) {
-                    LocationEditor.INSTANCE.setHoveredWidget(listener);
+                    LayoutEditingGui.INSTANCE.setHoveredWidget(listener);
                     result = true;
                 }
             } else {
                 listener.setMouseHoverExit();
             }
             if (!result) {
-                LocationEditor.INSTANCE.setHoveredWidget(null);
+                LayoutEditingGui.INSTANCE.setHoveredWidget(null);
             }
         }
         return result;

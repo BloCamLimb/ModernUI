@@ -24,7 +24,7 @@ import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.animation.IInterpolator;
 import icyllis.modernui.gui.master.*;
 import icyllis.modernui.gui.math.Align9D;
-import icyllis.modernui.gui.math.Locator;
+import icyllis.modernui.gui.master.Locator;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

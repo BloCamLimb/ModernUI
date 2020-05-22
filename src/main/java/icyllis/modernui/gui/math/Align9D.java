@@ -31,24 +31,60 @@ public enum Align9D {
     BOTTOM_CENTER,
     BOTTOM_RIGHT;
 
-    private Align3H align3H;
+    private final int hIndex;
 
-    private Align3V align3V;
+    private final int vIndex;
 
     Align9D() {
-        this.align3H = Align3H.getFrom9D(this);
-        this.align3V = Align3V.getFrom9D(this);
+        hIndex = ordinal() % 3;
+        vIndex = ordinal() / 3;
     }
 
-    public Align3H getAlign3H() {
-        return align3H;
+    public float getAlignedX(float px, float width) {
+        switch (hIndex) {
+            case 0:
+                return px;
+            case 1:
+                return px + width / 2.0f;
+            case 2:
+                return px + width;
+        }
+        return px;
     }
 
-    public Align3V getAlign3V() {
-        return align3V;
+    public float getAlignedY(float py, float height) {
+        switch (vIndex) {
+            case 0:
+                return py;
+            case 1:
+                return py + height / 2.0f;
+            case 2:
+                return py + height;
+        }
+        return py;
     }
 
-    public static Align9D combineWith(Align3H align3H, Align3V align3V) {
-        return values()[align3H.ordinal() + align3V.ordinal() * 3];
+    public boolean isLeft() {
+        return hIndex == 0;
+    }
+
+    public boolean isHCenter() {
+        return hIndex == 1;
+    }
+
+    public boolean isRight() {
+        return hIndex == 2;
+    }
+
+    public boolean isTop() {
+        return vIndex == 0;
+    }
+
+    public boolean isVCenter() {
+        return vIndex == 1;
+    }
+
+    public boolean isBottom() {
+        return vIndex == 2;
     }
 }

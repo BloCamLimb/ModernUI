@@ -21,7 +21,7 @@ package icyllis.modernui.impl.setting;
 import icyllis.modernui.graphics.font.FontTools;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.Icon;
-import icyllis.modernui.gui.math.Align3H;
+import icyllis.modernui.gui.math.TextAlign;
 import icyllis.modernui.system.ConstantsLibrary;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
@@ -71,7 +71,7 @@ public class OptiFineSettingEntry extends SettingEntry {
             canvas.setRGBA(0.377f, 0.377f, 0.377f, 0.25f);
             canvas.drawRect(bl, y1 + 2, x2, y1 + 18);
         }
-        canvas.setTextAlign(Align3H.RIGHT);
+        canvas.setTextAlign(TextAlign.RIGHT);
         canvas.setRGBA(titleBrightness, titleBrightness, titleBrightness, 1);
         canvas.drawText(optionText, x2 - 10, y1 + 6);
         canvas.drawIcon(ICON, x2 - 8, y1 + 6, x2, y1 + 14);

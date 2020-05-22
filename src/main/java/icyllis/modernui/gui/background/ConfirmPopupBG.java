@@ -19,7 +19,7 @@
 package icyllis.modernui.gui.background;
 
 import icyllis.modernui.gui.animation.IInterpolator;
-import icyllis.modernui.gui.math.Align3H;
+import icyllis.modernui.gui.math.TextAlign;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.Canvas;
@@ -64,10 +64,10 @@ public class ConfirmPopupBG extends Background {
         //canvas.drawRectLines(x, y, x + 180f, y + heightOffset);
 
         canvas.resetColor();
-        canvas.setTextAlign(Align3H.CENTER);
+        canvas.setTextAlign(TextAlign.CENTER);
         canvas.drawText(title, x + 90, y + 4);
 
-        canvas.setTextAlign(Align3H.LEFT);
+        canvas.setTextAlign(TextAlign.LEFT);
         int i = 0;
         for (String t : desc) {
             canvas.drawText(t, x + 8, y + 24 + i++ * 12);

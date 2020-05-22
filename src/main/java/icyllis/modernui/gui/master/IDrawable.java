@@ -18,6 +18,8 @@
 
 package icyllis.modernui.gui.master;
 
+import javax.annotation.Nonnull;
+
 /**
  * This is an really basic interface that represents a drawable element in gui
  * But also can be used for update animations. A.K.A Frame Event Listener
@@ -33,7 +35,7 @@ public interface IDrawable {
      * @param time elapsed time from a gui open
      *                    unit: floating point ticks, 20.0 ticks = 1 second
      */
-    void draw(Canvas canvas, float time);
+    void draw(@Nonnull Canvas canvas, float time);
 
     /**
      * Called when game window size changed, used to reset position, use layout for multiple elements
@@ -65,5 +67,13 @@ public interface IDrawable {
      * @param alpha specific alpha
      */
     default void setAlpha(float alpha) {}
+
+    /**
+     * Allocate host to current element, called after construction
+     *
+     * @since 1.6
+     * @param host host
+     */
+    default void allocateHost(@Nonnull IHost host) {}
 
 }

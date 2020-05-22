@@ -21,7 +21,7 @@ package icyllis.modernui.system;
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.font.TrueTypeRenderer;
 import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.gui.master.LocationEditor;
+import icyllis.modernui.gui.master.LayoutEditingGui;
 import icyllis.modernui.gui.test.ContainerTest;
 import icyllis.modernui.gui.test.ModuleTest;
 import net.minecraft.client.gui.screen.Screen;
@@ -117,7 +117,7 @@ public class EventsHandler {
             if (ConfigManager.COMMON.isEnableDeveloperMode() && event.getAction() == GLFW.GLFW_PRESS) {
                 if (Screen.hasControlDown() && Screen.hasShiftDown()) {
                     if (event.getKey() == GLFW.GLFW_KEY_T && GlobalModuleManager.INSTANCE.getModernScreen() != null) {
-                        LocationEditor.INSTANCE.iterateWorking();
+                        LayoutEditingGui.INSTANCE.iterateWorking();
                     }
                 }
             }
@@ -125,22 +125,22 @@ public class EventsHandler {
 
         @SubscribeEvent
         public static void onScreenEndDraw(GuiScreenEvent.DrawScreenEvent.Post event) {
-            LocationEditor.INSTANCE.draw();
+            LayoutEditingGui.INSTANCE.draw();
         }
 
         @SubscribeEvent
         public static void onScreenStartMouseClicked(@Nonnull GuiScreenEvent.MouseClickedEvent.Pre event) {
-            event.setCanceled(LocationEditor.INSTANCE.mouseClicked(event.getButton()));
+            event.setCanceled(LayoutEditingGui.INSTANCE.mouseClicked(event.getButton()));
         }
 
         @SubscribeEvent
         public static void onScreenStartMouseReleased(@Nonnull GuiScreenEvent.MouseReleasedEvent.Pre event) {
-            LocationEditor.INSTANCE.mouseReleased();
+            LayoutEditingGui.INSTANCE.mouseReleased();
         }
 
         @SubscribeEvent
         public static void onScreenStartMouseDragged(@Nonnull GuiScreenEvent.MouseDragEvent.Pre event) {
-            event.setCanceled(LocationEditor.INSTANCE.mouseDragged(event.getDragX(), event.getDragY()));
+            event.setCanceled(LayoutEditingGui.INSTANCE.mouseDragged(event.getDragX(), event.getDragY()));
         }
     }
 

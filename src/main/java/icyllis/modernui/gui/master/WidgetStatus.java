@@ -16,16 +16,18 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.math;
+package icyllis.modernui.gui.master;
 
-import javax.annotation.Nonnull;
+public enum WidgetStatus {
+    ACTIVE, // draw and listen events
+    INACTIVE, // draw darker and not listen events
+    INVISIBLE; // not draw and not listen events
 
-public enum Align3V {
-    TOP,
-    CENTER,
-    BOTTOM;
+    public boolean isListening() {
+        return this == ACTIVE;
+    }
 
-    public static Align3V getFrom9D(@Nonnull Align9D align9D) {
-        return values()[align9D.ordinal() / 3];
+    public boolean isDrawing() {
+        return this != INVISIBLE;
     }
 }

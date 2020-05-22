@@ -21,14 +21,14 @@ package icyllis.modernui.gui.popup;
 import icyllis.modernui.graphics.font.FontTools;
 import icyllis.modernui.gui.animation.IInterpolator;
 import icyllis.modernui.gui.master.IHost;
-import icyllis.modernui.gui.math.Align3H;
+import icyllis.modernui.gui.math.TextAlign;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.Widget;
 import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.math.Color3i;
-import icyllis.modernui.gui.math.Locator;
+import icyllis.modernui.gui.master.Locator;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -111,11 +111,11 @@ public class DropDownMenu extends Widget {
             } else {
                 canvas.setColor(Color3i.WHITE);
             }
-            if (align.getAlign3H() == Align3H.LEFT) {
-                canvas.setTextAlign(Align3H.LEFT);
+            if (align.isLeft()) {
+                canvas.setTextAlign(TextAlign.LEFT);
                 canvas.drawText(text, x1 + 3, cy + 2);
             } else {
-                canvas.setTextAlign(Align3H.RIGHT);
+                canvas.setTextAlign(TextAlign.RIGHT);
                 canvas.drawText(text, x2 - 3, cy + 2);
             }
         }
@@ -189,7 +189,7 @@ public class DropDownMenu extends Widget {
     public void locate(float px, float py) {
         int gWidth = getHost().getWindowWidth();
         int gHeight = getHost().getWindowHeight();
-        if (align.getAlign3H() == Align3H.LEFT) {
+        if (align.isLeft()) {
             this.x2 = Math.min(px + width, gWidth);
             this.x1 = x2 - width;
         } else {

@@ -27,7 +27,7 @@ package icyllis.modernui.graphics.font;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
-import icyllis.modernui.gui.math.Align3H;
+import icyllis.modernui.gui.math.TextAlign;
 import icyllis.modernui.gui.math.Color3i;
 import icyllis.modernui.system.ConfigManager;
 import net.minecraft.client.Minecraft;
@@ -110,7 +110,7 @@ public class TrueTypeRenderer implements IFontRenderer {
     }
 
     @Override
-    public float drawString(String str, float startX, float startY, float r, float g, float b, float a, Align3H align) {
+    public float drawString(String str, float startX, float startY, float r, float g, float b, float a, TextAlign align) {
         /* Check for invalid arguments */
         if (str == null || str.isEmpty()) {
             return 0;
@@ -155,7 +155,7 @@ public class TrueTypeRenderer implements IFontRenderer {
         }*/
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        startX = startX - entry.advance * align.getTextOffset();
+        startX = startX - entry.advance * align.getOffsetFactor();
 
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder buffer = tessellator.getBuffer();

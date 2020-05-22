@@ -63,7 +63,7 @@ public class ScrollBar implements IDrawable, IMouseListener, IDraggable {
     }
 
     @Override
-    public void draw(Canvas canvas, float time) {
+    public void draw(@Nonnull Canvas canvas, float time) {
         if (!barHovered && !isDragging && brightness > 0.5f) {
             if (time > startTime) {
                 float change = (startTime - time) / 40.0f;

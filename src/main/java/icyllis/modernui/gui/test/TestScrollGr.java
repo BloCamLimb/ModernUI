@@ -19,7 +19,7 @@
 package icyllis.modernui.gui.test;
 
 import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.math.Align3H;
+import icyllis.modernui.gui.math.TextAlign;
 import icyllis.modernui.gui.scroll.IScrollHost;
 import icyllis.modernui.gui.scroll.UniformScrollEntry;
 import icyllis.modernui.gui.scroll.UniformScrollGroup;
@@ -58,7 +58,7 @@ public class TestScrollGr extends UniformScrollGroup<TestScrollGr.TestScrollEn> 
             canvas.setRGBA(0, 0, 0, 0.1f);
             canvas.drawRect(x1, y1 + 1, x2, y2 - 1);
             canvas.resetColor();
-            canvas.setTextAlign(Align3H.LEFT);
+            canvas.setTextAlign(TextAlign.LEFT);
             canvas.drawText(String.valueOf(hashCode()), x1 + 10, y1 + 5);
         }
     }

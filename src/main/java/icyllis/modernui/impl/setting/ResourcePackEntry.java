@@ -20,7 +20,7 @@ package icyllis.modernui.impl.setting;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.graphics.font.FontTools;
-import icyllis.modernui.gui.math.Align3H;
+import icyllis.modernui.gui.math.TextAlign;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.scroll.ScrollWindow;
@@ -73,7 +73,7 @@ public class ResourcePackEntry extends UniformScrollEntry {
     }
 
     @Override
-    public final void onDraw(Canvas canvas, float time) {
+    public final void onDraw(@Nonnull Canvas canvas, float time) {
         /*Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();*/
 
@@ -127,7 +127,7 @@ public class ResourcePackEntry extends UniformScrollEntry {
         blitIcon(x1 + 3, y1 + 2);
 
         canvas.resetColor();
-        canvas.setTextAlign(Align3H.LEFT);
+        canvas.setTextAlign(TextAlign.LEFT);
         canvas.drawText(title, x1 + 39, y1 + 4);
 
         canvas.setColor(Color3i.GRAY);

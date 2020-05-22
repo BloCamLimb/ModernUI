@@ -19,7 +19,7 @@
 package icyllis.modernui.impl.module;
 
 import icyllis.modernui.gui.math.Align9D;
-import icyllis.modernui.gui.math.Locator;
+import icyllis.modernui.gui.master.Locator;
 import icyllis.modernui.impl.background.MenuHomeBG;
 import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.IModule;
@@ -28,7 +28,6 @@ import icyllis.modernui.gui.popup.ConfirmCallback;
 import icyllis.modernui.gui.popup.PopupConfirm;
 import icyllis.modernui.gui.widget.MenuButton;
 import icyllis.modernui.system.RegistryLibrary;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.advancements.AdvancementsScreen;
 import net.minecraft.client.gui.screen.*;
 import net.minecraft.client.resources.I18n;
@@ -43,8 +42,6 @@ import java.util.Random;
 import java.util.function.Consumer;
 
 public class IngameMenuHome extends ModuleGroup {
-
-    private Minecraft minecraft = Minecraft.getInstance();
 
     private List<MenuButton> buttons = new ArrayList<>();
 

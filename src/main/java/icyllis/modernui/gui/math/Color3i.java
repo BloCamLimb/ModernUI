@@ -18,6 +18,8 @@
 
 package icyllis.modernui.gui.math;
 
+import net.minecraft.util.text.TextFormatting;
+
 import javax.annotation.Nullable;
 
 public class Color3i {

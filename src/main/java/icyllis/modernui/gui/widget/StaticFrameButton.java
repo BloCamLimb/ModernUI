@@ -20,9 +20,9 @@ package icyllis.modernui.gui.widget;
 
 import com.google.gson.annotations.Expose;
 import icyllis.modernui.gui.master.*;
-import icyllis.modernui.gui.math.Align3H;
+import icyllis.modernui.gui.math.TextAlign;
 import icyllis.modernui.gui.math.Align9D;
-import icyllis.modernui.gui.math.Locator;
+import icyllis.modernui.gui.master.Locator;
 import net.minecraft.client.resources.I18n;
 
 import javax.annotation.Nonnull;
@@ -51,7 +51,7 @@ public class StaticFrameButton extends Button {
         super.onDraw(canvas, time);
         canvas.setRGBA(getModulatedBrightness(), getModulatedBrightness(), getModulatedBrightness(), 1.0f);
         canvas.drawRectOutline(x1, y1, x2, y2, 0.51f);
-        canvas.setTextAlign(Align3H.CENTER);
+        canvas.setTextAlign(TextAlign.CENTER);
         canvas.drawText(text, x1 + width / 2f, y1 + 2);
     }
 

@@ -18,7 +18,7 @@
 
 package icyllis.modernui.impl.setting;
 
-import icyllis.modernui.gui.math.Align3H;
+import icyllis.modernui.gui.math.TextAlign;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.gui.scroll.UniformScrollGroup;
@@ -79,7 +79,7 @@ public class SettingCategoryGroup extends UniformScrollGroup<SettingEntry> {
     @Override
     public void draw(@Nonnull Canvas canvas, float time) {
         canvas.resetColor();
-        canvas.setTextAlign(Align3H.LEFT);
+        canvas.setTextAlign(TextAlign.LEFT);
         canvas.drawText(title, centerX - 160, y1 + 14);
         super.draw(canvas, time);
     }
