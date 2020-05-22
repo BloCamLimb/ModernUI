@@ -21,7 +21,7 @@ package icyllis.modernui.gui.widget;
 import icyllis.modernui.gui.master.*;
 import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.math.Direction4D;
-import icyllis.modernui.gui.math.Locator;
+import icyllis.modernui.gui.master.Locator;
 import icyllis.modernui.system.ConstantsLibrary;
 
 import javax.annotation.Nonnull;

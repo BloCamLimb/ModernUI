@@ -20,13 +20,12 @@ package icyllis.modernui.gui.master;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.math.Color3i;
-import icyllis.modernui.gui.math.Locator;
 import net.minecraft.util.text.TextFormatting;
 
 import javax.annotation.Nullable;
 
-//TODO Experimental
-public enum LocationEditor {
+//TODO Experimental, all changes won't be saved
+public enum LayoutEditingGui {
     INSTANCE;
 
     @Nullable
@@ -121,6 +120,7 @@ public enum LocationEditor {
                 hoveredWidget.relocate();
                 accDragX -= x;
                 accDragY -= y;
+                MouseTools.useDefaultCursor();
                 return true;
             }
         }

@@ -25,10 +25,10 @@ import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.IHost;
 import icyllis.modernui.gui.master.Icon;
-import icyllis.modernui.gui.math.Align3H;
+import icyllis.modernui.gui.math.TextAlign;
 import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.math.Direction4D;
-import icyllis.modernui.gui.math.Locator;
+import icyllis.modernui.gui.master.Locator;
 import net.minecraft.client.resources.I18n;
 
 import javax.annotation.Nonnull;
@@ -77,19 +77,19 @@ public class TextIconButton extends IconButton {
             canvas.setRGBA(1, 1, 1, textAlpha);
             switch (direction) {
                 case UP:
-                    canvas.setTextAlign(Align3H.CENTER);
+                    canvas.setTextAlign(TextAlign.CENTER);
                     canvas.drawText(text, x1 + width / 2f, y1 - 12);
                     break;
                 case DOWN:
-                    canvas.setTextAlign(Align3H.CENTER);
+                    canvas.setTextAlign(TextAlign.CENTER);
                     canvas.drawText(text, x1 + width / 2f, y2 + 3);
                     break;
                 case LEFT:
-                    canvas.setTextAlign(Align3H.RIGHT);
+                    canvas.setTextAlign(TextAlign.RIGHT);
                     canvas.drawText(text, x1 - 4, y1 + (height - 8) / 2f);
                     break;
                 case RIGHT:
-                    canvas.setTextAlign(Align3H.LEFT);
+                    canvas.setTextAlign(TextAlign.LEFT);
                     canvas.drawText(text, x2 + 4, y1 + (height - 8) / 2f);
                     break;
             }

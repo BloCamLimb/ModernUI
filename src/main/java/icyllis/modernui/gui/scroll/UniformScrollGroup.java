@@ -56,7 +56,7 @@ public abstract class UniformScrollGroup<T extends UniformScrollEntry> extends S
     }
 
     @Override
-    public void draw(Canvas canvas, float time) {
+    public void draw(@Nonnull Canvas canvas, float time) {
         for (UniformScrollEntry entry : visible) {
             entry.draw(canvas, time);
         }

@@ -18,7 +18,7 @@
 
 package icyllis.modernui.gui.background;
 
-import icyllis.modernui.gui.math.Align3H;
+import icyllis.modernui.gui.math.TextAlign;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.IDrawable;
 
@@ -30,9 +30,9 @@ public class TextDrawable implements IDrawable {
 
     private float x, y;
 
-    private final Align3H align;
+    private final TextAlign align;
 
-    public TextDrawable(Align3H align) {
+    public TextDrawable(TextAlign align) {
         this.align = align;
     }
 

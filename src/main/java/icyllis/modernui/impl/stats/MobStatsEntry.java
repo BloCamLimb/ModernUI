@@ -18,7 +18,7 @@
 
 package icyllis.modernui.impl.stats;
 
-import icyllis.modernui.gui.math.Align3H;
+import icyllis.modernui.gui.math.TextAlign;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.gui.scroll.UniformScrollEntry;
@@ -49,7 +49,7 @@ public class MobStatsEntry extends UniformScrollEntry {
 
     @Override
     public void onDraw(@Nonnull Canvas canvas, float time) {
-        canvas.setTextAlign(Align3H.LEFT);
+        canvas.setTextAlign(TextAlign.LEFT);
         canvas.resetColor();
         canvas.drawText(entityName, x1 + 2, y1 + 1);
         canvas.drawText(kill, x1 + 12, y1 + 10);

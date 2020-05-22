@@ -18,24 +18,19 @@
 
 package icyllis.modernui.gui.math;
 
-import javax.annotation.Nonnull;
-
-public enum Align3H {
+public enum TextAlign {
     LEFT(0.0f),
     CENTER(0.25f),
     RIGHT(0.5f);
 
-    private float textOffset;
+    /* Divided by 2, because font renderer is based on a gui scale of 2 */
+    private float offsetFactor;
 
-    Align3H(float textOffset) {
-        this.textOffset = textOffset;
+    TextAlign(float offsetFactor) {
+        this.offsetFactor = offsetFactor;
     }
 
-    public float getTextOffset() {
-        return textOffset;
-    }
-
-    public static Align3H getFrom9D(@Nonnull Align9D align9D) {
-        return values()[align9D.ordinal() % 3];
+    public float getOffsetFactor() {
+        return offsetFactor;
     }
 }

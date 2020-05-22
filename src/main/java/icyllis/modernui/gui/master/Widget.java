@@ -19,10 +19,7 @@
 package icyllis.modernui.gui.master;
 
 import com.google.gson.annotations.Expose;
-import icyllis.modernui.gui.math.Align3H;
-import icyllis.modernui.gui.math.Align3V;
 import icyllis.modernui.gui.math.Align9D;
-import icyllis.modernui.gui.math.Locator;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -37,6 +34,7 @@ import javax.annotation.Nullable;
  */
 public abstract class Widget implements IWidget {
 
+    @Nonnull
     private final IHost host;
 
     @Nullable
@@ -51,7 +49,7 @@ public abstract class Widget implements IWidget {
 
     protected float width, height;
 
-    private Status status = Status.ACTIVE;
+    private WidgetStatus status = WidgetStatus.ACTIVE;
 
     private boolean mouseHovered = false;
 
@@ -62,7 +60,7 @@ public abstract class Widget implements IWidget {
      */
     private float widgetAlpha = 1.0f;
 
-    public Widget(IHost host, @Nonnull Builder builder) {
+    public Widget(@Nonnull IHost host, @Nonnull Builder builder) {
         this.host = host;
         this.width = builder.width;
         this.height = builder.height;
@@ -71,13 +69,13 @@ public abstract class Widget implements IWidget {
     }
 
     @Override
-    public final void draw(Canvas canvas, float time) {
+    public final void draw(@Nonnull Canvas canvas, float time) {
         if (status.isDrawing()) {
             onDraw(canvas, time);
         }
     }
 
-    protected abstract void onDraw(Canvas canvas, float time);
+    protected abstract void onDraw(@Nonnull Canvas canvas, float time);
 
     /**
      * Set widget position, or use layout for multiple widgets
@@ -86,32 +84,10 @@ public abstract class Widget implements IWidget {
      * @param py pivot y pos
      */
     public void locate(float px, float py) {
-        Align3H horizontalAlign = align.getAlign3H();
-        switch (horizontalAlign) {
-            case LEFT:
-                x1 = px;
-                break;
-            case CENTER:
-                x1 = px - width / 2f;
-                break;
-            case RIGHT:
-                x1 = px - width;
-                break;
-        }
+        x1 = align.getAlignedX(px, -width);
         x2 = x1 + width;
 
-        Align3V verticalAlign = align.getAlign3V();
-        switch (verticalAlign) {
-            case TOP:
-                y1 = py;
-                break;
-            case CENTER:
-                y1 = py - height / 2f;
-                break;
-            case BOTTOM:
-                y1 = py - height;
-                break;
-        }
+        y1 = align.getAlignedY(py, -height);
         y2 = y1 + height;
     }
 
@@ -178,14 +154,14 @@ public abstract class Widget implements IWidget {
      * But builder gives you a default status, so you
      * shouldn't call this in constructor
      */
-    public void setStatus(Status status, boolean allowAnimation) {
+    public void setStatus(WidgetStatus status, boolean allowAnimation) {
         if (this.status != status) {
             this.status = status;
             onStatusChanged(status, allowAnimation);
         }
     }
 
-    protected void onStatusChanged(Status status, boolean allowAnimation) {}
+    protected void onStatusChanged(WidgetStatus status, boolean allowAnimation) {}
 
     @Override
     public boolean updateMouseHover(double mouseX, double mouseY) {
@@ -316,7 +292,7 @@ public abstract class Widget implements IWidget {
         return host;
     }
 
-    public final Status getStatus() {
+    public final WidgetStatus getStatus() {
         return status;
     }
 
@@ -392,17 +368,4 @@ public abstract class Widget implements IWidget {
         }
     }
 
-    public enum Status {
-        ACTIVE, // draw and listen events
-        INACTIVE, // draw darker and not listen events
-        INVISIBLE; // not draw and not listen events
-
-        public boolean isListening() {
-            return this == ACTIVE;
-        }
-
-        public boolean isDrawing() {
-            return this != INVISIBLE;
-        }
-    }
 }

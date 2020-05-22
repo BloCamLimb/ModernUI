@@ -18,12 +18,14 @@
 
 package icyllis.modernui.impl.setting;
 
-import icyllis.modernui.gui.math.Align3H;
+import icyllis.modernui.gui.math.TextAlign;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.scroll.ScrollWindow;
 import icyllis.modernui.impl.module.SettingLanguage;
 import icyllis.modernui.gui.scroll.UniformScrollEntry;
 import net.minecraft.client.resources.Language;
+
+import javax.annotation.Nonnull;
 
 public class LanguageEntry extends UniformScrollEntry {
 
@@ -46,7 +48,7 @@ public class LanguageEntry extends UniformScrollEntry {
     }
 
     @Override
-    public final void onDraw(Canvas canvas, float time) {
+    public final void onDraw(@Nonnull Canvas canvas, float time) {
         /*Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();*/
 
@@ -97,7 +99,7 @@ public class LanguageEntry extends UniformScrollEntry {
             RenderSystem.enableTexture();*/
         }
 
-        canvas.setTextAlign(Align3H.CENTER);
+        canvas.setTextAlign(TextAlign.CENTER);
         canvas.resetColor();
         canvas.drawText(language.toString(), centerX, y1 + 4);
     }

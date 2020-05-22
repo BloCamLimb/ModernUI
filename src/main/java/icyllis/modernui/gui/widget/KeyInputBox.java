@@ -18,7 +18,7 @@
 
 package icyllis.modernui.gui.widget;
 
-import icyllis.modernui.gui.math.Align3H;
+import icyllis.modernui.gui.math.TextAlign;
 import icyllis.modernui.gui.master.*;
 import icyllis.modernui.gui.math.Color3i;
 import net.minecraft.client.resources.I18n;
@@ -67,7 +67,7 @@ public class KeyInputBox extends Widget implements IKeyboardListener {
             canvas.drawRectLines(x1, y1, x2, y2);
             canvas.setLineAntiAliasing(false);
         }
-        canvas.setTextAlign(Align3H.CENTER);
+        canvas.setTextAlign(TextAlign.CENTER);
         canvas.setRGBA(textBrightness, textBrightness, textBrightness, 1.0f);
         canvas.drawText(keyText, x1 + 42, y1 + 4);
     }

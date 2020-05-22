@@ -21,12 +21,12 @@ package icyllis.modernui.gui.widget;
 import com.google.common.collect.Lists;
 import com.google.gson.annotations.Expose;
 import icyllis.modernui.gui.animation.IInterpolator;
-import icyllis.modernui.gui.math.Align3H;
+import icyllis.modernui.gui.math.TextAlign;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.*;
 import icyllis.modernui.gui.math.Align9D;
-import icyllis.modernui.gui.math.Locator;
+import icyllis.modernui.gui.master.Locator;
 import net.minecraft.client.resources.I18n;
 
 import javax.annotation.Nonnull;
@@ -78,7 +78,7 @@ public class DynamicFrameButton extends Button {
         super.onDraw(canvas, time);
         frameAC.update();
         canvas.setRGBA(getModulatedBrightness(), getModulatedBrightness(), getModulatedBrightness(), 1.0f);
-        canvas.setTextAlign(Align3H.CENTER);
+        canvas.setTextAlign(TextAlign.CENTER);
         canvas.drawText(text, x1 + width / 2f, y1 + 2);
         if (frameAlpha > 0) {
             canvas.setRGBA(0.5f, 0.5f, 0.5f, frameAlpha);
@@ -173,7 +173,7 @@ public class DynamicFrameButton extends Button {
                 counting = ticks < startTick + countdown * 20;
                 displayCount = countdown - (ticks - startTick) / 20;
                 if (!counting) {
-                    setStatus(Status.ACTIVE, true);
+                    setStatus(WidgetStatus.ACTIVE, true);
                     getHost().refocusMouseCursor();
                 }
             }

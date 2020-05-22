@@ -330,7 +330,7 @@ public enum GlobalModuleManager {
             popup = null;
             //extraData = null;
             rootScreen = null;
-            LocationEditor.INSTANCE.setHoveredWidget(null);
+            LayoutEditingGui.INSTANCE.setHoveredWidget(null);
             MouseTools.useDefaultCursor();
             // Hotfix 1.5.8
             minecraft.keyboardListener.enableRepeatEvents(false);

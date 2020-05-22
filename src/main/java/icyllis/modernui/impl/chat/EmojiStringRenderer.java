@@ -20,7 +20,7 @@ package icyllis.modernui.impl.chat;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.gui.math.Align3H;
+import icyllis.modernui.gui.math.TextAlign;
 import icyllis.modernui.graphics.font.IFontRenderer;
 import icyllis.modernui.graphics.font.TrueTypeRenderer;
 import icyllis.modernui.gui.math.Color3i;
@@ -53,7 +53,7 @@ public class EmojiStringRenderer implements IFontRenderer {
     private WeakHashMap<String, EmojiText> MAPS = new WeakHashMap<>();
 
     @Override
-    public float drawString(String str, float startX, float startY, Color3i color, float alpha, Align3H align) {
+    public float drawString(String str, float startX, float startY, Color3i color, float alpha, TextAlign align) {
         EmojiText entry = MAPS.get(str);
         if (entry == null) {
             entry = cache(str);
@@ -68,7 +68,7 @@ public class EmojiStringRenderer implements IFontRenderer {
     }
 
     @Override
-    public float drawString(String str, float startX, float startY, float r, float g, float b, float a, Align3H align) {
+    public float drawString(String str, float startX, float startY, float r, float g, float b, float a, TextAlign align) {
         return 0;
     }
 

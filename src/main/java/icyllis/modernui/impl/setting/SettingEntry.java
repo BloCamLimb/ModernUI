@@ -18,7 +18,7 @@
 
 package icyllis.modernui.impl.setting;
 
-import icyllis.modernui.gui.math.Align3H;
+import icyllis.modernui.gui.math.TextAlign;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.scroll.UniformScrollEntry;
 
@@ -54,7 +54,7 @@ public abstract class SettingEntry extends UniformScrollEntry {
         /*Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();*/
         canvas.setRGBA(titleBrightness, titleBrightness, titleBrightness, 1);
-        canvas.setTextAlign(Align3H.LEFT);
+        canvas.setTextAlign(TextAlign.LEFT);
         canvas.drawText(title, x1, y1 + 6);
         /*if (desc.length > 0) {
 

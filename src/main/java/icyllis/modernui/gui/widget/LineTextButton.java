@@ -23,9 +23,9 @@ import com.google.gson.annotations.Expose;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.*;
-import icyllis.modernui.gui.math.Align3H;
+import icyllis.modernui.gui.math.TextAlign;
 import icyllis.modernui.gui.math.Align9D;
-import icyllis.modernui.gui.math.Locator;
+import icyllis.modernui.gui.master.Locator;
 import net.minecraft.client.resources.I18n;
 
 import javax.annotation.Nonnull;
@@ -79,7 +79,7 @@ public class LineTextButton extends Widget {
     public void onDraw(@Nonnull Canvas canvas, float time) {
         lineAC.update();
         canvas.setRGBA(textBrightness, textBrightness, textBrightness, 1.0f);
-        canvas.setTextAlign(Align3H.CENTER);
+        canvas.setTextAlign(TextAlign.CENTER);
         canvas.drawText(text, x1 + width / 2f, y1 + 2);
         canvas.resetColor();
         canvas.drawRect(x1 + lineOffset, y1 + 11, x2 - lineOffset, y1 + 12);

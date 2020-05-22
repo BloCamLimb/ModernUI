@@ -21,7 +21,7 @@ package icyllis.modernui.gui.widget;
 import com.google.gson.annotations.Expose;
 import icyllis.modernui.gui.master.*;
 import icyllis.modernui.gui.math.Align9D;
-import icyllis.modernui.gui.math.Locator;
+import icyllis.modernui.gui.master.Locator;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

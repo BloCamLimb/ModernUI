@@ -23,6 +23,8 @@ import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.IDrawable;
 
+import javax.annotation.Nonnull;
+
 public class Background implements IDrawable {
 
     private float alpha = 0f;
@@ -41,7 +43,7 @@ public class Background implements IDrawable {
     }
 
     @Override
-    public void draw(Canvas canvas, float time) {
+    public void draw(@Nonnull Canvas canvas, float time) {
         canvas.setRGBA(0, 0, 0, alpha);
         canvas.drawRect(0, 0, width, height);
     }

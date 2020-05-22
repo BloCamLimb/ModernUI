@@ -43,8 +43,6 @@ import java.util.stream.Collectors;
 
 public class SettingGeneral extends Module {
 
-    private Minecraft minecraft;
-
     private SettingScrollWindow window;
 
     private DropdownSettingEntry difficultyEntry;
@@ -52,7 +50,6 @@ public class SettingGeneral extends Module {
     private BooleanSettingEntry lockEntry;
 
     public SettingGeneral() {
-        this.minecraft = Minecraft.getInstance();
         this.window = new SettingScrollWindow(this);
 
         List<SettingCategoryGroup> groups = new ArrayList<>();

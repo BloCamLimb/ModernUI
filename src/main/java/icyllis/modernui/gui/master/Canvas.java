@@ -23,7 +23,7 @@ import icyllis.modernui.graphics.font.IFontRenderer;
 import icyllis.modernui.graphics.font.ModernFontRenderer;
 import icyllis.modernui.graphics.font.TrueTypeRenderer;
 import icyllis.modernui.graphics.shader.ShaderTools;
-import icyllis.modernui.gui.math.Align3H;
+import icyllis.modernui.gui.math.TextAlign;
 import icyllis.modernui.gui.math.Color3i;
 import icyllis.modernui.gui.shader.*;
 import net.minecraft.client.MainWindow;
@@ -56,6 +56,7 @@ import javax.annotation.Nonnull;
  */
 @SuppressWarnings("unused")
 //TODO use custom MVP matrix loaded to shader
+// use int RGBA color rather than float
 public class Canvas {
 
     /**
@@ -104,7 +105,7 @@ public class Canvas {
     /**
      * Text align
      */
-    private Align3H textAlign = Align3H.LEFT;
+    private TextAlign textAlign = TextAlign.LEFT;
 
 
     /**
@@ -212,7 +213,7 @@ public class Canvas {
      *
      * @param align align
      */
-    public void setTextAlign(Align3H align) {
+    public void setTextAlign(TextAlign align) {
         this.textAlign = align;
     }
 

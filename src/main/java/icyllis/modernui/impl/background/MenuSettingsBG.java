@@ -51,7 +51,7 @@ public class MenuSettingsBG implements IDrawable {
     }
 
     @Override
-    public void draw(Canvas canvas, float time) {
+    public void draw(@Nonnull Canvas canvas, float time) {
         float x = 40, y = 16;
         canvas.translate(xOffset, 0);
         canvas.setRGBA(0, 0, 0, 0.377f);

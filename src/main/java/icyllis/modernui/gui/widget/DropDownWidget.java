@@ -19,12 +19,12 @@
 package icyllis.modernui.gui.widget;
 
 import icyllis.modernui.graphics.font.FontTools;
-import icyllis.modernui.gui.math.Align3H;
+import icyllis.modernui.gui.math.TextAlign;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.*;
 import icyllis.modernui.gui.math.Align9D;
-import icyllis.modernui.gui.math.Locator;
+import icyllis.modernui.gui.master.Locator;
 import icyllis.modernui.gui.popup.DropDownMenu;
 import icyllis.modernui.gui.popup.PopupMenu;
 import icyllis.modernui.system.ConstantsLibrary;
@@ -72,12 +72,12 @@ public class DropDownWidget extends Widget {
     }
 
     @Override
-    public void onDraw(Canvas canvas, float time) {
+    public void onDraw(@Nonnull Canvas canvas, float time) {
         if (backAlpha > 0) {
             canvas.setRGBA(0.377f, 0.377f, 0.377f, backAlpha);
             canvas.drawRect(x1, y1, x2, y2);
         }
-        canvas.setTextAlign(Align3H.RIGHT);
+        canvas.setTextAlign(TextAlign.RIGHT);
         canvas.setRGBA(brightness, brightness, brightness, 1);
         canvas.drawText(text, x2 - 10, y1 + 4);
         canvas.drawIcon(icon, x2 - 8, y1 + 5, x2, y2 - 3);
@@ -113,7 +113,7 @@ public class DropDownWidget extends Widget {
     }
 
     @Override
-    protected void onStatusChanged(Status status, boolean allowAnimation) {
+    protected void onStatusChanged(WidgetStatus status, boolean allowAnimation) {
         super.onStatusChanged(status, allowAnimation);
         if (status.isListening()) {
             brightness = 0.85f;
