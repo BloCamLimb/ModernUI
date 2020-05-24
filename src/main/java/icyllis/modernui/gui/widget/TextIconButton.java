@@ -25,7 +25,7 @@ import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.master.IHost;
 import icyllis.modernui.gui.master.Icon;
-import icyllis.modernui.gui.math.TextAlign;
+import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.math.Direction4D;
 import icyllis.modernui.gui.master.Locator;

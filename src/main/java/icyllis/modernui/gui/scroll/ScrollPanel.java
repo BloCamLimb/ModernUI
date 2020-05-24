@@ -87,7 +87,7 @@ public class ScrollPanel<E extends UniformScrollEntry, G extends UniformScrollGr
     }
 
     @Override
-    public boolean onMouseClick(double mouseX, double mouseY, int mouseButton) {
+    public boolean dispatchMouseClick(double mouseX, double mouseY, int mouseButton) {
         if (scrollbar.mouseClicked(mouseX, mouseY, mouseButton)) {
             return true;
         }
@@ -95,7 +95,7 @@ public class ScrollPanel<E extends UniformScrollEntry, G extends UniformScrollGr
     }
 
     @Override
-    public boolean onMouseRelease(double mouseX, double mouseY, int mouseButton) {
+    public boolean dispatchMouseRelease(double mouseX, double mouseY, int mouseButton) {
         if (scrollbar.mouseReleased(mouseX, mouseY, mouseButton)) {
             return true;
         }

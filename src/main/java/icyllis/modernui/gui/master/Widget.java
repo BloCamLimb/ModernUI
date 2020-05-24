@@ -26,7 +26,7 @@ import javax.annotation.Nullable;
 
 /**
  * Almost all gui elements extends this.
- *
+ * <p>
  * Widget has its own precise position and a rect area
  * which is used for listening mouse and keyboard events.
  *
@@ -40,13 +40,25 @@ public abstract class Widget implements IWidget {
     @Nullable
     private final Locator locator;
 
+    /**
+     * read-only in onDraw, or write-only in the constructor
+     */
     @Nonnull
     protected Align9D align;
 
+    /**
+     * read-only in onDraw
+     */
     protected float x1, y1;
 
+    /**
+     * read-only in onDraw
+     */
     protected float x2, y2;
 
+    /**
+     * read-only in onDraw, or write-only in the constructor
+     */
     protected float width, height;
 
     private WidgetStatus status = WidgetStatus.ACTIVE;
@@ -58,7 +70,7 @@ public abstract class Widget implements IWidget {
     /**
      * A mandatory alpha, for global shader uniform
      */
-    private float widgetAlpha = 1.0f;
+    private float systemAlpha = 1.0f;
 
     public Widget(@Nonnull IHost host, @Nonnull Builder builder) {
         this.host = host;
@@ -78,7 +90,7 @@ public abstract class Widget implements IWidget {
     protected abstract void onDraw(@Nonnull Canvas canvas, float time);
 
     /**
-     * Set widget position, or use layout for multiple widgets
+     * Set widget position
      *
      * @param px pivot x pos
      * @param py pivot y pos
@@ -140,13 +152,13 @@ public abstract class Widget implements IWidget {
     }
 
     @Override
-    public float getAlpha() {
-        return widgetAlpha;
+    public final float getAlpha() {
+        return systemAlpha;
     }
 
     @Override
-    public void setAlpha(float alpha) {
-        this.widgetAlpha = alpha;
+    public final void setAlpha(float alpha) {
+        this.systemAlpha = alpha;
     }
 
     /**
@@ -161,7 +173,8 @@ public abstract class Widget implements IWidget {
         }
     }
 
-    protected void onStatusChanged(WidgetStatus status, boolean allowAnimation) {}
+    protected void onStatusChanged(WidgetStatus status, boolean allowAnimation) {
+    }
 
     @Override
     public boolean updateMouseHover(double mouseX, double mouseY) {
@@ -200,7 +213,7 @@ public abstract class Widget implements IWidget {
     @Override
     public final boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if (status.isListening()) {
-            if (onMouseClick(mouseX, mouseY, mouseButton)) {
+            if (dispatchMouseClick(mouseX, mouseY, mouseButton)) {
                 return true;
             }
             if (mouseButton == 0) {
@@ -224,7 +237,7 @@ public abstract class Widget implements IWidget {
     @Override
     public final boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
         if (status.isListening()) {
-            if (onMouseRelease(mouseX, mouseY, mouseButton)) {
+            if (dispatchMouseRelease(mouseX, mouseY, mouseButton)) {
                 return true;
             }
             if (mouseButton == 0) {
@@ -244,11 +257,11 @@ public abstract class Widget implements IWidget {
         return false;
     }
 
-    protected boolean onMouseClick(double mouseX, double mouseY, int mouseButton) {
+    protected boolean dispatchMouseClick(double mouseX, double mouseY, int mouseButton) {
         return false;
     }
 
-    protected boolean onMouseRelease(double mouseX, double mouseY, int mouseButton) {
+    protected boolean dispatchMouseRelease(double mouseX, double mouseY, int mouseButton) {
         return false;
     }
 
@@ -279,7 +292,8 @@ public abstract class Widget implements IWidget {
     /**
      * Called when widget is listening and mouse hovered in area
      */
-    protected void onMouseHoverEnter(double mouseX, double mouseY) {}
+    protected void onMouseHoverEnter(double mouseX, double mouseY) {
+    }
 
     /**
      * Called whenever widget is not mouse hovered
@@ -288,6 +302,7 @@ public abstract class Widget implements IWidget {
         dClickTime = -10;
     }
 
+    @Nonnull
     public final IHost getHost() {
         return host;
     }

@@ -18,43 +18,92 @@
 
 package icyllis.modernui.system;
 
+import icyllis.modernui.system.network.IMessage;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.network.NetworkDirection;
+import net.minecraftforge.fml.network.NetworkEvent;
 import net.minecraftforge.fml.network.NetworkRegistry;
 import net.minecraftforge.fml.network.simple.SimpleChannel;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
 public enum NetworkManager {
     INSTANCE;
 
-    private final String protocol;
+    private final String PROTOCOL;
 
     private final SimpleChannel CHANNEL;
 
+    private int index = 0;
+
     {
-        protocol = ModList.get().getModFileById(ModernUI.MODID).getMods().get(0).getVersion().getQualifier();
+        PROTOCOL = ModList.get().getModFileById(ModernUI.MODID).getMods().get(0).getVersion().getQualifier();
         CHANNEL = NetworkRegistry.ChannelBuilder
-                .named(new ResourceLocation(ModernUI.MODID, "network"))
-                .networkProtocolVersion(() -> protocol)
-                .clientAcceptedVersions(protocol::equals)
-                .serverAcceptedVersions(protocol::equals)
+                .named(new ResourceLocation(ModernUI.MODID, "main_network"))
+                .networkProtocolVersion(() -> PROTOCOL)
+                .clientAcceptedVersions(PROTOCOL::equals)
+                .serverAcceptedVersions(PROTOCOL::equals)
                 .simpleChannel();
     }
 
-    public void registerMessages() {
-        int index = 0;
-        //CHANNEL.messageBuilder(OpenContainer.class, index).encoder(OpenContainer::encode).decoder(OpenContainer::decode).consumer(OpenContainer::handle).add();
+    void registerMessages() {
+
     }
 
-    public <M> void sendToServer(M message) {
+    /**
+     * Register a network message
+     *
+     * @param type      message class
+     * @param factory   supplier to create default new instance, should be a empty constructor
+     * @param direction message direction, null for bi-directional message
+     * @param <MSG>     message type
+     */
+    public <MSG extends IMessage> void registerMessage(@Nonnull Class<MSG> type, @Nonnull Supplier<MSG> factory, @Nullable NetworkDirection direction) {
+        CHANNEL.messageBuilder(type, ++index, direction)
+                .encoder(IMessage::encode)
+                .decoder(buf -> decode(factory, buf))
+                .consumer((BiConsumer<MSG, Supplier<NetworkEvent.Context>>) this::handle)
+                .add();
+    }
+
+    @Nonnull
+    private <MSG extends IMessage> MSG decode(@Nonnull Supplier<MSG> factory, PacketBuffer buf) {
+        MSG msg = factory.get();
+        msg.decode(buf);
+        return msg;
+    }
+
+    private <MSG extends IMessage> void handle(@Nonnull MSG message, @Nonnull Supplier<NetworkEvent.Context> ctx) {
+        IMessage.SimpleContext simple = new IMessage.SimpleContext(ctx.get());
+        message.handle(simple);
+        ctx.get().setPacketHandled(true);
+    }
+
+    public <MSG extends IMessage> void sendToServer(MSG message) {
         CHANNEL.sendToServer(message);
     }
 
-    public <M> void sendTo(M message, @Nonnull ServerPlayerEntity playerMP) {
+    public <MSG extends IMessage> void sendToPlayer(MSG message, @Nonnull PlayerEntity player) {
+        try {
+            sendToPlayer(message, (ServerPlayerEntity) player);
+        } catch (ClassCastException ignored) {
+            ModernUI.LOGGER.warn(ModernUI.MARKER, "Messages can't be sent to an illegal player");
+        }
+    }
+
+    public <MSG extends IMessage> void sendToPlayer(MSG message, @Nonnull ServerPlayerEntity playerMP) {
         CHANNEL.sendTo(message, playerMP.connection.netManager, NetworkDirection.PLAY_TO_CLIENT);
+    }
+
+    public <MSG extends IMessage> void replay(MSG message, NetworkEvent.Context context) {
+        CHANNEL.reply(message, context);
     }
 
     /*@Override

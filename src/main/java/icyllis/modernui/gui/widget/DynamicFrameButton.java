@@ -21,7 +21,7 @@ package icyllis.modernui.gui.widget;
 import com.google.common.collect.Lists;
 import com.google.gson.annotations.Expose;
 import icyllis.modernui.gui.animation.IInterpolator;
-import icyllis.modernui.gui.math.TextAlign;
+import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.*;

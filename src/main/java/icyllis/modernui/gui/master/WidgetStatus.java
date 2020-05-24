@@ -19,9 +19,21 @@
 package icyllis.modernui.gui.master;
 
 public enum WidgetStatus {
-    ACTIVE, // draw and listen events
-    INACTIVE, // draw darker and not listen events
-    INVISIBLE; // not draw and not listen events
+
+    /**
+     * draw and listen events
+     */
+    ACTIVE,
+
+    /**
+     * draw darker and not listen events
+     */
+    INACTIVE,
+
+    /**
+     * not draw and not listen events
+     */
+    INVISIBLE;
 
     public boolean isListening() {
         return this == ACTIVE;

@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.math;
+package icyllis.modernui.graphics.math;
 
 import org.lwjgl.opengl.GL11;
 

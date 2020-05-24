@@ -18,7 +18,7 @@
 
 package icyllis.modernui.gui.widget;
 
-import icyllis.modernui.gui.math.TextAlign;
+import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.gui.master.*;
 import icyllis.modernui.gui.math.Color3i;
 import net.minecraft.client.resources.I18n;
@@ -149,13 +149,13 @@ public class KeyInputBox extends Widget implements IKeyboardListener {
     }
 
     @Override
-    protected boolean onMouseClick(double mouseX, double mouseY, int mouseButton) {
+    protected boolean dispatchMouseClick(double mouseX, double mouseY, int mouseButton) {
         if (editing) {
             keyBinder.accept(InputMappings.Type.MOUSE.getOrMakeInput(mouseButton));
             getHost().setKeyboardListener(null);
             return true;
         }
-        return super.onMouseClick(mouseX, mouseY, mouseButton);
+        return super.dispatchMouseClick(mouseX, mouseY, mouseButton);
     }
 
     @Override

@@ -20,7 +20,7 @@ package icyllis.modernui.impl.setting;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.graphics.font.FontTools;
-import icyllis.modernui.gui.math.TextAlign;
+import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.scroll.ScrollWindow;

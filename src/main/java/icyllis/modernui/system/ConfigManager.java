@@ -18,12 +18,15 @@
 
 package icyllis.modernui.system;
 
+import icyllis.modernui.graphics.BlurHandler;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.loading.FMLPaths;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ConfigManager {
 
@@ -71,6 +74,8 @@ public class ConfigManager {
         private final ForgeConfigSpec.BooleanValue keepRunningInScreenV;
         private final ForgeConfigSpec.BooleanValue blurScreenBackgroundV;
 
+        private final ForgeConfigSpec.ConfigValue<List<? extends String>> blurScreenExclusionsV;
+
         private final ForgeConfigSpec.ConfigValue<String> preferredFontNameV;
         private final ForgeConfigSpec.BooleanValue enableGlobalFontRendererV;
         private final ForgeConfigSpec.BooleanValue allowFontShadowV;
@@ -83,6 +88,9 @@ public class ConfigManager {
                     .define("keepGameRunning", true);
             blurScreenBackgroundV = builder.comment("Blur GUI background when opening a gui screen, this is incompatible with OptiFine's FXAA shader or some mods.")
                     .define("blurGuiBackground", true);
+
+            blurScreenExclusionsV = builder.comment("A list of gui screen superclasses that won't activate blur effect when opened.")
+                    .defineList("blurGuiExclusions", ArrayList::new, $ -> true);
 
             builder.pop();
 
@@ -102,6 +110,8 @@ public class ConfigManager {
         private void load() {
             keepRunningInScreen = keepRunningInScreenV.get();
             blurScreenBackground = blurScreenBackgroundV.get();
+
+            BlurHandler.INSTANCE.loadExclusions(blurScreenExclusionsV.get());
 
             preferredFontName = preferredFontNameV.get();
             enableGlobalFontRenderer = enableGlobalFontRendererV.get();

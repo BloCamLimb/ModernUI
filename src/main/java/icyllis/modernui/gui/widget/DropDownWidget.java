@@ -19,12 +19,11 @@
 package icyllis.modernui.gui.widget;
 
 import icyllis.modernui.graphics.font.FontTools;
-import icyllis.modernui.gui.math.TextAlign;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.*;
 import icyllis.modernui.gui.math.Align9D;
-import icyllis.modernui.gui.master.Locator;
+import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.gui.popup.DropDownMenu;
 import icyllis.modernui.gui.popup.PopupMenu;
 import icyllis.modernui.system.ConstantsLibrary;
@@ -42,10 +41,10 @@ public class DropDownWidget extends Widget {
 
     private final Icon icon = new Icon(ConstantsLibrary.ICONS, 0.25f, 0.125f, 0.375f, 0.25f, true);
 
+    private final Animation bgAnimation;
+
     private List<String> list;
-
     private String text;
-
     private int index;
 
     private float brightness = 0.85f;
@@ -53,8 +52,6 @@ public class DropDownWidget extends Widget {
 
     @Nullable
     private IntConsumer operation;
-
-    private final Animation bgAnimation;
 
     public DropDownWidget(IHost host, Builder builder) {
         super(host, builder);
@@ -89,6 +86,16 @@ public class DropDownWidget extends Widget {
     }
 
     @Override
+    protected void onStatusChanged(WidgetStatus status, boolean allowAnimation) {
+        super.onStatusChanged(status, allowAnimation);
+        if (status.isListening()) {
+            brightness = 0.85f;
+        } else {
+            brightness = 0.5f;
+        }
+    }
+
+    @Override
     protected boolean onMouseLeftClick(double mouseX, double mouseY) {
         DropDownMenu menu = new DropDownMenu.Builder(list, index).setAlign(align).build(getHost()).buildCallback(this::updateValue);
         menu.locate(getHost().toAbsoluteX(x2 - 4), getHost().toAbsoluteY(y2));
@@ -112,16 +119,6 @@ public class DropDownWidget extends Widget {
         backAlpha = a;
     }
 
-    @Override
-    protected void onStatusChanged(WidgetStatus status, boolean allowAnimation) {
-        super.onStatusChanged(status, allowAnimation);
-        if (status.isListening()) {
-            brightness = 0.85f;
-        } else {
-            brightness = 0.5f;
-        }
-    }
-
     public void updateList(@Nonnull List<String> list, int index) {
         this.list = list;
         updateValue(index);
@@ -131,8 +128,7 @@ public class DropDownWidget extends Widget {
         this.index = index;
         text = list.get(index);
         float textLength = FontTools.getStringWidth(text) + 3;
-        width = textLength + 6 + 4;
-        relocate();
+        setWidth(textLength + 6 + 4);
         if (operation != null) {
             operation.accept(index);
         }

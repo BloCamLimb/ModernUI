@@ -19,7 +19,7 @@
 package icyllis.modernui.impl.stats;
 
 import icyllis.modernui.graphics.font.FontTools;
-import icyllis.modernui.gui.math.TextAlign;
+import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.math.Color3i;
 import icyllis.modernui.gui.scroll.ScrollWindow;

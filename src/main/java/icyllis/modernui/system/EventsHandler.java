@@ -24,6 +24,7 @@ import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.LayoutEditingGui;
 import icyllis.modernui.gui.test.ContainerTest;
 import icyllis.modernui.gui.test.ModuleTest;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.container.ContainerType;
@@ -59,8 +60,10 @@ public class EventsHandler {
     @SubscribeEvent
     public static void rightClickItem(@Nonnull PlayerInteractEvent.RightClickItem event) {
         if (ConfigManager.COMMON.isEnableDeveloperMode()) {
-            if (event.getSide().isServer() && event.getItemStack().getItem().equals(Items.DIAMOND)) {
-                NetworkHooks.openGui((ServerPlayerEntity) event.getPlayer(), new ContainerTest.Provider());
+            if (event.getItemStack().getItem().equals(Items.DIAMOND)) {
+                if (event.getSide().isServer()) {
+                    NetworkHooks.openGui((ServerPlayerEntity) event.getPlayer(), new ContainerTest.Provider());
+                }
             }
         }
     }
@@ -118,6 +121,13 @@ public class EventsHandler {
                 if (Screen.hasControlDown() && Screen.hasShiftDown()) {
                     if (event.getKey() == GLFW.GLFW_KEY_T && GlobalModuleManager.INSTANCE.getModernScreen() != null) {
                         LayoutEditingGui.INSTANCE.iterateWorking();
+                    }
+                    if (event.getKey() == GLFW.GLFW_KEY_P) {
+                        if (GlobalModuleManager.INSTANCE.getModernScreen() == null) {
+                            if (Minecraft.getInstance().currentScreen != null) {
+                                ModernUI.LOGGER.debug(ModernUI.MARKER, "Opened gui class name : {}", Minecraft.getInstance().currentScreen.getClass().getName());
+                            }
+                        }
                     }
                 }
             }

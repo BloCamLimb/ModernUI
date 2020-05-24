@@ -21,7 +21,7 @@
 package icyllis.modernui.graphics.font;
 
 import icyllis.modernui.gui.math.Color3i;
-import icyllis.modernui.gui.math.TextAlign;
+import icyllis.modernui.graphics.math.TextAlign;
 
 public interface IFontRenderer {
 

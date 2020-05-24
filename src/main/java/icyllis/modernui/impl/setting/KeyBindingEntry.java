@@ -103,7 +103,7 @@ public class KeyBindingEntry extends SettingEntry {
     }*/
 
     @Override
-    protected boolean onMouseClick(double mouseX, double mouseY, int mouseButton) {
+    protected boolean dispatchMouseClick(double mouseX, double mouseY, int mouseButton) {
         return inputBox.isMouseHovered() && inputBox.mouseClicked(mouseX, mouseY, mouseButton);
     }
 

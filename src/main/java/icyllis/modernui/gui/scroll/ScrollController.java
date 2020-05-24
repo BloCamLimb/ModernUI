@@ -49,7 +49,7 @@ public class ScrollController {
     public void update(float currentTime) {
         if (value != targetValue) {
             float p = Math.min((currentTime - startTime) / duration, 1);
-            p = IInterpolator.DECELERATE.getInterpolation(p);
+            p = IInterpolator.SINE.getInterpolation(p);
             value = MathHelper.lerp(p, startValue, targetValue);
             master.callbackScrollAmount(value);
         }
@@ -78,6 +78,7 @@ public class ScrollController {
     }
 
     public void scrollDirect(float delta) {
+        // based on a gui scale of 2
         float amount = Math.round(MathHelper.clamp(targetValue + delta, 0, master.getMaxScrollAmount()) * 2.0f) / 2.0f;
         setTargetValueDirect(amount);
     }

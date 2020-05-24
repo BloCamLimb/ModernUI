@@ -48,6 +48,7 @@ public class Animation implements IAnimation {
 
     /**
      * New animation with fixed duration
+     *
      * @param duration milliseconds
      */
     public Animation(int duration) {
@@ -101,13 +102,13 @@ public class Animation implements IAnimation {
         start0(true);
     }
 
-    private void start0(boolean full) {
+    private void start0(boolean isFull) {
         startTime = GlobalModuleManager.INSTANCE.getAnimationTime() + delayTime;
         waiting = false;
         reversed = false;
         started = false;
         if (appliers != null) {
-            appliers.forEach(e -> e.record(reversed, full));
+            appliers.forEach(e -> e.record(reversed, isFull));
         }
         GlobalModuleManager.INSTANCE.addAnimation(this);
     }
@@ -127,13 +128,13 @@ public class Animation implements IAnimation {
         invert0(true);
     }
 
-    private void invert0(boolean full) {
+    private void invert0(boolean isFull) {
         startTime = GlobalModuleManager.INSTANCE.getAnimationTime() + delayTime;
         waiting = false;
         reversed = true;
         started = false;
         if (appliers != null) {
-            appliers.forEach(e -> e.record(reversed, full));
+            appliers.forEach(e -> e.record(reversed, isFull));
         }
         GlobalModuleManager.INSTANCE.addAnimation(this);
     }
@@ -203,17 +204,21 @@ public class Animation implements IAnimation {
 
         /**
          * Called when animation started by user
+         *
          * @param animation started animation
          * @param isReverse whether to play reverse animation
          */
-        default void onAnimationStart(@Nonnull Animation animation, boolean isReverse) {}
+        default void onAnimationStart(@Nonnull Animation animation, boolean isReverse) {
+        }
 
         /**
          * Called at the end of the animation
+         *
          * @param animation ended animation
          * @param isReverse whether to play reverse animation
          */
-        default void onAnimationEnd(@Nonnull Animation animation, boolean isReverse) {}
+        default void onAnimationEnd(@Nonnull Animation animation, boolean isReverse) {
+        }
 
     }
 }

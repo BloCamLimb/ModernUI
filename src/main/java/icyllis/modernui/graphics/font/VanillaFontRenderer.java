@@ -20,7 +20,7 @@
 
 package icyllis.modernui.graphics.font;
 
-import icyllis.modernui.gui.math.TextAlign;
+import icyllis.modernui.graphics.math.TextAlign;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 
