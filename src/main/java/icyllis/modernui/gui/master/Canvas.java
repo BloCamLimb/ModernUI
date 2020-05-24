@@ -23,8 +23,8 @@ import icyllis.modernui.graphics.font.IFontRenderer;
 import icyllis.modernui.graphics.font.ModernFontRenderer;
 import icyllis.modernui.graphics.font.TrueTypeRenderer;
 import icyllis.modernui.graphics.shader.ShaderTools;
-import icyllis.modernui.gui.math.TextAlign;
 import icyllis.modernui.gui.math.Color3i;
+import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.gui.shader.*;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
@@ -478,8 +478,8 @@ public class Canvas {
      * Size: 16 * 16 (* GuiScale)
      *
      * @param item item
-     * @param x x pos
-     * @param y y pos
+     * @param x    x pos
+     * @param y    y pos
      */
     public void drawItem(@Nonnull Item item, float x, float y) {
         itemRenderer.renderItemIntoGUI(item.getDefaultInstance(), (int) x, (int) y);
@@ -492,8 +492,8 @@ public class Canvas {
      * Draw item stack with NBT
      *
      * @param stack item stack
-     * @param x x pos
-     * @param y y pos
+     * @param x     x pos
+     * @param y     y pos
      */
     public void drawItemStack(@Nonnull ItemStack stack, float x, float y) {
         itemRenderer.renderItemAndEffectIntoGUI(stack, (int) x, (int) y);
@@ -506,8 +506,8 @@ public class Canvas {
      * Draw item stack with NBT and their damage, amount
      *
      * @param stack item stack
-     * @param x x pos
-     * @param y y pos
+     * @param x     x pos
+     * @param y     y pos
      */
     public void drawItemStackWithOverlays(@Nonnull ItemStack stack, float x, float y) {
         itemRenderer.renderItemAndEffectIntoGUI(stack, (int) x, (int) y);

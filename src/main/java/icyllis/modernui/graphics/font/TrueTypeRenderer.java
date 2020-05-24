@@ -27,7 +27,7 @@ package icyllis.modernui.graphics.font;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
-import icyllis.modernui.gui.math.TextAlign;
+import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.gui.math.Color3i;
 import icyllis.modernui.system.ConfigManager;
 import net.minecraft.client.Minecraft;

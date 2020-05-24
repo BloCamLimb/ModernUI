@@ -21,7 +21,7 @@ package icyllis.modernui.gui.popup;
 import icyllis.modernui.graphics.font.FontTools;
 import icyllis.modernui.gui.animation.IInterpolator;
 import icyllis.modernui.gui.master.IHost;
-import icyllis.modernui.gui.math.TextAlign;
+import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.Canvas;

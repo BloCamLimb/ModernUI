@@ -20,11 +20,12 @@ package icyllis.modernui.gui.animation;
 
 import net.minecraft.util.math.MathHelper;
 
+import javax.annotation.Nonnull;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Smooth applier without value changed suddenly
+ * Record values and apply changes with interpolator
  */
 public class Applier {
 
@@ -37,6 +38,7 @@ public class Applier {
     private final Supplier<Float> getter;
     private final Consumer<Float> setter;
 
+    @Nonnull
     private IInterpolator interpolator = IInterpolator.LINEAR;
 
     public Applier(float startValue, float endValue, Supplier<Float> getter, Consumer<Float> setter) {
@@ -46,13 +48,13 @@ public class Applier {
         this.setter = setter;
     }
 
-    public Applier setInterpolator(IInterpolator interpolator) {
+    public Applier setInterpolator(@Nonnull IInterpolator interpolator) {
         this.interpolator = interpolator;
         return this;
     }
 
-    public void record(boolean inverted, boolean full) {
-        if (full) {
+    void record(boolean inverted, boolean isFull) {
+        if (isFull) {
             if (inverted) {
                 logicStart = endValue;
             } else {
@@ -68,7 +70,7 @@ public class Applier {
         }
     }
 
-    public void update(float progress) {
+    void update(float progress) {
         progress = interpolator.getInterpolation(progress);
         float value = MathHelper.lerp(progress, logicStart, logicEnd);
         setter.accept(value);

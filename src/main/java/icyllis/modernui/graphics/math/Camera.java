@@ -16,9 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics;
-
-import icyllis.modernui.gui.math.Matrix4f;
+package icyllis.modernui.graphics.math;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;

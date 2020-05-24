@@ -23,7 +23,7 @@ import com.google.gson.annotations.Expose;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.*;
-import icyllis.modernui.gui.math.TextAlign;
+import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.gui.math.Align9D;
 import icyllis.modernui.gui.master.Locator;
 import net.minecraft.client.resources.I18n;

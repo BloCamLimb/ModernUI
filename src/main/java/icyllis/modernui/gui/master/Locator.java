@@ -23,9 +23,10 @@ import icyllis.modernui.gui.math.Align9D;
 
 import javax.annotation.Nonnull;
 
+/**
+ * Locate a point on gui screen
+ */
 public class Locator {
-
-    public static final Locator CENTER = new Locator();
 
     @Expose
     private Align9D align = Align9D.CENTER;

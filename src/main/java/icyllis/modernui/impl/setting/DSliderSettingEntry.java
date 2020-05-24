@@ -18,7 +18,7 @@
 
 package icyllis.modernui.impl.setting;
 
-import icyllis.modernui.gui.math.TextAlign;
+import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.gui.master.Canvas;
 import icyllis.modernui.gui.widget.SliderDiscrete;
 
@@ -86,12 +86,12 @@ public class DSliderSettingEntry extends SettingEntry implements SliderDiscrete.
     }
 
     @Override
-    public boolean onMouseClick(double mouseX, double mouseY, int mouseButton) {
+    public boolean dispatchMouseClick(double mouseX, double mouseY, int mouseButton) {
         return slider.isMouseHovered() && slider.mouseClicked(mouseX, mouseY, mouseButton);
     }
 
     @Override
-    public boolean onMouseRelease(double mouseX, double mouseY, int mouseButton) {
+    public boolean dispatchMouseRelease(double mouseX, double mouseY, int mouseButton) {
         return slider.isMouseHovered() && slider.mouseReleased(mouseX, mouseY, mouseButton);
     }
 
