@@ -1,5 +1,6 @@
-### 1.15.2-???
-* Fix controls search bar crash
+### 1.15.2-1.5.9.56 (2020-05-26)
+* Fix search bar crash
+* Fix server crash on start
 
 ### 1.15.2-1.5.8.55 (2020-05-17)
 * Fix keyboard listener auto lose focus, and integrated in module

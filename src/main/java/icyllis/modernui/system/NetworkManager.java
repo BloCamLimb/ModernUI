@@ -102,7 +102,7 @@ public enum NetworkManager {
         CHANNEL.sendTo(message, playerMP.connection.netManager, NetworkDirection.PLAY_TO_CLIENT);
     }
 
-    public <MSG extends IMessage> void replay(MSG message, NetworkEvent.Context context) {
+    public <MSG extends IMessage> void reply(MSG message, NetworkEvent.Context context) {
         CHANNEL.reply(message, context);
     }
 
