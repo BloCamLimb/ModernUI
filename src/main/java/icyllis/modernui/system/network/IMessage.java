@@ -112,7 +112,7 @@ public interface IMessage {
          * @param <MSG> message type
          */
         public <MSG extends IMessage> void reply(MSG msg) {
-            NetworkManager.INSTANCE.replay(msg, ctx);
+            NetworkManager.INSTANCE.reply(msg, ctx);
         }
 
         /**

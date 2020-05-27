@@ -24,6 +24,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.UsernameCache;
 
+import javax.script.ScriptEngineManager;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +38,12 @@ public enum StorageManager {
 
     private static final Object2IntArrayMap<String> EMOJI_MAP = new Object2IntArrayMap<>();
     private static final List<Pair<String, Integer>> EMOJI_HISTORY = new ArrayList<>();
+
+    private final ScriptEngineManager scriptManager = new ScriptEngineManager();
+
+    public ScriptEngineManager getScriptManager() {
+        return scriptManager;
+    }
 
     /**
      * Find emoji code by given keyword

@@ -36,6 +36,9 @@ public class TestDraw implements IDrawable {
     private float yOffset;
 
     private Animation animation;
+    private Animation accAnm;
+
+    private float circleAcc;
 
     public TestDraw() {
         animation = new Animation(600)
@@ -46,6 +49,12 @@ public class TestDraw implements IDrawable {
                                 .setInterpolator(IInterpolator.DECELERATE)
                 );
         animation.startFull();
+        accAnm = new Animation(600)
+                .applyTo(
+                        new Applier((float) Math.PI, (float) -Math.PI, () -> circleAcc, v -> circleAcc = v)
+                            .setInterpolator(IInterpolator.ACC_DEC)
+                );
+        accAnm.startFull();
     }
 
     @Override
@@ -79,9 +88,9 @@ public class TestDraw implements IDrawable {
         canvas.drawText("Modern UI Library", 20, 64);
 
         canvas.save();
-        canvas.translate((float) Math.sin(Math.sin(time / 4) * Math.PI) * 16, (float) Math.cos(Math.sin(time / 4) * Math.PI) * 16);
+        canvas.translate((float) Math.sin(circleAcc) * 16, (float) Math.cos(circleAcc) * 16);
         canvas.setColor(Color3i.LIGHT_PURPLE, 0.5f);
-        canvas.drawCircle(60, 160, 5);
+        canvas.drawCircle(60, 160, 3);
         canvas.restore();
 
         canvas.resetColor();
@@ -92,8 +101,10 @@ public class TestDraw implements IDrawable {
     public void tick(int ticks) {
         if ((ticks + 16) % 32 == 0) {
             animation.invert();
+            accAnm.startFull();
         } else if ((ticks) % 32 == 0) {
             animation.startFull();
+            accAnm.startFull();
         }
     }
 }
