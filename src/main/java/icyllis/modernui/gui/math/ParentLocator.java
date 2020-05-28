@@ -18,21 +18,39 @@
 
 package icyllis.modernui.gui.math;
 
-public class AlignLocator implements ILocator {
+import icyllis.modernui.gui.master.Widget;
+
+import javax.annotation.Nullable;
+
+public class ParentLocator implements ILocator {
 
     private Align9D align = Align9D.CENTER;
 
-    private float xOffset = 0;
+    private float xOffset = 0.0f;
 
-    private float yOffset = 0;
+    private float yOffset = 0.0f;
+
+    private float width = 16.0f;
+
+    private float height = 16.0f;
 
     @Override
-    public float getLocatedX(float width) {
-        return align.getAlignedX(xOffset, width);
+    public float getLocatedX(@Nullable Widget prev, float hostWidth) {
+        return align.getAlignedX(xOffset, hostWidth);
     }
 
     @Override
-    public float getLocatedY(float height) {
-        return align.getAlignedY(yOffset, height);
+    public float getLocatedY(@Nullable Widget prev, float hostHeight) {
+        return align.getAlignedY(yOffset, hostHeight);
+    }
+
+    @Override
+    public float getSizedW(@Nullable Widget prev, float hostWidth) {
+        return width;
+    }
+
+    @Override
+    public float getSizedH(@Nullable Widget prev, float hostHeight) {
+        return height;
     }
 }

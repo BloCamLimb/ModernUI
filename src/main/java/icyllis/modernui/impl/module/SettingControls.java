@@ -19,6 +19,7 @@
 package icyllis.modernui.impl.module;
 
 import com.google.common.collect.Lists;
+import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.master.*;
 import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.gui.background.TextDrawable;

@@ -48,7 +48,7 @@ public class ConfigManager {
         COMMON_SPEC = builder.build();
     }
 
-    protected static void register() {
+    static void init() {
         FMLPaths.getOrCreateGameRelativePath(FMLPaths.CONFIGDIR.get().resolve("ModernUI"), "ModernUI");
         ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ConfigManager.CLIENT_SPEC, "ModernUI/client.toml");
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ConfigManager.COMMON_SPEC, "ModernUI/common.toml");

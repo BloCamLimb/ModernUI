@@ -18,28 +18,53 @@
 
 package icyllis.modernui.gui.math;
 
+import icyllis.modernui.gui.master.Widget;
+
+import javax.annotation.Nullable;
+
 /**
  * Locate a two-dimensional vector point on screen or define a rect size (w*h)
  * Although the return type is float, but it's better to be an integer
- * There are three implementations to use
  */
 public interface ILocator {
 
     /**
      * Get located x
      *
-     * @param width parent element (host) width,
-     *              or screen width (AKA scaled game window width / framebuffer width)
+     * @param prev      previous widget if present
+     * @param hostWidth parent (host) width,
+     *                  or game main window scaled width
      * @return located x
      */
-    float getLocatedX(float width);
+    float getLocatedX(@Nullable Widget prev, float hostWidth);
 
     /**
      * Get located y
      *
-     * @param height parent element (host) height,
-     *               or screen height (AKA scaled game window height / framebuffer height)
+     * @param prev       previous widget if present
+     * @param hostHeight parent (host) height,
+     *                   or game main window scaled height
      * @return located y
      */
-    float getLocatedY(float height);
+    float getLocatedY(@Nullable Widget prev, float hostHeight);
+
+    /**
+     * Get sized width
+     *
+     * @param prev      previous widget if present
+     * @param hostWidth parent (host) height,
+     *                  or game main window scaled width
+     * @return sized w
+     */
+    float getSizedW(@Nullable Widget prev, float hostWidth);
+
+    /**
+     * Get sized height
+     *
+     * @param prev       previous widget if present
+     * @param hostHeight parent (host) height,
+     *                   or game main window scaled height
+     * @return sized h
+     */
+    float getSizedH(@Nullable Widget prev, float hostHeight);
 }

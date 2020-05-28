@@ -40,10 +40,10 @@ public class ModernUI {
         checkJava();
 
         ModIntegration.init();
-        ConfigManager.register();
+        ConfigManager.init();
 
         if (FMLEnvironment.dist == Dist.CLIENT) {
-            ShaderTools.addResourceListener();
+            ShaderTools.init();
         }
     }
 
@@ -52,7 +52,9 @@ public class ModernUI {
         if (javaVersion.startsWith("1.8")) {
             String[] s = javaVersion.split("_");
             if (Integer.parseInt(s[1]) < 60) {
-                throw new RuntimeException("You're using java {} which is not compatible with Modern UI, a minimum of java 1.8.0_200 or above is required");
+                throw new RuntimeException(
+                        "You're using java {} which is not compatible with Modern UI, " +
+                        "a minimum of java 1.8.0_200 or above is required");
             }
         }
     }

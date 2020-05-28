@@ -20,7 +20,6 @@ package icyllis.modernui.gui.master;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.gui.animation.IAnimation;
-import icyllis.modernui.gui.math.DelayedTask;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IHasContainer;
@@ -34,7 +33,8 @@ import org.apache.logging.log4j.MarkerManager;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -107,6 +107,13 @@ public enum GlobalModuleManager {
         };
     }
 
+    /**
+     * Register a container screen on client
+     *
+     * @param type container type
+     * @param root root module factory
+     * @param <T>  container
+     */
     public <T extends Container> void registerContainerScreen(@Nonnull ContainerType<? extends T> type, @Nonnull Function<T, Supplier<IModule>> root) {
         ScreenManager.registerFactory(type, castModernScreen(root));
     }
@@ -115,7 +122,7 @@ public enum GlobalModuleManager {
         minecraft.displayGuiScreen(null);
     }
 
-    protected void init(Screen master, int width, int height) {
+    void init(Screen master, int width, int height) {
         this.rootScreen = master;
         this.width = width;
         this.height = height;
@@ -156,7 +163,8 @@ public enum GlobalModuleManager {
 
     /**
      * Open a popup module, a special module
-     * @param popup popup module
+     *
+     * @param popup      popup module
      * @param resetMouse true will post mouseMoved(-1, -1) to root module
      *                   confirm window should reset mouse
      *                   context menu should not reset mouse
@@ -207,7 +215,7 @@ public enum GlobalModuleManager {
         tasks.add(task);
     }
 
-    protected void mouseMoved(double mouseX, double mouseY) {
+    void mouseMoved(double mouseX, double mouseY) {
         this.mouseX = mouseX;
         this.mouseY = mouseY;
         if (popup != null) {
@@ -217,7 +225,7 @@ public enum GlobalModuleManager {
         }
     }
 
-    protected boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+    boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if (popup != null) {
             return popup.mouseClicked(mouseX, mouseY, mouseButton);
         } else {
@@ -225,7 +233,7 @@ public enum GlobalModuleManager {
         }
     }
 
-    protected boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
+    boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
         if (popup != null) {
             return popup.mouseReleased(mouseX, mouseY, mouseButton);
         } else {
@@ -233,7 +241,7 @@ public enum GlobalModuleManager {
         }
     }
 
-    protected boolean mouseDragged(double mouseX, double mouseY, double deltaX, double deltaY) {
+    boolean mouseDragged(double mouseX, double mouseY, double deltaX, double deltaY) {
         if (popup != null) {
             return popup.mouseDragged(mouseX, mouseY, deltaX, deltaY);
         } else {
@@ -241,7 +249,7 @@ public enum GlobalModuleManager {
         }
     }
 
-    protected boolean mouseScrolled(double mouseX, double mouseY, double amount) {
+    boolean mouseScrolled(double mouseX, double mouseY, double amount) {
         if (popup != null) {
             return popup.mouseScrolled(mouseX, mouseY, amount);
         } else {
@@ -249,7 +257,7 @@ public enum GlobalModuleManager {
         }
     }
 
-    protected boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (popup != null) {
             return popup.keyPressed(keyCode, scanCode, modifiers);
         } else {
@@ -257,7 +265,7 @@ public enum GlobalModuleManager {
         }
     }
 
-    protected boolean keyReleased(int keyCode, int scanCode, int modifiers) {
+    boolean keyReleased(int keyCode, int scanCode, int modifiers) {
         if (popup != null) {
             return popup.keyReleased(keyCode, scanCode, modifiers);
         } else {
@@ -265,7 +273,7 @@ public enum GlobalModuleManager {
         }
     }
 
-    protected boolean charTyped(char codePoint, int modifiers) {
+    boolean charTyped(char codePoint, int modifiers) {
         if (popup != null) {
             return popup.charTyped(codePoint, modifiers);
         } else {
@@ -273,12 +281,12 @@ public enum GlobalModuleManager {
         }
     }
 
-    protected boolean changeKeyboardListener(boolean searchNext) {
+    boolean changeKeyboardListener(boolean searchNext) {
         //TODO change focus
         return false;
     }
 
-    protected boolean onBack() {
+    boolean onBack() {
         if (popup != null) {
             closePopup();
             return true;
@@ -289,11 +297,11 @@ public enum GlobalModuleManager {
     /**
      * Refocus mouse cursor and update mouse position
      */
-    protected void refreshMouse() {
+    void refreshMouse() {
         mouseMoved(mouseX, mouseY);
     }
 
-    protected void draw() {
+    void draw() {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableAlphaTest();
@@ -308,7 +316,7 @@ public enum GlobalModuleManager {
         RenderSystem.disableBlend();
     }
 
-    protected void resize(int width, int height) {
+    void resize(int width, int height) {
         this.width = width;
         this.height = height;
         root.resize(width, height);
@@ -321,7 +329,7 @@ public enum GlobalModuleManager {
         refreshMouse();
     }
 
-    protected void clear() {
+    void clear() {
         // Hotfix 1.4.7
         if (guiToOpen == null) {
             animations.clear();
@@ -337,7 +345,7 @@ public enum GlobalModuleManager {
         }
     }
 
-    public void onClientTick() {
+    public void clientTick() {
         ticks++;
         if (root != null) {
             root.tick(ticks);
@@ -353,7 +361,7 @@ public enum GlobalModuleManager {
     }
 
     @SuppressWarnings("ForLoopReplaceableByForEach")
-    public void onRenderTick(float partialTick) {
+    public void renderTick(float partialTick) {
         animationTime = ticks + partialTick;
         animations.removeIf(IAnimation::shouldRemove);
         // list size is dynamically changeable
@@ -371,23 +379,23 @@ public enum GlobalModuleManager {
         return animationTime;
     }
 
-    public int getTicks() {
+    int getTicks() {
         return ticks;
     }
 
-    protected int getWindowWidth() {
+    int getWindowWidth() {
         return width;
     }
 
-    protected int getWindowHeight() {
+    int getWindowHeight() {
         return height;
     }
 
-    protected double getMouseX() {
+    double getMouseX() {
         return mouseX;
     }
 
-    protected double getMouseY() {
+    double getMouseY() {
         return mouseY;
     }
 

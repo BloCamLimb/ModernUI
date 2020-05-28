@@ -19,7 +19,6 @@
 package icyllis.modernui.gui.master;
 
 import icyllis.modernui.graphics.BlurHandler;
-import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.text.ITextComponent;

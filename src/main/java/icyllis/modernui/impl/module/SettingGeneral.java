@@ -29,7 +29,6 @@ import icyllis.modernui.impl.setting.SettingScrollWindow;
 import icyllis.modernui.system.ModIntegration;
 import icyllis.modernui.system.SettingsManager;
 import net.minecraft.client.GameSettings;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.PlayerModelPart;
 import net.minecraft.network.play.client.CLockDifficultyPacket;

@@ -16,9 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.gui.math;
-
-import icyllis.modernui.gui.master.GlobalModuleManager;
+package icyllis.modernui.gui.master;
 
 public class DelayedTask {
 

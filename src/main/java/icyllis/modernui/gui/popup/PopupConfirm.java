@@ -19,6 +19,7 @@
 package icyllis.modernui.gui.popup;
 
 import icyllis.modernui.graphics.font.FontTools;
+import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.background.ConfirmPopupBG;
 import icyllis.modernui.gui.test.WidgetLayout;
 import icyllis.modernui.gui.master.*;
