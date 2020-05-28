@@ -11,13 +11,13 @@ logoFile="modernui_logo.png"
     authors="BloCamLimb"
     credits="BloCamLimb"
     description='''
-    Creates fancy UI with better menu, fonts, animations, optimization and many utility functions, also a gui library for other mods.
+    Creates fancy UI with better menu, fonts, animations, optimization and many utility functions, also a library for other mods.
     '''
 
 [[dependencies.modernui]]
     modId="forge"
     mandatory=true
-    versionRange="[31.2.0,)"
+    versionRange="[31.2.5,)"
     ordering="NONE"
     side="BOTH"
 [[dependencies.modernui]]

@@ -19,7 +19,6 @@
 package icyllis.modernui.gui.master;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.gui.math.DelayedTask;
 import icyllis.modernui.system.ModernUI;
 
 import javax.annotation.Nullable;

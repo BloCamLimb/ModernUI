@@ -24,6 +24,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.shader.ShaderLinkHelper;
 import net.minecraft.resources.IReloadableResourceManager;
 import net.minecraft.resources.IResourceManager;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.resource.IResourceType;
 import net.minecraftforge.resource.ISelectiveResourceReloadListener;
 import net.minecraftforge.resource.VanillaResourceType;
@@ -31,9 +33,10 @@ import net.minecraftforge.resource.VanillaResourceType;
 import javax.annotation.Nonnull;
 import java.util.function.Predicate;
 
+@OnlyIn(Dist.CLIENT)
 public class ShaderTools {
 
-    public static void addResourceListener() {
+    public static void init() {
         IResourceManager manager = Minecraft.getInstance().getResourceManager();
         if (manager instanceof IReloadableResourceManager) {
             ((IReloadableResourceManager) manager).addReloadListener(

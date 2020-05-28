@@ -83,7 +83,7 @@ public class EventsHandler {
         @SubscribeEvent
         public static void onRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
             if (event.phase == TickEvent.Phase.START) {
-                GlobalModuleManager.INSTANCE.onRenderTick(event.renderTickTime);
+                GlobalModuleManager.INSTANCE.renderTick(event.renderTickTime);
             } else {
                 BlurHandler.INSTANCE.renderTick();
             }
@@ -92,7 +92,7 @@ public class EventsHandler {
         @SubscribeEvent
         public static void onClientTick(@Nonnull TickEvent.ClientTickEvent event) {
             if (event.phase == TickEvent.Phase.START) {
-                GlobalModuleManager.INSTANCE.onClientTick();
+                GlobalModuleManager.INSTANCE.clientTick();
             }
         }
 

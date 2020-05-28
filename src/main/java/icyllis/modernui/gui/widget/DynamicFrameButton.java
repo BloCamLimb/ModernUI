@@ -20,6 +20,7 @@ package icyllis.modernui.gui.widget;
 
 import com.google.common.collect.Lists;
 import com.google.gson.annotations.Expose;
+import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.animation.IInterpolator;
 import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.gui.animation.Animation;
@@ -122,7 +123,7 @@ public class DynamicFrameButton extends Button {
 
     public static class Countdown extends DynamicFrameButton {
 
-        private final int startTick = GlobalModuleManager.INSTANCE.getTicks();
+        private final int startTick;
 
         private final int countdown;
 
@@ -133,6 +134,7 @@ public class DynamicFrameButton extends Button {
         public Countdown(IHost host, Builder builder) {
             super(host, builder);
             this.displayCount = this.countdown = builder.countdown;
+            startTick = host.getElapsedTicks();
         }
 
         public DynamicFrameButton.Countdown buildCallback(@Nullable Runnable r, boolean onetime) {

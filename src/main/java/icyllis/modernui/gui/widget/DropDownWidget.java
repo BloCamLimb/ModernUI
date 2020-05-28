@@ -19,6 +19,7 @@
 package icyllis.modernui.gui.widget;
 
 import icyllis.modernui.graphics.font.FontTools;
+import icyllis.modernui.gui.master.GlobalModuleManager;
 import icyllis.modernui.gui.animation.Animation;
 import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.master.*;

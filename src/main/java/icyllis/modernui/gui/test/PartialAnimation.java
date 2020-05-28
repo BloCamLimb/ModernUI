@@ -18,9 +18,7 @@
 
 package icyllis.modernui.gui.test;
 
-import icyllis.modernui.gui.animation.Applier;
 import icyllis.modernui.gui.animation.IAnimation;
-import icyllis.modernui.gui.master.GlobalModuleManager;
 
 /**
  * A single animation depend on current value

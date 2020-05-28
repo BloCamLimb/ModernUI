@@ -329,6 +329,12 @@ public abstract class Module implements IModule, IHost {
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if (autoLoseFocus) {
             IKeyboardListener k = getKeyboardListener();
+            if (k instanceof IMouseListener) {
+                if (!((IMouseListener) k).isMouseHovered()) {
+                    setKeyboardListener(null);
+                    return true;
+                }
+            }
             IMouseListener m = null;
             for (IMouseListener listener : mouseListeners) {
                 if (listener.isMouseHovered() && listener.mouseClicked(mouseX, mouseY, mouseButton)) {
