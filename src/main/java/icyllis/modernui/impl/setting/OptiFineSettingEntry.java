@@ -18,10 +18,10 @@
 
 package icyllis.modernui.impl.setting;
 
-import icyllis.modernui.graphics.font.FontTools;
-import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.master.Icon;
-import icyllis.modernui.graphics.math.TextAlign;
+import icyllis.modernui.ui.master.UITools;
+import icyllis.modernui.ui.master.Canvas;
+import icyllis.modernui.ui.master.Icon;
+import icyllis.modernui.graphics.font.TextAlign;
 import icyllis.modernui.system.ConstantsLibrary;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
@@ -112,7 +112,7 @@ public class OptiFineSettingEntry extends SettingEntry {
     }
 
     @Override
-    protected void onMouseHoverExit() {
+    public void onMouseHoverExit() {
         super.onMouseHoverExit();
         drawOptionFrame = false;
     }
@@ -124,6 +124,6 @@ public class OptiFineSettingEntry extends SettingEntry {
         } catch (IllegalAccessException | InvocationTargetException e) {
             e.printStackTrace();
         }
-        textLength = FontTools.getStringWidth(optionText) + 3;
+        textLength = UITools.getStringWidth(optionText) + 3;
     }
 }

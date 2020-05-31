@@ -34,7 +34,7 @@ public class ModernUI {
 
     public static final Logger LOGGER = LogManager.getLogger("ModernUI");
 
-    public static final Marker MARKER = MarkerManager.getMarker("MAIN");
+    public static final Marker MARKER = MarkerManager.getMarker("SYSTEM");
 
     public ModernUI() {
         checkJava();
@@ -47,13 +47,15 @@ public class ModernUI {
         }
     }
 
+    // Java 1.8.0_51 which is officially used by Mojang will produce bugs with ModernUI,
+    // so I throw an exception to tell players to update Java
     private void checkJava() {
         String javaVersion = System.getProperty("java.version");
         if (javaVersion.startsWith("1.8")) {
             String[] s = javaVersion.split("_");
             if (Integer.parseInt(s[1]) < 60) {
                 throw new RuntimeException(
-                        "You're using java {} which is not compatible with Modern UI, " +
+                        "You're using java " + javaVersion + " which is not compatible with Modern UI, " +
                         "a minimum of java 1.8.0_200 or above is required");
             }
         }

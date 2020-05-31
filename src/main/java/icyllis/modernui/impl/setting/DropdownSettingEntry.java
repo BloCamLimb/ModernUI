@@ -18,16 +18,16 @@
 
 package icyllis.modernui.impl.setting;
 
-import icyllis.modernui.graphics.font.FontTools;
-import icyllis.modernui.graphics.math.TextAlign;
-import icyllis.modernui.gui.animation.Animation;
-import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.gui.master.Icon;
-import icyllis.modernui.gui.math.Align9D;
-import icyllis.modernui.gui.popup.PopupMenu;
-import icyllis.modernui.gui.popup.DropDownMenu;
+import icyllis.modernui.ui.master.UITools;
+import icyllis.modernui.graphics.font.TextAlign;
+import icyllis.modernui.ui.animation.Animation;
+import icyllis.modernui.ui.animation.Applier;
+import icyllis.modernui.ui.master.Canvas;
+import icyllis.modernui.ui.master.UIManager;
+import icyllis.modernui.ui.master.Icon;
+import icyllis.modernui.ui.layout.Align9D;
+import icyllis.modernui.ui.popup.PopupMenu;
+import icyllis.modernui.ui.popup.DropDownMenu;
 import icyllis.modernui.system.ConstantsLibrary;
 
 import javax.annotation.Nonnull;
@@ -63,7 +63,7 @@ public class DropdownSettingEntry extends SettingEntry {
         this.optionNames = optionNames;
         this.saveOption = saveOption;
         optionText = optionNames.get(originalIndex);
-        textLength = FontTools.getStringWidth(optionText) + 3;
+        textLength = UITools.getStringWidth(optionText) + 3;
 
         frameAnimation = new Animation(100)
                 .applyTo(new Applier(0, 0.25f, () -> frameAlpha, this::setFrameAlpha))
@@ -170,14 +170,14 @@ public class DropdownSettingEntry extends SettingEntry {
                     .build(window)
                     .buildCallback(this::onValueChanged);
             menu.locate(window.toAbsoluteX(x2 - 4), window.toAbsoluteY(y1 + 18));
-            GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(menu), false);
+            UIManager.INSTANCE.openPopup(new PopupMenu(menu), false);
             return true;
         }
         return super.onMouseLeftClick(mouseX, mouseY);
     }
 
     @Override
-    protected void onMouseHoverEnter(double mouseX, double mouseY) {
+    public void onMouseHoverEnter(double mouseX, double mouseY) {
         super.onMouseHoverEnter(mouseX, mouseY);
         if (available) {
             optionBrightness = 1.0f;
@@ -185,7 +185,7 @@ public class DropdownSettingEntry extends SettingEntry {
     }
 
     @Override
-    protected void onMouseHoverExit() {
+    public void onMouseHoverExit() {
         super.onMouseHoverExit();
         drawOptionFrame = false;
         frameAlpha = 0;
@@ -202,7 +202,7 @@ public class DropdownSettingEntry extends SettingEntry {
     protected void updateValue(int index) {
         currentOptionIndex = index;
         optionText = optionNames.get(index);
-        textLength = FontTools.getStringWidth(optionText) + 3;
+        textLength = UITools.getStringWidth(optionText) + 3;
     }
 
     public void saveOption() {

@@ -19,8 +19,8 @@
 package icyllis.modernui.impl.setting;
 
 import icyllis.modernui.impl.module.SettingLanguage;
-import icyllis.modernui.gui.scroll.ScrollWindow;
-import icyllis.modernui.gui.scroll.UniformScrollGroup;
+import icyllis.modernui.ui.scroll.ScrollWindow;
+import icyllis.modernui.ui.scroll.UniformScrollGroup;
 import net.minecraft.client.resources.LanguageManager;
 
 public class LanguageGroup extends UniformScrollGroup<LanguageEntry> {

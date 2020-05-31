@@ -18,10 +18,10 @@
 
 package icyllis.modernui.impl.setting;
 
-import icyllis.modernui.graphics.math.TextAlign;
-import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.scroll.ScrollWindow;
-import icyllis.modernui.gui.scroll.UniformScrollGroup;
+import icyllis.modernui.graphics.font.TextAlign;
+import icyllis.modernui.ui.master.Canvas;
+import icyllis.modernui.ui.scroll.ScrollWindow;
+import icyllis.modernui.ui.scroll.UniformScrollGroup;
 import net.minecraft.util.text.TextFormatting;
 
 import javax.annotation.Nonnull;

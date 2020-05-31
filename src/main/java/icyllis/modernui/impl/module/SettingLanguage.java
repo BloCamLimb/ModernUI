@@ -19,10 +19,10 @@
 package icyllis.modernui.impl.module;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.gui.master.Module;
+import icyllis.modernui.ui.test.Module;
 import icyllis.modernui.impl.setting.LanguageEntry;
 import icyllis.modernui.impl.setting.LanguageGroup;
-import icyllis.modernui.gui.scroll.ScrollWindow;
+import icyllis.modernui.ui.scroll.ScrollWindow;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.LanguageManager;

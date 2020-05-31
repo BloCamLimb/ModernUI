@@ -61,8 +61,8 @@ public enum NetworkManager {
      * Register a network message
      *
      * @param type      message class
-     * @param factory   supplier to create default new instance, should be a empty constructor
-     * @param direction message direction, null for bi-directional message
+     * @param factory   factory to create default new instance, should be a empty constructor
+     * @param direction message direction, null for bi-directional message or unclear
      * @param <MSG>     message type
      */
     public <MSG extends IMessage> void registerMessage(@Nonnull Class<MSG> type, @Nonnull Supplier<MSG> factory, @Nullable NetworkDirection direction) {
@@ -86,10 +86,24 @@ public enum NetworkManager {
         ctx.get().setPacketHandled(true);
     }
 
+    /**
+     * Send a message to server, call this on client side
+     *
+     * @param message message to send
+     * @param <MSG>   message type
+     */
     public <MSG extends IMessage> void sendToServer(MSG message) {
         CHANNEL.sendToServer(message);
     }
 
+    /**
+     * A helper version of {@link #sendToPlayer(IMessage, ServerPlayerEntity)}
+     * auto cast player entity to server player entity
+     *
+     * @param message message to send
+     * @param player  player entity on server
+     * @param <MSG>   message type
+     */
     public <MSG extends IMessage> void sendToPlayer(MSG message, @Nonnull PlayerEntity player) {
         try {
             sendToPlayer(message, (ServerPlayerEntity) player);
@@ -98,10 +112,24 @@ public enum NetworkManager {
         }
     }
 
+    /**
+     * Send a message to a client player, call this on server side
+     *
+     * @param message  message to send
+     * @param playerMP player entity on server
+     * @param <MSG>    message type
+     */
     public <MSG extends IMessage> void sendToPlayer(MSG message, @Nonnull ServerPlayerEntity playerMP) {
         CHANNEL.sendTo(message, playerMP.connection.netManager, NetworkDirection.PLAY_TO_CLIENT);
     }
 
+    /**
+     * Reply a message depend on network context
+     *
+     * @param message message to reply
+     * @param context network context
+     * @param <MSG>   message type
+     */
     public <MSG extends IMessage> void reply(MSG message, NetworkEvent.Context context) {
         CHANNEL.reply(message, context);
     }

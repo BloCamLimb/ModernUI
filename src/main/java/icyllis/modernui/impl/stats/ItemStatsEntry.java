@@ -18,12 +18,12 @@
 
 package icyllis.modernui.impl.stats;
 
-import icyllis.modernui.graphics.font.FontTools;
-import icyllis.modernui.graphics.math.TextAlign;
-import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.math.Color3i;
-import icyllis.modernui.gui.scroll.ScrollWindow;
-import icyllis.modernui.gui.scroll.UniformScrollEntry;
+import icyllis.modernui.ui.master.UITools;
+import icyllis.modernui.graphics.font.TextAlign;
+import icyllis.modernui.ui.master.Canvas;
+import icyllis.modernui.graphics.math.Color3i;
+import icyllis.modernui.ui.scroll.ScrollWindow;
+import icyllis.modernui.ui.scroll.UniformScrollEntry;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.stats.Stat;
@@ -66,7 +66,7 @@ public class ItemStatsEntry extends UniformScrollEntry {
         if (drawTooltip) {
             canvas.setRGBA(0.5f, 0.5f, 0.5f, 0.25f);
             canvas.drawRect(x1 + 1, y1 + 1, x1 + 19, y2 - 1);
-            float l = FontTools.getStringWidth(itemName);
+            float l = UITools.getStringWidth(itemName);
             canvas.setRGBA(0, 0, 0, 0.5f);
             canvas.drawRect(x1 + 22, y1 + 3, x1 + 28 + l, y2 - 3);
             canvas.setTextAlign(TextAlign.LEFT);
@@ -114,12 +114,7 @@ public class ItemStatsEntry extends UniformScrollEntry {
     }
 
     @Override
-    protected void onMouseHoverEnter(double mouseX, double mouseY) {
-
-    }
-
-    @Override
-    protected void onMouseHoverExit() {
+    public void onMouseHoverExit() {
         drawTooltip = false;
     }
 }

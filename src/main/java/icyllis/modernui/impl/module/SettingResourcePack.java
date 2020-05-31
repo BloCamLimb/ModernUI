@@ -19,16 +19,16 @@
 package icyllis.modernui.impl.module;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.gui.master.WidgetStatus;
-import icyllis.modernui.gui.test.WidgetLayout;
-import icyllis.modernui.gui.master.Module;
-import icyllis.modernui.gui.master.Widget;
-import icyllis.modernui.gui.math.Align9D;
-import icyllis.modernui.gui.math.Direction4D;
-import icyllis.modernui.gui.master.Locator;
-import icyllis.modernui.gui.scroll.ScrollWindow;
-import icyllis.modernui.gui.widget.StaticFrameButton;
-import icyllis.modernui.gui.widget.TriangleButton;
+import icyllis.modernui.ui.test.WidgetStatus;
+import icyllis.modernui.ui.test.WidgetLayout;
+import icyllis.modernui.ui.test.Module;
+import icyllis.modernui.ui.test.Widget;
+import icyllis.modernui.ui.layout.Align9D;
+import icyllis.modernui.ui.layout.Direction4D;
+import icyllis.modernui.ui.test.Locator;
+import icyllis.modernui.ui.scroll.ScrollWindow;
+import icyllis.modernui.ui.widget.StaticFrameButton;
+import icyllis.modernui.ui.widget.TriangleButton;
 import icyllis.modernui.impl.background.ResourcePackBG;
 import icyllis.modernui.impl.setting.ResourcePackEntry;
 import icyllis.modernui.impl.setting.ResourcePackGroup;

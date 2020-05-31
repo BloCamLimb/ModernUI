@@ -20,10 +20,10 @@ package icyllis.modernui.system;
 
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.font.TrueTypeRenderer;
-import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.gui.master.LayoutEditingGui;
-import icyllis.modernui.gui.test.ContainerTest;
-import icyllis.modernui.gui.test.ModuleTest;
+import icyllis.modernui.ui.example.TestMainView;
+import icyllis.modernui.ui.master.UIManager;
+import icyllis.modernui.ui.master.UIEditor;
+import icyllis.modernui.ui.example.ContainerTest;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.entity.player.ServerPlayerEntity;
@@ -83,7 +83,7 @@ public class EventsHandler {
         @SubscribeEvent
         public static void onRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
             if (event.phase == TickEvent.Phase.START) {
-                GlobalModuleManager.INSTANCE.renderTick(event.renderTickTime);
+                UIManager.INSTANCE.renderTick(event.renderTickTime);
             } else {
                 BlurHandler.INSTANCE.renderTick();
             }
@@ -92,20 +92,20 @@ public class EventsHandler {
         @SubscribeEvent
         public static void onClientTick(@Nonnull TickEvent.ClientTickEvent event) {
             if (event.phase == TickEvent.Phase.START) {
-                GlobalModuleManager.INSTANCE.clientTick();
+                UIManager.INSTANCE.clientTick();
             }
         }
 
         @SubscribeEvent
         public static void onGuiOpen(@Nonnull GuiOpenEvent event) {
             TrueTypeRenderer.INSTANCE.init();
-            GlobalModuleManager.INSTANCE.onGuiOpen(event.getGui(), event::setCanceled);
+            UIManager.INSTANCE.onGuiOpen(event.getGui(), event::setCanceled);
             BlurHandler.INSTANCE.blur(event.getGui());
         }
 
         @SubscribeEvent
         public static void onRenderAttackIndicator(@Nonnull RenderGameOverlayEvent.Pre event) {
-            if (event.getType() == RenderGameOverlayEvent.ElementType.CROSSHAIRS && GlobalModuleManager.INSTANCE.getModernScreen() != null) {
+            if (event.getType() == RenderGameOverlayEvent.ElementType.CROSSHAIRS && UIManager.INSTANCE.getModernScreen() != null) {
                 event.setCanceled(true);
             }
         }
@@ -119,14 +119,13 @@ public class EventsHandler {
         public static void onKeyInput(InputEvent.KeyInputEvent event) {
             if (ConfigManager.COMMON.isEnableDeveloperMode() && event.getAction() == GLFW.GLFW_PRESS) {
                 if (Screen.hasControlDown() && Screen.hasShiftDown()) {
-                    if (event.getKey() == GLFW.GLFW_KEY_T && GlobalModuleManager.INSTANCE.getModernScreen() != null) {
-                        LayoutEditingGui.INSTANCE.iterateWorking();
+                    if (event.getKey() == GLFW.GLFW_KEY_T && UIManager.INSTANCE.getModernScreen() != null) {
+                        UIEditor.INSTANCE.iterateWorking();
                     }
                     if (event.getKey() == GLFW.GLFW_KEY_P) {
-                        if (GlobalModuleManager.INSTANCE.getModernScreen() == null) {
-                            if (Minecraft.getInstance().currentScreen != null) {
-                                ModernUI.LOGGER.debug(ModernUI.MARKER, "Opened gui class name : {}", Minecraft.getInstance().currentScreen.getClass().getName());
-                            }
+                        if (UIManager.INSTANCE.getModernScreen() == null && Minecraft.getInstance().currentScreen != null) {
+                            ModernUI.LOGGER.debug(ModernUI.MARKER, "Opened gui class name : {}",
+                                    Minecraft.getInstance().currentScreen.getClass().getName());
                         }
                     }
                 }
@@ -135,22 +134,22 @@ public class EventsHandler {
 
         @SubscribeEvent
         public static void onScreenEndDraw(GuiScreenEvent.DrawScreenEvent.Post event) {
-            LayoutEditingGui.INSTANCE.draw();
+            UIEditor.INSTANCE.draw();
         }
 
         @SubscribeEvent
         public static void onScreenStartMouseClicked(@Nonnull GuiScreenEvent.MouseClickedEvent.Pre event) {
-            event.setCanceled(LayoutEditingGui.INSTANCE.mouseClicked(event.getButton()));
+            event.setCanceled(UIEditor.INSTANCE.mouseClicked(event.getButton()));
         }
 
         @SubscribeEvent
         public static void onScreenStartMouseReleased(@Nonnull GuiScreenEvent.MouseReleasedEvent.Pre event) {
-            LayoutEditingGui.INSTANCE.mouseReleased();
+            UIEditor.INSTANCE.mouseReleased();
         }
 
         @SubscribeEvent
         public static void onScreenStartMouseDragged(@Nonnull GuiScreenEvent.MouseDragEvent.Pre event) {
-            event.setCanceled(LayoutEditingGui.INSTANCE.mouseDragged(event.getDragX(), event.getDragY()));
+            event.setCanceled(UIEditor.INSTANCE.mouseDragged(event.getDragX(), event.getDragY()));
         }
     }
 
@@ -170,7 +169,7 @@ public class EventsHandler {
         @SubscribeEvent
         public static void setupClient(FMLClientSetupEvent event) {
             SettingsManager.INSTANCE.buildAllSettings();
-            GlobalModuleManager.INSTANCE.registerContainerScreen(RegistryLibrary.TEST_CONTAINER, c -> ModuleTest::new);
+            UIManager.INSTANCE.registerContainerScreen(RegistryLibrary.TEST_CONTAINER, c -> TestMainView::new);
         }
 
         @OnlyIn(Dist.CLIENT)

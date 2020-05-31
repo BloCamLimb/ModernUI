@@ -20,7 +20,7 @@
 
 package icyllis.modernui.graphics.font;
 
-import icyllis.modernui.gui.math.Color3i;
+import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.system.ConfigManager;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.fonts.providers.IGlyphProvider;

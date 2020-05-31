@@ -18,10 +18,10 @@
 
 package icyllis.modernui.impl.stats;
 
-import icyllis.modernui.graphics.math.TextAlign;
-import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.scroll.ScrollWindow;
-import icyllis.modernui.gui.scroll.UniformScrollEntry;
+import icyllis.modernui.graphics.font.TextAlign;
+import icyllis.modernui.ui.master.Canvas;
+import icyllis.modernui.ui.scroll.ScrollWindow;
+import icyllis.modernui.ui.scroll.UniformScrollEntry;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.EntityType;
 import net.minecraft.stats.StatisticsManager;
@@ -74,12 +74,12 @@ public class MobStatsEntry extends UniformScrollEntry {
     }
 
     @Override
-    protected void onMouseHoverEnter(double mouseX, double mouseY) {
+    public void onMouseHoverEnter(double mouseX, double mouseY) {
 
     }
 
     @Override
-    protected void onMouseHoverExit() {
+    public void onMouseHoverExit() {
 
     }
 }

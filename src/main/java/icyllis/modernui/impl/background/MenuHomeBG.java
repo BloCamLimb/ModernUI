@@ -18,11 +18,11 @@
 
 package icyllis.modernui.impl.background;
 
-import icyllis.modernui.gui.animation.Animation;
-import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.animation.IInterpolator;
-import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.master.IDrawable;
+import icyllis.modernui.ui.animation.Animation;
+import icyllis.modernui.ui.animation.Applier;
+import icyllis.modernui.ui.animation.IInterpolator;
+import icyllis.modernui.ui.master.Canvas;
+import icyllis.modernui.ui.master.IDrawable;
 
 import javax.annotation.Nonnull;
 

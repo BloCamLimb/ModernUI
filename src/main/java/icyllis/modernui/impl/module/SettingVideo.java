@@ -18,7 +18,7 @@
 
 package icyllis.modernui.impl.module;
 
-import icyllis.modernui.gui.master.Module;
+import icyllis.modernui.ui.test.Module;
 import icyllis.modernui.impl.setting.GuiScaleSettingEntry;
 import icyllis.modernui.impl.setting.SettingCategoryGroup;
 import icyllis.modernui.impl.setting.SettingEntry;

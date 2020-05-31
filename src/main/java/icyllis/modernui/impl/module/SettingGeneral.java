@@ -19,12 +19,12 @@
 package icyllis.modernui.impl.module;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.gui.master.IModule;
-import icyllis.modernui.gui.master.Module;
+import icyllis.modernui.ui.test.IModule;
+import icyllis.modernui.ui.test.Module;
 import icyllis.modernui.impl.setting.*;
-import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.gui.popup.ConfirmCallback;
-import icyllis.modernui.gui.popup.PopupConfirm;
+import icyllis.modernui.ui.master.UIManager;
+import icyllis.modernui.ui.popup.ConfirmCallback;
+import icyllis.modernui.ui.popup.PopupConfirm;
 import icyllis.modernui.impl.setting.SettingScrollWindow;
 import icyllis.modernui.system.ModIntegration;
 import icyllis.modernui.system.SettingsManager;
@@ -82,7 +82,7 @@ public class SettingGeneral extends Module {
                         IModule popup = new PopupConfirm(this::lockDifficulty, 3)
                                 .setConfirmTitle(I18n.format("gui.modernui.button.Lock"))
                                 .setDescription(I18n.format("gui.modernui.popup.lockDifficulty"));
-                        GlobalModuleManager.INSTANCE.openPopup(popup, true);
+                        UIManager.INSTANCE.openPopup(popup, true);
                     }
                 }, true);
                 difficultyEntry.setAvailable(!locked);
@@ -179,7 +179,7 @@ public class SettingGeneral extends Module {
     }
 
     private void lockDifficulty(int callback) {
-        GlobalModuleManager.INSTANCE.closePopup();
+        UIManager.INSTANCE.closePopup();
         if (callback == ConfirmCallback.CONFIRM) {
             if (this.minecraft.world != null) {
                 Objects.requireNonNull(this.minecraft.getConnection()).sendPacket(new CLockDifficultyPacket(true));

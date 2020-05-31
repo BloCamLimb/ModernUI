@@ -18,11 +18,11 @@
 
 package icyllis.modernui.impl.background;
 
-import icyllis.modernui.gui.animation.Animation;
-import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.animation.IInterpolator;
-import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.master.IDrawable;
+import icyllis.modernui.ui.animation.Animation;
+import icyllis.modernui.ui.animation.Applier;
+import icyllis.modernui.ui.animation.IInterpolator;
+import icyllis.modernui.ui.master.Canvas;
+import icyllis.modernui.ui.master.IDrawable;
 import icyllis.modernui.impl.module.IngameMenuHome;
 
 import javax.annotation.Nonnull;
@@ -34,7 +34,7 @@ public class MenuSettingsBG implements IDrawable {
     private float xOffset;
 
     public MenuSettingsBG(@Nonnull IngameMenuHome home) {
-        int c = home.getWindowWidth();
+        int c = home.getGameWidth();
         if (home.getTransitionDirection(true)) {
             new Animation(200)
                     .applyTo(

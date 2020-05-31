@@ -18,7 +18,7 @@
 
 package icyllis.modernui.system.test;
 
-import icyllis.modernui.gui.master.IModule;
+import icyllis.modernui.ui.test.IModule;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 

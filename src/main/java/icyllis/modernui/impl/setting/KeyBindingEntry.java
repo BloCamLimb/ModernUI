@@ -19,13 +19,13 @@
 package icyllis.modernui.impl.setting;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.gui.animation.Animation;
-import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.gui.popup.PopupMenu;
-import icyllis.modernui.gui.popup.DropDownMenu;
-import icyllis.modernui.gui.widget.KeyInputBox;
+import icyllis.modernui.ui.animation.Animation;
+import icyllis.modernui.ui.animation.Applier;
+import icyllis.modernui.ui.master.Canvas;
+import icyllis.modernui.ui.master.UIManager;
+import icyllis.modernui.ui.popup.PopupMenu;
+import icyllis.modernui.ui.popup.DropDownMenu;
+import icyllis.modernui.ui.widget.KeyInputBox;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.I18n;
@@ -113,8 +113,8 @@ public class KeyBindingEntry extends SettingEntry {
                 .build(window)
                 .buildCallback(this::menuActions);
 
-        menu.locate((float) getHost().getAbsoluteMouseX() + 1, (float) getHost().getAbsoluteMouseY() + 1);
-        GlobalModuleManager.INSTANCE.openPopup(new PopupMenu(menu), false);
+        menu.locate((float) getParent().getAbsoluteMouseX() + 1, (float) getParent().getAbsoluteMouseY() + 1);
+        UIManager.INSTANCE.openPopup(new PopupMenu(menu), false);
         lightUp();
         return true;
     }
@@ -215,13 +215,13 @@ public class KeyBindingEntry extends SettingEntry {
     }
 
     @Override
-    protected void onMouseHoverEnter(double mouseX, double mouseY) {
+    public void onMouseHoverEnter(double mouseX, double mouseY) {
         super.onMouseHoverEnter(mouseX, mouseY);
         inputBox.setTextBrightness(titleBrightness);
     }
 
     @Override
-    protected void onMouseHoverExit() {
+    public void onMouseHoverExit() {
         super.onMouseHoverExit();
         inputBox.setMouseHoverExit();
         inputBox.setTextBrightness(titleBrightness);

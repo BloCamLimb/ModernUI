@@ -18,9 +18,9 @@
 
 package icyllis.modernui.impl.setting;
 
-import icyllis.modernui.graphics.math.TextAlign;
-import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.scroll.UniformScrollEntry;
+import icyllis.modernui.graphics.font.TextAlign;
+import icyllis.modernui.ui.master.Canvas;
+import icyllis.modernui.ui.scroll.UniformScrollEntry;
 
 import javax.annotation.Nonnull;
 
@@ -74,13 +74,13 @@ public abstract class SettingEntry extends UniformScrollEntry {
     protected abstract void drawExtra(Canvas canvas, float time);
 
     @Override
-    protected void onMouseHoverEnter(double mouseX, double mouseY) {
+    public void onMouseHoverEnter(double mouseX, double mouseY) {
         super.onMouseHoverEnter(mouseX, mouseY);
         titleBrightness = 1.0f;
     }
 
     @Override
-    protected void onMouseHoverExit() {
+    public void onMouseHoverExit() {
         super.onMouseHoverExit();
         titleBrightness = 0.85f;
     }

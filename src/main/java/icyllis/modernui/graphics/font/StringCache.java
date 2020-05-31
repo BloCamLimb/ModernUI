@@ -27,7 +27,7 @@ package icyllis.modernui.graphics.font;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.gui.math.Color3i;
+import icyllis.modernui.graphics.math.Color3i;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.Style;
 import net.minecraft.util.text.TextFormatting;

@@ -19,13 +19,15 @@
 package icyllis.modernui.impl.module;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.gui.master.*;
-import icyllis.modernui.graphics.math.TextAlign;
-import icyllis.modernui.gui.background.TextDrawable;
-import icyllis.modernui.gui.math.Align9D;
-import icyllis.modernui.gui.math.Direction4D;
-import icyllis.modernui.gui.widget.*;
+import icyllis.modernui.ui.master.UIManager;
+import icyllis.modernui.ui.master.*;
+import icyllis.modernui.graphics.font.TextAlign;
+import icyllis.modernui.ui.background.TextDrawable;
+import icyllis.modernui.ui.layout.Align9D;
+import icyllis.modernui.ui.layout.Direction4D;
+import icyllis.modernui.ui.test.Module;
+import icyllis.modernui.ui.test.WidgetStatus;
+import icyllis.modernui.ui.widget.*;
 import icyllis.modernui.impl.setting.SettingCategoryGroup;
 import icyllis.modernui.impl.setting.SettingEntry;
 import icyllis.modernui.impl.setting.KeyBindingEntry;
@@ -295,7 +297,7 @@ public class SettingControls extends Module {
             list.add(entry);
             allKeyBinding.add(entry);
             if (allKeyBinding.size() >= 1000) {
-                ModernUI.LOGGER.warn(GlobalModuleManager.MARKER, "Too much key bindings, please report this issue");
+                ModernUI.LOGGER.warn(UIManager.MARKER, "Too much key bindings, please report this issue");
                 // maybe we want more optimization?
                 break;
             }
