@@ -80,7 +80,7 @@ public interface IMessage {
          * Get client player instance on logic client side
          */
         @OnlyIn(Dist.CLIENT)
-        public synchronized PlayerEntity getClientPlayer() {
+        public PlayerEntity getClientPlayer() {
             return Minecraft.getInstance().player;
         }
 
@@ -99,14 +99,14 @@ public interface IMessage {
         }
 
         /**
-         * Enqueue a async work to main thread or run immediately with current player
+         * Enqueue a async work to main thread or run immediately with appropriate player
          */
         public CompletableFuture<Void> enqueueWork(Consumer<PlayerEntity> consumer) {
             return ctx.enqueueWork(() -> consumer.accept(getPlayer()));
         }
 
         /**
-         * Replay a message to sender
+         * Reply a message to sender or server
          *
          * @param msg   message
          * @param <MSG> message type

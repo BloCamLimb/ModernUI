@@ -18,11 +18,11 @@
 
 package icyllis.modernui.impl.chat;
 
-import icyllis.modernui.graphics.math.TextAlign;
-import icyllis.modernui.gui.math.Color3i;
-import icyllis.modernui.gui.test.StandardEventListener;
+import icyllis.modernui.graphics.font.TextAlign;
+import icyllis.modernui.graphics.math.Color3i;
+import icyllis.modernui.ui.test.StandardEventListener;
 import icyllis.modernui.graphics.font.IFontRenderer;
-import icyllis.modernui.gui.test.DrawTools;
+import icyllis.modernui.ui.test.DrawTools;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.SharedConstants;

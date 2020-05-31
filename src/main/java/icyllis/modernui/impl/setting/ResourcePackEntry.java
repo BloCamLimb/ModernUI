@@ -19,14 +19,14 @@
 package icyllis.modernui.impl.setting;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.graphics.font.FontTools;
-import icyllis.modernui.graphics.math.TextAlign;
-import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.math.Align9D;
-import icyllis.modernui.gui.scroll.ScrollWindow;
+import icyllis.modernui.ui.master.UITools;
+import icyllis.modernui.graphics.font.TextAlign;
+import icyllis.modernui.ui.master.Canvas;
+import icyllis.modernui.ui.layout.Align9D;
+import icyllis.modernui.ui.scroll.ScrollWindow;
 import icyllis.modernui.impl.module.SettingResourcePack;
-import icyllis.modernui.gui.scroll.UniformScrollEntry;
-import icyllis.modernui.gui.math.Color3i;
+import icyllis.modernui.ui.scroll.UniformScrollEntry;
+import icyllis.modernui.graphics.math.Color3i;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
@@ -167,12 +167,12 @@ public class ResourcePackEntry extends UniformScrollEntry {
     }
 
     @Override
-    protected void onMouseHoverEnter(double mouseX, double mouseY) {
+    public void onMouseHoverEnter(double mouseX, double mouseY) {
         super.onMouseHoverEnter(mouseX, mouseY);
     }
 
     @Override
-    protected void onMouseHoverExit() {
+    public void onMouseHoverExit() {
         super.onMouseHoverExit();
     }
 
@@ -181,17 +181,17 @@ public class ResourcePackEntry extends UniformScrollEntry {
         if (!resourcePack.getCompatibility().isCompatible()) {
             title = TextFormatting.DARK_RED + "(" + I18n.format("resourcePack.incompatible") + ") " + TextFormatting.RESET + title;
         }
-        float w = FontTools.getStringWidth(title);
+        float w = UITools.getStringWidth(title);
         float cw = width - 39;
         if (w > cw) {
-            float kw = cw - FontTools.getStringWidth("...");
-            title = FontTools.trimStringToWidth(title, kw, false) + "...";
+            float kw = cw - UITools.getStringWidth("...");
+            title = UITools.trimStringToWidth(title, kw, false) + "...";
         }
 
     }
 
     public void updateDescription() {
-        this.desc = FontTools.splitStringToWidth(resourcePack.getDescription().getFormattedText(), width - 39);
+        this.desc = UITools.splitStringToWidth(resourcePack.getDescription().getFormattedText(), width - 39);
     }
 
     public void bindTexture() {

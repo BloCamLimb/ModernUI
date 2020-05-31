@@ -20,12 +20,12 @@ package icyllis.modernui.impl.chat;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.graphics.math.TextAlign;
+import icyllis.modernui.graphics.font.TextAlign;
 import icyllis.modernui.graphics.font.IFontRenderer;
 import icyllis.modernui.graphics.font.TrueTypeRenderer;
-import icyllis.modernui.gui.math.Color3i;
+import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.system.ModernUI;
-import icyllis.modernui.gui.test.DrawTools;
+import icyllis.modernui.ui.test.DrawTools;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.util.ResourceLocation;

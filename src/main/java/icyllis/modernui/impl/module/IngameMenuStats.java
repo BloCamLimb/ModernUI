@@ -18,13 +18,13 @@
 
 package icyllis.modernui.impl.module;
 
-import icyllis.modernui.gui.animation.Animation;
-import icyllis.modernui.gui.animation.Applier;
-import icyllis.modernui.gui.animation.IInterpolator;
+import icyllis.modernui.ui.animation.Animation;
+import icyllis.modernui.ui.animation.Applier;
+import icyllis.modernui.ui.animation.IInterpolator;
 import icyllis.modernui.impl.background.MenuSettingsBG;
-import icyllis.modernui.gui.test.WidgetLayout;
-import icyllis.modernui.gui.master.ModuleGroup;
-import icyllis.modernui.gui.widget.LineTextButton;
+import icyllis.modernui.ui.test.WidgetLayout;
+import icyllis.modernui.ui.test.ModuleGroup;
+import icyllis.modernui.ui.widget.LineTextButton;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.network.play.ClientPlayNetHandler;
 import net.minecraft.client.resources.I18n;
@@ -114,7 +114,7 @@ public class IngameMenuStats extends ModuleGroup {
 
     @Override
     public int[] onChangingModule() {
-        int c = home.getWindowWidth();
+        int c = home.getGameWidth();
         if (home.getTransitionDirection(false)) {
             new Animation(200)
                     .applyTo(

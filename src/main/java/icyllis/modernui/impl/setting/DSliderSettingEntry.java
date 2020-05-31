@@ -18,9 +18,9 @@
 
 package icyllis.modernui.impl.setting;
 
-import icyllis.modernui.graphics.math.TextAlign;
-import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.widget.SliderDiscrete;
+import icyllis.modernui.graphics.font.TextAlign;
+import icyllis.modernui.ui.master.Canvas;
+import icyllis.modernui.ui.widget.SliderDiscrete;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -96,7 +96,7 @@ public class DSliderSettingEntry extends SettingEntry implements SliderDiscrete.
     }
 
     @Override
-    protected void onMouseHoverExit() {
+    public void onMouseHoverExit() {
         super.onMouseHoverExit();
         slider.setMouseHoverExit();
     }

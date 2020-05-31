@@ -18,7 +18,7 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.gui.master.GlobalModuleManager;
+import icyllis.modernui.ui.master.UIManager;
 import icyllis.modernui.system.ConfigManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.ChatScreen;
@@ -125,7 +125,7 @@ public enum BlurHandler {
 
     public void renderTick() {
         if (changingProgress) {
-            float p = Math.min(GlobalModuleManager.INSTANCE.getAnimationTime(), 4.0f);
+            float p = Math.min(UIManager.INSTANCE.getAnimationTime(), 4.0f);
             this.updateProgress(p);
             if (backAlpha != 0.5f) {
                 backAlpha = p / 8f;

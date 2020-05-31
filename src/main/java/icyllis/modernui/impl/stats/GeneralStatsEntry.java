@@ -18,11 +18,11 @@
 
 package icyllis.modernui.impl.stats;
 
-import icyllis.modernui.graphics.math.TextAlign;
-import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.scroll.ScrollWindow;
-import icyllis.modernui.gui.scroll.UniformScrollEntry;
-import icyllis.modernui.gui.math.Color3i;
+import icyllis.modernui.graphics.font.TextAlign;
+import icyllis.modernui.ui.master.Canvas;
+import icyllis.modernui.ui.scroll.ScrollWindow;
+import icyllis.modernui.ui.scroll.UniformScrollEntry;
+import icyllis.modernui.graphics.math.Color3i;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.stats.Stat;
 import net.minecraft.stats.StatisticsManager;
@@ -58,15 +58,5 @@ public class GeneralStatsEntry extends UniformScrollEntry {
 
     public void updateValue(@Nonnull StatisticsManager manager) {
         value = stat.format(manager.getValue(stat));
-    }
-
-    @Override
-    protected void onMouseHoverEnter(double mouseX, double mouseY) {
-
-    }
-
-    @Override
-    protected void onMouseHoverExit() {
-
     }
 }

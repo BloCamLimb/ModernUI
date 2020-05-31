@@ -18,7 +18,7 @@
 
 package icyllis.modernui.system;
 
-import icyllis.modernui.gui.master.GlobalModuleManager;
+import icyllis.modernui.ui.master.UIManager;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.fml.ModList;
 import net.optifine.shaders.gui.GuiShaders;
@@ -54,7 +54,7 @@ public class ModIntegration {
 
         public static void openShadersGui() {
             Minecraft.getInstance().displayGuiScreen(
-                    new GuiShaders(GlobalModuleManager.INSTANCE.getModernScreen(), Minecraft.getInstance().gameSettings));
+                    new GuiShaders(UIManager.INSTANCE.getModernScreen(), Minecraft.getInstance().gameSettings));
         }
     }
 }

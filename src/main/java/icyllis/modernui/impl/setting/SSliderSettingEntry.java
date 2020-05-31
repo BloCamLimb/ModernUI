@@ -18,9 +18,9 @@
 
 package icyllis.modernui.impl.setting;
 
-import icyllis.modernui.graphics.math.TextAlign;
-import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.widget.SliderSmooth;
+import icyllis.modernui.graphics.font.TextAlign;
+import icyllis.modernui.ui.master.Canvas;
+import icyllis.modernui.ui.widget.SliderSmooth;
 
 import javax.annotation.Nonnull;
 import java.util.function.Consumer;
@@ -110,12 +110,12 @@ public class SSliderSettingEntry extends SettingEntry implements SliderSmooth.IL
     }
 
     @Override
-    protected void onMouseHoverEnter(double mouseX, double mouseY) {
+    public void onMouseHoverEnter(double mouseX, double mouseY) {
         super.onMouseHoverEnter(mouseX, mouseY);
     }
 
     @Override
-    protected void onMouseHoverExit() {
+    public void onMouseHoverExit() {
         super.onMouseHoverExit();
         slider.setMouseHoverExit();
     }

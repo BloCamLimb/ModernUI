@@ -19,7 +19,7 @@
 package icyllis.modernui.system;
 
 import icyllis.modernui.graphics.BlurHandler;
-import icyllis.modernui.gui.master.GlobalModuleManager;
+import icyllis.modernui.ui.master.UIManager;
 import icyllis.modernui.impl.module.IngameMenuHome;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
@@ -51,7 +51,8 @@ public class CoreMethods {
                 if (ConfigManager.COMMON.isEnableLibOnlyMode()) {
                     minecraft.displayGuiScreen(new IngameMenuScreen(true));
                 } else {
-                    GlobalModuleManager.INSTANCE.openGuiScreen(new TranslationTextComponent("menu.game"), IngameMenuHome::new);
+                    //UIManager.INSTANCE.openGuiScreen(new TranslationTextComponent("menu.game"), IngameMenuHome::new);
+                    minecraft.displayGuiScreen(new IngameMenuScreen(true));
                 }
             }
         }

@@ -18,8 +18,8 @@
 
 package icyllis.modernui.impl.background;
 
-import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.master.IDrawable;
+import icyllis.modernui.ui.master.Canvas;
+import icyllis.modernui.ui.master.IDrawable;
 
 import javax.annotation.Nonnull;
 

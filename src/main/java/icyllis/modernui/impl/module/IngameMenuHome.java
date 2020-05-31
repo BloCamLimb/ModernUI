@@ -18,15 +18,15 @@
 
 package icyllis.modernui.impl.module;
 
-import icyllis.modernui.gui.math.Align9D;
-import icyllis.modernui.gui.master.Locator;
+import icyllis.modernui.ui.master.UIManager;
+import icyllis.modernui.ui.layout.Align9D;
+import icyllis.modernui.ui.test.Locator;
 import icyllis.modernui.impl.background.MenuHomeBG;
-import icyllis.modernui.gui.master.GlobalModuleManager;
-import icyllis.modernui.gui.master.IModule;
-import icyllis.modernui.gui.master.ModuleGroup;
-import icyllis.modernui.gui.popup.ConfirmCallback;
-import icyllis.modernui.gui.popup.PopupConfirm;
-import icyllis.modernui.gui.widget.MenuButton;
+import icyllis.modernui.ui.test.IModule;
+import icyllis.modernui.ui.test.ModuleGroup;
+import icyllis.modernui.ui.popup.ConfirmCallback;
+import icyllis.modernui.ui.popup.PopupConfirm;
+import icyllis.modernui.ui.widget.MenuButton;
 import icyllis.modernui.system.RegistryLibrary;
 import net.minecraft.client.gui.advancements.AdvancementsScreen;
 import net.minecraft.client.gui.screen.*;
@@ -63,7 +63,7 @@ public class IngameMenuHome extends ModuleGroup {
                         .setLocator(new Locator(Align9D.TOP_LEFT, 8, 8))
                         .build(this)
                         .buildCallback(() -> {
-                            GlobalModuleManager.INSTANCE.closeGuiScreen();
+                            UIManager.INSTANCE.closeGuiScreen();
                             playSound(RegistryLibrary.BUTTON_CLICK_2);
                         })
         );
@@ -96,7 +96,7 @@ public class IngameMenuHome extends ModuleGroup {
                         .build(this)
                         .buildCallback(
                                 () -> {
-                            minecraft.displayGuiScreen(new ModListScreen(GlobalModuleManager.INSTANCE.getModernScreen()));
+                            minecraft.displayGuiScreen(new ModListScreen(UIManager.INSTANCE.getModernScreen()));
                             playSound(RegistryLibrary.BUTTON_CLICK_2);
                                 }
                         )
@@ -165,7 +165,7 @@ public class IngameMenuHome extends ModuleGroup {
         IModule popup = new PopupConfirm(this::confirmExit)
                 .setConfirmTitle(I18n.format("gui.modernui.button.exit"))
                 .setDescription(I18n.format("gui.modernui.popup.exit"));
-        GlobalModuleManager.INSTANCE.openPopup(popup, true);
+        UIManager.INSTANCE.openPopup(popup, true);
     }
 
     private void confirmExit(int callback) {

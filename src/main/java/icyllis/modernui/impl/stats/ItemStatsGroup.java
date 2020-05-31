@@ -20,11 +20,11 @@ package icyllis.modernui.impl.stats;
 
 import com.google.common.collect.Sets;
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.gui.master.Canvas;
-import icyllis.modernui.gui.test.DrawTools;
-import icyllis.modernui.gui.scroll.ScrollWindow;
-import icyllis.modernui.gui.scroll.UniformScrollGroup;
-import icyllis.modernui.gui.math.Color3i;
+import icyllis.modernui.ui.master.Canvas;
+import icyllis.modernui.ui.test.DrawTools;
+import icyllis.modernui.ui.scroll.ScrollWindow;
+import icyllis.modernui.ui.scroll.UniformScrollGroup;
+import icyllis.modernui.graphics.math.Color3i;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.AbstractGui;
 import net.minecraft.client.renderer.texture.TextureManager;
