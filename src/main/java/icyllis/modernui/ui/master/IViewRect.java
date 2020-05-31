@@ -18,6 +18,9 @@
 
 package icyllis.modernui.ui.master;
 
+/**
+ * Used for layout
+ */
 public interface IViewRect {
 
     /**

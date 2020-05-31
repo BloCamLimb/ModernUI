@@ -136,26 +136,6 @@ public class ViewGroup extends View implements IViewParent {
     }
 
     @Override
-    public final double getRelativeMX() {
-        return super.getRelativeMX() + getTranslationX();
-    }
-
-    @Override
-    public final double getRelativeMY() {
-        return super.getRelativeMY() + getTranslationY();
-    }
-
-    @Override
-    public final float toAbsoluteX(float rx) {
-        return getParent().toAbsoluteX(rx) - getTranslationX();
-    }
-
-    @Override
-    public final float toAbsoluteY(float ry) {
-        return getParent().toAbsoluteY(ry) - getTranslationY();
-    }
-
-    @Override
     public float getTranslationX() {
         return 0;
     }

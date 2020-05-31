@@ -494,13 +494,13 @@ public enum UIManager implements IViewParent {
      * @param view dragging view
      */
     public void setDragging(@Nullable View view) {
-        if (vHovered != view) {
-            if (vHovered != null) {
-                vHovered.onStopDragging();
+        if (vDragging != view) {
+            if (vDragging != null) {
+                vDragging.onStopDragging();
             }
-            vHovered = view;
-            if (vHovered != null) {
-                vHovered.onStartDragging();
+            vDragging = view;
+            if (vDragging != null) {
+                vDragging.onStartDragging();
             }
         }
     }

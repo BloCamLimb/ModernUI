@@ -20,6 +20,7 @@ package icyllis.modernui.ui.master;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.graphics.math.Color3i;
+import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.ui.test.Locator;
 import net.minecraft.util.text.TextFormatting;
 
@@ -85,7 +86,11 @@ public enum UIEditor {
             canvas.drawText(hoveredView.getClass().getSimpleName(), 4, 12);
             canvas.setLineAntiAliasing(true);
             canvas.setLineWidth(2.0f);
-            canvas.drawRectLines(hoveredView.getLeft() - 1, hoveredView.getTop() - 1, hoveredView.getRight() + 1, hoveredView.getBottom() + 1);
+            canvas.drawRectLines(
+                    hoveredView.toAbsoluteX(hoveredView.getLeft() - 1),
+                    hoveredView.toAbsoluteY(hoveredView.getTop() - 1),
+                    hoveredView.toAbsoluteX(hoveredView.getRight() + 1),
+                    hoveredView.toAbsoluteY(hoveredView.getBottom() + 1));
             canvas.setLineAntiAliasing(false);
         }
 
