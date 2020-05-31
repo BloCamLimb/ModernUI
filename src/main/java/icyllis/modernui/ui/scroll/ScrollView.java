@@ -18,7 +18,6 @@
 
 package icyllis.modernui.ui.scroll;
 
-import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.ui.master.Canvas;
 import icyllis.modernui.ui.master.UIManager;
 import icyllis.modernui.ui.master.View;
@@ -55,13 +54,15 @@ public class ScrollView extends ViewGroup {
 
     @Override
     protected void dispatchDraw(@Nonnull Canvas canvas, float time) {
+        canvas.clipStart(getLeft(), getTop(), getWidth(), getHeight());
         super.dispatchDraw(canvas, time);
         scrollBar.draw(canvas, time);
+        canvas.clipEnd();
     }
 
     @Override
     protected boolean dispatchMouseHover(double mouseX, double mouseY) {
-        if (scrollBar.updateMouseHover(mouseX - getTranslationX(), mouseY - getTranslationY())) {
+        if (scrollBar.updateMouseHover(mouseX, mouseY)) {
             return true;
         }
         return super.dispatchMouseHover(mouseX, mouseY);

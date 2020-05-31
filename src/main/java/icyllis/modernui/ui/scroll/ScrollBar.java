@@ -182,7 +182,6 @@ public class ScrollBar extends View {
             isDragging = true;
             UIManager.INSTANCE.setDragging(this);
         } else {
-            ModernUI.LOGGER.info("mouseY{} barTop{} barBottom{}", mouseY, barY, barY + barLength);
             if (mouseY < barY) {
                 float mov = transformPosToAmount((float) (barY - mouseY));
                 controller.scrollSmoothBy(-Math.min(60f, mov));
@@ -205,24 +204,21 @@ public class ScrollBar extends View {
 
     @Override
     protected boolean onMouseDragged(double mouseX, double mouseY, double deltaX, double deltaY) {
-        if (isDragging) {
-            /*if (barY + deltaY >= y && barY - y + deltaY <= getMaxDragLength()) {
-                draggingY += deltaY;
-            }
-            if (mouseY == draggingY) {
-                window.scrollDirect(transformPosToAmount((float) deltaY));
-            }*/
-            if (UIManager.INSTANCE.getHoveredView() == this) {
-                accDelta += deltaY;
-                int i = (int) (accDelta * 2.0);
-                if (i != 0) {
-                    controller.scrollDirectBy(transformPosToAmount(i / 2.0f));
-                    accDelta -= i / 2.0f;
-                }
-            }
-            return true;
+        /*if (barY + deltaY >= y && barY - y + deltaY <= getMaxDragLength()) {
+            draggingY += deltaY;
         }
-        return super.onMouseDragged(mouseX, mouseY, deltaX, deltaY);
+        if (mouseY == draggingY) {
+            window.scrollDirect(transformPosToAmount((float) deltaY));
+        }*/
+        if (UIManager.INSTANCE.getHoveredView() == this) {
+            accDelta += deltaY;
+            int i = (int) (accDelta * 2.0);
+            if (i != 0) {
+                controller.scrollDirectBy(transformPosToAmount(i / 2.0f));
+                accDelta -= i / 2.0f;
+            }
+        }
+        return true;
     }
 
     /**
@@ -232,5 +228,25 @@ public class ScrollBar extends View {
      */
     private float transformPosToAmount(float relativePos) {
         return view.getMaxScrollAmount() / getMaxDragLength() * relativePos;
+    }
+
+    @Override
+    public double getRelativeMX() {
+        return getParent().getParent().getRelativeMX();
+    }
+
+    @Override
+    public double getRelativeMY() {
+        return getParent().getParent().getRelativeMY();
+    }
+
+    @Override
+    public float toAbsoluteX(float rx) {
+        return getParent().getParent().toAbsoluteX(rx);
+    }
+
+    @Override
+    public float toAbsoluteY(float ry) {
+        return getParent().getParent().toAbsoluteY(ry);
     }
 }

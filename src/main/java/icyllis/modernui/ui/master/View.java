@@ -265,11 +265,19 @@ public class View implements IDrawable, IViewRect {
     }
 
     public double getRelativeMX() {
-        return getParent().getRelativeMX();
+        return getParent().getRelativeMX() + getParent().getTranslationX();
     }
 
     public double getRelativeMY() {
-        return getParent().getRelativeMY();
+        return getParent().getRelativeMY() + getParent().getTranslationY();
+    }
+
+    public float toAbsoluteX(float rx) {
+        return getParent().toAbsoluteX(rx) - getParent().getTranslationX();
+    }
+
+    public float toAbsoluteY(float ry) {
+        return getParent().toAbsoluteY(ry) - getParent().getTranslationY();
     }
 
     /**
