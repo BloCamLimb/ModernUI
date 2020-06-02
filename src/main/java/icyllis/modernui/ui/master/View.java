@@ -145,7 +145,7 @@ public class View implements IDrawable, IViewRect {
      *
      * @param parent parent view
      */
-    public final void setParent(@Nonnull IViewParent parent) {
+    public void setParent(@Nonnull IViewParent parent) {
         this.parent = parent;
     }
 
@@ -153,15 +153,15 @@ public class View implements IDrawable, IViewRect {
         return layout;
     }
 
-    public final void setLayout(@Nonnull ILayout layout) {
+    public void setLayout(@Nonnull ILayout layout) {
         this.layout = layout;
     }
 
-    public final void selfRelayout() {
+    public void relayoutFromParent() {
         getParent().relayoutChild(this);
     }
 
-    public final int getId() {
+    public int getId() {
         return id;
     }
 
@@ -170,7 +170,7 @@ public class View implements IDrawable, IViewRect {
      *
      * @param id view id
      */
-    public final void setId(int id) {
+    public void setId(int id) {
         this.id = id;
     }
 
@@ -278,6 +278,22 @@ public class View implements IDrawable, IViewRect {
 
     public float toAbsoluteY(float ry) {
         return getParent().toAbsoluteY(ry) - getParent().getTranslationY();
+    }
+
+    public float getAbsoluteLeft() {
+        return toAbsoluteX(left);
+    }
+
+    public float getAbsoluteTop() {
+        return toAbsoluteY(top);
+    }
+
+    public float getAbsoluteRight() {
+        return toAbsoluteX(right);
+    }
+
+    public float getAbsoluteBottom() {
+        return toAbsoluteY(bottom);
     }
 
     /**
