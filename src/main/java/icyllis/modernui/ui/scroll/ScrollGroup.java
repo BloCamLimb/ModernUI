@@ -22,6 +22,7 @@ import icyllis.modernui.ui.test.IWidget;
 
 import javax.annotation.Nonnull;
 
+@Deprecated
 public abstract class ScrollGroup implements IWidget {
 
     protected final IScrollHost window;

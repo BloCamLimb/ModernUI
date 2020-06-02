@@ -43,7 +43,7 @@ public enum UIEditor {
     private double accDragY = 0;
 
     public void setHoveredWidget(@Nullable Object obj) {
-        if (working && !dragging) {
+        if (true/*!dragging*/) {
             if (obj == null) {
                 hoveredView = null;
             } else if (obj instanceof View) {
@@ -55,9 +55,6 @@ public enum UIEditor {
 
     public void iterateWorking() {
         working = !working;
-        if (!working) {
-            hoveredView = null;
-        }
     }
 
     public void draw() {
@@ -71,7 +68,7 @@ public enum UIEditor {
 
         canvas.setRGBA(0.5f, 0.5f, 0.5f, 0.25f);
         if (hoveredView != null) {
-            canvas.drawRoundedRect(1, 1, 80, 32, 4);
+            canvas.drawRoundedRect(1, 1, 80, 68, 4);
         } else {
             canvas.drawRoundedRect(1, 1, 80, 14, 4);
         }
@@ -84,14 +81,24 @@ public enum UIEditor {
                 canvas.drawText("Y Offset: " + l.getYOffset(), 4, 21);
             }*/
             canvas.drawText(hoveredView.getClass().getSimpleName(), 4, 12);
-            canvas.setLineAntiAliasing(true);
-            canvas.setLineWidth(2.0f);
-            canvas.drawRectLines(
-                    hoveredView.toAbsoluteX(hoveredView.getLeft() - 1),
-                    hoveredView.toAbsoluteY(hoveredView.getTop() - 1),
-                    hoveredView.toAbsoluteX(hoveredView.getRight() + 1),
-                    hoveredView.toAbsoluteY(hoveredView.getBottom() + 1));
-            canvas.setLineAntiAliasing(false);
+
+            IViewParent parent = hoveredView.getParent();
+            canvas.drawText(parent.getClass().getSimpleName() + '\u2191', 4, 21);
+
+            float ty = 30;
+            while (parent != UIManager.INSTANCE) {
+                parent = parent.getParent();
+                canvas.drawText(parent.getClass().getSimpleName() + '\u2191', 4, ty);
+                ty += 9;
+            }
+
+            canvas.drawRoundedRectFrame(
+                    hoveredView.getAbsoluteLeft() - 1,
+                    hoveredView.getAbsoluteTop() - 1,
+                    hoveredView.getAbsoluteRight() + 1,
+                    hoveredView.getAbsoluteBottom() + 1,
+                    2
+            );
         }
 
         Canvas.setLineAA0(false);
