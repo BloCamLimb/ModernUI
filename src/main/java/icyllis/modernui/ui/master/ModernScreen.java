@@ -22,20 +22,20 @@ import icyllis.modernui.graphics.BlurHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
-import java.util.function.Supplier;
 
 @OnlyIn(Dist.CLIENT)
 public final class ModernScreen extends Screen {
 
     private final UIManager manager = UIManager.INSTANCE;
 
-    protected ModernScreen(ITextComponent title) {
-        super(title);
+    ModernScreen() {
+        super(new StringTextComponent(""));
     }
 
     @Override
@@ -144,8 +144,8 @@ public final class ModernScreen extends Screen {
     @Nonnull
     @Override
     public String toString() {
-        if (manager.getRootView() != null) {
-            return getClass().getSimpleName() + "-" + manager.getRootView().getClass().getSimpleName() + "(" + hashCode() + ")";
+        if (manager.getMainView() != null) {
+            return getClass().getSimpleName() + "-" + manager.getMainView().getClass().getSimpleName() + "(" + hashCode() + ")";
         }
         return getClass().getSimpleName() + "(" + hashCode() + ")";
     }

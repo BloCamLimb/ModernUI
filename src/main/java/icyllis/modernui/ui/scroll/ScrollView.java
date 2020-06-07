@@ -66,13 +66,7 @@ public class ScrollView extends ViewGroup {
         return super.dispatchMouseHover(mouseX, mouseY);
     }
 
-    @Override
-    protected void dispatchLayout() {
-        super.dispatchLayout();
-        scrollBar.layout(this);
-    }
-
-    @Override
+    /*@Override
     protected void onLayout() {
         super.onLayout();
 
@@ -88,7 +82,7 @@ public class ScrollView extends ViewGroup {
             scrollBar.setBarLength(p);
         }
         updateScrollAmount(scrollAmount);
-    }
+    }*/
 
     final void updateScrollAmount(float scrollAmount) {
         this.scrollAmount = scrollAmount;

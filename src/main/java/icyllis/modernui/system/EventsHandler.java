@@ -20,6 +20,7 @@ package icyllis.modernui.system;
 
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.font.TrueTypeRenderer;
+import icyllis.modernui.ui.example.TestFragment;
 import icyllis.modernui.ui.example.TestMainView;
 import icyllis.modernui.ui.master.UIManager;
 import icyllis.modernui.ui.master.UIEditor;
@@ -169,7 +170,7 @@ public class EventsHandler {
         @SubscribeEvent
         public static void setupClient(FMLClientSetupEvent event) {
             SettingsManager.INSTANCE.buildAllSettings();
-            UIManager.INSTANCE.registerContainerScreen(RegistryLibrary.TEST_CONTAINER, c -> TestMainView::new);
+            UIManager.INSTANCE.registerContainerScreen(RegistryLibrary.TEST_CONTAINER, c -> new TestFragment());
         }
 
         @OnlyIn(Dist.CLIENT)

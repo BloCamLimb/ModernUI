@@ -59,7 +59,15 @@ public class MeasureSpec {
      * @return measure mode
      */
     public static Mode getMode(int measureSpec) {
-        return Mode.values()[(measureSpec & MODE_MASK) >> MODE_SHIFT];
+        switch (measureSpec & MODE_MASK) {
+            case 0:
+                return Mode.UNSPECIFIED;
+            case 1 << MODE_SHIFT:
+                return Mode.EXACTLY;
+            case 2 << MODE_SHIFT:
+                return Mode.AT_MOST;
+        }
+        return Mode.UNSPECIFIED;
     }
 
     public enum Mode {
