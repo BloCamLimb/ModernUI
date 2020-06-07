@@ -5,7 +5,7 @@
  * Modern UI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * 3.0 any later version.
  *
  * Modern UI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -64,14 +64,14 @@ public class ConfigManager {
 
     public static class Client {
 
-        public boolean keepRunningInScreen;
+        //public boolean keepRunningInScreen;
         public boolean blurScreenBackground;
 
         public String preferredFontName;
         public boolean enableGlobalFontRenderer;
         public boolean allowFontShadow;
 
-        private final ForgeConfigSpec.BooleanValue keepRunningInScreenV;
+        //private final ForgeConfigSpec.BooleanValue keepRunningInScreenV;
         private final ForgeConfigSpec.BooleanValue blurScreenBackgroundV;
 
         private final ForgeConfigSpec.ConfigValue<List<? extends String>> blurScreenExclusionsV;
@@ -84,8 +84,8 @@ public class ConfigManager {
             builder.comment("Screen Config")
                     .push("screen");
 
-            keepRunningInScreenV = builder.comment("Keep game running no matter what screen is open. Modern UI's GUIs will never pause game.")
-                    .define("keepGameRunning", true);
+            /*keepRunningInScreenV = builder.comment("Keep game running no matter what screen is open. Modern UI's GUIs will never pause game.")
+                    .define("keepGameRunning", true);*/
             blurScreenBackgroundV = builder.comment("Blur GUI background when opening a gui screen, this is incompatible with OptiFine's FXAA shader or some mods.")
                     .define("blurGuiBackground", true);
 
@@ -108,7 +108,7 @@ public class ConfigManager {
         }
 
         private void load() {
-            keepRunningInScreen = keepRunningInScreenV.get();
+            //keepRunningInScreen = keepRunningInScreenV.get();
             blurScreenBackground = blurScreenBackgroundV.get();
 
             BlurHandler.INSTANCE.loadExclusions(blurScreenExclusionsV.get());

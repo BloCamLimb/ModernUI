@@ -5,7 +5,7 @@
  * Modern UI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * 3.0 any later version.
  *
  * Modern UI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -19,6 +19,7 @@
 package icyllis.modernui.ui.master;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.ui.animation.IAnimation;
 import icyllis.modernui.ui.test.IModule;
@@ -35,6 +36,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -55,35 +57,26 @@ public enum UIManager implements IViewParent {
      */
     INSTANCE;
 
+    // logger marker
     public static final Marker MARKER = MarkerManager.getMarker("UI");
 
+    // cached minecraft instance
     private final Minecraft minecraft = Minecraft.getInstance();
 
-    /**
-     * Cached gui to open, used for logic check
-     */
+    // Cached gui to open, used for logic
     @Nullable
     private Screen guiToOpen;
 
-    /**
-     * Current screen instance, must be ModernScreen or ModernContainerScreen
-     * This is not the same instance as Minecraft.currentScreen
-     */
+    // Current screen instance, must be ModernScreen or ModernContainerScreen or null
+    @Nullable
     private Screen modernScreen;
 
-    /**
-     * Cached factory for instantiation
-     */
     @Nullable
     private Supplier<View> factory;
 
-    /**
-     * The origin of all modules
-     */
-    /*private IModule root;*/
-
     private View rootView;
 
+    @Deprecated
     @Nullable
     private IModule popup;
 
@@ -91,26 +84,29 @@ public enum UIManager implements IViewParent {
 
     private double mouseX, mouseY;
 
+    // a list of animations in render loop
     private final List<IAnimation> animations = new ArrayList<>();
 
     private final List<DelayedTask> tasks = new CopyOnWriteArrayList<>();
 
+    // elapsed ticks from a gui open, update every tick, 20 = 1 second
     private int ticks = 0;
 
-    private float animationTime = 0;
+    // elapsed time from a gui open, update every frame, 20.0 = 1 second
+    private float frameTime = 0;
 
-    // lazy loading
+    // lazy loading, should be final
     private Canvas canvas = null;
 
+    // only post events to focused views
     @Nullable
     private View vHovered = null;
-
     @Nullable
     private View vDragging = null;
-
     @Nullable
     private View vKeyboard = null;
 
+    // for double click check, 10 tick = 0.5s
     private int dClickTime = -10;
 
     UIManager() {
@@ -128,6 +124,27 @@ public enum UIManager implements IViewParent {
         minecraft.displayGuiScreen(new ModernScreen(title));
     }
 
+    /**
+     * Close current gui screen
+     */
+    public void closeGuiScreen() {
+        minecraft.displayGuiScreen(null);
+    }
+
+    /**
+     * Register a container screen on client
+     * <p>
+     * Use {@link net.minecraftforge.fml.network.NetworkHooks#openGui(ServerPlayerEntity, INamedContainerProvider, Consumer)}
+     * to open a client gui on server
+     *
+     * @param type    container type
+     * @param factory root view factory
+     * @param <T>     container
+     */
+    public <T extends Container> void registerContainerScreen(@Nonnull ContainerType<? extends T> type, @Nonnull Function<T, Supplier<View>> factory) {
+        ScreenManager.registerFactory(type, castModernScreen(factory));
+    }
+
     @SuppressWarnings({"unchecked", "ConstantConditions"})
     @Nonnull
     private <T extends Container, U extends Screen & IHasContainer<T>> ScreenManager.IScreenFactory<T, U> castModernScreen(@Nonnull Function<T, Supplier<View>> factory) {
@@ -140,27 +157,6 @@ public enum UIManager implements IViewParent {
             this.factory = factory.apply(c);
             return (U) new ModernContainerScreen<>(c, p, t);
         };
-    }
-
-    /**
-     * Register a container screen on client
-     * <p>
-     * Use {@link net.minecraftforge.fml.network.NetworkHooks#openGui(ServerPlayerEntity, INamedContainerProvider, Consumer)}
-     * to open a client gui on server
-     *
-     * @param type container type
-     * @param factory root view factory
-     * @param <T>  container
-     */
-    public <T extends Container> void registerContainerScreen(@Nonnull ContainerType<? extends T> type, @Nonnull Function<T, Supplier<View>> factory) {
-        ScreenManager.registerFactory(type, castModernScreen(factory));
-    }
-
-    /**
-     * Close current gui screen
-     */
-    public void closeGuiScreen() {
-        minecraft.displayGuiScreen(null);
     }
 
     /**
@@ -209,7 +205,7 @@ public enum UIManager implements IViewParent {
             closeGuiScreen();
             return;
         }
-        rootView.setParent(this);
+        rootView.assignParent(this);
         if (canvas == null) {
             canvas = new Canvas();
         }
@@ -222,6 +218,7 @@ public enum UIManager implements IViewParent {
             clear();
             return;
         }
+        // modern screen != null
         if (modernScreen != gui && ((gui instanceof ModernScreen) || (gui instanceof ModernContainerScreen<?>))) {
             if (rootView != null) {
                 cancel.accept(true);
@@ -372,11 +369,11 @@ public enum UIManager implements IViewParent {
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableAlphaTest();
         RenderSystem.disableDepthTest();
-        rootView.draw(canvas, animationTime);
+        rootView.draw(canvas, frameTime);
         if (popup != null) {
-            popup.draw(animationTime);
+            popup.draw(frameTime);
         }
-        Canvas.setLineAA0(false);
+        GL11.glDisable(GL11.GL_LINE_SMOOTH);
         RenderSystem.lineWidth(1.0f);
         RenderSystem.enableTexture();
         RenderSystem.disableBlend();
@@ -386,7 +383,7 @@ public enum UIManager implements IViewParent {
         this.width = width;
         this.height = height;
         //root.resize(width, height);
-        rootView.layout(this);
+        //rootView.layout(this);
         if (popup != null) {
             popup.resize(width, height);
         }
@@ -429,24 +426,24 @@ public enum UIManager implements IViewParent {
 
     @SuppressWarnings("ForLoopReplaceableByForEach")
     public void renderTick(float partialTick) {
-        animationTime = ticks + partialTick;
+        frameTime = ticks + partialTick;
 
         // remove animations from loop in next frame
         animations.removeIf(IAnimation::shouldRemove);
 
         // list size is dynamically changeable, due to animation chain
         for (int i = 0; i < animations.size(); i++) {
-            animations.get(i).update(animationTime);
+            animations.get(i).update(frameTime);
         }
     }
 
     private void resetTicks() {
         ticks = 0;
-        animationTime = 0;
+        frameTime = 0;
     }
 
     public float getAnimationTime() {
-        return animationTime;
+        return frameTime;
     }
 
     public int getTicks() {
@@ -604,6 +601,6 @@ public enum UIManager implements IViewParent {
 
     @Override
     public void relayoutChild(@Nonnull View view) {
-        view.layout(this);
+        //view.layout(this);
     }
 }

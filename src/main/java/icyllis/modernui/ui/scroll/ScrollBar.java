@@ -5,7 +5,7 @@
  * Modern UI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * 3.0 any later version.
  *
  * Modern UI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -18,10 +18,9 @@
 
 package icyllis.modernui.ui.scroll;
 
-import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.ui.layout.ILayout;
 import icyllis.modernui.ui.layout.ScriptLayout;
-import icyllis.modernui.ui.master.Canvas;
+import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.master.UIManager;
 import icyllis.modernui.ui.master.View;
 
@@ -66,7 +65,7 @@ public class ScrollBar extends View {
     public ScrollBar(@Nonnull ScrollView view) {
         this.view = view;
         controller = new ScrollController(view);
-        setParent(view);
+        assignParent(view);
         setLayout(LAYOUT);
     }
 
@@ -210,7 +209,7 @@ public class ScrollBar extends View {
         if (mouseY == draggingY) {
             window.scrollDirect(transformPosToAmount((float) deltaY));
         }*/
-        if (UIManager.INSTANCE.getHoveredView() == this) {
+        if (mouseY >= getTop() && mouseY <= getBottom()) {
             accDelta += deltaY;
             int i = (int) (accDelta * 2.0);
             if (i != 0) {

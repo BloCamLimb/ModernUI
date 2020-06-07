@@ -5,7 +5,7 @@
  * Modern UI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * 3.0 any later version.
  *
  * Modern UI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -18,27 +18,32 @@
 
 package icyllis.modernui.ui.master;
 
-import icyllis.modernui.ui.layout.DefaultLayout;
-import icyllis.modernui.ui.layout.ILayout;
+import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.ui.layout.MeasureSpec;
+import icyllis.modernui.ui.test.IViewRect;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
 
+/**
+ * View is the basic component of UI. View has its own rectangular area on screen,
+ * which is also responsible for drawing and event handling.
+ */
 @SuppressWarnings("unused")
 @OnlyIn(Dist.CLIENT)
 public class View implements IDrawable, IViewRect {
 
-    /**
-     * Parent view, assigned by {@link #setParent(IViewParent)}
-     */
-    private IViewParent parent;
+    static final int PFLAG_MEASURED_DIMENSION_SET = 0x00000800;
+    static final int PFLAG_LAYOUT_REQUIRED = 0x00002000;
+
+    public int privateFlags;
 
     /**
-     * View layout info to determine a rect area
+     * Parent view, assigned by {@link #assignParent(IViewParent)}
      */
-    private ILayout layout;
+    protected IViewParent parent;
 
     private int id;
 
@@ -46,19 +51,24 @@ public class View implements IDrawable, IViewRect {
      * Rect area
      */
     private int left;
-
     private int top;
-
     private int right;
-
     private int bottom;
 
     /**
      * System properties
      */
     private boolean visible = true;
-
     private boolean listening = true;
+
+    private int minWidth;
+    private int minHeight;
+
+    int prevWidthMeasureSpec = Integer.MIN_VALUE;
+    int prevHeightMeasureSpec = Integer.MIN_VALUE;
+
+    int measuredWidth;
+    int measuredHeight;
 
     /**
      * Raw draw method
@@ -97,64 +107,198 @@ public class View implements IDrawable, IViewRect {
     }
 
     /**
-     * Auto layout by system
+     * Assign rect area of this view and all descendants
+     * <p>
+     * Derived classes should not override this method.
+     * Derived classes with children should override
+     * onLayout(). In that method, they should
+     * call layout on each of their children
      *
-     * @param prev previous child view in parent or the parent
+     * @param l left position, relative to parent
+     * @param t top position, relative to parent
+     * @param r right position, relative to parent
+     * @param b bottom position, relative to parent
      */
-    public final void layout(IViewRect prev) {
-        if (layout == null) {
-            layout = DefaultLayout.INSTANCE;
+    public void layout(int l, int t, int r, int b) {
+        boolean changed = setFrame(l, t, r, b);
+
+        if (changed || hasFlag(PFLAG_LAYOUT_REQUIRED)) {
+            onLayout(changed, l, t, r, b);
+
+            removeFlag(PFLAG_LAYOUT_REQUIRED);
         }
-
-        left = layout.getLayoutX(prev, parent);
-        top = layout.getLayoutY(prev, parent);
-
-        right = left + layout.getLayoutWidth(prev, parent);
-        bottom = top + layout.getLayoutHeight(prev, parent);
-
-        right = Math.max(right, left);
-        bottom = Math.max(bottom, top);
-
-        dispatchLayout();
-        onLayout();
     }
 
     /**
      * Layout child views
+     *
+     * @param changed whether the size or position of this view was changed
+     * @param left    left position, relative to parent
+     * @param top     top position, relative to parent
+     * @param right   right position, relative to parent
+     * @param bottom  bottom position, relative to parent
      */
-    protected void dispatchLayout() {
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
 
     }
 
     /**
-     * Called after this view and child views layout
+     * Assign the rect area of this view, called from layout()
+     *
+     * @param left   left position, relative to parent
+     * @param top    top position, relative to parent
+     * @param right  right position, relative to parent
+     * @param bottom bottom position, relative to parent
+     * @return whether the rect area of this view was changed
      */
-    protected void onLayout() {
+    protected boolean setFrame(int left, int top, int right, int bottom) {
+        if (this.left != left || this.right != right || this.top != top || this.bottom != bottom) {
+
+            int oldWidth = this.right - this.left;
+            int oldHeight = this.bottom - this.top;
+            int newWidth = right - left;
+            int newHeight = bottom - top;
+
+            boolean sizeChanged = (newWidth != oldWidth) || (newHeight != oldHeight);
+
+            this.left = left;
+            this.top = top;
+            this.right = right;
+            this.bottom = bottom;
+
+            if (sizeChanged) {
+                onSizeChanged(newWidth, newHeight, oldWidth, oldHeight);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Called when width or height changed
+     *
+     * @param width      new width
+     * @param height     new height
+     * @param prevWidth  previous width
+     * @param prevHeight previous height
+     */
+    protected void onSizeChanged(int width, int height, int prevWidth, int prevHeight) {
 
     }
 
+    /**
+     * Called by parent to calculate the size of this view.
+     * This method is used to post the onMeasure event,
+     * and the measurement result is performed in {@link #onMeasure(int, int)}
+     *
+     * @param widthMeasureSpec  width measure specification imposed by the parent
+     * @param heightMeasureSpec height measure specification imposed by the parent
+     * @see #onMeasure(int, int)
+     */
+    public final void measure(int widthMeasureSpec, int heightMeasureSpec) {
+
+        final boolean specChanged =
+                widthMeasureSpec != prevWidthMeasureSpec
+                        || heightMeasureSpec != prevHeightMeasureSpec;
+        final boolean isSpecExactly =
+                MeasureSpec.getMode(widthMeasureSpec) == MeasureSpec.Mode.EXACTLY
+                        && MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.Mode.EXACTLY;
+        final boolean matchesSpecSize =
+                measuredWidth == MeasureSpec.getSize(widthMeasureSpec)
+                        && measuredHeight == MeasureSpec.getSize(heightMeasureSpec);
+        final boolean needsLayout = specChanged
+                && (!isSpecExactly || !matchesSpecSize);
+
+        if (needsLayout) {
+            // remove the flag first anyway
+            removeFlag(PFLAG_MEASURED_DIMENSION_SET);
+
+            onMeasure(widthMeasureSpec, heightMeasureSpec);
+
+            // the flag should be added in onMeasure()
+            if (!hasFlag(PFLAG_MEASURED_DIMENSION_SET)) {
+                throw new IllegalStateException();
+            }
+
+            addFlag(PFLAG_LAYOUT_REQUIRED);
+        }
+
+        prevWidthMeasureSpec = widthMeasureSpec;
+        prevHeightMeasureSpec = heightMeasureSpec;
+    }
+
+    /**
+     * Measure this view and should be override and shouldn't call super.onMeasure()
+     * You must call {@link #setMeasuredDimension(int, int)} to set measurement result
+     *
+     * @param widthMeasureSpec  width measure specification imposed by the parent
+     *                          {@link MeasureSpec}
+     * @param heightMeasureSpec height measure specification imposed by the parent
+     *                          {@link MeasureSpec}
+     */
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        setMeasuredDimension(getDefaultSize(minWidth, widthMeasureSpec),
+                getDefaultSize(minHeight, heightMeasureSpec));
+    }
+
+    /**
+     * Set measurement result, should be called in {@link #onMeasure(int, int)}
+     *
+     * @param measuredWidth  measured width of this view
+     * @param measuredHeight measured height of this view
+     */
+    protected final void setMeasuredDimension(int measuredWidth, int measuredHeight) {
+        this.measuredWidth = measuredWidth;
+        this.measuredHeight = measuredHeight;
+
+        addFlag(PFLAG_MEASURED_DIMENSION_SET);
+    }
+
+    /**
+     * Helper method to get default size
+     *
+     * @param size        default size
+     * @param measureSpec measure specification
+     * @return measured size
+     */
+    public static int getDefaultSize(int size, int measureSpec) {
+        int result = size;
+
+        switch (MeasureSpec.getMode(measureSpec)) {
+            case UNSPECIFIED:
+                break;
+            case AT_MOST:
+            case EXACTLY:
+                result = MeasureSpec.getSize(measureSpec);
+                break;
+        }
+
+        return result;
+    }
+
+    /**
+     * Get the parent of this view
+     *
+     * @return parent of this view
+     */
     public final IViewParent getParent() {
         return parent;
     }
 
     /**
-     * Set parent view, do not call this unless you know what you're doing
+     * Assign parent view, do not call this unless you know what you're doing
      * <p>
      * Should call immediately after this view is created to make sure
      * parent is not null when calling resize()
      *
      * @param parent parent view
      */
-    public void setParent(@Nonnull IViewParent parent) {
-        this.parent = parent;
-    }
-
-    public final ILayout getLayout() {
-        return layout;
-    }
-
-    public void setLayout(@Nonnull ILayout layout) {
-        this.layout = layout;
+    void assignParent(@Nonnull IViewParent parent) {
+        if (this.parent == null) {
+            this.parent = parent;
+        } else {
+            throw new RuntimeException("parent of view " + this + " has been assigned");
+        }
     }
 
     public void relayoutFromParent() {
@@ -172,6 +316,21 @@ public class View implements IDrawable, IViewRect {
      */
     public void setId(int id) {
         this.id = id;
+    }
+
+    // helper method
+    void addFlag(int flag) {
+        privateFlags |= flag;
+    }
+
+    // helper method
+    void removeFlag(int flag) {
+        privateFlags &= ~flag;
+    }
+
+    // helper method
+    boolean hasFlag(int flag) {
+        return (privateFlags & flag) != 0;
     }
 
     /**

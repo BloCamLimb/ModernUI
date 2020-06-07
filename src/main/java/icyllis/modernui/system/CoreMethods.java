@@ -5,7 +5,7 @@
  * Modern UI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * 3.0 any later version.
  *
  * Modern UI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -40,11 +40,11 @@ public class CoreMethods {
     }
 
     /* Minecraft */
-    public static void displayInGameMenu(boolean pauseGame) {
+    public static void displayInGameMenu(boolean usePauseScreen) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.currentScreen == null) {
             // If press F3 + Esc and is single player and not open LAN world
-            if (pauseGame && minecraft.isIntegratedServerRunning() && minecraft.getIntegratedServer() != null && !minecraft.getIntegratedServer().getPublic()) {
+            if (usePauseScreen && minecraft.isIntegratedServerRunning() && minecraft.getIntegratedServer() != null && !minecraft.getIntegratedServer().getPublic()) {
                 minecraft.displayGuiScreen(new IngameMenuScreen(false));
                 minecraft.getSoundHandler().pause();
             } else {
@@ -64,9 +64,10 @@ public class CoreMethods {
     }
 
     /* Screen */
-    public static boolean isPauseScreen() {
+    /* Removed due to break vanilla's logic */
+    /*public static boolean isPauseScreen() {
         return !ConfigManager.CLIENT.keepRunningInScreen;
-    }
+    }*/
 
     public static int calcGuiScales() {
         MainWindow mainWindow = Minecraft.getInstance().getMainWindow();

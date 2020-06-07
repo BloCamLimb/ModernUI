@@ -5,7 +5,7 @@
  * Modern UI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * 3.0 any later version.
  *
  * Modern UI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -34,11 +34,12 @@ import org.lwjgl.glfw.GLFW;
 import javax.annotation.Nonnull;
 import java.util.Objects;
 
-//TODO rewrite vanilla code, make item slots can be renderer with alpha
+//TODO rewrite vanilla code, make item slots can be rendered with alpha
+// And render layer for tooltips etc
 
 /**
- * This is required, because most mods check if instanceof {@link ContainerScreen} rather than {@link IHasContainer}
- * But vanilla is IScreenFactory<T extends Container, U extends Screen & IHasContainer<T>>, see {@link ScreenManager.IScreenFactory}
+ * This is required due to most mods check if extends {@link ContainerScreen} rather than {@link IHasContainer}
+ * However vanilla is (Screen & IHasContainer<T>), see {@link ScreenManager.IScreenFactory}
  * @param <G> container
  */
 @OnlyIn(Dist.CLIENT)

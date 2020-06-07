@@ -5,7 +5,7 @@
  * Modern UI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * 3.0 any later version.
  *
  * Modern UI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -20,11 +20,13 @@ package icyllis.modernui.ui.master;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.graphics.math.Color3i;
-import icyllis.modernui.system.ModernUI;
-import icyllis.modernui.ui.test.Locator;
+import icyllis.modernui.graphics.renderer.Canvas;
 import net.minecraft.util.text.TextFormatting;
+import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 
 //TODO Experimental, all changes won't be saved
 public enum UIEditor {
@@ -42,14 +44,44 @@ public enum UIEditor {
     private double accDragX = 0;
     private double accDragY = 0;
 
+    private final List<String> treeInfo = new ArrayList<>();
+
+    private int bottom = 14;
+
     public void setHoveredWidget(@Nullable Object obj) {
-        if (true/*!dragging*/) {
-            if (obj == null) {
-                hoveredView = null;
-            } else if (obj instanceof View) {
-                hoveredView = (View) obj;
-                UITools.useDefaultCursor();
+        if (obj == null) {
+            hoveredView = null;
+            treeInfo.clear();
+            bottom = 14;
+        } else if (obj instanceof View) {
+            hoveredView = (View) obj;
+            UITools.useDefaultCursor();
+
+            treeInfo.clear();
+            List<String> temp = new ArrayList<>();
+            IViewParent parent = hoveredView.getParent();
+            temp.add(hoveredView.getClass().getSimpleName());
+            temp.add(0, parent.getClass().getSimpleName());
+            while (parent != UIManager.INSTANCE) {
+                parent = parent.getParent();
+                temp.add(0, parent.getClass().getSimpleName());
             }
+            for (int i = 0; i < temp.size(); i++) {
+                StringBuilder builder = new StringBuilder();
+                if (i != 0) {
+                    for (int j = 0; j < i; j++) {
+                        builder.append("   ");
+                    }
+                }
+                builder.append(temp.get(i));
+                if (i == 0) {
+                    builder.append(" (System)");
+                } else if (i == 1) {
+                    builder.append(" (Root)");
+                }
+                treeInfo.add(builder.toString());
+            }
+            bottom = 14 + temp.size() * 9;
         }
     }
 
@@ -67,11 +99,8 @@ public enum UIEditor {
         RenderSystem.disableDepthTest();
 
         canvas.setRGBA(0.5f, 0.5f, 0.5f, 0.25f);
-        if (hoveredView != null) {
-            canvas.drawRoundedRect(1, 1, 80, 68, 4);
-        } else {
-            canvas.drawRoundedRect(1, 1, 80, 14, 4);
-        }
+        canvas.drawRoundedRect(1, 1, 120, bottom, 4);
+
         canvas.setColor(Color3i.BLUE_C, 1);
         canvas.drawText(TextFormatting.GOLD + "Gui Editing Mode: ON", 4, 3);
         if (hoveredView != null) {
@@ -80,7 +109,7 @@ public enum UIEditor {
                 canvas.drawText("X Offset: " + l.getXOffset(), 4, 12);
                 canvas.drawText("Y Offset: " + l.getYOffset(), 4, 21);
             }*/
-            canvas.drawText(hoveredView.getClass().getSimpleName(), 4, 12);
+            /*canvas.drawText(hoveredView.getClass().getSimpleName(), 4, 12);
 
             IViewParent parent = hoveredView.getParent();
             canvas.drawText(parent.getClass().getSimpleName() + '\u2191', 4, 21);
@@ -89,6 +118,11 @@ public enum UIEditor {
             while (parent != UIManager.INSTANCE) {
                 parent = parent.getParent();
                 canvas.drawText(parent.getClass().getSimpleName() + '\u2191', 4, ty);
+                ty += 9;
+            }*/
+            float ty = 12;
+            for (String str : treeInfo) {
+                canvas.drawText(str, 4, ty);
                 ty += 9;
             }
 
@@ -101,7 +135,7 @@ public enum UIEditor {
             );
         }
 
-        Canvas.setLineAA0(false);
+        GL11.glDisable(GL11.GL_LINE_SMOOTH);
         RenderSystem.lineWidth(1.0f);
         RenderSystem.enableTexture();
         RenderSystem.disableBlend();
