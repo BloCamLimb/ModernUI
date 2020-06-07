@@ -16,21 +16,18 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.ui.master;
+package icyllis.modernui.ui.example;
+
+import icyllis.modernui.ui.master.Fragment;
+import icyllis.modernui.ui.master.View;
 
 import javax.annotation.Nullable;
 
-/**
- * Part of a UI, used to manage specified view creation and its logic
- * A UI can contain multiple fragments, which are controlled by UIManager
- * to determine whether they are instantiated and enabled.
- * Different fragments can communicate with each other,
- * and there can be transition animation when switching etc.
- */
-public abstract class Fragment {
+public class TestFragment extends Fragment {
 
     @Nullable
+    @Override
     public View createView() {
-        return null;
+        return new TestMainView();
     }
 }

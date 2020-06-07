@@ -68,5 +68,5 @@ public interface IViewParent extends IViewRect {
      */
     float getTranslationY();
 
-    void relayoutChild(@Nonnull View view);
+    void relayoutChildren();
 }

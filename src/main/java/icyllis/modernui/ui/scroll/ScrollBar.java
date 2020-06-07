@@ -65,8 +65,8 @@ public class ScrollBar extends View {
     public ScrollBar(@Nonnull ScrollView view) {
         this.view = view;
         controller = new ScrollController(view);
-        assignParent(view);
-        setLayout(LAYOUT);
+        /*assignParent(view);
+        setLayout(LAYOUT);*/
     }
 
     @Override

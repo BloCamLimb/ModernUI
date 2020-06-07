@@ -18,19 +18,16 @@
 
 package icyllis.modernui.ui.example;
 
-import icyllis.modernui.ui.layout.ListLayout;
-import icyllis.modernui.ui.layout.ScriptLayout;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.master.View;
 import icyllis.modernui.ui.master.ViewGroup;
-import icyllis.modernui.ui.scroll.ScrollView;
 
 import javax.annotation.Nonnull;
 
 public class TestMainView extends ViewGroup {
 
     public TestMainView() {
-        setLayout(new ScriptLayout(
+        /*setLayout(new ScriptLayout(
                 "60",
                 "60",
                 "150.0",
@@ -58,12 +55,18 @@ public class TestMainView extends ViewGroup {
             v.setLayout(new ListLayout());
             s.addActiveViewToPool(v);
         }
-        addActiveViewToPool(s);
+        addActiveViewToPool(s);*/
+    }
+
+    @Override
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        super.onLayout(changed, left, top, right, bottom);
     }
 
     @Override
     protected void onDraw(@Nonnull Canvas canvas, float time) {
         super.onDraw(canvas, time);
+        canvas.drawText("AAA", getLeft() + 9, getTop() + 6);
     }
 
     private static class CView extends View {

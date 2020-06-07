@@ -38,7 +38,7 @@ public class View implements IDrawable, IViewRect {
     static final int PFLAG_MEASURED_DIMENSION_SET = 0x00000800;
     static final int PFLAG_LAYOUT_REQUIRED = 0x00002000;
 
-    public int privateFlags;
+    int privateFlags;
 
     /**
      * Parent view, assigned by {@link #assignParent(IViewParent)}
@@ -109,15 +109,14 @@ public class View implements IDrawable, IViewRect {
     /**
      * Assign rect area of this view and all descendants
      * <p>
-     * Derived classes should not override this method.
-     * Derived classes with children should override
-     * onLayout(). In that method, they should
-     * call layout on each of their children
+     * Derived classes should NOT override this method for any reason
+     * Derived classes with children should override onLayout()
+     * In that method, they should call layout() on each of their children
      *
-     * @param l left position, relative to parent
-     * @param t top position, relative to parent
-     * @param r right position, relative to parent
-     * @param b bottom position, relative to parent
+     * @param l left position, relative to game window
+     * @param t top position, relative to game window
+     * @param r right position, relative to game window
+     * @param b bottom position, relative to game window
      */
     public void layout(int l, int t, int r, int b) {
         boolean changed = setFrame(l, t, r, b);
@@ -133,10 +132,10 @@ public class View implements IDrawable, IViewRect {
      * Layout child views
      *
      * @param changed whether the size or position of this view was changed
-     * @param left    left position, relative to parent
-     * @param top     top position, relative to parent
-     * @param right   right position, relative to parent
-     * @param bottom  bottom position, relative to parent
+     * @param left    left position, relative to game window
+     * @param top     top position, relative to game window
+     * @param right   right position, relative to game window
+     * @param bottom  bottom position, relative to game window
      */
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
 
@@ -145,10 +144,10 @@ public class View implements IDrawable, IViewRect {
     /**
      * Assign the rect area of this view, called from layout()
      *
-     * @param left   left position, relative to parent
-     * @param top    top position, relative to parent
-     * @param right  right position, relative to parent
-     * @param bottom bottom position, relative to parent
+     * @param left   left position, relative to game window
+     * @param top    top position, relative to game window
+     * @param right  right position, relative to game window
+     * @param bottom bottom position, relative to game window
      * @return whether the rect area of this view was changed
      */
     protected boolean setFrame(int left, int top, int right, int bottom) {
@@ -301,8 +300,14 @@ public class View implements IDrawable, IViewRect {
         }
     }
 
-    public void relayoutFromParent() {
-        getParent().relayoutChild(this);
+    /**
+     * Request parent view to re-layout all child views belong to it, including this view
+     */
+    public void requestLayout() {
+        if (UIManager.INSTANCE.isInitLayout()) {
+            return;
+        }
+        parent.relayoutChildren();
     }
 
     public int getId() {

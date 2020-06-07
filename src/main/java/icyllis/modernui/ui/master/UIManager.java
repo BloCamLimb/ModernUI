@@ -22,6 +22,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.ui.animation.IAnimation;
+import icyllis.modernui.ui.layout.MeasureSpec;
 import icyllis.modernui.ui.test.IModule;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IHasContainer;
@@ -31,6 +32,7 @@ import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.inventory.container.ContainerType;
 import net.minecraft.inventory.container.INamedContainerProvider;
+import net.minecraft.util.Tuple;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -45,6 +47,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
@@ -71,22 +74,26 @@ public enum UIManager implements IViewParent {
     @Nullable
     private Screen modernScreen;
 
-    @Nullable
-    private Supplier<View> factory;
+    // main fragment of a UI
+    private Fragment mainFragment;
 
-    private View rootView;
+    // main view that created from main fragment
+    private View mainView;
 
     @Deprecated
     @Nullable
     private IModule popup;
 
+    // scaled game window width / height
     private int width, height;
 
+    // scaled mouseX, mouseY on screen
     private double mouseX, mouseY;
 
     // a list of animations in render loop
     private final List<IAnimation> animations = new ArrayList<>();
 
+    @Deprecated
     private final List<DelayedTask> tasks = new CopyOnWriteArrayList<>();
 
     // elapsed ticks from a gui open, update every tick, 20 = 1 second
@@ -109,19 +116,20 @@ public enum UIManager implements IViewParent {
     // for double click check, 10 tick = 0.5s
     private int dClickTime = -10;
 
+    private boolean initLayout = true;
+
     UIManager() {
 
     }
 
     /**
-     * Open a gui screen on client side
+     * Open a gui screen
      *
-     * @param title   screen title
-     * @param factory root view factory
+     * @param mainFragment main fragment of the UI
      */
-    public void openGuiScreen(ITextComponent title, @Nonnull Supplier<View> factory) {
-        this.factory = factory;
-        minecraft.displayGuiScreen(new ModernScreen(title));
+    public void openGuiScreen(@Nonnull Fragment mainFragment) {
+        this.mainFragment = mainFragment;
+        minecraft.displayGuiScreen(new ModernScreen());
     }
 
     /**
@@ -132,29 +140,28 @@ public enum UIManager implements IViewParent {
     }
 
     /**
-     * Register a container screen on client
-     * <p>
-     * Use {@link net.minecraftforge.fml.network.NetworkHooks#openGui(ServerPlayerEntity, INamedContainerProvider, Consumer)}
-     * to open a client gui on server
+     * Register a container screen
+     * To open the UI,
+     * see {@link net.minecraftforge.fml.network.NetworkHooks#openGui(ServerPlayerEntity, INamedContainerProvider, Consumer)}
      *
      * @param type    container type
-     * @param factory root view factory
+     * @param factory main fragment factory
      * @param <T>     container
      */
-    public <T extends Container> void registerContainerScreen(@Nonnull ContainerType<? extends T> type, @Nonnull Function<T, Supplier<View>> factory) {
+    public <T extends Container> void registerContainerScreen(@Nonnull ContainerType<? extends T> type, @Nonnull Function<T, Fragment> factory) {
         ScreenManager.registerFactory(type, castModernScreen(factory));
     }
 
     @SuppressWarnings({"unchecked", "ConstantConditions"})
     @Nonnull
-    private <T extends Container, U extends Screen & IHasContainer<T>> ScreenManager.IScreenFactory<T, U> castModernScreen(@Nonnull Function<T, Supplier<View>> factory) {
+    private <T extends Container, U extends Screen & IHasContainer<T>> ScreenManager.IScreenFactory<T, U> castModernScreen(@Nonnull Function<T, Fragment> factory) {
         return (c, p, t) -> {
             // The client container can be null sometimes, but a container screen doesn't allow the container to be null
             // so return null, there's no gui will be open, and the server container will be closed automatically
             if (c == null) {
                 return null;
             }
-            this.factory = factory.apply(c);
+            this.mainFragment = factory.apply(c);
             return (U) new ModernContainerScreen<>(c, p, t);
         };
     }
@@ -197,19 +204,21 @@ public enum UIManager implements IViewParent {
         this.modernScreen = mui;
         this.width = width;
         this.height = height;
-        if (factory != null) {
-            rootView = factory.get();
-            factory = null;
+        if (mainView == null) {
+            mainView = mainFragment.createView();
+            if (mainView == null) {
+                closeGuiScreen();
+                return;
+            } else {
+                mainView.assignParent(this);
+            }
         }
-        if (rootView == null) {
-            closeGuiScreen();
-            return;
-        }
-        rootView.assignParent(this);
         if (canvas == null) {
             canvas = new Canvas();
         }
+        initLayout = true;
         resize(width, height);
+        initLayout = false;
     }
 
     public void onGuiOpen(Screen gui, Consumer<Boolean> cancel) {
@@ -220,7 +229,7 @@ public enum UIManager implements IViewParent {
         }
         // modern screen != null
         if (modernScreen != gui && ((gui instanceof ModernScreen) || (gui instanceof ModernContainerScreen<?>))) {
-            if (rootView != null) {
+            if (mainView != null) {
                 cancel.accept(true);
                 ModernUI.LOGGER.fatal(MARKER, "ModernUI doesn't allow to keep other screens, use module group instead. RootScreen: {}, GuiToOpen: {}", modernScreen, gui);
                 return;
@@ -259,8 +268,8 @@ public enum UIManager implements IViewParent {
             popup.mouseMoved(mouseX, mouseY);
             return;
         }
-        if (rootView != null) {
-            if (!rootView.updateMouseHover(mouseX, mouseY)) {
+        if (mainView != null) {
+            if (!mainView.updateMouseHover(mouseX, mouseY)) {
                 setHoveredView(null);
             }
         }
@@ -369,7 +378,7 @@ public enum UIManager implements IViewParent {
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableAlphaTest();
         RenderSystem.disableDepthTest();
-        rootView.draw(canvas, frameTime);
+        mainView.draw(canvas, frameTime);
         if (popup != null) {
             popup.draw(frameTime);
         }
@@ -382,8 +391,10 @@ public enum UIManager implements IViewParent {
     void resize(int width, int height) {
         this.width = width;
         this.height = height;
-        //root.resize(width, height);
-        //rootView.layout(this);
+        int msw = MeasureSpec.makeMeasureSpec(width, MeasureSpec.Mode.AT_MOST);
+        int msh = MeasureSpec.makeMeasureSpec(height, MeasureSpec.Mode.AT_MOST);
+        mainView.measure(msw, msh);
+        mainView.layout(0, 0, mainView.measuredWidth, mainView.measuredHeight);
         if (popup != null) {
             popup.resize(width, height);
         }
@@ -398,7 +409,7 @@ public enum UIManager implements IViewParent {
         if (guiToOpen == null) {
             animations.clear();
             tasks.clear();
-            rootView = null;
+            mainView = null;
             popup = null;
             //extraData = null;
             modernScreen = null;
@@ -411,8 +422,8 @@ public enum UIManager implements IViewParent {
 
     public void clientTick() {
         ++ticks;
-        if (rootView != null) {
-            rootView.tick(ticks);
+        if (mainView != null) {
+            mainView.tick(ticks);
         }
         if (popup != null) {
             popup.tick(ticks);
@@ -464,6 +475,10 @@ public enum UIManager implements IViewParent {
 
     public double getMouseY() {
         return mouseY;
+    }
+
+    public boolean isInitLayout() {
+        return initLayout;
     }
 
     void setHoveredView(@Nullable View view) {
@@ -530,8 +545,8 @@ public enum UIManager implements IViewParent {
         return vKeyboard;
     }
 
-    public View getRootView() {
-        return rootView;
+    public View getMainView() {
+        return mainView;
     }
 
     @Override
@@ -600,7 +615,7 @@ public enum UIManager implements IViewParent {
     }
 
     @Override
-    public void relayoutChild(@Nonnull View view) {
-        //view.layout(this);
+    public void relayoutChildren() {
+
     }
 }

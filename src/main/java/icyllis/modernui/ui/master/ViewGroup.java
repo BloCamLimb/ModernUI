@@ -100,16 +100,6 @@ public class ViewGroup extends View implements IViewParent {
     }*/
 
     @Override
-    protected void dispatchLayout() {
-        super.dispatchLayout();
-        IViewRect prev = this;
-        for (View view : activeViews) {
-            view.layout(prev);
-            prev = view;
-        }
-    }
-
-    @Override
     protected void dispatchDraw(@Nonnull Canvas canvas, float time) {
         super.dispatchDraw(canvas, time);
         boolean s = (getTranslationX() != 0 || getTranslationY() != 0);
@@ -148,12 +138,7 @@ public class ViewGroup extends View implements IViewParent {
     }
 
     @Override
-    public void relayoutChild(@Nonnull View view) {
-        int i = activeViews.indexOf(view);
-        if (i > 0) {
-            view.layout(activeViews.get(i - 1));
-        } else {
-            view.layout(this);
-        }
+    public void relayoutChildren() {
+
     }
 }
