@@ -5,7 +5,7 @@
  * Modern UI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * 3.0 any later version.
  *
  * Modern UI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -16,16 +16,13 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.ui.master;
+package icyllis.modernui.graphics.renderer;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.graphics.font.IFontRenderer;
-import icyllis.modernui.graphics.font.ModernFontRenderer;
-import icyllis.modernui.graphics.font.TrueTypeRenderer;
+import icyllis.modernui.graphics.font.*;
 import icyllis.modernui.graphics.shader.ShaderTools;
 import icyllis.modernui.graphics.shader.program.*;
 import icyllis.modernui.graphics.math.Color3i;
-import icyllis.modernui.graphics.font.TextAlign;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -39,7 +36,7 @@ import org.lwjgl.opengl.GL11;
 import javax.annotation.Nonnull;
 
 /**
- * Use paint brush and drawing board to draw things in or especially for ModernUI's GUI:
+ * Use paint to draw things in or especially for Modern UI's UI:
  * likes rect, rounded rect, circle, ring, line, point
  * textured icon, etc.
  * This avoided RenderType being used in gui, for better performance
@@ -51,7 +48,7 @@ import javax.annotation.Nonnull;
  * or in world renderer, that also need matrix transformation to be compatible with vanilla
  * <p>
  * {@link net.minecraft.client.renderer.RenderType}
- * {@link icyllis.modernui.graphics.renderer.ModernTextRenderType}
+ * {@link TextRenderType}
  * {@link icyllis.modernui.graphics.font.TrueTypeRenderer}
  */
 @SuppressWarnings("unused")
@@ -175,7 +172,16 @@ public class Canvas {
      * @param aa anti-aliasing
      */
     public void setLineAntiAliasing(boolean aa) {
-        setLineAA0(aa);
+        if (aa) {
+            if (!lineAA) {
+                GL11.glEnable(GL11.GL_LINE_SMOOTH);
+                GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
+                lineAA = true;
+            }
+        } else if (lineAA) {
+            GL11.glDisable(GL11.GL_LINE_SMOOTH);
+            lineAA = false;
+        }
     }
 
     /**
@@ -185,17 +191,6 @@ public class Canvas {
      */
     public void setLineWidth(float width) {
         RenderSystem.lineWidth(width);
-    }
-
-    protected static void setLineAA0(boolean aa) {
-        if (aa && !lineAA) {
-            GL11.glEnable(GL11.GL_LINE_SMOOTH);
-            GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
-            lineAA = true;
-        } else if (!aa && lineAA) {
-            GL11.glDisable(GL11.GL_LINE_SMOOTH);
-            lineAA = false;
-        }
     }
 
     /**

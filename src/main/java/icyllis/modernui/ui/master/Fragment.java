@@ -16,11 +16,14 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.ui.layout;
+package icyllis.modernui.ui.master;
 
-public enum Direction4D {
-    LEFT,
-    RIGHT,
-    UP,
-    DOWN
+/**
+ * Part of a UI, used to manage specified view creation and its logic
+ * A UI can contain multiple fragments, which are controlled by UIManager
+ * to determine whether they are instantiated and enabled.
+ * Different fragments can communicate with each other,
+ * and there can be transition animation when switching etc.
+ */
+public class Fragment {
 }

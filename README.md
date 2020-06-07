@@ -6,7 +6,8 @@
   - (The beginning of each file specifies which license it is under)
   - [![License](https://img.shields.io/badge/License-GPLv3-blue.svg?style=flat-square)](https://raw.githubusercontent.com/BloCamLimb/ModernUI/1.15/LICENSE)
   - [![License](https://img.shields.io/badge/License-LGPLv3-lightblue.svg?style=flat-square)](https://www.gnu.org/licenses/lgpl-3.0.en.html)
-* Textures, Shaders
+  - [![License](https://img.shields.io/badge/License-Apache%202.0-orange.svg?style=flat-square)](https://www.apache.org/licenses/LICENSE-2.0)
+* Textures, Shaders, Models
   - Copyright (C) 2019 BloCamLimb et al. All rights reserved. 
   - [![License](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-yellow.svg?style=flat-square)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 * Fonts

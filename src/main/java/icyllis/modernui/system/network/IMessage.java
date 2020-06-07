@@ -5,7 +5,7 @@
  * Modern UI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * 3.0 any later version.
  *
  * Modern UI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -28,6 +28,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.network.NetworkEvent;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -55,7 +56,7 @@ public interface IMessage {
     void handle(@Nonnull SimpleContext ctx);
 
     /**
-     * Simplified network context for user modding
+     * Simplified network context wrapper
      */
     class SimpleContext {
 
@@ -68,6 +69,7 @@ public interface IMessage {
         /**
          * Get current player for bi-directional packet
          */
+        @Nullable
         public PlayerEntity getPlayer() {
             if (ctx.getDirection().getOriginationSide().isClient()) {
                 return getServerPlayer();
@@ -77,22 +79,24 @@ public interface IMessage {
         }
 
         /**
-         * Get client player instance on logic client side
+         * Get client player on client side
          */
         @OnlyIn(Dist.CLIENT)
+        @Nullable
         public PlayerEntity getClientPlayer() {
             return Minecraft.getInstance().player;
         }
 
         /**
-         * Get who sends this packet on logic server side
+         * Get who sends this packet on server side
          */
+        @Nullable
         public ServerPlayerEntity getServerPlayer() {
             return ctx.getSender();
         }
 
         /**
-         * Enqueue a async work to main thread or run immediately
+         * Enqueue an async work to main thread of appropriate side or run immediately
          */
         public CompletableFuture<Void> enqueueWork(Runnable runnable) {
             return ctx.enqueueWork(runnable);
@@ -116,7 +120,7 @@ public interface IMessage {
         }
 
         /**
-         * Get original context
+         * Get original context if needed
          */
         public NetworkEvent.Context getContext() {
             return ctx;

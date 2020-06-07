@@ -5,7 +5,7 @@
  * Modern UI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * 3.0 any later version.
  *
  * Modern UI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -28,7 +28,7 @@ var MethodInsnNode = Java.type('org.objectweb.asm.tree.MethodInsnNode');
 
 function initializeCoreMod() {
     return wrapMethodTransformers({
-        'replaceDisplayIngameMenu': {
+        'replaceDisplayInGameMenu': {
             'target': {
                 'type': 'METHOD',
                 'class': 'net.minecraft.client.Minecraft',
@@ -55,7 +55,7 @@ function initializeCoreMod() {
                 return methodNode;
             }
         },
-        'replaceGuiScaleCalculation': {
+        'replaceGuiScaleAlgorithm': {
             'target': {
                 'type': 'METHOD',
                 'class': 'net.minecraft.client.MainWindow',
@@ -86,7 +86,7 @@ function initializeCoreMod() {
                 return methodNode;
             }
         },
-        'replaceRenderBackgroundAlpha': {
+        'replaceRenderBackgroundColor': {
             'target': {
                 'type': 'METHOD',
                 'class': 'net.minecraft.client.gui.screen.Screen',
@@ -107,7 +107,7 @@ function initializeCoreMod() {
                 list.insertBefore(invoke, cast);
                 return methodNode;
             }
-        },
+        }/*,
         'replaceScreenPauseGame': {
             'target': {
                 'type': 'METHOD',
@@ -127,7 +127,7 @@ function initializeCoreMod() {
                 }
                 return methodNode;
             }
-        }
+        }*/
     })
 }
 

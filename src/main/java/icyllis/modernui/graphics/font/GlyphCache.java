@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019 BloCamLimb, cubex2. All rights reserved.
+ * Copyright (C) 2019 BloCamLimb All rights reserved.
  *
  * Better Fonts is a minecraft mod originally made by iSuzutsuki
  * for minecraft 1.4 ~ 1.7, and be ported to 1.8 ~ 1.12 by cube2x.
@@ -9,7 +9,7 @@
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or 3.0 any later version.
+ * version 3.0 of the License, or 3.0 any later version.
  *
  * Modern UI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -27,7 +27,6 @@ package icyllis.modernui.graphics.font;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.mojang.blaze3d.platform.GlStateManager;
-import icyllis.modernui.graphics.renderer.ModernTextRenderType;
 import icyllis.modernui.system.ConfigManager;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.renderer.RenderType;
@@ -513,7 +512,7 @@ class GlyphCache {
              */
             Entry entry = new Entry();
             entry.textureName = textureName;
-            entry.renderType = ModernTextRenderType.getOrCacheType(textureName);
+            entry.renderType = TextRenderType.getOrCacheType(textureName);
             entry.width = rect.width;
             entry.height = rect.height;
             entry.u1 = ((float) rect.x) / TEXTURE_WIDTH;
