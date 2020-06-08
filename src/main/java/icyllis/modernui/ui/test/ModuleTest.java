@@ -27,6 +27,7 @@ import icyllis.modernui.ui.widget.StaticFrameButton;
 import icyllis.modernui.ui.widget.TextField;
 import icyllis.modernui.system.ConstantsLibrary;
 
+@Deprecated
 public class ModuleTest extends Module {
 
     /*public static final ResourceLocation BACKGROUND = new ResourceLocation(ModernUI.MODID, "textures/gui/gui_default_background.png");

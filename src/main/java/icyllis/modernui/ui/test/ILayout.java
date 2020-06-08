@@ -16,14 +16,13 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.ui.layout;
-
-import icyllis.modernui.ui.test.IViewRect;
+package icyllis.modernui.ui.test;
 
 /**
  * Identify a 2-dimensional vector point on parent view as pivot point,
  * and identify width and height to form a view rect area
  */
+@Deprecated
 public interface ILayout {
 
     /**

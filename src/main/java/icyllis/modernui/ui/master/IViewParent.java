@@ -18,41 +18,37 @@
 
 package icyllis.modernui.ui.master;
 
-import icyllis.modernui.ui.test.IViewRect;
-
-import javax.annotation.Nonnull;
-
 /**
  * Defines a view that can act as a parent of another view
  */
-public interface IViewParent extends IViewRect {
+public interface IViewParent {
 
     /**
-     * Get parent view, null if this view is UIManager
+     * Get parent view
      *
      * @return parent view
      */
     IViewParent getParent();
 
     /**
-     * Get relative mouse x if needed
+     * Get relative mouse X if needed
      */
     double getRelativeMX();
 
     /**
-     * Get relative mouse x if needed
+     * Get relative mouse Y if needed
      */
     double getRelativeMY();
 
     /**
-     * Transform relative x if needed
+     * Transform relative X if needed
      *
      * @return absolute x
      */
     float toAbsoluteX(float rx);
 
     /**
-     * Transform relative y if needed
+     * Transform relative Y if needed
      *
      * @return absolute y
      */
@@ -68,5 +64,8 @@ public interface IViewParent extends IViewRect {
      */
     float getTranslationY();
 
-    void relayoutChildren();
+    /**
+     * Required when child views changed, to request this parent to relayout all child views
+     */
+    void relayoutChildViews();
 }

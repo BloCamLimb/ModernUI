@@ -21,7 +21,6 @@ package icyllis.modernui.ui.master;
 import icyllis.modernui.graphics.BlurHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -59,7 +58,7 @@ public final class ModernScreen extends Screen {
     @Override
     public void removed() {
         super.removed();
-        manager.clear();
+        manager.destroy();
     }
 
     @Override

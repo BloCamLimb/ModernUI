@@ -16,29 +16,40 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.ui.layout;
+package icyllis.modernui.ui.test;
 
-import icyllis.modernui.ui.test.IViewRect;
+import icyllis.modernui.ui.layout.Align9D;
 
-public class ListLayout implements ILayout {
+@Deprecated
+public class NormalLayout implements ILayout {
+
+    private Align9D align = Align9D.CENTER;
+
+    private int offsetX = 0;
+
+    private int offsetY = 0;
+
+    private int width = 16;
+
+    private int height = 16;
 
     @Override
     public int getLayoutX(IViewRect prev, IViewRect parent) {
-        return prev.getLeft();
+        return (int) (parent.getLeft() + align.getAlignedX(offsetX, parent.getWidth()));
     }
 
     @Override
     public int getLayoutY(IViewRect prev, IViewRect parent) {
-        return prev.getBottom();
+        return (int) (parent.getTop() + align.getAlignedX(offsetY, parent.getHeight()));
     }
 
     @Override
     public int getLayoutWidth(IViewRect prev, IViewRect parent) {
-        return prev.getWidth();
+        return width;
     }
 
     @Override
     public int getLayoutHeight(IViewRect prev, IViewRect parent) {
-        return prev.getHeight();
+        return height;
     }
 }

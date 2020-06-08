@@ -23,8 +23,6 @@ import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.container.INamedContainerProvider;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nonnull;
 import java.util.Map;
@@ -36,7 +34,7 @@ import java.util.function.Supplier;
  * Fragment manager to create a UI, contains some system properties and fragment factories to pass to UIManager.
  * Also a listener to listen system methods in UIManager.
  */
-@OnlyIn(Dist.CLIENT)
+@Deprecated
 public interface IFragmentManager {
 
     /**

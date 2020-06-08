@@ -20,7 +20,6 @@ package icyllis.modernui.ui.master;
 
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.layout.MeasureSpec;
-import icyllis.modernui.ui.test.IViewRect;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lwjgl.glfw.GLFW;
@@ -33,7 +32,7 @@ import javax.annotation.Nonnull;
  */
 @SuppressWarnings("unused")
 @OnlyIn(Dist.CLIENT)
-public class View implements IDrawable, IViewRect {
+public class View implements IDrawable {
 
     static final int PFLAG_MEASURED_DIMENSION_SET = 0x00000800;
     static final int PFLAG_LAYOUT_REQUIRED = 0x00002000;
@@ -307,7 +306,7 @@ public class View implements IDrawable, IViewRect {
         if (UIManager.INSTANCE.isInitLayout()) {
             return;
         }
-        parent.relayoutChildren();
+        parent.relayoutChildViews();
     }
 
     public int getId() {
@@ -343,7 +342,6 @@ public class View implements IDrawable, IViewRect {
      *
      * @return width
      */
-    @Override
     public final int getWidth() {
         return right - left;
     }
@@ -353,7 +351,6 @@ public class View implements IDrawable, IViewRect {
      *
      * @return height
      */
-    @Override
     public final int getHeight() {
         return bottom - top;
     }
@@ -363,7 +360,6 @@ public class View implements IDrawable, IViewRect {
      *
      * @return left
      */
-    @Override
     public final int getLeft() {
         return left;
     }
@@ -373,7 +369,6 @@ public class View implements IDrawable, IViewRect {
      *
      * @return top
      */
-    @Override
     public final int getTop() {
         return top;
     }
@@ -383,7 +378,6 @@ public class View implements IDrawable, IViewRect {
      *
      * @return right
      */
-    @Override
     public final int getRight() {
         return right;
     }
@@ -393,7 +387,6 @@ public class View implements IDrawable, IViewRect {
      *
      * @return bottom
      */
-    @Override
     public final int getBottom() {
         return bottom;
     }

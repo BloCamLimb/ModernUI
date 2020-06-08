@@ -21,7 +21,6 @@ package icyllis.modernui.system;
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.font.TrueTypeRenderer;
 import icyllis.modernui.ui.example.TestFragment;
-import icyllis.modernui.ui.example.TestMainView;
 import icyllis.modernui.ui.master.UIManager;
 import icyllis.modernui.ui.master.UIEditor;
 import icyllis.modernui.ui.example.ContainerTest;
@@ -100,7 +99,7 @@ public class EventsHandler {
         @SubscribeEvent
         public static void onGuiOpen(@Nonnull GuiOpenEvent event) {
             TrueTypeRenderer.INSTANCE.init();
-            UIManager.INSTANCE.onGuiOpen(event.getGui(), event::setCanceled);
+            UIManager.INSTANCE.handleGuiOpenEvent(event.getGui(), event::setCanceled);
             BlurHandler.INSTANCE.blur(event.getGui());
         }
 

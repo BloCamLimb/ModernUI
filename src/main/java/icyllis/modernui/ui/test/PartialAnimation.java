@@ -18,17 +18,15 @@
 
 package icyllis.modernui.ui.test;
 
-import icyllis.modernui.ui.animation.IAnimation;
-
 /**
  * A single animation depend on current value
  */
 @Deprecated
-public class PartialAnimation implements IAnimation {
-    @Override
+public class PartialAnimation {
+    /*@Override
     public void update(float time) {
 
-    }
+    }*/
 
     /*private final float duration;
 

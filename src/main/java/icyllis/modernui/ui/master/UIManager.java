@@ -21,7 +21,7 @@ package icyllis.modernui.ui.master;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.system.ModernUI;
-import icyllis.modernui.ui.animation.IAnimation;
+import icyllis.modernui.ui.animation.Animation;
 import icyllis.modernui.ui.layout.MeasureSpec;
 import icyllis.modernui.ui.test.IModule;
 import net.minecraft.client.Minecraft;
@@ -32,8 +32,6 @@ import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.inventory.container.ContainerType;
 import net.minecraft.inventory.container.INamedContainerProvider;
-import net.minecraft.util.Tuple;
-import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.logging.log4j.Marker;
@@ -47,8 +45,6 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.IntFunction;
-import java.util.function.Supplier;
 
 /**
  * Manage current gui screen, mainly Modern UI's, and post events to root view and popup view
@@ -91,16 +87,16 @@ public enum UIManager implements IViewParent {
     private double mouseX, mouseY;
 
     // a list of animations in render loop
-    private final List<IAnimation> animations = new ArrayList<>();
+    private final List<Animation> animations = new ArrayList<>();
 
-    @Deprecated
+    // a list of UI tasks
     private final List<DelayedTask> tasks = new CopyOnWriteArrayList<>();
 
     // elapsed ticks from a gui open, update every tick, 20 = 1 second
     private int ticks = 0;
 
     // elapsed time from a gui open, update every frame, 20.0 = 1 second
-    private float frameTime = 0;
+    private float drawTime = 0;
 
     // lazy loading, should be final
     private Canvas canvas = null;
@@ -116,6 +112,7 @@ public enum UIManager implements IViewParent {
     // for double click check, 10 tick = 0.5s
     private int dClickTime = -10;
 
+    // prevent request layout on init layout
     private boolean initLayout = true;
 
     UIManager() {
@@ -174,6 +171,7 @@ public enum UIManager implements IViewParent {
      *                confirm window should reset mouse
      *                context menu should not reset mouse
      */
+    //TODO new popup system
     public void openPopup(IModule popup, boolean refresh) {
         /*if (root == null) {
             ModernUI.LOGGER.fatal(MARKER, "#openPopup() shouldn't be called when there's NO gui open");
@@ -200,6 +198,7 @@ public enum UIManager implements IViewParent {
         }
     }
 
+    // called when open a UI, or back to the UI (Modern UI's UI)
     void init(Screen mui, int width, int height) {
         this.modernScreen = mui;
         this.width = width;
@@ -221,23 +220,24 @@ public enum UIManager implements IViewParent {
         initLayout = false;
     }
 
-    public void onGuiOpen(Screen gui, Consumer<Boolean> cancel) {
-        this.guiToOpen = gui;
-        if (gui == null) {
-            clear();
+    // System method, do not call
+    public void handleGuiOpenEvent(Screen guiToOpen, Consumer<Boolean> cancelFunc) {
+        this.guiToOpen = guiToOpen;
+        if (guiToOpen == null) {
+            destroy();
             return;
         }
         // modern screen != null
-        if (modernScreen != gui && ((gui instanceof ModernScreen) || (gui instanceof ModernContainerScreen<?>))) {
+        if (modernScreen != guiToOpen && ((guiToOpen instanceof ModernScreen) || (guiToOpen instanceof ModernContainerScreen<?>))) {
             if (mainView != null) {
-                cancel.accept(true);
-                ModernUI.LOGGER.fatal(MARKER, "ModernUI doesn't allow to keep other screens, use module group instead. RootScreen: {}, GuiToOpen: {}", modernScreen, gui);
+                cancelFunc.accept(true);
+                ModernUI.LOGGER.fatal(MARKER, "ModernUI doesn't allow to keep other screens, use fragment instead. RootScreen: {}, GuiToOpen: {}", modernScreen, guiToOpen);
                 return;
             }
             resetTicks();
         }
         // hotfix 1.5.2, but there's no way to work with screens that will pause game
-        if (modernScreen != gui && modernScreen != null) {
+        if (modernScreen != guiToOpen && modernScreen != null) {
             mouseMoved(-1, -1);
         }
         // for non-modern-ui screens
@@ -246,19 +246,31 @@ public enum UIManager implements IViewParent {
         }
     }
 
+    private void resetTicks() {
+        ticks = 0;
+        drawTime = 0;
+    }
+
     @Nullable
     public Screen getModernScreen() {
         return modernScreen;
     }
 
-    public void addAnimation(IAnimation animation) {
+    /**
+     * Add an active animation, which will be removed from list if finished
+     *
+     * @param animation animation to add
+     */
+    public void enqueueAnimation(@Nonnull Animation animation) {
         if (!animations.contains(animation)) {
             animations.add(animation);
         }
     }
 
-    public void scheduleTask(DelayedTask task) {
-        tasks.add(task);
+    public void enqueueTask(@Nonnull DelayedTask task) {
+        if (!tasks.contains(task)) {
+            tasks.add(task);
+        }
     }
 
     void mouseMoved(double mouseX, double mouseY) {
@@ -378,9 +390,9 @@ public enum UIManager implements IViewParent {
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableAlphaTest();
         RenderSystem.disableDepthTest();
-        mainView.draw(canvas, frameTime);
+        mainView.draw(canvas, drawTime);
         if (popup != null) {
-            popup.draw(frameTime);
+            popup.draw(drawTime);
         }
         GL11.glDisable(GL11.GL_LINE_SMOOTH);
         RenderSystem.lineWidth(1.0f);
@@ -404,7 +416,7 @@ public enum UIManager implements IViewParent {
         refreshMouse();
     }
 
-    void clear() {
+    void destroy() {
         // Hotfix 1.4.7
         if (guiToOpen == null) {
             animations.clear();
@@ -412,6 +424,7 @@ public enum UIManager implements IViewParent {
             mainView = null;
             popup = null;
             //extraData = null;
+            mainFragment = null;
             modernScreen = null;
             UIEditor.INSTANCE.setHoveredWidget(null);
             UITools.useDefaultCursor();
@@ -420,6 +433,7 @@ public enum UIManager implements IViewParent {
         }
     }
 
+    // System method, do not call
     public void clientTick() {
         ++ticks;
         if (mainView != null) {
@@ -435,26 +449,22 @@ public enum UIManager implements IViewParent {
         tasks.removeIf(DelayedTask::shouldRemove);
     }
 
+    // System method, do not call
     @SuppressWarnings("ForLoopReplaceableByForEach")
     public void renderTick(float partialTick) {
-        frameTime = ticks + partialTick;
+        drawTime = ticks + partialTick;
 
         // remove animations from loop in next frame
-        animations.removeIf(IAnimation::shouldRemove);
+        animations.removeIf(Animation::shouldRemove);
 
         // list size is dynamically changeable, due to animation chain
         for (int i = 0; i < animations.size(); i++) {
-            animations.get(i).update(frameTime);
+            animations.get(i).update(drawTime);
         }
     }
 
-    private void resetTicks() {
-        ticks = 0;
-        frameTime = 0;
-    }
-
     public float getAnimationTime() {
-        return frameTime;
+        return drawTime;
     }
 
     public int getTicks() {
@@ -555,36 +565,6 @@ public enum UIManager implements IViewParent {
     }
 
     @Override
-    public int getWidth() {
-        return width;
-    }
-
-    @Override
-    public int getHeight() {
-        return height;
-    }
-
-    @Override
-    public int getLeft() {
-        return 0;
-    }
-
-    @Override
-    public int getTop() {
-        return 0;
-    }
-
-    @Override
-    public int getRight() {
-        return width;
-    }
-
-    @Override
-    public int getBottom() {
-        return height;
-    }
-
-    @Override
     public double getRelativeMX() {
         return mouseX;
     }
@@ -615,7 +595,7 @@ public enum UIManager implements IViewParent {
     }
 
     @Override
-    public void relayoutChildren() {
-
+    public void relayoutChildViews() {
+        //TODO
     }
 }
