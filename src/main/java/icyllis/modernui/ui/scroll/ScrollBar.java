@@ -18,8 +18,8 @@
 
 package icyllis.modernui.ui.scroll;
 
-import icyllis.modernui.ui.layout.ILayout;
-import icyllis.modernui.ui.layout.ScriptLayout;
+import icyllis.modernui.ui.test.ILayout;
+import icyllis.modernui.ui.test.ScriptLayout;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.master.UIManager;
 import icyllis.modernui.ui.master.View;

@@ -16,11 +16,10 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.ui.layout;
+package icyllis.modernui.ui.test;
 
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.system.StorageManager;
-import icyllis.modernui.ui.test.IViewRect;
 import icyllis.modernui.ui.master.UIManager;
 
 import javax.annotation.Nullable;
@@ -30,6 +29,7 @@ import javax.script.ScriptException;
 /**
  * Custom layout using js
  */
+@Deprecated
 public class ScriptLayout implements ILayout {
 
     private static final ScriptEngine ENGINE = StorageManager.INSTANCE.getScriptManager().getEngineByName("JavaScript");

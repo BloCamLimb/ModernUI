@@ -25,7 +25,7 @@ import javax.annotation.Nonnull;
  */
 public class MeasureSpec {
 
-    private static final int MODE_SHIFT = 0x20 - 0x2;
+    private static final int MODE_SHIFT = 30;
     private static final int MODE_MASK = 0x3 << MODE_SHIFT;
 
     /**
@@ -37,9 +37,9 @@ public class MeasureSpec {
      */
     public static int makeMeasureSpec(int size, @Nonnull Mode mode) {
         if (size < 0 || size > (1 << MODE_SHIFT - 1)) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("out of range?");
         }
-        return (size & ~MODE_MASK) | (mode.bit & MODE_MASK);
+        return (size & ~MODE_MASK) | (mode.ordinal() << MODE_SHIFT & MODE_MASK);
     }
 
     /**
@@ -67,34 +67,31 @@ public class MeasureSpec {
             case 2 << MODE_SHIFT:
                 return Mode.AT_MOST;
         }
-        return Mode.UNSPECIFIED;
+        throw new IllegalStateException("unknown mode?");
     }
 
+    /**
+     * Measure specification mode
+     */
     public enum Mode {
 
         /**
-         * Measure specification mode: The parent has not imposed any constraint
-         * on the child. It can be whatever size it wants.
+         * The parent has not imposed any constraint on the child.
+         * It can be whatever size it wants.
          */
         UNSPECIFIED,
 
         /**
-         * Measure specification mode: The parent has determined an exact size
-         * for the child. The child is going to be given those bounds regardless
+         * The parent has determined an exact size for the child.
+         * The child is going to be given those bounds regardless
          * of how big it wants to be.
          */
         EXACTLY,
 
         /**
-         * Measure specification mode: The child can be as large as it wants up
-         * to the specified size.
+         * The child can be as large as it wants up to the specified size.
          */
-        AT_MOST;
+        AT_MOST
 
-        private final int bit;
-
-        Mode() {
-            bit = ordinal() << MODE_SHIFT;
-        }
     }
 }

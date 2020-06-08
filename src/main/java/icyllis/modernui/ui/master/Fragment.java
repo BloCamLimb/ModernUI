@@ -27,8 +27,15 @@ import javax.annotation.Nullable;
  * Different fragments can communicate with each other,
  * and there can be transition animation when switching etc.
  */
-public abstract class Fragment {
+public class Fragment {
 
+    /**
+     * Create the view belong to this fragment
+     * If creating a main view, it's better to use FrameLayout
+     * to center the view.
+     *
+     * @return view or null
+     */
     @Nullable
     public View createView() {
         return null;

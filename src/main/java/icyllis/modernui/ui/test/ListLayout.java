@@ -16,35 +16,28 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.ui.layout;
+package icyllis.modernui.ui.test;
 
-import icyllis.modernui.ui.test.IViewRect;
-
-public class DefaultLayout implements ILayout {
-
-    public static final DefaultLayout INSTANCE = new DefaultLayout();
-
-    private DefaultLayout() {
-
-    }
+@Deprecated
+public class ListLayout implements ILayout {
 
     @Override
     public int getLayoutX(IViewRect prev, IViewRect parent) {
-        return parent.getWidth() >> 1;
+        return prev.getLeft();
     }
 
     @Override
     public int getLayoutY(IViewRect prev, IViewRect parent) {
-        return parent.getWidth() >> 1;
+        return prev.getBottom();
     }
 
     @Override
     public int getLayoutWidth(IViewRect prev, IViewRect parent) {
-        return 16;
+        return prev.getWidth();
     }
 
     @Override
     public int getLayoutHeight(IViewRect prev, IViewRect parent) {
-        return 16;
+        return prev.getHeight();
     }
 }

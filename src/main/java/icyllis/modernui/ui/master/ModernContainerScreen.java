@@ -77,7 +77,7 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
     @Override
     public void removed() {
         super.removed();
-        manager.clear();
+        manager.destroy();
     }
 
     @Override

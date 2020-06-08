@@ -26,7 +26,7 @@ import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 
-public class Animation implements IAnimation {
+public class Animation {
 
     private final float duration;
 
@@ -110,7 +110,7 @@ public class Animation implements IAnimation {
         if (appliers != null) {
             appliers.forEach(e -> e.record(reversed, isFull));
         }
-        UIManager.INSTANCE.addAnimation(this);
+        UIManager.INSTANCE.enqueueAnimation(this);
     }
 
     /**
@@ -136,7 +136,7 @@ public class Animation implements IAnimation {
         if (appliers != null) {
             appliers.forEach(e -> e.record(reversed, isFull));
         }
-        UIManager.INSTANCE.addAnimation(this);
+        UIManager.INSTANCE.enqueueAnimation(this);
     }
 
     /**
@@ -167,7 +167,6 @@ public class Animation implements IAnimation {
         }
     }
 
-    @Override
     public void update(float time) {
         if (waiting || time <= startTime) {
             return;
@@ -195,7 +194,6 @@ public class Animation implements IAnimation {
         return duration;
     }
 
-    @Override
     public boolean shouldRemove() {
         return waiting;
     }

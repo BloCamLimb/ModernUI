@@ -19,16 +19,16 @@
 package icyllis.modernui.ui.master;
 
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.ui.test.IViewRect;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
-public class ViewGroup extends View implements IViewParent {
+public abstract class ViewGroup extends View implements IViewParent {
 
     @Nonnull
     private List<View> activeViews = new ArrayList<>();
@@ -138,7 +138,64 @@ public class ViewGroup extends View implements IViewParent {
     }
 
     @Override
-    public void relayoutChildren() {
+    public void relayoutChildViews() {
 
+    }
+
+    protected boolean checkLayoutParams(@Nullable LayoutParams p) {
+        return p != null;
+    }
+
+    /**
+     * LayoutParams are used by views to tell their parents how they want to
+     * be laid out.
+     * <p>
+     * The base LayoutParams class just describes how big the view wants to be
+     * for both width and height.
+     * <p>
+     * There are subclasses of LayoutParams for different subclasses of
+     * ViewGroup
+     */
+    public static class LayoutParams {
+
+        /**
+         * Special value for width or height, which means
+         * views want to be as big as parent view,
+         * but not greater than parent
+         */
+        public static final int MATCH_PARENT = -1;
+
+        /**
+         * Special value for width or height, which means
+         * views want to be just large enough to fit
+         * its own content
+         */
+        public static final int WRAP_CONTENT = -2;
+
+        /**
+         * The width that views want to be.
+         * Can be one of MATCH_PARENT or WARP_CONTENT, or exact value
+         */
+        public int width;
+
+        /**
+         * The height that views want to be.
+         * Can be one of MATCH_PARENT or WARP_CONTENT, or exact value
+         */
+        public int height;
+
+        /**
+         * Creates a new set of layout parameters with the specified width
+         * and height.
+         *
+         * @param width  either {@link #WRAP_CONTENT},
+         *               {@link #MATCH_PARENT}, or a fixed value
+         * @param height either {@link #WRAP_CONTENT},
+         *               {@link #MATCH_PARENT}, or a fixed value
+         */
+        public LayoutParams(int width, int height) {
+            this.width = width;
+            this.height = height;
+        }
     }
 }

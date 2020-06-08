@@ -16,8 +16,9 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.ui.animation;
+package icyllis.modernui.ui.test;
 
+@Deprecated
 public interface IAnimation {
 
     /**

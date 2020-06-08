@@ -18,8 +18,6 @@
 
 package icyllis.modernui.ui.animation;
 
-import icyllis.modernui.ui.animation.Animation;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Comparator;
@@ -34,10 +32,10 @@ import java.util.Optional;
 public class AnimationControl implements Animation.IListener {
 
     @Nullable
-    private final List<Animation> openList;
+    private final Animation[] openArray;
 
     @Nullable
-    private final List<Animation> closeList;
+    private final Animation[] closeArray;
 
     // 0 = close, 1 = opening, 2 = open, 3 = closing
     private int openState = 0;
@@ -55,8 +53,16 @@ public class AnimationControl implements Animation.IListener {
     private final Animation lastCloseAnimation;
 
     public AnimationControl(@Nullable List<Animation> openList, @Nullable List<Animation> closeList) {
-        this.openList = openList;
-        this.closeList = closeList;
+        if (openList != null) {
+            openArray = openList.toArray(new Animation[0]);
+        } else {
+            openArray = null;
+        }
+        if (closeList != null) {
+            closeArray = closeList.toArray(new Animation[0]);
+        } else {
+            closeArray = null;
+        }
         if (openList != null) {
             Optional<Animation> d = openList.stream().max(Comparator.comparing(Animation::getDuration));
             lastOpenAnimation = d.orElse(null);
@@ -87,24 +93,28 @@ public class AnimationControl implements Animation.IListener {
     }
 
     /**
-     * Call this at the beginning of draw()
+     * Call this at the beginning of onDraw()
      */
     public void update() {
         if (prepareToOpen && openState == 0) {
             openState = 1;
-            if (openList != null) {
-                openList.forEach(Animation::startFull);
+            if (openArray != null) {
+                for (Animation a : openArray) {
+                    a.startFull();
+                }
             }
-            if (openList == null || openList.isEmpty()) {
+            if (openArray == null || openArray.length == 0) {
                 openState = 2;
             }
             prepareToOpen = false;
         } else if (prepareToClose && openState == 2) {
             openState = 3;
-            if (closeList != null) {
-                closeList.forEach(Animation::startFull);
+            if (closeArray != null) {
+                for (Animation a : closeArray) {
+                    a.startFull();
+                }
             }
-            if (closeList == null || closeList.isEmpty()) {
+            if (closeArray == null || closeArray.length == 0) {
                 openState = 0;
             }
             prepareToClose = false;

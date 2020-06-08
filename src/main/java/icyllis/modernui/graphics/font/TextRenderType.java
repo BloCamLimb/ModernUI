@@ -2,10 +2,6 @@
  * Modern UI.
  * Copyright (C) 2019 BloCamLimb All rights reserved.
  *
- * Better Fonts is a minecraft mod originally made by iSuzutsuki
- * for minecraft 1.4 ~ 1.7, and be ported to 1.8 ~ 1.12 by cube2x.
- * This class is under LGPL v3.0 license. See https://www.gnu.org/licenses/lgpl-3.0.en.html
- *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -35,9 +31,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-/**
- * @author BloCamLimb
- */
 public class TextRenderType extends RenderType {
 
     private static final Map<Integer, RenderType> TYPES = new HashMap<>();
