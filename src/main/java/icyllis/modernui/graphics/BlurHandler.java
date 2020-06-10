@@ -18,8 +18,10 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.ui.master.UIManager;
 import icyllis.modernui.system.ConfigManager;
+import icyllis.modernui.ui.master.ModernContainerScreen;
+import icyllis.modernui.ui.master.ModernScreen;
+import icyllis.modernui.ui.master.UIManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraft.client.gui.screen.Screen;
@@ -44,18 +46,26 @@ public enum BlurHandler {
 
     private final Minecraft minecraft = Minecraft.getInstance();
 
-    private final List<Class<?>> excludedClass = new ArrayList<>();
+    private final List<Class<?>> excluded = new ArrayList<>();
 
-    /** If is playing animation **/
+    /**
+     * If is playing animation
+     */
     private boolean changingProgress = false;
 
-    /** If blur shader is activated **/
+    /**
+     * If blur shader is activated
+     */
     private boolean blurring = false;
 
-    /** If a gui excluded, the other guis that opened after this gui won't be blurred, unless current gui closed **/
+    /**
+     * If a gui excluded, the other guis that opened after this gui won't be blurred, unless current gui closed
+     */
     private boolean guiOpened = false;
 
-    /** Background alpha **/
+    /**
+     * Background alpha
+     */
     private float backAlpha = 0;
 
     BlurHandler() {
@@ -63,10 +73,11 @@ public enum BlurHandler {
     }
 
     public void blur(@Nullable Screen gui) {
-        boolean excluded = gui != null && excludedClass.stream().anyMatch(c -> c.isAssignableFrom(gui.getClass()));
-        if (excluded || !ConfigManager.CLIENT.blurScreenBackground) {
+        boolean exclude = gui != null && !(gui instanceof ModernScreen) && !(gui instanceof ModernContainerScreen<?>) &&
+                excluded.stream().anyMatch(c -> c.isAssignableFrom(gui.getClass()));
+        if (exclude || !ConfigManager.CLIENT.blurScreenBackground) {
             backAlpha = 0.5f;
-            if (excluded && blurring) {
+            if (exclude && blurring) {
                 minecraft.gameRenderer.stopUseShader();
                 changingProgress = false;
                 blurring = false;
@@ -96,7 +107,7 @@ public enum BlurHandler {
      * Mainly for ingame menu gui, re-blur after resources reloaded
      */
     public void forceBlur() {
-        // no need to check if is excluded, this method is only called by modern ui screen
+        // no need to check if is excluded, this method is only called by Modern UI screen
         if (!ConfigManager.CLIENT.blurScreenBackground) {
             return;
         }
@@ -111,12 +122,12 @@ public enum BlurHandler {
     }
 
     public void loadExclusions(@Nonnull List<? extends String> names) {
-        excludedClass.clear();
-        excludedClass.add(ChatScreen.class);
+        excluded.clear();
+        excluded.add(ChatScreen.class);
         for (String s : names) {
             try {
                 Class<?> clazz = Class.forName(s);
-                excludedClass.add(clazz);
+                excluded.add(clazz);
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             }

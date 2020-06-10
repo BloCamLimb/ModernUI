@@ -18,15 +18,18 @@
 
 package icyllis.modernui.ui.master;
 
+import javax.annotation.Nonnull;
+
 public class DelayedTask {
 
+    @Nonnull
     private final Runnable runnable;
 
     private final int finishTick;
 
     private boolean finish = false;
 
-    public DelayedTask(Runnable runnable, int delayedTick) {
+    public DelayedTask(@Nonnull Runnable runnable, int delayedTick) {
         this.runnable = runnable;
         this.finishTick = UIManager.INSTANCE.getTicks() + delayedTick;
     }

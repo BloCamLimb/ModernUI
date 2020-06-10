@@ -34,40 +34,55 @@ import javax.annotation.Nonnull;
 @OnlyIn(Dist.CLIENT)
 public class View implements IDrawable {
 
-    static final int PFLAG_MEASURED_DIMENSION_SET = 0x00000800;
-    static final int PFLAG_LAYOUT_REQUIRED = 0x00002000;
+    private static final int PFLAG_MEASURED_DIMENSION_SET = 0x00000800;
+    private static final int PFLAG_LAYOUT_REQUIRED = 0x00002000;
 
-    int privateFlags;
+    private int privateFlags;
 
     /**
      * Parent view, assigned by {@link #assignParent(IViewParent)}
      */
-    protected IViewParent parent;
+    private IViewParent parent;
 
     private int id;
 
     /**
-     * Rect area
+     * View left on screen
      */
     private int left;
-    private int top;
-    private int right;
-    private int bottom;
 
     /**
-     * System properties
+     * View top on screen
      */
+    private int top;
+
+    /**
+     * View right on screen
+     */
+    private int right;
+
+    /**
+     * View bottom on screen
+     */
+    private int bottom;
+
     private boolean visible = true;
     private boolean listening = true;
 
     private int minWidth;
     private int minHeight;
 
-    int prevWidthMeasureSpec = Integer.MIN_VALUE;
-    int prevHeightMeasureSpec = Integer.MIN_VALUE;
+    /**
+     * Cached previous measure spec to avoid unnecessary measurements
+     */
+    private int prevWidthMeasureSpec = Integer.MIN_VALUE;
+    private int prevHeightMeasureSpec = Integer.MIN_VALUE;
 
-    int measuredWidth;
-    int measuredHeight;
+    /**
+     * The measurement result in onMeasure(), used to layout
+     */
+    private int measuredWidth;
+    private int measuredHeight;
 
     /**
      * Raw draw method
@@ -112,18 +127,18 @@ public class View implements IDrawable {
      * Derived classes with children should override onLayout()
      * In that method, they should call layout() on each of their children
      *
-     * @param l left position, relative to game window
-     * @param t top position, relative to game window
-     * @param r right position, relative to game window
-     * @param b bottom position, relative to game window
+     * @param left   left position, relative to game window
+     * @param top    top position, relative to game window
+     * @param right  right position, relative to game window
+     * @param bottom bottom position, relative to game window
      */
-    public void layout(int l, int t, int r, int b) {
-        boolean changed = setFrame(l, t, r, b);
+    public void layout(int left, int top, int right, int bottom) {
+        boolean changed = setFrame(left, top, right, bottom);
 
-        if (changed || hasFlag(PFLAG_LAYOUT_REQUIRED)) {
-            onLayout(changed, l, t, r, b);
+        if (changed || hasPFlag(PFLAG_LAYOUT_REQUIRED)) {
+            onLayout(changed, left, top, right, bottom);
 
-            removeFlag(PFLAG_LAYOUT_REQUIRED);
+            removePFlag(PFLAG_LAYOUT_REQUIRED);
         }
     }
 
@@ -209,16 +224,16 @@ public class View implements IDrawable {
 
         if (needsLayout) {
             // remove the flag first anyway
-            removeFlag(PFLAG_MEASURED_DIMENSION_SET);
+            removePFlag(PFLAG_MEASURED_DIMENSION_SET);
 
             onMeasure(widthMeasureSpec, heightMeasureSpec);
 
             // the flag should be added in onMeasure()
-            if (!hasFlag(PFLAG_MEASURED_DIMENSION_SET)) {
-                throw new IllegalStateException();
+            if (!hasPFlag(PFLAG_MEASURED_DIMENSION_SET)) {
+                throw new IllegalStateException("measured dimension unspecified?");
             }
 
-            addFlag(PFLAG_LAYOUT_REQUIRED);
+            addPFlag(PFLAG_LAYOUT_REQUIRED);
         }
 
         prevWidthMeasureSpec = widthMeasureSpec;
@@ -249,7 +264,29 @@ public class View implements IDrawable {
         this.measuredWidth = measuredWidth;
         this.measuredHeight = measuredHeight;
 
-        addFlag(PFLAG_MEASURED_DIMENSION_SET);
+        addPFlag(PFLAG_MEASURED_DIMENSION_SET);
+    }
+
+    /**
+     * Get measured width information
+     * This should be used during measurement and layout calculations only.
+     * Use {@link #getWidth()} to get the width of this view after layout.
+     *
+     * @return measured width of this view
+     */
+    public final int getMeasuredWidth() {
+        return measuredWidth;
+    }
+
+    /**
+     * Get measured height information
+     * This should be used during measurement and layout calculations only.
+     * Use {@link #getHeight()} to get the height of this view after layout.
+     *
+     * @return measured height of this view
+     */
+    public final int getMeasuredHeight() {
+        return measuredHeight;
     }
 
     /**
@@ -260,18 +297,16 @@ public class View implements IDrawable {
      * @return measured size
      */
     public static int getDefaultSize(int size, int measureSpec) {
-        int result = size;
 
         switch (MeasureSpec.getMode(measureSpec)) {
             case UNSPECIFIED:
                 break;
             case AT_MOST:
             case EXACTLY:
-                result = MeasureSpec.getSize(measureSpec);
-                break;
+                return MeasureSpec.getSize(measureSpec);
         }
 
-        return result;
+        return size;
     }
 
     /**
@@ -323,17 +358,17 @@ public class View implements IDrawable {
     }
 
     // helper method
-    void addFlag(int flag) {
+    private void addPFlag(int flag) {
         privateFlags |= flag;
     }
 
     // helper method
-    void removeFlag(int flag) {
+    private void removePFlag(int flag) {
         privateFlags &= ~flag;
     }
 
     // helper method
-    boolean hasFlag(int flag) {
+    private boolean hasPFlag(int flag) {
         return (privateFlags & flag) != 0;
     }
 
@@ -422,19 +457,19 @@ public class View implements IDrawable {
     }
 
     public double getRelativeMX() {
-        return getParent().getRelativeMX() + getParent().getTranslationX();
+        return getParent().getRelativeMX() + getParent().getScrollX();
     }
 
     public double getRelativeMY() {
-        return getParent().getRelativeMY() + getParent().getTranslationY();
+        return getParent().getRelativeMY() + getParent().getScrollY();
     }
 
     public float toAbsoluteX(float rx) {
-        return getParent().toAbsoluteX(rx) - getParent().getTranslationX();
+        return getParent().toAbsoluteX(rx) - getParent().getScrollX();
     }
 
     public float toAbsoluteY(float ry) {
-        return getParent().toAbsoluteY(ry) - getParent().getTranslationY();
+        return getParent().toAbsoluteY(ry) - getParent().getScrollY();
     }
 
     public float getAbsoluteLeft() {
@@ -461,7 +496,7 @@ public class View implements IDrawable {
      * @param mouseY relative mouse Y pos
      * @return return {@code true} if certain view hovered
      */
-    public final boolean updateMouseHover(double mouseX, double mouseY) {
+    final boolean updateMouseHover(double mouseX, double mouseY) {
         if (isInView(mouseX, mouseY)) {
             if (dispatchMouseHover(mouseX, mouseY)) {
                 return true;
