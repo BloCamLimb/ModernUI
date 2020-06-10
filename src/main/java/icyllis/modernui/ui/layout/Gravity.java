@@ -122,13 +122,6 @@ public class Gravity {
 
 
     /**
-     * Raw bit controlling whether the layout direction is relative or not (START/END instead of
-     * absolute LEFT/RIGHT).
-     */
-    public static final int RELATIVE_LAYOUT_DIRECTION = 0x00800000;
-
-
-    /**
      * Binary mask to get the absolute horizontal gravity of a gravity.
      */
     public static final int HORIZONTAL_GRAVITY_MASK = (AXIS_SPECIFIED |
@@ -138,22 +131,5 @@ public class Gravity {
      */
     public static final int VERTICAL_GRAVITY_MASK = (AXIS_SPECIFIED |
             AXIS_PULL_BEFORE | AXIS_PULL_AFTER) << AXIS_Y_SHIFT;
-
-
-    /**
-     * Push object to x-axis position at the start of its container, not changing its size.
-     */
-    public static final int START = RELATIVE_LAYOUT_DIRECTION | LEFT;
-
-    /**
-     * Push object to x-axis position at the end of its container, not changing its size.
-     */
-    public static final int END = RELATIVE_LAYOUT_DIRECTION | RIGHT;
-
-
-    /**
-     * Binary mask for the horizontal gravity and script specific direction bit.
-     */
-    public static final int RELATIVE_HORIZONTAL_GRAVITY_MASK = START | END;
 
 }

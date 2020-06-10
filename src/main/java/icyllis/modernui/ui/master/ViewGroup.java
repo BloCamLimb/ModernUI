@@ -102,10 +102,10 @@ public abstract class ViewGroup extends View implements IViewParent {
     @Override
     protected void dispatchDraw(@Nonnull Canvas canvas, float time) {
         super.dispatchDraw(canvas, time);
-        boolean s = (getTranslationX() != 0 || getTranslationY() != 0);
+        boolean s = (getScrollX() != 0 || getScrollY() != 0);
         if (s) {
             canvas.save();
-            canvas.translate(-getTranslationX(), -getTranslationY());
+            canvas.translate(-getScrollX(), -getScrollY());
         }
         for (View view : activeViews) {
             view.draw(canvas, time);
@@ -117,8 +117,8 @@ public abstract class ViewGroup extends View implements IViewParent {
 
     @Override
     protected boolean dispatchMouseHover(double mouseX, double mouseY) {
-        double tmx = mouseX + getTranslationX();
-        double tmy = mouseY + getTranslationY();
+        double tmx = mouseX + getScrollX();
+        double tmy = mouseY + getScrollY();
         for (int i = activeViews.size() - 1; i >= 0; i--) {
             if (activeViews.get(i).updateMouseHover(tmx, tmy)) {
                 return true;
@@ -128,12 +128,12 @@ public abstract class ViewGroup extends View implements IViewParent {
     }
 
     @Override
-    public float getTranslationX() {
+    public float getScrollX() {
         return 0;
     }
 
     @Override
-    public float getTranslationY() {
+    public float getScrollY() {
         return 0;
     }
 
@@ -142,8 +142,44 @@ public abstract class ViewGroup extends View implements IViewParent {
 
     }
 
-    protected boolean checkLayoutParams(@Nullable LayoutParams p) {
-        return p != null;
+    /**
+     * Create a safe layout params base on the given params to fit to this view group
+     * <p>
+     * Also see {@link #createDefaultLayoutParams()}
+     * Also see {@link #checkLayoutParams(LayoutParams)}
+     *
+     * @param params layout params to convert
+     * @return safe layout params
+     */
+    @Nonnull
+    protected LayoutParams convertLayoutParams(@Nonnull ViewGroup.LayoutParams params) {
+        return params;
+    }
+
+    /**
+     * Create default layout params if child params is null
+     * <p>
+     * Also see {@link #convertLayoutParams(LayoutParams)}
+     * Also see {@link #checkLayoutParams(LayoutParams)}
+     *
+     * @return layout params
+     */
+    @Nonnull
+    protected LayoutParams createDefaultLayoutParams() {
+        return new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+    }
+
+    /**
+     * Check whether given params fit to this view group
+     * <p>
+     * Also see {@link #convertLayoutParams(LayoutParams)}
+     * Also see {@link #createDefaultLayoutParams()}
+     *
+     * @param params layout params to check
+     * @return params matched
+     */
+    protected boolean checkLayoutParams(@Nullable LayoutParams params) {
+        return params != null;
     }
 
     /**
@@ -196,6 +232,102 @@ public abstract class ViewGroup extends View implements IViewParent {
         public LayoutParams(int width, int height) {
             this.width = width;
             this.height = height;
+        }
+
+        /**
+         * Copy constructor. Clones the width and height values of the source.
+         *
+         * @param source the layout params to copy from.
+         */
+        public LayoutParams(@Nonnull LayoutParams source) {
+            width = source.width;
+            height = source.height;
+        }
+
+        /**
+         * Create a new object copied from this params
+         *
+         * @return copied layout params
+         */
+        @Nonnull
+        public LayoutParams copy() {
+            return new LayoutParams(this);
+        }
+
+    }
+
+    public static class MarginLayoutParams extends LayoutParams {
+
+        /**
+         * The left margin
+         */
+        public int leftMargin;
+
+        /**
+         * The top margin
+         */
+        public int topMargin;
+
+        /**
+         * The right margin
+         */
+        public int rightMargin;
+
+        /**
+         * The bottom margin
+         */
+        public int bottomMargin;
+
+        /**
+         * Creates a new set of layout parameters with the specified width
+         * and height.
+         *
+         * @param width  either {@link #WRAP_CONTENT},
+         *               {@link #MATCH_PARENT}, or a fixed value
+         * @param height either {@link #WRAP_CONTENT},
+         *               {@link #MATCH_PARENT}, or a fixed value
+         */
+        public MarginLayoutParams(int width, int height) {
+            super(width, height);
+        }
+
+        /**
+         * Sets the margins, and its values should be positive.
+         *
+         * @param left   the left margin size
+         * @param top    the top margin size
+         * @param right  the right margin size
+         * @param bottom the bottom margin size
+         */
+        public void setMargins(int left, int top, int right, int bottom) {
+            leftMargin = left;
+            topMargin = top;
+            rightMargin = right;
+            bottomMargin = bottom;
+        }
+
+        /**
+         * Copy constructor. Clones the width, height and margin values of the source.
+         *
+         * @param source the layout params to copy from.
+         */
+        public MarginLayoutParams(@Nonnull MarginLayoutParams source) {
+            super(source.width, source.height);
+
+            leftMargin = source.leftMargin;
+            topMargin = source.topMargin;
+            rightMargin = source.rightMargin;
+            bottomMargin = source.bottomMargin;
+        }
+
+        public MarginLayoutParams(@Nonnull LayoutParams source) {
+            super(source);
+        }
+
+        @Nonnull
+        @Override
+        public MarginLayoutParams copy() {
+            return new MarginLayoutParams(this);
         }
     }
 }

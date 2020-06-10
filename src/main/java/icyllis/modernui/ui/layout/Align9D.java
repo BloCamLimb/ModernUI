@@ -18,8 +18,12 @@
 
 package icyllis.modernui.ui.layout;
 
-// NatsuiroMatsuri: Ore ga hololive da!
-// yagoo!
+/**
+ * Ore ga hololive da!
+ *
+ * @deprecated This is an old API, use {@link Gravity}
+ */
+@Deprecated
 public enum Align9D {
     TOP_LEFT,
     TOP_CENTER,

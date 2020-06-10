@@ -18,6 +18,7 @@
 
 package icyllis.modernui.ui.layout;
 
+@Deprecated
 public enum Direction4D {
     LEFT,
     RIGHT,

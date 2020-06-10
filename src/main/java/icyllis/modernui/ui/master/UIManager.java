@@ -406,7 +406,7 @@ public enum UIManager implements IViewParent {
         int msw = MeasureSpec.makeMeasureSpec(width, MeasureSpec.Mode.AT_MOST);
         int msh = MeasureSpec.makeMeasureSpec(height, MeasureSpec.Mode.AT_MOST);
         mainView.measure(msw, msh);
-        mainView.layout(0, 0, mainView.measuredWidth, mainView.measuredHeight);
+        mainView.layout(0, 0, mainView.getMeasuredWidth(), mainView.getMeasuredHeight());
         if (popup != null) {
             popup.resize(width, height);
         }
@@ -585,12 +585,12 @@ public enum UIManager implements IViewParent {
     }
 
     @Override
-    public float getTranslationX() {
+    public float getScrollX() {
         return 0;
     }
 
     @Override
-    public float getTranslationY() {
+    public float getScrollY() {
         return 0;
     }
 

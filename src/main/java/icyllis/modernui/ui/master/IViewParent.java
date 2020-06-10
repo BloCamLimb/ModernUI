@@ -31,38 +31,14 @@ public interface IViewParent {
     IViewParent getParent();
 
     /**
-     * Get relative mouse X if needed
+     * Available in scrollable view
      */
-    double getRelativeMX();
-
-    /**
-     * Get relative mouse Y if needed
-     */
-    double getRelativeMY();
-
-    /**
-     * Transform relative X if needed
-     *
-     * @return absolute x
-     */
-    float toAbsoluteX(float rx);
-
-    /**
-     * Transform relative Y if needed
-     *
-     * @return absolute y
-     */
-    float toAbsoluteY(float ry);
+    float getScrollX();
 
     /**
      * Available in scrollable view
      */
-    float getTranslationX();
-
-    /**
-     * Available in scrollable view
-     */
-    float getTranslationY();
+    float getScrollY();
 
     /**
      * Required when child views changed, to request this parent to relayout all child views

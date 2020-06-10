@@ -18,6 +18,8 @@
 
 package icyllis.modernui.ui.layout;
 
+import net.minecraft.util.math.MathHelper;
+
 import javax.annotation.Nonnull;
 
 /**
@@ -36,9 +38,7 @@ public class MeasureSpec {
      * @return measure specification
      */
     public static int makeMeasureSpec(int size, @Nonnull Mode mode) {
-        if (size < 0 || size > (1 << MODE_SHIFT - 1)) {
-            throw new IllegalArgumentException("out of range?");
-        }
+        size = MathHelper.clamp(size, 0, 1 << MODE_SHIFT - 1);
         return (size & ~MODE_MASK) | (mode.ordinal() << MODE_SHIFT & MODE_MASK);
     }
 
@@ -60,14 +60,13 @@ public class MeasureSpec {
      */
     public static Mode getMode(int measureSpec) {
         switch (measureSpec & MODE_MASK) {
-            case 0:
-                return Mode.UNSPECIFIED;
             case 1 << MODE_SHIFT:
                 return Mode.EXACTLY;
             case 2 << MODE_SHIFT:
                 return Mode.AT_MOST;
+            default:
+                return Mode.UNSPECIFIED;
         }
-        throw new IllegalStateException("unknown mode?");
     }
 
     /**

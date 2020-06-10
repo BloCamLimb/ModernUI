@@ -22,8 +22,6 @@ import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.master.*;
 
 import javax.annotation.Nonnull;
-import java.util.Comparator;
-import java.util.Optional;
 
 /**
  * Vertical scroll view with relatively good performance
@@ -41,13 +39,13 @@ public class ScrollView extends ViewGroup {
     }
 
     @Override
-    public float getTranslationX() {
-        return super.getTranslationX();
+    public float getScrollX() {
+        return super.getScrollX();
     }
 
     @Override
-    public final float getTranslationY() {
-        return super.getTranslationY() + scrollAmount;
+    public final float getScrollY() {
+        return super.getScrollY() + scrollAmount;
     }
 
     @Override
@@ -86,8 +84,8 @@ public class ScrollView extends ViewGroup {
 
     final void updateScrollAmount(float scrollAmount) {
         this.scrollAmount = scrollAmount;
-        float tTop = getTop() + getTranslationY();
-        float tBottom = getBottom() + getTranslationY();
+        float tTop = getTop() + getScrollY();
+        float tBottom = getBottom() + getScrollY();
         for (View view : getActiveViews()) {
             if (view.getBottom() > tTop && view.getTop() < tBottom) {
                 view.setVisible(true);
