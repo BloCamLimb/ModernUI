@@ -146,7 +146,7 @@ public abstract class Widget implements IWidget {
         return y2;
     }
 
-    @Override
+    @Deprecated
     public void resize(int width, int height) {
         if (locator != null) {
             locator.locate(this, width, height);

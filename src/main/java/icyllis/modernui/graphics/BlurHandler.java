@@ -42,11 +42,11 @@ import java.util.List;
 public enum BlurHandler {
     INSTANCE;
 
-    private final ResourceLocation BLUR = new ResourceLocation("shaders/post/blur_fast.json");
+    private final ResourceLocation shader = new ResourceLocation("shaders/post/blur_fast.json");
 
     private final Minecraft minecraft = Minecraft.getInstance();
 
-    private final List<Class<?>> excluded = new ArrayList<>();
+    private final List<Class<?>> exclusions = new ArrayList<>();
 
     /**
      * If is playing animation
@@ -66,18 +66,23 @@ public enum BlurHandler {
     /**
      * Background alpha
      */
-    private float backAlpha = 0;
+    private float backgroundAlpha = 0;
 
     BlurHandler() {
 
     }
 
+    /**
+     * Use blur shader in game renderer post-processing
+     *
+     * @param gui gui changed
+     */
     public void blur(@Nullable Screen gui) {
-        boolean exclude = gui != null && !(gui instanceof ModernScreen) && !(gui instanceof ModernContainerScreen<?>) &&
-                excluded.stream().anyMatch(c -> c.isAssignableFrom(gui.getClass()));
-        if (exclude || !ConfigManager.CLIENT.blurScreenBackground) {
-            backAlpha = 0.5f;
-            if (exclude && blurring) {
+        boolean excluded = gui != null && !(gui instanceof ModernScreen) && !(gui instanceof ModernContainerScreen<?>) &&
+                exclusions.stream().anyMatch(c -> c.isAssignableFrom(gui.getClass()));
+        if (excluded || !ConfigManager.CLIENT.blurScreenBackground) {
+            backgroundAlpha = 0.5f;
+            if (excluded && blurring) {
                 minecraft.gameRenderer.stopUseShader();
                 changingProgress = false;
                 blurring = false;
@@ -89,10 +94,10 @@ public enum BlurHandler {
             GameRenderer gr = minecraft.gameRenderer;
             if (toBlur && !blurring && !guiOpened) {
                 if (gr.getShaderGroup() == null) {
-                    gr.loadShader(BLUR);
+                    gr.loadShader(shader);
                     changingProgress = true;
                     blurring = true;
-                    backAlpha = 0;
+                    backgroundAlpha = 0;
                 }
             } else if (!toBlur && blurring) {
                 gr.stopUseShader();
@@ -104,7 +109,7 @@ public enum BlurHandler {
     }
 
     /**
-     * Mainly for ingame menu gui, re-blur after resources reloaded
+     * Inner method, to re-blur after resources (including shaders) reloaded in in-game menu
      */
     public void forceBlur() {
         // no need to check if is excluded, this method is only called by Modern UI screen
@@ -114,7 +119,7 @@ public enum BlurHandler {
         if (minecraft.world != null) {
             GameRenderer gr = minecraft.gameRenderer;
             if (gr.getShaderGroup() == null) {
-                gr.loadShader(BLUR);
+                gr.loadShader(shader);
                 changingProgress = true;
                 blurring = true;
             }
@@ -122,12 +127,12 @@ public enum BlurHandler {
     }
 
     public void loadExclusions(@Nonnull List<? extends String> names) {
-        excluded.clear();
-        excluded.add(ChatScreen.class);
+        exclusions.clear();
+        exclusions.add(ChatScreen.class);
         for (String s : names) {
             try {
                 Class<?> clazz = Class.forName(s);
-                excluded.add(clazz);
+                exclusions.add(clazz);
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             }
@@ -136,10 +141,10 @@ public enum BlurHandler {
 
     public void renderTick() {
         if (changingProgress) {
-            float p = Math.min(UIManager.INSTANCE.getAnimationTime(), 4.0f);
+            float p = Math.min(UIManager.INSTANCE.getDrawingTime(), 4.0f);
             this.updateProgress(p);
-            if (backAlpha != 0.5f) {
-                backAlpha = p / 8f;
+            if (backgroundAlpha < 0.5f) {
+                backgroundAlpha = p / 8.0f;
             }
             if (p == 4.0f) {
                 changingProgress = false;
@@ -159,7 +164,7 @@ public enum BlurHandler {
     }
 
     public float getBackgroundAlpha() {
-        return backAlpha;
+        return backgroundAlpha;
     }
 
 }

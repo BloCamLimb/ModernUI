@@ -18,8 +18,6 @@
 
 package icyllis.modernui.ui.test;
 
-import icyllis.modernui.ui.master.IDrawable;
-
 /**
  * Widget has its rect area and position, also can listen mouse events as default, most widely used in gui
  */

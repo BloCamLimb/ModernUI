@@ -137,11 +137,6 @@ public abstract class ViewGroup extends View implements IViewParent {
         return 0;
     }
 
-    @Override
-    public void relayoutChildViews() {
-
-    }
-
     /**
      * Create a safe layout params base on the given params to fit to this view group
      * <p>

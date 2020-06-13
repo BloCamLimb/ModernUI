@@ -99,8 +99,9 @@ public class EventsHandler {
         @SubscribeEvent
         public static void onGuiOpen(@Nonnull GuiOpenEvent event) {
             TrueTypeRenderer.INSTANCE.init();
-            UIManager.INSTANCE.handleGuiOpenEvent(event.getGui(), event::setCanceled);
+            boolean cancel = UIManager.INSTANCE.handleGuiOpenEvent(event.getGui());
             BlurHandler.INSTANCE.blur(event.getGui());
+            event.setCanceled(cancel);
         }
 
         @SubscribeEvent

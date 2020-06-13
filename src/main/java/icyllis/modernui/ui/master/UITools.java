@@ -43,10 +43,24 @@ public class UITools {
         HAND_CURSOR = GLFW.glfwCreateStandardCursor(GLFW.GLFW_HAND_CURSOR);
     }
 
+    /**
+     * Return the width of a string in pixels.
+     *
+     * @param string compute the width of this string
+     * @return the width in pixels
+     */
     public static float getStringWidth(String string) {
         return FONT_RENDERER.getStringWidth(string);
     }
 
+    /**
+     * Trim a string so that it fits in the specified width when rendered, optionally reversing the string
+     *
+     * @param str     the String to trim
+     * @param width   the desired string width (in GUI coordinate system)
+     * @param reverse if true, the returned string will also be reversed
+     * @return the trimmed and optionally reversed string
+     */
     public static String trimStringToWidth(String str, float width, boolean reverse) {
         return FONT_RENDERER.trimStringToWidth(str, width, reverse);
     }
@@ -80,6 +94,9 @@ public class UITools {
         GLFW.glfwSetCursor(Minecraft.getInstance().getMainWindow().getHandle(), IBEAM_CURSOR);
     }
 
+    /**
+     * The hand cursor on a link or a web-page button.
+     */
     public static void useHandCursor() {
         GLFW.glfwSetCursor(Minecraft.getInstance().getMainWindow().getHandle(), HAND_CURSOR);
     }

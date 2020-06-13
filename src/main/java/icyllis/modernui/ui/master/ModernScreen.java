@@ -39,14 +39,12 @@ public final class ModernScreen extends Screen {
 
     @Override
     public void init(Minecraft minecraft, int width, int height) {
-        super.init(minecraft, width, height);
         manager.init(this, width, height);
-        BlurHandler.INSTANCE.forceBlur(); // hotfix
+        BlurHandler.INSTANCE.forceBlur();
     }
 
     @Override
     public void resize(@Nonnull Minecraft minecraft, int width, int height) {
-        super.resize(minecraft, width, height);
         manager.resize(width, height);
     }
 
@@ -57,7 +55,6 @@ public final class ModernScreen extends Screen {
 
     @Override
     public void removed() {
-        super.removed();
         manager.destroy();
     }
 
@@ -68,39 +65,26 @@ public final class ModernScreen extends Screen {
 
     @Override
     public final void mouseMoved(double mouseX, double mouseY) {
-        super.mouseMoved(mouseX, mouseY);
         manager.mouseMoved(mouseX, mouseY);
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        if (super.mouseClicked(mouseX, mouseY, mouseButton)) {
-            return true;
-        }
-        return manager.mouseClicked0(mouseX, mouseY, mouseButton);
+        return manager.mouseClicked(mouseX, mouseY, mouseButton);
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
-        if (super.mouseReleased(mouseX, mouseY, mouseButton)) {
-            return true;
-        }
-        return manager.mouseReleased0(mouseX, mouseY, mouseButton);
+        return manager.mouseReleased(mouseX, mouseY, mouseButton);
     }
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double deltaX, double deltaY) {
-        if (super.mouseDragged(mouseX, mouseY, mouseButton, deltaX, deltaY)) {
-            return true;
-        }
         return manager.mouseDragged(mouseX, mouseY, deltaX, deltaY);
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        if (super.mouseScrolled(mouseX, mouseY, delta)) {
-            return true;
-        }
         return manager.mouseScrolled(mouseX, mouseY, delta);
     }
 
@@ -112,7 +96,7 @@ public final class ModernScreen extends Screen {
             if (manager.onBack()) {
                 return true;
             }
-            onClose();
+            manager.closeGuiScreen();
             return true;
         } else if (keyCode == GLFW.GLFW_KEY_TAB) {
             boolean searchNext = !hasShiftDown();
@@ -126,17 +110,11 @@ public final class ModernScreen extends Screen {
 
     @Override
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-        if (super.keyReleased(keyCode, scanCode, modifiers)) {
-            return true;
-        }
         return manager.keyReleased(keyCode, scanCode, modifiers);
     }
 
     @Override
     public boolean charTyped(char codePoint, int modifiers) {
-        if (super.charTyped(codePoint, modifiers)) {
-            return true;
-        }
         return manager.charTyped(codePoint, modifiers);
     }
 

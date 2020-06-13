@@ -22,7 +22,7 @@ import icyllis.modernui.ui.animation.Animation;
 import icyllis.modernui.ui.animation.Applier;
 import icyllis.modernui.ui.animation.IInterpolator;
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.ui.master.IDrawable;
+import icyllis.modernui.ui.test.IDrawable;
 
 import javax.annotation.Nonnull;
 
@@ -69,7 +69,6 @@ public class SSExpandableBox implements IDrawable, Animation.IListener {
         }
     }
 
-    @Override
     public void resize(int width, int height) {
         x = width / 2f - 140;
         y = height / 2f;

@@ -48,7 +48,7 @@ public abstract class Window implements IWidget, IHost {
         this.hResizer = hResizer;
     }
 
-    @Override
+    @Deprecated
     public void resize(int width, int height) {
         this.x1 = xResizer.apply(width);
         this.y1 = yResizer.apply(height);

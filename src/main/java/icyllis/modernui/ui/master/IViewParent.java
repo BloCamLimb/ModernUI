@@ -40,8 +40,4 @@ public interface IViewParent {
      */
     float getScrollY();
 
-    /**
-     * Required when child views changed, to request this parent to relayout all child views
-     */
-    void relayoutChildViews();
 }

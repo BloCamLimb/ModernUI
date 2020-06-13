@@ -168,7 +168,7 @@ public abstract class Module implements IModule, IHost {
     @Override
     public void resize(int width, int height) {
         for (IDrawable drawable : drawables) {
-            drawable.resize(width, height);
+            //drawable.resize(width, height);
         }
     }
 
@@ -230,12 +230,12 @@ public abstract class Module implements IModule, IHost {
 
     @Override
     public int getElapsedTicks() {
-        return manager.getTicks();
+        return manager.getElapsedTicks();
     }
 
     @Override
     public float getAnimationTime() {
-        return manager.getAnimationTime();
+        return manager.getDrawingTime();
     }
 
     @Override

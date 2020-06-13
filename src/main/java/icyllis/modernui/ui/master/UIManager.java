@@ -47,7 +47,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * Manage current gui screen, mainly Modern UI's, and post events to root view and popup view
+ * Modern UI's UI system service, almost everything is here
  */
 @OnlyIn(Dist.CLIENT)
 public enum UIManager implements IViewParent {
@@ -62,19 +62,19 @@ public enum UIManager implements IViewParent {
     // cached minecraft instance
     private final Minecraft minecraft = Minecraft.getInstance();
 
-    // Cached gui to open, used for logic
+    // cached gui to open
     @Nullable
     private Screen guiToOpen;
 
-    // Current screen instance, must be ModernScreen or ModernContainerScreen or null
+    // current screen instance, must be ModernScreen or ModernContainerScreen or null
     @Nullable
     private Screen modernScreen;
 
     // main fragment of a UI
-    private Fragment mainFragment;
+    private Fragment fragment;
 
     // main view that created from main fragment
-    private View mainView;
+    private View view;
 
     @Deprecated
     @Nullable
@@ -96,24 +96,27 @@ public enum UIManager implements IViewParent {
     private int ticks = 0;
 
     // elapsed time from a gui open, update every frame, 20.0 = 1 second
-    private float drawTime = 0;
+    private float time = 0;
 
     // lazy loading, should be final
     private Canvas canvas = null;
 
     // only post events to focused views
     @Nullable
-    private View vHovered = null;
+    private View mHovered = null;
     @Nullable
-    private View vDragging = null;
+    private View mDragging = null;
     @Nullable
-    private View vKeyboard = null;
+    private View mKeyboard = null;
 
     // for double click check, 10 tick = 0.5s
-    private int dClickTime = -10;
+    private int doubleClickTime = -10;
 
-    // prevent request layout on init layout
-    private boolean initLayout = true;
+    // to schedule layout on next frame
+    private boolean layoutRequested = false;
+
+    // to fix layout freq at 60Hz at most
+    private float lastLayoutTime = 0;
 
     UIManager() {
 
@@ -125,7 +128,7 @@ public enum UIManager implements IViewParent {
      * @param mainFragment main fragment of the UI
      */
     public void openGuiScreen(@Nonnull Fragment mainFragment) {
-        this.mainFragment = mainFragment;
+        this.fragment = mainFragment;
         minecraft.displayGuiScreen(new ModernScreen());
     }
 
@@ -137,28 +140,29 @@ public enum UIManager implements IViewParent {
     }
 
     /**
-     * Register a container screen
-     * To open the UI,
+     * Register a container screen. To open the gui screen,
      * see {@link net.minecraftforge.fml.network.NetworkHooks#openGui(ServerPlayerEntity, INamedContainerProvider, Consumer)}
      *
      * @param type    container type
      * @param factory main fragment factory
      * @param <T>     container
      */
-    public <T extends Container> void registerContainerScreen(@Nonnull ContainerType<? extends T> type, @Nonnull Function<T, Fragment> factory) {
+    public <T extends Container> void registerContainerScreen(@Nonnull ContainerType<? extends T> type,
+                                                              @Nonnull Function<T, Fragment> factory) {
         ScreenManager.registerFactory(type, castModernScreen(factory));
     }
 
     @SuppressWarnings({"unchecked", "ConstantConditions"})
     @Nonnull
-    private <T extends Container, U extends Screen & IHasContainer<T>> ScreenManager.IScreenFactory<T, U> castModernScreen(@Nonnull Function<T, Fragment> factory) {
+    private <T extends Container, U extends Screen & IHasContainer<T>> ScreenManager.IScreenFactory<T, U> castModernScreen(
+            @Nonnull Function<T, Fragment> factory) {
         return (c, p, t) -> {
             // The client container can be null sometimes, but a container screen doesn't allow the container to be null
             // so return null, there's no gui will be open, and the server container will be closed automatically
             if (c == null) {
                 return null;
             }
-            this.mainFragment = factory.apply(c);
+            this.fragment = factory.apply(c);
             return (U) new ModernContainerScreen<>(c, p, t);
         };
     }
@@ -185,7 +189,7 @@ public enum UIManager implements IViewParent {
         }
         this.popup = popup;
         this.popup.resize(width, height);
-        this.refreshMouse();
+        refreshMouse();
     }
 
     /**
@@ -194,45 +198,61 @@ public enum UIManager implements IViewParent {
     public void closePopup() {
         if (popup != null) {
             popup = null;
-            this.refreshMouse();
+            refreshMouse();
         }
     }
 
-    // called when open a UI, or back to the UI (Modern UI's UI)
-    void init(Screen mui, int width, int height) {
+    /**
+     * Called when open a gui screen, or back to the gui screen
+     *
+     * @param mui    modern screen or modern container screen
+     * @param width  screen width (= game main window width)
+     * @param height screen height (= game main window height)
+     */
+    void init(@Nonnull Screen mui, int width, int height) {
         this.modernScreen = mui;
         this.width = width;
         this.height = height;
-        if (mainView == null) {
-            mainView = mainFragment.createView();
-            if (mainView == null) {
+
+        // init view of this UI
+        if (view == null) {
+            if (fragment == null) {
+                ModernUI.LOGGER.fatal(MARKER, "Fragment can't be null when opening a gui screen");
                 closeGuiScreen();
                 return;
-            } else {
-                mainView.assignParent(this);
             }
+            view = fragment.createView();
+            if (view == null) {
+                ModernUI.LOGGER.warn(MARKER, "The main view created from the fragment shouldn't be null");
+                view = new View();
+            }
+            view.assignParent(this);
         }
+
+        // create canvas
         if (canvas == null) {
             canvas = new Canvas();
         }
-        initLayout = true;
-        resize(width, height);
-        initLayout = false;
+
+        layout();
     }
 
-    // System method, do not call
-    public void handleGuiOpenEvent(Screen guiToOpen, Consumer<Boolean> cancelFunc) {
+    /**
+     * Inner method, do not call
+     *
+     * @return {@code true} to cancel the event
+     */
+    public boolean handleGuiOpenEvent(@Nullable Screen guiToOpen) {
         this.guiToOpen = guiToOpen;
         if (guiToOpen == null) {
             destroy();
-            return;
+            return false;
         }
-        // modern screen != null
+        // (modern screen != null)
         if (modernScreen != guiToOpen && ((guiToOpen instanceof ModernScreen) || (guiToOpen instanceof ModernContainerScreen<?>))) {
-            if (mainView != null) {
-                cancelFunc.accept(true);
-                ModernUI.LOGGER.fatal(MARKER, "ModernUI doesn't allow to keep other screens, use fragment instead. RootScreen: {}, GuiToOpen: {}", modernScreen, guiToOpen);
-                return;
+            if (view != null) {
+                ModernUI.LOGGER.fatal(MARKER, "Modern UI doesn't allow to keep other screens. ModernScreen: {}, GuiToOpen: {}", modernScreen, guiToOpen);
+                return true;
             }
             resetTicks();
         }
@@ -244,13 +264,20 @@ public enum UIManager implements IViewParent {
         if (modernScreen == null) {
             resetTicks();
         }
+        return false;
     }
 
     private void resetTicks() {
         ticks = 0;
-        drawTime = 0;
+        time = 0;
     }
 
+    /**
+     * Get current open screen differently from Minecraft's,
+     * which will only return Modern UI's screen or null
+     *
+     * @return modern screen
+     */
     @Nullable
     public Screen getModernScreen() {
         return modernScreen;
@@ -261,16 +288,20 @@ public enum UIManager implements IViewParent {
      *
      * @param animation animation to add
      */
-    public void enqueueAnimation(@Nonnull Animation animation) {
+    public void addAnimation(@Nonnull Animation animation) {
         if (!animations.contains(animation)) {
             animations.add(animation);
         }
     }
 
-    public void enqueueTask(@Nonnull DelayedTask task) {
-        if (!tasks.contains(task)) {
-            tasks.add(task);
-        }
+    /**
+     * Post a task that will run on next pre-tick
+     *
+     * @param runnable     runnable
+     * @param delayedTicks delayed ticks to run the task
+     */
+    public void postTask(@Nonnull Runnable runnable, int delayedTicks) {
+        tasks.add(new DelayedTask(runnable, delayedTicks));
     }
 
     void mouseMoved(double mouseX, double mouseY) {
@@ -280,41 +311,41 @@ public enum UIManager implements IViewParent {
             popup.mouseMoved(mouseX, mouseY);
             return;
         }
-        if (mainView != null) {
-            if (!mainView.updateMouseHover(mouseX, mouseY)) {
+        if (view != null) {
+            if (!view.updateMouseHover(mouseX, mouseY)) {
                 setHoveredView(null);
             }
         }
     }
 
-    boolean mouseClicked0(double mouseX, double mouseY, int mouseButton) {
+    boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if (popup != null) {
             return popup.mouseClicked(mouseX, mouseY, mouseButton);
         }
-        if (vHovered != null) {
+        if (mHovered != null) {
             if (mouseButton == 0) {
-                int delta = ticks - dClickTime;
+                int delta = ticks - doubleClickTime;
                 if (delta < 10) {
-                    dClickTime = -10;
-                    if (vHovered.onMouseDoubleClicked(vHovered.getRelativeMX(), vHovered.getRelativeMY())) {
+                    doubleClickTime = -10;
+                    if (false) {//vHovered.onMouseDoubleClicked(vHovered.getRelativeMX(), vHovered.getRelativeMY())) {
                         return true;
                     }
                 } else {
-                    dClickTime = ticks;
+                    doubleClickTime = ticks;
                 }
-                return vHovered.onMouseLeftClicked(vHovered.getRelativeMX(), vHovered.getRelativeMY());
+                return false;//vHovered.onMouseLeftClicked(vHovered.getRelativeMX(), vHovered.getRelativeMY());
             } else if (mouseButton == 1) {
-                return vHovered.onMouseRightClicked(vHovered.getRelativeMX(), vHovered.getRelativeMY());
+                return false;//vHovered.onMouseRightClicked(vHovered.getRelativeMX(), vHovered.getRelativeMY());
             }
         }
         return false;
     }
 
-    boolean mouseReleased0(double mouseX, double mouseY, int mouseButton) {
+    boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
         if (popup != null) {
             return popup.mouseReleased(mouseX, mouseY, mouseButton);
         }
-        if (vDragging != null) {
+        if (mDragging != null) {
             setDragging(null);
             return true;
         }
@@ -325,8 +356,8 @@ public enum UIManager implements IViewParent {
         if (popup != null) {
             return popup.mouseDragged(mouseX, mouseY, deltaX, deltaY);
         }
-        if (vDragging != null) {
-            return vDragging.onMouseDragged(vDragging.getRelativeMX(), vDragging.getRelativeMY(), deltaX, deltaY);
+        if (mDragging != null) {
+            return false;//vDragging.onMouseDragged(vDragging.getRelativeMX(), vDragging.getRelativeMY(), deltaX, deltaY);
         }
         return false;
     }
@@ -335,8 +366,8 @@ public enum UIManager implements IViewParent {
         if (popup != null) {
             return popup.mouseScrolled(mouseX, mouseY, amount);
         }
-        if (vHovered != null) {
-            return vHovered.onMouseScrolled(vHovered.getRelativeMX(), vHovered.getRelativeMY(), amount);
+        if (mHovered != null) {
+            return false;//vHovered.onMouseScrolled(vHovered.getRelativeMX(), vHovered.getRelativeMY(), amount);
         }
         return false;
     }
@@ -366,7 +397,7 @@ public enum UIManager implements IViewParent {
     }
 
     boolean changeKeyboardListener(boolean searchNext) {
-        //TODO change focus
+        //TODO change focus implementation
         return false;
     }
 
@@ -390,30 +421,45 @@ public enum UIManager implements IViewParent {
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableAlphaTest();
         RenderSystem.disableDepthTest();
-        mainView.draw(canvas, drawTime);
-        if (popup != null) {
+        view.draw(canvas, time);
+        /*if (popup != null) {
             popup.draw(drawTime);
-        }
+        }*/
         GL11.glDisable(GL11.GL_LINE_SMOOTH);
         RenderSystem.lineWidth(1.0f);
         RenderSystem.enableTexture();
         RenderSystem.disableBlend();
     }
 
+    /**
+     * Called when game window size changed, used to re-layout the UI
+     *
+     * @param width  scaled game window width
+     * @param height scaled game window height
+     */
     void resize(int width, int height) {
         this.width = width;
         this.height = height;
-        int msw = MeasureSpec.makeMeasureSpec(width, MeasureSpec.Mode.AT_MOST);
-        int msh = MeasureSpec.makeMeasureSpec(height, MeasureSpec.Mode.AT_MOST);
-        mainView.measure(msw, msh);
-        mainView.layout(0, 0, mainView.getMeasuredWidth(), mainView.getMeasuredHeight());
-        if (popup != null) {
-            popup.resize(width, height);
-        }
         double scale = minecraft.getMainWindow().getGuiScaleFactor();
         mouseX = minecraft.mouseHelper.getMouseX() / scale;
         mouseY = minecraft.mouseHelper.getMouseY() / scale;
+        layout();
+    }
+
+    /**
+     * Layout entire UI views
+     * {@link #requestLayout()}
+     */
+    private void layout() {
+        int widthSpec = MeasureSpec.makeMeasureSpec(width, MeasureSpec.Mode.AT_MOST);
+        int heightSpec = MeasureSpec.makeMeasureSpec(height, MeasureSpec.Mode.AT_MOST);
+        view.measure(widthSpec, heightSpec);
+        view.layout(0, 0, view.getMeasuredWidth(), view.getMeasuredHeight());
+        /*if (popup != null) {
+            popup.resize(width, height);
+        }*/
         refreshMouse();
+        layoutRequested = false;
     }
 
     void destroy() {
@@ -421,11 +467,13 @@ public enum UIManager implements IViewParent {
         if (guiToOpen == null) {
             animations.clear();
             tasks.clear();
-            mainView = null;
+            view = null;
             popup = null;
-            //extraData = null;
-            mainFragment = null;
+            fragment = null;
             modernScreen = null;
+            doubleClickTime = -10;
+            lastLayoutTime = 0;
+            layoutRequested = false;
             UIEditor.INSTANCE.setHoveredWidget(null);
             UITools.useDefaultCursor();
             // Hotfix 1.5.8
@@ -433,81 +481,136 @@ public enum UIManager implements IViewParent {
         }
     }
 
-    // System method, do not call
+    /**
+     * Inner method, do not call
+     */
     public void clientTick() {
         ++ticks;
-        if (mainView != null) {
-            mainView.tick(ticks);
-        }
         if (popup != null) {
             popup.tick(ticks);
         }
-        // tick listeners are always called before runnables
+        if (view != null) {
+            view.tick(ticks);
+        }
+        // view tick() is always called before tasks
         for (DelayedTask task : tasks) {
             task.tick(ticks);
         }
         tasks.removeIf(DelayedTask::shouldRemove);
     }
 
-    // System method, do not call
+    /**
+     * Inner method, do not call
+     */
     @SuppressWarnings("ForLoopReplaceableByForEach")
     public void renderTick(float partialTick) {
-        drawTime = ticks + partialTick;
+        time = ticks + partialTick;
 
         // remove animations from loop in next frame
         animations.removeIf(Animation::shouldRemove);
 
-        // list size is dynamically changeable, due to animation chain
+        // list size is dynamically changeable, because updating animation may add new animation to the list
         for (int i = 0; i < animations.size(); i++) {
-            animations.get(i).update(drawTime);
+            animations.get(i).update(time);
+        }
+
+        // layout after updating animations and before drawing
+        if (layoutRequested) {
+            // fixed at 60Hz
+            if (time - lastLayoutTime > 0.3333333f) {
+                lastLayoutTime = time;
+                layout();
+            }
         }
     }
 
-    public float getAnimationTime() {
-        return drawTime;
+    /**
+     * Get elapsed time from a gui open, update every frame, 20.0 = 1 second
+     *
+     * @return drawing time
+     */
+    public float getDrawingTime() {
+        return time;
     }
 
-    public int getTicks() {
+    /**
+     * Get elapsed ticks from a gui open, update every tick, 20 = 1 second
+     *
+     * @return elapsed ticks
+     */
+    public int getElapsedTicks() {
         return ticks;
     }
 
+    /**
+     * Get scaled UI screen width which is equal to game main window width
+     *
+     * @return window width
+     */
     public int getWindowWidth() {
         return width;
     }
 
+    /**
+     * Get scaled UI screen height which is equal to game main window height
+     *
+     * @return window height
+     */
     public int getWindowHeight() {
         return height;
     }
 
+    /**
+     * Get scaled mouse X position on screen
+     *
+     * @return mouse x
+     */
     public double getMouseX() {
         return mouseX;
     }
 
+    /**
+     * Get scaled mouse Y position on screen
+     *
+     * @return mouse y
+     */
     public double getMouseY() {
         return mouseY;
     }
 
-    public boolean isInitLayout() {
-        return initLayout;
+    /**
+     * Get main view of current UI
+     *
+     * @return main view
+     */
+    public View getMainView() {
+        return view;
+    }
+
+    /**
+     * Request layout all views of current UI in next pre-frame
+     */
+    public void requestLayout() {
+        layoutRequested = true;
     }
 
     void setHoveredView(@Nullable View view) {
-        if (vHovered != view) {
-            if (vHovered != null) {
-                vHovered.onMouseHoverExit();
+        if (mHovered != view) {
+            if (mHovered != null) {
+                mHovered.onMouseHoverExit();
             }
-            vHovered = view;
-            if (vHovered != null) {
-                vHovered.onMouseHoverEnter();
+            mHovered = view;
+            if (mHovered != null) {
+                mHovered.onMouseHoverEnter();
             }
-            dClickTime = -10;
+            doubleClickTime = -10;
             UIEditor.INSTANCE.setHoveredWidget(view);
         }
     }
 
     @Nullable
     public View getHoveredView() {
-        return vHovered;
+        return mHovered;
     }
 
     /**
@@ -516,20 +619,20 @@ public enum UIManager implements IViewParent {
      * @param view dragging view
      */
     public void setDragging(@Nullable View view) {
-        if (vDragging != view) {
-            if (vDragging != null) {
-                vDragging.onStopDragging();
+        if (mDragging != view) {
+            if (mDragging != null) {
+                mDragging.onStopDragging();
             }
-            vDragging = view;
-            if (vDragging != null) {
-                vDragging.onStartDragging();
+            mDragging = view;
+            if (mDragging != null) {
+                mDragging.onStartDragging();
             }
         }
     }
 
     @Nullable
     public View getDragging() {
-        return vDragging;
+        return mDragging;
     }
 
     /**
@@ -538,64 +641,45 @@ public enum UIManager implements IViewParent {
      * @param view keyboard view
      */
     public void setKeyboard(@Nullable View view) {
-        if (vKeyboard != view) {
+        if (mKeyboard != view) {
             minecraft.keyboardListener.enableRepeatEvents(view != null);
-            if (vKeyboard != null) {
-                vKeyboard.onStopKeyboard();
+            if (mKeyboard != null) {
+                mKeyboard.onStopKeyboard();
             }
-            vKeyboard = view;
-            if (vKeyboard != null) {
-                vKeyboard.onStartKeyboard();
+            mKeyboard = view;
+            if (mKeyboard != null) {
+                mKeyboard.onStartKeyboard();
             }
         }
     }
 
     @Nullable
     public View getKeyboard() {
-        return vKeyboard;
+        return mKeyboard;
     }
 
-    public View getMainView() {
-        return mainView;
-    }
-
+    /**
+     * Inner method, do not call
+     */
     @Override
     public IViewParent getParent() {
         throw new RuntimeException("System view!");
     }
 
-    @Override
-    public double getRelativeMX() {
-        return mouseX;
-    }
-
-    @Override
-    public double getRelativeMY() {
-        return mouseY;
-    }
-
-    @Override
-    public float toAbsoluteX(float rx) {
-        return rx;
-    }
-
-    @Override
-    public float toAbsoluteY(float ry) {
-        return ry;
-    }
-
+    /**
+     * Inner method, do not call
+     */
     @Override
     public float getScrollX() {
         return 0;
     }
 
+    /**
+     * Inner method, do not call
+     */
     @Override
     public float getScrollY() {
         return 0;
     }
 
-    @Override
-    public void relayoutChildViews() {
-        //TODO
-    }
 }

@@ -22,7 +22,7 @@ import icyllis.modernui.ui.animation.Animation;
 import icyllis.modernui.ui.animation.Applier;
 import icyllis.modernui.ui.animation.IInterpolator;
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.ui.master.IDrawable;
+import icyllis.modernui.ui.test.IDrawable;
 
 import javax.annotation.Nonnull;
 
@@ -68,7 +68,6 @@ public class MenuHomeBG implements IDrawable {
         canvas.drawLine(32, 0, 32, height);
     }
 
-    @Override
     public void resize(int width, int height) {
         this.height = height;
     }

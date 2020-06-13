@@ -19,12 +19,14 @@
 package icyllis.modernui.ui.master;
 
 import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.ui.layout.MeasureSpec;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * View is the basic component of UI. View has its own rectangular area on screen,
@@ -32,41 +34,77 @@ import javax.annotation.Nonnull;
  */
 @SuppressWarnings("unused")
 @OnlyIn(Dist.CLIENT)
-public class View implements IDrawable {
+public class View {
 
-    private static final int PFLAG_MEASURED_DIMENSION_SET = 0x00000800;
-    private static final int PFLAG_LAYOUT_REQUIRED = 0x00002000;
+    private static final AtomicInteger GENERATED_ID = new AtomicInteger(1);
 
+    /**
+     * Used to mark a View that has no ID.
+     */
+    public static final int NO_ID = -1;
+
+    /**
+     * Private flags
+     */
+    private static final int PFLAG_MEASURED_DIMENSION_SET = 1 << 11;
+    private static final int PFLAG_LAYOUT_REQUIRED = 1 << 13;
+
+    /**
+     * Private boolean state flags
+     * {@link #addFlag(int)}
+     * {@link #removeFlag(int)}
+     * {@link #hasFlag(int)}
+     */
     private int privateFlags;
 
     /**
-     * Parent view, assigned by {@link #assignParent(IViewParent)}
+     * View flag masks
+     */
+    private static final int VISIBILITY_MASK = 0x3;
+
+    /**
+     * View multi-state flags
+     * {@link #setFlag(int, int)}
+     */
+    private int viewFlags;
+
+    /**
+     * Parent view of this view
+     * {@link #assignParent(IViewParent)}
      */
     private IViewParent parent;
 
-    private int id;
+    /**
+     * View id to identify this view in UI hierarchy
+     * {@link #getId()}
+     * {@link #setId(int)}
+     */
+    private int id = NO_ID;
 
     /**
      * View left on screen
+     * {@link #getLeft()}
      */
     private int left;
 
     /**
      * View top on screen
+     * {@link #getTop()}
      */
     private int top;
 
     /**
      * View right on screen
+     * {@link #getRight()}
      */
     private int right;
 
     /**
      * View bottom on screen
+     * {@link #getBottom()}
      */
     private int bottom;
 
-    private boolean visible = true;
     private boolean listening = true;
 
     private int minWidth;
@@ -90,9 +128,8 @@ public class View implements IDrawable {
      * @param canvas canvas to draw content
      * @param time   elapsed time from a gui open
      */
-    @Override
-    public void draw(@Nonnull Canvas canvas, float time) {
-        if (visible) {
+    protected void draw(@Nonnull Canvas canvas, float time) {
+        if ((viewFlags & VISIBILITY_MASK) == 0) {
 
             onDraw(canvas, time);
 
@@ -121,6 +158,15 @@ public class View implements IDrawable {
     }
 
     /**
+     * Called from client thread every tick on pre-tick, to update or cache something
+     *
+     * @param ticks elapsed ticks from a gui open, 20 tick = 1 second
+     */
+    protected void tick(int ticks) {
+
+    }
+
+    /**
      * Assign rect area of this view and all descendants
      * <p>
      * Derived classes should NOT override this method for any reason
@@ -135,10 +181,10 @@ public class View implements IDrawable {
     public void layout(int left, int top, int right, int bottom) {
         boolean changed = setFrame(left, top, right, bottom);
 
-        if (changed || hasPFlag(PFLAG_LAYOUT_REQUIRED)) {
+        if (changed || hasFlag(PFLAG_LAYOUT_REQUIRED)) {
             onLayout(changed, left, top, right, bottom);
 
-            removePFlag(PFLAG_LAYOUT_REQUIRED);
+            removeFlag(PFLAG_LAYOUT_REQUIRED);
         }
     }
 
@@ -210,30 +256,32 @@ public class View implements IDrawable {
      */
     public final void measure(int widthMeasureSpec, int heightMeasureSpec) {
 
-        final boolean specChanged =
+        boolean specChanged =
                 widthMeasureSpec != prevWidthMeasureSpec
                         || heightMeasureSpec != prevHeightMeasureSpec;
-        final boolean isSpecExactly =
+        boolean isSpecExactly =
                 MeasureSpec.getMode(widthMeasureSpec) == MeasureSpec.Mode.EXACTLY
                         && MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.Mode.EXACTLY;
-        final boolean matchesSpecSize =
+        boolean matchesSpecSize =
                 measuredWidth == MeasureSpec.getSize(widthMeasureSpec)
                         && measuredHeight == MeasureSpec.getSize(heightMeasureSpec);
-        final boolean needsLayout = specChanged
+        boolean needsLayout = specChanged
                 && (!isSpecExactly || !matchesSpecSize);
 
         if (needsLayout) {
             // remove the flag first anyway
-            removePFlag(PFLAG_MEASURED_DIMENSION_SET);
+            removeFlag(PFLAG_MEASURED_DIMENSION_SET);
 
             onMeasure(widthMeasureSpec, heightMeasureSpec);
 
             // the flag should be added in onMeasure()
-            if (!hasPFlag(PFLAG_MEASURED_DIMENSION_SET)) {
-                throw new IllegalStateException("measured dimension unspecified?");
+            if (!hasFlag(PFLAG_MEASURED_DIMENSION_SET)) {
+                ModernUI.LOGGER.fatal(UIManager.MARKER, "measured dimension unspecified on measure");
+                setMeasuredDimension(getDefaultSize(minWidth, widthMeasureSpec),
+                        getDefaultSize(minHeight, heightMeasureSpec));
             }
 
-            addPFlag(PFLAG_LAYOUT_REQUIRED);
+            addFlag(PFLAG_LAYOUT_REQUIRED);
         }
 
         prevWidthMeasureSpec = widthMeasureSpec;
@@ -264,7 +312,7 @@ public class View implements IDrawable {
         this.measuredWidth = measuredWidth;
         this.measuredHeight = measuredHeight;
 
-        addPFlag(PFLAG_MEASURED_DIMENSION_SET);
+        addFlag(PFLAG_MEASURED_DIMENSION_SET);
     }
 
     /**
@@ -335,45 +383,89 @@ public class View implements IDrawable {
     }
 
     /**
-     * Request parent view to re-layout all child views belong to it, including this view
+     * Get the ID of this view
+     *
+     * @return view id
      */
-    public void requestLayout() {
-        if (UIManager.INSTANCE.isInitLayout()) {
-            return;
-        }
-        parent.relayoutChildViews();
-    }
-
     public int getId() {
         return id;
     }
 
     /**
-     * ID should not be repeated in the same view group
+     * ID should not be repeated in the same view group and a positive number
      *
      * @param id view id
      */
     public void setId(int id) {
-        this.id = id;
-    }
-
-    // helper method
-    private void addPFlag(int flag) {
-        privateFlags |= flag;
-    }
-
-    // helper method
-    private void removePFlag(int flag) {
-        privateFlags &= ~flag;
-    }
-
-    // helper method
-    private boolean hasPFlag(int flag) {
-        return (privateFlags & flag) != 0;
+        if (id == NO_ID) {
+            this.id = generateViewId();
+        } else {
+            this.id = id;
+        }
     }
 
     /**
-     * Get view width
+     * Generate next view identifier, multi-threaded
+     *
+     * @return generated id
+     */
+    public static int generateViewId() {
+        for (; ; ) {
+            int cid = GENERATED_ID.get();
+            int nid = cid + 1;
+            if (nid < 1) {
+                nid = 1;
+            }
+            if (GENERATED_ID.compareAndSet(cid, nid)) {
+                return cid;
+            }
+        }
+    }
+
+    private void addFlag(int flag) {
+        privateFlags |= flag;
+    }
+
+    private void removeFlag(int flag) {
+        privateFlags &= ~flag;
+    }
+
+    private boolean hasFlag(int flag) {
+        return (privateFlags & flag) != 0;
+    }
+
+    //TODO state switching events
+    private void setFlag(int flag, int mask) {
+        final int old = viewFlags;
+
+        viewFlags = (viewFlags & ~mask) | (flag & mask);
+
+        final int change = viewFlags ^ old;
+
+    }
+
+    /**
+     * Set visibility of this view
+     * See {@link Visibility}
+     *
+     * @param visibility visibility to set
+     */
+    public void setVisibility(@Nonnull Visibility visibility) {
+        setFlag(visibility.ordinal(), VISIBILITY_MASK);
+    }
+
+    /**
+     * Get visibility of this view.
+     * See {@link Visibility}
+     *
+     * @return visibility
+     */
+    public Visibility getVisibility() {
+        return Visibility.values()[viewFlags & VISIBILITY_MASK];
+    }
+
+    /**
+     * Get view current layout width
      *
      * @return width
      */
@@ -382,7 +474,7 @@ public class View implements IDrawable {
     }
 
     /**
-     * Get view height
+     * Get view current layout height
      *
      * @return height
      */
@@ -391,7 +483,8 @@ public class View implements IDrawable {
     }
 
     /**
-     * Get view left (x1)
+     * Get view logic left position on screen.
+     * The sum of scroll amounts of all parent views are not counted.
      *
      * @return left
      */
@@ -400,7 +493,8 @@ public class View implements IDrawable {
     }
 
     /**
-     * Get view top (y1)
+     * Get view logic top position on screen.
+     * The sum of scroll amounts of all parent views are not counted.
      *
      * @return top
      */
@@ -409,7 +503,8 @@ public class View implements IDrawable {
     }
 
     /**
-     * Get view right (x2)
+     * Get view logic right position on screen.
+     * The sum of scroll amounts of all parent views are not counted.
      *
      * @return right
      */
@@ -418,7 +513,8 @@ public class View implements IDrawable {
     }
 
     /**
-     * Get view bottom (y2)
+     * Get view logic bottom position on screen.
+     * The sum of scroll amounts of all parent views are not counted.
      *
      * @return bottom
      */
@@ -426,22 +522,11 @@ public class View implements IDrawable {
         return bottom;
     }
 
-    public final void setVisible(boolean visible) {
-        if (this.visible != visible) {
-            this.visible = visible;
-            onVisibleChanged(visible);
-        }
-    }
-
     public final void setListening(boolean listening) {
         if (this.listening != listening) {
             this.listening = listening;
             onListeningChanged(listening);
         }
-    }
-
-    public final boolean isVisible() {
-        return visible;
     }
 
     public final boolean isListening() {
@@ -456,7 +541,7 @@ public class View implements IDrawable {
 
     }
 
-    public double getRelativeMX() {
+    /*public double getRelativeMX() {
         return getParent().getRelativeMX() + getParent().getScrollX();
     }
 
@@ -486,7 +571,7 @@ public class View implements IDrawable {
 
     public float getAbsoluteBottom() {
         return toAbsoluteY(bottom);
-    }
+    }*/
 
     /**
      * Check if mouse hover this view
@@ -678,6 +763,29 @@ public class View implements IDrawable {
      */
     protected boolean onCharTyped(char codePoint, int modifiers) {
         return false;
+    }
+
+    /**
+     * View visibility.
+     * {@link #setVisibility(Visibility)}
+     * {@link #getVisibility()}
+     */
+    public enum Visibility {
+
+        /**
+         * This view is visible, as view's default value
+         */
+        VISIBLE,
+
+        /**
+         * This view is invisible, but it still takes up space for layout.
+         */
+        INVISIBLE,
+
+        /**
+         * This view is invisible, and it doesn't take any space for layout.
+         */
+        GONE
     }
 
 }

@@ -30,11 +30,15 @@ import javax.annotation.Nullable;
 public class Fragment {
 
     /**
-     * Create the view belong to this fragment
-     * If creating a main view, it's better to use FrameLayout
-     * to center the view.
+     * Create the view belong to this fragment.
+     * <p>
+     * If this fragment is main fragment of a UI, this method
+     * should create the main view of the UI, and can't be null.
+     * <p>
+     * The main view of a UI is considered as a child view of FrameLayout,
+     * so you can use layout params of FrameLayout to layout the view.
      *
-     * @return view or null
+     * @return view instance or null
      */
     @Nullable
     public View createView() {

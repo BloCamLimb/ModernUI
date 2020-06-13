@@ -22,7 +22,7 @@ import icyllis.modernui.ui.animation.Animation;
 import icyllis.modernui.ui.animation.Applier;
 import icyllis.modernui.ui.animation.IInterpolator;
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.ui.master.IDrawable;
+import icyllis.modernui.ui.test.IDrawable;
 import icyllis.modernui.impl.module.IngameMenuHome;
 
 import javax.annotation.Nonnull;
@@ -102,7 +102,6 @@ public class MenuSettingsBG implements IDrawable {
         RenderSystem.enableTexture();
     }*/
 
-    @Override
     public void resize(int width, int height) {
         w = width - 80;
         h = height - 32;
