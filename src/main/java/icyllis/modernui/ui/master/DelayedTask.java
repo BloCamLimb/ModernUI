@@ -29,9 +29,9 @@ public class DelayedTask {
 
     private boolean finish = false;
 
-    public DelayedTask(@Nonnull Runnable runnable, int delayedTick) {
+    public DelayedTask(@Nonnull Runnable runnable, int delayedTicks) {
         this.runnable = runnable;
-        this.finishTick = UIManager.INSTANCE.getTicks() + delayedTick;
+        this.finishTick = UIManager.INSTANCE.getElapsedTicks() + delayedTicks;
     }
 
     public void tick(int ticks) {

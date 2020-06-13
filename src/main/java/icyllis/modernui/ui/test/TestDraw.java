@@ -24,7 +24,6 @@ import icyllis.modernui.ui.animation.Applier;
 import icyllis.modernui.ui.animation.IInterpolator;
 import icyllis.modernui.ui.animation.OvershootInterpolator;
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.ui.master.IDrawable;
 import icyllis.modernui.graphics.math.Color3i;
 
 import javax.annotation.Nonnull;

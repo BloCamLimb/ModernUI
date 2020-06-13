@@ -19,6 +19,7 @@
 package icyllis.modernui.ui.scroll;
 
 import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.ui.master.View;
 import icyllis.modernui.ui.test.IHost;
 import icyllis.modernui.ui.test.Widget;
 
@@ -178,7 +179,7 @@ public class ScrollPanel<E extends UniformScrollEntry, G extends UniformScrollGr
         float v = getHeight();
         float t = group.getHeight();
         boolean renderBar = t > v;
-        scrollbar.setVisible(renderBar);
+        scrollbar.setVisibility(renderBar ? View.Visibility.VISIBLE : View.Visibility.INVISIBLE);
         if (renderBar) {
             float p = v / t;
             scrollbar.setBarLength(p);

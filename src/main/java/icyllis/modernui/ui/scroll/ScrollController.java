@@ -58,7 +58,7 @@ public class ScrollController {
     }
 
     private void setTargetValue(float newTargetValue) {
-        startTime = UIManager.INSTANCE.getAnimationTime();
+        startTime = UIManager.INSTANCE.getDrawingTime();
         startValue = value;
         targetValue = Math.round(newTargetValue);
         float dis = Math.abs(targetValue - value);

@@ -21,7 +21,7 @@ package icyllis.modernui.ui.background;
 import icyllis.modernui.ui.animation.Animation;
 import icyllis.modernui.ui.animation.Applier;
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.ui.master.IDrawable;
+import icyllis.modernui.ui.test.IDrawable;
 
 import javax.annotation.Nonnull;
 
@@ -48,7 +48,6 @@ public class Background implements IDrawable {
         canvas.drawRect(0, 0, width, height);
     }
 
-    @Override
     public void resize(int width, int height) {
         this.width = width;
         this.height = height;

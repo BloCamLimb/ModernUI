@@ -20,6 +20,7 @@ package icyllis.modernui.ui.scroll;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.ui.master.View;
 import icyllis.modernui.ui.test.Module;
 import icyllis.modernui.ui.test.Window;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -239,7 +240,7 @@ public class ScrollWindow<T extends ScrollGroup> extends Window implements IScro
         float v = getVisibleHeight();
         float t = getTotalHeight();
         boolean renderBar = t > v;
-        scrollbar.setVisible(renderBar);
+        scrollbar.setVisibility(renderBar ? View.Visibility.VISIBLE : View.Visibility.INVISIBLE);
         if (renderBar) {
             float p = v / t;
             scrollbar.setBarLength(p);

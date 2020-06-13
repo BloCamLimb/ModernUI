@@ -103,14 +103,14 @@ public class Animation {
     }
 
     private void start0(boolean isFull) {
-        startTime = UIManager.INSTANCE.getAnimationTime() + delayTime;
+        startTime = UIManager.INSTANCE.getDrawingTime() + delayTime;
         waiting = false;
         reversed = false;
         started = false;
         if (appliers != null) {
             appliers.forEach(e -> e.record(reversed, isFull));
         }
-        UIManager.INSTANCE.enqueueAnimation(this);
+        UIManager.INSTANCE.addAnimation(this);
     }
 
     /**
@@ -129,14 +129,14 @@ public class Animation {
     }
 
     private void invert0(boolean isFull) {
-        startTime = UIManager.INSTANCE.getAnimationTime() + delayTime;
+        startTime = UIManager.INSTANCE.getDrawingTime() + delayTime;
         waiting = false;
         reversed = true;
         started = false;
         if (appliers != null) {
             appliers.forEach(e -> e.record(reversed, isFull));
         }
-        UIManager.INSTANCE.enqueueAnimation(this);
+        UIManager.INSTANCE.addAnimation(this);
     }
 
     /**

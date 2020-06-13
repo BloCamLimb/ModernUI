@@ -19,7 +19,7 @@
 package icyllis.modernui.impl.background;
 
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.ui.master.IDrawable;
+import icyllis.modernui.ui.test.IDrawable;
 
 import javax.annotation.Nonnull;
 
@@ -41,7 +41,6 @@ public class ResourcePackBG implements IDrawable {
         }
     }
 
-    @Override
     public void resize(int width, int height) {
         x1 = width / 2f - 8f;
         x2 = width / 2f + 8f;

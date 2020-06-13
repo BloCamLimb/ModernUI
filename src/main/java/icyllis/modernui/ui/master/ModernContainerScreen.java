@@ -38,16 +38,17 @@ import java.util.Objects;
 // And render layer for tooltips etc
 
 /**
- * This is required due to most mods check if extends {@link ContainerScreen} rather than {@link IHasContainer}
- * However vanilla is (Screen & IHasContainer<T>), see {@link ScreenManager.IScreenFactory}
- * @param <G> container
+ * This is required because most of mods will check if instanceof {@link ContainerScreen} rather than {@link IHasContainer}.
+ * see {@link ScreenManager.IScreenFactory}.
+ *
+ * @param <G> container type
  */
 @OnlyIn(Dist.CLIENT)
 public final class ModernContainerScreen<G extends Container> extends ContainerScreen<G> implements IHasContainer<G> {
 
     private final UIManager manager = UIManager.INSTANCE;
 
-    public ModernContainerScreen(@Nonnull G container, PlayerInventory inventory, ITextComponent title) {
+    ModernContainerScreen(@Nonnull G container, PlayerInventory inventory, ITextComponent title) {
         super(container, inventory, title);
     }
 
@@ -82,20 +83,19 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
 
     @Override
     public final void mouseMoved(double mouseX, double mouseY) {
-        super.mouseMoved(mouseX, mouseY);
         manager.mouseMoved(mouseX, mouseY);
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         super.mouseClicked(mouseX, mouseY, mouseButton);
-        return manager.mouseClicked0(mouseX, mouseY, mouseButton);
+        return manager.mouseClicked(mouseX, mouseY, mouseButton);
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
         super.mouseReleased(mouseX, mouseY, mouseButton);
-        return manager.mouseReleased0(mouseX, mouseY, mouseButton);
+        return manager.mouseReleased(mouseX, mouseY, mouseButton);
     }
 
     @Override
@@ -106,7 +106,6 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        super.mouseScrolled(mouseX, mouseY, delta);
         return manager.mouseScrolled(mouseX, mouseY, delta);
     }
 
@@ -148,13 +147,11 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
 
     @Override
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-        super.keyReleased(keyCode, scanCode, modifiers);
         return manager.keyReleased(keyCode, scanCode, modifiers);
     }
 
     @Override
     public boolean charTyped(char codePoint, int modifiers) {
-        super.charTyped(codePoint, modifiers);
         return manager.charTyped(codePoint, modifiers);
     }
 

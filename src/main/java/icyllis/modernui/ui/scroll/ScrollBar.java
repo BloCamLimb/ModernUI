@@ -123,7 +123,7 @@ public class ScrollBar extends View {
 
     private void wake() {
         brightness = 0.75f;
-        startTime = UIManager.INSTANCE.getAnimationTime() + 10.0f;
+        startTime = UIManager.INSTANCE.getDrawingTime() + 10.0f;
     }
 
     public void setBarLength(float percentage) {
@@ -156,7 +156,7 @@ public class ScrollBar extends View {
             if (barHovered) {
                 wake();
             } else {
-                startTime = UIManager.INSTANCE.getAnimationTime() + 10.0f;
+                startTime = UIManager.INSTANCE.getDrawingTime() + 10.0f;
             }
         }
         return super.dispatchMouseHover(mouseX, mouseY);
@@ -167,7 +167,7 @@ public class ScrollBar extends View {
         super.onMouseHoverExit();
         if (barHovered) {
             barHovered = false;
-            startTime = UIManager.INSTANCE.getAnimationTime() + 10.0f;
+            startTime = UIManager.INSTANCE.getDrawingTime() + 10.0f;
         }
     }
 
@@ -197,7 +197,7 @@ public class ScrollBar extends View {
         super.onStopDragging();
         if (isDragging) {
             isDragging = false;
-            startTime = UIManager.INSTANCE.getAnimationTime() + 10.0f;
+            startTime = UIManager.INSTANCE.getDrawingTime() + 10.0f;
         }
     }
 
@@ -227,25 +227,5 @@ public class ScrollBar extends View {
      */
     private float transformPosToAmount(float relativePos) {
         return view.getMaxScrollAmount() / getMaxDragLength() * relativePos;
-    }
-
-    @Override
-    public double getRelativeMX() {
-        return getParent().getParent().getRelativeMX();
-    }
-
-    @Override
-    public double getRelativeMY() {
-        return getParent().getParent().getRelativeMY();
-    }
-
-    @Override
-    public float toAbsoluteX(float rx) {
-        return getParent().getParent().toAbsoluteX(rx);
-    }
-
-    @Override
-    public float toAbsoluteY(float ry) {
-        return getParent().getParent().toAbsoluteY(ry);
     }
 }

@@ -126,13 +126,13 @@ public enum UIEditor {
                 ty += 9;
             }
 
-            canvas.drawRoundedRectFrame(
+            /*canvas.drawRoundedRectFrame(
                     hoveredView.getAbsoluteLeft() - 1,
                     hoveredView.getAbsoluteTop() - 1,
                     hoveredView.getAbsoluteRight() + 1,
                     hoveredView.getAbsoluteBottom() + 1,
                     2
-            );
+            );*/
         }
 
         GL11.glDisable(GL11.GL_LINE_SMOOTH);
