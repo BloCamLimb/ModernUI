@@ -18,6 +18,8 @@
 
 package icyllis.modernui.ui.master;
 
+import icyllis.modernui.ui.layout.FrameLayout;
+
 import javax.annotation.Nullable;
 
 /**
@@ -36,7 +38,8 @@ public class Fragment {
      * should create the main view of the UI, and can't be null.
      * <p>
      * The main view of a UI is considered as a child view of FrameLayout,
-     * so you can use layout params of FrameLayout to layout the view.
+     * so you can use LayoutParams of FrameLayout to layout the view.
+     * see {@link FrameLayout.LayoutParams}
      *
      * @return view instance or null
      */

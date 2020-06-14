@@ -57,6 +57,11 @@ public class ScrollView extends ViewGroup {
     }
 
     @Override
+    protected void onLayout(boolean changed) {
+
+    }
+
+    @Override
     protected boolean dispatchMouseHover(double mouseX, double mouseY) {
         /*if (scrollBar.updateMouseHover(mouseX, mouseY)) {
             return true;
@@ -86,13 +91,13 @@ public class ScrollView extends ViewGroup {
         this.scrollAmount = scrollAmount;
         float tTop = getTop() + getScrollY();
         float tBottom = getBottom() + getScrollY();
-        for (View view : getActiveViews()) {
+        /*for (View view : getActiveViews()) {
             if (view.getBottom() > tTop && view.getTop() < tBottom) {
                 view.setVisibility(Visibility.VISIBLE);
             } else {
                 view.setVisibility(Visibility.INVISIBLE);
             }
-        }
+        }*/
         updateScrollBarOffset();
         UIManager.INSTANCE.refreshMouse();
     }

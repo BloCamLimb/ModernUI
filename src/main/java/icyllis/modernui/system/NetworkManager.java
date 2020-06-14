@@ -31,7 +31,7 @@ import net.minecraftforge.fml.network.simple.SimpleChannel;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.function.BiConsumer;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 public enum NetworkManager {
@@ -66,11 +66,14 @@ public enum NetworkManager {
      * @param <MSG>     message type
      */
     public <MSG extends IMessage> void registerMessage(@Nonnull Class<MSG> type, @Nonnull Supplier<MSG> factory, @Nullable NetworkDirection direction) {
-        CHANNEL.messageBuilder(type, ++index, direction)
+        /*CHANNEL.messageBuilder(type, ++index, direction)
                 .encoder(IMessage::encode)
                 .decoder(buf -> decode(factory, buf))
                 .consumer((BiConsumer<MSG, Supplier<NetworkEvent.Context>>) this::handle)
-                .add();
+                .add();*/
+        synchronized (this) {
+            CHANNEL.registerMessage(++index, type, IMessage::encode, buf -> decode(factory, buf), this::handle, Optional.ofNullable(direction));
+        }
     }
 
     @Nonnull
