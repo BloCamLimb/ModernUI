@@ -19,48 +19,16 @@
 package icyllis.modernui.ui.example;
 
 import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.ui.layout.FrameLayout;
+import icyllis.modernui.ui.layout.Gravity;
 import icyllis.modernui.ui.master.View;
-import icyllis.modernui.ui.master.ViewGroup;
 
 import javax.annotation.Nonnull;
 
-public class TestMainView extends ViewGroup {
+public class TestMainView extends FrameLayout {
 
     public TestMainView() {
-        /*setLayout(new ScriptLayout(
-                "60",
-                "60",
-                "150.0",
-                "120.0"
-        ));
-        ScrollView s = new ScrollView();
-        s.setLayout(new ScriptLayout(
-                "prev.getLeft() + 20.0",
-                "prev.getTop() + 10",
-                "40.0",
-                "90"
-        ));
-        {
-            View v = new CView();
-            v.setLayout(new ScriptLayout(
-                    "parent.getLeft()",
-                    "parent.getTop() + 6",
-                    "20",
-                    "15"
-            ));
-            s.addActiveViewToPool(v);
-        }
-        for (int i = 0; i < 10; i++) {
-            View v = new CView();
-            v.setLayout(new ListLayout());
-            s.addActiveViewToPool(v);
-        }
-        addActiveViewToPool(s);*/
-    }
-
-    @Override
-    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
-        super.onLayout(changed, left, top, right, bottom);
+        addView(new CView(), new LayoutParams(20, 20, Gravity.CENTER));
     }
 
     @Override
@@ -70,6 +38,7 @@ public class TestMainView extends ViewGroup {
     }
 
     private static class CView extends View {
+
         @Override
         protected void onDraw(@Nonnull Canvas canvas, float time) {
             super.onDraw(canvas, time);

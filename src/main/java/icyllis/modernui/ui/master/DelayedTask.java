@@ -20,6 +20,10 @@ package icyllis.modernui.ui.master;
 
 import javax.annotation.Nonnull;
 
+/**
+ * Delayed task used in UI
+ * {@link UIManager#postTask(Runnable, int)}
+ */
 public class DelayedTask {
 
     @Nonnull

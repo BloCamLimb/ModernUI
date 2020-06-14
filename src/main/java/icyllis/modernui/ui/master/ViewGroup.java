@@ -19,108 +19,60 @@
 package icyllis.modernui.ui.master;
 
 import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.system.ModernUI;
+import icyllis.modernui.ui.layout.MeasureSpec;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
 
+@SuppressWarnings("unused")
 @OnlyIn(Dist.CLIENT)
 public abstract class ViewGroup extends View implements IViewParent {
 
-    @Nonnull
-    private List<View> activeViews = new ArrayList<>();
+    private View[] children;
 
-    @Nonnull
-    private List<View> allViews = new ArrayList<>();
+    private int childrenCount = 0;
+
+    {
+        children = new View[12];
+    }
 
     public ViewGroup() {
 
     }
 
-    public void addActiveViewToPool(@Nonnull View view) {
-        if (!activeViews.contains(view)) {
-            activeViews.add(view);
-            allViews.add(view);
-            view.assignParent(this);
-        }
-    }
-
-    protected void removeView(@Nonnull View view) {
-        activeViews.remove(view);
-        allViews.remove(view);
-    }
-
-    protected void removeAllViews() {
-        activeViews.clear();
-        allViews.clear();
-    }
-
-    protected void deactivateAll() {
-        activeViews.clear();
-    }
-
-    protected void activateView(@Nonnull View view) {
-        if (allViews.contains(view) && !activeViews.contains(view)) {
-            activeViews.add(view);
-        }
-    }
-
-    @Nonnull
-    protected List<View> getActiveViews() {
-        return activeViews;
-    }
-
-    @Nonnull
-    protected List<View> getAllViews() {
-        return allViews;
-    }
-
-    /*protected void deactivateOnlyAdd(@Nonnull View view) {
-        if (inactiveViews == null) {
-            inactiveViews = new ArrayList<>();
-        }
-        inactiveViews.addAll(activeViews);
-        inactiveViews.clear();
-        activeViews.add(view);
-    }
-
-    protected void activateView(int id) {
-        if (inactiveViews == null) {
-            return;
-        }
-        Optional<View> o = inactiveViews.stream().filter(v -> v.getId() == id).findFirst();
-        if (o.isPresent()) {
-            View v = o.get();
-            activeViews.add(v);
-            inactiveViews.remove(v);
-        }
-    }*/
-
     @Override
     protected void dispatchDraw(@Nonnull Canvas canvas, float time) {
         super.dispatchDraw(canvas, time);
-        boolean s = (getScrollX() != 0 || getScrollY() != 0);
-        if (s) {
+        boolean toTranslate = (getScrollX() != 0 || getScrollY() != 0);
+        if (toTranslate) {
             canvas.save();
             canvas.translate(-getScrollX(), -getScrollY());
         }
-        for (View view : activeViews) {
-            view.draw(canvas, time);
+        for (int i = 0; i < childrenCount; i++) {
+            children[i].draw(canvas, time);
         }
-        if (s) {
+        if (toTranslate) {
             canvas.restore();
         }
     }
 
     @Override
+    public final void layout(int left, int top, int right, int bottom) {
+        super.layout(left, top, right, bottom);
+    }
+
+    @Override
+    protected abstract void onLayout(boolean changed);
+
+    @Override
     protected boolean dispatchMouseHover(double mouseX, double mouseY) {
-        double tmx = mouseX + getScrollX();
-        double tmy = mouseY + getScrollY();
-        for (int i = activeViews.size() - 1; i >= 0; i--) {
-            if (activeViews.get(i).updateMouseHover(tmx, tmy)) {
+        double mx = mouseX + getScrollX();
+        double my = mouseY + getScrollY();
+        for (int i = childrenCount - 1; i >= 0; i--) {
+            if (children[i].updateMouseHover(mx, my)) {
                 return true;
             }
         }
@@ -135,6 +87,205 @@ public abstract class ViewGroup extends View implements IViewParent {
     @Override
     public float getScrollY() {
         return 0;
+    }
+
+    public void addView(@Nonnull View child) {
+        addView(child, -1);
+    }
+
+    public void addView(@Nonnull View child, int index) {
+        LayoutParams params = child.getLayoutParams();
+        if (params == null) {
+            params = createDefaultLayoutParams();
+        }
+        addView(child, index, params);
+    }
+
+    public void addView(@Nonnull View child, @Nonnull LayoutParams params) {
+        addView(child, -1, params);
+    }
+
+    public void addView(@Nonnull View child, int index, @Nonnull LayoutParams params) {
+        addView0(child, index, params);
+    }
+
+    private void addView0(@Nonnull View child, int index, @Nonnull LayoutParams params) {
+
+        if (child.getParent() != null) {
+            ModernUI.LOGGER.fatal(UIManager.MARKER,
+                    "Failed to add child view {} to {}. The child has already a parent.", child, this);
+            return;
+        }
+
+        if (!checkLayoutParams(params)) {
+            params = convertLayoutParams(params);
+        }
+
+        child.setLayoutParams(params);
+
+        if (index < 0) {
+            index = childrenCount;
+        }
+
+        addInArray(child, index);
+
+        child.assignParent(this);
+
+        UIManager.INSTANCE.refreshMouse();
+    }
+
+    public View getChildAt(int index) {
+        if (index < 0 || index >= childrenCount) {
+            return null;
+        }
+        return children[index];
+    }
+
+    public int getChildCount() {
+        return childrenCount;
+    }
+
+    private void addInArray(@Nonnull View child, int index) {
+        View[] children = this.children;
+        final int count = this.childrenCount;
+        final int size = children.length;
+        if (index == count) {
+            if (size == count) {
+                this.children = new View[size + 12];
+                System.arraycopy(children, 0, this.children, 0, size);
+                children = this.children;
+            }
+            children[childrenCount++] = child;
+        } else if (index < count) {
+            if (size == count) {
+                this.children = new View[size + 12];
+                System.arraycopy(children, 0, this.children, 0, index);
+                System.arraycopy(children, index, this.children, index + 1, count - index);
+                children = this.children;
+            } else {
+                System.arraycopy(children, index, children, index + 1, count - index);
+            }
+            children[index] = child;
+            ++childrenCount;
+        } else {
+            throw new IndexOutOfBoundsException("index=" + index + " count=" + count);
+        }
+    }
+
+    /**
+     * Ask one of the children of this view to measure itself, taking into
+     * account both the MeasureSpec requirements for this view and its padding
+     * and margins. The child must have MarginLayoutParams The heavy lifting is
+     * done in getChildMeasureSpec.
+     *
+     * @param child            The child to measure
+     * @param parentWidthSpec  The width requirements for this view
+     * @param widthUsed        Extra space that has been used up by the parent
+     *                         horizontally (possibly by other children of the parent)
+     * @param parentHeightSpec The height requirements for this view
+     * @param heightUsed       Extra space that has been used up by the parent
+     *                         vertically (possibly by other children of the parent)
+     */
+    protected void measureChildWithMargins(@Nonnull View child,
+                                           int parentWidthSpec, int widthUsed,
+                                           int parentHeightSpec, int heightUsed) {
+        MarginLayoutParams lp = (MarginLayoutParams) child.getLayoutParams();
+
+        int childWidthMeasureSpec = getChildMeasureSpec(parentWidthSpec,
+          lp.leftMargin + lp.rightMargin
+                  + widthUsed, lp.width);
+        int childHeightMeasureSpec = getChildMeasureSpec(parentHeightSpec,
+                lp.topMargin + lp.bottomMargin
+                        + heightUsed, lp.height);
+
+        child.measure(childWidthMeasureSpec, childHeightMeasureSpec);
+    }
+
+    /**
+     * Does the hard part of measureChildren: figuring out the MeasureSpec to
+     * pass to a particular child. This method figures out the right MeasureSpec
+     * for one dimension (height or width) of one child view.
+     * <p>
+     * The goal is to combine information from our MeasureSpec with the
+     * LayoutParams of the child to get the best possible results. For example,
+     * if the this view knows its size (because its MeasureSpec has a mode of
+     * EXACTLY), and the child has indicated in its LayoutParams that it wants
+     * to be the same size as the parent, the parent should ask the child to
+     * layout given an exact size.
+     *
+     * @param spec           The requirements for this view
+     * @param padding        The padding of this view for the current dimension and
+     *                       margins, if applicable
+     * @param childDimension How big the child wants to be in the current
+     *                       dimension
+     * @return a MeasureSpec integer for the child
+     */
+    public static int getChildMeasureSpec(int spec, int padding, int childDimension) {
+        int specSize = MeasureSpec.getSize(spec);
+
+        int size = Math.max(0, specSize - padding);
+
+        int resultSize = 0;
+        MeasureSpec.Mode resultMode = MeasureSpec.Mode.UNSPECIFIED;
+
+        switch (MeasureSpec.getMode(spec)) {
+            // Parent has imposed an exact size on us
+            case EXACTLY:
+                if (childDimension >= 0) {
+                    resultSize = childDimension;
+                    resultMode = MeasureSpec.Mode.EXACTLY;
+                } else if (childDimension == LayoutParams.MATCH_PARENT) {
+                    // Child wants to be our size. So be it.
+                    resultSize = size;
+                    resultMode = MeasureSpec.Mode.EXACTLY;
+                } else if (childDimension == LayoutParams.WRAP_CONTENT) {
+                    // Child wants to determine its own size. It can't be
+                    // bigger than us.
+                    resultSize = size;
+                    resultMode = MeasureSpec.Mode.AT_MOST;
+                }
+                break;
+
+            // Parent has imposed a maximum size on us
+            case AT_MOST:
+                if (childDimension >= 0) {
+                    // Child wants a specific size... so be it
+                    resultSize = childDimension;
+                    resultMode = MeasureSpec.Mode.EXACTLY;
+                } else if (childDimension == LayoutParams.MATCH_PARENT) {
+                    // Child wants to be our size, but our size is not fixed.
+                    // Constrain child to not be bigger than us.
+                    resultSize = size;
+                    resultMode = MeasureSpec.Mode.AT_MOST;
+                } else if (childDimension == LayoutParams.WRAP_CONTENT) {
+                    // Child wants to determine its own size. It can't be
+                    // bigger than us.
+                    resultSize = size;
+                    resultMode = MeasureSpec.Mode.AT_MOST;
+                }
+                break;
+
+            // Parent asked to see how big we want to be
+            case UNSPECIFIED:
+                if (childDimension >= 0) {
+                    // Child wants a specific size... let him have it
+                    resultSize = childDimension;
+                    resultMode = MeasureSpec.Mode.EXACTLY;
+                } else if (childDimension == LayoutParams.MATCH_PARENT) {
+                    // Child wants to be our size... find out how big it should
+                    // be
+                    resultSize = size;
+                    resultMode = MeasureSpec.Mode.UNSPECIFIED;
+                } else if (childDimension == LayoutParams.WRAP_CONTENT) {
+                    // Child wants to determine its own size.... find out how
+                    // big it should be
+                    resultSize = size;
+                    resultMode = MeasureSpec.Mode.UNSPECIFIED;
+                }
+                break;
+        }
+
+        return MeasureSpec.makeMeasureSpec(resultSize, resultMode);
     }
 
     /**

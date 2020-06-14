@@ -36,6 +36,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 @OnlyIn(Dist.CLIENT)
 public class View {
 
+    /**
+     * {@link #generateViewId()}
+     */
     private static final AtomicInteger GENERATED_ID = new AtomicInteger(1);
 
     /**
@@ -47,7 +50,7 @@ public class View {
      * Private flags
      */
     private static final int PFLAG_MEASURED_DIMENSION_SET = 1 << 11;
-    private static final int PFLAG_LAYOUT_REQUIRED = 1 << 13;
+    private static final int PFLAG_LAYOUT_REQUIRED        = 1 << 13;
 
     /**
      * Private boolean state flags
@@ -113,7 +116,7 @@ public class View {
     /**
      * Cached previous measure spec to avoid unnecessary measurements
      */
-    private int prevWidthMeasureSpec = Integer.MIN_VALUE;
+    private int prevWidthMeasureSpec  = Integer.MIN_VALUE;
     private int prevHeightMeasureSpec = Integer.MIN_VALUE;
 
     /**
@@ -121,6 +124,12 @@ public class View {
      */
     private int measuredWidth;
     private int measuredHeight;
+
+    /**
+     * The layout parameters associated with this view and used by the parent
+     * {@link ViewGroup} to determine how this view should be laid out.
+     */
+    private ViewGroup.LayoutParams layoutParams;
 
     /**
      * Raw draw method
@@ -182,7 +191,7 @@ public class View {
         boolean changed = setFrame(left, top, right, bottom);
 
         if (changed || hasFlag(PFLAG_LAYOUT_REQUIRED)) {
-            onLayout(changed, left, top, right, bottom);
+            onLayout(changed);
 
             removeFlag(PFLAG_LAYOUT_REQUIRED);
         }
@@ -192,12 +201,8 @@ public class View {
      * Layout child views
      *
      * @param changed whether the size or position of this view was changed
-     * @param left    left position, relative to game window
-     * @param top     top position, relative to game window
-     * @param right   right position, relative to game window
-     * @param bottom  bottom position, relative to game window
      */
-    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+    protected void onLayout(boolean changed) {
 
     }
 
@@ -213,17 +218,18 @@ public class View {
     protected boolean setFrame(int left, int top, int right, int bottom) {
         if (this.left != left || this.right != right || this.top != top || this.bottom != bottom) {
 
-            int oldWidth = this.right - this.left;
-            int oldHeight = this.bottom - this.top;
-            int newWidth = right - left;
-            int newHeight = bottom - top;
-
-            boolean sizeChanged = (newWidth != oldWidth) || (newHeight != oldHeight);
+            int oldWidth = getWidth();
+            int oldHeight = getHeight();
 
             this.left = left;
             this.top = top;
             this.right = right;
             this.bottom = bottom;
+
+            int newWidth = getWidth();
+            int newHeight = getHeight();
+
+            boolean sizeChanged = (newWidth != oldWidth) || (newHeight != oldHeight);
 
             if (sizeChanged) {
                 onSizeChanged(newWidth, newHeight, oldWidth, oldHeight);
@@ -276,7 +282,7 @@ public class View {
 
             // the flag should be added in onMeasure()
             if (!hasFlag(PFLAG_MEASURED_DIMENSION_SET)) {
-                ModernUI.LOGGER.fatal(UIManager.MARKER, "measured dimension unspecified on measure");
+                ModernUI.LOGGER.fatal(UIManager.MARKER, "Measured dimension unspecified on measure");
                 setMeasuredDimension(getDefaultSize(minWidth, widthMeasureSpec),
                         getDefaultSize(minHeight, heightMeasureSpec));
             }
@@ -338,6 +344,37 @@ public class View {
     }
 
     /**
+     * Get the LayoutParams associated with this view. All views should have
+     * layout parameters. These supply parameters to the <i>parent</i> of this
+     * view specifying how it should be arranged. There are many subclasses of
+     * ViewGroup.LayoutParams, and these correspond to the different subclasses
+     * of ViewGroup that are responsible for arranging their children.
+     * <p>
+     * This method may return null if this View is not attached to a parent
+     * ViewGroup or {@link #setLayoutParams(ViewGroup.LayoutParams)}
+     * was not invoked successfully. When a View is attached to a parent
+     * ViewGroup, this method must not return null.
+     *
+     * @return the LayoutParams associated with this view, or null if no
+     * parameters have been set yet
+     */
+    public ViewGroup.LayoutParams getLayoutParams() {
+        return layoutParams;
+    }
+
+    public void setLayoutParams(@Nonnull ViewGroup.LayoutParams params) {
+        layoutParams = params;
+    }
+
+    public int getMinWidth() {
+        return minWidth;
+    }
+
+    public int getMinHeight() {
+        return minHeight;
+    }
+
+    /**
      * Helper method to get default size
      *
      * @param size        default size
@@ -355,6 +392,22 @@ public class View {
         }
 
         return size;
+    }
+
+    public static int resolveSize(int size, int measureSpec) {
+        final int specSize = MeasureSpec.getSize(measureSpec);
+        final int result;
+        switch (MeasureSpec.getMode(measureSpec)) {
+            case AT_MOST:
+                result = Math.min(specSize, size);
+                break;
+            case EXACTLY:
+                result = specSize;
+                break;
+            default:
+                result = size;
+        }
+        return result;
     }
 
     /**

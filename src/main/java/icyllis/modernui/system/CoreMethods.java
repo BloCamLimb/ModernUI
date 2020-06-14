@@ -48,12 +48,8 @@ public class CoreMethods {
                 minecraft.displayGuiScreen(new IngameMenuScreen(false));
                 minecraft.getSoundHandler().pause();
             } else {
-                if (ConfigManager.COMMON.isEnableLibOnlyMode()) {
-                    minecraft.displayGuiScreen(new IngameMenuScreen(true));
-                } else {
-                    //UIManager.INSTANCE.openGuiScreen(new TranslationTextComponent("menu.game"), IngameMenuHome::new);
-                    minecraft.displayGuiScreen(new IngameMenuScreen(true));
-                }
+                //UIManager.INSTANCE.openGuiScreen(new TranslationTextComponent("menu.game"), IngameMenuHome::new);
+                minecraft.displayGuiScreen(new IngameMenuScreen(true));
             }
         }
     }
@@ -71,9 +67,7 @@ public class CoreMethods {
 
     public static int calcGuiScales() {
         MainWindow mainWindow = Minecraft.getInstance().getMainWindow();
-        int framebufferWidth = mainWindow.getFramebufferWidth();
-        int framebufferHeight = mainWindow.getFramebufferHeight();
-        return calcGuiScales(framebufferWidth, framebufferHeight);
+        return calcGuiScales(mainWindow.getFramebufferWidth(), mainWindow.getFramebufferHeight());
     }
 
     private static int calcGuiScales(int framebufferWidth, int framebufferHeight) {

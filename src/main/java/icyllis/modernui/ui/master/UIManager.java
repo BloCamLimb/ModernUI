@@ -416,6 +416,9 @@ public enum UIManager implements IViewParent {
         mouseMoved(mouseX, mouseY);
     }
 
+    /**
+     * Raw draw method, draw entire UI
+     */
     void draw() {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -451,8 +454,8 @@ public enum UIManager implements IViewParent {
      * {@link #requestLayout()}
      */
     private void layout() {
-        int widthSpec = MeasureSpec.makeMeasureSpec(width, MeasureSpec.Mode.AT_MOST);
-        int heightSpec = MeasureSpec.makeMeasureSpec(height, MeasureSpec.Mode.AT_MOST);
+        int widthSpec = MeasureSpec.makeMeasureSpec(width, MeasureSpec.Mode.EXACTLY);
+        int heightSpec = MeasureSpec.makeMeasureSpec(height, MeasureSpec.Mode.EXACTLY);
         view.measure(widthSpec, heightSpec);
         view.layout(0, 0, view.getMeasuredWidth(), view.getMeasuredHeight());
         /*if (popup != null) {
@@ -460,6 +463,7 @@ public enum UIManager implements IViewParent {
         }*/
         refreshMouse();
         layoutRequested = false;
+        ModernUI.LOGGER.debug(MARKER, "Actively Layout Performed");
     }
 
     void destroy() {

@@ -35,21 +35,21 @@ import java.util.function.Consumer;
 public interface IMessage {
 
     /**
-     * Encode message to byte buf
+     * Encode message to byte buffer
      *
      * @param buf buf to write
      */
     void encode(@Nonnull PacketBuffer buf);
 
     /**
-     * Decode message from byte buf
+     * Decode message from byte buffer
      *
      * @param buf buf to read
      */
     void decode(@Nonnull PacketBuffer buf);
 
     /**
-     * Handle this message, not necessarily on the main thread
+     * Handle message on sided effective thread
      *
      * @param ctx context
      */

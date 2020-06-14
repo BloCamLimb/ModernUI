@@ -122,10 +122,8 @@ public class ConfigManager {
     public static class Common {
 
         private boolean enableDeveloperMode;
-        private boolean enableLibOnlyMode;
 
         private final ForgeConfigSpec.BooleanValue enableDeveloperModeV;
-        private final ForgeConfigSpec.BooleanValue enableLibOnlyModeV;
 
         public Common(@Nonnull ForgeConfigSpec.Builder builder) {
             builder.comment("Developer Config")
@@ -133,23 +131,16 @@ public class ConfigManager {
 
             enableDeveloperModeV = builder.comment("For assisting developer to debug mod and edit modules in-game")
                     .define("enableDeveloperMode", false);
-            enableLibOnlyModeV = builder.comment("Make Modern UI only as a library mod to work.")
-                    .define("enableLibOnlyMode", false);
 
             builder.pop();
         }
 
         private void load() {
             enableDeveloperMode = enableDeveloperModeV.get();
-            enableLibOnlyMode = enableLibOnlyModeV.get();
         }
 
         public boolean isEnableDeveloperMode() {
             return enableDeveloperMode;
-        }
-
-        public boolean isEnableLibOnlyMode() {
-            return enableLibOnlyMode;
         }
     }
 }
