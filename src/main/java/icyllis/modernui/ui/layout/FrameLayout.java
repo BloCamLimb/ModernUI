@@ -26,6 +26,10 @@ import javax.annotation.Nullable;
 
 public class FrameLayout extends ViewGroup {
 
+    public FrameLayout() {
+
+    }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int count = getChildCount();
@@ -35,7 +39,7 @@ public class FrameLayout extends ViewGroup {
 
         for (int i = 0; i < count; i++) {
             View child = getChildAt(i);
-            if (child.getVisibility() != Visibility.GONE) {
+            if (child.getVisibility().canLayout()) {
                 measureChildWithMargins(child,
                         widthMeasureSpec, 0, heightMeasureSpec, 0);
                 LayoutParams lp = (LayoutParams) child.getLayoutParams();

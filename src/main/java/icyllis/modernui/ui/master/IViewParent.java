@@ -31,6 +31,11 @@ public interface IViewParent {
     IViewParent getParent();
 
     /**
+     * Request layout when something changed
+     */
+    void requestLayout();
+
+    /**
      * Available in scrollable view
      */
     float getScrollX();

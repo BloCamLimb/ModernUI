@@ -21,7 +21,7 @@ package icyllis.modernui.ui.widget;
 import com.google.gson.annotations.Expose;
 import icyllis.modernui.ui.test.IHost;
 import icyllis.modernui.ui.test.Widget;
-import icyllis.modernui.ui.layout.Align9D;
+import icyllis.modernui.ui.test.Align9D;
 import icyllis.modernui.ui.test.Locator;
 import net.minecraft.util.math.MathHelper;
 

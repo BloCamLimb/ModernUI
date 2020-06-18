@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.ui.layout;
+package icyllis.modernui.ui.test;
 
 @Deprecated
 public enum Direction4D {

@@ -18,32 +18,41 @@
 
 package icyllis.modernui.ui.example;
 
+import icyllis.modernui.graphics.font.TextAlign;
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.ui.layout.FrameLayout;
-import icyllis.modernui.ui.layout.Gravity;
+import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.ui.master.View;
 
 import javax.annotation.Nonnull;
 
-public class TestMainView extends FrameLayout {
+public class TestMainView extends View {
 
     public TestMainView() {
-        addView(new CView(), new LayoutParams(20, 20, Gravity.CENTER));
+
     }
 
     @Override
     protected void onDraw(@Nonnull Canvas canvas, float time) {
         super.onDraw(canvas, time);
-        canvas.drawText("AAA", getLeft() + 9, getTop() + 6);
+        canvas.setTextAlign(TextAlign.CENTER);
+        canvas.drawText("AAA", getLeft() + getWidth() / 2.0f, getTop() + 6);
     }
 
-    private static class CView extends View {
+    @Override
+    protected void onMouseHoverEnter() {
+        super.onMouseHoverEnter();
+        ModernUI.LOGGER.info("mouse enter");
+    }
 
-        @Override
-        protected void onDraw(@Nonnull Canvas canvas, float time) {
-            super.onDraw(canvas, time);
-            canvas.resetColor();
-            canvas.drawText("233", getLeft(), getTop() + 3);
-        }
+    @Override
+    protected boolean onMouseLeftClicked(double mouseX, double mouseY) {
+        ModernUI.LOGGER.info("left click");
+        return true;
+    }
+
+    @Override
+    protected void onMouseHoverExit() {
+        super.onMouseHoverExit();
+        ModernUI.LOGGER.info("mouse exit");
     }
 }

@@ -10,8 +10,10 @@ buildscript {
         classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.+', changing: true
     }
 }
+plugins {
+    id "com.matthewprenger.cursegradle" version '1.4.0'
+}
 apply plugin: 'net.minecraftforge.gradle'
-apply plugin: 'eclipse'
 apply plugin: 'java-library'
 apply plugin: 'maven-publish'
 
@@ -178,4 +180,31 @@ task devJar(type: Jar) {
 artifacts {
     archives apiJar
     archives devJar
+}
+
+if (System.getenv("CurseForgeAPI") != null) {
+    curseforge {
+        apiKey = System.getenv("CurseForgeAPI")
+        project {
+            id = '352491'
+            changelogType = 'markdown'
+            changelog = project.file('changelogs.md').getText()
+            releaseType = "${release_type}"
+            relations {
+                optionalDependency 'optiforge'
+                incompatible 'blur'
+            }
+            mainArtifact(jar) {
+                // remove classifier
+                displayName = project.version
+            }
+            //addArtifact devJar
+        }
+        options {
+            debug = true
+            detectNewerJava = true
+        }
+    }
+} else {
+    println "CurseForge API token unspecified"
 }

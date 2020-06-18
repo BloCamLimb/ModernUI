@@ -48,6 +48,8 @@ public enum UIEditor {
 
     private int bottom = 14;
 
+    private int[] hoveredLocation = new int[2];
+
     public void setHoveredWidget(@Nullable Object obj) {
         if (obj == null) {
             hoveredView = null;
@@ -126,13 +128,14 @@ public enum UIEditor {
                 ty += 9;
             }
 
-            /*canvas.drawRoundedRectFrame(
-                    hoveredView.getAbsoluteLeft() - 1,
-                    hoveredView.getAbsoluteTop() - 1,
-                    hoveredView.getAbsoluteRight() + 1,
-                    hoveredView.getAbsoluteBottom() + 1,
+            hoveredView.getLocationInWindow(hoveredLocation);
+            canvas.drawRoundedRectFrame(
+                    hoveredLocation[0] - 1,
+                    hoveredLocation[1] - 1,
+                    hoveredLocation[0] + hoveredView.getWidth() + 1,
+                    hoveredLocation[1] + hoveredView.getHeight() + 1,
                     2
-            );*/
+            );
         }
 
         GL11.glDisable(GL11.GL_LINE_SMOOTH);

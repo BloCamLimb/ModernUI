@@ -18,8 +18,6 @@
 
 package icyllis.modernui.ui.test;
 
-import icyllis.modernui.ui.layout.Align9D;
-
 @Deprecated
 public class NormalLayout implements ILayout {
 

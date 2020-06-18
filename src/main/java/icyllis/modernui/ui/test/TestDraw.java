@@ -28,6 +28,7 @@ import icyllis.modernui.graphics.math.Color3i;
 
 import javax.annotation.Nonnull;
 
+@Deprecated
 public class TestDraw implements IDrawable {
 
     private float xOffset;

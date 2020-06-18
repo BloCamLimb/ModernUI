@@ -21,9 +21,8 @@ package icyllis.modernui.ui.scroll;
 import com.google.common.collect.Lists;
 import icyllis.modernui.ui.test.IHost;
 import icyllis.modernui.ui.test.Widget;
-import icyllis.modernui.ui.layout.Align9D;
+import icyllis.modernui.ui.test.Align9D;
 import icyllis.modernui.ui.test.Locator;
-import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.math.MathHelper;
 
 import javax.annotation.Nonnull;

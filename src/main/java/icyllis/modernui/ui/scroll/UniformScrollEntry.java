@@ -19,7 +19,7 @@
 package icyllis.modernui.ui.scroll;
 
 import icyllis.modernui.ui.test.Widget;
-import icyllis.modernui.ui.layout.Align9D;
+import icyllis.modernui.ui.test.Align9D;
 
 import javax.annotation.Nonnull;
 

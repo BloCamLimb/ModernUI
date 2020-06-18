@@ -26,6 +26,7 @@ import icyllis.modernui.ui.scroll.UniformScrollGroup;
 
 import javax.annotation.Nonnull;
 
+@Deprecated
 public class TestScrollGr extends UniformScrollGroup<TestScrollGr.TestScrollEn> {
 
     public TestScrollGr(IScrollHost window) {

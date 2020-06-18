@@ -19,7 +19,7 @@
 package icyllis.modernui.impl.module;
 
 import icyllis.modernui.ui.master.UIManager;
-import icyllis.modernui.ui.layout.Align9D;
+import icyllis.modernui.ui.test.Align9D;
 import icyllis.modernui.ui.test.Locator;
 import icyllis.modernui.impl.background.MenuHomeBG;
 import icyllis.modernui.ui.test.IModule;

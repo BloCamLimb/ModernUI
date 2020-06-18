@@ -19,7 +19,6 @@
 package icyllis.modernui.ui.master;
 
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.ui.layout.MeasureSpec;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -50,6 +49,7 @@ public class View {
      * Private flags
      */
     private static final int PFLAG_MEASURED_DIMENSION_SET = 1 << 11;
+    private static final int PFLAG_FORCE_LAYOUT           = 1 << 12;
     private static final int PFLAG_LAYOUT_REQUIRED        = 1 << 13;
 
     /**
@@ -195,6 +195,8 @@ public class View {
 
             removeFlag(PFLAG_LAYOUT_REQUIRED);
         }
+
+        removeFlag(PFLAG_FORCE_LAYOUT);
     }
 
     /**
@@ -258,21 +260,28 @@ public class View {
      *
      * @param widthMeasureSpec  width measure specification imposed by the parent
      * @param heightMeasureSpec height measure specification imposed by the parent
+     * @throws IllegalStateException measurement result is not set in
+     *                               {@link #onMeasure(int, int)}
      * @see #onMeasure(int, int)
      */
     public final void measure(int widthMeasureSpec, int heightMeasureSpec) {
 
-        boolean specChanged =
-                widthMeasureSpec != prevWidthMeasureSpec
-                        || heightMeasureSpec != prevHeightMeasureSpec;
-        boolean isSpecExactly =
-                MeasureSpec.getMode(widthMeasureSpec) == MeasureSpec.Mode.EXACTLY
-                        && MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.Mode.EXACTLY;
-        boolean matchesSpecSize =
-                measuredWidth == MeasureSpec.getSize(widthMeasureSpec)
-                        && measuredHeight == MeasureSpec.getSize(heightMeasureSpec);
-        boolean needsLayout = specChanged
-                && (!isSpecExactly || !matchesSpecSize);
+        boolean needsLayout = hasFlag(PFLAG_FORCE_LAYOUT);
+
+        if (!needsLayout) {
+
+            boolean specChanged =
+                    widthMeasureSpec != prevWidthMeasureSpec
+                            || heightMeasureSpec != prevHeightMeasureSpec;
+            boolean isSpecExactly =
+                    MeasureSpec.getMode(widthMeasureSpec).isExactly()
+                            && MeasureSpec.getMode(heightMeasureSpec).isExactly();
+            boolean matchesSpecSize =
+                    measuredWidth == MeasureSpec.getSize(widthMeasureSpec)
+                            && measuredHeight == MeasureSpec.getSize(heightMeasureSpec);
+            needsLayout = specChanged
+                    && (!isSpecExactly || !matchesSpecSize);
+        }
 
         if (needsLayout) {
             // remove the flag first anyway
@@ -280,11 +289,9 @@ public class View {
 
             onMeasure(widthMeasureSpec, heightMeasureSpec);
 
-            // the flag should be added in onMeasure()
+            // the flag should be added in onMeasure() by calling setMeasuredDimension()
             if (!hasFlag(PFLAG_MEASURED_DIMENSION_SET)) {
-                ModernUI.LOGGER.fatal(UIManager.MARKER, "Measured dimension unspecified on measure");
-                setMeasuredDimension(getDefaultSize(minWidth, widthMeasureSpec),
-                        getDefaultSize(minHeight, heightMeasureSpec));
+                throw new IllegalStateException("measured dimension unspecified on measure");
             }
 
             addFlag(PFLAG_LAYOUT_REQUIRED);
@@ -362,6 +369,15 @@ public class View {
         return layoutParams;
     }
 
+    /**
+     * Set the layout parameters associated with this view. These supply
+     * parameters to the <i>parent</i> of this view specifying how it should be
+     * arranged. There are many subclasses of ViewGroup.LayoutParams, and these
+     * correspond to the different subclasses of ViewGroup that are responsible
+     * for arranging their children.
+     *
+     * @param params layout parameters for this view
+     */
     public void setLayoutParams(@Nonnull ViewGroup.LayoutParams params) {
         layoutParams = params;
     }
@@ -395,8 +411,8 @@ public class View {
     }
 
     public static int resolveSize(int size, int measureSpec) {
-        final int specSize = MeasureSpec.getSize(measureSpec);
-        final int result;
+        int specSize = MeasureSpec.getSize(measureSpec);
+        int result;
         switch (MeasureSpec.getMode(measureSpec)) {
             case AT_MOST:
                 result = Math.min(specSize, size);
@@ -420,12 +436,10 @@ public class View {
     }
 
     /**
-     * Assign parent view, do not call this unless you know what you're doing
-     * <p>
-     * Should call immediately after this view is created to make sure
-     * parent is not null when calling resize()
+     * Assign parent view, this method is called by system
      *
      * @param parent parent view
+     * @throws RuntimeException parent is already assigned
      */
     void assignParent(@Nonnull IViewParent parent) {
         if (this.parent == null) {
@@ -464,13 +478,13 @@ public class View {
      */
     public static int generateViewId() {
         for (; ; ) {
-            int cid = GENERATED_ID.get();
-            int nid = cid + 1;
-            if (nid < 1) {
-                nid = 1;
+            int cur = GENERATED_ID.get();
+            int next = cur + 1;
+            if (next < 1) {
+                next = 1;
             }
-            if (GENERATED_ID.compareAndSet(cid, nid)) {
-                return cid;
+            if (GENERATED_ID.compareAndSet(cur, next)) {
+                return cur;
             }
         }
     }
@@ -594,37 +608,53 @@ public class View {
 
     }
 
-    /*public double getRelativeMX() {
-        return getParent().getRelativeMX() + getParent().getScrollX();
+    /**
+     * Request layout if layout information changed.
+     * This will schedule a layout pass of the view tree.
+     */
+    public void requestLayout() {
+        boolean requestParent = !hasFlag(PFLAG_FORCE_LAYOUT);
+
+        addFlag(PFLAG_FORCE_LAYOUT);
+
+        if (requestParent && parent != null) {
+            parent.requestLayout();
+        }
     }
 
-    public double getRelativeMY() {
-        return getParent().getRelativeMY() + getParent().getScrollY();
+    /**
+     * Add a mark to force this view to be laid out during the next
+     * layout pass.
+     */
+    public void markForceLayout() {
+        addFlag(PFLAG_FORCE_LAYOUT);
     }
 
-    public float toAbsoluteX(float rx) {
-        return getParent().toAbsoluteX(rx) - getParent().getScrollX();
-    }
+    /**
+     * Computes the coordinates of this view in its window. The argument
+     * must be an array of two integers. After the method returns, the array
+     * contains the x and y location in that order.
+     *
+     * @param location an array of two integers in which to hold the coordinates
+     */
+    public void getLocationInWindow(@Nonnull int[] location) {
+        if (location.length < 2) {
+            throw new IllegalArgumentException("location array length must be greater than one");
+        }
 
-    public float toAbsoluteY(float ry) {
-        return getParent().toAbsoluteY(ry) - getParent().getScrollY();
-    }
+        int x = left;
+        int y = top;
 
-    public float getAbsoluteLeft() {
-        return toAbsoluteX(left);
-    }
+        IViewParent parent = this.parent;
+        while (parent != UIManager.INSTANCE) {
+            x -= parent.getScrollX();
+            y -= parent.getScrollY();
+            parent = parent.getParent();
+        }
 
-    public float getAbsoluteTop() {
-        return toAbsoluteY(top);
+        location[0] = x;
+        location[1] = y;
     }
-
-    public float getAbsoluteRight() {
-        return toAbsoluteX(right);
-    }
-
-    public float getAbsoluteBottom() {
-        return toAbsoluteY(bottom);
-    }*/
 
     /**
      * Check if mouse hover this view
@@ -838,7 +868,15 @@ public class View {
         /**
          * This view is invisible, and it doesn't take any space for layout.
          */
-        GONE
+        GONE;
+
+        public boolean canDraw() {
+            return this == VISIBLE;
+        }
+
+        public boolean canLayout() {
+            return this != GONE;
+        }
     }
 
 }

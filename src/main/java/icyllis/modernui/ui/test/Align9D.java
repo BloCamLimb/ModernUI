@@ -16,7 +16,9 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.ui.layout;
+package icyllis.modernui.ui.test;
+
+import icyllis.modernui.ui.layout.Gravity;
 
 /**
  * Ore ga hololive da!

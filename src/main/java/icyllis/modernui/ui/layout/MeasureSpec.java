@@ -25,10 +25,11 @@ import javax.annotation.Nonnull;
 /**
  * Measure specification, encapsulates the layout requirements passed from parent to child
  */
+@SuppressWarnings("unused")
 public class MeasureSpec {
 
     private static final int MODE_SHIFT = 30;
-    private static final int MODE_MASK = 0x3 << MODE_SHIFT;
+    private static final int MODE_MASK  = 0x3 << MODE_SHIFT;
 
     /**
      * Make measure specification based on the size and mode
@@ -90,7 +91,18 @@ public class MeasureSpec {
         /**
          * The child can be as large as it wants up to the specified size.
          */
-        AT_MOST
+        AT_MOST;
 
+        public boolean isUnspecified() {
+            return this == UNSPECIFIED;
+        }
+
+        public boolean isExactly() {
+            return this == EXACTLY;
+        }
+
+        public boolean isAtMost() {
+            return this == AT_MOST;
+        }
     }
 }
