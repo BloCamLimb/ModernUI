@@ -37,6 +37,7 @@ public interface IFontRenderer {
      * @param align 0-left 0.25-center 0.5-right
      * @return formatted text width
      */
+    @Deprecated
     default float drawString(String str, float startX, float startY, Color3i color, float alpha, TextAlign align) {
         return drawString(str, startX, startY, color.getFloatRed(), color.getFloatGreen(), color.getFloatBlue(), alpha, align);
     }

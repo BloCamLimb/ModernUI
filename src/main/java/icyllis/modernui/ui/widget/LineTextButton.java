@@ -25,7 +25,7 @@ import icyllis.modernui.ui.animation.Animation;
 import icyllis.modernui.ui.animation.AnimationControl;
 import icyllis.modernui.ui.animation.Applier;
 import icyllis.modernui.graphics.font.TextAlign;
-import icyllis.modernui.ui.layout.Align9D;
+import icyllis.modernui.ui.test.Align9D;
 import icyllis.modernui.ui.test.Locator;
 import icyllis.modernui.ui.test.IHost;
 import icyllis.modernui.ui.test.Widget;

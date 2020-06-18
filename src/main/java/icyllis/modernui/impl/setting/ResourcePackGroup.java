@@ -21,7 +21,7 @@ package icyllis.modernui.impl.setting;
 import com.google.common.collect.Lists;
 import icyllis.modernui.graphics.font.TextAlign;
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.ui.layout.Align9D;
+import icyllis.modernui.ui.test.Align9D;
 import icyllis.modernui.impl.module.SettingResourcePack;
 import icyllis.modernui.ui.scroll.ScrollWindow;
 import icyllis.modernui.ui.scroll.UniformScrollGroup;

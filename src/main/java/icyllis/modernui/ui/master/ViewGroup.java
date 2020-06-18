@@ -31,13 +31,11 @@ import javax.annotation.Nullable;
 @OnlyIn(Dist.CLIENT)
 public abstract class ViewGroup extends View implements IViewParent {
 
-    private View[] children;
+    // child views
+    private View[] children = new View[12];
 
+    // child view count
     private int childrenCount = 0;
-
-    {
-        children = new View[12];
-    }
 
     public ViewGroup() {
 
@@ -46,15 +44,15 @@ public abstract class ViewGroup extends View implements IViewParent {
     @Override
     protected void dispatchDraw(@Nonnull Canvas canvas, float time) {
         super.dispatchDraw(canvas, time);
-        boolean toTranslate = (getScrollX() != 0 || getScrollY() != 0);
-        if (toTranslate) {
+        boolean needTranslate = (getScrollX() != 0 || getScrollY() != 0);
+        if (needTranslate) {
             canvas.save();
             canvas.translate(-getScrollX(), -getScrollY());
         }
         for (int i = 0; i < childrenCount; i++) {
             children[i].draw(canvas, time);
         }
-        if (toTranslate) {
+        if (needTranslate) {
             canvas.restore();
         }
     }
@@ -69,8 +67,8 @@ public abstract class ViewGroup extends View implements IViewParent {
 
     @Override
     protected boolean dispatchMouseHover(double mouseX, double mouseY) {
-        double mx = mouseX + getScrollX();
-        double my = mouseY + getScrollY();
+        final double mx = mouseX + getScrollX();
+        final double my = mouseY + getScrollY();
         for (int i = childrenCount - 1; i >= 0; i--) {
             if (children[i].updateMouseHover(mx, my)) {
                 return true;
@@ -89,10 +87,21 @@ public abstract class ViewGroup extends View implements IViewParent {
         return 0;
     }
 
+    /**
+     * Add a child view to the end of array with default layout params
+     *
+     * @param child child view to add
+     */
     public void addView(@Nonnull View child) {
         addView(child, -1);
     }
 
+    /**
+     * Add a child view to specified index of array with default layout params
+     *
+     * @param child child view to add
+     * @param index target index
+     */
     public void addView(@Nonnull View child, int index) {
         LayoutParams params = child.getLayoutParams();
         if (params == null) {
@@ -101,10 +110,23 @@ public abstract class ViewGroup extends View implements IViewParent {
         addView(child, index, params);
     }
 
+    /**
+     * Add a child view to the end of array with specified layout params
+     *
+     * @param child  child view to add
+     * @param params layout params of the view
+     */
     public void addView(@Nonnull View child, @Nonnull LayoutParams params) {
         addView(child, -1, params);
     }
 
+    /**
+     * Add a child view to specified index of array with specified layout params
+     *
+     * @param child  child view to add
+     * @param index  target index
+     * @param params layout params of the view
+     */
     public void addView(@Nonnull View child, int index, @Nonnull LayoutParams params) {
         addView0(child, index, params);
     }
@@ -192,8 +214,8 @@ public abstract class ViewGroup extends View implements IViewParent {
         MarginLayoutParams lp = (MarginLayoutParams) child.getLayoutParams();
 
         int childWidthMeasureSpec = getChildMeasureSpec(parentWidthSpec,
-          lp.leftMargin + lp.rightMargin
-                  + widthUsed, lp.width);
+                lp.leftMargin + lp.rightMargin
+                        + widthUsed, lp.width);
         int childHeightMeasureSpec = getChildMeasureSpec(parentHeightSpec,
                 lp.topMargin + lp.bottomMargin
                         + heightUsed, lp.height);

@@ -16,23 +16,14 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.ui.example;
+package icyllis.modernui.ui.layout;
 
-import icyllis.modernui.ui.layout.FrameLayout;
-import icyllis.modernui.ui.layout.Gravity;
-import icyllis.modernui.ui.master.Fragment;
-import icyllis.modernui.ui.master.View;
+import icyllis.modernui.ui.master.ViewGroup;
 
-import javax.annotation.Nullable;
-
-public class TestFragment extends Fragment {
-
-    @Nullable
+public class GridLayout extends ViewGroup {
+    
     @Override
-    public View createView() {
-        View view = new TestMainView();
-        // main view can use FrameLayout params
-        view.setLayoutParams(new FrameLayout.LayoutParams(20, 20, Gravity.CENTER));
-        return view;
+    protected void onLayout(boolean changed) {
+
     }
 }

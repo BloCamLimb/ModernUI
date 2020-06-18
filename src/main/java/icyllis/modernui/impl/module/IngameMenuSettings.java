@@ -25,7 +25,7 @@ import icyllis.modernui.ui.animation.IInterpolator;
 import icyllis.modernui.ui.test.WidgetLayout;
 import icyllis.modernui.ui.master.UIManager;
 import icyllis.modernui.ui.test.ModuleGroup;
-import icyllis.modernui.ui.layout.Align9D;
+import icyllis.modernui.ui.test.Align9D;
 import icyllis.modernui.ui.popup.DropDownMenu;
 import icyllis.modernui.ui.popup.PopupMenu;
 import icyllis.modernui.ui.widget.LineTextButton;

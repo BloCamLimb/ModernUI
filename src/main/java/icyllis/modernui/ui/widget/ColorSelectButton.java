@@ -22,7 +22,7 @@ import com.google.gson.annotations.Expose;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.test.IHost;
 import icyllis.modernui.ui.test.Widget;
-import icyllis.modernui.ui.layout.Align9D;
+import icyllis.modernui.ui.test.Align9D;
 import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.ui.test.Locator;
 

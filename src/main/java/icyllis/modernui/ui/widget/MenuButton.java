@@ -27,7 +27,7 @@ import icyllis.modernui.ui.master.UITools;
 import icyllis.modernui.ui.animation.Animation;
 import icyllis.modernui.ui.animation.Applier;
 import icyllis.modernui.ui.animation.IInterpolator;
-import icyllis.modernui.ui.layout.Align9D;
+import icyllis.modernui.ui.test.Align9D;
 import icyllis.modernui.ui.test.Locator;
 import icyllis.modernui.system.ConstantsLibrary;
 import icyllis.modernui.ui.test.IHost;

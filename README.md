@@ -17,7 +17,7 @@
 Add followings to `build.gradle`
 ```
 plugins {
-    id "com.wynprice.cursemaven" version "2.1.1"
+    id "com.wynprice.cursemaven" version "2.1.5"
 }
 ```
 ```

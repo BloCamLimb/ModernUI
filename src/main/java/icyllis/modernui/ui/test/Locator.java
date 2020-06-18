@@ -19,7 +19,6 @@
 package icyllis.modernui.ui.test;
 
 import com.google.gson.annotations.Expose;
-import icyllis.modernui.ui.layout.Align9D;
 
 import javax.annotation.Nonnull;
 

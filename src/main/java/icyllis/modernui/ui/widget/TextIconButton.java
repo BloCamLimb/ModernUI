@@ -26,8 +26,8 @@ import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.test.IHost;
 import icyllis.modernui.graphics.renderer.Icon;
 import icyllis.modernui.graphics.font.TextAlign;
-import icyllis.modernui.ui.layout.Align9D;
-import icyllis.modernui.ui.layout.Direction4D;
+import icyllis.modernui.ui.test.Align9D;
+import icyllis.modernui.ui.test.Direction4D;
 import icyllis.modernui.ui.test.Locator;
 import net.minecraft.client.resources.I18n;
 

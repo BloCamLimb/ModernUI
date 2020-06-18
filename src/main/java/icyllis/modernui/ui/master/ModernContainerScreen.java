@@ -106,7 +106,7 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        return manager.mouseScrolled(mouseX, mouseY, delta);
+        return manager.mouseScrolled(delta);
     }
 
     @Override

@@ -25,7 +25,7 @@ import icyllis.modernui.ui.animation.Applier;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.master.UIManager;
 import icyllis.modernui.graphics.renderer.Icon;
-import icyllis.modernui.ui.layout.Align9D;
+import icyllis.modernui.ui.test.Align9D;
 import icyllis.modernui.ui.popup.PopupMenu;
 import icyllis.modernui.ui.popup.DropDownMenu;
 import icyllis.modernui.system.ConstantsLibrary;

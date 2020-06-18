@@ -22,6 +22,8 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.ui.animation.Animation;
+import icyllis.modernui.ui.layout.FrameLayout;
+import icyllis.modernui.ui.layout.Gravity;
 import icyllis.modernui.ui.layout.MeasureSpec;
 import icyllis.modernui.ui.test.IModule;
 import net.minecraft.client.Minecraft;
@@ -50,6 +52,7 @@ import java.util.function.Function;
  * Modern UI's UI system service, almost everything is here
  */
 @OnlyIn(Dist.CLIENT)
+@SuppressWarnings("unused")
 public enum UIManager implements IViewParent {
     /**
      * Render thread instance only
@@ -103,7 +106,7 @@ public enum UIManager implements IViewParent {
 
     // only post events to focused views
     @Nullable
-    private View mHovered = null;
+    private View mHovered  = null;
     @Nullable
     private View mDragging = null;
     @Nullable
@@ -211,8 +214,6 @@ public enum UIManager implements IViewParent {
      */
     void init(@Nonnull Screen mui, int width, int height) {
         this.modernScreen = mui;
-        this.width = width;
-        this.height = height;
 
         // init view of this UI
         if (view == null) {
@@ -226,6 +227,18 @@ public enum UIManager implements IViewParent {
                 ModernUI.LOGGER.warn(MARKER, "The main view created from the fragment shouldn't be null");
                 view = new View();
             }
+
+            // convert layout params
+            if (!(view.getLayoutParams() instanceof FrameLayout.LayoutParams)) {
+                ViewGroup.LayoutParams params = view.getLayoutParams();
+                if (params instanceof ViewGroup.MarginLayoutParams) {
+                    params = new FrameLayout.LayoutParams((ViewGroup.MarginLayoutParams) params);
+                } else {
+                    params = new FrameLayout.LayoutParams(params);
+                }
+                view.setLayoutParams(params);
+            }
+
             view.assignParent(this);
         }
 
@@ -234,7 +247,7 @@ public enum UIManager implements IViewParent {
             canvas = new Canvas();
         }
 
-        layout();
+        resize(width, height);
     }
 
     /**
@@ -327,15 +340,15 @@ public enum UIManager implements IViewParent {
                 int delta = ticks - doubleClickTime;
                 if (delta < 10) {
                     doubleClickTime = -10;
-                    if (false) {//vHovered.onMouseDoubleClicked(vHovered.getRelativeMX(), vHovered.getRelativeMY())) {
+                    if (mHovered.onMouseDoubleClicked(getViewMouseX(mHovered), getViewMouseY(mHovered))) {
                         return true;
                     }
                 } else {
                     doubleClickTime = ticks;
                 }
-                return false;//vHovered.onMouseLeftClicked(vHovered.getRelativeMX(), vHovered.getRelativeMY());
+                return mHovered.onMouseLeftClicked(getViewMouseX(mHovered), getViewMouseY(mHovered));
             } else if (mouseButton == 1) {
-                return false;//vHovered.onMouseRightClicked(vHovered.getRelativeMX(), vHovered.getRelativeMY());
+                return mHovered.onMouseRightClicked(getViewMouseX(mHovered), getViewMouseY(mHovered));
             }
         }
         return false;
@@ -357,17 +370,17 @@ public enum UIManager implements IViewParent {
             return popup.mouseDragged(mouseX, mouseY, deltaX, deltaY);
         }
         if (mDragging != null) {
-            return false;//vDragging.onMouseDragged(vDragging.getRelativeMX(), vDragging.getRelativeMY(), deltaX, deltaY);
+            return mDragging.onMouseDragged(getViewMouseX(mDragging), getViewMouseY(mDragging), deltaX, deltaY);
         }
         return false;
     }
 
-    boolean mouseScrolled(double mouseX, double mouseY, double amount) {
+    boolean mouseScrolled(double amount) {
         if (popup != null) {
             return popup.mouseScrolled(mouseX, mouseY, amount);
         }
         if (mHovered != null) {
-            return false;//vHovered.onMouseScrolled(vHovered.getRelativeMX(), vHovered.getRelativeMY(), amount);
+            return mHovered.onMouseScrolled(getViewMouseX(mHovered), getViewMouseY(mHovered), amount);
         }
         return false;
     }
@@ -454,10 +467,52 @@ public enum UIManager implements IViewParent {
      * {@link #requestLayout()}
      */
     private void layout() {
-        int widthSpec = MeasureSpec.makeMeasureSpec(width, MeasureSpec.Mode.EXACTLY);
-        int heightSpec = MeasureSpec.makeMeasureSpec(height, MeasureSpec.Mode.EXACTLY);
-        view.measure(widthSpec, heightSpec);
-        view.layout(0, 0, view.getMeasuredWidth(), view.getMeasuredHeight());
+        if (view.getVisibility().canLayout()) {
+
+            int widthSpec = MeasureSpec.makeMeasureSpec(width, MeasureSpec.Mode.EXACTLY);
+            int heightSpec = MeasureSpec.makeMeasureSpec(height, MeasureSpec.Mode.EXACTLY);
+
+            FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) view.getLayoutParams();
+
+            int childWidthMeasureSpec = ViewGroup.getChildMeasureSpec(widthSpec,
+                    lp.leftMargin + lp.rightMargin, lp.width);
+            int childHeightMeasureSpec = ViewGroup.getChildMeasureSpec(heightSpec,
+                    lp.topMargin + lp.bottomMargin, lp.height);
+
+            view.measure(childWidthMeasureSpec, childHeightMeasureSpec);
+
+            int measuredWidth = view.getMeasuredWidth();
+            int measuredHeight = view.getMeasuredHeight();
+
+            int childLeft;
+            int childTop;
+
+            switch (lp.gravity & Gravity.HORIZONTAL_GRAVITY_MASK) {
+                case Gravity.HORIZONTAL_CENTER:
+                    childLeft = (width - measuredWidth) / 2 +
+                            lp.leftMargin - lp.rightMargin;
+                    break;
+                case Gravity.RIGHT:
+                    childLeft = width - measuredWidth - lp.rightMargin;
+                    break;
+                default:
+                    childLeft = lp.leftMargin;
+            }
+
+            switch (lp.gravity & Gravity.VERTICAL_GRAVITY_MASK) {
+                case Gravity.VERTICAL_CENTER:
+                    childTop = (height - measuredHeight) / 2 +
+                            lp.topMargin - lp.bottomMargin;
+                    break;
+                case Gravity.BOTTOM:
+                    childTop = height - measuredHeight - lp.bottomMargin;
+                    break;
+                default:
+                    childTop = lp.topMargin;
+            }
+
+            view.layout(childLeft, childTop, childLeft + measuredWidth, childTop + measuredHeight);
+        }
         /*if (popup != null) {
             popup.resize(width, height);
         }*/
@@ -583,6 +638,42 @@ public enum UIManager implements IViewParent {
     }
 
     /**
+     * Get logical mouse x for a view, generally used by system
+     *
+     * @param view view
+     * @return relative mouse x
+     */
+    public double getViewMouseX(@Nonnull View view) {
+        IViewParent parent = view.getParent();
+        double mouseX = this.mouseX;
+
+        while (parent != this) {
+            mouseX += parent.getScrollX();
+            parent = parent.getParent();
+        }
+
+        return mouseX;
+    }
+
+    /**
+     * Get logical mouse y for a view, generally used by system
+     *
+     * @param view view
+     * @return relative mouse y
+     */
+    public double getViewMouseY(@Nonnull View view) {
+        IViewParent parent = view.getParent();
+        double mouseY = this.mouseY;
+
+        while (parent != this) {
+            mouseY += parent.getScrollY();
+            parent = parent.getParent();
+        }
+
+        return mouseY;
+    }
+
+    /**
      * Get main view of current UI
      *
      * @return main view
@@ -592,12 +683,16 @@ public enum UIManager implements IViewParent {
     }
 
     /**
-     * Request layout all views of current UI in next pre-frame
+     * Request layout all views with force layout mark in next frame
+     * See {@link View#requestLayout()}
+     * See {@link View#markForceLayout()}
      */
+    @Override
     public void requestLayout() {
         layoutRequested = true;
     }
 
+    // inner method
     void setHoveredView(@Nullable View view) {
         if (mHovered != view) {
             if (mHovered != null) {
@@ -675,7 +770,7 @@ public enum UIManager implements IViewParent {
      */
     @Override
     public float getScrollX() {
-        return 0;
+        throw new RuntimeException("System view!");
     }
 
     /**
@@ -683,7 +778,7 @@ public enum UIManager implements IViewParent {
      */
     @Override
     public float getScrollY() {
-        return 0;
+        throw new RuntimeException("System view!");
     }
 
 }
