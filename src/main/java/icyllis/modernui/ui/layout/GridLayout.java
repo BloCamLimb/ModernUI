@@ -21,7 +21,7 @@ package icyllis.modernui.ui.layout;
 import icyllis.modernui.ui.master.ViewGroup;
 
 public class GridLayout extends ViewGroup {
-    
+
     @Override
     protected void onLayout(boolean changed) {
 

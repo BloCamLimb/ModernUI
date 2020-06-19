@@ -84,7 +84,6 @@ public class TrueTypeRenderer implements IFontRenderer {
             try {
                 ObfuscationReflectionHelper.findField(Minecraft.class, "field_71466_p").set(Minecraft.getInstance(), ModernFontRenderer.INSTANCE);
                 ObfuscationReflectionHelper.findField(EntityRendererManager.class, "field_78736_p").set(Minecraft.getInstance().getRenderManager(), ModernFontRenderer.INSTANCE);
-                //GlobalModuleManager.INSTANCE.scheduleTask(new DelayedTask(this::refreshCache, 1));
             } catch (IllegalAccessException e) {
                 e.printStackTrace();
             }
@@ -93,15 +92,6 @@ public class TrueTypeRenderer implements IFontRenderer {
 
     public void init() {
 
-    }
-
-    @Deprecated
-    public void refreshCache() {
-        /*cache.clearStringCache();
-        if (Minecraft.getInstance().player != null) {
-            Minecraft.getInstance().player.sendMessage(new StringTextComponent("[Modern UI] String Cache and Glyph Cache are cleared."));
-        }*/
-        throw new RuntimeException("Deprecated");
     }
 
     @Override

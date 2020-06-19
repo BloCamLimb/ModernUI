@@ -18,8 +18,6 @@
 
 package icyllis.modernui.ui.test;
 
-import icyllis.modernui.ui.test.Widget;
-
 import javax.annotation.Nullable;
 
 /**

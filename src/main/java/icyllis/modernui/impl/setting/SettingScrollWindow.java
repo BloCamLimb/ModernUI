@@ -19,7 +19,7 @@
 package icyllis.modernui.impl.setting;
 
 import icyllis.modernui.ui.test.Module;
-import icyllis.modernui.ui.scroll.ScrollWindow;
+import icyllis.modernui.ui.widget.ScrollWindow;
 
 public class SettingScrollWindow extends ScrollWindow<SettingCategoryGroup> {
 

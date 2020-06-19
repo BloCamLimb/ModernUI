@@ -18,7 +18,7 @@
 
 package icyllis.modernui.ui.animation;
 
-public class AccelerateInterpolator implements IInterpolator {
+public class AccelerateInterpolator implements ITimeInterpolator {
 
     private final float factor;
 

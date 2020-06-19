@@ -22,7 +22,7 @@ import com.google.gson.annotations.Expose;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.animation.Animation;
 import icyllis.modernui.ui.animation.Applier;
-import icyllis.modernui.ui.animation.IInterpolator;
+import icyllis.modernui.ui.animation.ITimeInterpolator;
 import icyllis.modernui.ui.test.Align9D;
 import icyllis.modernui.ui.test.Locator;
 import icyllis.modernui.ui.test.IHost;
@@ -91,7 +91,7 @@ public class SlidingToggleButton extends Widget {
                         new Applier(cg, tg, () -> g, this::setG),
                         new Applier(cb, tb, () -> b, this::setB),
                         new Applier(height / 2.0f, width - height / 2.0f, () -> circleOffset, this::setCircleOffset)
-                                .setInterpolator(IInterpolator.DECELERATE)
+                                .setInterpolator(ITimeInterpolator.DECELERATE)
                 );
 
         frameAnimation.skipToStart();

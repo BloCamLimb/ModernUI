@@ -18,24 +18,32 @@
 
 package icyllis.modernui.ui.master;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.system.ConfigManager;
+import icyllis.modernui.system.ModernUI;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.text.TextFormatting;
-import org.lwjgl.opengl.GL11;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.event.GuiScreenEvent;
+import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import org.lwjgl.glfw.GLFW;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
 //TODO Really Experimental, all changes won't be saved
+@OnlyIn(Dist.CLIENT)
 public enum UIEditor {
     INSTANCE;
 
     @Nullable
     private View hoveredView;
-
-    private final Canvas canvas = new Canvas();
 
     private boolean working = false;
 
@@ -87,19 +95,14 @@ public enum UIEditor {
         }
     }
 
-    public void iterateWorking() {
+    private void iterateWorking() {
         working = !working;
     }
 
-    public void draw() {
+    void draw(@Nonnull Canvas canvas) {
         if (!working) {
             return;
         }
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.disableAlphaTest();
-        RenderSystem.disableDepthTest();
-
         canvas.setRGBA(0.5f, 0.5f, 0.5f, 0.25f);
         canvas.drawRoundedRect(1, 1, 120, bottom, 4);
 
@@ -137,28 +140,26 @@ public enum UIEditor {
                     2
             );
         }
-
-        GL11.glDisable(GL11.GL_LINE_SMOOTH);
-        RenderSystem.lineWidth(1.0f);
-        RenderSystem.enableTexture();
-        RenderSystem.disableBlend();
     }
 
-    public boolean mouseClicked(int button) {
+    @SubscribeEvent
+    void gMouseClicked(@Nonnull GuiScreenEvent.MouseClickedEvent.Pre event) {
+        int button = event.getButton();
         if (working && button == 0) {
             if (hoveredView != null) {
                 dragging = true;
-                return true;
+                event.setCanceled(true);
             }
         }
-        return false;
     }
 
-    public void mouseReleased() {
+    @SubscribeEvent
+    void gMouseReleased(@Nonnull GuiScreenEvent.MouseReleasedEvent.Pre event) {
         dragging = false;
     }
 
-    public boolean mouseDragged(double dx, double dy) {
+    @SubscribeEvent
+    void gMouseDragged(@Nonnull GuiScreenEvent.MouseDragEvent.Pre event) {
         if (dragging && hoveredView != null) {
             /*accDragX += dx;
             accDragY += dy;
@@ -175,6 +176,22 @@ public enum UIEditor {
                 return true;
             }*/
         }
-        return false;
+    }
+
+    @SubscribeEvent
+    void gKeyInput(@Nonnull InputEvent.KeyInputEvent event) {
+        if (ConfigManager.COMMON.isEnableDeveloperMode() && event.getAction() == GLFW.GLFW_PRESS) {
+            if (Screen.hasControlDown() && Screen.hasShiftDown()) {
+                if (event.getKey() == GLFW.GLFW_KEY_T && UIManager.INSTANCE.getModernScreen() != null) {
+                    iterateWorking();
+                }
+                if (event.getKey() == GLFW.GLFW_KEY_P) {
+                    if (UIManager.INSTANCE.getModernScreen() == null && Minecraft.getInstance().currentScreen != null) {
+                        ModernUI.LOGGER.debug(UIManager.MARKER, "Opened gui class name : {}",
+                                Minecraft.getInstance().currentScreen.getClass().getName());
+                    }
+                }
+            }
+        }
     }
 }

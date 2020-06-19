@@ -22,7 +22,7 @@ import com.google.common.collect.Lists;
 import icyllis.modernui.ui.test.Module;
 import icyllis.modernui.impl.setting.LanguageEntry;
 import icyllis.modernui.impl.setting.LanguageGroup;
-import icyllis.modernui.ui.scroll.ScrollWindow;
+import icyllis.modernui.ui.widget.ScrollWindow;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.LanguageManager;

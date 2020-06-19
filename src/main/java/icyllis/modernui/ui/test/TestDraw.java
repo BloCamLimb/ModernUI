@@ -21,7 +21,7 @@ package icyllis.modernui.ui.test;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.ui.animation.Animation;
 import icyllis.modernui.ui.animation.Applier;
-import icyllis.modernui.ui.animation.IInterpolator;
+import icyllis.modernui.ui.animation.ITimeInterpolator;
 import icyllis.modernui.ui.animation.OvershootInterpolator;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.graphics.math.Color3i;
@@ -46,13 +46,13 @@ public class TestDraw implements IDrawable {
                         new Applier(-70, 100, () -> xOffset, v -> xOffset = v)
                                 .setInterpolator(new OvershootInterpolator(2)),
                         new Applier(0, 50, () -> yOffset, v -> yOffset = v)
-                                .setInterpolator(IInterpolator.DECELERATE)
+                                .setInterpolator(ITimeInterpolator.DECELERATE)
                 );
         animation.startFull();
         accAnm = new Animation(600)
                 .applyTo(
                         new Applier((float) Math.PI, (float) -Math.PI, () -> circleAcc, v -> circleAcc = v)
-                            .setInterpolator(IInterpolator.ACC_DEC)
+                            .setInterpolator(ITimeInterpolator.ACC_DEC)
                 );
         accAnm.startFull();
     }

@@ -32,12 +32,19 @@ import net.minecraft.client.shader.ShaderGroup;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.event.GuiOpenEvent;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Better than Blur (mod) in every respect, and surely they are incompatible
+ */
 @OnlyIn(Dist.CLIENT)
 public enum BlurHandler {
     INSTANCE;
@@ -74,12 +81,14 @@ public enum BlurHandler {
 
     /**
      * Use blur shader in game renderer post-processing
-     *
-     * @param gui gui changed
      */
-    public void blur(@Nullable Screen gui) {
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    void gGuiOpen(@Nonnull GuiOpenEvent event) {
+        @Nullable Screen gui = event.getGui();
+
         boolean excluded = gui != null && !(gui instanceof ModernScreen) && !(gui instanceof ModernContainerScreen<?>) &&
                 exclusions.stream().anyMatch(c -> c.isAssignableFrom(gui.getClass()));
+
         if (excluded || !ConfigManager.CLIENT.blurScreenBackground) {
             backgroundAlpha = 0.5f;
             if (excluded && blurring) {
@@ -89,6 +98,7 @@ public enum BlurHandler {
             }
             return;
         }
+
         boolean toBlur = gui != null;
         if (minecraft.world != null) {
             GameRenderer gr = minecraft.gameRenderer;
@@ -139,10 +149,11 @@ public enum BlurHandler {
         }
     }
 
-    public void renderTick() {
-        if (changingProgress) {
+    @SubscribeEvent
+    void gRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
+        if (changingProgress && event.phase == TickEvent.Phase.END) {
             float p = Math.min(UIManager.INSTANCE.getDrawingTime(), 4.0f);
-            this.updateProgress(p);
+            updateProgress(p);
             if (backgroundAlpha < 0.5f) {
                 backgroundAlpha = p / 8.0f;
             }

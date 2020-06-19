@@ -21,13 +21,13 @@ package icyllis.modernui.impl.module;
 import com.google.common.collect.Lists;
 import icyllis.modernui.ui.animation.Animation;
 import icyllis.modernui.ui.animation.Applier;
-import icyllis.modernui.ui.animation.IInterpolator;
+import icyllis.modernui.ui.animation.ITimeInterpolator;
 import icyllis.modernui.ui.test.WidgetLayout;
 import icyllis.modernui.ui.master.UIManager;
 import icyllis.modernui.ui.test.ModuleGroup;
 import icyllis.modernui.ui.test.Align9D;
-import icyllis.modernui.ui.popup.DropDownMenu;
-import icyllis.modernui.ui.popup.PopupMenu;
+import icyllis.modernui.ui.overlay.DropDownMenu;
+import icyllis.modernui.ui.overlay.PopupMenu;
 import icyllis.modernui.ui.widget.LineTextButton;
 import icyllis.modernui.impl.background.MenuSettingsBG;
 import icyllis.modernui.system.ModIntegration;
@@ -112,13 +112,13 @@ public class IngameMenuSettings extends ModuleGroup {
             new Animation(200)
                     .applyTo(
                             new Applier(0, c, bg::getXOffset, bg::setXOffset)
-                                    .setInterpolator(IInterpolator.SINE))
+                                    .setInterpolator(ITimeInterpolator.SINE))
                     .start();
         } else {
             new Animation(200)
                     .applyTo(
                             new Applier(0, -c, bg::getXOffset, bg::setXOffset)
-                                    .setInterpolator(IInterpolator.SINE))
+                                    .setInterpolator(ITimeInterpolator.SINE))
                     .start();
         }
         return new int[]{1, 4};

@@ -26,7 +26,7 @@ import icyllis.modernui.ui.animation.AnimationControl;
 import icyllis.modernui.ui.master.UITools;
 import icyllis.modernui.ui.animation.Animation;
 import icyllis.modernui.ui.animation.Applier;
-import icyllis.modernui.ui.animation.IInterpolator;
+import icyllis.modernui.ui.animation.ITimeInterpolator;
 import icyllis.modernui.ui.test.Align9D;
 import icyllis.modernui.ui.test.Locator;
 import icyllis.modernui.system.ConstantsLibrary;
@@ -60,7 +60,7 @@ public class MenuButton extends IconButton {
                     .applyTo(
                             new Applier(0.0f, 1.0f, () -> frameAlpha, this::setFrameAlpha),
                             new Applier(0.0f, getTextLength() + 5.0f, () -> frameSizeW, this::setFrameSizeW)
-                                    .setInterpolator(IInterpolator.SINE)
+                                    .setInterpolator(ITimeInterpolator.SINE)
                     )
             );
             openList.add(new Animation(150)
