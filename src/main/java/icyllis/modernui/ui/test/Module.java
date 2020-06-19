@@ -125,7 +125,6 @@ public abstract class Module implements IModule, IHost {
             } catch (NoSuchFieldException | IllegalAccessException ignored) {
 
             }
-            //TODO use builder
             try {
                 HOST.set(e.widget, this);
             } catch (IllegalAccessException ex) {

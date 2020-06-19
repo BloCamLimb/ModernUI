@@ -27,14 +27,17 @@ import java.lang.reflect.InvocationTargetException;
 
 public class ModIntegration {
 
-    // client only
-    public static final boolean optifineLoaded;
+    public static boolean optifineLoaded = false;
 
     static {
-        boolean of = false;
+
+    }
+
+    public static void init() {
+        ModList modList = ModList.get();
         try {
             Class<?> clazz = Class.forName("optifine.Installer");
-            of = true;
+            optifineLoaded = true;
             String ver = (String) clazz.getMethod("getOptiFineVersion").invoke(null);
             ModernUI.LOGGER.debug(ModernUI.MARKER, "OptiFine loaded, version : {}", ver);
         } catch (ClassNotFoundException | NoSuchMethodException ignored) {
@@ -42,12 +45,6 @@ public class ModIntegration {
         } catch (IllegalAccessException | InvocationTargetException e) {
             e.printStackTrace();
         }
-        optifineLoaded = of;
-    }
-
-    public static void init() {
-        ModList modList = ModList.get();
-
     }
 
     public static class OptiFine {

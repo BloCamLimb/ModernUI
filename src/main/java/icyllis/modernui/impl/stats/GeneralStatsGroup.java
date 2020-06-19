@@ -18,8 +18,8 @@
 
 package icyllis.modernui.impl.stats;
 
-import icyllis.modernui.ui.scroll.ScrollWindow;
-import icyllis.modernui.ui.scroll.UniformScrollGroup;
+import icyllis.modernui.ui.widget.ScrollWindow;
+import icyllis.modernui.ui.widget.UniformScrollGroup;
 import icyllis.modernui.graphics.math.Color3i;
 import net.minecraft.stats.Stat;
 import net.minecraft.stats.StatisticsManager;

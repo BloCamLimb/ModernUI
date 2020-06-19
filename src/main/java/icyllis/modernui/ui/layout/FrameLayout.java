@@ -23,8 +23,17 @@ import icyllis.modernui.ui.master.ViewGroup;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 
+/**
+ * Same as Android
+ */
 public class FrameLayout extends ViewGroup {
+
+    public static final int DEFAULT_GRAVITY = Gravity.TOP | Gravity.LEFT;
+
+    private final List<View> matchParentChildren = new ArrayList<>(1);
 
     public FrameLayout() {
 
@@ -32,14 +41,20 @@ public class FrameLayout extends ViewGroup {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        matchParentChildren.clear();
+
         int count = getChildCount();
+
+        boolean measureMatchParentChildren =
+                !MeasureSpec.getMode(widthMeasureSpec).isExactly() ||
+                        !MeasureSpec.getMode(heightMeasureSpec).isExactly();
 
         int maxWidth = 0;
         int maxHeight = 0;
 
         for (int i = 0; i < count; i++) {
             View child = getChildAt(i);
-            if (child.getVisibility().canLayout()) {
+            if (child.getVisibility() != GONE) {
                 measureChildWithMargins(child,
                         widthMeasureSpec, 0, heightMeasureSpec, 0);
                 LayoutParams lp = (LayoutParams) child.getLayoutParams();
@@ -47,6 +62,12 @@ public class FrameLayout extends ViewGroup {
                         child.getMeasuredWidth() + lp.leftMargin + lp.rightMargin);
                 maxHeight = Math.max(maxHeight,
                         child.getMeasuredHeight() + lp.topMargin + lp.bottomMargin);
+                if (measureMatchParentChildren) {
+                    if (lp.width == LayoutParams.MATCH_PARENT ||
+                            lp.height == LayoutParams.MATCH_PARENT) {
+                        matchParentChildren.add(child);
+                    }
+                }
             }
         }
 
@@ -55,6 +76,38 @@ public class FrameLayout extends ViewGroup {
 
         setMeasuredDimension(resolveSize(maxWidth, widthMeasureSpec),
                 resolveSize(maxHeight, heightMeasureSpec));
+
+        count = matchParentChildren.size();
+        if (count > 1) {
+            for (int i = 0; i < count; i++) {
+                View child = matchParentChildren.get(i);
+                MarginLayoutParams lp = (MarginLayoutParams) child.getLayoutParams();
+
+                int childWidthMeasureSpec;
+                if (lp.width == LayoutParams.MATCH_PARENT) {
+                    int width = Math.max(0, getMeasuredWidth() - lp.leftMargin
+                            - lp.rightMargin);
+                    childWidthMeasureSpec = MeasureSpec.makeMeasureSpec(
+                            width, MeasureSpec.Mode.EXACTLY);
+                } else {
+                    childWidthMeasureSpec = getChildMeasureSpec(widthMeasureSpec,
+                            lp.leftMargin + lp.rightMargin, lp.width);
+                }
+
+                int childHeightMeasureSpec;
+                if (lp.height == LayoutParams.MATCH_PARENT) {
+                    int height = Math.max(0, getMeasuredHeight() - lp.topMargin
+                            - lp.bottomMargin);
+                    childHeightMeasureSpec = MeasureSpec.makeMeasureSpec(
+                            height, MeasureSpec.Mode.EXACTLY);
+                } else {
+                    childHeightMeasureSpec = getChildMeasureSpec(heightMeasureSpec,
+                            lp.topMargin + lp.bottomMargin, lp.height);
+                }
+
+                child.measure(childWidthMeasureSpec, childHeightMeasureSpec);
+            }
+        }
     }
 
     @Override
@@ -69,7 +122,7 @@ public class FrameLayout extends ViewGroup {
 
         for (int i = 0; i < count; i++) {
             final View child = getChildAt(i);
-            if (child.getVisibility() != Visibility.GONE) {
+            if (child.getVisibility() != GONE) {
                 LayoutParams lp = (LayoutParams) child.getLayoutParams();
 
                 int width = child.getMeasuredWidth();
@@ -140,7 +193,7 @@ public class FrameLayout extends ViewGroup {
          * The gravity to apply with the View to which these layout parameters
          * are associated. Default value is TOP_LEFT
          */
-        public int gravity = Gravity.TOP | Gravity.LEFT;
+        public int gravity = DEFAULT_GRAVITY;
 
         /**
          * Creates a new set of layout parameters with the specified width

@@ -18,7 +18,7 @@
 
 package icyllis.modernui.ui.animation;
 
-public class OvershootInterpolator implements IInterpolator {
+public class OvershootInterpolator implements ITimeInterpolator {
 
     private final float tension;
 

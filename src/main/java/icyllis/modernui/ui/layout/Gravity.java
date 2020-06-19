@@ -21,6 +21,7 @@ package icyllis.modernui.ui.layout;
 /**
  * The position and size relationship of objects in containers.
  */
+@SuppressWarnings("unused")
 public class Gravity {
 
     /**
@@ -36,12 +37,12 @@ public class Gravity {
     /**
      * Raw bit controlling how the right/bottom edge is placed.
      */
-    public static final int AXIS_PULL_AFTER = 0x0004;
+    public static final int AXIS_PULL_AFTER  = 0x0004;
     /**
      * Raw bit controlling whether the right/bottom edge is clipped to its
      * container, based on the gravity direction being applied.
      */
-    public static final int AXIS_CLIP = 0x0008;
+    public static final int AXIS_CLIP        = 0x0008;
 
 
     /**
@@ -57,7 +58,7 @@ public class Gravity {
     /**
      * Push object to the top of its container, not changing its size.
      */
-    public static final int TOP = (AXIS_PULL_BEFORE | AXIS_SPECIFIED) << AXIS_Y_SHIFT;
+    public static final int TOP    = (AXIS_PULL_BEFORE | AXIS_SPECIFIED) << AXIS_Y_SHIFT;
     /**
      * Push object to the bottom of its container, not changing its size.
      */
@@ -65,11 +66,11 @@ public class Gravity {
     /**
      * Push object to the left of its container, not changing its size.
      */
-    public static final int LEFT = (AXIS_PULL_BEFORE | AXIS_SPECIFIED) << AXIS_X_SHIFT;
+    public static final int LEFT   = (AXIS_PULL_BEFORE | AXIS_SPECIFIED) << AXIS_X_SHIFT;
     /**
      * Push object to the right of its container, not changing its size.
      */
-    public static final int RIGHT = (AXIS_PULL_AFTER | AXIS_SPECIFIED) << AXIS_X_SHIFT;
+    public static final int RIGHT  = (AXIS_PULL_AFTER | AXIS_SPECIFIED) << AXIS_X_SHIFT;
 
 
     /**
@@ -81,7 +82,7 @@ public class Gravity {
      * Grow the vertical size of the object if needed so it completely fills
      * its container.
      */
-    public static final int FILL_VERTICAL = TOP | BOTTOM;
+    public static final int FILL_VERTICAL   = TOP | BOTTOM;
 
 
     /**
@@ -93,7 +94,7 @@ public class Gravity {
      * Grow the horizontal size of the object if needed so it completely fills
      * its container.
      */
-    public static final int FILL_HORIZONTAL = LEFT | RIGHT;
+    public static final int FILL_HORIZONTAL   = LEFT | RIGHT;
 
 
     /**
@@ -129,7 +130,7 @@ public class Gravity {
     /**
      * Binary mask to get the vertical gravity of a gravity.
      */
-    public static final int VERTICAL_GRAVITY_MASK = (AXIS_SPECIFIED |
+    public static final int VERTICAL_GRAVITY_MASK   = (AXIS_SPECIFIED |
             AXIS_PULL_BEFORE | AXIS_PULL_AFTER) << AXIS_Y_SHIFT;
 
 }

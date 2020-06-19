@@ -20,7 +20,6 @@ package icyllis.modernui.ui.test;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.system.ModernUI;
-import icyllis.modernui.ui.master.DelayedTask;
 import icyllis.modernui.ui.master.UIManager;
 import icyllis.modernui.ui.master.UITools;
 

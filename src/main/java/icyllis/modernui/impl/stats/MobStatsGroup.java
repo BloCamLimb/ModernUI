@@ -19,8 +19,8 @@
 package icyllis.modernui.impl.stats;
 
 import com.google.common.collect.Sets;
-import icyllis.modernui.ui.scroll.ScrollWindow;
-import icyllis.modernui.ui.scroll.UniformScrollGroup;
+import icyllis.modernui.ui.widget.ScrollWindow;
+import icyllis.modernui.ui.widget.UniformScrollGroup;
 import net.minecraft.entity.EntityType;
 import net.minecraft.stats.StatisticsManager;
 import net.minecraft.stats.Stats;

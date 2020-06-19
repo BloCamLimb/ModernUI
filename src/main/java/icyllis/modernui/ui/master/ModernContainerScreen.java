@@ -55,19 +55,19 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
     @Override
     public void init(Minecraft minecraft, int width, int height) {
         super.init(minecraft, width, height);
-        manager.init(this, width, height);
+        manager.sInit(this, width, height);
     }
 
     @Override
     public void resize(@Nonnull Minecraft minecraft, int width, int height) {
         super.resize(minecraft, width, height);
-        manager.resize(width, height);
+        manager.sResize(width, height);
     }
 
     @Override
     public void render(int mouseX, int mouseY, float partialTicks) {
         super.render(mouseX, mouseY, partialTicks);
-        manager.draw();
+        manager.sDraw();
     }
 
     @Override
@@ -78,45 +78,45 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
     @Override
     public void removed() {
         super.removed();
-        manager.destroy();
+        manager.sDestroy();
     }
 
     @Override
     public final void mouseMoved(double mouseX, double mouseY) {
-        manager.mouseMoved(mouseX, mouseY);
+        manager.sMouseMoved(mouseX, mouseY);
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         super.mouseClicked(mouseX, mouseY, mouseButton);
-        return manager.mouseClicked(mouseX, mouseY, mouseButton);
+        return manager.sMouseClicked(mouseX, mouseY, mouseButton);
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
         super.mouseReleased(mouseX, mouseY, mouseButton);
-        return manager.mouseReleased(mouseX, mouseY, mouseButton);
+        return manager.sMouseReleased(mouseX, mouseY, mouseButton);
     }
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double deltaX, double deltaY) {
         super.mouseDragged(mouseX, mouseY, mouseButton, deltaX, deltaY);
-        return manager.mouseDragged(mouseX, mouseY, deltaX, deltaY);
+        return manager.sMouseDragged(mouseX, mouseY, deltaX, deltaY);
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        return manager.mouseScrolled(delta);
+        return manager.sMouseScrolled(mouseX, mouseY, delta);
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (manager.keyPressed(keyCode, scanCode, modifiers)) {
+        if (manager.sKeyPressed(keyCode, scanCode, modifiers)) {
             return true;
         } else {
             InputMappings.Input mouseKey = InputMappings.getInputByCode(keyCode, scanCode);
             if (keyCode == GLFW.GLFW_KEY_ESCAPE || Objects.requireNonNull(this.minecraft).gameSettings.keyBindInventory.isActiveAndMatches(mouseKey)) {
-                if (manager.onBack()) {
+                if (manager.sBack()) {
                     return true;
                 }
                 Objects.requireNonNull(Objects.requireNonNull(this.minecraft).player).closeScreen();
@@ -124,8 +124,8 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
             }
             if (keyCode == GLFW.GLFW_KEY_TAB) {
                 boolean searchNext = !hasShiftDown();
-                if (!manager.changeKeyboardListener(searchNext)) {
-                    return manager.changeKeyboardListener(searchNext);
+                if (!manager.sChangeKeyboard(searchNext)) {
+                    return manager.sChangeKeyboard(searchNext);
                 }
                 return true;
             }
@@ -147,12 +147,12 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
 
     @Override
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-        return manager.keyReleased(keyCode, scanCode, modifiers);
+        return manager.sKeyReleased(keyCode, scanCode, modifiers);
     }
 
     @Override
     public boolean charTyped(char codePoint, int modifiers) {
-        return manager.charTyped(codePoint, modifiers);
+        return manager.sCharTyped(codePoint, modifiers);
     }
 
     @Nonnull

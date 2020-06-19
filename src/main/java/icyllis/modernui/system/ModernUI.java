@@ -18,9 +18,13 @@
 
 package icyllis.modernui.system;
 
+import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.shader.ShaderTools;
-import net.minecraftforge.api.distmarker.Dist;
+import icyllis.modernui.ui.master.UIEditor;
+import icyllis.modernui.ui.master.UIManager;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -39,16 +43,19 @@ public class ModernUI {
     public ModernUI() {
         checkJava();
 
-        ModIntegration.init();
         ConfigManager.init();
+        ModIntegration.init();
+        FMLJavaModLoadingContext.get().getModEventBus().register(RegistryLibrary.INSTANCE);
 
-        if (FMLEnvironment.dist == Dist.CLIENT) {
+        if (FMLEnvironment.dist.isClient()) {
             ShaderTools.init();
+            MinecraftForge.EVENT_BUS.register(BlurHandler.INSTANCE);
+            MinecraftForge.EVENT_BUS.register(UIEditor.INSTANCE);
+            MinecraftForge.EVENT_BUS.register(UIManager.INSTANCE);
         }
     }
 
-    // Java 1.8.0_51 which is officially used by Mojang will produce bugs with ModernUI,
-    // so I throw an exception to tell players to update Java
+    // Java 1.8.0_51 which is officially used by Mojang will produce bugs with Modern UI
     private void checkJava() {
         String javaVersion = System.getProperty("java.version");
         if (javaVersion.startsWith("1.8")) {
@@ -56,7 +63,7 @@ public class ModernUI {
             if (Integer.parseInt(s[1]) < 60) {
                 throw new RuntimeException(
                         "You're using java " + javaVersion + " which is not compatible with Modern UI, " +
-                        "a minimum of java 1.8.0_200 or above is required");
+                                "a minimum of java 1.8.0_200 or above is required");
             }
         }
     }

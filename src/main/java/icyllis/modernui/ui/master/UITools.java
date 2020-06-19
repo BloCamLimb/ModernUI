@@ -28,6 +28,7 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings("unused")
 @OnlyIn(Dist.CLIENT)
 public class UITools {
 

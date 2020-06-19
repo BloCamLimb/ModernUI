@@ -61,7 +61,24 @@ public class View {
     private int privateFlags;
 
     /**
-     * View flag masks
+     * View visibility.
+     * {@link #setVisibility(int)}
+     * {@link #getVisibility()}
+     *
+     * This view is visible, as view's default value
+     */
+    public static final int VISIBLE   = 0x0;
+    /**
+     * This view is invisible, but it still takes up space for layout.
+     */
+    public static final int INVISIBLE = 0x1;
+    /**
+     * This view is invisible, and it doesn't take any space for layout.
+     */
+    public static final int GONE      = 0x2;
+
+    /**
+     * View visibility mask
      */
     private static final int VISIBILITY_MASK = 0x3;
 
@@ -513,22 +530,22 @@ public class View {
 
     /**
      * Set visibility of this view
-     * See {@link Visibility}
+     * See {@link #VISIBLE} or {@link #INVISIBLE} or {@link #GONE}
      *
      * @param visibility visibility to set
      */
-    public void setVisibility(@Nonnull Visibility visibility) {
-        setFlag(visibility.ordinal(), VISIBILITY_MASK);
+    public void setVisibility(int visibility) {
+        setFlag(visibility, VISIBILITY_MASK);
     }
 
     /**
      * Get visibility of this view.
-     * See {@link Visibility}
+     * See {@link #VISIBLE} or {@link #INVISIBLE} or {@link #GONE}
      *
      * @return visibility
      */
-    public Visibility getVisibility() {
-        return Visibility.values()[viewFlags & VISIBILITY_MASK];
+    public int getVisibility() {
+        return viewFlags & VISIBILITY_MASK;
     }
 
     /**
@@ -846,37 +863,6 @@ public class View {
      */
     protected boolean onCharTyped(char codePoint, int modifiers) {
         return false;
-    }
-
-    /**
-     * View visibility.
-     * {@link #setVisibility(Visibility)}
-     * {@link #getVisibility()}
-     */
-    public enum Visibility {
-
-        /**
-         * This view is visible, as view's default value
-         */
-        VISIBLE,
-
-        /**
-         * This view is invisible, but it still takes up space for layout.
-         */
-        INVISIBLE,
-
-        /**
-         * This view is invisible, and it doesn't take any space for layout.
-         */
-        GONE;
-
-        public boolean canDraw() {
-            return this == VISIBLE;
-        }
-
-        public boolean canLayout() {
-            return this != GONE;
-        }
     }
 
 }

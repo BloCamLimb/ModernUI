@@ -20,7 +20,7 @@ package icyllis.modernui.impl.module;
 
 import icyllis.modernui.ui.animation.Animation;
 import icyllis.modernui.ui.animation.Applier;
-import icyllis.modernui.ui.animation.IInterpolator;
+import icyllis.modernui.ui.animation.ITimeInterpolator;
 import icyllis.modernui.impl.background.MenuSettingsBG;
 import icyllis.modernui.ui.test.WidgetLayout;
 import icyllis.modernui.ui.test.ModuleGroup;
@@ -119,13 +119,13 @@ public class IngameMenuStats extends ModuleGroup {
             new Animation(200)
                     .applyTo(
                             new Applier(0, c, bg::getXOffset, bg::setXOffset)
-                                    .setInterpolator(IInterpolator.SINE))
+                                    .setInterpolator(ITimeInterpolator.SINE))
                     .start();
         } else {
             new Animation(200)
                     .applyTo(
                             new Applier(0, -c, bg::getXOffset, bg::setXOffset)
-                                    .setInterpolator(IInterpolator.SINE))
+                                    .setInterpolator(ITimeInterpolator.SINE))
                     .start();
         }
         return new int[]{1, 4};

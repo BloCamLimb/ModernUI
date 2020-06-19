@@ -26,7 +26,7 @@ import icyllis.modernui.ui.test.Widget;
 import icyllis.modernui.ui.test.Align9D;
 import icyllis.modernui.ui.test.Direction4D;
 import icyllis.modernui.ui.test.Locator;
-import icyllis.modernui.ui.scroll.ScrollWindow;
+import icyllis.modernui.ui.widget.ScrollWindow;
 import icyllis.modernui.ui.widget.StaticFrameButton;
 import icyllis.modernui.ui.widget.TriangleButton;
 import icyllis.modernui.impl.background.ResourcePackBG;

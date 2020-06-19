@@ -22,7 +22,7 @@ import com.google.common.collect.Lists;
 import icyllis.modernui.graphics.renderer.Icon;
 import icyllis.modernui.ui.master.UIManager;
 import icyllis.modernui.graphics.font.TextAlign;
-import icyllis.modernui.ui.background.TextDrawable;
+import icyllis.modernui.ui.widget.TextDrawable;
 import icyllis.modernui.ui.test.Align9D;
 import icyllis.modernui.ui.test.Direction4D;
 import icyllis.modernui.ui.test.Module;

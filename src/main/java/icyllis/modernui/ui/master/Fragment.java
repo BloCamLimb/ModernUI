@@ -19,6 +19,8 @@
 package icyllis.modernui.ui.master;
 
 import icyllis.modernui.ui.layout.FrameLayout;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nullable;
 
@@ -30,6 +32,7 @@ import javax.annotation.Nullable;
  * and there can be transition animation when switching etc.
  */
 //TODO experimental
+@OnlyIn(Dist.CLIENT)
 public class Fragment {
 
     /**

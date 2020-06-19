@@ -22,6 +22,7 @@ import icyllis.modernui.graphics.BlurHandler;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLPaths;
 
 import javax.annotation.Nonnull;
@@ -52,13 +53,18 @@ public class ConfigManager {
         FMLPaths.getOrCreateGameRelativePath(FMLPaths.CONFIGDIR.get().resolve("ModernUI"), "ModernUI");
         ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ConfigManager.CLIENT_SPEC, "ModernUI/client.toml");
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ConfigManager.COMMON_SPEC, "ModernUI/common.toml");
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(ConfigManager::reload);
     }
 
-    protected static void reload(ForgeConfigSpec spec) {
+
+    static void reload(@Nonnull ModConfig.ModConfigEvent event) {
+        ForgeConfigSpec spec = event.getConfig().getSpec();
         if (spec == CLIENT_SPEC) {
             CLIENT.load();
+            ModernUI.LOGGER.debug(ModernUI.MARKER, "Client config loaded");
         } else if (spec == COMMON_SPEC) {
             COMMON.load();
+            ModernUI.LOGGER.debug(ModernUI.MARKER, "Common config loaded");
         }
     }
 

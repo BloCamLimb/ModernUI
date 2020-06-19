@@ -22,7 +22,7 @@ import com.google.common.collect.Lists;
 import com.google.gson.annotations.Expose;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.animation.AnimationControl;
-import icyllis.modernui.ui.animation.IInterpolator;
+import icyllis.modernui.ui.animation.ITimeInterpolator;
 import icyllis.modernui.graphics.font.TextAlign;
 import icyllis.modernui.ui.animation.Animation;
 import icyllis.modernui.ui.animation.Applier;
@@ -59,9 +59,9 @@ public class DynamicFrameButton extends Button {
                 Lists.newArrayList(new Animation(100)
                         .applyTo(
                                 new Applier(width / 2f, 0, () -> fwo, this::setFwo)
-                                        .setInterpolator(IInterpolator.SINE),
+                                        .setInterpolator(ITimeInterpolator.SINE),
                                 new Applier(6, 0, () -> fho, this::setFho)
-                                        .setInterpolator(IInterpolator.SINE),
+                                        .setInterpolator(ITimeInterpolator.SINE),
                                 new Applier(0.0f, 1.0f, () -> frameAlpha, this::setFrameAlpha))
                 ),
                 Lists.newArrayList(new Animation(200)

@@ -18,7 +18,7 @@
 
 package icyllis.modernui.ui.animation;
 
-public class CycleInterpolator implements IInterpolator {
+public class CycleInterpolator implements ITimeInterpolator {
 
     private final float cycle;
 

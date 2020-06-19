@@ -182,6 +182,7 @@ artifacts {
     archives devJar
 }
 
+// this doesn't work due to Cloudflare
 if (System.getenv("CurseForgeAPI") != null) {
     curseforge {
         apiKey = System.getenv("CurseForgeAPI")

@@ -18,8 +18,8 @@
 
 package icyllis.modernui.ui.test;
 
-import icyllis.modernui.ui.background.SSExpandableBox;
-import icyllis.modernui.ui.scroll.MultiPageScrollPanel;
+import icyllis.modernui.ui.widget.SSExpandableBox;
+import icyllis.modernui.ui.widget.MultiPageScrollPanel;
 import icyllis.modernui.ui.widget.NumberInputField;
 import icyllis.modernui.ui.widget.SlidingToggleButton;
 import icyllis.modernui.ui.widget.StaticFrameButton;
