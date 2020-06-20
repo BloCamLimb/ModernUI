@@ -240,7 +240,7 @@ public class ScrollWindow<T extends ScrollGroup> extends Window implements IScro
         float v = getVisibleHeight();
         float t = getTotalHeight();
         boolean renderBar = t > v;
-        scrollbar.setVisibility(renderBar ? View.Visibility.VISIBLE : View.Visibility.INVISIBLE);
+        scrollbar.setVisibility(renderBar ? View.VISIBLE : View.INVISIBLE);
         if (renderBar) {
             float p = v / t;
             scrollbar.setBarLength(p);

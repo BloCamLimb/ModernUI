@@ -74,10 +74,38 @@ public class Gravity {
 
 
     /**
+     * Push object to the top left of its container, not changing its size.
+     */
+    public static final int TOP_LEFT     = TOP | LEFT;
+    /**
+     * Push object to the top right of its container, not changing its size.
+     */
+    public static final int TOP_RIGHT    = TOP | RIGHT;
+    /**
+     * Push object to the bottom left of its container, not changing its size.
+     */
+    public static final int BOTTOM_LEFT  = BOTTOM | LEFT;
+    /**
+     * Push object to the bottom right of its container, not changing its size.
+     */
+    public static final int BOTTOM_RIGHT = BOTTOM | RIGHT;
+
+
+    /**
      * Place object in the vertical center of its container, not changing its
      * size.
      */
     public static final int VERTICAL_CENTER = AXIS_SPECIFIED << AXIS_Y_SHIFT;
+    /**
+     * Place object in the vertical center left of its container, not changing
+     * its size.
+     */
+    public static final int LEFT_CENTER     = LEFT | VERTICAL_CENTER;
+    /**
+     * Place object in the vertical center right of its container, not changing
+     * its size.
+     */
+    public static final int RIGHT_CENTER    = RIGHT | VERTICAL_CENTER;
     /**
      * Grow the vertical size of the object if needed so it completely fills
      * its container.
@@ -91,6 +119,16 @@ public class Gravity {
      */
     public static final int HORIZONTAL_CENTER = AXIS_SPECIFIED << AXIS_X_SHIFT;
     /**
+     * Place object in the top horizontal center of its container, not changing
+     * its size.
+     */
+    public static final int TOP_CENTER        = TOP | HORIZONTAL_CENTER;
+    /**
+     * Place object in the bottom horizontal center of its container, not changing
+     * its size.
+     */
+    public static final int BOTTOM_CENTER     = BOTTOM | HORIZONTAL_CENTER;
+    /**
      * Grow the horizontal size of the object if needed so it completely fills
      * its container.
      */
@@ -102,19 +140,18 @@ public class Gravity {
      * and horizontal axis, not changing its size.
      */
     public static final int CENTER = VERTICAL_CENTER | HORIZONTAL_CENTER;
-
     /**
      * Grow the horizontal and vertical size of the object if needed so it
      * completely fills its container.
      */
-    public static final int FILL = FILL_VERTICAL | FILL_HORIZONTAL;
+    public static final int FILL   = FILL_VERTICAL | FILL_HORIZONTAL;
+
 
     /**
      * Flag to clip the edges of the object to its container along the
      * vertical axis.
      */
-    public static final int CLIP_VERTICAL = AXIS_CLIP << AXIS_Y_SHIFT;
-
+    public static final int CLIP_VERTICAL   = AXIS_CLIP << AXIS_Y_SHIFT;
     /**
      * Flag to clip the edges of the object to its container along the
      * horizontal axis.

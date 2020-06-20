@@ -22,6 +22,23 @@ import icyllis.modernui.ui.master.ViewGroup;
 
 public class GridLayout extends ViewGroup {
 
+    /**
+     * Orientation
+     */
+    public static final int HORIZONTAL = LinearLayout.HORIZONTAL;
+    public static final int VERTICAL   = LinearLayout.VERTICAL;
+
+    /**
+     * The constant used to indicate that a value is undefined.
+     * Fields can use this value to indicate that their values
+     * have not yet been set. Similarly, methods can return this value
+     * to indicate that there is no suitable value that the implementation
+     * can return.
+     * The value used for the constant (currently {@link Integer#MIN_VALUE}) is
+     * intended to avoid confusion between valid values whose sign may not be known.
+     */
+    public static final int UNDEFINED = Integer.MIN_VALUE;
+
     @Override
     protected void onLayout(boolean changed) {
 

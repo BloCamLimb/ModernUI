@@ -179,7 +179,7 @@ public class ScrollPanel<E extends UniformScrollEntry, G extends UniformScrollGr
         float v = getHeight();
         float t = group.getHeight();
         boolean renderBar = t > v;
-        scrollbar.setVisibility(renderBar ? View.Visibility.VISIBLE : View.Visibility.INVISIBLE);
+        scrollbar.setVisibility(renderBar ? View.VISIBLE : View.INVISIBLE);
         if (renderBar) {
             float p = v / t;
             scrollbar.setBarLength(p);

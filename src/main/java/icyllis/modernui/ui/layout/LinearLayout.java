@@ -26,7 +26,14 @@ import icyllis.modernui.ui.master.ViewGroup;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+@SuppressWarnings("unused")
 public class LinearLayout extends ViewGroup {
+
+    /**
+     * Orientation
+     */
+    public static final int HORIZONTAL = 0;
+    public static final int VERTICAL   = 1;
 
     /**
      * Don't show any dividers.
@@ -45,11 +52,23 @@ public class LinearLayout extends ViewGroup {
      */
     public static final int SHOW_DIVIDER_END       = 1 << 2;
 
-    private Orientation orientation;
 
-    private int gravity = FrameLayout.DEFAULT_GRAVITY;
+    private int orientation;
 
-    @Nullable
+    private int gravity = Gravity.TOP_LEFT;
+
+    private int totalLength;
+
+    private float weightSum;
+
+    private int[] maxAscent;
+    private int[] maxDescent;
+
+    private static final int INDEX_CENTER_VERTICAL = 0;
+    private static final int INDEX_TOP             = 1;
+    private static final int INDEX_BOTTOM          = 2;
+    private static final int INDEX_FILL            = 3;
+
     private Drawable divider;
 
     private int showDividers;
@@ -90,7 +109,7 @@ public class LinearLayout extends ViewGroup {
      * @param divider drawable that will divide each item.
      * @see #setShowDividers(int)
      */
-    public void setDividerDrawable(@Nullable Drawable divider) {
+    public void setDivider(@Nullable Drawable divider) {
         if (this.divider == divider) {
             return;
         }
@@ -106,7 +125,7 @@ public class LinearLayout extends ViewGroup {
     }
 
     @Nullable
-    public Drawable getDividerDrawable() {
+    public Drawable getDivider() {
         return divider;
     }
 
@@ -125,7 +144,7 @@ public class LinearLayout extends ViewGroup {
      *
      * @param padding Padding value in pixels that will be applied to each end
      * @see #setShowDividers(int)
-     * @see #setDividerDrawable(Drawable)
+     * @see #setDivider(Drawable)
      * @see #getDividerPadding()
      */
     public void setDividerPadding(int padding) {
@@ -143,7 +162,7 @@ public class LinearLayout extends ViewGroup {
      * Get the padding size used to inset dividers in pixels
      *
      * @see #setShowDividers(int)
-     * @see #setDividerDrawable(Drawable)
+     * @see #setDivider(Drawable)
      * @see #setDividerPadding(int)
      */
     public int getDividerPadding() {
@@ -153,7 +172,7 @@ public class LinearLayout extends ViewGroup {
     @Override
     protected void onDraw(@Nonnull Canvas canvas, float time) {
         if (divider != null) {
-            if (orientation.isVertical()) {
+            if (orientation == VERTICAL) {
                 drawDividersVertical(canvas);
             } else {
                 drawDividersHorizontal(canvas);
@@ -161,49 +180,589 @@ public class LinearLayout extends ViewGroup {
         }
     }
 
-    void drawDividersVertical(@Nonnull Canvas canvas) {
+    private void drawDividersVertical(@Nonnull Canvas canvas) {
+        // draw the divider before first non-GONE child
+        // faster than Android API, because we draw every frame
+        boolean began = false;
+        View lastDraw = null;
+
         int count = getChildCount();
         for (int i = 0; i < count; i++) {
             View child = getChildAt(i);
             if (child.getVisibility() != GONE) {
-                if (hasDividerBeforeChildAt(i)) {
-                    /*final LayoutParams lp = (LayoutParams) child.getLayoutParams();
-                    final int top = child.getTop() - lp.topMargin - mDividerHeight;
-                    drawHorizontalDivider(canvas, top);*/
+                LayoutParams lp = (LayoutParams) child.getLayoutParams();
+                int top = child.getTop() - lp.topMargin - dividerHeight;
+                if (!began) {
+                    if ((showDividers & SHOW_DIVIDER_BEGINNING) != 0) {
+                        drawHorizontalDivider(canvas, top);
+                    }
+                    began = true;
+                } else {
+                    if ((showDividers & SHOW_DIVIDER_MIDDLE) != 0) {
+                        drawHorizontalDivider(canvas, top);
+                    }
+                }
+                lastDraw = child;
+            }
+        }
+
+        // draw last one
+        if ((showDividers & SHOW_DIVIDER_END) != 0) {
+            int bottom;
+            if (lastDraw != null) {
+                LayoutParams lp = (LayoutParams) lastDraw.getLayoutParams();
+                bottom = lastDraw.getBottom() + lp.bottomMargin;
+            } else {
+                bottom = getBottom() - dividerHeight;
+            }
+            drawHorizontalDivider(canvas, bottom);
+        }
+    }
+
+    private void drawHorizontalDivider(@Nonnull Canvas canvas, int top) {
+        divider.draw(canvas, getLeft() + dividerPadding, top, getRight() - dividerPadding, top + dividerHeight);
+    }
+
+    private void drawDividersHorizontal(@Nonnull Canvas canvas) {
+        boolean began = false;
+        View lastDraw = null;
+
+        int count = getChildCount();
+        for (int i = 0; i < count; i++) {
+            View child = getChildAt(i);
+            if (child.getVisibility() != GONE) {
+                LayoutParams lp = (LayoutParams) child.getLayoutParams();
+                int left = child.getLeft() - lp.leftMargin - dividerWidth;
+                if (!began) {
+                    if ((showDividers & SHOW_DIVIDER_BEGINNING) != 0) {
+                        drawVerticalDivider(canvas, left);
+                    }
+                    began = true;
+                } else {
+                    if ((showDividers & SHOW_DIVIDER_MIDDLE) != 0) {
+                        drawVerticalDivider(canvas, left);
+                    }
+                }
+                lastDraw = child;
+            }
+        }
+
+        if ((showDividers & SHOW_DIVIDER_END) != 0) {
+            int right;
+            if (lastDraw != null) {
+                LayoutParams lp = (LayoutParams) lastDraw.getLayoutParams();
+                right = lastDraw.getRight() + lp.rightMargin;
+            } else {
+                right = getRight() - dividerWidth;
+            }
+            drawVerticalDivider(canvas, right);
+        }
+    }
+
+    private void drawVerticalDivider(@Nonnull Canvas canvas, int left) {
+        divider.draw(canvas, left, getTop() + dividerPadding, left + dividerWidth, getBottom() - dividerPadding);
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        if (orientation == VERTICAL) {
+            measureVertical(widthMeasureSpec, heightMeasureSpec);
+        } else {
+            measureHorizontal(widthMeasureSpec, heightMeasureSpec);
+        }
+    }
+
+    private void measureVertical(int widthMeasureSpec, int heightMeasureSpec) {
+        totalLength = 0;
+
+        int maxWidth = 0;
+        int alternativeMaxWidth = 0;
+        int weightedMaxWidth = 0;
+
+        boolean allFillParent = true;
+        float totalWeight = 0;
+
+        final int count = getChildCount();
+
+        final MeasureSpec.Mode widthMode = MeasureSpec.getMode(widthMeasureSpec);
+        final MeasureSpec.Mode heightMode = MeasureSpec.getMode(heightMeasureSpec);
+
+        boolean matchWidth = false;
+        boolean skippedMeasure = false;
+
+        int consumedExcessSpace = 0;
+
+        int nonSkippedChildCount = 0;
+
+        for (int i = 0; i < count; i++) {
+            View child = getChildAt(i);
+            if (child.getVisibility() == GONE) {
+                continue;
+            }
+
+            ++nonSkippedChildCount;
+            if (hasDividerBeforeChildAt(i)) {
+                totalLength += dividerHeight;
+            }
+
+            LayoutParams lp = (LayoutParams) child.getLayoutParams();
+
+            totalWeight += lp.weight;
+
+            boolean useExcessSpace = lp.height == 0 && lp.weight > 0;
+            if (heightMode.isExactly() && useExcessSpace) {
+                // Optimization: don't bother measuring children who are only
+                // laid out using excess space. These views will get measured
+                // later if we have space to distribute.
+                totalLength = Math.max(totalLength, totalLength + lp.topMargin + lp.bottomMargin);
+                skippedMeasure = true;
+            } else {
+                if (useExcessSpace) {
+                    // The heightMode is either UNSPECIFIED or AT_MOST, and
+                    // this child is only laid out using excess space. Measure
+                    // using WRAP_CONTENT so that we can find out the view's
+                    // optimal height. We'll restore the original height of 0
+                    // after measurement.
+                    lp.height = LayoutParams.WRAP_CONTENT;
+                }
+
+                // Determine how big this child would like to be. If this or
+                // previous children have given a weight, then we allow it to
+                // use all available space (and we will shrink things later
+                // if needed).
+                int usedHeight = totalWeight == 0 ? totalLength : 0;
+                measureChildWithMargins(child, widthMeasureSpec, 0,
+                        heightMeasureSpec, usedHeight);
+
+                int childHeight = child.getMeasuredHeight();
+                if (useExcessSpace) {
+                    // Restore the original height and record how much space
+                    // we've allocated to excess-only children so that we can
+                    // match the behavior of EXACTLY measurement.
+                    lp.height = 0;
+                    consumedExcessSpace += childHeight;
+                }
+
+                totalLength = Math.max(totalLength, totalLength + childHeight + lp.topMargin +
+                        lp.bottomMargin);
+            }
+
+            boolean matchWidthLocally = false;
+            if (!widthMode.isExactly() && lp.width == LayoutParams.MATCH_PARENT) {
+                // The width of the linear layout will scale, and at least one
+                // child said it wanted to match our width. Set a flag
+                // indicating that we need to remeasure at least that view when
+                // we know our width.
+                matchWidth = true;
+                matchWidthLocally = true;
+            }
+
+            int margin = lp.leftMargin + lp.rightMargin;
+            int measuredWidth = child.getMeasuredWidth() + margin;
+            maxWidth = Math.max(maxWidth, measuredWidth);
+
+            allFillParent = allFillParent && lp.width == LayoutParams.MATCH_PARENT;
+            if (lp.weight > 0) {
+                // Widths of weighted Views are bogus if we end up
+                // remeasuring, so keep them separate.
+                weightedMaxWidth = Math.max(weightedMaxWidth,
+                        matchWidthLocally ? margin : measuredWidth);
+            } else {
+                alternativeMaxWidth = Math.max(alternativeMaxWidth,
+                        matchWidthLocally ? margin : measuredWidth);
+            }
+        }
+
+        // add last
+        if (nonSkippedChildCount > 0 && hasDividerBeforeChildAt(count)) {
+            totalLength += dividerHeight;
+        }
+
+        int heightSize = totalLength;
+
+        // Check against our minimum height
+        heightSize = Math.max(heightSize, getMinHeight());
+
+        // Reconcile our calculated size with the heightMeasureSpec
+        heightSize = resolveSize(heightSize, heightMeasureSpec);
+        // Either expand children with weight to take up available space or
+        // shrink them if they extend beyond our current bounds. If we skipped
+        // measurement on any children, we need to measure them now.
+        int remainingExcess = heightSize - totalLength + consumedExcessSpace;
+
+        if (skippedMeasure || (totalWeight > 0.0f)) {
+            float remainingWeightSum = weightSum > 0.0f ? weightSum : totalWeight;
+
+            totalLength = 0;
+
+            for (int i = 0; i < count; i++) {
+                View child = getChildAt(i);
+                if (child.getVisibility() == GONE) {
+                    continue;
+                }
+
+                LayoutParams lp = (LayoutParams) child.getLayoutParams();
+                float childWeight = lp.weight;
+                if (childWeight > 0) {
+                    int share = (int) (childWeight * remainingExcess / remainingWeightSum);
+                    remainingExcess -= share;
+                    remainingWeightSum -= childWeight;
+
+                    int childHeight;
+                    if (lp.height == 0) {
+                        // This child needs to be laid out from scratch using
+                        // only its share of excess space.
+                        childHeight = share;
+                    } else {
+                        // This child had some intrinsic height to which we
+                        // need to add its share of excess space.
+                        childHeight = child.getMeasuredHeight() + share;
+                    }
+
+                    int childHeightMeasureSpec = MeasureSpec.makeMeasureSpec(
+                            Math.max(0, childHeight), MeasureSpec.Mode.EXACTLY);
+                    int childWidthMeasureSpec = getChildMeasureSpec(widthMeasureSpec,
+                            lp.leftMargin + lp.rightMargin, lp.width);
+                    child.measure(childWidthMeasureSpec, childHeightMeasureSpec);
+                }
+
+                int margin = lp.leftMargin + lp.rightMargin;
+                int measuredWidth = child.getMeasuredWidth() + margin;
+                maxWidth = Math.max(maxWidth, measuredWidth);
+
+                boolean matchWidthLocally = !widthMode.isExactly() &&
+                        lp.width == LayoutParams.MATCH_PARENT;
+
+                alternativeMaxWidth = Math.max(alternativeMaxWidth,
+                        matchWidthLocally ? margin : measuredWidth);
+
+                allFillParent = allFillParent && lp.width == LayoutParams.MATCH_PARENT;
+
+                totalLength = Math.max(totalLength, totalLength + child.getMeasuredHeight() +
+                        lp.topMargin + lp.bottomMargin);
+            }
+        } else {
+            alternativeMaxWidth = Math.max(alternativeMaxWidth, weightedMaxWidth);
+        }
+
+        if (!allFillParent && !widthMode.isExactly()) {
+            maxWidth = alternativeMaxWidth;
+        }
+
+        maxWidth = Math.max(maxWidth, getMinWidth());
+
+        setMeasuredDimension(resolveSize(maxWidth, widthMeasureSpec), heightSize);
+
+        if (matchWidth) {
+            // Pretend that the linear layout has an exact size.
+            int uniformMeasureSpec = MeasureSpec.makeMeasureSpec(getMeasuredWidth(),
+                    MeasureSpec.Mode.EXACTLY);
+            for (int i = 0; i < count; i++) {
+                View child = getChildAt(i);
+                if (child.getVisibility() != GONE) {
+                    LayoutParams lp = (LayoutParams) child.getLayoutParams();
+
+                    if (lp.width == LayoutParams.MATCH_PARENT) {
+                        // temporarily force children to reuse their old measured height
+                        int lpHeight = lp.height;
+                        lp.height = child.getMeasuredHeight();
+
+                        // remeasure with new dimensions
+                        measureChildWithMargins(child, uniformMeasureSpec, 0,
+                                heightMeasureSpec, 0);
+                        lp.height = lpHeight;
+                    }
                 }
             }
         }
     }
 
-    void drawDividersHorizontal(@Nonnull Canvas canvas) {
+    private void measureHorizontal(int widthMeasureSpec, int heightMeasureSpec) {
+        totalLength = 0;
 
+        int maxHeight = 0;
+        int alternativeMaxHeight = 0;
+        int weightedMaxHeight = 0;
+
+        boolean allFillParent = true;
+        float totalWeight = 0;
+
+        final int count = getChildCount();
+
+        final MeasureSpec.Mode widthMode = MeasureSpec.getMode(widthMeasureSpec);
+        final MeasureSpec.Mode heightMode = MeasureSpec.getMode(heightMeasureSpec);
+
+        boolean matchHeight = false;
+        boolean skippedMeasure = false;
+
+        if (maxAscent == null || maxDescent == null) {
+            maxAscent = new int[4];
+            maxDescent = new int[4];
+        }
+
+        int[] maxAscent = this.maxAscent;
+        int[] maxDescent = this.maxDescent;
+
+        maxAscent[0] = maxAscent[1] = maxAscent[2] = maxAscent[3] = -1;
+        maxDescent[0] = maxDescent[1] = maxDescent[2] = maxDescent[3] = -1;
+
+        int consumedExcessSpace = 0;
+
+        int nonSkippedChildCount = 0;
+
+        for (int i = 0; i < count; i++) {
+            View child = getChildAt(i);
+            if (child.getVisibility() == GONE) {
+                continue;
+            }
+
+            ++nonSkippedChildCount;
+
+            if (hasDividerBeforeChildAt(i)) {
+                totalLength += dividerWidth;
+            }
+
+            LayoutParams lp = (LayoutParams) child.getLayoutParams();
+
+            totalWeight += lp.weight;
+
+            boolean useExcessSpace = lp.width == 0 && lp.weight > 0;
+            if (widthMode.isExactly() && useExcessSpace) {
+                // Optimization: don't bother measuring children who are only
+                // laid out using excess space. These views will get measured
+                // later if we have space to distribute.
+                totalLength = Math.max(totalLength, totalLength + lp.leftMargin + lp.rightMargin);
+                skippedMeasure = true;
+            } else {
+                if (useExcessSpace) {
+                    // The widthMode is either UNSPECIFIED or AT_MOST, and
+                    // this child is only laid out using excess space. Measure
+                    // using WRAP_CONTENT so that we can find out the view's
+                    // optimal width. We'll restore the original width of 0
+                    // after measurement.
+                    lp.width = LayoutParams.WRAP_CONTENT;
+                }
+
+                // Determine how big this child would like to be. If this or
+                // previous children have given a weight, then we allow it to
+                // use all available space (and we will shrink things later
+                // if needed).
+                int usedWidth = totalWeight == 0 ? totalLength : 0;
+                measureChildWithMargins(child, widthMeasureSpec, usedWidth,
+                        heightMeasureSpec, 0);
+
+                int childWidth = child.getMeasuredWidth();
+                if (useExcessSpace) {
+                    // Restore the original width and record how much space
+                    // we've allocated to excess-only children so that we can
+                    // match the behavior of EXACTLY measurement.
+                    lp.width = 0;
+                    consumedExcessSpace += childWidth;
+                }
+
+                if (widthMode.isExactly()) {
+                    totalLength += childWidth + lp.leftMargin + lp.rightMargin;
+                } else {
+                    totalLength = Math.max(totalLength, totalLength + childWidth + lp.leftMargin
+                            + lp.rightMargin);
+                }
+            }
+
+            boolean matchHeightLocally = false;
+            if (!heightMode.isExactly() && lp.height == LayoutParams.MATCH_PARENT) {
+                // The height of the linear layout will scale, and at least one
+                // child said it wanted to match our height. Set a flag indicating that
+                // we need to remeasure at least that view when we know our height.
+                matchHeight = true;
+                matchHeightLocally = true;
+            }
+
+            int margin = lp.topMargin + lp.bottomMargin;
+            int childHeight = child.getMeasuredHeight() + margin;
+
+            maxHeight = Math.max(maxHeight, childHeight);
+
+            allFillParent = allFillParent && lp.height == LayoutParams.MATCH_PARENT;
+            if (lp.weight > 0) {
+                // Heights of weighted Views are bogus if we end up
+                // remeasuring, so keep them separate.
+                weightedMaxHeight = Math.max(weightedMaxHeight,
+                        matchHeightLocally ? margin : childHeight);
+            } else {
+                alternativeMaxHeight = Math.max(alternativeMaxHeight,
+                        matchHeightLocally ? margin : childHeight);
+            }
+        }
+
+        // add last
+        if (nonSkippedChildCount > 0 && hasDividerBeforeChildAt(count)) {
+            totalLength += dividerWidth;
+        }
+
+        // Check mMaxAscent[INDEX_TOP] first because it maps to Gravity.TOP,
+        // the most common case
+        if (maxAscent[INDEX_TOP] != -1 ||
+                maxAscent[INDEX_CENTER_VERTICAL] != -1 ||
+                maxAscent[INDEX_BOTTOM] != -1 ||
+                maxAscent[INDEX_FILL] != -1) {
+            int ascent = Math.max(maxAscent[INDEX_FILL],
+                    Math.max(maxAscent[INDEX_CENTER_VERTICAL],
+                            Math.max(maxAscent[INDEX_TOP], maxAscent[INDEX_BOTTOM])));
+            int descent = Math.max(maxDescent[INDEX_FILL],
+                    Math.max(maxDescent[INDEX_CENTER_VERTICAL],
+                            Math.max(maxDescent[INDEX_TOP], maxDescent[INDEX_BOTTOM])));
+            maxHeight = Math.max(maxHeight, ascent + descent);
+        }
+
+        int widthSize = totalLength;
+
+        // Check against our minimum width
+        widthSize = Math.max(widthSize, getMinWidth());
+
+        // Reconcile our calculated size with the widthMeasureSpec
+        widthSize = resolveSize(widthSize, widthMeasureSpec);
+
+        // Either expand children with weight to take up available space or
+        // shrink them if they extend beyond our current bounds. If we skipped
+        // measurement on any children, we need to measure them now.
+        int remainingExcess = widthSize - totalLength + consumedExcessSpace;
+
+        if (skippedMeasure || (totalWeight > 0.0f)) {
+            float remainingWeightSum = weightSum > 0.0f ? weightSum : totalWeight;
+
+            maxAscent[0] = maxAscent[1] = maxAscent[2] = maxAscent[3] = -1;
+            maxDescent[0] = maxDescent[1] = maxDescent[2] = maxDescent[3] = -1;
+            maxHeight = -1;
+
+            totalLength = 0;
+
+            for (int i = 0; i < count; ++i) {
+                View child = getChildAt(i);
+                if (child.getVisibility() == View.GONE) {
+                    continue;
+                }
+
+                LayoutParams lp = (LayoutParams) child.getLayoutParams();
+                float childWeight = lp.weight;
+                if (childWeight > 0) {
+                    int share = (int) (childWeight * remainingExcess / remainingWeightSum);
+                    remainingExcess -= share;
+                    remainingWeightSum -= childWeight;
+
+                    int childWidth;
+                    if (lp.width == 0) {
+                        // This child needs to be laid out from scratch using
+                        // only its share of excess space.
+                        childWidth = share;
+                    } else {
+                        // This child had some intrinsic width to which we
+                        // need to add its share of excess space.
+                        childWidth = child.getMeasuredWidth() + share;
+                    }
+
+                    int childWidthMeasureSpec = MeasureSpec.makeMeasureSpec(
+                            Math.max(0, childWidth), MeasureSpec.Mode.EXACTLY);
+                    int childHeightMeasureSpec = getChildMeasureSpec(heightMeasureSpec,
+                            lp.topMargin + lp.bottomMargin, lp.height);
+                    child.measure(childWidthMeasureSpec, childHeightMeasureSpec);
+                }
+
+                if (widthMode.isExactly()) {
+                    totalLength += child.getMeasuredWidth() + lp.leftMargin + lp.rightMargin;
+                } else {
+                    totalLength = Math.max(totalLength, totalLength + child.getMeasuredWidth() +
+                            lp.leftMargin + lp.rightMargin);
+                }
+
+                boolean matchHeightLocally = !heightMode.isExactly() &&
+                        lp.height == LayoutParams.MATCH_PARENT;
+
+                int margin = lp.topMargin + lp.bottomMargin;
+                int childHeight = child.getMeasuredHeight() + margin;
+                maxHeight = Math.max(maxHeight, childHeight);
+                alternativeMaxHeight = Math.max(alternativeMaxHeight,
+                        matchHeightLocally ? margin : childHeight);
+
+                allFillParent = allFillParent && lp.height == LayoutParams.MATCH_PARENT;
+            }
+
+            // Check mMaxAscent[INDEX_TOP] first because it maps to Gravity.TOP,
+            // the most common case
+            if (maxAscent[INDEX_TOP] != -1 ||
+                    maxAscent[INDEX_CENTER_VERTICAL] != -1 ||
+                    maxAscent[INDEX_BOTTOM] != -1 ||
+                    maxAscent[INDEX_FILL] != -1) {
+                int ascent = Math.max(maxAscent[INDEX_FILL],
+                        Math.max(maxAscent[INDEX_CENTER_VERTICAL],
+                                Math.max(maxAscent[INDEX_TOP], maxAscent[INDEX_BOTTOM])));
+                int descent = Math.max(maxDescent[INDEX_FILL],
+                        Math.max(maxDescent[INDEX_CENTER_VERTICAL],
+                                Math.max(maxDescent[INDEX_TOP], maxDescent[INDEX_BOTTOM])));
+                maxHeight = Math.max(maxHeight, ascent + descent);
+            }
+        } else {
+            alternativeMaxHeight = Math.max(alternativeMaxHeight, weightedMaxHeight);
+        }
+
+        if (!allFillParent && !heightMode.isExactly()) {
+            maxHeight = alternativeMaxHeight;
+        }
+
+        // Check against our minimum height
+        maxHeight = Math.max(maxHeight, getMinHeight());
+
+        setMeasuredDimension(widthSize, resolveSize(maxHeight, heightMeasureSpec));
+
+        if (matchHeight) {
+            // Pretend that the linear layout has an exact size. This is the measured height of
+            // ourselves. The measured height should be the max height of the children, changed
+            // to accommodate the heightMeasureSpec from the parent
+            int uniformMeasureSpec = MeasureSpec.makeMeasureSpec(getMeasuredHeight(),
+                    MeasureSpec.Mode.EXACTLY);
+            for (int i = 0; i < count; ++i) {
+                View child = getChildAt(i);
+                if (child.getVisibility() != GONE) {
+                    LayoutParams lp = (LayoutParams) child.getLayoutParams();
+
+                    if (lp.height == LayoutParams.MATCH_PARENT) {
+                        // temporarily force children to reuse their old measured width
+                        int lpWidth = lp.width;
+                        lp.width = child.getMeasuredWidth();
+
+                        // remeasure with new dimensions
+                        measureChildWithMargins(child, widthMeasureSpec, 0, uniformMeasureSpec, 0);
+                        lp.width = lpWidth;
+                    }
+                }
+            }
+        }
     }
 
     /**
      * Determines where to position dividers between children.
+     * Only used in measure or layout
      *
-     * @param childIndex Index of child to check for preceding divider
+     * @param childIndex index of child to check for preceding divider
      * @return true if there should be a divider before the child at childIndex
      */
-    protected boolean hasDividerBeforeChildAt(int childIndex) {
+    private boolean hasDividerBeforeChildAt(int childIndex) {
         if (childIndex == getChildCount()) {
+            // whether the end divider should draw
             return (showDividers & SHOW_DIVIDER_END) != 0;
         }
         boolean allViewsAreGoneBefore = allViewsAreGoneBefore(childIndex);
         if (allViewsAreGoneBefore) {
+            // the first non-gone view, check if beginning divider is enabled
             return (showDividers & SHOW_DIVIDER_BEGINNING) != 0;
         } else {
             return (showDividers & SHOW_DIVIDER_MIDDLE) != 0;
         }
     }
 
-    /**
-     * Checks whether all child views before the given index are gone.
-     */
     private boolean allViewsAreGoneBefore(int childIndex) {
         for (int i = childIndex - 1; i >= 0; i--) {
-            final View child = getChildAt(i);
-            if (child.getVisibility() != GONE) {
+            View child = getChildAt(i);
+            if (child != null && child.getVisibility() != GONE) {
                 return false;
             }
         }
@@ -212,15 +771,271 @@ public class LinearLayout extends ViewGroup {
 
     @Override
     protected void onLayout(boolean changed) {
-
-    }
-
-    public enum Orientation {
-        HORIZONTAL,
-        VERTICAL;
-
-        public boolean isVertical() {
-            return this == VERTICAL;
+        if (orientation == VERTICAL) {
+            layoutVertical();
+        } else {
+            layoutHorizontal();
         }
     }
+
+    private void layoutVertical() {
+        int count = getChildCount();
+
+        int parentLeft = getLeft();
+        int parentRight = getRight();
+
+        int parentTop = getTop();
+        int parentBottom = getBottom();
+
+        int parentWidth = getWidth();
+        int parentHeight = getHeight();
+
+        int parentHorizontalGravity = gravity & Gravity.HORIZONTAL_GRAVITY_MASK;
+
+        int childTop;
+        int childLeft;
+
+        switch (gravity & Gravity.VERTICAL_GRAVITY_MASK) {
+            case Gravity.BOTTOM:
+                childTop = parentTop + parentHeight - totalLength;
+                break;
+            case Gravity.VERTICAL_CENTER:
+                childTop = parentTop + (parentHeight - totalLength) / 2;
+                break;
+            default:
+                childTop = parentTop;
+                break;
+        }
+
+        for (int i = 0; i < count; i++) {
+            View child = getChildAt(i);
+            if (child.getVisibility() != GONE) {
+                LayoutParams lp = (LayoutParams) child.getLayoutParams();
+
+                int width = child.getMeasuredWidth();
+                int height = child.getMeasuredHeight();
+
+                int gravity = lp.gravity;
+                if (gravity < 0) {
+                    gravity = parentHorizontalGravity;
+                }
+
+                int horizontalGravity = gravity & Gravity.HORIZONTAL_GRAVITY_MASK;
+
+                switch (horizontalGravity) {
+                    case Gravity.HORIZONTAL_CENTER:
+                        childLeft = parentLeft + (parentWidth - width) / 2 +
+                                lp.leftMargin - lp.rightMargin;
+                        break;
+                    case Gravity.RIGHT:
+                        childLeft = parentRight + parentWidth - width - lp.rightMargin;
+                        break;
+                    default:
+                        childLeft = parentLeft + lp.leftMargin;
+                        break;
+                }
+
+                if (hasDividerBeforeChildAt(i)) {
+                    childTop += dividerHeight;
+                }
+
+                childTop += lp.topMargin;
+
+                child.layout(childLeft, childTop, childLeft + width, childTop + height);
+
+                childTop += height + lp.bottomMargin;
+            }
+        }
+    }
+
+    private void layoutHorizontal() {
+        int count = getChildCount();
+
+        int parentLeft = getLeft();
+        int parentRight = getRight();
+
+        int parentTop = getTop();
+        int parentBottom = getBottom();
+
+        int parentWidth = getWidth();
+        int parentHeight = getHeight();
+
+        int parentVerticalGravity = gravity & Gravity.VERTICAL_GRAVITY_MASK;
+
+        int childTop;
+        int childLeft;
+
+        switch (gravity & Gravity.HORIZONTAL_GRAVITY_MASK) {
+            case Gravity.RIGHT:
+                childLeft = parentLeft + parentWidth - totalLength;
+                break;
+            case Gravity.HORIZONTAL_CENTER:
+                childLeft = parentLeft + (parentWidth - totalLength) / 2;
+                break;
+            default:
+                childLeft = parentLeft;
+                break;
+        }
+
+        for (int i = 0; i < count; i++) {
+            View child = getChildAt(i);
+            if (child.getVisibility() != GONE) {
+                LayoutParams lp = (LayoutParams) child.getLayoutParams();
+
+                int width = child.getMeasuredWidth();
+                int height = child.getMeasuredHeight();
+
+                int gravity = lp.gravity;
+                if (gravity < 0) {
+                    gravity = parentVerticalGravity;
+                }
+
+                int verticalGravity = gravity & Gravity.VERTICAL_GRAVITY_MASK;
+
+                switch (verticalGravity) {
+                    case Gravity.VERTICAL_CENTER:
+                        childTop = parentTop + (parentHeight - height) / 2 +
+                                lp.topMargin - lp.bottomMargin;
+                        break;
+                    case Gravity.BOTTOM:
+                        childTop = parentTop + parentHeight - height - lp.bottomMargin;
+                        break;
+                    default:
+                        childTop = parentTop + lp.topMargin;
+                        break;
+                }
+
+                if (hasDividerBeforeChildAt(i)) {
+                    childLeft += dividerWidth;
+                }
+
+                childLeft += lp.leftMargin;
+
+                child.layout(childLeft, childTop, childLeft + width, childTop + height);
+
+                childLeft += width + lp.rightMargin;
+            }
+        }
+    }
+
+    public void setOrientation(int orientation) {
+        if (this.orientation != orientation) {
+            this.orientation = orientation;
+            requestLayout();
+        }
+    }
+
+    public int getOrientation() {
+        return orientation;
+    }
+
+    public void setGravity(int gravity) {
+        if (this.gravity != gravity) {
+            if ((gravity & Gravity.HORIZONTAL_GRAVITY_MASK) == 0) {
+                gravity |= Gravity.LEFT;
+            }
+
+            if ((gravity & Gravity.VERTICAL_GRAVITY_MASK) == 0) {
+                gravity |= Gravity.TOP;
+            }
+
+            this.gravity = gravity;
+            requestLayout();
+        }
+    }
+
+    public int getGravity() {
+        return gravity;
+    }
+
+    @Nonnull
+    @Override
+    protected ViewGroup.LayoutParams convertLayoutParams(@Nonnull ViewGroup.LayoutParams params) {
+        if (params instanceof LayoutParams) {
+            return new LayoutParams((LayoutParams) params);
+        } else if (params instanceof MarginLayoutParams) {
+            return new LayoutParams((MarginLayoutParams) params);
+        }
+        return new LayoutParams(params);
+    }
+
+    @Nonnull
+    @Override
+    protected ViewGroup.LayoutParams createDefaultLayoutParams() {
+        if (orientation == HORIZONTAL) {
+            return new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+        }
+        return new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+    }
+
+    @Override
+    protected boolean checkLayoutParams(@Nullable ViewGroup.LayoutParams params) {
+        return params instanceof LayoutParams;
+    }
+
+    public static class LayoutParams extends MarginLayoutParams {
+
+        /**
+         * Indicates how much of the extra space in the LinearLayout will be
+         * allocated to the view associated with these LayoutParams. Specify
+         * 0 if the view should not be stretched. Otherwise the extra pixels
+         * will be pro-rated among all views whose weight is greater than 0.
+         */
+        public float weight;
+
+        /**
+         * Gravity for the view associated with these LayoutParams.
+         *
+         * @see Gravity
+         */
+        public int gravity = -1;
+
+        public LayoutParams(int width, int height) {
+            super(width, height);
+            weight = 0;
+        }
+
+        /**
+         * Creates a new set of layout parameters with the specified width, height
+         * and weight.
+         *
+         * @param width  either {@link #WRAP_CONTENT},
+         *               {@link #MATCH_PARENT}, or a fixed value
+         * @param height either {@link #WRAP_CONTENT},
+         *               {@link #MATCH_PARENT}, or a fixed value
+         * @param weight the weight
+         */
+        public LayoutParams(int width, int height, float weight) {
+            super(width, height);
+            this.weight = weight;
+        }
+
+        public LayoutParams(@Nonnull MarginLayoutParams source) {
+            super(source);
+        }
+
+        public LayoutParams(@Nonnull ViewGroup.LayoutParams source) {
+            super(source);
+        }
+
+        /**
+         * Copy constructor. Clones the width, height, margin values, weight,
+         * and gravity of the source.
+         *
+         * @param source The layout params to copy from.
+         */
+        public LayoutParams(LayoutParams source) {
+            super(source);
+
+            this.weight = source.weight;
+            this.gravity = source.gravity;
+        }
+
+        @Nonnull
+        @Override
+        public LayoutParams copy() {
+            return new LayoutParams(this);
+        }
+    }
+
 }
