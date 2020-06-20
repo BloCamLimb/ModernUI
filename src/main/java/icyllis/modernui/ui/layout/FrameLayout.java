@@ -31,8 +31,6 @@ import java.util.List;
  */
 public class FrameLayout extends ViewGroup {
 
-    public static final int DEFAULT_GRAVITY = Gravity.TOP | Gravity.LEFT;
-
     private final List<View> matchParentChildren = new ArrayList<>(1);
 
     public FrameLayout() {
@@ -120,6 +118,9 @@ public class FrameLayout extends ViewGroup {
         int parentTop = getTop();
         int parentBottom = getBottom();
 
+        int parentWidth = getWidth();
+        int parentHeight = getHeight();
+
         for (int i = 0; i < count; i++) {
             final View child = getChildAt(i);
             if (child.getVisibility() != GONE) {
@@ -138,7 +139,7 @@ public class FrameLayout extends ViewGroup {
 
                 switch (horizontalGravity) {
                     case Gravity.HORIZONTAL_CENTER:
-                        childLeft = parentLeft + (parentRight - parentLeft - width) / 2 +
+                        childLeft = parentLeft + (parentWidth - width) / 2 +
                                 lp.leftMargin - lp.rightMargin;
                         break;
                     case Gravity.RIGHT:
@@ -150,7 +151,7 @@ public class FrameLayout extends ViewGroup {
 
                 switch (verticalGravity) {
                     case Gravity.VERTICAL_CENTER:
-                        childTop = parentTop + (parentBottom - parentTop - height) / 2 +
+                        childTop = parentTop + (parentHeight - height) / 2 +
                                 lp.topMargin - lp.bottomMargin;
                         break;
                     case Gravity.BOTTOM:
@@ -193,7 +194,7 @@ public class FrameLayout extends ViewGroup {
          * The gravity to apply with the View to which these layout parameters
          * are associated. Default value is TOP_LEFT
          */
-        public int gravity = DEFAULT_GRAVITY;
+        public int gravity = Gravity.TOP_LEFT;
 
         /**
          * Creates a new set of layout parameters with the specified width
