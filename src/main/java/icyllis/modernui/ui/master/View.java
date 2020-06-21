@@ -713,7 +713,7 @@ public class View {
      * @param mouseY relative mouse Y pos
      * @return return {@code true} if certain view hovered
      */
-    final boolean updateMouseHover(double mouseX, double mouseY) {
+    final boolean updateMouseHover(int mouseX, int mouseY) {
         if (isInView(mouseX, mouseY)) {
             if (onUpdateMouseHover(mouseX, mouseY)) {
                 return true;
@@ -725,8 +725,8 @@ public class View {
     }
 
     // helper
-    private boolean isInView(double mx, double my) {
-        return mx >= left && mx <= right && my >= top && my <= bottom;
+    private boolean isInView(int mx, int my) {
+        return mx >= left && mx < right && my >= top && my < bottom;
     }
 
     /**
@@ -737,7 +737,7 @@ public class View {
      * @return {@code true} if certain child view hovered
      * {@code false} will make this view hovered
      */
-    protected boolean onUpdateMouseHover(double mouseX, double mouseY) {
+    protected boolean onUpdateMouseHover(int mouseX, int mouseY) {
         return false;
     }
 
@@ -762,7 +762,7 @@ public class View {
      * @param mouseY relative mouse Y pos
      * @return return {@code true} if action performed
      */
-    protected boolean onMouseLeftClicked(double mouseX, double mouseY) {
+    protected boolean onMouseLeftClicked(int mouseX, int mouseY) {
         return false;
     }
 
@@ -773,7 +773,7 @@ public class View {
      * @param mouseY relative mouse Y pos
      * @return return {@code true} if action performed
      */
-    protected boolean onMouseLeftReleased(double mouseX, double mouseY) {
+    protected boolean onMouseLeftReleased(int mouseX, int mouseY) {
         return false;
     }
 
@@ -784,7 +784,7 @@ public class View {
      * @param mouseY relative mouse Y pos
      * @return return {@code true} if action performed
      */
-    protected boolean onMouseDoubleClicked(double mouseX, double mouseY) {
+    protected boolean onMouseDoubleClicked(int mouseX, int mouseY) {
         return false;
     }
 
@@ -795,7 +795,7 @@ public class View {
      * @param mouseY relative mouse Y pos
      * @return return {@code true} if action performed
      */
-    protected boolean onMouseRightClicked(double mouseX, double mouseY) {
+    protected boolean onMouseRightClicked(int mouseX, int mouseY) {
         return false;
     }
 
@@ -806,7 +806,7 @@ public class View {
      * @param mouseY relative mouse Y pos
      * @return return {@code true} if action performed
      */
-    protected boolean onMouseRightReleased(double mouseX, double mouseY) {
+    protected boolean onMouseRightReleased(int mouseX, int mouseY) {
         return false;
     }
 
@@ -818,7 +818,7 @@ public class View {
      * @param amount scroll amount
      * @return return {@code true} if action performed
      */
-    protected boolean onMouseScrolled(double mouseX, double mouseY, double amount) {
+    protected boolean onMouseScrolled(int mouseX, int mouseY, double amount) {
         return false;
     }
 
@@ -845,7 +845,7 @@ public class View {
      * @param deltaY mouse y change
      * @return return {@code true} if action performed
      */
-    protected boolean onMouseDragged(double mouseX, double mouseY, double deltaX, double deltaY) {
+    protected boolean onMouseDragged(int mouseX, int mouseY, double deltaX, double deltaY) {
         return false;
     }
 

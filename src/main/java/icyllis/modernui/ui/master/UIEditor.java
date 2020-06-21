@@ -60,6 +60,9 @@ public enum UIEditor {
     private int[] hoveredLocation = new int[2];
 
     public void setHoveredWidget(@Nullable Object obj) {
+        if (!working) {
+            return;
+        }
         if (obj == null) {
             hoveredView = null;
             treeInfo.clear();

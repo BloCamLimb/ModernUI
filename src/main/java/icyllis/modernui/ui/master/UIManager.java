@@ -91,7 +91,7 @@ public enum UIManager implements IViewParent {
     private int width, height;
 
     // scaled mouseX, mouseY on screen
-    private double mouseX, mouseY;
+    private int mouseX, mouseY;
 
     // a list of animations in render loop
     private final List<Animation> animations = new ArrayList<>();
@@ -318,21 +318,17 @@ public enum UIManager implements IViewParent {
         tasks.add(new DelayedTask(runnable, delayedTicks));
     }
 
-    void sMouseMoved(double mouseX, double mouseY) {
+    void sMouseMoved(int mouseX, int mouseY) {
         this.mouseX = mouseX;
         this.mouseY = mouseY;
+        focus();
         /*if (popup != null) {
             popup.mouseMoved(mouseX, mouseY);
             return;
         }*/
-        if (view != null) {
-            if (!view.updateMouseHover(mouseX, mouseY)) {
-                setHoveredView(null);
-            }
-        }
     }
 
-    boolean sMouseClicked(double mouseX, double mouseY, int mouseButton) {
+    boolean sMouseClicked(int mouseX, int mouseY, int mouseButton) {
         this.mouseX = mouseX;
         this.mouseY = mouseY;
         /*if (popup != null) {
@@ -357,7 +353,7 @@ public enum UIManager implements IViewParent {
         return false;
     }
 
-    boolean sMouseReleased(double mouseX, double mouseY, int mouseButton) {
+    boolean sMouseReleased(int mouseX, int mouseY, int mouseButton) {
         this.mouseX = mouseX;
         this.mouseY = mouseY;
         /*if (popup != null) {
@@ -370,7 +366,7 @@ public enum UIManager implements IViewParent {
         return false;//root.mouseReleased(mouseX, mouseY, mouseButton);
     }
 
-    boolean sMouseDragged(double mouseX, double mouseY, double deltaX, double deltaY) {
+    boolean sMouseDragged(int mouseX, int mouseY, double deltaX, double deltaY) {
         this.mouseX = mouseX;
         this.mouseY = mouseY;
         /*if (popup != null) {
@@ -382,7 +378,7 @@ public enum UIManager implements IViewParent {
         return false;
     }
 
-    boolean sMouseScrolled(double mouseX, double mouseY, double amount) {
+    boolean sMouseScrolled(int mouseX, int mouseY, double amount) {
         this.mouseX = mouseX;
         this.mouseY = mouseY;
         /*if (popup != null) {
@@ -435,7 +431,18 @@ public enum UIManager implements IViewParent {
      * Refocus mouse cursor and update mouse position
      */
     public void refreshMouse() {
-        sMouseMoved(mouseX, mouseY);
+        focus();
+    }
+
+    /**
+     * Find focus in UI
+     */
+    private void focus() {
+        if (view != null) {
+            if (!view.updateMouseHover(mouseX, mouseY)) {
+                setHoveredView(null);
+            }
+        }
     }
 
     /**
@@ -474,8 +481,8 @@ public enum UIManager implements IViewParent {
         this.width = width;
         this.height = height;
         double scale = minecraft.getMainWindow().getGuiScaleFactor();
-        mouseX = minecraft.mouseHelper.getMouseX() / scale;
-        mouseY = minecraft.mouseHelper.getMouseY() / scale;
+        mouseX = (int) (minecraft.mouseHelper.getMouseX() / scale);
+        mouseY = (int) (minecraft.mouseHelper.getMouseY() / scale);
         layout();
     }
 
@@ -506,7 +513,7 @@ public enum UIManager implements IViewParent {
 
         switch (lp.gravity & Gravity.HORIZONTAL_GRAVITY_MASK) {
             case Gravity.HORIZONTAL_CENTER:
-                childLeft = (width - measuredWidth) / 2 +
+                childLeft = (width - measuredWidth) >> 1 +
                         lp.leftMargin - lp.rightMargin;
                 break;
             case Gravity.RIGHT:
@@ -518,7 +525,7 @@ public enum UIManager implements IViewParent {
 
         switch (lp.gravity & Gravity.VERTICAL_GRAVITY_MASK) {
             case Gravity.VERTICAL_CENTER:
-                childTop = (height - measuredHeight) / 2 +
+                childTop = (height - measuredHeight) >> 1 +
                         lp.topMargin - lp.bottomMargin;
                 break;
             case Gravity.BOTTOM:
@@ -534,9 +541,8 @@ public enum UIManager implements IViewParent {
         }*/
         layoutRequested = false;
 
-        refreshMouse();
-
         ModernUI.LOGGER.debug(MARKER, "Layout performed in {} " + '\u03bc' + "s", (System.nanoTime() - startTime) / 1000);
+        focus();
     }
 
     void sDestroy() {
@@ -651,7 +657,7 @@ public enum UIManager implements IViewParent {
      *
      * @return mouse x
      */
-    public double getMouseX() {
+    public int getMouseX() {
         return mouseX;
     }
 
@@ -660,7 +666,7 @@ public enum UIManager implements IViewParent {
      *
      * @return mouse y
      */
-    public double getMouseY() {
+    public int getMouseY() {
         return mouseY;
     }
 
@@ -670,16 +676,16 @@ public enum UIManager implements IViewParent {
      * @param view view
      * @return relative mouse x
      */
-    public double getViewMouseX(@Nonnull View view) {
+    public int getViewMouseX(@Nonnull View view) {
         IViewParent parent = view.getParent();
-        double mouseX = this.mouseX;
+        float mouseX = this.mouseX;
 
         while (parent != this) {
             mouseX += parent.getScrollX();
             parent = parent.getParent();
         }
 
-        return mouseX;
+        return (int) mouseX;
     }
 
     /**
@@ -688,16 +694,16 @@ public enum UIManager implements IViewParent {
      * @param view view
      * @return relative mouse y
      */
-    public double getViewMouseY(@Nonnull View view) {
+    public int getViewMouseY(@Nonnull View view) {
         IViewParent parent = view.getParent();
-        double mouseY = this.mouseY;
+        float mouseY = this.mouseY;
 
         while (parent != this) {
             mouseY += parent.getScrollY();
             parent = parent.getParent();
         }
 
-        return mouseY;
+        return (int) mouseY;
     }
 
     /**

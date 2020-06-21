@@ -68,9 +68,9 @@ public abstract class ViewGroup extends View implements IViewParent {
     protected abstract void onLayout(boolean changed);
 
     @Override
-    protected boolean onUpdateMouseHover(double mouseX, double mouseY) {
-        final double mx = mouseX + getScrollX();
-        final double my = mouseY + getScrollY();
+    protected boolean onUpdateMouseHover(int mouseX, int mouseY) {
+        int mx = (int) (mouseX + getScrollX());
+        int my = (int) (mouseY + getScrollY());
         for (int i = childrenCount - 1; i >= 0; i--) {
             if (children[i].updateMouseHover(mx, my)) {
                 return true;
