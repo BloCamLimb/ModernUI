@@ -684,7 +684,7 @@ public class RelativeLayout extends ViewGroup {
 
     private void centerHorizontal(@Nonnull View child, @Nonnull LayoutParams params, int myWidth) {
         int childWidth = child.getMeasuredWidth();
-        int left = (myWidth - childWidth) / 2;
+        int left = (myWidth - childWidth) >> 1;
 
         params.mLeft = left;
         params.mRight = left + childWidth;
@@ -692,7 +692,7 @@ public class RelativeLayout extends ViewGroup {
 
     private void centerVertical(@Nonnull View child, @Nonnull LayoutParams params, int myHeight) {
         int childHeight = child.getMeasuredHeight();
-        int top = (myHeight - childHeight) / 2;
+        int top = (myHeight - childHeight) >> 1;
 
         params.mTop = top;
         params.mBottom = top + childHeight;

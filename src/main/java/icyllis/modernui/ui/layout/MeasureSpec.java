@@ -39,7 +39,7 @@ public class MeasureSpec {
      * @return measure specification
      */
     public static int makeMeasureSpec(int size, @Nonnull Mode mode) {
-        size = MathHelper.clamp(size, 0, 1 << MODE_SHIFT - 1);
+        //size = MathHelper.clamp(size, 0, 1 << MODE_SHIFT - 1);
         return (size & ~MODE_MASK) | (mode.ordinal() << MODE_SHIFT & MODE_MASK);
     }
 

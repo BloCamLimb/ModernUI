@@ -61,7 +61,6 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
     @Override
     public void resize(@Nonnull Minecraft minecraft, int width, int height) {
         super.resize(minecraft, width, height);
-        manager.sResize(width, height);
     }
 
     @Override
@@ -83,30 +82,30 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
 
     @Override
     public final void mouseMoved(double mouseX, double mouseY) {
-        manager.sMouseMoved(mouseX, mouseY);
+        manager.sMouseMoved((int) mouseX, (int) mouseY);
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         super.mouseClicked(mouseX, mouseY, mouseButton);
-        return manager.sMouseClicked(mouseX, mouseY, mouseButton);
+        return manager.sMouseClicked((int) mouseX, (int) mouseY, mouseButton);
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
         super.mouseReleased(mouseX, mouseY, mouseButton);
-        return manager.sMouseReleased(mouseX, mouseY, mouseButton);
+        return manager.sMouseReleased((int) mouseX, (int) mouseY, mouseButton);
     }
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double deltaX, double deltaY) {
         super.mouseDragged(mouseX, mouseY, mouseButton, deltaX, deltaY);
-        return manager.sMouseDragged(mouseX, mouseY, deltaX, deltaY);
+        return manager.sMouseDragged((int) mouseX, (int) mouseY, deltaX, deltaY);
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        return manager.sMouseScrolled(mouseX, mouseY, delta);
+        return manager.sMouseScrolled((int) mouseX, (int) mouseY, delta);
     }
 
     @Override

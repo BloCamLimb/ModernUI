@@ -149,7 +149,7 @@ public class ScrollBar extends View {
     }*/
 
     @Override
-    protected boolean onUpdateMouseHover(double mouseX, double mouseY) {
+    protected boolean onUpdateMouseHover(int mouseX, int mouseY) {
         boolean prev = barHovered;
         barHovered = isMouseOnBar(mouseY);
         if (prev != barHovered) {
@@ -176,7 +176,7 @@ public class ScrollBar extends View {
     }
 
     @Override
-    protected boolean onMouseLeftClicked(double mouseX, double mouseY) {
+    protected boolean onMouseLeftClicked(int mouseX, int mouseY) {
         if (barHovered) {
             isDragging = true;
             UIManager.INSTANCE.setDragging(this);
@@ -202,7 +202,7 @@ public class ScrollBar extends View {
     }
 
     @Override
-    protected boolean onMouseDragged(double mouseX, double mouseY, double deltaX, double deltaY) {
+    protected boolean onMouseDragged(int mouseX, int mouseY, double deltaX, double deltaY) {
         /*if (barY + deltaY >= y && barY - y + deltaY <= getMaxDragLength()) {
             draggingY += deltaY;
         }

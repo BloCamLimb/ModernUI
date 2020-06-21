@@ -20,6 +20,7 @@ package icyllis.modernui.ui.example;
 
 import icyllis.modernui.ui.layout.FrameLayout;
 import icyllis.modernui.ui.layout.Gravity;
+import icyllis.modernui.ui.layout.LinearLayout;
 import icyllis.modernui.ui.master.Fragment;
 import icyllis.modernui.ui.master.View;
 

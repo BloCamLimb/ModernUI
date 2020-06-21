@@ -62,7 +62,7 @@ public class TestLinearLayout extends LinearLayout {
     }
 
     @Override
-    protected boolean onMouseLeftClicked(double mouseX, double mouseY) {
+    protected boolean onMouseLeftClicked(int mouseX, int mouseY) {
         ModernUI.LOGGER.info("left click");
         return true;
     }
