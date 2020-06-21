@@ -170,4 +170,111 @@ public class Gravity {
     public static final int VERTICAL_GRAVITY_MASK   = (AXIS_SPECIFIED |
             AXIS_PULL_BEFORE | AXIS_PULL_AFTER) << AXIS_Y_SHIFT;
 
+
+    /**
+     * Apply a gravity constant to an object.
+     *
+     * @param gravity   The desired placement of the object, as defined by the
+     *                  constants in this class.
+     * @param w         The horizontal size of the object.
+     * @param h         The vertical size of the object.
+     * @param container The frame of the containing space, in which the object
+     *                  will be placed.  Should be large enough to contain the
+     *                  width and height of the object.
+     * @param xAdj      Offset to apply to the X axis.  If gravity is LEFT this
+     *                  pushes it to the right; if gravity is RIGHT it pushes it to
+     *                  the left; if gravity is CENTER_HORIZONTAL it pushes it to the
+     *                  right or left; otherwise it is ignored.
+     * @param yAdj      Offset to apply to the Y axis.  If gravity is TOP this pushes
+     *                  it down; if gravity is BOTTOM it pushes it up; if gravity is
+     *                  CENTER_VERTICAL it pushes it down or up; otherwise it is
+     *                  ignored.
+     * @param outRect   Receives the computed frame of the object in its
+     *                  container.
+     */
+    public static void apply(int gravity, int w, int h, int[] container,
+                             int xAdj, int yAdj, int[] outRect) {
+        switch (gravity & ((AXIS_PULL_BEFORE | AXIS_PULL_AFTER) << AXIS_X_SHIFT)) {
+            case 0:
+                outRect[0] = container[0]
+                        + ((container[2] - container[0] - w) / 2) + xAdj;
+                outRect[2] = outRect[0] + w;
+                if ((gravity & (AXIS_CLIP << AXIS_X_SHIFT))
+                        == (AXIS_CLIP << AXIS_X_SHIFT)) {
+                    if (outRect[0] < container[0]) {
+                        outRect[0] = container[0];
+                    }
+                    if (outRect[2] > container[2]) {
+                        outRect[2] = container[2];
+                    }
+                }
+                break;
+            case AXIS_PULL_BEFORE << AXIS_X_SHIFT:
+                outRect[0] = container[0] + xAdj;
+                outRect[2] = outRect[0] + w;
+                if ((gravity & (AXIS_CLIP << AXIS_X_SHIFT))
+                        == (AXIS_CLIP << AXIS_X_SHIFT)) {
+                    if (outRect[2] > container[2]) {
+                        outRect[2] = container[2];
+                    }
+                }
+                break;
+            case AXIS_PULL_AFTER << AXIS_X_SHIFT:
+                outRect[2] = container[2] - xAdj;
+                outRect[0] = outRect[2] - w;
+                if ((gravity & (AXIS_CLIP << AXIS_X_SHIFT))
+                        == (AXIS_CLIP << AXIS_X_SHIFT)) {
+                    if (outRect[0] < container[0]) {
+                        outRect[0] = container[0];
+                    }
+                }
+                break;
+            default:
+                outRect[0] = container[0] + xAdj;
+                outRect[2] = container[2] + xAdj;
+                break;
+        }
+
+        switch (gravity & ((AXIS_PULL_BEFORE | AXIS_PULL_AFTER) << AXIS_Y_SHIFT)) {
+            case 0:
+                outRect[1] = container[1]
+                        + ((container[3] - container[1] - h) / 2) + yAdj;
+                outRect[3] = outRect[1] + h;
+                if ((gravity & (AXIS_CLIP << AXIS_Y_SHIFT))
+                        == (AXIS_CLIP << AXIS_Y_SHIFT)) {
+                    if (outRect[1] < container[1]) {
+                        outRect[1] = container[1];
+                    }
+                    if (outRect[3] > container[3]) {
+                        outRect[3] = container[3];
+                    }
+                }
+                break;
+            case AXIS_PULL_BEFORE << AXIS_Y_SHIFT:
+                outRect[1] = container[1] + yAdj;
+                outRect[3] = outRect[1] + h;
+                if ((gravity & (AXIS_CLIP << AXIS_Y_SHIFT))
+                        == (AXIS_CLIP << AXIS_Y_SHIFT)) {
+                    if (outRect[3] > container[3]) {
+                        outRect[3] = container[3];
+                    }
+                }
+                break;
+            case AXIS_PULL_AFTER << AXIS_Y_SHIFT:
+                outRect[3] = container[3] - yAdj;
+                outRect[1] = outRect[3] - h;
+                if ((gravity & (AXIS_CLIP << AXIS_Y_SHIFT))
+                        == (AXIS_CLIP << AXIS_Y_SHIFT)) {
+                    if (outRect[1] < container[1]) {
+                        outRect[1] = container[1];
+                    }
+                }
+                break;
+            default:
+                outRect[1] = container[1] + yAdj;
+                outRect[3] = container[3] + yAdj;
+                break;
+        }
+    }
+
 }

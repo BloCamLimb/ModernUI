@@ -16,23 +16,16 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.ui.example;
+package icyllis.modernui.ui.layout;
 
-import icyllis.modernui.ui.layout.FrameLayout;
-import icyllis.modernui.ui.layout.Gravity;
-import icyllis.modernui.ui.master.Fragment;
-import icyllis.modernui.ui.master.View;
+public class Orientation {
 
-import javax.annotation.Nullable;
-
-public class TestFragment extends Fragment {
-
-    @Nullable
-    @Override
-    public View createView() {
-        View view = new TestRelativeLayout();
-        // main view can use FrameLayout params
-        view.setLayoutParams(new FrameLayout.LayoutParams(100, 200, Gravity.CENTER));
-        return view;
-    }
+    /**
+     * Orientation horizontal
+     */
+    public static final int HORIZONTAL = 0;
+    /**
+     * Orientation vertical
+     */
+    public static final int VERTICAL   = 1;
 }

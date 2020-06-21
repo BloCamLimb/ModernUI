@@ -97,8 +97,16 @@ public class MeasureSpec {
             return this == UNSPECIFIED;
         }
 
+        public boolean notUnspecified() {
+            return this != UNSPECIFIED;
+        }
+
         public boolean isExactly() {
             return this == EXACTLY;
+        }
+
+        public boolean notExactly() {
+            return this != EXACTLY;
         }
 
         public boolean isAtMost() {

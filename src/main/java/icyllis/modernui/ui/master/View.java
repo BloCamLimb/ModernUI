@@ -25,6 +25,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -64,7 +65,7 @@ public class View {
      * View visibility.
      * {@link #setVisibility(int)}
      * {@link #getVisibility()}
-     *
+     * <p>
      * This view is visible, as view's default value
      */
     public static final int VISIBLE   = 0x0;
@@ -217,7 +218,7 @@ public class View {
     }
 
     /**
-     * Layout child views
+     * Layout child views, call from {@link #layout(int, int, int, int)}
      *
      * @param changed whether the size or position of this view was changed
      */
@@ -397,6 +398,7 @@ public class View {
      */
     public void setLayoutParams(@Nonnull ViewGroup.LayoutParams params) {
         layoutParams = params;
+        requestLayout();
     }
 
     public int getMinWidth() {
@@ -674,6 +676,36 @@ public class View {
     }
 
     /**
+     * Finds the first descendant view with the given ID, the view itself if
+     * the ID matches {@link #getId()}, or {@code null} if the ID is invalid
+     * (< 0) or there is no matching view in the hierarchy.
+     * <p>
+     * <strong>Note:</strong> In most cases -- depending on compiler support --
+     * the resulting view is automatically cast to the target class type. If
+     * the target class type is unconstrained, an explicit cast may be
+     * necessary.
+     *
+     * @param id the ID to search for
+     * @return a view with given ID if found, or {@code null} otherwise
+     */
+    @Nullable
+    public final <T extends View> T findViewById(int id) {
+        if (id == NO_ID) {
+            return null;
+        }
+        return findViewTraversal(id);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Nullable
+    protected <T extends View> T findViewTraversal(int id) {
+        if (id == this.id) {
+            return (T) this;
+        }
+        return null;
+    }
+
+    /**
      * Check if mouse hover this view
      * This is system method and can't be override
      *
@@ -683,7 +715,7 @@ public class View {
      */
     final boolean updateMouseHover(double mouseX, double mouseY) {
         if (isInView(mouseX, mouseY)) {
-            if (dispatchMouseHover(mouseX, mouseY)) {
+            if (onUpdateMouseHover(mouseX, mouseY)) {
                 return true;
             }
             UIManager.INSTANCE.setHoveredView(this);
@@ -702,9 +734,10 @@ public class View {
      *
      * @param mouseX relative mouse X pos
      * @param mouseY relative mouse Y pos
-     * @return return {@code true} if certain child view hovered
+     * @return {@code true} if certain child view hovered
+     * {@code false} will make this view hovered
      */
-    protected boolean dispatchMouseHover(double mouseX, double mouseY) {
+    protected boolean onUpdateMouseHover(double mouseX, double mouseY) {
         return false;
     }
 

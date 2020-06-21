@@ -31,10 +31,10 @@ import java.util.List;
 
 public class ConfigManager {
 
-    public static final Client CLIENT;
+    public static final  Client          CLIENT;
     private static final ForgeConfigSpec CLIENT_SPEC;
 
-    public static final Common COMMON;
+    public static final  Common          COMMON;
     private static final ForgeConfigSpec COMMON_SPEC;
 
     static {
@@ -56,7 +56,6 @@ public class ConfigManager {
         FMLJavaModLoadingContext.get().getModEventBus().addListener(ConfigManager::reload);
     }
 
-
     static void reload(@Nonnull ModConfig.ModConfigEvent event) {
         ForgeConfigSpec spec = event.getConfig().getSpec();
         if (spec == CLIENT_SPEC) {
@@ -73,7 +72,7 @@ public class ConfigManager {
         //public boolean keepRunningInScreen;
         public boolean blurScreenBackground;
 
-        public String preferredFontName;
+        public String  preferredFontName;
         public boolean enableGlobalFontRenderer;
         public boolean allowFontShadow;
 
@@ -83,8 +82,8 @@ public class ConfigManager {
         private final ForgeConfigSpec.ConfigValue<List<? extends String>> blurScreenExclusionsV;
 
         private final ForgeConfigSpec.ConfigValue<String> preferredFontNameV;
-        private final ForgeConfigSpec.BooleanValue enableGlobalFontRendererV;
-        private final ForgeConfigSpec.BooleanValue allowFontShadowV;
+        private final ForgeConfigSpec.BooleanValue        enableGlobalFontRendererV;
+        private final ForgeConfigSpec.BooleanValue        allowFontShadowV;
 
         private Client(@Nonnull ForgeConfigSpec.Builder builder) {
             builder.comment("Screen Config")

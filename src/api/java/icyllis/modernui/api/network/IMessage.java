@@ -16,9 +16,8 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.system.network;
+package icyllis.modernui.api.network;
 
-import icyllis.modernui.system.NetworkManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
@@ -30,8 +29,9 @@ import net.minecraftforge.fml.network.NetworkEvent;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
+@SuppressWarnings("unused")
 public interface IMessage {
 
     /**
@@ -62,12 +62,16 @@ public interface IMessage {
 
         private final NetworkEvent.Context ctx;
 
-        public SimpleContext(NetworkEvent.Context ctx) {
+        private final BiConsumer<IMessage, NetworkEvent.Context> replier;
+
+        public SimpleContext(NetworkEvent.Context ctx, BiConsumer<IMessage, NetworkEvent.Context> replier) {
             this.ctx = ctx;
+            this.replier = replier;
         }
 
         /**
-         * Get current player for bi-directional packet
+         * Get current player when you don't know the packet should
+         * be handled on server or client
          */
         @Nullable
         public PlayerEntity getPlayer() {
@@ -79,7 +83,8 @@ public interface IMessage {
         }
 
         /**
-         * Get client player on client side
+         * Get client player
+         * Call this on client side
          */
         @OnlyIn(Dist.CLIENT)
         @Nullable
@@ -88,7 +93,8 @@ public interface IMessage {
         }
 
         /**
-         * Get who sends this packet on server side
+         * Get who sends this packet to server
+         * Call this on server side
          */
         @Nullable
         public ServerPlayerEntity getServerPlayer() {
@@ -103,27 +109,21 @@ public interface IMessage {
         }
 
         /**
-         * Enqueue a async work to main thread or run immediately with appropriate player
-         */
-        public CompletableFuture<Void> enqueueWork(Consumer<PlayerEntity> consumer) {
-            return ctx.enqueueWork(() -> consumer.accept(getPlayer()));
-        }
-
-        /**
-         * Reply a message to sender or server
+         * Reply a message to sender or server according to network context
          *
          * @param msg   message
          * @param <MSG> message type
          */
         public <MSG extends IMessage> void reply(MSG msg) {
-            NetworkManager.INSTANCE.reply(msg, ctx);
+            replier.accept(msg, ctx);
         }
 
         /**
          * Get original context if needed
          */
-        public NetworkEvent.Context getContext() {
+        public NetworkEvent.Context getOriginalContext() {
             return ctx;
         }
     }
+
 }

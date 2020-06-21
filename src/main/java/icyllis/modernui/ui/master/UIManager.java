@@ -484,6 +484,7 @@ public enum UIManager implements IViewParent {
      * {@link #requestLayout()}
      */
     private void layout() {
+        long startTime = System.nanoTime();
         // main view should be forced to layout as FrameLayout
         int widthSpec = MeasureSpec.makeMeasureSpec(width, MeasureSpec.Mode.EXACTLY);
         int heightSpec = MeasureSpec.makeMeasureSpec(height, MeasureSpec.Mode.EXACTLY);
@@ -535,7 +536,7 @@ public enum UIManager implements IViewParent {
 
         refreshMouse();
 
-        ModernUI.LOGGER.debug(MARKER, "Actively Layout Performed");
+        ModernUI.LOGGER.debug(MARKER, "Layout performed in {} " + '\u03bc' + "s", (System.nanoTime() - startTime) / 1000);
     }
 
     void sDestroy() {

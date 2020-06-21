@@ -62,11 +62,11 @@ public class ScrollView extends ViewGroup {
     }
 
     @Override
-    protected boolean dispatchMouseHover(double mouseX, double mouseY) {
+    protected boolean onUpdateMouseHover(double mouseX, double mouseY) {
         /*if (scrollBar.updateMouseHover(mouseX, mouseY)) {
             return true;
         }*/
-        return super.dispatchMouseHover(mouseX, mouseY);
+        return super.onUpdateMouseHover(mouseX, mouseY);
     }
 
     /*@Override

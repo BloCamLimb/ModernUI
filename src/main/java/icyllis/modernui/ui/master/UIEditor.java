@@ -18,6 +18,7 @@
 
 package icyllis.modernui.ui.master;
 
+import icyllis.modernui.graphics.font.TextAlign;
 import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.system.ConfigManager;
@@ -105,6 +106,7 @@ public enum UIEditor {
         }
         canvas.setRGBA(0.5f, 0.5f, 0.5f, 0.25f);
         canvas.drawRoundedRect(1, 1, 120, bottom, 4);
+        canvas.setTextAlign(TextAlign.LEFT);
 
         canvas.setColor(Color3i.BLUE_C, 1);
         canvas.drawText(TextFormatting.GOLD + "Gui Editing Mode: ON", 4, 3);
@@ -180,18 +182,24 @@ public enum UIEditor {
 
     @SubscribeEvent
     void gKeyInput(@Nonnull InputEvent.KeyInputEvent event) {
-        if (ConfigManager.COMMON.isEnableDeveloperMode() && event.getAction() == GLFW.GLFW_PRESS) {
-            if (Screen.hasControlDown() && Screen.hasShiftDown()) {
-                if (event.getKey() == GLFW.GLFW_KEY_T && UIManager.INSTANCE.getModernScreen() != null) {
+        if (!ConfigManager.COMMON.isEnableDeveloperMode() || event.getAction() != GLFW.GLFW_PRESS) {
+            return;
+        }
+        if (!Screen.hasControlDown() || !Screen.hasShiftDown()) {
+            return;
+        }
+        switch (event.getKey()) {
+            case GLFW.GLFW_KEY_T:
+                if (UIManager.INSTANCE.getModernScreen() != null) {
                     iterateWorking();
                 }
-                if (event.getKey() == GLFW.GLFW_KEY_P) {
-                    if (UIManager.INSTANCE.getModernScreen() == null && Minecraft.getInstance().currentScreen != null) {
-                        ModernUI.LOGGER.debug(UIManager.MARKER, "Opened gui class name : {}",
-                                Minecraft.getInstance().currentScreen.getClass().getName());
-                    }
+                break;
+            case GLFW.GLFW_KEY_P:
+                if (UIManager.INSTANCE.getModernScreen() == null && Minecraft.getInstance().currentScreen != null) {
+                    ModernUI.LOGGER.debug(UIManager.MARKER, "Open gui class name : {}",
+                            Minecraft.getInstance().currentScreen.getClass().getName());
                 }
-            }
+                break;
         }
     }
 }

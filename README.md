@@ -14,6 +14,10 @@
 ![a](https://i.loli.net/2020/05/15/fYAow29d4JtqaGu.png)
 ![b](https://i.loli.net/2020/04/10/LDBFc1qo5wtnS8u.png)
 ### Adding Modern UI to your project
+#### Development environment
+- Java 8u251
+- Forge 1.15.2-31.2.0
+#### Gradle configuration
 Add followings to `build.gradle`
 ```
 plugins {
@@ -25,5 +29,5 @@ dependencies {
     compile fg.deobf("curse.maven:Modern-UI:[fileId]")
 }
 ```
-Latest development version: 1.15.2-1.5.9.56 (File Id: 2966106)
+Latest version: 1.15.2-1.5.9.56 (File Id: 2966106)
 

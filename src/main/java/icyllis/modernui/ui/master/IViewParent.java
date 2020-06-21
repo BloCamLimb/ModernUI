@@ -18,13 +18,9 @@
 
 package icyllis.modernui.ui.master;
 
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-
 /**
- * Defines a view that can act as a parent of another view
+ * Defines a view that can act as a parent of a view
  */
-@OnlyIn(Dist.CLIENT)
 public interface IViewParent {
 
     /**

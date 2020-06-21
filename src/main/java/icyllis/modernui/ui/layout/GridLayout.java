@@ -23,12 +23,6 @@ import icyllis.modernui.ui.master.ViewGroup;
 public class GridLayout extends ViewGroup {
 
     /**
-     * Orientation
-     */
-    public static final int HORIZONTAL = LinearLayout.HORIZONTAL;
-    public static final int VERTICAL   = LinearLayout.VERTICAL;
-
-    /**
      * The constant used to indicate that a value is undefined.
      * Fields can use this value to indicate that their values
      * have not yet been set. Similarly, methods can return this value
