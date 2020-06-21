@@ -30,12 +30,6 @@ import javax.annotation.Nullable;
 public class LinearLayout extends ViewGroup {
 
     /**
-     * Orientation
-     */
-    public static final int HORIZONTAL = 0;
-    public static final int VERTICAL   = 1;
-
-    /**
      * Don't show any dividers.
      */
     public static final int SHOW_DIVIDER_NONE      = 0;
@@ -53,28 +47,51 @@ public class LinearLayout extends ViewGroup {
     public static final int SHOW_DIVIDER_END       = 1 << 2;
 
 
+    /**
+     * {@link #setOrientation(int)}
+     */
     private int orientation;
 
+    /**
+     * {@link #setGravity(int)}
+     */
     private int gravity = Gravity.TOP_LEFT;
 
-    private int totalLength;
-
+    /**
+     * {@link #setWeightSum(float)}
+     */
     private float weightSum;
 
+    // inner
+    private int totalLength;
+
+    // inner
     private int[] maxAscent;
     private int[] maxDescent;
 
+    // inner
     private static final int INDEX_CENTER_VERTICAL = 0;
     private static final int INDEX_TOP             = 1;
     private static final int INDEX_BOTTOM          = 2;
     private static final int INDEX_FILL            = 3;
 
+    /**
+     * {@link #setDivider(Drawable)}
+     */
     private Drawable divider;
 
+    /**
+     * {@link #setShowDividers(int)}
+     * {@link #setDividerPadding(int)}
+     */
     private int showDividers;
     private int dividerWidth;
     private int dividerHeight;
     private int dividerPadding;
+
+    public LinearLayout() {
+
+    }
 
     /**
      * @return {@code true} if this layout is currently configured to show at least one
@@ -169,10 +186,35 @@ public class LinearLayout extends ViewGroup {
         return dividerPadding;
     }
 
+    /**
+     * Defines the desired weights sum. If unspecified the weights sum is computed
+     * at layout time by adding the layout_weight of each child.
+     * <p>
+     * This can be used for instance to give a single child 50% of the total
+     * available space by giving it a layout_weight of 0.5 and setting the
+     * weightSum to 1.0.
+     *
+     * @param weightSum a number greater than 0.0f, or a number lower than or equals
+     *                  to 0.0f if the weight sum should be computed from the children's weight
+     */
+    public void setWeightSum(float weightSum) {
+        this.weightSum = Math.max(0.0f, weightSum);
+    }
+
+    /**
+     * Returns the desired weights sum.
+     *
+     * @return A number greater than 0.0f if the weight sum is defined, or
+     * a number lower than or equals to 0.0f if not weight sum is to be used.
+     */
+    public float getWeightSum() {
+        return weightSum;
+    }
+
     @Override
     protected void onDraw(@Nonnull Canvas canvas, float time) {
         if (divider != null) {
-            if (orientation == VERTICAL) {
+            if (orientation == Orientation.VERTICAL) {
                 drawDividersVertical(canvas);
             } else {
                 drawDividersHorizontal(canvas);
@@ -265,7 +307,7 @@ public class LinearLayout extends ViewGroup {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        if (orientation == VERTICAL) {
+        if (orientation == Orientation.VERTICAL) {
             measureVertical(widthMeasureSpec, heightMeasureSpec);
         } else {
             measureHorizontal(widthMeasureSpec, heightMeasureSpec);
@@ -281,6 +323,8 @@ public class LinearLayout extends ViewGroup {
 
         boolean allFillParent = true;
         float totalWeight = 0;
+
+        boolean began = false;
 
         final int count = getChildCount();
 
@@ -301,8 +345,16 @@ public class LinearLayout extends ViewGroup {
             }
 
             ++nonSkippedChildCount;
-            if (hasDividerBeforeChildAt(i)) {
-                totalLength += dividerHeight;
+
+            if (!began) {
+                if ((showDividers & SHOW_DIVIDER_BEGINNING) != 0) {
+                    totalLength += dividerHeight;
+                }
+                began = true;
+            } else {
+                if ((showDividers & SHOW_DIVIDER_MIDDLE) != 0) {
+                    totalLength += dividerHeight;
+                }
             }
 
             LayoutParams lp = (LayoutParams) child.getLayoutParams();
@@ -348,7 +400,7 @@ public class LinearLayout extends ViewGroup {
             }
 
             boolean matchWidthLocally = false;
-            if (!widthMode.isExactly() && lp.width == LayoutParams.MATCH_PARENT) {
+            if (widthMode.notExactly() && lp.width == LayoutParams.MATCH_PARENT) {
                 // The width of the linear layout will scale, and at least one
                 // child said it wanted to match our width. Set a flag
                 // indicating that we need to remeasure at least that view when
@@ -373,8 +425,8 @@ public class LinearLayout extends ViewGroup {
             }
         }
 
-        // add last
-        if (nonSkippedChildCount > 0 && hasDividerBeforeChildAt(count)) {
+        // add last, if the beginning added and to show end
+        if (nonSkippedChildCount > 0 && (showDividers & SHOW_DIVIDER_END) != 0) {
             totalLength += dividerHeight;
         }
 
@@ -430,7 +482,7 @@ public class LinearLayout extends ViewGroup {
                 int measuredWidth = child.getMeasuredWidth() + margin;
                 maxWidth = Math.max(maxWidth, measuredWidth);
 
-                boolean matchWidthLocally = !widthMode.isExactly() &&
+                boolean matchWidthLocally = widthMode.notExactly() &&
                         lp.width == LayoutParams.MATCH_PARENT;
 
                 alternativeMaxWidth = Math.max(alternativeMaxWidth,
@@ -445,7 +497,7 @@ public class LinearLayout extends ViewGroup {
             alternativeMaxWidth = Math.max(alternativeMaxWidth, weightedMaxWidth);
         }
 
-        if (!allFillParent && !widthMode.isExactly()) {
+        if (!allFillParent && widthMode.notExactly()) {
             maxWidth = alternativeMaxWidth;
         }
 
@@ -487,6 +539,8 @@ public class LinearLayout extends ViewGroup {
         boolean allFillParent = true;
         float totalWeight = 0;
 
+        boolean began = false;
+
         final int count = getChildCount();
 
         final MeasureSpec.Mode widthMode = MeasureSpec.getMode(widthMeasureSpec);
@@ -518,8 +572,15 @@ public class LinearLayout extends ViewGroup {
 
             ++nonSkippedChildCount;
 
-            if (hasDividerBeforeChildAt(i)) {
-                totalLength += dividerWidth;
+            if (!began) {
+                if ((showDividers & SHOW_DIVIDER_BEGINNING) != 0) {
+                    totalLength += dividerWidth;
+                }
+                began = true;
+            } else {
+                if ((showDividers & SHOW_DIVIDER_MIDDLE) != 0) {
+                    totalLength += dividerWidth;
+                }
             }
 
             LayoutParams lp = (LayoutParams) child.getLayoutParams();
@@ -569,7 +630,7 @@ public class LinearLayout extends ViewGroup {
             }
 
             boolean matchHeightLocally = false;
-            if (!heightMode.isExactly() && lp.height == LayoutParams.MATCH_PARENT) {
+            if (heightMode.notExactly() && lp.height == LayoutParams.MATCH_PARENT) {
                 // The height of the linear layout will scale, and at least one
                 // child said it wanted to match our height. Set a flag indicating that
                 // we need to remeasure at least that view when we know our height.
@@ -594,8 +655,8 @@ public class LinearLayout extends ViewGroup {
             }
         }
 
-        // add last
-        if (nonSkippedChildCount > 0 && hasDividerBeforeChildAt(count)) {
+        // add last, if the beginning added and to show end
+        if (nonSkippedChildCount > 0 && (showDividers & SHOW_DIVIDER_END) != 0) {
             totalLength += dividerWidth;
         }
 
@@ -674,7 +735,7 @@ public class LinearLayout extends ViewGroup {
                             lp.leftMargin + lp.rightMargin);
                 }
 
-                boolean matchHeightLocally = !heightMode.isExactly() &&
+                boolean matchHeightLocally = heightMode.notExactly() &&
                         lp.height == LayoutParams.MATCH_PARENT;
 
                 int margin = lp.topMargin + lp.bottomMargin;
@@ -704,7 +765,7 @@ public class LinearLayout extends ViewGroup {
             alternativeMaxHeight = Math.max(alternativeMaxHeight, weightedMaxHeight);
         }
 
-        if (!allFillParent && !heightMode.isExactly()) {
+        if (!allFillParent && heightMode.notExactly()) {
             maxHeight = alternativeMaxHeight;
         }
 
@@ -744,7 +805,9 @@ public class LinearLayout extends ViewGroup {
      *
      * @param childIndex index of child to check for preceding divider
      * @return true if there should be a divider before the child at childIndex
+     * @deprecated performance not good enough
      */
+    @Deprecated
     private boolean hasDividerBeforeChildAt(int childIndex) {
         if (childIndex == getChildCount()) {
             // whether the end divider should draw
@@ -759,6 +822,7 @@ public class LinearLayout extends ViewGroup {
         }
     }
 
+    @Deprecated
     private boolean allViewsAreGoneBefore(int childIndex) {
         for (int i = childIndex - 1; i >= 0; i--) {
             View child = getChildAt(i);
@@ -771,7 +835,7 @@ public class LinearLayout extends ViewGroup {
 
     @Override
     protected void onLayout(boolean changed) {
-        if (orientation == VERTICAL) {
+        if (orientation == Orientation.VERTICAL) {
             layoutVertical();
         } else {
             layoutHorizontal();
@@ -807,6 +871,8 @@ public class LinearLayout extends ViewGroup {
                 break;
         }
 
+        boolean began = false;
+
         for (int i = 0; i < count; i++) {
             View child = getChildAt(i);
             if (child.getVisibility() != GONE) {
@@ -835,8 +901,15 @@ public class LinearLayout extends ViewGroup {
                         break;
                 }
 
-                if (hasDividerBeforeChildAt(i)) {
-                    childTop += dividerHeight;
+                if (!began) {
+                    if ((showDividers & SHOW_DIVIDER_BEGINNING) != 0) {
+                        childTop += dividerHeight;
+                    }
+                    began = true;
+                } else {
+                    if ((showDividers & SHOW_DIVIDER_MIDDLE) != 0) {
+                        childTop += dividerHeight;
+                    }
                 }
 
                 childTop += lp.topMargin;
@@ -877,6 +950,8 @@ public class LinearLayout extends ViewGroup {
                 break;
         }
 
+        boolean began = false;
+
         for (int i = 0; i < count; i++) {
             View child = getChildAt(i);
             if (child.getVisibility() != GONE) {
@@ -905,8 +980,15 @@ public class LinearLayout extends ViewGroup {
                         break;
                 }
 
-                if (hasDividerBeforeChildAt(i)) {
-                    childLeft += dividerWidth;
+                if (!began) {
+                    if ((showDividers & SHOW_DIVIDER_BEGINNING) != 0) {
+                        childLeft += dividerWidth;
+                    }
+                    began = true;
+                } else {
+                    if ((showDividers & SHOW_DIVIDER_MIDDLE) != 0) {
+                        childLeft += dividerWidth;
+                    }
                 }
 
                 childLeft += lp.leftMargin;
@@ -918,6 +1000,11 @@ public class LinearLayout extends ViewGroup {
         }
     }
 
+    /**
+     * Should the layout be a column or a row.
+     *
+     * @param orientation {@link Orientation}, default is HORIZONTAL
+     */
     public void setOrientation(int orientation) {
         if (this.orientation != orientation) {
             this.orientation = orientation;
@@ -929,6 +1016,14 @@ public class LinearLayout extends ViewGroup {
         return orientation;
     }
 
+    /**
+     * Describes how the child views are positioned. Defaults to GRAVITY_TOP. If
+     * this layout has a VERTICAL orientation, this controls where all the child
+     * views are placed if there is extra vertical space. If this layout has a
+     * HORIZONTAL orientation, this controls the alignment of the children.
+     *
+     * @param gravity See {@link Gravity}
+     */
     public void setGravity(int gravity) {
         if (this.gravity != gravity) {
             if ((gravity & Gravity.HORIZONTAL_GRAVITY_MASK) == 0) {
@@ -940,6 +1035,22 @@ public class LinearLayout extends ViewGroup {
             }
 
             this.gravity = gravity;
+            requestLayout();
+        }
+    }
+
+    public void setHorizontalGravity(int horizontalGravity) {
+        horizontalGravity = horizontalGravity & Gravity.HORIZONTAL_GRAVITY_MASK;
+        if ((gravity & Gravity.HORIZONTAL_GRAVITY_MASK) != horizontalGravity) {
+            gravity = (gravity & ~Gravity.HORIZONTAL_GRAVITY_MASK) | horizontalGravity;
+            requestLayout();
+        }
+    }
+
+    public void setVerticalGravity(int verticalGravity) {
+        verticalGravity = verticalGravity & Gravity.VERTICAL_GRAVITY_MASK;
+        if ((gravity & Gravity.VERTICAL_GRAVITY_MASK) != verticalGravity) {
+            gravity = (gravity & ~Gravity.VERTICAL_GRAVITY_MASK) | verticalGravity;
             requestLayout();
         }
     }
@@ -962,7 +1073,7 @@ public class LinearLayout extends ViewGroup {
     @Nonnull
     @Override
     protected ViewGroup.LayoutParams createDefaultLayoutParams() {
-        if (orientation == HORIZONTAL) {
+        if (orientation == Orientation.HORIZONTAL) {
             return new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
         }
         return new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
@@ -1037,5 +1148,4 @@ public class LinearLayout extends ViewGroup {
             return new LayoutParams(this);
         }
     }
-
 }

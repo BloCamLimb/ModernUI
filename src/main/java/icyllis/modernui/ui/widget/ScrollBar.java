@@ -149,7 +149,7 @@ public class ScrollBar extends View {
     }*/
 
     @Override
-    protected boolean dispatchMouseHover(double mouseX, double mouseY) {
+    protected boolean onUpdateMouseHover(double mouseX, double mouseY) {
         boolean prev = barHovered;
         barHovered = isMouseOnBar(mouseY);
         if (prev != barHovered) {
@@ -159,7 +159,7 @@ public class ScrollBar extends View {
                 startTime = UIManager.INSTANCE.getDrawingTime() + 10.0f;
             }
         }
-        return super.dispatchMouseHover(mouseX, mouseY);
+        return super.onUpdateMouseHover(mouseX, mouseY);
     }
 
     @Override

@@ -18,11 +18,13 @@
 
 package icyllis.modernui.system;
 
-import icyllis.modernui.system.network.IMessage;
+import icyllis.modernui.api.network.IMessage;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.network.NetworkDirection;
 import net.minecraftforge.fml.network.NetworkEvent;
@@ -72,7 +74,7 @@ public enum NetworkManager {
                 .consumer((BiConsumer<MSG, Supplier<NetworkEvent.Context>>) this::handle)
                 .add();*/
         synchronized (this) {
-            CHANNEL.registerMessage(++index, type, IMessage::encode, buf -> decode(factory, buf), this::handle, Optional.ofNullable(direction));
+            CHANNEL.registerMessage(index++, type, IMessage::encode, buf -> decode(factory, buf), this::handle, Optional.ofNullable(direction));
         }
     }
 
@@ -84,9 +86,20 @@ public enum NetworkManager {
     }
 
     private <MSG extends IMessage> void handle(@Nonnull MSG message, @Nonnull Supplier<NetworkEvent.Context> ctx) {
-        IMessage.SimpleContext simple = new IMessage.SimpleContext(ctx.get());
+        IMessage.SimpleContext simple = new IMessage.SimpleContext(ctx.get(), this::reply);
         message.handle(simple);
         ctx.get().setPacketHandled(true);
+    }
+
+    /**
+     * Reply a message depend on network context
+     *
+     * @param message message to reply
+     * @param context network context
+     * @param <MSG>   message type
+     */
+    private <MSG extends IMessage> void reply(MSG message, @Nonnull NetworkEvent.Context context) {
+        CHANNEL.reply(message, context);
     }
 
     /**
@@ -95,6 +108,7 @@ public enum NetworkManager {
      * @param message message to send
      * @param <MSG>   message type
      */
+    @OnlyIn(Dist.CLIENT)
     public <MSG extends IMessage> void sendToServer(MSG message) {
         CHANNEL.sendToServer(message);
     }
@@ -111,7 +125,7 @@ public enum NetworkManager {
         try {
             sendToPlayer(message, (ServerPlayerEntity) player);
         } catch (ClassCastException ignored) {
-            ModernUI.LOGGER.warn(ModernUI.MARKER, "Messages can't be sent to an illegal player");
+            ModernUI.LOGGER.fatal(ModernUI.MARKER, "Messages can't be sent to an illegal player");
         }
     }
 
@@ -124,17 +138,6 @@ public enum NetworkManager {
      */
     public <MSG extends IMessage> void sendToPlayer(MSG message, @Nonnull ServerPlayerEntity playerMP) {
         CHANNEL.sendTo(message, playerMP.connection.netManager, NetworkDirection.PLAY_TO_CLIENT);
-    }
-
-    /**
-     * Reply a message depend on network context
-     *
-     * @param message message to reply
-     * @param context network context
-     * @param <MSG>   message type
-     */
-    public <MSG extends IMessage> void reply(MSG message, NetworkEvent.Context context) {
-        CHANNEL.reply(message, context);
     }
 
     /*@Override

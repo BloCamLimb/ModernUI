@@ -30,6 +30,7 @@ import net.minecraft.util.text.StringTextComponent;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+// container should be not in UI package
 public class ContainerTest extends Container {
 
     // client

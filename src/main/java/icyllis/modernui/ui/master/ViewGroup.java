@@ -68,7 +68,7 @@ public abstract class ViewGroup extends View implements IViewParent {
     protected abstract void onLayout(boolean changed);
 
     @Override
-    protected boolean dispatchMouseHover(double mouseX, double mouseY) {
+    protected boolean onUpdateMouseHover(double mouseX, double mouseY) {
         final double mx = mouseX + getScrollX();
         final double my = mouseY + getScrollY();
         for (int i = childrenCount - 1; i >= 0; i--) {
@@ -76,7 +76,7 @@ public abstract class ViewGroup extends View implements IViewParent {
                 return true;
             }
         }
-        return super.dispatchMouseHover(mouseX, mouseY);
+        return super.onUpdateMouseHover(mouseX, mouseY);
     }
 
     @Override
@@ -141,6 +141,8 @@ public abstract class ViewGroup extends View implements IViewParent {
             return;
         }
 
+        requestLayout();
+
         if (!checkLayoutParams(params)) {
             params = convertLayoutParams(params);
         }
@@ -154,8 +156,6 @@ public abstract class ViewGroup extends View implements IViewParent {
         addInArray(child, index);
 
         child.assignParent(this);
-
-        UIManager.INSTANCE.refreshMouse();
     }
 
     public View getChildAt(int index) {
@@ -194,6 +194,27 @@ public abstract class ViewGroup extends View implements IViewParent {
         } else {
             throw new IndexOutOfBoundsException("index=" + index + " count=" + count);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Nullable
+    @Override
+    protected <T extends View> T findViewTraversal(int id) {
+        if (id == getId()) {
+            return (T) this;
+        }
+
+        for (int i = 0; i < childrenCount; i++) {
+            View child = children[i];
+
+            child = child.findViewById(id);
+
+            if (child != null) {
+                return (T) child;
+            }
+        }
+
+        return null;
     }
 
     /**

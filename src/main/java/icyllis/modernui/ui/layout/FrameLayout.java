@@ -26,9 +26,6 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Same as Android
- */
 public class FrameLayout extends ViewGroup {
 
     private final List<View> matchParentChildren = new ArrayList<>(1);
@@ -44,8 +41,8 @@ public class FrameLayout extends ViewGroup {
         int count = getChildCount();
 
         boolean measureMatchParentChildren =
-                !MeasureSpec.getMode(widthMeasureSpec).isExactly() ||
-                        !MeasureSpec.getMode(heightMeasureSpec).isExactly();
+                MeasureSpec.getMode(widthMeasureSpec).notExactly() ||
+                        MeasureSpec.getMode(heightMeasureSpec).notExactly();
 
         int maxWidth = 0;
         int maxHeight = 0;
