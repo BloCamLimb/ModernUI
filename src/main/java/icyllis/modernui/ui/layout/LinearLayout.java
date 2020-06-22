@@ -400,7 +400,7 @@ public class LinearLayout extends ViewGroup {
             }
 
             boolean matchWidthLocally = false;
-            if (widthMode.notExactly() && lp.width == LayoutParams.MATCH_PARENT) {
+            if (widthMode.isVariable() && lp.width == LayoutParams.MATCH_PARENT) {
                 // The width of the linear layout will scale, and at least one
                 // child said it wanted to match our width. Set a flag
                 // indicating that we need to remeasure at least that view when
@@ -482,7 +482,7 @@ public class LinearLayout extends ViewGroup {
                 int measuredWidth = child.getMeasuredWidth() + margin;
                 maxWidth = Math.max(maxWidth, measuredWidth);
 
-                boolean matchWidthLocally = widthMode.notExactly() &&
+                boolean matchWidthLocally = widthMode.isVariable() &&
                         lp.width == LayoutParams.MATCH_PARENT;
 
                 alternativeMaxWidth = Math.max(alternativeMaxWidth,
@@ -497,7 +497,7 @@ public class LinearLayout extends ViewGroup {
             alternativeMaxWidth = Math.max(alternativeMaxWidth, weightedMaxWidth);
         }
 
-        if (!allFillParent && widthMode.notExactly()) {
+        if (!allFillParent && widthMode.isVariable()) {
             maxWidth = alternativeMaxWidth;
         }
 
@@ -630,7 +630,7 @@ public class LinearLayout extends ViewGroup {
             }
 
             boolean matchHeightLocally = false;
-            if (heightMode.notExactly() && lp.height == LayoutParams.MATCH_PARENT) {
+            if (heightMode.isVariable() && lp.height == LayoutParams.MATCH_PARENT) {
                 // The height of the linear layout will scale, and at least one
                 // child said it wanted to match our height. Set a flag indicating that
                 // we need to remeasure at least that view when we know our height.
@@ -735,7 +735,7 @@ public class LinearLayout extends ViewGroup {
                             lp.leftMargin + lp.rightMargin);
                 }
 
-                boolean matchHeightLocally = heightMode.notExactly() &&
+                boolean matchHeightLocally = heightMode.isVariable() &&
                         lp.height == LayoutParams.MATCH_PARENT;
 
                 int margin = lp.topMargin + lp.bottomMargin;
@@ -765,7 +765,7 @@ public class LinearLayout extends ViewGroup {
             alternativeMaxHeight = Math.max(alternativeMaxHeight, weightedMaxHeight);
         }
 
-        if (!allFillParent && heightMode.notExactly()) {
+        if (!allFillParent && heightMode.isVariable()) {
             maxHeight = alternativeMaxHeight;
         }
 
@@ -864,7 +864,7 @@ public class LinearLayout extends ViewGroup {
                 childTop = parentTop + parentHeight - totalLength;
                 break;
             case Gravity.VERTICAL_CENTER:
-                childTop = parentTop + (parentHeight - totalLength) >> 1;
+                childTop = parentTop + (parentHeight - totalLength) / 2;
                 break;
             default:
                 childTop = parentTop;
@@ -890,7 +890,7 @@ public class LinearLayout extends ViewGroup {
 
                 switch (horizontalGravity) {
                     case Gravity.HORIZONTAL_CENTER:
-                        childLeft = parentLeft + (parentWidth - width) >> 1 +
+                        childLeft = parentLeft + (parentWidth - width) / 2 +
                                 lp.leftMargin - lp.rightMargin;
                         break;
                     case Gravity.RIGHT:
@@ -943,7 +943,7 @@ public class LinearLayout extends ViewGroup {
                 childLeft = parentLeft + parentWidth - totalLength;
                 break;
             case Gravity.HORIZONTAL_CENTER:
-                childLeft = parentLeft + (parentWidth - totalLength) >> 1;
+                childLeft = parentLeft + (parentWidth - totalLength) / 2;
                 break;
             default:
                 childLeft = parentLeft;
@@ -969,7 +969,7 @@ public class LinearLayout extends ViewGroup {
 
                 switch (verticalGravity) {
                     case Gravity.VERTICAL_CENTER:
-                        childTop = parentTop + (parentHeight - height) >> 1 +
+                        childTop = parentTop + (parentHeight - height) / 2 +
                                 lp.topMargin - lp.bottomMargin;
                         break;
                     case Gravity.BOTTOM:

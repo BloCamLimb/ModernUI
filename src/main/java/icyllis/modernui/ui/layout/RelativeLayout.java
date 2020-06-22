@@ -21,7 +21,6 @@ package icyllis.modernui.ui.layout;
 import icyllis.modernui.ui.master.View;
 import icyllis.modernui.ui.master.ViewGroup;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import javax.annotation.Nonnull;
@@ -66,7 +65,7 @@ public class RelativeLayout extends ViewGroup {
      * Rule that aligns a child's bottom edge with another child's bottom edge.
      */
     public static final  int ALIGN_BOTTOM = 7;
-    private static final int VERT_COUNT   = 8;
+    private static final int VERB_COUNT   = 8;
 
 
     private static final int[] RULES_VERTICAL = {
@@ -82,18 +81,19 @@ public class RelativeLayout extends ViewGroup {
      */
     private static final int VALUE_NOT_SET = Integer.MIN_VALUE;
 
+
     /**
-     * {@link #setGravity(int)}
+     * See {@link #setGravity(int)}
      */
     private int gravity = Gravity.TOP_LEFT;
 
     /**
-     * {@link #setIgnoreGravity(int)}
+     * See {@link #setIgnoreGravity(int)}
      */
     private int ignoreGravity = 0;
 
     // inner
-    private boolean sortChildren;
+    private boolean dirtyChildren;
 
     // inner
     private View[] sortedHorizontalChildren;
@@ -129,9 +129,9 @@ public class RelativeLayout extends ViewGroup {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        if (sortChildren) {
+        if (dirtyChildren) {
             sortChildren();
-            sortChildren = false;
+            dirtyChildren = false;
         }
 
         int myWidth = -1;
@@ -146,11 +146,11 @@ public class RelativeLayout extends ViewGroup {
         int heightSize = MeasureSpec.getSize(heightMeasureSpec);
 
         // Record our dimensions if they are known;
-        if (widthMode.notUnspecified()) {
+        if (widthMode.isSpecified()) {
             myWidth = widthSize;
         }
 
-        if (heightMode.notUnspecified()) {
+        if (heightMode.isSpecified()) {
             myHeight = heightSize;
         }
 
@@ -180,8 +180,8 @@ public class RelativeLayout extends ViewGroup {
             ignore = findViewById(ignoreGravity);
         }
 
-        boolean isWrapContentWidth = widthMode.notExactly();
-        boolean isWrapContentHeight = heightMode.notExactly();
+        boolean isWrapContentWidth = widthMode.isVariable();
+        boolean isWrapContentHeight = heightMode.isVariable();
 
         View[] views = sortedHorizontalChildren;
         int count = views.length;
@@ -292,17 +292,14 @@ public class RelativeLayout extends ViewGroup {
         }
 
         if (horizontalGravity || verticalGravity) {
-            int[] in = new int[4];
-            in[0] = 0;
-            in[1] = 0;
-            in[2] = width;
-            in[3] = height;
+            int[] in = new int[]{0, 0, width, height};
 
             int[] out = new int[4];
             Gravity.apply(gravity, right - left, bottom - top, in, 0, 0, out);
 
             int horizontalOffset = out[0] - left;
             int verticalOffset = out[1] - top;
+
             if (horizontalOffset != 0 || verticalOffset != 0) {
                 for (int i = 0; i < count; i++) {
                     View child = views[i];
@@ -684,7 +681,7 @@ public class RelativeLayout extends ViewGroup {
 
     private void centerHorizontal(@Nonnull View child, @Nonnull LayoutParams params, int myWidth) {
         int childWidth = child.getMeasuredWidth();
-        int left = (myWidth - childWidth) >> 1;
+        int left = (myWidth - childWidth) / 2;
 
         params.mLeft = left;
         params.mRight = left + childWidth;
@@ -692,7 +689,7 @@ public class RelativeLayout extends ViewGroup {
 
     private void centerVertical(@Nonnull View child, @Nonnull LayoutParams params, int myHeight) {
         int childHeight = child.getMeasuredHeight();
-        int top = (myHeight - childHeight) >> 1;
+        int top = (myHeight - childHeight) / 2;
 
         params.mTop = top;
         params.mBottom = top + childHeight;
@@ -784,7 +781,7 @@ public class RelativeLayout extends ViewGroup {
     @Override
     public void requestLayout() {
         super.requestLayout();
-        sortChildren = true;
+        dirtyChildren = true;
     }
 
     @Nonnull
@@ -821,11 +818,11 @@ public class RelativeLayout extends ViewGroup {
          * If the anchor view is not found,
          * it will use the parent as the anchor.
          */
-        private int[] rules = new int[VERT_COUNT];
+        private int[] rules = new int[VERB_COUNT];
 
         /**
          * The align or position relation to the anchor or parent.
-         * Default is NO_GRAVITY
+         * Default is NO_GRAVITY. FILL doesn't support here
          */
         public int gravity = 0;
 
@@ -850,7 +847,7 @@ public class RelativeLayout extends ViewGroup {
         /**
          * Adds a layout rule to be interpreted by the RelativeLayout.
          *
-         * @param verb   a layout verb, such as {@link #ALIGN_RIGHT}
+         * @param verb   a layout verb, such as {@link #ABOVE} or {@link #ALIGN_RIGHT}
          * @param anchor the ID of another view to use as an anchor
          */
         public void setRule(int verb, int anchor) {
@@ -860,7 +857,7 @@ public class RelativeLayout extends ViewGroup {
         /**
          * Returns the layout rule associated with a specific verb.
          *
-         * @param verb a layout verb, such as {@link #ALIGN_RIGHT}
+         * @param verb a layout verb, such as {@link #ABOVE} or {@link #ALIGN_RIGHT}
          * @return the id of another view to use as an anchor
          * @see #setRule(int, int)
          */
@@ -876,7 +873,7 @@ public class RelativeLayout extends ViewGroup {
          */
         public LayoutParams(@Nonnull LayoutParams source) {
             super(source);
-            System.arraycopy(source.rules, LEFT_OF, rules, LEFT_OF, VERT_COUNT);
+            System.arraycopy(source.rules, LEFT_OF, rules, LEFT_OF, VERB_COUNT);
             gravity = source.gravity;
         }
 
@@ -992,6 +989,7 @@ public class RelativeLayout extends ViewGroup {
 
             LayoutParams layoutParams;
             Node dependency;
+            int anchorViewId;
             // Builds up the dependents and dependencies for each node of the graph
             for (Node node : nodes) {
                 layoutParams = (LayoutParams) node.view.getLayoutParams();
@@ -999,7 +997,7 @@ public class RelativeLayout extends ViewGroup {
                 // Look only the the rules passed in parameter, this way we build only the
                 // dependencies for a specific set of rules
                 for (int verb : rulesFilter) {
-                    int anchorViewId = layoutParams.getRule(verb);
+                    anchorViewId = layoutParams.getRule(verb);
                     if (anchorViewId > 0) {
                         // The node this node depends on
                         dependency = keyNodes.get(anchorViewId);
@@ -1049,7 +1047,7 @@ public class RelativeLayout extends ViewGroup {
             /**
              * The list of dependencies for this node.
              */
-            final Map<Integer, Node> dependencies = new Object2ObjectArrayMap<>();
+            final Map<Integer, Node> dependencies = new Int2ObjectArrayMap<>();
         }
     }
 }
