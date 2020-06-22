@@ -47,9 +47,9 @@ public class TestRelativeLayout extends RelativeLayout {
         view.text = "Second On The Top";
         addView(view);
 
-        lp = new LayoutParams(LayoutParams.MATCH_PARENT, 30);
+        lp = new LayoutParams(LayoutParams.MATCH_PARENT, 40);
         lp.setRule(LEFT_OF, 1);
-        lp.gravity = Gravity.CENTER;
+        lp.gravity = Gravity.VERTICAL_CENTER;
         view = new CView();
         view.setId(3);
         view.setLayoutParams(lp);

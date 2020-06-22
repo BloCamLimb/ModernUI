@@ -513,7 +513,7 @@ public enum UIManager implements IViewParent {
 
         switch (lp.gravity & Gravity.HORIZONTAL_GRAVITY_MASK) {
             case Gravity.HORIZONTAL_CENTER:
-                childLeft = (width - measuredWidth) >> 1 +
+                childLeft = (width - measuredWidth) / 2 +
                         lp.leftMargin - lp.rightMargin;
                 break;
             case Gravity.RIGHT:
@@ -525,7 +525,7 @@ public enum UIManager implements IViewParent {
 
         switch (lp.gravity & Gravity.VERTICAL_GRAVITY_MASK) {
             case Gravity.VERTICAL_CENTER:
-                childTop = (height - measuredHeight) >> 1 +
+                childTop = (height - measuredHeight) / 2 +
                         lp.topMargin - lp.bottomMargin;
                 break;
             case Gravity.BOTTOM:

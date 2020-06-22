@@ -41,8 +41,8 @@ public class FrameLayout extends ViewGroup {
         int count = getChildCount();
 
         boolean measureMatchParentChildren =
-                MeasureSpec.getMode(widthMeasureSpec).notExactly() ||
-                        MeasureSpec.getMode(heightMeasureSpec).notExactly();
+                MeasureSpec.getMode(widthMeasureSpec).isVariable() ||
+                        MeasureSpec.getMode(heightMeasureSpec).isVariable();
 
         int maxWidth = 0;
         int maxHeight = 0;
@@ -136,7 +136,7 @@ public class FrameLayout extends ViewGroup {
 
                 switch (horizontalGravity) {
                     case Gravity.HORIZONTAL_CENTER:
-                        childLeft = parentLeft + (parentWidth - width) >> 1 +
+                        childLeft = parentLeft + (parentWidth - width) / 2 +
                                 lp.leftMargin - lp.rightMargin;
                         break;
                     case Gravity.RIGHT:
@@ -148,7 +148,7 @@ public class FrameLayout extends ViewGroup {
 
                 switch (verticalGravity) {
                     case Gravity.VERTICAL_CENTER:
-                        childTop = parentTop + (parentHeight - height) >> 1 +
+                        childTop = parentTop + (parentHeight - height) / 2 +
                                 lp.topMargin - lp.bottomMargin;
                         break;
                     case Gravity.BOTTOM:

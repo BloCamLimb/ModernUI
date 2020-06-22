@@ -31,7 +31,7 @@ public class TestFragment extends Fragment {
     @Nullable
     @Override
     public View createView() {
-        View view = new TestRelativeLayout();
+        View view = new TestLinearLayout();
         // main view can use FrameLayout params
         view.setLayoutParams(new FrameLayout.LayoutParams(100, 200, Gravity.CENTER));
         return view;
