@@ -16,39 +16,39 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.ui.parser;
+package icyllis.modernui.ui.data;
 
-import com.google.gson.*;
-import com.google.gson.reflect.TypeToken;
-import icyllis.modernui.ui.parser.adaptor.WidgetAdaptor;
-import icyllis.modernui.ui.master.UIManager;
-import icyllis.modernui.system.ModernUI;
-import net.minecraft.client.Minecraft;
-import net.minecraft.util.ResourceLocation;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+import icyllis.modernui.ui.master.View;
 
-import javax.annotation.Nonnull;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.lang.reflect.Constructor;
+import java.util.HashMap;
+import java.util.Map;
 
-public enum WidgetParser {
+/**
+ * Serialize and deserialize layout file and instantiate views
+ */
+public enum LayoutManager {
     INSTANCE;
 
     private final Gson gson;
 
+    private final Map<String, Constructor<? extends View>> constructorMap = new HashMap<>();
+
     {
         gson = new GsonBuilder()
                 .setPrettyPrinting()
-                .registerTypeAdapter(WidgetContainer.class, new WidgetAdaptor())
+                .registerTypeAdapter(LayoutContainer.class, new Adaptor())
                 .excludeFieldsWithoutExposeAnnotation()
                 .create();
     }
 
-    @Nonnull
+    /*@Nonnull
     public List<WidgetContainer> parseWidgets(ResourceLocation location) {
         List<WidgetContainer> list = new ArrayList<>();
         Type type = new TypeToken<List<WidgetContainer>>(){}.getType();
@@ -71,6 +71,22 @@ public enum WidgetParser {
         }
         list.removeIf(Objects::isNull);
         return list;
+    }*/
+
+    /**
+     * Serialize and deserialize a layout file
+     */
+    private static class Adaptor extends TypeAdapter<LayoutContainer> {
+
+        @Override
+        public void write(JsonWriter out, LayoutContainer value) throws IOException {
+
+        }
+
+        @Override
+        public LayoutContainer read(JsonReader in) throws IOException {
+            return null;
+        }
     }
 
 }

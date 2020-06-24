@@ -19,6 +19,7 @@
 package icyllis.modernui.system;
 
 import icyllis.modernui.graphics.BlurHandler;
+import icyllis.modernui.graphics.font.ModernFontRenderer;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.config.ModConfig;
@@ -74,7 +75,6 @@ public class ConfigManager {
 
         public String  preferredFontName;
         public boolean enableGlobalFontRenderer;
-        public boolean allowFontShadow;
 
         //private final ForgeConfigSpec.BooleanValue keepRunningInScreenV;
         private final ForgeConfigSpec.BooleanValue blurScreenBackgroundV;
@@ -102,9 +102,9 @@ public class ConfigManager {
             builder.comment("Fonts Config")
                     .push("fonts");
 
-            enableGlobalFontRendererV = builder.comment("Replace vanilla's font renderer to Modern UI's. This won't affect the font renderer which is used in Modern UI's GUIs.")
+            enableGlobalFontRendererV = builder.comment("Replace font renderer of vanilla to that of Modern UI. This won't affect the font renderer used in Modern UI's gui screens.")
                     .define("enableGlobalRenderer", true);
-            preferredFontNameV = builder.comment("The name of font to use with highest priority. The default font that included in Modern UI is always the alternative one to use.")
+            preferredFontNameV = builder.comment("The font name with the highest priority to use, the default one included in Modern UI is always the alternative one to use.")
                     .define("preferredFontName", "");
             allowFontShadowV = builder.comment("Allow font renderer to draw text with shadow, set to false if you can't read the font clearly.")
                     .define("allowFontShadow", true);
@@ -120,7 +120,7 @@ public class ConfigManager {
 
             preferredFontName = preferredFontNameV.get();
             enableGlobalFontRenderer = enableGlobalFontRendererV.get();
-            allowFontShadow = allowFontShadowV.get();
+            ModernFontRenderer.sAllowFontShadow = allowFontShadowV.get();
         }
     }
 

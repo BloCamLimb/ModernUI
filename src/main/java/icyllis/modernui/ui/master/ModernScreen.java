@@ -39,23 +39,23 @@ public final class ModernScreen extends Screen {
 
     @Override
     public void init(Minecraft minecraft, int width, int height) {
-        manager.sInit(this, width, height);
+        manager.init(this, width, height);
         BlurHandler.INSTANCE.forceBlur();
     }
 
     @Override
     public void resize(@Nonnull Minecraft minecraft, int width, int height) {
-        manager.sResize(width, height);
+        manager.resize(width, height);
     }
 
     @Override
     public void render(int mouseX, int mouseY, float partialTicks) {
-        manager.sDraw();
+        manager.draw();
     }
 
     @Override
     public void removed() {
-        manager.sDestroy();
+        manager.destroy();
     }
 
     @Override
@@ -122,8 +122,8 @@ public final class ModernScreen extends Screen {
     @Override
     public String toString() {
         if (manager.getMainView() != null) {
-            return getClass().getSimpleName() + "-" + manager.getMainView().getClass().getSimpleName() + "(" + hashCode() + ")";
+            return getClass().getSimpleName() + "-" + manager.getMainView().getClass().getSimpleName() + "@" + Integer.toHexString(hashCode());
         }
-        return getClass().getSimpleName() + "(" + hashCode() + ")";
+        return super.toString();
     }
 }

@@ -1,3 +1,6 @@
+### 1.15.2-1.6.0.57 / 1.15.2-2.0.0.57
+* Reduce the requirement of OpenGL 4.6 to OpenGL 4.3
+
 ### 1.15.2-1.5.9.56 (2020-05-26)
 * Fix search bar crash
 * Fix server crash on start
