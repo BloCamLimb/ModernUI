@@ -20,6 +20,7 @@ package icyllis.modernui.ui.master;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.system.ConfigManager;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.ui.animation.Animation;
 import icyllis.modernui.ui.layout.FrameLayout;
@@ -47,6 +48,7 @@ import org.lwjgl.opengl.GL11;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
@@ -122,7 +124,7 @@ public enum UIManager implements IViewParent {
     // to schedule layout on next frame
     private boolean layoutRequested = false;
 
-    // to fix layout freq at 60Hz at most
+    // to fix layout freq at 40Hz at most
     private float lastLayoutTime = 0;
 
     UIManager() {
@@ -216,8 +218,8 @@ public enum UIManager implements IViewParent {
      * @param width  screen width (= game main window width)
      * @param height screen height (= game main window height)
      */
-    void sInit(@Nonnull Screen mui, int width, int height) {
-        this.modernScreen = mui;
+    void init(@Nonnull Screen mui, int width, int height) {
+        modernScreen = mui;
 
         // init view of this UI
         if (view == null) {
@@ -231,6 +233,7 @@ public enum UIManager implements IViewParent {
                 ModernUI.LOGGER.fatal(MARKER, "The main view created from the fragment shouldn't be null");
                 view = new View();
             }
+            fragment.view = view;
 
             ViewGroup.LayoutParams params = view.getLayoutParams();
             // convert layout params
@@ -251,7 +254,7 @@ public enum UIManager implements IViewParent {
             canvas = new Canvas();
         }
 
-        sResize(width, height);
+        resize(width, height);
     }
 
     /**
@@ -262,13 +265,13 @@ public enum UIManager implements IViewParent {
         guiToOpen = event.getGui();
 
         if (guiToOpen == null) {
-            sDestroy();
+            destroy();
             return;
         }
 
         if (modernScreen != guiToOpen && ((guiToOpen instanceof ModernScreen) || (guiToOpen instanceof ModernContainerScreen<?>))) {
             if (view != null) {
-                ModernUI.LOGGER.fatal(MARKER, "Modern UI doesn't allow to keep other screens. ModernScreen: {}, GuiToOpen: {}", modernScreen, guiToOpen);
+                ModernUI.LOGGER.fatal(MARKER, "Modern UI doesn't allow to keep other screens. Current: {}, ToOpen: {}", modernScreen, guiToOpen);
                 event.setCanceled(true);
                 return;
             }
@@ -289,8 +292,9 @@ public enum UIManager implements IViewParent {
     /**
      * Get current open screen differently from Minecraft's,
      * which will only return Modern UI's screen or null
+     * {@link Minecraft#currentScreen}
      *
-     * @return modern screen
+     * @return open modern screen
      */
     @Nullable
     public Screen getModernScreen() {
@@ -321,7 +325,7 @@ public enum UIManager implements IViewParent {
     void sMouseMoved(int mouseX, int mouseY) {
         this.mouseX = mouseX;
         this.mouseY = mouseY;
-        focus();
+        findFocus();
         /*if (popup != null) {
             popup.mouseMoved(mouseX, mouseY);
             return;
@@ -428,16 +432,16 @@ public enum UIManager implements IViewParent {
     }
 
     /**
-     * Refocus mouse cursor and update mouse position
+     * Refocus mouse cursor and update mouse hovering state
      */
     public void refreshMouse() {
-        focus();
+        findFocus();
     }
 
     /**
-     * Find focus in UI
+     * Find mouse hovering focus for entire UI
      */
-    private void focus() {
+    private void findFocus() {
         if (view != null) {
             if (!view.updateMouseHover(mouseX, mouseY)) {
                 setHoveredView(null);
@@ -448,7 +452,7 @@ public enum UIManager implements IViewParent {
     /**
      * Raw draw method, draw entire UI
      */
-    void sDraw() {
+    void draw() {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableAlphaTest();
@@ -477,7 +481,7 @@ public enum UIManager implements IViewParent {
      * @param width  scaled game window width
      * @param height scaled game window height
      */
-    void sResize(int width, int height) {
+    void resize(int width, int height) {
         this.width = width;
         this.height = height;
         double scale = minecraft.getMainWindow().getGuiScaleFactor();
@@ -487,7 +491,7 @@ public enum UIManager implements IViewParent {
     }
 
     /**
-     * Layout entire UI views
+     * Layout entire UI views, a bit performance hungry
      * {@link #requestLayout()}
      */
     private void layout() {
@@ -541,11 +545,13 @@ public enum UIManager implements IViewParent {
         }*/
         layoutRequested = false;
 
-        ModernUI.LOGGER.debug(MARKER, "Layout performed in {} " + '\u03bc' + "s", (System.nanoTime() - startTime) / 1000);
-        focus();
+        if (ConfigManager.COMMON.isEnableDeveloperMode()) {
+            ModernUI.LOGGER.debug(MARKER, "Layout performed in {} \u03bcs", (System.nanoTime() - startTime) / 1000.0f);
+        }
+        findFocus();
     }
 
-    void sDestroy() {
+    void destroy() {
         // Hotfix 1.4.7
         if (guiToOpen == null) {
             animations.clear();
@@ -573,21 +579,28 @@ public enum UIManager implements IViewParent {
             return;
         }
         ++ticks;
-        if (popup != null) {
+        /*if (popup != null) {
             popup.tick(ticks);
-        }
+        }*/
         if (view != null) {
             view.tick(ticks);
         }
-        // view tick() is always called before tasks
-        for (DelayedTask task : tasks) {
-            task.tick(ticks);
+        // view ticking is always performed before tasks
+        if (!tasks.isEmpty()) {
+            Iterator<DelayedTask> iterator = tasks.iterator();
+            DelayedTask task;
+            while (iterator.hasNext()) {
+                task = iterator.next();
+                task.tick(ticks);
+                if (task.shouldRemove()) {
+                    iterator.remove();
+                }
+            }
         }
-        tasks.removeIf(DelayedTask::shouldRemove);
     }
 
     /**
-     * Inner method, do not call
+     * Inner method
      */
     @SuppressWarnings("ForLoopReplaceableByForEach")
     @SubscribeEvent
@@ -599,7 +612,9 @@ public enum UIManager implements IViewParent {
         time = ticks + event.renderTickTime;
 
         // remove animations from loop in next frame
-        animations.removeIf(Animation::shouldRemove);
+        if (!animations.isEmpty()) {
+            animations.removeIf(Animation::shouldRemove);
+        }
 
         // list size is dynamically changeable, because updating animation may add new animation to the list
         for (int i = 0; i < animations.size(); i++) {
@@ -608,8 +623,8 @@ public enum UIManager implements IViewParent {
 
         // layout after updating animations and before drawing
         if (layoutRequested) {
-            // fixed at 60Hz
-            if (time - lastLayoutTime > 0.3333333f) {
+            // fixed at 40Hz
+            if (time - lastLayoutTime >= 0.5f) {
                 lastLayoutTime = time;
                 layout();
             }

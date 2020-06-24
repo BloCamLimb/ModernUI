@@ -36,14 +36,19 @@ import javax.annotation.Nullable;
 public class Fragment {
 
     /**
+     * The view you create from this fragment
+     */
+    View view;
+
+    /**
      * Create the view belong to this fragment.
      * <p>
      * If this fragment is main fragment of a UI, this method
      * should create the main view of the UI, and can't be null.
      * <p>
-     * The main view of a UI is considered as a child view of FrameLayout,
+     * The main view of a UI is considered as a child of FrameLayout,
      * so you can use LayoutParams of FrameLayout to layout the view.
-     * see {@link FrameLayout.LayoutParams}
+     * See {@link FrameLayout.LayoutParams}
      *
      * @return view instance or null
      */

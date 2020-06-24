@@ -16,25 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.ui.parser;
+package icyllis.modernui.ui.data;
 
-import icyllis.modernui.ui.test.Widget;
-
-/**
- * Named widget container
- */
-public class WidgetContainer {
-
-    public String name;
-
-    public Widget widget;
-
-    public WidgetContainer(String name, Widget widget) {
-        this.name = name;
-        this.widget = widget;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
+public interface ILayoutElement {
 }

@@ -30,7 +30,9 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.loading.FMLPaths;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
@@ -188,7 +190,7 @@ public enum UIEditor {
         if (!ConfigManager.COMMON.isEnableDeveloperMode() || event.getAction() != GLFW.GLFW_PRESS) {
             return;
         }
-        if (!Screen.hasControlDown() || !Screen.hasShiftDown()) {
+        if (!Screen.hasControlDown()) {
             return;
         }
         switch (event.getKey()) {
@@ -198,10 +200,32 @@ public enum UIEditor {
                 }
                 break;
             case GLFW.GLFW_KEY_P:
-                if (UIManager.INSTANCE.getModernScreen() == null && Minecraft.getInstance().currentScreen != null) {
-                    ModernUI.LOGGER.debug(UIManager.MARKER, "Open gui class name : {}",
-                            Minecraft.getInstance().currentScreen.getClass().getName());
+                if (Minecraft.getInstance().currentScreen == null) {
+                    break;
                 }
+                StringBuilder builder = new StringBuilder();
+                builder.append("Printing UI Debug Info:\n");
+
+                builder.append("[0] Is Modern Screen: ");
+                builder.append(UIManager.INSTANCE.getModernScreen() != null);
+                builder.append("\n");
+
+                builder.append("[1] Has Container: ");
+                builder.append(Minecraft.getInstance().player != null && Minecraft.getInstance().player.openContainer != null);
+                builder.append("\n");
+
+                if (UIManager.INSTANCE.getModernScreen() == null) {
+                    builder.append("[2] Open Gui: ");
+                    builder.append(Minecraft.getInstance().currentScreen);
+                } else {
+                    builder.append("[2] Main View: ");
+                    builder.append(UIManager.INSTANCE.getMainView());
+                }
+                builder.append("\n");
+
+                ModernUI.LOGGER.debug(UIManager.MARKER, builder.toString());
+                //ModernUI.LOGGER.debug(UIManager.MARKER, "{}", FMLPaths.GAMEDIR.get().getParent().resolve("src/main/resources/assets/modernui"));
+
                 break;
         }
     }

@@ -1,4 +1,4 @@
-#version 430 core
+#version 430 compatibility
 
 out vec2 f_Position;
 

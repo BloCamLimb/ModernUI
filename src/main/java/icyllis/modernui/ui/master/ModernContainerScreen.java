@@ -55,7 +55,7 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
     @Override
     public void init(Minecraft minecraft, int width, int height) {
         super.init(minecraft, width, height);
-        manager.sInit(this, width, height);
+        manager.init(this, width, height);
     }
 
     @Override
@@ -66,7 +66,7 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
     @Override
     public void render(int mouseX, int mouseY, float partialTicks) {
         super.render(mouseX, mouseY, partialTicks);
-        manager.sDraw();
+        manager.draw();
     }
 
     @Override
@@ -77,7 +77,7 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
     @Override
     public void removed() {
         super.removed();
-        manager.sDestroy();
+        manager.destroy();
     }
 
     @Override
@@ -158,8 +158,8 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
     @Override
     public String toString() {
         if (manager.getMainView() != null) {
-            return getClass().getSimpleName() + "-" + manager.getMainView().getClass().getSimpleName() + "(" + hashCode() + ")";
+            return getClass().getSimpleName() + "-" + manager.getMainView().getClass().getSimpleName() + "@" + Integer.toHexString(hashCode());
         }
-        return getClass().getSimpleName() + "(" + hashCode() + ")";
+        return super.toString();
     }
 }
