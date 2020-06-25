@@ -42,7 +42,7 @@ public abstract class ViewGroup extends View implements IViewParent {
     }
 
     @Override
-    protected void dispatchDraw(@Nonnull Canvas canvas, float time) {
+    protected void dispatchDraw(@Nonnull Canvas canvas, int time) {
         boolean doTranslate = (getScrollX() != 0 || getScrollY() != 0);
         if (doTranslate) {
             canvas.save();
@@ -68,9 +68,9 @@ public abstract class ViewGroup extends View implements IViewParent {
     protected abstract void onLayout(boolean changed);
 
     @Override
-    protected boolean onUpdateMouseHover(int mouseX, int mouseY) {
-        int mx = (int) (mouseX + getScrollX());
-        int my = (int) (mouseY + getScrollY());
+    protected boolean onUpdateMouseHover(double mouseX, double mouseY) {
+        double mx = mouseX + getScrollX();
+        double my = mouseY + getScrollY();
         for (int i = childrenCount - 1; i >= 0; i--) {
             if (children[i].updateMouseHover(mx, my)) {
                 return true;
@@ -331,6 +331,14 @@ public abstract class ViewGroup extends View implements IViewParent {
         }
 
         return MeasureSpec.makeMeasureSpec(resultSize, resultMode);
+    }
+
+    @Override
+    protected void tick(int ticks) {
+        super.tick(ticks);
+        for (int i = 0; i < childrenCount; i++) {
+            children[i].tick(ticks);
+        }
     }
 
     /**

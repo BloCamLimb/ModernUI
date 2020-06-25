@@ -19,13 +19,15 @@
 package icyllis.modernui.system;
 
 import icyllis.modernui.graphics.BlurHandler;
-import icyllis.modernui.graphics.shader.ShaderTools;
 import icyllis.modernui.ui.master.UIEditor;
 import icyllis.modernui.ui.master.UIManager;
+import net.minecraft.client.Minecraft;
+import net.minecraft.resources.IReloadableResourceManager;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
+import net.minecraftforge.resource.ISelectiveResourceReloadListener;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
@@ -48,7 +50,7 @@ public class ModernUI {
         FMLJavaModLoadingContext.get().getModEventBus().register(RegistryLibrary.INSTANCE);
 
         if (FMLEnvironment.dist.isClient()) {
-            ShaderTools.init();
+            StorageManager.init();
             MinecraftForge.EVENT_BUS.register(BlurHandler.INSTANCE);
             MinecraftForge.EVENT_BUS.register(UIEditor.INSTANCE);
             MinecraftForge.EVENT_BUS.register(UIManager.INSTANCE);

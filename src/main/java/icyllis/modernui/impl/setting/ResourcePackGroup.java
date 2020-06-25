@@ -23,7 +23,7 @@ import icyllis.modernui.graphics.font.TextAlign;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.test.Align9D;
 import icyllis.modernui.impl.module.SettingResourcePack;
-import icyllis.modernui.ui.widget.ScrollWindow;
+import icyllis.modernui.ui.test.ScrollWindow;
 import icyllis.modernui.ui.widget.UniformScrollGroup;
 import net.minecraft.client.resources.ClientResourcePackInfo;
 import net.minecraft.client.resources.I18n;

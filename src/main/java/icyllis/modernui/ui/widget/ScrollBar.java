@@ -18,35 +18,22 @@
 
 package icyllis.modernui.ui.widget;
 
-import icyllis.modernui.ui.test.ILayout;
-import icyllis.modernui.ui.test.ScriptLayout;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.master.UIManager;
-import icyllis.modernui.ui.master.View;
 
 import javax.annotation.Nonnull;
 
 /**
- * Vertical scroll bar
+ * This class encapsulated methods to handle events and draw the scroll bar.
+ * Scroll bar is never a view in UI, but including view's logic.
+ * Scroll bar should be the same level as the view it's in.
+ * To control the scroll amount, use {@link Scroller}
  *
- * @since 1.6 reworked
+ * @since 1.6
  */
-public class ScrollBar extends View {
-
-    private static final ILayout LAYOUT;
-
-    static {
-        LAYOUT = new ScriptLayout(
-                "parent.getRight() - 6",
-                "parent.getTop() + 1",
-                "5",
-                "parent.getHeight() - 2"
-        );
-    }
+public class ScrollBar {
 
     private final ScrollView view;
-
-    private final ScrollController controller;
 
     private float barY;
 
@@ -60,13 +47,10 @@ public class ScrollBar extends View {
 
     private boolean isDragging = false;
 
-    private double accDelta = 0;
+    private double accDragging = 0;
 
     public ScrollBar(@Nonnull ScrollView view) {
         this.view = view;
-        controller = new ScrollController(view);
-        /*assignParent(view);
-        setLayout(LAYOUT);*/
     }
 
     @Override
@@ -210,11 +194,11 @@ public class ScrollBar extends View {
             window.scrollDirect(transformPosToAmount((float) deltaY));
         }*/
         if (mouseY >= getTop() && mouseY <= getBottom()) {
-            accDelta += deltaY;
-            int i = (int) (accDelta * 2.0);
+            accDragging += deltaY;
+            int i = (int) (accDragging * 2.0);
             if (i != 0) {
                 controller.scrollDirectBy(transformPosToAmount(i / 2.0f));
-                accDelta -= i / 2.0f;
+                accDragging -= i / 2.0f;
             }
         }
         return true;

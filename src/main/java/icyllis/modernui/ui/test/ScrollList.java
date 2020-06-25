@@ -16,15 +16,15 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.ui.widget;
+package icyllis.modernui.ui.test;
 
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.ui.test.IMouseListener;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+@Deprecated
 public class ScrollList<T extends ScrollGroup> implements IMouseListener {
 
     private final ScrollWindow<T> window;

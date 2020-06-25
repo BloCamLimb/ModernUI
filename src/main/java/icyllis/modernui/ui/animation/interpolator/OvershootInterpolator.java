@@ -16,24 +16,21 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.shader.program;
+package icyllis.modernui.ui.animation.interpolator;
 
-import icyllis.modernui.graphics.shader.ShaderProgram;
-import org.lwjgl.opengl.GL20;
+import icyllis.modernui.ui.animation.ITimeInterpolator;
 
-public class RoundedRectFrameShader extends ShaderProgram {
+public class OvershootInterpolator implements ITimeInterpolator {
 
-    public static RoundedRectFrameShader INSTANCE = new RoundedRectFrameShader("rect", "rounded_rect_frame");
+    private final float tension;
 
-    public RoundedRectFrameShader(String vert, String frag) {
-        super(vert, frag);
+    public OvershootInterpolator(float tension) {
+        this.tension = tension;
     }
 
-    public void setRadius(float radius) {
-        GL20.glUniform1f(0, radius);
-    }
-
-    public void setInnerRect(float left, float top, float right, float bottom) {
-        GL20.glUniform4f(1, left, top, right, bottom);
+    @Override
+    public float getInterpolation(float progress) {
+        progress -= 1.0f;
+        return progress * progress * ((tension + 1) * progress + tension) + 1.0f;
     }
 }

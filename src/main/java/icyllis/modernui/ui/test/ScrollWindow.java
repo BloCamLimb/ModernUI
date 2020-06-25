@@ -16,13 +16,13 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.ui.widget;
+package icyllis.modernui.ui.test;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.master.View;
-import icyllis.modernui.ui.test.Module;
-import icyllis.modernui.ui.test.Window;
+import icyllis.modernui.ui.widget.ScrollBar;
+import icyllis.modernui.ui.widget.Scroller;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
@@ -32,6 +32,7 @@ import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.function.Function;
 
+@Deprecated
 public class ScrollWindow<T extends ScrollGroup> extends Window implements IScrollHost {
 
     protected final int borderThickness = 6;
@@ -44,7 +45,7 @@ public class ScrollWindow<T extends ScrollGroup> extends Window implements IScro
 
     protected ScrollBar scrollbar;
 
-    protected ScrollController controller;
+    protected Scroller controller;
 
     protected ScrollList<T> scrollList;
 
@@ -220,7 +221,7 @@ public class ScrollWindow<T extends ScrollGroup> extends Window implements IScro
     }
 
     @Override
-    public ScrollController getScrollController() {
+    public Scroller getScrollController() {
         return controller;
     }
 
@@ -240,7 +241,7 @@ public class ScrollWindow<T extends ScrollGroup> extends Window implements IScro
         float v = getVisibleHeight();
         float t = getTotalHeight();
         boolean renderBar = t > v;
-        scrollbar.setVisibility(renderBar ? View.VISIBLE : View.INVISIBLE);
+        //scrollbar.setVisibility(renderBar ? View.VISIBLE : View.INVISIBLE);
         if (renderBar) {
             float p = v / t;
             scrollbar.setBarLength(p);
@@ -252,7 +253,7 @@ public class ScrollWindow<T extends ScrollGroup> extends Window implements IScro
         scrollList.layoutGroups(centerX, getTop());
         updateScrollBarLength();
         // update all scroll data
-        controller.scrollDirectBy(0);
+        //controller.scrollDirectBy(0);
     }
 
     public void addGroups(Collection<T> collection) {

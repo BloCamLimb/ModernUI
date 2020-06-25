@@ -18,35 +18,59 @@
 
 package icyllis.modernui.system;
 
+import icyllis.modernui.graphics.shader.ShaderTools;
+import icyllis.modernui.ui.data.LayoutResourceManager;
 import it.unimi.dsi.fastutil.objects.Object2IntArrayMap;
 import javafx.util.Pair;
+import net.minecraft.client.Minecraft;
+import net.minecraft.resources.IReloadableResourceManager;
+import net.minecraft.resources.IResourceManager;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.UsernameCache;
+import net.minecraftforge.resource.IResourceType;
+import net.minecraftforge.resource.ISelectiveResourceReloadListener;
+import net.minecraftforge.resource.VanillaResourceType;
 
+import javax.annotation.Nonnull;
 import javax.script.ScriptEngineManager;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
- * Save and load data from local game files or world save
+ * Save and load data from local game files, and load resources
  */
+@OnlyIn(Dist.CLIENT)
 public enum StorageManager {
     INSTANCE;
 
-    private static final Object2IntArrayMap<String> EMOJI_MAP = new Object2IntArrayMap<>();
+    private static final Object2IntArrayMap<String>  EMOJI_MAP     = new Object2IntArrayMap<>();
     private static final List<Pair<String, Integer>> EMOJI_HISTORY = new ArrayList<>();
 
     private final ScriptEngineManager scriptManager = new ScriptEngineManager();
+
+    static void init() {
+        ((IReloadableResourceManager) Minecraft.getInstance().getResourceManager()).addReloadListener(
+                (ISelectiveResourceReloadListener) INSTANCE::onResourcesReload);
+    }
 
     public ScriptEngineManager getScriptManager() {
         return scriptManager;
     }
 
+    private void onResourcesReload(@Nonnull IResourceManager manager, @Nonnull Predicate<IResourceType> predicate) {
+        if (predicate.test(VanillaResourceType.SHADERS)) {
+            ShaderTools.compileShaders(manager);
+        }
+        if (predicate.test(LayoutResourceManager.UI_RESOURCE_TYPE)) {
+            LayoutResourceManager.INSTANCE.onResourcesReload(manager);
+        }
+    }
+
     /**
      * Find emoji code by given keyword
+     *
      * @param keyword keyword
      * @return emoji code collection
      */
@@ -57,7 +81,7 @@ public enum StorageManager {
     public synchronized static void addToEmojiHistory(Pair<String, Integer> emoji) {
         EMOJI_HISTORY.removeIf(e -> e.equals(emoji));
         EMOJI_HISTORY.add(0, emoji);
-        if(EMOJI_HISTORY.size() > 15) {
+        if (EMOJI_HISTORY.size() > 15) {
             EMOJI_HISTORY.remove(15);
         }
     }

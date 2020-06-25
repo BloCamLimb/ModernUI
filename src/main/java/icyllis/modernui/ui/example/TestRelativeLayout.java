@@ -62,7 +62,7 @@ public class TestRelativeLayout extends RelativeLayout {
         public String text;
 
         @Override
-        protected void onDraw(@Nonnull Canvas canvas, float time) {
+        protected void onDraw(@Nonnull Canvas canvas, int time) {
             canvas.resetColor();
             canvas.setTextAlign(TextAlign.CENTER);
             canvas.drawText(text, getLeft() + getWidth() / 2.0f, getTop() + 4.0f);

@@ -77,7 +77,7 @@ public class Canvas {
 
     private final RoundedRectShader roundedRect = RoundedRectShader.INSTANCE;
 
-    private final RoundedRectFrameShader roundedRectFrame = RoundedRectFrameShader.INSTANCE;
+    private final RoundedFrameShader roundedFrame = RoundedFrameShader.INSTANCE;
 
     private final CircleShader circle = CircleShader.INSTANCE;
 
@@ -425,8 +425,8 @@ public class Canvas {
      * @param bottom rect bottom
      * @param radius rounded radius, must >= 1.5
      */
-    public void drawRoundedRectFrame(float left, float top, float right, float bottom, float radius) {
-        ShaderTools.useShader(roundedRectFrame);
+    public void drawRoundedFrame(float left, float top, float right, float bottom, float radius) {
+        ShaderTools.useShader(roundedFrame);
         roundedRect.setRadius(radius - 1);
         roundedRect.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
         drawRect(left, top, right, bottom);

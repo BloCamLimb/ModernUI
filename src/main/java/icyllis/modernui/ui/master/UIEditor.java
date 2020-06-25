@@ -30,9 +30,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.loading.FMLPaths;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
@@ -92,8 +90,6 @@ public enum UIEditor {
                 builder.append(temp.get(i));
                 if (i == 0) {
                     builder.append(" (System)");
-                } else if (i == 1) {
-                    builder.append(" (Root)");
                 }
                 treeInfo.add(builder.toString());
             }
@@ -139,7 +135,7 @@ public enum UIEditor {
             }
 
             hoveredView.getLocationInWindow(hoveredLocation);
-            canvas.drawRoundedRectFrame(
+            canvas.drawRoundedFrame(
                     hoveredLocation[0] - 1,
                     hoveredLocation[1] - 1,
                     hoveredLocation[0] + hoveredView.getWidth() + 1,
@@ -187,7 +183,7 @@ public enum UIEditor {
 
     @SubscribeEvent
     void gKeyInput(@Nonnull InputEvent.KeyInputEvent event) {
-        if (!ConfigManager.COMMON.isEnableDeveloperMode() || event.getAction() != GLFW.GLFW_PRESS) {
+        if (!ConfigManager.isDeveloperMode() || event.getAction() != GLFW.GLFW_PRESS) {
             return;
         }
         if (!Screen.hasControlDown()) {

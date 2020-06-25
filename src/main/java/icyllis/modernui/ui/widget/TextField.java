@@ -623,7 +623,7 @@ public class TextField extends Widget implements IKeyboardListener {
             canvas.setRGBA(0, 0, 0, 0.25f);
             canvas.drawRect(instance.x1 - getHeaderLength(), instance.y1, instance.x2 + getTrailerLength(), instance.y2);
             canvas.setRGBA(r, g, b, a);
-            canvas.drawRoundedRectFrame(instance.x1 - getHeaderLength() - 1, instance.y1 - 1, instance.x2 + 1 + getTrailerLength(), instance.y2 + 1, 1.5f);
+            canvas.drawRoundedFrame(instance.x1 - getHeaderLength() - 1, instance.y1 - 1, instance.x2 + 1 + getTrailerLength(), instance.y2 + 1, 1.5f);
             if (title != null) {
                 canvas.setTextAlign(TextAlign.LEFT);
                 canvas.drawText(title, instance.x1 - titleLength, instance.y1 + (instance.height - 8) / 2f);

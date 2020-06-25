@@ -18,14 +18,16 @@
 
 package icyllis.modernui.ui.data;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.TypeAdapter;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonWriter;
 import icyllis.modernui.ui.master.View;
+import net.minecraft.client.Minecraft;
+import net.minecraft.resources.IResourceManager;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.resource.IResourceType;
+import net.minecraftforge.resource.ReloadRequirements;
+import net.minecraftforge.resource.SelectiveReloadStateHandler;
 
-import java.io.IOException;
+import javax.annotation.Nonnull;
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,19 +35,23 @@ import java.util.Map;
 /**
  * Serialize and deserialize layout file and instantiate views
  */
-public enum LayoutManager {
+@SuppressWarnings("unused")
+@OnlyIn(Dist.CLIENT)
+public enum LayoutResourceManager {
     INSTANCE;
 
-    private final Gson gson;
+    public static final Type UI_RESOURCE_TYPE = new Type();
 
     private final Map<String, Constructor<? extends View>> constructorMap = new HashMap<>();
 
-    {
-        gson = new GsonBuilder()
-                .setPrettyPrinting()
-                .registerTypeAdapter(LayoutContainer.class, new Adaptor())
-                .excludeFieldsWithoutExposeAnnotation()
-                .create();
+    public void onResourcesReload(@Nonnull IResourceManager resourceManager) {
+
+    }
+
+    public void reloadLayoutResources() {
+        SelectiveReloadStateHandler.INSTANCE.beginReload(ReloadRequirements.include(UI_RESOURCE_TYPE));
+        Minecraft.getInstance().reloadResources();
+        SelectiveReloadStateHandler.INSTANCE.endReload();
     }
 
     /*@Nonnull
@@ -73,20 +79,8 @@ public enum LayoutManager {
         return list;
     }*/
 
-    /**
-     * Serialize and deserialize a layout file
-     */
-    private static class Adaptor extends TypeAdapter<LayoutContainer> {
+    private static class Type implements IResourceType {
 
-        @Override
-        public void write(JsonWriter out, LayoutContainer value) throws IOException {
-
-        }
-
-        @Override
-        public LayoutContainer read(JsonReader in) throws IOException {
-            return null;
-        }
     }
 
 }

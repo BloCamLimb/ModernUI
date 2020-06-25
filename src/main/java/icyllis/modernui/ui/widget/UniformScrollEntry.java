@@ -18,6 +18,7 @@
 
 package icyllis.modernui.ui.widget;
 
+import icyllis.modernui.ui.test.IScrollHost;
 import icyllis.modernui.ui.test.Widget;
 import icyllis.modernui.ui.test.Align9D;
 

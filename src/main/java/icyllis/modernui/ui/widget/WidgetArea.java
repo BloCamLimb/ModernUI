@@ -75,9 +75,8 @@ public interface WidgetArea {
             if (inRadius) {
                 double angle = (mouseX - x) / (y - mouseY);
                 return angle >= clockwise && angle <= clockwise + flare;
-            } else {
-                return false;
             }
+            return false;
         }
 
         public float getRadius() {

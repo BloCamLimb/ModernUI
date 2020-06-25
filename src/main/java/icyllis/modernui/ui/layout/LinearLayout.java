@@ -212,7 +212,7 @@ public class LinearLayout extends ViewGroup {
     }
 
     @Override
-    protected void onDraw(@Nonnull Canvas canvas, float time) {
+    protected void onDraw(@Nonnull Canvas canvas, int time) {
         if (divider != null) {
             if (orientation == Orientation.VERTICAL) {
                 drawDividersVertical(canvas);
@@ -262,7 +262,8 @@ public class LinearLayout extends ViewGroup {
     }
 
     private void drawHorizontalDivider(@Nonnull Canvas canvas, int top) {
-        divider.draw(canvas, getLeft() + dividerPadding, top, getRight() - dividerPadding, top + dividerHeight);
+        divider.setBounds(getLeft() + dividerPadding, top, getRight() - dividerPadding, top + dividerHeight);
+        divider.draw(canvas);
     }
 
     private void drawDividersHorizontal(@Nonnull Canvas canvas) {
@@ -302,7 +303,8 @@ public class LinearLayout extends ViewGroup {
     }
 
     private void drawVerticalDivider(@Nonnull Canvas canvas, int left) {
-        divider.draw(canvas, left, getTop() + dividerPadding, left + dividerWidth, getBottom() - dividerPadding);
+        divider.setBounds(left, getTop() + dividerPadding, left + dividerWidth, getBottom() - dividerPadding);
+        divider.draw(canvas);
     }
 
     @Override

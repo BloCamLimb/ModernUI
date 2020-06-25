@@ -93,7 +93,7 @@ public enum UIManager implements IViewParent {
     private int width, height;
 
     // scaled mouseX, mouseY on screen
-    private int mouseX, mouseY;
+    private double mouseX, mouseY;
 
     // a list of animations in render loop
     private final List<Animation> animations = new ArrayList<>();
@@ -104,10 +104,11 @@ public enum UIManager implements IViewParent {
     // elapsed ticks from a gui open, update every tick, 20 = 1 second
     private int ticks = 0;
 
-    // elapsed time from a gui open, update every frame, 20.0 = 1 second
-    private float time = 0;
+    // elapsed time from a gui open in milliseconds
+    private int time = 0;
 
-    // lazy loading, should be final
+    // the canvas to draw things shared in all views and drawables
+    // lazy loading because this class is loaded before GL initialization
     private Canvas canvas = null;
 
     // only post events to focused views
@@ -118,14 +119,14 @@ public enum UIManager implements IViewParent {
     @Nullable
     private View mKeyboard = null;
 
-    // for double click check, 10 tick = 0.5s
-    private int doubleClickTime = -10;
+    // for double click check, default 10 tick = 0.5s
+    private int doubleClickTime = Integer.MIN_VALUE;
 
     // to schedule layout on next frame
     private boolean layoutRequested = false;
 
     // to fix layout freq at 40Hz at most
-    private float lastLayoutTime = 0;
+    private int lastLayoutTime = 0;
 
     UIManager() {
 
@@ -233,7 +234,7 @@ public enum UIManager implements IViewParent {
                 ModernUI.LOGGER.fatal(MARKER, "The main view created from the fragment shouldn't be null");
                 view = new View();
             }
-            fragment.view = view;
+            fragment.root = view;
 
             ViewGroup.LayoutParams params = view.getLayoutParams();
             // convert layout params
@@ -271,7 +272,7 @@ public enum UIManager implements IViewParent {
 
         if (modernScreen != guiToOpen && ((guiToOpen instanceof ModernScreen) || (guiToOpen instanceof ModernContainerScreen<?>))) {
             if (view != null) {
-                ModernUI.LOGGER.fatal(MARKER, "Modern UI doesn't allow to keep other screens. Current: {}, ToOpen: {}", modernScreen, guiToOpen);
+                // prevent repeated opening sometimes
                 event.setCanceled(true);
                 return;
             }
@@ -322,7 +323,7 @@ public enum UIManager implements IViewParent {
         tasks.add(new DelayedTask(runnable, delayedTicks));
     }
 
-    void sMouseMoved(int mouseX, int mouseY) {
+    void sMouseMoved(double mouseX, double mouseY) {
         this.mouseX = mouseX;
         this.mouseY = mouseY;
         findFocus();
@@ -332,7 +333,7 @@ public enum UIManager implements IViewParent {
         }*/
     }
 
-    boolean sMouseClicked(int mouseX, int mouseY, int mouseButton) {
+    boolean sMouseClicked(double mouseX, double mouseY, int mouseButton) {
         this.mouseX = mouseX;
         this.mouseY = mouseY;
         /*if (popup != null) {
@@ -342,7 +343,7 @@ public enum UIManager implements IViewParent {
             if (mouseButton == 0) {
                 int delta = ticks - doubleClickTime;
                 if (delta < 10) {
-                    doubleClickTime = -10;
+                    doubleClickTime = Integer.MIN_VALUE;
                     if (mHovered.onMouseDoubleClicked(getViewMouseX(mHovered), getViewMouseY(mHovered))) {
                         return true;
                     }
@@ -357,7 +358,7 @@ public enum UIManager implements IViewParent {
         return false;
     }
 
-    boolean sMouseReleased(int mouseX, int mouseY, int mouseButton) {
+    boolean sMouseReleased(double mouseX, double mouseY, int mouseButton) {
         this.mouseX = mouseX;
         this.mouseY = mouseY;
         /*if (popup != null) {
@@ -370,7 +371,7 @@ public enum UIManager implements IViewParent {
         return false;//root.mouseReleased(mouseX, mouseY, mouseButton);
     }
 
-    boolean sMouseDragged(int mouseX, int mouseY, double deltaX, double deltaY) {
+    boolean sMouseDragged(double mouseX, double mouseY, double deltaX, double deltaY) {
         this.mouseX = mouseX;
         this.mouseY = mouseY;
         /*if (popup != null) {
@@ -382,7 +383,7 @@ public enum UIManager implements IViewParent {
         return false;
     }
 
-    boolean sMouseScrolled(int mouseX, int mouseY, double amount) {
+    boolean sMouseScrolled(double mouseX, double mouseY, double amount) {
         this.mouseX = mouseX;
         this.mouseY = mouseY;
         /*if (popup != null) {
@@ -545,7 +546,7 @@ public enum UIManager implements IViewParent {
         }*/
         layoutRequested = false;
 
-        if (ConfigManager.COMMON.isEnableDeveloperMode()) {
+        if (ConfigManager.isDeveloperMode()) {
             ModernUI.LOGGER.debug(MARKER, "Layout performed in {} \u03bcs", (System.nanoTime() - startTime) / 1000.0f);
         }
         findFocus();
@@ -560,7 +561,7 @@ public enum UIManager implements IViewParent {
             popup = null;
             fragment = null;
             modernScreen = null;
-            doubleClickTime = -10;
+            doubleClickTime = Integer.MIN_VALUE;
             lastLayoutTime = 0;
             layoutRequested = false;
             UIEditor.INSTANCE.setHoveredWidget(null);
@@ -605,38 +606,38 @@ public enum UIManager implements IViewParent {
     @SuppressWarnings("ForLoopReplaceableByForEach")
     @SubscribeEvent
     void gRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
-        if (event.phase != TickEvent.Phase.START) {
-            return;
-        }
+        if (event.phase == TickEvent.Phase.START) {
+            // remove animations from loop in next frame
+            if (!animations.isEmpty()) {
+                animations.removeIf(Animation::shouldRemove);
+            }
 
-        time = ticks + event.renderTickTime;
+        } else {
 
-        // remove animations from loop in next frame
-        if (!animations.isEmpty()) {
-            animations.removeIf(Animation::shouldRemove);
-        }
+            time = (int) ((ticks + event.renderTickTime) * 50.0f);
 
-        // list size is dynamically changeable, because updating animation may add new animation to the list
-        for (int i = 0; i < animations.size(); i++) {
-            animations.get(i).update(time);
-        }
+            // list size is dynamically changeable, because updating animation may add new animation to the list
+            for (int i = 0; i < animations.size(); i++) {
+                animations.get(i).update(time);
+            }
 
-        // layout after updating animations and before drawing
-        if (layoutRequested) {
-            // fixed at 40Hz
-            if (time - lastLayoutTime >= 0.5f) {
-                lastLayoutTime = time;
-                layout();
+            // layout after updating animations and before drawing
+            if (layoutRequested) {
+                // fixed at 40Hz
+                if (time - lastLayoutTime >= 25) {
+                    lastLayoutTime = time;
+                    layout();
+                }
             }
         }
     }
 
     /**
-     * Get elapsed time from a gui open, update every frame, 20.0 = 1 second
+     * Get elapsed time from a gui open, update every frame
      *
-     * @return drawing time
+     * @return drawing time in milliseconds
      */
-    public float getDrawingTime() {
+    public int getDrawingTime() {
         return time;
     }
 
@@ -672,7 +673,7 @@ public enum UIManager implements IViewParent {
      *
      * @return mouse x
      */
-    public int getMouseX() {
+    public double getMouseX() {
         return mouseX;
     }
 
@@ -681,7 +682,7 @@ public enum UIManager implements IViewParent {
      *
      * @return mouse y
      */
-    public int getMouseY() {
+    public double getMouseY() {
         return mouseY;
     }
 
@@ -693,7 +694,7 @@ public enum UIManager implements IViewParent {
      */
     public int getViewMouseX(@Nonnull View view) {
         IViewParent parent = view.getParent();
-        float mouseX = this.mouseX;
+        double mouseX = this.mouseX;
 
         while (parent != this) {
             mouseX += parent.getScrollX();
@@ -711,7 +712,7 @@ public enum UIManager implements IViewParent {
      */
     public int getViewMouseY(@Nonnull View view) {
         IViewParent parent = view.getParent();
-        float mouseY = this.mouseY;
+        double mouseY = this.mouseY;
 
         while (parent != this) {
             mouseY += parent.getScrollY();
@@ -750,7 +751,7 @@ public enum UIManager implements IViewParent {
             if (mHovered != null) {
                 mHovered.onMouseHoverEnter();
             }
-            doubleClickTime = -10;
+            doubleClickTime = Integer.MIN_VALUE;
             UIEditor.INSTANCE.setHoveredWidget(view);
         }
     }

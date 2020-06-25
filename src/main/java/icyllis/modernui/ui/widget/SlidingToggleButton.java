@@ -148,7 +148,7 @@ public class SlidingToggleButton extends Widget {
         canvas.setRGBA(r, g, b, a);
         canvas.drawRoundedRect(x1, y1, x2, y2, height / 2f);
         canvas.setRGBA(brightness, brightness, brightness, 1);
-        canvas.drawRoundedRectFrame(x1, y1, x2, y2, height / 2f);
+        canvas.drawRoundedFrame(x1, y1, x2, y2, height / 2f);
         canvas.setAlpha(0.9f);
         canvas.drawCircle(x1 + circleOffset, y1 + height / 2f, height / 2f - 0.5f);
     }

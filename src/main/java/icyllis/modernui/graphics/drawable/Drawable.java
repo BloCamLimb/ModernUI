@@ -27,16 +27,17 @@ import javax.annotation.Nonnull;
  */
 public abstract class Drawable {
 
+    private int left;
+    private int top;
+    private int right;
+    private int bottom;
+
     /**
      * Draw things in bounds
      *
      * @param canvas the canvas to draw things
-     * @param left   left bound
-     * @param top    top bound
-     * @param right  right bound
-     * @param bottom bottom bound
      */
-    public abstract void draw(@Nonnull Canvas canvas, int left, int top, int right, int bottom);
+    public abstract void draw(@Nonnull Canvas canvas);
 
     /**
      * Returns the drawable's intrinsic width.
@@ -62,5 +63,64 @@ public abstract class Drawable {
      */
     public int getIntrinsicHeight() {
         return -1;
+    }
+
+    /**
+     * Get actual width for drawing
+     *
+     * @return width
+     */
+    public final int getWidth() {
+        return right - left;
+    }
+
+    /**
+     * Get actual height for drawing
+     *
+     * @return height
+     */
+    public final int getHeight() {
+        return bottom - top;
+    }
+
+    public final int getLeft() {
+        return left;
+    }
+
+    public final int getTop() {
+        return top;
+    }
+
+    public final int getRight() {
+        return right;
+    }
+
+    public final int getBottom() {
+        return bottom;
+    }
+
+    /**
+     * Set the bounds of this drawable for drawing
+     *
+     * @param left   left bound
+     * @param top    top bound
+     * @param right  right bound
+     * @param bottom bottom bound
+     */
+    public void setBounds(int left, int top, int right, int bottom) {
+        if (this.left != left || this.top != top ||
+                this.right != right || this.bottom != bottom) {
+
+            this.left = left;
+            this.top = top;
+            this.right = right;
+            this.bottom = bottom;
+
+            onBoundsChanged();
+        }
+    }
+
+    protected void onBoundsChanged() {
+
     }
 }
