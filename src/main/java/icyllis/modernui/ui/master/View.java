@@ -155,7 +155,7 @@ public class View {
      * @param canvas canvas to draw content
      * @param time   elapsed time from a gui open
      */
-    protected void draw(@Nonnull Canvas canvas, float time) {
+    protected void draw(@Nonnull Canvas canvas, int time) {
         if ((viewFlags & VISIBILITY_MASK) == 0) {
 
             onDraw(canvas, time);
@@ -170,7 +170,7 @@ public class View {
      * @param canvas canvas to draw content
      * @param time   elapsed time from a gui open
      */
-    protected void onDraw(@Nonnull Canvas canvas, float time) {
+    protected void onDraw(@Nonnull Canvas canvas, int time) {
 
     }
 
@@ -180,7 +180,7 @@ public class View {
      * @param canvas canvas to draw content
      * @param time   elapsed time from a gui open
      */
-    protected void dispatchDraw(@Nonnull Canvas canvas, float time) {
+    protected void dispatchDraw(@Nonnull Canvas canvas, int time) {
 
     }
 
@@ -713,7 +713,7 @@ public class View {
      * @param mouseY relative mouse Y pos
      * @return return {@code true} if certain view hovered
      */
-    final boolean updateMouseHover(int mouseX, int mouseY) {
+    final boolean updateMouseHover(double mouseX, double mouseY) {
         if (isInView(mouseX, mouseY)) {
             if (onUpdateMouseHover(mouseX, mouseY)) {
                 return true;
@@ -725,7 +725,7 @@ public class View {
     }
 
     // helper
-    private boolean isInView(int mx, int my) {
+    private boolean isInView(double mx, double my) {
         return mx >= left && mx < right && my >= top && my < bottom;
     }
 
@@ -737,7 +737,7 @@ public class View {
      * @return {@code true} if certain child view hovered
      * {@code false} will make this view hovered
      */
-    protected boolean onUpdateMouseHover(int mouseX, int mouseY) {
+    protected boolean onUpdateMouseHover(double mouseX, double mouseY) {
         return false;
     }
 

@@ -16,9 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.ui.widget;
-
-import icyllis.modernui.ui.test.IWidget;
+package icyllis.modernui.ui.test;
 
 import javax.annotation.Nonnull;
 

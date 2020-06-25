@@ -22,7 +22,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.ui.animation.Animation;
 import icyllis.modernui.ui.animation.Applier;
 import icyllis.modernui.ui.animation.ITimeInterpolator;
-import icyllis.modernui.ui.animation.OvershootInterpolator;
+import icyllis.modernui.ui.animation.interpolator.OvershootInterpolator;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.graphics.math.Color3i;
 

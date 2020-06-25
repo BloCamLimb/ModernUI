@@ -36,9 +36,9 @@ import javax.annotation.Nullable;
 public class Fragment {
 
     /**
-     * The view you create from this fragment
+     * The view created from this fragment
      */
-    View view;
+    View root;
 
     /**
      * Create the view belong to this fragment.
@@ -55,5 +55,14 @@ public class Fragment {
     @Nullable
     public View createView() {
         return null;
+    }
+
+    /**
+     * Get the view created from this fragment
+     *
+     * @return root view
+     */
+    public View getView() {
+        return root;
     }
 }

@@ -49,7 +49,7 @@ public class ScrollView extends ViewGroup {
     }
 
     @Override
-    protected void dispatchDraw(@Nonnull Canvas canvas, float time) {
+    protected void dispatchDraw(@Nonnull Canvas canvas, int time) {
         canvas.clipStart(getLeft(), getTop(), getWidth(), getHeight());
         super.dispatchDraw(canvas, time);
         scrollBar.draw(canvas, time);

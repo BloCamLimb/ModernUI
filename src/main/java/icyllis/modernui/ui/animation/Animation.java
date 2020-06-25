@@ -28,11 +28,11 @@ import java.util.List;
 
 public class Animation {
 
-    private final float duration;
+    private int duration;
 
-    private float startTime;
+    private int startTime;
 
-    private float delayTime;
+    private int delayTime;
 
     @Nullable
     private List<Applier> appliers;
@@ -49,11 +49,10 @@ public class Animation {
     /**
      * New animation with fixed duration
      *
-     * @param duration milliseconds
+     * @param duration in milliseconds
      */
     public Animation(int duration) {
-        // convert ms to tick
-        this.duration = duration / 50.0f;
+        this.duration = duration;
     }
 
     public Animation applyTo(@Nonnull Applier applier) {
@@ -76,7 +75,7 @@ public class Animation {
      * Milliseconds
      */
     public Animation withDelay(int delay) {
-        delayTime = delay / 50.0f;
+        delayTime = delay;
         return this;
     }
 
@@ -167,7 +166,7 @@ public class Animation {
         }
     }
 
-    public void update(float time) {
+    public void update(int time) {
         if (waiting || time <= startTime) {
             return;
         }
@@ -190,7 +189,7 @@ public class Animation {
         }
     }
 
-    public float getDuration() {
+    public int getDuration() {
         return duration;
     }
 

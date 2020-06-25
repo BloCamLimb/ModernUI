@@ -40,7 +40,7 @@ public class EventsHandler {
 
     @SubscribeEvent
     static void rightClickItem(@Nonnull PlayerInteractEvent.RightClickItem event) {
-        if (ConfigManager.COMMON.isEnableDeveloperMode()) {
+        if (ConfigManager.isDeveloperMode()) {
             if (event.getItemStack().getItem() == Items.DIAMOND) {
                 if (event.getSide().isServer()) {
                     NetworkHooks.openGui((ServerPlayerEntity) event.getPlayer(), new ContainerTest.Provider());

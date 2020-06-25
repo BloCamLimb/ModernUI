@@ -20,7 +20,7 @@ package icyllis.modernui.impl.setting;
 
 import icyllis.modernui.graphics.font.TextAlign;
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.ui.widget.ScrollWindow;
+import icyllis.modernui.ui.test.ScrollWindow;
 import icyllis.modernui.impl.module.SettingLanguage;
 import icyllis.modernui.ui.widget.UniformScrollEntry;
 import net.minecraft.client.resources.Language;

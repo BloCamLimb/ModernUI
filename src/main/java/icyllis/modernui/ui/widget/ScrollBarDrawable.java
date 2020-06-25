@@ -18,25 +18,28 @@
 
 package icyllis.modernui.ui.widget;
 
-import icyllis.modernui.ui.test.IHost;
-import icyllis.modernui.ui.test.IWidget;
+import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.graphics.renderer.Canvas;
 
-public interface IScrollHost extends IHost, IWidget {
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
-    /**
-     * Get scroll offset without top and bottom margin
-     *
-     * @return scroll amount (gt 0)
-     */
-    float getVisibleOffset();
+public class ScrollBarDrawable extends Drawable {
 
-    float getMargin();
+    @Nullable
+    private Drawable verticalTrack;
+    @Nullable
+    private Drawable verticalThumb;
+    @Nullable
+    private Drawable horizontalTrack;
+    @Nullable
+    private Drawable horizontalThumb;
 
-    void layoutList();
+    private boolean vertical = false;
+    private boolean visible = false;
 
-    float getMaxScrollAmount();
+    @Override
+    public void draw(@Nonnull Canvas canvas) {
 
-    void callbackScrollAmount(float scrollAmount);
-
-    ScrollController getScrollController();
+    }
 }

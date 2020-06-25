@@ -16,19 +16,24 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.ui.animation;
+package icyllis.modernui.graphics.shader.program;
 
-public class OvershootInterpolator implements ITimeInterpolator {
+import icyllis.modernui.graphics.shader.ShaderProgram;
+import org.lwjgl.opengl.GL20;
 
-    private final float tension;
+public class RoundedFrameShader extends ShaderProgram {
 
-    public OvershootInterpolator(float tension) {
-        this.tension = tension;
+    public static RoundedFrameShader INSTANCE = new RoundedFrameShader("rect", "rounded_rect_frame");
+
+    public RoundedFrameShader(String vert, String frag) {
+        super(vert, frag);
     }
 
-    @Override
-    public float getInterpolation(float progress) {
-        progress -= 1.0f;
-        return progress * progress * ((tension + 1) * progress + tension) + 1.0f;
+    public void setRadius(float radius) {
+        GL20.glUniform1f(0, radius);
+    }
+
+    public void setInnerRect(float left, float top, float right, float bottom) {
+        GL20.glUniform4f(1, left, top, right, bottom);
     }
 }

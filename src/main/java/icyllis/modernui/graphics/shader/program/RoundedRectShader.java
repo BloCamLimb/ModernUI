@@ -23,7 +23,7 @@ import org.lwjgl.opengl.GL20;
 
 public class RoundedRectShader extends ShaderProgram {
 
-    public static RoundedRectShader INSTANCE = new RoundedRectShader("rect", "rounded_rect");
+    public static final RoundedRectShader INSTANCE = new RoundedRectShader("rect", "rounded_rect");
 
     public RoundedRectShader(String vert, String frag) {
         super(vert, frag);

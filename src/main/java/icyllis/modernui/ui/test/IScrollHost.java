@@ -16,21 +16,29 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.ui.animation;
+package icyllis.modernui.ui.test;
 
-public class AccelerateInterpolator implements ITimeInterpolator {
+import icyllis.modernui.ui.test.IHost;
+import icyllis.modernui.ui.test.IWidget;
+import icyllis.modernui.ui.widget.Scroller;
 
-    private final float factor;
+@Deprecated
+public interface IScrollHost extends IHost, IWidget {
 
-    public AccelerateInterpolator(float factor) {
-        this.factor = factor;
-    }
+    /**
+     * Get scroll offset without top and bottom margin
+     *
+     * @return scroll amount (gt 0)
+     */
+    float getVisibleOffset();
 
-    @Override
-    public float getInterpolation(float progress) {
-        if (factor == 1.0f) {
-            return progress * progress;
-        }
-        return (float) Math.pow(progress, factor * 2);
-    }
+    float getMargin();
+
+    void layoutList();
+
+    float getMaxScrollAmount();
+
+    void callbackScrollAmount(float scrollAmount);
+
+    Scroller getScrollController();
 }

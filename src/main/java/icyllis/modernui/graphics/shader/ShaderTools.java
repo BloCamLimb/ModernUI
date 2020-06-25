@@ -36,25 +36,15 @@ import java.util.function.Predicate;
 @OnlyIn(Dist.CLIENT)
 public class ShaderTools {
 
-    public static void init() {
-        IResourceManager manager = Minecraft.getInstance().getResourceManager();
-        if (manager instanceof IReloadableResourceManager) {
-            ((IReloadableResourceManager) manager).addReloadListener(
-                    (ISelectiveResourceReloadListener) ShaderTools::compileShaders);
-        }
-    }
+    public static void compileShaders(IResourceManager manager) {
+        RingShader.INSTANCE.compile(manager);
+        RoundedRectShader.INSTANCE.compile(manager);
+        RoundedFrameShader.INSTANCE.compile(manager);
+        CircleShader.INSTANCE.compile(manager);
+        FeatheredRectShader.INSTANCE.compile(manager);
 
-    private static void compileShaders(IResourceManager manager, @Nonnull Predicate<IResourceType> typePredicate) {
-        if (typePredicate.test(VanillaResourceType.SHADERS)) {
-            RingShader.INSTANCE.compile(manager);
-            RoundedRectShader.INSTANCE.compile(manager);
-            RoundedRectFrameShader.INSTANCE.compile(manager);
-            CircleShader.INSTANCE.compile(manager);
-            FeatheredRectShader.INSTANCE.compile(manager);
-
-            ModernUI.LOGGER.debug(ShaderProgram.MARKER, "Shaders compiled with a total of {}", ShaderProgram.compileCount);
-            ShaderProgram.compileCount = 0;
-        }
+        ModernUI.LOGGER.debug(ShaderProgram.MARKER, "Shaders have been compiled with a total of {}", ShaderProgram.compileCount);
+        ShaderProgram.compileCount = 0;
     }
 
     public static <T extends ShaderProgram> void useShader(@Nonnull T shader) {

@@ -27,6 +27,8 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLPaths;
 
 import javax.annotation.Nonnull;
+import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -61,10 +63,10 @@ public class ConfigManager {
         ForgeConfigSpec spec = event.getConfig().getSpec();
         if (spec == CLIENT_SPEC) {
             CLIENT.load();
-            ModernUI.LOGGER.debug(ModernUI.MARKER, "Client config loaded");
+            //ModernUI.LOGGER.debug(ModernUI.MARKER, "Client config loaded");
         } else if (spec == COMMON_SPEC) {
             COMMON.load();
-            ModernUI.LOGGER.debug(ModernUI.MARKER, "Common config loaded");
+            //ModernUI.LOGGER.debug(ModernUI.MARKER, "Common config loaded");
         }
     }
 
@@ -95,7 +97,7 @@ public class ConfigManager {
                     .define("blurGuiBackground", true);
 
             blurScreenExclusionsV = builder.comment("A list of gui screen superclasses that won't activate blur effect when opened.")
-                    .defineList("blurGuiExclusions", ArrayList::new, $ -> true);
+                    .defineList("blurGuiExclusions", ArrayList::new, s -> true);
 
             builder.pop();
 
@@ -124,28 +126,43 @@ public class ConfigManager {
         }
     }
 
+    private static boolean developerMode = false;
+
+    public static boolean isDeveloperMode() {
+        return developerMode;
+    }
+
     public static class Common {
 
-        private boolean enableDeveloperMode;
-
-        private final ForgeConfigSpec.BooleanValue enableDeveloperModeV;
+        //private final ForgeConfigSpec.BooleanValue enableDeveloperModeV;
+        private final ForgeConfigSpec.IntValue workingDirLevelV;
 
         public Common(@Nonnull ForgeConfigSpec.Builder builder) {
             builder.comment("Developer Config")
                     .push("developer");
 
-            enableDeveloperModeV = builder.comment("For assisting developer to debug mod and edit modules in-game")
-                    .define("enableDeveloperMode", false);
+            /*enableDeveloperModeV = builder.comment("For assisting developer to debug mod and edit modules in-game")
+                    .define("enableDeveloperMode", false);*/
+            workingDirLevelV = builder.comment("The level of your working directory, determines the root directory of your project.")
+                    .defineInRange("workingDirLevel", 1, 0, Integer.MAX_VALUE);
 
             builder.pop();
         }
 
         private void load() {
-            enableDeveloperMode = enableDeveloperModeV.get();
-        }
-
-        public boolean isEnableDeveloperMode() {
-            return enableDeveloperMode;
+            if (!developerMode) {
+                Path path = FMLPaths.GAMEDIR.get();
+                int level = workingDirLevelV.get();
+                for (int i = 0; i < level; i++) {
+                    path = path.getParent();
+                }
+                File projectDir = path.toFile();
+                String[] r = projectDir.list((f, n) -> n.equals("build.gradle"));
+                if (r != null && r.length > 0) {
+                    ModernUI.LOGGER.debug(ModernUI.MARKER, "Enables Developer Mode");
+                    developerMode = true;
+                }
+            }
         }
     }
 }

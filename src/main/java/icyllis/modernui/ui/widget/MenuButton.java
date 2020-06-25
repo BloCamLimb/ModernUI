@@ -97,7 +97,7 @@ public class MenuButton extends IconButton {
             canvas.setRGBA(0.0f, 0.0f, 0.0f, 0.5f * frameAlpha);
             canvas.drawRoundedRect(x1 + 27, y1 + 1, x1 + 32 + frameSizeW, y1 + 15, 6);
             canvas.setRGBA(0.5f, 0.5f, 0.5f, frameAlpha);
-            canvas.drawRoundedRectFrame(x1 + 27, y1 + 1, x1 + 32 + frameSizeW, y1 + 15, 6);
+            canvas.drawRoundedFrame(x1 + 27, y1 + 1, x1 + 32 + frameSizeW, y1 + 15, 6);
             canvas.setRGBA(1.0f, 1.0f, 1.0f, textAlpha);
             canvas.drawText(text, x1 + 32, y1 + 4);
         }

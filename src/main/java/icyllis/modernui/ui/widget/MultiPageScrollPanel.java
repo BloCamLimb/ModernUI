@@ -114,7 +114,7 @@ public class MultiPageScrollPanel<E extends UniformScrollEntry, G extends Unifor
         }
         layoutList();
         if (scrollToTop) {
-            controller.scrollDirectBy(-getMaxScrollAmount());
+            //controller.scrollDirectBy(-getMaxScrollAmount());
         }
         hasScrolled = true;
     }

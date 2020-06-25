@@ -18,6 +18,8 @@
 
 package icyllis.modernui.ui.animation;
 
+import icyllis.modernui.ui.animation.interpolator.ViscousFluidInterpolator;
+
 @FunctionalInterface
 public interface ITimeInterpolator {
 
@@ -39,12 +41,17 @@ public interface ITimeInterpolator {
     /**
      * Slow to fast to slow
      */
-    ITimeInterpolator ACC_DEC = in -> (float) (Math.cos((in + 1) * Math.PI) / 2.0d) + 0.5f;
+    ITimeInterpolator ACC_DEC = in -> (float) (Math.cos((in + 1) * Math.PI) / 2.0) + 0.5f;
 
     /**
      * From fast to slow, it's better to use {@link #DECELERATE}, they are similar
      */
-    ITimeInterpolator SINE = in -> (float) Math.sin(Math.PI / 2.0d * in);
+    ITimeInterpolator SINE = in -> (float) Math.sin(Math.PI / 2.0 * in);
+
+    /**
+     * Default used in scroller
+     */
+    ITimeInterpolator VISCOUS_FLUID = new ViscousFluidInterpolator();
 
     /**
      * Get interpolation value

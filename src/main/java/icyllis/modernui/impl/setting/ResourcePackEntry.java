@@ -23,7 +23,7 @@ import icyllis.modernui.ui.master.UITools;
 import icyllis.modernui.graphics.font.TextAlign;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.test.Align9D;
-import icyllis.modernui.ui.widget.ScrollWindow;
+import icyllis.modernui.ui.test.ScrollWindow;
 import icyllis.modernui.impl.module.SettingResourcePack;
 import icyllis.modernui.ui.widget.UniformScrollEntry;
 import icyllis.modernui.graphics.math.Color3i;

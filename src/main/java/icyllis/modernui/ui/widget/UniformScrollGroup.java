@@ -19,6 +19,8 @@
 package icyllis.modernui.ui.widget;
 
 import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.ui.test.IScrollHost;
+import icyllis.modernui.ui.test.ScrollGroup;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -161,18 +163,18 @@ public abstract class UniformScrollGroup<T extends UniformScrollEntry> extends S
         float c = entry.getTop() - window.getTop() - window.getVisibleOffset() - window.getMargin();
         if (c < 0) {
             if (c < -240) {
-                window.getScrollController().scrollDirectBy(c);
+                //window.getScrollController().scrollDirectBy(c);
             } else {
-                window.getScrollController().scrollSmoothBy(c);
+                //window.getScrollController().scrollSmoothBy(c);
             }
             return;
         }
         float d = entry.getBottom() - window.getBottom() - window.getVisibleOffset() + window.getMargin();
         if (d > 0) {
             if (d > 240) {
-                window.getScrollController().scrollDirectBy(d);
+                //window.getScrollController().scrollDirectBy(d);
             } else {
-                window.getScrollController().scrollSmoothBy(d);
+                //window.getScrollController().scrollSmoothBy(d);
             }
         }
     }

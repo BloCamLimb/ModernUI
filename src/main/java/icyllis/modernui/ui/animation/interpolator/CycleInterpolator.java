@@ -16,7 +16,20 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.ui.data;
+package icyllis.modernui.ui.animation.interpolator;
 
-public interface ILayoutElement {
+import icyllis.modernui.ui.animation.ITimeInterpolator;
+
+public class CycleInterpolator implements ITimeInterpolator {
+
+    private final float cycle;
+
+    public CycleInterpolator(float cycle) {
+        this.cycle = cycle;
+    }
+
+    @Override
+    public float getInterpolation(float progress) {
+        return (float) Math.sin(2 * Math.PI * cycle * progress);
+    }
 }

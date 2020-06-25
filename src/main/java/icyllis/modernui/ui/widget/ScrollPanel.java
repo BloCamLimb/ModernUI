@@ -21,6 +21,7 @@ package icyllis.modernui.ui.widget;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.master.View;
 import icyllis.modernui.ui.test.IHost;
+import icyllis.modernui.ui.test.IScrollHost;
 import icyllis.modernui.ui.test.Widget;
 
 import javax.annotation.Nonnull;
@@ -38,7 +39,7 @@ public class ScrollPanel<E extends UniformScrollEntry, G extends UniformScrollGr
 
     protected ScrollBar scrollbar;
 
-    protected ScrollController controller;
+    protected Scroller controller;
 
     /**
      * This cannot used in inner class
@@ -153,7 +154,7 @@ public class ScrollPanel<E extends UniformScrollEntry, G extends UniformScrollGr
     }
 
     @Override
-    public ScrollController getScrollController() {
+    public Scroller getScrollController() {
         return controller;
     }
 
@@ -172,14 +173,14 @@ public class ScrollPanel<E extends UniformScrollEntry, G extends UniformScrollGr
         group.locate((x1 + x2) / 2f, y1);
         updateScrollBarLength();
         // update all scroll data
-        controller.scrollDirectBy(0);
+        //controller.scrollDirectBy(0);
     }
 
     public void updateScrollBarLength() {
         float v = getHeight();
         float t = group.getHeight();
         boolean renderBar = t > v;
-        scrollbar.setVisibility(renderBar ? View.VISIBLE : View.INVISIBLE);
+        //scrollbar.setVisibility(renderBar ? View.VISIBLE : View.INVISIBLE);
         if (renderBar) {
             float p = v / t;
             scrollbar.setBarLength(p);

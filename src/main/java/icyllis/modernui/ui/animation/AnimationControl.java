@@ -27,7 +27,7 @@ import java.util.Optional;
 /**
  * Control animation in two states
  * Any state cannot be cancelled when it is in progress
- * This is not needed in most cases
+ * This is not needed in most cases, maybe deprecated
  */
 public class AnimationControl implements Animation.IListener {
 
