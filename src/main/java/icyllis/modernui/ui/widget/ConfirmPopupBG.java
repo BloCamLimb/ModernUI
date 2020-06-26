@@ -49,13 +49,13 @@ public class ConfirmPopupBG extends Background {
     @Override
     public void draw(@Nonnull Canvas canvas, float time) {
         super.draw(canvas, time);
-        canvas.setRGBA(0.064f, 0.064f, 0.064f, 0.7f);
+        //canvas.setColor(0.064f, 0.064f, 0.064f, 0.7f);
         canvas.drawRect(x, y, x + 180, y + heightOffset);
 
-        canvas.setRGBA(0.032f, 0.032f, 0.032f, 0.85f);
+        //canvas.setColor(0.032f, 0.032f, 0.032f, 0.85f);
         canvas.drawRect(x, y, x + 180, y + 16);
 
-        canvas.setRGBA(0.5f, 0.5f, 0.5f, 1.0f);
+        //canvas.setColor(0.5f, 0.5f, 0.5f, 1.0f);
         GL11.glEnable(GL11.GL_POLYGON_SMOOTH);
         GL11.glHint(GL11.GL_POLYGON_SMOOTH_HINT, GL11.GL_NICEST);
         canvas.drawRectOutline(x, y, x + 180, y + heightOffset, 0.51f);

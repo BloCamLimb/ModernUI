@@ -149,7 +149,7 @@ public class TextField extends Widget implements IKeyboardListener {
 
         if (!s.isEmpty()) {
             String s1 = b ? s.substring(0, ds) : s;
-            canvas.setRGBA(0.88f, 0.88f, 0.88f, 1);
+            //canvas.setColor(0.88f, 0.88f, 0.88f, 1);
             canvas.drawText(s1, lx, ty);
             float c = UITools.getStringWidth(s1);
             cx += c;
@@ -163,11 +163,11 @@ public class TextField extends Widget implements IKeyboardListener {
         // draw selection box
         if (de != ds) {
             float l1 = lx + UITools.getStringWidth(s.substring(0, de));
-            canvas.setColor(Color3i.BLUE_C, 0.5f);
+            //canvas.setColor(Color3i.BLUE_C, 0.5f);
             canvas.drawRect(kx, ty - 1, l1, ty + 10);
         }
 
-        canvas.setRGBA(0.88f, 0.88f, 0.88f, 1);
+        //canvas.setColor(0.88f, 0.88f, 0.88f, 1);
 
         if (!s.isEmpty() && b && ds < s.length()) {
             canvas.drawText(s.substring(ds), cx, ty);
@@ -620,9 +620,9 @@ public class TextField extends Widget implements IKeyboardListener {
 
         @Override
         public void draw(@Nonnull Canvas canvas, float time) {
-            canvas.setRGBA(0, 0, 0, 0.25f);
+            //canvas.setColor(0, 0, 0, 0.25f);
             canvas.drawRect(instance.x1 - getHeaderLength(), instance.y1, instance.x2 + getTrailerLength(), instance.y2);
-            canvas.setRGBA(r, g, b, a);
+            //canvas.setColor(r, g, b, a);
             canvas.drawRoundedFrame(instance.x1 - getHeaderLength() - 1, instance.y1 - 1, instance.x2 + 1 + getTrailerLength(), instance.y2 + 1, 1.5f);
             if (title != null) {
                 canvas.setTextAlign(TextAlign.LEFT);

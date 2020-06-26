@@ -55,7 +55,7 @@ public class TestScrollGr extends UniformScrollGroup<TestScrollGr.TestScrollEn> 
 
         @Override
         protected void onDraw(@Nonnull Canvas canvas, float time) {
-            canvas.setRGBA(0, 0, 0, 0.1f);
+            //canvas.setColor(0, 0, 0, 0.1f);
             canvas.drawRect(x1, y1 + 1, x2, y2 - 1);
             canvas.resetColor();
             canvas.setTextAlign(TextAlign.LEFT);

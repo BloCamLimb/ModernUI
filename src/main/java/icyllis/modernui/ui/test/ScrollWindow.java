@@ -20,7 +20,6 @@ package icyllis.modernui.ui.test;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.ui.master.View;
 import icyllis.modernui.ui.widget.ScrollBar;
 import icyllis.modernui.ui.widget.Scroller;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -99,7 +98,7 @@ public class ScrollWindow<T extends ScrollGroup> extends Window implements IScro
 
         RenderSystem.shadeModel(GL11.GL_FLAT);
 
-        scrollbar.draw(canvas, time);
+        //scrollbar.draw(canvas, time);
 
         RenderSystem.enableTexture();
 

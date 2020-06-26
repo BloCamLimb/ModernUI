@@ -95,14 +95,14 @@ public class TrueTypeRenderer implements IFontRenderer {
     }
 
     @Override
-    public float drawString(String str, float startX, float startY, float r, float g, float b, float a, TextAlign align) {
+    public float drawString(String str, float startX, float startY, int r, int g, int b, int a, TextAlign align) {
         /* Check for invalid arguments */
         if (str == null || str.isEmpty()) {
             return 0;
         }
 
         // Fix for what RenderLivingBase#setBrightness does
-        GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL11.GL_MODULATE);
+        //GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL11.GL_MODULATE);
 
         RenderSystem.enableTexture();
 
@@ -116,16 +116,13 @@ public class TrueTypeRenderer implements IFontRenderer {
          * This color change will have no effect on the actual text (since colors are included in the Tessellator vertex
          * array), however GuiEditSign of all things depends on having the current color set to white when it renders its
          * "Edit sign message:" text. Otherwise, the sign which is rendered underneath would look too dark.
+         *
+         * It seems no use any more
          */
-        RenderSystem.color3f(r, g, b);
-
-        int red = (int) (r * 255);
-        int green = (int) (g * 255);
-        int blue = (int) (b * 255);
-        int alpha = (int) (a * 255);
+        //RenderSystem.color3f(r, g, b);
 
         /* formatting color will replace parameter color */
-        Color3i rColor = null;
+        Color3i formattedColor = null;
 
         /*
          * Enable GL_BLEND in case the font is drawn anti-aliased because Minecraft itself only enables blending for chat text
@@ -143,7 +140,7 @@ public class TrueTypeRenderer implements IFontRenderer {
         startX = startX - entry.advance * align.getOffsetFactor();
 
         Tessellator tessellator = Tessellator.getInstance();
-        BufferBuilder buffer = tessellator.getBuffer();
+        BufferBuilder bufferBuilder = tessellator.getBuffer();
 
         /* The currently active font style is needed to select the proper ASCII digit style for fast replacement */
         int fontStyle = StringCache.FormattingCode.PLAIN;
@@ -156,7 +153,7 @@ public class TrueTypeRenderer implements IFontRenderer {
              * in which case only the last such color code takes effect.
              */
             while (colorIndex < entry.codes.length && entry.glyphs[glyphIndex].stringIndex >= entry.codes[colorIndex].stringIndex) {
-                rColor = entry.codes[colorIndex].color;
+                formattedColor = entry.codes[colorIndex].color;
                 fontStyle = entry.codes[colorIndex].fontStyle;
                 colorIndex++;
             }
@@ -186,22 +183,22 @@ public class TrueTypeRenderer implements IFontRenderer {
             float y1 = startY + (glyph.y) / 2.0F;
             float y2 = startY + (glyph.y + texture.height) / 2.0F;
 
-            buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR_TEX);
+            bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR_TEX);
             GlStateManager.bindTexture(texture.textureName);
 
-            if (rColor != null) {
-                int rr = rColor.getIntRed();
-                int rg = rColor.getIntGreen();
-                int rb = rColor.getIntBlue();
-                buffer.pos(x1, y1, 0).color(rr, rg, rb, alpha).tex(texture.u1, texture.v1).endVertex();
-                buffer.pos(x1, y2, 0).color(rr, rg, rb, alpha).tex(texture.u1, texture.v2).endVertex();
-                buffer.pos(x2, y2, 0).color(rr, rg, rb, alpha).tex(texture.u2, texture.v2).endVertex();
-                buffer.pos(x2, y1, 0).color(rr, rg, rb, alpha).tex(texture.u2, texture.v1).endVertex();
+            if (formattedColor != null) {
+                int red = formattedColor.getIntRed();
+                int green = formattedColor.getIntGreen();
+                int blue = formattedColor.getIntBlue();
+                bufferBuilder.pos(x1, y1, 0).color(red, green, blue, a).tex(texture.u1, texture.v1).endVertex();
+                bufferBuilder.pos(x1, y2, 0).color(red, green, blue, a).tex(texture.u1, texture.v2).endVertex();
+                bufferBuilder.pos(x2, y2, 0).color(red, green, blue, a).tex(texture.u2, texture.v2).endVertex();
+                bufferBuilder.pos(x2, y1, 0).color(red, green, blue, a).tex(texture.u2, texture.v1).endVertex();
             } else {
-                buffer.pos(x1, y1, 0).color(red, green, blue, alpha).tex(texture.u1, texture.v1).endVertex();
-                buffer.pos(x1, y2, 0).color(red, green, blue, alpha).tex(texture.u1, texture.v2).endVertex();
-                buffer.pos(x2, y2, 0).color(red, green, blue, alpha).tex(texture.u2, texture.v2).endVertex();
-                buffer.pos(x2, y1, 0).color(red, green, blue, alpha).tex(texture.u2, texture.v1).endVertex();
+                bufferBuilder.pos(x1, y1, 0).color(r, g, b, a).tex(texture.u1, texture.v1).endVertex();
+                bufferBuilder.pos(x1, y2, 0).color(r, g, b, a).tex(texture.u1, texture.v2).endVertex();
+                bufferBuilder.pos(x2, y2, 0).color(r, g, b, a).tex(texture.u2, texture.v2).endVertex();
+                bufferBuilder.pos(x2, y1, 0).color(r, g, b, a).tex(texture.u2, texture.v1).endVertex();
             }
 
             tessellator.draw();
@@ -213,7 +210,7 @@ public class TrueTypeRenderer implements IFontRenderer {
 
             /* Use initial color passed to renderString(); disable texturing to draw solid color lines */
             GlStateManager.disableTexture();
-            buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+            bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
 
             for (int glyphIndex = 0, colorIndex = 0; glyphIndex < entry.glyphs.length; glyphIndex++) {
                 /*
@@ -222,7 +219,7 @@ public class TrueTypeRenderer implements IFontRenderer {
                  * color code takes effect.
                  */
                 while (colorIndex < entry.codes.length && entry.glyphs[glyphIndex].stringIndex >= entry.codes[colorIndex].stringIndex) {
-                    rColor = entry.codes[colorIndex].color;
+                    formattedColor = entry.codes[colorIndex].color;
                     renderStyle = entry.codes[colorIndex].renderStyle;
                     colorIndex++;
                 }
@@ -236,26 +233,26 @@ public class TrueTypeRenderer implements IFontRenderer {
                 /* Draw underline under glyph if the style is enabled */
                 if ((renderStyle & StringCache.FormattingCode.UNDERLINE) != 0) {
                     /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
-                    if (rColor != null) {
-                        int rr = rColor.getIntRed();
-                        int rg = rColor.getIntGreen();
-                        int rb = rColor.getIntBlue();
-                        drawI1(startX, startY, buffer, glyph, glyphSpace, alpha, rr, rg, rb, UNDERLINE_OFFSET, UNDERLINE_THICKNESS);
+                    if (formattedColor != null) {
+                        int red = formattedColor.getIntRed();
+                        int green = formattedColor.getIntGreen();
+                        int blue = formattedColor.getIntBlue();
+                        drawI1(startX, startY, bufferBuilder, glyph, glyphSpace, a, red, green, blue, UNDERLINE_OFFSET, UNDERLINE_THICKNESS);
                     } else {
-                        drawI1(startX, startY, buffer, glyph, glyphSpace, alpha, red, green, blue, UNDERLINE_OFFSET, UNDERLINE_THICKNESS);
+                        drawI1(startX, startY, bufferBuilder, glyph, glyphSpace, a, r, g, b, UNDERLINE_OFFSET, UNDERLINE_THICKNESS);
                     }
                 }
 
                 /* Draw strikethrough in the middle of glyph if the style is enabled */
                 if ((renderStyle & StringCache.FormattingCode.STRIKETHROUGH) != 0) {
                     /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
-                    if (rColor != null) {
-                        int rr = rColor.getIntRed();
-                        int rg = rColor.getIntGreen();
-                        int rb = rColor.getIntBlue();
-                        drawI1(startX, startY, buffer, glyph, glyphSpace, alpha, rr, rg, rb, UNDERLINE_OFFSET, UNDERLINE_THICKNESS);
+                    if (formattedColor != null) {
+                        int red = formattedColor.getIntRed();
+                        int green = formattedColor.getIntGreen();
+                        int blue = formattedColor.getIntBlue();
+                        drawI1(startX, startY, bufferBuilder, glyph, glyphSpace, a, red, green, blue, UNDERLINE_OFFSET, UNDERLINE_THICKNESS);
                     } else {
-                        drawI1(startX, startY, buffer, glyph, glyphSpace, alpha, red, green, blue, STRIKETHROUGH_OFFSET, STRIKETHROUGH_THICKNESS);
+                        drawI1(startX, startY, bufferBuilder, glyph, glyphSpace, a, r, g, b, STRIKETHROUGH_OFFSET, STRIKETHROUGH_THICKNESS);
                     }
                 }
             }
@@ -296,7 +293,7 @@ public class TrueTypeRenderer implements IFontRenderer {
     //TODO Add support for the "k" code which randomly replaces letters on each render (used on
     //TODO Pre-sort by texture to minimize binds; can store colors per glyph in string cache (?)
     //TODO Optimize the underline/strikethrough drawing to draw a single line for each run
-    protected float drawStringGlobal(@Nullable String str, float startX, float startY, float r, float g, float b, float a, boolean isShadow, Matrix4f matrix, IRenderTypeBuffer typeBuffer, int packedLight) {
+    protected float drawStringGlobal(@Nullable String str, float startX, float startY, int red, int green, int blue, int alpha, boolean isShadow, Matrix4f matrix, IRenderTypeBuffer typeBuffer, int packedLight) {
         /* Check for invalid arguments */
         if (str == null || str.isEmpty()) {
             return 0;
@@ -323,11 +320,6 @@ public class TrueTypeRenderer implements IFontRenderer {
          * "Edit sign message:" text. Otherwise, the sign which is rendered underneath would look too dark.
          */
         //RenderSystem.color3f(r, g, b);
-
-        int red = (int) (r * 255);
-        int green = (int) (g * 255);
-        int blue = (int) (b * 255);
-        int alpha = (int) (a * 255);
         if (isShadow) {
             red = red >> 2;
             green = green >> 2;
@@ -335,7 +327,7 @@ public class TrueTypeRenderer implements IFontRenderer {
         }
 
         /* formatting color will replace parameter color */
-        Color3i rColor = null;
+        Color3i formattedColor = null;
 
         /*
          * Enable GL_BLEND in case the font is drawn anti-aliased because Minecraft itself only enables blending for chat text
@@ -362,7 +354,7 @@ public class TrueTypeRenderer implements IFontRenderer {
              * in which case only the last such color code takes effect.
              */
             while (colorIndex < entry.codes.length && entry.glyphs[glyphIndex].stringIndex >= entry.codes[colorIndex].stringIndex) {
-                rColor = entry.codes[colorIndex].color;
+                formattedColor = entry.codes[colorIndex].color;
                 fontStyle = entry.codes[colorIndex].fontStyle;
                 colorIndex++;
             }
@@ -396,19 +388,19 @@ public class TrueTypeRenderer implements IFontRenderer {
 
             IVertexBuilder builder = typeBuffer.getBuffer(texture.renderType);
 
-            if (rColor != null) {
-                int rr = rColor.getIntRed();
-                int rg = rColor.getIntGreen();
-                int rb = rColor.getIntBlue();
+            if (formattedColor != null) {
+                int r = formattedColor.getIntRed();
+                int g = formattedColor.getIntGreen();
+                int b = formattedColor.getIntBlue();
                 if (isShadow) {
-                    rr = rr >> 2;
-                    rg = rg >> 2;
-                    rb = rb >> 2;
+                    r = r >> 2;
+                    g = g >> 2;
+                    b = b >> 2;
                 }
-                builder.pos(matrix, x1, y1, 0).color(rr, rg, rb, alpha).tex(texture.u1, texture.v1).lightmap(packedLight).endVertex();
-                builder.pos(matrix, x1, y2, 0).color(rr, rg, rb, alpha).tex(texture.u1, texture.v2).lightmap(packedLight).endVertex();
-                builder.pos(matrix, x2, y2, 0).color(rr, rg, rb, alpha).tex(texture.u2, texture.v2).lightmap(packedLight).endVertex();
-                builder.pos(matrix, x2, y1, 0).color(rr, rg, rb, alpha).tex(texture.u2, texture.v1).lightmap(packedLight).endVertex();
+                builder.pos(matrix, x1, y1, 0).color(r, g, b, alpha).tex(texture.u1, texture.v1).lightmap(packedLight).endVertex();
+                builder.pos(matrix, x1, y2, 0).color(r, g, b, alpha).tex(texture.u1, texture.v2).lightmap(packedLight).endVertex();
+                builder.pos(matrix, x2, y2, 0).color(r, g, b, alpha).tex(texture.u2, texture.v2).lightmap(packedLight).endVertex();
+                builder.pos(matrix, x2, y1, 0).color(r, g, b, alpha).tex(texture.u2, texture.v1).lightmap(packedLight).endVertex();
             } else {
                 builder.pos(matrix, x1, y1, 0).color(red, green, blue, alpha).tex(texture.u1, texture.v1).lightmap(packedLight).endVertex();
                 builder.pos(matrix, x1, y2, 0).color(red, green, blue, alpha).tex(texture.u1, texture.v2).lightmap(packedLight).endVertex();
@@ -431,7 +423,7 @@ public class TrueTypeRenderer implements IFontRenderer {
             int renderStyle = 0;
 
             Tessellator tessellator = Tessellator.getInstance();
-            BufferBuilder buffer = tessellator.getBuffer();
+            BufferBuilder bufferBuilder = tessellator.getBuffer();
 
             RenderSystem.enableBlend();
             RenderSystem.defaultBlendFunc();
@@ -440,7 +432,7 @@ public class TrueTypeRenderer implements IFontRenderer {
 
             /* Use initial color passed to renderString(); disable texturing to draw solid color lines */
             GlStateManager.disableTexture();
-            buffer.begin(7, DefaultVertexFormats.POSITION_COLOR);
+            bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
 
             for (int glyphIndex = 0, colorIndex = 0; glyphIndex < entry.glyphs.length; glyphIndex++) {
                 /*
@@ -449,7 +441,7 @@ public class TrueTypeRenderer implements IFontRenderer {
                  * color code takes effect.
                  */
                 while (colorIndex < entry.codes.length && entry.glyphs[glyphIndex].stringIndex >= entry.codes[colorIndex].stringIndex) {
-                    rColor = entry.codes[colorIndex].color;
+                    formattedColor = entry.codes[colorIndex].color;
                     renderStyle = entry.codes[colorIndex].renderStyle;
                     colorIndex++;
                 }
@@ -463,36 +455,36 @@ public class TrueTypeRenderer implements IFontRenderer {
                 /* Draw underline under glyph if the style is enabled */
                 if ((renderStyle & StringCache.FormattingCode.UNDERLINE) != 0) {
                     /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
-                    if (rColor != null) {
-                        int rr = rColor.getIntRed();
-                        int rg = rColor.getIntGreen();
-                        int rb = rColor.getIntBlue();
+                    if (formattedColor != null) {
+                        int r = formattedColor.getIntRed();
+                        int g = formattedColor.getIntGreen();
+                        int b = formattedColor.getIntBlue();
                         if (isShadow) {
-                            rr = rr >> 2;
-                            rg = rg >> 2;
-                            rb = rb >> 2;
+                            r = r >> 2;
+                            g = g >> 2;
+                            b = b >> 2;
                         }
-                        drawI1(matrix, startX, startY, buffer, glyph, glyphSpace, alpha, rr, rg, rb, UNDERLINE_OFFSET, UNDERLINE_THICKNESS);
+                        drawI1(matrix, startX, startY, bufferBuilder, glyph, glyphSpace, alpha, r, g, b, UNDERLINE_OFFSET, UNDERLINE_THICKNESS);
                     } else {
-                        drawI1(matrix, startX, startY, buffer, glyph, glyphSpace, alpha, red, green, blue, UNDERLINE_OFFSET, UNDERLINE_THICKNESS);
+                        drawI1(matrix, startX, startY, bufferBuilder, glyph, glyphSpace, alpha, red, green, blue, UNDERLINE_OFFSET, UNDERLINE_THICKNESS);
                     }
                 }
 
                 /* Draw strikethrough in the middle of glyph if the style is enabled */
                 if ((renderStyle & StringCache.FormattingCode.STRIKETHROUGH) != 0) {
                     /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
-                    if (rColor != null) {
-                        int rr = rColor.getIntRed();
-                        int rg = rColor.getIntGreen();
-                        int rb = rColor.getIntBlue();
+                    if (formattedColor != null) {
+                        int r = formattedColor.getIntRed();
+                        int g = formattedColor.getIntGreen();
+                        int b = formattedColor.getIntBlue();
                         if (isShadow) {
-                            rr = rr >> 2;
-                            rg = rg >> 2;
-                            rb = rb >> 2;
+                            r = r >> 2;
+                            g = g >> 2;
+                            b = b >> 2;
                         }
-                        drawI1(matrix, startX, startY, buffer, glyph, glyphSpace, alpha, rr, rg, rb, UNDERLINE_OFFSET, UNDERLINE_THICKNESS);
+                        drawI1(matrix, startX, startY, bufferBuilder, glyph, glyphSpace, alpha, r, g, b, UNDERLINE_OFFSET, UNDERLINE_THICKNESS);
                     } else {
-                        drawI1(matrix, startX, startY, buffer, glyph, glyphSpace, alpha, red, green, blue, STRIKETHROUGH_OFFSET, STRIKETHROUGH_THICKNESS);
+                        drawI1(matrix, startX, startY, bufferBuilder, glyph, glyphSpace, alpha, red, green, blue, STRIKETHROUGH_OFFSET, STRIKETHROUGH_THICKNESS);
                     }
                 }
             }

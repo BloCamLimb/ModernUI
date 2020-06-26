@@ -20,6 +20,7 @@ package icyllis.modernui.ui.widget;
 
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.master.*;
+import icyllis.modernui.ui.master.ViewGroup;
 
 import javax.annotation.Nonnull;
 
@@ -32,7 +33,7 @@ public class ScrollView extends ViewGroup {
 
     private float maxHeight = 0.0f;
 
-    private final ScrollBar scrollBar = new ScrollBar(this);
+    //private final ScrollBar scrollBar = new ScrollBar(this);
 
     public ScrollView() {
 
@@ -49,10 +50,10 @@ public class ScrollView extends ViewGroup {
     }
 
     @Override
-    protected void dispatchDraw(@Nonnull Canvas canvas, int time) {
-        canvas.clipStart(getLeft(), getTop(), getWidth(), getHeight());
-        super.dispatchDraw(canvas, time);
-        scrollBar.draw(canvas, time);
+    protected void dispatchDraw(@Nonnull Canvas canvas) {
+        canvas.clipStart(this);
+        super.dispatchDraw(canvas);
+        //scrollBar.draw(canvas);
         canvas.clipEnd();
     }
 
@@ -111,7 +112,7 @@ public class ScrollView extends ViewGroup {
     }
 
     private void updateScrollBarOffset() {
-        scrollBar.setBarOffset(getScrollPercentage());
+        //scrollBar.setBarOffset(getScrollPercentage());
     }
 
     public float getMaxScrollAmount() {

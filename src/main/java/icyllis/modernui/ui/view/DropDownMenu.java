@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.ui.overlay;
+package icyllis.modernui.ui.view;
 
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.master.UITools;
@@ -90,11 +90,11 @@ public class DropDownMenu extends Widget {
         float top = upward ? y2 - heightOffset : y1;
         float bottom = upward ? y2 : y1 + heightOffset;
 
-        canvas.setRGBA(0.032f, 0.032f, 0.032f, 0.63f);
+        //canvas.setColor(0.032f, 0.032f, 0.032f, 0.63f);
         canvas.drawRect(x1, top, x2, bottom);
 
         canvas.setLineAntiAliasing(true);
-        canvas.setColor(Color3i.WHITE, 0.315f);
+        //canvas.setColor(Color3i.WHITE, 0.315f);
         canvas.drawRectLines(x1, top, x2, bottom);
         canvas.setLineAntiAliasing(false);
 
@@ -102,7 +102,7 @@ public class DropDownMenu extends Widget {
             String text = list.get(i);
             float cy = y1 + ENTRY_HEIGHT * i;
             if (i == hovered) {
-                canvas.setRGBA(0.5f, 0.5f, 0.5f, 0.315f);
+                //canvas.setColor(0.5f, 0.5f, 0.5f, 0.315f);
                 canvas.drawRect(x1, cy, x2, cy + ENTRY_HEIGHT);
             }
             canvas.setAlpha(textAlpha);

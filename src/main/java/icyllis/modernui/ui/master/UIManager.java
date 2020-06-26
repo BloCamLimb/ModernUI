@@ -344,15 +344,15 @@ public enum UIManager implements IViewParent {
                 int delta = ticks - doubleClickTime;
                 if (delta < 10) {
                     doubleClickTime = Integer.MIN_VALUE;
-                    if (mHovered.onMouseDoubleClicked(getViewMouseX(mHovered), getViewMouseY(mHovered))) {
+                    if (mHovered.onMouseDoubleClicked((int) getViewMouseX(mHovered), (int) getViewMouseY(mHovered))) {
                         return true;
                     }
                 } else {
                     doubleClickTime = ticks;
                 }
-                return mHovered.onMouseLeftClicked(getViewMouseX(mHovered), getViewMouseY(mHovered));
+                return mHovered.onMouseLeftClicked((int) getViewMouseX(mHovered), (int) getViewMouseY(mHovered));
             } else if (mouseButton == 1) {
-                return mHovered.onMouseRightClicked(getViewMouseX(mHovered), getViewMouseY(mHovered));
+                return mHovered.onMouseRightClicked((int) getViewMouseX(mHovered), (int) getViewMouseY(mHovered));
             }
         }
         return false;
@@ -378,7 +378,7 @@ public enum UIManager implements IViewParent {
             return popup.mouseDragged(mouseX, mouseY, deltaX, deltaY);
         }*/
         if (mDragging != null) {
-            return mDragging.onMouseDragged(getViewMouseX(mDragging), getViewMouseY(mDragging), deltaX, deltaY);
+            return mDragging.onMouseDragged((int) getViewMouseX(mDragging), (int) getViewMouseY(mDragging), deltaX, deltaY);
         }
         return false;
     }
@@ -390,7 +390,7 @@ public enum UIManager implements IViewParent {
             return popup.mouseScrolled(mouseX, mouseY, amount);
         }*/
         if (mHovered != null) {
-            return mHovered.onMouseScrolled(getViewMouseX(mHovered), getViewMouseY(mHovered), amount);
+            return mHovered.onMouseScrolled((int) getViewMouseX(mHovered), (int) getViewMouseY(mHovered), amount);
         }
         return false;
     }
@@ -458,7 +458,9 @@ public enum UIManager implements IViewParent {
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableAlphaTest();
         RenderSystem.disableDepthTest();
-        view.draw(canvas, time);
+        canvas.setDrawingTime(time);
+        canvas.moveTo(view);
+        view.draw(canvas);
         /*if (popup != null) {
             popup.draw(drawTime);
         }*/
@@ -692,7 +694,7 @@ public enum UIManager implements IViewParent {
      * @param view view
      * @return relative mouse x
      */
-    public int getViewMouseX(@Nonnull View view) {
+    public double getViewMouseX(@Nonnull View view) {
         IViewParent parent = view.getParent();
         double mouseX = this.mouseX;
 
@@ -701,7 +703,7 @@ public enum UIManager implements IViewParent {
             parent = parent.getParent();
         }
 
-        return (int) mouseX;
+        return mouseX;
     }
 
     /**
@@ -710,7 +712,7 @@ public enum UIManager implements IViewParent {
      * @param view view
      * @return relative mouse y
      */
-    public int getViewMouseY(@Nonnull View view) {
+    public double getViewMouseY(@Nonnull View view) {
         IViewParent parent = view.getParent();
         double mouseY = this.mouseY;
 
@@ -719,7 +721,7 @@ public enum UIManager implements IViewParent {
             parent = parent.getParent();
         }
 
-        return (int) mouseY;
+        return mouseY;
     }
 
     /**
@@ -752,7 +754,6 @@ public enum UIManager implements IViewParent {
                 mHovered.onMouseHoverEnter();
             }
             doubleClickTime = Integer.MIN_VALUE;
-            UIEditor.INSTANCE.setHoveredWidget(view);
         }
     }
 

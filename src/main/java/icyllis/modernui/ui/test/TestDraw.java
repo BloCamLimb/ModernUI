@@ -65,7 +65,7 @@ public class TestDraw implements IDrawable {
         canvas.setLineAntiAliasing(true);
         canvas.drawOctagonRectFrame(100, 40, 200, 60, 3);
         canvas.setLineAntiAliasing(false);*/
-        canvas.setColor(Color3i.BLUE_C, 0.5f);
+        //canvas.setColor(Color3i.BLUE_C, 0.5f);
         canvas.drawCircle(150, 50, 11);
         canvas.restore();
 
@@ -80,7 +80,7 @@ public class TestDraw implements IDrawable {
         canvas.drawCircle(20, 120, 8);
         RenderSystem.depthMask(true);
         canvas.setZ(0);
-        canvas.setRGB(1, 1, 1);
+        canvas.setColor(1, 1, 1);
         canvas.drawCircle(20, 130, 8);
         RenderSystem.disableDepthTest();
 
@@ -89,7 +89,7 @@ public class TestDraw implements IDrawable {
 
         canvas.save();
         canvas.translate((float) Math.sin(circleAcc) * 16, (float) Math.cos(circleAcc) * 16);
-        canvas.setColor(Color3i.LIGHT_PURPLE, 0.5f);
+        //canvas.setColor(Color3i.LIGHT_PURPLE, 0.5f);
         canvas.drawCircle(60, 160, 3);
         canvas.restore();
 

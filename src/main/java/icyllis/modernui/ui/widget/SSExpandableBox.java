@@ -58,7 +58,7 @@ public class SSExpandableBox implements IDrawable, Animation.IListener {
     @Override
     public void draw(@Nonnull Canvas canvas, float time) {
         if (panelLength > 0) {
-            canvas.setRGBA(0, 0, 0, 0.5f);
+            //canvas.setColor(0, 0, 0, 0.5f);
             canvas.drawFeatheredRect(x + width - 3 - panelLength, y + 1, x + width - 1, y + barLength - 1, 1);
             canvas.resetColor();
             canvas.drawFeatheredRect(x + width - 4 - panelLength, y, x + width - 2 - panelLength, y + barLength, 1);

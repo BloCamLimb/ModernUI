@@ -78,11 +78,11 @@ public class ResourcePackEntry extends UniformScrollEntry {
         BufferBuilder bufferBuilder = tessellator.getBuffer();*/
 
         if (module.getHighlightEntry() == this) {
-            canvas.setRGBA(0.5f, 0.5f, 0.5f, 0.377f);
+            //canvas.setColor(0.5f, 0.5f, 0.5f, 0.377f);
             canvas.drawRect(x1 + 1, y1, x2 - 1, y2);
 
             canvas.setLineAntiAliasing(true);
-            canvas.setRGBA(1, 1, 1, 0.879f);
+            //canvas.setColor(1, 1, 1, 0.879f);
             canvas.drawRectLines(x1 + 1, y1, x2 - 1, y2);
             canvas.setLineAntiAliasing(false);
             /*RenderSystem.disableTexture();
@@ -105,7 +105,7 @@ public class ResourcePackEntry extends UniformScrollEntry {
             RenderSystem.enableTexture();*/
         } else if (isMouseHovered()) {
             canvas.setLineAntiAliasing(true);
-            canvas.setRGBA(0.879f, 0.879f, 0.879f, 0.7f);
+            //canvas.setColor(0.879f, 0.879f, 0.879f, 0.7f);
             canvas.drawRectLines(x1 + 1, y1, x2 - 1, y2);
             canvas.setLineAntiAliasing(false);
             /*RenderSystem.disableTexture();

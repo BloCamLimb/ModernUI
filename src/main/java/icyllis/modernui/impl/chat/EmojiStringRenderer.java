@@ -53,23 +53,18 @@ public class EmojiStringRenderer implements IFontRenderer {
     private WeakHashMap<String, EmojiText> MAPS = new WeakHashMap<>();
 
     @Override
-    public float drawString(String str, float startX, float startY, Color3i color, float alpha, TextAlign align) {
+    public float drawString(String str, float startX, float startY, int r, int g, int b, int a, TextAlign align) {
         EmojiText entry = MAPS.get(str);
         if (entry == null) {
             entry = cache(str);
         }
-        entry.text.forEach(t -> FONT.drawString(t.str, startX + t.x, startY, color, alpha, align));
+        entry.text.forEach(t -> FONT.drawString(t.str, startX + t.x, startY, r, g, b, a, align));
         RenderSystem.color3f(0.867f, 0.867f, 0.867f);
         GlStateManager.enableBlend();
         GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         TEX.bindTexture(EMOJI);
         entry.emoji.forEach(e -> DrawTools.blit(startX + e.x, startY - 1, e.u, e.v, TEX_WID, TEX_WID));
         return 0; // unsupported
-    }
-
-    @Override
-    public float drawString(String str, float startX, float startY, float r, float g, float b, float a, TextAlign align) {
-        return 0;
     }
 
     @Override

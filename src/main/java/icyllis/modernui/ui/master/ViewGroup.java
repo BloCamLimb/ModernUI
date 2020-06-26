@@ -42,7 +42,7 @@ public abstract class ViewGroup extends View implements IViewParent {
     }
 
     @Override
-    protected void dispatchDraw(@Nonnull Canvas canvas, int time) {
+    protected void dispatchDraw(@Nonnull Canvas canvas) {
         boolean doTranslate = (getScrollX() != 0 || getScrollY() != 0);
         if (doTranslate) {
             canvas.save();
@@ -51,7 +51,8 @@ public abstract class ViewGroup extends View implements IViewParent {
         for (int i = 0; i < childrenCount; i++) {
             View child = children[i];
             if (child.getVisibility() != GONE) {
-                child.draw(canvas, time);
+                canvas.moveTo(child);
+                child.draw(canvas);
             }
         }
         if (doTranslate) {

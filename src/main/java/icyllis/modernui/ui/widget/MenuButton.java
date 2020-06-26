@@ -94,11 +94,11 @@ public class MenuButton extends IconButton {
         super.onDraw(canvas, time);
         sideTextAC.update();
         if (sideTextAC.isAnimationOpen()) {
-            canvas.setRGBA(0.0f, 0.0f, 0.0f, 0.5f * frameAlpha);
+            //canvas.setColor(0.0f, 0.0f, 0.0f, 0.5f * frameAlpha);
             canvas.drawRoundedRect(x1 + 27, y1 + 1, x1 + 32 + frameSizeW, y1 + 15, 6);
-            canvas.setRGBA(0.5f, 0.5f, 0.5f, frameAlpha);
+            //canvas.setColor(0.5f, 0.5f, 0.5f, frameAlpha);
             canvas.drawRoundedFrame(x1 + 27, y1 + 1, x1 + 32 + frameSizeW, y1 + 15, 6);
-            canvas.setRGBA(1.0f, 1.0f, 1.0f, textAlpha);
+            //canvas.setColor(1.0f, 1.0f, 1.0f, textAlpha);
             canvas.drawText(text, x1 + 32, y1 + 4);
         }
     }

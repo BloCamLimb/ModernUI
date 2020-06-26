@@ -74,7 +74,7 @@ public class TextIconButton extends IconButton {
     public void onDraw(@Nonnull Canvas canvas, float time) {
         super.onDraw(canvas, time);
         if (textAlpha > 0) {
-            canvas.setRGBA(1, 1, 1, textAlpha);
+            //canvas.setColor(1, 1, 1, textAlpha);
             switch (direction) {
                 case UP:
                     canvas.setTextAlign(TextAlign.CENTER);

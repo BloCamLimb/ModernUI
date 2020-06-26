@@ -57,10 +57,10 @@ public class ColorSelectButton extends Widget {
 
     @Override
     public void onDraw(@Nonnull Canvas canvas, float time) {
-        canvas.setRGBA(r, g, b, 0.8f);
+        //canvas.setColor(r, g, b, 0.8f);
         canvas.drawRect(x1, y1, x2, y2);
         if (frameAlpha > 0) {
-            canvas.setRGBA(1, 1, 1, frameAlpha);
+            //canvas.setColor(1, 1, 1, frameAlpha);
             canvas.drawRectOutline(x1, y1, x2, y2, 0.51f);
         }
     }

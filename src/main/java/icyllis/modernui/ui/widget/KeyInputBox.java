@@ -63,16 +63,16 @@ public class KeyInputBox extends Widget implements IKeyboardListener {
 
     @Override
     public void onDraw(@Nonnull Canvas canvas, float time) {
-        canvas.setRGBA(0.377f, 0.377f, 0.377f, backAlpha);
+        //canvas.setColor(0.377f, 0.377f, 0.377f, backAlpha);
         canvas.drawRect(x1, y1, x2, y2);
         if (editing) {
             canvas.setLineAntiAliasing(true);
-            canvas.setColor(Color3i.BLUE_C, 0.863f);
+            //canvas.setColor(Color3i.BLUE_C, 0.863f);
             canvas.drawRectLines(x1, y1, x2, y2);
             canvas.setLineAntiAliasing(false);
         }
         canvas.setTextAlign(TextAlign.CENTER);
-        canvas.setRGBA(textBrightness, textBrightness, textBrightness, 1.0f);
+        //canvas.setColor(textBrightness, textBrightness, textBrightness, 1.0f);
         canvas.drawText(keyText, x1 + 42, y1 + 4);
     }
 

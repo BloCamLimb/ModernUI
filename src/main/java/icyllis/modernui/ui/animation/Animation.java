@@ -176,7 +176,7 @@ public class Animation {
                 listeners.forEach(e -> e.onAnimationStart(this, reversed));
             }
         }
-        float p = Math.min((time - startTime) / duration, 1);
+        float p = Math.min((float) (time - startTime) / duration, 1);
         if (appliers != null) {
             appliers.forEach(e -> e.update(p));
         }

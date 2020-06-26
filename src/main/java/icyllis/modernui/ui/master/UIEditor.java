@@ -105,7 +105,7 @@ public enum UIEditor {
         if (!working) {
             return;
         }
-        canvas.setRGBA(0.5f, 0.5f, 0.5f, 0.25f);
+        canvas.setColor(128, 128, 128, 64);
         canvas.drawRoundedRect(1, 1, 120, bottom, 4);
         canvas.setTextAlign(TextAlign.LEFT);
 

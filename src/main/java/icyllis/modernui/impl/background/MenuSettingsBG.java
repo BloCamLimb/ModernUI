@@ -54,12 +54,12 @@ public class MenuSettingsBG implements IDrawable {
     public void draw(@Nonnull Canvas canvas, float time) {
         float x = 40, y = 16;
         canvas.translate(xOffset, 0);
-        canvas.setRGBA(0, 0, 0, 0.377f);
+        //canvas.setColor(0, 0, 0, 0.377f);
         canvas.drawRect(x, y + 20, x + w, y + h - 20);
         canvas.setAlpha(0.755f);
         canvas.drawRect(x, y, x + w, y + 20);
         canvas.drawRect(x, y + h - 20, x + w, y + h);
-        canvas.setRGBA(0.55f, 0.55f, 0.55f, 0.863f);
+        //canvas.setColor(0.55f, 0.55f, 0.55f, 0.863f);
         canvas.drawLine(x, y + 20, x + w, y + 20);
         canvas.drawLine(x, y + h - 19.5f, x + w, y + h - 19.5f);
     }

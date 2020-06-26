@@ -81,7 +81,7 @@ public class LineTextButton extends Widget {
     @Override
     public void onDraw(@Nonnull Canvas canvas, float time) {
         lineAC.update();
-        canvas.setRGBA(textBrightness, textBrightness, textBrightness, 1.0f);
+        //canvas.setColor(textBrightness, textBrightness, textBrightness, 1.0f);
         canvas.setTextAlign(TextAlign.CENTER);
         canvas.drawText(text, x1 + width / 2f, y1 + 2);
         canvas.resetColor();

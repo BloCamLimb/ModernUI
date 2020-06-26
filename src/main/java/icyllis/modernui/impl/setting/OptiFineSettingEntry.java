@@ -68,11 +68,11 @@ public class OptiFineSettingEntry extends SettingEntry {
     protected void drawExtra(@Nonnull Canvas canvas, float time) {
         if (drawOptionFrame) {
             float bl = x2 - 10 - textLength;
-            canvas.setRGBA(0.377f, 0.377f, 0.377f, 0.25f);
+            //canvas.setColor(0.377f, 0.377f, 0.377f, 0.25f);
             canvas.drawRect(bl, y1 + 2, x2, y1 + 18);
         }
         canvas.setTextAlign(TextAlign.RIGHT);
-        canvas.setRGBA(titleBrightness, titleBrightness, titleBrightness, 1);
+        //canvas.setColor(titleBrightness, titleBrightness, titleBrightness, 1);
         canvas.drawText(optionText, x2 - 10, y1 + 6);
         canvas.drawIcon(ICON, x2 - 8, y1 + 6, x2, y1 + 14);
     }
