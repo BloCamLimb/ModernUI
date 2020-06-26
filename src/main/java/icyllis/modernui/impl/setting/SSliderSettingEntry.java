@@ -84,7 +84,7 @@ public class SSliderSettingEntry extends SettingEntry implements SliderSmooth.IL
     @Override
     public void drawExtra(Canvas canvas, float time) {
         slider.draw(canvas, time);
-        canvas.setRGBA(titleBrightness, titleBrightness, titleBrightness, 1);
+        //canvas.setColor(titleBrightness, titleBrightness, titleBrightness, 1);
         canvas.setTextAlign(TextAlign.RIGHT);
         canvas.drawText(displayString, x2 - 6, y1 + 6);
         //fontRenderer.drawString(displayString, x2 - 6, y1 + 6, titleBrightness, 1.0f, TextAlign.RIGHT);

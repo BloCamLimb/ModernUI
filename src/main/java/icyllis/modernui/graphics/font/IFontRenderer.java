@@ -32,32 +32,14 @@ public interface IFontRenderer {
      * @param str string to draw
      * @param startX start x pos
      * @param startY start y pos
-     * @param color RGB color
-     * @param alpha alpha 0-1
+     * @param r red 0-255
+     * @param g green 0-255
+     * @param b blue 0-255
+     * @param a alpha 0-255
      * @param align 0-left 0.25-center 0.5-right
      * @return formatted text width
      */
-    @Deprecated
-    default float drawString(String str, float startX, float startY, Color3i color, float alpha, TextAlign align) {
-        return drawString(str, startX, startY, color.getFloatRed(), color.getFloatGreen(), color.getFloatBlue(), alpha, align);
-    }
-
-    /**
-     * Render a single-line string to the screen using the current OpenGL color. The (x,y) coordinates are of the upper-left
-     * corner of the string's bounding box, rather than the baseline position as is typical with fonts. This function will also
-     * add the string to the cache so the next drawString() call with the same string is faster.
-     *
-     * @param str string to draw
-     * @param startX start x pos
-     * @param startY start y pos
-     * @param r red 0-1f
-     * @param g green 0-1f
-     * @param b blue 0-1f
-     * @param a alpha 0-1f
-     * @param align 0-left 0.25-center 0.5-right
-     * @return formatted text width
-     */
-    float drawString(String str, float startX, float startY, float r, float g, float b, float a, TextAlign align);
+    float drawString(String str, float startX, float startY, int r, int g, int b, int a, TextAlign align);
 
     /**
      * Return the width of a string in pixels. Used for centering strings.

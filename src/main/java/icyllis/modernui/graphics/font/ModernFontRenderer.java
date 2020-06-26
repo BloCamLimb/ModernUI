@@ -80,10 +80,10 @@ public class ModernFontRenderer extends FontRenderer {
             color |= 0xff000000;
         }
 
-        float a = Color3i.getAlphaFrom(color);
-        float r = Color3i.getRedFrom(color);
-        float g = Color3i.getGreenFrom(color);
-        float b = Color3i.getBlueFrom(color);
+        int a = color >> 24 & 0xff;
+        int r = color >> 16 & 0xff;
+        int g = color >> 8 & 0xff;
+        int b = color & 0xff;
 
         if (dropShadow && sAllowFontShadow) {
             fontRenderer.drawStringGlobal(text, x + 1, y + 1, r, g, b, a, true, matrix, buffer, packedLight);

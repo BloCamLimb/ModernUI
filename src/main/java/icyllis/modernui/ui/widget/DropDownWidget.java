@@ -26,8 +26,8 @@ import icyllis.modernui.ui.animation.Animation;
 import icyllis.modernui.ui.animation.Applier;
 import icyllis.modernui.ui.test.Align9D;
 import icyllis.modernui.graphics.font.TextAlign;
-import icyllis.modernui.ui.overlay.DropDownMenu;
-import icyllis.modernui.ui.overlay.PopupMenu;
+import icyllis.modernui.ui.view.DropDownMenu;
+import icyllis.modernui.ui.view.PopupMenu;
 import icyllis.modernui.system.ConstantsLibrary;
 import icyllis.modernui.ui.test.IHost;
 import icyllis.modernui.ui.test.Locator;
@@ -77,11 +77,11 @@ public class DropDownWidget extends Widget {
     @Override
     public void onDraw(@Nonnull Canvas canvas, float time) {
         if (backAlpha > 0) {
-            canvas.setRGBA(0.377f, 0.377f, 0.377f, backAlpha);
+            //canvas.setColor(0.377f, 0.377f, 0.377f, backAlpha);
             canvas.drawRect(x1, y1, x2, y2);
         }
         canvas.setTextAlign(TextAlign.RIGHT);
-        canvas.setRGBA(brightness, brightness, brightness, 1);
+        //canvas.setColor(brightness, brightness, brightness, 1);
         canvas.drawText(text, x2 - 10, y1 + 4);
         canvas.drawIcon(icon, x2 - 8, y1 + 5, x2, y2 - 3);
     }

@@ -62,9 +62,9 @@ public class MenuHomeBG implements IDrawable {
     @Override
     public void draw(@Nonnull Canvas canvas, float time) {
         canvas.translate(xOffset, 0);
-        canvas.setRGBA(0, 0, 0, 0.7f);
+        //canvas.setColor(0, 0, 0, 0.7f);
         canvas.drawRect(0, 0, 32, height);
-        canvas.setRGBA(0.55f, 0.55f, 0.55f, 0.85f);
+        //canvas.setColor(0.55f, 0.55f, 0.55f, 0.85f);
         canvas.drawLine(32, 0, 32, height);
     }
 

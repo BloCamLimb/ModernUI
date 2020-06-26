@@ -81,11 +81,11 @@ public class DynamicFrameButton extends Button {
     public void onDraw(@Nonnull Canvas canvas, float time) {
         super.onDraw(canvas, time);
         frameAC.update();
-        canvas.setRGBA(getModulatedBrightness(), getModulatedBrightness(), getModulatedBrightness(), 1.0f);
+        //canvas.setColor(getModulatedBrightness(), getModulatedBrightness(), getModulatedBrightness(), 1.0f);
         canvas.setTextAlign(TextAlign.CENTER);
         canvas.drawText(text, x1 + width / 2f, y1 + 2);
         if (frameAlpha > 0) {
-            canvas.setRGBA(0.5f, 0.5f, 0.5f, frameAlpha);
+            //canvas.setColor(0.5f, 0.5f, 0.5f, frameAlpha);
             canvas.drawRectOutline(x1 - fwo, y1 - fho, x2 + fwo, y2 + fho, 0.51f);
         }
     }
@@ -165,7 +165,7 @@ public class DynamicFrameButton extends Button {
         public void onDraw(@Nonnull Canvas canvas, float time) {
             super.onDraw(canvas, time);
             if (counting) {
-                canvas.setRGBA(0.03f, 0.03f, 0.03f, 0.7f);
+                //canvas.setColor(0.03f, 0.03f, 0.03f, 0.7f);
                 canvas.drawRect(x1, y1, x2, y2);
                 canvas.resetColor();
                 canvas.drawText(displayCount + "s", x1 + width / 2f, y1 + 2);

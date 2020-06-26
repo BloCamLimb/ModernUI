@@ -20,7 +20,6 @@ package icyllis.modernui.ui.example;
 
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.ui.animation.Animation;
 import icyllis.modernui.ui.animation.Applier;
 import icyllis.modernui.ui.animation.ITimeInterpolator;
@@ -38,9 +37,10 @@ public class TestLinearLayout extends LinearLayout {
         setGravity(Gravity.CENTER);
         setDivider(new Drawable() {
             @Override
-            public void draw(@Nonnull Canvas canvas, int left, int top, int right, int bottom) {
-                canvas.setRGBA(0.75f, 0.75f, 0.75f, 0.25f);
-                canvas.drawRect(left, top, right, bottom);
+            public void draw(@Nonnull Canvas canvas) {
+                canvas.moveTo(this);
+                canvas.setColor(192, 192, 192, 128);
+                canvas.drawRect(0, 0, getWidth(), getHeight());
             }
 
             @Override
@@ -53,29 +53,25 @@ public class TestLinearLayout extends LinearLayout {
         addView(new CView(), new LinearLayout.LayoutParams(60, 20));
         addView(new CView(), new LinearLayout.LayoutParams(60, 20));
         addView(new CView(), new LinearLayout.LayoutParams(60, 20));
-        addView(new DView(ITimeInterpolator.SINE, 0), new LinearLayout.LayoutParams(60, 20));
+        addView(new DView(ITimeInterpolator.DECELERATE, 0), new LinearLayout.LayoutParams(60, 20));
         //addView(new DView(ITimeInterpolator.VISCOUS_FLUID, 30), new LinearLayout.LayoutParams(60, 20));
     }
 
     @Override
-    protected void onDraw(@Nonnull Canvas canvas, int time) {
-        super.onDraw(canvas, time);
-        canvas.resetColor();
-        canvas.drawText("LinearLayout", getLeft(), getTop());
-    }
+    protected void onDraw(@Nonnull Canvas canvas) {
+        super.onDraw(canvas);
 
-    @Override
-    protected boolean onMouseLeftClicked(int mouseX, int mouseY) {
-        ModernUI.LOGGER.info("left click");
-        return true;
+        canvas.moveTo(this);
+        canvas.resetColor();
+        canvas.drawText("LinearLayout", 0, 0);
     }
 
     private static class CView extends View {
 
         @Override
-        protected void onDraw(@Nonnull Canvas canvas, int time) {
+        protected void onDraw(@Nonnull Canvas canvas) {
             canvas.resetColor();
-            canvas.drawText("Child", getLeft(), getTop() + 4);
+            canvas.drawText("Child", 0, 4);
         }
     }
 
@@ -83,19 +79,19 @@ public class TestLinearLayout extends LinearLayout {
 
         private final Animation animation;
 
-        private float offsetX;
+        private float offsetY;
 
-        private int offset;
+        private final int offset;
 
         public DView(ITimeInterpolator interpolator, int offset) {
             this.offset = offset;
-            animation = new Animation(300)
-                    .applyTo(new Applier(0, 60, () -> offsetX, v -> offsetX = v).setInterpolator(interpolator));
+            animation = new Animation(200)
+                    .applyTo(new Applier(0, 60, () -> offsetY, v -> offsetY = v).setInterpolator(interpolator));
         }
 
         @Override
-        protected void onDraw(@Nonnull Canvas canvas, int time) {
-            canvas.drawText("Go My Way", getLeft() + offset, getTop() + offsetX);
+        protected void onDraw(@Nonnull Canvas canvas) {
+            canvas.drawText("Go My Way", offset, offsetY);
         }
 
         @Override

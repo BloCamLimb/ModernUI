@@ -44,12 +44,12 @@ public abstract class Slider extends Widget implements IDraggable {
     @Override
     public void onDraw(@Nonnull Canvas canvas, float time) {
         float cx = (float) (x1 + slideOffset);
-        canvas.setRGBA(0.63f, 0.63f, 0.63f, 1.0f);
+        //canvas.setColor(0.63f, 0.63f, 0.63f, 1.0f);
         canvas.drawRect(x1, y1, cx, y2);
-        canvas.setRGBA(0.315f, 0.315f, 0.315f, 0.863f);
+        //canvas.setColor(0.315f, 0.315f, 0.315f, 0.863f);
         canvas.drawRect(cx, y1, x2, y2);
         float c = (thumbHovered || isDragging) ? 1.0f : 0.8f;
-        canvas.setRGBA(c, c, c, 1.0f);
+        //canvas.setColor(c, c, c, 1.0f);
         canvas.drawRect(cx, y1 - 1, cx + 4, y2 + 1);
     }
 

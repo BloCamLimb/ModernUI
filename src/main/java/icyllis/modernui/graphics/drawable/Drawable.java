@@ -33,7 +33,14 @@ public abstract class Drawable {
     private int bottom;
 
     /**
-     * Draw things in bounds
+     * Draw things in bounds.
+     * <p>
+     * Before you draw in the method, you have to call {@link Canvas#moveTo(Drawable)},
+     * (0, 0) will be the top left of the bounds,
+     * (width, height) will be the bottom right of the bounds.
+     * <p>
+     * See {@link #getWidth()}
+     * See {@link #getHeight()}
      *
      * @param canvas the canvas to draw things
      */

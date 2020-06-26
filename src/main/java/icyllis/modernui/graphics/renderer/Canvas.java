@@ -19,10 +19,12 @@
 package icyllis.modernui.graphics.renderer;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.font.*;
 import icyllis.modernui.graphics.shader.ShaderTools;
 import icyllis.modernui.graphics.shader.program.*;
 import icyllis.modernui.graphics.math.Color3i;
+import icyllis.modernui.ui.master.View;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -52,8 +54,7 @@ import javax.annotation.Nonnull;
  * {@link icyllis.modernui.graphics.font.TrueTypeRenderer}
  */
 @SuppressWarnings("unused")
-//TODO we don't have our camera (also UBO), but not very useful
-// use int RGBA color rather than float
+//TODO use int RGBA color rather than float
 public class Canvas {
 
     /**
@@ -87,16 +88,24 @@ public class Canvas {
     /**
      * Paint colors
      */
-    private float r = 1.0f;
-
-    private float g = 1.0f;
-
-    private float b = 1.0f;
-
-    private float a = 1.0f;
+    private int r = 255;
+    private int g = 255;
+    private int b = 255;
+    private int a = 255;
 
 
     private double z = 0.0D;
+
+    /**
+     * Drawing location offset
+     */
+    private float drawingX = 0.0f;
+    private float drawingY = 0.0f;
+
+    /**
+     * Elapsed time from a gui open
+     */
+    private int drawingTime = 0;
 
 
     /**
@@ -118,14 +127,16 @@ public class Canvas {
     /**
      * Set current paint color
      *
-     * @param r red [0,1]
-     * @param g green [0,1]
-     * @param b blue [0,1]
-     * @param a alpha [0,1]
+     * @param r red [0,255]
+     * @param g green [0,255]
+     * @param b blue [0,255]
+     * @param a alpha [0,255]
      */
-    public void setRGBA(float r, float g, float b, float a) {
-        setRGB(r, g, b);
-        setAlpha(a);
+    public void setColor(int r, int g, int b, int a) {
+        this.r = r;
+        this.g = g;
+        this.b = b;
+        this.a = a;
     }
 
     /**
@@ -135,10 +146,23 @@ public class Canvas {
      * @param g green [0,1]
      * @param b blue [0,1]
      */
-    public void setRGB(float r, float g, float b) {
+    public void setColor(int r, int g, int b) {
         this.r = r;
         this.g = g;
         this.b = b;
+    }
+
+    public void setRGBA(int rgba) {
+        a = rgba >> 24 & 0xff;
+        r = rgba >> 16 & 0xff;
+        g = rgba >> 8 & 0xff;
+        b = rgba & 0xff;
+    }
+
+    public void setRGB(int rgb) {
+        r = rgb >> 16 & 0xff;
+        g = rgb >> 8 & 0xff;
+        b = rgb & 0xff;
     }
 
     /**
@@ -147,23 +171,50 @@ public class Canvas {
      * @param a alpha [0,1]
      */
     public void setAlpha(float a) {
+        this.a = (int) (a * 255.0f);
+    }
+
+    /**
+     * Set current paint alpha
+     *
+     * @param a alpha [0,255]
+     */
+    public void setAlpha(int a) {
         this.a = a;
     }
 
     public void setColor(@Nonnull Color3i color) {
-        setRGB(color.getFloatRed(), color.getFloatGreen(), color.getFloatBlue());
+        r = color.getIntRed();
+        g = color.getIntGreen();
+        b = color.getIntBlue();
     }
 
-    public void setColor(@Nonnull Color3i color, float a) {
-        setColor(color);
-        setAlpha(a);
+    public void setColor(@Nonnull Color3i color, int a) {
+        r = color.getIntRed();
+        g = color.getIntGreen();
+        b = color.getIntBlue();
+        this.a = a;
     }
 
     /**
      * Reset color to default color
      */
     public void resetColor() {
-        setRGBA(1.0f, 1.0f, 1.0f, 1.0f);
+        setColor(255, 255, 255, 255);
+    }
+
+    /**
+     * Get elapsed time from a gui open, update every frame
+     *
+     * @return drawing time in milliseconds
+     */
+    public int getDrawingTime() {
+        return drawingTime;
+    }
+
+    // inner use
+    public void setDrawingTime(int drawingTime) {
+        this.drawingTime = drawingTime;
     }
 
     /**
@@ -221,7 +272,7 @@ public class Canvas {
      * @return text advance (text width)
      */
     public float drawText(String text, float x, float y) {
-        return fontRenderer.drawString(text, x, y, r, g, b, a, textAlign);
+        return fontRenderer.drawString(text, x + drawingX, y + drawingY, r, g, b, a, textAlign);
     }
 
     /**
@@ -234,6 +285,11 @@ public class Canvas {
      */
     public void drawRect(float left, float top, float right, float bottom) {
         RenderSystem.disableTexture();
+
+        left += drawingX;
+        top += drawingY;
+        right += drawingX;
+        bottom += drawingY;
 
         bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
         bufferBuilder.pos(left, bottom, z).color(r, g, b, a).endVertex();
@@ -254,6 +310,11 @@ public class Canvas {
      */
     public void drawRectOutline(float left, float top, float right, float bottom, float thickness) {
         RenderSystem.disableTexture();
+
+        left += drawingX;
+        top += drawingY;
+        right += drawingX;
+        bottom += drawingY;
 
         /*ShaderTools.useShader(featheredRect);
         featheredRect.setThickness(0.25f);
@@ -309,6 +370,11 @@ public class Canvas {
     public void drawOctagonRectFrame(float left, float top, float right, float bottom, float bevel) {
         RenderSystem.disableTexture();
 
+        left += drawingX;
+        top += drawingY;
+        right += drawingX;
+        bottom += drawingY;
+
         bufferBuilder.begin(GL11.GL_LINE_LOOP, DefaultVertexFormats.POSITION_COLOR);
         bufferBuilder.pos(left, bottom - bevel, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(left + bevel, bottom, z).color(r, g, b, a).endVertex();
@@ -332,6 +398,11 @@ public class Canvas {
      */
     public void drawRectLines(float left, float top, float right, float bottom) {
         RenderSystem.disableTexture();
+
+        left += drawingX;
+        top += drawingY;
+        right += drawingX;
+        bottom += drawingY;
 
         bufferBuilder.begin(GL11.GL_LINE_LOOP, DefaultVertexFormats.POSITION_COLOR);
         bufferBuilder.pos(left, bottom, z).color(r, g, b, a).endVertex();
@@ -386,6 +457,11 @@ public class Canvas {
      */
     public void drawLine(float startX, float startY, float stopX, float stopY) {
         RenderSystem.disableTexture();
+
+        startX += drawingX;
+        stopX += drawingX;
+        startY += drawingY;
+        stopY += drawingY;
 
         bufferBuilder.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);
         bufferBuilder.pos(startX, startY, z).color(r, g, b, a).endVertex();
@@ -465,6 +541,11 @@ public class Canvas {
         RenderSystem.enableTexture();
         icon.bindTexture();
 
+        left += drawingX;
+        top += drawingY;
+        right += drawingX;
+        bottom += drawingY;
+
         bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR_TEX);
         bufferBuilder.pos(left, bottom, z).color(r, g, b, a).tex(icon.getLeft(), icon.getBottom()).endVertex();
         bufferBuilder.pos(right, bottom, z).color(r, g, b, a).tex(icon.getRight(), icon.getBottom()).endVertex();
@@ -482,7 +563,7 @@ public class Canvas {
      * @param y    y pos
      */
     public void drawItem(@Nonnull Item item, float x, float y) {
-        itemRenderer.renderItemIntoGUI(item.getDefaultInstance(), (int) (x), (int) (y));
+        itemRenderer.renderItemIntoGUI(item.getDefaultInstance(), (int) (x + drawingX), (int) (y + drawingY));
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableDepthTest();
@@ -496,7 +577,7 @@ public class Canvas {
      * @param y     y pos
      */
     public void drawItemStack(@Nonnull ItemStack stack, float x, float y) {
-        itemRenderer.renderItemAndEffectIntoGUI(stack, (int) (x), (int) (y));
+        itemRenderer.renderItemAndEffectIntoGUI(stack, (int) (x + drawingX), (int) (y + drawingY));
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableDepthTest();
@@ -510,11 +591,33 @@ public class Canvas {
      * @param y     y pos
      */
     public void drawItemStackWithOverlays(@Nonnull ItemStack stack, float x, float y) {
-        itemRenderer.renderItemAndEffectIntoGUI(stack, (int) (x), (int) (y));
-        itemRenderer.renderItemOverlays(ModernFontRenderer.INSTANCE, stack, (int) (x), (int) (y));
+        itemRenderer.renderItemAndEffectIntoGUI(stack, (int) (x + drawingX), (int) (y + drawingY));
+        itemRenderer.renderItemOverlays(ModernFontRenderer.INSTANCE, stack, (int) (x + drawingX), (int) (y + drawingY));
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableDepthTest();
+    }
+
+    /**
+     * At most cases, you've to call this
+     * in view's onDraw() method
+     *
+     * @param view view to move
+     */
+    public void moveTo(@Nonnull View view) {
+        drawingX = view.getLeft();
+        drawingY = view.getTop();
+    }
+
+    /**
+     * At most cases, you've to call this
+     * in drawable's draw() method
+     *
+     * @param drawable drawable to move
+     */
+    public void moveTo(@Nonnull Drawable drawable) {
+        drawingX = drawable.getLeft();
+        drawingY = drawable.getTop();
     }
 
     public void save() {
@@ -558,6 +661,10 @@ public class Canvas {
         }
         ky *= py;
         translate(kx, ky);
+    }
+
+    public void clipStart(@Nonnull View view) {
+        clipStart(view.getLeft(), view.getTop(), view.getWidth(), view.getHeight());
     }
 
     public void clipStart(float x, float y, float width, float height) {

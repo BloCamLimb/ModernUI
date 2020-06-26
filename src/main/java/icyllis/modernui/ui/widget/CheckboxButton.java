@@ -76,12 +76,12 @@ public class CheckboxButton extends Widget {
 
     @Override
     public void onDraw(@Nonnull Canvas canvas, float time) {
-        canvas.setRGBA(brightness, brightness, brightness, 1.0f);
+        //canvas.setColor(brightness, brightness, brightness, 1.0f);
         canvas.drawRectOutline(x1, y1, x2, y2, 0.51f);
         if (markAlpha > 0) {
             canvas.setAlpha(markAlpha);
             if (getStatus().isListening()) {
-                canvas.setRGB(1, 1, 1);
+                canvas.setColor(1, 1, 1);
             }
             canvas.drawIcon(icon, x1, y1, x2, y2);
         }

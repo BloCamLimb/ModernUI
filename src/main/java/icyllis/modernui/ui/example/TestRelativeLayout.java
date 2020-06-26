@@ -23,7 +23,6 @@ import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.layout.Gravity;
 import icyllis.modernui.ui.layout.RelativeLayout;
 import icyllis.modernui.ui.master.View;
-import icyllis.modernui.ui.master.ViewGroup;
 
 import javax.annotation.Nonnull;
 
@@ -62,7 +61,7 @@ public class TestRelativeLayout extends RelativeLayout {
         public String text;
 
         @Override
-        protected void onDraw(@Nonnull Canvas canvas, int time) {
+        protected void onDraw(@Nonnull Canvas canvas) {
             canvas.resetColor();
             canvas.setTextAlign(TextAlign.CENTER);
             canvas.drawText(text, getLeft() + getWidth() / 2.0f, getTop() + 4.0f);

@@ -20,6 +20,7 @@ package icyllis.modernui.ui.widget;
 
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.master.UIManager;
+import icyllis.modernui.ui.master.View;
 
 import javax.annotation.Nonnull;
 
@@ -31,9 +32,10 @@ import javax.annotation.Nonnull;
  *
  * @since 1.6
  */
-public class ScrollBar {
+public class ScrollBar extends View {
 
-    private final ScrollView view;
+    @Nonnull
+    private final ICallback callback;
 
     private float barY;
 
@@ -49,30 +51,25 @@ public class ScrollBar {
 
     private double accDragging = 0;
 
-    public ScrollBar(@Nonnull ScrollView view) {
-        this.view = view;
+    public ScrollBar(@Nonnull ICallback callback) {
+        this.callback = callback;
     }
 
     @Override
-    public void draw(@Nonnull Canvas canvas, float time) {
-        super.draw(canvas, time);
-        controller.update(time);
+    protected void onDraw(@Nonnull Canvas canvas) {
         if (!barHovered && !isDragging && brightness > 0.5f) {
-            if (time > startTime) {
-                float change = (startTime - time) / 40.0f;
+            if (canvas.getDrawingTime() > startTime) {
+                float change = (startTime - canvas.getDrawingTime()) / 2000.0f;
                 brightness = Math.max(0.75f + change, 0.5f);
             }
         }
-    }
-
-    @Override
-    protected void onDraw(@Nonnull Canvas canvas, float time) {
-        super.onDraw(canvas, time);
-        canvas.setRGBA(0.063f, 0.063f, 0.063f, 0.157f);
+        canvas.setColor(16, 16, 16, 40);
         canvas.drawRect(getLeft(), getTop(), getRight(), getBottom());
-        canvas.setRGBA(brightness, brightness, brightness, 0.5f);
+        int br = (int) (brightness * 255.0f);
+        canvas.setColor(br, br, br, 128);
         canvas.drawRect(getLeft(), barY, getRight(), barY + barLength);
     }
+
 
     /*public void draw(float currentTime) {
         if (!barHovered && !isDragging && brightness > 0.5f) {
@@ -132,7 +129,7 @@ public class ScrollBar {
         return false;
     }*/
 
-    @Override
+    /*@Override
     protected boolean onUpdateMouseHover(int mouseX, int mouseY) {
         boolean prev = barHovered;
         barHovered = isMouseOnBar(mouseY);
@@ -144,7 +141,7 @@ public class ScrollBar {
             }
         }
         return super.onUpdateMouseHover(mouseX, mouseY);
-    }
+    }*/
 
     @Override
     protected void onMouseHoverExit() {
@@ -167,10 +164,10 @@ public class ScrollBar {
         } else {
             if (mouseY < barY) {
                 float mov = transformPosToAmount((float) (barY - mouseY));
-                controller.scrollSmoothBy(-Math.min(60f, mov));
+                //controller.scrollSmoothBy(-Math.min(60f, mov));
             } else if (mouseY > barY + barLength) {
                 float mov = transformPosToAmount((float) (mouseY - barY - barLength));
-                controller.scrollSmoothBy(Math.min(60f, mov));
+                //controller.scrollSmoothBy(Math.min(60f, mov));
             }
         }
         return true;
@@ -197,7 +194,7 @@ public class ScrollBar {
             accDragging += deltaY;
             int i = (int) (accDragging * 2.0);
             if (i != 0) {
-                controller.scrollDirectBy(transformPosToAmount(i / 2.0f));
+                //controller.scrollDirectBy(transformPosToAmount(i / 2.0f));
                 accDragging -= i / 2.0f;
             }
         }
@@ -210,6 +207,10 @@ public class ScrollBar {
      * @param relativePos relative move (pos)
      */
     private float transformPosToAmount(float relativePos) {
-        return view.getMaxScrollAmount() / getMaxDragLength() * relativePos;
+        return 0;//view.getMaxScrollAmount() / getMaxDragLength() * relativePos;
+    }
+
+    public interface ICallback {
+
     }
 }

@@ -212,7 +212,7 @@ public class LinearLayout extends ViewGroup {
     }
 
     @Override
-    protected void onDraw(@Nonnull Canvas canvas, int time) {
+    protected void onDraw(@Nonnull Canvas canvas) {
         if (divider != null) {
             if (orientation == Orientation.VERTICAL) {
                 drawDividersVertical(canvas);

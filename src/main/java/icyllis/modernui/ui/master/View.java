@@ -150,37 +150,41 @@ public class View {
     private ViewGroup.LayoutParams layoutParams;
 
     /**
-     * Raw draw method
+     * Raw draw method, do not override this
      *
      * @param canvas canvas to draw content
-     * @param time   elapsed time from a gui open
      */
-    protected void draw(@Nonnull Canvas canvas, int time) {
+    public void draw(@Nonnull Canvas canvas) {
         if ((viewFlags & VISIBILITY_MASK) == 0) {
 
-            onDraw(canvas, time);
+            onDraw(canvas);
 
-            dispatchDraw(canvas, time);
+            dispatchDraw(canvas);
         }
     }
 
     /**
      * Draw this view if visible
+     * <p>
+     * Before you draw in the method, you have to call {@link Canvas#moveTo(View)},
+     * (0, 0) will be the top left of the bounds,
+     * (width, height) will be the bottom right of the bounds.
+     * <p>
+     * See {@link #getWidth()}
+     * See {@link #getHeight()}
      *
      * @param canvas canvas to draw content
-     * @param time   elapsed time from a gui open
      */
-    protected void onDraw(@Nonnull Canvas canvas, int time) {
+    protected void onDraw(@Nonnull Canvas canvas) {
 
     }
 
     /**
-     * Dispatch events to child views
+     * Draw child views if visible
      *
      * @param canvas canvas to draw content
-     * @param time   elapsed time from a gui open
      */
-    protected void dispatchDraw(@Nonnull Canvas canvas, int time) {
+    protected void dispatchDraw(@Nonnull Canvas canvas) {
 
     }
 
@@ -719,6 +723,7 @@ public class View {
                 return true;
             }
             UIManager.INSTANCE.setHoveredView(this);
+            onMouseHoverUpdate(mouseX, mouseY);
             return true;
         }
         return false;
@@ -730,7 +735,9 @@ public class View {
     }
 
     /**
-     * Dispatch events to child views if present
+     * Dispatch events to child views if present.
+     * Check if mouse hover a child view.
+     * You shouldn't override this method.
      *
      * @param mouseX relative mouse X pos
      * @param mouseY relative mouse Y pos
@@ -745,6 +752,14 @@ public class View {
      * Called when mouse start to hover on this view
      */
     protected void onMouseHoverEnter() {
+
+    }
+
+    /**
+     * Call when mouse hovered on this view and moved,
+     * also called when onMouseHoverEnter(), until onMouseHoverExit() called
+     */
+    protected void onMouseHoverUpdate(double mouseX, double mouseY) {
 
     }
 

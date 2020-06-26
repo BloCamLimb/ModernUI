@@ -33,7 +33,7 @@ public class ResourcePackBG implements IDrawable {
 
     @Override
     public void draw(@Nonnull Canvas canvas, float time) {
-        canvas.setRGBA(0, 0, 0, 0.27f);
+        //canvas.setColor(0, 0, 0, 0.27f);
         canvas.drawRect(x1, y1, x2, y2);
         if (drawSide) {
             canvas.drawRect(x3, y1, x4, y2);

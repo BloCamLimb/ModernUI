@@ -71,7 +71,7 @@ public class DSliderSettingEntry extends SettingEntry implements SliderDiscrete.
     @Override
     public void drawExtra(Canvas canvas, float time) {
         slider.draw(canvas, time);
-        canvas.setRGBA(titleBrightness, titleBrightness, titleBrightness, 1);
+        //canvas.setColor(titleBrightness, titleBrightness, titleBrightness, 1);
         canvas.setTextAlign(TextAlign.RIGHT);
         canvas.drawText(displayString, x2 - 6, y1 + 6);
     }

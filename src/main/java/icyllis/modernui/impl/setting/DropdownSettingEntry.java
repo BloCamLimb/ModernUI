@@ -26,8 +26,8 @@ import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.master.UIManager;
 import icyllis.modernui.graphics.renderer.Icon;
 import icyllis.modernui.ui.test.Align9D;
-import icyllis.modernui.ui.overlay.PopupMenu;
-import icyllis.modernui.ui.overlay.DropDownMenu;
+import icyllis.modernui.ui.view.PopupMenu;
+import icyllis.modernui.ui.view.DropDownMenu;
 import icyllis.modernui.system.ConstantsLibrary;
 
 import javax.annotation.Nonnull;
@@ -100,11 +100,11 @@ public class DropdownSettingEntry extends SettingEntry {
             bufferBuilder.pos(bl, y1 + 2, 0.0D).color(96, 96, 96, frameAlpha).endVertex();
             tessellator.draw();
             RenderSystem.enableTexture();*/
-            canvas.setRGBA(0.377f, 0.377f, 0.377f, frameAlpha);
+            //canvas.setColor(0.377f, 0.377f, 0.377f, frameAlpha);
             canvas.drawRect(bl, y1 + 2, x2, y1 + 18);
         }
         canvas.setTextAlign(TextAlign.RIGHT);
-        canvas.setRGBA(optionBrightness, optionBrightness, optionBrightness, 1);
+        //canvas.setColor(optionBrightness, optionBrightness, optionBrightness, 1);
         canvas.drawText(optionText, x2 - 10, y1 + 6);
         //fontRenderer.drawString(optionText, x2 - 10, y1 + 6, optionBrightness, 1, TextAlign.RIGHT);
         canvas.drawIcon(ICON, x2 - 8, y1 + 6, x2, y1 + 14);

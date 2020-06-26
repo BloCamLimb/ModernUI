@@ -53,14 +53,14 @@ public abstract class SettingEntry extends UniformScrollEntry {
     public final void onDraw(@Nonnull Canvas canvas, float time) {
         /*Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();*/
-        canvas.setRGBA(titleBrightness, titleBrightness, titleBrightness, 1);
+        //canvas.setColor(titleBrightness, titleBrightness, titleBrightness, 1);
         canvas.setTextAlign(TextAlign.LEFT);
         canvas.drawText(title, x1, y1 + 6);
         /*if (desc.length > 0) {
 
         }*/
         drawExtra(canvas, time);
-        canvas.setRGBA(0.55f, 0.55f, 0.55f, 0.863f);
+        //canvas.setColor(0.55f, 0.55f, 0.55f, 0.863f);
         canvas.drawLine(x1, y2, x2, y2);
         /*RenderSystem.disableTexture();
         bufferBuilder.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);

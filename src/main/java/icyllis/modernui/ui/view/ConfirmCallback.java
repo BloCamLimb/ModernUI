@@ -16,7 +16,7 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.ui.overlay;
+package icyllis.modernui.ui.view;
 
 @FunctionalInterface
 public interface ConfirmCallback {

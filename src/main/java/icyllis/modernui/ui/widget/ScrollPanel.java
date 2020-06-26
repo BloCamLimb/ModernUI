@@ -19,7 +19,6 @@
 package icyllis.modernui.ui.widget;
 
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.ui.master.View;
 import icyllis.modernui.ui.test.IHost;
 import icyllis.modernui.ui.test.IScrollHost;
 import icyllis.modernui.ui.test.Widget;
@@ -62,7 +61,7 @@ public class ScrollPanel<E extends UniformScrollEntry, G extends UniformScrollGr
         group.draw(canvas, time);
         canvas.restore();
 
-        scrollbar.draw(canvas, time);
+        //scrollbar.draw(canvas, time);
 
         canvas.clipEnd();
     }

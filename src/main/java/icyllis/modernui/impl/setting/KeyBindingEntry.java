@@ -23,8 +23,8 @@ import icyllis.modernui.ui.animation.Animation;
 import icyllis.modernui.ui.animation.Applier;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.master.UIManager;
-import icyllis.modernui.ui.overlay.PopupMenu;
-import icyllis.modernui.ui.overlay.DropDownMenu;
+import icyllis.modernui.ui.view.PopupMenu;
+import icyllis.modernui.ui.view.DropDownMenu;
 import icyllis.modernui.ui.widget.KeyInputBox;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
@@ -72,7 +72,7 @@ public class KeyBindingEntry extends SettingEntry {
     @Override
     public void drawExtra(Canvas canvas, float time) {
         if (light > 0) {
-            canvas.setRGBA(0.5f, 0.5f, 0.5f, light);
+            //canvas.setColor(0.5f, 0.5f, 0.5f, light);
             canvas.drawRect(x1 - 1, y1 + 1, x2 + 1, y2 - 1);
         }
         inputBox.draw(canvas, time);
