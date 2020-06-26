@@ -51,7 +51,6 @@ public abstract class ViewGroup extends View implements IViewParent {
         for (int i = 0; i < childrenCount; i++) {
             View child = children[i];
             if (child.getVisibility() != GONE) {
-                canvas.moveTo(child);
                 child.draw(canvas);
             }
         }
@@ -69,15 +68,15 @@ public abstract class ViewGroup extends View implements IViewParent {
     protected abstract void onLayout(boolean changed);
 
     @Override
-    protected boolean onUpdateMouseHover(double mouseX, double mouseY) {
-        double mx = mouseX + getScrollX();
-        double my = mouseY + getScrollY();
+    protected boolean dispatchUpdateMouseHover(double mouseX, double mouseY) {
+        final double mx = mouseX + getScrollX();
+        final double my = mouseY + getScrollY();
         for (int i = childrenCount - 1; i >= 0; i--) {
             if (children[i].updateMouseHover(mx, my)) {
                 return true;
             }
         }
-        return super.onUpdateMouseHover(mouseX, mouseY);
+        return super.dispatchUpdateMouseHover(mouseX, mouseY);
     }
 
     @Override
@@ -208,7 +207,7 @@ public abstract class ViewGroup extends View implements IViewParent {
         for (int i = 0; i < childrenCount; i++) {
             View child = children[i];
 
-            child = child.findViewById(id);
+            child = child.findViewTraversal(id);
 
             if (child != null) {
                 return (T) child;

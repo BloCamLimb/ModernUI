@@ -21,9 +21,9 @@ package icyllis.modernui.graphics.renderer;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.font.*;
+import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.graphics.shader.ShaderTools;
 import icyllis.modernui.graphics.shader.program.*;
-import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.ui.master.View;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
@@ -99,8 +99,8 @@ public class Canvas {
     /**
      * Drawing location offset
      */
-    private float drawingX = 0.0f;
-    private float drawingY = 0.0f;
+    private int drawingX = 0;
+    private int drawingY = 0;
 
     /**
      * Elapsed time from a gui open
@@ -665,6 +665,10 @@ public class Canvas {
 
     public void clipStart(@Nonnull View view) {
         clipStart(view.getLeft(), view.getTop(), view.getWidth(), view.getHeight());
+    }
+
+    public void clipVertical(@Nonnull View view) {
+        clipStart(0, view.getTop(), mainWindow.getScaledWidth(), view.getHeight());
     }
 
     public void clipStart(float x, float y, float width, float height) {

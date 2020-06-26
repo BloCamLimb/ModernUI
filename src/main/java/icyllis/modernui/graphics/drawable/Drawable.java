@@ -47,7 +47,7 @@ public abstract class Drawable {
     public abstract void draw(@Nonnull Canvas canvas);
 
     /**
-     * Returns the drawable's intrinsic width.
+     * Returns the drawable's intrinsic width. Actually a layout params.
      * <p>
      * Intrinsic width is the width at which the drawable would like to be laid
      * out, including any inherent padding. If the drawable has no intrinsic
@@ -60,7 +60,7 @@ public abstract class Drawable {
     }
 
     /**
-     * Returns the drawable's intrinsic height.
+     * Returns the drawable's intrinsic height. Actually a layout params.
      * <p>
      * Intrinsic height is the height at which the drawable would like to be
      * laid out, including any inherent padding. If the drawable has no
@@ -127,6 +127,9 @@ public abstract class Drawable {
         }
     }
 
+    /**
+     * Called when bounds changed, including position or size
+     */
     protected void onBoundsChanged() {
 
     }

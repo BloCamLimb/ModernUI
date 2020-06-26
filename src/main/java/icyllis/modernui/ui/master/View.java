@@ -20,6 +20,7 @@ package icyllis.modernui.ui.master;
 
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.layout.MeasureSpec;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lwjgl.glfw.GLFW;
@@ -54,10 +55,11 @@ public class View {
     private static final int PFLAG_LAYOUT_REQUIRED        = 1 << 13;
 
     /**
-     * Private boolean state flags
-     * {@link #addFlag(int)}
-     * {@link #removeFlag(int)}
-     * {@link #hasFlag(int)}
+     * Private status flags for different stages or processes
+     * Internal use only
+     * {@link #addPrivateFlag(int)}
+     * {@link #removePrivateFlag(int)}
+     * {@link #hasPrivateFlag(int)}
      */
     private int privateFlags;
 
@@ -84,8 +86,8 @@ public class View {
     private static final int VISIBILITY_MASK = 0x3;
 
     /**
-     * View multi-state flags
-     * {@link #setFlag(int, int)}
+     * View states flags
+     * {@link #setStateFlag(int, int)}
      */
     private int viewFlags;
 
@@ -212,13 +214,13 @@ public class View {
     public void layout(int left, int top, int right, int bottom) {
         boolean changed = setFrame(left, top, right, bottom);
 
-        if (changed || hasFlag(PFLAG_LAYOUT_REQUIRED)) {
+        if (changed || hasPrivateFlag(PFLAG_LAYOUT_REQUIRED)) {
             onLayout(changed);
 
-            removeFlag(PFLAG_LAYOUT_REQUIRED);
+            removePrivateFlag(PFLAG_LAYOUT_REQUIRED);
         }
 
-        removeFlag(PFLAG_FORCE_LAYOUT);
+        removePrivateFlag(PFLAG_FORCE_LAYOUT);
     }
 
     /**
@@ -288,7 +290,7 @@ public class View {
      */
     public final void measure(int widthMeasureSpec, int heightMeasureSpec) {
 
-        boolean needsLayout = hasFlag(PFLAG_FORCE_LAYOUT);
+        boolean needsLayout = hasPrivateFlag(PFLAG_FORCE_LAYOUT);
 
         if (!needsLayout) {
 
@@ -307,16 +309,16 @@ public class View {
 
         if (needsLayout) {
             // remove the flag first anyway
-            removeFlag(PFLAG_MEASURED_DIMENSION_SET);
+            removePrivateFlag(PFLAG_MEASURED_DIMENSION_SET);
 
             onMeasure(widthMeasureSpec, heightMeasureSpec);
 
             // the flag should be added in onMeasure() by calling setMeasuredDimension()
-            if (!hasFlag(PFLAG_MEASURED_DIMENSION_SET)) {
+            if (!hasPrivateFlag(PFLAG_MEASURED_DIMENSION_SET)) {
                 throw new IllegalStateException("measured dimension unspecified on measure");
             }
 
-            addFlag(PFLAG_LAYOUT_REQUIRED);
+            addPrivateFlag(PFLAG_LAYOUT_REQUIRED);
         }
 
         prevWidthMeasureSpec = widthMeasureSpec;
@@ -347,7 +349,7 @@ public class View {
         this.measuredWidth = measuredWidth;
         this.measuredHeight = measuredHeight;
 
-        addFlag(PFLAG_MEASURED_DIMENSION_SET);
+        addPrivateFlag(PFLAG_MEASURED_DIMENSION_SET);
     }
 
     /**
@@ -460,11 +462,13 @@ public class View {
 
     /**
      * Assign parent view, this method is called by system
+     * Internal method, derived classes should NOT override
+     * or call this method for any reason
      *
      * @param parent parent view
      * @throws RuntimeException parent is already assigned
      */
-    void assignParent(@Nonnull IViewParent parent) {
+    public void assignParent(@Nonnull IViewParent parent) {
         if (this.parent == null) {
             this.parent = parent;
         } else {
@@ -512,20 +516,20 @@ public class View {
         }
     }
 
-    private void addFlag(int flag) {
+    private void addPrivateFlag(int flag) {
         privateFlags |= flag;
     }
 
-    private void removeFlag(int flag) {
+    private void removePrivateFlag(int flag) {
         privateFlags &= ~flag;
     }
 
-    private boolean hasFlag(int flag) {
+    private boolean hasPrivateFlag(int flag) {
         return (privateFlags & flag) != 0;
     }
 
     //TODO state switching events
-    private void setFlag(int flag, int mask) {
+    private void setStateFlag(int flag, int mask) {
         final int old = viewFlags;
 
         viewFlags = (viewFlags & ~mask) | (flag & mask);
@@ -541,7 +545,7 @@ public class View {
      * @param visibility visibility to set
      */
     public void setVisibility(int visibility) {
-        setFlag(visibility, VISIBILITY_MASK);
+        setStateFlag(visibility, VISIBILITY_MASK);
     }
 
     /**
@@ -636,9 +640,9 @@ public class View {
      * This will schedule a layout pass of the view tree.
      */
     public void requestLayout() {
-        boolean requestParent = !hasFlag(PFLAG_FORCE_LAYOUT);
+        boolean requestParent = !hasPrivateFlag(PFLAG_FORCE_LAYOUT);
 
-        addFlag(PFLAG_FORCE_LAYOUT);
+        addPrivateFlag(PFLAG_FORCE_LAYOUT);
 
         if (requestParent && parent != null) {
             parent.requestLayout();
@@ -650,7 +654,7 @@ public class View {
      * layout pass.
      */
     public void markForceLayout() {
-        addFlag(PFLAG_FORCE_LAYOUT);
+        addPrivateFlag(PFLAG_FORCE_LAYOUT);
     }
 
     /**
@@ -662,11 +666,11 @@ public class View {
      */
     public void getLocationInWindow(@Nonnull int[] location) {
         if (location.length < 2) {
-            throw new IllegalArgumentException("location array length must be greater than one");
+            throw new IllegalArgumentException("location array length must be two at least");
         }
 
-        int x = left;
-        int y = top;
+        float x = left;
+        float y = top;
 
         IViewParent parent = this.parent;
         while (parent != UIManager.INSTANCE) {
@@ -675,8 +679,8 @@ public class View {
             parent = parent.getParent();
         }
 
-        location[0] = x;
-        location[1] = y;
+        location[0] = (int) x;
+        location[1] = (int) y;
     }
 
     /**
@@ -710,16 +714,16 @@ public class View {
     }
 
     /**
-     * Check if mouse hover this view
-     * This is system method and can't be override
+     * Check if mouse hover this view.
+     * Internal method, unless you custom {@link #dispatchUpdateMouseHover(double, double)}
      *
      * @param mouseX relative mouse X pos
      * @param mouseY relative mouse Y pos
      * @return return {@code true} if certain view hovered
      */
-    final boolean updateMouseHover(double mouseX, double mouseY) {
-        if (isInView(mouseX, mouseY)) {
-            if (onUpdateMouseHover(mouseX, mouseY)) {
+    public final boolean updateMouseHover(double mouseX, double mouseY) {
+        if (mouseX >= left && mouseX < right && mouseY >= top && mouseY < bottom) {
+            if (dispatchUpdateMouseHover(mouseX, mouseY)) {
                 return true;
             }
             UIManager.INSTANCE.setHoveredView(this);
@@ -729,22 +733,16 @@ public class View {
         return false;
     }
 
-    // helper
-    private boolean isInView(double mx, double my) {
-        return mx >= left && mx < right && my >= top && my < bottom;
-    }
-
     /**
-     * Dispatch events to child views if present.
-     * Check if mouse hover a child view.
-     * You shouldn't override this method.
+     * Dispatch events to child views if present, check if mouse hovered a child view.
+     * See {@link #onMouseHoverUpdate(double, double)}
      *
      * @param mouseX relative mouse X pos
      * @param mouseY relative mouse Y pos
      * @return {@code true} if certain child view hovered
      * {@code false} will make this view hovered
      */
-    protected boolean onUpdateMouseHover(double mouseX, double mouseY) {
+    protected boolean dispatchUpdateMouseHover(double mouseX, double mouseY) {
         return false;
     }
 
@@ -771,119 +769,102 @@ public class View {
     }
 
     /**
-     * Called when mouse hover and left button clicked
+     * Called when mouse hovered on this view and a mouse button clicked.
      *
-     * @param mouseX relative mouse X pos
-     * @param mouseY relative mouse Y pos
-     * @return return {@code true} if action performed
+     * @param mouseX      relative mouse x pos
+     * @param mouseY      relative mouse y pos
+     * @param mouseButton mouse button, for example {@link GLFW#GLFW_MOUSE_BUTTON_LEFT}
+     * @return {@code true} if action performed
      */
-    protected boolean onMouseLeftClicked(int mouseX, int mouseY) {
+    protected boolean onMouseClicked(double mouseX, double mouseY, int mouseButton) {
         return false;
     }
 
     /**
-     * Called when mouse hover and left button released
+     * Called when mouse hovered on this view and left button double clicked.
+     * If no action performed in this method, onMouseClicked will be called.
      *
-     * @param mouseX relative mouse X pos
-     * @param mouseY relative mouse Y pos
-     * @return return {@code true} if action performed
+     * @param mouseX relative mouse x pos
+     * @param mouseY relative mouse y pos
+     * @return {@code true} if action performed
      */
-    protected boolean onMouseLeftReleased(int mouseX, int mouseY) {
+    protected boolean onMouseDoubleClicked(double mouseX, double mouseY) {
         return false;
     }
 
     /**
-     * Called when mouse hover and left button double clicked
+     * Called when mouse hovered on this view and a mouse button released.
      *
-     * @param mouseX relative mouse X pos
-     * @param mouseY relative mouse Y pos
-     * @return return {@code true} if action performed
+     * @param mouseX      relative mouse x pos
+     * @param mouseY      relative mouse y pos
+     * @param mouseButton mouse button, for example {@link GLFW#GLFW_MOUSE_BUTTON_LEFT}
+     * @return {@code true} if action performed
      */
-    protected boolean onMouseDoubleClicked(int mouseX, int mouseY) {
+    protected boolean onMouseReleased(double mouseX, double mouseY, int mouseButton) {
         return false;
     }
 
     /**
-     * Called when mouse hover and right button clicked
+     * Called when mouse hovered on this view and mouse scrolled.
      *
-     * @param mouseX relative mouse X pos
-     * @param mouseY relative mouse Y pos
-     * @return return {@code true} if action performed
-     */
-    protected boolean onMouseRightClicked(int mouseX, int mouseY) {
-        return false;
-    }
-
-    /**
-     * Called when mouse hover and right button released
-     *
-     * @param mouseX relative mouse X pos
-     * @param mouseY relative mouse Y pos
-     * @return return {@code true} if action performed
-     */
-    protected boolean onMouseRightReleased(int mouseX, int mouseY) {
-        return false;
-    }
-
-    /**
-     * Called when mouse hover and mouse scrolled
-     *
-     * @param mouseX relative mouse X pos
-     * @param mouseY relative mouse Y pos
+     * @param mouseX relative mouse x pos
+     * @param mouseY relative mouse y pos
      * @param amount scroll amount
      * @return return {@code true} if action performed
      */
-    protected boolean onMouseScrolled(int mouseX, int mouseY, double amount) {
+    protected boolean onMouseScrolled(double mouseX, double mouseY, double amount) {
         return false;
     }
 
     /**
-     * Call when this view start to be listened as a draggable
+     * Call when this view start to be listened as a draggable.
      */
     protected void onStartDragging() {
 
     }
 
     /**
-     * Call when this view is no longer listened as a draggable
+     * Call when this view is no longer listened as a draggable.
      */
     protected void onStopDragging() {
 
     }
 
     /**
-     * Called when mouse moved
+     * Called when mouse moved and dragged.
      *
-     * @param mouseX relative mouse X pos
-     * @param mouseY relative mouse X pos
-     * @param deltaX mouse x change
-     * @param deltaY mouse y change
-     * @return return {@code true} if action performed
+     * @param mouseX relative mouse x pos
+     * @param mouseY relative mouse y pos
+     * @param deltaX mouse x pos change
+     * @param deltaY mouse y pos change
+     * @return {@code true} if action performed
      */
-    protected boolean onMouseDragged(int mouseX, int mouseY, double deltaX, double deltaY) {
+    protected boolean onMouseDragged(double mouseX, double mouseY, double deltaX, double deltaY) {
         return false;
     }
 
     /**
-     * Call when this view start to be listened as a keyboard listener
+     * Call when this view start to be listened as a keyboard listener.
      */
     protected void onStartKeyboard() {
 
     }
 
     /**
-     * Call when this view is no longer listened as a keyboard listener
+     * Call when this view is no longer listened as a keyboard listener.
      */
     protected void onStopKeyboard() {
 
     }
 
     /**
-     * Called when a key pressed
+     * Called when a key pressed.
      *
-     * @param keyCode   see {@link GLFW}
-     * @param scanCode  keyboard scan code
-     * @param modifiers modifier key, see {@link GLFW}
+     * @param keyCode   see {@link GLFW}, for example {@link GLFW#GLFW_KEY_W}
+     * @param scanCode  keyboard scan code, seldom used
+     * @param modifiers modifier key, for example {@link GLFW#GLFW_MOD_CONTROL}
+     *                  Actually you need {@link Screen#hasControlDown()},
+     *                  {@link Screen#hasShiftDown()}, {@link Screen#hasAltDown()}
      * @return return {@code true} if action performed
      */
     protected boolean onKeyPressed(int keyCode, int scanCode, int modifiers) {
@@ -891,11 +872,13 @@ public class View {
     }
 
     /**
-     * Called when a key released
+     * Called when a key released.
      *
-     * @param keyCode   see {@link GLFW}
-     * @param scanCode  keyboard scan code
-     * @param modifiers modifier key, see {@link GLFW}
+     * @param keyCode   see {@link GLFW}, for example {@link GLFW#GLFW_KEY_W}
+     * @param scanCode  keyboard scan code, seldom used
+     * @param modifiers modifier key, for example {@link GLFW#GLFW_MOD_CONTROL}.
+     *                  Actually you need {@link Screen#hasControlDown()},
+     *                  {@link Screen#hasShiftDown()}, {@link Screen#hasAltDown()}
      * @return return {@code true} if action performed
      */
     protected boolean onKeyReleased(int keyCode, int scanCode, int modifiers) {
@@ -903,10 +886,12 @@ public class View {
     }
 
     /**
-     * Called when a unicode character typed
+     * Called when a unicode character typed.
      *
-     * @param codePoint chat code
-     * @param modifiers modifier key, see {@link GLFW}
+     * @param codePoint char code
+     * @param modifiers modifier key, for example {@link GLFW#GLFW_MOD_CONTROL}
+     *                  Actually you need {@link Screen#hasControlDown()},
+     *                  {@link Screen#hasShiftDown()}, {@link Screen#hasAltDown()}
      * @return return {@code true} if action performed
      */
     protected boolean onCharTyped(char codePoint, int modifiers) {

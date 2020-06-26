@@ -57,7 +57,7 @@ public class ScrollWindow<T extends ScrollGroup> extends Window implements IScro
 
     @Override
     public final void draw(@Nonnull Canvas canvas, float time) {
-        controller.update(time);
+        //controller.update(time);
 
         /* For horizontal transition animation */
         canvas.clipStart(0, y1, getGameWidth(), height);
@@ -233,7 +233,7 @@ public class ScrollWindow<T extends ScrollGroup> extends Window implements IScro
     }
 
     private void updateScrollBarOffset() {
-        scrollbar.setBarOffset(getScrollPercentage());
+        //scrollbar.setBarOffset(getScrollPercentage());
     }
 
     public void updateScrollBarLength() {
@@ -243,7 +243,7 @@ public class ScrollWindow<T extends ScrollGroup> extends Window implements IScro
         //scrollbar.setVisibility(renderBar ? View.VISIBLE : View.INVISIBLE);
         if (renderBar) {
             float p = v / t;
-            scrollbar.setBarLength(p);
+            //scrollbar.setBarLength(p);
         }
     }
 

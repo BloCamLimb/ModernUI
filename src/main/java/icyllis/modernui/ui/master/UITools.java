@@ -27,6 +27,7 @@ import org.lwjgl.glfw.GLFW;
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 @SuppressWarnings("unused")
 @OnlyIn(Dist.CLIENT)
@@ -100,5 +101,22 @@ public class UITools {
      */
     public static void useHandCursor() {
         GLFW.glfwSetCursor(Minecraft.getInstance().getMainWindow().getHandle(), HAND_CURSOR);
+    }
+
+    /**
+     * Run a view's method for all views of given view recursively
+     *
+     * @param view     root view
+     * @param consumer method to run
+     */
+    public static void runViewTraversal(@Nonnull View view, @Nonnull Consumer<View> consumer) {
+        consumer.accept(view);
+        if (view instanceof ViewGroup) {
+            final ViewGroup group = (ViewGroup) view;
+            final int count = group.getChildCount();
+            for (int i = 0; i < count; i++) {
+                runViewTraversal(group.getChildAt(i), consumer);
+            }
+        }
     }
 }

@@ -120,7 +120,7 @@ public enum UIManager implements IViewParent {
     private View mKeyboard = null;
 
     // for double click check, default 10 tick = 0.5s
-    private int doubleClickTime = Integer.MIN_VALUE;
+    private int lastClickTick = Integer.MIN_VALUE;
 
     // to schedule layout on next frame
     private boolean layoutRequested = false;
@@ -341,18 +341,25 @@ public enum UIManager implements IViewParent {
         }*/
         if (mHovered != null) {
             if (mouseButton == 0) {
-                int delta = ticks - doubleClickTime;
+                int delta = ticks - lastClickTick;
                 if (delta < 10) {
-                    doubleClickTime = Integer.MIN_VALUE;
-                    if (mHovered.onMouseDoubleClicked((int) getViewMouseX(mHovered), (int) getViewMouseY(mHovered))) {
+                    lastClickTick = Integer.MIN_VALUE;
+                    if (mHovered.onMouseDoubleClicked(getViewMouseX(mHovered), getViewMouseY(mHovered))) {
                         return true;
                     }
                 } else {
-                    doubleClickTime = ticks;
+                    lastClickTick = ticks;
                 }
-                return mHovered.onMouseLeftClicked((int) getViewMouseX(mHovered), (int) getViewMouseY(mHovered));
-            } else if (mouseButton == 1) {
-                return mHovered.onMouseRightClicked((int) getViewMouseX(mHovered), (int) getViewMouseY(mHovered));
+            }
+            if (mHovered.onMouseClicked(getViewMouseX(mHovered), getViewMouseY(mHovered), mouseButton)) {
+                return true;
+            }
+            IViewParent parent = mHovered.getParent();
+            while (parent != this) {
+                if (((View) parent).onMouseClicked(mouseX, mouseY, mouseButton)) {
+                    return true;
+                }
+                parent = parent.getParent();
             }
         }
         return false;
@@ -368,6 +375,18 @@ public enum UIManager implements IViewParent {
             setDragging(null);
             return true;
         }
+        if (mHovered != null) {
+            if (mHovered.onMouseReleased(getViewMouseX(mHovered), getViewMouseY(mHovered), mouseButton)) {
+                return true;
+            }
+            IViewParent parent = mHovered.getParent();
+            while (parent != this) {
+                if (((View) parent).onMouseReleased(mouseX, mouseY, mouseButton)) {
+                    return true;
+                }
+                parent = parent.getParent();
+            }
+        }
         return false;//root.mouseReleased(mouseX, mouseY, mouseButton);
     }
 
@@ -378,7 +397,7 @@ public enum UIManager implements IViewParent {
             return popup.mouseDragged(mouseX, mouseY, deltaX, deltaY);
         }*/
         if (mDragging != null) {
-            return mDragging.onMouseDragged((int) getViewMouseX(mDragging), (int) getViewMouseY(mDragging), deltaX, deltaY);
+            return mDragging.onMouseDragged(getViewMouseX(mDragging), getViewMouseY(mDragging), deltaX, deltaY);
         }
         return false;
     }
@@ -390,33 +409,48 @@ public enum UIManager implements IViewParent {
             return popup.mouseScrolled(mouseX, mouseY, amount);
         }*/
         if (mHovered != null) {
-            return mHovered.onMouseScrolled((int) getViewMouseX(mHovered), (int) getViewMouseY(mHovered), amount);
+            if (mHovered.onMouseScrolled(getViewMouseX(mHovered), getViewMouseY(mHovered), amount)) {
+                return true;
+            }
+            IViewParent parent = mHovered.getParent();
+            while (parent != this) {
+                if (((View) parent).onMouseScrolled(mouseX, mouseY, amount)) {
+                    return true;
+                }
+                parent = parent.getParent();
+            }
         }
         return false;
     }
 
     boolean sKeyPressed(int keyCode, int scanCode, int modifiers) {
-        if (popup != null) {
+        /*if (popup != null) {
             return popup.keyPressed(keyCode, scanCode, modifiers);
-        } else {
-            return false;//root.keyPressed(keyCode, scanCode, modifiers);
+        }*/
+        if (mKeyboard != null) {
+            return mKeyboard.onKeyPressed(keyCode, scanCode, modifiers);
         }
+        return false;
     }
 
     boolean sKeyReleased(int keyCode, int scanCode, int modifiers) {
-        if (popup != null) {
+        /*if (popup != null) {
             return popup.keyReleased(keyCode, scanCode, modifiers);
-        } else {
-            return false;//root.keyReleased(keyCode, scanCode, modifiers);
+        }*/
+        if (mKeyboard != null) {
+            return mKeyboard.onKeyReleased(keyCode, scanCode, modifiers);
         }
+        return false;//root.keyReleased(keyCode, scanCode, modifiers);
     }
 
     boolean sCharTyped(char codePoint, int modifiers) {
-        if (popup != null) {
+        /*if (popup != null) {
             return popup.charTyped(codePoint, modifiers);
-        } else {
-            return false;//root.charTyped(codePoint, modifiers);
+        }*/
+        if (mKeyboard != null) {
+            return mKeyboard.onCharTyped(codePoint, modifiers);
         }
+        return false;//root.charTyped(codePoint, modifiers);
     }
 
     boolean sChangeKeyboard(boolean searchNext) {
@@ -488,8 +522,8 @@ public enum UIManager implements IViewParent {
         this.width = width;
         this.height = height;
         double scale = minecraft.getMainWindow().getGuiScaleFactor();
-        mouseX = (int) (minecraft.mouseHelper.getMouseX() / scale);
-        mouseY = (int) (minecraft.mouseHelper.getMouseY() / scale);
+        mouseX = (minecraft.mouseHelper.getMouseX() / scale);
+        mouseY = (minecraft.mouseHelper.getMouseY() / scale);
         layout();
     }
 
@@ -563,7 +597,7 @@ public enum UIManager implements IViewParent {
             popup = null;
             fragment = null;
             modernScreen = null;
-            doubleClickTime = Integer.MIN_VALUE;
+            lastClickTick = Integer.MIN_VALUE;
             lastLayoutTime = 0;
             layoutRequested = false;
             UIEditor.INSTANCE.setHoveredWidget(null);
@@ -615,7 +649,7 @@ public enum UIManager implements IViewParent {
             }
 
         } else {
-
+            // convert ticks to milliseconds
             time = (int) ((ticks + event.renderTickTime) * 50.0f);
 
             // list size is dynamically changeable, because updating animation may add new animation to the list
@@ -753,7 +787,7 @@ public enum UIManager implements IViewParent {
             if (mHovered != null) {
                 mHovered.onMouseHoverEnter();
             }
-            doubleClickTime = Integer.MIN_VALUE;
+            lastClickTick = Integer.MIN_VALUE;
         }
     }
 
