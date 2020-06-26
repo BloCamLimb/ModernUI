@@ -74,9 +74,9 @@ public class Scroller {
      *
      * @param time current drawing time
      */
-    public void update(float time) {
+    public void update(int time) {
         if (currValue != targetValue) {
-            float p = Math.min((time - startTime) / duration, 1);
+            float p = Math.min((float) (time - startTime) / duration, 1);
             p = interpolator.getInterpolation(p);
             currValue = MathHelper.lerp(p, startValue, targetValue);
             if (callback != null) {
@@ -165,12 +165,12 @@ public class Scroller {
         float end = MathHelper.clamp(target, 0, maxValue) * 2.0f;
         targetValue = Math.round(end) / 2.0f;
         float dis = Math.abs(targetValue - currValue);
-        if (dis > 120) {
-            duration = (int) Math.sqrt(dis * 6.0f);
-        } else if (dis > 60) {
-            duration = (int) (dis * 2.0f);
+        if (dis > 300.0f) {
+            duration = (int) (dis * 1.6f);
+        } else if (dis > 66.0f) {
+            duration = (int) (Math.sqrt(dis * 4.0f) * 16.0f);
         } else {
-            duration = 150;
+            duration = 300;
         }
     }
 

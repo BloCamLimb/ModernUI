@@ -16,12 +16,13 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.ui.widget;
+package icyllis.modernui.ui.test;
 
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.ui.test.IHost;
-import icyllis.modernui.ui.test.IScrollHost;
-import icyllis.modernui.ui.test.Widget;
+import icyllis.modernui.ui.widget.ScrollBar;
+import icyllis.modernui.ui.widget.Scroller;
+import icyllis.modernui.ui.widget.UniformScrollEntry;
+import icyllis.modernui.ui.widget.UniformScrollGroup;
 
 import javax.annotation.Nonnull;
 import java.util.function.Function;
@@ -29,6 +30,7 @@ import java.util.function.Function;
 /**
  * Light-weighted scroll window with fixed size, and can only use single uniform scroll group
  */
+@Deprecated
 public class ScrollPanel<E extends UniformScrollEntry, G extends UniformScrollGroup<E>> extends Widget implements IScrollHost {
 
     @Nonnull
@@ -52,7 +54,7 @@ public class ScrollPanel<E extends UniformScrollEntry, G extends UniformScrollGr
 
     @Override
     protected void onDraw(@Nonnull Canvas canvas, float time) {
-        controller.update(time);
+        //controller.update(time);
 
         canvas.clipStart(x1, y1, width, height);
 
@@ -144,7 +146,7 @@ public class ScrollPanel<E extends UniformScrollEntry, G extends UniformScrollGr
     }
 
     public void updateScrollBarOffset() {
-        scrollbar.setBarOffset(getScrollPercentage());
+        //scrollbar.setBarOffset(getScrollPercentage());
     }
 
     @Override
@@ -182,7 +184,7 @@ public class ScrollPanel<E extends UniformScrollEntry, G extends UniformScrollGr
         //scrollbar.setVisibility(renderBar ? View.VISIBLE : View.INVISIBLE);
         if (renderBar) {
             float p = v / t;
-            scrollbar.setBarLength(p);
+            //scrollbar.setBarLength(p);
         }
     }
 

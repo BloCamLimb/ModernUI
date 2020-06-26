@@ -22,6 +22,8 @@ import icyllis.modernui.ui.layout.FrameLayout;
 import icyllis.modernui.ui.layout.Gravity;
 import icyllis.modernui.ui.master.Fragment;
 import icyllis.modernui.ui.master.View;
+import icyllis.modernui.ui.master.ViewGroup;
+import icyllis.modernui.ui.widget.ScrollView;
 
 import javax.annotation.Nullable;
 
@@ -30,9 +32,12 @@ public class TestFragment extends Fragment {
     @Nullable
     @Override
     public View createView() {
-        View view = new TestLinearLayout();
+        ScrollView scrollView = new ScrollView();
         // main view can use FrameLayout params
-        view.setLayoutParams(new FrameLayout.LayoutParams(100, 200, Gravity.CENTER));
-        return view;
+        scrollView.setLayoutParams(new FrameLayout.LayoutParams(100, 100, Gravity.CENTER));
+        View content = new TestLinearLayout();
+        content.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 200));
+        scrollView.addView(content);
+        return scrollView;
     }
 }

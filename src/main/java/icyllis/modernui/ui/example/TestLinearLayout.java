@@ -60,7 +60,6 @@ public class TestLinearLayout extends LinearLayout {
     @Override
     protected void onDraw(@Nonnull Canvas canvas) {
         super.onDraw(canvas);
-
         canvas.moveTo(this);
         canvas.resetColor();
         canvas.drawText("LinearLayout", 0, 0);
@@ -70,6 +69,7 @@ public class TestLinearLayout extends LinearLayout {
 
         @Override
         protected void onDraw(@Nonnull Canvas canvas) {
+            canvas.moveTo(this);
             canvas.resetColor();
             canvas.drawText("Child", 0, 4);
         }
@@ -87,10 +87,12 @@ public class TestLinearLayout extends LinearLayout {
             this.offset = offset;
             animation = new Animation(200)
                     .applyTo(new Applier(0, 60, () -> offsetY, v -> offsetY = v).setInterpolator(interpolator));
+            animation.invertFull();
         }
 
         @Override
         protected void onDraw(@Nonnull Canvas canvas) {
+            canvas.moveTo(this);
             canvas.drawText("Go My Way", offset, offsetY);
         }
 
