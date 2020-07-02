@@ -31,7 +31,6 @@ public interface IMouseListener {
 
     /**
      * Check if mouse hover this widget, and update member variable for mouse event
-     * Call {@link UIManager#setMouseListener(IMouseListener)} if event canceled
      *
      * @param mouseX relative mouse X pos
      * @param mouseY relative mouse Y pos

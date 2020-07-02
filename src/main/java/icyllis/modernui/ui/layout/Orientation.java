@@ -18,14 +18,22 @@
 
 package icyllis.modernui.ui.layout;
 
-public class Orientation {
-
+public enum Orientation {
     /**
      * Orientation horizontal
      */
-    public static final int HORIZONTAL = 0;
+    HORIZONTAL,
+
     /**
      * Orientation vertical
      */
-    public static final int VERTICAL   = 1;
+    VERTICAL;
+
+    public boolean isHorizontal() {
+        return this == HORIZONTAL;
+    }
+
+    public boolean isVertical() {
+        return this == VERTICAL;
+    }
 }

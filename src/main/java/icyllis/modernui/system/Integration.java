@@ -24,13 +24,9 @@ import net.optifine.shaders.gui.GuiShaders;
 
 import java.lang.reflect.InvocationTargetException;
 
-public class ModIntegration {
+public class Integration {
 
     public static boolean optifineLoaded = false;
-
-    static {
-
-    }
 
     public static void init() {
         ModList modList = ModList.get();

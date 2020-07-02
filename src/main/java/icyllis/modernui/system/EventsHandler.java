@@ -18,13 +18,11 @@
 
 package icyllis.modernui.system;
 
-import icyllis.modernui.graphics.font.TrueTypeRenderer;
 import icyllis.modernui.ui.example.ContainerTest;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.Items;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -40,7 +38,7 @@ public class EventsHandler {
 
     @SubscribeEvent
     static void rightClickItem(@Nonnull PlayerInteractEvent.RightClickItem event) {
-        if (ConfigManager.isDeveloperMode()) {
+        if (Config.isDeveloperMode()) {
             if (event.getItemStack().getItem() == Items.DIAMOND) {
                 if (event.getSide().isServer()) {
                     NetworkHooks.openGui((ServerPlayerEntity) event.getPlayer(), new ContainerTest.Provider());
@@ -59,14 +57,14 @@ public class EventsHandler {
      */
     @OnlyIn(Dist.CLIENT)
     @Mod.EventBusSubscriber(Dist.CLIENT)
-    public static class ClientEventHandler {
+    static class Client {
 
-        @SubscribeEvent(receiveCanceled = true)
+        /*@SubscribeEvent(receiveCanceled = true)
         static void onGuiOpen(@Nonnull GuiOpenEvent event) {
-            TrueTypeRenderer.INSTANCE.init();
+
         }
 
-        /*@SubscribeEvent
+        @SubscribeEvent
         static void onRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
 
         }

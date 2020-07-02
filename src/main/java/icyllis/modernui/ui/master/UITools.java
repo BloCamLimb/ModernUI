@@ -39,7 +39,7 @@ public class UITools {
     private static final long HAND_CURSOR;
 
     static {
-        FONT_RENDERER = TrueTypeRenderer.INSTANCE;
+        FONT_RENDERER = TrueTypeRenderer.getInstance();
 
         IBEAM_CURSOR = GLFW.glfwCreateStandardCursor(GLFW.GLFW_IBEAM_CURSOR);
         HAND_CURSOR = GLFW.glfwCreateStandardCursor(GLFW.GLFW_HAND_CURSOR);

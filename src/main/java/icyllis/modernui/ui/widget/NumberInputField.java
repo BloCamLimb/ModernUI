@@ -19,7 +19,7 @@
 package icyllis.modernui.ui.widget;
 
 import icyllis.modernui.ui.test.IHost;
-import icyllis.modernui.system.ConstantsLibrary;
+import icyllis.modernui.system.Tools;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -40,7 +40,7 @@ public class NumberInputField extends TextField {
         super(host, builder);
         super.setText("0");
         super.setFilter((s, t) -> {
-            if (ConstantsLibrary.DIGIT_FILTER.test(t)) {
+            if (Tools.DIGIT_FILTER.test(t)) {
                 return t;
             } else {
                 return s;
@@ -98,7 +98,7 @@ public class NumberInputField extends TextField {
         if (newText.isEmpty()) {
             return "0";
         }
-        if (ConstantsLibrary.INTEGER_FILTER.test(newText) || newText.equals("0")) {
+        if (Tools.INTEGER_FILTER.test(newText) || newText.equals("0")) {
             long n;
             try {
                 n = Long.parseLong(newText);

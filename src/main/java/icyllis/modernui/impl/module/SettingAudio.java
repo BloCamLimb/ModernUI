@@ -24,7 +24,7 @@ import icyllis.modernui.impl.setting.SettingCategoryGroup;
 import icyllis.modernui.impl.setting.SettingEntry;
 import icyllis.modernui.impl.setting.SSliderSettingEntry;
 import icyllis.modernui.impl.setting.SettingScrollWindow;
-import icyllis.modernui.system.ConstantsLibrary;
+import icyllis.modernui.system.Tools;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.I18n;
@@ -48,7 +48,7 @@ public class SettingAudio extends Module {
         for (SoundCategory soundCategory : SoundCategory.values()) {
             SSliderSettingEntry entry = new SSliderSettingEntry(window, I18n.format("soundCategory." + soundCategory.getName()),
                     0, 1, 0.01f, gameSettings.getSoundLevel(soundCategory),
-                    d -> gameSettings.setSoundLevel(soundCategory, d.floatValue()), ConstantsLibrary.PERCENTAGE_STRING_FUNC, true);
+                    d -> gameSettings.setSoundLevel(soundCategory, d.floatValue()), Tools.PERCENTAGE_STRING_FUNC, true);
             list.add(entry);
         }
         SettingCategoryGroup category = new SettingCategoryGroup(window, I18n.format("gui.modernui.settings.category.sounds"), list);

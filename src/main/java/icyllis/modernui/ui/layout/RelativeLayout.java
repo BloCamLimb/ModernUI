@@ -36,36 +36,37 @@ public class RelativeLayout extends ViewGroup {
     /**
      * Rule that aligns a child's right edge with another child's left edge.
      */
-    public static final  int LEFT_OF      = 0;
+    public static final int LEFT_OF      = 0;
     /**
      * Rule that aligns a child's left edge with another child's right edge.
      */
-    public static final  int RIGHT_OF     = 1;
+    public static final int RIGHT_OF     = 1;
     /**
      * Rule that aligns a child's bottom edge with another child's top edge.
      */
-    public static final  int ABOVE        = 2;
+    public static final int ABOVE        = 2;
     /**
      * Rule that aligns a child's top edge with another child's bottom edge.
      */
-    public static final  int BELOW        = 3;
+    public static final int BELOW        = 3;
     /**
      * Rule that aligns a child's left edge with another child's left edge.
      */
-    public static final  int ALIGN_LEFT   = 4;
+    public static final int ALIGN_LEFT   = 4;
     /**
      * Rule that aligns a child's top edge with another child's top edge.
      */
-    public static final  int ALIGN_TOP    = 5;
+    public static final int ALIGN_TOP    = 5;
     /**
      * Rule that aligns a child's right edge with another child's right edge.
      */
-    public static final  int ALIGN_RIGHT  = 6;
+    public static final int ALIGN_RIGHT  = 6;
     /**
      * Rule that aligns a child's bottom edge with another child's bottom edge.
      */
-    public static final  int ALIGN_BOTTOM = 7;
-    private static final int VERB_COUNT   = 8;
+    public static final int ALIGN_BOTTOM = 7;
+
+    private static final int VERB_COUNT = 8;
 
 
     private static final int[] RULES_VERTICAL = {
@@ -90,14 +91,18 @@ public class RelativeLayout extends ViewGroup {
     /**
      * See {@link #setIgnoreGravity(int)}
      */
-    private int ignoreGravity = 0;
+    private int ignoreGravity = NO_ID;
 
     // inner
-    private boolean dirtyChildren;
+    private boolean dirtyHierarchy;
 
     // inner
     private View[] sortedHorizontalChildren;
     private View[] sortedVerticalChildren;
+
+    // inner
+    private final int[] inBounds  = new int[4];
+    private final int[] outBounds = new int[4];
 
     // inner
     private final DependencyGraph graph = new DependencyGraph();
@@ -129,9 +134,9 @@ public class RelativeLayout extends ViewGroup {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        if (dirtyChildren) {
+        if (dirtyHierarchy) {
             sortChildren();
-            dirtyChildren = false;
+            dirtyHierarchy = false;
         }
 
         int myWidth = -1;
@@ -292,13 +297,15 @@ public class RelativeLayout extends ViewGroup {
         }
 
         if (horizontalGravity || verticalGravity) {
-            int[] in = new int[]{0, 0, width, height};
+            int[] inBounds = this.inBounds;
+            inBounds[0] = 0;
+            inBounds[1] = 0;
+            inBounds[2] = width;
+            inBounds[3] = height;
+            Gravity.apply(gravity, right - left, bottom - top, inBounds, 0, 0, outBounds);
 
-            int[] out = new int[4];
-            Gravity.apply(gravity, right - left, bottom - top, in, 0, 0, out);
-
-            int horizontalOffset = out[0] - left;
-            int verticalOffset = out[1] - top;
+            int horizontalOffset = outBounds[0] - left;
+            int verticalOffset = outBounds[1] - top;
 
             if (horizontalOffset != 0 || verticalOffset != 0) {
                 for (int i = 0; i < count; i++) {
@@ -781,7 +788,7 @@ public class RelativeLayout extends ViewGroup {
     @Override
     public void requestLayout() {
         super.requestLayout();
-        dirtyChildren = true;
+        dirtyHierarchy = true;
     }
 
     @Nonnull
@@ -889,19 +896,19 @@ public class RelativeLayout extends ViewGroup {
         /**
          * List of all views in the graph.
          */
-        private List<Node> nodes = new ObjectArrayList<>();
+        private final List<Node> nodes = new ObjectArrayList<>();
 
         /**
          * List of nodes in the graph. Each node is identified by its
          * view id (see View#getId()).
          */
-        private Map<Integer, Node> keyNodes = new Int2ObjectArrayMap<>();
+        private final Map<Integer, Node> keyNodes = new Int2ObjectArrayMap<>();
 
         /**
          * Temporary data structure used to build the list of roots
          * for this graph.
          */
-        private Deque<Node> roots = new ArrayDeque<>();
+        private final Deque<Node> roots = new ArrayDeque<>();
 
         /**
          * Clears the graph.

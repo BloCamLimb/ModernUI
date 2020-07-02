@@ -32,7 +32,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ConfigManager {
+public class Config {
 
     public static final  Client          CLIENT;
     private static final ForgeConfigSpec CLIENT_SPEC;
@@ -54,9 +54,9 @@ public class ConfigManager {
 
     static void init() {
         FMLPaths.getOrCreateGameRelativePath(FMLPaths.CONFIGDIR.get().resolve("ModernUI"), "ModernUI");
-        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ConfigManager.CLIENT_SPEC, "ModernUI/client.toml");
-        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ConfigManager.COMMON_SPEC, "ModernUI/common.toml");
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(ConfigManager::reload);
+        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, Config.CLIENT_SPEC, "ModernUI/client.toml");
+        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.COMMON_SPEC, "ModernUI/common.toml");
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(Config::reload);
     }
 
     static void reload(@Nonnull ModConfig.ModConfigEvent event) {
@@ -126,7 +126,7 @@ public class ConfigManager {
         }
     }
 
-    private static boolean developerMode = false;
+    private static boolean developerMode;
 
     public static boolean isDeveloperMode() {
         return developerMode;
@@ -135,16 +135,16 @@ public class ConfigManager {
     public static class Common {
 
         //private final ForgeConfigSpec.BooleanValue enableDeveloperModeV;
-        private final ForgeConfigSpec.IntValue workingDirLevelV;
+        //private final ForgeConfigSpec.IntValue workingDirLevelV;
 
         public Common(@Nonnull ForgeConfigSpec.Builder builder) {
             builder.comment("Developer Config")
                     .push("developer");
 
             /*enableDeveloperModeV = builder.comment("For assisting developer to debug mod and edit modules in-game")
-                    .define("enableDeveloperMode", false);*/
+                    .define("enableDeveloperMode", false);
             workingDirLevelV = builder.comment("The level of your working directory, determines the root directory of your project.")
-                    .defineInRange("workingDirLevel", 1, 0, Integer.MAX_VALUE);
+                    .defineInRange("workingDirLevel", 1, 0, Integer.MAX_VALUE);*/
 
             builder.pop();
         }
@@ -152,15 +152,16 @@ public class ConfigManager {
         private void load() {
             if (!developerMode) {
                 Path path = FMLPaths.GAMEDIR.get();
-                int level = workingDirLevelV.get();
-                for (int i = 0; i < level; i++) {
+                // determines the root directory of your project
+                for (int i = 0; i <= 1; i++) {
+                    File dir = path.toFile();
+                    String[] r = dir.list((f, n) -> n.equals("build.gradle"));
+                    if (r != null && r.length > 0) {
+                        developerMode = true;
+                        ModernUI.LOGGER.debug(ModernUI.MARKER, "Enables Developer Mode");
+                        break;
+                    }
                     path = path.getParent();
-                }
-                File projectDir = path.toFile();
-                String[] r = projectDir.list((f, n) -> n.equals("build.gradle"));
-                if (r != null && r.length > 0) {
-                    ModernUI.LOGGER.debug(ModernUI.MARKER, "Enables Developer Mode");
-                    developerMode = true;
                 }
             }
         }

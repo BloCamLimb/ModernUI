@@ -22,7 +22,7 @@ import icyllis.modernui.ui.master.UITools;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.graphics.renderer.Icon;
 import icyllis.modernui.graphics.font.TextAlign;
-import icyllis.modernui.system.ConstantsLibrary;
+import icyllis.modernui.system.Tools;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.AbstractOption;
@@ -37,7 +37,7 @@ public class OptiFineSettingEntry extends SettingEntry {
     private static Method getter;
     private static Method setter;
 
-    private static final Icon ICON = new Icon(ConstantsLibrary.ICONS, 0.5f, 0.125f, 0.625f, 0.25f, true);
+    private static final Icon ICON = new Icon(Tools.ICONS, 0.5f, 0.125f, 0.625f, 0.25f, true);
 
     static {
         try {

@@ -24,7 +24,7 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import icyllis.modernui.graphics.math.Color3i;
-import icyllis.modernui.system.ConfigManager;
+import icyllis.modernui.system.Config;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
@@ -37,12 +37,13 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import org.lwjgl.opengl.GL11;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 @OnlyIn(Dist.CLIENT)
 public class TrueTypeRenderer implements IFontRenderer {
 
-    public static final TrueTypeRenderer INSTANCE = new TrueTypeRenderer();
+    private static final TrueTypeRenderer INSTANCE = new TrueTypeRenderer();
 
     /**
      * Vertical adjustment (in pixels * 2) to string position because Minecraft uses top of string instead of baseline
@@ -76,11 +77,12 @@ public class TrueTypeRenderer implements IFontRenderer {
 
     private TrueTypeRenderer() {
         cache = new StringCache();
+        //TODO config
         cache.setDefaultFont(14.0f);
 
         ModernFontRenderer.INSTANCE = new ModernFontRenderer(this);
 
-        if (ConfigManager.CLIENT.enableGlobalFontRenderer) {
+        if (Config.CLIENT.enableGlobalFontRenderer) {
             try {
                 ObfuscationReflectionHelper.findField(Minecraft.class, "field_71466_p").set(Minecraft.getInstance(), ModernFontRenderer.INSTANCE);
                 ObfuscationReflectionHelper.findField(EntityRendererManager.class, "field_78736_p").set(Minecraft.getInstance().getRenderManager(), ModernFontRenderer.INSTANCE);
@@ -90,12 +92,13 @@ public class TrueTypeRenderer implements IFontRenderer {
         }
     }
 
-    public void init() {
-
+    public static TrueTypeRenderer getInstance() {
+        RenderSystem.assertThread(RenderSystem::isOnRenderThread);
+        return INSTANCE;
     }
 
     @Override
-    public float drawString(String str, float startX, float startY, int r, int g, int b, int a, TextAlign align) {
+    public float drawString(@Nullable String str, float startX, float startY, int r, int g, int b, int a, TextAlign align) {
         /* Check for invalid arguments */
         if (str == null || str.isEmpty()) {
             return 0;
@@ -137,7 +140,7 @@ public class TrueTypeRenderer implements IFontRenderer {
         }*/
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        startX = startX - entry.advance * align.getOffsetFactor();
+        startX = startX - entry.advance * align.offsetFactor;
 
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();
@@ -267,7 +270,7 @@ public class TrueTypeRenderer implements IFontRenderer {
         return entry.advance / 2;
     }
 
-    private void drawI1(float startX, float startY, BufferBuilder buffer, GlyphCache.Glyph glyph, float glyphSpace, int a, int r, int g, int b, int underlineOffset, int underlineThickness) {
+    private void drawI1(float startX, float startY, @Nonnull BufferBuilder buffer, @Nonnull GlyphCache.Glyph glyph, float glyphSpace, int a, int r, int g, int b, int underlineOffset, int underlineThickness) {
         float x1 = startX + (glyph.x - glyphSpace) / 2.0F;
         float x2 = startX + (glyph.x + glyph.advance) / 2.0F;
         float y1 = startY + (underlineOffset) / 2.0F;
@@ -293,7 +296,7 @@ public class TrueTypeRenderer implements IFontRenderer {
     //TODO Add support for the "k" code which randomly replaces letters on each render (used on
     //TODO Pre-sort by texture to minimize binds; can store colors per glyph in string cache (?)
     //TODO Optimize the underline/strikethrough drawing to draw a single line for each run
-    protected float drawStringGlobal(@Nullable String str, float startX, float startY, int red, int green, int blue, int alpha, boolean isShadow, Matrix4f matrix, IRenderTypeBuffer typeBuffer, int packedLight) {
+    float drawStringGlobal(@Nullable String str, float startX, float startY, int red, int green, int blue, int alpha, boolean isShadow, Matrix4f matrix, IRenderTypeBuffer typeBuffer, int packedLight) {
         /* Check for invalid arguments */
         if (str == null || str.isEmpty()) {
             return 0;
@@ -543,7 +546,8 @@ public class TrueTypeRenderer implements IFontRenderer {
      * @param breakAtSpaces set to prefer breaking line at spaces than in the middle of a word
      * @return the number of characters from str that will fit inside width
      */
-    private int sizeString(String str, float width, boolean breakAtSpaces) {
+    @SuppressWarnings("SameParameterValue")
+    private int sizeString(@Nullable String str, float width, final boolean breakAtSpaces) {
         /* Check for invalid arguments */
         if (str == null || str.isEmpty()) {
             return 0;

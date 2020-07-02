@@ -20,7 +20,7 @@ package icyllis.modernui.ui.master;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.system.ConfigManager;
+import icyllis.modernui.system.Config;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.ui.animation.Animation;
 import icyllis.modernui.ui.layout.FrameLayout;
@@ -109,18 +109,18 @@ public enum UIManager implements IViewParent {
 
     // the canvas to draw things shared in all views and drawables
     // lazy loading because this class is loaded before GL initialization
-    private Canvas canvas = null;
+    private Canvas canvas;
 
     // only post events to focused views
     @Nullable
-    private View mHovered  = null;
+    private View mHovered;
     @Nullable
-    private View mDragging = null;
+    private View mDragging;
     @Nullable
-    private View mKeyboard = null;
+    private View mKeyboard;
 
     // for double click check, default 10 tick = 0.5s
-    private int lastClickTick = Integer.MIN_VALUE;
+    private int lastDClickTick = Integer.MIN_VALUE;
 
     // to schedule layout on next frame
     private boolean layoutRequested = false;
@@ -250,11 +250,6 @@ public enum UIManager implements IViewParent {
             view.assignParent(this);
         }
 
-        // create canvas
-        if (canvas == null) {
-            canvas = new Canvas();
-        }
-
         resize(width, height);
     }
 
@@ -264,6 +259,11 @@ public enum UIManager implements IViewParent {
     @SubscribeEvent
     void gGuiOpen(@Nonnull GuiOpenEvent event) {
         guiToOpen = event.getGui();
+
+        // create canvas, also font renderer
+        if (canvas == null) {
+            canvas = new Canvas(minecraft);
+        }
 
         if (guiToOpen == null) {
             destroy();
@@ -326,7 +326,7 @@ public enum UIManager implements IViewParent {
     void sMouseMoved(double mouseX, double mouseY) {
         this.mouseX = mouseX;
         this.mouseY = mouseY;
-        findFocus();
+        mouseMoved();
         /*if (popup != null) {
             popup.mouseMoved(mouseX, mouseY);
             return;
@@ -340,23 +340,42 @@ public enum UIManager implements IViewParent {
             return popup.mouseClicked(mouseX, mouseY, mouseButton);
         }*/
         if (mHovered != null) {
+            IViewParent parent;
+            View view;
+            double viewMX = getViewMouseX(mHovered);
+            double viewMY = getViewMouseY(mHovered);
             if (mouseButton == 0) {
-                int delta = ticks - lastClickTick;
+                int delta = ticks - lastDClickTick;
                 if (delta < 10) {
-                    lastClickTick = Integer.MIN_VALUE;
-                    if (mHovered.onMouseDoubleClicked(getViewMouseX(mHovered), getViewMouseY(mHovered))) {
+                    lastDClickTick = Integer.MIN_VALUE;
+                    if (mHovered.onMouseDoubleClicked(viewMX, viewMY)) {
                         return true;
                     }
+                    parent = mHovered.getParent();
+                    double viewMX2 = viewMX;
+                    double viewMY2 = viewMY;
+                    while (parent != this) {
+                        view = (View) parent;
+                        viewMX2 -= parent.getScrollX();
+                        viewMY2 -= parent.getScrollY();
+                        if (view.onMouseDoubleClicked(viewMX2, viewMY2)) {
+                            return true;
+                        }
+                        parent = parent.getParent();
+                    }
                 } else {
-                    lastClickTick = ticks;
+                    lastDClickTick = ticks;
                 }
             }
-            if (mHovered.onMouseClicked(getViewMouseX(mHovered), getViewMouseY(mHovered), mouseButton)) {
+            if (mHovered.onMouseClicked(viewMX, viewMY, mouseButton)) {
                 return true;
             }
-            IViewParent parent = mHovered.getParent();
+            parent = mHovered.getParent();
             while (parent != this) {
-                if (((View) parent).onMouseClicked(mouseX, mouseY, mouseButton)) {
+                view = (View) parent;
+                viewMX -= parent.getScrollX();
+                viewMY -= parent.getScrollY();
+                if (view.onMouseClicked(viewMX, viewMY, mouseButton)) {
                     return true;
                 }
                 parent = parent.getParent();
@@ -376,12 +395,18 @@ public enum UIManager implements IViewParent {
             return true;
         }
         if (mHovered != null) {
-            if (mHovered.onMouseReleased(getViewMouseX(mHovered), getViewMouseY(mHovered), mouseButton)) {
+            double viewMX = getViewMouseX(mHovered);
+            double viewMY = getViewMouseY(mHovered);
+            if (mHovered.onMouseReleased(viewMX, viewMY, mouseButton)) {
                 return true;
             }
             IViewParent parent = mHovered.getParent();
+            View view;
             while (parent != this) {
-                if (((View) parent).onMouseReleased(mouseX, mouseY, mouseButton)) {
+                view = (View) parent;
+                viewMX -= parent.getScrollX();
+                viewMY -= parent.getScrollY();
+                if (view.onMouseReleased(viewMX, viewMY, mouseButton)) {
                     return true;
                 }
                 parent = parent.getParent();
@@ -409,11 +434,17 @@ public enum UIManager implements IViewParent {
             return popup.mouseScrolled(mouseX, mouseY, amount);
         }*/
         if (mHovered != null) {
-            if (mHovered.onMouseScrolled(getViewMouseX(mHovered), getViewMouseY(mHovered), amount)) {
+            double viewMX = getViewMouseX(mHovered);
+            double viewMY = getViewMouseY(mHovered);
+            if (mHovered.onMouseScrolled(viewMX, getViewMouseY(mHovered), amount)) {
                 return true;
             }
             IViewParent parent = mHovered.getParent();
+            View view;
             while (parent != this) {
+                view = (View) parent;
+                viewMX -= parent.getScrollX();
+                viewMY -= parent.getScrollY();
                 if (((View) parent).onMouseScrolled(mouseX, mouseY, amount)) {
                     return true;
                 }
@@ -470,17 +501,15 @@ public enum UIManager implements IViewParent {
      * Refocus mouse cursor and update mouse hovering state
      */
     public void refreshMouse() {
-        findFocus();
+        mouseMoved();
     }
 
     /**
      * Find mouse hovering focus for entire UI
      */
-    private void findFocus() {
-        if (view != null) {
-            if (!view.updateMouseHover(mouseX, mouseY)) {
-                setHoveredView(null);
-            }
+    private void mouseMoved() {
+        if (view != null && !view.updateMouseHover(mouseX, mouseY)) {
+            setHovered(null);
         }
     }
 
@@ -582,10 +611,10 @@ public enum UIManager implements IViewParent {
         }*/
         layoutRequested = false;
 
-        if (ConfigManager.isDeveloperMode()) {
+        if (Config.isDeveloperMode()) {
             ModernUI.LOGGER.debug(MARKER, "Layout performed in {} \u03bcs", (System.nanoTime() - startTime) / 1000.0f);
         }
-        findFocus();
+        mouseMoved();
     }
 
     void destroy() {
@@ -597,7 +626,7 @@ public enum UIManager implements IViewParent {
             popup = null;
             fragment = null;
             modernScreen = null;
-            lastClickTick = Integer.MIN_VALUE;
+            lastDClickTick = Integer.MIN_VALUE;
             lastLayoutTime = 0;
             layoutRequested = false;
             UIEditor.INSTANCE.setHoveredWidget(null);
@@ -758,6 +787,10 @@ public enum UIManager implements IViewParent {
         return mouseY;
     }
 
+    public float getGuiScale() {
+        return (float) minecraft.getMainWindow().getGuiScaleFactor();
+    }
+
     /**
      * Get main view of current UI
      *
@@ -770,29 +803,19 @@ public enum UIManager implements IViewParent {
     /**
      * Request layout all views with force layout mark in next frame
      * See {@link View#requestLayout()}
-     * See {@link View#markForceLayout()}
+     * See {@link View#forceLayout()}
      */
     @Override
     public void requestLayout() {
         layoutRequested = true;
     }
 
-    // inner method
-    void setHoveredView(@Nullable View view) {
-        if (mHovered != view) {
-            if (mHovered != null) {
-                mHovered.onMouseHoverExit();
-            }
-            mHovered = view;
-            if (mHovered != null) {
-                mHovered.onMouseHoverEnter();
-            }
-            lastClickTick = Integer.MIN_VALUE;
-        }
+    void setHovered(@Nullable View view) {
+        mHovered = view;
     }
 
     @Nullable
-    public View getHoveredView() {
+    public View getHovered() {
         return mHovered;
     }
 

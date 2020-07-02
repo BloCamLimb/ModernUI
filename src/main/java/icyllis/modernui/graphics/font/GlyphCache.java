@@ -23,7 +23,7 @@ package icyllis.modernui.graphics.font;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.mojang.blaze3d.platform.GlStateManager;
-import icyllis.modernui.system.ConfigManager;
+import icyllis.modernui.system.Config;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.renderer.RenderType;
 import org.apache.logging.log4j.Marker;
@@ -269,10 +269,10 @@ class GlyphCache {
     void setDefaultFont(float size) {
         usedFonts.clear();
         //usedFonts.add(new Font(name, Font.PLAIN, 72)); //size 1 > 72
-        if (!ConfigManager.CLIENT.preferredFontName.isEmpty()) {
-            allFonts.stream().filter(f -> f.getName().contains(ConfigManager.CLIENT.preferredFontName)).findFirst().ifPresent(e -> {
-                usedFonts.add(e);
-                ModernUI.LOGGER.debug(MARKER, "{} has been loaded", e.getName());
+        if (!Config.CLIENT.preferredFontName.isEmpty()) {
+            allFonts.stream().filter(f -> f.getName().contains(Config.CLIENT.preferredFontName)).findFirst().ifPresent(font -> {
+                usedFonts.add(font);
+                ModernUI.LOGGER.debug(MARKER, "{} has been loaded", font.getName());
             });
         }
         try {
@@ -433,7 +433,7 @@ class GlyphCache {
                  */
                 vectorBounds = vector.getPixelBounds(fontRenderContext, 0, 0);
 
-                /* Enlage the stringImage if it is too small to store the entire rendered string */
+                /* Enlarge the stringImage if it is too small to store the entire rendered string */
                 if (vectorBounds.width > stringImage.getWidth() || vectorBounds.height > stringImage.getHeight()) {
                     int width = Math.max(vectorBounds.width, stringImage.getWidth());
                     int height = Math.max(vectorBounds.height, stringImage.getHeight());
@@ -511,10 +511,10 @@ class GlyphCache {
             entry.renderType = TextRenderType.getOrCacheType(textureName);
             entry.width = rect.width;
             entry.height = rect.height;
-            entry.u1 = ((float) rect.x) / TEXTURE_WIDTH;
-            entry.v1 = ((float) rect.y) / TEXTURE_HEIGHT;
-            entry.u2 = ((float) (rect.x + rect.width)) / TEXTURE_WIDTH;
-            entry.v2 = ((float) (rect.y + rect.height)) / TEXTURE_HEIGHT;
+            entry.u1 = (float) rect.x / TEXTURE_WIDTH;
+            entry.v1 = (float) rect.y / TEXTURE_HEIGHT;
+            entry.u2 = (float) (rect.x + rect.width) / TEXTURE_WIDTH;
+            entry.v2 = (float) (rect.y + rect.height) / TEXTURE_HEIGHT;
 
             /*
              * The lower 32 bits of the glyphCache key are the glyph codepoint. The upper 64 bits are the font number
@@ -671,19 +671,29 @@ class GlyphCache {
 
     static class Glyph implements Comparable<Glyph> {
 
-        /** The index into the original string (i.e. with color codes) for the character that generated this glyph. */
+        /**
+         * The index into the original string (i.e. with color codes) for the character that generated this glyph.
+         */
         int stringIndex;
 
-        /** Texture ID and position/size of the glyph's pre-rendered image within the cache texture. */
+        /**
+         * Texture ID and position/size of the glyph's pre-rendered image within the cache texture.
+         */
         Entry texture;
 
-        /** Glyph's horizontal position (in pixels) relative to the entire string's baseline */
+        /**
+         * Glyph's horizontal position (in pixels) relative to the entire string's baseline
+         */
         int x;
 
-        /** Glyph's vertical position (in pixels) relative to the entire string's baseline */
+        /**
+         * Glyph's vertical position (in pixels) relative to the entire string's baseline
+         */
         int y;
 
-        /** Glyph's horizontal advance (in pixels) used for strikethrough and underline effects */
+        /**
+         * Glyph's horizontal advance (in pixels) used for strikethrough and underline effects
+         */
         float advance;
 
         /**

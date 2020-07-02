@@ -30,6 +30,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.extensions.IForgeContainerType;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.network.IContainerFactory;
@@ -37,45 +38,46 @@ import net.minecraftforge.registries.IForgeRegistry;
 
 import javax.annotation.Nonnull;
 
-/**
- * All references are final, read-only
- */
-public enum RegistryLibrary {
-    INSTANCE;
+@Mod.EventBusSubscriber(modid = ModernUI.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
+public class Registry {
 
-    /** Sounds **/
-    public static SoundEvent BUTTON_CLICK_1 = null;
-    public static SoundEvent BUTTON_CLICK_2 = null;
+    /**
+     * Sounds
+     */
+    public static SoundEvent BUTTON_CLICK_1;
+    public static SoundEvent BUTTON_CLICK_2;
 
-    /** Containers **/
-    public static ContainerType<ContainerTest> TEST_CONTAINER = null;
+    /**
+     * Containers
+     */
+    public static ContainerType<ContainerTest> TEST_CONTAINER;
 
     @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
-    void registerSounds(@Nonnull RegistryEvent.Register<SoundEvent> event) {
-        IForgeRegistry<SoundEvent> registry = event.getRegistry();
+    static void registerSounds(@Nonnull RegistryEvent.Register<SoundEvent> event) {
+        final IForgeRegistry<SoundEvent> registry = event.getRegistry();
 
         BUTTON_CLICK_1 = registerSound(registry, "button1");
         BUTTON_CLICK_2 = registerSound(registry, "button2");
     }
 
     @SubscribeEvent
-    void registerContainers(@Nonnull RegistryEvent.Register<ContainerType<?>> event) {
-        IForgeRegistry<ContainerType<?>> registry = event.getRegistry();
+    static void registerContainers(@Nonnull RegistryEvent.Register<ContainerType<?>> event) {
+        final IForgeRegistry<ContainerType<?>> registry = event.getRegistry();
 
         TEST_CONTAINER = registerContainer(registry, ContainerTest::new, "test");
     }
 
     @SubscribeEvent
-    void setupCommon(@Nonnull FMLCommonSetupEvent event) {
-        NetworkManager.INSTANCE.registerMessages();
+    static void setupCommon(@Nonnull FMLCommonSetupEvent event) {
+
     }
 
     @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
-    void setupClient(@Nonnull FMLClientSetupEvent event) {
+    static void setupClient(@Nonnull FMLClientSetupEvent event) {
         SettingsManager.INSTANCE.buildAllSettings();
-        UIManager.INSTANCE.registerContainerScreen(RegistryLibrary.TEST_CONTAINER, c -> new TestFragment());
+        UIManager.INSTANCE.registerContainerScreen(Registry.TEST_CONTAINER, c -> new TestFragment());
     }
 
     @Nonnull

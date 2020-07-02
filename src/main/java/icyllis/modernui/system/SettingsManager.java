@@ -58,7 +58,9 @@ import java.util.stream.Collectors;
  * Settings are only available on client side
  *
  * @since 1.1
+ * @deprecated no need to cache settings builder in UI
  */
+@Deprecated
 @SuppressWarnings({"unchecked", "NoTranslation"})
 @OnlyIn(Dist.CLIENT)
 public enum SettingsManager {
@@ -289,7 +291,7 @@ public enum SettingsManager {
         boolean_getter = ObfuscationReflectionHelper.findField(BooleanOption.class, "field_216746_Q");
         boolean_setter = ObfuscationReflectionHelper.findField(BooleanOption.class, "field_216747_R");
 
-        if (ModIntegration.optifineLoaded) {
+        if (Integration.optifineLoaded) {
             try {
                 of_dynamic_fov = GameSettings.class.getDeclaredField("ofDynamicFov");
                 of_chat_background = GameSettings.class.getDeclaredField("ofChatBackground");
@@ -338,8 +340,8 @@ public enum SettingsManager {
         CHAT_OPACITY = INSTANCE
                 .transformToSmooth(AbstractOption.CHAT_OPACITY, p -> (int) (p * 90 + 10) + "%");
         CHAT_SCALE = INSTANCE
-                .transformToSmooth(AbstractOption.CHAT_SCALE, Triple.of(0.1, null, null), ConstantsLibrary.PERCENTAGE_STRING_FUNC);
-        if (ModIntegration.optifineLoaded) {
+                .transformToSmooth(AbstractOption.CHAT_SCALE, Triple.of(0.1, null, null), Tools.PERCENTAGE_STRING_FUNC);
+        if (Integration.optifineLoaded) {
             CHAT_WIDTH = INSTANCE
                     .transformToSmooth(AbstractOption.CHAT_WIDTH, Triple.of(null, null, 1.0f / 1136.0f),
                             d -> NewChatGui.calculateChatboxWidth(d * 4.0571431d) + "px");
@@ -355,13 +357,13 @@ public enum SettingsManager {
                 .transformToSmooth(AbstractOption.CHAT_HEIGHT_UNFOCUSED, Triple.of(null, null, 1.0f / 160.0f),
                         d -> NewChatGui.calculateChatboxHeight(d) + "px");
         TEXT_BACKGROUND_OPACITY = INSTANCE
-                .transformToSmooth(AbstractOption.ACCESSIBILITY_TEXT_BACKGROUND_OPACITY, ConstantsLibrary.PERCENTAGE_STRING_FUNC);
+                .transformToSmooth(AbstractOption.ACCESSIBILITY_TEXT_BACKGROUND_OPACITY, Tools.PERCENTAGE_STRING_FUNC);
         GAMMA = INSTANCE
-                .transformToSmooth(AbstractOption.GAMMA, ConstantsLibrary.PERCENTAGE_STRING_FUNC);
+                .transformToSmooth(AbstractOption.GAMMA, Tools.PERCENTAGE_STRING_FUNC);
         SENSITIVITY = INSTANCE
                 .transformToSmooth(AbstractOption.SENSITIVITY, Triple.of(null, null, 0.005f), p -> (int) (p * 200) + "%");
         MOUSE_WHEEL_SENSITIVITY = INSTANCE
-                .transformToSmooth(AbstractOption.MOUSE_WHEEL_SENSITIVITY, ConstantsLibrary.PERCENTAGE_STRING_FUNC);
+                .transformToSmooth(AbstractOption.MOUSE_WHEEL_SENSITIVITY, Tools.PERCENTAGE_STRING_FUNC);
         RENDER_DISTANCE = INSTANCE
                 .transformToDiscrete(AbstractOption.RENDER_DISTANCE, false);
         BIOME_BLEND_RADIUS = INSTANCE
@@ -458,7 +460,7 @@ public enum SettingsManager {
             gameSettings.sendSettingsToServer();
         });
 
-        if (ModIntegration.optifineLoaded) {
+        if (Integration.optifineLoaded) {
 
             DYNAMIC_FOV = window -> new BooleanSettingEntry(window, I18n.format("of.options.DYNAMIC_FOV"),
                     SettingsManager.INSTANCE.getDynamicFov(), SettingsManager.INSTANCE::setDynamicFov);
@@ -466,7 +468,7 @@ public enum SettingsManager {
             AO_LEVEL = window -> new SSliderSettingEntry(window, I18n.format("of.options.AO_LEVEL"),
                     0, 1, 0,
                     SettingsManager.INSTANCE.getAoLevel(), SettingsManager.INSTANCE::setAoLevel,
-                    ConstantsLibrary.PERCENTAGE_STRING_FUNC, false);
+                    Tools.PERCENTAGE_STRING_FUNC, false);
 
             CHAT_SHADOW = window -> new BooleanSettingEntry(window, I18n.format("of.options.CHAT_SHADOW"),
                     SettingsManager.INSTANCE.getChatShadow(), SettingsManager.INSTANCE::setChatShadow);

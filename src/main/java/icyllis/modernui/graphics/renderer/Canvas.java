@@ -30,6 +30,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.ItemRenderer;
 import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.WorldVertexBufferUploader;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -60,28 +61,22 @@ public class Canvas {
     /**
      * Instances
      */
-    private final MainWindow mainWindow = Minecraft.getInstance().getMainWindow();
+    private final MainWindow mainWindow;
 
-    private final Tessellator tessellator = Tessellator.getInstance();
+    private final ItemRenderer itemRenderer;
 
-    private final BufferBuilder bufferBuilder = tessellator.getBuffer();
+    private final IFontRenderer fontRenderer = TrueTypeRenderer.getInstance();
 
-    private final IFontRenderer fontRenderer = TrueTypeRenderer.INSTANCE;
-
-    private final ItemRenderer itemRenderer = Minecraft.getInstance().getItemRenderer();
+    private final BufferBuilder bufferBuilder = Tessellator.getInstance().getBuffer();
 
 
     /**
      * Shaders instance
      */
-    private final RingShader ring = RingShader.INSTANCE;
-
-    private final RoundedRectShader roundedRect = RoundedRectShader.INSTANCE;
-
-    private final RoundedFrameShader roundedFrame = RoundedFrameShader.INSTANCE;
-
-    private final CircleShader circle = CircleShader.INSTANCE;
-
+    private final RingShader          ring          = RingShader.INSTANCE;
+    private final RoundedRectShader   roundedRect   = RoundedRectShader.INSTANCE;
+    private final RoundedFrameShader  roundedFrame  = RoundedFrameShader.INSTANCE;
+    private final CircleShader        circle        = CircleShader.INSTANCE;
     private final FeatheredRectShader featheredRect = FeatheredRectShader.INSTANCE;
 
 
@@ -120,8 +115,9 @@ public class Canvas {
     private static boolean lineAA = false;
 
 
-    public Canvas() {
-
+    public Canvas(@Nonnull Minecraft minecraft) {
+        mainWindow = minecraft.getMainWindow();
+        itemRenderer = minecraft.getItemRenderer();
     }
 
     /**
@@ -296,7 +292,8 @@ public class Canvas {
         bufferBuilder.pos(right, bottom, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(right, top, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(left, top, z).color(r, g, b, a).endVertex();
-        tessellator.draw();
+        bufferBuilder.finishDrawing();
+        WorldVertexBufferUploader.draw(bufferBuilder);
     }
 
     /**
@@ -326,7 +323,8 @@ public class Canvas {
         bufferBuilder.pos(right, top, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(right, top - thickness, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(left - thickness, top - thickness, z).color(r, g, b, a).endVertex();
-        tessellator.draw();
+        bufferBuilder.finishDrawing();
+        WorldVertexBufferUploader.draw(bufferBuilder);
 
         //featheredRect.setInnerRect(right + 0.25f, top - thickness + 0.25f, right + thickness - 0.25f, bottom - 0.25f);
 
@@ -335,7 +333,8 @@ public class Canvas {
         bufferBuilder.pos(right + thickness, bottom, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(right + thickness, top - thickness, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(right, top - thickness, z).color(r, g, b, a).endVertex();
-        tessellator.draw();
+        bufferBuilder.finishDrawing();
+        WorldVertexBufferUploader.draw(bufferBuilder);
 
         //featheredRect.setInnerRect(left + 0.25f, bottom + 0.25f, right + thickness - 0.25f, bottom + thickness - 0.25f);
 
@@ -344,7 +343,8 @@ public class Canvas {
         bufferBuilder.pos(right + thickness, bottom + thickness, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(right + thickness, bottom, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(left, bottom, z).color(r, g, b, a).endVertex();
-        tessellator.draw();
+        bufferBuilder.finishDrawing();
+        WorldVertexBufferUploader.draw(bufferBuilder);
 
         //featheredRect.setInnerRect(left - thickness + 0.25f, top + 0.25f, left - 0.25f, bottom + thickness - 0.25f);
 
@@ -353,7 +353,8 @@ public class Canvas {
         bufferBuilder.pos(left, bottom + thickness, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(left, top, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(left - thickness, top, z).color(r, g, b, a).endVertex();
-        tessellator.draw();
+        bufferBuilder.finishDrawing();
+        WorldVertexBufferUploader.draw(bufferBuilder);
 
         //ShaderTools.releaseShader();
     }
@@ -384,7 +385,8 @@ public class Canvas {
         bufferBuilder.pos(right - bevel, top, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(left + bevel, top, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(left, top + bevel, z).color(r, g, b, a).endVertex();
-        tessellator.draw();
+        bufferBuilder.finishDrawing();
+        WorldVertexBufferUploader.draw(bufferBuilder);
     }
 
     /**
@@ -409,7 +411,8 @@ public class Canvas {
         bufferBuilder.pos(right, bottom, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(right, top, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(left, top, z).color(r, g, b, a).endVertex();
-        tessellator.draw();
+        bufferBuilder.finishDrawing();
+        WorldVertexBufferUploader.draw(bufferBuilder);
     }
 
     /**
@@ -466,7 +469,8 @@ public class Canvas {
         bufferBuilder.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);
         bufferBuilder.pos(startX, startY, z).color(r, g, b, a).endVertex();
         bufferBuilder.pos(stopX, stopY, z).color(r, g, b, a).endVertex();
-        tessellator.draw();
+        bufferBuilder.finishDrawing();
+        WorldVertexBufferUploader.draw(bufferBuilder);
     }
 
     /**
@@ -551,7 +555,8 @@ public class Canvas {
         bufferBuilder.pos(right, bottom, z).color(r, g, b, a).tex(icon.getRight(), icon.getBottom()).endVertex();
         bufferBuilder.pos(right, top, z).color(r, g, b, a).tex(icon.getRight(), icon.getTop()).endVertex();
         bufferBuilder.pos(left, top, z).color(r, g, b, a).tex(icon.getLeft(), icon.getTop()).endVertex();
-        tessellator.draw();
+        bufferBuilder.finishDrawing();
+        WorldVertexBufferUploader.draw(bufferBuilder);
     }
 
     /**
@@ -592,7 +597,7 @@ public class Canvas {
      */
     public void drawItemStackWithOverlays(@Nonnull ItemStack stack, float x, float y) {
         itemRenderer.renderItemAndEffectIntoGUI(stack, (int) (x + drawingX), (int) (y + drawingY));
-        itemRenderer.renderItemOverlays(ModernFontRenderer.INSTANCE, stack, (int) (x + drawingX), (int) (y + drawingY));
+        itemRenderer.renderItemOverlays(ModernFontRenderer.getInstance(), stack, (int) (x + drawingX), (int) (y + drawingY));
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableDepthTest();

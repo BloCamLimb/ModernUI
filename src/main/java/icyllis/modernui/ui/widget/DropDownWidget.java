@@ -28,7 +28,7 @@ import icyllis.modernui.ui.test.Align9D;
 import icyllis.modernui.graphics.font.TextAlign;
 import icyllis.modernui.ui.view.DropDownMenu;
 import icyllis.modernui.ui.view.PopupMenu;
-import icyllis.modernui.system.ConstantsLibrary;
+import icyllis.modernui.system.Tools;
 import icyllis.modernui.ui.test.IHost;
 import icyllis.modernui.ui.test.Locator;
 import icyllis.modernui.ui.test.Widget;
@@ -45,7 +45,7 @@ import java.util.function.IntConsumer;
  */
 public class DropDownWidget extends Widget {
 
-    private final Icon icon = new Icon(ConstantsLibrary.ICONS, 0.25f, 0.125f, 0.375f, 0.25f, true);
+    private final Icon icon = new Icon(Tools.ICONS, 0.25f, 0.125f, 0.375f, 0.25f, true);
 
     private final Animation bgAnimation;
 

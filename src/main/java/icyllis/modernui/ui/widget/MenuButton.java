@@ -29,7 +29,7 @@ import icyllis.modernui.ui.animation.Applier;
 import icyllis.modernui.ui.animation.ITimeInterpolator;
 import icyllis.modernui.ui.test.Align9D;
 import icyllis.modernui.ui.test.Locator;
-import icyllis.modernui.system.ConstantsLibrary;
+import icyllis.modernui.system.Tools;
 import icyllis.modernui.ui.test.IHost;
 import net.minecraft.client.resources.I18n;
 
@@ -184,7 +184,7 @@ public class MenuButton extends IconButton {
         public final int id;
 
         public Builder(String text, int uIndex, int id) {
-            super(new Icon(ConstantsLibrary.ICONS, uIndex * 64 / 512f, 0, (uIndex + 1) * 64 / 512f, 64 / 512f, true));
+            super(new Icon(Tools.ICONS, uIndex * 64 / 512f, 0, (uIndex + 1) * 64 / 512f, 64 / 512f, true));
             this.text = text;
             this.id = id;
         }

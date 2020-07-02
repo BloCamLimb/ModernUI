@@ -48,9 +48,9 @@ public class LinearLayout extends ViewGroup {
 
 
     /**
-     * {@link #setOrientation(int)}
+     * {@link #setOrientation(Orientation)}
      */
-    private int orientation;
+    private Orientation orientation;
 
     /**
      * {@link #setGravity(int)}
@@ -1007,14 +1007,14 @@ public class LinearLayout extends ViewGroup {
      *
      * @param orientation {@link Orientation}, default is HORIZONTAL
      */
-    public void setOrientation(int orientation) {
+    public void setOrientation(Orientation orientation) {
         if (this.orientation != orientation) {
             this.orientation = orientation;
             requestLayout();
         }
     }
 
-    public int getOrientation() {
+    public Orientation getOrientation() {
         return orientation;
     }
 

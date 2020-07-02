@@ -20,7 +20,7 @@ package icyllis.modernui.ui.test;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.ui.widget.ScrollBar;
+import icyllis.modernui.ui.master.View;
 import icyllis.modernui.ui.widget.Scroller;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
@@ -42,7 +42,7 @@ public class ScrollWindow<T extends ScrollGroup> extends Window implements IScro
 
     protected float scrollAmount = 0f;
 
-    protected ScrollBar scrollbar;
+    protected View.ScrollBar scrollbar;
 
     protected Scroller controller;
 

@@ -23,10 +23,9 @@ import icyllis.modernui.ui.master.UIManager;
 import net.minecraft.util.math.MathHelper;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
- * Make scrollable view to scroll smoothly in one orientation
+ * Scroll smoothly in one orientation
  *
  * @since 1.6
  */
@@ -43,29 +42,18 @@ public class Scroller {
     private int startTime;
     private int duration;
 
-    /**
-     * Use lambda
-     */
-    @Nullable
-    private final ICallback callback;
+    @Nonnull
+    private final IListener listener;
 
     @Nonnull
     private final ITimeInterpolator interpolator;
 
-    public Scroller() {
-        this(ITimeInterpolator.VISCOUS_FLUID);
+    public Scroller(@Nonnull IListener listener) {
+        this(listener, ITimeInterpolator.VISCOUS_FLUID);
     }
 
-    public Scroller(@Nonnull ICallback callback) {
-        this(callback, ITimeInterpolator.VISCOUS_FLUID);
-    }
-
-    public Scroller(@Nonnull ITimeInterpolator interpolator) {
-        this(null, interpolator);
-    }
-
-    public Scroller(@Nullable ICallback callback, @Nonnull ITimeInterpolator interpolator) {
-        this.callback = callback;
+    public Scroller(@Nonnull IListener listener, @Nonnull ITimeInterpolator interpolator) {
+        this.listener = listener;
         this.interpolator = interpolator;
     }
 
@@ -79,9 +67,7 @@ public class Scroller {
             float p = Math.min((float) (time - startTime) / duration, 1);
             p = interpolator.getInterpolation(p);
             currValue = MathHelper.lerp(p, startValue, targetValue);
-            if (callback != null) {
-                callback.applyScrollAmount(currValue);
-            }
+            listener.onScrollAmountUpdated(this, currValue);
         }
     }
 
@@ -149,8 +135,9 @@ public class Scroller {
     public void scrollTo(float target, int duration) {
         startTime = UIManager.INSTANCE.getDrawingTime();
         startValue = currValue;
-        float endX = MathHelper.clamp(target, 0, maxValue) * 2.0f;
-        targetValue = Math.round(endX) / 2.0f;
+        float scale = UIManager.INSTANCE.getGuiScale();
+        float endX = MathHelper.clamp(target, 0, maxValue) * scale;
+        targetValue = Math.round(endX) / scale;
         this.duration = duration;
     }
 
@@ -160,17 +147,24 @@ public class Scroller {
      * @param target the target scroll amount
      */
     public void scrollTo(float target) {
+        float lastTime = startTime;
         startTime = UIManager.INSTANCE.getDrawingTime();
         startValue = currValue;
-        float end = MathHelper.clamp(target, 0, maxValue) * 2.0f;
-        targetValue = Math.round(end) / 2.0f;
+        float scale = UIManager.INSTANCE.getGuiScale();
+        float end = MathHelper.clamp(target, 0, maxValue) * scale;
+        targetValue = Math.round(end) / scale;
+
+        // smooth
         float dis = Math.abs(targetValue - currValue);
-        if (dis > 300.0f) {
-            duration = (int) (dis * 1.6f);
-        } else if (dis > 66.0f) {
-            duration = (int) (Math.sqrt(dis * 4.0f) * 16.0f);
+        if (dis > 60.0) {
+            duration = (int) (Math.sqrt(dis / 60.0) * 300.0);
         } else {
             duration = 300;
+        }
+        // fast scroll
+        dis = startTime - lastTime;
+        if (dis < 200.0) {
+            duration *= (dis / 400.0) + 0.5;
         }
     }
 
@@ -180,9 +174,7 @@ public class Scroller {
      */
     public void abortAnimation() {
         currValue = targetValue;
-        if (callback != null) {
-            callback.applyScrollAmount(currValue);
-        }
+        listener.onScrollAmountUpdated(this, currValue);
     }
 
     /**
@@ -207,13 +199,14 @@ public class Scroller {
     }
 
     @FunctionalInterface
-    public interface ICallback {
+    public interface IListener {
 
         /**
-         * Apply the scroll value to somewhere
+         * Apply the scroll value to listener
          *
+         * @param scroller     scroller to call the method
          * @param scrollAmount current scroll amount
          */
-        void applyScrollAmount(float scrollAmount);
+        void onScrollAmountUpdated(Scroller scroller, float scrollAmount);
     }
 }
