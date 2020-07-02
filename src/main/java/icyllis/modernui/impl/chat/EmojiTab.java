@@ -20,11 +20,8 @@ package icyllis.modernui.impl.chat;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.graphics.font.TextAlign;
-import icyllis.modernui.graphics.font.TrueTypeRenderer;
-import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.system.StorageManager;
-import icyllis.modernui.system.ConstantsLibrary;
+import icyllis.modernui.system.Tools;
 import icyllis.modernui.ui.test.DrawTools;
 import javafx.util.Pair;
 import net.minecraft.client.Minecraft;
@@ -57,7 +54,7 @@ public class EmojiTab implements IGuiEventListener {
         GlStateManager.enableBlend();
         GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 
-        TEX.bindTexture(ConstantsLibrary.ICONS);
+        TEX.bindTexture(Tools.ICONS);
         if(showMode == 0) {
             RenderSystem.color3f(0.6f, 0.6f, 0.6f);
         }

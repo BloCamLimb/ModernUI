@@ -18,8 +18,10 @@
 
 package icyllis.modernui.ui.master;
 
+import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.layout.MeasureSpec;
+import icyllis.modernui.ui.widget.Scroller;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -47,9 +49,17 @@ public class View {
      */
     public static final int NO_ID = -1;
 
-    /**
-     * Private flags
+    /*
+     * Private masks
+     * |--------|--------|--------|--------|
+     *                                    1  PFLAG_HOVERED
+     * |--------|--------|--------|--------|
+     *                        1              PFLAG_MEASURED_DIMENSION_SET
+     *                       1               PFLAG_FORCE_LAYOUT
+     *                      1                PFLAG_LAYOUT_REQUIRED
+     * |--------|--------|--------|--------|
      */
+    private static final int PFLAG_HOVERED                = 1;
     private static final int PFLAG_MEASURED_DIMENSION_SET = 1 << 11;
     private static final int PFLAG_FORCE_LAYOUT           = 1 << 12;
     private static final int PFLAG_LAYOUT_REQUIRED        = 1 << 13;
@@ -315,7 +325,7 @@ public class View {
 
             // the flag should be added in onMeasure() by calling setMeasuredDimension()
             if (!hasPrivateFlag(PFLAG_MEASURED_DIMENSION_SET)) {
-                throw new IllegalStateException("measured dimension unspecified on measure");
+                throw new IllegalStateException("Measured dimension unspecified on measure");
             }
 
             addPrivateFlag(PFLAG_LAYOUT_REQUIRED);
@@ -468,11 +478,11 @@ public class View {
      * @param parent parent view
      * @throws RuntimeException parent is already assigned
      */
-    public void assignParent(@Nonnull IViewParent parent) {
+    final void assignParent(@Nonnull IViewParent parent) {
         if (this.parent == null) {
             this.parent = parent;
         } else {
-            throw new RuntimeException("parent of view " + this + " has been assigned");
+            throw new RuntimeException("Parent of view " + this + " has been assigned");
         }
     }
 
@@ -529,7 +539,7 @@ public class View {
     }
 
     //TODO state switching events
-    private void setStateFlag(int flag, int mask) {
+    void setStateFlag(int flag, int mask) {
         final int old = viewFlags;
 
         viewFlags = (viewFlags & ~mask) | (flag & mask);
@@ -653,7 +663,7 @@ public class View {
      * Add a mark to force this view to be laid out during the next
      * layout pass.
      */
-    public void markForceLayout() {
+    public void forceLayout() {
         addPrivateFlag(PFLAG_FORCE_LAYOUT);
     }
 
@@ -666,7 +676,7 @@ public class View {
      */
     public void getLocationInWindow(@Nonnull int[] location) {
         if (location.length < 2) {
-            throw new IllegalArgumentException("location array length must be two at least");
+            throw new IllegalArgumentException("Location array length must be two at least");
         }
 
         float x = left;
@@ -715,49 +725,80 @@ public class View {
 
     /**
      * Check if mouse hover this view.
-     * Internal method, unless you custom {@link #dispatchUpdateMouseHover(double, double)}
      *
      * @param mouseX relative mouse X pos
      * @param mouseY relative mouse Y pos
      * @return return {@code true} if certain view hovered
      */
-    public final boolean updateMouseHover(double mouseX, double mouseY) {
+    final boolean updateMouseHover(double mouseX, double mouseY) {
+        final boolean prevHovered = hasPrivateFlag(PFLAG_HOVERED);
         if (mouseX >= left && mouseX < right && mouseY >= top && mouseY < bottom) {
-            if (dispatchUpdateMouseHover(mouseX, mouseY)) {
-                return true;
+            if (!prevHovered) {
+                addPrivateFlag(PFLAG_HOVERED);
+                onMouseHoverEnter(mouseX, mouseY);
             }
-            UIManager.INSTANCE.setHoveredView(this);
-            onMouseHoverUpdate(mouseX, mouseY);
+            onMouseHoverMoved(mouseX, mouseY);
+            if (!dispatchUpdateMouseHover(mouseX, mouseY)) {
+                UIManager.INSTANCE.setHovered(this);
+            }
             return true;
+        } else {
+            if (prevHovered) {
+                removePrivateFlag(PFLAG_HOVERED);
+                onMouseHoverExit();
+            }
         }
         return false;
     }
 
     /**
      * Dispatch events to child views if present, check if mouse hovered a child view.
-     * See {@link #onMouseHoverUpdate(double, double)}
      *
      * @param mouseX relative mouse X pos
      * @param mouseY relative mouse Y pos
-     * @return {@code true} if certain child view hovered
-     * {@code false} will make this view hovered
+     * @return return {@code true} if certain child view hovered
      */
-    protected boolean dispatchUpdateMouseHover(double mouseX, double mouseY) {
+    boolean dispatchUpdateMouseHover(double mouseX, double mouseY) {
         return false;
     }
 
     /**
-     * Called when mouse start to hover on this view
+     * Ensure rest of views of other branches to hover exit
      */
-    protected void onMouseHoverEnter() {
+    void ensureMouseHoverExit() {
+        if (hasPrivateFlag(PFLAG_HOVERED)) {
+            removePrivateFlag(PFLAG_HOVERED);
+            onMouseHoverExit();
+        }
+    }
+
+    /**
+     * Returns true if the view is currently mouse hovered
+     *
+     * @return {@code true} if the view is currently mouse hovered
+     */
+    public boolean isMouseHovered() {
+        return hasPrivateFlag(PFLAG_HOVERED);
+    }
+
+    /**
+     * Called when mouse start to hover on this view
+     *
+     * @param mouseX relative mouse x pos
+     * @param mouseY relative mouse y pos
+     */
+    protected void onMouseHoverEnter(double mouseX, double mouseY) {
 
     }
 
     /**
-     * Call when mouse hovered on this view and moved,
-     * also called when onMouseHoverEnter(), until onMouseHoverExit() called
+     * Called when mouse hovered on this view and moved
+     * Also called at the same time as onMouseHoverEnter()
+     *
+     * @param mouseX relative mouse x pos
+     * @param mouseY relative mouse y pos
      */
-    protected void onMouseHoverUpdate(double mouseX, double mouseY) {
+    protected void onMouseHoverMoved(double mouseX, double mouseY) {
 
     }
 
@@ -898,4 +939,398 @@ public class View {
         return false;
     }
 
+    /**
+     * Called when click on scrollbar track and not on the thumb
+     * and there was an scroll amount change
+     *
+     * @param delta    scroll amount change calculated by scrollbar
+     * @param vertical {@code true} if scrollbar is vertical, horizontal otherwise
+     */
+    protected void onScrollBarClicked(float delta, boolean vertical) {
+
+    }
+
+    /**
+     * Called when drag the scroll thumb and there was an scroll
+     * amount change
+     *
+     * @param delta    scroll amount change calculated by scrollbar
+     * @param vertical {@code true} if scrollbar is vertical, horizontal otherwise
+     */
+    protected void onScrollBarDragged(float delta, boolean vertical) {
+
+    }
+
+    /**
+     * This class encapsulated methods to handle events and draw the scroll bar.
+     * Scrollbar should be the same level as the view it's in.
+     * To control the scroll amount, use {@link Scroller}
+     *
+     * @since 1.6
+     */
+    @SuppressWarnings("unused")
+    public class ScrollBar {
+
+        private static final int DRAW_TRACK        = 1;
+        private static final int DRAW_THUMB        = 1 << 1;
+        private static final int ALWAYS_DRAW_TRACK = 1 << 2;
+        private static final int TRACK_HOVERED     = 1 << 3;
+        private static final int THUMB_HOVERED     = 1 << 4;
+        private static final int VERTICAL          = 1 << 5;
+
+        @Nullable
+        private Drawable track;
+        @Nullable
+        private Drawable thumb;
+
+        private int flags;
+
+        private int   thumbLength;
+        private float thumbOffset;
+
+        private float maxScroll;
+
+        //private double accDelta;
+        private int left;
+        private int top;
+        private int right;
+        private int bottom;
+
+        private ScrollBar(boolean vertical) {
+            if (vertical) {
+                flags |= VERTICAL;
+            }
+        }
+
+        void draw(@Nonnull Canvas canvas) {
+            /*if (!barHovered && !isDragging && brightness > 0.5f) {
+                if (canvas.getDrawingTime() > startTime) {
+                    float change = (startTime - canvas.getDrawingTime()) / 2000.0f;
+                    brightness = Math.max(0.75f + change, 0.5f);
+                }
+            }
+            canvas.setColor(16, 16, 16, 40);
+            canvas.drawRect(getLeft(), getTop(), getRight(), getBottom());
+            int br = (int) (brightness * 255.0f);
+            canvas.setColor(br, br, br, 128);
+            canvas.drawRect(getLeft(), barY, getRight(), barY + barLength);*/
+
+            if ((flags & DRAW_TRACK) != 0 && track != null) {
+                track.draw(canvas);
+            }
+            if ((flags & DRAW_THUMB) != 0 && thumb != null) {
+                // due to gui scaling, we have to do with float rather than integer
+                canvas.save();
+                if (isVertical()) {
+                    canvas.translate(0, thumbOffset);
+                } else {
+                    canvas.translate(thumbOffset, 0);
+                }
+                thumb.draw(canvas);
+                canvas.restore();
+            }
+        }
+
+        public void setParameters(float range, float offset, float extent) {
+            boolean drawTrack;
+            boolean drawThumb;
+            boolean vertical = isVertical();
+            if (extent <= 0 || extent >= range) {
+                drawTrack = (flags & ALWAYS_DRAW_TRACK) != 0;
+                drawThumb = false;
+            } else {
+                drawTrack = drawThumb = true;
+            }
+            if (drawTrack && track != null) {
+                track.setBounds(left, top, right, bottom);
+            }
+
+            maxScroll = range - extent;
+
+            int totalLength;
+            int thickness;
+            if (vertical) {
+                totalLength = bottom - top;
+                thickness = right - left;
+            } else {
+                totalLength = right - left;
+                thickness = bottom - top;
+            }
+
+            float preciseLength = totalLength * extent / range;
+            float preciseOffset = (totalLength - preciseLength) * offset / maxScroll;
+
+            thumbLength = Math.round(Math.max(preciseLength, thickness << 1));
+            thumbOffset = Math.min(preciseOffset, totalLength - thumbLength);
+
+            if (drawThumb && thumb != null) {
+                if (vertical) {
+                    thumb.setBounds(left, top, right, top + thumbLength);
+                } else {
+                    thumb.setBounds(left, top, left + thumbLength, bottom);
+                }
+            }
+            if (drawTrack) {
+                flags |= DRAW_TRACK;
+            } else {
+                flags &= ~DRAW_TRACK;
+            }
+            if (drawThumb) {
+                flags |= DRAW_THUMB;
+            } else {
+                flags &= ~DRAW_THUMB;
+            }
+        }
+
+        public void setTrackDrawable(@Nullable Drawable track) {
+            this.track = track;
+        }
+
+        public void setThumbDrawable(@Nullable Drawable thumb) {
+            this.thumb = thumb;
+        }
+
+        public boolean isAlwaysDrawTrack() {
+            return (flags & ALWAYS_DRAW_TRACK) != 0;
+        }
+
+        public void setAlwaysDrawTrack(boolean alwaysDrawTrack) {
+            if (alwaysDrawTrack) {
+                flags |= ALWAYS_DRAW_TRACK;
+            } else {
+                flags &= ~ALWAYS_DRAW_TRACK;
+            }
+        }
+
+        public float getMaxScroll() {
+            return maxScroll;
+        }
+
+        boolean isVertical() {
+            return (flags & VERTICAL) != 0;
+        }
+
+        /*public void draw(float currentTime) {
+            if (!barHovered && !isDragging && brightness > 0.5f) {
+                if (currentTime > startTime) {
+                    float change = (startTime - currentTime) / 40.0f;
+                    brightness = Math.max(0.75f + change, 0.5f);
+                }
+            }
+            if (!visible) {
+                return;
+            }
+
+            Tessellator tessellator = Tessellator.getInstance();
+            BufferBuilder bufferBuilder = tessellator.getBuffer();
+
+            bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+            bufferBuilder.pos(x, y + maxLength, 0.0D).color(16, 16, 16, 40).endVertex();
+            bufferBuilder.pos(x + barThickness, y + maxLength, 0.0D).color(16, 16, 16, 40).endVertex();
+            bufferBuilder.pos(x + barThickness, y, 0.0D).color(16, 16, 16, 40).endVertex();
+            bufferBuilder.pos(x, y, 0.0D).color(16, 16, 16, 40).endVertex();
+            tessellator.draw();
+
+            int b = (int) (brightness * 255);
+
+            bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+            bufferBuilder.pos(x, barY + barLength, 0.0D).color(b, b, b, 128).endVertex();
+            bufferBuilder.pos(x + barThickness, barY + barLength, 0.0D).color(b, b, b, 128).endVertex();
+            bufferBuilder.pos(x + barThickness, barY, 0.0D).color(b, b, b, 128).endVertex();
+            bufferBuilder.pos(x, barY, 0.0D).color(b, b, b, 128).endVertex();
+            tessellator.draw();
+        }*/
+
+        /*private void wake() {
+            brightness = 0.75f;
+            startTime = UIManager.INSTANCE.getDrawingTime() + 10.0f;
+        }*/
+
+        /*public void setBarLength(float percentage) {
+            this.barLength = (int) (getHeight() * percentage);
+        }
+
+        private float getMaxDragLength() {
+            return getHeight() - barLength;
+        }
+
+        public void setBarOffset(float percentage) {
+            barY = getMaxDragLength() * percentage + getTop();
+            wake();
+        }*/
+
+        /*@Override
+        public boolean updateMouseHover(double mouseX, double mouseY) {
+            if (visible) {
+
+                return barHovered;
+            }
+            return false;
+        }*/
+
+        /*@Override
+        protected boolean onUpdateMouseHover(int mouseX, int mouseY) {
+            boolean prev = barHovered;
+            barHovered = isMouseOnBar(mouseY);
+            if (prev != barHovered) {
+                if (barHovered) {
+                    wake();
+                } else {
+                    startTime = UIManager.INSTANCE.getDrawingTime() + 10.0f;
+                }
+            }
+            return super.onUpdateMouseHover(mouseX, mouseY);
+        }*/
+
+        /*@Override
+        protected void onMouseHoverMoved(double mouseX, double mouseY) {
+            super.onMouseHoverMoved(mouseX, mouseY);
+            if (vertical) {
+                float thumbY = getTop() + thumbOffset;
+                thumbHovered = mouseY >= thumbY && mouseY < thumbY + thumbLength;
+            } else {
+                float thumbX = getLeft() + thumbOffset;
+                thumbHovered = mouseX >= thumbX && mouseX < thumbX + thumbLength;
+            }
+        }
+
+        @Override
+        protected void onMouseHoverExit() {
+            super.onMouseHoverExit();
+            thumbHovered = false;
+        }*/
+
+        boolean onMouseClicked(double mouseX, double mouseY, int mouseButton) {
+            /*if (thumbHovered) {
+                UIManager.INSTANCE.setDragging(this);
+                return true;
+            }*/
+            if (isVertical()) {
+                float start = getTop() + thumbOffset;
+                float end = start + thumbLength;
+                if (mouseY < start) {
+                    float delta = toScrollDelta((float) (mouseY - start), true);
+                    onScrollBarClicked(Math.max(-60.0f, delta), true);
+                    return true;
+                } else if (mouseY > end) {
+                    float delta = toScrollDelta((float) (mouseY - end), true);
+                    onScrollBarClicked(Math.min(60.0f, delta), true);
+                    return true;
+                }
+            } else {
+                float start = getLeft() + thumbOffset;
+                float end = start + thumbLength;
+                if (mouseX < start) {
+                    float delta = toScrollDelta((float) (mouseX - start), false);
+                    onScrollBarClicked(Math.max(-60.0f, delta), false);
+                    return true;
+                } else if (mouseX > end) {
+                    float delta = toScrollDelta((float) (mouseX - end), false);
+                    onScrollBarClicked(Math.min(60.0f, delta), false);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /*@Override
+        protected boolean onMouseDragged(double mouseX, double mouseY, double deltaX, double deltaY) {
+            if (vertical) {
+                if (mouseY >= getTop() && mouseY <= getBottom()) {
+                    *//*accDelta += deltaY;
+                    int i = (int) (accDelta * scale);
+                    float delta = i / scale;
+                    accDelta -= delta;
+                    delta = toScrollDelta(delta);*//*
+                    onScrollBarDragged(toScrollDelta((float) deltaY), vertical);
+                    return true;
+                }
+            } else {
+                if (mouseX >= getLeft() && mouseX <= getRight()) {
+                    *//*accDelta += deltaX;
+                    int i = (int) (accDelta * 2.0f);
+                    float delta = i / 2.0f;
+                    accDelta -= delta;
+                    delta = toScrollDelta(delta);*//*
+                    onScrollBarDragged(toScrollDelta((float) deltaX), vertical);
+                    return true;
+                }
+            }
+            return super.onMouseDragged(mouseX, mouseY, deltaX, deltaY);
+        }*/
+
+        /*@Override
+        protected void onMouseHoverExit() {
+            super.onMouseHoverExit();
+            if (barHovered) {
+                barHovered = false;
+                startTime = UIManager.INSTANCE.getDrawingTime() + 10.0f;
+            }
+        }*/
+
+        /*private boolean isMouseOnBar(double mouseY) {
+            return mouseY >= barY && mouseY <= barY + barLength;
+        }*/
+
+        /*@Override
+        protected boolean onMouseLeftClicked(int mouseX, int mouseY) {
+            if (barHovered) {
+                isDragging = true;
+                UIManager.INSTANCE.setDragging(this);
+            } else {
+                if (mouseY < barY) {
+                    float mov = transformPosToAmount((float) (barY - mouseY));
+                    //controller.scrollSmoothBy(-Math.min(60f, mov));
+                } else if (mouseY > barY + barLength) {
+                    float mov = transformPosToAmount((float) (mouseY - barY - barLength));
+                    //controller.scrollSmoothBy(Math.min(60f, mov));
+                }
+            }
+            return true;
+        }*/
+
+        /*@Override
+        protected void onStopDragging() {
+            super.onStopDragging();
+            if (isDragging) {
+                isDragging = false;
+                startTime = UIManager.INSTANCE.getDrawingTime() + 10.0f;
+            }
+        }*/
+
+        /*@Override
+        protected boolean onMouseDragged(int mouseX, int mouseY, double deltaX, double deltaY) {
+            *//*if (barY + deltaY >= y && barY - y + deltaY <= getMaxDragLength()) {
+                draggingY += deltaY;
+            }
+            if (mouseY == draggingY) {
+                window.scrollDirect(transformPosToAmount((float) deltaY));
+            }*//*
+            if (mouseY >= getTop() && mouseY <= getBottom()) {
+                accDragging += deltaY;
+                int i = (int) (accDragging * 2.0);
+                if (i != 0) {
+                    //controller.scrollDirectBy(transformPosToAmount(i / 2.0f));
+                    accDragging -= i / 2.0f;
+                }
+            }
+            return true;
+        }*/
+
+        /**
+         * Transform mouse position change to scroll amount change
+         *
+         * @param delta    relative mouse position change
+         * @param vertical is vertical
+         * @return scroll delta
+         */
+        private float toScrollDelta(float delta, boolean vertical) {
+            delta *= maxScroll;
+            if (vertical) {
+                return delta / (getHeight() - thumbLength);
+            } else {
+                return delta / (getWidth() - thumbLength);
+            }
+        }
+    }
 }

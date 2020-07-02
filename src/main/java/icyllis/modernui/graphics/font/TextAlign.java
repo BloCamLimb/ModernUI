@@ -26,7 +26,7 @@ public enum TextAlign {
     RIGHT(0.5f);
 
     /* Divided by 2, because font renderer is based on a gui scale of 2 */
-    private float offsetFactor;
+    final float offsetFactor;
 
     TextAlign(float offsetFactor) {
         this.offsetFactor = offsetFactor;

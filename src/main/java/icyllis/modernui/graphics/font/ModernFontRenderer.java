@@ -20,7 +20,6 @@
 
 package icyllis.modernui.graphics.font;
 
-import icyllis.modernui.graphics.math.Color3i;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.fonts.providers.IGlyphProvider;
 import net.minecraft.client.renderer.*;
@@ -35,8 +34,7 @@ import java.util.List;
  */
 public class ModernFontRenderer extends FontRenderer {
 
-    /* This instance shouldn't be called manually */
-    public static ModernFontRenderer INSTANCE;
+    static ModernFontRenderer INSTANCE;
 
     private final TrueTypeRenderer fontRenderer;
 
@@ -45,6 +43,10 @@ public class ModernFontRenderer extends FontRenderer {
     protected ModernFontRenderer(TrueTypeRenderer fontRenderer) {
         super(null, null);
         this.fontRenderer = fontRenderer;
+    }
+
+    public static ModernFontRenderer getInstance() {
+        return INSTANCE;
     }
 
     @Override

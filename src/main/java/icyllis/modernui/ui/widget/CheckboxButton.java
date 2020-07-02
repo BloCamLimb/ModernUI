@@ -24,7 +24,7 @@ import icyllis.modernui.ui.animation.Animation;
 import icyllis.modernui.ui.animation.Applier;
 import icyllis.modernui.ui.test.Align9D;
 import icyllis.modernui.ui.test.Locator;
-import icyllis.modernui.system.ConstantsLibrary;
+import icyllis.modernui.system.Tools;
 import icyllis.modernui.ui.test.IHost;
 import icyllis.modernui.ui.test.Widget;
 import icyllis.modernui.ui.test.WidgetStatus;
@@ -56,7 +56,7 @@ public class CheckboxButton extends Widget {
 
     public CheckboxButton(IHost host, Builder builder) {
         super(host, builder);
-        this.icon = new Icon(ConstantsLibrary.ICONS, 0, 0.125f, 0.125f, 0.25f, true);
+        this.icon = new Icon(Tools.ICONS, 0, 0.125f, 0.125f, 0.25f, true);
         brightAnimation = new Animation(100)
                 .applyTo(new Applier(0.7f, 1.0f, this::getBrightness, this::setBrightness));
         inactiveAnimation = new Animation(100)

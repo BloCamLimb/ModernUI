@@ -32,7 +32,7 @@ import icyllis.modernui.impl.setting.SettingCategoryGroup;
 import icyllis.modernui.impl.setting.SettingEntry;
 import icyllis.modernui.impl.setting.KeyBindingEntry;
 import icyllis.modernui.impl.setting.SettingScrollWindow;
-import icyllis.modernui.system.ConstantsLibrary;
+import icyllis.modernui.system.Tools;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.system.SettingsManager;
 import net.minecraft.client.resources.I18n;
@@ -77,7 +77,7 @@ public class SettingControls extends Module {
         addWidget(window);
 
         filterConflictButton = new TextIconButton.Builder(
-                new Icon(ConstantsLibrary.ICONS, 0.5f, 0.25f, 0.625f, 0.375f, true),
+                new Icon(Tools.ICONS, 0.5f, 0.25f, 0.625f, 0.375f, true),
                 I18n.format("gui.modernui.button.filterConflicts"))
                 .setWidth(12)
                 .setHeight(12)
@@ -89,7 +89,7 @@ public class SettingControls extends Module {
         addWidget(filterConflictButton);
 
         resetAllButton = new TextIconButton.Builder(
-                new Icon(ConstantsLibrary.ICONS, 0.625f, 0.25f, 0.75f, 0.375f, true),
+                new Icon(Tools.ICONS, 0.625f, 0.25f, 0.75f, 0.375f, true),
                 I18n.format("controls.resetAll"))
                 .setWidth(12)
                 .setHeight(12)

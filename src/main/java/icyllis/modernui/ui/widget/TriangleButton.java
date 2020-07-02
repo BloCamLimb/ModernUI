@@ -23,7 +23,7 @@ import icyllis.modernui.graphics.renderer.Icon;
 import icyllis.modernui.ui.test.Align9D;
 import icyllis.modernui.ui.test.Direction4D;
 import icyllis.modernui.ui.test.Locator;
-import icyllis.modernui.system.ConstantsLibrary;
+import icyllis.modernui.system.Tools;
 import icyllis.modernui.ui.test.IHost;
 
 import javax.annotation.Nonnull;
@@ -105,7 +105,7 @@ public class TriangleButton extends IconButton {
     public static class Builder extends IconButton.Builder {
 
         public Builder(@Nonnull Direction4D direction, float size) {
-            super(new Icon(ConstantsLibrary.ICONS, 64 * direction.ordinal() / 512f, 0.25f, (direction.ordinal() + 1) * 64 / 512f, 0.375f, true));
+            super(new Icon(Tools.ICONS, 64 * direction.ordinal() / 512f, 0.25f, (direction.ordinal() + 1) * 64 / 512f, 0.375f, true));
             super.setWidth(size);
             super.setHeight(size);
         }

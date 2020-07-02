@@ -24,7 +24,7 @@ import icyllis.modernui.ui.widget.NumberInputField;
 import icyllis.modernui.ui.widget.SlidingToggleButton;
 import icyllis.modernui.ui.widget.StaticFrameButton;
 import icyllis.modernui.ui.widget.TextField;
-import icyllis.modernui.system.ConstantsLibrary;
+import icyllis.modernui.system.Tools;
 
 @Deprecated
 public class ModuleTest extends Module {
@@ -55,7 +55,7 @@ public class ModuleTest extends Module {
                 .setWidth(120)
                 .setLocator(new Locator(-60, 4))));
         password.setDecoration(f -> new TextField.Frame(f, "Password:", -1));
-        password.setEchoChar(ConstantsLibrary.BLACK_CIRCLE);
+        password.setEchoChar(Tools.BLACK_CIRCLE);
 
         SSExpandableBox sse = new SSExpandableBox(60, 80, SSExpandableBox.RIGHT_TOP_BOTTOM);
         addDrawable(sse);

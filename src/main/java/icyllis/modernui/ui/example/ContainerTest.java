@@ -18,7 +18,7 @@
 
 package icyllis.modernui.ui.example;
 
-import icyllis.modernui.system.RegistryLibrary;
+import icyllis.modernui.system.Registry;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.container.Container;
@@ -35,12 +35,12 @@ public class ContainerTest extends Container {
 
     // client
     public ContainerTest(int windowId, PlayerInventory inv, PacketBuffer buf) {
-        super(RegistryLibrary.TEST_CONTAINER, windowId);
+        super(Registry.TEST_CONTAINER, windowId);
     }
 
     // server
     public ContainerTest(int windowId, PlayerInventory inv, PlayerEntity player) {
-        super(RegistryLibrary.TEST_CONTAINER, windowId);
+        super(Registry.TEST_CONTAINER, windowId);
     }
 
     @Override

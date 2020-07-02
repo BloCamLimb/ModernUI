@@ -18,7 +18,7 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.system.ConfigManager;
+import icyllis.modernui.system.Config;
 import icyllis.modernui.ui.master.ModernContainerScreen;
 import icyllis.modernui.ui.master.ModernScreen;
 import icyllis.modernui.ui.master.UIManager;
@@ -89,7 +89,7 @@ public enum BlurHandler {
         boolean excluded = gui != null && !(gui instanceof ModernScreen) && !(gui instanceof ModernContainerScreen<?>) &&
                 exclusions.stream().anyMatch(c -> c.isAssignableFrom(gui.getClass()));
 
-        if (excluded || !ConfigManager.CLIENT.blurScreenBackground) {
+        if (excluded || !Config.CLIENT.blurScreenBackground) {
             backgroundAlpha = 0.5f;
             if (excluded && blurring) {
                 minecraft.gameRenderer.stopUseShader();
@@ -123,7 +123,7 @@ public enum BlurHandler {
      */
     public void forceBlur() {
         // no need to check if is excluded, this method is only called by Modern UI screen
-        if (!ConfigManager.CLIENT.blurScreenBackground) {
+        if (!Config.CLIENT.blurScreenBackground) {
             return;
         }
         if (minecraft.world != null) {

@@ -16,9 +16,9 @@
  * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.system;
+package icyllis.modernui.network;
 
-import icyllis.modernui.api.network.IMessage;
+import icyllis.modernui.system.ModernUI;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.network.PacketBuffer;
@@ -53,10 +53,6 @@ public enum NetworkManager {
                 .clientAcceptedVersions(PROTOCOL::equals)
                 .serverAcceptedVersions(PROTOCOL::equals)
                 .simpleChannel();
-    }
-
-    void registerMessages() {
-
     }
 
     /**

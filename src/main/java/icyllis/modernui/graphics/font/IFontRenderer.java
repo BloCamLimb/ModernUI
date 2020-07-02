@@ -20,7 +20,7 @@
 
 package icyllis.modernui.graphics.font;
 
-import icyllis.modernui.graphics.math.Color3i;
+import javax.annotation.Nullable;
 
 public interface IFontRenderer {
 
@@ -39,7 +39,7 @@ public interface IFontRenderer {
      * @param align 0-left 0.25-center 0.5-right
      * @return formatted text width
      */
-    float drawString(String str, float startX, float startY, int r, int g, int b, int a, TextAlign align);
+    float drawString(@Nullable String str, float startX, float startY, int r, int g, int b, int a, TextAlign align);
 
     /**
      * Return the width of a string in pixels. Used for centering strings.

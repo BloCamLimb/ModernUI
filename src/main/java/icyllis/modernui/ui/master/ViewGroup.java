@@ -31,10 +31,13 @@ import javax.annotation.Nullable;
 @OnlyIn(Dist.CLIENT)
 public abstract class ViewGroup extends View implements IViewParent {
 
-    // child views
-    private View[] children = new View[12];
+    private static final int ARRAY_CAPACITY_INCREMENT = 12;
 
-    // child view count
+    // child views
+    private View[] children = new View[ARRAY_CAPACITY_INCREMENT];
+
+    // number of valid children in the children array, the rest
+    // should be null or not considered as children
     private int childrenCount = 0;
 
     public ViewGroup() {
@@ -43,14 +46,17 @@ public abstract class ViewGroup extends View implements IViewParent {
 
     @Override
     protected void dispatchDraw(@Nonnull Canvas canvas) {
-        boolean doTranslate = (getScrollX() != 0 || getScrollY() != 0);
+        final boolean doTranslate = (getScrollX() != 0 || getScrollY() != 0);
         if (doTranslate) {
             canvas.save();
             canvas.translate(-getScrollX(), -getScrollY());
         }
-        for (int i = 0; i < childrenCount; i++) {
-            View child = children[i];
-            if (child.getVisibility() != GONE) {
+        final View[] views = children;
+        final int count = childrenCount;
+        View child;
+        for (int i = 0; i < count; i++) {
+            child = views[i];
+            if (child.getVisibility() == VISIBLE) {
                 child.draw(canvas);
             }
         }
@@ -68,15 +74,30 @@ public abstract class ViewGroup extends View implements IViewParent {
     protected abstract void onLayout(boolean changed);
 
     @Override
-    protected boolean dispatchUpdateMouseHover(double mouseX, double mouseY) {
+    final boolean dispatchUpdateMouseHover(double mouseX, double mouseY) {
         final double mx = mouseX + getScrollX();
         final double my = mouseY + getScrollY();
+        final View[] views = children;
+        boolean anyHovered = false;
+        View child;
         for (int i = childrenCount - 1; i >= 0; i--) {
-            if (children[i].updateMouseHover(mx, my)) {
-                return true;
+            child = views[i];
+            if (!anyHovered &&child.updateMouseHover(mx, my)) {
+                anyHovered = true;
+            } else {
+                child.ensureMouseHoverExit();
             }
         }
-        return super.dispatchUpdateMouseHover(mouseX, mouseY);
+        return anyHovered;
+    }
+
+    @Override
+    final void ensureMouseHoverExit() {
+        super.ensureMouseHoverExit();
+        final View[] views = children;
+        for (int i = 0; i < childrenCount; i++) {
+            views[i].ensureMouseHoverExit();
+        }
     }
 
     @Override
@@ -133,8 +154,7 @@ public abstract class ViewGroup extends View implements IViewParent {
         addView0(child, index, params);
     }
 
-    private void addView0(@Nonnull View child, int index, @Nonnull LayoutParams params) {
-
+    private void addView0(@Nonnull final View child, int index, @Nonnull LayoutParams params) {
         if (child.getParent() != null) {
             ModernUI.LOGGER.fatal(UIManager.MARKER,
                     "Failed to add child view {} to {}. The child has already a parent.", child, this);
@@ -170,26 +190,26 @@ public abstract class ViewGroup extends View implements IViewParent {
     }
 
     private void addInArray(@Nonnull View child, int index) {
-        View[] children = this.children;
-        final int count = this.childrenCount;
-        final int size = children.length;
+        View[] views = children;
+        final int count = childrenCount;
+        final int size = views.length;
         if (index == count) {
             if (size == count) {
-                this.children = new View[size + 12];
-                System.arraycopy(children, 0, this.children, 0, size);
-                children = this.children;
+                children = new View[size + ARRAY_CAPACITY_INCREMENT];
+                System.arraycopy(views, 0, children, 0, size);
+                views = children;
             }
-            children[childrenCount++] = child;
+            views[childrenCount++] = child;
         } else if (index < count) {
             if (size == count) {
-                this.children = new View[size + 12];
-                System.arraycopy(children, 0, this.children, 0, index);
-                System.arraycopy(children, index, this.children, index + 1, count - index);
-                children = this.children;
+                children = new View[size + ARRAY_CAPACITY_INCREMENT];
+                System.arraycopy(views, 0, children, 0, index);
+                System.arraycopy(views, index, children, index + 1, count - index);
+                views = children;
             } else {
-                System.arraycopy(children, index, children, index + 1, count - index);
+                System.arraycopy(views, index, views, index + 1, count - index);
             }
-            children[index] = child;
+            views[index] = child;
             ++childrenCount;
         } else {
             throw new IndexOutOfBoundsException("index=" + index + " count=" + count);
@@ -204,13 +224,17 @@ public abstract class ViewGroup extends View implements IViewParent {
             return (T) this;
         }
 
-        for (int i = 0; i < childrenCount; i++) {
-            View child = children[i];
+        final View[] views = children;
+        final int count = childrenCount;
 
-            child = child.findViewTraversal(id);
+        View view;
+        for (int i = 0; i < count; i++) {
+            view = views[i];
 
-            if (child != null) {
-                return (T) child;
+            view = view.findViewTraversal(id);
+
+            if (view != null) {
+                return (T) view;
             }
         }
 
@@ -335,19 +359,20 @@ public abstract class ViewGroup extends View implements IViewParent {
 
     @Override
     protected void tick(int ticks) {
-        super.tick(ticks);
-        for (int i = 0; i < childrenCount; i++) {
-            children[i].tick(ticks);
+        final View[] views = children;
+        final int count = childrenCount;
+        for (int i = 0; i < count; i++) {
+            views[i].tick(ticks);
         }
     }
 
     /**
      * Create a safe layout params base on the given params to fit to this view group
      * <p>
-     * Also see {@link #createDefaultLayoutParams()}
-     * Also see {@link #checkLayoutParams(LayoutParams)}
+     * See also {@link #createDefaultLayoutParams()}
+     * See also {@link #checkLayoutParams(LayoutParams)}
      *
-     * @param params layout params to convert
+     * @param params the layout params to convert
      * @return safe layout params
      */
     @Nonnull
@@ -358,10 +383,10 @@ public abstract class ViewGroup extends View implements IViewParent {
     /**
      * Create default layout params if child params is null
      * <p>
-     * Also see {@link #convertLayoutParams(LayoutParams)}
-     * Also see {@link #checkLayoutParams(LayoutParams)}
+     * See also {@link #convertLayoutParams(LayoutParams)}
+     * See also {@link #checkLayoutParams(LayoutParams)}
      *
-     * @return layout params
+     * @return default layout params
      */
     @Nonnull
     protected LayoutParams createDefaultLayoutParams() {
@@ -371,11 +396,11 @@ public abstract class ViewGroup extends View implements IViewParent {
     /**
      * Check whether given params fit to this view group
      * <p>
-     * Also see {@link #convertLayoutParams(LayoutParams)}
-     * Also see {@link #createDefaultLayoutParams()}
+     * See also {@link #convertLayoutParams(LayoutParams)}
+     * See also {@link #createDefaultLayoutParams()}
      *
      * @param params layout params to check
-     * @return params matched
+     * @return if params matched to this view group
      */
     protected boolean checkLayoutParams(@Nullable LayoutParams params) {
         return params != null;

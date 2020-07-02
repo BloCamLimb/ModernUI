@@ -43,7 +43,7 @@ public class VanillaFontRenderer implements IFontRenderer {
 
     @Override
     public float drawString(String str, float startX, float startY, int r, int g, int b, int a, @Nonnull TextAlign align) {
-        startX = startX - FONT.getStringWidth(str) * align.getOffsetFactor() * 2;
+        startX = startX - FONT.getStringWidth(str) * align.offsetFactor * 2.0f;
         return FONT.drawString(str, startX, startY, a << 24 | r << 16 | g << 8 | b) - startX;
     }
 

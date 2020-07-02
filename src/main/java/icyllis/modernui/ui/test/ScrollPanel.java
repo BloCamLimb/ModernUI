@@ -19,7 +19,7 @@
 package icyllis.modernui.ui.test;
 
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.ui.widget.ScrollBar;
+import icyllis.modernui.ui.master.View;
 import icyllis.modernui.ui.widget.Scroller;
 import icyllis.modernui.ui.widget.UniformScrollEntry;
 import icyllis.modernui.ui.widget.UniformScrollGroup;
@@ -38,7 +38,7 @@ public class ScrollPanel<E extends UniformScrollEntry, G extends UniformScrollGr
 
     protected float scrollAmount = 0f;
 
-    protected ScrollBar scrollbar;
+    protected View.ScrollBar scrollbar;
 
     protected Scroller controller;
 

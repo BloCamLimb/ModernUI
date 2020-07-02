@@ -23,9 +23,10 @@ import net.minecraft.util.ResourceLocation;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-public class ConstantsLibrary {
+public class Tools {
 
     //public static final ResourceLocation BUTTON = new ResourceLocation(ModernUI.MODID, "textures/gui/button.png");
+    @Deprecated
     public static final ResourceLocation ICONS = new ResourceLocation(ModernUI.MODID, "textures/gui/gui_icon.png");
 
     public static final Function<Double, String> PERCENTAGE_STRING_FUNC = p -> (int) (p * 100) + "%";

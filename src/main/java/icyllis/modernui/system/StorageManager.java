@@ -25,8 +25,7 @@ import javafx.util.Pair;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.IReloadableResourceManager;
 import net.minecraft.resources.IResourceManager;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.resource.IResourceType;
 import net.minecraftforge.resource.ISelectiveResourceReloadListener;
 import net.minecraftforge.resource.VanillaResourceType;
@@ -39,9 +38,9 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
- * Save and load data from local game files, and load resources
+ * Save and load data from local game files, and load resources.
+ * There are different work on the server and the client.
  */
-@OnlyIn(Dist.CLIENT)
 public enum StorageManager {
     INSTANCE;
 
@@ -51,8 +50,10 @@ public enum StorageManager {
     private final ScriptEngineManager scriptManager = new ScriptEngineManager();
 
     static void init() {
-        ((IReloadableResourceManager) Minecraft.getInstance().getResourceManager()).addReloadListener(
-                (ISelectiveResourceReloadListener) INSTANCE::onResourcesReload);
+        if (FMLEnvironment.dist.isClient()) {
+            ((IReloadableResourceManager) Minecraft.getInstance().getResourceManager()).addReloadListener(
+                    (ISelectiveResourceReloadListener) INSTANCE::onResourcesReload);
+        }
     }
 
     public ScriptEngineManager getScriptManager() {

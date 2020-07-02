@@ -28,7 +28,7 @@ import icyllis.modernui.graphics.renderer.Icon;
 import icyllis.modernui.ui.test.Align9D;
 import icyllis.modernui.ui.view.PopupMenu;
 import icyllis.modernui.ui.view.DropDownMenu;
-import icyllis.modernui.system.ConstantsLibrary;
+import icyllis.modernui.system.Tools;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -55,7 +55,7 @@ public class DropdownSettingEntry extends SettingEntry {
 
     private final Animation frameAnimation;
 
-    private static final Icon ICON = new Icon(ConstantsLibrary.ICONS, 0.25f, 0.125f, 0.375f, 0.25f, true);
+    private static final Icon ICON = new Icon(Tools.ICONS, 0.25f, 0.125f, 0.375f, 0.25f, true);
 
     public DropdownSettingEntry(SettingScrollWindow window, String optionTitle, @Nonnull List<String> optionNames, int originalIndex, Consumer<Integer> saveOption) {
         super(window, optionTitle);
