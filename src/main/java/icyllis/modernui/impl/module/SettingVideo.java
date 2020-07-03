@@ -18,7 +18,7 @@
 
 package icyllis.modernui.impl.module;
 
-import icyllis.modernui.system.Integration;
+import icyllis.modernui.system.ModIntegration;
 import icyllis.modernui.ui.test.Module;
 import icyllis.modernui.impl.setting.GuiScaleSettingEntry;
 import icyllis.modernui.impl.setting.SettingCategoryGroup;
@@ -53,7 +53,7 @@ public class SettingVideo extends Module {
         addDetailsCategory(groups);
         addAnimationsCategory(groups);
 
-        if (Integration.optifineLoaded) {
+        if (ModIntegration.optifineLoaded) {
             addPerformanceCategory(groups);
             addOtherCategory(groups);
         }
@@ -85,7 +85,7 @@ public class SettingVideo extends Module {
 
         list.add(SettingsManager.VSYNC.apply(window));
 
-        if (Integration.optifineLoaded) {
+        if (ModIntegration.optifineLoaded) {
 
             list.add(SettingsManager.DYNAMIC_FOV.apply(window));
 
@@ -103,13 +103,13 @@ public class SettingVideo extends Module {
 
         list.add(SettingsManager.AO.apply(window));
 
-        if (Integration.optifineLoaded) {
+        if (ModIntegration.optifineLoaded) {
             list.add(SettingsManager.AO_LEVEL.apply(window));
         }
 
         list.add(SettingsManager.MIPMAP_LEVEL.apply(window));
 
-        if (Integration.optifineLoaded) {
+        if (ModIntegration.optifineLoaded) {
 
             list.add(SettingsManager.MIPMAP_TYPE.apply(window));
             //TODO optifine (WIP) AF Level, AA Level
@@ -148,7 +148,7 @@ public class SettingVideo extends Module {
         list.add(SettingsManager.ENTITY_SHADOWS.apply(window));
         list.add(SettingsManager.BIOME_BLEND_RADIUS.apply(window));
 
-        if (Integration.optifineLoaded) {
+        if (ModIntegration.optifineLoaded) {
             try {
                 Field field = GuiDetailSettingsOF.class.getDeclaredField("enumOptions");
                 field.setAccessible(true);
@@ -173,7 +173,7 @@ public class SettingVideo extends Module {
 
         list.add(SettingsManager.PARTICLES.apply(window));
 
-        if (Integration.optifineLoaded) {
+        if (ModIntegration.optifineLoaded) {
             try {
                 Field field = GuiAnimationSettingsOF.class.getDeclaredField("enumOptions");
                 field.setAccessible(true);

@@ -53,12 +53,8 @@ public abstract class ViewGroup extends View implements IViewParent {
         }
         final View[] views = children;
         final int count = childrenCount;
-        View child;
         for (int i = 0; i < count; i++) {
-            child = views[i];
-            if (child.getVisibility() == VISIBLE) {
-                child.draw(canvas);
-            }
+            views[i].draw(canvas);
         }
         if (doTranslate) {
             canvas.restore();
@@ -82,7 +78,7 @@ public abstract class ViewGroup extends View implements IViewParent {
         View child;
         for (int i = childrenCount - 1; i >= 0; i--) {
             child = views[i];
-            if (!anyHovered &&child.updateMouseHover(mx, my)) {
+            if (!anyHovered && child.updateMouseHover(mx, my)) {
                 anyHovered = true;
             } else {
                 child.ensureMouseHoverExit();
@@ -95,7 +91,8 @@ public abstract class ViewGroup extends View implements IViewParent {
     final void ensureMouseHoverExit() {
         super.ensureMouseHoverExit();
         final View[] views = children;
-        for (int i = 0; i < childrenCount; i++) {
+        final int count = childrenCount;
+        for (int i = 0; i < count; i++) {
             views[i].ensureMouseHoverExit();
         }
     }
@@ -131,6 +128,20 @@ public abstract class ViewGroup extends View implements IViewParent {
             params = createDefaultLayoutParams();
         }
         addView(child, index, params);
+    }
+
+    /**
+     * Add a child view to end of array with specified width and height
+     *
+     * @param child  child view to add
+     * @param width  view layout width
+     * @param height view layout height
+     */
+    public void addView(@Nonnull View child, int width, int height) {
+        LayoutParams params = createDefaultLayoutParams();
+        params.width = width;
+        params.height = height;
+        addView(child, -1, params);
     }
 
     /**
@@ -210,7 +221,7 @@ public abstract class ViewGroup extends View implements IViewParent {
                 System.arraycopy(views, index, views, index + 1, count - index);
             }
             views[index] = child;
-            ++childrenCount;
+            childrenCount++;
         } else {
             throw new IndexOutOfBoundsException("index=" + index + " count=" + count);
         }
@@ -219,7 +230,7 @@ public abstract class ViewGroup extends View implements IViewParent {
     @SuppressWarnings("unchecked")
     @Nullable
     @Override
-    protected <T extends View> T findViewTraversal(int id) {
+    final <T extends View> T findViewTraversal(int id) {
         if (id == getId()) {
             return (T) this;
         }

@@ -34,13 +34,13 @@ import java.util.List;
  */
 public class ModernFontRenderer extends FontRenderer {
 
+    public static boolean sAllowFontShadow = true;
+
     static ModernFontRenderer INSTANCE;
 
     private final TrueTypeRenderer fontRenderer;
 
-    public static boolean sAllowFontShadow = true;
-
-    protected ModernFontRenderer(TrueTypeRenderer fontRenderer) {
+    ModernFontRenderer(TrueTypeRenderer fontRenderer) {
         super(null, null);
         this.fontRenderer = fontRenderer;
     }
@@ -64,9 +64,9 @@ public class ModernFontRenderer extends FontRenderer {
             return 0;
         } else {
             IRenderTypeBuffer.Impl impl = IRenderTypeBuffer.getImpl(Tessellator.getInstance().getBuffer());
-            int i = renderString(text, x, y, color, dropShadow, matrix, impl, false, 0, 0x00f000f0);
+            int newX = renderString(text, x, y, color, dropShadow, matrix, impl, false, 0, 0x00f000f0);
             impl.finish();
-            return i;
+            return newX;
         }
     }
 
@@ -75,9 +75,9 @@ public class ModernFontRenderer extends FontRenderer {
         return drawStringInternal(text, x, y, color, dropShadow, buffer, matrix, packedLight);
     }
 
-    private int drawStringInternal(@Nullable String text, float x, float y, int color, boolean dropShadow, @Nonnull IRenderTypeBuffer buffer, Matrix4f matrix, int packedLight) {
-        // alpha test
-
+    public int drawStringInternal(@Nullable String text, float x, float y, int color, boolean dropShadow, @Nonnull IRenderTypeBuffer buffer, Matrix4f matrix, int packedLight) {
+        // ensure has alpha, color can be ARGB, or can be RGB
+        // if alpha <= 1, make alpha = 255
         if ((color & 0xfe000000) == 0) {
             color |= 0xff000000;
         }
@@ -92,7 +92,7 @@ public class ModernFontRenderer extends FontRenderer {
         }
 
         Matrix4f matrix4f = matrix.copy();
-        matrix4f.translate(new Vector3f(0.0F, 0.0F, 0.001F));
+        matrix4f.translate(new Vector3f(0.0F, 0.0F, 0.001f));
         x += fontRenderer.drawStringGlobal(text, x, y, r, g, b, a, false, matrix4f, buffer, packedLight);
         return text == null ? 0 : (int) (x + (dropShadow ? 1.0f : 0.0f));
     }
@@ -137,19 +137,19 @@ public class ModernFontRenderer extends FontRenderer {
     @Deprecated
     @Override
     public void setGlyphProviders(@Nonnull List<IGlyphProvider> g) {
-
+        // no font
     }
 
     @Deprecated
     @Override
     public void close() {
-
+        // no stream
     }
 
-    @Deprecated
+    // we keep bidi enabled, so no need to convert text
     @Nonnull
     @Override
     public String bidiReorder(@Nonnull String text) {
-        throw new RuntimeException();
+        return text;
     }
 }

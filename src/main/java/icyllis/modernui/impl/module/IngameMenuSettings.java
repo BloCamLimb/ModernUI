@@ -19,7 +19,7 @@
 package icyllis.modernui.impl.module;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.system.Integration;
+import icyllis.modernui.system.ModIntegration;
 import icyllis.modernui.ui.animation.Animation;
 import icyllis.modernui.ui.animation.Applier;
 import icyllis.modernui.ui.animation.ITimeInterpolator;
@@ -128,7 +128,7 @@ public class IngameMenuSettings extends ModuleGroup {
     private void openAssetsMenu() {
         List<String> tabs = Lists.newArrayList(I18n.format("gui.modernui.settings.tab.resourcePacks"),
                 I18n.format("gui.modernui.settings.tab.language"));
-        if (Integration.optifineLoaded) {
+        if (ModIntegration.optifineLoaded) {
             tabs.add(I18n.format("of.options.shadersTitle"));
         }
         DropDownMenu menu = new DropDownMenu.Builder(
@@ -150,7 +150,7 @@ public class IngameMenuSettings extends ModuleGroup {
                 } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException | ClassCastException e) {
                     e.printStackTrace();
                 }*/
-                Integration.OptiFine.openShadersGui();
+                ModIntegration.OptiFine.openShadersGui();
                 return;
             }
             switchChildModule(5 + index);

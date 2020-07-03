@@ -291,7 +291,7 @@ public enum SettingsManager {
         boolean_getter = ObfuscationReflectionHelper.findField(BooleanOption.class, "field_216746_Q");
         boolean_setter = ObfuscationReflectionHelper.findField(BooleanOption.class, "field_216747_R");
 
-        if (Integration.optifineLoaded) {
+        if (ModIntegration.optifineLoaded) {
             try {
                 of_dynamic_fov = GameSettings.class.getDeclaredField("ofDynamicFov");
                 of_chat_background = GameSettings.class.getDeclaredField("ofChatBackground");
@@ -341,7 +341,7 @@ public enum SettingsManager {
                 .transformToSmooth(AbstractOption.CHAT_OPACITY, p -> (int) (p * 90 + 10) + "%");
         CHAT_SCALE = INSTANCE
                 .transformToSmooth(AbstractOption.CHAT_SCALE, Triple.of(0.1, null, null), Tools.PERCENTAGE_STRING_FUNC);
-        if (Integration.optifineLoaded) {
+        if (ModIntegration.optifineLoaded) {
             CHAT_WIDTH = INSTANCE
                     .transformToSmooth(AbstractOption.CHAT_WIDTH, Triple.of(null, null, 1.0f / 1136.0f),
                             d -> NewChatGui.calculateChatboxWidth(d * 4.0571431d) + "px");
@@ -460,7 +460,7 @@ public enum SettingsManager {
             gameSettings.sendSettingsToServer();
         });
 
-        if (Integration.optifineLoaded) {
+        if (ModIntegration.optifineLoaded) {
 
             DYNAMIC_FOV = window -> new BooleanSettingEntry(window, I18n.format("of.options.DYNAMIC_FOV"),
                     SettingsManager.INSTANCE.getDynamicFov(), SettingsManager.INSTANCE::setDynamicFov);

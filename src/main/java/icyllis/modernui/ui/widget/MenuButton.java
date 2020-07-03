@@ -151,7 +151,7 @@ public class MenuButton extends IconButton {
     }
 
     public float getTextLength() {
-        return UITools.getStringWidth(text);
+        return UITools.getTextWidth(text);
     }
 
     public void setFrameAlpha(float frameAlpha) {

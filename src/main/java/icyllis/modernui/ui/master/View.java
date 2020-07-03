@@ -20,6 +20,7 @@ package icyllis.modernui.ui.master;
 
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.ui.layout.MeasureSpec;
 import icyllis.modernui.ui.widget.Scroller;
 import net.minecraft.client.gui.screen.Screen;
@@ -30,10 +31,13 @@ import org.lwjgl.glfw.GLFW;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 /**
  * View is the basic component of UI. View has its own rectangular area on screen,
  * which is also responsible for drawing and event handling.
+ *
+ * @since 1.6
  */
 @SuppressWarnings("unused")
 @OnlyIn(Dist.CLIENT)
@@ -155,6 +159,11 @@ public class View {
     private int measuredWidth;
     private int measuredHeight;
 
+    @Nullable
+    private ScrollBar horizontalScrollBar;
+    @Nullable
+    private ScrollBar verticalScrollBar;
+
     /**
      * The layout parameters associated with this view and used by the parent
      * {@link ViewGroup} to determine how this view should be laid out.
@@ -166,22 +175,22 @@ public class View {
      *
      * @param canvas canvas to draw content
      */
-    public void draw(@Nonnull Canvas canvas) {
+    final void draw(@Nonnull Canvas canvas) {
         if ((viewFlags & VISIBILITY_MASK) == 0) {
 
             onDraw(canvas);
 
             dispatchDraw(canvas);
+
+            runVerticalScrollBar(bar -> bar.draw(canvas));
         }
     }
 
     /**
      * Draw this view if visible
-     * <p>
      * Before you draw in the method, you have to call {@link Canvas#moveTo(View)},
      * (0, 0) will be the top left of the bounds,
      * (width, height) will be the bottom right of the bounds.
-     * <p>
      * See {@link #getWidth()}
      * See {@link #getHeight()}
      *
@@ -225,12 +234,41 @@ public class View {
         boolean changed = setFrame(left, top, right, bottom);
 
         if (changed || hasPrivateFlag(PFLAG_LAYOUT_REQUIRED)) {
+            layoutScrollBars();
+
             onLayout(changed);
 
             removePrivateFlag(PFLAG_LAYOUT_REQUIRED);
         }
 
         removePrivateFlag(PFLAG_FORCE_LAYOUT);
+    }
+
+    /**
+     * Layout scroll bars if enabled
+     */
+    private void layoutScrollBars() {
+        ScrollBar scrollBar = verticalScrollBar;
+        if (scrollBar != null) {
+            int thickness = scrollBar.getSize();
+            int r = right - scrollBar.getRightPadding();
+            int l = Math.max(r - thickness, left);
+            int t = top + scrollBar.getTopPadding();
+            int b = bottom - scrollBar.getBottomPadding();
+            scrollBar.setFrame(l, t, r, b);
+        }
+        scrollBar = horizontalScrollBar;
+        if (scrollBar != null) {
+            int thickness = scrollBar.getSize();
+            int b = bottom - scrollBar.getBottomPadding();
+            int t = Math.max(b - thickness, top);
+            int l = left + scrollBar.getLeftPadding();
+            int r = right - scrollBar.getRightPadding();
+            if (isVerticalScrollBarEnabled()) {
+                r -= verticalScrollBar.getWidth();
+            }
+            scrollBar.setFrame(l, t, r, b);
+        }
     }
 
     /**
@@ -245,22 +283,22 @@ public class View {
     /**
      * Assign the rect area of this view, called from layout()
      *
-     * @param left   left position, relative to game window
-     * @param top    top position, relative to game window
-     * @param right  right position, relative to game window
-     * @param bottom bottom position, relative to game window
+     * @param l   left position, relative to game window
+     * @param t    top position, relative to game window
+     * @param r  right position, relative to game window
+     * @param b bottom position, relative to game window
      * @return whether the rect area of this view was changed
      */
-    protected boolean setFrame(int left, int top, int right, int bottom) {
-        if (this.left != left || this.right != right || this.top != top || this.bottom != bottom) {
+    protected boolean setFrame(int l, int t, int r, int b) {
+        if (left != l || right != r || top != t || bottom != b) {
 
             int oldWidth = getWidth();
             int oldHeight = getHeight();
 
-            this.left = left;
-            this.top = top;
-            this.right = right;
-            this.bottom = bottom;
+            left = l;
+            top = t;
+            right = r;
+            bottom = b;
 
             int newWidth = getWidth();
             int newHeight = getHeight();
@@ -569,6 +607,84 @@ public class View {
     }
 
     /**
+     * Define whether the horizontal scrollbar should have or not.
+     * The scrollbar is null by default.
+     *
+     * @param enabled true if the horizontal scrollbar should be enabled
+     * @see #isHorizontalScrollBarEnabled()
+     */
+    public final void setHorizontalScrollBarEnabled(boolean enabled) {
+        if (enabled) {
+            if (horizontalScrollBar == null) {
+                horizontalScrollBar = new ScrollBar(false);
+            }
+        } else {
+            horizontalScrollBar = null;
+        }
+    }
+
+    /**
+     * Define whether the vertical scrollbar should have or not.
+     * The scrollbar is null by default.
+     *
+     * @param enabled true if the vertical scrollbar should be enabled
+     * @see #isVerticalScrollBarEnabled()
+     */
+    public final void setVerticalScrollBarEnabled(boolean enabled) {
+        if (enabled) {
+            if (verticalScrollBar == null) {
+                verticalScrollBar = new ScrollBar(true);
+            }
+        } else {
+            verticalScrollBar = null;
+        }
+    }
+
+    /**
+     * Indicate whether the horizontal scrollbar should have or not.
+     * The scrollbar is null by default.
+     *
+     * @return true if the horizontal scrollbar already created, false otherwise
+     * @see #setHorizontalScrollBarEnabled(boolean)
+     */
+    public final boolean isHorizontalScrollBarEnabled() {
+        return horizontalScrollBar != null;
+    }
+
+    /**
+     * Indicate whether the vertical scrollbar should have or not.
+     * The scrollbar is null by default.
+     *
+     * @return true if the vertical scrollbar already created, false otherwise
+     * @see #setVerticalScrollBarEnabled(boolean)
+     */
+    public final boolean isVerticalScrollBarEnabled() {
+        return verticalScrollBar != null;
+    }
+
+    public final void runHorizontalScrollBar(Consumer<ScrollBar> consumer) {
+        if (horizontalScrollBar != null) {
+            consumer.accept(horizontalScrollBar);
+        }
+    }
+
+    public final void runVerticalScrollBar(Consumer<ScrollBar> consumer) {
+        if (verticalScrollBar != null) {
+            consumer.accept(verticalScrollBar);
+        }
+    }
+
+    @Nullable
+    public final ScrollBar getHorizontalScrollBar() {
+        return horizontalScrollBar;
+    }
+
+    @Nullable
+    public final ScrollBar getVerticalScrollBar() {
+        return verticalScrollBar;
+    }
+
+    /**
      * Get view current layout width
      *
      * @return width
@@ -716,7 +832,7 @@ public class View {
 
     @SuppressWarnings("unchecked")
     @Nullable
-    protected <T extends View> T findViewTraversal(int id) {
+    <T extends View> T findViewTraversal(int id) {
         if (id == this.id) {
             return (T) this;
         }
@@ -724,7 +840,7 @@ public class View {
     }
 
     /**
-     * Check if mouse hover this view.
+     * Internal method. Check if mouse hover this view.
      *
      * @param mouseX relative mouse X pos
      * @param mouseY relative mouse Y pos
@@ -733,6 +849,10 @@ public class View {
     final boolean updateMouseHover(double mouseX, double mouseY) {
         final boolean prevHovered = hasPrivateFlag(PFLAG_HOVERED);
         if (mouseX >= left && mouseX < right && mouseY >= top && mouseY < bottom) {
+            if (handleScrollBarsHover(mouseX, mouseY)) {
+                UIManager.INSTANCE.setHovered(this);
+                return true;
+            }
             if (!prevHovered) {
                 addPrivateFlag(PFLAG_HOVERED);
                 onMouseHoverEnter(mouseX, mouseY);
@@ -751,8 +871,18 @@ public class View {
         return false;
     }
 
+    private boolean handleScrollBarsHover(double mouseX, double mouseY) {
+        ScrollBar scrollBar = verticalScrollBar;
+        if (scrollBar != null && scrollBar.updateMouseHover(mouseX, mouseY)) {
+            return true;
+        }
+        scrollBar = horizontalScrollBar;
+        return scrollBar != null && scrollBar.updateMouseHover(mouseX, mouseY);
+    }
+
     /**
-     * Dispatch events to child views if present, check if mouse hovered a child view.
+     * Internal method. Dispatch events to child views if present,
+     * check if mouse hovered a child view.
      *
      * @param mouseX relative mouse X pos
      * @param mouseY relative mouse Y pos
@@ -763,7 +893,7 @@ public class View {
     }
 
     /**
-     * Ensure rest of views of other branches to hover exit
+     * Internal method. Ensure rest of views of other branches to hover exit.
      */
     void ensureMouseHoverExit() {
         if (hasPrivateFlag(PFLAG_HOVERED)) {
@@ -807,6 +937,26 @@ public class View {
      */
     protected void onMouseHoverExit() {
 
+    }
+
+    /**
+     * Internal method. Called when mouse hovered on this view and a mouse button clicked.
+     *
+     * @param mouseX      relative mouse x pos
+     * @param mouseY      relative mouse y pos
+     * @param mouseButton mouse button, for example {@link GLFW#GLFW_MOUSE_BUTTON_LEFT}
+     * @return {@code true} if action performed
+     */
+    final boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        ScrollBar scrollBar = verticalScrollBar;
+        if (scrollBar != null && scrollBar.onMouseClicked(mouseX, mouseY, mouseButton)) {
+            return true;
+        }
+        scrollBar = horizontalScrollBar;
+        if (scrollBar != null && scrollBar.onMouseClicked(mouseX, mouseY, mouseButton)) {
+            return true;
+        }
+        return onMouseClicked(mouseX, mouseY, mouseButton);
     }
 
     /**
@@ -943,10 +1093,10 @@ public class View {
      * Called when click on scrollbar track and not on the thumb
      * and there was an scroll amount change
      *
-     * @param delta    scroll amount change calculated by scrollbar
-     * @param vertical {@code true} if scrollbar is vertical, horizontal otherwise
+     * @param vertical    {@code true} if scrollbar is vertical, horizontal otherwise
+     * @param scrollDelta scroll amount change calculated by scrollbar
      */
-    protected void onScrollBarClicked(float delta, boolean vertical) {
+    protected void onScrollBarClicked(boolean vertical, float scrollDelta) {
 
     }
 
@@ -954,23 +1104,23 @@ public class View {
      * Called when drag the scroll thumb and there was an scroll
      * amount change
      *
-     * @param delta    scroll amount change calculated by scrollbar
-     * @param vertical {@code true} if scrollbar is vertical, horizontal otherwise
+     * @param vertical    {@code true} if scrollbar is vertical, horizontal otherwise
+     * @param scrollDelta scroll amount change calculated by scrollbar
      */
-    protected void onScrollBarDragged(float delta, boolean vertical) {
+    protected void onScrollBarDragged(boolean vertical, float scrollDelta) {
 
     }
 
     /**
-     * This class encapsulated methods to handle events and draw the scroll bar.
-     * Scrollbar should be the same level as the view it's in.
+     * This class encapsulated methods to handle events of and draw the scroll bar.
+     * Scrollbar is integrated in the view it's created.
      * To control the scroll amount, use {@link Scroller}
      *
      * @since 1.6
      */
-    @SuppressWarnings("unused")
     public class ScrollBar {
 
+        // scrollbar masks
         private static final int DRAW_TRACK        = 1;
         private static final int DRAW_THUMB        = 1 << 1;
         private static final int ALWAYS_DRAW_TRACK = 1 << 2;
@@ -980,29 +1130,41 @@ public class View {
 
         @Nullable
         private Drawable track;
-        @Nullable
+        //Nonnull
         private Drawable thumb;
 
         private int flags;
 
-        private int   thumbLength;
         private float thumbOffset;
+        private float scrollRange;
 
-        private float maxScroll;
-
-        //private double accDelta;
         private int left;
         private int top;
         private int right;
         private int bottom;
 
+        /**
+         * Alternative size if not specified in drawable
+         * {@link #setAlternativeSize(int)}
+         * {@link #getSize()}
+         */
+        private int size;
+
+        /**
+         * left, top, right, bottom padding
+         * {@link #setPadding(int, int, int, int)}
+         */
+        private int padding;
+
         private ScrollBar(boolean vertical) {
             if (vertical) {
                 flags |= VERTICAL;
             }
+            //TODO config for default size
+            size = 5;
         }
 
-        void draw(@Nonnull Canvas canvas) {
+        private void draw(@Nonnull Canvas canvas) {
             /*if (!barHovered && !isDragging && brightness > 0.5f) {
                 if (canvas.getDrawingTime() > startTime) {
                     float change = (startTime - canvas.getDrawingTime()) / 2000.0f;
@@ -1018,7 +1180,7 @@ public class View {
             if ((flags & DRAW_TRACK) != 0 && track != null) {
                 track.draw(canvas);
             }
-            if ((flags & DRAW_THUMB) != 0 && thumb != null) {
+            if ((flags & DRAW_THUMB) != 0) {
                 // due to gui scaling, we have to do with float rather than integer
                 canvas.save();
                 if (isVertical()) {
@@ -1031,39 +1193,45 @@ public class View {
             }
         }
 
+        /**
+         * Set scroll bar parameters, should be called from scroller's listener
+         *
+         * @param range  scroll range, max scroll amount
+         * @param offset scroll offset, current scroll amount
+         * @param extent visible range
+         */
         public void setParameters(float range, float offset, float extent) {
             boolean drawTrack;
             boolean drawThumb;
             boolean vertical = isVertical();
-            if (extent <= 0 || extent >= range) {
+            if (extent <= 0 || range <= 0) {
                 drawTrack = (flags & ALWAYS_DRAW_TRACK) != 0;
                 drawThumb = false;
             } else {
                 drawTrack = drawThumb = true;
             }
-            if (drawTrack && track != null) {
+            if (track != null) {
                 track.setBounds(left, top, right, bottom);
             }
 
-            maxScroll = range - extent;
-
-            int totalLength;
-            int thickness;
+            final int totalLength;
+            final int thickness;
             if (vertical) {
-                totalLength = bottom - top;
-                thickness = right - left;
+                totalLength = getHeight();
+                thickness = getWidth();
             } else {
-                totalLength = right - left;
-                thickness = bottom - top;
+                totalLength = getWidth();
+                thickness = getHeight();
             }
 
-            float preciseLength = totalLength * extent / range;
-            float preciseOffset = (totalLength - preciseLength) * offset / maxScroll;
+            float preciseLength = totalLength * extent / (range + extent);
+            float preciseOffset = (totalLength - preciseLength) * offset / range;
 
-            thumbLength = Math.round(Math.max(preciseLength, thickness << 1));
+            int thumbLength = Math.round(Math.max(preciseLength, thickness << 1));
             thumbOffset = Math.min(preciseOffset, totalLength - thumbLength);
+            scrollRange = range;
 
-            if (drawThumb && thumb != null) {
+            if (drawThumb) {
                 if (vertical) {
                     thumb.setBounds(left, top, right, top + thumbLength);
                 } else {
@@ -1086,7 +1254,7 @@ public class View {
             this.track = track;
         }
 
-        public void setThumbDrawable(@Nullable Drawable thumb) {
+        public void setThumbDrawable(@Nonnull Drawable thumb) {
             this.thumb = thumb;
         }
 
@@ -1094,6 +1262,10 @@ public class View {
             return (flags & ALWAYS_DRAW_TRACK) != 0;
         }
 
+        /**
+         * Indicates whether the vertical scrollbar track should always be drawn
+         * regardless of the extent.
+         */
         public void setAlwaysDrawTrack(boolean alwaysDrawTrack) {
             if (alwaysDrawTrack) {
                 flags |= ALWAYS_DRAW_TRACK;
@@ -1102,12 +1274,75 @@ public class View {
             }
         }
 
-        public float getMaxScroll() {
-            return maxScroll;
+        /**
+         * Set the scroll bar alternative size, if size is not specified
+         * in thumb or track drawable.
+         *
+         * @param alternativeSize alternative scrollbar thickness
+         */
+        public void setAlternativeSize(int alternativeSize) {
+            size = alternativeSize;
         }
 
-        boolean isVertical() {
+        /**
+         * Set the scroll bar padding to view frame
+         *
+         * @param left   left padding [0-255]
+         * @param top    top padding [0-255]
+         * @param right  right padding [0-255]
+         * @param bottom bottom padding [0-255]
+         */
+        public void setPadding(int left, int top, int right, int bottom) {
+            padding = left | top << 8 | right << 16 | bottom << 24;
+        }
+
+        public int getLeftPadding() {
+            return padding & 0xff;
+        }
+
+        public int getTopPadding() {
+            return (padding >> 8) & 0xff;
+        }
+
+        public int getRightPadding() {
+            return (padding >> 16) & 0xff;
+        }
+
+        public int getBottomPadding() {
+            return (padding >> 24) & 0xff;
+        }
+
+        private int getSize() {
+            int s;
+            if (isVertical()) {
+                if (track != null) {
+                    s = track.getIntrinsicWidth();
+                } else {
+                    s = thumb.getIntrinsicWidth();
+                }
+            } else {
+                if (track != null) {
+                    s = track.getIntrinsicHeight();
+                } else {
+                    s = thumb.getIntrinsicHeight();
+                }
+            }
+            if (s <= 0) {
+                return size;
+            }
+            return s;
+        }
+
+        private boolean isVertical() {
             return (flags & VERTICAL) != 0;
+        }
+
+        private int getThumbLength() {
+            if (isVertical()) {
+                return thumb.getHeight();
+            } else {
+                return thumb.getWidth();
+            }
         }
 
         /*public void draw(float currentTime) {
@@ -1159,14 +1394,26 @@ public class View {
             wake();
         }*/
 
-        /*@Override
-        public boolean updateMouseHover(double mouseX, double mouseY) {
-            if (visible) {
+        private void setFrame(int l, int t, int r, int b) {
+            left = l;
+            top = t;
+            right = r;
+            bottom = b;
+        }
 
-                return barHovered;
+        private boolean updateMouseHover(double mouseX, double mouseY) {
+            if (mouseX >= left && mouseX < right && mouseY >= top && mouseY < bottom) {
+                flags |= THUMB_HOVERED;
+                return true;
             }
+            //TODO drawable states
+            flags &= ~THUMB_HOVERED;
             return false;
-        }*/
+        }
+
+        private boolean isThumbHovered() {
+            return (flags & THUMB_HOVERED) != 0;
+        }
 
         /*@Override
         protected boolean onUpdateMouseHover(int mouseX, int mouseY) {
@@ -1200,33 +1447,41 @@ public class View {
             thumbHovered = false;
         }*/
 
-        boolean onMouseClicked(double mouseX, double mouseY, int mouseButton) {
+        private int getWidth() {
+            return right - left;
+        }
+
+        private int getHeight() {
+            return bottom - top;
+        }
+
+        private boolean onMouseClicked(double mouseX, double mouseY, int mouseButton) {
             /*if (thumbHovered) {
                 UIManager.INSTANCE.setDragging(this);
                 return true;
             }*/
             if (isVertical()) {
-                float start = getTop() + thumbOffset;
-                float end = start + thumbLength;
+                float start = top + thumbOffset;
+                float end = start + getThumbLength();
                 if (mouseY < start) {
                     float delta = toScrollDelta((float) (mouseY - start), true);
-                    onScrollBarClicked(Math.max(-60.0f, delta), true);
+                    onScrollBarClicked(true, Math.max(-60.0f, delta));
                     return true;
                 } else if (mouseY > end) {
                     float delta = toScrollDelta((float) (mouseY - end), true);
-                    onScrollBarClicked(Math.min(60.0f, delta), true);
+                    onScrollBarClicked(true, Math.min(60.0f, delta));
                     return true;
                 }
             } else {
-                float start = getLeft() + thumbOffset;
-                float end = start + thumbLength;
+                float start = left + thumbOffset;
+                float end = start + getThumbLength();
                 if (mouseX < start) {
                     float delta = toScrollDelta((float) (mouseX - start), false);
-                    onScrollBarClicked(Math.max(-60.0f, delta), false);
+                    onScrollBarClicked(false, Math.max(-60.0f, delta));
                     return true;
                 } else if (mouseX > end) {
                     float delta = toScrollDelta((float) (mouseX - end), false);
-                    onScrollBarClicked(Math.min(60.0f, delta), false);
+                    onScrollBarClicked(false, Math.min(60.0f, delta));
                     return true;
                 }
             }
@@ -1325,11 +1580,11 @@ public class View {
          * @return scroll delta
          */
         private float toScrollDelta(float delta, boolean vertical) {
-            delta *= maxScroll;
+            delta *= scrollRange;
             if (vertical) {
-                return delta / (getHeight() - thumbLength);
+                return delta / (getHeight() - getThumbLength());
             } else {
-                return delta / (getWidth() - thumbLength);
+                return delta / (getWidth() - getThumbLength());
             }
         }
     }

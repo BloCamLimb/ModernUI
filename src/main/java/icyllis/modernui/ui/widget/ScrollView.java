@@ -18,7 +18,6 @@
 
 package icyllis.modernui.ui.widget;
 
-import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.drawable.ScrollThumbDrawable;
 import icyllis.modernui.ui.layout.FrameLayout;
@@ -31,23 +30,14 @@ import javax.annotation.Nonnull;
  */
 public class ScrollView extends FrameLayout implements Scroller.IListener {
 
+    private int   scrollRange;
     private float scrollAmount;
 
-    /*private final Scroller  scroller  = new Scroller(this);
-    private final ScrollBar scrollBar = new ScrollBar(this);*/
-
-    private int scrollRange;
+    private final Scroller scroller = new Scroller(this);
 
     public ScrollView() {
-        /*scrollBar.setTrackDrawable(new Drawable() {
-            @Override
-            public void draw(@Nonnull Canvas canvas) {
-                canvas.moveTo(this);
-                canvas.setColor(16, 16, 16, 40);
-                canvas.drawRect(0, 0, getWidth(), getHeight());
-            }
-        });
-        scrollBar.setThumbDrawable(new ScrollThumbDrawable());*/
+        setVerticalScrollBarEnabled(true);
+        runVerticalScrollBar(bar -> bar.setThumbDrawable(new ScrollThumbDrawable()));
     }
 
     @Override
@@ -57,52 +47,51 @@ public class ScrollView extends FrameLayout implements Scroller.IListener {
 
     @Override
     protected void dispatchDraw(@Nonnull Canvas canvas) {
-        //scroller.update(canvas.getDrawingTime());
+        scroller.update(canvas.getDrawingTime());
         canvas.clipVertical(this);
         super.dispatchDraw(canvas);
         canvas.clipEnd();
-        //scrollBar.draw(canvas);
     }
 
     @Override
     protected void onLayout(boolean changed) {
         super.onLayout(changed);
-        //TODO use params
-        //scrollBar.layout(getRight() - 6, getTop() + 1, getRight() - 1, getBottom() - 1);
-        if (getChildCount() > 0) {
-            scrollRange = getChildAt(0).getHeight();
-        } else {
-            scrollRange = 0;
-        }
-        float maxScroll = scrollRange - getHeight();
-        // must specify max scroll amount
-        //scroller.setMaxValue(Math.max(maxScroll, 0));
-        // refresh gui scale factor
-        //scroller.scrollBy(0);
+        scrollRange = getScrollRange();
+        // we must specify max scroll amount
+        scroller.setMaxScroll(scrollRange);
         // scroller may not callback this method
-        //scrollBar.setParameters(scrollRange, scrollAmount, getHeight(), true);
+        runVerticalScrollBar(bar -> bar.setParameters(scrollRange, scrollAmount, getHeight()));
+    }
+
+    private int getScrollRange() {
+        int scrollRange = 0;
+        if (getChildCount() > 0) {
+            View child = getChildAt(0);
+            scrollRange = Math.max(0, child.getHeight() - getHeight());
+        }
+        return scrollRange;
     }
 
     @Override
     protected boolean onMouseScrolled(double mouseX, double mouseY, double amount) {
-        //scroller.scrollBy((int) Math.round(amount * -20.0f));
+        scroller.scrollBy(Math.round(amount * -20.0f));
         return true;
     }
 
-    /*@Override
-    public void onScrollBarClicked(ScrollBar scrollBar, float scrollDelta) {
+    @Override
+    protected void onScrollBarClicked(boolean vertical, float scrollDelta) {
         scroller.scrollBy(scrollDelta);
     }
 
     @Override
-    public void onScrollBarDragged(ScrollBar scrollBar, float scrollDelta) {
+    protected void onScrollBarDragged(boolean vertical, float scrollDelta) {
         scroller.scrollBy(scrollDelta);
         scroller.abortAnimation();
-    }*/
+    }
 
     @Override
-    public void onScrollAmountUpdated(Scroller scroller, float scrollAmount) {
-        this.scrollAmount = scrollAmount;
-        //scrollBar.setParameters(scrollRange, scrollAmount, getHeight(), true);
+    public void onScrollAmountUpdated(Scroller scroller, float amount) {
+        scrollAmount = amount;
+        runVerticalScrollBar(bar -> bar.setParameters(scrollRange, scrollAmount, getHeight()));
     }
 }

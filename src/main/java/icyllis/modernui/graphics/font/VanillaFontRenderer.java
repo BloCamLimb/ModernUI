@@ -28,7 +28,7 @@ import javax.annotation.Nonnull;
 @Deprecated
 public class VanillaFontRenderer implements IFontRenderer {
 
-    private static final VanillaFontRenderer INSTANCE = new VanillaFontRenderer();
+    //private static final VanillaFontRenderer INSTANCE = new VanillaFontRenderer();
 
     private final FontRenderer FONT;
 

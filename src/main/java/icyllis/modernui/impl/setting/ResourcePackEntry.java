@@ -181,17 +181,17 @@ public class ResourcePackEntry extends UniformScrollEntry {
         if (!resourcePack.getCompatibility().isCompatible()) {
             title = TextFormatting.DARK_RED + "(" + I18n.format("resourcePack.incompatible") + ") " + TextFormatting.RESET + title;
         }
-        float w = UITools.getStringWidth(title);
+        float w = UITools.getTextWidth(title);
         float cw = width - 39;
         if (w > cw) {
-            float kw = cw - UITools.getStringWidth("...");
-            title = UITools.trimStringToWidth(title, kw, false) + "...";
+            float kw = cw - UITools.getTextWidth("...");
+            title = UITools.trimTextToWidth(title, kw, false) + "...";
         }
 
     }
 
     public void updateDescription() {
-        this.desc = UITools.splitStringToWidth(resourcePack.getDescription().getFormattedText(), width - 39);
+        this.desc = UITools.splitTextToWidth(resourcePack.getDescription().getFormattedText(), width - 39);
     }
 
     public void bindTexture() {

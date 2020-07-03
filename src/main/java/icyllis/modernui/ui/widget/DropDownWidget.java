@@ -133,7 +133,7 @@ public class DropDownWidget extends Widget {
     public void updateValue(int index) {
         this.index = index;
         text = list.get(index);
-        float textLength = UITools.getStringWidth(text) + 3;
+        float textLength = UITools.getTextWidth(text) + 3;
         setWidth(textLength + 6 + 4);
         if (operation != null) {
             operation.accept(index);

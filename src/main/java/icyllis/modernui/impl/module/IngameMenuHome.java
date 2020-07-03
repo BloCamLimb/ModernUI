@@ -18,7 +18,7 @@
 
 package icyllis.modernui.impl.module;
 
-import icyllis.modernui.system.Registry;
+import icyllis.modernui.system.RegistryLib;
 import icyllis.modernui.ui.master.UIManager;
 import icyllis.modernui.ui.test.Align9D;
 import icyllis.modernui.ui.test.Locator;
@@ -64,7 +64,7 @@ public class IngameMenuHome extends ModuleGroup {
                         .build(this)
                         .buildCallback(() -> {
                             UIManager.INSTANCE.closeGuiScreen();
-                            playSound(Registry.BUTTON_CLICK_2);
+                            playSound(RegistryLib.BUTTON_CLICK_2);
                         })
         );
         consumer.accept(
@@ -75,7 +75,7 @@ public class IngameMenuHome extends ModuleGroup {
                                 () -> {
                             minecraft.displayGuiScreen(
                                     new AdvancementsScreen(Objects.requireNonNull(minecraft.player).connection.getAdvancementManager()));
-                            playSound(Registry.BUTTON_CLICK_2);
+                            playSound(RegistryLib.BUTTON_CLICK_2);
                                 }
                         )
         );
@@ -86,7 +86,7 @@ public class IngameMenuHome extends ModuleGroup {
                         .buildCallback(
                                 () -> {
                             switchChildModule(2);
-                            playSound(Registry.BUTTON_CLICK_2);
+                            playSound(RegistryLib.BUTTON_CLICK_2);
                                 }
                         )
         );
@@ -97,7 +97,7 @@ public class IngameMenuHome extends ModuleGroup {
                         .buildCallback(
                                 () -> {
                             minecraft.displayGuiScreen(new ModListScreen(UIManager.INSTANCE.getModernScreen()));
-                            playSound(Registry.BUTTON_CLICK_2);
+                            playSound(RegistryLib.BUTTON_CLICK_2);
                                 }
                         )
         ); // Forge's GUI is a little buggy, but we fixed that
@@ -108,7 +108,7 @@ public class IngameMenuHome extends ModuleGroup {
                         .buildCallback(
                                 () -> {
                             switchChildModule(4);
-                            playSound(Registry.BUTTON_CLICK_2);
+                            playSound(RegistryLib.BUTTON_CLICK_2);
                                 }
                         )
         );
@@ -161,7 +161,7 @@ public class IngameMenuHome extends ModuleGroup {
     }
 
     private void exitToTitle() {
-        playSound(Registry.BUTTON_CLICK_2);
+        playSound(RegistryLib.BUTTON_CLICK_2);
         IModule popup = new PopupConfirm(this::confirmExit)
                 .setConfirmTitle(I18n.format("gui.modernui.button.exit"))
                 .setDescription(I18n.format("gui.modernui.popup.exit"));

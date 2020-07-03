@@ -19,7 +19,7 @@
 package icyllis.modernui.impl.module;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.system.Integration;
+import icyllis.modernui.system.ModIntegration;
 import icyllis.modernui.ui.test.IModule;
 import icyllis.modernui.ui.test.Module;
 import icyllis.modernui.impl.setting.*;
@@ -120,7 +120,7 @@ public class SettingGeneral extends Module {
 
         list.add(SettingsManager.CHAT_HEIGHT_UNFOCUSED.apply(window));
 
-        if (Integration.optifineLoaded) {
+        if (ModIntegration.optifineLoaded) {
 
             list.add(SettingsManager.CHAT_BACKGROUND.apply(window));
 

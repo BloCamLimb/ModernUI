@@ -51,7 +51,7 @@ public class UITools {
      * @param string compute the width of this string
      * @return the width in pixels
      */
-    public static float getStringWidth(String string) {
+    public static float getTextWidth(String string) {
         return FONT_RENDERER.getStringWidth(string);
     }
 
@@ -63,12 +63,12 @@ public class UITools {
      * @param reverse if true, the returned string will also be reversed
      * @return the trimmed and optionally reversed string
      */
-    public static String trimStringToWidth(String str, float width, boolean reverse) {
+    public static String trimTextToWidth(String str, float width, boolean reverse) {
         return FONT_RENDERER.trimStringToWidth(str, width, reverse);
     }
 
     @Nonnull
-    public static String[] splitStringToWidth(@Nonnull String string, float width) {
+    public static String[] splitTextToWidth(@Nonnull String string, float width) {
         List<String> list = new ArrayList<>();
         String str;
         int currentIndex = 0;

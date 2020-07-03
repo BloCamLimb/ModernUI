@@ -20,17 +20,17 @@ package icyllis.modernui.graphics.renderer;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.graphics.font.*;
+import icyllis.modernui.graphics.font.IFontRenderer;
+import icyllis.modernui.graphics.font.ModernFontRenderer;
+import icyllis.modernui.graphics.font.TextAlign;
+import icyllis.modernui.graphics.font.TrueTypeRenderer;
 import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.graphics.shader.ShaderTools;
 import icyllis.modernui.graphics.shader.program.*;
 import icyllis.modernui.ui.master.View;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.ItemRenderer;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.WorldVertexBufferUploader;
+import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -45,14 +45,16 @@ import javax.annotation.Nonnull;
  * This avoided RenderType being used in gui, for better performance
  * (reduces GL callings, because render states changed little)
  * <p>
- * The font renderer uses another system, which has two parts, one for ModernUI's GUI, and
+ * The font renderer uses another system, which has two parts, one for ModernUI's UI, and
  * the global one is using RenderType, make ModernUI's font renderer work everywhere,
  * because it's not always called in gui, likes non-ModernUI GUI, TileEntityRenderer
  * or in world renderer, that also need matrix transformation to be compatible with vanilla
  * <p>
- * {@link net.minecraft.client.renderer.RenderType}
- * {@link TextRenderType}
- * {@link icyllis.modernui.graphics.font.TrueTypeRenderer}
+ * You shouldn't create instances, the canvas will be given in draw method
+ *
+ * @see net.minecraft.client.renderer.RenderType
+ * @see icyllis.modernui.graphics.font.TextRenderType
+ * @see icyllis.modernui.graphics.font.TrueTypeRenderer
  */
 @SuppressWarnings("unused")
 //TODO use int RGBA color rather than float
@@ -61,8 +63,7 @@ public class Canvas {
     /**
      * Instances
      */
-    private final MainWindow mainWindow;
-
+    private final MainWindow   mainWindow;
     private final ItemRenderer itemRenderer;
 
     private final IFontRenderer fontRenderer = TrueTypeRenderer.getInstance();
@@ -89,10 +90,13 @@ public class Canvas {
     private int a = 255;
 
 
+    /**
+     * Depth
+     */
     private double z = 0.0D;
 
     /**
-     * Drawing location offset
+     * Drawing location offset, view or drawable
      */
     private int drawingX = 0;
     private int drawingY = 0;
@@ -121,7 +125,7 @@ public class Canvas {
     }
 
     /**
-     * Set current paint color
+     * Set current paint color with alpha
      *
      * @param r red [0,255]
      * @param g green [0,255]
@@ -136,7 +140,7 @@ public class Canvas {
     }
 
     /**
-     * Set current paint color
+     * Set current paint color, keep previous alpha
      *
      * @param r red [0,1]
      * @param g green [0,1]
@@ -148,13 +152,23 @@ public class Canvas {
         this.b = b;
     }
 
-    public void setRGBA(int rgba) {
+    /**
+     * Set current paint color with alpha
+     *
+     * @param rgba like 0x80404040 (=R64,G64,B64,A128)
+     */
+    public void setARGB(int rgba) {
         a = rgba >> 24 & 0xff;
         r = rgba >> 16 & 0xff;
         g = rgba >> 8 & 0xff;
         b = rgba & 0xff;
     }
 
+    /**
+     * Set current paint color, keep previous alpha
+     *
+     * @param rgb like 0x404040 (=R64,G64,B64)
+     */
     public void setRGB(int rgb) {
         r = rgb >> 16 & 0xff;
         g = rgb >> 8 & 0xff;
@@ -162,7 +176,7 @@ public class Canvas {
     }
 
     /**
-     * Set current paint alpha
+     * Set current paint alpha in float form
      *
      * @param a alpha [0,1]
      */
@@ -171,7 +185,7 @@ public class Canvas {
     }
 
     /**
-     * Set current paint alpha
+     * Set current paint alpha in integer form
      *
      * @param a alpha [0,255]
      */
@@ -193,10 +207,13 @@ public class Canvas {
     }
 
     /**
-     * Reset color to default color
+     * Reset color to white color and completely opaque.
      */
     public void resetColor() {
-        setColor(255, 255, 255, 255);
+        r = 255;
+        g = 255;
+        b = 255;
+        a = 255;
     }
 
     /**
@@ -251,21 +268,25 @@ public class Canvas {
     }
 
     /**
-     * Set text align type
+     * Set current text align, left, center or right
      *
      * @param align align
      */
     public void setTextAlign(TextAlign align) {
-        this.textAlign = align;
+        textAlign = align;
     }
 
     /**
-     * Draw text on screen, text formatting and bidi are supported
+     * Draw text on screen, text formatting and bidi are supported.
+     * This method returns the text width, or you can get width by
+     * {@link icyllis.modernui.ui.master.UITools#getTextWidth(String)}
      *
      * @param text formatted string
      * @param x    x pos
      * @param y    y pos
-     * @return text advance (text width)
+     * @return text advance (text width), different from the vanilla method,
+     * which returns x with text advance, see
+     * @see ModernFontRenderer#drawStringInternal(String, float, float, int, boolean, IRenderTypeBuffer, Matrix4f, int)
      */
     public float drawText(String text, float x, float y) {
         return fontRenderer.drawString(text, x + drawingX, y + drawingY, r, g, b, a, textAlign);
@@ -317,6 +338,12 @@ public class Canvas {
         featheredRect.setThickness(0.25f);
 
         featheredRect.setInnerRect(left - thickness + 0.25f, top - thickness + 0.25f, right - 0.25f, top - 0.25f);*/
+
+        final int r = this.r;
+        final int g = this.g;
+        final int b = this.b;
+        final int a = this.a;
+        final double z = this.z;
 
         bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
         bufferBuilder.pos(left - thickness, top, z).color(r, g, b, a).endVertex();
@@ -375,6 +402,12 @@ public class Canvas {
         top += drawingY;
         right += drawingX;
         bottom += drawingY;
+
+        final int r = this.r;
+        final int g = this.g;
+        final int b = this.b;
+        final int a = this.a;
+        final double z = this.z;
 
         bufferBuilder.begin(GL11.GL_LINE_LOOP, DefaultVertexFormats.POSITION_COLOR);
         bufferBuilder.pos(left, bottom - bevel, z).color(r, g, b, a).endVertex();
@@ -561,7 +594,7 @@ public class Canvas {
 
     /**
      * Draw item default instance, without any NBT data
-     * Size: 16 * 16 (* GuiScale)
+     * Size on screen: 16 * 16 * GuiScale
      *
      * @param item item
      * @param x    x pos
@@ -577,7 +610,7 @@ public class Canvas {
     /**
      * Draw item stack with NBT
      *
-     * @param stack item stack
+     * @param stack item stack to draw
      * @param x     x pos
      * @param y     y pos
      */
@@ -589,14 +622,15 @@ public class Canvas {
     }
 
     /**
-     * Draw item stack with NBT and their damage, amount
+     * Draw item stack with NBT and their damage bar, amount etc
      *
-     * @param stack item stack
+     * @param stack item stack to draw
      * @param x     x pos
      * @param y     y pos
      */
     public void drawItemStackWithOverlays(@Nonnull ItemStack stack, float x, float y) {
         itemRenderer.renderItemAndEffectIntoGUI(stack, (int) (x + drawingX), (int) (y + drawingY));
+        // force to use ModernUI font renderer
         itemRenderer.renderItemOverlays(ModernFontRenderer.getInstance(), stack, (int) (x + drawingX), (int) (y + drawingY));
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -650,22 +684,22 @@ public class Canvas {
      * @param py pivot y pos
      */
     public void scale(float sx, float sy, float px, float py) {
-        scale(sx, sy);
-        float kx;
-        float ky;
+        RenderSystem.scalef(sx, sy, 1.0f);
+        float dx;
+        float dy;
         if (sx < 1) {
-            kx = 1.0f / sx - 1.0f;
+            dx = 1.0f / sx - 1.0f;
         } else {
-            kx = sx - 1.0f;
+            dx = sx - 1.0f;
         }
-        kx *= px;
+        dx *= px;
         if (sy < 1) {
-            ky = 1.0f / sy - 1.0f;
+            dy = 1.0f / sy - 1.0f;
         } else {
-            ky = sy - 1.0f;
+            dy = sy - 1.0f;
         }
-        ky *= py;
-        translate(kx, ky);
+        dy *= py;
+        RenderSystem.translatef(dx, dy, 0.0f);
     }
 
     public void clipStart(@Nonnull View view) {

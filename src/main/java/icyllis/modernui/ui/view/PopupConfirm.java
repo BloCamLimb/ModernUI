@@ -101,7 +101,7 @@ public class PopupConfirm extends Module {
     }
 
     public PopupConfirm setDescription(String description) {
-        bg.setDesc(UITools.splitStringToWidth(description, 164));
+        bg.setDesc(UITools.splitTextToWidth(description, 164));
         return this;
     }
 

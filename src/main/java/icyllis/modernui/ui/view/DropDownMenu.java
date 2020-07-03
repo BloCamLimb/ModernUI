@@ -66,7 +66,7 @@ public class DropDownMenu extends Widget {
         super(host, builder);
         this.list = builder.list;
         this.selected = builder.index;
-        this.width = this.list.stream().distinct().mapToInt(s -> (int) Math.ceil(UITools.getStringWidth(s))).max().orElse(0) + 7;
+        this.width = this.list.stream().distinct().mapToInt(s -> (int) Math.ceil(UITools.getTextWidth(s))).max().orElse(0) + 7;
         this.height = this.list.size() * ENTRY_HEIGHT;
         this.space = 16;
         new Animation(200)
