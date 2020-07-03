@@ -19,7 +19,7 @@
 package icyllis.modernui.ui.master;
 
 /**
- * Defines a view that can act as a parent of a view
+ * Defines an object that can act as a parent of a view
  */
 public interface IViewParent {
 

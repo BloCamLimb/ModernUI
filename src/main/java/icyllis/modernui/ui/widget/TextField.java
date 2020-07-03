@@ -22,7 +22,6 @@ import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.master.UITools;
 import icyllis.modernui.graphics.font.TextAlign;
 import icyllis.modernui.ui.test.Align9D;
-import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.ui.test.Locator;
 import icyllis.modernui.ui.test.IHost;
 import icyllis.modernui.ui.test.IKeyboardListener;
@@ -135,7 +134,7 @@ public class TextField extends Widget implements IKeyboardListener {
 
         int ds = this.cursorPosition - this.lineScrollOffset;
         int de = this.selectionEnd - this.lineScrollOffset;
-        String s = UITools.trimStringToWidth(disText.substring(this.lineScrollOffset), getVisibleWidth(), false);
+        String s = UITools.trimTextToWidth(disText.substring(this.lineScrollOffset), getVisibleWidth(), false);
         boolean b = ds >= 0 && ds <= s.length();
 
         float lx = x1 + leftMargin;
@@ -151,7 +150,7 @@ public class TextField extends Widget implements IKeyboardListener {
             String s1 = b ? s.substring(0, ds) : s;
             //canvas.setColor(0.88f, 0.88f, 0.88f, 1);
             canvas.drawText(s1, lx, ty);
-            float c = UITools.getStringWidth(s1);
+            float c = UITools.getTextWidth(s1);
             cx += c;
         }
 
@@ -162,7 +161,7 @@ public class TextField extends Widget implements IKeyboardListener {
 
         // draw selection box
         if (de != ds) {
-            float l1 = lx + UITools.getStringWidth(s.substring(0, de));
+            float l1 = lx + UITools.getTextWidth(s.substring(0, de));
             //canvas.setColor(Color3i.BLUE_C, 0.5f);
             canvas.drawRect(kx, ty - 1, l1, ty + 10);
         }
@@ -287,10 +286,10 @@ public class TextField extends Widget implements IKeyboardListener {
             this.lineScrollOffset = i;
         }
 
-        String s = UITools.trimStringToWidth(this.disText.substring(this.lineScrollOffset), getVisibleWidth(), false);
+        String s = UITools.trimTextToWidth(this.disText.substring(this.lineScrollOffset), getVisibleWidth(), false);
         int k = s.length() + this.lineScrollOffset;
         if (this.selectionEnd == this.lineScrollOffset) {
-            this.lineScrollOffset -= UITools.trimStringToWidth(this.disText, getVisibleWidth(), true).length();
+            this.lineScrollOffset -= UITools.trimTextToWidth(this.disText, getVisibleWidth(), true).length();
         }
 
         if (this.selectionEnd > k) {
@@ -342,10 +341,10 @@ public class TextField extends Widget implements IKeyboardListener {
         }
         if (mouseX >= x1 + leftMargin && mouseX <= x2 - rightMargin) {
             float i = (float) (mouseX - x1 - leftMargin);
-            String s = UITools.trimStringToWidth(this.disText.substring(this.lineScrollOffset), getVisibleWidth(), false);
+            String s = UITools.trimTextToWidth(this.disText.substring(this.lineScrollOffset), getVisibleWidth(), false);
             shiftDown = Screen.hasShiftDown();
             // Fixed vanilla's bug
-            this.setCursorPos(UITools.trimStringToWidth(s, i, false).length() + this.lineScrollOffset);
+            this.setCursorPos(UITools.trimTextToWidth(s, i, false).length() + this.lineScrollOffset);
         }
         return true;
     }
@@ -614,7 +613,7 @@ public class TextField extends Widget implements IKeyboardListener {
         public Frame(TextField instance, @Nullable String title, int color) {
             super(instance);
             this.title = title;
-            this.titleLength = UITools.getStringWidth(title);
+            this.titleLength = UITools.getTextWidth(title);
             setColor(color);
         }
 

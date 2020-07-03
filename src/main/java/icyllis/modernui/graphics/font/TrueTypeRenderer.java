@@ -78,7 +78,7 @@ public class TrueTypeRenderer implements IFontRenderer {
     private TrueTypeRenderer() {
         cache = new StringCache();
         //TODO config
-        cache.setDefaultFont(14.0f);
+        cache.setDefaultFont(16.0f);
 
         ModernFontRenderer.INSTANCE = new ModernFontRenderer(this);
 

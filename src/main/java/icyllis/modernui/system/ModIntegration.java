@@ -24,7 +24,7 @@ import net.optifine.shaders.gui.GuiShaders;
 
 import java.lang.reflect.InvocationTargetException;
 
-public class Integration {
+public class ModIntegration {
 
     public static boolean optifineLoaded = false;
 

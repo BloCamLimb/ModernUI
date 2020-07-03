@@ -66,7 +66,7 @@ public class ItemStatsEntry extends UniformScrollEntry {
         if (drawTooltip) {
             //canvas.setColor(0.5f, 0.5f, 0.5f, 0.25f);
             canvas.drawRect(x1 + 1, y1 + 1, x1 + 19, y2 - 1);
-            float l = UITools.getStringWidth(itemName);
+            float l = UITools.getTextWidth(itemName);
             //canvas.setColor(0, 0, 0, 0.5f);
             canvas.drawRect(x1 + 22, y1 + 3, x1 + 28 + l, y2 - 3);
             canvas.setTextAlign(TextAlign.LEFT);

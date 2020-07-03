@@ -55,7 +55,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * Modern UI's UI system service, almost everything is here
+ * Modern UI - UI system service, almost everything is here.
+ * Use this correctly, or...
  */
 @SuppressWarnings("unused")
 @OnlyIn(Dist.CLIENT)
@@ -109,11 +110,15 @@ public enum UIManager implements IViewParent {
 
     // the canvas to draw things shared in all views and drawables
     // lazy loading because this class is loaded before GL initialization
+    // will be init when Minecraft finished loading, and open MainMenuScreen
+    // also init ttf font renderer when loaded
     private Canvas canvas;
 
-    // only post events to focused views
+    // the most child hovered view, render at the top of other hovered ancestor views
     @Nullable
     private View mHovered;
+
+    // focused view
     @Nullable
     private View mDragging;
     @Nullable
@@ -367,7 +372,7 @@ public enum UIManager implements IViewParent {
                     lastDClickTick = ticks;
                 }
             }
-            if (mHovered.onMouseClicked(viewMX, viewMY, mouseButton)) {
+            if (mHovered.mouseClicked(viewMX, viewMY, mouseButton)) {
                 return true;
             }
             parent = mHovered.getParent();
@@ -375,7 +380,7 @@ public enum UIManager implements IViewParent {
                 view = (View) parent;
                 viewMX -= parent.getScrollX();
                 viewMY -= parent.getScrollY();
-                if (view.onMouseClicked(viewMX, viewMY, mouseButton)) {
+                if (view.mouseClicked(viewMX, viewMY, mouseButton)) {
                     return true;
                 }
                 parent = parent.getParent();
@@ -445,7 +450,7 @@ public enum UIManager implements IViewParent {
                 view = (View) parent;
                 viewMX -= parent.getScrollX();
                 viewMY -= parent.getScrollY();
-                if (((View) parent).onMouseScrolled(mouseX, mouseY, amount)) {
+                if (view.onMouseScrolled(mouseX, mouseY, amount)) {
                     return true;
                 }
                 parent = parent.getParent();
@@ -810,6 +815,11 @@ public enum UIManager implements IViewParent {
         layoutRequested = true;
     }
 
+    /**
+     * Internal method, to tell the manager the most child view hovered
+     *
+     * @param view the most child view hovered
+     */
     void setHovered(@Nullable View view) {
         mHovered = view;
     }

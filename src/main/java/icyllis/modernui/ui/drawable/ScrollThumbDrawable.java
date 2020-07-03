@@ -31,4 +31,14 @@ public class ScrollThumbDrawable extends Drawable {
         canvas.setColor(128, 128, 128, 128);
         canvas.drawRect(0, 0, getWidth(), getHeight());
     }
+
+    @Override
+    public int getIntrinsicWidth() {
+        return 5;
+    }
+
+    @Override
+    public int getIntrinsicHeight() {
+        return 5;
+    }
 }

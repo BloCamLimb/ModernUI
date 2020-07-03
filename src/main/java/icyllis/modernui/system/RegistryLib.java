@@ -39,7 +39,7 @@ import net.minecraftforge.registries.IForgeRegistry;
 import javax.annotation.Nonnull;
 
 @Mod.EventBusSubscriber(modid = ModernUI.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
-public class Registry {
+public class RegistryLib {
 
     /**
      * Sounds
@@ -77,7 +77,7 @@ public class Registry {
     @SubscribeEvent
     static void setupClient(@Nonnull FMLClientSetupEvent event) {
         SettingsManager.INSTANCE.buildAllSettings();
-        UIManager.INSTANCE.registerContainerScreen(Registry.TEST_CONTAINER, c -> new TestFragment());
+        UIManager.INSTANCE.registerContainerScreen(RegistryLib.TEST_CONTAINER, c -> new TestFragment());
     }
 
     @Nonnull

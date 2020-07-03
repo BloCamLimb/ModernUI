@@ -124,6 +124,6 @@ public class OptiFineSettingEntry extends SettingEntry {
         } catch (IllegalAccessException | InvocationTargetException e) {
             e.printStackTrace();
         }
-        textLength = UITools.getStringWidth(optionText) + 3;
+        textLength = UITools.getTextWidth(optionText) + 3;
     }
 }

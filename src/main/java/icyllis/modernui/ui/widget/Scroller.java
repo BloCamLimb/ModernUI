@@ -74,9 +74,9 @@ public class Scroller {
     /**
      * Set max value can scroll
      *
-     * @param max max value
+     * @param max scroll range
      */
-    public void setMaxValue(float max) {
+    public void setMaxScroll(float max) {
         maxValue = max;
     }
 
@@ -164,7 +164,7 @@ public class Scroller {
         // fast scroll
         dis = startTime - lastTime;
         if (dis < 200.0) {
-            duration *= (dis / 400.0) + 0.5;
+            duration *= (dis / 400.0f) + 0.5f;
         }
     }
 
@@ -204,9 +204,9 @@ public class Scroller {
         /**
          * Apply the scroll value to listener
          *
-         * @param scroller     scroller to call the method
-         * @param scrollAmount current scroll amount
+         * @param scroller scroller to call the method
+         * @param amount   current scroll amount
          */
-        void onScrollAmountUpdated(Scroller scroller, float scrollAmount);
+        void onScrollAmountUpdated(Scroller scroller, float amount);
     }
 }

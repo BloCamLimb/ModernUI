@@ -63,7 +63,7 @@ public class DropdownSettingEntry extends SettingEntry {
         this.optionNames = optionNames;
         this.saveOption = saveOption;
         optionText = optionNames.get(originalIndex);
-        textLength = UITools.getStringWidth(optionText) + 3;
+        textLength = UITools.getTextWidth(optionText) + 3;
 
         frameAnimation = new Animation(100)
                 .applyTo(new Applier(0, 0.25f, () -> frameAlpha, this::setFrameAlpha))
@@ -202,7 +202,7 @@ public class DropdownSettingEntry extends SettingEntry {
     protected void updateValue(int index) {
         currentOptionIndex = index;
         optionText = optionNames.get(index);
-        textLength = UITools.getStringWidth(optionText) + 3;
+        textLength = UITools.getTextWidth(optionText) + 3;
     }
 
     public void saveOption() {

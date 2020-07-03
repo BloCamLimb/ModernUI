@@ -47,7 +47,7 @@ public class ModernUI {
         checkJava();
 
         Config.init();
-        Integration.init();
+        ModIntegration.init();
         StorageManager.init();
 
         if (FMLEnvironment.dist.isClient()) {
