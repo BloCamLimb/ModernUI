@@ -20,7 +20,6 @@ package icyllis.modernui.system;
 
 import com.google.common.collect.Lists;
 import icyllis.modernui.impl.setting.*;
-import icyllis.modernui.impl.setting.SettingScrollWindow;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.NewChatGui;

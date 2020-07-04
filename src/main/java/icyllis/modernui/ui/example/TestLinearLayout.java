@@ -40,7 +40,7 @@ public class TestLinearLayout extends LinearLayout {
             public void draw(@Nonnull Canvas canvas) {
                 canvas.moveTo(this);
                 canvas.setColor(192, 192, 192, 128);
-                canvas.drawRect(0, 0, getWidth(), getHeight());
+                canvas.drawLine(0, 0, getWidth(), 0);
             }
 
             @Override
@@ -49,10 +49,11 @@ public class TestLinearLayout extends LinearLayout {
             }
         });
         setShowDividers(SHOW_DIVIDER_MIDDLE | SHOW_DIVIDER_END);
-        setDividerPadding(2);
-        addView(new CView(), new LinearLayout.LayoutParams(60, 20));
-        addView(new CView(), new LinearLayout.LayoutParams(60, 20));
-        addView(new CView(), new LinearLayout.LayoutParams(60, 20));
+        setDividerPadding(8);
+        LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(100, 18);
+        for (int i = 0; i < 40; i++) {
+            addView(new CView(), p);
+        }
         addView(new DView(ITimeInterpolator.DECELERATE, 0), new LinearLayout.LayoutParams(60, 20));
         //addView(new DView(ITimeInterpolator.VISCOUS_FLUID, 30), new LinearLayout.LayoutParams(60, 20));
     }
@@ -67,11 +68,13 @@ public class TestLinearLayout extends LinearLayout {
 
     private static class CView extends View {
 
+        private final String str = String.valueOf(hashCode());
+
         @Override
         protected void onDraw(@Nonnull Canvas canvas) {
             canvas.moveTo(this);
             canvas.resetColor();
-            canvas.drawText("Child", 0, 4);
+            canvas.drawText(str, 0, 4);
         }
     }
 
@@ -93,17 +96,17 @@ public class TestLinearLayout extends LinearLayout {
         @Override
         protected void onDraw(@Nonnull Canvas canvas) {
             canvas.moveTo(this);
-            canvas.drawText("Go My Way", offset, offsetY);
+            canvas.drawText("Go My Way", offset, offsetY + 4);
         }
 
         @Override
         protected void tick(int ticks) {
             super.tick(ticks);
-            if (ticks % 40 == 0) {
+            /*if (ticks % 40 == 0) {
                 animation.invert();
             } else if (ticks % 20 == 0) {
                 animation.start();
-            }
+            }*/
         }
     }
 }

@@ -344,7 +344,7 @@ public class StringCache {
         digitGlyphs[FormattingCode.PLAIN] = getOrCacheString("0123456789").glyphs;
         digitGlyphs[FormattingCode.BOLD] = getOrCacheString(TextFormatting.BOLD + "0123456789").glyphs;
         digitGlyphs[FormattingCode.ITALIC] = getOrCacheString(TextFormatting.ITALIC + "0123456789").glyphs;
-        digitGlyphs[FormattingCode.BOLD | FormattingCode.ITALIC] = getOrCacheString(new StringTextComponent("0123456789").setStyle(new Style().setBold(true).setItalic(true)).getFormattedText()).glyphs;
+        digitGlyphs[FormattingCode.BOLD | FormattingCode.ITALIC] = getOrCacheString(TextFormatting.BOLD.toString() + TextFormatting.ITALIC + "0123456789").glyphs;
         digitGlyphsReady = true;
     }
 

@@ -20,7 +20,6 @@ package icyllis.modernui.ui.master;
 
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.ui.layout.MeasureSpec;
 import icyllis.modernui.ui.widget.Scroller;
 import net.minecraft.client.gui.screen.Screen;
@@ -175,7 +174,7 @@ public class View {
      *
      * @param canvas canvas to draw content
      */
-    final void draw(@Nonnull Canvas canvas) {
+    public void draw(@Nonnull Canvas canvas) {
         if ((viewFlags & VISIBILITY_MASK) == 0) {
 
             onDraw(canvas);
@@ -283,9 +282,9 @@ public class View {
     /**
      * Assign the rect area of this view, called from layout()
      *
-     * @param l   left position, relative to game window
-     * @param t    top position, relative to game window
-     * @param r  right position, relative to game window
+     * @param l left position, relative to game window
+     * @param t top position, relative to game window
+     * @param r right position, relative to game window
      * @param b bottom position, relative to game window
      * @return whether the rect area of this view was changed
      */
@@ -1403,16 +1402,20 @@ public class View {
 
         private boolean updateMouseHover(double mouseX, double mouseY) {
             if (mouseX >= left && mouseX < right && mouseY >= top && mouseY < bottom) {
-                flags |= THUMB_HOVERED;
+                flags |= TRACK_HOVERED;
                 return true;
             }
             //TODO drawable states
-            flags &= ~THUMB_HOVERED;
+            flags &= ~TRACK_HOVERED;
             return false;
         }
 
         private boolean isThumbHovered() {
             return (flags & THUMB_HOVERED) != 0;
+        }
+
+        private boolean isTrackHovered() {
+            return (flags & TRACK_HOVERED) != 0;
         }
 
         /*@Override
@@ -1460,29 +1463,31 @@ public class View {
                 UIManager.INSTANCE.setDragging(this);
                 return true;
             }*/
-            if (isVertical()) {
-                float start = top + thumbOffset;
-                float end = start + getThumbLength();
-                if (mouseY < start) {
-                    float delta = toScrollDelta((float) (mouseY - start), true);
-                    onScrollBarClicked(true, Math.max(-60.0f, delta));
-                    return true;
-                } else if (mouseY > end) {
-                    float delta = toScrollDelta((float) (mouseY - end), true);
-                    onScrollBarClicked(true, Math.min(60.0f, delta));
-                    return true;
-                }
-            } else {
-                float start = left + thumbOffset;
-                float end = start + getThumbLength();
-                if (mouseX < start) {
-                    float delta = toScrollDelta((float) (mouseX - start), false);
-                    onScrollBarClicked(false, Math.max(-60.0f, delta));
-                    return true;
-                } else if (mouseX > end) {
-                    float delta = toScrollDelta((float) (mouseX - end), false);
-                    onScrollBarClicked(false, Math.min(60.0f, delta));
-                    return true;
+            if (isTrackHovered()) {
+                if (isVertical()) {
+                    float start = top + thumbOffset;
+                    float end = start + getThumbLength();
+                    if (mouseY < start) {
+                        float delta = toScrollDelta((float) (mouseY - start - 1), true);
+                        onScrollBarClicked(true, Math.max(-60.0f, delta));
+                        return true;
+                    } else if (mouseY > end) {
+                        float delta = toScrollDelta((float) (mouseY - end + 1), true);
+                        onScrollBarClicked(true, Math.min(60.0f, delta));
+                        return true;
+                    }
+                } else {
+                    float start = left + thumbOffset;
+                    float end = start + getThumbLength();
+                    if (mouseX < start) {
+                        float delta = toScrollDelta((float) (mouseX - start - 1), false);
+                        onScrollBarClicked(false, Math.max(-60.0f, delta));
+                        return true;
+                    } else if (mouseX > end) {
+                        float delta = toScrollDelta((float) (mouseX - end + 1), false);
+                        onScrollBarClicked(false, Math.min(60.0f, delta));
+                        return true;
+                    }
                 }
             }
             return false;

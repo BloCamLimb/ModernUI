@@ -45,16 +45,8 @@ public class Scroller {
     @Nonnull
     private final IListener listener;
 
-    @Nonnull
-    private final ITimeInterpolator interpolator;
-
     public Scroller(@Nonnull IListener listener) {
-        this(listener, ITimeInterpolator.VISCOUS_FLUID);
-    }
-
-    public Scroller(@Nonnull IListener listener, @Nonnull ITimeInterpolator interpolator) {
         this.listener = listener;
-        this.interpolator = interpolator;
     }
 
     /**
@@ -65,7 +57,7 @@ public class Scroller {
     public void update(int time) {
         if (currValue != targetValue) {
             float p = Math.min((float) (time - startTime) / duration, 1);
-            p = interpolator.getInterpolation(p);
+            p = ITimeInterpolator.SINE.getInterpolation(p);
             currValue = MathHelper.lerp(p, startValue, targetValue);
             listener.onScrollAmountUpdated(this, currValue);
         }
@@ -137,7 +129,7 @@ public class Scroller {
         startValue = currValue;
         float scale = UIManager.INSTANCE.getGuiScale();
         float endX = MathHelper.clamp(target, 0, maxValue) * scale;
-        targetValue = Math.round(endX) / scale;
+        targetValue = (int) endX / scale;
         this.duration = duration;
     }
 
@@ -152,19 +144,19 @@ public class Scroller {
         startValue = currValue;
         float scale = UIManager.INSTANCE.getGuiScale();
         float end = MathHelper.clamp(target, 0, maxValue) * scale;
-        targetValue = Math.round(end) / scale;
+        targetValue = (int) end / scale;
 
         // smooth
         float dis = Math.abs(targetValue - currValue);
         if (dis > 60.0) {
-            duration = (int) (Math.sqrt(dis / 60.0) * 300.0);
+            duration = (int) (Math.sqrt(dis / 60.0) * 200.0);
         } else {
-            duration = 300;
+            duration = 200;
         }
         // fast scroll
         dis = startTime - lastTime;
-        if (dis < 200.0) {
-            duration *= (dis / 400.0f) + 0.5f;
+        if (dis < 150.0) {
+            duration *= (dis / 300.0f) + 0.5f;
         }
     }
 
@@ -177,25 +169,8 @@ public class Scroller {
         listener.onScrollAmountUpdated(this, currValue);
     }
 
-    /**
-     * Set target value dynamically
-     *
-     * @param target tart value
-     * @see #extendDuration(int)
-     */
-    public void setTargetValue(float target) {
-        targetValue = target;
-    }
-
-    /**
-     * Extend the scroll animation. This allows a running animation to scroll
-     * further and longer, when used with {@link #setTargetValue(float)}.
-     *
-     * @param extend additional time to scroll in milliseconds
-     */
-    public void extendDuration(int extend) {
-        int passed = UIManager.INSTANCE.getDrawingTime() - startTime;
-        duration = passed + extend;
+    public boolean isScrolling() {
+        return currValue != targetValue;
     }
 
     @FunctionalInterface
