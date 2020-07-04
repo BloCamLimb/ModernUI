@@ -26,7 +26,7 @@ import icyllis.modernui.impl.setting.SettingEntry;
 import icyllis.modernui.impl.setting.SettingScrollWindow;
 import icyllis.modernui.system.SettingsManager;
 import net.minecraft.client.resources.I18n;
-import net.minecraft.client.settings.AbstractOption;
+import net.minecraft.client.AbstractOption;
 import net.optifine.config.IteratableOptionOF;
 import net.optifine.gui.GuiAnimationSettingsOF;
 import net.optifine.gui.GuiDetailSettingsOF;

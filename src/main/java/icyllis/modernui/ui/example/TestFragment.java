@@ -34,9 +34,9 @@ public class TestFragment extends Fragment {
     public View createView() {
         ScrollView scrollView = new ScrollView();
         // main view can use FrameLayout params
-        scrollView.setLayoutParams(new FrameLayout.LayoutParams(100, 100, Gravity.CENTER));
+        scrollView.setLayoutParams(new FrameLayout.LayoutParams(140, 140, Gravity.CENTER));
         View content = new TestLinearLayout();
-        content.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 200));
+        content.setLayoutParams(new FrameLayout.LayoutParams(140, 800));
         scrollView.addView(content);
         return scrollView;
     }

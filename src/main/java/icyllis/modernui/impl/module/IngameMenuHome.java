@@ -18,18 +18,20 @@
 
 package icyllis.modernui.impl.module;
 
+import icyllis.modernui.impl.background.MenuHomeBG;
 import icyllis.modernui.system.RegistryLib;
 import icyllis.modernui.ui.master.UIManager;
 import icyllis.modernui.ui.test.Align9D;
-import icyllis.modernui.ui.test.Locator;
-import icyllis.modernui.impl.background.MenuHomeBG;
 import icyllis.modernui.ui.test.IModule;
+import icyllis.modernui.ui.test.Locator;
 import icyllis.modernui.ui.test.ModuleGroup;
 import icyllis.modernui.ui.view.ConfirmCallback;
 import icyllis.modernui.ui.view.PopupConfirm;
 import icyllis.modernui.ui.widget.MenuButton;
 import net.minecraft.client.gui.advancements.AdvancementsScreen;
-import net.minecraft.client.gui.screen.*;
+import net.minecraft.client.gui.screen.DirtMessageScreen;
+import net.minecraft.client.gui.screen.MainMenuScreen;
+import net.minecraft.client.gui.screen.MultiplayerScreen;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.realms.RealmsBridge;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -184,8 +186,8 @@ public class IngameMenuHome extends ModuleGroup {
         if (singleplayer) {
             minecraft.displayGuiScreen(new MainMenuScreen());
         } else if (realmsConnected) {
-            RealmsBridge realmsbridge = new RealmsBridge();
-            realmsbridge.switchToRealms(new MainMenuScreen());
+            RealmsBridge realmsBridge = new RealmsBridge();
+            realmsBridge.switchToRealms(new MainMenuScreen());
         } else {
             minecraft.displayGuiScreen(new MultiplayerScreen(new MainMenuScreen()));
         }

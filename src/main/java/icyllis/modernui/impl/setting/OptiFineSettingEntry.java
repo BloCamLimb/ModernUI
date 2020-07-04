@@ -25,7 +25,7 @@ import icyllis.modernui.graphics.font.TextAlign;
 import icyllis.modernui.system.Tools;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.settings.AbstractOption;
+import net.minecraft.client.AbstractOption;
 import net.optifine.config.IteratableOptionOF;
 
 import javax.annotation.Nonnull;

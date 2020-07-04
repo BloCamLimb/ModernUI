@@ -18,6 +18,7 @@
 
 package icyllis.modernui.ui.widget;
 
+import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.drawable.ScrollThumbDrawable;
 import icyllis.modernui.ui.layout.FrameLayout;
@@ -37,7 +38,17 @@ public class ScrollView extends FrameLayout implements Scroller.IListener {
 
     public ScrollView() {
         setVerticalScrollBarEnabled(true);
-        runVerticalScrollBar(bar -> bar.setThumbDrawable(new ScrollThumbDrawable()));
+        runVerticalScrollBar(bar -> {
+            bar.setThumbDrawable(new ScrollThumbDrawable());
+            bar.setTrackDrawable(new Drawable() {
+                @Override
+                public void draw(@Nonnull Canvas canvas) {
+                    canvas.moveTo(this);
+                    canvas.setColor(16, 16, 16, 40);
+                    canvas.drawRect(0, 0, getWidth(), getHeight());
+                }
+            });
+        });
     }
 
     @Override

@@ -119,7 +119,7 @@ public enum BlurHandler {
     }
 
     /**
-     * Inner method, to re-blur after resources (including shaders) reloaded in in-game menu
+     * Internal method, to re-blur after resources (including shaders) reloaded in in-game menu
      */
     public void forceBlur() {
         // no need to check if is excluded, this method is only called by Modern UI screen
@@ -152,7 +152,7 @@ public enum BlurHandler {
     @SubscribeEvent
     void gRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
         if (changingProgress && event.phase == TickEvent.Phase.END) {
-            float p = Math.min(UIManager.INSTANCE.getDrawingTime(), 4.0f);
+            float p = Math.min(UIManager.INSTANCE.getDrawingTime(), 200) / 50.0f;
             updateProgress(p);
             if (backgroundAlpha < 0.5f) {
                 backgroundAlpha = p / 8.0f;
