@@ -18,15 +18,15 @@
 
 package icyllis.modernui.impl.module;
 
+import icyllis.modernui.system.ModIntegration;
+import icyllis.modernui.ui.test.Module;
 import icyllis.modernui.impl.setting.GuiScaleSettingEntry;
 import icyllis.modernui.impl.setting.SettingCategoryGroup;
 import icyllis.modernui.impl.setting.SettingEntry;
 import icyllis.modernui.impl.setting.SettingScrollWindow;
-import icyllis.modernui.system.ModIntegration;
 import icyllis.modernui.system.SettingsManager;
-import icyllis.modernui.ui.test.Module;
-import net.minecraft.client.AbstractOption;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.client.AbstractOption;
 import net.optifine.config.IteratableOptionOF;
 import net.optifine.gui.GuiAnimationSettingsOF;
 import net.optifine.gui.GuiDetailSettingsOF;

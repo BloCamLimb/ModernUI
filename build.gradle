@@ -58,7 +58,7 @@ configurations {
 }
 
 minecraft {
-    mappings channel: 'snapshot', version: '20200707-1.16.1'
+    mappings channel: 'snapshot', version: '20200525-1.15.1'
 
     accessTransformer(file('src/main/resources/META-INF/accesstransformer.cfg'))
 
@@ -95,7 +95,7 @@ minecraft {
             // Recommended logging level for the console
             property 'forge.logging.console.level', 'debug'
 
-            args '--all', '--output', file('src/generated/resources/')
+            args '--mod', 'modern', '--all', '--output', file('src/generated/resources/')
 
             mods {
                 modernui {
@@ -115,10 +115,6 @@ repositories {
         // location of the maven that hosts JEI files
         name = "Progwml6 maven"
         url = "https://dvs1.progwml6.com/files/maven/"
-    }
-    maven {
-        name = "tterrag maven"
-        url "https://maven.tterrag.com/"
     }
 }
 
@@ -167,7 +163,7 @@ jar {
     from sourceSets.api.output
 }
 
-/*task apiJar(type: Jar) {
+task apiJar(type: Jar) {
     classifier("api")
     from sourceSets.api.output
     from sourceSets.api.allJava
@@ -184,7 +180,7 @@ task devJar(type: Jar) {
 artifacts {
     archives apiJar
     archives devJar
-}*/
+}
 
 // this doesn't work due to Cloudflare
 if (System.getenv("CurseForgeAPI") != null) {

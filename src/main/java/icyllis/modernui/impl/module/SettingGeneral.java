@@ -67,7 +67,7 @@ public class SettingGeneral extends Module {
         List<SettingEntry> list = new ArrayList<>();
 
         List<String> difficulties = Lists.newArrayList(Difficulty.values()).stream().
-                map(d -> d.getDisplayName().getString()).collect(Collectors.toCollection(ArrayList::new));
+                map(d -> d.getDisplayName().getFormattedText()).collect(Collectors.toCollection(ArrayList::new));
         if (minecraft.world != null) {
             difficultyEntry = new DropdownSettingEntry(window, I18n.format("options.difficulty"), difficulties,
                     minecraft.world.getDifficulty().getId(), i -> {
@@ -169,7 +169,7 @@ public class SettingGeneral extends Module {
         list.add(SettingsManager.MAIN_HAND.apply(window));
 
         for (PlayerModelPart part : PlayerModelPart.values()) {
-            BooleanSettingEntry entry = new BooleanSettingEntry(window, part.getName().getString(),
+            BooleanSettingEntry entry = new BooleanSettingEntry(window, part.getName().getFormattedText(),
                     gameSettings.getModelParts().contains(part), b -> gameSettings.setModelPartEnabled(part, b));
             list.add(entry);
         }

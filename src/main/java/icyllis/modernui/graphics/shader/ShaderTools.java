@@ -36,15 +36,7 @@ import java.util.function.Predicate;
 @OnlyIn(Dist.CLIENT)
 public class ShaderTools {
 
-    public static void init() {
-        ((IReloadableResourceManager) Minecraft.getInstance().getResourceManager()).addReloadListener(
-                (ISelectiveResourceReloadListener) ShaderTools::onResourcesReload);
-    }
-
-    private static void onResourcesReload(IResourceManager manager, @Nonnull Predicate<IResourceType> t) {
-        if (!t.test(VanillaResourceType.SHADERS)) {
-            return;
-        }
+    public static void compileShaders(IResourceManager manager) {
         RingShader.INSTANCE.compile(manager);
         RoundedRectShader.INSTANCE.compile(manager);
         RoundedFrameShader.INSTANCE.compile(manager);

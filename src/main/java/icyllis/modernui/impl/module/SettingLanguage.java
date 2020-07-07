@@ -61,8 +61,7 @@ public class SettingLanguage extends Module {
             manager.setCurrentLanguage(highlight.getLanguage());
             gameSettings.language = highlight.getLanguage().getCode();
             ForgeHooksClient.refreshResources(minecraft, VanillaResourceType.LANGUAGES);
-            //FIXME
-            //minecraft.fontRenderer.getBidiFlag(manager.isCurrentLanguageBidirectional());
+            minecraft.fontRenderer.setBidiFlag(manager.isCurrentLanguageBidirectional());
             gameSettings.saveOptions();
         }
     }

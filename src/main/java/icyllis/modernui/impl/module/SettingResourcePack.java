@@ -138,8 +138,7 @@ public class SettingResourcePack extends Module {
         }
 
         Collections.reverse(list);
-        //FIXME
-        //minecraft.getResourcePackList().setEnabledPacks(list);
+        minecraft.getResourcePackList().setEnabledPacks(list);
         gameSettings.resourcePacks.clear();
         gameSettings.incompatibleResourcePacks.clear();
 

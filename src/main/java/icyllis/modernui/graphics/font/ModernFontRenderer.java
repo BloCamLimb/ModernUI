@@ -22,12 +22,8 @@ package icyllis.modernui.graphics.font;
 
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.fonts.providers.IGlyphProvider;
-import net.minecraft.client.renderer.IRenderTypeBuffer;
-import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.*;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.vector.Matrix4f;
-import net.minecraft.util.math.vector.TransformationMatrix;
-import net.minecraft.util.math.vector.Vector3f;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -45,7 +41,7 @@ public class ModernFontRenderer extends FontRenderer {
     private final TrueTypeRenderer fontRenderer;
 
     ModernFontRenderer(TrueTypeRenderer fontRenderer) {
-        super(null);
+        super(null, null);
         this.fontRenderer = fontRenderer;
     }
 
