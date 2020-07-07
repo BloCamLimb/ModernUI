@@ -30,7 +30,6 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.extensions.IForgeContainerType;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -84,7 +83,7 @@ public class RegistryLib {
     @Nonnull
     @OnlyIn(Dist.CLIENT)
     public static SoundEvent registerSound(@Nonnull IForgeRegistry<SoundEvent> registry, String name) {
-        ResourceLocation soundID = new ResourceLocation(ModLoadingContext.get().getActiveNamespace(), name);
+        ResourceLocation soundID = new ResourceLocation(ModernUI.MODID, name);
         SoundEvent event = new SoundEvent(soundID).setRegistryName(soundID);
         registry.register(event);
         return event;

@@ -20,7 +20,6 @@ package icyllis.modernui.system;
 
 import com.google.common.collect.Lists;
 import icyllis.modernui.impl.setting.*;
-import net.minecraft.client.AbstractOption;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.NewChatGui;
@@ -419,13 +418,12 @@ public enum SettingsManager {
             this.minecraft.scheduleResourcesRefresh(); // Forge?
         }, String::valueOf, false);
 
-        //FIXME
-        /*GRAPHICS = window -> new DropdownSettingEntry(window, I18n.format("options.graphics"),
+        GRAPHICS = window -> new DropdownSettingEntry(window, I18n.format("options.graphics"),
                 getGraphicTexts(),
-                gameSettings. ? 0 : 1, i -> {
+                gameSettings.fancyGraphics ? 0 : 1, i -> {
             gameSettings.fancyGraphics = i == 0;
             minecraft.worldRenderer.loadRenderers();
-        });*/
+        });
 
         ATTACK_INDICATOR = window -> new DropdownSettingEntry(window, I18n.format("options.attackIndicator"),
                 getAttackIndicatorTexts(),
@@ -690,7 +688,7 @@ public enum SettingsManager {
     public List<String> getNarratorTexts() {
         return NarratorChatListener.INSTANCE.isActive() ?
                 Lists.newArrayList(NarratorStatus.values()).stream()
-                        .map(n -> n.func_238233_b_().getString()).collect(Collectors.toCollection(ArrayList::new)) :
+                        .map(n -> I18n.format(n.getResourceKey())).collect(Collectors.toCollection(ArrayList::new)) :
                 Lists.newArrayList(I18n.format("options.narrator.notavailable"));
     }
 
