@@ -38,7 +38,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
- * Save and load data from local game files, and load resources.
+ * Save and load data from local game files.
  * There are different work on the server and the client.
  */
 public enum StorageManager {
@@ -50,23 +50,11 @@ public enum StorageManager {
     private final ScriptEngineManager scriptManager = new ScriptEngineManager();
 
     static void init() {
-        if (FMLEnvironment.dist.isClient()) {
-            ((IReloadableResourceManager) Minecraft.getInstance().getResourceManager()).addReloadListener(
-                    (ISelectiveResourceReloadListener) INSTANCE::onResourcesReload);
-        }
+
     }
 
     public ScriptEngineManager getScriptManager() {
         return scriptManager;
-    }
-
-    private void onResourcesReload(@Nonnull IResourceManager manager, @Nonnull Predicate<IResourceType> predicate) {
-        if (predicate.test(VanillaResourceType.SHADERS)) {
-            ShaderTools.compileShaders(manager);
-        }
-        if (predicate.test(LayoutResourceManager.UI_RESOURCE_TYPE)) {
-            LayoutResourceManager.INSTANCE.onResourcesReload(manager);
-        }
     }
 
     /**

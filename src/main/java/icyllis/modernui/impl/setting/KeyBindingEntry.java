@@ -32,6 +32,7 @@ import net.minecraft.client.resources.I18n;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.client.util.InputMappings;
 import net.minecraftforge.client.settings.KeyModifier;
+import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
 import java.util.Locale;
@@ -152,15 +153,15 @@ public class KeyBindingEntry extends SettingEntry {
 
         switch (key.getType()) {
             case KEYSYM:
-                glfwName = InputMappings.getKeynameFromKeycode(keyCode);
+                glfwName = GLFW.glfwGetKeyName(keyCode, -1);
                 break;
             case SCANCODE:
-                glfwName = InputMappings.getKeyNameFromScanCode(keyCode);
+                glfwName = GLFW.glfwGetKeyName(-1, keyCode);
                 break;
             case MOUSE:
                 // if not translated, use default, eg. keyCode 0 = Mouse 1 (Mouse Left Button)
                 inputBox.setKeyText(Objects.equals(localizedName, translateKey) ?
-                        I18n.format(InputMappings.Type.MOUSE.getName(), keyCode + 1) : localizedName);
+                        I18n.format("key.mouse", keyCode + 1) : localizedName);
                 return;
         }
 

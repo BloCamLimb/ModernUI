@@ -19,7 +19,7 @@
 package icyllis.modernui.graphics.shader.uniform;
 
 import icyllis.modernui.graphics.shader.ShaderUniform;
-import net.minecraft.client.renderer.Vector4f;
+import net.minecraft.util.math.vector.Vector4f;
 import org.lwjgl.opengl.GL20;
 
 public class UniformVec4 extends ShaderUniform<Vector4f> {

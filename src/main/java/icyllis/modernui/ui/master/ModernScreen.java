@@ -18,6 +18,7 @@
 
 package icyllis.modernui.ui.master;
 
+import com.mojang.blaze3d.matrix.MatrixStack;
 import icyllis.modernui.graphics.BlurHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
@@ -49,7 +50,7 @@ public final class ModernScreen extends Screen {
     }
 
     @Override
-    public void render(int mouseX, int mouseY, float partialTicks) {
+    public void render(@Nonnull MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         manager.draw();
     }
 
