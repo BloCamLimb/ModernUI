@@ -19,6 +19,8 @@
 package icyllis.modernui.system;
 
 import icyllis.modernui.graphics.BlurHandler;
+import icyllis.modernui.graphics.shader.ShaderTools;
+import icyllis.modernui.ui.data.LayoutResourceManager;
 import icyllis.modernui.ui.master.UIEditor;
 import icyllis.modernui.ui.master.UIManager;
 import net.minecraft.client.MainWindow;
@@ -51,6 +53,8 @@ public class ModernUI {
         StorageManager.init();
 
         if (FMLEnvironment.dist.isClient()) {
+            LayoutResourceManager.init();
+            ShaderTools.init();
             MinecraftForge.EVENT_BUS.register(BlurHandler.INSTANCE);
             MinecraftForge.EVENT_BUS.register(UIEditor.INSTANCE);
             MinecraftForge.EVENT_BUS.register(UIManager.INSTANCE);
@@ -96,6 +100,7 @@ public class ModernUI {
         return (int) (BlurHandler.INSTANCE.getBackgroundAlpha() * 255.0f) << 24;
     }
 
+    /* Core function */
     public static int calcGuiScales() {
         MainWindow mainWindow = Minecraft.getInstance().getMainWindow();
         return calcGuiScales(mainWindow.getFramebufferWidth(), mainWindow.getFramebufferHeight());

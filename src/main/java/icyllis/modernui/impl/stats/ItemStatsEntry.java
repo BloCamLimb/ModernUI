@@ -49,7 +49,7 @@ public class ItemStatsEntry extends UniformScrollEntry {
     public ItemStatsEntry(ScrollWindow<?> window, @Nonnull Item item, Color3i color) {
         super(window, 288, ItemStatsGroup.ENTRY_HEIGHT);
         this.item = item;
-        this.itemName = item.getName().getFormattedText();
+        this.itemName = item.getName().getString();
         this.color = color;
     }
 

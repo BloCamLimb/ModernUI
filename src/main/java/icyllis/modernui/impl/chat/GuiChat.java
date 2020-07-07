@@ -18,6 +18,7 @@
 
 package icyllis.modernui.impl.chat;
 
+import com.mojang.blaze3d.matrix.MatrixStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.text.StringTextComponent;
@@ -37,7 +38,7 @@ public final class GuiChat extends Screen {
     }
 
     @Override
-    public void render(int mouseX, int mouseY, float partialTicks) {
+    public void render(@Nonnull MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         inputBox.draw();
         emojiTab.draw(mouseX, mouseY);
     }

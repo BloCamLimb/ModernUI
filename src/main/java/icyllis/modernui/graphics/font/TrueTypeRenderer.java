@@ -28,10 +28,10 @@ import icyllis.modernui.system.Config;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
-import net.minecraft.client.renderer.Matrix4f;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.entity.EntityRendererManager;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
@@ -92,6 +92,7 @@ public class TrueTypeRenderer implements IFontRenderer {
         }
     }
 
+    // Create when gui opened
     public static TrueTypeRenderer getInstance() {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
         return INSTANCE;
@@ -287,9 +288,9 @@ public class TrueTypeRenderer implements IFontRenderer {
      * corner of the string's bounding box, rather than the baseline position as is typical with fonts. This function will also
      * add the string to the cache so the next drawString() call with the same string is faster.
      *
-     * @param str          the string being rendered; it can contain formatting codes
-     * @param startX       the x coordinate to draw at
-     * @param startY       the y coordinate to draw at
+     * @param str    the string being rendered; it can contain formatting codes
+     * @param startX the x coordinate to draw at
+     * @param startY the y coordinate to draw at
      * @return the total advance (horizontal distance) of this string
      */
     //TODO Add optional NumericShaper to replace ASCII digits with locale specific ones

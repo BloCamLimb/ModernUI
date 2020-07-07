@@ -18,14 +18,14 @@
 
 package icyllis.modernui.impl.setting;
 
-import icyllis.modernui.ui.master.UITools;
+import icyllis.modernui.graphics.font.TextAlign;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.graphics.renderer.Icon;
-import icyllis.modernui.graphics.font.TextAlign;
 import icyllis.modernui.system.Tools;
+import icyllis.modernui.ui.master.UITools;
+import net.minecraft.client.AbstractOption;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.AbstractOption;
 import net.optifine.config.IteratableOptionOF;
 
 import javax.annotation.Nonnull;
@@ -53,7 +53,7 @@ public class OptiFineSettingEntry extends SettingEntry {
     private final GameSettings gameSettings;
 
     private String optionText = "";
-    private float textLength;
+    private float  textLength;
 
     protected boolean drawOptionFrame = false;
 

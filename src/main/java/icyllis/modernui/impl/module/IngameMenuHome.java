@@ -33,7 +33,7 @@ import net.minecraft.client.gui.screen.DirtMessageScreen;
 import net.minecraft.client.gui.screen.MainMenuScreen;
 import net.minecraft.client.gui.screen.MultiplayerScreen;
 import net.minecraft.client.resources.I18n;
-import net.minecraft.realms.RealmsBridge;
+import net.minecraft.realms.RealmsBridgeScreen;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.fml.client.gui.screen.ModListScreen;
 
@@ -75,9 +75,9 @@ public class IngameMenuHome extends ModuleGroup {
                         .build(this)
                         .buildCallback(
                                 () -> {
-                            minecraft.displayGuiScreen(
-                                    new AdvancementsScreen(Objects.requireNonNull(minecraft.player).connection.getAdvancementManager()));
-                            playSound(RegistryLib.BUTTON_CLICK_2);
+                                    minecraft.displayGuiScreen(
+                                            new AdvancementsScreen(Objects.requireNonNull(minecraft.player).connection.getAdvancementManager()));
+                                    playSound(RegistryLib.BUTTON_CLICK_2);
                                 }
                         )
         );
@@ -87,8 +87,8 @@ public class IngameMenuHome extends ModuleGroup {
                         .build(this)
                         .buildCallback(
                                 () -> {
-                            switchChildModule(2);
-                            playSound(RegistryLib.BUTTON_CLICK_2);
+                                    switchChildModule(2);
+                                    playSound(RegistryLib.BUTTON_CLICK_2);
                                 }
                         )
         );
@@ -98,8 +98,8 @@ public class IngameMenuHome extends ModuleGroup {
                         .build(this)
                         .buildCallback(
                                 () -> {
-                            minecraft.displayGuiScreen(new ModListScreen(UIManager.INSTANCE.getModernScreen()));
-                            playSound(RegistryLib.BUTTON_CLICK_2);
+                                    minecraft.displayGuiScreen(new ModListScreen(UIManager.INSTANCE.getModernScreen()));
+                                    playSound(RegistryLib.BUTTON_CLICK_2);
                                 }
                         )
         ); // Forge's GUI is a little buggy, but we fixed that
@@ -109,8 +109,8 @@ public class IngameMenuHome extends ModuleGroup {
                         .build(this)
                         .buildCallback(
                                 () -> {
-                            switchChildModule(4);
-                            playSound(RegistryLib.BUTTON_CLICK_2);
+                                    switchChildModule(4);
+                                    playSound(RegistryLib.BUTTON_CLICK_2);
                                 }
                         )
         );
@@ -137,6 +137,7 @@ public class IngameMenuHome extends ModuleGroup {
 
     /**
      * Get transition animation direction
+     *
      * @param constr is in constructor
      */
     public boolean getTransitionDirection(boolean constr) {
@@ -186,8 +187,8 @@ public class IngameMenuHome extends ModuleGroup {
         if (singleplayer) {
             minecraft.displayGuiScreen(new MainMenuScreen());
         } else if (realmsConnected) {
-            RealmsBridge realmsBridge = new RealmsBridge();
-            realmsBridge.switchToRealms(new MainMenuScreen());
+            RealmsBridgeScreen realmsBridge = new RealmsBridgeScreen();
+            realmsBridge.func_231394_a_(new MainMenuScreen());
         } else {
             minecraft.displayGuiScreen(new MultiplayerScreen(new MainMenuScreen()));
         }
