@@ -1,29 +1,29 @@
 /*
  * Modern UI.
- * Copyright (C) 2019 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2020 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * 3.0 any later version.
+ * Modern UI is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
  *
  * Modern UI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
+ * GNU Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.ui.widget;
 
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.graphics.renderer.Icon;
+import icyllis.modernui.ui.master.UITools;
 import icyllis.modernui.ui.test.Align9D;
 import icyllis.modernui.ui.test.Direction4D;
 import icyllis.modernui.ui.test.Locator;
-import icyllis.modernui.system.Tools;
 import icyllis.modernui.ui.test.IHost;
 
 import javax.annotation.Nonnull;
@@ -105,7 +105,7 @@ public class TriangleButton extends IconButton {
     public static class Builder extends IconButton.Builder {
 
         public Builder(@Nonnull Direction4D direction, float size) {
-            super(new Icon(Tools.ICONS, 64 * direction.ordinal() / 512f, 0.25f, (direction.ordinal() + 1) * 64 / 512f, 0.375f, true));
+            super(new Icon(UITools.ICONS, 64 * direction.ordinal() / 512f, 0.25f, (direction.ordinal() + 1) * 64 / 512f, 0.375f, true));
             super.setWidth(size);
             super.setHeight(size);
         }

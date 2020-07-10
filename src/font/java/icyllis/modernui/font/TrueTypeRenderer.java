@@ -1,30 +1,27 @@
 /*
  * Modern UI.
- * Copyright (C) 2019 BloCamLimb All rights reserved.
+ * Copyright (C) 2019-2020 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 3.0 of the License, or 3.0 any later version.
+ * version 3 of the License, or (at your option) any later version.
  *
  * Modern UI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
- * USA
+ * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.font;
+package icyllis.modernui.font;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
-import icyllis.modernui.graphics.math.Color3i;
-import icyllis.modernui.system.Config;
+import icyllis.modernui.api.util.Color3i;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
@@ -82,7 +79,7 @@ public class TrueTypeRenderer implements IFontRenderer {
 
         ModernFontRenderer.INSTANCE = new ModernFontRenderer(this);
 
-        if (Config.CLIENT.enableGlobalFontRenderer) {
+        if (true) {
             try {
                 ObfuscationReflectionHelper.findField(Minecraft.class, "field_71466_p").set(Minecraft.getInstance(), ModernFontRenderer.INSTANCE);
                 ObfuscationReflectionHelper.findField(EntityRendererManager.class, "field_78736_p").set(Minecraft.getInstance().getRenderManager(), ModernFontRenderer.INSTANCE);
@@ -191,9 +188,9 @@ public class TrueTypeRenderer implements IFontRenderer {
             GlStateManager.bindTexture(texture.textureName);
 
             if (formattedColor != null) {
-                int red = formattedColor.getIntRed();
-                int green = formattedColor.getIntGreen();
-                int blue = formattedColor.getIntBlue();
+                int red = formattedColor.getRed();
+                int green = formattedColor.getGreen();
+                int blue = formattedColor.getBlue();
                 bufferBuilder.pos(x1, y1, 0).color(red, green, blue, a).tex(texture.u1, texture.v1).endVertex();
                 bufferBuilder.pos(x1, y2, 0).color(red, green, blue, a).tex(texture.u1, texture.v2).endVertex();
                 bufferBuilder.pos(x2, y2, 0).color(red, green, blue, a).tex(texture.u2, texture.v2).endVertex();
@@ -238,9 +235,9 @@ public class TrueTypeRenderer implements IFontRenderer {
                 if ((renderStyle & StringCache.FormattingCode.UNDERLINE) != 0) {
                     /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
                     if (formattedColor != null) {
-                        int red = formattedColor.getIntRed();
-                        int green = formattedColor.getIntGreen();
-                        int blue = formattedColor.getIntBlue();
+                        int red = formattedColor.getRed();
+                        int green = formattedColor.getGreen();
+                        int blue = formattedColor.getBlue();
                         drawI1(startX, startY, bufferBuilder, glyph, glyphSpace, a, red, green, blue, UNDERLINE_OFFSET, UNDERLINE_THICKNESS);
                     } else {
                         drawI1(startX, startY, bufferBuilder, glyph, glyphSpace, a, r, g, b, UNDERLINE_OFFSET, UNDERLINE_THICKNESS);
@@ -251,9 +248,9 @@ public class TrueTypeRenderer implements IFontRenderer {
                 if ((renderStyle & StringCache.FormattingCode.STRIKETHROUGH) != 0) {
                     /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
                     if (formattedColor != null) {
-                        int red = formattedColor.getIntRed();
-                        int green = formattedColor.getIntGreen();
-                        int blue = formattedColor.getIntBlue();
+                        int red = formattedColor.getRed();
+                        int green = formattedColor.getGreen();
+                        int blue = formattedColor.getBlue();
                         drawI1(startX, startY, bufferBuilder, glyph, glyphSpace, a, red, green, blue, UNDERLINE_OFFSET, UNDERLINE_THICKNESS);
                     } else {
                         drawI1(startX, startY, bufferBuilder, glyph, glyphSpace, a, r, g, b, STRIKETHROUGH_OFFSET, STRIKETHROUGH_THICKNESS);
@@ -393,9 +390,9 @@ public class TrueTypeRenderer implements IFontRenderer {
             IVertexBuilder builder = typeBuffer.getBuffer(texture.renderType);
 
             if (formattedColor != null) {
-                int r = formattedColor.getIntRed();
-                int g = formattedColor.getIntGreen();
-                int b = formattedColor.getIntBlue();
+                int r = formattedColor.getRed();
+                int g = formattedColor.getGreen();
+                int b = formattedColor.getBlue();
                 if (isShadow) {
                     r = r >> 2;
                     g = g >> 2;
@@ -460,9 +457,9 @@ public class TrueTypeRenderer implements IFontRenderer {
                 if ((renderStyle & StringCache.FormattingCode.UNDERLINE) != 0) {
                     /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
                     if (formattedColor != null) {
-                        int r = formattedColor.getIntRed();
-                        int g = formattedColor.getIntGreen();
-                        int b = formattedColor.getIntBlue();
+                        int r = formattedColor.getRed();
+                        int g = formattedColor.getGreen();
+                        int b = formattedColor.getBlue();
                         if (isShadow) {
                             r = r >> 2;
                             g = g >> 2;
@@ -478,9 +475,9 @@ public class TrueTypeRenderer implements IFontRenderer {
                 if ((renderStyle & StringCache.FormattingCode.STRIKETHROUGH) != 0) {
                     /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
                     if (formattedColor != null) {
-                        int r = formattedColor.getIntRed();
-                        int g = formattedColor.getIntGreen();
-                        int b = formattedColor.getIntBlue();
+                        int r = formattedColor.getRed();
+                        int g = formattedColor.getGreen();
+                        int b = formattedColor.getBlue();
                         if (isShadow) {
                             r = r >> 2;
                             g = g >> 2;

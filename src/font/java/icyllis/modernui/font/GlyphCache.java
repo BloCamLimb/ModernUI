@@ -1,30 +1,27 @@
 /*
  * Modern UI.
- * Copyright (C) 2019 BloCamLimb All rights reserved.
+ * Copyright (C) 2019-2020 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 3.0 of the License, or 3.0 any later version.
+ * version 3 of the License, or (at your option) any later version.
  *
  * Modern UI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
- * USA
+ * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.font;
+package icyllis.modernui.font;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.mojang.blaze3d.platform.GlStateManager;
-import icyllis.modernui.system.Config;
-import icyllis.modernui.system.ModernUI;
+import icyllis.modernui.system.ModernUI_Font;
 import net.minecraft.client.renderer.RenderType;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -48,7 +45,7 @@ import java.util.List;
 
 class GlyphCache {
 
-    private static final Marker MARKER = MarkerManager.getMarker("FONTS");
+    private static final Marker MARKER = MarkerManager.getMarker("GLYPH");
 
     /**
      * The width in pixels of every texture used for caching pre-rendered glyph images. Used by GlyphCache when calculating
@@ -269,16 +266,16 @@ class GlyphCache {
     void setDefaultFont(float size) {
         usedFonts.clear();
         //usedFonts.add(new Font(name, Font.PLAIN, 72)); //size 1 > 72
-        if (!Config.CLIENT.preferredFontName.isEmpty()) {
+        /*if (!Config.CLIENT.preferredFontName.isEmpty()) {
             allFonts.stream().filter(f -> f.getName().contains(Config.CLIENT.preferredFontName)).findFirst().ifPresent(font -> {
                 usedFonts.add(font);
                 ModernUI.LOGGER.debug(MARKER, "{} has been loaded", font.getName());
             });
-        }
+        }*/
         try {
             Font f = Font.createFont(Font.TRUETYPE_FONT, getClass().getResourceAsStream("/assets/modernui/font/biliw.otf"));
             usedFonts.add(f);
-            ModernUI.LOGGER.debug(MARKER, "{} has been loaded", f.getName());
+            ModernUI_Font.LOGGER.debug(MARKER, "{} has been loaded", f.getName());
         } catch (FontFormatException | IOException e) {
             e.printStackTrace();
         }
@@ -340,7 +337,7 @@ class GlyphCache {
             Font font = iterator.next();
             if (font.canDisplayUpTo(text, start, limit) != start) {
                 /* If found, add this font to the usedFonts list so it can be looked up faster next time */
-                ModernUI.LOGGER.debug(MARKER, "{} has been loaded", font.getName());
+                ModernUI_Font.LOGGER.debug(MARKER, "{} has been loaded", font.getName());
                 usedFonts.add(font);
 
                 /* Return a font instance of the proper point size and style; allFonts has only 1pt sized plain style fonts */

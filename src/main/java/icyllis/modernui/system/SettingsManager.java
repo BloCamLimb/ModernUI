@@ -1,25 +1,26 @@
 /*
  * Modern UI.
- * Copyright (C) 2019 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2020 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * 3.0 any later version.
+ * Modern UI is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
  *
  * Modern UI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
+ * GNU Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.system;
 
 import com.google.common.collect.Lists;
 import icyllis.modernui.impl.setting.*;
+import icyllis.modernui.ui.master.UITools;
 import net.minecraft.client.AbstractOption;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
@@ -54,11 +55,11 @@ import java.util.stream.Collectors;
  * Manage almost ALL Overwritten vanilla settings (options) and OptiFine
  * settings to set or get their values or generate all option texts, and
  * cache the methods to create their entries for Modern UI settings interface
- *
+ * <p>
  * Settings are only available on client side
  *
  * @since 1.1
- * @deprecated no need to cache settings builder in UI
+ * @deprecated BOMB!
  */
 @Deprecated
 @SuppressWarnings({"unchecked", "NoTranslation"})
@@ -95,11 +96,9 @@ public enum SettingsManager {
     public static Function<SettingScrollWindow, SSliderSettingEntry> GAMMA;
 
 
-
     public static Function<SettingScrollWindow, SSliderSettingEntry> SENSITIVITY;
 
     public static Function<SettingScrollWindow, SSliderSettingEntry> MOUSE_WHEEL_SENSITIVITY;
-
 
 
     public static Function<SettingScrollWindow, DSliderSettingEntry> FRAMERATE_LIMIT;
@@ -109,7 +108,6 @@ public enum SettingsManager {
     public static Function<SettingScrollWindow, DSliderSettingEntry> BIOME_BLEND_RADIUS;
 
     public static Function<SettingScrollWindow, DSliderSettingEntry> MIPMAP_LEVEL;
-
 
 
     public static Function<SettingScrollWindow, BooleanSettingEntry> REALMS_NOTIFICATIONS;
@@ -149,9 +147,9 @@ public enum SettingsManager {
     public static Function<SettingScrollWindow, DropdownSettingEntry> MAIN_HAND;
 
 
-
-
-    /** OptiFine Settings **/
+    /**
+     * OptiFine Settings
+     **/
 
     public static Function<SettingScrollWindow, BooleanSettingEntry> DYNAMIC_FOV;
 
@@ -180,9 +178,7 @@ public enum SettingsManager {
     public static Function<SettingScrollWindow, BooleanSettingEntry> USE_VBO;
 
 
-
     public static Function<SettingScrollWindow, SSliderSettingEntry> AO_LEVEL;
-
 
 
     public static Function<SettingScrollWindow, DropdownSettingEntry> CHAT_BACKGROUND;
@@ -194,12 +190,6 @@ public enum SettingsManager {
     public static Function<SettingScrollWindow, DropdownSettingEntry> BETTER_GRASS;
 
     public static Function<SettingScrollWindow, DropdownSettingEntry> CONNECTED_TEXTURES;
-
-
-
-
-
-
 
 
     static {
@@ -340,7 +330,7 @@ public enum SettingsManager {
         CHAT_OPACITY = INSTANCE
                 .transformToSmooth(AbstractOption.CHAT_OPACITY, p -> (int) (p * 90 + 10) + "%");
         CHAT_SCALE = INSTANCE
-                .transformToSmooth(AbstractOption.CHAT_SCALE, Triple.of(0.1, null, null), Tools.PERCENTAGE_STRING_FUNC);
+                .transformToSmooth(AbstractOption.CHAT_SCALE, Triple.of(0.1, null, null), UITools::percentageToString);
         if (ModIntegration.optifineLoaded) {
             CHAT_WIDTH = INSTANCE
                     .transformToSmooth(AbstractOption.CHAT_WIDTH, Triple.of(null, null, 1.0f / 1136.0f),
@@ -357,13 +347,13 @@ public enum SettingsManager {
                 .transformToSmooth(AbstractOption.CHAT_HEIGHT_UNFOCUSED, Triple.of(null, null, 1.0f / 160.0f),
                         d -> NewChatGui.calculateChatboxHeight(d) + "px");
         TEXT_BACKGROUND_OPACITY = INSTANCE
-                .transformToSmooth(AbstractOption.ACCESSIBILITY_TEXT_BACKGROUND_OPACITY, Tools.PERCENTAGE_STRING_FUNC);
+                .transformToSmooth(AbstractOption.ACCESSIBILITY_TEXT_BACKGROUND_OPACITY, UITools::percentageToString);
         GAMMA = INSTANCE
-                .transformToSmooth(AbstractOption.GAMMA, Tools.PERCENTAGE_STRING_FUNC);
+                .transformToSmooth(AbstractOption.GAMMA, UITools::percentageToString);
         SENSITIVITY = INSTANCE
                 .transformToSmooth(AbstractOption.SENSITIVITY, Triple.of(null, null, 0.005f), p -> (int) (p * 200) + "%");
         MOUSE_WHEEL_SENSITIVITY = INSTANCE
-                .transformToSmooth(AbstractOption.MOUSE_WHEEL_SENSITIVITY, Tools.PERCENTAGE_STRING_FUNC);
+                .transformToSmooth(AbstractOption.MOUSE_WHEEL_SENSITIVITY, UITools::percentageToString);
         RENDER_DISTANCE = INSTANCE
                 .transformToDiscrete(AbstractOption.RENDER_DISTANCE, false);
         BIOME_BLEND_RADIUS = INSTANCE
@@ -469,7 +459,7 @@ public enum SettingsManager {
             AO_LEVEL = window -> new SSliderSettingEntry(window, I18n.format("of.options.AO_LEVEL"),
                     0, 1, 0,
                     SettingsManager.INSTANCE.getAoLevel(), SettingsManager.INSTANCE::setAoLevel,
-                    Tools.PERCENTAGE_STRING_FUNC, false);
+                    UITools::percentageToString, false);
 
             CHAT_SHADOW = window -> new BooleanSettingEntry(window, I18n.format("of.options.CHAT_SHADOW"),
                     SettingsManager.INSTANCE.getChatShadow(), SettingsManager.INSTANCE::setChatShadow);

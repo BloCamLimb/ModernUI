@@ -1,30 +1,30 @@
 /*
  * Modern UI.
- * Copyright (C) 2019 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2020 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * 3.0 any later version.
+ * Modern UI is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
  *
  * Modern UI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
+ * GNU Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.impl.module;
 
 import com.google.common.collect.Lists;
+import icyllis.modernui.ui.master.UITools;
 import icyllis.modernui.ui.test.Module;
 import icyllis.modernui.impl.setting.SettingCategoryGroup;
 import icyllis.modernui.impl.setting.SettingEntry;
 import icyllis.modernui.impl.setting.SSliderSettingEntry;
 import icyllis.modernui.impl.setting.SettingScrollWindow;
-import icyllis.modernui.system.Tools;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.I18n;
@@ -48,7 +48,7 @@ public class SettingAudio extends Module {
         for (SoundCategory soundCategory : SoundCategory.values()) {
             SSliderSettingEntry entry = new SSliderSettingEntry(window, I18n.format("soundCategory." + soundCategory.getName()),
                     0, 1, 0.01f, gameSettings.getSoundLevel(soundCategory),
-                    d -> gameSettings.setSoundLevel(soundCategory, d.floatValue()), Tools.PERCENTAGE_STRING_FUNC, true);
+                    d -> gameSettings.setSoundLevel(soundCategory, d.floatValue()), UITools::percentageToString, true);
             list.add(entry);
         }
         SettingCategoryGroup category = new SettingCategoryGroup(window, I18n.format("gui.modernui.settings.category.sounds"), list);

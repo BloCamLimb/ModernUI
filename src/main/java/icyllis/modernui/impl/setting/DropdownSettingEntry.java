@@ -1,25 +1,25 @@
 /*
  * Modern UI.
- * Copyright (C) 2019 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2020 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * 3.0 any later version.
+ * Modern UI is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
  *
  * Modern UI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
+ * GNU Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.impl.setting;
 
 import icyllis.modernui.ui.master.UITools;
-import icyllis.modernui.graphics.font.TextAlign;
+import icyllis.modernui.font.TextAlign;
 import icyllis.modernui.ui.animation.Animation;
 import icyllis.modernui.ui.animation.Applier;
 import icyllis.modernui.graphics.renderer.Canvas;
@@ -28,7 +28,6 @@ import icyllis.modernui.graphics.renderer.Icon;
 import icyllis.modernui.ui.test.Align9D;
 import icyllis.modernui.ui.view.PopupMenu;
 import icyllis.modernui.ui.view.DropDownMenu;
-import icyllis.modernui.system.Tools;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -55,7 +54,7 @@ public class DropdownSettingEntry extends SettingEntry {
 
     private final Animation frameAnimation;
 
-    private static final Icon ICON = new Icon(Tools.ICONS, 0.25f, 0.125f, 0.375f, 0.25f, true);
+    private static final Icon ICON = new Icon(UITools.ICONS, 0.25f, 0.125f, 0.375f, 0.25f, true);
 
     public DropdownSettingEntry(SettingScrollWindow window, String optionTitle, @Nonnull List<String> optionNames, int originalIndex, Consumer<Integer> saveOption) {
         super(window, optionTitle);
