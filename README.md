@@ -2,10 +2,10 @@
 ### Homepage [CurseForge](https://www.curseforge.com/minecraft/mc-mods/modern-ui)
 ### License
 * Modern UI
-  - Copyright (C) 2019 BloCamLimb et al. All rights reserved. 
+  - Copyright (C) 2019-2020 BloCamLimb. All rights reserved. 
   - [![License](https://img.shields.io/badge/License-LGPLv3-blue.svg?style=flat-square)](https://www.gnu.org/licenses/lgpl-3.0.en.html)
 * Textures, Shaders, Models
-  - Copyright (C) 2019 BloCamLimb et al. All rights reserved. 
+  - Copyright (C) 2019-2020 BloCamLimb. All rights reserved. 
   - [![License](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-yellow.svg?style=flat-square)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 * Sounds, Translations
   - [![License](https://img.shields.io/badge/License-No%20Restriction-green.svg?style=flat-square)](https://creativecommons.org/publicdomain/zero/1.0/)
