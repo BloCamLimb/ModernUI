@@ -1,25 +1,27 @@
 /*
  * Modern UI.
- * Copyright (C) 2019 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2020 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * 3.0 any later version.
+ * Modern UI is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
  *
  * Modern UI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
+ * GNU Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.ui.master;
 
-import icyllis.modernui.graphics.font.TrueTypeRenderer;
+import icyllis.modernui.font.TrueTypeRenderer;
+import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lwjgl.glfw.GLFW;
@@ -28,10 +30,15 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
 
 @SuppressWarnings("unused")
 @OnlyIn(Dist.CLIENT)
 public class UITools {
+
+    //public static final ResourceLocation BUTTON = new ResourceLocation(ModernUI.MODID, "textures/gui/button.png");
+    @Deprecated
+    public static final ResourceLocation ICONS = new ResourceLocation(ModernUI.MODID, "textures/gui/gui_icon.png");
 
     private static final TrueTypeRenderer FONT_RENDERER;
 
@@ -44,6 +51,9 @@ public class UITools {
         IBEAM_CURSOR = GLFW.glfwCreateStandardCursor(GLFW.GLFW_IBEAM_CURSOR);
         HAND_CURSOR = GLFW.glfwCreateStandardCursor(GLFW.GLFW_HAND_CURSOR);
     }
+
+    public static final char CHECK_MARK   = '\u2714';
+    public static final char BLACK_CIRCLE = '\u25cf';
 
     /**
      * Return the width of a string in pixels.
@@ -118,5 +128,31 @@ public class UITools {
                 runViewTraversal(group.getChildAt(i), consumer);
             }
         }
+    }
+
+    private static final Pattern DIGIT_PATTERN   = Pattern.compile("[0-9]+");
+    private static final Pattern INTEGER_PATTERN = Pattern.compile("^-?[1-9]\\d*$");
+    private static final Pattern HEX_PATTERN     = Pattern.compile("(?i)[0-9a-f]+");
+
+    public static boolean matchDigit(String str) {
+        return DIGIT_PATTERN.matcher(str).matches();
+    }
+
+    public static boolean matchInteger(String str) {
+        return INTEGER_PATTERN.matcher(str).matches();
+    }
+
+    public static boolean matchHex(String str) {
+        return HEX_PATTERN.matcher(str).matches();
+    }
+
+    @Nonnull
+    public static String[] splitByCaps(@Nonnull String str) {
+        return str.split("(?<!^)(?=[A-Z])");
+    }
+
+    @Nonnull
+    public static String percentageToString(double p) {
+        return (int) (p * 100) + "%";
     }
 }

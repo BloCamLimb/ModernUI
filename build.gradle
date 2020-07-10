@@ -24,28 +24,36 @@ archivesBaseName = 'ModernUI'
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
 
 sourceSets {
+    // no API, actually
     api {
         java {
             srcDir 'src/api/java'
         }
     }
-    main {
+    font {
         java {
-            srcDir 'src/main/java'
+            srcDir 'src/font/java'
         }
         compileClasspath += sourceSets.api.output
         runtimeClasspath += sourceSets.api.output
     }
+    main {
+        java {
+            srcDir 'src/main/java'
+        }
+        compileClasspath += sourceSets.api.output + sourceSets.font.output
+        runtimeClasspath += sourceSets.api.output + sourceSets.font.output
+    }
     test {
-        compileClasspath += sourceSets.api.output + sourceSets.main.output
-        runtimeClasspath += sourceSets.api.output + sourceSets.main.output
+        compileClasspath += sourceSets.api.output + sourceSets.font.output + sourceSets.main.output
+        runtimeClasspath += sourceSets.api.output + sourceSets.font.output + sourceSets.main.output
     }
 }
 
 configurations {
-    def compileExtenders = [apiCompile, testCompile]
-    def compileOnlyExtenders = [apiCompileOnly, testCompileOnly]
-    def runtimeOnlyExtenders = [apiRuntimeOnly]
+    def compileExtenders = [apiCompile, fontCompile, testCompile]
+    def compileOnlyExtenders = [apiCompileOnly, fontCompileOnly, testCompileOnly]
+    def runtimeOnlyExtenders = [apiRuntimeOnly, fontRuntimeOnly]
     for (def compileExtender : compileExtenders) {
         compileExtender.extendsFrom(compile)
     }
@@ -66,12 +74,11 @@ minecraft {
         client {
             workingDirectory project.file('run')
 
-            // Recommended logging level for the console
             property 'forge.logging.console.level', 'debug'
 
             mods {
                 modernui {
-                    sources (sourceSets.main, sourceSets.api)
+                    sources (sourceSets.main, sourceSets.font, sourceSets.api)
                 }
             }
         }
@@ -79,12 +86,11 @@ minecraft {
         server {
             workingDirectory project.file('run')
 
-            // Recommended logging level for the console
             property 'forge.logging.console.level', 'debug'
 
             mods {
                 modernui {
-                    sources (sourceSets.main, sourceSets.api)
+                    sources (sourceSets.main, sourceSets.font, sourceSets.api)
                 }
             }
         }
@@ -92,14 +98,13 @@ minecraft {
         data {
             workingDirectory project.file('run')
 
-            // Recommended logging level for the console
             property 'forge.logging.console.level', 'debug'
 
             args '--all', '--output', file('src/generated/resources/')
 
             mods {
                 modernui {
-                    sources (sourceSets.main, sourceSets.api)
+                    sources (sourceSets.main, sourceSets.font, sourceSets.api)
                 }
             }
         }
@@ -108,7 +113,6 @@ minecraft {
 
 repositories {
     flatDir {
-        // local libs
         dirs 'libs'
     }
     maven {
@@ -165,9 +169,10 @@ jar {
     classifier("universal")
     from sourceSets.main.output
     from sourceSets.api.output
+    from sourceSets.font.output
 }
 
-/*task apiJar(type: Jar) {
+task apiJar(type: Jar) {
     classifier("api")
     from sourceSets.api.output
     from sourceSets.api.allJava
@@ -179,12 +184,21 @@ task devJar(type: Jar) {
     from sourceSets.main.allJava
     from sourceSets.api.output
     from sourceSets.api.allJava
+    from sourceSets.font.output
+    from sourceSets.font.allJava
+}
+
+task fontJar(type: Jar) {
+    classifier("font")
+    from sourceSets.api.output
+    from sourceSets.font.output
 }
 
 artifacts {
     archives apiJar
     archives devJar
-}*/
+    archives fontJar
+}
 
 // this doesn't work due to Cloudflare
 if (System.getenv("CurseForgeAPI") != null) {

@@ -1,5 +1,5 @@
 modLoader="javafml"
-loaderVersion="[31,)"
+loaderVersion="[32,)"
 issueTrackerURL="https://github.com/BloCamLimb/ModernUI/issues"
 logoFile="modernui_logo.png"
 
@@ -11,18 +11,18 @@ logoFile="modernui_logo.png"
     authors="BloCamLimb"
     credits="BloCamLimb"
     description='''
-    Creates fancy UI with better menu, fonts, animations, optimization and many utility functions, also a library for other mods.
+    Modern UI gives you a brand-new system to easily create modernized and highly flexible UI in Minecraft.
     '''
 
 [[dependencies.modernui]]
     modId="forge"
     mandatory=true
-    versionRange="[31.2.5,)"
+    versionRange="[32.0.57,)"
     ordering="NONE"
     side="BOTH"
 [[dependencies.modernui]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.15.2, 1.16)"
+    versionRange="[1.16.1, 1.17)"
     ordering="NONE"
     side="BOTH"

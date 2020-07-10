@@ -3,8 +3,7 @@
 ### License
 * Modern UI
   - Copyright (C) 2019 BloCamLimb et al. All rights reserved. 
-  - [![License](https://img.shields.io/badge/License-GPLv3-blue.svg?style=flat-square)](https://raw.githubusercontent.com/BloCamLimb/ModernUI/1.15/LICENSE)
-  - [![License](https://img.shields.io/badge/License-LGPLv3-lightblue.svg?style=flat-square)](https://www.gnu.org/licenses/lgpl-3.0.en.html)
+  - [![License](https://img.shields.io/badge/License-LGPLv3-blue.svg?style=flat-square)](https://www.gnu.org/licenses/lgpl-3.0.en.html)
 * Textures, Shaders, Models
   - Copyright (C) 2019 BloCamLimb et al. All rights reserved. 
   - [![License](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-yellow.svg?style=flat-square)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
@@ -16,7 +15,7 @@
 ### Adding Modern UI to your project
 #### Development environment
 - Java 8u251
-- Forge 1.15.2-31.2.0
+- Forge 1.16.1-32.0.57
 #### Gradle configuration
 Add followings to `build.gradle`
 ```
@@ -26,8 +25,8 @@ plugins {
 ```
 ```
 dependencies {
-    compile fg.deobf("curse.maven:Modern-UI:[fileId]")
+    compile fg.deobf("curse.maven:ModernUI:[fileID]")
 }
 ```
-Latest version: 1.15.2-1.5.9.56 (File Id: 2966106)
+Latest version: (no build for 1.16.1) (FileID: )
 

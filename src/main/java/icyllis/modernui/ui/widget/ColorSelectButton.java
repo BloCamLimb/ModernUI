@@ -1,19 +1,19 @@
 /*
  * Modern UI.
- * Copyright (C) 2019 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2020 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * 3.0 any later version.
+ * Modern UI is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
  *
  * Modern UI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
+ * GNU Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.ui.widget;
@@ -23,7 +23,7 @@ import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.test.IHost;
 import icyllis.modernui.ui.test.Widget;
 import icyllis.modernui.ui.test.Align9D;
-import icyllis.modernui.graphics.math.Color3i;
+import icyllis.modernui.api.util.Color3i;
 import icyllis.modernui.ui.test.Locator;
 
 import javax.annotation.Nonnull;

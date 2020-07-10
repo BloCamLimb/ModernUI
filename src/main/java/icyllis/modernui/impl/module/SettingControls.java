@@ -1,19 +1,19 @@
 /*
  * Modern UI.
- * Copyright (C) 2019 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2020 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * 3.0 any later version.
+ * Modern UI is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
  *
  * Modern UI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
+ * GNU Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.impl.module;
@@ -21,7 +21,8 @@ package icyllis.modernui.impl.module;
 import com.google.common.collect.Lists;
 import icyllis.modernui.graphics.renderer.Icon;
 import icyllis.modernui.ui.master.UIManager;
-import icyllis.modernui.graphics.font.TextAlign;
+import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.ui.master.UITools;
 import icyllis.modernui.ui.widget.TextDrawable;
 import icyllis.modernui.ui.test.Align9D;
 import icyllis.modernui.ui.test.Direction4D;
@@ -32,7 +33,6 @@ import icyllis.modernui.impl.setting.SettingCategoryGroup;
 import icyllis.modernui.impl.setting.SettingEntry;
 import icyllis.modernui.impl.setting.KeyBindingEntry;
 import icyllis.modernui.impl.setting.SettingScrollWindow;
-import icyllis.modernui.system.Tools;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.system.SettingsManager;
 import net.minecraft.client.resources.I18n;
@@ -77,7 +77,7 @@ public class SettingControls extends Module {
         addWidget(window);
 
         filterConflictButton = new TextIconButton.Builder(
-                new Icon(Tools.ICONS, 0.5f, 0.25f, 0.625f, 0.375f, true),
+                new Icon(UITools.ICONS, 0.5f, 0.25f, 0.625f, 0.375f, true),
                 I18n.format("gui.modernui.button.filterConflicts"))
                 .setWidth(12)
                 .setHeight(12)
@@ -89,7 +89,7 @@ public class SettingControls extends Module {
         addWidget(filterConflictButton);
 
         resetAllButton = new TextIconButton.Builder(
-                new Icon(Tools.ICONS, 0.625f, 0.25f, 0.75f, 0.375f, true),
+                new Icon(UITools.ICONS, 0.625f, 0.25f, 0.75f, 0.375f, true),
                 I18n.format("controls.resetAll"))
                 .setWidth(12)
                 .setHeight(12)
