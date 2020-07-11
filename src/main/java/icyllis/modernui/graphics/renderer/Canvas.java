@@ -19,11 +19,11 @@
 package icyllis.modernui.graphics.renderer;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.font.TextRenderType;
+import icyllis.modernui.font.compat.TextRenderType;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.font.IFontRenderer;
-import icyllis.modernui.font.ModernFontRenderer;
-import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.font.compat.ModernFontRenderer;
+import icyllis.modernui.font.style.TextAlign;
 import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.api.util.Color3i;
 import icyllis.modernui.graphics.shader.ShaderTools;

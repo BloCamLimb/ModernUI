@@ -20,7 +20,7 @@ package icyllis.modernui.ui.widget;
 
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.master.UITools;
-import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.font.style.TextAlign;
 import icyllis.modernui.ui.test.Align9D;
 import icyllis.modernui.ui.test.Locator;
 import icyllis.modernui.ui.test.IHost;

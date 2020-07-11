@@ -23,7 +23,7 @@ import com.google.gson.annotations.Expose;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.animation.AnimationControl;
 import icyllis.modernui.ui.animation.ITimeInterpolator;
-import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.font.style.TextAlign;
 import icyllis.modernui.ui.animation.Animation;
 import icyllis.modernui.ui.animation.Applier;
 import icyllis.modernui.ui.test.Align9D;

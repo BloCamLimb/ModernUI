@@ -18,7 +18,7 @@
 
 package icyllis.modernui.impl.stats;
 
-import icyllis.modernui.font.TextAlign;
+import icyllis.modernui.font.style.TextAlign;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.test.ScrollWindow;
 import icyllis.modernui.ui.widget.UniformScrollEntry;

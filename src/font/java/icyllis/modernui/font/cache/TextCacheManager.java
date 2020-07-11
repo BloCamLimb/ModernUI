@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.font;
+package icyllis.modernui.font.cache;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -34,12 +34,22 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public class StringCache {
+/**
+ * Create or cache text and generate render node
+ *
+ * @since 2.0
+ */
+public class TextCacheManager {
+
+    /**
+     * Config value for default vanilla font size.
+     */
+    public static int sVanillaFontSize = 16;
 
     /**
      * Reference to the unicode.FontRenderer class. Needed for creating GlyphVectors and retrieving glyph texture coordinates.
      */
-    private GlyphCache glyphCache;
+    private GlyphManager glyphManager;
 
     /**
      * A cache of recently seen strings to their fully layed-out state, complete with color changes and texture coordinates of
@@ -71,7 +81,7 @@ public class StringCache {
      * The 4 element array is index by the font style (combination of Font.PLAIN, Font.BOLD, and Font.ITALIC), and each of the
      * nested elements is index by the digit value 0-9.
      */
-    GlyphCache.Glyph[][] digitGlyphs = new GlyphCache.Glyph[4][10];
+    GlyphInfo[][] digitGlyphs = new GlyphInfo[4][10];
 
     /**
      * True if digitGlyphs[] has been assigned and cacheString() can begin replacing all digits with '0' in the string.
@@ -208,7 +218,7 @@ public class StringCache {
         /**
          * Array of fully layed out glyphs for the string. Sorted by logical order of characters (i.e. glyph.stringIndex)
          */
-        public GlyphCache.Glyph[] glyphs;
+        public GlyphInfo[] glyphs;
 
         /**
          * Array of color code locations from the original string
@@ -293,38 +303,15 @@ public class StringCache {
      * A single StringCache object is allocated by Minecraft's FontRenderer which forwards all string drawing and requests for
      * string width to this class.
      */
-    public StringCache() {
+    public TextCacheManager() {
         /* StringCache is created by the main game thread; remember it for later thread safety checks */
         /* We do not this anymore, because mojang's RenderSystem */
         //mainThread = Thread.currentThread();
 
-        glyphCache = new GlyphCache();
-        stringCache = CacheBuilder.newBuilder().expireAfterAccess(1, TimeUnit.MINUTES).build();
-
-        /* Pre-cache the ASCII digits to allow for fast glyph substitution */
-        //cacheDigitGlyphs(); // called by below
-    }
-
-    @Deprecated
-    void clearStringCache() {
-        stringCache.invalidateAll();
-        glyphCache.clearGlyphCache();
-        cacheDigitGlyphs();
-    }
-
-    /**
-     * Change the default font used to pre-render glyph images. If this method is called at runtime, the string cache is flushed so that
-     * all visible strings will be immediately re-laid out using the new font selection.
-     *  @param fontSize  the new point size
-     *
-     */
-    public void setDefaultFont(float fontSize) {
-        /* Change the font in the glyph cache and clear the string cache so all strings have to be re-layed out and re-rendered */
-        glyphCache.setDefaultFont(fontSize);
-        //antiAliasEnabled = antiAlias;
-        //weakRefCache.clear();
-        //stringCache.clear();
-        stringCache.invalidateAll();
+        glyphManager = new GlyphManager();
+        stringCache = CacheBuilder.newBuilder()
+                .weakKeys()
+                .expireAfterAccess(1, TimeUnit.MINUTES).build();
 
         /* Pre-cache the ASCII digits to allow for fast glyph substitution */
         cacheDigitGlyphs();
@@ -386,12 +373,12 @@ public class StringCache {
             int length = extractFormattingCodes(entry, str, text); // return total string length except formatting codes
 
             /* Layout the entire string, splitting it up by formatting codes and the Unicode bidirectional algorithm */
-            List<GlyphCache.Glyph> glyphList = new ArrayList<>();
+            List<GlyphInfo> glyphList = new ArrayList<>();
 
             entry.advance = layoutBidiString(glyphList, text, 0, length, entry.codes);
 
             /* Convert the accumulated Glyph list to an array for efficient storage */
-            entry.glyphs = new GlyphCache.Glyph[glyphList.size()];
+            entry.glyphs = new GlyphInfo[glyphList.size()];
             entry.glyphs = glyphList.toArray(entry.glyphs);
 
             /*
@@ -403,7 +390,7 @@ public class StringCache {
             /* Do some post-processing on each Glyph object */
             int colorIndex = 0, shift = 0;
             for (int glyphIndex = 0; glyphIndex < entry.glyphs.length; glyphIndex++) {
-                GlyphCache.Glyph glyph = entry.glyphs[glyphIndex];
+                GlyphInfo glyph = entry.glyphs[glyphIndex];
 
                 /*
                  * Adjust the string index for each glyph to point into the original string with unstripped color codes. The while
@@ -437,12 +424,12 @@ public class StringCache {
 
         /* Do not access weakRefCache from other threads since it is unsynchronized, and for a newly created entry, the keyRef is null */
         /*if (mainThread == Thread.currentThread()) {
-            *//*
-             * Add the String passed into this method to the stringWeakMap so it keeps the Key reference live as long as the String is in use.
-             * If an existing Entry was already found in the stringCache, it's possible that its Key has already been garbage collected. The
-             * code below checks for this to avoid adding (str, null) entries into weakRefCache. Note that if a new Key object was created, it
-             * will still be live because of the strong reference created by the "key" variable.
-             *//*
+         *//*
+         * Add the String passed into this method to the stringWeakMap so it keeps the Key reference live as long as the String is in use.
+         * If an existing Entry was already found in the stringCache, it's possible that its Key has already been garbage collected. The
+         * code below checks for this to avoid adding (str, null) entries into weakRefCache. Note that if a new Key object was created, it
+         * will still be live because of the strong reference created by the "key" variable.
+         *//*
             Key oldKey = entry.keyRef.get();
             if (oldKey != null) {
                 //weakRefCache.put(str, oldKey);
@@ -561,7 +548,7 @@ public class StringCache {
      * @param limit     the (offset + length) at which to stop performing the layout
      * @return the total advance (horizontal distance) of this string
      */
-    private float layoutBidiString(List<GlyphCache.Glyph> glyphList, char[] text, int start, int limit, FormattingCode[] codes) {
+    private float layoutBidiString(List<GlyphInfo> glyphList, char[] text, int start, int limit, FormattingCode[] codes) {
         float advance = 0;
 
         /* Avoid performing full bidirectional analysis if text has no "strong" right-to-left characters */
@@ -611,7 +598,7 @@ public class StringCache {
         }
     }
 
-    private float layoutStyle(List<GlyphCache.Glyph> glyphList, char[] text, int start, int limit, int layoutFlags, float advance, FormattingCode[] codes) {
+    private float layoutStyle(List<GlyphInfo> glyphList, char[] text, int start, int limit, int layoutFlags, float advance, FormattingCode[] codes) {
         int currentFontStyle = Font.PLAIN;
 
         /* Find FormattingCode object with stripIndex <= start; that will have the font style in effect at the beginning of this text run */
@@ -675,7 +662,7 @@ public class StringCache {
      * TODO Correctly handling RTL font selection requires scanning the string from RTL as well.
      * TODO Use bitmap fonts as a fallback if no OpenType font could be found
      */
-    private float layoutString(List<GlyphCache.Glyph> glyphList, char[] text, int start, int limit, int layoutFlags, float advance, int style) {
+    private float layoutString(List<GlyphInfo> glyphList, char[] text, int start, int limit, int layoutFlags, float advance, int style) {
         /*
          * Convert all digits in the string to a '0' before layout to ensure that any glyphs replaced on the fly will all have
          * the same positions. Under Windows, Java's "SansSerif" logical font uses the "Arial" font for digits, in which the "1"
@@ -693,7 +680,7 @@ public class StringCache {
 
         /* Break the string up into segments, where each segment can be displayed using a single font */
         while (start < limit) {
-            Font font = glyphCache.lookupFont(text, start, limit, style);
+            Font font = glyphManager.lookupFont(text, start, limit, style);
             int next = font.canDisplayUpTo(text, start, limit);
 
             /* canDisplayUpTo returns -1 if the entire string range is supported by this font */
@@ -731,7 +718,7 @@ public class StringCache {
      * @return the advance (horizontal distance) of this string plus the advance passed in as an argument
      * //TODO need to adjust position of all glyphs if digits are present, by assuming every digit should be 0 in length
      */
-    private float layoutFont(List<GlyphCache.Glyph> glyphList, char[] text, int start, int limit, int layoutFlags, float advance, Font font) {
+    private float layoutFont(List<GlyphInfo> glyphList, char[] text, int start, int limit, int layoutFlags, float advance, Font font) {
         /*
          * Ensure that all glyphs used by the string are pre-rendered and cached in the texture. Only safe to do so from the
          * main thread because cacheGlyphs() can crash LWJGL if it makes OpenGL calls from any other thread. In this case,
@@ -739,11 +726,11 @@ public class StringCache {
          * returns null for any glyphs not yet stored in the glyph cache.
          */
         //if (mainThread == Thread.currentThread()) { // already checked
-        glyphCache.cacheGlyphs(font, text, start, limit, layoutFlags);
+        glyphManager.cacheGlyphs(font, text, start, limit, layoutFlags);
         //}
 
         /* Creating a GlyphVector takes care of all language specific OpenType glyph substitutions and positionings */
-        GlyphVector vector = glyphCache.layoutGlyphVector(font, text, start, limit, layoutFlags);
+        GlyphVector vector = glyphManager.layoutGlyphVector(font, text, start, limit, layoutFlags);
 
         /*
          * Extract all needed information for each glyph from the GlyphVector so it won't be needed for actual rendering.
@@ -751,7 +738,7 @@ public class StringCache {
          * string is layed out, this field will be adjusted on every Glyph object to correctly index the original unstripped
          * string.
          */
-        GlyphCache.Glyph glyph = null;
+        GlyphInfo glyph = null;
         int numGlyphs = vector.getNumGlyphs();
         for (int index = 0; index < numGlyphs; index++) {
             Point position = vector.getGlyphPixelBounds(index, null, advance, 0).getLocation();
@@ -765,9 +752,9 @@ public class StringCache {
              * Allocate a new glyph object and add to the glyphList. The glyph.stringIndex here is really like stripIndex but
              * it will be corrected later to account for the color codes that have been stripped out.
              */
-            glyph = new GlyphCache.Glyph();
+            glyph = new GlyphInfo();
             glyph.stringIndex = start + vector.getGlyphCharIndex(index);
-            glyph.texture = glyphCache.lookupGlyph(font, vector.getGlyphCode(index));
+            glyph.texture = glyphManager.lookupGlyph(font, vector.getGlyphCode(index));
             glyph.x = position.x;
             glyph.y = position.y;
             glyphList.add(glyph);

@@ -16,8 +16,9 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.font;
+package icyllis.modernui.font.compat;
 
+import icyllis.modernui.font.TrueTypeRenderer;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.fonts.providers.IGlyphProvider;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
@@ -32,13 +33,13 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 /**
- * Use modern ui font renderer to replace vanilla's renderer
+ * Replace vanilla renderer with Modern UI renderer
  */
-public class ModernFontRenderer extends FontRenderer {
+public final class ModernFontRenderer extends FontRenderer {
 
-    public static boolean sAllowFontShadow = true;
+    private static final ModernFontRenderer INSTANCE = new ModernFontRenderer(TrueTypeRenderer.getInstance());
 
-    static ModernFontRenderer INSTANCE;
+    public static boolean sAllowFontShadow;
 
     private final TrueTypeRenderer fontRenderer;
 
@@ -47,6 +48,11 @@ public class ModernFontRenderer extends FontRenderer {
         this.fontRenderer = fontRenderer;
     }
 
+    /**
+     * For compatibility, developers should not use this
+     *
+     * @return instance
+     */
     public static ModernFontRenderer getInstance() {
         return INSTANCE;
     }
@@ -78,7 +84,13 @@ public class ModernFontRenderer extends FontRenderer {
     }
 
     public int drawStringInternal(@Nullable String text, float x, float y, int color, boolean dropShadow, @Nonnull IRenderTypeBuffer buffer, Matrix4f matrix, int packedLight) {
-        // ensure has alpha, color can be ARGB, or can be RGB
+        if (text == null) {
+            return 0;
+        }
+        if (text.isEmpty()) {
+            return (int) (x + (dropShadow ? 1.0f : 0.0f));
+        }
+        // ensure alpha, color can be ARGB, or can be RGB
         // if alpha <= 1, make alpha = 255
         if ((color & 0xfe000000) == 0) {
             color |= 0xff000000;
@@ -96,7 +108,7 @@ public class ModernFontRenderer extends FontRenderer {
         Matrix4f matrix4f = matrix.copy();
         matrix4f.translate(new Vector3f(0.0F, 0.0F, 0.001f));
         x += fontRenderer.drawStringGlobal(text, x, y, r, g, b, a, false, matrix4f, buffer, packedLight);
-        return text == null ? 0 : (int) (x + (dropShadow ? 1.0f : 0.0f));
+        return (int) (x + (dropShadow ? 1.0f : 0.0f));
     }
 
     @Override

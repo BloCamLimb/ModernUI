@@ -1,4 +1,4 @@
-### 1.15.2-1.6.0.57 / 1.15.2-2.0.0.57
+### 1.16.1-2.0.0.57
 * Reduce the requirement of OpenGL 4.6 to OpenGL 4.3
 
 ### 1.15.2-1.5.9.56 (2020-05-26)
@@ -88,7 +88,7 @@ Add russian localization (by vanja-san)
 Fix API compatibility
 
 ### 1.15.2-1.4.2.36 (2020-04-18)
-Fix wrong displacement while following entry in scroll window  
+Fix wrong displacement while following glyphTexture in scroll window  
 Improve and perfect the KeyBinding search function
 
 ### 1.15.2-1.4.1.35 (2020-04-17)

@@ -16,21 +16,26 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.font;
+package icyllis.modernui.font.process;
 
-public enum TextAlign {
-    LEFT(0.0f),
-    CENTER(0.25f),
-    RIGHT(0.5f);
+import icyllis.modernui.api.util.Color3i;
 
-    /* Divided by 2, because font renderer is based on a gui scale of 2 */
-    final float offsetFactor;
+import javax.annotation.Nonnull;
 
-    TextAlign(float offsetFactor) {
-        this.offsetFactor = offsetFactor;
-    }
+/**
+ * Encapsulates the most primitive information to tell the renderer how to
+ * render a single glyph in specified text component or string. These props
+ * can be parsed by TextFormatting and Style.
+ */
+@Deprecated
+public class StringPropInfo {
 
-    public float getOffsetFactor() {
-        return offsetFactor;
+    /**
+     * RGB color
+     */
+    public final Color3i color;
+
+    public StringPropInfo(@Nonnull Color3i color) {
+        this.color = color;
     }
 }
