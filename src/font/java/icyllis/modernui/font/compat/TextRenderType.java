@@ -16,22 +16,22 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.font;
+package icyllis.modernui.font.compat;
 
 import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.systems.RenderSystem;
+import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import net.minecraft.client.renderer.RenderState;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import org.lwjgl.opengl.GL11;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
 public class TextRenderType extends RenderType {
 
-    private static final Map<Integer, RenderType> TYPES = new HashMap<>();
+    private static final Map<Integer, RenderType> TYPES = new Int2ObjectArrayMap<>();
 
     private static final ImmutableList<RenderState> GENERAL_STATES;
 
@@ -70,6 +70,10 @@ public class TextRenderType extends RenderType {
 
     public static RenderType getOrCacheType(int textureName) {
         return TYPES.computeIfAbsent(textureName, TextRenderType::new);
+    }
+
+    public static boolean removeCachedType(int textureName) {
+        return TYPES.remove(textureName) != null;
     }
 
     @Override

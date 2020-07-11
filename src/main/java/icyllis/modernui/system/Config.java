@@ -19,7 +19,7 @@
 package icyllis.modernui.system;
 
 import icyllis.modernui.graphics.BlurHandler;
-import icyllis.modernui.font.ModernFontRenderer;
+import icyllis.modernui.font.compat.ModernFontRenderer;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.config.ModConfig;

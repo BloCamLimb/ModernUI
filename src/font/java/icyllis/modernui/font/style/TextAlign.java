@@ -16,23 +16,17 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.system;
+package icyllis.modernui.font.style;
 
-import net.minecraftforge.fml.common.Mod;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+public enum TextAlign {
+    LEFT(0.0f),
+    CENTER(0.25f),
+    RIGHT(0.5f);
 
-/**
- * We allow font renderer to be a standalone mod
- */
-@Mod(ModernUI_Font.MODID)
-public class ModernUI_Font {
+    /* Divided by 2, because font renderer is based on a gui scale of 2 */
+    public final float offsetFactor;
 
-    public static final String MODID = "modernuifont";
-
-    public static final Logger LOGGER = LogManager.getLogger("ModernUI");
-
-    public ModernUI_Font() {
-
+    TextAlign(float offsetFactor) {
+        this.offsetFactor = offsetFactor;
     }
 }

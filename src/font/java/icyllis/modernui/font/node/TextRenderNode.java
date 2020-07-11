@@ -16,23 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.system;
+package icyllis.modernui.font.node;
 
-import net.minecraftforge.fml.common.Mod;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-/**
- * We allow font renderer to be a standalone mod
- */
-@Mod(ModernUI_Font.MODID)
-public class ModernUI_Font {
-
-    public static final String MODID = "modernuifont";
-
-    public static final Logger LOGGER = LogManager.getLogger("ModernUI");
-
-    public ModernUI_Font() {
-
-    }
+public class TextRenderNode {
 }
