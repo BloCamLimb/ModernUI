@@ -22,5 +22,7 @@ package icyllis.modernui.api;
  * RUA!
  */
 public enum ModernUI_API {
-    INSTANCE
+    INSTANCE;
+
+    public static final String MOD_NAME_COMPACT = "ModernUI";
 }

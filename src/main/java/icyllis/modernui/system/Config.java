@@ -18,8 +18,8 @@
 
 package icyllis.modernui.system;
 
+import icyllis.modernui.api.ModernUI_API;
 import icyllis.modernui.graphics.BlurHandler;
-import icyllis.modernui.font.compat.ModernFontRenderer;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.config.ModConfig;
@@ -53,9 +53,9 @@ public class Config {
     }
 
     static void init() {
-        FMLPaths.getOrCreateGameRelativePath(FMLPaths.CONFIGDIR.get().resolve("ModernUI"), "ModernUI");
-        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, Config.CLIENT_SPEC, "ModernUI/client.toml");
-        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.COMMON_SPEC, "ModernUI/common.toml");
+        FMLPaths.getOrCreateGameRelativePath(FMLPaths.CONFIGDIR.get().resolve(ModernUI_API.MOD_NAME_COMPACT), ModernUI_API.MOD_NAME_COMPACT);
+        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, Config.CLIENT_SPEC, ModernUI_API.MOD_NAME_COMPACT + "/client.toml");
+        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.COMMON_SPEC, ModernUI_API.MOD_NAME_COMPACT + "/common.toml");
         FMLJavaModLoadingContext.get().getModEventBus().addListener(Config::reload);
     }
 
@@ -75,17 +75,10 @@ public class Config {
         //public boolean keepRunningInScreen;
         public boolean blurScreenBackground;
 
-        public String  preferredFontName;
-        public boolean enableGlobalFontRenderer;
-
         //private final ForgeConfigSpec.BooleanValue keepRunningInScreenV;
         private final ForgeConfigSpec.BooleanValue blurScreenBackgroundV;
 
         private final ForgeConfigSpec.ConfigValue<List<? extends String>> blurScreenExclusionsV;
-
-        private final ForgeConfigSpec.ConfigValue<String> preferredFontNameV;
-        private final ForgeConfigSpec.BooleanValue        enableGlobalFontRendererV;
-        private final ForgeConfigSpec.BooleanValue        allowFontShadowV;
 
         private Client(@Nonnull ForgeConfigSpec.Builder builder) {
             builder.comment("Screen Config")
@@ -101,17 +94,7 @@ public class Config {
 
             builder.pop();
 
-            builder.comment("Fonts Config")
-                    .push("fonts");
 
-            enableGlobalFontRendererV = builder.comment("Replace font renderer of vanilla to that of Modern UI. This won't affect the font renderer used in Modern UI's gui screens.")
-                    .define("enableGlobalRenderer", true);
-            preferredFontNameV = builder.comment("The font name with the highest priority to use, the default one included in Modern UI is always the alternative one to use.")
-                    .define("preferredFontName", "");
-            allowFontShadowV = builder.comment("Allow font renderer to draw text with shadow, set to false if you can't read the font clearly.")
-                    .define("allowFontShadow", true);
-
-            builder.pop();
         }
 
         private void load() {
@@ -119,10 +102,6 @@ public class Config {
             blurScreenBackground = blurScreenBackgroundV.get();
 
             BlurHandler.INSTANCE.loadExclusions(blurScreenExclusionsV.get());
-
-            preferredFontName = preferredFontNameV.get();
-            enableGlobalFontRenderer = enableGlobalFontRendererV.get();
-            ModernFontRenderer.sAllowFontShadow = allowFontShadowV.get();
         }
     }
 

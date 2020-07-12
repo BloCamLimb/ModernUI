@@ -20,7 +20,7 @@ package icyllis.modernui.font.compat;
 
 import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.systems.RenderSystem;
-import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 import net.minecraft.client.renderer.RenderState;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
@@ -31,8 +31,15 @@ import java.util.Objects;
 
 public class TextRenderType extends RenderType {
 
-    private static final Map<Integer, RenderType> TYPES = new Int2ObjectArrayMap<>();
+    /**
+     * Texture id to render type map
+     */
+    //TODO remove some old textures depend on put order
+    private static final Map<Integer, RenderType> TYPES = new Int2ObjectLinkedOpenHashMap<>();
 
+    /**
+     * Only the texture id is different, the rest state are same
+     */
     private static final ImmutableList<RenderState> GENERAL_STATES;
 
     static {
@@ -55,6 +62,11 @@ public class TextRenderType extends RenderType {
 
     private final int hashCode;
 
+    /**
+     * The OpenGL texture ID that contains this glyph image.
+     */
+    public final int textureName;
+
     private TextRenderType(int textureName) {
         super("modern_text",
                 DefaultVertexFormats.POSITION_COLOR_TEX_LIGHTMAP,
@@ -65,6 +77,7 @@ public class TextRenderType extends RenderType {
                     RenderSystem.bindTexture(textureName);
                 },
                 () -> GENERAL_STATES.forEach(RenderState::clearRenderState));
+        this.textureName = textureName;
         this.hashCode = Objects.hash(super.hashCode(), GENERAL_STATES, textureName);
     }
 
@@ -81,6 +94,9 @@ public class TextRenderType extends RenderType {
         return hashCode;
     }
 
+    /**
+     * Singleton, the constructor is private
+     */
     @Override
     public boolean equals(Object o) {
         return this == o;

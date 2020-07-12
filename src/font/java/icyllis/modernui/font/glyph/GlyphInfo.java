@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.font.cache;
+package icyllis.modernui.font.glyph;
 
 public class GlyphInfo implements Comparable<GlyphInfo> {
 
@@ -28,7 +28,7 @@ public class GlyphInfo implements Comparable<GlyphInfo> {
     /**
      * Texture ID and position/size of the glyph's pre-rendered image within the cache texture.
      */
-    GlyphTexture texture;
+    TexturedGlyph texture;
 
     /**
      * Glyph's horizontal position (in pixels) relative to the entire string's baseline
@@ -43,7 +43,7 @@ public class GlyphInfo implements Comparable<GlyphInfo> {
     /**
      * Glyph's horizontal advance (in pixels) used for strikethrough and underline effects
      */
-    float advance;
+    public float advance;
 
     /**
      * Allows arrays of Glyph objects to be sorted. Performs numeric comparison on stringIndex.
