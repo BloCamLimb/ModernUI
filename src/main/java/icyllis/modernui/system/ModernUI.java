@@ -18,6 +18,7 @@
 
 package icyllis.modernui.system;
 
+import icyllis.modernui.api.ModernUI_API;
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.shader.ShaderTools;
 import icyllis.modernui.ui.data.LayoutResourceManager;
@@ -41,7 +42,7 @@ public class ModernUI {
 
     public static final String MODID = "modernui";
 
-    public static final Logger LOGGER = LogManager.getLogger("ModernUI");
+    public static final Logger LOGGER = LogManager.getLogger(ModernUI_API.MOD_NAME_COMPACT);
 
     public static final Marker MARKER = MarkerManager.getMarker("SYSTEM");
 

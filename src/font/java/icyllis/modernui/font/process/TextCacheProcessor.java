@@ -16,13 +16,14 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.font.cache;
+package icyllis.modernui.font.process;
 
-import com.google.common.cache.Cache;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.cache.CacheBuilder;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.api.util.Color3i;
-import net.minecraft.util.text.TextFormatting;
+import icyllis.modernui.font.glyph.GlyphInfo;
+import icyllis.modernui.font.glyph.GlyphManager;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -39,7 +40,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @since 2.0
  */
-public class TextCacheManager {
+public class TextCacheProcessor {
 
     /**
      * Config value for default vanilla font size.
@@ -47,33 +48,33 @@ public class TextCacheManager {
     public static int sVanillaFontSize = 16;
 
     /**
-     * Reference to the unicode.FontRenderer class. Needed for creating GlyphVectors and retrieving glyph texture coordinates.
+     * Needed for creating GlyphVectors and retrieving glyph texture coordinates.
      */
-    private GlyphManager glyphManager;
+    private final GlyphManager glyphManager = new GlyphManager();
 
-    /**
-     * A cache of recently seen strings to their fully layed-out state, complete with color changes and texture coordinates of
+    /*
+     * A cache of recently seen strings to their fully laid-out state, complete with color changes and texture coordinates of
      * all pre-rendered glyph images needed to display this string. The weakRefCache holds strong references to the Key
      * objects used in this map.
      */
-    //private WeakHashMap<Key, Entry> stringCache = new WeakHashMap<>(); // Use guava cache below
+    //private WeakHashMap<Key, Entry> stringCache = new WeakHashMap<>();
 
-    /**
+    /*
      * Every String passed to the public renderString() function is added to this WeakHashMap. As long as As long as Minecraft
      * continues to hold a strong reference to the String object (i.e. from TileEntitySign and ChatLine) passed here, the
      * weakRefCache map will continue to hold a strong reference to the Key object that said strings all map to (multiple strings
      * in weakRefCache can map to a single Key if those strings only differ by their ASCII digits).
      */
-    //private WeakHashMap<String, Key> weakRefCache = new WeakHashMap<>(); // Deprecated
+    //private WeakHashMap<String, Key> weakRefCache = new WeakHashMap<>();
 
-    private Cache<Key, Entry> stringCache;
+    private final LoadingCache<Key, Entry> stringCache;
 
     /**
      * Temporary Key object re-used for lookups with stringCache.get(). Using a temporary object like this avoids the overhead
      * of allocating new objects in the critical rendering path. Of course, new Key objects are always created when adding
      * a mapping to stringCache.
      */
-    private Key lookupKey = new Key();
+    private final Key lookupKey = new Key();
 
     /**
      * Pre-cached glyphs for the ASCII digits 0-9 (in that order). Used by renderString() to substitute digit glyphs on the fly
@@ -87,20 +88,6 @@ public class TextCacheManager {
      * True if digitGlyphs[] has been assigned and cacheString() can begin replacing all digits with '0' in the string.
      */
     private boolean digitGlyphsReady = false;
-
-    /**
-     * If true, then enble GL_BLEND in renderString() so anti-aliasing font glyphs show up properly.
-     */
-    //boolean antiAliasEnabled = false; // Always Enabled
-
-    /**
-     * Reference to the main Minecraft thread that created this GlyphCache object. Starting with Minecraft 1.3.1, it is possible
-     * for GlyphCache.cacheGlyphs() to be invoked from the TcpReaderThread while processing a chat packet and computing the width
-     * of the incoming chat text. Unfortunately, if cacheGlyphs() makes any OpenGL calls from any thread except the main one,
-     * it will crash LWJGL with a NullPointerException. By remembering the initial thread and comparing it later against
-     * Thread.currentThread(), the StringCache code can avoid calling cacheGlyphs() when it's not safe to do so.
-     */
-    //private Thread mainThread; // Use RenderSystem to check
 
     /**
      * Wraps a String and acts as the key into stringCache. The hashCode() and equals() methods consider all ASCII digits
@@ -285,7 +272,7 @@ public class TextCacheManager {
         /**
          * Combination of UNDERLINE and STRIKETHROUGH flags specifying effects performed by renderString()
          */
-        public byte renderStyle;
+        public byte renderEffect;
 
         /**
          * Performs numeric comparison on stripIndex. Allows binary search on ColorCode arrays in layoutStyle.
@@ -303,14 +290,12 @@ public class TextCacheManager {
      * A single StringCache object is allocated by Minecraft's FontRenderer which forwards all string drawing and requests for
      * string width to this class.
      */
-    public TextCacheManager() {
+    public TextCacheProcessor() {
         /* StringCache is created by the main game thread; remember it for later thread safety checks */
         /* We do not this anymore, because mojang's RenderSystem */
         //mainThread = Thread.currentThread();
 
-        glyphManager = new GlyphManager();
         stringCache = CacheBuilder.newBuilder()
-                .weakKeys()
                 .expireAfterAccess(1, TimeUnit.MINUTES).build();
 
         /* Pre-cache the ASCII digits to allow for fast glyph substitution */
@@ -325,9 +310,9 @@ public class TextCacheManager {
         /* Need to cache each font style combination; the digitGlyphsReady = false disabled the normal glyph substitution mechanism */
         digitGlyphsReady = false;
         digitGlyphs[FormattingCode.PLAIN] = getOrCacheString("0123456789").glyphs;
-        digitGlyphs[FormattingCode.BOLD] = getOrCacheString(TextFormatting.BOLD + "0123456789").glyphs;
-        digitGlyphs[FormattingCode.ITALIC] = getOrCacheString(TextFormatting.ITALIC + "0123456789").glyphs;
-        digitGlyphs[FormattingCode.BOLD | FormattingCode.ITALIC] = getOrCacheString(TextFormatting.BOLD.toString() + TextFormatting.ITALIC + "0123456789").glyphs;
+        digitGlyphs[FormattingCode.BOLD] = getOrCacheString("\u00a7l0123456789").glyphs;
+        digitGlyphs[FormattingCode.ITALIC] = getOrCacheString("\u00a7o0123456789").glyphs;
+        digitGlyphs[FormattingCode.BOLD | FormattingCode.ITALIC] = getOrCacheString("\u00a7l\u00a7o0123456789").glyphs;
         digitGlyphsReady = true;
     }
 
@@ -521,7 +506,7 @@ public class TextCacheManager {
             formatting.stripIndex = next - shift;
             formatting.color = Color3i.getFormattingColor(colorCode);
             formatting.fontStyle = fontStyle;
-            formatting.renderStyle = renderStyle;
+            formatting.renderEffect = renderStyle;
             codeList.add(formatting);
 
             /* Resume search for section marks after skipping this one */

@@ -35,7 +35,7 @@ import java.util.List;
 /**
  * Replace vanilla renderer with Modern UI renderer
  */
-public final class ModernFontRenderer extends FontRenderer {
+public class ModernFontRenderer extends FontRenderer {
 
     private static final ModernFontRenderer INSTANCE = new ModernFontRenderer(TrueTypeRenderer.getInstance());
 

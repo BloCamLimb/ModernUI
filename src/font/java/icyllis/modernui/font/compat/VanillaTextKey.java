@@ -16,9 +16,11 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.font.cache;
+package icyllis.modernui.font.compat;
 
 import net.minecraft.util.text.Style;
+
+import javax.annotation.Nonnull;
 
 /**
  * Wraps a String and acts as the key into cache. The hashCode() and equals() methods consider all ASCII digits
@@ -26,27 +28,67 @@ import net.minecraft.util.text.Style;
  * be all hashed together into the same entry. The draw method will then substitute the correct digit glyph on
  * the fly. This special digit handling gives a significant speedup on the F3 debug screen.
  * <p>
- * For vanilla only, because computing hash is a little heavy now.
+ * For vanilla only, because Modern UI can generate render node directly.
  *
  * @see net.minecraft.util.text.Style
  * @see net.minecraft.util.text.TextFormatting
  * @since 2.0
  */
-//TODO render style hash only
 public class VanillaTextKey {
 
     /**
-     * a copy of the String which this Key is indexing. A copy is used to avoid creating a strong reference to the original
+     * A copy of the String which this Key is indexing. A copy is used to avoid creating a strong reference to the original
      * passed into draw method. When the original String is no longer needed by Minecraft, it will be garbage collected
      * and the WeakHashMaps in StringCache will allow this Key object and its associated Entry object to be garbage
-     * collected as well.
+     * collected as well. This string contains TextFormatting codes.
      */
-    public String str;
+    private String str;
 
-    public Style style;
+    /**
+     * Reference to vanilla's {@link Style}, we extract the value that will only affect the rendering effect
+     * of the string, and store it as an integer
+     *
+     * @see #parseStyle(Style)
+     */
+    private int style;
 
     public VanillaTextKey() {
 
+    }
+
+    /**
+     * Update current str and style value, parse vanilla's style to an integer
+     *
+     * @param str   str
+     * @param style style
+     */
+    public void updateKey(@Nonnull String str, @Nonnull Style style) {
+        this.str = str;
+        this.style = parseStyle(style);
+    }
+
+    public static int parseStyle(@Nonnull Style style) {
+        int r = 0;
+        if (style.getColor() != null) {
+            // RGB - 24 bit
+            r |= style.getColor().func_240742_a_();
+        }
+        if (style.getBold()) {
+            r |= 1 << 24;
+        }
+        if (style.getItalic()) {
+            r |= 1 << 25;
+        }
+        if (style.getStrikethrough()) {
+            r |= 1 << 26;
+        }
+        if (style.getUnderlined()) {
+            r |= 1 << 27;
+        }
+        if (style.getObfuscated()) {
+            r |= 1 << 28;
+        }
+        return r;
     }
 
     /**
@@ -59,6 +101,11 @@ public class VanillaTextKey {
     public boolean equals(Object o) {
 
         if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        /* First check if styles are equal */
+        if (style != (((VanillaTextKey) o).style)) {
             return false;
         }
 
@@ -76,19 +123,19 @@ public class VanillaTextKey {
          * not be considered equal to any other digit. This forces any string that differs in formatting codes only to
          * have a separate entry in the cache.
          */
-        boolean colorCode = false;
+        boolean formatting = false;
 
         for (int index = 0; index < length; index++) {
             char c1 = str.charAt(index);
             char c2 = other.charAt(index);
 
-            if (c1 != c2 && (c1 < '0' || c1 > '9' || c2 < '0' || c2 > '9' || colorCode)) {
+            if (c1 != c2 && (c1 < '0' || c1 > '9' || c2 < '0' || c2 > '9' || formatting)) {
                 return false;
             }
-            colorCode = (c1 == '\u00a7');
+            formatting = (c1 == '\u00a7');
         }
 
-        return style.equals(((VanillaTextKey) o).style);
+        return true;
     }
 
     /**
@@ -99,6 +146,7 @@ public class VanillaTextKey {
     @Override
     public int hashCode() {
         int code = 0;
+        final String str = this.str;
         final int length = str.length();
 
         /*
@@ -106,18 +154,18 @@ public class VanillaTextKey {
          * not be considered equal to any other digit. This forces any string that differs in formatting codes only to
          * have a separate entry in the cache.
          */
-        boolean formattingCode = false;
+        boolean formatting = false;
 
         for (int index = 0; index < length; index++) {
             char c = str.charAt(index);
-            if (c >= '0' && c <= '9' && !formattingCode) {
+            if (c >= '0' && c <= '9' && !formatting) {
                 c = '0';
             }
-            code = (code * 31) + c;
-            formattingCode = (c == '\u00a7');
+            code = code * 31 + c;
+            formatting = (c == '\u00a7');
         }
 
-        return code * style.hashCode();
+        return code * 31 + style;
     }
 
     /**
