@@ -1,7 +1,13 @@
-### 1.16.1-2.0.0.57
+### 1.16.1-2.0.0.57 (2020-0?-??)
 * Reduce the requirement of OpenGL 4.6 to OpenGL 4.3
-* Improve the layout accuracy of font renderer
-* Improve the size accuracy of glyph
+* Improve the text layout accuracy of font renderer
+* Improve the size and advance accuracy of glyph
+* Improve the align accuracy of digits rendering
+* Use grayscale pixels to store font textures to reduce memory usage
+* Use render nodes for text rendering to improve performance greatly
+* Support higher level mipmap for font textures
+* Support vanilla text styles and components
+* Add font size style to text component
 
 ### 1.15.2-1.5.9.56 (2020-05-26)
 * Fix search bar crash

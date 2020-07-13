@@ -18,7 +18,6 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.system.Config;
 import icyllis.modernui.ui.master.ModernContainerScreen;
 import icyllis.modernui.ui.master.ModernScreen;
 import icyllis.modernui.ui.master.UIManager;
@@ -48,6 +47,11 @@ import java.util.List;
 @OnlyIn(Dist.CLIENT)
 public enum BlurHandler {
     INSTANCE;
+
+    /**
+     * Config value
+     */
+    public static boolean sBlurScreenBackground;
 
     private final ResourceLocation shader = new ResourceLocation("shaders/post/blur_fast.json");
 
@@ -89,7 +93,7 @@ public enum BlurHandler {
         boolean excluded = gui != null && !(gui instanceof ModernScreen) && !(gui instanceof ModernContainerScreen<?>) &&
                 exclusions.stream().anyMatch(c -> c.isAssignableFrom(gui.getClass()));
 
-        if (excluded || !Config.CLIENT.blurScreenBackground) {
+        if (excluded || !sBlurScreenBackground) {
             backgroundAlpha = 0.5f;
             if (excluded && blurring) {
                 minecraft.gameRenderer.stopUseShader();
@@ -104,6 +108,7 @@ public enum BlurHandler {
             GameRenderer gr = minecraft.gameRenderer;
             if (toBlur && !blurring && !guiOpened) {
                 if (gr.getShaderGroup() == null) {
+                    //FIXME hot-bar bugs
                     //gr.loadShader(shader);
                     changingProgress = true;
                     blurring = true;
@@ -123,7 +128,7 @@ public enum BlurHandler {
      */
     public void forceBlur() {
         // no need to check if is excluded, this method is only called by Modern UI screen
-        if (!Config.CLIENT.blurScreenBackground) {
+        if (!sBlurScreenBackground) {
             return;
         }
         if (minecraft.world != null) {

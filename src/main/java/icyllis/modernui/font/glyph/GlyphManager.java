@@ -33,13 +33,11 @@ import org.lwjgl.opengl.GL30;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -62,6 +60,7 @@ public class GlyphManager {
      *
      * @see icyllis.modernui.system.Config.Client
      */
+    public static String  sPreferredFontName;
     public static boolean sAntiAliasing;
     public static boolean sHighPrecision;
     public static boolean sEnableMipmap;
@@ -95,6 +94,11 @@ public class GlyphManager {
      * sampling of the glyph cache textures.
      */
     private static final int GLYPH_BORDER = 3;
+
+    /**
+     * For bilinear or trilinear mipmap textures, similar to {@link #GLYPH_BORDER}, but must be smaller than it
+     */
+    private static final int GLYPH_FRAME = 2;
 
     /**
      * Transparent (alpha zero) white background color for use with BufferedImage.clearRect().
@@ -137,17 +141,11 @@ public class GlyphManager {
     private final int[] imageData = new int[TEXTURE_WIDTH * TEXTURE_HEIGHT];
 
     /**
-     * Intermediate data array for uploading texture data
-     */
-    private final int[] uploadData = new int[TEXTURE_WIDTH * TEXTURE_HEIGHT];
-
-    /**
      * A direct buffer used with glTexSubImage2D(). Used for loading the pre-rendered glyph
      * images from the glyphCacheImage BufferedImage into OpenGL textures.
      */
-    private final IntBuffer uploadBuffer = ByteBuffer.allocateDirect(TEXTURE_WIDTH * TEXTURE_HEIGHT << 2)
-            .order(ByteOrder.BIG_ENDIAN)
-            .asIntBuffer();
+    private final ByteBuffer uploadBuffer = ByteBuffer.allocateDirect(TEXTURE_WIDTH * TEXTURE_HEIGHT)
+            .order(ByteOrder.BIG_ENDIAN);
 
     /**
      * A single integer direct buffer with native byte ordering used for returning values from glGenTextures().
@@ -224,13 +222,18 @@ public class GlyphManager {
         /* Use Java's logical font as the default initial font if user does not override it in some configuration file */
         java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().preferLocaleFonts();
 
-        //FIXME
-        /*if (!Config.CLIENT.preferredFontName.isEmpty()) {
-            allFonts.stream().filter(f -> f.getName().contains(Config.CLIENT.preferredFontName)).findFirst().ifPresent(font -> {
-                usedFonts.add(font);
-                ModernUI.LOGGER.debug(MARKER, "{} has been loaded", font.getName());
+        loadPreferredFonts();
+
+        setRenderingHints();
+    }
+
+    private void loadPreferredFonts() {
+        if (sPreferredFontName.isEmpty()) {
+            allFonts.stream().filter(f -> f.getName().contains(sPreferredFontName)).findFirst().ifPresent(font -> {
+                selectedFonts.add(font);
+                ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", font.getName());
             });
-        }*/
+        }
         try {
             Font f = Font.createFont(Font.TRUETYPE_FONT, getClass().getResourceAsStream("/assets/modernui/font/biliw.otf"));
             selectedFonts.add(f);
@@ -243,8 +246,6 @@ public class GlyphManager {
             ModernUI.LOGGER.warn(MARKER, "Built-in font was missing");
         }
         selectedFonts.add(new Font(Font.SANS_SERIF, Font.PLAIN, 72)); //size 1 > 72
-
-        setRenderingHints();
     }
 
     /**
@@ -265,8 +266,9 @@ public class GlyphManager {
     }
 
     /**
-     * Find the first font in the system able to render at least one character from a given string. The function always tries searching first
-     * in the fontCache (based on the request style). Failing that, it searches the usedFonts list followed by the allFonts[] array.
+     * Find the first font in the system able to render the given codePoint. The function always tries searching first
+     * in the fontCache (based on the request style and size).
+     * Failing that, it searches the selectedFonts list followed by the allFonts[] array.
      *
      * @param codePoint the codePoint to check against the font
      * @param fontStyle combination of the Font.PLAIN, Font.BOLD, and Font.ITALIC to request a particular font style
@@ -324,8 +326,6 @@ public class GlyphManager {
                 l -> cacheGlyph(font, codePoint));
     }
 
-    private int cpm = 0;
-
     /**
      * Create a textured glyph with given character and font, draw and upload image data to OpenGL texture.
      *
@@ -358,29 +358,22 @@ public class GlyphManager {
 
         glyphTextureGraphics.setFont(font);
         glyphTextureGraphics.drawString(String.valueOf(chars), currPosX, currPosY - baseline);
-        int x = currPosX - 2;
-        int y = currPosY - 2;
-        uploadTexture(x, y, renderWidth + 4, renderHeight + 4);
+
+        int x = currPosX - GLYPH_FRAME;
+        int y = currPosY - GLYPH_FRAME;
+
+        uploadTexture(x, y, renderWidth + GLYPH_FRAME * 2, renderHeight + GLYPH_FRAME * 2);
 
         currLineHeight = Math.max(currLineHeight, renderHeight);
-
         currPosX += renderWidth + GLYPH_BORDER * 2;
 
         int advance = Math.round(vector.getGlyphMetrics(0).getAdvanceX());
 
-        cpm++;
-        if (cpm > 5) {
-            try {
-                ImageIO.write(glyphTextureImage, "png", new File("F:/apm.png"));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            cpm = 0;
-        }
-
-        return new TexturedGlyph(textureName, advance / 2.0f, baseline / 2.0f, (renderWidth + 4) / 2.0f, (renderHeight + 4) / 2.0f,
+        return new TexturedGlyph(textureName, advance / 2.0f, baseline / 2.0f,
+                (renderWidth + GLYPH_FRAME * 2) / 2.0f, (renderHeight + GLYPH_FRAME * 2) / 2.0f,
                 (float) x / TEXTURE_WIDTH, (float) y / TEXTURE_HEIGHT,
-                (float) (x + renderWidth + 4) / TEXTURE_WIDTH, (float) (y + renderHeight + 4) / TEXTURE_HEIGHT);
+                (float) (x + renderWidth + GLYPH_FRAME * 2) / TEXTURE_WIDTH,
+                (float) (y + renderHeight + GLYPH_FRAME * 2) / TEXTURE_HEIGHT);
     }
 
     /**
@@ -585,6 +578,14 @@ public class GlyphManager {
         }
     }
 
+    /**
+     * Upload texture data of current texture from CPU to GPU with given dirty area.
+     *
+     * @param x      left pos
+     * @param y      top pos
+     * @param width  width
+     * @param height height
+     */
     private void uploadTexture(int x, int y, int width, int height) {
         /* Load imageBuffer with pixel data ready for transfer to OpenGL texture */
         updateImageBuffer(x, y, width, height);
@@ -595,13 +596,13 @@ public class GlyphManager {
         GL11.glPixelStorei(GL11.GL_UNPACK_ROW_LENGTH, width); // not full texture
         GL11.glPixelStorei(GL11.GL_UNPACK_SKIP_ROWS, 0);
         GL11.glPixelStorei(GL11.GL_UNPACK_SKIP_PIXELS, 0);
-        GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 4); // 4 is RGBA, 4 channels
+        GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1); // 1 is Alpha, 1 channels
 
         GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, x, y, width, height,
-                GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, uploadBuffer);
+                GL11.GL_ALPHA, GL11.GL_UNSIGNED_BYTE, uploadBuffer);
 
-        /* Auto generate mipmap texture */
-        GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+        /* Auto generate mipmap texture, no needed */
+        //GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
     }
 
     /**
@@ -617,15 +618,17 @@ public class GlyphManager {
         /* Copy raw pixel data from BufferedImage to imageData array with one integer per pixel in 0xAARRGGBB form */
         glyphTextureImage.getRGB(x, y, width, height, imageData, 0, width);
 
-        /* Swizzle each color integer from Java's ARGB format to OpenGL's RGBA */
-        for (int i = 0; i < width * height; i++) {
-            int color = imageData[i];
-            uploadData[i] = (color << 8) | (color >>> 24);
-        }
-
         /* Copy int array to direct buffer */
         uploadBuffer.clear();
-        uploadBuffer.put(uploadData);
+
+        /* Swizzle each color integer from Java's ARGB format to OpenGL's grayscale */
+        for (int i = 0; i < width * height; i++) {
+            //int color = imageData[i];
+            //uploadData[i] = (color << 8) | (color >>> 24);
+            // only alpha channel
+            uploadBuffer.put((byte) (imageData[i] >>> 24));
+        }
+
         uploadBuffer.flip();
     }
 
@@ -664,7 +667,7 @@ public class GlyphManager {
         textureName = textureGenBuffer.get(0);
 
         /* Load imageBuffer with pixel data ready for transfer to OpenGL texture */
-        updateImageBuffer(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+        //updateImageBuffer(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
 
         /*
          * Initialize texture with the now cleared BufferedImage. Using a texture with GL_ALPHA8 internal format may result in
@@ -673,10 +676,10 @@ public class GlyphManager {
         GlStateManager.bindTexture(textureName);
 
         /* Due to changes in 1.14+, so this ensure pixels are correctly stored from CPU to GPU */
-        GlStateManager.pixelStore(GL11.GL_UNPACK_ROW_LENGTH, 0); // 0 is unspecific
+        /*GlStateManager.pixelStore(GL11.GL_UNPACK_ROW_LENGTH, 0); // 0 is unspecific
         GlStateManager.pixelStore(GL11.GL_UNPACK_SKIP_ROWS, 0);
         GlStateManager.pixelStore(GL11.GL_UNPACK_SKIP_PIXELS, 0);
-        GlStateManager.pixelStore(GL11.GL_UNPACK_ALIGNMENT, 4); // 4 is RGBA, has 4 channels
+        GlStateManager.pixelStore(GL11.GL_UNPACK_ALIGNMENT, 4); // 4 is RGBA, has 4 channels*/
 
         int mipmapLevel = sMipmapLevel;
 
@@ -684,17 +687,19 @@ public class GlyphManager {
             GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, mipmapLevel);
             GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MIN_LOD, 0);
             GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LOD, mipmapLevel);
-            GL11.glTexParameterf(GL11.GL_TEXTURE_2D, GL14.GL_TEXTURE_LOD_BIAS, 0.0F);
+            GL11.glTexParameterf(GL11.GL_TEXTURE_2D, GL14.GL_TEXTURE_LOD_BIAS, 0.0f);
         }
 
         for (int level = 0; level <= mipmapLevel; level++) {
-            GL11.glTexImage2D(GL11.GL_TEXTURE_2D, level, GL11.GL_ALPHA8, TEXTURE_WIDTH >> level,
-                    TEXTURE_HEIGHT >> level, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, uploadBuffer);
+            GL11.glTexImage2D(GL11.GL_TEXTURE_2D, level, GL11.GL_ALPHA, TEXTURE_WIDTH >> level,
+                    TEXTURE_HEIGHT >> level, 0, GL11.GL_ALPHA, GL11.GL_UNSIGNED_BYTE, (IntBuffer) null);
         }
 
+        /* We set MinMag params here, just call once for a texture */
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
 
+        /* Auto generate mipmap */
         GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
 
     }

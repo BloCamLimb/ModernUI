@@ -185,13 +185,13 @@ public class TextCacheProcessor {
         int curColor;
         int curStyle = PLAIN;
 
-        final int defColor;
         if (style.getColor() != null) {
-            defColor = style.getColor().func_240742_a_();
+            curColor = style.getColor().func_240742_a_();
         } else {
-            defColor = -1;
+            curColor = -1;
         }
-        curColor = defColor;
+        final int defColor = curColor;
+
         if (style.getBold()) {
             curStyle |= BOLD;
         }
