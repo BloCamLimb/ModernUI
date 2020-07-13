@@ -20,10 +20,9 @@ package icyllis.modernui.font.style;
 
 public enum TextAlign {
     LEFT(0.0f),
-    CENTER(0.25f),
-    RIGHT(0.5f);
+    CENTER(0.5f),
+    RIGHT(1.0f);
 
-    /* Divided by 2, because font renderer is based on a gui scale of 2 */
     public final float offsetFactor;
 
     TextAlign(float offsetFactor) {

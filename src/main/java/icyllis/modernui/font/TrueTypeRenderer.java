@@ -49,7 +49,6 @@ public class TrueTypeRenderer implements IFontRenderer {
      *
      * @see icyllis.modernui.system.Config.Client
      */
-    public static String  sPreferredFontName;
     public static boolean sGlobalRenderer;
 
     /**
@@ -116,8 +115,7 @@ public class TrueTypeRenderer implements IFontRenderer {
         }
         TextRenderNode node = processor.lookupVanillaNode(str, Style.EMPTY);
 
-        //FIXME
-        x -= node.advance * align.offsetFactor * 2;
+        x -= node.advance * align.offsetFactor;
         node.drawText(Tessellator.getInstance().getBuffer(), x, y, r, g, b, a);
         return node.advance;
     }

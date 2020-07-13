@@ -76,7 +76,6 @@ public class Config {
     public static class Client {
 
         //public boolean keepRunningInScreen;
-        public boolean blurScreenBackground;
 
         //private final ForgeConfigSpec.BooleanValue keepRunningInScreenV;
         private final ForgeConfigSpec.BooleanValue blurScreenBackgroundV;
@@ -142,12 +141,12 @@ public class Config {
 
         private void load() {
             //keepRunningInScreen = keepRunningInScreenV.get();
-            blurScreenBackground = blurScreenBackgroundV.get();
 
+            BlurHandler.sBlurScreenBackground = blurScreenBackgroundV.get();
             BlurHandler.INSTANCE.loadExclusions(blurScreenExclusionsV.get());
 
             TrueTypeRenderer.sGlobalRenderer = globalRenderer.get();
-            TrueTypeRenderer.sPreferredFontName = preferredName.get();
+            GlyphManager.sPreferredFontName = preferredName.get();
             GlyphManager.sAntiAliasing = antiAliasing.get();
             GlyphManager.sHighPrecision = highPrecision.get();
             GlyphManager.sEnableMipmap = enableMipmap.get();
@@ -164,16 +163,16 @@ public class Config {
 
     public static class Common {
 
-        //private final ForgeConfigSpec.BooleanValue enableDeveloperModeV;
+        private final ForgeConfigSpec.BooleanValue enableDeveloperModeV;
         //private final ForgeConfigSpec.IntValue workingDirLevelV;
 
         public Common(@Nonnull ForgeConfigSpec.Builder builder) {
             builder.comment("Developer Config")
                     .push("developer");
 
-            /*enableDeveloperModeV = builder.comment("For assisting developer to debug mod and edit modules in-game")
+            enableDeveloperModeV = builder.comment("Whether to enable developer mode.")
                     .define("enableDeveloperMode", false);
-            workingDirLevelV = builder.comment("The level of your working directory, determines the root directory of your project.")
+            /*workingDirLevelV = builder.comment("The level of your working directory, determines the root directory of your project.")
                     .defineInRange("workingDirLevel", 1, 0, Integer.MAX_VALUE);*/
 
             builder.pop();
@@ -181,19 +180,24 @@ public class Config {
 
         private void load() {
             if (!developerMode) {
-                Path path = FMLPaths.GAMEDIR.get();
-                // determines the root directory of your project
-                for (int i = 0; i <= 1; i++) {
-                    File dir = path.toFile();
-                    String[] r = dir.list((f, n) -> n.equals("build.gradle"));
-                    if (r != null && r.length > 0) {
-                        developerMode = true;
-                        ModernUI.LOGGER.debug(ModernUI.MARKER, "Enables Developer Mode");
-                        break;
-                    }
-                    path = path.getParent();
+                if (enableDeveloperModeV.get()) {
+                    enableDeveloperMode();
+                    return;
+                }
+                // get '/run' parent
+                Path path = FMLPaths.GAMEDIR.get().getParent();
+                // the root directory of your project
+                File dir = path.toFile();
+                String[] r = dir.list((f, n) -> n.equals("build.gradle"));
+                if (r != null && r.length > 0) {
+                    enableDeveloperMode();
                 }
             }
+        }
+
+        private void enableDeveloperMode() {
+            developerMode = true;
+            ModernUI.LOGGER.debug(ModernUI.MARKER, "Enables Developer Mode");
         }
     }
 }
