@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.font.compat;
+package icyllis.modernui.font.node;
 
 import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -35,7 +35,7 @@ public class TextRenderType extends RenderType {
      * Texture id to render type map
      */
     //TODO remove some old textures depend on put order
-    private static final Map<Integer, RenderType> TYPES = new Int2ObjectLinkedOpenHashMap<>();
+    private static final Map<Integer, TextRenderType> TYPES = new Int2ObjectLinkedOpenHashMap<>();
 
     /**
      * Only the texture id is different, the rest state are same
@@ -81,7 +81,7 @@ public class TextRenderType extends RenderType {
         this.hashCode = Objects.hash(super.hashCode(), GENERAL_STATES, textureName);
     }
 
-    public static RenderType getOrCacheType(int textureName) {
+    public static TextRenderType getOrCacheType(int textureName) {
         return TYPES.computeIfAbsent(textureName, TextRenderType::new);
     }
 

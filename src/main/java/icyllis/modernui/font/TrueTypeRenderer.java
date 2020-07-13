@@ -20,26 +20,20 @@ package icyllis.modernui.font;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.IVertexBuilder;
 import icyllis.modernui.api.util.Color3i;
-import icyllis.modernui.font.compat.ModernFontRenderer;
-import icyllis.modernui.font.glyph.GlyphInfo;
-import icyllis.modernui.font.glyph.TexturedGlyph;
+import icyllis.modernui.font.node.TextRenderNode;
 import icyllis.modernui.font.process.TextCacheProcessor;
 import icyllis.modernui.font.style.TextAlign;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.entity.EntityRendererManager;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.math.vector.Matrix4f;
+import net.minecraft.util.text.Style;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import org.lwjgl.opengl.GL11;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 @OnlyIn(Dist.CLIENT)
@@ -48,12 +42,12 @@ public class TrueTypeRenderer implements IFontRenderer {
     /**
      * Render thread instance
      */
-    private static final TrueTypeRenderer INSTANCE = new TrueTypeRenderer();
+    private static TrueTypeRenderer INSTANCE;
 
     /**
      * Config values
      *
-     * @see icyllis.modernui.system.ModernUI_Font.Config
+     * @see icyllis.modernui.system.Config.Client
      */
     public static String  sPreferredFontName;
     public static boolean sGlobalRenderer;
@@ -86,7 +80,7 @@ public class TrueTypeRenderer implements IFontRenderer {
     /**
      * Cache and pre-process string for much better performance
      */
-    private final TextCacheProcessor cache = new TextCacheProcessor();
+    private final TextCacheProcessor processor = new TextCacheProcessor();
 
     /**
      * Note: When Minecraft load completed, MainMenuScreen will be open and post GuiOpenEvent
@@ -97,20 +91,35 @@ public class TrueTypeRenderer implements IFontRenderer {
 
         // init constructor and hook
         if (sGlobalRenderer) {
-            try {
+            /*try {
                 ObfuscationReflectionHelper.findField(Minecraft.class, "field_71466_p")
                         .set(Minecraft.getInstance(), ModernFontRenderer.getInstance());
                 ObfuscationReflectionHelper.findField(EntityRendererManager.class, "field_78736_p")
                         .set(Minecraft.getInstance().getRenderManager(), ModernFontRenderer.getInstance());
             } catch (IllegalAccessException e) {
                 e.printStackTrace();
-            }
+            }*/
         }
     }
 
     public static TrueTypeRenderer getInstance() {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
+        if (INSTANCE == null) {
+            INSTANCE = new TrueTypeRenderer();
+        }
         return INSTANCE;
+    }
+
+    public float drawFromCanvas(@Nullable String str, float x, float y, int r, int g, int b, int a, TextAlign align) {
+        if (str == null || str.isEmpty()) {
+            return 0;
+        }
+        TextRenderNode node = processor.lookupVanillaNode(str, Style.EMPTY);
+
+        //FIXME
+        x -= node.advance * align.offsetFactor * 2;
+        node.drawText(Tessellator.getInstance().getBuffer(), x, y, r, g, b, a);
+        return node.advance;
     }
 
     @Override
@@ -126,7 +135,7 @@ public class TrueTypeRenderer implements IFontRenderer {
         RenderSystem.enableTexture();
 
         /* Make sure the entire string is cached before rendering and return its glyph representation */
-        TextCacheProcessor.Entry entry = cache.getOrCacheString(str);
+        //TextCacheProcessor.Entry entry = cache.getOrCacheString(str);
 
         /* Adjust the baseline of the string because the startY coordinate in Minecraft is for the top of the string */
         startY += BASELINE_OFFSET;
@@ -156,31 +165,31 @@ public class TrueTypeRenderer implements IFontRenderer {
         }*/
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        startX = startX - entry.advance * align.offsetFactor;
+        //startX = startX - entry.advance * align.offsetFactor;
 
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();
 
         /* The currently active font style is needed to select the proper ASCII digit style for fast replacement */
-        int fontStyle = TextCacheProcessor.FormattingCode.PLAIN;
+        int fontStyle = TextCacheProcessor.PLAIN;
 
-        for (int glyphIndex = 0, colorIndex = 0; glyphIndex < entry.glyphs.length; glyphIndex++) {
+        //for (int glyphIndex = 0, colorIndex = 0; glyphIndex < entry.glyphs.length; glyphIndex++) {
             /*
              * If the original string had a color code at this glyph's position, then change the current GL color that gets added
              * to the vertex array. Note that only the RGB component of the color is replaced by a color code; the alpha component
              * of the original color passed into this function will remain. The while loop handles multiple consecutive color codes,
              * in which case only the last such color code takes effect.
              */
-            while (colorIndex < entry.codes.length && entry.glyphs[glyphIndex].stringIndex >= entry.codes[colorIndex].stringIndex) {
+            /*while (colorIndex < entry.codes.length && entry.glyphs[glyphIndex].stringIndex >= entry.codes[colorIndex].stringIndex) {
                 formattedColor = entry.codes[colorIndex].color;
                 fontStyle = entry.codes[colorIndex].fontStyle;
                 colorIndex++;
-            }
+            }*/
 
             /* Select the current glyph's texture information and horizontal layout position within this string */
-            GlyphInfo glyph = entry.glyphs[glyphIndex];
+            /*Glyph glyph = entry.glyphs[glyphIndex];
             TexturedGlyph texture = glyph.texture;
-            int glyphX = glyph.x;
+            int glyphX = glyph.x;*/
 
             /*
              * Replace ASCII digits in the string with their respective glyphs; strings differing by digits are only cached once.
@@ -188,16 +197,16 @@ public class TrueTypeRenderer implements IFontRenderer {
              * narrower than other digits), re-center the new glyph over the placeholder's position to minimize the visual impact
              * of the width mismatch.
              */
-            char c = str.charAt(glyph.stringIndex);
+            /*char c = str.charAt(glyph.stringIndex);
             if (c >= '0' && c <= '9') {
                 int oldWidth = texture.advance;
                 texture = cache.digitGlyphs[fontStyle][c - '0'].texture;
                 int newWidth = texture.advance;
                 glyphX += (oldWidth - newWidth) >> 1;
-            }
+            }*/
 
             /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
-            float x1 = startX + (glyphX) / 2.0F;
+            /*float x1 = startX + (glyphX) / 2.0F;
             float x2 = startX + (glyphX + texture.advance) / 2.0F;
             float y1 = startY + (glyph.y) / 2.0F;
             float y2 = startY + (glyph.y + texture.height) / 2.0F;
@@ -220,51 +229,51 @@ public class TrueTypeRenderer implements IFontRenderer {
                 bufferBuilder.pos(x2, y1, 0).color(r, g, b, a).tex(texture.u2, texture.v1).endVertex();
             }
 
-            tessellator.draw();
-        }
+            tessellator.draw();*/
+        //}
 
         /* Draw strikethrough and underlines if the string uses them anywhere */
-        if (entry.needExtraRender) {
-            int renderStyle = 0;
+        //if (entry.needExtraRender) {
+            //int renderStyle = 0;
 
             /* Use initial color passed to renderString(); disable texturing to draw solid color lines */
-            GlStateManager.disableTexture();
-            bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+            //GlStateManager.disableTexture();
+            //bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
 
-            for (int glyphIndex = 0, colorIndex = 0; glyphIndex < entry.glyphs.length; glyphIndex++) {
+            //for (int glyphIndex = 0, colorIndex = 0; glyphIndex < entry.glyphs.length; glyphIndex++) {
                 /*
                  * If the original string had a color code at this glyph's position, then change the current GL color that gets added
                  * to the vertex array. The while loop handles multiple consecutive color codes, in which case only the last such
                  * color code takes effect.
                  */
-                while (colorIndex < entry.codes.length && entry.glyphs[glyphIndex].stringIndex >= entry.codes[colorIndex].stringIndex) {
+                /*while (colorIndex < entry.codes.length && entry.glyphs[glyphIndex].stringIndex >= entry.codes[colorIndex].stringIndex) {
                     formattedColor = entry.codes[colorIndex].color;
                     renderStyle = entry.codes[colorIndex].renderEffect;
                     colorIndex++;
-                }
+                }*/
 
                 /* Select the current glyph within this string for its layout position */
-                GlyphInfo glyph = entry.glyphs[glyphIndex];
+                //Glyph glyph = entry.glyphs[glyphIndex];
 
                 /* The strike/underlines are drawn beyond the glyph's width to include the extra space between glyphs */
-                float glyphSpace = glyph.advance - glyph.texture.advance;
+                float glyphSpace = 0;//glyph.advance - glyph.texture.advance;
 
                 /* Draw underline under glyph if the style is enabled */
-                if ((renderStyle & TextCacheProcessor.FormattingCode.UNDERLINE) != 0) {
+                //if ((renderStyle & TextCacheProcessor.FormattingCode.UNDERLINE) != 0) {
                     /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
-                    if (formattedColor != null) {
+                    /*if (formattedColor != null) {
                         int red = formattedColor.getRed();
                         int green = formattedColor.getGreen();
                         int blue = formattedColor.getBlue();
                         drawI1(startX, startY, bufferBuilder, glyph, glyphSpace, a, red, green, blue, UNDERLINE_OFFSET, UNDERLINE_THICKNESS);
                     } else {
                         drawI1(startX, startY, bufferBuilder, glyph, glyphSpace, a, r, g, b, UNDERLINE_OFFSET, UNDERLINE_THICKNESS);
-                    }
-                }
+                    }*/
+                //}
 
                 /* Draw strikethrough in the middle of glyph if the style is enabled */
-                if ((renderStyle & TextCacheProcessor.FormattingCode.STRIKETHROUGH) != 0) {
-                    /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
+                /*if ((renderStyle & TextCacheProcessor.FormattingCode.STRIKETHROUGH) != 0) {
+                    *//* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled *//*
                     if (formattedColor != null) {
                         int red = formattedColor.getRed();
                         int green = formattedColor.getGreen();
@@ -273,20 +282,20 @@ public class TrueTypeRenderer implements IFontRenderer {
                     } else {
                         drawI1(startX, startY, bufferBuilder, glyph, glyphSpace, a, r, g, b, STRIKETHROUGH_OFFSET, STRIKETHROUGH_THICKNESS);
                     }
-                }
-            }
+                }*/
+            //}
 
             /* Finish drawing the last strikethrough/underline segments */
-            tessellator.draw();
-            GlStateManager.enableTexture();
-        }
+            //tessellator.draw();
+            //GlStateManager.enableTexture();
+        //}
 
 
         /* Return total horizontal advance (slightly wider than the bounding box, but close enough for centering strings) */
-        return entry.advance / 2;
+        return 0;//entry.advance / 2;
     }
 
-    private void drawI1(float startX, float startY, @Nonnull BufferBuilder buffer, @Nonnull GlyphInfo glyph, float glyphSpace, int a, int r, int g, int b, int underlineOffset, int underlineThickness) {
+    /*private void drawI1(float startX, float startY, @Nonnull BufferBuilder buffer, @Nonnull Glyph glyph, float glyphSpace, int a, int r, int g, int b, int underlineOffset, int underlineThickness) {
         float x1 = startX + (glyph.x - glyphSpace) / 2.0F;
         float x2 = startX + (glyph.x + glyph.advance) / 2.0F;
         float y1 = startY + (underlineOffset) / 2.0F;
@@ -296,7 +305,7 @@ public class TrueTypeRenderer implements IFontRenderer {
         buffer.pos(x1, y2, 0).color(r, g, b, a).endVertex();
         buffer.pos(x2, y2, 0).color(r, g, b, a).endVertex();
         buffer.pos(x2, y1, 0).color(r, g, b, a).endVertex();
-    }
+    }*/
 
     /**
      * Render a single-line string to the screen using the current OpenGL color. The (x,y) coordinates are of the upper-left
@@ -328,7 +337,7 @@ public class TrueTypeRenderer implements IFontRenderer {
         }
 
         /* Make sure the entire string is cached before rendering and return its glyph representation */
-        TextCacheProcessor.Entry entry = cache.getOrCacheString(str);
+        //TextCacheProcessor.Entry entry = processor.getOrCacheString(str);
 
         /* Adjust the baseline of the string because the startY coordinate in Minecraft is for the top of the string */
         startY += BASELINE_OFFSET;
@@ -363,25 +372,25 @@ public class TrueTypeRenderer implements IFontRenderer {
         RenderSystem.defaultBlendFunc();*/
 
         /* The currently active font style is needed to select the proper ASCII digit style for fast replacement */
-        int fontStyle = TextCacheProcessor.FormattingCode.PLAIN;
+        int fontStyle = TextCacheProcessor.PLAIN;
 
-        for (int glyphIndex = 0, colorIndex = 0; glyphIndex < entry.glyphs.length; glyphIndex++) {
+        //for (int glyphIndex = 0, colorIndex = 0; glyphIndex < entry.glyphs.length; glyphIndex++) {
             /*
              * If the original string had a color code at this glyph's position, then change the current GL color that gets added
              * to the vertex array. Note that only the RGB component of the color is replaced by a color code; the alpha component
              * of the original color passed into this function will remain. The while loop handles multiple consecutive color codes,
              * in which case only the last such color code takes effect.
              */
-            while (colorIndex < entry.codes.length && entry.glyphs[glyphIndex].stringIndex >= entry.codes[colorIndex].stringIndex) {
+            /*while (colorIndex < entry.codes.length && entry.glyphs[glyphIndex].stringIndex >= entry.codes[colorIndex].stringIndex) {
                 formattedColor = entry.codes[colorIndex].color;
                 fontStyle = entry.codes[colorIndex].fontStyle;
                 colorIndex++;
-            }
+            }*/
 
             /* Select the current glyph's texture information and horizontal layout position within this string */
-            GlyphInfo glyph = entry.glyphs[glyphIndex];
+            /*Glyph glyph = entry.glyphs[glyphIndex];
             TexturedGlyph texture = glyph.texture;
-            int glyphX = glyph.x;
+            int glyphX = glyph.x;*/
 
             /*
              * Replace ASCII digits in the string with their respective glyphs; strings differing by digits are only cached once.
@@ -389,25 +398,25 @@ public class TrueTypeRenderer implements IFontRenderer {
              * narrower than other digits), re-center the new glyph over the placeholder's position to minimize the visual impact
              * of the width mismatch.
              */
-            char c = str.charAt(glyph.stringIndex);
+            /*char c = str.charAt(glyph.stringIndex);
             if (c >= '0' && c <= '9') {
                 int oldWidth = texture.advance;
-                texture = cache.digitGlyphs[fontStyle][c - '0'].texture;
+                texture = processor.digitGlyphs[fontStyle][c - '0'].texture;
                 int newWidth = texture.advance;
                 glyphX += (oldWidth - newWidth) >> 1;
-            }
+            }*/
 
             /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
-            float x1 = startX + (glyphX) / 2.0F;
+            /*float x1 = startX + (glyphX) / 2.0F;
             float x2 = startX + (glyphX + texture.advance) / 2.0F;
             float y1 = startY + (glyph.y) / 2.0F;
-            float y2 = startY + (glyph.y + texture.height) / 2.0F;
+            float y2 = startY + (glyph.y + texture.height) / 2.0F;*/
 
             //GlStateManager.bindTexture(texture.textureName);
 
-            IVertexBuilder builder = typeBuffer.getBuffer(texture.renderType);
+            //IVertexBuilder builder = typeBuffer.getBuffer(texture.renderType);
 
-            if (formattedColor != null) {
+            /*if (formattedColor != null) {
                 int r = formattedColor.getRed();
                 int g = formattedColor.getGreen();
                 int b = formattedColor.getBlue();
@@ -425,13 +434,13 @@ public class TrueTypeRenderer implements IFontRenderer {
                 builder.pos(matrix, x1, y2, 0).color(red, green, blue, alpha).tex(texture.u1, texture.v2).lightmap(packedLight).endVertex();
                 builder.pos(matrix, x2, y2, 0).color(red, green, blue, alpha).tex(texture.u2, texture.v2).lightmap(packedLight).endVertex();
                 builder.pos(matrix, x2, y1, 0).color(red, green, blue, alpha).tex(texture.u2, texture.v1).lightmap(packedLight).endVertex();
-            }
+            }*/
 
             //tessellator.draw();
-        }
+        //}
 
         /* Draw strikethrough and underlines if the string uses them anywhere */
-        if (entry.needExtraRender) {
+        //if (entry.needExtraRender) {
 
             // we use default buffer builder now, so we must finish the render type buffer manually
             if (typeBuffer instanceof IRenderTypeBuffer.Impl) {
@@ -453,28 +462,28 @@ public class TrueTypeRenderer implements IFontRenderer {
             GlStateManager.disableTexture();
             bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
 
-            for (int glyphIndex = 0, colorIndex = 0; glyphIndex < entry.glyphs.length; glyphIndex++) {
+            //for (int glyphIndex = 0, colorIndex = 0; glyphIndex < entry.glyphs.length; glyphIndex++) {
                 /*
                  * If the original string had a color code at this glyph's position, then change the current GL color that gets added
                  * to the vertex array. The while loop handles multiple consecutive color codes, in which case only the last such
                  * color code takes effect.
                  */
-                while (colorIndex < entry.codes.length && entry.glyphs[glyphIndex].stringIndex >= entry.codes[colorIndex].stringIndex) {
+                /*while (colorIndex < entry.codes.length && entry.glyphs[glyphIndex].stringIndex >= entry.codes[colorIndex].stringIndex) {
                     formattedColor = entry.codes[colorIndex].color;
                     renderStyle = entry.codes[colorIndex].renderEffect;
                     colorIndex++;
-                }
+                }*/
 
                 /* Select the current glyph within this string for its layout position */
-                GlyphInfo glyph = entry.glyphs[glyphIndex];
+                //Glyph glyph = entry.glyphs[glyphIndex];
 
                 /* The strike/underlines are drawn beyond the glyph's width to include the extra space between glyphs */
-                float glyphSpace = glyph.advance - glyph.texture.advance;
+                //float glyphSpace = glyph.advance - glyph.texture.advance;
 
                 /* Draw underline under glyph if the style is enabled */
-                if ((renderStyle & TextCacheProcessor.FormattingCode.UNDERLINE) != 0) {
+                //if ((renderStyle & TextCacheProcessor.FormattingCode.UNDERLINE) != 0) {
                     /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
-                    if (formattedColor != null) {
+                    /*if (formattedColor != null) {
                         int r = formattedColor.getRed();
                         int g = formattedColor.getGreen();
                         int b = formattedColor.getBlue();
@@ -486,13 +495,13 @@ public class TrueTypeRenderer implements IFontRenderer {
                         drawI1(matrix, startX, startY, bufferBuilder, glyph, glyphSpace, alpha, r, g, b, UNDERLINE_OFFSET, UNDERLINE_THICKNESS);
                     } else {
                         drawI1(matrix, startX, startY, bufferBuilder, glyph, glyphSpace, alpha, red, green, blue, UNDERLINE_OFFSET, UNDERLINE_THICKNESS);
-                    }
-                }
+                    }*/
+                //}
 
                 /* Draw strikethrough in the middle of glyph if the style is enabled */
-                if ((renderStyle & TextCacheProcessor.FormattingCode.STRIKETHROUGH) != 0) {
+                //if ((renderStyle & TextCacheProcessor.FormattingCode.STRIKETHROUGH) != 0) {
                     /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
-                    if (formattedColor != null) {
+                    /*if (formattedColor != null) {
                         int r = formattedColor.getRed();
                         int g = formattedColor.getGreen();
                         int b = formattedColor.getBlue();
@@ -504,22 +513,22 @@ public class TrueTypeRenderer implements IFontRenderer {
                         drawI1(matrix, startX, startY, bufferBuilder, glyph, glyphSpace, alpha, r, g, b, UNDERLINE_OFFSET, UNDERLINE_THICKNESS);
                     } else {
                         drawI1(matrix, startX, startY, bufferBuilder, glyph, glyphSpace, alpha, red, green, blue, STRIKETHROUGH_OFFSET, STRIKETHROUGH_THICKNESS);
-                    }
-                }
-            }
+                    }*/
+                //}
+            //}
 
             /* Finish drawing the last strikethrough/underline segments */
-            tessellator.draw();
+            /*tessellator.draw();
             GlStateManager.enableTexture();
-            RenderSystem.disableCull();
-        }
+            RenderSystem.disableCull();*/
+        //}
 
 
         /* Return total horizontal advance (slightly wider than the bounding box, but close enough for centering strings) */
-        return entry.advance / 2;
+        return 0;
     }
 
-    private void drawI1(Matrix4f matrix, float startX, float startY, BufferBuilder buffer, GlyphInfo glyph, float glyphSpace, int a, int r, int g, int b, int underlineOffset, int underlineThickness) {
+    /*private void drawI1(Matrix4f matrix, float startX, float startY, BufferBuilder buffer, Glyph glyph, float glyphSpace, int a, int r, int g, int b, int underlineOffset, int underlineThickness) {
         float x1 = startX + (glyph.x - glyphSpace) / 2.0F;
         float x2 = startX + (glyph.x + glyph.advance) / 2.0F;
         float y1 = startY + (underlineOffset) / 2.0F;
@@ -529,7 +538,7 @@ public class TrueTypeRenderer implements IFontRenderer {
         buffer.pos(matrix, x1, y2, 0).color(r, g, b, a).endVertex();
         buffer.pos(matrix, x2, y2, 0).color(r, g, b, a).endVertex();
         buffer.pos(matrix, x2, y1, 0).color(r, g, b, a).endVertex();
-    }
+    }*/
 
     /**
      * Return the width of a string in pixels. Used for centering strings inside GUI buttons.
@@ -546,10 +555,10 @@ public class TrueTypeRenderer implements IFontRenderer {
         }
 
         /* Make sure the entire string is cached and rendered since it will probably be used again in a renderString() call */
-        TextCacheProcessor.Entry entry = cache.getOrCacheString(str);
+        //TextCacheProcessor.Entry entry = processor.getOrCacheString(str);
 
         /* Return total horizontal advance (slightly wider than the bounding box, but close enough for centering strings) */
-        return entry.advance / 2;
+        return processor.lookupVanillaNode(str, Style.EMPTY).advance;
     }
 
     /**
@@ -562,6 +571,7 @@ public class TrueTypeRenderer implements IFontRenderer {
      * @param breakAtSpaces set to prefer breaking line at spaces than in the middle of a word
      * @return the number of characters from str that will fit inside width
      */
+    //FIXME
     @SuppressWarnings("SameParameterValue")
     private int sizeString(@Nullable String str, float width, final boolean breakAtSpaces) {
         /* Check for invalid arguments */
@@ -573,7 +583,7 @@ public class TrueTypeRenderer implements IFontRenderer {
         width += width;
 
         /* The glyph array for a string is sorted by the string's logical character position */
-        GlyphInfo[] glyphs = cache.getOrCacheString(str).glyphs;
+        //Glyph[] glyphs = processor.getOrCacheString(str).glyphs;
 
         /* Index of the last whitespace found in the string; used if breakAtSpaces is true */
         int wsIndex = -1;
@@ -581,8 +591,8 @@ public class TrueTypeRenderer implements IFontRenderer {
         /* Add up the individual advance of each glyph until it exceeds the specified width */
         float advance = 0;
         int index = 0;
-        while (index < glyphs.length && advance <= width) {
-            /* Keep track of spaces if breakAtSpaces it set */
+        /*while (index < glyphs.length && advance <= width) {
+            // Keep track of spaces if breakAtSpaces it set
             if (breakAtSpaces) {
                 char c = str.charAt(glyphs[index].stringIndex);
                 if (c == ' ') {
@@ -600,15 +610,15 @@ public class TrueTypeRenderer implements IFontRenderer {
             } else {
                 break;
             }
-        }
+        }*/
 
         /* Avoid splitting individual words if breakAtSpaces set; same test condition as in Minecraft's FontRenderer */
-        if (index < glyphs.length && wsIndex != -1 && wsIndex < index) {
+        /*if (index < glyphs.length && wsIndex != -1 && wsIndex < index) {
             index = wsIndex;
-        }
+        }*/
 
         /* The string index of the last glyph that wouldn't fit gives the total desired length of the string in characters */
-        return index < glyphs.length ? glyphs[index].stringIndex : str.length();
+        return 0;//index < glyphs.length ? glyphs[index].stringIndex : str.length();
     }
 
     /**

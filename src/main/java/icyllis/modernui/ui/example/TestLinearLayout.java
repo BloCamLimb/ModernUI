@@ -68,12 +68,11 @@ public class TestLinearLayout extends LinearLayout {
 
     private static class CView extends View {
 
-        private final String str = String.valueOf(hashCode());
-
         @Override
         protected void onDraw(@Nonnull Canvas canvas) {
             canvas.moveTo(this);
             canvas.resetColor();
+            String str = "Modern UI ABCDEFG";
             canvas.drawText(str, 0, 4);
         }
     }

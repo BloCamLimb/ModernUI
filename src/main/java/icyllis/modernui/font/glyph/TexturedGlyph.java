@@ -18,10 +18,10 @@
 
 package icyllis.modernui.font.glyph;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
-import icyllis.modernui.font.compat.TextRenderType;
+import icyllis.modernui.font.node.TextRenderType;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.util.math.vector.Matrix4f;
 
 import javax.annotation.Nonnull;
@@ -37,22 +37,33 @@ public class TexturedGlyph {
     /**
      * Render type for render type buffer system.
      */
-    private final RenderType renderType;
+    private final TextRenderType renderType;
 
     /**
-     * Glyph's horizontal advance in pixels.
+     * The horizontal advance in pixels of this glyph, including font spacing!
+     * This will be used for layout.
      */
     public final float advance;
 
     /**
-     * The total height of this glyph image.
+     * The offset to baseline that specified when drawing.
+     * This will be used for drawing offset Y.
      */
-    private final float height;
+    private final float baseline;
 
     /**
-     * The offset to baseline that specified when drawing.
+     * The total width of this glyph image.
+     * In pixels, due to gui scaling, we convert it into float.
+     * This will be used for drawing size.
      */
-    public final float baseline;
+    private final float width;
+
+    /**
+     * The total height of this glyph image.
+     * In pixels, due to gui scaling, we convert it into float.
+     * This will be used for drawing size.
+     */
+    private final float height;
 
     /**
      * The horizontal texture coordinate of the upper-left corner.
@@ -74,24 +85,34 @@ public class TexturedGlyph {
      */
     private final float v2;
 
-    public TexturedGlyph(int textureName, float advance, float height, float baseline, float u1, float v1, float u2, float v2) {
+    public TexturedGlyph(int textureName, float advance, float baseline, float width, float height, float u1, float v1, float u2, float v2) {
         renderType = TextRenderType.getOrCacheType(textureName);
         this.advance = advance;
-        this.height = height;
         this.baseline = baseline;
+        this.width = width;
+        this.height = height;
         this.u1 = u1;
         this.v1 = v1;
         this.u2 = u2;
         this.v2 = v2;
     }
 
-    public void drawGlyph(IVertexBuilder builder) {
-
+    public float drawGlyph(@Nonnull IVertexBuilder builder, float x, float y, int r, int g, int b, int a) {
+        RenderSystem.bindTexture(renderType.textureName);
+        y += baseline;
+        builder.pos(x, y, 0).color(r, g, b, a).tex(u1, v1).endVertex();
+        builder.pos(x, y + height, 0).color(r, g, b, a).tex(u1, v2).endVertex();
+        builder.pos(x + width, y + height, 0).color(r, g, b, a).tex(u2, v2).endVertex();
+        builder.pos(x + width, y, 0).color(r, g, b, a).tex(u2, v1).endVertex();
+        return x + advance;
     }
 
     public void drawGlyph(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, float x, float y, int r, int g, int b, int a, int packedLight) {
         IVertexBuilder builder = buffer.getBuffer(renderType);
+        y += baseline;
         builder.pos(matrix, x, y, 0).color(r, g, b, a).tex(u1, v1).lightmap(packedLight).endVertex();
-        builder.pos(matrix, x, y, 0)
+        builder.pos(matrix, x, y + height, 0).color(r, g, b, a).tex(u1, v2).lightmap(packedLight).endVertex();
+        builder.pos(matrix, x + width, y + height, 0).color(r, g, b, a).tex(u2, v2).lightmap(packedLight).endVertex();
+        builder.pos(matrix, x + width, y, 0).color(r, g, b, a).tex(u2, v1).lightmap(packedLight).endVertex();
     }
 }

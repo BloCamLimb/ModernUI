@@ -18,7 +18,8 @@
 
 package icyllis.modernui.font.glyph;
 
-public class GlyphInfo implements Comparable<GlyphInfo> {
+@Deprecated
+public class Glyph implements Comparable<Glyph> {
 
     /**
      * The index into the original string (i.e. with color codes) for the character that generated this glyph.
@@ -28,7 +29,7 @@ public class GlyphInfo implements Comparable<GlyphInfo> {
     /**
      * Texture ID and position/size of the glyph's pre-rendered image within the cache texture.
      */
-    TexturedGlyph texture;
+    //TexturedGlyph texture;
 
     /**
      * Glyph's horizontal position (in pixels) relative to the entire string's baseline
@@ -43,7 +44,7 @@ public class GlyphInfo implements Comparable<GlyphInfo> {
     /**
      * Glyph's horizontal advance (in pixels) used for strikethrough and underline effects
      */
-    public float advance;
+    float advance;
 
     /**
      * Allows arrays of Glyph objects to be sorted. Performs numeric comparison on stringIndex.
@@ -52,7 +53,7 @@ public class GlyphInfo implements Comparable<GlyphInfo> {
      * @return either -1, 0, or 1 if this < other, this == other, or this > other
      */
     @Override
-    public int compareTo(GlyphInfo o) {
+    public int compareTo(Glyph o) {
         return Integer.compare(stringIndex, o.stringIndex);
     }
 }

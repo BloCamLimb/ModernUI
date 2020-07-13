@@ -19,6 +19,9 @@
 package icyllis.modernui.system;
 
 import icyllis.modernui.api.ModernUI_API;
+import icyllis.modernui.font.ModernFontRenderer;
+import icyllis.modernui.font.TrueTypeRenderer;
+import icyllis.modernui.font.glyph.GlyphManager;
 import icyllis.modernui.graphics.BlurHandler;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.ModLoadingContext;
@@ -54,8 +57,8 @@ public class Config {
 
     static void init() {
         FMLPaths.getOrCreateGameRelativePath(FMLPaths.CONFIGDIR.get().resolve(ModernUI_API.MOD_NAME_COMPACT), ModernUI_API.MOD_NAME_COMPACT);
-        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, Config.CLIENT_SPEC, ModernUI_API.MOD_NAME_COMPACT + "/client.toml");
-        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.COMMON_SPEC, ModernUI_API.MOD_NAME_COMPACT + "/common.toml");
+        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, CLIENT_SPEC, ModernUI_API.MOD_NAME_COMPACT + "/client.toml");
+        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, COMMON_SPEC, ModernUI_API.MOD_NAME_COMPACT + "/common.toml");
         FMLJavaModLoadingContext.get().getModEventBus().addListener(Config::reload);
     }
 
@@ -80,6 +83,14 @@ public class Config {
 
         private final ForgeConfigSpec.ConfigValue<List<? extends String>> blurScreenExclusionsV;
 
+        private final ForgeConfigSpec.ConfigValue<String> preferredName;
+        private final ForgeConfigSpec.BooleanValue        globalRenderer;
+        private final ForgeConfigSpec.BooleanValue        allowShadow;
+        private final ForgeConfigSpec.BooleanValue        antiAliasing;
+        private final ForgeConfigSpec.BooleanValue        highPrecision;
+        private final ForgeConfigSpec.BooleanValue        enableMipmap;
+        private final ForgeConfigSpec.IntValue            mipmapLevel;
+
         private Client(@Nonnull ForgeConfigSpec.Builder builder) {
             builder.comment("Screen Config")
                     .push("screen");
@@ -94,6 +105,38 @@ public class Config {
 
             builder.pop();
 
+            builder.comment("General Config")
+                    .push("general");
+
+            globalRenderer = builder.comment(
+                    "Replace the default font renderer of vanilla to that of Modern UI. This doesn't affect the font renderer in Modern UI.")
+                    .define("globalRenderer", true);
+
+            builder.pop();
+
+            builder.comment("Font Config")
+                    .push("font");
+
+            preferredName = builder.comment(
+                    "The font name with the highest priority to use, the built-in font is always the alternative one to use.")
+                    .define("preferredName", "");
+            allowShadow = builder.comment(
+                    "Allow font renderer to draw text with shadow, set to false if you can't read the font clearly.")
+                    .define("allowShadow", true);
+            antiAliasing = builder.comment(
+                    "Enable font anti-aliasing.")
+                    .define("antiAliasing", true);
+            highPrecision = builder.comment(
+                    "Enable high precision rendering, this is very useful especially when the font size is very small.")
+                    .define("highPrecision", true);
+            enableMipmap = builder.comment(
+                    "Enable mipmap for font textures, this makes font will not be blurred when scaling.")
+                    .define("enableMipmap", true);
+            mipmapLevel = builder.comment(
+                    "The mipmap level for font textures.")
+                    .defineInRange("mipmapLevel", 4, 0, 4);
+
+            builder.pop();
 
         }
 
@@ -102,6 +145,14 @@ public class Config {
             blurScreenBackground = blurScreenBackgroundV.get();
 
             BlurHandler.INSTANCE.loadExclusions(blurScreenExclusionsV.get());
+
+            TrueTypeRenderer.sGlobalRenderer = globalRenderer.get();
+            TrueTypeRenderer.sPreferredFontName = preferredName.get();
+            GlyphManager.sAntiAliasing = antiAliasing.get();
+            GlyphManager.sHighPrecision = highPrecision.get();
+            GlyphManager.sEnableMipmap = enableMipmap.get();
+            GlyphManager.sMipmapLevel = mipmapLevel.get();
+            ModernFontRenderer.sAllowFontShadow = allowShadow.get();
         }
     }
 
