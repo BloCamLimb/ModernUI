@@ -16,11 +16,12 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.font.compat;
+package icyllis.modernui.font.process;
 
 import net.minecraft.util.text.Style;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Wraps a String and acts as the key into cache. The hashCode() and equals() methods consider all ASCII digits
@@ -56,15 +57,21 @@ public class VanillaTextKey {
 
     }
 
+    private VanillaTextKey(String str, int style) {
+        this.str = str;
+        this.style = style;
+    }
+
     /**
      * Update current str and style value, parse vanilla's style to an integer
      *
      * @param str   str
      * @param style style
      */
-    public void updateKey(@Nonnull String str, @Nonnull Style style) {
+    public void updateKey(String str, @Nullable Style style) {
         this.str = str;
-        this.style = parseStyle(style);
+        // text formatting may render same as style, but we can't parse them easily
+        this.style = style == null ? -1 : parseStyle(style);
     }
 
     public static int parseStyle(@Nonnull Style style) {
@@ -176,5 +183,14 @@ public class VanillaTextKey {
     @Override
     public String toString() {
         return str;
+    }
+
+    /**
+     * Returns a copy of this key
+     *
+     * @return copied key
+     */
+    public VanillaTextKey copy() {
+        return new VanillaTextKey(str, style);
     }
 }

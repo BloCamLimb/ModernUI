@@ -125,22 +125,24 @@ public class Color3i {
         return color;
     }
 
-    @Nullable
-    public static Color3i getFormattingColor(int code) {
+    public static Color3i fromFormattingCode(int code) {
         if (code >= 0 && code <= 15) {
             return FORMATTING_COLORS[code];
         }
-        return null;
+        return WHITE;
     }
 
+    @Deprecated
     public static float getRedFrom(int color) {
         return (color >> 16 & 0xff) / 255.0f;
     }
 
+    @Deprecated
     public static float getGreenFrom(int color) {
         return (color >> 8 & 0xff) / 255.0f;
     }
 
+    @Deprecated
     public static float getBlueFrom(int color) {
         return (color & 0xff) / 255.0f;
     }

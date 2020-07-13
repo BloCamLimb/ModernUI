@@ -16,30 +16,33 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.font.compat;
+package icyllis.modernui.font;
 
-import icyllis.modernui.font.TrueTypeRenderer;
 import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.fonts.providers.IGlyphProvider;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Matrix4f;
-import net.minecraft.util.math.vector.TransformationMatrix;
 import net.minecraft.util.math.vector.Vector3f;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.List;
 
 /**
  * Replace vanilla renderer with Modern UI renderer
  */
 public class ModernFontRenderer extends FontRenderer {
 
-    private static final ModernFontRenderer INSTANCE = new ModernFontRenderer(TrueTypeRenderer.getInstance());
+    /**
+     * Render thread instance
+     */
+    private static ModernFontRenderer INSTANCE;
 
+    /**
+     * Config value
+     */
     public static boolean sAllowFontShadow;
+
 
     private final TrueTypeRenderer fontRenderer;
 
@@ -54,10 +57,13 @@ public class ModernFontRenderer extends FontRenderer {
      * @return instance
      */
     public static ModernFontRenderer getInstance() {
+        if (INSTANCE == null) {
+            INSTANCE = new ModernFontRenderer(TrueTypeRenderer.getInstance());
+        }
         return INSTANCE;
     }
 
-    @Override
+    /*@Override
     public int drawString(@Nullable String text, float x, float y, int color) {
         return drawString(text, x, y, color, TransformationMatrix.identity().getMatrix(), false);
     }
@@ -65,7 +71,7 @@ public class ModernFontRenderer extends FontRenderer {
     @Override
     public int drawStringWithShadow(@Nullable String text, float x, float y, int color) {
         return drawString(text, x, y, color, TransformationMatrix.identity().getMatrix(), true);
-    }
+    }*/
 
     private int drawString(@Nullable String text, float x, float y, int color, Matrix4f matrix, boolean dropShadow) {
         if (text == null) {
@@ -116,7 +122,7 @@ public class ModernFontRenderer extends FontRenderer {
         return MathHelper.ceil(fontRenderer.getStringWidth(text));
     }
 
-    @Override
+    /*@Override
     public float getCharWidth(char character) {
         return fontRenderer.getStringWidth(String.valueOf(character));
     }
@@ -158,7 +164,7 @@ public class ModernFontRenderer extends FontRenderer {
     @Override
     public void close() {
         // no stream
-    }
+    }*/
 
     // we keep bidi enabled, so no need to convert text
     @Nonnull

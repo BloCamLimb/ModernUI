@@ -19,13 +19,12 @@
 package icyllis.modernui.graphics.renderer;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.font.compat.TextRenderType;
-import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.font.IFontRenderer;
-import icyllis.modernui.font.compat.ModernFontRenderer;
-import icyllis.modernui.font.style.TextAlign;
-import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.api.util.Color3i;
+import icyllis.modernui.font.ModernFontRenderer;
+import icyllis.modernui.font.TrueTypeRenderer;
+import icyllis.modernui.font.node.TextRenderType;
+import icyllis.modernui.font.style.TextAlign;
+import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.shader.ShaderTools;
 import icyllis.modernui.graphics.shader.program.*;
 import icyllis.modernui.ui.master.View;
@@ -67,7 +66,7 @@ public class Canvas {
     private final MainWindow   mainWindow;
     private final ItemRenderer itemRenderer;
 
-    private final IFontRenderer fontRenderer = TrueTypeRenderer.getInstance();
+    private final TrueTypeRenderer fontRenderer = TrueTypeRenderer.getInstance();
 
     private final BufferBuilder bufferBuilder = Tessellator.getInstance().getBuffer();
 
@@ -290,7 +289,7 @@ public class Canvas {
      * @see ModernFontRenderer#drawStringInternal(String, float, float, int, boolean, IRenderTypeBuffer, Matrix4f, int)
      */
     public float drawText(String text, float x, float y) {
-        return fontRenderer.drawString(text, x + drawingX, y + drawingY, r, g, b, a, textAlign);
+        return fontRenderer.drawFromCanvas(text, x + drawingX, y + drawingY, r, g, b, a, textAlign);
     }
 
     /**

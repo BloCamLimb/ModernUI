@@ -104,7 +104,7 @@ public enum BlurHandler {
             GameRenderer gr = minecraft.gameRenderer;
             if (toBlur && !blurring && !guiOpened) {
                 if (gr.getShaderGroup() == null) {
-                    gr.loadShader(shader);
+                    //gr.loadShader(shader);
                     changingProgress = true;
                     blurring = true;
                     backgroundAlpha = 0;
