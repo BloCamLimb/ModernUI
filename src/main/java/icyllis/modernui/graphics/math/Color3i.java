@@ -16,9 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.api.util;
-
-import javax.annotation.Nullable;
+package icyllis.modernui.graphics.math;
 
 @SuppressWarnings("unused")
 public class Color3i {

@@ -37,13 +37,27 @@ public class EffectRenderInfo {
     public static final byte STRIKETHROUGH = 2;
 
     /**
-     * Offset from the string's baseline as which to draw the underline (in pixels)
+     * Offset from the string's baseline as which to draw the underline
      */
     private static final float UNDERLINE_OFFSET     = 0.5f;
     /**
-     * Offset from the string's baseline as which to draw the strikethrough line (in pixels)
+     * Offset from the string's baseline as which to draw the strikethrough line
      */
     private static final float STRIKETHROUGH_OFFSET = -3.0f;
+
+    /**
+     * Thickness of the underline
+     */
+    private static final float UNDERLINE_THICKNESS     = 1.0f;
+    /**
+     * Thickness of the strikethrough line
+     */
+    private static final float STRIKETHROUGH_THICKNESS = 1.0f;
+
+    /**
+     * Effect depth for offset z
+     */
+    private static final float EFFECT_DEPTH = 0.01f;
 
 
     private final float start;
@@ -67,19 +81,18 @@ public class EffectRenderInfo {
             g = color >> 8 & 0xff;
             b = color & 0xff;
         }
-        x += start;
         if (type == UNDERLINE) {
             y += UNDERLINE_OFFSET;
-            builder.pos(x, y + 1, 0).color(r, g, b, a).endVertex();
-            builder.pos(x + end, y + 1, 0).color(r, g, b, a).endVertex();
-            builder.pos(x + end, y + 1, 0).color(r, g, b, a).endVertex();
-            builder.pos(x, y, 0).color(r, g, b, a).endVertex();
+            builder.pos(x + start, y + UNDERLINE_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).endVertex();
+            builder.pos(x + end, y + UNDERLINE_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).endVertex();
+            builder.pos(x + end, y, EFFECT_DEPTH).color(r, g, b, a).endVertex();
+            builder.pos(x + start, y, EFFECT_DEPTH).color(r, g, b, a).endVertex();
         } else if (type == STRIKETHROUGH) {
             y += STRIKETHROUGH_OFFSET;
-            builder.pos(x, y + 1, 0).color(r, g, b, a).endVertex();
-            builder.pos(x + end, y + 1, 0).color(r, g, b, a).endVertex();
-            builder.pos(x + end, y + 1, 0).color(r, g, b, a).endVertex();
-            builder.pos(x, y, 0).color(r, g, b, a).endVertex();
+            builder.pos(x + start, y + STRIKETHROUGH_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).endVertex();
+            builder.pos(x + end, y + STRIKETHROUGH_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).endVertex();
+            builder.pos(x + end, y, EFFECT_DEPTH).color(r, g, b, a).endVertex();
+            builder.pos(x + start, y, EFFECT_DEPTH).color(r, g, b, a).endVertex();
         }
     }
 }

@@ -19,7 +19,7 @@
 package icyllis.modernui.graphics.renderer;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.api.util.Color3i;
+import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.font.ModernFontRenderer;
 import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.font.node.TextRenderType;

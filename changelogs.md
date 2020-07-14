@@ -3,11 +3,14 @@
 * Improve the text layout accuracy of font renderer
 * Improve the size and advance accuracy of glyph
 * Improve the align accuracy of digits rendering
+* Improve the rule of font priority to use
 * Use grayscale pixels to store font textures to reduce memory usage
 * Use render nodes for text rendering to improve performance greatly
 * Support higher level mipmap for font textures
 * Support vanilla text styles and components
 * Add font size style to text component
+* Add more configs for font renderer
+* Add more configs for blur effect and background opacity
 
 ### 1.15.2-1.5.9.56 (2020-05-26)
 * Fix search bar crash

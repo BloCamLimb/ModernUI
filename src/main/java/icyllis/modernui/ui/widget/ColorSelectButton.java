@@ -23,7 +23,7 @@ import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.test.IHost;
 import icyllis.modernui.ui.test.Widget;
 import icyllis.modernui.ui.test.Align9D;
-import icyllis.modernui.api.util.Color3i;
+import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.ui.test.Locator;
 
 import javax.annotation.Nonnull;

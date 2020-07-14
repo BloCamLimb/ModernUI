@@ -19,7 +19,7 @@
 package icyllis.modernui.ui.master;
 
 import icyllis.modernui.font.style.TextAlign;
-import icyllis.modernui.api.util.Color3i;
+import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.system.Config;
 import icyllis.modernui.system.ModernUI;

@@ -18,10 +18,10 @@
 
 package icyllis.modernui.system;
 
-import icyllis.modernui.api.ModernUI_API;
 import icyllis.modernui.font.ModernFontRenderer;
 import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.font.glyph.GlyphManager;
+import icyllis.modernui.font.process.TextCacheProcessor;
 import icyllis.modernui.graphics.BlurHandler;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.ModLoadingContext;
@@ -56,9 +56,9 @@ public class Config {
     }
 
     static void init() {
-        FMLPaths.getOrCreateGameRelativePath(FMLPaths.CONFIGDIR.get().resolve(ModernUI_API.MOD_NAME_COMPACT), ModernUI_API.MOD_NAME_COMPACT);
-        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, CLIENT_SPEC, ModernUI_API.MOD_NAME_COMPACT + "/client.toml");
-        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, COMMON_SPEC, ModernUI_API.MOD_NAME_COMPACT + "/common.toml");
+        FMLPaths.getOrCreateGameRelativePath(FMLPaths.CONFIGDIR.get().resolve(ModernUI.MOD_NAME_COMPACT), ModernUI.MOD_NAME_COMPACT);
+        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, CLIENT_SPEC, ModernUI.MOD_NAME_COMPACT + "/client.toml");
+        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, COMMON_SPEC, ModernUI.MOD_NAME_COMPACT + "/common.toml");
         FMLJavaModLoadingContext.get().getModEventBus().addListener(Config::reload);
     }
 
@@ -78,17 +78,21 @@ public class Config {
         //public boolean keepRunningInScreen;
 
         //private final ForgeConfigSpec.BooleanValue keepRunningInScreenV;
-        private final ForgeConfigSpec.BooleanValue blurScreenBackgroundV;
+        private final ForgeConfigSpec.BooleanValue blurBackground;
+        private final ForgeConfigSpec.IntValue     animationDuration;
+        private final ForgeConfigSpec.IntValue     blurRadius;
+        private final ForgeConfigSpec.DoubleValue  backgroundAlpha;
 
-        private final ForgeConfigSpec.ConfigValue<List<? extends String>> blurScreenExclusionsV;
+        private final ForgeConfigSpec.ConfigValue<List<? extends String>> blurExclusions;
 
-        private final ForgeConfigSpec.ConfigValue<String> preferredName;
+        private final ForgeConfigSpec.ConfigValue<String> preferredFontName;
         private final ForgeConfigSpec.BooleanValue        globalRenderer;
         private final ForgeConfigSpec.BooleanValue        allowShadow;
         private final ForgeConfigSpec.BooleanValue        antiAliasing;
         private final ForgeConfigSpec.BooleanValue        highPrecision;
         private final ForgeConfigSpec.BooleanValue        enableMipmap;
         private final ForgeConfigSpec.IntValue            mipmapLevel;
+        private final ForgeConfigSpec.IntValue            defaultFontSize;
 
         private Client(@Nonnull ForgeConfigSpec.Builder builder) {
             builder.comment("Screen Config")
@@ -96,28 +100,38 @@ public class Config {
 
             /*keepRunningInScreenV = builder.comment("Keep game running no matter what screen is open. Modern UI's GUIs will never pause game.")
                     .define("keepGameRunning", true);*/
-            blurScreenBackgroundV = builder.comment("Blur GUI background when opening a gui screen, this is incompatible with OptiFine's FXAA shader or some mods.")
-                    .define("blurGuiBackground", true);
+            blurBackground = builder.comment(
+                    "Blur GUI background, this is incompatible with OptiFine's FXAA shader or some mods.")
+                    .define("blurBackground", true);
+            backgroundAlpha = builder.comment(
+                    "GUI background opacity in world.")
+                    .defineInRange("backgroundAlpha", 0.4, 0, 0.8);
+            animationDuration = builder.comment(
+                    "The duration of GUI background alpha and blur radius animation in milliseconds. (0 = OFF)")
+                    .defineInRange("animationDuration", 200, 0, 800);
+            blurRadius = builder.comment(
+                    "Blur effect radius if enabled, higher value can severely degrade performance.")
+                    .defineInRange("blurRadius", 12, 2, 18);
 
-            blurScreenExclusionsV = builder.comment("A list of gui screen superclasses that won't activate blur effect when opened.")
-                    .defineList("blurGuiExclusions", ArrayList::new, s -> true);
+            blurExclusions = builder.comment(
+                    "A list of GUI screen superclasses that won't activate blur effect when opened.")
+                    .defineList("blurExclusions", ArrayList::new, s -> true);
 
             builder.pop();
 
             builder.comment("General Config")
                     .push("general");
 
-            globalRenderer = builder.comment(
-                    "Replace the default font renderer of vanilla to that of Modern UI. This doesn't affect the font renderer in Modern UI.")
-                    .define("globalRenderer", true);
-
             builder.pop();
 
             builder.comment("Font Config")
                     .push("font");
 
-            preferredName = builder.comment(
-                    "The font name with the highest priority to use, the built-in font is always the alternative one to use.")
+            globalRenderer = builder.comment(
+                    "Replace the default font renderer of vanilla to that of Modern UI.")
+                    .define("globalRenderer", true);
+            preferredFontName = builder.comment(
+                    "The font name with the highest priority to use, the built-in font is always the second choice.")
                     .define("preferredName", "");
             allowShadow = builder.comment(
                     "Allow font renderer to draw text with shadow, set to false if you can't read the font clearly.")
@@ -126,14 +140,17 @@ public class Config {
                     "Enable font anti-aliasing.")
                     .define("antiAliasing", true);
             highPrecision = builder.comment(
-                    "Enable high precision rendering, this is very useful especially when the font size is very small.")
+                    "Enable high precision rendering, this is very useful especially when the font is very small.")
                     .define("highPrecision", true);
             enableMipmap = builder.comment(
-                    "Enable mipmap for font textures, this makes font will not be blurred when scaling.")
+                    "Enable mipmap for font textures, this makes font will not be blurred when scaling down.")
                     .define("enableMipmap", true);
             mipmapLevel = builder.comment(
                     "The mipmap level for font textures.")
                     .defineInRange("mipmapLevel", 4, 0, 4);
+            defaultFontSize = builder.comment(
+                    "The default font size for texts with no size specified.")
+                    .defineInRange("defaultFontSize", 16, 12, 24);
 
             builder.pop();
 
@@ -142,15 +159,19 @@ public class Config {
         private void load() {
             //keepRunningInScreen = keepRunningInScreenV.get();
 
-            BlurHandler.sBlurScreenBackground = blurScreenBackgroundV.get();
-            BlurHandler.INSTANCE.loadExclusions(blurScreenExclusionsV.get());
+            BlurHandler.sBlurBackground = blurBackground.get();
+            BlurHandler.sAnimationDuration = animationDuration.get();
+            BlurHandler.sBlurRadius = blurRadius.get();
+            BlurHandler.sBackgroundAlpha = backgroundAlpha.get().floatValue();
+            BlurHandler.INSTANCE.loadExclusions(blurExclusions.get());
 
             TrueTypeRenderer.sGlobalRenderer = globalRenderer.get();
-            GlyphManager.sPreferredFontName = preferredName.get();
+            GlyphManager.sPreferredFontName = preferredFontName.get();
             GlyphManager.sAntiAliasing = antiAliasing.get();
             GlyphManager.sHighPrecision = highPrecision.get();
             GlyphManager.sEnableMipmap = enableMipmap.get();
             GlyphManager.sMipmapLevel = mipmapLevel.get();
+            TextCacheProcessor.sDefaultFontSize = defaultFontSize.get();
             ModernFontRenderer.sAllowFontShadow = allowShadow.get();
         }
     }

@@ -22,7 +22,7 @@ import icyllis.modernui.font.style.TextAlign;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.test.ScrollWindow;
 import icyllis.modernui.ui.widget.UniformScrollEntry;
-import icyllis.modernui.api.util.Color3i;
+import icyllis.modernui.graphics.math.Color3i;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.stats.Stat;
 import net.minecraft.stats.StatisticsManager;

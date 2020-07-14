@@ -28,7 +28,7 @@ var MethodInsnNode = Java.type('org.objectweb.asm.tree.MethodInsnNode');
 
 function initializeCoreMod() {
     return wrapMethodTransformers({
-        'replaceDisplayInGameMenu': {
+        'displayInGameMenu': {
             'target': {
                 'type': 'METHOD',
                 'class': 'net.minecraft.client.Minecraft',
@@ -55,7 +55,7 @@ function initializeCoreMod() {
                 return methodNode;
             }
         },
-        'replaceGuiScaleAlgorithm': {
+        'guiScaleAlgorithm': {
             'target': {
                 'type': 'METHOD',
                 'class': 'net.minecraft.client.MainWindow',
@@ -86,11 +86,11 @@ function initializeCoreMod() {
                 return methodNode;
             }
         },
-        'replaceRenderBackgroundColor': {
+        'renderBackgroundColor': {
             'target': {
                 'type': 'METHOD',
                 'class': 'net.minecraft.client.gui.screen.Screen',
-                'methodName': 'renderBackground',
+                'methodName': 'func_238651_a_', // renderBackground
                 'methodDesc': '(Lcom/mojang/blaze3d/matrix/MatrixStack;I)V'
             },
             'transformer': function (methodNode) {

@@ -548,6 +548,10 @@ public enum UIManager implements IViewParent {
         if (modernScreen != null && event.getType() == RenderGameOverlayEvent.ElementType.CROSSHAIRS) {
             event.setCanceled(true);
         }
+        if (event.getType() == RenderGameOverlayEvent.ElementType.HOTBAR) {
+            // hotfix 1.16 for BlurHandler shader, I don't why...
+            RenderSystem.enableTexture();
+        }
     }
 
     /**
