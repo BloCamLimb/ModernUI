@@ -27,6 +27,7 @@ import icyllis.modernui.ui.layout.Gravity;
 import icyllis.modernui.ui.layout.LinearLayout;
 import icyllis.modernui.ui.layout.Orientation;
 import icyllis.modernui.ui.master.View;
+import net.minecraft.util.text.TextFormatting;
 
 import javax.annotation.Nonnull;
 
@@ -72,7 +73,7 @@ public class TestLinearLayout extends LinearLayout {
         protected void onDraw(@Nonnull Canvas canvas) {
             canvas.moveTo(this);
             canvas.resetColor();
-            String str = "Modern UI ABCDEFG";
+            String str = "Modern" + TextFormatting.AQUA + " UI " + TextFormatting.UNDERLINE + "MOS\u2642";
             canvas.drawText(str, 0, 4);
         }
     }
@@ -95,7 +96,7 @@ public class TestLinearLayout extends LinearLayout {
         @Override
         protected void onDraw(@Nonnull Canvas canvas) {
             canvas.moveTo(this);
-            canvas.drawText("Go My Way", offset, offsetY + 4);
+            canvas.drawText(TextFormatting.UNDERLINE + "G" + TextFormatting.RESET + " " + TextFormatting.STRIKETHROUGH + "Uko", offset, offsetY + 4);
         }
 
         @Override

@@ -19,10 +19,7 @@
 package icyllis.modernui.api;
 
 /**
- * RUA!
+ * Modern UI just is API, RUA!
  */
-public enum ModernUI_API {
-    INSTANCE;
-
-    public static final String MOD_NAME_COMPACT = "ModernUI";
+public class ModernUI_API {
 }

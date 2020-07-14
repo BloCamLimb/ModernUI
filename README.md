@@ -26,6 +26,7 @@ plugins {
 ```
 dependencies {
     compile fg.deobf("curse.maven:ModernUI:[fileID]")
+    compile 'com.github.ben-manes.caffeine:caffeine:2.8.5'
 }
 ```
 Latest version: (no build for 1.16.1) (FileID: )

@@ -12,6 +12,7 @@ buildscript {
 }
 plugins {
     id "com.matthewprenger.cursegradle" version '1.4.0'
+    id 'com.github.johnrengelman.shadow' version '4.0.4'
 }
 apply plugin: 'net.minecraftforge.gradle'
 apply plugin: 'java-library'
@@ -56,6 +57,8 @@ configurations {
     for (def runtimeOnlyExtender : runtimeOnlyExtenders) {
         runtimeOnlyExtender.extendsFrom(runtimeOnly)
     }
+    caffeine
+    compile.extendsFrom(caffeine)
 }
 
 minecraft {
@@ -71,7 +74,7 @@ minecraft {
 
             mods {
                 modernui {
-                    sources (sourceSets.main, sourceSets.api)
+                    sources(sourceSets.main, sourceSets.api)
                 }
             }
         }
@@ -83,7 +86,7 @@ minecraft {
 
             mods {
                 modernui {
-                    sources (sourceSets.main, sourceSets.api)
+                    sources(sourceSets.main, sourceSets.api)
                 }
             }
         }
@@ -97,7 +100,7 @@ minecraft {
 
             mods {
                 modernui {
-                    sources (sourceSets.main, sourceSets.api)
+                    sources(sourceSets.main, sourceSets.api)
                 }
             }
         }
@@ -122,7 +125,7 @@ repositories {
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
-    compile "com.github.ben-manes.caffeine:caffeine:${caffeine_version}"
+    caffeine "com.github.ben-manes.caffeine:caffeine:${caffeine_version}"
 
     compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}:api")
 
@@ -147,42 +150,41 @@ processResources {
 }
 
 jar {
+    classifier("slim")
     manifest {
         attributes([
-            "Specification-Title": "ModernUI",
-            "Specification-Vendor": "BloCamLimb",
-            "Specification-Version": "1",
-            "Implementation-Title": project.name,
-            "Implementation-Version": "${version}",
-            "Implementation-Vendor" :"BloCamLimb",
-            "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+                "Specification-Title"     : "ModernUI",
+                "Specification-Vendor"    : "BloCamLimb",
+                "Specification-Version"   : "1",
+                "Implementation-Title"    : project.name,
+                "Implementation-Version"  : "${version}",
+                "Implementation-Vendor"   : "BloCamLimb",
+                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
         ])
     }
 }
 
-jar {
+shadowJar {
     classifier("universal")
-    from sourceSets.main.output
-    from sourceSets.api.output
+    configurations = [project.configurations.caffeine]
+
+    relocate 'com.google.errorprone', 'icyllis.errorprone'
+    relocate 'org.checkerframe', 'icyllis.checkerframe'
+    relocate 'com.github.benmanes.caffeine', 'icyllis.caffeine'
+
+    exclude 'META-INF/LICENSE**'
+    exclude 'META-INF/maven/**'
 }
 
-task apiJar(type: Jar) {
-    classifier("api")
-    from sourceSets.api.output
-    from sourceSets.api.allJava
-}
-
-task devJar(type: Jar) {
-    classifier("dev")
-    from sourceSets.main.output
+task buildDevJar(type: Jar) {
+    classifier("userdev")
     from sourceSets.main.allJava
-    from sourceSets.api.output
-    from sourceSets.api.allJava
+    from sourceSets.main.output
+    exclude "**/**.otf"
 }
 
-artifacts {
-    archives apiJar
-    archives devJar
+reobf {
+    shadowJar {}
 }
 
 // this doesn't work due to Cloudflare
@@ -209,6 +211,4 @@ if (System.getenv("CurseForgeAPI") != null) {
             detectNewerJava = true
         }
     }
-} else {
-    println "CurseForge API token unspecified"
 }

@@ -24,13 +24,12 @@ import com.ibm.icu.text.ArabicShaping;
 import com.ibm.icu.text.ArabicShapingException;
 import com.ibm.icu.text.Bidi;
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.api.util.Color3i;
-import icyllis.modernui.font.glyph.Glyph;
 import icyllis.modernui.font.glyph.GlyphManager;
 import icyllis.modernui.font.glyph.TexturedGlyph;
 import icyllis.modernui.font.node.EffectRenderInfo;
 import icyllis.modernui.font.node.StringRenderInfo;
 import icyllis.modernui.font.node.TextRenderNode;
+import icyllis.modernui.graphics.math.Color3i;
 import net.minecraft.util.text.LanguageMap;
 import net.minecraft.util.text.Style;
 
@@ -53,6 +52,13 @@ import java.util.concurrent.TimeUnit;
 public class TextCacheProcessor {
 
     /**
+     * Config values
+     *
+     * @see icyllis.modernui.system.Config.Client
+     */
+    public static int sDefaultFontSize;
+
+    /**
      * Bit flag used with fontStyle to request the plain (normal) style
      */
     public static final byte PLAIN  = 0;
@@ -65,14 +71,9 @@ public class TextCacheProcessor {
      */
     public static final byte ITALIC = 2;
 
-    /**
-     * Config value for default vanilla font size.
-     */
-    public static final int VANILLA_FONT_SIZE = 16;
-
 
     /**
-     * Needed for creating GlyphVectors and retrieving glyph texture coordinates.
+     * Draw and cache all glyphs of all fonts needed
      */
     private final GlyphManager glyphManager = new GlyphManager();
 
@@ -102,21 +103,13 @@ public class TextCacheProcessor {
      */
     private final VanillaTextKey lookupKey = new VanillaTextKey();
 
-    /**
-     * Pre-cached glyphs for the ASCII digits 0-9 (in that order). Used by renderString() to substitute digit glyphs on the fly
-     * as a performance boost. The speed up is most noticeable on the F3 screen which rapidly displays lots of changing numbers.
-     * The 4 element array is index by the font style (combination of Font.PLAIN, Font.BOLD, and Font.ITALIC), and each of the
-     * nested elements is index by the digit value 0-9.
-     */
-    Glyph[][] digitGlyphs = new Glyph[4][10];
-
-    /**
+    /*
      * True if digitGlyphs[] has been assigned and cacheString() can begin replacing all digits with '0' in the string.
      */
-    private boolean digitGlyphsReady = false;
+    //private boolean digitGlyphsReady = false;
 
     /**
-     * Cached results
+     * Cached processing results
      */
     private final List<TexturedGlyph>    glyphs  = new ArrayList<>();
     private final List<StringRenderInfo> strings = new ArrayList<>();
@@ -128,26 +121,30 @@ public class TextCacheProcessor {
      */
     public TextCacheProcessor() {
         /* StringCache is created by the main game thread; remember it for later thread safety checks */
-        /* We do not this anymore, because mojang's RenderSystem */
         //mainThread = Thread.currentThread();
 
         /* Pre-cache the ASCII digits to allow for fast glyph substitution */
-        cacheDigitGlyphs();
+        //cacheDigitGlyphs();
     }
 
     /**
      * Pre-cache the ASCII digits to allow for fast glyph substitution. Called once from the constructor and called any time the font selection
      * changes at runtime via setDefaultFont().
+     * <p>
+     * Pre-cached glyphs for the ASCII digits 0-9 (in that order). Used by renderString() to substitute digit glyphs on the fly
+     * as a performance boost. The speed up is most noticeable on the F3 screen which rapidly displays lots of changing numbers.
+     * The 4 element array is index by the font style (combination of Font.PLAIN, Font.BOLD, and Font.ITALIC), and each of the
+     * nested elements is index by the digit value 0-9.
      */
-    //FIXME
+    @Deprecated
     private void cacheDigitGlyphs() {
         /* Need to cache each font style combination; the digitGlyphsReady = false disabled the normal glyph substitution mechanism */
-        digitGlyphsReady = false;
+        //digitGlyphsReady = false;
         /*digitGlyphs[FormattingCode.PLAIN] = getOrCacheString("0123456789").glyphs;
         digitGlyphs[FormattingCode.BOLD] = getOrCacheString("\u00a7l0123456789").glyphs;
         digitGlyphs[FormattingCode.ITALIC] = getOrCacheString("\u00a7o0123456789").glyphs;
         digitGlyphs[FormattingCode.BOLD | FormattingCode.ITALIC] = getOrCacheString("\u00a7l\u00a7o0123456789").glyphs;*/
-        digitGlyphsReady = true;
+        //digitGlyphsReady = true;
     }
 
     public TextRenderNode lookupVanillaNode(@Nonnull String str, Style style) {
@@ -220,7 +217,7 @@ public class TextCacheProcessor {
         for (int i = 0; i < length; i++) {
             char c1 = text[i];
 
-            if (c1 == '\u00a7') {
+            if (c1 == '\u00a7' && i + 1 < length) {
                 int code = "0123456789abcdefklmnor".indexOf(Character.toLowerCase(str.charAt(++i)));
                 switch (code) {
                     case 16:
@@ -282,7 +279,7 @@ public class TextCacheProcessor {
                             }
                         }
                     }
-                        break;
+                    break;
 
                     default:
                         if (code != -1) {
@@ -320,7 +317,7 @@ public class TextCacheProcessor {
                 codePoint = c1;
             }
 
-            font = glyphManager.lookupFont(codePoint, curStyle, VANILLA_FONT_SIZE);
+            font = glyphManager.lookupFont(codePoint, curStyle, sDefaultFontSize);
             glyph = glyphManager.lookupGlyph(font, codePoint);
             glyphs.add(glyph);
             advance += glyph.advance;
@@ -692,13 +689,13 @@ public class TextCacheProcessor {
          * problem where the digit glyphs have to be initially cached and the digitGlyphs[] array initialized without replacing
          * every digit with '0'.
          */
-        if (digitGlyphsReady) {
+        /*if (digitGlyphsReady) {
             for (int index = start; index < limit; index++) {
                 if (text[index] >= '0' && text[index] <= '9') {
                     text[index] = '0';
                 }
             }
-        }
+        }*/
 
         /* Break the string up into segments, where each segment can be displayed using a single font */
         while (start < limit) {
@@ -793,13 +790,138 @@ public class TextCacheProcessor {
     }
 
     /**
+     * This entry holds the laid out glyph positions for the cached string along with some relevant metadata.
+     */
+    @Deprecated
+    public static class Entry {
+        /**
+         * A weak reference back to the Key object in stringCache that maps to this Entry.
+         */
+        public WeakReference<Key> keyRef; // We do not use this anymore
+
+        /**
+         * The total horizontal advance (i.e. width) for this string in pixels.
+         */
+        public float advance;
+
+        /**
+         * Array of fully layed out glyphs for the string. Sorted by logical order of characters (i.e. glyph.stringIndex)
+         */
+        public Glyph[] glyphs;
+
+        /**
+         * Array of color code locations from the original string
+         */
+        public FormattingCode[] codes;
+
+        /**
+         * True if the string uses strikethrough or underlines anywhere and needs an extra pass in renderString()
+         */
+        public boolean needExtraRender;
+    }
+
+    /**
+     * Identifies the location and value of a single color code in the original string
+     */
+    @Deprecated
+    public static class FormattingCode implements Comparable<Integer> {
+
+        /**
+         * Bit flag used with renderStyle to request the underline style
+         */
+        public static final byte UNDERLINE = 1;
+
+        /**
+         * Bit flag used with renderStyle to request the strikethrough style
+         */
+        public static final byte STRIKETHROUGH = 2;
+
+        /**
+         * The index into the original string (i.e. with color codes) for the location of this color code.
+         */
+        public int stringIndex;
+
+        /**
+         * The index into the stripped string (i.e. with no color codes) of where this color code would have appeared
+         */
+        public int stripIndex;
+
+        /**
+         * Combination of PLAIN, BOLD, and ITALIC specifying font specific styles
+         */
+        public byte fontStyle;
+
+        /**
+         * The numeric color code (i.e. index into the colorCode[] array); -1 to reset default (original parameter) color
+         */
+        @Nullable
+        public Color3i color;
+
+        /**
+         * Combination of UNDERLINE and STRIKETHROUGH flags specifying effects performed by renderString()
+         */
+        public byte renderEffect;
+
+        /**
+         * Performs numeric comparison on stripIndex. Allows binary search on ColorCode arrays in layoutStyle.
+         *
+         * @param i the Integer object being compared
+         * @return either -1, 0, or 1 if this < other, this == other, or this > other
+         */
+        @Override
+        public int compareTo(@Nonnull Integer i) {
+            return Integer.compare(stringIndex, i);
+        }
+    }
+
+    @Deprecated
+    public static class Glyph implements Comparable<Glyph> {
+
+        /**
+         * The index into the original string (i.e. with color codes) for the character that generated this glyph.
+         */
+        int stringIndex;
+
+        /**
+         * Texture ID and position/size of the glyph's pre-rendered image within the cache texture.
+         */
+        int texture;
+
+        /**
+         * Glyph's horizontal position (in pixels) relative to the entire string's baseline
+         */
+        int x;
+
+        /**
+         * Glyph's vertical position (in pixels) relative to the entire string's baseline
+         */
+        int y;
+
+        /**
+         * Glyph's horizontal advance (in pixels) used for strikethrough and underline effects
+         */
+        float advance;
+
+        /**
+         * Allows arrays of Glyph objects to be sorted. Performs numeric comparison on stringIndex.
+         *
+         * @param o the other Glyph object being compared with this one
+         * @return either -1, 0, or 1 if this < other, this == other, or this > other
+         */
+        @Override
+        public int compareTo(Glyph o) {
+            return Integer.compare(stringIndex, o.stringIndex);
+        }
+    }
+
+    /**
      * Wraps a String and acts as the key into stringCache. The hashCode() and equals() methods consider all ASCII digits
      * to be equal when hashing and comparing Key objects together. Therefore, Strings which only differ in their digits will
      * be all hashed together into the same entry. The renderString() method will then substitute the correct digit glyph on
      * the fly. This special digit handling gives a significant speedup on the F3 debug screen.
      */
     @Deprecated
-    private static class Key {
+    public static class Key {
         /**
          * A copy of the String which this Key is indexing. A copy is used to avoid creating a strong reference to the original
          * passed into renderString(). When the original String is no longer needed by Minecraft, it will be garbage collected
@@ -889,91 +1011,6 @@ public class TextCacheProcessor {
         @Override
         public String toString() {
             return str;
-        }
-    }
-
-    /**
-     * This entry holds the laid out glyph positions for the cached string along with some relevant metadata.
-     */
-    @Deprecated
-    public static class Entry {
-        /**
-         * A weak reference back to the Key object in stringCache that maps to this Entry.
-         */
-        public WeakReference<Key> keyRef; // We do not use this anymore
-
-        /**
-         * The total horizontal advance (i.e. width) for this string in pixels.
-         */
-        public float advance;
-
-        /**
-         * Array of fully layed out glyphs for the string. Sorted by logical order of characters (i.e. glyph.stringIndex)
-         */
-        public Glyph[] glyphs;
-
-        /**
-         * Array of color code locations from the original string
-         */
-        public FormattingCode[] codes;
-
-        /**
-         * True if the string uses strikethrough or underlines anywhere and needs an extra pass in renderString()
-         */
-        public boolean needExtraRender;
-    }
-
-    /**
-     * Identifies the location and value of a single color code in the original string
-     */
-    @Deprecated
-    public static class FormattingCode implements Comparable<Integer> {
-
-        /**
-         * Bit flag used with renderStyle to request the underline style
-         */
-        public static final byte UNDERLINE = 1;
-
-        /**
-         * Bit flag used with renderStyle to request the strikethrough style
-         */
-        public static final byte STRIKETHROUGH = 2;
-
-        /**
-         * The index into the original string (i.e. with color codes) for the location of this color code.
-         */
-        public int stringIndex;
-
-        /**
-         * The index into the stripped string (i.e. with no color codes) of where this color code would have appeared
-         */
-        public int stripIndex;
-
-        /**
-         * Combination of PLAIN, BOLD, and ITALIC specifying font specific styles
-         */
-        public byte fontStyle;
-
-        /**
-         * The numeric color code (i.e. index into the colorCode[] array); -1 to reset default (original parameter) color
-         */
-        @Nullable
-        public Color3i color;
-
-        /**
-         * Combination of UNDERLINE and STRIKETHROUGH flags specifying effects performed by renderString()
-         */
-        public byte renderEffect;
-
-        /**
-         * Performs numeric comparison on stripIndex. Allows binary search on ColorCode arrays in layoutStyle.
-         *
-         * @param i the Integer object being compared
-         * @return either -1, 0, or 1 if this < other, this == other, or this > other
-         */
-        @Override
-        public int compareTo(@Nonnull Integer i) {
-            return Integer.compare(stringIndex, i);
         }
     }
 }

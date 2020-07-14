@@ -20,7 +20,7 @@ package icyllis.modernui.impl.stats;
 
 import icyllis.modernui.ui.test.ScrollWindow;
 import icyllis.modernui.ui.widget.UniformScrollGroup;
-import icyllis.modernui.api.util.Color3i;
+import icyllis.modernui.graphics.math.Color3i;
 import net.minecraft.stats.Stat;
 import net.minecraft.stats.StatisticsManager;
 import net.minecraft.stats.Stats;

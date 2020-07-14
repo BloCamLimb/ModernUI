@@ -26,7 +26,7 @@ import icyllis.modernui.ui.test.Align9D;
 import icyllis.modernui.ui.test.ScrollWindow;
 import icyllis.modernui.impl.module.SettingResourcePack;
 import icyllis.modernui.ui.widget.UniformScrollEntry;
-import icyllis.modernui.api.util.Color3i;
+import icyllis.modernui.graphics.math.Color3i;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
