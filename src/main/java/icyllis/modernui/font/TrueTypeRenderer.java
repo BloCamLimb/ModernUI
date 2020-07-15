@@ -18,25 +18,25 @@
 
 package icyllis.modernui.font;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.ibm.icu.text.ArabicShaping;
+import com.ibm.icu.text.ArabicShapingException;
+import com.ibm.icu.text.Bidi;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.font.process.TextProcessState;
 import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.font.node.TextRenderNode;
 import icyllis.modernui.font.process.TextCacheProcessor;
 import icyllis.modernui.font.style.TextAlign;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.entity.EntityRendererManager;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.math.vector.Matrix4f;
+import net.minecraft.util.text.LanguageMap;
 import net.minecraft.util.text.Style;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nullable;
@@ -69,7 +69,7 @@ public class TrueTypeRenderer implements IFontRenderer {
     /**
      * Note: When Minecraft load completed, MainMenuScreen will be open and post GuiOpenEvent
      * UIManager will listen the event and create new Canvas instance, Canvas will call
-     * {@link #getInstance()} and init this class static field to perform this constructor
+     * {@link #getInstance()} and init to perform this constructor
      */
     private TrueTypeRenderer() {
 
@@ -98,10 +98,20 @@ public class TrueTypeRenderer implements IFontRenderer {
         if (str == null || str.isEmpty()) {
             return 0;
         }
+        if (LanguageMap.getInstance().func_230505_b_()) {
+            try {
+                Bidi bidi = new Bidi(new ArabicShaping(ArabicShaping.LETTERS_SHAPE).shape(str),
+                        Bidi.DIRECTION_DEFAULT_RIGHT_TO_LEFT);
+                bidi.setReorderingMode(Bidi.REORDER_DEFAULT);
+                str = bidi.writeReordered(Bidi.DO_MIRRORING);
+            } catch (ArabicShapingException ignored) {
+
+            }
+        }
         TextRenderNode node = processor.lookupVanillaNode(str, Style.EMPTY);
 
         x -= node.advance * align.offsetFactor;
-        node.drawText(Tessellator.getInstance().getBuffer(), x, y, r, g, b, a);
+        node.drawText(Tessellator.getInstance().getBuffer(), str, x, y, r, g, b, a);
         return node.advance;
     }
 
@@ -154,7 +164,7 @@ public class TrueTypeRenderer implements IFontRenderer {
         BufferBuilder bufferBuilder = tessellator.getBuffer();
 
         /* The currently active font style is needed to select the proper ASCII digit style for fast replacement */
-        int fontStyle = TextCacheProcessor.PLAIN;
+        int fontStyle = TextProcessState.PLAIN;
 
         //for (int glyphIndex = 0, colorIndex = 0; glyphIndex < entry.glyphs.length; glyphIndex++) {
             /*
@@ -355,7 +365,7 @@ public class TrueTypeRenderer implements IFontRenderer {
         RenderSystem.defaultBlendFunc();*/
 
         /* The currently active font style is needed to select the proper ASCII digit style for fast replacement */
-        int fontStyle = TextCacheProcessor.PLAIN;
+        int fontStyle = TextProcessState.PLAIN;
 
         //for (int glyphIndex = 0, colorIndex = 0; glyphIndex < entry.glyphs.length; glyphIndex++) {
             /*

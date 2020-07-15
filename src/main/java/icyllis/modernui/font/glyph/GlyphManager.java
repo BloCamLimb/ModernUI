@@ -19,9 +19,17 @@
 package icyllis.modernui.font.glyph;
 
 import com.mojang.blaze3d.platform.GlStateManager;
+import icyllis.modernui.font.node.TextRenderNode;
+import icyllis.modernui.font.process.VanillaTextKey;
 import icyllis.modernui.system.ModernUI;
+import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectArrayMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2IntArrayMap;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.texture.TextureUtil;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -34,17 +42,14 @@ import org.lwjgl.opengl.GL30;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.awt.*;
-import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Draw using glyphs of different sizes and fonts, and store them in auto generated OpenGL textures
@@ -91,16 +96,23 @@ public class GlyphManager {
     private static final int STRING_HEIGHT = 64;
 
     /**
+     * For bilinear or trilinear mipmap textures, similar to {@link #GLYPH_SPACING}, but must be smaller than it
+     */
+    private static final int GLYPH_BORDER = 2;
+
+    /**
      * The width in pixels of a transparent border between individual glyphs in the cache texture. This border keeps neighboring
      * glyphs from "bleeding through" when the scaled GUI resolution is not pixel aligned and sometimes results in off-by-one
      * sampling of the glyph cache textures.
      */
-    private static final int GLYPH_SPACING = 3;
+    private static final int GLYPH_SPACING = GLYPH_BORDER + 1;
 
     /**
-     * For bilinear or trilinear mipmap textures, similar to {@link #GLYPH_SPACING}, but must be smaller than it
+     * For drawing, due to {@link #GLYPH_BORDER}, we need an offset for drawing glyphs
+     *
+     * @see TextRenderNode#drawText(BufferBuilder, String, float, float, int, int, int, int)
      */
-    private static final int GLYPH_BORDER = 2;
+    public static final float GLYPH_OFFSET = GLYPH_BORDER / 2.0f;
 
     /**
      * Transparent (alpha zero) black background color for use with BufferedImage.clearRect().
@@ -131,11 +143,6 @@ public class GlyphManager {
      */
     private final Graphics2D glyphTextureGraphics = glyphTextureImage.createGraphics();
 
-    /**
-     * Needed for all text layout operations that create GlyphVectors (maps point size to pixel size).
-     */
-    private final FontRenderContext fontRenderContext = glyphTextureGraphics.getFontRenderContext();
-
 
     /**
      * Intermediate data array for use with textureImage.getRgb().
@@ -163,7 +170,7 @@ public class GlyphManager {
      * searching through allFonts[]. This list will only have plain variation of a font at a dummy point size, unlike fontCache which could
      * have multiple entries for the various styles (i.e. bold, italic, etc.) of a font.
      */
-    private final List<Font> selectedFonts = new ArrayList<>();
+    private final List<Font> selectedFonts = new ObjectArrayList<>();
 
 
     /**
@@ -176,14 +183,20 @@ public class GlyphManager {
      * increasing) which forms the upper 32 bits of the key into the glyphCache map. This font cache can include different styles
      * of the same font family like bold or italic.
      */
-    private final Map<Font, Integer> fontKeyMap = new Object2IntArrayMap<>(4);
+    private final Object2IntMap<Font> fontKeyMap = new Object2IntArrayMap<>(8);
 
     /**
      * A cache of pre-rendered glyphs mapping each glyph by its glyphcode to the position of its pre-rendered image within
      * the cache texture. The key is a 64 bit number such that the lower 32 bits are the glyphcode and the upper 32 are the
      * index of the font in the fontCache. This makes for a single globally unique number to identify any glyph from any font.
      */
-    private final Map<Long, TexturedGlyph> glyphCache = new Long2ObjectArrayMap<>(4096);
+    private final Long2ObjectMap<TexturedGlyph> glyphCache = new Long2ObjectArrayMap<>(4096);
+
+    /**
+     * Font ID {@link #fontKeyMap} to an array of length 10 represent 0-9 digits (in that order)
+     * These glyph advance are equal for fast rendering. For example {@link VanillaTextKey#hashCode()} did.
+     */
+    private final Int2ObjectMap<TexturedGlyph[]> digitsMap = new Int2ObjectArrayMap<>(4);
 
 
     /**
@@ -263,7 +276,7 @@ public class GlyphManager {
     private GlyphVector layoutGlyphVector(Font font, char[] text, int start, int limit, int layoutFlags) {
         /* Ensure this font is already in fontCache so it can be referenced by cacheGlyphs() later on */
         fontKeyMap.putIfAbsent(font, fontKeyMap.size());
-        return font.layoutGlyphVector(fontRenderContext, text, start, limit, layoutFlags);
+        return font.layoutGlyphVector(glyphTextureGraphics.getFontRenderContext(), text, start, limit, layoutFlags);
     }
 
     /**
@@ -275,6 +288,7 @@ public class GlyphManager {
      * @param fontStyle combination of the Font.PLAIN, Font.BOLD, and Font.ITALIC to request a particular font style
      * @param fontSize  the font size required for the text
      */
+    @Nonnull
     public Font lookupFont(int codePoint, int fontStyle, int fontSize) {
         //int nextOffset;
         // Try using an already known base font;
@@ -304,7 +318,6 @@ public class GlyphManager {
         Font font = selectedFonts.get(0);
 
         /* Return a font instance of the proper point size and style; selectedFonts only 1pt sized plain style fonts */
-        // No char can be displayed, so the length is 1
         return font.deriveFont(fontStyle, fontSize);
     }
 
@@ -321,10 +334,23 @@ public class GlyphManager {
      */
     @Nonnull
     public TexturedGlyph lookupGlyph(Font font, int codePoint) {
-        long fontKey = (long) fontKeyMap.computeIfAbsent(font,
+        long fontKey = (long) fontKeyMap.computeIntIfAbsent(font,
                 f -> fontKeyMap.size()) << 32;
         return glyphCache.computeIfAbsent(fontKey | codePoint,
                 l -> cacheGlyph(font, codePoint));
+    }
+
+    /**
+     * Helper method, a combination of {@link #lookupFont(int, int, int)} and {@link #lookupGlyph(Font, int)}
+     *
+     * @param codePoint the codePoint to check against the font
+     * @param fontStyle combination of the Font.PLAIN, Font.BOLD, and Font.ITALIC to request a particular font style
+     * @param fontSize  the font size required for the text
+     * @return the cache textured glyph
+     */
+    @Nonnull
+    public TexturedGlyph lookupGlyph(int codePoint, int fontStyle, int fontSize) {
+        return lookupGlyph(lookupFont(codePoint, fontStyle, fontSize), codePoint);
     }
 
     /**
@@ -338,9 +364,9 @@ public class GlyphManager {
     private TexturedGlyph cacheGlyph(@Nonnull Font font, int codePoint) {
         char[] chars = Character.toChars(codePoint);
 
-        GlyphVector vector = font.createGlyphVector(fontRenderContext, chars);
+        GlyphVector vector = font.createGlyphVector(glyphTextureGraphics.getFontRenderContext(), chars);
 
-        Rectangle renderBounds = vector.getGlyphPixelBounds(0, fontRenderContext, 0, 0);
+        Rectangle renderBounds = vector.getGlyphPixelBounds(0, glyphTextureGraphics.getFontRenderContext(), 0, 0);
         int renderWidth = (int) renderBounds.getWidth();
         int renderHeight = (int) renderBounds.getHeight();
 
@@ -365,19 +391,102 @@ public class GlyphManager {
         int width = renderWidth + GLYPH_BORDER * 2;
         int height = renderHeight + GLYPH_BORDER * 2;
 
-        glyphTextureGraphics.drawString(String.valueOf(chars), x, currPosY - baseline);
+        glyphTextureGraphics.drawString(String.valueOf(chars), currPosX, currPosY - baseline);
 
         uploadTexture(x, y, width, height);
 
         currLineHeight = Math.max(currLineHeight, renderHeight);
         currPosX += renderWidth + GLYPH_SPACING * 2;
 
-        //ModernUI.LOGGER.debug("C:{} X:{} Y:{} W:{} H:{} A:{}", chars, x, y, width, height, advance);
-
         return new TexturedGlyph(textureName, advance / 2.0f, baseline / 2.0f,
                 width / 2.0f, height / 2.0f,
                 (float) x / TEXTURE_WIDTH, (float) y / TEXTURE_HEIGHT,
                 (float) (x + width) / TEXTURE_WIDTH, (float) (y + height) / TEXTURE_HEIGHT);
+    }
+
+    public TexturedGlyph[] lookupDigits(Font font) {
+        int fontKey = fontKeyMap.computeIntIfAbsent(font,
+                f -> fontKeyMap.size());
+        return digitsMap.computeIfAbsent(fontKey,
+                l -> cacheDigits(font));
+    }
+
+    /**
+     * Helper method, a combination of {@link #lookupFont(int, int, int)} and {@link #lookupDigits(Font)}
+     *
+     * @param fontStyle combination of the Font.PLAIN, Font.BOLD, and Font.ITALIC to request a particular font style
+     * @param fontSize  the font size required for the text
+     * @return an array of digits 0-9
+     */
+    public TexturedGlyph[] lookupDigits(int fontStyle, int fontSize) {
+        return lookupDigits(lookupFont(48, fontStyle, fontSize));
+    }
+
+    @Nonnull
+    private TexturedGlyph[] cacheDigits(@Nonnull Font font) {
+        TexturedGlyph[] digits = new TexturedGlyph[10];
+
+        char[] chars = new char[1];
+
+        glyphTextureGraphics.setFont(font);
+
+        int standardAdvance = 0;
+        int standardRenderWidth = 0;
+
+        for (int i = 0; i < 10; i++) {
+            chars[0] = (char) (i + 48);
+            GlyphVector vector = font.createGlyphVector(glyphTextureGraphics.getFontRenderContext(), chars);
+
+            Rectangle renderBounds = vector.getGlyphPixelBounds(0, glyphTextureGraphics.getFontRenderContext(), 0, 0);
+            int renderWidth = (int) renderBounds.getWidth();
+            int renderHeight = (int) renderBounds.getHeight();
+
+            if (currPosX + renderWidth + GLYPH_SPACING > TEXTURE_WIDTH) {
+                currPosX = GLYPH_SPACING;
+                currPosY += currLineHeight + GLYPH_SPACING * 2;
+                currLineHeight = 0;
+            }
+            if (currPosY + renderHeight + GLYPH_SPACING > TEXTURE_HEIGHT) {
+                currPosX = GLYPH_SPACING;
+                currPosY = GLYPH_SPACING;
+                allocateGlyphTexture();
+            }
+
+            int baseline = (int) renderBounds.getY();
+            if (i == 0) {
+                standardAdvance = Math.round(vector.getGlyphMetrics(0).getAdvanceX());
+                standardRenderWidth = renderWidth;
+            }
+
+            int x = currPosX - GLYPH_BORDER;
+            int y = currPosY - GLYPH_BORDER;
+            int width;
+            if (i == 0) {
+                width = renderWidth + GLYPH_BORDER * 2;
+            } else {
+                width = standardRenderWidth + GLYPH_BORDER * 2;
+            }
+            int height = renderHeight + GLYPH_BORDER * 2;
+
+            if (i == 0) {
+                glyphTextureGraphics.drawString(String.valueOf(chars), currPosX, currPosY - baseline);
+            } else {
+                int offset = Math.round((standardRenderWidth - renderWidth) / 2.0f);
+                glyphTextureGraphics.drawString(String.valueOf(chars), currPosX + offset, currPosY - baseline);
+            }
+
+            uploadTexture(x, y, width, height);
+
+            currLineHeight = Math.max(currLineHeight, renderHeight);
+            currPosX += standardRenderWidth + GLYPH_SPACING * 2;
+
+            digits[i] = new TexturedGlyph(textureName, standardAdvance / 2.0f, baseline / 2.0f,
+                    width / 2.0f, height / 2.0f,
+                    (float) x / TEXTURE_WIDTH, (float) y / TEXTURE_HEIGHT,
+                    (float) (x + width) / TEXTURE_WIDTH, (float) (y + height) / TEXTURE_HEIGHT);
+        }
+
+        return digits;
     }
 
     /**
@@ -442,7 +551,7 @@ public class GlyphManager {
                  * for the ascent above the baseline and to correct for a few glyphs that appear to have negative
                  * horizontal bearing (e.g. U+0423 Cyrillic uppercase letter U on Windows 7).
                  */
-                vectorBounds = vector.getPixelBounds(fontRenderContext, 0, 0);
+                vectorBounds = vector.getPixelBounds(glyphTextureGraphics.getFontRenderContext(), 0, 0);
 
                 /* Enlarge the stringImage if it is too small to store the entire rendered string */
                 if (vectorBounds.width > tempStringImage.getWidth() || vectorBounds.height > tempStringImage.getHeight()) {

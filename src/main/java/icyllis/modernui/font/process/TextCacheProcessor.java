@@ -20,8 +20,6 @@ package icyllis.modernui.font.process;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.ibm.icu.text.ArabicShaping;
-import com.ibm.icu.text.ArabicShapingException;
 import com.ibm.icu.text.Bidi;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.glyph.GlyphManager;
@@ -30,7 +28,7 @@ import icyllis.modernui.font.node.EffectRenderInfo;
 import icyllis.modernui.font.node.StringRenderInfo;
 import icyllis.modernui.font.node.TextRenderNode;
 import icyllis.modernui.graphics.math.Color3i;
-import net.minecraft.util.text.LanguageMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.util.text.Style;
 
 import javax.annotation.Nonnull;
@@ -57,19 +55,6 @@ public class TextCacheProcessor {
      * @see icyllis.modernui.system.Config.Client
      */
     public static int sDefaultFontSize;
-
-    /**
-     * Bit flag used with fontStyle to request the plain (normal) style
-     */
-    public static final byte PLAIN  = 0;
-    /**
-     * Bit flag used with fontStyle to request the bold style
-     */
-    public static final byte BOLD   = 1;
-    /**
-     * Bit flag used with fontStyle to request the italic style
-     */
-    public static final byte ITALIC = 2;
 
 
     /**
@@ -111,9 +96,14 @@ public class TextCacheProcessor {
     /**
      * Cached processing results
      */
-    private final List<TexturedGlyph>    glyphs  = new ArrayList<>();
-    private final List<StringRenderInfo> strings = new ArrayList<>();
-    private final List<EffectRenderInfo> effects = new ArrayList<>();
+    private final List<TexturedGlyph>    glyphs  = new ObjectArrayList<>();
+    private final List<StringRenderInfo> strings = new ObjectArrayList<>();
+    private final List<EffectRenderInfo> effects = new ObjectArrayList<>();
+
+    /**
+     * Record current processing states
+     */
+    private final TextProcessState processState = new TextProcessState();
 
     /**
      * A single StringCache object is allocated by Minecraft's FontRenderer which forwards all string drawing and requests for
@@ -147,169 +137,186 @@ public class TextCacheProcessor {
         //digitGlyphsReady = true;
     }
 
+    /**
+     * Lookup cached render node for vanilla renderer
+     *
+     * @param str   raw formatted string
+     * @param style text component style
+     * @return cached render node
+     */
     public TextRenderNode lookupVanillaNode(@Nonnull String str, Style style) {
         lookupKey.updateKey(str, style);
         TextRenderNode node = stringCache.getIfPresent(lookupKey);
         if (node == null) {
-            return genVanillaNode(lookupKey.copy(), str, style);
+            return generateVanillaNode(lookupKey.copy(), str, style);
         }
         return node;
     }
 
     @Nonnull
-    private TextRenderNode genVanillaNode(VanillaTextKey key, @Nonnull String str, Style style) {
-        final char[] text;
-        final int length;
-        if (LanguageMap.getInstance().func_230505_b_()) {
-            Bidi bidi = null;
-            try {
-                bidi = new Bidi(new ArabicShaping(ArabicShaping.LETTERS_SHAPE).shape(str),
-                        Bidi.DIRECTION_DEFAULT_RIGHT_TO_LEFT);
-            } catch (ArabicShapingException ignored) {
+    private TextRenderNode generateVanillaNode(VanillaTextKey key, @Nonnull String str, @Nonnull Style style) {
+        final char[] text = str.toCharArray();
+        final int length = text.length;
+        final TextProcessState state = processState;
 
-            }
-            if (bidi != null) {
-                bidi.setReorderingMode(Bidi.REORDER_DEFAULT);
-                text = bidi.writeReordered(Bidi.DO_MIRRORING).toCharArray();
-            } else {
-                text = str.toCharArray();
-            }
-        } else {
-            text = str.toCharArray();
-        }
-        length = text.length;
-
-        int curColor;
-        int curStyle = PLAIN;
-
-        if (style.getColor() != null) {
-            curColor = style.getColor().func_240742_a_();
-        } else {
-            curColor = -1;
-        }
-        final int defColor = curColor;
-
-        if (style.getBold()) {
-            curStyle |= BOLD;
-        }
-        if (style.getItalic()) {
-            curStyle |= ITALIC;
-        }
-        final int defStyle = curStyle;
-
-        final boolean defStrikethrough = style.getStrikethrough();
-        final boolean defUnderline = style.getUnderlined();
-        final boolean defObfuscated = style.getObfuscated();
-
-        boolean strikethrough = defStrikethrough;
-        boolean underline = defUnderline;
-        boolean obfuscated = defObfuscated;
-
-        float strikethroughX = 0;
-        float underlineX = 0;
-
-        float advance = 0;
-
-        Font font;
-        TexturedGlyph glyph;
+        state.updateState(style);
 
         int codePoint;
+        TexturedGlyph glyph;
+
         for (int i = 0; i < length; i++) {
             char c1 = text[i];
 
-            if (c1 == '\u00a7' && i + 1 < length) {
-                int code = "0123456789abcdefklmnor".indexOf(Character.toLowerCase(str.charAt(++i)));
-                switch (code) {
-                    case 16:
-                        if (!obfuscated) {
-                            obfuscated = true;
-                            if (!glyphs.isEmpty()) {
-                                strings.add(new StringRenderInfo(glyphs.toArray(new TexturedGlyph[0]), curColor, false));
-                                glyphs.clear();
+            if (i + 1 < length) {
+                if (c1 == '\u00a7') {
+                    int code = "0123456789abcdefklmnor".indexOf(Character.toLowerCase(text[++i]));
+                    switch (code) {
+                        /* Obfuscated */
+                        case 16:
+                            if (state.setObfuscated(true)) {
+                                if (!state.isDigitMode()) {
+                                    state.setDigitGlyphs(glyphManager.lookupDigits(state.getFontStyle(), sDefaultFontSize));
+                                }
+                                if (state.isDigitMode() && state.hasDigit()) {
+                                    strings.add(StringRenderInfo.ofDigit(state.getDigitGlyphs(),
+                                            state.getColor(), state.toDigitIndexArray()));
+                                } else if (!glyphs.isEmpty()) {
+                                    strings.add(StringRenderInfo.ofText(glyphs.toArray(new TexturedGlyph[0]),
+                                            state.getColor()));
+                                }
+                            }
+                            break;
+
+                        /* Bold */
+                        case 17:
+                            if (state.setBold(true)) {
+                                if (state.getObfuscatedCount() > 0) {
+                                    strings.add(StringRenderInfo.ofObfuscated(state.getDigitGlyphs(),
+                                            state.getColor(), state.getObfuscatedCount()));
+                                } else if (state.isDigitMode() && state.hasDigit()) {
+                                    strings.add(StringRenderInfo.ofDigit(state.getDigitGlyphs(),
+                                            state.getColor(), state.toDigitIndexArray()));
+                                }
+                                if (state.isDigitMode() || state.isObfuscated()) {
+                                    state.setDigitGlyphs(glyphManager.lookupDigits(state.getFontStyle(), sDefaultFontSize));
+                                }
+                            }
+                            break;
+
+                        case 18:
+                            state.setStrikethrough(true);
+                            break;
+
+                        case 19:
+                            state.setUnderline(true);
+                            break;
+
+                        case 20:
+                            if (state.setItalic(true)) {
+                                if (state.getObfuscatedCount() > 0) {
+                                    strings.add(StringRenderInfo.ofObfuscated(state.getDigitGlyphs(),
+                                            state.getColor(), state.getObfuscatedCount()));
+                                } else if (state.isDigitMode() && state.hasDigit()) {
+                                    strings.add(StringRenderInfo.ofDigit(state.getDigitGlyphs(),
+                                            state.getColor(), state.toDigitIndexArray()));
+                                }
+                                if (state.isDigitMode() || state.isObfuscated()) {
+                                    state.setDigitGlyphs(glyphManager.lookupDigits(state.getFontStyle(), sDefaultFontSize));
+                                }
+                            }
+                            break;
+
+                        /* Reset */
+                        case 21: {
+                            int pColor = state.getColor();
+                            if (state.setDefaultColor()) {
+                                if (state.getObfuscatedCount() > 0) {
+                                    strings.add(StringRenderInfo.ofObfuscated(state.getDigitGlyphs(),
+                                            pColor, state.getObfuscatedCount()));
+                                } else if (state.isDigitMode() && state.hasDigit()) {
+                                    strings.add(StringRenderInfo.ofDigit(state.getDigitGlyphs(),
+                                            pColor, state.toDigitIndexArray()));
+                                } else if (!glyphs.isEmpty()) {
+                                    strings.add(StringRenderInfo.ofText(glyphs.toArray(new TexturedGlyph[0]),
+                                            pColor));
+                                }
+                                if (state.isUnderline()) {
+                                    effects.add(EffectRenderInfo.ofUnderline(state.getUnderlineStart(), state.getAdvance(), pColor));
+                                }
+                                if (state.isStrikethrough()) {
+                                    effects.add(EffectRenderInfo.ofStrikethrough(state.getUnderlineStart(), state.getAdvance(), pColor));
+                                }
+                                state.setDefaultFontStyle();
+                                state.setDefaultObfuscated();
+                                state.setDefaultStrikethrough();
+                                state.setDefaultUnderline();
+                            } else {
+                                if (state.isObfuscated() && state.setDefaultObfuscated() && state.getObfuscatedCount() > 0) {
+                                    strings.add(StringRenderInfo.ofObfuscated(state.getDigitGlyphs(),
+                                            pColor, state.getObfuscatedCount()));
+                                }
                             }
                         }
-                        break;
-
-                    case 17:
-                        curStyle |= BOLD;
-                        break;
-
-                    case 18:
-                        if (!strikethrough) {
-                            strikethrough = true;
-                            strikethroughX = advance;
-                        }
-                        break;
-
-                    case 19:
-                        if (!underline) {
-                            underline = true;
-                            underlineX = advance;
-                        }
-                        break;
-
-                    case 20:
-                        curStyle |= ITALIC;
-                        break;
-
-                    case 21:
-                        curStyle = defStyle;
-                        curColor = defColor;
-                    {
-                        boolean p = strikethrough;
-                        strikethrough = defStrikethrough;
-                        if (!strikethrough && p) {
-                            effects.add(new EffectRenderInfo(strikethroughX, advance, curColor, EffectRenderInfo.STRIKETHROUGH));
-                        }
-                    }
-                    {
-                        boolean p = underline;
-                        underline = defUnderline;
-                        if (!underline && p) {
-                            effects.add(new EffectRenderInfo(underlineX, advance, curColor, EffectRenderInfo.UNDERLINE));
-                        }
-                    }
-                    {
-                        boolean p = obfuscated;
-                        obfuscated = defObfuscated;
-                        if (!obfuscated && p) {
-                            if (!glyphs.isEmpty()) {
-                                strings.add(new StringRenderInfo(glyphs.toArray(new TexturedGlyph[0]), curColor, true));
-                                glyphs.clear();
+                            /*fontStyle = defStyle;
+                            color = defColor;
+                        {
+                            boolean p = strikethrough;
+                            strikethrough = defStrikethrough;
+                            if (!strikethrough && p) {
+                                effects.add(EffectRenderInfo.ofStrikethrough(strikethroughX, advance, color));
                             }
                         }
-                    }
-                    break;
-
-                    default:
-                        if (code != -1) {
-                            int c = Color3i.fromFormattingCode(code).getColor();
-                            if (curColor != c) {
+                        {
+                            boolean p = underline;
+                            underline = defUnderline;
+                            if (!underline && p) {
+                                effects.add(EffectRenderInfo.ofUnderline(underlineX, advance, color));
+                            }
+                        }
+                        {
+                            boolean p = obfuscated;
+                            obfuscated = defObfuscated;
+                            if (!obfuscated && p) {
                                 if (!glyphs.isEmpty()) {
-                                    strings.add(new StringRenderInfo(glyphs.toArray(new TexturedGlyph[0]), curColor, obfuscated));
-                                    curColor = c;
+                                    strings.add(new StringRenderInfo(glyphs.toArray(new TexturedGlyph[0]), color, true));
                                     glyphs.clear();
                                 }
-                                if (strikethrough) {
-                                    effects.add(new EffectRenderInfo(strikethroughX, advance, curColor, EffectRenderInfo.STRIKETHROUGH));
-                                    strikethroughX = advance;
-                                }
-                                if (underline) {
-                                    effects.add(new EffectRenderInfo(underlineX, advance, curColor, EffectRenderInfo.UNDERLINE));
-                                    underlineX = advance;
-                                }
                             }
-                        }
-                        break;
-                }
-                continue;
-            }
+                        }*/
+                            break;
 
-            if (Character.isHighSurrogate(c1) && i + 1 < length) {
-                char c2 = text[i + 1];
-                if (Character.isLowerCase(c2)) {
-                    ++i;
-                    codePoint = Character.toCodePoint(c1, c2);
+                        default:
+                            if (code != -1) {
+                                int c = Color3i.fromFormattingCode(code).getColor();
+                                processState.setColor(c, this::addStringAndEffectInfo);
+                                /*if (color != c) {
+                                    if (!glyphs.isEmpty()) {
+                                        strings.add(new StringRenderInfo(glyphs.toArray(new TexturedGlyph[0]), color, obfuscated));
+                                        color = c;
+                                        glyphs.clear();
+                                    }
+                                    if (strikethrough) {
+                                        effects.add(new EffectRenderInfo(strikethroughX, advance, color, EffectRenderInfo.STRIKETHROUGH));
+                                        strikethroughX = advance;
+                                    }
+                                    if (underline) {
+                                        effects.add(new EffectRenderInfo(underlineX, advance, color, EffectRenderInfo.UNDERLINE));
+                                        underlineX = advance;
+                                    }
+                                }*/
+                            }
+                            break;
+                    }
+                    continue;
+
+                } else if (Character.isHighSurrogate(c1)) {
+                    char c2 = text[i + 1];
+                    if (Character.isLowSurrogate(c2)) {
+                        ++i;
+                        codePoint = Character.toCodePoint(c1, c2);
+                    } else {
+                        codePoint = c1;
+                    }
                 } else {
                     codePoint = c1;
                 }
@@ -317,27 +324,34 @@ public class TextCacheProcessor {
                 codePoint = c1;
             }
 
-            font = glyphManager.lookupFont(codePoint, curStyle, sDefaultFontSize);
-            glyph = glyphManager.lookupGlyph(font, codePoint);
-            glyphs.add(glyph);
-            advance += glyph.advance;
+            if (codePoint >= 48 && codePoint <= 57) {
+                TexturedGlyph[] digits = glyphManager.lookupDigits(processState.getFontStyle(), sDefaultFontSize);
+                processState.nowDigit(i, digits, this::addStringInfo);
+                processState.addAdvance(digits[0].advance);
+            } else {
+                processState.nowText(this::addStringInfo);
+                glyph = glyphManager.lookupGlyph(codePoint, processState.getFontStyle(), sDefaultFontSize);
+                processState.addAdvance(glyph.advance);
+                glyphs.add(glyph);
+            }
         }
 
-        if (strikethrough) {
-            effects.add(new EffectRenderInfo(strikethroughX, advance, curColor, EffectRenderInfo.STRIKETHROUGH));
+        /*if (strikethrough) {
+            effects.add(new EffectRenderInfo(strikethroughX, advance, color, EffectRenderInfo.STRIKETHROUGH));
         }
 
         if (underline) {
-            effects.add(new EffectRenderInfo(underlineX, advance, curColor, EffectRenderInfo.UNDERLINE));
+            effects.add(new EffectRenderInfo(underlineX, advance, color, EffectRenderInfo.UNDERLINE));
         }
 
         if (!glyphs.isEmpty()) {
-            strings.add(new StringRenderInfo(glyphs.toArray(new TexturedGlyph[0]), curColor, obfuscated));
+            strings.add(new StringRenderInfo(glyphs.toArray(new TexturedGlyph[0]), color, obfuscated));
             glyphs.clear();
-        }
+        }*/
+        addStringAndEffectInfo(processState);
 
         final TextRenderNode node = new TextRenderNode(strings.toArray(new StringRenderInfo[0]),
-                effects.isEmpty() ? null : effects.toArray(new EffectRenderInfo[0]), advance);
+                effects.isEmpty() ? null : effects.toArray(new EffectRenderInfo[0]), processState.getAdvance());
 
         stringCache.put(key, node);
         effects.clear();
@@ -469,7 +483,7 @@ public class TextCacheProcessor {
      * @return the length of the new stripped string in text[]; actual text.length will not change because the array is not reallocated
      */
     @Deprecated
-    private int extractFormattingCodes(Entry cacheEntry, String str, char[] text) {
+    private int extractFormattingCodes(Entry cacheEntry, @Nonnull String str, char[] text) {
         List<FormattingCode> codeList = new ArrayList<>();
         int start = 0, shift = 0, next;
 
@@ -496,7 +510,7 @@ public class TextCacheProcessor {
 
                 /* Bold style */
                 case 17:
-                    fontStyle |= BOLD;
+                    fontStyle |= TextProcessState.BOLD;
                     break;
 
                 /* Strikethrough style */
@@ -513,12 +527,12 @@ public class TextCacheProcessor {
 
                 /* Italic style */
                 case 20:
-                    fontStyle |= ITALIC;
+                    fontStyle |= TextProcessState.ITALIC;
                     break;
 
                 /* Reset style */
                 case 21:
-                    fontStyle = PLAIN;
+                    fontStyle = TextProcessState.PLAIN;
                     renderStyle = 0;
                     colorCode = -1; // we need to back default color
                     break;

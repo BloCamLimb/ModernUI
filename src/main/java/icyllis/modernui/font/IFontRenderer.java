@@ -22,6 +22,7 @@ import icyllis.modernui.font.style.TextAlign;
 
 import javax.annotation.Nullable;
 
+@Deprecated
 public interface IFontRenderer {
 
     /**

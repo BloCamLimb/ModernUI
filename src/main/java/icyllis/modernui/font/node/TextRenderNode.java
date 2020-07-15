@@ -19,6 +19,7 @@
 package icyllis.modernui.font.node;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.font.glyph.GlyphManager;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.WorldVertexBufferUploader;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
@@ -27,6 +28,9 @@ import org.lwjgl.opengl.GL11;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+/**
+ * The complete node, including
+ */
 public class TextRenderNode {
 
     /**
@@ -35,11 +39,20 @@ public class TextRenderNode {
     private static final int BASELINE_OFFSET = 7;
 
 
+    /**
+     * All strings to render.
+     */
     private final StringRenderInfo[] stringInfos;
 
+    /**
+     * All effects to render.
+     */
     @Nullable
     private final EffectRenderInfo[] effectInfos;
 
+    /**
+     * Total advance of this text node.
+     */
     public final float advance;
 
     public TextRenderNode(StringRenderInfo[] stringInfos, @Nullable EffectRenderInfo[] effectInfos, float advance) {
@@ -48,12 +61,13 @@ public class TextRenderNode {
         this.advance = advance;
     }
 
-    public void drawText(@Nonnull BufferBuilder builder, float x, float y, int r, int g, int b, int a) {
+    public void drawText(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a) {
         float bx = x;
         y += BASELINE_OFFSET;
+        x -= GlyphManager.GLYPH_OFFSET;
         RenderSystem.enableTexture();
         for (StringRenderInfo info : stringInfos) {
-            x = info.drawString(builder, x, y, r, g, b, a);
+            x = info.drawString(builder, raw, x, y, r, g, b, a);
         }
         if (effectInfos != null) {
             RenderSystem.disableTexture();

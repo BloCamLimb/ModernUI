@@ -179,7 +179,7 @@ public enum BlurHandler {
             if (blurring) {
                 updateRadius(p * sBlurRadius);
             }
-            if (backgroundAlpha != sBackgroundAlpha) {
+            if (backgroundAlpha < sBackgroundAlpha) {
                 backgroundAlpha = p * sBackgroundAlpha;
             }
             if (p == 1.0f) {

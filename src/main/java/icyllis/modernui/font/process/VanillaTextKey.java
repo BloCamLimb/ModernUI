@@ -29,7 +29,7 @@ import javax.annotation.Nullable;
  * be all hashed together into the same entry. The draw method will then substitute the correct digit glyph on
  * the fly. This special digit handling gives a significant speedup on the F3 debug screen.
  * <p>
- * For vanilla only, because Modern UI can generate render node directly.
+ * For vanilla only, Modern UI can generate render node directly.
  *
  * @see net.minecraft.util.text.Style
  * @see net.minecraft.util.text.TextFormatting
@@ -57,6 +57,9 @@ public class VanillaTextKey {
 
     }
 
+    /**
+     * Copy constructor
+     */
     private VanillaTextKey(String str, int style) {
         this.str = str;
         this.style = style;
@@ -65,12 +68,12 @@ public class VanillaTextKey {
     /**
      * Update current str and style value, parse vanilla's style to an integer
      *
-     * @param str   str
-     * @param style style
+     * @param str   raw formatted string
+     * @param style text component style
      */
     public void updateKey(String str, @Nullable Style style) {
         this.str = str;
-        // text formatting may render same as style, but we can't parse them easily
+        // text formatting may render same as style, but we can't separate them easily
         this.style = style == null ? -1 : parseStyle(style);
     }
 
@@ -136,7 +139,7 @@ public class VanillaTextKey {
             char c1 = str.charAt(index);
             char c2 = other.charAt(index);
 
-            if (c1 != c2 && (c1 < '0' || c1 > '9' || c2 < '0' || c2 > '9' || formatting)) {
+            if (c1 != c2 && (formatting || c1 < '0' || c1 > '9' || c2 < '0' || c2 > '9')) {
                 return false;
             }
             formatting = (c1 == '\u00a7');
@@ -165,7 +168,7 @@ public class VanillaTextKey {
 
         for (int index = 0; index < length; index++) {
             char c = str.charAt(index);
-            if (c >= '0' && c <= '9' && !formatting) {
+            if (!formatting && c >= '0' && c <= '9') {
                 c = '0';
             }
             code = code * 31 + c;
