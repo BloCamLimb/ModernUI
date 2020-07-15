@@ -41,7 +41,7 @@ public class TexturedGlyph {
 
     /**
      * The horizontal advance in pixels of this glyph, including font spacing!
-     * This will be used for layout.
+     * This will be used for layout or trim.
      */
     public final float advance;
 

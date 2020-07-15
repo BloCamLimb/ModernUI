@@ -57,16 +57,28 @@ public class EffectRenderInfo {
     /**
      * Effect depth for offset z
      */
-    private static final float EFFECT_DEPTH = 0.01f;
+    public static final float EFFECT_DEPTH = 0.01f;
 
 
-    private final float start;
+    /**
+     * Start X offset of this effect to the start x of the whole text
+     */
+    protected final float start;
 
-    private final float end;
+    /**
+     * End X offset of this effect to the start x of the whole text
+     */
+    protected final float end;
 
-    private final int color;
+    /**
+     * RGB color
+     */
+    protected final int color;
 
-    private final byte type;
+    /**
+     * Either {@link #UNDERLINE} or {@link #STRIKETHROUGH}
+     */
+    protected final byte type;
 
     public EffectRenderInfo(float start, float end, int color, byte type) {
         this.start = start;
@@ -94,5 +106,15 @@ public class EffectRenderInfo {
             builder.pos(x + end, y, EFFECT_DEPTH).color(r, g, b, a).endVertex();
             builder.pos(x + start, y, EFFECT_DEPTH).color(r, g, b, a).endVertex();
         }
+    }
+
+    @Nonnull
+    public static EffectRenderInfo ofUnderline(float start, float end, int color) {
+        return new EffectRenderInfo(start, end, color, UNDERLINE);
+    }
+
+    @Nonnull
+    public static EffectRenderInfo ofStrikethrough(float start, float end, int color) {
+        return new EffectRenderInfo(start, end, color, STRIKETHROUGH);
     }
 }

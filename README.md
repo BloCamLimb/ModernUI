@@ -25,8 +25,8 @@ plugins {
 ```
 ```
 dependencies {
-    compile fg.deobf("curse.maven:ModernUI:[fileID]")
-    compile 'com.github.ben-manes.caffeine:caffeine:2.8.5'
+    compileOnly fg.deobf("curse.maven:ModernUI:[FileID]-userdev")
+    runtimeOnly fg.deobf("curse.maven:ModernUI:[FileID]-universal")
 }
 ```
 Latest version: (no build for 1.16.1) (FileID: )

@@ -26,66 +26,39 @@ import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 
-public class StringRenderInfo {
+/**
+ * The key to fast render digit
+ */
+public class DigitRenderInfo extends StringRenderInfo {
 
     /**
-     * An array of resulted glyphs to render.
-     * <p>
-     * If this class is {@link DigitRenderInfo} or {@link ObfuscatedRenderInfo}, this field
-     * is a reference of cached array in GlyphManager, 0-9 textured glyphs (in that order)
+     * An array of digit char index of the whole original string.
+     * The index should skipped all supplementary multilingual plane and formatting codes.
+     * This array length equals to this info total digit count to renderer.
+     * This array value equals to the char (not code point) index of the original string.
+     *
+     * @see StringRenderInfo#glyphs
      */
-    protected final TexturedGlyph[] glyphs;
+    private final int[] indexArray;
 
-    /**
-     * RGB color
-     */
-    protected final int color;
-
-    public StringRenderInfo(TexturedGlyph[] glyphs, int color) {
-        this.glyphs = glyphs;
-        this.color = color;
+    public DigitRenderInfo(TexturedGlyph[] glyphs, int color, int[] indexArray) {
+        super(glyphs, color);
+        this.indexArray = indexArray;
     }
 
-    /**
-     * Draw string of this info.
-     *
-     * @param builder vertex builder
-     * @param raw     needed by {@link DigitRenderInfo}
-     * @param x       start x
-     * @param y       start y
-     * @param r       default red
-     * @param g       default green
-     * @param b       default blue
-     * @param a       alpha
-     * @return next x pos
-     */
+    @Override
     public float drawString(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a) {
         if (color != -1) {
             r = color >> 16 & 0xff;
             g = color >> 8 & 0xff;
             b = color & 0xff;
         }
-        for (TexturedGlyph glyph : glyphs) {
+        for (int i : indexArray) {
             builder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR_TEX);
-            x = glyph.drawGlyph(builder, x, y, r, g, b, a);
+            x = glyphs[raw.charAt(i) - '0'].drawGlyph(builder, x, y, r, g, b, a);
             builder.finishDrawing();
             WorldVertexBufferUploader.draw(builder);
         }
         return x;
-    }
-
-    @Nonnull
-    public static StringRenderInfo ofText(TexturedGlyph[] glyphs, int color) {
-        return new StringRenderInfo(glyphs, color);
-    }
-
-    @Nonnull
-    public static DigitRenderInfo ofDigit(TexturedGlyph[] digits, int color, int[] indexMap) {
-        return new DigitRenderInfo(digits, color, indexMap);
-    }
-
-    @Nonnull
-    public static ObfuscatedRenderInfo ofObfuscated(TexturedGlyph[] digits, int color, int count) {
-        return new ObfuscatedRenderInfo(digits, color, count);
     }
 }

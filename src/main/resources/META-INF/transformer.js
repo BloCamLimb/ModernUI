@@ -95,7 +95,17 @@ function initializeCoreMod() {
             },
             'transformer': function (methodNode) {
                 var list = methodNode.instructions;
-                var invoke = ASMAPI.findFirstMethodCall(methodNode, ASMAPI.MethodType.VIRTUAL, "net/minecraft/client/gui/screen/Screen", "fillGradient", "(Lcom/mojang/blaze3d/matrix/MatrixStack;IIIIII)V")
+                var iterator = list.iterator();
+                while(iterator.hasNext()) {
+                    var inst = iterator.next();
+                    if (inst.getType() === AbstractInsnNode.LDC_INSN) {
+                        var next = inst.getNext();
+                        list.set(inst, new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/ModernUI", "getScreenBackgroundColor", "()I", false));
+                        list.set(next, new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/ModernUI", "getScreenBackgroundColor", "()I", false));
+                        break;
+                    }
+                }
+                /*var invoke = ASMAPI.findFirstMethodCall(methodNode, ASMAPI.MethodType.VIRTUAL, "net/minecraft/client/gui/screen/Screen", "fillGradient", "(Lcom/mojang/blaze3d/matrix/MatrixStack;IIIIII)V")
                 var ldc1 = invoke.getPrevious();
                 var ldc2 = ldc1.getPrevious();
                 list.remove(ldc1);
@@ -104,7 +114,7 @@ function initializeCoreMod() {
                     new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/ModernUI", "getScreenBackgroundColor", "()I", false),
                     new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/ModernUI", "getScreenBackgroundColor", "()I", false)
                 );
-                list.insertBefore(invoke, cast);
+                list.insertBefore(invoke, cast);*/
                 return methodNode;
             }
         }/*,
