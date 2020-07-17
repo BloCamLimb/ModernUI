@@ -26,6 +26,7 @@ import icyllis.modernui.ui.animation.ITimeInterpolator;
 import icyllis.modernui.ui.layout.Gravity;
 import icyllis.modernui.ui.layout.LinearLayout;
 import icyllis.modernui.ui.layout.Orientation;
+import icyllis.modernui.ui.master.UIManager;
 import icyllis.modernui.ui.master.View;
 import net.minecraft.util.text.TextFormatting;
 
@@ -64,7 +65,8 @@ public class TestLinearLayout extends LinearLayout {
         super.onDraw(canvas);
         canvas.moveTo(this);
         canvas.resetColor();
-        canvas.drawText("LinearLayout", 0, 0);
+        float a = canvas.drawText("LinearLayout", 0, 0);
+        canvas.drawText(String.valueOf(canvas.getDrawingTime()), a + 2, 0);
     }
 
     private static class CView extends View {
@@ -73,7 +75,7 @@ public class TestLinearLayout extends LinearLayout {
         protected void onDraw(@Nonnull Canvas canvas) {
             canvas.moveTo(this);
             canvas.resetColor();
-            String str = "Modern" + TextFormatting.AQUA + " UI " + TextFormatting.UNDERLINE + "MOS\u2642";
+            String str = TextFormatting.UNDERLINE + "Modern" + TextFormatting.AQUA + " UI " + TextFormatting.RESET + "MOS" + TextFormatting.STRIKETHROUGH + "\u2642";
             canvas.drawText(str, 0, 4);
         }
     }

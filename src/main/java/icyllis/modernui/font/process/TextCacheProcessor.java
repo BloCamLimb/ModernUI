@@ -24,12 +24,11 @@ import com.ibm.icu.text.Bidi;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.glyph.GlyphManager;
 import icyllis.modernui.font.glyph.TexturedGlyph;
-import icyllis.modernui.font.node.EffectRenderInfo;
-import icyllis.modernui.font.node.StringRenderInfo;
 import icyllis.modernui.font.node.TextRenderNode;
 import icyllis.modernui.graphics.math.Color3i;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import icyllis.modernui.system.ModernUI;
 import net.minecraft.util.text.Style;
+import net.minecraft.util.text.TextFormatting;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -94,16 +93,9 @@ public class TextCacheProcessor {
     //private boolean digitGlyphsReady = false;
 
     /**
-     * Cached processing results
+     * Register current processing results
      */
-    private final List<TexturedGlyph>    glyphs  = new ObjectArrayList<>();
-    private final List<StringRenderInfo> strings = new ObjectArrayList<>();
-    private final List<EffectRenderInfo> effects = new ObjectArrayList<>();
-
-    /**
-     * Record current processing states
-     */
-    private final TextProcessState processState = new TextProcessState();
+    private final TextProcessRegister processRegister = new TextProcessRegister();
 
     /**
      * A single StringCache object is allocated by Minecraft's FontRenderer which forwards all string drawing and requests for
@@ -140,38 +132,51 @@ public class TextCacheProcessor {
     /**
      * Lookup cached render node for vanilla renderer
      *
-     * @param str   raw formatted string
-     * @param style text component style
+     * @param string raw formatted string
+     * @param style  text component style
      * @return cached render node
      */
-    public TextRenderNode lookupVanillaNode(@Nonnull String str, Style style) {
-        lookupKey.updateKey(str, style);
+    public TextRenderNode lookupVanillaNode(@Nonnull String string, @Nonnull Style style) {
+        lookupKey.updateKey(string, style);
         TextRenderNode node = stringCache.getIfPresent(lookupKey);
         if (node == null) {
-            return generateVanillaNode(lookupKey.copy(), str, style);
+            return generateVanillaNode(lookupKey.copy(), string, style);
         }
         return node;
     }
 
-    @Nonnull
-    private TextRenderNode generateVanillaNode(VanillaTextKey key, @Nonnull String str, @Nonnull Style style) {
-        final char[] text = str.toCharArray();
-        final int length = text.length;
-        final TextProcessState state = processState;
+    /**
+     * Get text formatting from formatting code
+     *
+     * @param code c
+     * @return text formatting, {@code null} if code invalid
+     */
+    @Nullable
+    public static TextFormatting fromFormattingCode(char code) {
+        int i = "0123456789abcdefklmnor".indexOf(Character.toLowerCase(code));
+        return i != -1 ? TextFormatting.values()[i] : null;
+    }
 
-        state.updateState(style);
+    @Nonnull
+    private TextRenderNode generateVanillaNode(VanillaTextKey key, @Nonnull String string, @Nonnull final Style style) {
+        final int length = string.length();
+        final TextProcessRegister register = processRegister;
+
+        register.beginProcess(style);
 
         int codePoint;
         TexturedGlyph glyph;
+        for (int stringIndex = 0, glyphIndex = 0; stringIndex < length; stringIndex++) {
+            char c1 = string.charAt(stringIndex);
 
-        for (int i = 0; i < length; i++) {
-            char c1 = text[i];
-
-            if (i + 1 < length) {
+            if (stringIndex + 1 < length) {
                 if (c1 == '\u00a7') {
-                    int code = "0123456789abcdefklmnor".indexOf(Character.toLowerCase(text[++i]));
-                    switch (code) {
-                        /* Obfuscated */
+                    TextFormatting formatting = fromFormattingCode(string.charAt(++stringIndex));
+                    if (formatting != null) {
+                        register.applyFormatting(formatting, glyphIndex);
+                    }
+                    /*switch (code) {
+                     *//* Obfuscated *//*
                         case 16:
                             if (state.setObfuscated(true)) {
                                 if (!state.isDigitMode()) {
@@ -187,7 +192,7 @@ public class TextCacheProcessor {
                             }
                             break;
 
-                        /* Bold */
+                        *//* Bold *//*
                         case 17:
                             if (state.setBold(true)) {
                                 if (state.getObfuscatedCount() > 0) {
@@ -226,7 +231,7 @@ public class TextCacheProcessor {
                             }
                             break;
 
-                        /* Reset */
+                        *//* Reset *//*
                         case 21: {
                             int pColor = state.getColor();
                             if (state.setDefaultColor()) {
@@ -257,7 +262,7 @@ public class TextCacheProcessor {
                                 }
                             }
                         }
-                            /*fontStyle = defStyle;
+                            *//*fontStyle = defStyle;
                             color = defColor;
                         {
                             boolean p = strikethrough;
@@ -282,14 +287,14 @@ public class TextCacheProcessor {
                                     glyphs.clear();
                                 }
                             }
-                        }*/
-                            break;
+                        }*//*
+                        break;
 
                         default:
                             if (code != -1) {
                                 int c = Color3i.fromFormattingCode(code).getColor();
-                                processState.setColor(c, this::addStringAndEffectInfo);
-                                /*if (color != c) {
+                                //processState.setColor(c, this::addStringAndEffectInfo);
+                                *//*if (color != c) {
                                     if (!glyphs.isEmpty()) {
                                         strings.add(new StringRenderInfo(glyphs.toArray(new TexturedGlyph[0]), color, obfuscated));
                                         color = c;
@@ -303,17 +308,17 @@ public class TextCacheProcessor {
                                         effects.add(new EffectRenderInfo(underlineX, advance, color, EffectRenderInfo.UNDERLINE));
                                         underlineX = advance;
                                     }
-                                }*/
+                                }*//*
                             }
                             break;
-                    }
+                    }*/
                     continue;
 
                 } else if (Character.isHighSurrogate(c1)) {
-                    char c2 = text[i + 1];
+                    char c2 = string.charAt(stringIndex + 1);
                     if (Character.isLowSurrogate(c2)) {
-                        ++i;
                         codePoint = Character.toCodePoint(c1, c2);
+                        ++stringIndex;
                     } else {
                         codePoint = c1;
                     }
@@ -324,16 +329,27 @@ public class TextCacheProcessor {
                 codePoint = c1;
             }
 
-            if (codePoint >= 48 && codePoint <= 57) {
-                TexturedGlyph[] digits = glyphManager.lookupDigits(processState.getFontStyle(), sDefaultFontSize);
-                processState.nowDigit(i, digits, this::addStringInfo);
-                processState.addAdvance(digits[0].advance);
+            /*if (codePoint >= 48 && codePoint <= 57) {
+                TexturedGlyph[] digits = glyphManager.lookupDigits(processRegister.getFontStyle(), sDefaultFontSize);
+                //processState.nowDigit(i, digits, this::addStringInfo);
+                processRegister.addAdvance(digits[0].advance);
             } else {
-                processState.nowText(this::addStringInfo);
-                glyph = glyphManager.lookupGlyph(codePoint, processState.getFontStyle(), sDefaultFontSize);
-                processState.addAdvance(glyph.advance);
+                //processState.nowText(this::addStringInfo);
+                glyph = glyphManager.lookupGlyph(codePoint, processRegister.getFontStyle(), sDefaultFontSize);
+                processRegister.addAdvance(glyph.advance);
                 glyphs.add(glyph);
+            }*/
+
+            /*if (register.peekFontStyle()) {
+                register.setDigitGlyphs(glyphManager.lookupDigits(
+                        register.getFontStyle(), sDefaultFontSize));
+            }*/
+            if (register.isObfuscated() || (codePoint <= 57 && codePoint >= 48)) {
+                register.depositDigit(stringIndex, glyphManager.lookupDigits(register.getFontStyle(), sDefaultFontSize));
+            } else {
+                register.depositGlyph(glyphManager.lookupGlyph(codePoint, register.getFontStyle(), sDefaultFontSize));
             }
+            glyphIndex++;
         }
 
         /*if (strikethrough) {
@@ -348,14 +364,13 @@ public class TextCacheProcessor {
             strings.add(new StringRenderInfo(glyphs.toArray(new TexturedGlyph[0]), color, obfuscated));
             glyphs.clear();
         }*/
-        addStringAndEffectInfo(processState);
+        //addStringAndEffectInfo(processState);
+        register.finishProcess();
 
-        final TextRenderNode node = new TextRenderNode(strings.toArray(new StringRenderInfo[0]),
-                effects.isEmpty() ? null : effects.toArray(new EffectRenderInfo[0]), processState.getAdvance());
+        final TextRenderNode node = new TextRenderNode(register.wrapGlyphs(),
+                register.wrapEffects(), register.wrapColors(), register.getAdvance());
 
         stringCache.put(key, node);
-        effects.clear();
-        strings.clear();
 
         return node;
     }
@@ -510,7 +525,7 @@ public class TextCacheProcessor {
 
                 /* Bold style */
                 case 17:
-                    fontStyle |= TextProcessState.BOLD;
+                    fontStyle |= TextProcessRegister.BOLD;
                     break;
 
                 /* Strikethrough style */
@@ -527,12 +542,12 @@ public class TextCacheProcessor {
 
                 /* Italic style */
                 case 20:
-                    fontStyle |= TextProcessState.ITALIC;
+                    fontStyle |= TextProcessRegister.ITALIC;
                     break;
 
                 /* Reset style */
                 case 21:
-                    fontStyle = TextProcessState.PLAIN;
+                    fontStyle = TextProcessRegister.PLAIN;
                     renderStyle = 0;
                     colorCode = -1; // we need to back default color
                     break;

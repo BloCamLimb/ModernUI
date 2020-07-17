@@ -20,46 +20,26 @@ package icyllis.modernui.font.node;
 
 import icyllis.modernui.font.glyph.TexturedGlyph;
 import net.minecraft.client.renderer.BufferBuilder;
+import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.WorldVertexBufferUploader;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.util.math.vector.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 
-public class StringRenderInfo {
+public class GlyphRenderInfo implements IGlyphRenderInfo {
 
     /**
      * An array of resulted glyphs to render.
-     * <p>
-     * If this class is {@link DigitRenderInfo} or {@link ObfuscatedRenderInfo}, this field
-     * is a reference of cached array in GlyphManager, 0-9 textured glyphs (in that order)
      */
-    protected final TexturedGlyph[] glyphs;
+    protected final TexturedGlyph glyph;
 
-    /**
-     * RGB color
-     */
-    protected final int color;
-
-    public StringRenderInfo(TexturedGlyph[] glyphs, int color) {
-        this.glyphs = glyphs;
-        this.color = color;
+    public GlyphRenderInfo(TexturedGlyph glyph) {
+        this.glyph = glyph;
     }
 
-    /**
-     * Draw string of this info.
-     *
-     * @param builder vertex builder
-     * @param raw     needed by {@link DigitRenderInfo}
-     * @param x       start x
-     * @param y       start y
-     * @param r       default red
-     * @param g       default green
-     * @param b       default blue
-     * @param a       alpha
-     * @return next x pos
-     */
-    public float drawString(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a) {
+    /*public float drawString(@Nonnull BufferBuilder builder, @Nonnull String raw, int color, float x, float y, int r, int g, int b, int a) {
         if (color != -1) {
             r = color >> 16 & 0xff;
             g = color >> 8 & 0xff;
@@ -75,8 +55,8 @@ public class StringRenderInfo {
     }
 
     @Nonnull
-    public static StringRenderInfo ofText(TexturedGlyph[] glyphs, int color) {
-        return new StringRenderInfo(glyphs, color);
+    public static CodePointInfo ofText(TexturedGlyph[] glyphs, int color) {
+        return new CodePointInfo(glyphs, color);
     }
 
     @Nonnull
@@ -85,7 +65,21 @@ public class StringRenderInfo {
     }
 
     @Nonnull
-    public static ObfuscatedRenderInfo ofObfuscated(TexturedGlyph[] digits, int color, int count) {
-        return new ObfuscatedRenderInfo(digits, color, count);
+    public static ObfuscatedInfo ofObfuscated(TexturedGlyph[] digits, int color, int count) {
+        return new ObfuscatedInfo(digits, color, count);
+    }*/
+
+    @Override
+    public float drawString(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a) {
+        builder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR_TEX);
+        x = glyph.drawGlyph(builder, x, y, r, g, b, a);
+        builder.finishDrawing();
+        WorldVertexBufferUploader.draw(builder);
+        return x;
+    }
+
+    @Override
+    public float drawString(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, int packedLight) {
+        return glyph.drawGlyph(matrix, buffer, x, y, r, g, b, a, packedLight);
     }
 }

@@ -21,7 +21,6 @@ package icyllis.modernui.font.process;
 import net.minecraft.util.text.Style;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * Wraps a String and acts as the key into cache. The hashCode() and equals() methods consider all ASCII digits
@@ -53,6 +52,11 @@ public class VanillaTextKey {
      */
     private int style;
 
+    /**
+     * Cached hash code, default is 0
+     */
+    private int hash;
+
     public VanillaTextKey() {
 
     }
@@ -60,9 +64,10 @@ public class VanillaTextKey {
     /**
      * Copy constructor
      */
-    private VanillaTextKey(String str, int style) {
+    private VanillaTextKey(String str, int style, int hash) {
         this.str = str;
         this.style = style;
+        this.hash = hash;
     }
 
     /**
@@ -71,13 +76,23 @@ public class VanillaTextKey {
      * @param str   raw formatted string
      * @param style text component style
      */
-    public void updateKey(String str, @Nullable Style style) {
+    public void updateKey(String str, @Nonnull Style style) {
         this.str = str;
         // text formatting may render same as style, but we can't separate them easily
-        this.style = style == null ? -1 : parseStyle(style);
+        this.style = parseStyle(style);
+        hash = 0;
     }
 
+    /**
+     * Extract info that can produce a visual change from given style to an integer
+     *
+     * @param style style to parse
+     * @return result
+     */
     public static int parseStyle(@Nonnull Style style) {
+        if (style == Style.EMPTY) {
+            return 0;
+        }
         int r = 0;
         if (style.getColor() != null) {
             // RGB - 24 bit
@@ -110,7 +125,8 @@ public class VanillaTextKey {
     @Override
     public boolean equals(Object o) {
 
-        if (o == null || getClass() != o.getClass()) {
+        // Suppression
+        if (getClass() != o.getClass()) {
             return false;
         }
 
@@ -119,7 +135,6 @@ public class VanillaTextKey {
             return false;
         }
 
-        final String str = this.str;
         /* Calling toString on a String object simply returns itself so no new object allocation is performed */
         final String other = o.toString();
         final int length = str.length();
@@ -139,7 +154,7 @@ public class VanillaTextKey {
             char c1 = str.charAt(index);
             char c2 = other.charAt(index);
 
-            if (c1 != c2 && (formatting || c1 < '0' || c1 > '9' || c2 < '0' || c2 > '9')) {
+            if (c1 != c2 && (c1 > '9' || c1 < '0' || formatting || c2 > '9' || c2 < '0')) {
                 return false;
             }
             formatting = (c1 == '\u00a7');
@@ -155,27 +170,31 @@ public class VanillaTextKey {
      */
     @Override
     public int hashCode() {
-        int code = 0;
-        final String str = this.str;
-        final int length = str.length();
+        int code = hash;
 
-        /*
-         * true if a section mark character was last seen. In this case, if the next character is a digit, it must
-         * not be considered equal to any other digit. This forces any string that differs in formatting codes only to
-         * have a separate entry in the cache.
-         */
-        boolean formatting = false;
+        if (code == 0) {
+            final int length = str.length();
 
-        for (int index = 0; index < length; index++) {
-            char c = str.charAt(index);
-            if (!formatting && c >= '0' && c <= '9') {
-                c = '0';
+            /*
+             * true if a section mark character was last seen. In this case, if the next character is a digit, it must
+             * not be considered equal to any other digit. This forces any string that differs in formatting codes only to
+             * have a separate entry in the cache.
+             */
+            boolean formatting = false;
+
+            for (int index = 0; index < length; index++) {
+                char c = str.charAt(index);
+                if (c <= '9' && c >= '0' && !formatting) {
+                    c = '0';
+                }
+                code = code * 31 + c;
+                formatting = (c == '\u00a7');
             }
-            code = code * 31 + c;
-            formatting = (c == '\u00a7');
+
+            return hash = code * 31 + style;
         }
 
-        return code * 31 + style;
+        return code;
     }
 
     /**
@@ -194,6 +213,6 @@ public class VanillaTextKey {
      * @return copied key
      */
     public VanillaTextKey copy() {
-        return new VanillaTextKey(str, style);
+        return new VanillaTextKey(str, style, hash);
     }
 }

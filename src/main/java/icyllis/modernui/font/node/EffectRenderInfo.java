@@ -114,7 +114,7 @@ public class EffectRenderInfo {
     }
 
     @Nonnull
-    public static EffectRenderInfo ofStrikethrough(float start, float end, int color) {
+    public static EffectRenderInfo strikethrough(float start, float end, int color) {
         return new EffectRenderInfo(start, end, color, STRIKETHROUGH);
     }
 }

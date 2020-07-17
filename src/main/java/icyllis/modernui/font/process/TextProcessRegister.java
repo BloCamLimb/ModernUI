@@ -18,14 +18,20 @@
 
 package icyllis.modernui.font.process;
 
-import icyllis.modernui.font.glyph.GlyphManager;
 import icyllis.modernui.font.glyph.TexturedGlyph;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
+import icyllis.modernui.font.node.*;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.util.text.Style;
+import net.minecraft.util.text.TextFormatting;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.List;
 
-public class TextProcessState {
+/**
+ * Temporary process results
+ */
+public class TextProcessRegister {
 
     /**
      * Bit flag used with fontStyle to request the plain (normal) style
@@ -51,6 +57,7 @@ public class TextProcessState {
 
     private int defaultColor;
     private int currentColor;
+    private int lastColor;
 
     private boolean defaultStrikethrough;
     private boolean currentStrikethrough;
@@ -65,27 +72,21 @@ public class TextProcessState {
     private boolean defaultObfuscated;
     private boolean currentObfuscated;
 
-    private boolean digitMode;
-
-    /**
-     * @see GlyphManager#lookupDigits(int, int)
-     */
-    private TexturedGlyph[] digitGlyphs;
-
-    private final IntArrayList digitIndexList = new IntArrayList();
-
-    private int obfuscatedCount;
-
     private float advance;
+
+    private final List<IGlyphRenderInfo> glyphs  = new ObjectArrayList<>();
+    private final List<EffectRenderInfo> effects = new ObjectArrayList<>();
+    private final List<ColorStateInfo>   colors  = new ObjectArrayList<>();
 
     /**
      * Update style and set default values
      *
      * @param style s
      */
-    public void updateState(@Nonnull Style style) {
+    public void beginProcess(@Nonnull Style style) {
         if (style.getColor() != null) {
             defaultColor = style.getColor().func_240742_a_();
+            colors.add(new ColorStateInfo(0, defaultColor));
         } else {
             defaultColor = NO_COLOR;
         }
@@ -111,11 +112,103 @@ public class TextProcessState {
         defaultObfuscated = style.getObfuscated();
         currentObfuscated = defaultObfuscated;
 
-        digitMode = false;
-        digitGlyphs = null;
-        digitIndexList.clear();
-        obfuscatedCount = 0;
         advance = 0;
+    }
+
+    public void finishProcess() {
+        if (currentStrikethrough) {
+            effects.add(EffectRenderInfo.strikethrough(strikethroughStart, advance, currentColor));
+            strikethroughStart = advance;
+        }
+        if (currentUnderline) {
+            effects.add(EffectRenderInfo.ofUnderline(underlineStart, advance, currentColor));
+            underlineStart = advance;
+        }
+    }
+
+    @Nullable
+    public EffectRenderInfo[] wrapEffects() {
+        if (effects.isEmpty()) {
+            return null;
+        }
+        EffectRenderInfo[] r = effects.toArray(new EffectRenderInfo[0]);
+        effects.clear();
+        return r;
+    }
+
+    @Nonnull
+    public IGlyphRenderInfo[] wrapGlyphs() {
+        IGlyphRenderInfo[] r = glyphs.toArray(new IGlyphRenderInfo[0]);
+        glyphs.clear();
+        return r;
+    }
+
+    @Nullable
+    public ColorStateInfo[] wrapColors() {
+        if (colors.isEmpty()) {
+            return null;
+        }
+        ColorStateInfo[] r = colors.toArray(new ColorStateInfo[0]);
+        colors.clear();
+        return r;
+    }
+
+    public void applyFormatting(@Nonnull TextFormatting formatting, int glyphIndex) {
+        if (formatting.getColor() != null) {
+            if (setColor(formatting.getColor())) {
+                colors.add(new ColorStateInfo(glyphIndex, currentColor));
+                if (currentStrikethrough) {
+                    effects.add(EffectRenderInfo.strikethrough(strikethroughStart, advance, lastColor));
+                    strikethroughStart = advance;
+                }
+                if (currentUnderline) {
+                    effects.add(EffectRenderInfo.ofUnderline(underlineStart, advance, lastColor));
+                    underlineStart = advance;
+                }
+            }
+        } else {
+            switch (formatting) {
+                case STRIKETHROUGH:
+                    setStrikethrough(true);
+                    break;
+                case UNDERLINE:
+                    setUnderline(true);
+                    break;
+                case BOLD:
+                    setBold(true);
+                    break;
+                case ITALIC:
+                    setItalic(true);
+                    break;
+                case OBFUSCATED:
+                    setObfuscated(true);
+                    break;
+                case RESET: {
+                    boolean p = false;
+                    if (setDefaultColor()) {
+                        colors.add(new ColorStateInfo(glyphIndex, currentColor));
+                        if (currentStrikethrough) {
+                            effects.add(EffectRenderInfo.strikethrough(strikethroughStart, advance, lastColor));
+                            strikethroughStart = advance;
+                        }
+                        if (currentUnderline) {
+                            effects.add(EffectRenderInfo.ofUnderline(underlineStart, advance, lastColor));
+                            underlineStart = advance;
+                        }
+                        p = true;
+                    }
+                    setDefaultObfuscated();
+                    setDefaultFontStyle();
+                    if (setDefaultStrikethrough() && !p) {
+                        effects.add(EffectRenderInfo.strikethrough(strikethroughStart, advance, currentColor));
+                    }
+                    if (setDefaultUnderline() && !p) {
+                        effects.add(EffectRenderInfo.ofUnderline(underlineStart, advance, currentColor));
+                    }
+                }
+                break;
+            }
+        }
     }
 
     /**
@@ -123,8 +216,23 @@ public class TextProcessState {
      *
      * @param adv a
      */
-    public void addAdvance(float adv) {
+    @Deprecated
+    private void addAdvance(float adv) {
         advance += adv;
+    }
+
+    public void depositGlyph(TexturedGlyph glyph) {
+        glyphs.add(new GlyphRenderInfo(glyph));
+        advance += glyph.advance;
+    }
+
+    public void depositDigit(int stringIndex, TexturedGlyph[] glyphs) {
+        if (currentObfuscated) {
+            this.glyphs.add(new ObfuscatedInfo(glyphs));
+        } else {
+            this.glyphs.add(new DigitRenderInfo(glyphs, stringIndex));
+        }
+        advance += glyphs[0].advance;
     }
 
     public boolean setDefaultFontStyle() {
@@ -141,7 +249,7 @@ public class TextProcessState {
      * @param b b
      * @return if bold changed
      */
-    public boolean setBold(boolean b) {
+    private boolean setBold(boolean b) {
         if (b) {
             b = (currentFontStyle & BOLD) == 0;
             currentFontStyle |= BOLD;
@@ -181,13 +289,14 @@ public class TextProcessState {
      */
     public boolean setColor(int color) {
         if (currentColor != color) {
+            lastColor = currentColor;
             currentColor = color;
             return true;
         }
         return false;
     }
 
-    public boolean setDigitMode(boolean b) {
+    /*public boolean setDigitMode(boolean b) {
         if (digitMode != b) {
             digitMode = b;
             return true;
@@ -217,7 +326,7 @@ public class TextProcessState {
 
     public int[] toDigitIndexArray() {
         return digitIndexList.toArray(new int[0]);
-    }
+    }*/
 
     public boolean setDefaultStrikethrough() {
         return setStrikethrough(defaultStrikethrough);
@@ -228,8 +337,9 @@ public class TextProcessState {
             currentStrikethrough = b;
             if (b) {
                 strikethroughStart = advance;
+            } else {
+                return true;
             }
-            return true;
         }
         return false;
     }
@@ -243,34 +353,34 @@ public class TextProcessState {
             currentUnderline = b;
             if (b) {
                 underlineStart = advance;
+            } else {
+                return true;
             }
-            return true;
         }
         return false;
     }
 
-    public boolean setDefaultObfuscated() {
-        return setObfuscated(defaultObfuscated);
+    public void setDefaultObfuscated() {
+        setObfuscated(defaultObfuscated);
     }
 
-    public boolean setObfuscated(boolean b) {
+    public void setObfuscated(boolean b) {
         if (currentObfuscated != b) {
             currentObfuscated = b;
-            if (b) {
+            /*if (!b && obfuscatedCount > 0) {
+                glyphs.add(GlyphRenderInfo.ofObfuscated(digitGlyphs, currentColor, obfuscatedCount));
                 obfuscatedCount = 0;
-            }
-            return true;
+            }*/
         }
-        return false;
     }
 
-    public void addObfuscatedCount() {
+    /*public void addObfuscatedCount() {
         obfuscatedCount++;
     }
 
     public int getObfuscatedCount() {
         return obfuscatedCount;
-    }
+    }*/
 
     public float getAdvance() {
         return advance;
@@ -288,7 +398,7 @@ public class TextProcessState {
         return currentObfuscated;
     }
 
-    public float getStrikethroughStart() {
+    /*public float getStrikethroughStart() {
         return strikethroughStart;
     }
 
@@ -302,5 +412,5 @@ public class TextProcessState {
 
     public boolean isUnderline() {
         return currentUnderline;
-    }
+    }*/
 }

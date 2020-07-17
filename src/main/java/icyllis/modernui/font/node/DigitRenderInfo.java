@@ -20,8 +20,10 @@ package icyllis.modernui.font.node;
 
 import icyllis.modernui.font.glyph.TexturedGlyph;
 import net.minecraft.client.renderer.BufferBuilder;
+import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.WorldVertexBufferUploader;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.util.math.vector.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
@@ -29,7 +31,12 @@ import javax.annotation.Nonnull;
 /**
  * The key to fast render digit
  */
-public class DigitRenderInfo extends StringRenderInfo {
+public class DigitRenderInfo implements IGlyphRenderInfo {
+
+    /**
+     * A reference of cached array in GlyphManager, 0-9 textured glyphs (in that order)
+     */
+    private final TexturedGlyph[] glyphs;
 
     /**
      * An array of digit char index of the whole original string.
@@ -37,21 +44,21 @@ public class DigitRenderInfo extends StringRenderInfo {
      * This array length equals to this info total digit count to renderer.
      * This array value equals to the char (not code point) index of the original string.
      *
-     * @see StringRenderInfo#glyphs
+     * @see #glyphs
      */
-    private final int[] indexArray;
+    private final int stringIndex;
 
-    public DigitRenderInfo(TexturedGlyph[] glyphs, int color, int[] indexArray) {
-        super(glyphs, color);
-        this.indexArray = indexArray;
+    public DigitRenderInfo(TexturedGlyph[] glyphs, int stringIndex) {
+        this.glyphs = glyphs;
+        this.stringIndex = stringIndex;
     }
 
-    @Override
-    public float drawString(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a) {
-        if (color != -1) {
-            r = color >> 16 & 0xff;
-            g = color >> 8 & 0xff;
-            b = color & 0xff;
+    /*@Override
+    public float drawString(@Nonnull BufferBuilder builder, @Nonnull String raw, int color, float x, float y, int r, int g, int b, int a) {
+        if (this.color != -1) {
+            r = this.color >> 16 & 0xff;
+            g = this.color >> 8 & 0xff;
+            b = this.color & 0xff;
         }
         for (int i : indexArray) {
             builder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR_TEX);
@@ -60,5 +67,19 @@ public class DigitRenderInfo extends StringRenderInfo {
             WorldVertexBufferUploader.draw(builder);
         }
         return x;
+    }*/
+
+    @Override
+    public float drawString(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a) {
+        builder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR_TEX);
+        x = glyphs[raw.charAt(stringIndex) - '0'].drawGlyph(builder, x, y, r, g, b, a);
+        builder.finishDrawing();
+        WorldVertexBufferUploader.draw(builder);
+        return x;
+    }
+
+    @Override
+    public float drawString(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, int packedLight) {
+        return glyphs[raw.charAt(stringIndex) - '0'].drawGlyph(matrix, buffer, x, y, r, g, b, a, packedLight);
     }
 }
