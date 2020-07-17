@@ -18,15 +18,22 @@
 
 package icyllis.modernui.font;
 
+import com.mojang.blaze3d.matrix.MatrixStack;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.client.gui.fonts.Font;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Matrix4f;
+import net.minecraft.util.math.vector.TransformationMatrix;
 import net.minecraft.util.math.vector.Vector3f;
+import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.function.Function;
 
 /**
  * Replace vanilla renderer with Modern UI renderer
@@ -36,7 +43,7 @@ public class ModernFontRenderer extends FontRenderer {
     /**
      * Render thread instance
      */
-    private static ModernFontRenderer INSTANCE;
+    static ModernFontRenderer INSTANCE;
 
     /**
      * Config value
@@ -46,46 +53,43 @@ public class ModernFontRenderer extends FontRenderer {
 
     private final TrueTypeRenderer fontRenderer;
 
-    ModernFontRenderer(TrueTypeRenderer fontRenderer) {
-        super(null);
+    ModernFontRenderer(TrueTypeRenderer fontRenderer, Function<ResourceLocation, Font> fontLibrary) {
+        super(fontLibrary);
         this.fontRenderer = fontRenderer;
     }
 
     /**
-     * For compatibility, developers should not use this
+     * INTERNAL USE, developers should not use this
      *
      * @return instance
      */
     public static ModernFontRenderer getInstance() {
-        if (INSTANCE == null) {
-            INSTANCE = new ModernFontRenderer(TrueTypeRenderer.getInstance());
-        }
         return INSTANCE;
     }
 
-    /*@Override
-    public int drawString(@Nullable String text, float x, float y, int color) {
-        return drawString(text, x, y, color, TransformationMatrix.identity().getMatrix(), false);
+    @Override
+    public int drawString(@Nonnull MatrixStack matrixStack, @Nullable String text, float x, float y, int color) {
+        return drawString(text, x, y, color, matrixStack.getLast().getMatrix(), false);
     }
 
     @Override
-    public int drawStringWithShadow(@Nullable String text, float x, float y, int color) {
-        return drawString(text, x, y, color, TransformationMatrix.identity().getMatrix(), true);
-    }*/
+    public int drawStringWithShadow(@Nonnull MatrixStack matrixStack, @Nullable String text, float x, float y, int color) {
+        return drawString(text, x, y, color, matrixStack.getLast().getMatrix(), true);
+    }
 
     private int drawString(@Nullable String text, float x, float y, int color, Matrix4f matrix, boolean dropShadow) {
         if (text == null) {
             return 0;
         } else {
             IRenderTypeBuffer.Impl impl = IRenderTypeBuffer.getImpl(Tessellator.getInstance().getBuffer());
-            int newX = renderString(text, x, y, color, dropShadow, matrix, impl, false, 0, 0x00f000f0);
+            int nextX = renderString(text, x, y, color, dropShadow, matrix, impl, false, 0, 0x00f000f0);
             impl.finish();
-            return newX;
+            return nextX;
         }
     }
 
     @Override
-    public int renderString(@Nullable String text, float x, float y, int color, boolean dropShadow, Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, boolean transparentIn, int colorBackgroundIn, int packedLight) {
+    public int renderString(@Nullable String text, float x, float y, int color, boolean dropShadow, @Nonnull Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, boolean transparentIn, int colorBackgroundIn, int packedLight) {
         return drawStringInternal(text, x, y, color, dropShadow, buffer, matrix, packedLight);
     }
 
@@ -107,13 +111,11 @@ public class ModernFontRenderer extends FontRenderer {
         int g = color >> 8 & 0xff;
         int b = color & 0xff;
 
-        if (dropShadow && sAllowFontShadow) {
-            fontRenderer.drawStringGlobal(text, x + 1, y + 1, r, g, b, a, true, matrix, buffer, packedLight);
-        }
+        /*if (dropShadow && sAllowFontShadow) {
+            fontRenderer.drawFromVanilla(matrix, buffer, text, x + 1, y + 1, r, g, b, a, packedLight);
+        }*/
 
-        Matrix4f matrix4f = matrix.copy();
-        matrix4f.translate(new Vector3f(0.0F, 0.0F, 0.001f));
-        x += fontRenderer.drawStringGlobal(text, x, y, r, g, b, a, false, matrix4f, buffer, packedLight);
+        x += fontRenderer.drawFromVanilla(matrix, buffer, text, x, y, r, g, b, a, packedLight);
         return (int) (x + (dropShadow ? 1.0f : 0.0f));
     }
 
@@ -167,9 +169,9 @@ public class ModernFontRenderer extends FontRenderer {
     }*/
 
     // we keep bidi enabled, so no need to convert text
-    @Nonnull
+    /*@Nonnull
     @Override
     public String bidiReorder(@Nonnull String text) {
         return text;
-    }
+    }*/
 }

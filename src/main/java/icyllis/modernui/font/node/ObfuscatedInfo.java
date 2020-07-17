@@ -20,30 +20,34 @@ package icyllis.modernui.font.node;
 
 import icyllis.modernui.font.glyph.TexturedGlyph;
 import net.minecraft.client.renderer.BufferBuilder;
+import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.WorldVertexBufferUploader;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.util.math.vector.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 import java.util.Random;
 
-public class ObfuscatedRenderInfo extends StringRenderInfo {
+public class ObfuscatedInfo implements IGlyphRenderInfo {
 
     private static final Random RANDOM = new Random();
 
-    private final int count;
+    /**
+     * A reference of cached array in GlyphManager, 0-9 textured glyphs (in that order)
+     */
+    private final TexturedGlyph[] glyphs;
 
-    public ObfuscatedRenderInfo(TexturedGlyph[] glyphs, int color, int count) {
-        super(glyphs, color);
-        this.count = count;
+    public ObfuscatedInfo(TexturedGlyph[] glyphs) {
+        this.glyphs = glyphs;
     }
 
-    @Override
-    public float drawString(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a) {
-        if (color != -1) {
-            r = color >> 16 & 0xff;
-            g = color >> 8 & 0xff;
-            b = color & 0xff;
+    /*@Override
+    public float drawString(@Nonnull BufferBuilder builder, @Nonnull String raw, int color, float x, float y, int r, int g, int b, int a) {
+        if (this.color != -1) {
+            r = this.color >> 16 & 0xff;
+            g = this.color >> 8 & 0xff;
+            b = this.color & 0xff;
         }
         for (int i = 0; i < count; i++) {
             builder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR_TEX);
@@ -52,5 +56,19 @@ public class ObfuscatedRenderInfo extends StringRenderInfo {
             WorldVertexBufferUploader.draw(builder);
         }
         return x;
+    }*/
+
+    @Override
+    public float drawString(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a) {
+        builder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR_TEX);
+        x = glyphs[RANDOM.nextInt(glyphs.length)].drawGlyph(builder, x, y, r, g, b, a);
+        builder.finishDrawing();
+        WorldVertexBufferUploader.draw(builder);
+        return x;
+    }
+
+    @Override
+    public float drawString(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, int packedLight) {
+        return glyphs[RANDOM.nextInt(glyphs.length)].drawGlyph(matrix, buffer, x, y, r, g, b, a, packedLight);
     }
 }

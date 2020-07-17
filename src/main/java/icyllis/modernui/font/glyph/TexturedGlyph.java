@@ -107,12 +107,13 @@ public class TexturedGlyph {
         return x + advance;
     }
 
-    public void drawGlyph(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, float x, float y, int r, int g, int b, int a, int packedLight) {
+    public float drawGlyph(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, float x, float y, int r, int g, int b, int a, int packedLight) {
         IVertexBuilder builder = buffer.getBuffer(renderType);
         y += baseline;
         builder.pos(matrix, x, y, 0).color(r, g, b, a).tex(u1, v1).lightmap(packedLight).endVertex();
         builder.pos(matrix, x, y + height, 0).color(r, g, b, a).tex(u1, v2).lightmap(packedLight).endVertex();
         builder.pos(matrix, x + width, y + height, 0).color(r, g, b, a).tex(u2, v2).lightmap(packedLight).endVertex();
         builder.pos(matrix, x + width, y, 0).color(r, g, b, a).tex(u2, v1).lightmap(packedLight).endVertex();
+        return x + advance;
     }
 }
