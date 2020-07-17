@@ -709,12 +709,12 @@ public class GlyphManager {
         GL11.glPixelStorei(GL11.GL_UNPACK_ROW_LENGTH, width); // not full texture
         GL11.glPixelStorei(GL11.GL_UNPACK_SKIP_ROWS, 0);
         GL11.glPixelStorei(GL11.GL_UNPACK_SKIP_PIXELS, 0);
-        GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1); // 1 is Alpha, 1 channels
+        GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1); // 1 is Alpha, 1 channel
 
         GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, x, y, width, height,
                 GL11.GL_ALPHA, GL11.GL_UNSIGNED_BYTE, uploadBuffer);
 
-        /* Auto generate mipmap texture, no needed */
+        /* Auto generate mipmap texture */
         //GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
     }
 

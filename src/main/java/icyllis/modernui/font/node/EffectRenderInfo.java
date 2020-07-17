@@ -39,7 +39,7 @@ public class EffectRenderInfo {
     /**
      * Offset from the string's baseline as which to draw the underline
      */
-    private static final float UNDERLINE_OFFSET     = 0.5f;
+    private static final float UNDERLINE_OFFSET     = 1.5f;
     /**
      * Offset from the string's baseline as which to draw the strikethrough line
      */
@@ -109,7 +109,7 @@ public class EffectRenderInfo {
     }
 
     @Nonnull
-    public static EffectRenderInfo ofUnderline(float start, float end, int color) {
+    public static EffectRenderInfo underline(float start, float end, int color) {
         return new EffectRenderInfo(start, end, color, UNDERLINE);
     }
 

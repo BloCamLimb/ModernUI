@@ -39,10 +39,10 @@ import org.apache.logging.log4j.MarkerManager;
 @Mod(ModernUI.MODID)
 public class ModernUI {
 
-    public static final String MODID            = "modernui";
-    public static final String MOD_NAME_COMPACT = "ModernUI";
+    public static final String MODID        = "modernui";
+    public static final String NAME_COMPACT = "ModernUI";
 
-    public static final Logger LOGGER = LogManager.getLogger(MOD_NAME_COMPACT);
+    public static final Logger LOGGER = LogManager.getLogger(NAME_COMPACT);
 
     public static final Marker MARKER = MarkerManager.getMarker("SYSTEM");
 

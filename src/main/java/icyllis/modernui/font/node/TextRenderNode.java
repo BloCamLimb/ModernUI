@@ -42,6 +42,11 @@ public class TextRenderNode {
      */
     private static final int BASELINE_OFFSET = 7;
 
+    /**
+     * Who knows what happened in 1.16?
+     */
+    private static final int VANILLA_BASELINE_OFFSET = 6;
+
 
     /**
      * All glyphs to render.
@@ -124,7 +129,7 @@ public class TextRenderNode {
         if (buffer instanceof IRenderTypeBuffer.Impl) {
             ((IRenderTypeBuffer.Impl) buffer).finish();
         }
-        y += 6;
+        y += VANILLA_BASELINE_OFFSET;
         x -= GlyphManager.GLYPH_OFFSET;
         int colorIndex = 0;
         ColorStateInfo nextColor = colors[colorIndex];

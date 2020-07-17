@@ -26,7 +26,6 @@ import icyllis.modernui.font.glyph.GlyphManager;
 import icyllis.modernui.font.glyph.TexturedGlyph;
 import icyllis.modernui.font.node.TextRenderNode;
 import icyllis.modernui.graphics.math.Color3i;
-import icyllis.modernui.system.ModernUI;
 import net.minecraft.util.text.Style;
 import net.minecraft.util.text.TextFormatting;
 
@@ -45,8 +44,11 @@ import java.util.concurrent.TimeUnit;
  *
  * @since 2.0
  */
+//TODO Layout string, Bidi, ITextProperties
 @SuppressWarnings("unused")
 public class TextCacheProcessor {
+
+    private static TextCacheProcessor INSTANCE;
 
     /**
      * Config values
@@ -95,7 +97,7 @@ public class TextCacheProcessor {
     /**
      * Register current processing results
      */
-    private final TextProcessRegister processRegister = new TextProcessRegister();
+    private final TextProcessRegister register = new TextProcessRegister();
 
     /**
      * A single StringCache object is allocated by Minecraft's FontRenderer which forwards all string drawing and requests for
@@ -107,6 +109,14 @@ public class TextCacheProcessor {
 
         /* Pre-cache the ASCII digits to allow for fast glyph substitution */
         //cacheDigitGlyphs();
+    }
+
+    public static TextCacheProcessor getInstance() {
+        RenderSystem.assertThread(RenderSystem::isOnRenderThread);
+        if (INSTANCE == null) {
+            INSTANCE = new TextCacheProcessor();
+        }
+        return INSTANCE;
     }
 
     /**
@@ -160,7 +170,7 @@ public class TextCacheProcessor {
     @Nonnull
     private TextRenderNode generateVanillaNode(VanillaTextKey key, @Nonnull String string, @Nonnull final Style style) {
         final int length = string.length();
-        final TextProcessRegister register = processRegister;
+        final TextProcessRegister register = this.register;
 
         register.beginProcess(style);
 
