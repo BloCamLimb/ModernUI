@@ -121,7 +121,7 @@ public class TextProcessRegister {
             strikethroughStart = advance;
         }
         if (currentUnderline) {
-            effects.add(EffectRenderInfo.ofUnderline(underlineStart, advance, currentColor));
+            effects.add(EffectRenderInfo.underline(underlineStart, advance, currentColor));
             underlineStart = advance;
         }
     }
@@ -162,7 +162,7 @@ public class TextProcessRegister {
                     strikethroughStart = advance;
                 }
                 if (currentUnderline) {
-                    effects.add(EffectRenderInfo.ofUnderline(underlineStart, advance, lastColor));
+                    effects.add(EffectRenderInfo.underline(underlineStart, advance, lastColor));
                     underlineStart = advance;
                 }
             }
@@ -192,7 +192,7 @@ public class TextProcessRegister {
                             strikethroughStart = advance;
                         }
                         if (currentUnderline) {
-                            effects.add(EffectRenderInfo.ofUnderline(underlineStart, advance, lastColor));
+                            effects.add(EffectRenderInfo.underline(underlineStart, advance, lastColor));
                             underlineStart = advance;
                         }
                         p = true;
@@ -203,7 +203,7 @@ public class TextProcessRegister {
                         effects.add(EffectRenderInfo.strikethrough(strikethroughStart, advance, currentColor));
                     }
                     if (setDefaultUnderline() && !p) {
-                        effects.add(EffectRenderInfo.ofUnderline(underlineStart, advance, currentColor));
+                        effects.add(EffectRenderInfo.underline(underlineStart, advance, currentColor));
                     }
                 }
                 break;

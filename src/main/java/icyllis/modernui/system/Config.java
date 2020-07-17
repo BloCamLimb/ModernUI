@@ -56,9 +56,9 @@ public class Config {
     }
 
     static void init() {
-        FMLPaths.getOrCreateGameRelativePath(FMLPaths.CONFIGDIR.get().resolve(ModernUI.MOD_NAME_COMPACT), ModernUI.MOD_NAME_COMPACT);
-        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, CLIENT_SPEC, ModernUI.MOD_NAME_COMPACT + "/client.toml");
-        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, COMMON_SPEC, ModernUI.MOD_NAME_COMPACT + "/common.toml");
+        FMLPaths.getOrCreateGameRelativePath(FMLPaths.CONFIGDIR.get().resolve(ModernUI.NAME_COMPACT), ModernUI.NAME_COMPACT);
+        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, CLIENT_SPEC, ModernUI.NAME_COMPACT + "/client.toml");
+        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, COMMON_SPEC, ModernUI.NAME_COMPACT + "/common.toml");
         FMLJavaModLoadingContext.get().getModEventBus().addListener(Config::reload);
     }
 
@@ -66,10 +66,10 @@ public class Config {
         ForgeConfigSpec spec = event.getConfig().getSpec();
         if (spec == CLIENT_SPEC) {
             CLIENT.load();
-            //ModernUI.LOGGER.debug(ModernUI.MARKER, "Client config loaded");
+            ModernUI.LOGGER.debug(ModernUI.MARKER, "Client config was loaded or reloaded");
         } else if (spec == COMMON_SPEC) {
             COMMON.load();
-            //ModernUI.LOGGER.debug(ModernUI.MARKER, "Common config loaded");
+            ModernUI.LOGGER.debug(ModernUI.MARKER, "Common config was loaded or reloaded");
         }
     }
 
@@ -150,7 +150,7 @@ public class Config {
                     .defineInRange("mipmapLevel", 4, 0, 4);
             defaultFontSize = builder.comment(
                     "The default font size for texts with no size specified.")
-                    .defineInRange("defaultFontSize", 16, 12, 24);
+                    .defineInRange("defaultFontSize", 16, 12, 20);
 
             builder.pop();
 

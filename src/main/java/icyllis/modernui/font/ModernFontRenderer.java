@@ -18,32 +18,38 @@
 
 package icyllis.modernui.font;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.font.process.TextCacheProcessor;
+import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.fonts.Font;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
-import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.entity.EntityRendererManager;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Matrix4f;
-import net.minecraft.util.math.vector.TransformationMatrix;
-import net.minecraft.util.math.vector.Vector3f;
+import net.minecraft.util.text.ITextProperties;
+import net.minecraft.util.text.Style;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
+import org.apache.commons.lang3.mutable.MutableFloat;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 /**
  * Replace vanilla renderer with Modern UI renderer
+ * INTERNAL USE ONLY, developers can't use this for any reason
  */
 public class ModernFontRenderer extends FontRenderer {
 
     /**
      * Render thread instance
      */
-    static ModernFontRenderer INSTANCE;
+    private static ModernFontRenderer INSTANCE;
 
     /**
      * Config value
@@ -51,54 +57,67 @@ public class ModernFontRenderer extends FontRenderer {
     public static boolean sAllowFontShadow;
 
 
-    private final TrueTypeRenderer fontRenderer;
+    private final TextCacheProcessor processor = TextCacheProcessor.getInstance();
 
-    ModernFontRenderer(TrueTypeRenderer fontRenderer, Function<ResourceLocation, Font> fontLibrary) {
+    private ModernFontRenderer(Function<ResourceLocation, Font> fontLibrary) {
         super(fontLibrary);
-        this.fontRenderer = fontRenderer;
     }
 
     /**
-     * INTERNAL USE, developers should not use this
+     * INTERNAL USE ONLY, developers can't use this for any reason
      *
      * @return instance
      */
     public static ModernFontRenderer getInstance() {
+        RenderSystem.assertThread(RenderSystem::isOnRenderThread);
+        if (INSTANCE == null) {
+            INSTANCE = new ModernFontRenderer(
+                    ObfuscationReflectionHelper.getPrivateValue(FontRenderer.class,
+                            Minecraft.getInstance().fontRenderer, "field_211127_e"));
+        }
         return INSTANCE;
     }
 
-    @Override
-    public int drawString(@Nonnull MatrixStack matrixStack, @Nullable String text, float x, float y, int color) {
-        return drawString(text, x, y, color, matrixStack.getLast().getMatrix(), false);
-    }
-
-    @Override
-    public int drawStringWithShadow(@Nonnull MatrixStack matrixStack, @Nullable String text, float x, float y, int color) {
-        return drawString(text, x, y, color, matrixStack.getLast().getMatrix(), true);
-    }
-
-    private int drawString(@Nullable String text, float x, float y, int color, Matrix4f matrix, boolean dropShadow) {
-        if (text == null) {
-            return 0;
-        } else {
-            IRenderTypeBuffer.Impl impl = IRenderTypeBuffer.getImpl(Tessellator.getInstance().getBuffer());
-            int nextX = renderString(text, x, y, color, dropShadow, matrix, impl, false, 0, 0x00f000f0);
-            impl.finish();
-            return nextX;
+    void hook() {
+        try {
+            ObfuscationReflectionHelper.findField(Minecraft.class, "field_71466_p")
+                    .set(Minecraft.getInstance(), this);
+            ObfuscationReflectionHelper.findField(EntityRendererManager.class, "field_78736_p")
+                    .set(Minecraft.getInstance().getRenderManager(), this);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
         }
     }
 
     @Override
-    public int renderString(@Nullable String text, float x, float y, int color, boolean dropShadow, @Nonnull Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, boolean transparentIn, int colorBackgroundIn, int packedLight) {
-        return drawStringInternal(text, x, y, color, dropShadow, buffer, matrix, packedLight);
+    public int func_238411_a_(@Nonnull String text, float x, float y, int color, boolean dropShadow, Matrix4f matrix,
+                              @Nonnull IRenderTypeBuffer buffer, boolean transparent, int colorBackground, int packedLight, boolean bidiFlag) {
+        // it seems that transparent (seeThroughType) is only available in Minecraft Debug Mode
+        // bidiFlag is useless, we have our layout system
+        if (transparent) {
+            ModernUI.LOGGER.debug("transparent text render in");
+        }
+        return drawStringInternal(text, x, y, color, dropShadow, matrix, buffer, packedLight, bidiFlag, Style.EMPTY);
     }
 
-    public int drawStringInternal(@Nullable String text, float x, float y, int color, boolean dropShadow, @Nonnull IRenderTypeBuffer buffer, Matrix4f matrix, int packedLight) {
-        if (text == null) {
-            return 0;
-        }
+    @Override
+    public int func_238416_a_(ITextProperties multiText, float x, float y, int color, boolean dropShadow, Matrix4f matrix,
+                              @Nonnull IRenderTypeBuffer buffer, boolean transparent, int colorBackground, int packedLight) {
+        MutableFloat m = new MutableFloat(x);
+        multiText.func_230439_a_((style, str) -> {
+            m.setValue(drawStringInternal(str, m.getValue(), y, color, dropShadow, matrix, buffer, packedLight, true, style));
+            return Optional.empty();
+        }, Style.EMPTY);
+        return m.getValue().intValue();
+    }
+
+    private int drawStringInternal(@Nonnull String text, float x, float y, int color, boolean dropShadow, Matrix4f matrix,
+                                   @Nonnull IRenderTypeBuffer buffer, int packedLight, boolean bidiFlag, Style style) {
         if (text.isEmpty()) {
-            return (int) (x + (dropShadow ? 1.0f : 0.0f));
+            return (int) x + (dropShadow ? 1 : 0);
+        }
+        if (bidiFlag) {
+            text = bidiReorder(text);
         }
         // ensure alpha, color can be ARGB, or can be RGB
         // if alpha <= 1, make alpha = 255
@@ -115,13 +134,19 @@ public class ModernFontRenderer extends FontRenderer {
             fontRenderer.drawFromVanilla(matrix, buffer, text, x + 1, y + 1, r, g, b, a, packedLight);
         }*/
 
-        x += fontRenderer.drawFromVanilla(matrix, buffer, text, x, y, r, g, b, a, packedLight);
-        return (int) (x + (dropShadow ? 1.0f : 0.0f));
+        x += processor.lookupVanillaNode(text, style).drawText(matrix, buffer, text, x, y, r, g, b, a, packedLight);
+        return (int) x + (dropShadow ? 1 : 0);
     }
 
     @Override
     public int getStringWidth(@Nullable String text) {
-        return MathHelper.ceil(fontRenderer.getStringWidth(text));
+        if (text == null || text.isEmpty()) {
+            return 0;
+        }
+        if (getBidiFlag()) {
+            text = bidiReorder(text);
+        }
+        return MathHelper.ceil(processor.lookupVanillaNode(text, Style.EMPTY).advance);
     }
 
     /*@Override

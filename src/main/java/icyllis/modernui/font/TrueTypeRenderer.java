@@ -18,32 +18,23 @@
 
 package icyllis.modernui.font;
 
-import com.ibm.icu.text.ArabicShaping;
-import com.ibm.icu.text.ArabicShapingException;
-import com.ibm.icu.text.Bidi;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.font.process.TextProcessRegister;
-import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.font.node.TextRenderNode;
 import icyllis.modernui.font.process.TextCacheProcessor;
+import icyllis.modernui.font.process.TextProcessRegister;
 import icyllis.modernui.font.style.TextAlign;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
+import icyllis.modernui.graphics.math.Color3i;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.entity.EntityRendererManager;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.math.vector.Matrix4f;
-import net.minecraft.util.text.LanguageMap;
 import net.minecraft.util.text.Style;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import org.lwjgl.opengl.GL11;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 @OnlyIn(Dist.CLIENT)
@@ -69,7 +60,7 @@ public class TrueTypeRenderer implements IFontRenderer {
     /**
      * Cache and pre-process string for much better performance
      */
-    private final TextCacheProcessor processor = new TextCacheProcessor();
+    private final TextCacheProcessor processor = TextCacheProcessor.getInstance();
 
     /**
      * Note: When Minecraft load completed, MainMenuScreen will be open and post GuiOpenEvent
@@ -80,17 +71,7 @@ public class TrueTypeRenderer implements IFontRenderer {
 
         // init constructor and hook
         if (sGlobalRenderer) {
-            try {
-                ModernFontRenderer.INSTANCE = new ModernFontRenderer(this,
-                        ObfuscationReflectionHelper.getPrivateValue(FontRenderer.class,
-                                Minecraft.getInstance().fontRenderer, "field_211127_e"));
-                ObfuscationReflectionHelper.findField(Minecraft.class, "field_71466_p")
-                        .set(Minecraft.getInstance(), ModernFontRenderer.INSTANCE);
-                ObfuscationReflectionHelper.findField(EntityRendererManager.class, "field_78736_p")
-                        .set(Minecraft.getInstance().getRenderManager(), ModernFontRenderer.INSTANCE);
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            }
+            ModernFontRenderer.getInstance().hook();
         }
     }
 
@@ -106,38 +87,10 @@ public class TrueTypeRenderer implements IFontRenderer {
         if (str == null || str.isEmpty()) {
             return 0;
         }
-        if (LanguageMap.getInstance().func_230505_b_()) {
-            try {
-                Bidi bidi = new Bidi(new ArabicShaping(ArabicShaping.LETTERS_SHAPE).shape(str),
-                        Bidi.DIRECTION_DEFAULT_RIGHT_TO_LEFT);
-                bidi.setReorderingMode(Bidi.REORDER_DEFAULT);
-                str = bidi.writeReordered(Bidi.DO_MIRRORING);
-            } catch (ArabicShapingException ignored) {
-
-            }
-        }
         TextRenderNode node = processor.lookupVanillaNode(str, Style.EMPTY);
 
         x -= node.advance * align.offsetFactor;
         return node.drawText(Tessellator.getInstance().getBuffer(), str, x, y, r, g, b, a);
-    }
-
-    public float drawFromVanilla(Matrix4f matrix, IRenderTypeBuffer buffer, @Nonnull String str, float x, float y, int r, int g, int b, int a, int packedLight) {
-        if (str.isEmpty()) {
-            return 0;
-        }
-        if (LanguageMap.getInstance().func_230505_b_()) {
-            try {
-                Bidi bidi = new Bidi(new ArabicShaping(ArabicShaping.LETTERS_SHAPE).shape(str),
-                        Bidi.DIRECTION_DEFAULT_RIGHT_TO_LEFT);
-                bidi.setReorderingMode(Bidi.REORDER_DEFAULT);
-                str = bidi.writeReordered(Bidi.DO_MIRRORING);
-            } catch (ArabicShapingException ignored) {
-
-            }
-        }
-
-        return processor.lookupVanillaNode(str, Style.EMPTY).drawText(matrix, buffer, str, x, y, r, g, b, a, packedLight);
     }
 
     @Override
@@ -192,29 +145,29 @@ public class TrueTypeRenderer implements IFontRenderer {
         int fontStyle = TextProcessRegister.PLAIN;
 
         //for (int glyphIndex = 0, colorIndex = 0; glyphIndex < entry.glyphs.length; glyphIndex++) {
-            /*
-             * If the original string had a color code at this glyph's position, then change the current GL color that gets added
-             * to the vertex array. Note that only the RGB component of the color is replaced by a color code; the alpha component
-             * of the original color passed into this function will remain. The while loop handles multiple consecutive color codes,
-             * in which case only the last such color code takes effect.
-             */
+        /*
+         * If the original string had a color code at this glyph's position, then change the current GL color that gets added
+         * to the vertex array. Note that only the RGB component of the color is replaced by a color code; the alpha component
+         * of the original color passed into this function will remain. The while loop handles multiple consecutive color codes,
+         * in which case only the last such color code takes effect.
+         */
             /*while (colorIndex < entry.codes.length && entry.glyphs[glyphIndex].stringIndex >= entry.codes[colorIndex].stringIndex) {
                 formattedColor = entry.codes[colorIndex].color;
                 fontStyle = entry.codes[colorIndex].fontStyle;
                 colorIndex++;
             }*/
 
-            /* Select the current glyph's texture information and horizontal layout position within this string */
+        /* Select the current glyph's texture information and horizontal layout position within this string */
             /*Glyph glyph = entry.glyphs[glyphIndex];
             TexturedGlyph texture = glyph.texture;
             int glyphX = glyph.x;*/
 
-            /*
-             * Replace ASCII digits in the string with their respective glyphs; strings differing by digits are only cached once.
-             * If the new replacement glyph has a different width than the original placeholder glyph (e.g. the '1' glyph is often
-             * narrower than other digits), re-center the new glyph over the placeholder's position to minimize the visual impact
-             * of the width mismatch.
-             */
+        /*
+         * Replace ASCII digits in the string with their respective glyphs; strings differing by digits are only cached once.
+         * If the new replacement glyph has a different width than the original placeholder glyph (e.g. the '1' glyph is often
+         * narrower than other digits), re-center the new glyph over the placeholder's position to minimize the visual impact
+         * of the width mismatch.
+         */
             /*char c = str.charAt(glyph.stringIndex);
             if (c >= '0' && c <= '9') {
                 int oldWidth = texture.advance;
@@ -223,7 +176,7 @@ public class TrueTypeRenderer implements IFontRenderer {
                 glyphX += (oldWidth - newWidth) >> 1;
             }*/
 
-            /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
+        /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
             /*float x1 = startX + (glyphX) / 2.0F;
             float x2 = startX + (glyphX + texture.advance) / 2.0F;
             float y1 = startY + (glyph.y) / 2.0F;
@@ -252,33 +205,33 @@ public class TrueTypeRenderer implements IFontRenderer {
 
         /* Draw strikethrough and underlines if the string uses them anywhere */
         //if (entry.needExtraRender) {
-            //int renderStyle = 0;
+        //int renderStyle = 0;
 
-            /* Use initial color passed to renderString(); disable texturing to draw solid color lines */
-            //GlStateManager.disableTexture();
-            //bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+        /* Use initial color passed to renderString(); disable texturing to draw solid color lines */
+        //GlStateManager.disableTexture();
+        //bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
 
-            //for (int glyphIndex = 0, colorIndex = 0; glyphIndex < entry.glyphs.length; glyphIndex++) {
-                /*
-                 * If the original string had a color code at this glyph's position, then change the current GL color that gets added
-                 * to the vertex array. The while loop handles multiple consecutive color codes, in which case only the last such
-                 * color code takes effect.
-                 */
+        //for (int glyphIndex = 0, colorIndex = 0; glyphIndex < entry.glyphs.length; glyphIndex++) {
+        /*
+         * If the original string had a color code at this glyph's position, then change the current GL color that gets added
+         * to the vertex array. The while loop handles multiple consecutive color codes, in which case only the last such
+         * color code takes effect.
+         */
                 /*while (colorIndex < entry.codes.length && entry.glyphs[glyphIndex].stringIndex >= entry.codes[colorIndex].stringIndex) {
                     formattedColor = entry.codes[colorIndex].color;
                     renderStyle = entry.codes[colorIndex].renderEffect;
                     colorIndex++;
                 }*/
 
-                /* Select the current glyph within this string for its layout position */
-                //Glyph glyph = entry.glyphs[glyphIndex];
+        /* Select the current glyph within this string for its layout position */
+        //Glyph glyph = entry.glyphs[glyphIndex];
 
-                /* The strike/underlines are drawn beyond the glyph's width to include the extra space between glyphs */
-                float glyphSpace = 0;//glyph.advance - glyph.texture.advance;
+        /* The strike/underlines are drawn beyond the glyph's width to include the extra space between glyphs */
+        float glyphSpace = 0;//glyph.advance - glyph.texture.advance;
 
-                /* Draw underline under glyph if the style is enabled */
-                //if ((renderStyle & TextCacheProcessor.FormattingCode.UNDERLINE) != 0) {
-                    /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
+        /* Draw underline under glyph if the style is enabled */
+        //if ((renderStyle & TextCacheProcessor.FormattingCode.UNDERLINE) != 0) {
+        /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
                     /*if (formattedColor != null) {
                         int red = formattedColor.getRed();
                         int green = formattedColor.getGreen();
@@ -287,11 +240,11 @@ public class TrueTypeRenderer implements IFontRenderer {
                     } else {
                         drawI1(startX, startY, bufferBuilder, glyph, glyphSpace, a, r, g, b, UNDERLINE_OFFSET, UNDERLINE_THICKNESS);
                     }*/
-                //}
+        //}
 
-                /* Draw strikethrough in the middle of glyph if the style is enabled */
-                /*if ((renderStyle & TextCacheProcessor.FormattingCode.STRIKETHROUGH) != 0) {
-                    *//* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled *//*
+        /* Draw strikethrough in the middle of glyph if the style is enabled */
+        /*if ((renderStyle & TextCacheProcessor.FormattingCode.STRIKETHROUGH) != 0) {
+         *//* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled *//*
                     if (formattedColor != null) {
                         int red = formattedColor.getRed();
                         int green = formattedColor.getGreen();
@@ -301,11 +254,11 @@ public class TrueTypeRenderer implements IFontRenderer {
                         drawI1(startX, startY, bufferBuilder, glyph, glyphSpace, a, r, g, b, STRIKETHROUGH_OFFSET, STRIKETHROUGH_THICKNESS);
                     }
                 }*/
-            //}
+        //}
 
-            /* Finish drawing the last strikethrough/underline segments */
-            //tessellator.draw();
-            //GlStateManager.enableTexture();
+        /* Finish drawing the last strikethrough/underline segments */
+        //tessellator.draw();
+        //GlStateManager.enableTexture();
         //}
 
 
@@ -389,29 +342,29 @@ public class TrueTypeRenderer implements IFontRenderer {
         int fontStyle = TextProcessRegister.PLAIN;
 
         //for (int glyphIndex = 0, colorIndex = 0; glyphIndex < entry.glyphs.length; glyphIndex++) {
-            /*
-             * If the original string had a color code at this glyph's position, then change the current GL color that gets added
-             * to the vertex array. Note that only the RGB component of the color is replaced by a color code; the alpha component
-             * of the original color passed into this function will remain. The while loop handles multiple consecutive color codes,
-             * in which case only the last such color code takes effect.
-             */
+        /*
+         * If the original string had a color code at this glyph's position, then change the current GL color that gets added
+         * to the vertex array. Note that only the RGB component of the color is replaced by a color code; the alpha component
+         * of the original color passed into this function will remain. The while loop handles multiple consecutive color codes,
+         * in which case only the last such color code takes effect.
+         */
             /*while (colorIndex < entry.codes.length && entry.glyphs[glyphIndex].stringIndex >= entry.codes[colorIndex].stringIndex) {
                 formattedColor = entry.codes[colorIndex].color;
                 fontStyle = entry.codes[colorIndex].fontStyle;
                 colorIndex++;
             }*/
 
-            /* Select the current glyph's texture information and horizontal layout position within this string */
+        /* Select the current glyph's texture information and horizontal layout position within this string */
             /*Glyph glyph = entry.glyphs[glyphIndex];
             TexturedGlyph texture = glyph.texture;
             int glyphX = glyph.x;*/
 
-            /*
-             * Replace ASCII digits in the string with their respective glyphs; strings differing by digits are only cached once.
-             * If the new replacement glyph has a different width than the original placeholder glyph (e.g. the '1' glyph is often
-             * narrower than other digits), re-center the new glyph over the placeholder's position to minimize the visual impact
-             * of the width mismatch.
-             */
+        /*
+         * Replace ASCII digits in the string with their respective glyphs; strings differing by digits are only cached once.
+         * If the new replacement glyph has a different width than the original placeholder glyph (e.g. the '1' glyph is often
+         * narrower than other digits), re-center the new glyph over the placeholder's position to minimize the visual impact
+         * of the width mismatch.
+         */
             /*char c = str.charAt(glyph.stringIndex);
             if (c >= '0' && c <= '9') {
                 int oldWidth = texture.advance;
@@ -420,15 +373,15 @@ public class TrueTypeRenderer implements IFontRenderer {
                 glyphX += (oldWidth - newWidth) >> 1;
             }*/
 
-            /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
+        /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
             /*float x1 = startX + (glyphX) / 2.0F;
             float x2 = startX + (glyphX + texture.advance) / 2.0F;
             float y1 = startY + (glyph.y) / 2.0F;
             float y2 = startY + (glyph.y + texture.height) / 2.0F;*/
 
-            //GlStateManager.bindTexture(texture.textureName);
+        //GlStateManager.bindTexture(texture.textureName);
 
-            //IVertexBuilder builder = typeBuffer.getBuffer(texture.renderType);
+        //IVertexBuilder builder = typeBuffer.getBuffer(texture.renderType);
 
             /*if (formattedColor != null) {
                 int r = formattedColor.getRed();
@@ -450,53 +403,53 @@ public class TrueTypeRenderer implements IFontRenderer {
                 builder.pos(matrix, x2, y1, 0).color(red, green, blue, alpha).tex(texture.u2, texture.v1).lightmap(packedLight).endVertex();
             }*/
 
-            //tessellator.draw();
+        //tessellator.draw();
         //}
 
         /* Draw strikethrough and underlines if the string uses them anywhere */
         //if (entry.needExtraRender) {
 
-            // we use default buffer builder now, so we must finish the render type buffer manually
-            if (typeBuffer instanceof IRenderTypeBuffer.Impl) {
-                ((IRenderTypeBuffer.Impl) typeBuffer).finish();
-            }
+        // we use default buffer builder now, so we must finish the render type buffer manually
+        if (typeBuffer instanceof IRenderTypeBuffer.Impl) {
+            ((IRenderTypeBuffer.Impl) typeBuffer).finish();
+        }
 
 
-            int renderStyle = 0;
+        int renderStyle = 0;
 
-            Tessellator tessellator = Tessellator.getInstance();
-            BufferBuilder bufferBuilder = tessellator.getBuffer();
+        Tessellator tessellator = Tessellator.getInstance();
+        BufferBuilder bufferBuilder = tessellator.getBuffer();
 
-            RenderSystem.enableBlend();
-            RenderSystem.defaultBlendFunc();
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
 
-            RenderSystem.enableCull();
+        RenderSystem.enableCull();
 
-            /* Use initial color passed to renderString(); disable texturing to draw solid color lines */
-            GlStateManager.disableTexture();
-            bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+        /* Use initial color passed to renderString(); disable texturing to draw solid color lines */
+        GlStateManager.disableTexture();
+        bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
 
-            //for (int glyphIndex = 0, colorIndex = 0; glyphIndex < entry.glyphs.length; glyphIndex++) {
-                /*
-                 * If the original string had a color code at this glyph's position, then change the current GL color that gets added
-                 * to the vertex array. The while loop handles multiple consecutive color codes, in which case only the last such
-                 * color code takes effect.
-                 */
+        //for (int glyphIndex = 0, colorIndex = 0; glyphIndex < entry.glyphs.length; glyphIndex++) {
+        /*
+         * If the original string had a color code at this glyph's position, then change the current GL color that gets added
+         * to the vertex array. The while loop handles multiple consecutive color codes, in which case only the last such
+         * color code takes effect.
+         */
                 /*while (colorIndex < entry.codes.length && entry.glyphs[glyphIndex].stringIndex >= entry.codes[colorIndex].stringIndex) {
                     formattedColor = entry.codes[colorIndex].color;
                     renderStyle = entry.codes[colorIndex].renderEffect;
                     colorIndex++;
                 }*/
 
-                /* Select the current glyph within this string for its layout position */
-                //Glyph glyph = entry.glyphs[glyphIndex];
+        /* Select the current glyph within this string for its layout position */
+        //Glyph glyph = entry.glyphs[glyphIndex];
 
-                /* The strike/underlines are drawn beyond the glyph's width to include the extra space between glyphs */
-                //float glyphSpace = glyph.advance - glyph.texture.advance;
+        /* The strike/underlines are drawn beyond the glyph's width to include the extra space between glyphs */
+        //float glyphSpace = glyph.advance - glyph.texture.advance;
 
-                /* Draw underline under glyph if the style is enabled */
-                //if ((renderStyle & TextCacheProcessor.FormattingCode.UNDERLINE) != 0) {
-                    /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
+        /* Draw underline under glyph if the style is enabled */
+        //if ((renderStyle & TextCacheProcessor.FormattingCode.UNDERLINE) != 0) {
+        /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
                     /*if (formattedColor != null) {
                         int r = formattedColor.getRed();
                         int g = formattedColor.getGreen();
@@ -510,11 +463,11 @@ public class TrueTypeRenderer implements IFontRenderer {
                     } else {
                         drawI1(matrix, startX, startY, bufferBuilder, glyph, glyphSpace, alpha, red, green, blue, UNDERLINE_OFFSET, UNDERLINE_THICKNESS);
                     }*/
-                //}
+        //}
 
-                /* Draw strikethrough in the middle of glyph if the style is enabled */
-                //if ((renderStyle & TextCacheProcessor.FormattingCode.STRIKETHROUGH) != 0) {
-                    /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
+        /* Draw strikethrough in the middle of glyph if the style is enabled */
+        //if ((renderStyle & TextCacheProcessor.FormattingCode.STRIKETHROUGH) != 0) {
+        /* The divide by 2.0F is needed to align with the scaled GUI coordinate system; startX/startY are already scaled */
                     /*if (formattedColor != null) {
                         int r = formattedColor.getRed();
                         int g = formattedColor.getGreen();
@@ -528,10 +481,10 @@ public class TrueTypeRenderer implements IFontRenderer {
                     } else {
                         drawI1(matrix, startX, startY, bufferBuilder, glyph, glyphSpace, alpha, red, green, blue, STRIKETHROUGH_OFFSET, STRIKETHROUGH_THICKNESS);
                     }*/
-                //}
-            //}
+        //}
+        //}
 
-            /* Finish drawing the last strikethrough/underline segments */
+        /* Finish drawing the last strikethrough/underline segments */
             /*tessellator.draw();
             GlStateManager.enableTexture();
             RenderSystem.disableCull();*/
