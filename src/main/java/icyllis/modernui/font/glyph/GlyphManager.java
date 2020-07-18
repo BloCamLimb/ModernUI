@@ -714,8 +714,15 @@ public class GlyphManager {
         GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, x, y, width, height,
                 GL11.GL_ALPHA, GL11.GL_UNSIGNED_BYTE, uploadBuffer);
 
+        /*int mipmapLevel = sEnableMipmap ? sMipmapLevel : 0;
+
+        for (int level = 0; level <= mipmapLevel; level++) {
+            GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, level, x, y, width, height,
+                    GL11.GL_ALPHA, GL11.GL_UNSIGNED_BYTE, uploadBuffer);
+        }*/
+
         /* Auto generate mipmap texture */
-        //GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+        GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
     }
 
     /**

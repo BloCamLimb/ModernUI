@@ -151,7 +151,8 @@ public class TextRenderNode {
             }
             x = glyphs[glyphIndex].drawString(matrix, buffer, raw, x, y, r, g, b, a, packedLight);
         }
-        if (effects != null) {
+        //FIXME vanilla effects
+        /*if (effects != null) {
             if (buffer instanceof IRenderTypeBuffer.Impl) {
                 ((IRenderTypeBuffer.Impl) buffer).finish();
             }
@@ -165,7 +166,7 @@ public class TextRenderNode {
             builder.finishDrawing();
             WorldVertexBufferUploader.draw(builder);
             RenderSystem.disableCull();
-        }
+        }*/
         return advance;
     }
 }

@@ -1,11 +1,12 @@
-### 1.16.1-2.0.0.57 (2020-0?-??)
+### 1.16.1-2.0.0.57 (2020-07-18)
+**Beta version, a lot of changes to be added, keep update!**
 * Reduce the requirement of OpenGL 4.6 to OpenGL 4.3
 * Improve the text layout accuracy of font renderer
 * Improve the size and advance accuracy of glyph
-* Improve the align accuracy of digits rendering
+* Improve the align accuracy of digit rendering
 * Improve the rule of font priority to use
 * Use grayscale pixels to store font textures to reduce memory usage
-* Use render nodes for text rendering to improve performance greatly
+* Use render nodes for text rendering to improve performance
 * Support higher level mipmap for font textures
 * Support vanilla text styles and components
 * Add font size style to text component
