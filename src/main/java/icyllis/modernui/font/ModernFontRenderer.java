@@ -101,16 +101,16 @@ public class ModernFontRenderer extends FontRenderer {
                               @Nonnull IRenderTypeBuffer buffer, boolean transparent, int colorBackground, int packedLight) {
         MutableFloat m = new MutableFloat(x);
         multiText.func_230439_a_((style, text) -> {
-            m.add(drawStringInternal(text, m.getValue(), y, color, dropShadow, matrix, buffer, packedLight, getBidiFlag(), style));
+            m.add(drawStringInternal(text, m.getAndAdd(0), y, color, dropShadow, matrix, buffer, packedLight, getBidiFlag(), style));
             return Optional.empty();
         }, Style.EMPTY);
-        return m.getValue().intValue();
+        return m.getValue().intValue() + (dropShadow ? 1 : 0);
     }
 
     private float drawStringInternal(@Nonnull String text, float x, float y, int color, boolean dropShadow, Matrix4f matrix,
                                    @Nonnull IRenderTypeBuffer buffer, int packedLight, boolean bidiFlag, Style style) {
         if (text.isEmpty()) {
-            return x + (dropShadow ? 1 : 0);
+            return 0.0f;
         }
         if (bidiFlag) {
             text = bidiReorder(text);
@@ -146,7 +146,7 @@ public class ModernFontRenderer extends FontRenderer {
 
     @Override
     public int func_238414_a_(@Nonnull ITextProperties multiText) {
-        MutableFloat m = new MutableFloat();
+        MutableFloat m = new MutableFloat(0);
         multiText.func_230439_a_((style, text) -> {
             if (getBidiFlag()) {
                 text = bidiReorder(text);
@@ -154,7 +154,7 @@ public class ModernFontRenderer extends FontRenderer {
             m.add(processor.lookupVanillaNode(text, style).advance);
             return Optional.empty();
         }, Style.EMPTY);
-        return m.getValue().intValue();
+        return MathHelper.ceil(m.getAndIncrement());
     }
 
     /*@Override
