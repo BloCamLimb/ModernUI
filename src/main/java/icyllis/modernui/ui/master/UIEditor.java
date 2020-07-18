@@ -18,6 +18,9 @@
 
 package icyllis.modernui.ui.master;
 
+import com.ibm.icu.text.ArabicShaping;
+import com.ibm.icu.text.ArabicShapingException;
+import com.ibm.icu.text.Bidi;
 import icyllis.modernui.font.style.TextAlign;
 import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.graphics.renderer.Canvas;
@@ -222,6 +225,17 @@ public enum UIEditor {
 
                 ModernUI.LOGGER.debug(UIManager.MARKER, builder.toString());
                 //ModernUI.LOGGER.debug(UIManager.MARKER, "{}", FMLPaths.GAMEDIR.get().getParent().resolve("src/main/resources/assets/modernui"));
+                String k2 = "\u062a\u0646\u0628\u064a\u0647\u0627\u062a \u0627\u0644\u0640Realms : \u064a\u0639\u0645\u0644";
+                try {
+                    Bidi bidi = new Bidi((new ArabicShaping(8)).shape(k2), Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT);
+                    bidi.setReorderingMode(Bidi.REORDER_DEFAULT);
+                    k2 = bidi.writeReordered(Bidi.DO_MIRRORING);
+                } catch (ArabicShapingException ignored) {
+
+                }
+                for (int i = 0; i < k2.length(); i++) {
+                    ModernUI.LOGGER.debug("{}: {}", i, k2.charAt(i));
+                }
 
                 break;
         }
