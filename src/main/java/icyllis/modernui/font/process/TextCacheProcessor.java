@@ -642,8 +642,8 @@ public class TextCacheProcessor {
 
                     /* An odd numbered level indicates right-to-left ordering */
                     int layoutFlag = (bidi.getRunLevel(logicalIndex) & 1) == 1 ? Font.LAYOUT_RIGHT_TO_LEFT : Font.LAYOUT_LEFT_TO_RIGHT;
-                    //advance = layoutStyle(glyphList, text, start + bidi.getRunStart(logicalIndex), start + bidi.getRunLimit(logicalIndex),
-                    //        layoutFlag, advance, codes);
+                    advance = layoutStyle(glyphList, text, start + bidi.getRunStart(logicalIndex), start + bidi.getRunLimit(logicalIndex),
+                            layoutFlag, advance, codes);
                 }
             }
 
@@ -661,46 +661,46 @@ public class TextCacheProcessor {
         int currentFontStyle = Font.PLAIN;
 
         /* Find FormattingCode object with stripIndex <= start; that will have the font style in effect at the beginning of this text run */
-        //int codeIndex = Arrays.binarySearch(codes, start);
+        int codeIndex = Arrays.binarySearch(codes, start);
 
         /*
          * If no exact match is found, Arrays.binarySearch() returns (-(insertion point) - 1) where the insertion point is the index
          * of the first FormattingCode with a stripIndex > start. In that case, colorIndex is adjusted to select the immediately preceding
          * FormattingCode whose stripIndex < start.
          */
-        /*if (codeIndex < 0) {
+        if (codeIndex < 0) {
             codeIndex = -codeIndex - 2;
-        }*/
+        }
 
         /* Break up the string into segments, where each segment has the same font style in use */
-        //while (start < limit) {
-        //int next = limit;
+        while (start < limit) {
+            int next = limit;
 
-        /* In case of multiple consecutive color codes with the same stripIndex, select the last one which will have active font style */
-        //while (codeIndex >= 0 && codeIndex < (codes.length - 1) && codes[codeIndex].stripIndex == codes[codeIndex + 1].stripIndex) {
-        //    codeIndex++;
-        //}
+            /* In case of multiple consecutive color codes with the same stripIndex, select the last one which will have active font style */
+            while (codeIndex >= 0 && codeIndex < (codes.length - 1) && codes[codeIndex].stripIndex == codes[codeIndex + 1].stripIndex) {
+                codeIndex++;
+            }
 
-        /* If an actual FormattingCode object was found (colorIndex within the array), use its fontStyle for layout and render */
-        //if (codeIndex >= 0 && codeIndex < codes.length) {
-        //    currentFontStyle = codes[codeIndex].fontStyle;
-        //}
+            /* If an actual FormattingCode object was found (colorIndex within the array), use its fontStyle for layout and render */
+            if (codeIndex >= 0 && codeIndex < codes.length) {
+                currentFontStyle = codes[codeIndex].fontStyle;
+            }
 
-        /*
-         * Search for the next FormattingCode that uses a different fontStyle than the current one. If found, the stripIndex of that
-         * new code is the split point where the string must be split into a separately styled segment.
-         */
-            /*while (++codeIndex < codes.length) {
+            /*
+             * Search for the next FormattingCode that uses a different fontStyle than the current one. If found, the stripIndex of that
+             * new code is the split point where the string must be split into a separately styled segment.
+             */
+            while (++codeIndex < codes.length) {
                 if (codes[codeIndex].fontStyle != currentFontStyle) {
                     next = codes[codeIndex].stripIndex;
                     break;
                 }
-            }*/
+            }
 
-        /* Layout the string segment with the style currently selected by the last color code */
-        //advance = layoutString(glyphList, text, start, next, layoutFlags, advance, currentFontStyle);
-        //start = next;
-        //}
+            /* Layout the string segment with the style currently selected by the last color code */
+            advance = layoutString(glyphList, text, start, next, layoutFlags, advance, currentFontStyle);
+            start = next;
+        }
 
         return advance;
     }
