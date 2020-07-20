@@ -243,9 +243,9 @@ public class GlyphManager {
 
     private void loadPreferredFonts() {
         if (!sPreferredFontName.isEmpty()) {
-            allFonts.stream().filter(f -> f.getName().contains(sPreferredFontName)).findFirst().ifPresent(font -> {
-                selectedFonts.add(font);
-                ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", font.getName());
+            allFonts.stream().filter(f -> f.getName().equals(sPreferredFontName)).findFirst().ifPresent(f -> {
+                selectedFonts.add(f);
+                ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", f.getName());
             });
         }
         try {
@@ -259,6 +259,7 @@ public class GlyphManager {
             e.printStackTrace();
             ModernUI.LOGGER.warn(MARKER, "Built-in font was missing");
         }
+        // Arial
         selectedFonts.add(new Font(Font.SANS_SERIF, Font.PLAIN, 72)); //size 1 > 72
     }
 
@@ -722,7 +723,9 @@ public class GlyphManager {
         }*/
 
         /* Auto generate mipmap texture */
-        GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+        if (sEnableMipmap) {
+            GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+        }
     }
 
     /**

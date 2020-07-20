@@ -16,25 +16,13 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.font.node;
+package icyllis.modernui.font.process;
 
-public class ColorStateInfo {
-
-    public static final ColorStateInfo[] NO_COLOR_STATE = new ColorStateInfo[]{new ColorStateInfo(-1, -1)};
+public class TextProcessData {
 
     /**
-     * The index of glyphs rendered in the current string of where this color would appeared.
-     * Formatting codes render nothing, in SMP two chars in the string represent a glyph.
+     * Array of temporary formatting info of the original string.
      */
-    public final int glyphIndex;
+    public FormattingStyle[] styles;
 
-    /**
-     * The color in 0xRRGGBB format
-     */
-    public final int color;
-
-    public ColorStateInfo(int glyphIndex, int color) {
-        this.glyphIndex = glyphIndex;
-        this.color = color;
-    }
 }

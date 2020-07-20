@@ -28,14 +28,14 @@ import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 
-public class GlyphRenderInfo implements IGlyphRenderInfo {
+public class StaticGlyphInfo implements IGlyphRenderInfo {
 
     /**
-     * An array of resulted glyphs to render.
+     * The immutable glyph to render
      */
     protected final TexturedGlyph glyph;
 
-    public GlyphRenderInfo(TexturedGlyph glyph) {
+    public StaticGlyphInfo(TexturedGlyph glyph) {
         this.glyph = glyph;
     }
 

@@ -166,6 +166,7 @@ public class TextProcessRegister {
                     underlineStart = advance;
                 }
             }
+            setObfuscated(false);
         } else {
             switch (formatting) {
                 case STRIKETHROUGH:
@@ -222,15 +223,15 @@ public class TextProcessRegister {
     }
 
     public void depositGlyph(TexturedGlyph glyph) {
-        glyphs.add(new GlyphRenderInfo(glyph));
+        glyphs.add(new StaticGlyphInfo(glyph));
         advance += glyph.advance;
     }
 
     public void depositDigit(int stringIndex, TexturedGlyph[] glyphs) {
         if (currentObfuscated) {
-            this.glyphs.add(new ObfuscatedInfo(glyphs));
+            this.glyphs.add(new RandomGlyphInfo(glyphs));
         } else {
-            this.glyphs.add(new DigitRenderInfo(glyphs, stringIndex));
+            this.glyphs.add(new DigitGlyphInfo(glyphs, stringIndex));
         }
         advance += glyphs[0].advance;
     }
