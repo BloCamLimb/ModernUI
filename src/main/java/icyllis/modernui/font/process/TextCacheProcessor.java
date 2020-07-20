@@ -498,6 +498,56 @@ public class TextCacheProcessor {
     }
 
     /**
+     * Formatting codes are not involved in rendering, so we should first extract formatting codes
+     * from a formatted text into a stripped text. The color codes must be removed for a font's context
+     * sensitive glyph substitution to work (like Arabic letter middle form) or Bidi analysis.
+     *
+     * @param data   an object to store the results
+     * @param string text with formatting codes to strip
+     * @param style  default/reset style
+     * @return a new char array with all formatting codes removed from the given string
+     */
+    @Nonnull
+    private char[] resolveFormattingCodes(TextProcessData data, @Nonnull final String string, @Nonnull Style style) {
+        char[] text = string.toCharArray();
+        final List<FormattingStyle> list = new ArrayList<>();
+
+        int start = 0, shift = 0, next;
+
+        list.add(new FormattingStyle(0, 0, style));
+
+        while ((next = string.indexOf('\u00a7', start)) != -1 && next + 1 < string.length()) {
+            TextFormatting formatting = fromFormattingCode(string.charAt(next + 1));
+
+            System.arraycopy(text, next - shift + 2, text, next - shift, text.length - next - 2);
+
+            if (formatting != null) {
+                /* set all FancyStyling (like BOLD, UNDERLINE) to false if this is a color formatting */
+                style = style.forceFormatting(formatting);
+
+                list.add(new FormattingStyle(next, next - shift, style));
+            }
+
+            start = next + 2;
+            shift += 2;
+        }
+
+        data.styles = list.toArray(new FormattingStyle[0]);
+        return text;
+    }
+
+    /**
+     * Split a string into contiguous LTR or RTL sections by applying the Unicode Bidirectional Algorithm. Calls layoutString()
+     * for each contiguous run to perform further analysis.
+     *
+     * @param data      an object to store the results
+     * @param text      the plain text (without formatting codes) to analyze
+     */
+    private void startBidiAnalysis(TextProcessData data, char[] text) {
+
+    }
+
+    /**
      * Remove all color codes from the string by shifting data in the text[] array over so it overwrites them. The value of each
      * color code and its position (relative to the new stripped text[]) is also recorded in a separate array. The color codes must
      * be removed for a font's context sensitive glyph substitution to work (like Arabic letter middle form).
@@ -506,6 +556,7 @@ public class TextCacheProcessor {
      * @param str        the string from which color codes will be stripped
      * @param text       on input it should be an identical copy of str; on output it will be string with all color codes removed
      * @return the length of the new stripped string in text[]; actual text.length will not change because the array is not reallocated
+     * @deprecated {@link #resolveFormattingCodes(TextProcessData, String, Style)}
      */
     @Deprecated
     private int extractFormattingCodes(Entry cacheEntry, @Nonnull String str, char[] text) {
@@ -521,7 +572,7 @@ public class TextCacheProcessor {
             /*
              * Remove the two char color code from text[] by shifting the remaining data in the array over on top of it.
              * The "start" and "next" variables all contain offsets into the original unmodified "str" string. The "shift"
-             * variable keeps track of how many characters have been sripped so far, and it's used to compute offsets into
+             * variable keeps track of how many characters have been stripped so far, and it's used to compute offsets into
              * the text[] array based on the start/next offsets in the original string.
              */
             System.arraycopy(text, next - shift + 2, text, next - shift, text.length - next - 2);

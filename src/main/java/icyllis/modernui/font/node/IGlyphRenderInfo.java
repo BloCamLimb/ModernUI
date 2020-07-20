@@ -30,7 +30,7 @@ public interface IGlyphRenderInfo {
      * Draw a character of this info.
      *
      * @param builder vertex builder
-     * @param raw     needed by {@link DigitRenderInfo}
+     * @param raw     needed by {@link DigitGlyphInfo}
      * @param x       start x of this character
      * @param y       start y
      * @param r       final red
@@ -46,7 +46,7 @@ public interface IGlyphRenderInfo {
      *
      * @param matrix      matrix
      * @param buffer      buffer source
-     * @param raw         needed by {@link DigitRenderInfo}
+     * @param raw         needed by {@link DigitGlyphInfo}
      * @param x           start x of this character
      * @param y           start y
      * @param r           final red

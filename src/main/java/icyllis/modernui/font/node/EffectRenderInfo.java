@@ -28,13 +28,13 @@ import javax.annotation.Nonnull;
 public class EffectRenderInfo {
 
     /**
-     * Bit flag used with renderStyle to request the underline style
+     * Underline style type
      */
-    public static final byte UNDERLINE     = 1;
+    public static final byte UNDERLINE     = 0;
     /**
-     * Bit flag used with renderStyle to request the strikethrough style
+     * Strikethrough style type
      */
-    public static final byte STRIKETHROUGH = 2;
+    public static final byte STRIKETHROUGH = 1;
 
     /**
      * Offset from the string's baseline as which to draw the underline
@@ -55,7 +55,7 @@ public class EffectRenderInfo {
     private static final float STRIKETHROUGH_THICKNESS = 1.0f;
 
     /**
-     * Effect depth for offset z
+     * Offset Z to ensure that effects render over characters in 3D world
      */
     public static final float EFFECT_DEPTH = 0.01f;
 
@@ -71,7 +71,7 @@ public class EffectRenderInfo {
     protected final float end;
 
     /**
-     * RGB color
+     * The color in 0xRRGGBB format
      */
     protected final int color;
 
