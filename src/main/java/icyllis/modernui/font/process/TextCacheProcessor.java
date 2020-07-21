@@ -36,6 +36,7 @@ import java.awt.font.GlyphVector;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -98,6 +99,11 @@ public class TextCacheProcessor {
      * Register current processing results
      */
     private final TextProcessRegister register = new TextProcessRegister();
+
+    /**
+     * Cache temporary processing results
+     */
+    private final TextProcessData data = new TextProcessData();
 
     /**
      * A single StringCache object is allocated by Minecraft's FontRenderer which forwards all string drawing and requests for
@@ -169,7 +175,7 @@ public class TextCacheProcessor {
 
     @Nonnull
     private TextRenderNode generateVanillaNode(VanillaTextKey key, @Nonnull String string, @Nonnull final Style style) {
-        final int length = string.length();
+        /*final int length = string.length();
         final TextProcessRegister register = this.register;
 
         register.beginProcess(style);
@@ -184,7 +190,7 @@ public class TextCacheProcessor {
                     TextFormatting formatting = fromFormattingCode(string.charAt(++stringIndex));
                     if (formatting != null) {
                         register.applyFormatting(formatting, glyphIndex);
-                    }
+                    }*/
                     /*switch (code) {
                      *//* Obfuscated *//*
                         case 16:
@@ -322,7 +328,7 @@ public class TextCacheProcessor {
                             }
                             break;
                     }*/
-                    continue;
+                    /*continue;
 
                 } else if (Character.isHighSurrogate(c1)) {
                     char c2 = string.charAt(stringIndex + 1);
@@ -337,7 +343,7 @@ public class TextCacheProcessor {
                 }
             } else {
                 codePoint = c1;
-            }
+            }*/
 
             /*if (codePoint >= 48 && codePoint <= 57) {
                 TexturedGlyph[] digits = glyphManager.lookupDigits(processRegister.getFontStyle(), sDefaultFontSize);
@@ -354,13 +360,13 @@ public class TextCacheProcessor {
                 register.setDigitGlyphs(glyphManager.lookupDigits(
                         register.getFontStyle(), sDefaultFontSize));
             }*/
-            if (register.isObfuscated() || (codePoint <= 57 && codePoint >= 48)) {
+            /*if (register.isObfuscated() || (codePoint <= 57 && codePoint >= 48)) {
                 register.depositDigit(stringIndex, glyphManager.lookupDigits(register.getFontStyle(), sDefaultFontSize));
             } else {
                 register.depositGlyph(glyphManager.lookupGlyph(codePoint, register.getFontStyle(), sDefaultFontSize));
             }
             glyphIndex++;
-        }
+        }*/
 
         /*if (strikethrough) {
             effects.add(new EffectRenderInfo(strikethroughX, advance, color, EffectRenderInfo.STRIKETHROUGH));
@@ -375,7 +381,19 @@ public class TextCacheProcessor {
             glyphs.clear();
         }*/
         //addStringAndEffectInfo(processState);
-        register.finishProcess();
+
+        //register.finishProcess();
+
+        final TextProcessData data = this.data;
+
+        /* Step 1 */
+        char[] text = resolveFormattingCodes(data, string, style);
+
+        /* Step 2-5 */
+        startBidiAnalysis(data, text);
+
+        /* Step 6 */
+        adjustGlyphIndexes(data);
 
         final TextRenderNode node = new TextRenderNode(register.wrapGlyphs(),
                 register.wrapEffects(), register.wrapColors(), register.getAdvance());
@@ -508,43 +526,268 @@ public class TextCacheProcessor {
      * @return a new char array with all formatting codes removed from the given string
      */
     @Nonnull
-    private char[] resolveFormattingCodes(TextProcessData data, @Nonnull final String string, @Nonnull Style style) {
+    private char[] resolveFormattingCodes(@Nonnull TextProcessData data, @Nonnull final String string, @Nonnull Style style) {
         char[] text = string.toCharArray();
-        final List<FormattingStyle> list = new ArrayList<>();
 
         int start = 0, shift = 0, next;
 
-        list.add(new FormattingStyle(0, 0, style));
+        data.codes.add(new FormattingStyle(0, 0, style));
 
         while ((next = string.indexOf('\u00a7', start)) != -1 && next + 1 < string.length()) {
             TextFormatting formatting = fromFormattingCode(string.charAt(next + 1));
 
+            /*
+             * Remove the two char color code from text[] by shifting the remaining data in the array over on top of it.
+             * The "start" and "next" variables all contain offsets into the original unmodified "str" string. The "shift"
+             * variable keeps track of how many characters have been stripped so far, and it's used to compute offsets into
+             * the text[] array based on the start/next offsets in the original string.
+             */
             System.arraycopy(text, next - shift + 2, text, next - shift, text.length - next - 2);
 
             if (formatting != null) {
-                /* set all FancyStyling (like BOLD, UNDERLINE) to false if this is a color formatting */
+                /* forceFormatting will set all FancyStyling (like BOLD, UNDERLINE) to false if this is a color formatting */
                 style = style.forceFormatting(formatting);
 
-                list.add(new FormattingStyle(next, next - shift, style));
+                data.codes.add(new FormattingStyle(next, next - shift, style));
             }
 
             start = next + 2;
             shift += 2;
         }
 
-        data.styles = list.toArray(new FormattingStyle[0]);
         return text;
     }
 
     /**
-     * Split a string into contiguous LTR or RTL sections by applying the Unicode Bidirectional Algorithm. Calls layoutString()
-     * for each contiguous run to perform further analysis.
+     * Split the full text into contiguous LTR or RTL sections by applying the Unicode Bidirectional Algorithm. Calls
+     * startStyleAnalysis() for each contiguous run to perform further analysis.
      *
-     * @param data      an object to store the results
-     * @param text      the plain text (without formatting codes) to analyze
+     * @param data an object to store the results
+     * @param text the full plain text (without formatting codes) to analyze
+     * @see #startStyleAnalysis(TextProcessData, char[], int, int, int)
      */
     private void startBidiAnalysis(TextProcessData data, char[] text) {
+        /* Avoid performing full bidirectional analysis if text has no "strong" right-to-left characters */
+        if (Bidi.requiresBidi(text, 0, text.length)) {
+            /* Note that while requiresBidi() uses start/limit the Bidi constructor uses start/length */
+            Bidi bidi = new Bidi(text, 0, null, 0, text.length, Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT);
 
+            /* If text is entirely right-to-left, then insert an EntryText node for the entire string */
+            if (bidi.isRightToLeft()) {
+                startStyleAnalysis(data, text, 0, text.length, Font.LAYOUT_RIGHT_TO_LEFT);
+            }
+
+            /* Otherwise text has a mixture of LTR and RLT, and it requires full bidirectional analysis */
+            else {
+                int runCount = bidi.getRunCount();
+                byte[] levels = new byte[runCount];
+                Integer[] ranges = new Integer[runCount];
+
+                /* Reorder contiguous runs of text into their display order from left to right */
+                for (int index = 0; index < runCount; index++) {
+                    levels[index] = (byte) bidi.getRunLevel(index);
+                    ranges[index] = index;
+                }
+                Bidi.reorderVisually(levels, 0, ranges, 0, runCount);
+
+                /*
+                 * Every GlyphVector must be created on a contiguous run of left-to-right or right-to-left text. Keep track of
+                 * the horizontal advance between each run of text, so that the glyphs in each run can be assigned a position relative
+                 * to the start of the entire string and not just relative to that run.
+                 */
+                for (int visualIndex = 0; visualIndex < runCount; visualIndex++) {
+                    int logicalIndex = ranges[visualIndex];
+
+                    /* An odd numbered level indicates right-to-left ordering */
+                    int layoutFlag = (bidi.getRunLevel(logicalIndex) & 1) == 1 ? Font.LAYOUT_RIGHT_TO_LEFT : Font.LAYOUT_LEFT_TO_RIGHT;
+                    startStyleAnalysis(data, text, bidi.getRunStart(logicalIndex), bidi.getRunLimit(logicalIndex), layoutFlag);
+                }
+            }
+        }
+
+        /* If text is entirely left-to-right, then insert an node for the entire string */
+        else {
+            startStyleAnalysis(data, text, 0, text.length, Font.LAYOUT_LEFT_TO_RIGHT);
+        }
+    }
+
+    /**
+     * Analyze the best matching font and paragraph context, according to layout direction and generate glyph vector.
+     * In some languages, the original Unicode code is mapped to another Unicode code for visual rendering.
+     * They will finally be converted into glyph codes according to different Font.
+     *
+     * @param data  an object to store the results
+     * @param text  the plain text (without formatting codes) to analyze
+     * @param start start index (inclusive) of the text
+     * @param limit end index (exclusive) of the text
+     * @param flag  layout direction, either {@link Font#LAYOUT_LEFT_TO_RIGHT} or {@link Font#LAYOUT_RIGHT_TO_LEFT}
+     */
+    private void startStyleAnalysis(@Nonnull TextProcessData data, char[] text, int start, int limit, int flag) {
+        final List<FormattingStyle> codes = data.codes;
+        /* Break up the string into segments, where each segment has the same font style in use */
+        while (start < limit) {
+            int next = limit;
+
+            /* In case of multiple consecutive color codes with the same stripIndex,
+            select the last one which will have active font style */
+            while (data.codeIndex >= 0 && data.codeIndex < codes.size() - 1 &&
+                    codes.get(data.codeIndex).stripIndex == codes.get(data.codeIndex + 1).stripIndex) {
+                data.codeIndex++;
+            }
+
+            FormattingStyle style = codes.get(data.codeIndex);
+
+            /*
+             * Search for the next FormattingCode that uses a different fontStyle than the current one. If found, the stripIndex of that
+             * new code is the split point where the string must be split into a separately styled segment.
+             */
+            while (++data.codeIndex < codes.size()) {
+                if (!codes.get(data.codeIndex).equals(style)) {
+                    next = codes.get(data.codeIndex).stripIndex;
+                    break;
+                }
+            }
+
+            /* Layout the string segment with the style currently selected by the last color code */
+            startLayoutText(data, text, start, next, flag, style);
+            start = next;
+        }
+    }
+
+    /**
+     * Analyze the best matching font and paragraph context, according to layout direction and generate glyph vector.
+     * In some languages, the original Unicode code is mapped to another Unicode code for visual rendering.
+     * They will finally be converted into glyph codes according to different Font.
+     *
+     * @param data  an object to store the results
+     * @param text  the plain text (without formatting codes) to analyze
+     * @param start start index (inclusive) of the text
+     * @param limit end index (exclusive) of the text
+     * @param flag  layout direction, either {@link Font#LAYOUT_LEFT_TO_RIGHT} or {@link Font#LAYOUT_RIGHT_TO_LEFT}
+     * @param style the style to layout the text
+     */
+    private void startLayoutText(TextProcessData data, char[] text, int start, int limit, int flag, @Nonnull FormattingStyle style) {
+        /* current font, without fontStyle and fontSize */
+        Font font = null;
+
+        int last = start;
+
+        /* Process code point */
+        for (int i = start; i < limit; i++) {
+            char c1 = text[i];
+            int codePoint;
+            if (i + 1 < limit && Character.isHighSurrogate(c1)) {
+                char c2 = text[i + 1];
+                if (Character.isLowSurrogate(c2)) {
+                    codePoint = Character.toCodePoint(c1, c2);
+                    ++i;
+                } else {
+                    codePoint = c1;
+                }
+            } else {
+                codePoint = c1;
+            }
+
+            // init the first font to use
+            if (font == null) {
+                font = glyphManager.lookupFont(codePoint);
+            } else {
+                Font f = glyphManager.lookupFont(codePoint);
+                // singleton, so don't have to use equals()
+                if (font != f) {
+                    /* exclude current character, so it's 'i', not 'i + 1' */
+                    layoutFont(data, text, last, i, flag, glyphManager.deriveFont(
+                            font, style.getFontStyle(), sDefaultFontSize), style.isObfuscated());
+                    font = f;
+                    last = i;
+                }
+            }
+        }
+
+        /* layout the rest text if not empty */
+        if (font != null) {
+            layoutFont(data, text, last, limit, flag, glyphManager.deriveFont(
+                    font, style.getFontStyle(), sDefaultFontSize), style.isObfuscated());
+        }
+    }
+
+    /**
+     * Finally, we got a piece of text with same layout direction, font style and whether to be obfuscated.
+     *
+     * @param data   an object to store the results
+     * @param text   the plain text (without formatting codes) to analyze
+     * @param start  start index (inclusive) of the text
+     * @param limit  end index (exclusive) of the text
+     * @param flag   layout direction, either {@link Font#LAYOUT_LEFT_TO_RIGHT} or {@link Font#LAYOUT_RIGHT_TO_LEFT}
+     * @param font   the derived font with fontStyle and fontSize
+     * @param random whether to layout obfuscated or original characters
+     */
+    private void layoutFont(TextProcessData data, char[] text, int start, int limit, int flag, Font font, boolean random) {
+        if (random) {
+            /* Random is not worthy to layout */
+            layoutRandom(data, text, start, limit, font);
+        } else {
+            /* The glyphCode matched to the same codePoint is specified in the font, they are different in different font */
+            GlyphVector vector = glyphManager.layoutGlyphVector(font, text, start, limit, flag);
+
+            int num = vector.getNumGlyphs();
+
+            final TexturedGlyph[] digits = glyphManager.lookupDigits(font);
+
+            for (int i = 0; i < num; i++) {
+                int stripIndex = vector.getGlyphCharIndex(0) + start;
+
+                char o = text[stripIndex];
+                /* Digits are not on SMP */
+                if (o <= '9' && o >= '0') {
+                    data.list.add(new ProcessingGlyph(stripIndex, digits, ProcessingGlyph.DYNAMIC_DIGIT));
+                    continue;
+                }
+
+                int glyphCode = vector.getGlyphCode(i);
+                TexturedGlyph glyph = glyphManager.lookupGlyph(font, glyphCode);
+
+                data.list.add(new ProcessingGlyph(stripIndex, glyph, ProcessingGlyph.STATIC_TEXT));
+            }
+        }
+    }
+
+    private void layoutRandom(TextProcessData data, char[] text, int start, int limit, Font font) {
+        final TexturedGlyph[] digits = glyphManager.lookupDigits(font);
+        /* Process code point */
+        for (int i = start; i < limit; i++) {
+            data.list.add(new ProcessingGlyph(start + i, digits, ProcessingGlyph.RANDOM_DIGIT));
+            char c1 = text[i];
+            if (i + 1 < limit && Character.isHighSurrogate(c1)) {
+                char c2 = text[i + 1];
+                if (Character.isLowSurrogate(c2)) {
+                    ++i;
+                }
+            }
+        }
+    }
+
+    private void adjustGlyphIndexes(@Nonnull TextProcessData data) {
+        /* Sort by stripIndex */
+        Collections.sort(data.list);
+
+        /* Shift stripIndex to stringIndex */
+        int codeIndex = 0, shift = 0;
+        for (int glyphIndex = 0; glyphIndex < data.list.size(); glyphIndex++) {
+            ProcessingGlyph glyph = data.list.get(glyphIndex);
+
+            /*
+             * Adjust the string index for each glyph to point into the original string with un-stripped color codes. The while
+             * loop is necessary to handle multiple consecutive color codes with no visible glyphs between them. These new adjusted
+             * stringIndex can now be compared against the color stringIndex during rendering. It also allows lookups of ASCII
+             * digits in the original string for fast glyph replacement during rendering.
+             */
+            while (codeIndex < data.codes.size() && glyph.stringIndex + shift >= data.list.get(codeIndex).stringIndex) {
+                shift += 2;
+                codeIndex++;
+            }
+            glyph.stringIndex += shift;
+        }
     }
 
     /**
@@ -656,6 +899,7 @@ public class TextCacheProcessor {
      * @param limit     the (offset + length) at which to stop performing the layout
      * @return the total advance (horizontal distance) of this string
      */
+    @SuppressWarnings("ConstantConditions")
     @Deprecated
     private float layoutBidiString(List<Glyph> glyphList, char[] text, int start, int limit, FormattingCode[] codes) {
         float advance = 0;
@@ -712,46 +956,46 @@ public class TextCacheProcessor {
         int currentFontStyle = Font.PLAIN;
 
         /* Find FormattingCode object with stripIndex <= start; that will have the font style in effect at the beginning of this text run */
-        int codeIndex = Arrays.binarySearch(codes, start);
+        //int codeIndex = Arrays.binarySearch(codes, start);
 
         /*
          * If no exact match is found, Arrays.binarySearch() returns (-(insertion point) - 1) where the insertion point is the index
          * of the first FormattingCode with a stripIndex > start. In that case, colorIndex is adjusted to select the immediately preceding
          * FormattingCode whose stripIndex < start.
          */
-        if (codeIndex < 0) {
+        /*if (codeIndex < 0) {
             codeIndex = -codeIndex - 2;
-        }
+        }*/
 
         /* Break up the string into segments, where each segment has the same font style in use */
-        while (start < limit) {
-            int next = limit;
+        //while (start < limit) {
+        //int next = limit;
 
-            /* In case of multiple consecutive color codes with the same stripIndex, select the last one which will have active font style */
-            while (codeIndex >= 0 && codeIndex < (codes.length - 1) && codes[codeIndex].stripIndex == codes[codeIndex + 1].stripIndex) {
+        /* In case of multiple consecutive color codes with the same stripIndex, select the last one which will have active font style */
+            /*while (codeIndex >= 0 && codeIndex < (codes.length - 1) && codes[codeIndex].stripIndex == codes[codeIndex + 1].stripIndex) {
                 codeIndex++;
-            }
+            }*/
 
-            /* If an actual FormattingCode object was found (colorIndex within the array), use its fontStyle for layout and render */
-            if (codeIndex >= 0 && codeIndex < codes.length) {
+        /* If an actual FormattingCode object was found (colorIndex within the array), use its fontStyle for layout and render */
+            /*if (codeIndex >= 0 && codeIndex < codes.length) {
                 currentFontStyle = codes[codeIndex].fontStyle;
-            }
+            }*/
 
-            /*
-             * Search for the next FormattingCode that uses a different fontStyle than the current one. If found, the stripIndex of that
-             * new code is the split point where the string must be split into a separately styled segment.
-             */
-            while (++codeIndex < codes.length) {
+        /*
+         * Search for the next FormattingCode that uses a different fontStyle than the current one. If found, the stripIndex of that
+         * new code is the split point where the string must be split into a separately styled segment.
+         */
+            /*while (++codeIndex < codes.length) {
                 if (codes[codeIndex].fontStyle != currentFontStyle) {
                     next = codes[codeIndex].stripIndex;
                     break;
                 }
-            }
+            }*/
 
-            /* Layout the string segment with the style currently selected by the last color code */
-            advance = layoutString(glyphList, text, start, next, layoutFlags, advance, currentFontStyle);
-            start = next;
-        }
+        /* Layout the string segment with the style currently selected by the last color code */
+        //advance = layoutString(glyphList, text, start, next, layoutFlags, advance, currentFontStyle);
+        //start = next;
+        //}
 
         return advance;
     }

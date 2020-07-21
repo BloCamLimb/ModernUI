@@ -21,6 +21,7 @@ package icyllis.modernui.font.process;
 import net.minecraft.util.text.Style;
 
 import javax.annotation.Nonnull;
+import java.awt.*;
 
 /**
  * Identifies the location and value of a formatting info in the original string
@@ -31,33 +32,34 @@ public class FormattingStyle {
     /**
      * Bit flag used with fontStyle to request the plain (normal) style
      */
-    public static final byte PLAIN  = 0;
+    public static final byte PLAIN  = Font.PLAIN;
     /**
      * Bit flag used with fontStyle to request the bold style
      */
-    public static final byte BOLD   = 1;
+    public static final byte BOLD   = Font.BOLD;
     /**
      * Bit flag used with fontStyle to request the italic style
      */
-    public static final byte ITALIC = 1 << 1;
+    public static final byte ITALIC = Font.ITALIC;
+
+    private static final byte FONT_STYLE_MASK    = BOLD | ITALIC;
+    /**
+     * Bit mask representing underline effect
+     */
+    private static final byte UNDERLINE_MASK     = 1 << 2;
+    /**
+     * Bit mask representing strikethrough effect
+     */
+    private static final byte STRIKETHROUGH_MASK = 1 << 3;
+    /**
+     * Bit mask representing obfuscated characters rendering
+     */
+    private static final byte OBFUSCATED_MASK    = 1 << 4;
 
     /**
      * Represent to use default color
      */
     public static final int NO_COLOR = -1;
-
-    /**
-     * Bit mask representing underline effect
-     */
-    private static final byte UNDERLINE_MASK = 1;
-    /**
-     * Bit mask representing strikethrough effect
-     */
-    private static final byte STRIKETHROUGH_MASK = 1 << 1;
-    /**
-     * Bit mask representing obfuscated characters rendering
-     */
-    private static final byte OBFUSCATED_MASK = 1 << 2;
 
 
     /**
@@ -75,22 +77,27 @@ public class FormattingStyle {
      */
     private final int color;
 
-    /**
-     * Combination of {@link #PLAIN}, {@link #BOLD}, and {@link #ITALIC} specifying font specific styles.
+    /*
+     * |--------|
+     *         1  BOLD
+     *        1   ITALIC
+     *        11  FONT_STYLE
+     *       1    UNDERLINE
+     *      1     STRIKETHROUGH
+     *     1      OBFUSCATED
+     * |--------|
      */
-    private final byte fontStyle;
-
     /**
-     * Combination of Underline (1), Strikethrough (2), Obfuscated (4)
+     * Combination of {@link #PLAIN}, {@link #BOLD}, {@link #ITALIC}, {@link #UNDERLINE_MASK},
+     * {@link #STRIKETHROUGH_MASK} and {@link #OBFUSCATED_MASK} specifying font specific styles.
      */
-    private final byte effect;
+    private final byte flags;
 
     public FormattingStyle(int stringIndex, int stripIndex, Style style) {
         this.stringIndex = stringIndex;
         this.stripIndex = stripIndex;
         color = getColor(style);
-        fontStyle = getFontStyle(style);
-        effect = getEffect(style);
+        flags = getFlags(style);
     }
 
     public static int getColor(@Nonnull Style style) {
@@ -106,7 +113,7 @@ public class FormattingStyle {
         return color;
     }
 
-    public static byte getFontStyle(@Nonnull Style style) {
+    public static byte getFlags(@Nonnull Style style) {
         byte v = PLAIN;
         if (style.getBold()) {
             v |= BOLD;
@@ -114,20 +121,6 @@ public class FormattingStyle {
         if (style.getItalic()) {
             v |= ITALIC;
         }
-        return v;
-    }
-
-    /**
-     * Combination of {@link #PLAIN}, {@link #BOLD}, and {@link #ITALIC} specifying font specific styles.
-     *
-     * @return font style
-     */
-    public byte getFontStyle() {
-        return fontStyle;
-    }
-
-    public static byte getEffect(@Nonnull Style style) {
-        byte v = 0;
         if (style.getUnderlined()) {
             v |= UNDERLINE_MASK;
         }
@@ -140,12 +133,31 @@ public class FormattingStyle {
         return v;
     }
 
-    public boolean isUnderline() {
-        return (effect & UNDERLINE_MASK) != 0;
+    /**
+     * Combination of {@link #PLAIN}, {@link #BOLD}, and {@link #ITALIC} specifying font specific styles.
+     *
+     * @return font style, same as Font class
+     */
+    public int getFontStyle() {
+        return flags & FONT_STYLE_MASK;
     }
 
+    /**
+     * Represent whether to use underline effect
+     *
+     * @return underline
+     */
+    public boolean isUnderline() {
+        return (flags & UNDERLINE_MASK) != 0;
+    }
+
+    /**
+     * Represent whether to use strikethrough effect
+     *
+     * @return strikethrough
+     */
     public boolean isStrikethrough() {
-        return (effect & STRIKETHROUGH_MASK) != 0;
+        return (flags & STRIKETHROUGH_MASK) != 0;
     }
 
     /**
@@ -154,6 +166,24 @@ public class FormattingStyle {
      * @return obfuscated
      */
     public boolean isObfuscated() {
-        return (effect & OBFUSCATED_MASK) != 0;
+        return (flags & OBFUSCATED_MASK) != 0;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        FormattingStyle style = (FormattingStyle) o;
+
+        if (color != style.color) return false;
+        return flags == style.flags;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = color;
+        result = 31 * result + (int) flags;
+        return result;
     }
 }
