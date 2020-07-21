@@ -273,11 +273,54 @@ public class GlyphManager {
      * @param layoutFlags either Font.LAYOUT_RIGHT_TO_LEFT or Font.LAYOUT_LEFT_TO_RIGHT
      * @return the newly created GlyphVector
      */
-    @Deprecated
-    private GlyphVector layoutGlyphVector(Font font, char[] text, int start, int limit, int layoutFlags) {
+    public GlyphVector layoutGlyphVector(Font font, char[] text, int start, int limit, int layoutFlags) {
         /* Ensure this font is already in fontCache so it can be referenced by cacheGlyphs() later on */
         fontKeyMap.putIfAbsent(font, fontKeyMap.size());
         return font.layoutGlyphVector(glyphTextureGraphics.getFontRenderContext(), text, start, limit, layoutFlags);
+    }
+
+    /**
+     * Find the first font in the system able to render the given codePoint. The function always tries searching first
+     * in the selected fonts followed by the allFonts.
+     *
+     * @param codePoint the codePoint to check against the font
+     * @return the font to use in selection list (without fontStyle and fontSize), need to call font.deriveFont
+     */
+    @Nonnull
+    public Font lookupFont(int codePoint) {
+        for (Font font : selectedFonts) {
+            /* Only use the font if it can layout at least the first character of the requested string range */
+            if (font.canDisplay(codePoint)) {
+                return font;
+            }
+        }
+
+        /* If still not found, try searching through all fonts installed on the system for the first that can layout this string */
+        for (Font font : allFonts) {
+            /* Only use the font if it can layout at least the first character of the requested string range */
+            if (font.canDisplay(codePoint)) {
+                /* If found, add this font to the selectedFonts list so it can be looked up faster next time */
+                selectedFonts.add(font);
+                ModernUI.LOGGER.debug(MARKER, "Extra font {} was loaded", font.getName());
+                return font;
+            }
+        }
+
+        /* If no supported fonts found, use the default one (first in selectedFonts) so it can draw its unknown character glyphs */
+        return selectedFonts.get(0);
+    }
+
+    /**
+     * Derive a font with given style and size
+     *
+     * @param font      font without fontStyle and fontSize
+     * @param fontStyle font style
+     * @param fontSize  font size
+     * @return derived font with style and size
+     */
+    @Nonnull
+    public Font deriveFont(@Nonnull Font font, int fontStyle, int fontSize) {
+        return font.deriveFont(fontStyle, fontSize);
     }
 
     /**
@@ -290,6 +333,7 @@ public class GlyphManager {
      * @param fontSize  the font size required for the text
      */
     @Nonnull
+    @Deprecated
     public Font lookupFont(int codePoint, int fontStyle, int fontSize) {
         //int nextOffset;
         // Try using an already known base font;
@@ -330,15 +374,15 @@ public class GlyphManager {
      *
      * @param font      the font to which this glyphCode belongs and which was used to pre-render the glyph image in cacheGlyphs(),
      *                  this font param also includes style and font size
-     * @param codePoint code point of character including supplementary multilingual plane
+     * @param glyphCode the font specific glyph code to lookup in the cache
      * @return the cache textured glyph
      */
     @Nonnull
-    public TexturedGlyph lookupGlyph(Font font, int codePoint) {
-        long fontKey = (long) fontKeyMap.computeIntIfAbsent(font,
-                f -> fontKeyMap.size()) << 32;
-        return glyphCache.computeIfAbsent(fontKey | codePoint,
-                l -> cacheGlyph(font, codePoint));
+    public TexturedGlyph lookupGlyph(Font font, int glyphCode) {
+        // the key should be cached in layout step
+        long fontKey = (long) fontKeyMap.getInt(font) << 32;
+        return glyphCache.computeIfAbsent(fontKey | glyphCode,
+                l -> cacheGlyph(font, glyphCode));
     }
 
     /**
@@ -350,6 +394,7 @@ public class GlyphManager {
      * @return the cache textured glyph
      */
     @Nonnull
+    @Deprecated
     public TexturedGlyph lookupGlyph(int codePoint, int fontStyle, int fontSize) {
         return lookupGlyph(lookupFont(codePoint, fontStyle, fontSize), codePoint);
     }
@@ -358,14 +403,15 @@ public class GlyphManager {
      * Create a textured glyph with given character and font, draw and upload image data to OpenGL texture.
      *
      * @param font      the font used to draw the character, includes font size and style (italic or bold)
-     * @param codePoint code point of character including supplementary multilingual plane
+     * @param glyphCode the font specific glyph code to lookup in the cache
      * @return created textured glyph
      */
     @Nonnull
-    private TexturedGlyph cacheGlyph(@Nonnull Font font, int codePoint) {
-        char[] chars = Character.toChars(codePoint);
+    private TexturedGlyph cacheGlyph(@Nonnull Font font, int glyphCode) {
 
-        GlyphVector vector = font.createGlyphVector(glyphTextureGraphics.getFontRenderContext(), chars);
+        /* There's no need to layout glyph vector, we only draw the specific glyphCode
+         * which is already laid-out in TextProcessor */
+        GlyphVector vector = font.createGlyphVector(glyphTextureGraphics.getFontRenderContext(), new int[]{glyphCode});
 
         Rectangle renderBounds = vector.getGlyphPixelBounds(0, glyphTextureGraphics.getFontRenderContext(), 0, 0);
         int renderWidth = (int) renderBounds.getWidth();
@@ -392,7 +438,7 @@ public class GlyphManager {
         int width = renderWidth + GLYPH_BORDER * 2;
         int height = renderHeight + GLYPH_BORDER * 2;
 
-        glyphTextureGraphics.drawString(String.valueOf(chars), currPosX, currPosY - baseline);
+        glyphTextureGraphics.drawGlyphVector(vector, currPosX, currPosY - baseline);
 
         uploadTexture(x, y, width, height);
 
@@ -405,9 +451,15 @@ public class GlyphManager {
                 (float) (x + width) / TEXTURE_WIDTH, (float) (y + height) / TEXTURE_HEIGHT);
     }
 
+    /**
+     * Lookup digit glyphs with given font
+     *
+     * @param font derived font including style and font size
+     * @return array of all digit glyphs 0-9 (in that order)
+     */
     public TexturedGlyph[] lookupDigits(Font font) {
-        int fontKey = fontKeyMap.computeIntIfAbsent(font,
-                f -> fontKeyMap.size());
+        // the key should be cached in layout step
+        int fontKey = fontKeyMap.getInt(font);
         return digitsMap.computeIfAbsent(fontKey,
                 l -> cacheDigits(font));
     }
@@ -419,10 +471,17 @@ public class GlyphManager {
      * @param fontSize  the font size required for the text
      * @return an array of digits 0-9
      */
+    @Deprecated
     public TexturedGlyph[] lookupDigits(int fontStyle, int fontSize) {
         return lookupDigits(lookupFont(48, fontStyle, fontSize));
     }
 
+    /**
+     * No javadoc, guess for yourself
+     *
+     * @param font p
+     * @return r
+     */
     @Nonnull
     private TexturedGlyph[] cacheDigits(@Nonnull Font font) {
         TexturedGlyph[] digits = new TexturedGlyph[10];
@@ -435,7 +494,7 @@ public class GlyphManager {
         int standardRenderWidth = 0;
 
         for (int i = 0; i < 10; i++) {
-            chars[0] = (char) (i + 48);
+            chars[0] = (char) ('0' + i);
             GlyphVector vector = font.createGlyphVector(glyphTextureGraphics.getFontRenderContext(), chars);
 
             Rectangle renderBounds = vector.getGlyphPixelBounds(0, glyphTextureGraphics.getFontRenderContext(), 0, 0);

@@ -25,9 +25,9 @@ plugins {
 ```
 ```
 dependencies {
-    compileOnly fg.deobf("curse.maven:ModernUI:[FileID]-userdev")
-    runtimeOnly fg.deobf("curse.maven:ModernUI:[FileID]-universal")
+    compileOnly fg.deobf("curse.maven:ModernUI:[FileID -userdev]")
+    runtimeOnly fg.deobf("curse.maven:ModernUI:[FileID -universal]")
 }
 ```
-Latest version: (no build for 1.16.1) (FileID: )
+Latest version: (no stable build for 1.16.1) (FileID: )
 

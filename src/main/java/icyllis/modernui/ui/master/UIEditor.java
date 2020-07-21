@@ -204,7 +204,7 @@ public enum UIEditor {
                     break;
                 }
                 StringBuilder builder = new StringBuilder();
-                builder.append("Printing UI Debug Info:\n");
+                builder.append("Modern UI Debug Info:\n");
 
                 builder.append("[0] Is Modern Screen: ");
                 builder.append(UIManager.INSTANCE.getModernScreen() != null);
@@ -224,91 +224,8 @@ public enum UIEditor {
                 builder.append("\n");
 
                 ModernUI.LOGGER.debug(UIManager.MARKER, builder.toString());
-                //ModernUI.LOGGER.debug(UIManager.MARKER, "{}", FMLPaths.GAMEDIR.get().getParent().resolve("src/main/resources/assets/modernui"));
-                String k2 = "\u062a\u0646\u0628\u064a\u0647\u0627\u062a \u0627\u0644\u0640Realms:" + "\u064a\u0639\u0645\u0644";
-                //String k2 = "\u062a\u0646\u0628\u064a\u0647\u0627\u062a \u0627\u0644\u0640Realms";
-                //ModernUI.LOGGER.debug("require bidi : {}", Bidi.requiresBidi(k2.toCharArray(), 0, k2.length()));
-                try {
-                    k2 = new ArabicShaping(8).shape(k2);
-                    /*for (int i = 0; i < k2.length(); i++) {
-                        ModernUI.LOGGER.debug("Shape{}: {}", i, (int) k2.charAt(i));
-                    }*/
-                    layoutBidiString(k2.toCharArray(), 0, k2.length());
-                    /*Bidi bidi = new Bidi(k2, Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT);
-                    bidi.setReorderingMode(Bidi.REORDER_DEFAULT);
-                    k2 = bidi.writeReordered(Bidi.DO_MIRRORING);*/
-                } catch (ArabicShapingException ignored) {
-
-                }
-                /*for (int i = 0; i < k2.length(); i++) {
-                    ModernUI.LOGGER.debug("Bidi{}: {}", i, k2.charAt(i));
-                }*/
 
                 break;
         }
-    }
-
-    private float layoutBidiString(char[] text, int start, int limit) {
-        float advance = 0;
-
-        /* Avoid performing full bidirectional analysis if text has no "strong" right-to-left characters */
-        if (Bidi.requiresBidi(text, start, limit)) {
-            /* Note that while requiresBidi() uses start/limit the Bidi constructor uses start/length */
-            Bidi bidi = new Bidi(text, start, null, 0, limit - start, Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT);
-
-            /* If text is entirely right-to-left, then insert an EntryText node for the entire string */
-            if (bidi.isRightToLeft()) {
-                return layoutStyle(text, start, limit, 1, advance);
-            }
-
-            /* Otherwise text has a mixture of LTR and RLT, and it requires full bidirectional analysis */
-            else {
-                int runCount = bidi.getRunCount();
-                byte[] levels = new byte[runCount];
-                Integer[] ranges = new Integer[runCount];
-
-                /* Reorder contiguous runs of text into their display order from left to right */
-                for (int index = 0; index < runCount; index++) {
-                    levels[index] = (byte) bidi.getRunLevel(index);
-                    ranges[index] = index;
-                }
-                Bidi.reorderVisually(levels, 0, ranges, 0, runCount);
-
-                /*
-                 * Every GlyphVector must be created on a contiguous run of left-to-right or right-to-left text. Keep track of
-                 * the horizontal advance between each run of text, so that the glyphs in each run can be assigned a position relative
-                 * to the start of the entire string and not just relative to that run.
-                 */
-                for (int visualIndex = 0; visualIndex < runCount; visualIndex++) {
-                    int logicalIndex = ranges[visualIndex];
-
-                    /* An odd numbered level indicates right-to-left ordering */
-                    int layoutFlag = (bidi.getRunLevel(logicalIndex) & 1) == 1 ? 1 : 0;
-                    advance = layoutStyle(text, start + bidi.getRunStart(logicalIndex), start + bidi.getRunLimit(logicalIndex),
-                            layoutFlag, advance);
-                }
-            }
-
-            return advance;
-        }
-
-        /* If text is entirely left-to-right, then insert an EntryText node for the entire string */
-        else {
-            return layoutStyle(text, start, limit, 0, advance);
-        }
-    }
-
-    private float layoutStyle(char[] text, int start, int limit, int direction, float advance) {
-        ModernUI.LOGGER.debug("New direction --- {}", direction == 0 ? "LTR" : "RTL");
-        if (direction == 0) {
-            for (int i = start; i < limit; i++) {
-                ModernUI.LOGGER.debug("Reorder: {}", text[i]);
-            }
-        } else {
-            for (int i = limit - 1; i >= start; i--) {
-                ModernUI.LOGGER.debug("Reorder: {}", text[i]);
-            }
-        }
-        return advance;
     }
 }
