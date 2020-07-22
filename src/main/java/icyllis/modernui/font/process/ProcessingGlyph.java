@@ -19,8 +19,13 @@
 package icyllis.modernui.font.process;
 
 import icyllis.modernui.font.glyph.TexturedGlyph;
+import icyllis.modernui.font.node.DigitGlyphInfo;
+import icyllis.modernui.font.node.IGlyphRenderInfo;
+import icyllis.modernui.font.node.RandomGlyphInfo;
+import icyllis.modernui.font.node.StaticGlyphInfo;
 
 import javax.annotation.Nonnull;
+import java.util.Objects;
 
 /**
  * Temporary resulted glyph
@@ -38,8 +43,11 @@ public class ProcessingGlyph implements Comparable<ProcessingGlyph> {
      */
     public int stringIndex;
 
+    public final float offsetX;
+
     /**
      * For type {@link #DYNAMIC_DIGIT} or {@link #RANDOM_DIGIT}
+     * All glyphs are same width
      */
     public final TexturedGlyph[] glyphs;
 
@@ -53,18 +61,43 @@ public class ProcessingGlyph implements Comparable<ProcessingGlyph> {
      */
     public final byte type;
 
-    public ProcessingGlyph(int stripIndex, TexturedGlyph glyph, byte type) {
+    public ProcessingGlyph(int stripIndex, float offsetX, TexturedGlyph glyph, byte type) {
         this.stringIndex = stripIndex;
+        this.offsetX = offsetX;
         glyphs = null;
         this.glyph = glyph;
         this.type = type;
     }
 
-    public ProcessingGlyph(int stripIndex, TexturedGlyph[] glyphs, byte type) {
+    public ProcessingGlyph(int stripIndex, float offsetX, TexturedGlyph[] glyphs, byte type) {
         this.stringIndex = stripIndex;
+        this.offsetX = offsetX;
         this.glyphs = glyphs;
         glyph = null;
         this.type = type;
+    }
+
+    public IGlyphRenderInfo toGlyph() {
+        switch (type) {
+            case DYNAMIC_DIGIT:
+                return new DigitGlyphInfo(glyphs, offsetX, stringIndex);
+            case RANDOM_DIGIT:
+                return new RandomGlyphInfo(glyphs, offsetX);
+            default:
+                return new StaticGlyphInfo(glyph, offsetX);
+        }
+    }
+
+    /**
+     * For extracting effects
+     *
+     * @return advance
+     */
+    public float getAdvance() {
+        if (glyphs == null) {
+            return Objects.requireNonNull(glyph).advance;
+        }
+        return glyphs[0].advance;
     }
 
     @Override

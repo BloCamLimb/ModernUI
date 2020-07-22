@@ -34,12 +34,36 @@ public class RandomGlyphInfo implements IGlyphRenderInfo {
     private static final Random RANDOM = new Random();
 
     /**
-     * A reference of cached array in GlyphManager, 0-9 textured glyphs (in that order)
+     * Array of glyphs with same advance
      */
     private final TexturedGlyph[] glyphs;
 
-    public RandomGlyphInfo(TexturedGlyph[] glyphs) {
+    /**
+     * Offset X to the start of the text
+     */
+    private final float offsetX;
+
+    public RandomGlyphInfo(TexturedGlyph[] glyphs, float offsetX) {
         this.glyphs = glyphs;
+        this.offsetX = offsetX;
+    }
+
+    @Override
+    public void drawString(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a) {
+        builder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR_TEX);
+        glyphs[RANDOM.nextInt(glyphs.length)].drawGlyph(builder, x + offsetX, y, r, g, b, a);
+        builder.finishDrawing();
+        WorldVertexBufferUploader.draw(builder);
+    }
+
+    @Override
+    public void drawString(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, int light) {
+        glyphs[RANDOM.nextInt(glyphs.length)].drawGlyph(matrix, buffer, x + offsetX, y, r, g, b, a, light);
+    }
+
+    @Override
+    public float getAdvance() {
+        return glyphs[0].advance;
     }
 
     /*@Override
@@ -57,18 +81,4 @@ public class RandomGlyphInfo implements IGlyphRenderInfo {
         }
         return x;
     }*/
-
-    @Override
-    public float drawString(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a) {
-        builder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR_TEX);
-        x = glyphs[RANDOM.nextInt(glyphs.length)].drawGlyph(builder, x, y, r, g, b, a);
-        builder.finishDrawing();
-        WorldVertexBufferUploader.draw(builder);
-        return x;
-    }
-
-    @Override
-    public float drawString(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, int packedLight) {
-        return glyphs[RANDOM.nextInt(glyphs.length)].drawGlyph(matrix, buffer, x, y, r, g, b, a, packedLight);
-    }
 }

@@ -39,6 +39,11 @@ public class DigitGlyphInfo implements IGlyphRenderInfo {
     private final TexturedGlyph[] glyphs;
 
     /**
+     * Offset X to the start of the text
+     */
+    private final float offsetX;
+
+    /**
      * An array of digit char index of the whole original string.
      * The index should skipped all supplementary multilingual plane and formatting codes.
      * This array length equals to this info total digit count to renderer.
@@ -48,9 +53,28 @@ public class DigitGlyphInfo implements IGlyphRenderInfo {
      */
     private final int stringIndex;
 
-    public DigitGlyphInfo(TexturedGlyph[] glyphs, int stringIndex) {
+    public DigitGlyphInfo(TexturedGlyph[] glyphs, float offsetX, int stringIndex) {
         this.glyphs = glyphs;
+        this.offsetX = offsetX;
         this.stringIndex = stringIndex;
+    }
+
+    @Override
+    public void drawString(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a) {
+        builder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR_TEX);
+        glyphs[raw.charAt(stringIndex) - '0'].drawGlyph(builder, x + offsetX, y, r, g, b, a);
+        builder.finishDrawing();
+        WorldVertexBufferUploader.draw(builder);
+    }
+
+    @Override
+    public void drawString(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, int light) {
+        glyphs[raw.charAt(stringIndex) - '0'].drawGlyph(matrix, buffer, x + offsetX, y, r, g, b, a, light);
+    }
+
+    @Override
+    public float getAdvance() {
+        return glyphs[0].advance;
     }
 
     /*@Override
@@ -68,18 +92,4 @@ public class DigitGlyphInfo implements IGlyphRenderInfo {
         }
         return x;
     }*/
-
-    @Override
-    public float drawString(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a) {
-        builder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR_TEX);
-        x = glyphs[raw.charAt(stringIndex) - '0'].drawGlyph(builder, x, y, r, g, b, a);
-        builder.finishDrawing();
-        WorldVertexBufferUploader.draw(builder);
-        return x;
-    }
-
-    @Override
-    public float drawString(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, int packedLight) {
-        return glyphs[raw.charAt(stringIndex) - '0'].drawGlyph(matrix, buffer, x, y, r, g, b, a, packedLight);
-    }
 }

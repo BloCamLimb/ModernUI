@@ -40,13 +40,14 @@ public class TexturedGlyph {
     private final TextRenderType renderType;
 
     /**
-     * The horizontal advance in pixels of this glyph, including font spacing!
-     * This will be used for layout or trim.
+     * The horizontal advance in high-precision pixels of this glyph.
+     * This will be used for text trimming.
      */
     public final float advance;
 
     /**
      * The offset to baseline that specified when drawing.
+     * The value should be a multiple of (1 / guiScale)
      * This will be used for drawing offset Y.
      */
     private final float baseline;
@@ -54,6 +55,7 @@ public class TexturedGlyph {
     /**
      * The total width of this glyph image.
      * In pixels, due to gui scaling, we convert it into float.
+     * The value should be a multiple of (1 / guiScale)
      * This will be used for drawing size.
      */
     private final float width;
@@ -61,6 +63,7 @@ public class TexturedGlyph {
     /**
      * The total height of this glyph image.
      * In pixels, due to gui scaling, we convert it into float.
+     * The value should be a multiple of (1 / guiScale)
      * This will be used for drawing size.
      */
     private final float height;
@@ -97,23 +100,21 @@ public class TexturedGlyph {
         this.v2 = v2;
     }
 
-    public float drawGlyph(@Nonnull IVertexBuilder builder, float x, float y, int r, int g, int b, int a) {
+    public void drawGlyph(@Nonnull IVertexBuilder builder, float x, float y, int r, int g, int b, int a) {
         RenderSystem.bindTexture(renderType.textureName);
         y += baseline;
         builder.pos(x, y, 0).color(r, g, b, a).tex(u1, v1).endVertex();
         builder.pos(x, y + height, 0).color(r, g, b, a).tex(u1, v2).endVertex();
         builder.pos(x + width, y + height, 0).color(r, g, b, a).tex(u2, v2).endVertex();
         builder.pos(x + width, y, 0).color(r, g, b, a).tex(u2, v1).endVertex();
-        return x + advance;
     }
 
-    public float drawGlyph(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, float x, float y, int r, int g, int b, int a, int packedLight) {
+    public void drawGlyph(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, float x, float y, int r, int g, int b, int a, int packedLight) {
         IVertexBuilder builder = buffer.getBuffer(renderType);
         y += baseline;
         builder.pos(matrix, x, y, 0).color(r, g, b, a).tex(u1, v1).lightmap(packedLight).endVertex();
         builder.pos(matrix, x, y + height, 0).color(r, g, b, a).tex(u1, v2).lightmap(packedLight).endVertex();
         builder.pos(matrix, x + width, y + height, 0).color(r, g, b, a).tex(u2, v2).lightmap(packedLight).endVertex();
         builder.pos(matrix, x + width, y, 0).color(r, g, b, a).tex(u2, v1).lightmap(packedLight).endVertex();
-        return x + advance;
     }
 }

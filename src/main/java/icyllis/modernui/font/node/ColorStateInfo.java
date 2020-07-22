@@ -20,6 +20,9 @@ package icyllis.modernui.font.node;
 
 public class ColorStateInfo {
 
+    /**
+     * In case no text formatting or specific style
+     */
     public static final ColorStateInfo[] NO_COLOR_STATE = new ColorStateInfo[]{new ColorStateInfo(-1, -1)};
 
     /**

@@ -28,6 +28,7 @@ import net.minecraft.client.renderer.entity.EntityRendererManager;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Matrix4f;
+import net.minecraft.util.math.vector.Vector3f;
 import net.minecraft.util.text.ITextProperties;
 import net.minecraft.util.text.Style;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
@@ -49,6 +50,8 @@ public class ModernFontRenderer extends FontRenderer {
      */
     private static ModernFontRenderer INSTANCE;
 
+    public static final Vector3f SHADOW_OFFSET = new Vector3f(0.0f, 0.0f, 0.03f);
+
     /**
      * Config value
      */
@@ -65,6 +68,7 @@ public class ModernFontRenderer extends FontRenderer {
      * INTERNAL USE ONLY, developers can't use this for any reason
      *
      * @return instance
+     * @see TrueTypeRenderer#getInstance()
      */
     public static ModernFontRenderer getInstance() {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
@@ -92,28 +96,26 @@ public class ModernFontRenderer extends FontRenderer {
                               @Nonnull IRenderTypeBuffer buffer, boolean transparent, int colorBackground, int packedLight, boolean bidiFlag) {
         // it seems that transparent (seeThroughType) is only available in Minecraft Debug Mode
         // bidiFlag is useless, we have our layout system
-        x += drawStringInternal(text, x, y, color, dropShadow, matrix, buffer, packedLight, bidiFlag, Style.EMPTY);
+        x += drawLayer0(text, x, y, color, dropShadow, matrix, buffer, packedLight, Style.EMPTY);
         return (int) x + (dropShadow ? 1 : 0);
     }
 
     @Override
     public int func_238416_a_(@Nonnull ITextProperties multiText, float x, float y, int color, boolean dropShadow, Matrix4f matrix,
                               @Nonnull IRenderTypeBuffer buffer, boolean transparent, int colorBackground, int packedLight) {
-        MutableFloat m = new MutableFloat(x);
+        MutableFloat mx = new MutableFloat(x);
+        // iterate the multi text
         multiText.func_230439_a_((style, text) -> {
-            m.add(drawStringInternal(text, m.getAndAdd(0), y, color, dropShadow, matrix, buffer, packedLight, getBidiFlag(), style));
+            mx.add(drawLayer0(text, mx.floatValue(), y, color, dropShadow, matrix, buffer, packedLight, style));
             return Optional.empty();
         }, Style.EMPTY);
-        return m.getValue().intValue() + (dropShadow ? 1 : 0);
+        return mx.getValue().intValue() + (dropShadow ? 1 : 0);
     }
 
-    private float drawStringInternal(@Nonnull String text, float x, float y, int color, boolean dropShadow, Matrix4f matrix,
-                                   @Nonnull IRenderTypeBuffer buffer, int packedLight, boolean bidiFlag, Style style) {
+    private float drawLayer0(@Nonnull String text, float x, float y, int color, boolean dropShadow, Matrix4f matrix,
+                             @Nonnull IRenderTypeBuffer buffer, int packedLight, Style style) {
         if (text.isEmpty()) {
             return 0.0f;
-        }
-        if (bidiFlag) {
-            text = bidiReorder(text);
         }
         // ensure alpha, color can be ARGB, or can be RGB
         // if alpha <= 1, make alpha = 255
@@ -126,11 +128,15 @@ public class ModernFontRenderer extends FontRenderer {
         int g = color >> 8 & 0xff;
         int b = color & 0xff;
 
-        /*if (dropShadow && sAllowFontShadow) {
-            fontRenderer.drawFromVanilla(matrix, buffer, text, x + 1, y + 1, r, g, b, a, packedLight);
-        }*/
+        Matrix4f mat = matrix;
 
-        return processor.lookupVanillaNode(text, style).drawText(matrix, buffer, text, x, y, r, g, b, a, packedLight);
+        if (dropShadow && sAllowFontShadow) {
+            //fontRenderer.drawFromVanilla(matrix, buffer, text, x + 1, y + 1, r, g, b, a, packedLight);
+            mat = mat.copy();
+            mat.translate(SHADOW_OFFSET);
+        }
+
+        return processor.lookupVanillaNode(text, style).drawText(mat, buffer, text, x, y, r, g, b, a, packedLight);
     }
 
     @Override
@@ -138,23 +144,20 @@ public class ModernFontRenderer extends FontRenderer {
         if (text == null || text.isEmpty()) {
             return 0;
         }
-        if (getBidiFlag()) {
-            text = bidiReorder(text);
-        }
         return MathHelper.ceil(processor.lookupVanillaNode(text, Style.EMPTY).advance);
     }
 
     @Override
     public int func_238414_a_(@Nonnull ITextProperties multiText) {
         MutableFloat m = new MutableFloat(0);
+        // iterate the multi text
         multiText.func_230439_a_((style, text) -> {
-            if (getBidiFlag()) {
-                text = bidiReorder(text);
+            if (!text.isEmpty()) {
+                m.add(processor.lookupVanillaNode(text, style).advance);
             }
-            m.add(processor.lookupVanillaNode(text, style).advance);
             return Optional.empty();
         }, Style.EMPTY);
-        return MathHelper.ceil(m.getAndIncrement());
+        return MathHelper.ceil(m.floatValue());
     }
 
     /*@Override
@@ -192,19 +195,25 @@ public class ModernFontRenderer extends FontRenderer {
     @Deprecated
     @Override
     public void setGlyphProviders(@Nonnull List<IGlyphProvider> g) {
-        // no font
+
     }
 
     @Deprecated
     @Override
     public void close() {
-        // no stream
+
     }*/
 
-    // we keep bidi enabled, so no need to convert text
-    /*@Nonnull
+    /**
+     * Bidi always works no matter what language is in
+     *
+     * @param text text
+     * @return text
+     */
+    @Deprecated
+    @Nonnull
     @Override
     public String bidiReorder(@Nonnull String text) {
         return text;
-    }*/
+    }
 }

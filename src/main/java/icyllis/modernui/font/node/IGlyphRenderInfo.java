@@ -37,24 +37,29 @@ public interface IGlyphRenderInfo {
      * @param g       final green
      * @param b       final blue
      * @param a       final alpha
-     * @return next x pos
      */
-    float drawString(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a);
+    void drawString(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a);
 
     /**
      * Draw a character of this info
      *
-     * @param matrix      matrix
-     * @param buffer      buffer source
-     * @param raw         needed by {@link DigitGlyphInfo}
-     * @param x           start x of this character
-     * @param y           start y
-     * @param r           final red
-     * @param g           final green
-     * @param b           final blue
-     * @param a           final alpha
-     * @param packedLight packed light
-     * @return next x pos
+     * @param matrix matrix
+     * @param buffer buffer source
+     * @param raw    needed by {@link DigitGlyphInfo}
+     * @param x      start x of this character
+     * @param y      start y
+     * @param r      final red
+     * @param g      final green
+     * @param b      final blue
+     * @param a      final alpha
+     * @param light  packed light
      */
-    float drawString(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, int packedLight);
+    void drawString(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, int light);
+
+    /**
+     * Get the glyph advance of this info
+     *
+     * @return advance
+     */
+    float getAdvance();
 }

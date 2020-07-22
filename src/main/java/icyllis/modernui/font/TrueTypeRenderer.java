@@ -21,8 +21,8 @@ package icyllis.modernui.font;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.node.TextRenderNode;
+import icyllis.modernui.font.process.FormattingStyle;
 import icyllis.modernui.font.process.TextCacheProcessor;
-import icyllis.modernui.font.process.TextProcessRegister;
 import icyllis.modernui.font.style.TextAlign;
 import icyllis.modernui.graphics.math.Color3i;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -75,6 +75,12 @@ public class TrueTypeRenderer implements IFontRenderer {
         }
     }
 
+    /**
+     * Get instance, lazy loading
+     *
+     * @return instance
+     * @see #TrueTypeRenderer()
+     */
     public static TrueTypeRenderer getInstance() {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
         if (INSTANCE == null) {
@@ -142,7 +148,7 @@ public class TrueTypeRenderer implements IFontRenderer {
         BufferBuilder bufferBuilder = tessellator.getBuffer();
 
         /* The currently active font style is needed to select the proper ASCII digit style for fast replacement */
-        int fontStyle = TextProcessRegister.PLAIN;
+        int fontStyle = FormattingStyle.PLAIN;
 
         //for (int glyphIndex = 0, colorIndex = 0; glyphIndex < entry.glyphs.length; glyphIndex++) {
         /*
@@ -339,7 +345,7 @@ public class TrueTypeRenderer implements IFontRenderer {
         RenderSystem.defaultBlendFunc();*/
 
         /* The currently active font style is needed to select the proper ASCII digit style for fast replacement */
-        int fontStyle = TextProcessRegister.PLAIN;
+        int fontStyle = FormattingStyle.PLAIN;
 
         //for (int glyphIndex = 0, colorIndex = 0; glyphIndex < entry.glyphs.length; glyphIndex++) {
         /*

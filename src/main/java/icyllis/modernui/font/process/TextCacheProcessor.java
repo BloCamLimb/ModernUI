@@ -22,33 +22,40 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.ibm.icu.text.Bidi;
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.font.glyph.GlyphManager;
 import icyllis.modernui.font.glyph.TexturedGlyph;
+import icyllis.modernui.font.node.ColorStateInfo;
+import icyllis.modernui.font.node.EffectRenderInfo;
+import icyllis.modernui.font.node.IGlyphRenderInfo;
 import icyllis.modernui.font.node.TextRenderNode;
 import icyllis.modernui.graphics.math.Color3i;
+import icyllis.modernui.system.ModernUI;
 import net.minecraft.util.text.Style;
 import net.minecraft.util.text.TextFormatting;
+import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.awt.*;
 import java.awt.font.GlyphVector;
+import java.awt.geom.Point2D;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Create or cache text and generate render node
+ * layout text and extract key info and generate or cache text render node
  *
  * @since 2.0
  */
-//TODO Layout string, Bidi, ITextProperties
 @SuppressWarnings("unused")
 public class TextCacheProcessor {
 
+    /**
+     * Instance on render thread, initialized when MainMenuScreen opened
+     */
     private static TextCacheProcessor INSTANCE;
 
     /**
@@ -96,11 +103,6 @@ public class TextCacheProcessor {
     //private boolean digitGlyphsReady = false;
 
     /**
-     * Register current processing results
-     */
-    private final TextProcessRegister register = new TextProcessRegister();
-
-    /**
      * Cache temporary processing results
      */
     private final TextProcessData data = new TextProcessData();
@@ -117,6 +119,12 @@ public class TextCacheProcessor {
         //cacheDigitGlyphs();
     }
 
+    /**
+     * Get processor instance
+     *
+     * @return instance
+     * @see TrueTypeRenderer#getInstance()
+     */
     public static TextCacheProcessor getInstance() {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
         if (INSTANCE == null) {
@@ -133,6 +141,8 @@ public class TextCacheProcessor {
      * as a performance boost. The speed up is most noticeable on the F3 screen which rapidly displays lots of changing numbers.
      * The 4 element array is index by the font style (combination of Font.PLAIN, Font.BOLD, and Font.ITALIC), and each of the
      * nested elements is index by the digit value 0-9.
+     *
+     * @deprecated {@link GlyphManager#lookupDigits(Font)}
      */
     @Deprecated
     private void cacheDigitGlyphs() {
@@ -148,10 +158,11 @@ public class TextCacheProcessor {
     /**
      * Lookup cached render node for vanilla renderer
      *
-     * @param string raw formatted string
-     * @param style  text component style
+     * @param string raw formatted string, can't be empty
+     * @param style  text component style, or {@link Style#EMPTY}
      * @return cached render node
      */
+    @Nonnull
     public TextRenderNode lookupVanillaNode(@Nonnull String string, @Nonnull Style style) {
         lookupKey.updateKey(string, style);
         TextRenderNode node = stringCache.getIfPresent(lookupKey);
@@ -166,6 +177,7 @@ public class TextCacheProcessor {
      *
      * @param code c
      * @return text formatting, {@code null} if code invalid
+     * @see TextFormatting#fromFormattingCode(char)
      */
     @Nullable
     public static TextFormatting fromFormattingCode(char code) {
@@ -191,8 +203,8 @@ public class TextCacheProcessor {
                     if (formatting != null) {
                         register.applyFormatting(formatting, glyphIndex);
                     }*/
-                    /*switch (code) {
-                     *//* Obfuscated *//*
+        /*switch (code) {
+         *//* Obfuscated *//*
                         case 16:
                             if (state.setObfuscated(true)) {
                                 if (!state.isDigitMode()) {
@@ -389,14 +401,30 @@ public class TextCacheProcessor {
         /* Step 1 */
         char[] text = resolveFormattingCodes(data, string, style);
 
-        /* Step 2-5 */
-        startBidiAnalysis(data, text);
+        final TextRenderNode node;
 
-        /* Step 6 */
-        adjustGlyphIndexes(data);
+        if (text.length > 0) {
+            /* Step 2-5 */
+            startBidiAnalysis(data, text);
 
-        final TextRenderNode node = new TextRenderNode(register.wrapGlyphs(),
-                register.wrapEffects(), register.wrapColors(), register.getAdvance());
+            /* Step 6 */
+            adjustGlyphIndex(data);
+
+            /* Step 7-8 */
+            Pair<EffectRenderInfo[], ColorStateInfo[]> pair = resolveEffectAndColor(data);
+
+            /* Step 9 */
+            IGlyphRenderInfo[] glyphs = data.wrapGlyphs();
+
+            /* Step 10 */
+            node = new TextRenderNode(glyphs,
+                    pair.getLeft(), pair.getRight(), data.wrapAdvance());
+        }
+
+        /* Sometimes naive, too young too simple */
+        else {
+            node = TextRenderNode.EMPTY;
+        }
 
         stringCache.put(key, node);
 
@@ -527,8 +555,6 @@ public class TextCacheProcessor {
      */
     @Nonnull
     private char[] resolveFormattingCodes(@Nonnull TextProcessData data, @Nonnull final String string, @Nonnull Style style) {
-        char[] text = string.toCharArray();
-
         int start = 0, shift = 0, next;
 
         data.codes.add(new FormattingStyle(0, 0, style));
@@ -541,8 +567,10 @@ public class TextCacheProcessor {
              * The "start" and "next" variables all contain offsets into the original unmodified "str" string. The "shift"
              * variable keeps track of how many characters have been stripped so far, and it's used to compute offsets into
              * the text[] array based on the start/next offsets in the original string.
+             *
+             * If string only contains 1 formatting code (2 chars in total), this doesn't work
              */
-            System.arraycopy(text, next - shift + 2, text, next - shift, text.length - next - 2);
+            //System.arraycopy(text, next - shift + 2, text, next - shift, text.length - next - 2);
 
             if (formatting != null) {
                 /* forceFormatting will set all FancyStyling (like BOLD, UNDERLINE) to false if this is a color formatting */
@@ -555,7 +583,7 @@ public class TextCacheProcessor {
             shift += 2;
         }
 
-        return text;
+        return Objects.requireNonNull(TextFormatting.getTextWithoutFormattingCodes(string)).toCharArray();
     }
 
     /**
@@ -564,9 +592,9 @@ public class TextCacheProcessor {
      *
      * @param data an object to store the results
      * @param text the full plain text (without formatting codes) to analyze
-     * @see #startStyleAnalysis(TextProcessData, char[], int, int, int)
+     * @see #layoutStyle(TextProcessData, char[], int, int, int)
      */
-    private void startBidiAnalysis(TextProcessData data, char[] text) {
+    private void startBidiAnalysis(TextProcessData data, @Nonnull char[] text) {
         /* Avoid performing full bidirectional analysis if text has no "strong" right-to-left characters */
         if (Bidi.requiresBidi(text, 0, text.length)) {
             /* Note that while requiresBidi() uses start/limit the Bidi constructor uses start/length */
@@ -574,7 +602,7 @@ public class TextCacheProcessor {
 
             /* If text is entirely right-to-left, then insert an EntryText node for the entire string */
             if (bidi.isRightToLeft()) {
-                startStyleAnalysis(data, text, 0, text.length, Font.LAYOUT_RIGHT_TO_LEFT);
+                layoutStyle(data, text, 0, text.length, Font.LAYOUT_RIGHT_TO_LEFT);
             }
 
             /* Otherwise text has a mixture of LTR and RLT, and it requires full bidirectional analysis */
@@ -599,15 +627,15 @@ public class TextCacheProcessor {
                     int logicalIndex = ranges[visualIndex];
 
                     /* An odd numbered level indicates right-to-left ordering */
-                    int layoutFlag = (bidi.getRunLevel(logicalIndex) & 1) == 1 ? Font.LAYOUT_RIGHT_TO_LEFT : Font.LAYOUT_LEFT_TO_RIGHT;
-                    startStyleAnalysis(data, text, bidi.getRunStart(logicalIndex), bidi.getRunLimit(logicalIndex), layoutFlag);
+                    int flag = (bidi.getRunLevel(logicalIndex) & 1) == 1 ? Font.LAYOUT_RIGHT_TO_LEFT : Font.LAYOUT_LEFT_TO_RIGHT;
+                    layoutStyle(data, text, bidi.getRunStart(logicalIndex), bidi.getRunLimit(logicalIndex), flag);
                 }
             }
         }
 
         /* If text is entirely left-to-right, then insert an node for the entire string */
         else {
-            startStyleAnalysis(data, text, 0, text.length, Font.LAYOUT_LEFT_TO_RIGHT);
+            layoutStyle(data, text, 0, text.length, Font.LAYOUT_LEFT_TO_RIGHT);
         }
     }
 
@@ -622,36 +650,40 @@ public class TextCacheProcessor {
      * @param limit end index (exclusive) of the text
      * @param flag  layout direction, either {@link Font#LAYOUT_LEFT_TO_RIGHT} or {@link Font#LAYOUT_RIGHT_TO_LEFT}
      */
-    private void startStyleAnalysis(@Nonnull TextProcessData data, char[] text, int start, int limit, int flag) {
+    private void layoutStyle(@Nonnull TextProcessData data, char[] text, int start, int limit, int flag) {
         final List<FormattingStyle> codes = data.codes;
+        int codeIndex = data.codeIndex;
         /* Break up the string into segments, where each segment has the same font style in use */
         while (start < limit) {
             int next = limit;
 
             /* In case of multiple consecutive color codes with the same stripIndex,
             select the last one which will have active font style */
-            while (data.codeIndex >= 0 && data.codeIndex < codes.size() - 1 &&
-                    codes.get(data.codeIndex).stripIndex == codes.get(data.codeIndex + 1).stripIndex) {
-                data.codeIndex++;
+            while (codeIndex < codes.size() - 1 &&
+                    codes.get(codeIndex).stripIndex == codes.get(codeIndex + 1).stripIndex) {
+                codeIndex++;
             }
 
-            FormattingStyle style = codes.get(data.codeIndex);
+            FormattingStyle style = codes.get(codeIndex);
 
             /*
-             * Search for the next FormattingCode that uses a different fontStyle than the current one. If found, the stripIndex of that
+             * Search for the next FormattingCode that uses a different layoutStyle than the current one. If found, the stripIndex of that
              * new code is the split point where the string must be split into a separately styled segment.
              */
-            while (++data.codeIndex < codes.size()) {
-                if (!codes.get(data.codeIndex).equals(style)) {
-                    next = codes.get(data.codeIndex).stripIndex;
+            while (codeIndex < codes.size() - 1) {
+                codeIndex++;
+                if (!codes.get(codeIndex).layoutStyleEquals(style)) {
+                    next = codes.get(codeIndex).stripIndex;
                     break;
                 }
             }
 
             /* Layout the string segment with the style currently selected by the last color code */
-            startLayoutText(data, text, start, next, flag, style);
+            layoutText(data, text, start, next, flag, style);
             start = next;
         }
+        /* Store the value */
+        data.codeIndex = codeIndex;
     }
 
     /**
@@ -666,21 +698,21 @@ public class TextCacheProcessor {
      * @param flag  layout direction, either {@link Font#LAYOUT_LEFT_TO_RIGHT} or {@link Font#LAYOUT_RIGHT_TO_LEFT}
      * @param style the style to layout the text
      */
-    private void startLayoutText(TextProcessData data, char[] text, int start, int limit, int flag, @Nonnull FormattingStyle style) {
-        /* current font, without fontStyle and fontSize */
+    private void layoutText(TextProcessData data, char[] text, int start, int limit, int flag, @Nonnull FormattingStyle style) {
+        /* Current font, without fontStyle and fontSize */
         Font font = null;
 
         int last = start;
 
-        /* Process code point */
-        for (int i = start; i < limit; i++) {
-            char c1 = text[i];
-            int codePoint;
-            if (i + 1 < limit && Character.isHighSurrogate(c1)) {
-                char c2 = text[i + 1];
+        /* Scan code point one by one, to use best matched font into segments */
+        int codePoint;
+        for (int next = start; next < limit; next++) {
+            char c1 = text[next];
+            if (Character.isHighSurrogate(c1) && next + 1 < limit) {
+                char c2 = text[next + 1];
                 if (Character.isLowSurrogate(c2)) {
                     codePoint = Character.toCodePoint(c1, c2);
-                    ++i;
+                    ++next;
                 } else {
                     codePoint = c1;
                 }
@@ -688,18 +720,17 @@ public class TextCacheProcessor {
                 codePoint = c1;
             }
 
-            // init the first font to use
+            /* init the first font to use */
             if (font == null) {
                 font = glyphManager.lookupFont(codePoint);
             } else {
                 Font f = glyphManager.lookupFont(codePoint);
-                // singleton, so don't have to use equals()
-                if (font != f) {
-                    /* exclude current character, so it's 'i', not 'i + 1' */
-                    layoutFont(data, text, last, i, flag, glyphManager.deriveFont(
+                /* singleton, so don't have to use equals() */
+                if (font != f && codePoint != 32) {
+                    layoutFont(data, text, last, next, flag, glyphManager.deriveFont(
                             font, style.getFontStyle(), sDefaultFontSize), style.isObfuscated());
                     font = f;
-                    last = i;
+                    last = next;
                 }
             }
         }
@@ -720,7 +751,7 @@ public class TextCacheProcessor {
      * @param limit  end index (exclusive) of the text
      * @param flag   layout direction, either {@link Font#LAYOUT_LEFT_TO_RIGHT} or {@link Font#LAYOUT_RIGHT_TO_LEFT}
      * @param font   the derived font with fontStyle and fontSize
-     * @param random whether to layout obfuscated or original characters
+     * @param random whether to layout obfuscated characters or not
      */
     private void layoutFont(TextProcessData data, char[] text, int start, int limit, int flag, Font font, boolean random) {
         if (random) {
@@ -734,29 +765,50 @@ public class TextCacheProcessor {
 
             final TexturedGlyph[] digits = glyphManager.lookupDigits(font);
 
+            /* Accumulated advance */
+            float aa = 0;
+
             for (int i = 0; i < num; i++) {
-                int stripIndex = vector.getGlyphCharIndex(0) + start;
+                int stripIndex = vector.getGlyphCharIndex(i) + start;
+                Point2D point = vector.getGlyphPosition(i);
 
                 char o = text[stripIndex];
                 /* Digits are not on SMP */
                 if (o <= '9' && o >= '0') {
-                    data.list.add(new ProcessingGlyph(stripIndex, digits, ProcessingGlyph.DYNAMIC_DIGIT));
+                    data.list.add(new ProcessingGlyph(stripIndex, data.advance + (float) point.getX() / 2,
+                            digits, ProcessingGlyph.DYNAMIC_DIGIT));
+                    aa += digits[0].advance;
                     continue;
                 }
 
                 int glyphCode = vector.getGlyphCode(i);
                 TexturedGlyph glyph = glyphManager.lookupGlyph(font, glyphCode);
 
-                data.list.add(new ProcessingGlyph(stripIndex, glyph, ProcessingGlyph.STATIC_TEXT));
+                data.list.add(new ProcessingGlyph(stripIndex, data.advance + (float) point.getX() / 2,
+                        glyph, ProcessingGlyph.STATIC_TEXT));
+                aa += glyph.advance;
             }
+            data.advance += aa;
         }
     }
 
+    /**
+     * Simple layout for random digits
+     *
+     * @param data  an object to store the results
+     * @param text  the plain text (without formatting codes) to analyze
+     * @param start start index (inclusive) of the text
+     * @param limit end index (exclusive) of the text
+     * @param font  the derived font with fontStyle and fontSize
+     */
     private void layoutRandom(TextProcessData data, char[] text, int start, int limit, Font font) {
         final TexturedGlyph[] digits = glyphManager.lookupDigits(font);
+        final float a = digits[0].advance;
         /* Process code point */
         for (int i = start; i < limit; i++) {
-            data.list.add(new ProcessingGlyph(start + i, digits, ProcessingGlyph.RANDOM_DIGIT));
+            data.list.add(new ProcessingGlyph(start + i, data.advance,
+                    digits, ProcessingGlyph.RANDOM_DIGIT));
+            data.advance += a;
             char c1 = text[i];
             if (i + 1 < limit && Character.isHighSurrogate(c1)) {
                 char c2 = text[i + 1];
@@ -767,12 +819,13 @@ public class TextCacheProcessor {
         }
     }
 
-    private void adjustGlyphIndexes(@Nonnull TextProcessData data) {
+    private void adjustGlyphIndex(@Nonnull TextProcessData data) {
         /* Sort by stripIndex */
         Collections.sort(data.list);
 
         /* Shift stripIndex to stringIndex */
-        int codeIndex = 0, shift = 0;
+        /* Skip the default code */
+        int codeIndex = 1, shift = 0;
         for (int glyphIndex = 0; glyphIndex < data.list.size(); glyphIndex++) {
             ProcessingGlyph glyph = data.list.get(glyphIndex);
 
@@ -787,6 +840,103 @@ public class TextCacheProcessor {
                 codeIndex++;
             }
             glyph.stringIndex += shift;
+        }
+    }
+
+    @Nonnull
+    private Pair<EffectRenderInfo[], ColorStateInfo[]> resolveEffectAndColor(@Nonnull TextProcessData data) {
+        final List<EffectRenderInfo> effects = new ArrayList<>();
+        final List<ColorStateInfo> colors = new ArrayList<>();
+        ModernUI.LOGGER.debug("adv: {}", data.advance);
+
+        boolean underline = data.codes.get(0).isUnderline();
+        boolean strikethrough = data.codes.get(0).isStrikethrough();
+
+        int color = data.codes.get(0).getColor();
+        if (color != FormattingStyle.NO_COLOR) {
+            colors.add(new ColorStateInfo(0, color));
+        }
+
+        float start1 = 0;
+        float start2 = 0;
+
+        int glyphIndex = 0;
+        ProcessingGlyph pg;
+        for (int codeIndex = 1; codeIndex < data.codes.size(); codeIndex++) {
+            FormattingStyle code = data.codes.get(codeIndex);
+
+            while (glyphIndex < data.list.size() - 1 &&
+                    (pg = data.list.get(glyphIndex)).stringIndex < code.stringIndex) {
+                //data.advance += pg.getAdvance();
+                glyphIndex++;
+            }
+
+            if (color != code.getColor()) {
+                colors.add(new ColorStateInfo(glyphIndex, color = code.getColor()));
+
+                boolean b = code.isUnderline();
+
+                if (underline) {
+                    //effects.add(EffectRenderInfo.underline(start1, data.advance, color));
+                }
+                if (b) {
+                    start1 = data.advance;
+                }
+                underline = b;
+
+                b = code.isStrikethrough();
+                if (strikethrough) {
+                    //effects.add(EffectRenderInfo.strikethrough(start2, data.advance, color));
+                }
+                if (b) {
+                    start2 = data.advance;
+                }
+                strikethrough = b;
+
+            } else {
+                boolean b = code.isUnderline();
+
+                if (underline != b) {
+                    if (!b) {
+                        //effects.add(EffectRenderInfo.underline(start1, data.advance, color));
+                    } else {
+                        start1 = data.advance;
+                    }
+                    underline = b;
+                }
+
+                b = code.isStrikethrough();
+                if (strikethrough != b) {
+                    if (!b) {
+                        //effects.add(EffectRenderInfo.strikethrough(start2, data.advance, color));
+                    } else {
+                        start2 = data.advance;
+                    }
+                    strikethrough = b;
+                }
+            }
+        }
+
+        /* Handle rest glyphs */
+        while (glyphIndex < data.list.size()) {
+            //data.advance += data.list.get(glyphIndex).getAdvance();
+            glyphIndex++;
+        }
+
+        /* Add last effects */
+        if (underline) {
+            //effects.add(EffectRenderInfo.underline(start1, data.advance, color));
+        }
+        if (strikethrough) {
+            //effects.add(EffectRenderInfo.strikethrough(start2, data.advance, color));
+        }
+
+        if (colors.isEmpty()) {
+            return Pair.of(effects.isEmpty() ? null : effects.toArray(new EffectRenderInfo[0]),
+                    null);
+        } else {
+            return Pair.of(effects.isEmpty() ? null : effects.toArray(new EffectRenderInfo[0]),
+                    colors.toArray(new ColorStateInfo[0]));
         }
     }
 
@@ -829,7 +979,7 @@ public class TextCacheProcessor {
 
                 /* Bold style */
                 case 17:
-                    fontStyle |= TextProcessRegister.BOLD;
+                    fontStyle |= FormattingStyle.BOLD;
                     break;
 
                 /* Strikethrough style */
@@ -846,12 +996,12 @@ public class TextCacheProcessor {
 
                 /* Italic style */
                 case 20:
-                    fontStyle |= TextProcessRegister.ITALIC;
+                    fontStyle |= FormattingStyle.ITALIC;
                     break;
 
                 /* Reset style */
                 case 21:
-                    fontStyle = TextProcessRegister.PLAIN;
+                    fontStyle = FormattingStyle.PLAIN;
                     renderStyle = 0;
                     colorCode = -1; // we need to back default color
                     break;
