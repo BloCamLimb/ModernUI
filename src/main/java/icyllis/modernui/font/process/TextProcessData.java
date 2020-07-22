@@ -18,8 +18,9 @@
 
 package icyllis.modernui.font.process;
 
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import icyllis.modernui.font.node.IGlyphRenderInfo;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class TextProcessData {
@@ -27,12 +28,12 @@ public class TextProcessData {
     /**
      * Array of temporary formatting info
      */
-    public final List<FormattingStyle> codes = new ObjectArrayList<>();
+    public final List<FormattingStyle> codes = new ArrayList<>();
 
     /**
      * List of processing glyphs
      */
-    public final List<ProcessingGlyph> list = new ObjectArrayList<>();
+    public final List<ProcessingGlyph> list = new ArrayList<>();
 
     /**
      * Indicates current style index in {@link #codes} for layout processing
@@ -44,10 +45,21 @@ public class TextProcessData {
      */
     public float advance;
 
-    public void release() {
+    public float layoutLeft;
+
+    public float layoutRight;
+
+    public IGlyphRenderInfo[] wrapGlyphs() {
+        return list.stream().map(ProcessingGlyph::toGlyph).toArray(IGlyphRenderInfo[]::new);
+    }
+
+    public float wrapAdvance() {
+        float r = advance;
+        list.clear();
         codes.clear();
         codeIndex = 0;
         advance = 0;
+        return r;
     }
 
 }

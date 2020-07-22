@@ -33,10 +33,34 @@ public class StaticGlyphInfo implements IGlyphRenderInfo {
     /**
      * The immutable glyph to render
      */
-    protected final TexturedGlyph glyph;
+    private final TexturedGlyph glyph;
 
-    public StaticGlyphInfo(TexturedGlyph glyph) {
+    /**
+     * Offset X to the start of the text
+     */
+    private final float offsetX;
+
+    public StaticGlyphInfo(TexturedGlyph glyph, float offsetX) {
         this.glyph = glyph;
+        this.offsetX = offsetX;
+    }
+
+    @Override
+    public void drawString(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a) {
+        builder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR_TEX);
+        glyph.drawGlyph(builder, x + offsetX, y, r, g, b, a);
+        builder.finishDrawing();
+        WorldVertexBufferUploader.draw(builder);
+    }
+
+    @Override
+    public void drawString(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, int light) {
+        glyph.drawGlyph(matrix, buffer, x + offsetX, y, r, g, b, a, light);
+    }
+
+    @Override
+    public float getAdvance() {
+        return glyph.advance;
     }
 
     /*public float drawString(@Nonnull BufferBuilder builder, @Nonnull String raw, int color, float x, float y, int r, int g, int b, int a) {
@@ -68,18 +92,4 @@ public class StaticGlyphInfo implements IGlyphRenderInfo {
     public static ObfuscatedInfo ofObfuscated(TexturedGlyph[] digits, int color, int count) {
         return new ObfuscatedInfo(digits, color, count);
     }*/
-
-    @Override
-    public float drawString(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a) {
-        builder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR_TEX);
-        x = glyph.drawGlyph(builder, x, y, r, g, b, a);
-        builder.finishDrawing();
-        WorldVertexBufferUploader.draw(builder);
-        return x;
-    }
-
-    @Override
-    public float drawString(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, int packedLight) {
-        return glyph.drawGlyph(matrix, buffer, x, y, r, g, b, a, packedLight);
-    }
 }

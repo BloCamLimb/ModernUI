@@ -56,6 +56,8 @@ public class FormattingStyle {
      */
     private static final byte OBFUSCATED_MASK    = 1 << 4;
 
+    private static final byte LAYOUT_MASK = FONT_STYLE_MASK | OBFUSCATED_MASK;
+
     /**
      * Represent to use default color
      */
@@ -85,6 +87,7 @@ public class FormattingStyle {
      *       1    UNDERLINE
      *      1     STRIKETHROUGH
      *     1      OBFUSCATED
+     *     1  11  LAYOUT_MASK
      * |--------|
      */
     /**
@@ -169,21 +172,13 @@ public class FormattingStyle {
         return (flags & OBFUSCATED_MASK) != 0;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        FormattingStyle style = (FormattingStyle) o;
-
-        if (color != style.color) return false;
-        return flags == style.flags;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = color;
-        result = 31 * result + (int) flags;
-        return result;
+    /**
+     * Check if layout style equals, excluding effects
+     *
+     * @param s obj
+     * @return if layout style equals
+     */
+    public boolean layoutStyleEquals(@Nonnull FormattingStyle s) {
+        return (flags & LAYOUT_MASK) == (s.flags & LAYOUT_MASK);
     }
 }

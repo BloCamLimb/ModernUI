@@ -19,6 +19,7 @@
 package icyllis.modernui.font.node;
 
 import com.mojang.blaze3d.vertex.IVertexBuilder;
+import icyllis.modernui.font.process.FormattingStyle;
 
 import javax.annotation.Nonnull;
 
@@ -71,7 +72,7 @@ public class EffectRenderInfo {
     protected final float end;
 
     /**
-     * The color in 0xRRGGBB format
+     * The color in 0xRRGGBB format, or {@link FormattingStyle#NO_COLOR}
      */
     protected final int color;
 

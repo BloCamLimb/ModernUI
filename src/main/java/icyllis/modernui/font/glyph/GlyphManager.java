@@ -181,7 +181,7 @@ public class GlyphManager {
     /**
      * A cache of all fonts that have at least one glyph pre-rendered in a texture. Each font maps to an integer (monotonically
      * increasing) which forms the upper 32 bits of the key into the glyphCache map. This font cache can include different styles
-     * of the same font family like bold or italic.
+     * of the same font family like bold or italic and different size.
      */
     private final Object2IntMap<Font> fontKeyMap = new Object2IntArrayMap<>(8);
 
@@ -259,7 +259,7 @@ public class GlyphManager {
             e.printStackTrace();
             ModernUI.LOGGER.warn(MARKER, "Built-in font was missing");
         }
-        // Arial
+        // Generally is Arial
         selectedFonts.add(new Font(Font.SANS_SERIF, Font.PLAIN, 72)); //size 1 > 72
     }
 
@@ -270,12 +270,10 @@ public class GlyphManager {
      * @param text        the string to layout
      * @param start       the offset into text at which to start the layout
      * @param limit       the (offset + length) at which to stop performing the layout
-     * @param layoutFlags either Font.LAYOUT_RIGHT_TO_LEFT or Font.LAYOUT_LEFT_TO_RIGHT
-     * @return the newly created GlyphVector
+     * @param layoutFlags either {@link Font#LAYOUT_RIGHT_TO_LEFT} or {@link Font#LAYOUT_LEFT_TO_RIGHT}
+     * @return the newly laid-out GlyphVector
      */
-    public GlyphVector layoutGlyphVector(Font font, char[] text, int start, int limit, int layoutFlags) {
-        /* Ensure this font is already in fontCache so it can be referenced by cacheGlyphs() later on */
-        fontKeyMap.putIfAbsent(font, fontKeyMap.size());
+    public GlyphVector layoutGlyphVector(@Nonnull Font font, char[] text, int start, int limit, int layoutFlags) {
         return font.layoutGlyphVector(glyphTextureGraphics.getFontRenderContext(), text, start, limit, layoutFlags);
     }
 
@@ -284,7 +282,8 @@ public class GlyphManager {
      * in the selected fonts followed by the allFonts.
      *
      * @param codePoint the codePoint to check against the font
-     * @return the font to use in selection list (without fontStyle and fontSize), need to call font.deriveFont
+     * @return the font to use in selection list (without fontStyle and fontSize),
+     * @see #deriveFont(Font, int, int)
      */
     @Nonnull
     public Font lookupFont(int codePoint) {
@@ -320,7 +319,10 @@ public class GlyphManager {
      */
     @Nonnull
     public Font deriveFont(@Nonnull Font font, int fontStyle, int fontSize) {
-        return font.deriveFont(fontStyle, fontSize);
+        font = font.deriveFont(fontStyle, fontSize);
+        /* Ensure this font is already in fontKeyMap so it can be referenced by lookupGlyph() later on */
+        fontKeyMap.putIfAbsent(font, fontKeyMap.size());
+        return font;
     }
 
     /**
@@ -334,7 +336,7 @@ public class GlyphManager {
      */
     @Nonnull
     @Deprecated
-    public Font lookupFont(int codePoint, int fontStyle, int fontSize) {
+    private Font lookupFont(int codePoint, int fontStyle, int fontSize) {
         //int nextOffset;
         // Try using an already known base font;
         // the first font in selectedFonts list is the one set with highest priority
@@ -374,7 +376,7 @@ public class GlyphManager {
      *
      * @param font      the font to which this glyphCode belongs and which was used to pre-render the glyph image in cacheGlyphs(),
      *                  this font param also includes style and font size
-     * @param glyphCode the font specific glyph code to lookup in the cache
+     * @param glyphCode the font specific glyph code to lookup in the cache, for digits {@link #lookupDigits(Font)}
      * @return the cache textured glyph
      */
     @Nonnull
@@ -395,7 +397,7 @@ public class GlyphManager {
      */
     @Nonnull
     @Deprecated
-    public TexturedGlyph lookupGlyph(int codePoint, int fontStyle, int fontSize) {
+    private TexturedGlyph lookupGlyph(int codePoint, int fontStyle, int fontSize) {
         return lookupGlyph(lookupFont(codePoint, fontStyle, fontSize), codePoint);
     }
 
@@ -429,7 +431,7 @@ public class GlyphManager {
         }
 
         int baseline = (int) renderBounds.getY();
-        int advance = Math.round(vector.getGlyphMetrics(0).getAdvanceX());
+        float advance = vector.getGlyphMetrics(0).getAdvanceX();
 
         glyphTextureGraphics.setFont(font);
 
@@ -472,15 +474,16 @@ public class GlyphManager {
      * @return an array of digits 0-9
      */
     @Deprecated
-    public TexturedGlyph[] lookupDigits(int fontStyle, int fontSize) {
+    private TexturedGlyph[] lookupDigits(int fontStyle, int fontSize) {
         return lookupDigits(lookupFont(48, fontStyle, fontSize));
     }
 
     /**
-     * No javadoc, guess for yourself
+     * Basically same as {@link #cacheGlyph(Font, int)}, but all digits width are equal to '0' width
+     * and drawn center aligned based on '0' width
      *
-     * @param font p
-     * @return r
+     * @param font derived font
+     * @return 0-9 digits (in that order)
      */
     @Nonnull
     private TexturedGlyph[] cacheDigits(@Nonnull Font font) {
@@ -490,7 +493,7 @@ public class GlyphManager {
 
         glyphTextureGraphics.setFont(font);
 
-        int standardAdvance = 0;
+        float standardAdvance = 0.0f;
         int standardRenderWidth = 0;
 
         for (int i = 0; i < 10; i++) {
@@ -514,7 +517,7 @@ public class GlyphManager {
 
             int baseline = (int) renderBounds.getY();
             if (i == 0) {
-                standardAdvance = Math.round(vector.getGlyphMetrics(0).getAdvanceX());
+                standardAdvance = vector.getGlyphMetrics(0).getAdvanceX();
                 standardRenderWidth = renderWidth;
             }
 
@@ -765,16 +768,16 @@ public class GlyphManager {
 
         GlStateManager.bindTexture(textureName);
 
-        /* Due to changes in 1.14+, so this ensure pixels are correctly stored from CPU to GPU */
+        /* Due to changes in 1.14+, so this ensures pixels are correctly stored from CPU to GPU */
         GL11.glPixelStorei(GL11.GL_UNPACK_ROW_LENGTH, width); // not full texture
         GL11.glPixelStorei(GL11.GL_UNPACK_SKIP_ROWS, 0);
         GL11.glPixelStorei(GL11.GL_UNPACK_SKIP_PIXELS, 0);
-        GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1); // 1 is Alpha, 1 channel
+        GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1); // 1 is alpha, 1 channel
 
         GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, x, y, width, height,
                 GL11.GL_ALPHA, GL11.GL_UNSIGNED_BYTE, uploadBuffer);
 
-        /*int mipmapLevel = sEnableMipmap ? sMipmapLevel : 0;
+        /* WRONG CODE HERE int mipmapLevel = sEnableMipmap ? sMipmapLevel : 0;
 
         for (int level = 0; level <= mipmapLevel; level++) {
             GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, level, x, y, width, height,
@@ -807,7 +810,8 @@ public class GlyphManager {
         for (int i = 0; i < width * height; i++) {
             //int color = imageData[i];
             //uploadData[i] = (color << 8) | (color >>> 24);
-            // only alpha channel
+
+            /* alpha channel for grayscale texture, because minecraft default blend mode is alpha */
             uploadBuffer.put((byte) (imageData[i] >>> 24));
         }
 

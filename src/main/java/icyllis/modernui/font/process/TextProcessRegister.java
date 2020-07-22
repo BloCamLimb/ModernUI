@@ -18,8 +18,9 @@
 
 package icyllis.modernui.font.process;
 
-import icyllis.modernui.font.glyph.TexturedGlyph;
-import icyllis.modernui.font.node.*;
+import icyllis.modernui.font.node.ColorStateInfo;
+import icyllis.modernui.font.node.EffectRenderInfo;
+import icyllis.modernui.font.node.IGlyphRenderInfo;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.util.text.Style;
 import net.minecraft.util.text.TextFormatting;
@@ -31,6 +32,7 @@ import java.util.List;
 /**
  * Temporary process results
  */
+@Deprecated
 public class TextProcessRegister {
 
     /**
@@ -222,19 +224,19 @@ public class TextProcessRegister {
         advance += adv;
     }
 
-    public void depositGlyph(TexturedGlyph glyph) {
-        glyphs.add(new StaticGlyphInfo(glyph));
+    /*public void depositGlyph(TexturedGlyph glyph) {
+        glyphs.add(new StaticGlyphInfo(glyph, offsetX));
         advance += glyph.advance;
     }
 
     public void depositDigit(int stringIndex, TexturedGlyph[] glyphs) {
         if (currentObfuscated) {
-            this.glyphs.add(new RandomGlyphInfo(glyphs));
+            this.glyphs.add(new RandomGlyphInfo(glyphs, offsetX));
         } else {
-            this.glyphs.add(new DigitGlyphInfo(glyphs, stringIndex));
+            this.glyphs.add(new DigitGlyphInfo(glyphs, offsetX, stringIndex));
         }
         advance += glyphs[0].advance;
-    }
+    }*/
 
     public boolean setDefaultFontStyle() {
         if (currentFontStyle != defaultFontStyle) {

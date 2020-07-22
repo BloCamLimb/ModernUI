@@ -20,7 +20,7 @@ package icyllis.modernui.font.node;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.glyph.GlyphManager;
-import icyllis.modernui.font.process.TextProcessRegister;
+import icyllis.modernui.font.process.FormattingStyle;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.WorldVertexBufferUploader;
@@ -32,9 +32,25 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * The complete node, including
+ * The complete node, including final rendering results and layout information
  */
 public class TextRenderNode {
+
+    /**
+     * Sometimes naive, too simple
+     */
+    public static final TextRenderNode EMPTY = new TextRenderNode(null, null, null, 0) {
+
+        @Override
+        public float drawText(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a) {
+            return 0;
+        }
+
+        @Override
+        public float drawText(Matrix4f matrix, IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, int packedLight) {
+            return 0;
+        }
+    };
 
     /**
      * Vertical adjustment to string position.
@@ -81,7 +97,6 @@ public class TextRenderNode {
     }
 
     public float drawText(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a) {
-        final float startX = x;
         final int startR = r;
         final int startG = g;
         final int startB = b;
@@ -93,7 +108,7 @@ public class TextRenderNode {
         for (int glyphIndex = 0; glyphIndex < glyphs.length; glyphIndex++) {
             if (nextColor.glyphIndex == glyphIndex) {
                 int color = nextColor.color;
-                if (color == TextProcessRegister.NO_COLOR) {
+                if (color == FormattingStyle.NO_COLOR) {
                     r = startR;
                     g = startG;
                     b = startB;
@@ -106,13 +121,14 @@ public class TextRenderNode {
                     nextColor = colors[colorIndex];
                 }
             }
-            x = glyphs[glyphIndex].drawString(builder, raw, x, y, r, g, b, a);
+            glyphs[glyphIndex].drawString(builder, raw, x, y, r, g, b, a);
         }
         if (effects != null) {
+            x += GlyphManager.GLYPH_OFFSET;
             RenderSystem.disableTexture();
             builder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
             for (EffectRenderInfo effect : effects) {
-                effect.drawEffect(builder, startX, y, startR, startG, startB, a);
+                effect.drawEffect(builder, x, y, startR, startG, startB, a);
             }
             builder.finishDrawing();
             WorldVertexBufferUploader.draw(builder);
@@ -121,7 +137,6 @@ public class TextRenderNode {
     }
 
     public float drawText(Matrix4f matrix, IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, int packedLight) {
-        final float startX = x;
         final int startR = r;
         final int startG = g;
         final int startB = b;
@@ -135,7 +150,7 @@ public class TextRenderNode {
         for (int glyphIndex = 0; glyphIndex < glyphs.length; glyphIndex++) {
             if (nextColor.glyphIndex == glyphIndex) {
                 int color = nextColor.color;
-                if (color == TextProcessRegister.NO_COLOR) {
+                if (color == FormattingStyle.NO_COLOR) {
                     r = startR;
                     g = startG;
                     b = startB;
@@ -148,7 +163,7 @@ public class TextRenderNode {
                     nextColor = colors[colorIndex];
                 }
             }
-            x = glyphs[glyphIndex].drawString(matrix, buffer, raw, x, y, r, g, b, a, packedLight);
+            glyphs[glyphIndex].drawString(matrix, buffer, raw, x, y, r, g, b, a, packedLight);
         }
         //FIXME vanilla effects
         /*if (effects != null) {
