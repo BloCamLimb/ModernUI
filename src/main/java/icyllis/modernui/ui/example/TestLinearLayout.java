@@ -74,7 +74,7 @@ public class TestLinearLayout extends LinearLayout {
         protected void onDraw(@Nonnull Canvas canvas) {
             canvas.moveTo(this);
             canvas.resetColor();
-            String str = "\u0625\u0635\u0644\u0627\u062d \u0648\u0627\u0633\u0645";//TextFormatting.UNDERLINE + "Modern" + TextFormatting.AQUA + " UI " + TextFormatting.OBFUSCATED + "\u0629\u064a\u0628\u0631\u0639\u0644\u0627" + TextFormatting.STRIKETHROUGH + "\u2642";
+            String str = "A" + TextFormatting.BLUE + TextFormatting.UNDERLINE;//TextFormatting.UNDERLINE + "Modern" + TextFormatting.AQUA + " UI " + TextFormatting.OBFUSCATED + "\u0629\u064a\u0628\u0631\u0639\u0644\u0627" + TextFormatting.STRIKETHROUGH + "\u2642";
             canvas.drawText(str, 0, 4);
         }
     }
@@ -97,7 +97,7 @@ public class TestLinearLayout extends LinearLayout {
         @Override
         protected void onDraw(@Nonnull Canvas canvas) {
             canvas.moveTo(this);
-            canvas.drawText(TextFormatting.UNDERLINE + "G" + TextFormatting.RESET + " " + TextFormatting.STRIKETHROUGH + "Uko", offset, offsetY + 4);
+            canvas.drawText("" + TextFormatting.RED + TextFormatting.BLUE + "G", offset, offsetY + 4);
         }
 
         @Override

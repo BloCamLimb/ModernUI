@@ -18,6 +18,7 @@
 
 package icyllis.modernui.font.node;
 
+@Deprecated
 public class ColorStateInfo {
 
     /**

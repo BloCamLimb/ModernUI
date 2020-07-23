@@ -31,17 +31,12 @@ import javax.annotation.Nonnull;
 /**
  * The key to fast render digit
  */
-public class DigitGlyphInfo implements IGlyphRenderInfo {
+public class DigitGlyphInfo extends GlyphRenderInfo {
 
     /**
      * A reference of cached array in GlyphManager, 0-9 textured glyphs (in that order)
      */
     private final TexturedGlyph[] glyphs;
-
-    /**
-     * Offset X to the start of the text
-     */
-    private final float offsetX;
 
     /**
      * An array of digit char index of the whole original string.
@@ -53,14 +48,14 @@ public class DigitGlyphInfo implements IGlyphRenderInfo {
      */
     private final int stringIndex;
 
-    public DigitGlyphInfo(TexturedGlyph[] glyphs, float offsetX, int stringIndex) {
+    public DigitGlyphInfo(TexturedGlyph[] glyphs, TextRenderEffect effect, Integer color, float offsetX, int stringIndex) {
+        super(effect, color, offsetX);
         this.glyphs = glyphs;
-        this.offsetX = offsetX;
         this.stringIndex = stringIndex;
     }
 
     @Override
-    public void drawString(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a) {
+    public void drawGlyph(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a) {
         builder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR_TEX);
         glyphs[raw.charAt(stringIndex) - '0'].drawGlyph(builder, x + offsetX, y, r, g, b, a);
         builder.finishDrawing();
@@ -68,7 +63,7 @@ public class DigitGlyphInfo implements IGlyphRenderInfo {
     }
 
     @Override
-    public void drawString(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, int light) {
+    public void drawGlyph(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, int light) {
         glyphs[raw.charAt(stringIndex) - '0'].drawGlyph(matrix, buffer, x + offsetX, y, r, g, b, a, light);
     }
 
