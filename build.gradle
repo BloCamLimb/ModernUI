@@ -128,7 +128,6 @@ dependencies {
     caffeine "com.github.ben-manes.caffeine:caffeine:${caffeine_version}"
 
     compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}:api")
-
     runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}")
 
     compileOnly files('/libs/OptiFine_1.15.2_HD_U_G1_pre14_MOD_dev.jar')

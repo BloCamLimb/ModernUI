@@ -651,6 +651,11 @@ public class TextCacheProcessor {
      * @param flag  layout direction, either {@link Font#LAYOUT_LEFT_TO_RIGHT} or {@link Font#LAYOUT_RIGHT_TO_LEFT}
      */
     private void layoutStyle(@Nonnull TextProcessData data, char[] text, int start, int limit, int flag) {
+        float lastAdvance = data.advance;
+        if (flag == Font.LAYOUT_RIGHT_TO_LEFT) {
+            data.layoutRight = lastAdvance;
+        }
+
         final List<FormattingStyle> codes = data.codes;
         int codeIndex = data.codeIndex;
         /* Break up the string into segments, where each segment has the same font style in use */
@@ -684,6 +689,12 @@ public class TextCacheProcessor {
         }
         /* Store the value */
         data.codeIndex = codeIndex;
+
+        if (flag == Font.LAYOUT_RIGHT_TO_LEFT) {
+            data.mergeGlyphs(data.advance - lastAdvance);
+        } else {
+            data.mergeGlyphs(0);
+        }
     }
 
     /**
@@ -756,39 +767,54 @@ public class TextCacheProcessor {
     private void layoutFont(TextProcessData data, char[] text, int start, int limit, int flag, Font font, boolean random) {
         if (random) {
             /* Random is not worthy to layout */
-            layoutRandom(data, text, start, limit, font);
+            layoutRandom(data, text, start, limit, flag, font);
         } else {
             /* The glyphCode matched to the same codePoint is specified in the font, they are different in different font */
             GlyphVector vector = glyphManager.layoutGlyphVector(font, text, start, limit, flag);
-
+            ModernUI.LOGGER.debug("LayoutFont: {}", String.valueOf(text, start, limit - start));
             int num = vector.getNumGlyphs();
 
             final TexturedGlyph[] digits = glyphManager.lookupDigits(font);
 
             /* Accumulated advance */
-            float aa = 0;
+            float totalAdv = 0;
 
             for (int i = 0; i < num; i++) {
                 int stripIndex = vector.getGlyphCharIndex(i) + start;
                 Point2D point = vector.getGlyphPosition(i);
 
+                float offset = (float) point.getX() / 2;
+                if (flag == Font.LAYOUT_RIGHT_TO_LEFT) {
+                    offset += data.layoutRight;
+                } else {
+                    offset += data.advance;
+                }
+
                 char o = text[stripIndex];
                 /* Digits are not on SMP */
                 if (o <= '9' && o >= '0') {
-                    data.list.add(new ProcessingGlyph(stripIndex, data.advance + (float) point.getX() / 2,
+                    data.minimalList.add(new ProcessingGlyph(stripIndex, offset,
                             digits, ProcessingGlyph.DYNAMIC_DIGIT));
-                    aa += digits[0].advance;
+                    totalAdv += digits[0].advance;
                     continue;
                 }
 
                 int glyphCode = vector.getGlyphCode(i);
                 TexturedGlyph glyph = glyphManager.lookupGlyph(font, glyphCode);
 
-                data.list.add(new ProcessingGlyph(stripIndex, data.advance + (float) point.getX() / 2,
+                data.minimalList.add(new ProcessingGlyph(stripIndex, offset,
                         glyph, ProcessingGlyph.STATIC_TEXT));
-                aa += glyph.advance;
+                totalAdv += glyph.advance;
+                ModernUI.LOGGER.debug("Add Glyph, Adv:{}, X:{}, Code:{}", glyph.advance, offset, glyphCode);
             }
-            data.advance += aa;
+            data.advance += totalAdv;
+
+            if (flag == Font.LAYOUT_RIGHT_TO_LEFT) {
+                data.mergeLayout(-totalAdv);
+                data.layoutRight -= totalAdv;
+            } else {
+                data.mergeLayout(0);
+            }
         }
     }
 
@@ -799,16 +825,30 @@ public class TextCacheProcessor {
      * @param text  the plain text (without formatting codes) to analyze
      * @param start start index (inclusive) of the text
      * @param limit end index (exclusive) of the text
+     * @param flag   layout direction, either {@link Font#LAYOUT_LEFT_TO_RIGHT} or {@link Font#LAYOUT_RIGHT_TO_LEFT}
      * @param font  the derived font with fontStyle and fontSize
      */
-    private void layoutRandom(TextProcessData data, char[] text, int start, int limit, Font font) {
+    private void layoutRandom(TextProcessData data, char[] text, int start, int limit, int flag, Font font) {
         final TexturedGlyph[] digits = glyphManager.lookupDigits(font);
-        final float a = digits[0].advance;
+        final float stdAdv = digits[0].advance;
+
+        float totalAdv = 0;
+        int glyphIndex = 0;
         /* Process code point */
         for (int i = start; i < limit; i++) {
-            data.list.add(new ProcessingGlyph(start + i, data.advance,
+            float offset = glyphIndex * stdAdv;
+            if (flag == Font.LAYOUT_RIGHT_TO_LEFT) {
+                offset += data.layoutRight;
+            } else {
+                offset += data.advance;
+            }
+
+            data.minimalList.add(new ProcessingGlyph(start + i, offset,
                     digits, ProcessingGlyph.RANDOM_DIGIT));
-            data.advance += a;
+
+            totalAdv += stdAdv;
+            glyphIndex++;
+
             char c1 = text[i];
             if (i + 1 < limit && Character.isHighSurrogate(c1)) {
                 char c2 = text[i + 1];
@@ -817,17 +857,25 @@ public class TextCacheProcessor {
                 }
             }
         }
+        data.advance += totalAdv;
+
+        if (flag == Font.LAYOUT_RIGHT_TO_LEFT) {
+            data.mergeLayout(-totalAdv);
+            data.layoutRight -= totalAdv;
+        } else {
+            data.mergeLayout(0);
+        }
     }
 
     private void adjustGlyphIndex(@Nonnull TextProcessData data) {
         /* Sort by stripIndex */
-        Collections.sort(data.list);
+        data.allList.sort(Comparator.comparingInt(ProcessingGlyph::getStringIndex));
 
         /* Shift stripIndex to stringIndex */
         /* Skip the default code */
         int codeIndex = 1, shift = 0;
-        for (int glyphIndex = 0; glyphIndex < data.list.size(); glyphIndex++) {
-            ProcessingGlyph glyph = data.list.get(glyphIndex);
+        for (int glyphIndex = 0; glyphIndex < data.allList.size(); glyphIndex++) {
+            ProcessingGlyph glyph = data.allList.get(glyphIndex);
 
             /*
              * Adjust the string index for each glyph to point into the original string with un-stripped color codes. The while
@@ -835,7 +883,7 @@ public class TextCacheProcessor {
              * stringIndex can now be compared against the color stringIndex during rendering. It also allows lookups of ASCII
              * digits in the original string for fast glyph replacement during rendering.
              */
-            while (codeIndex < data.codes.size() && glyph.stringIndex + shift >= data.list.get(codeIndex).stringIndex) {
+            while (codeIndex < data.codes.size() && glyph.stringIndex + shift >= data.allList.get(codeIndex).stringIndex) {
                 shift += 2;
                 codeIndex++;
             }
@@ -847,7 +895,7 @@ public class TextCacheProcessor {
     private Pair<EffectRenderInfo[], ColorStateInfo[]> resolveEffectAndColor(@Nonnull TextProcessData data) {
         final List<EffectRenderInfo> effects = new ArrayList<>();
         final List<ColorStateInfo> colors = new ArrayList<>();
-        ModernUI.LOGGER.debug("adv: {}", data.advance);
+        //ModernUI.LOGGER.debug("adv: {}", data.advance);
 
         boolean underline = data.codes.get(0).isUnderline();
         boolean strikethrough = data.codes.get(0).isStrikethrough();
@@ -865,8 +913,8 @@ public class TextCacheProcessor {
         for (int codeIndex = 1; codeIndex < data.codes.size(); codeIndex++) {
             FormattingStyle code = data.codes.get(codeIndex);
 
-            while (glyphIndex < data.list.size() - 1 &&
-                    (pg = data.list.get(glyphIndex)).stringIndex < code.stringIndex) {
+            while (glyphIndex < data.allList.size() - 1 &&
+                    (pg = data.allList.get(glyphIndex)).stringIndex < code.stringIndex) {
                 //data.advance += pg.getAdvance();
                 glyphIndex++;
             }
@@ -918,7 +966,7 @@ public class TextCacheProcessor {
         }
 
         /* Handle rest glyphs */
-        while (glyphIndex < data.list.size()) {
+        while (glyphIndex < data.allList.size()) {
             //data.advance += data.list.get(glyphIndex).getAdvance();
             glyphIndex++;
         }
