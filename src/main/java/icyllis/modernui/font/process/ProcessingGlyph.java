@@ -19,12 +19,9 @@
 package icyllis.modernui.font.process;
 
 import icyllis.modernui.font.glyph.TexturedGlyph;
-import icyllis.modernui.font.node.DigitGlyphInfo;
-import icyllis.modernui.font.node.IGlyphRenderInfo;
-import icyllis.modernui.font.node.RandomGlyphInfo;
-import icyllis.modernui.font.node.StaticGlyphInfo;
+import icyllis.modernui.font.node.*;
 
-import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Objects;
 
 /**
@@ -59,43 +56,47 @@ public class ProcessingGlyph {
      */
     public final TexturedGlyph glyph;
 
+    @Nullable
+    public final TextRenderEffect effect;
+
     /**
      * Either {@link #STATIC_TEXT}, {@link #DYNAMIC_DIGIT} or {@link #RANDOM_DIGIT}
      */
     public final byte type;
 
-    public ProcessingGlyph(int stripIndex, float offsetX, TexturedGlyph glyph, byte type) {
+    @Nullable
+    public Integer color;
+
+    public ProcessingGlyph(int stripIndex, float offsetX, TexturedGlyph glyph, @Nullable TextRenderEffect effect, byte type) {
         this.stringIndex = stripIndex;
         this.offsetX = offsetX;
+        this.effect = effect;
         glyphs = null;
         this.glyph = glyph;
         this.type = type;
     }
 
-    public ProcessingGlyph(int stripIndex, float offsetX, TexturedGlyph[] glyphs, byte type) {
+    public ProcessingGlyph(int stripIndex, float offsetX, TexturedGlyph[] glyphs, @Nullable TextRenderEffect effect, byte type) {
         this.stringIndex = stripIndex;
         this.offsetX = offsetX;
         this.glyphs = glyphs;
+        this.effect = effect;
         glyph = null;
         this.type = type;
     }
 
-    public IGlyphRenderInfo toGlyph() {
+    public GlyphRenderInfo toGlyph() {
         switch (type) {
             case DYNAMIC_DIGIT:
-                return new DigitGlyphInfo(glyphs, offsetX, stringIndex);
+                return new DigitGlyphInfo(glyphs, effect, color, offsetX, stringIndex);
             case RANDOM_DIGIT:
-                return new RandomGlyphInfo(glyphs, offsetX);
+                return new RandomGlyphInfo(glyphs, effect, color, offsetX);
             default:
-                return new StaticGlyphInfo(glyph, offsetX);
+                return new StaticGlyphInfo(glyph, effect, color, offsetX);
         }
     }
 
-    /**
-     * For extracting effects
-     *
-     * @return advance
-     */
+    @Deprecated
     public float getAdvance() {
         if (glyph == null) {
             return Objects.requireNonNull(glyphs)[0].advance;

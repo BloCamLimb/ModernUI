@@ -19,8 +19,8 @@
 package icyllis.modernui.font.process;
 
 import icyllis.modernui.font.node.ColorStateInfo;
-import icyllis.modernui.font.node.EffectRenderInfo;
-import icyllis.modernui.font.node.IGlyphRenderInfo;
+import icyllis.modernui.font.node.TextRenderEffect;
+import icyllis.modernui.font.node.GlyphRenderInfo;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.util.text.Style;
 import net.minecraft.util.text.TextFormatting;
@@ -76,8 +76,8 @@ public class TextProcessRegister {
 
     private float advance;
 
-    private final List<IGlyphRenderInfo> glyphs  = new ObjectArrayList<>();
-    private final List<EffectRenderInfo> effects = new ObjectArrayList<>();
+    private final List<GlyphRenderInfo>  glyphs  = new ObjectArrayList<>();
+    private final List<TextRenderEffect> effects = new ObjectArrayList<>();
     private final List<ColorStateInfo>   colors  = new ObjectArrayList<>();
 
     /**
@@ -119,28 +119,28 @@ public class TextProcessRegister {
 
     public void finishProcess() {
         if (currentStrikethrough) {
-            effects.add(EffectRenderInfo.strikethrough(strikethroughStart, advance, currentColor));
+            //effects.add(EffectRenderInfo.strikethrough(strikethroughStart, advance, currentColor));
             strikethroughStart = advance;
         }
         if (currentUnderline) {
-            effects.add(EffectRenderInfo.underline(underlineStart, advance, currentColor));
+            //effects.add(EffectRenderInfo.underline(underlineStart, advance, currentColor));
             underlineStart = advance;
         }
     }
 
     @Nullable
-    public EffectRenderInfo[] wrapEffects() {
+    public TextRenderEffect[] wrapEffects() {
         if (effects.isEmpty()) {
             return null;
         }
-        EffectRenderInfo[] r = effects.toArray(new EffectRenderInfo[0]);
+        TextRenderEffect[] r = effects.toArray(new TextRenderEffect[0]);
         effects.clear();
         return r;
     }
 
     @Nonnull
-    public IGlyphRenderInfo[] wrapGlyphs() {
-        IGlyphRenderInfo[] r = glyphs.toArray(new IGlyphRenderInfo[0]);
+    public GlyphRenderInfo[] wrapGlyphs() {
+        GlyphRenderInfo[] r = glyphs.toArray(new GlyphRenderInfo[0]);
         glyphs.clear();
         return r;
     }
@@ -160,11 +160,11 @@ public class TextProcessRegister {
             if (setColor(formatting.getColor())) {
                 colors.add(new ColorStateInfo(glyphIndex, currentColor));
                 if (currentStrikethrough) {
-                    effects.add(EffectRenderInfo.strikethrough(strikethroughStart, advance, lastColor));
+                    //effects.add(EffectRenderInfo.strikethrough(strikethroughStart, advance, lastColor));
                     strikethroughStart = advance;
                 }
                 if (currentUnderline) {
-                    effects.add(EffectRenderInfo.underline(underlineStart, advance, lastColor));
+                    //effects.add(EffectRenderInfo.underline(underlineStart, advance, lastColor));
                     underlineStart = advance;
                 }
             }
@@ -191,11 +191,11 @@ public class TextProcessRegister {
                     if (setDefaultColor()) {
                         colors.add(new ColorStateInfo(glyphIndex, currentColor));
                         if (currentStrikethrough) {
-                            effects.add(EffectRenderInfo.strikethrough(strikethroughStart, advance, lastColor));
+                            //effects.add(EffectRenderInfo.strikethrough(strikethroughStart, advance, lastColor));
                             strikethroughStart = advance;
                         }
                         if (currentUnderline) {
-                            effects.add(EffectRenderInfo.underline(underlineStart, advance, lastColor));
+                            //effects.add(EffectRenderInfo.underline(underlineStart, advance, lastColor));
                             underlineStart = advance;
                         }
                         p = true;
@@ -203,10 +203,10 @@ public class TextProcessRegister {
                     setDefaultObfuscated();
                     setDefaultFontStyle();
                     if (setDefaultStrikethrough() && !p) {
-                        effects.add(EffectRenderInfo.strikethrough(strikethroughStart, advance, currentColor));
+                        //effects.add(EffectRenderInfo.strikethrough(strikethroughStart, advance, currentColor));
                     }
                     if (setDefaultUnderline() && !p) {
-                        effects.add(EffectRenderInfo.underline(underlineStart, advance, currentColor));
+                        //effects.add(EffectRenderInfo.underline(underlineStart, advance, currentColor));
                     }
                 }
                 break;

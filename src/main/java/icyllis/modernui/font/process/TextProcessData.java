@@ -18,8 +18,9 @@
 
 package icyllis.modernui.font.process;
 
-import icyllis.modernui.font.node.IGlyphRenderInfo;
+import icyllis.modernui.font.node.GlyphRenderInfo;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,6 +46,11 @@ public class TextProcessData {
      */
     public final List<ProcessingGlyph> minimalList = new ArrayList<>();
 
+    /*
+     * All color states
+     */
+    //public final List<ColorStateInfo> colors = new ArrayList<>();
+
     /**
      * Indicates current style index in {@link #codes} for layout processing
      */
@@ -60,7 +66,9 @@ public class TextProcessData {
      */
     public float layoutRight;
 
-    public void mergeGlyphs(float adjust) {
+    public boolean hasEffect;
+
+    public void finishStyleLayout(float adjust) {
         if (adjust != 0) {
             layoutList.forEach(e -> e.offsetX += adjust);
         }
@@ -68,7 +76,7 @@ public class TextProcessData {
         layoutList.clear();
     }
 
-    public void mergeLayout(float adjust) {
+    public void finishFontLayout(float adjust) {
         if (adjust != 0) {
             minimalList.forEach(e -> e.offsetX += adjust);
         }
@@ -76,17 +84,48 @@ public class TextProcessData {
         minimalList.clear();
     }
 
-    public IGlyphRenderInfo[] wrapGlyphs() {
-        return allList.stream().map(ProcessingGlyph::toGlyph).toArray(IGlyphRenderInfo[]::new);
+    /*private void merge(@Nonnull List<float[]> list, int color, byte type) {
+        if (list.isEmpty()) {
+            return;
+        }
+        list.sort((o1, o2) -> Float.compare(o1[0], o2[0]));
+        float[][] res = new float[list.size()][2];
+        int i = -1;
+        for (float[] interval : list) {
+            if (i == -1 || interval[0] > res[i][1]) {
+                res[++i] = interval;
+            } else {
+                res[i][1] = Math.max(res[i][1], interval[1]);
+            }
+        }
+        res = Arrays.copyOf(res, i + 1);
+        for (float[] in : res) {
+            effects.add(new EffectRenderInfo(in[0], in[1], color, type));
+        }
+        list.clear();
+    }*/
+
+    @Nonnull
+    public GlyphRenderInfo[] wrapGlyphs() {
+        return allList.stream().map(ProcessingGlyph::toGlyph).toArray(GlyphRenderInfo[]::new);
     }
 
-    public float wrapAdvance() {
-        float r = advance;
+    /*@Nonnull
+    public ColorStateInfo[] wrapColors() {
+        if (colors.isEmpty()) {
+            return ColorStateInfo.NO_COLOR_STATE;
+        }
+        return colors.toArray(new ColorStateInfo[0]);
+    }*/
+
+    public void release() {
         allList.clear();
         codes.clear();
+        //colors.clear();
         codeIndex = 0;
         advance = 0;
-        return r;
+        layoutRight = 0;
+        hasEffect = false;
     }
 
 }

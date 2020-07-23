@@ -29,7 +29,7 @@ import org.lwjgl.opengl.GL11;
 import javax.annotation.Nonnull;
 import java.util.Random;
 
-public class RandomGlyphInfo implements IGlyphRenderInfo {
+public class RandomGlyphInfo extends GlyphRenderInfo {
 
     private static final Random RANDOM = new Random();
 
@@ -38,18 +38,13 @@ public class RandomGlyphInfo implements IGlyphRenderInfo {
      */
     private final TexturedGlyph[] glyphs;
 
-    /**
-     * Offset X to the start of the text
-     */
-    private final float offsetX;
-
-    public RandomGlyphInfo(TexturedGlyph[] glyphs, float offsetX) {
+    public RandomGlyphInfo(TexturedGlyph[] glyphs, TextRenderEffect effect, Integer color, float offsetX) {
+        super(effect, color, offsetX);
         this.glyphs = glyphs;
-        this.offsetX = offsetX;
     }
 
     @Override
-    public void drawString(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a) {
+    public void drawGlyph(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a) {
         builder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR_TEX);
         glyphs[RANDOM.nextInt(glyphs.length)].drawGlyph(builder, x + offsetX, y, r, g, b, a);
         builder.finishDrawing();
@@ -57,7 +52,7 @@ public class RandomGlyphInfo implements IGlyphRenderInfo {
     }
 
     @Override
-    public void drawString(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, int light) {
+    public void drawGlyph(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, int light) {
         glyphs[RANDOM.nextInt(glyphs.length)].drawGlyph(matrix, buffer, x + offsetX, y, r, g, b, a, light);
     }
 

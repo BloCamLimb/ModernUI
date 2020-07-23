@@ -28,25 +28,20 @@ import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 
-public class StaticGlyphInfo implements IGlyphRenderInfo {
+public class StaticGlyphInfo extends GlyphRenderInfo {
 
     /**
      * The immutable glyph to render
      */
     private final TexturedGlyph glyph;
 
-    /**
-     * Offset X to the start of the text
-     */
-    private final float offsetX;
-
-    public StaticGlyphInfo(TexturedGlyph glyph, float offsetX) {
+    public StaticGlyphInfo(TexturedGlyph glyph, TextRenderEffect effect, Integer color, float offsetX) {
+        super(effect, color, offsetX);
         this.glyph = glyph;
-        this.offsetX = offsetX;
     }
 
     @Override
-    public void drawString(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a) {
+    public void drawGlyph(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a) {
         builder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR_TEX);
         glyph.drawGlyph(builder, x + offsetX, y, r, g, b, a);
         builder.finishDrawing();
@@ -54,7 +49,7 @@ public class StaticGlyphInfo implements IGlyphRenderInfo {
     }
 
     @Override
-    public void drawString(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, int light) {
+    public void drawGlyph(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, int light) {
         glyph.drawGlyph(matrix, buffer, x + offsetX, y, r, g, b, a, light);
     }
 

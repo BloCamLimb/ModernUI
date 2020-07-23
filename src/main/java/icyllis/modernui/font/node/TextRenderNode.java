@@ -19,6 +19,7 @@
 package icyllis.modernui.font.node;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.IVertexBuilder;
 import icyllis.modernui.font.glyph.GlyphManager;
 import icyllis.modernui.font.process.FormattingStyle;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -29,7 +30,6 @@ import net.minecraft.util.math.vector.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * The complete node, including final rendering results and layout information
@@ -39,7 +39,7 @@ public class TextRenderNode {
     /**
      * Sometimes naive, too simple
      */
-    public static final TextRenderNode EMPTY = new TextRenderNode(null, null, null, 0) {
+    public static final TextRenderNode EMPTY = new TextRenderNode(null, 0, false) {
 
         @Override
         public float drawText(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a) {
@@ -58,7 +58,7 @@ public class TextRenderNode {
     private static final int BASELINE_OFFSET = 7;
 
     /**
-     * Who knows what happened in 1.16?
+     * Vertical adjustment to string position.
      */
     private static final int VANILLA_BASELINE_OFFSET = 6;
 
@@ -66,34 +66,25 @@ public class TextRenderNode {
     /**
      * All glyphs to render.
      */
-    private final IGlyphRenderInfo[] glyphs;
+    private final GlyphRenderInfo[] glyphs;
 
-    /**
-     * All effects to render.
-     */
-    @Nullable
-    private final EffectRenderInfo[] effects;
-
-    /**
+    /*
      * Switch current color
      */
-    @Nonnull
-    private final ColorStateInfo[] colors;
+    //private final ColorStateInfo[] colors;
 
     /**
      * Total advance of this text node.
      */
     public final float advance;
 
-    public TextRenderNode(IGlyphRenderInfo[] glyphs, @Nullable EffectRenderInfo[] effects, @Nullable ColorStateInfo[] colors, float advance) {
+    private final boolean hasEffect;
+
+    public TextRenderNode(GlyphRenderInfo[] glyphs, float advance, boolean hasEffect) {
         this.glyphs = glyphs;
-        this.effects = effects;
-        if (colors == null) {
-            this.colors = ColorStateInfo.NO_COLOR_STATE;
-        } else {
-            this.colors = colors;
-        }
+        //this.colors = colors;
         this.advance = advance;
+        this.hasEffect = hasEffect;
     }
 
     public float drawText(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a) {
@@ -103,11 +94,9 @@ public class TextRenderNode {
         y += BASELINE_OFFSET;
         x -= GlyphManager.GLYPH_OFFSET;
         RenderSystem.enableTexture();
-        int colorIndex = 0;
-        ColorStateInfo nextColor = colors[colorIndex];
-        for (int glyphIndex = 0; glyphIndex < glyphs.length; glyphIndex++) {
-            if (nextColor.glyphIndex == glyphIndex) {
-                int color = nextColor.color;
+        for (GlyphRenderInfo glyph : glyphs) {
+            if (glyph.color != null) {
+                int color = glyph.color;
                 if (color == FormattingStyle.NO_COLOR) {
                     r = startR;
                     g = startG;
@@ -117,18 +106,30 @@ public class TextRenderNode {
                     g = color >> 8 & 0xff;
                     b = color & 0xff;
                 }
-                if (++colorIndex < colors.length) {
-                    nextColor = colors[colorIndex];
-                }
             }
-            glyphs[glyphIndex].drawString(builder, raw, x, y, r, g, b, a);
+            glyph.drawGlyph(builder, raw, x, y, r, g, b, a);
         }
-        if (effects != null) {
+        if (hasEffect) {
+            r = startR;
+            g = startG;
+            b = startB;
             x += GlyphManager.GLYPH_OFFSET;
             RenderSystem.disableTexture();
             builder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
-            for (EffectRenderInfo effect : effects) {
-                effect.drawEffect(builder, x, y, startR, startG, startB, a);
+            for (GlyphRenderInfo glyph : glyphs) {
+                if (glyph.color != null) {
+                    int color = glyph.color;
+                    if (color == FormattingStyle.NO_COLOR) {
+                        r = startR;
+                        g = startG;
+                        b = startB;
+                    } else {
+                        r = color >> 16 & 0xff;
+                        g = color >> 8 & 0xff;
+                        b = color & 0xff;
+                    }
+                }
+                glyph.drawEffect(builder, x, y, r, g, b, a);
             }
             builder.finishDrawing();
             WorldVertexBufferUploader.draw(builder);
@@ -145,11 +146,9 @@ public class TextRenderNode {
         }
         y += VANILLA_BASELINE_OFFSET;
         x -= GlyphManager.GLYPH_OFFSET;
-        int colorIndex = 0;
-        ColorStateInfo nextColor = colors[colorIndex];
-        for (int glyphIndex = 0; glyphIndex < glyphs.length; glyphIndex++) {
-            if (nextColor.glyphIndex == glyphIndex) {
-                int color = nextColor.color;
+        for (GlyphRenderInfo glyph : glyphs) {
+            if (glyph.color != null) {
+                int color = glyph.color;
                 if (color == FormattingStyle.NO_COLOR) {
                     r = startR;
                     g = startG;
@@ -159,28 +158,31 @@ public class TextRenderNode {
                     g = color >> 8 & 0xff;
                     b = color & 0xff;
                 }
-                if (++colorIndex < colors.length) {
-                    nextColor = colors[colorIndex];
-                }
             }
-            glyphs[glyphIndex].drawString(matrix, buffer, raw, x, y, r, g, b, a, packedLight);
+            glyph.drawGlyph(matrix, buffer, raw, x, y, r, g, b, a, packedLight);
         }
-        //FIXME vanilla effects
-        /*if (effects != null) {
-            if (buffer instanceof IRenderTypeBuffer.Impl) {
-                ((IRenderTypeBuffer.Impl) buffer).finish();
+        if (hasEffect) {
+            r = startR;
+            g = startG;
+            b = startB;
+            x += GlyphManager.GLYPH_OFFSET;
+            IVertexBuilder builder = buffer.getBuffer(EffectRenderType.INSTANCE);
+            for (GlyphRenderInfo glyph : glyphs) {
+                if (glyph.color != null) {
+                    int color = glyph.color;
+                    if (color == FormattingStyle.NO_COLOR) {
+                        r = startR;
+                        g = startG;
+                        b = startB;
+                    } else {
+                        r = color >> 16 & 0xff;
+                        g = color >> 8 & 0xff;
+                        b = color & 0xff;
+                    }
+                }
+                glyph.drawEffect(matrix, builder, x, y, r, g, b, a, packedLight);
             }
-            RenderSystem.disableTexture();
-            RenderSystem.enableCull();
-            BufferBuilder builder = Tessellator.getInstance().getBuffer();
-            builder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
-            for (EffectRenderInfo effect : effects) {
-                effect.drawEffect(builder, startX, y, startR, startG, startB, a);
-            }
-            builder.finishDrawing();
-            WorldVertexBufferUploader.draw(builder);
-            RenderSystem.disableCull();
-        }*/
+        }
         return advance;
     }
 }

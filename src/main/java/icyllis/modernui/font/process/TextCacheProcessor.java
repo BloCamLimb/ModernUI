@@ -25,15 +25,12 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.font.glyph.GlyphManager;
 import icyllis.modernui.font.glyph.TexturedGlyph;
-import icyllis.modernui.font.node.ColorStateInfo;
-import icyllis.modernui.font.node.EffectRenderInfo;
-import icyllis.modernui.font.node.IGlyphRenderInfo;
+import icyllis.modernui.font.node.GlyphRenderInfo;
+import icyllis.modernui.font.node.TextRenderEffect;
 import icyllis.modernui.font.node.TextRenderNode;
 import icyllis.modernui.graphics.math.Color3i;
-import icyllis.modernui.system.ModernUI;
 import net.minecraft.util.text.Style;
 import net.minecraft.util.text.TextFormatting;
-import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -410,21 +407,21 @@ public class TextCacheProcessor {
             /* Step 6 */
             adjustGlyphIndex(data);
 
-            /* Step 7-8 */
-            Pair<EffectRenderInfo[], ColorStateInfo[]> pair = resolveEffectAndColor(data);
+            /* Step 7 */
+            insertColorState(data);
+
+            /* Step 8 */
+            GlyphRenderInfo[] glyphs = data.wrapGlyphs();
 
             /* Step 9 */
-            IGlyphRenderInfo[] glyphs = data.wrapGlyphs();
-
-            /* Step 10 */
-            node = new TextRenderNode(glyphs,
-                    pair.getLeft(), pair.getRight(), data.wrapAdvance());
+            node = new TextRenderNode(glyphs, data.advance, data.hasEffect);
         }
 
         /* Sometimes naive, too young too simple */
         else {
             node = TextRenderNode.EMPTY;
         }
+        data.release();
 
         stringCache.put(key, node);
 
@@ -576,6 +573,7 @@ public class TextCacheProcessor {
                 /* forceFormatting will set all FancyStyling (like BOLD, UNDERLINE) to false if this is a color formatting */
                 style = style.forceFormatting(formatting);
 
+
                 data.codes.add(new FormattingStyle(next, next - shift, style));
             }
 
@@ -691,9 +689,9 @@ public class TextCacheProcessor {
         data.codeIndex = codeIndex;
 
         if (flag == Font.LAYOUT_RIGHT_TO_LEFT) {
-            data.mergeGlyphs(data.advance - lastAdvance);
+            data.finishStyleLayout(data.advance - lastAdvance);
         } else {
-            data.mergeGlyphs(0);
+            data.finishStyleLayout(0);
         }
     }
 
@@ -715,7 +713,7 @@ public class TextCacheProcessor {
          * the same positions. Under Windows, Java's "SansSerif" logical font uses the "Arial" font for digits, in which the "1"
          * digit is slightly narrower than all other digits. Checking the digitGlyphsReady flag prevents a chicken-and-egg
          * problem where the digit glyphs have to be initially cached and the digitGlyphs[] array initialized without replacing
-         * every digit with '0'.
+         * every digit with '0'. Digits are not on SMP.
          */
         for (int i = start; i < limit; i++) {
             if (text[i] <= '9' && text[i] >= '0') {
@@ -727,6 +725,21 @@ public class TextCacheProcessor {
         Font font = null;
 
         int last = start;
+
+        final TextRenderEffect effect;
+        if (style.isUnderline()) {
+            if (style.isStrikethrough()) {
+                effect = TextRenderEffect.UNDERLINE_STRIKETHROUGH;
+            } else {
+                effect = TextRenderEffect.UNDERLINE;
+            }
+            data.hasEffect = true;
+        } else if (style.isStrikethrough()) {
+            effect = TextRenderEffect.STRIKETHROUGH;
+            data.hasEffect = true;
+        } else {
+            effect = null;
+        }
 
         /* Scan code point one by one, to use best matched font into segments */
         int codePoint;
@@ -749,10 +762,11 @@ public class TextCacheProcessor {
                 font = glyphManager.lookupFont(codePoint);
             } else {
                 Font f = glyphManager.lookupFont(codePoint);
-                /* singleton, so don't have to use equals() */
+                /* singleton, so don't have to use equals(); space character (32) should not affect the font */
                 if (font != f && codePoint != 32) {
                     layoutFont(data, text, last, next, flag, glyphManager.deriveFont(
-                            font, style.getFontStyle(), sDefaultFontSize), style.isObfuscated());
+                            font, style.getFontStyle(), sDefaultFontSize), style.isObfuscated(),
+                            effect);
                     font = f;
                     last = next;
                 }
@@ -762,7 +776,8 @@ public class TextCacheProcessor {
         /* layout the rest text if not empty */
         if (font != null) {
             layoutFont(data, text, last, limit, flag, glyphManager.deriveFont(
-                    font, style.getFontStyle(), sDefaultFontSize), style.isObfuscated());
+                    font, style.getFontStyle(), sDefaultFontSize), style.isObfuscated(),
+                    effect);
         }
     }
 
@@ -776,11 +791,13 @@ public class TextCacheProcessor {
      * @param flag   layout direction, either {@link Font#LAYOUT_LEFT_TO_RIGHT} or {@link Font#LAYOUT_RIGHT_TO_LEFT}
      * @param font   the derived font with fontStyle and fontSize
      * @param random whether to layout obfuscated characters or not
+     * @param effect text render effect
      */
-    private void layoutFont(TextProcessData data, char[] text, int start, int limit, int flag, Font font, boolean random) {
+    private void layoutFont(TextProcessData data, char[] text, int start, int limit, int flag, Font font, boolean random,
+                            TextRenderEffect effect) {
         if (random) {
             /* Random is not worthy to layout */
-            layoutRandom(data, text, start, limit, flag, font);
+            layoutRandom(data, text, start, limit, flag, font, effect);
         } else {
             /* The glyphCode matched to the same codePoint is specified in the font, they are different in different font */
             GlyphVector vector = glyphManager.layoutGlyphVector(font, text, start, limit, flag);
@@ -789,8 +806,8 @@ public class TextCacheProcessor {
             final TexturedGlyph[] digits = glyphManager.lookupDigits(font);
 
             for (int i = 0; i < num; i++) {
-                /* Exclude space or some characters (e.g in Hindi) */
-                if (vector.getGlyphVisualBounds(i).getBounds2D().getWidth() == 0) {
+                /* Exclude some auxiliary characters (e.g in Hindi) */
+                if (vector.getGlyphMetrics(i).getAdvanceX() == 0) {
                     continue;
                 }
 
@@ -809,7 +826,7 @@ public class TextCacheProcessor {
                 /* Digits are not on SMP */
                 if (o == '0') {
                     data.minimalList.add(new ProcessingGlyph(stripIndex, offset,
-                            digits, ProcessingGlyph.DYNAMIC_DIGIT));
+                            digits, effect, ProcessingGlyph.DYNAMIC_DIGIT));
                     continue;
                 }
 
@@ -817,17 +834,17 @@ public class TextCacheProcessor {
                 TexturedGlyph glyph = glyphManager.lookupGlyph(font, glyphCode);
 
                 data.minimalList.add(new ProcessingGlyph(stripIndex, offset,
-                        glyph, ProcessingGlyph.STATIC_TEXT));
+                        glyph, effect, ProcessingGlyph.STATIC_TEXT));
             }
 
             float totalAdvance = (float) (vector.getGlyphPosition(num).getX() / 2);
             data.advance += totalAdvance;
 
             if (flag == Font.LAYOUT_RIGHT_TO_LEFT) {
-                data.mergeLayout(-totalAdvance);
+                data.finishFontLayout(-totalAdvance);
                 data.layoutRight -= totalAdvance;
             } else {
-                data.mergeLayout(0);
+                data.finishFontLayout(0);
             }
         }
     }
@@ -835,14 +852,16 @@ public class TextCacheProcessor {
     /**
      * Simple layout for random digits
      *
-     * @param data  an object to store the results
-     * @param text  the plain text (without formatting codes) to analyze
-     * @param start start index (inclusive) of the text
-     * @param limit end index (exclusive) of the text
-     * @param flag  layout direction, either {@link Font#LAYOUT_LEFT_TO_RIGHT} or {@link Font#LAYOUT_RIGHT_TO_LEFT}
-     * @param font  the derived font with fontStyle and fontSize
+     * @param data   an object to store the results
+     * @param text   the plain text (without formatting codes) to analyze
+     * @param start  start index (inclusive) of the text
+     * @param limit  end index (exclusive) of the text
+     * @param flag   layout direction, either {@link Font#LAYOUT_LEFT_TO_RIGHT} or {@link Font#LAYOUT_RIGHT_TO_LEFT}
+     * @param font   the derived font with fontStyle and fontSize
+     * @param effect text render effect
      */
-    private void layoutRandom(TextProcessData data, char[] text, int start, int limit, int flag, Font font) {
+    private void layoutRandom(TextProcessData data, char[] text, int start, int limit, int flag, Font font,
+                              TextRenderEffect effect) {
         final TexturedGlyph[] digits = glyphManager.lookupDigits(font);
         final float stdAdv = digits[0].advance;
 
@@ -856,7 +875,7 @@ public class TextCacheProcessor {
         /* Process code point */
         for (int i = start; i < limit; i++) {
             data.minimalList.add(new ProcessingGlyph(start + i, offset,
-                    digits, ProcessingGlyph.RANDOM_DIGIT));
+                    digits, effect, ProcessingGlyph.RANDOM_DIGIT));
 
             offset += stdAdv;
 
@@ -872,10 +891,10 @@ public class TextCacheProcessor {
         data.advance += offset;
 
         if (flag == Font.LAYOUT_RIGHT_TO_LEFT) {
-            data.mergeLayout(-offset);
+            data.finishFontLayout(-offset);
             data.layoutRight -= offset;
         } else {
-            data.mergeLayout(0);
+            data.finishFontLayout(0);
         }
     }
 
@@ -885,22 +904,22 @@ public class TextCacheProcessor {
      * @param data data
      */
     private void adjustGlyphIndex(@Nonnull TextProcessData data) {
-        /* Sort by stripIndex */
+        /* Sort by stripIndex, mixed with LTR and RTL layout */
         data.allList.sort(Comparator.comparingInt(ProcessingGlyph::getStringIndex));
 
+        final List<FormattingStyle> codes = data.codes;
+        final List<ProcessingGlyph> glyphs = data.allList;
         /* Shift stripIndex to stringIndex */
         /* Skip the default code */
         int codeIndex = 1, shift = 0;
-        for (int glyphIndex = 0; glyphIndex < data.allList.size(); glyphIndex++) {
-            ProcessingGlyph glyph = data.allList.get(glyphIndex);
-
+        for (ProcessingGlyph glyph : glyphs) {
             /*
              * Adjust the string index for each glyph to point into the original string with un-stripped color codes. The while
              * loop is necessary to handle multiple consecutive color codes with no visible glyphs between them. These new adjusted
              * stringIndex can now be compared against the color stringIndex during rendering. It also allows lookups of ASCII
              * digits in the original string for fast glyph replacement during rendering.
              */
-            while (codeIndex < data.codes.size() && glyph.stringIndex + shift >= data.codes.get(codeIndex).stringIndex) {
+            while (codeIndex < codes.size() && glyph.stringIndex + shift >= codes.get(codeIndex).stringIndex) {
                 shift += 2;
                 codeIndex++;
             }
@@ -908,25 +927,80 @@ public class TextCacheProcessor {
         }
     }
 
-    @Nonnull
-    private Pair<EffectRenderInfo[], ColorStateInfo[]> resolveEffectAndColor(@Nonnull TextProcessData data) {
-        final List<EffectRenderInfo> effects = new ArrayList<>();
-        final List<ColorStateInfo> colors = new ArrayList<>();
-        //ModernUI.LOGGER.debug("adv: {}", data.advance);
+    private void insertColorState(@Nonnull TextProcessData data) {
+        final List<FormattingStyle> codes = data.codes;
+        final List<ProcessingGlyph> glyphs = data.allList;
 
-        boolean underline = data.codes.get(0).isUnderline();
-        boolean strikethrough = data.codes.get(0).isStrikethrough();
+        int codeIndex = 0;
+        while (codeIndex < codes.size() - 1 &&
+                codes.get(codeIndex).stripIndex == codes.get(codeIndex + 1).stripIndex) {
+            codeIndex++;
+        }
+        /*boolean underline = codes.get(codeIndex).isUnderline();
+        boolean strikethrough = codes.get(codeIndex).isStrikethrough();*/
 
-        int color = data.codes.get(0).getColor();
+        int color = codes.get(codeIndex).getColor();
+        /* The default is no color */
         if (color != FormattingStyle.NO_COLOR) {
-            colors.add(new ColorStateInfo(0, color));
+            glyphs.get(0).color = color;
         }
 
-        float start1 = 0;
+        if (++codeIndex < codes.size()) {
+            ProcessingGlyph glyph;
+            for (int glyphIndex = 1; glyphIndex < glyphs.size(); glyphIndex++) {
+                glyph = glyphs.get(glyphIndex);
+                /*if (underline) {
+                    if (strikethrough) {
+                        glyph.effect = TextRenderEffect.UNDERLINE_STRIKETHROUGH;
+                    } else {
+                        glyph.effect = TextRenderEffect.UNDERLINE;
+                    }
+                    data.hasEffect = true;
+                } else if (strikethrough) {
+                    glyph.effect = TextRenderEffect.STRIKETHROUGH;
+                    data.hasEffect = true;
+                }*/
+
+                if (codeIndex < codes.size() && glyph.stringIndex > codes.get(codeIndex).stringIndex) {
+                    /* In case of multiple consecutive color codes with the same stripIndex,
+                    select the last one which will have active font style */
+                    while (codeIndex < codes.size() - 1 &&
+                            codes.get(codeIndex).stripIndex == codes.get(codeIndex + 1).stripIndex) {
+                        codeIndex++;
+                    }
+
+                    FormattingStyle s = codes.get(codeIndex);
+                    if (s.getColor() != color) {
+                        color = s.getColor();
+                        glyph.color = color;
+                    }
+                    /*underline = s.isUnderline();
+                    strikethrough = s.isStrikethrough();*/
+
+                    codeIndex++;
+                }
+            }
+        }
+
+        /* Sometimes naive */
+        /*else {
+            if (underline) {
+                if (strikethrough) {
+                    glyphs.forEach(e -> e.effect = TextRenderEffect.UNDERLINE_STRIKETHROUGH);
+                } else {
+                    glyphs.forEach(e -> e.effect = TextRenderEffect.UNDERLINE);
+                }
+                data.hasEffect = true;
+            } else if (strikethrough) {
+                glyphs.forEach(e -> e.effect = TextRenderEffect.STRIKETHROUGH);
+                data.hasEffect = true;
+            }
+        }*/
+
+        /*float start1 = 0;
         float start2 = 0;
 
         int glyphIndex = 0;
-        ProcessingGlyph pg;
         for (int codeIndex = 1; codeIndex < data.codes.size(); codeIndex++) {
             FormattingStyle code = data.codes.get(codeIndex);
 
@@ -982,27 +1056,19 @@ public class TextCacheProcessor {
             }
         }
 
-        /* Handle rest glyphs */
         while (glyphIndex < data.allList.size()) {
             //data.advance += data.list.get(glyphIndex).getAdvance();
             glyphIndex++;
-        }
+        }*/
 
-        /* Add last effects */
-        if (underline) {
+        /*if (underline) {
             //effects.add(EffectRenderInfo.underline(start1, data.advance, color));
+            data.mergeUnderline(color);
         }
         if (strikethrough) {
             //effects.add(EffectRenderInfo.strikethrough(start2, data.advance, color));
-        }
-
-        if (colors.isEmpty()) {
-            return Pair.of(effects.isEmpty() ? null : effects.toArray(new EffectRenderInfo[0]),
-                    null);
-        } else {
-            return Pair.of(effects.isEmpty() ? null : effects.toArray(new EffectRenderInfo[0]),
-                    colors.toArray(new ColorStateInfo[0]));
-        }
+            data.mergeStrikethrough(color);
+        }*/
     }
 
     /**

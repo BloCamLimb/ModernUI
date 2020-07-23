@@ -56,8 +56,6 @@ public class FormattingStyle {
      */
     private static final byte OBFUSCATED_MASK    = 1 << 4;
 
-    private static final byte LAYOUT_MASK = FONT_STYLE_MASK | OBFUSCATED_MASK;
-
     /**
      * Represent to use default color
      */
@@ -87,7 +85,6 @@ public class FormattingStyle {
      *       1    UNDERLINE
      *      1     STRIKETHROUGH
      *     1      OBFUSCATED
-     *     1  11  LAYOUT_MASK
      * |--------|
      */
     /**
@@ -179,6 +176,6 @@ public class FormattingStyle {
      * @return if layout style equals
      */
     public boolean layoutStyleEquals(@Nonnull FormattingStyle s) {
-        return (flags & LAYOUT_MASK) == (s.flags & LAYOUT_MASK);
+        return flags == s.flags;
     }
 }
