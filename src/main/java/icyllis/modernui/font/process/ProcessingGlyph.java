@@ -30,7 +30,7 @@ import java.util.Objects;
 /**
  * Temporary resulted glyph
  */
-public class ProcessingGlyph implements Comparable<ProcessingGlyph> {
+public class ProcessingGlyph {
 
     public static final byte STATIC_TEXT = 0;
 
@@ -43,7 +43,10 @@ public class ProcessingGlyph implements Comparable<ProcessingGlyph> {
      */
     public int stringIndex;
 
-    public final float offsetX;
+    /**
+     * It will be adjusted in RTL layout
+     */
+    public float offsetX;
 
     /**
      * For type {@link #DYNAMIC_DIGIT} or {@link #RANDOM_DIGIT}
@@ -94,14 +97,13 @@ public class ProcessingGlyph implements Comparable<ProcessingGlyph> {
      * @return advance
      */
     public float getAdvance() {
-        if (glyphs == null) {
-            return Objects.requireNonNull(glyph).advance;
+        if (glyph == null) {
+            return Objects.requireNonNull(glyphs)[0].advance;
         }
-        return glyphs[0].advance;
+        return glyph.advance;
     }
 
-    @Override
-    public int compareTo(@Nonnull ProcessingGlyph o) {
-        return Integer.compare(stringIndex, o.stringIndex);
+    public int getStringIndex() {
+        return stringIndex;
     }
 }

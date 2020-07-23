@@ -31,9 +31,19 @@ public class TextProcessData {
     public final List<FormattingStyle> codes = new ArrayList<>();
 
     /**
-     * List of processing glyphs
+     * List of all processing glyphs
      */
-    public final List<ProcessingGlyph> list = new ArrayList<>();
+    public final List<ProcessingGlyph> allList = new ArrayList<>();
+
+    /**
+     * List of processing glyphs with same layout direction
+     */
+    public final List<ProcessingGlyph> layoutList = new ArrayList<>();
+
+    /**
+     * Used in layoutFont
+     */
+    public final List<ProcessingGlyph> minimalList = new ArrayList<>();
 
     /**
      * Indicates current style index in {@link #codes} for layout processing
@@ -45,17 +55,34 @@ public class TextProcessData {
      */
     public float advance;
 
-    public float layoutLeft;
-
+    /**
+     * Needed in RTL layout
+     */
     public float layoutRight;
 
+    public void mergeGlyphs(float adjust) {
+        if (adjust != 0) {
+            layoutList.forEach(e -> e.offsetX += adjust);
+        }
+        allList.addAll(layoutList);
+        layoutList.clear();
+    }
+
+    public void mergeLayout(float adjust) {
+        if (adjust != 0) {
+            minimalList.forEach(e -> e.offsetX += adjust);
+        }
+        layoutList.addAll(minimalList);
+        minimalList.clear();
+    }
+
     public IGlyphRenderInfo[] wrapGlyphs() {
-        return list.stream().map(ProcessingGlyph::toGlyph).toArray(IGlyphRenderInfo[]::new);
+        return allList.stream().map(ProcessingGlyph::toGlyph).toArray(IGlyphRenderInfo[]::new);
     }
 
     public float wrapAdvance() {
         float r = advance;
-        list.clear();
+        allList.clear();
         codes.clear();
         codeIndex = 0;
         advance = 0;
