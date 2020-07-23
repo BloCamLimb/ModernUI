@@ -204,6 +204,12 @@ public class ModernFontRenderer extends FontRenderer {
 
     }*/
 
+    @Deprecated
+    @Override
+    public boolean getBidiFlag() {
+        return false;
+    }
+
     /**
      * Bidi always works no matter what language is in
      *

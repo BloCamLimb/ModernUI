@@ -430,7 +430,8 @@ public class GlyphManager {
             allocateGlyphTexture();
         }
 
-        int baseline = (int) renderBounds.getY();
+        int baselineX = (int) renderBounds.getX();
+        int baselineY = (int) renderBounds.getY();
         float advance = vector.getGlyphMetrics(0).getAdvanceX();
 
         glyphTextureGraphics.setFont(font);
@@ -440,14 +441,14 @@ public class GlyphManager {
         int width = renderWidth + GLYPH_BORDER * 2;
         int height = renderHeight + GLYPH_BORDER * 2;
 
-        glyphTextureGraphics.drawGlyphVector(vector, currPosX, currPosY - baseline);
+        glyphTextureGraphics.drawGlyphVector(vector, currPosX - baselineX, currPosY - baselineY);
 
         uploadTexture(x, y, width, height);
 
         currLineHeight = Math.max(currLineHeight, renderHeight);
         currPosX += renderWidth + GLYPH_SPACING * 2;
 
-        return new TexturedGlyph(textureName, advance / 2.0f, baseline / 2.0f,
+        return new TexturedGlyph(textureName, advance / 2.0f, baselineX / 2.0f, baselineY / 2.0f,
                 width / 2.0f, height / 2.0f,
                 (float) x / TEXTURE_WIDTH, (float) y / TEXTURE_HEIGHT,
                 (float) (x + width) / TEXTURE_WIDTH, (float) (y + height) / TEXTURE_HEIGHT);
@@ -515,7 +516,8 @@ public class GlyphManager {
                 allocateGlyphTexture();
             }
 
-            int baseline = (int) renderBounds.getY();
+            int baselineX = (int) renderBounds.getX();
+            int baselineY = (int) renderBounds.getY();
             if (i == 0) {
                 standardAdvance = vector.getGlyphMetrics(0).getAdvanceX();
                 standardRenderWidth = renderWidth;
@@ -532,10 +534,10 @@ public class GlyphManager {
             int height = renderHeight + GLYPH_BORDER * 2;
 
             if (i == 0) {
-                glyphTextureGraphics.drawString(String.valueOf(chars), currPosX, currPosY - baseline);
+                glyphTextureGraphics.drawString(String.valueOf(chars), currPosX - baselineX, currPosY - baselineY);
             } else {
                 int offset = Math.round((standardRenderWidth - renderWidth) / 2.0f);
-                glyphTextureGraphics.drawString(String.valueOf(chars), currPosX + offset, currPosY - baseline);
+                glyphTextureGraphics.drawString(String.valueOf(chars), currPosX + offset - baselineX, currPosY - baselineY);
             }
 
             uploadTexture(x, y, width, height);
@@ -543,7 +545,8 @@ public class GlyphManager {
             currLineHeight = Math.max(currLineHeight, renderHeight);
             currPosX += standardRenderWidth + GLYPH_SPACING * 2;
 
-            digits[i] = new TexturedGlyph(textureName, standardAdvance / 2.0f, baseline / 2.0f,
+            digits[i] = new TexturedGlyph(textureName,
+                    standardAdvance / 2.0f, baselineX / 2.0f, baselineY / 2.0f,
                     width / 2.0f, height / 2.0f,
                     (float) x / TEXTURE_WIDTH, (float) y / TEXTURE_HEIGHT,
                     (float) (x + width) / TEXTURE_WIDTH, (float) (y + height) / TEXTURE_HEIGHT);

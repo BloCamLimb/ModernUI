@@ -48,9 +48,16 @@ public class TexturedGlyph {
     /**
      * The offset to baseline that specified when drawing.
      * The value should be a multiple of (1 / guiScale)
+     * This will be used for drawing offset X.
+     */
+    private final float baselineX;
+
+    /**
+     * The offset to baseline that specified when drawing.
+     * The value should be a multiple of (1 / guiScale)
      * This will be used for drawing offset Y.
      */
-    private final float baseline;
+    private final float baselineY;
 
     /**
      * The total width of this glyph image.
@@ -88,10 +95,11 @@ public class TexturedGlyph {
      */
     private final float v2;
 
-    public TexturedGlyph(int textureName, float advance, float baseline, float width, float height, float u1, float v1, float u2, float v2) {
+    public TexturedGlyph(int textureName, float advance, float baselineX, float baselineY, float width, float height, float u1, float v1, float u2, float v2) {
         renderType = TextRenderType.getOrCacheType(textureName);
         this.advance = advance;
-        this.baseline = baseline;
+        this.baselineX = baselineX;
+        this.baselineY = baselineY;
         this.width = width;
         this.height = height;
         this.u1 = u1;
@@ -102,7 +110,8 @@ public class TexturedGlyph {
 
     public void drawGlyph(@Nonnull IVertexBuilder builder, float x, float y, int r, int g, int b, int a) {
         RenderSystem.bindTexture(renderType.textureName);
-        y += baseline;
+        x += baselineX;
+        y += baselineY;
         builder.pos(x, y, 0).color(r, g, b, a).tex(u1, v1).endVertex();
         builder.pos(x, y + height, 0).color(r, g, b, a).tex(u1, v2).endVertex();
         builder.pos(x + width, y + height, 0).color(r, g, b, a).tex(u2, v2).endVertex();
@@ -111,7 +120,8 @@ public class TexturedGlyph {
 
     public void drawGlyph(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, float x, float y, int r, int g, int b, int a, int packedLight) {
         IVertexBuilder builder = buffer.getBuffer(renderType);
-        y += baseline;
+        x += baselineX;
+        y += baselineY;
         builder.pos(matrix, x, y, 0).color(r, g, b, a).tex(u1, v1).lightmap(packedLight).endVertex();
         builder.pos(matrix, x, y + height, 0).color(r, g, b, a).tex(u1, v2).lightmap(packedLight).endVertex();
         builder.pos(matrix, x + width, y + height, 0).color(r, g, b, a).tex(u2, v2).lightmap(packedLight).endVertex();

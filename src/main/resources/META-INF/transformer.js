@@ -39,7 +39,7 @@ function initializeCoreMod() {
                 var list = methodNode.instructions;
                 var iterator = list.iterator();
                 var finish = false;
-                while(iterator.hasNext()) {
+                while (iterator.hasNext()) {
                     var inst = iterator.next();
                     if (finish) {
                         list.remove(inst);
@@ -66,7 +66,7 @@ function initializeCoreMod() {
                 var list = methodNode.instructions;
                 var iterator = list.iterator();
                 var finish = false;
-                while(iterator.hasNext()) {
+                while (iterator.hasNext()) {
                     var inst = iterator.next();
                     if (finish) {
                         list.remove(inst);
@@ -96,7 +96,7 @@ function initializeCoreMod() {
             'transformer': function (methodNode) {
                 var list = methodNode.instructions;
                 var iterator = list.iterator();
-                while(iterator.hasNext()) {
+                while (iterator.hasNext()) {
                     var inst = iterator.next();
                     if (inst.getType() === AbstractInsnNode.LDC_INSN) {
                         var next = inst.getNext();
@@ -117,7 +117,36 @@ function initializeCoreMod() {
                 list.insertBefore(invoke, cast);*/
                 return methodNode;
             }
-        }/*,
+        },
+        /* This is really a shit thing, but I see it has been removed from here in 1.16.2 snapshot */
+        'removeBidiReorder': {
+            'target': {
+                'type': 'METHOD',
+                'class': 'net.minecraft.client.resources.ClientLanguageMap',
+                'methodName': 'func_230504_a_',
+                'methodDesc': '(Ljava/lang/String;Z)Ljava/lang/String;'
+            },
+            'transformer': function (methodNode) {
+                var list = methodNode.instructions;
+                var iterator = list.iterator();
+                var finish = false;
+                while (iterator.hasNext()) {
+                    var inst = iterator.next();
+                    if (finish) {
+                        list.remove(inst);
+                    } else if (inst.getType() === AbstractInsnNode.LINE) {
+                        var cast = ASMAPI.listOf(
+                            new VarInsnNode(Opcodes.ALOAD, 1),
+                            new InsnNode(Opcodes.ARETURN)
+                        );
+                        list.insert(inst, cast);
+                        finish = true;
+                    }
+                }
+                return methodNode;
+            }
+        }
+        /*,
         'replaceScreenPauseGame': {
             'target': {
                 'type': 'METHOD',
@@ -128,7 +157,7 @@ function initializeCoreMod() {
             'transformer': function (methodNode) {
                 var list = methodNode.instructions;
                 var iterator = list.iterator();
-                while(iterator.hasNext()) {
+                while (iterator.hasNext()) {
                     var inst = iterator.next();
                     if (inst.getType() === AbstractInsnNode.INSN) {
                         list.set(inst, new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/CoreMethods", "isPauseScreen", "()Z", false));
@@ -203,7 +232,7 @@ function wrapMethodTransformers(transformersObj) {
  * @return {function} A class transformer that wraps the methodTransformer
  */
 function makeClass2MethodTransformerFunction(mappedMethodName, methodDesc, methodTransformer) {
-    return function(classNode) {
+    return function (classNode) {
         var methods = classNode.methods;
         for (var i in methods) {
             var methodNode = methods[i];
