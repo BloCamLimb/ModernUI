@@ -65,8 +65,7 @@ public class TestLinearLayout extends LinearLayout {
         super.onDraw(canvas);
         canvas.moveTo(this);
         canvas.resetColor();
-        float a = canvas.drawText("LinearLayout", 0, 0);
-        canvas.drawText(String.valueOf(canvas.getDrawingTime()), a + 2, 0);
+        canvas.drawText(TextFormatting.GOLD + "LinearLayout " + canvas.getDrawingTime(), 0, 0);
     }
 
     private static class CView extends View {
