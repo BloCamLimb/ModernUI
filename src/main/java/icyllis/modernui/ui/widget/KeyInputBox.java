@@ -18,7 +18,7 @@
 
 package icyllis.modernui.ui.widget;
 
-import icyllis.modernui.font.style.TextAlign;
+import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.master.*;
 import icyllis.modernui.ui.test.IHost;

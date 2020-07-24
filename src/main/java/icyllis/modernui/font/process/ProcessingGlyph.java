@@ -27,6 +27,7 @@ import java.util.Objects;
 /**
  * Temporary resulted glyph
  */
+@Deprecated
 public class ProcessingGlyph {
 
     public static final byte STATIC_TEXT = 0;
@@ -85,16 +86,16 @@ public class ProcessingGlyph {
         this.type = type;
     }
 
-    public GlyphRenderInfo toGlyph() {
+    /*public GlyphRenderInfo toGlyph() {
         switch (type) {
             case DYNAMIC_DIGIT:
                 return new DigitGlyphInfo(glyphs, effect, color, offsetX, stringIndex);
             case RANDOM_DIGIT:
                 return new RandomGlyphInfo(glyphs, effect, color, offsetX);
             default:
-                return new StaticGlyphInfo(glyph, effect, color, offsetX);
+                return new StandardGlyphInfo(glyph, effect, color, offsetX);
         }
-    }
+    }*/
 
     @Deprecated
     public float getAdvance() {

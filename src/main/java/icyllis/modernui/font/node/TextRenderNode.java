@@ -22,6 +22,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import icyllis.modernui.font.glyph.GlyphManager;
 import icyllis.modernui.font.process.FormattingStyle;
+import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.WorldVertexBufferUploader;
@@ -47,7 +48,7 @@ public class TextRenderNode {
         }
 
         @Override
-        public float drawText(Matrix4f matrix, IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, int packedLight) {
+        public float drawText(Matrix4f matrix, IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, boolean isShadow, int packedLight) {
             return 0;
         }
     };
@@ -66,7 +67,7 @@ public class TextRenderNode {
     /**
      * All glyphs to render.
      */
-    private final GlyphRenderInfo[] glyphs;
+    public final GlyphRenderInfo[] glyphs;
 
     /*
      * Switch current color
@@ -137,7 +138,7 @@ public class TextRenderNode {
         return advance;
     }
 
-    public float drawText(Matrix4f matrix, IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, int packedLight) {
+    public float drawText(Matrix4f matrix, IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, boolean isShadow, int packedLight) {
         final int startR = r;
         final int startG = g;
         final int startB = b;
@@ -157,6 +158,11 @@ public class TextRenderNode {
                     r = color >> 16 & 0xff;
                     g = color >> 8 & 0xff;
                     b = color & 0xff;
+                    if (isShadow) {
+                        r >>= 2;
+                        g >>= 2;
+                        b >>= 2;
+                    }
                 }
             }
             glyph.drawGlyph(matrix, buffer, raw, x, y, r, g, b, a, packedLight);
@@ -178,6 +184,11 @@ public class TextRenderNode {
                         r = color >> 16 & 0xff;
                         g = color >> 8 & 0xff;
                         b = color & 0xff;
+                        if (isShadow) {
+                            r >>= 2;
+                            g >>= 2;
+                            b >>= 2;
+                        }
                     }
                 }
                 glyph.drawEffect(matrix, builder, x, y, r, g, b, a, packedLight);

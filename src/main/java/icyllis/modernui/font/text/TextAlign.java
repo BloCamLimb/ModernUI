@@ -16,7 +16,16 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.font.style;
+package icyllis.modernui.font.text;
 
-public class TextStyle {
+public enum TextAlign {
+    LEFT(0.0f),
+    CENTER(0.5f),
+    RIGHT(1.0f);
+
+    public final float offsetFactor;
+
+    TextAlign(float offsetFactor) {
+        this.offsetFactor = offsetFactor;
+    }
 }

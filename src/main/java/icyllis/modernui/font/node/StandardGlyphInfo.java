@@ -28,15 +28,15 @@ import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 
-public class StaticGlyphInfo extends GlyphRenderInfo {
+public class StandardGlyphInfo extends GlyphRenderInfo {
 
     /**
      * The immutable glyph to render
      */
     private final TexturedGlyph glyph;
 
-    public StaticGlyphInfo(TexturedGlyph glyph, TextRenderEffect effect, Integer color, float offsetX) {
-        super(effect, color, offsetX);
+    public StandardGlyphInfo(TexturedGlyph glyph, TextRenderEffect effect, int stringIndex, float offsetX) {
+        super(effect, stringIndex, offsetX);
         this.glyph = glyph;
     }
 

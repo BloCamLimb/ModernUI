@@ -1,5 +1,5 @@
-### 1.16.1-2.0.1.58
-**Beta version, Font Engine works fine, UI framework is developing, keep update!**
+### 1.16.1-2.0.1.58 (2020-07-24)
+**Font Engine works fine, UI is developing, keep update!**
  
 * Rewrite text processing, fix text formatting
 * Remove vanilla bidi analysis for every text in every frame
@@ -7,8 +7,8 @@
 * Fix vanilla's Arabic letters shaping (start, middle, end)
 * Fix Devanagari (Hindi etc) and other characters rendering
 * Fix text effect rendering and render type
-* Fix line wrapping, text width measuring
-* Optimize text rendering
+* Fix text width measuring, trimming
+* Optimize text rendering on RAM and FPS
 * Adjust the alignment accuracy of the digit rendering
 
 ### 1.16.1-2.0.0.57 (2020-07-18)

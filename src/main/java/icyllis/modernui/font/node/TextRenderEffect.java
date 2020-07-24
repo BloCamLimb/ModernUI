@@ -26,20 +26,20 @@ import javax.annotation.Nonnull;
 /**
  * Draw underline or strikethrough
  */
-public class TextRenderEffect {
+public abstract class TextRenderEffect {
 
-    /**
+    /*
      * Underline style type
      */
-    private static final byte UNDERLINE_MASK     = 1;
-    /**
+    //private static final byte UNDERLINE_MASK     = 1;
+    /*
      * Strikethrough style type
      */
-    private static final byte STRIKETHROUGH_MASK = 2;
+    //private static final byte STRIKETHROUGH_MASK = 2;
 
-    public static final TextRenderEffect UNDERLINE               = new TextRenderEffect(UNDERLINE_MASK);
-    public static final TextRenderEffect STRIKETHROUGH           = new TextRenderEffect(STRIKETHROUGH_MASK);
-    public static final TextRenderEffect UNDERLINE_STRIKETHROUGH = new TextRenderEffect((byte) (UNDERLINE_MASK | STRIKETHROUGH_MASK));
+    public static final TextRenderEffect UNDERLINE               = new Underline();
+    public static final TextRenderEffect STRIKETHROUGH           = new Strikethrough();
+    public static final TextRenderEffect UNDERLINE_STRIKETHROUGH = new UnderlineStrikethrough();
 
     /**
      * Offset from the string's baseline as which to draw the underline
@@ -49,6 +49,8 @@ public class TextRenderEffect {
      * Offset from the string's baseline as which to draw the strikethrough line
      */
     private static final float STRIKETHROUGH_OFFSET = -3.0f;
+
+    private static final float UNDERLINE_STRIKETHROUGH_OFFSET = STRIKETHROUGH_OFFSET - UNDERLINE_OFFSET;
 
     /**
      * Thickness of the underline
@@ -80,48 +82,18 @@ public class TextRenderEffect {
      */
     //protected final int color;
 
-    /**
+    /*
      * Combination of {@link #UNDERLINE_MASK} and {@link #STRIKETHROUGH_MASK}
      */
-    private final byte type;
+    //private final byte type;
 
-    private TextRenderEffect(byte type) {
-        this.type = type;
+    private TextRenderEffect() {
+
     }
 
-    public void drawEffect(@Nonnull IVertexBuilder builder, float start, float end, float y, int r, int g, int b, int a) {
-        if ((type & UNDERLINE_MASK) != 0) {
-            y += UNDERLINE_OFFSET;
-            builder.pos(start, y + UNDERLINE_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).endVertex();
-            builder.pos(end, y + UNDERLINE_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).endVertex();
-            builder.pos(end, y, EFFECT_DEPTH).color(r, g, b, a).endVertex();
-            builder.pos(start, y, EFFECT_DEPTH).color(r, g, b, a).endVertex();
-        }
-        if ((type & STRIKETHROUGH_MASK) != 0) {
-            y += STRIKETHROUGH_OFFSET;
-            builder.pos(start, y + STRIKETHROUGH_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).endVertex();
-            builder.pos(end, y + STRIKETHROUGH_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).endVertex();
-            builder.pos(end, y, EFFECT_DEPTH).color(r, g, b, a).endVertex();
-            builder.pos(start, y, EFFECT_DEPTH).color(r, g, b, a).endVertex();
-        }
-    }
+    public abstract void drawEffect(@Nonnull IVertexBuilder builder, float start, float end, float y, int r, int g, int b, int a);
 
-    public void drawEffect(Matrix4f matrix, @Nonnull IVertexBuilder builder, float start, float end, float y, int r, int g, int b, int a, int light) {
-        if ((type & UNDERLINE_MASK) != 0) {
-            y += UNDERLINE_OFFSET;
-            builder.pos(matrix, start, y + UNDERLINE_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).lightmap(light).endVertex();
-            builder.pos(matrix, end, y + UNDERLINE_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).lightmap(light).endVertex();
-            builder.pos(matrix, end, y, EFFECT_DEPTH).color(r, g, b, a).lightmap(light).endVertex();
-            builder.pos(matrix, start, y, EFFECT_DEPTH).color(r, g, b, a).lightmap(light).endVertex();
-        }
-        if ((type & STRIKETHROUGH_MASK) != 0) {
-            y += STRIKETHROUGH_OFFSET;
-            builder.pos(matrix, start, y + STRIKETHROUGH_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).lightmap(light).endVertex();
-            builder.pos(matrix, end, y + STRIKETHROUGH_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).lightmap(light).endVertex();
-            builder.pos(matrix, end, y, EFFECT_DEPTH).color(r, g, b, a).lightmap(light).endVertex();
-            builder.pos(matrix, start, y, EFFECT_DEPTH).color(r, g, b, a).lightmap(light).endVertex();
-        }
-    }
+    public abstract void drawEffect(Matrix4f matrix, @Nonnull IVertexBuilder builder, float start, float end, float y, int r, int g, int b, int a, int light);
 
     /*@Nonnull
     public static EffectRenderInfo underline(float start, float end, int color) {
@@ -133,10 +105,76 @@ public class TextRenderEffect {
         return new EffectRenderInfo(start, end, color, STRIKETHROUGH);
     }*/
 
-    @Override
-    public String toString() {
-        return "TextRenderEffect{" +
-                "type=" + type +
-                '}';
+    private static class Underline extends TextRenderEffect {
+
+        @Override
+        public void drawEffect(@Nonnull IVertexBuilder builder, float start, float end, float y, int r, int g, int b, int a) {
+            y += UNDERLINE_OFFSET;
+            builder.pos(start, y + UNDERLINE_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).endVertex();
+            builder.pos(end, y + UNDERLINE_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).endVertex();
+            builder.pos(end, y, EFFECT_DEPTH).color(r, g, b, a).endVertex();
+            builder.pos(start, y, EFFECT_DEPTH).color(r, g, b, a).endVertex();
+        }
+
+        @Override
+        public void drawEffect(Matrix4f matrix, @Nonnull IVertexBuilder builder, float start, float end, float y, int r, int g, int b, int a, int light) {
+            y += UNDERLINE_OFFSET;
+            builder.pos(matrix, start, y + UNDERLINE_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).lightmap(light).endVertex();
+            builder.pos(matrix, end, y + UNDERLINE_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).lightmap(light).endVertex();
+            builder.pos(matrix, end, y, EFFECT_DEPTH).color(r, g, b, a).lightmap(light).endVertex();
+            builder.pos(matrix, start, y, EFFECT_DEPTH).color(r, g, b, a).lightmap(light).endVertex();
+        }
+    }
+
+    private static class Strikethrough extends TextRenderEffect {
+
+        @Override
+        public void drawEffect(@Nonnull IVertexBuilder builder, float start, float end, float y, int r, int g, int b, int a) {
+            y += STRIKETHROUGH_OFFSET;
+            builder.pos(start, y + STRIKETHROUGH_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).endVertex();
+            builder.pos(end, y + STRIKETHROUGH_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).endVertex();
+            builder.pos(end, y, EFFECT_DEPTH).color(r, g, b, a).endVertex();
+            builder.pos(start, y, EFFECT_DEPTH).color(r, g, b, a).endVertex();
+        }
+
+        @Override
+        public void drawEffect(Matrix4f matrix, @Nonnull IVertexBuilder builder, float start, float end, float y, int r, int g, int b, int a, int light) {
+            y += STRIKETHROUGH_OFFSET;
+            builder.pos(matrix, start, y + STRIKETHROUGH_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).lightmap(light).endVertex();
+            builder.pos(matrix, end, y + STRIKETHROUGH_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).lightmap(light).endVertex();
+            builder.pos(matrix, end, y, EFFECT_DEPTH).color(r, g, b, a).lightmap(light).endVertex();
+            builder.pos(matrix, start, y, EFFECT_DEPTH).color(r, g, b, a).lightmap(light).endVertex();
+        }
+    }
+
+    private static class UnderlineStrikethrough extends TextRenderEffect {
+
+        @Override
+        public void drawEffect(@Nonnull IVertexBuilder builder, float start, float end, float y, int r, int g, int b, int a) {
+            y += UNDERLINE_OFFSET;
+            builder.pos(start, y + UNDERLINE_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).endVertex();
+            builder.pos(end, y + UNDERLINE_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).endVertex();
+            builder.pos(end, y, EFFECT_DEPTH).color(r, g, b, a).endVertex();
+            builder.pos(start, y, EFFECT_DEPTH).color(r, g, b, a).endVertex();
+            y += UNDERLINE_STRIKETHROUGH_OFFSET;
+            builder.pos(start, y + STRIKETHROUGH_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).endVertex();
+            builder.pos(end, y + STRIKETHROUGH_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).endVertex();
+            builder.pos(end, y, EFFECT_DEPTH).color(r, g, b, a).endVertex();
+            builder.pos(start, y, EFFECT_DEPTH).color(r, g, b, a).endVertex();
+        }
+
+        @Override
+        public void drawEffect(Matrix4f matrix, @Nonnull IVertexBuilder builder, float start, float end, float y, int r, int g, int b, int a, int light) {
+            y += UNDERLINE_OFFSET;
+            builder.pos(matrix, start, y + UNDERLINE_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).lightmap(light).endVertex();
+            builder.pos(matrix, end, y + UNDERLINE_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).lightmap(light).endVertex();
+            builder.pos(matrix, end, y, EFFECT_DEPTH).color(r, g, b, a).lightmap(light).endVertex();
+            builder.pos(matrix, start, y, EFFECT_DEPTH).color(r, g, b, a).lightmap(light).endVertex();
+            y += UNDERLINE_STRIKETHROUGH_OFFSET;
+            builder.pos(matrix, start, y + STRIKETHROUGH_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).lightmap(light).endVertex();
+            builder.pos(matrix, end, y + STRIKETHROUGH_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).lightmap(light).endVertex();
+            builder.pos(matrix, end, y, EFFECT_DEPTH).color(r, g, b, a).lightmap(light).endVertex();
+            builder.pos(matrix, start, y, EFFECT_DEPTH).color(r, g, b, a).lightmap(light).endVertex();
+        }
     }
 }
