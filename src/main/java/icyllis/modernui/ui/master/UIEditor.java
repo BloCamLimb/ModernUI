@@ -18,10 +18,7 @@
 
 package icyllis.modernui.ui.master;
 
-import com.ibm.icu.text.ArabicShaping;
-import com.ibm.icu.text.ArabicShapingException;
-import com.ibm.icu.text.Bidi;
-import icyllis.modernui.font.style.TextAlign;
+import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.system.Config;

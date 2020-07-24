@@ -23,7 +23,7 @@ import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.font.ModernFontRenderer;
 import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.font.node.TextRenderType;
-import icyllis.modernui.font.style.TextAlign;
+import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.shader.ShaderTools;
 import icyllis.modernui.graphics.shader.program.*;

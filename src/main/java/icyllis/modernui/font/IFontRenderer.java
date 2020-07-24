@@ -18,7 +18,7 @@
 
 package icyllis.modernui.font;
 
-import icyllis.modernui.font.style.TextAlign;
+import icyllis.modernui.font.text.TextAlign;
 
 import javax.annotation.Nullable;
 

@@ -38,20 +38,9 @@ public class DigitGlyphInfo extends GlyphRenderInfo {
      */
     private final TexturedGlyph[] glyphs;
 
-    /**
-     * An array of digit char index of the whole original string.
-     * The index should skipped all supplementary multilingual plane and formatting codes.
-     * This array length equals to this info total digit count to renderer.
-     * This array value equals to the char (not code point) index of the original string.
-     *
-     * @see #glyphs
-     */
-    private final int stringIndex;
-
-    public DigitGlyphInfo(TexturedGlyph[] glyphs, TextRenderEffect effect, Integer color, float offsetX, int stringIndex) {
-        super(effect, color, offsetX);
+    public DigitGlyphInfo(TexturedGlyph[] glyphs, TextRenderEffect effect, int stringIndex, float offsetX) {
+        super(effect, stringIndex, offsetX);
         this.glyphs = glyphs;
-        this.stringIndex = stringIndex;
     }
 
     @Override

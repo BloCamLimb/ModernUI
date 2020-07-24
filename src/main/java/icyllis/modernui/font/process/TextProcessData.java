@@ -34,17 +34,17 @@ public class TextProcessData {
     /**
      * List of all processing glyphs
      */
-    public final List<ProcessingGlyph> allList = new ArrayList<>();
+    public final List<GlyphRenderInfo> allList = new ArrayList<>();
 
     /**
      * List of processing glyphs with same layout direction
      */
-    public final List<ProcessingGlyph> layoutList = new ArrayList<>();
+    public final List<GlyphRenderInfo> layoutList = new ArrayList<>();
 
     /**
      * Used in layoutFont
      */
-    public final List<ProcessingGlyph> minimalList = new ArrayList<>();
+    public final List<GlyphRenderInfo> minimalList = new ArrayList<>();
 
     /*
      * All color states
@@ -66,6 +66,9 @@ public class TextProcessData {
      */
     public float layoutRight;
 
+    /**
+     * Mark whether this node should enable effect rendering
+     */
     public boolean hasEffect;
 
     public void finishStyleLayout(float adjust) {
@@ -107,7 +110,8 @@ public class TextProcessData {
 
     @Nonnull
     public GlyphRenderInfo[] wrapGlyphs() {
-        return allList.stream().map(ProcessingGlyph::toGlyph).toArray(GlyphRenderInfo[]::new);
+        //return allList.stream().map(ProcessingGlyph::toGlyph).toArray(GlyphRenderInfo[]::new);
+        return allList.toArray(new GlyphRenderInfo[0]);
     }
 
     /*@Nonnull

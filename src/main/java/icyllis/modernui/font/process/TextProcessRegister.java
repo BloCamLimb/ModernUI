@@ -18,7 +18,6 @@
 
 package icyllis.modernui.font.process;
 
-import icyllis.modernui.font.node.ColorStateInfo;
 import icyllis.modernui.font.node.TextRenderEffect;
 import icyllis.modernui.font.node.GlyphRenderInfo;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -78,7 +77,7 @@ public class TextProcessRegister {
 
     private final List<GlyphRenderInfo>  glyphs  = new ObjectArrayList<>();
     private final List<TextRenderEffect> effects = new ObjectArrayList<>();
-    private final List<ColorStateInfo>   colors  = new ObjectArrayList<>();
+    //private final List<ColorStateInfo>   colors  = new ObjectArrayList<>();
 
     /**
      * Update style and set default values
@@ -88,7 +87,7 @@ public class TextProcessRegister {
     public void beginProcess(@Nonnull Style style) {
         if (style.getColor() != null) {
             defaultColor = style.getColor().func_240742_a_();
-            colors.add(new ColorStateInfo(0, defaultColor));
+            //colors.add(new ColorStateInfo(0, defaultColor));
         } else {
             defaultColor = NO_COLOR;
         }
@@ -145,7 +144,7 @@ public class TextProcessRegister {
         return r;
     }
 
-    @Nullable
+    /*@Nullable
     public ColorStateInfo[] wrapColors() {
         if (colors.isEmpty()) {
             return null;
@@ -153,12 +152,12 @@ public class TextProcessRegister {
         ColorStateInfo[] r = colors.toArray(new ColorStateInfo[0]);
         colors.clear();
         return r;
-    }
+    }*/
 
     public void applyFormatting(@Nonnull TextFormatting formatting, int glyphIndex) {
         if (formatting.getColor() != null) {
             if (setColor(formatting.getColor())) {
-                colors.add(new ColorStateInfo(glyphIndex, currentColor));
+                //colors.add(new ColorStateInfo(glyphIndex, currentColor));
                 if (currentStrikethrough) {
                     //effects.add(EffectRenderInfo.strikethrough(strikethroughStart, advance, lastColor));
                     strikethroughStart = advance;
@@ -189,7 +188,7 @@ public class TextProcessRegister {
                 case RESET: {
                     boolean p = false;
                     if (setDefaultColor()) {
-                        colors.add(new ColorStateInfo(glyphIndex, currentColor));
+                        //colors.add(new ColorStateInfo(glyphIndex, currentColor));
                         if (currentStrikethrough) {
                             //effects.add(EffectRenderInfo.strikethrough(strikethroughStart, advance, lastColor));
                             strikethroughStart = advance;

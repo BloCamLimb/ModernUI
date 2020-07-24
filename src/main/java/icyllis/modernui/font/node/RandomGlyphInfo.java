@@ -38,8 +38,8 @@ public class RandomGlyphInfo extends GlyphRenderInfo {
      */
     private final TexturedGlyph[] glyphs;
 
-    public RandomGlyphInfo(TexturedGlyph[] glyphs, TextRenderEffect effect, Integer color, float offsetX) {
-        super(effect, color, offsetX);
+    public RandomGlyphInfo(TexturedGlyph[] glyphs, TextRenderEffect effect, int stringIndex, float offsetX) {
+        super(effect, stringIndex, offsetX);
         this.glyphs = glyphs;
     }
 

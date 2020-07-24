@@ -134,7 +134,7 @@ public class Config {
                     "The font name with the highest priority to use, the built-in font is always the second choice.")
                     .define("preferredName", "");
             allowShadow = builder.comment(
-                    "Allow font renderer to draw text with shadow, set to false if you can't read the font clearly.")
+                    "Allow font renderer to draw text with shadow, setting to false can improve performance.")
                     .define("allowShadow", true);
             antiAliasing = builder.comment(
                     "Enable font anti-aliasing.")

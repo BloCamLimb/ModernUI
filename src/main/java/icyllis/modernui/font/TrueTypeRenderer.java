@@ -23,7 +23,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.node.TextRenderNode;
 import icyllis.modernui.font.process.FormattingStyle;
 import icyllis.modernui.font.process.TextCacheProcessor;
-import icyllis.modernui.font.style.TextAlign;
+import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.math.Color3i;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.IRenderTypeBuffer;

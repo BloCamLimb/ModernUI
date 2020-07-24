@@ -25,9 +25,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.font.glyph.GlyphManager;
 import icyllis.modernui.font.glyph.TexturedGlyph;
-import icyllis.modernui.font.node.GlyphRenderInfo;
-import icyllis.modernui.font.node.TextRenderEffect;
-import icyllis.modernui.font.node.TextRenderNode;
+import icyllis.modernui.font.node.*;
 import icyllis.modernui.graphics.math.Color3i;
 import net.minecraft.util.text.Style;
 import net.minecraft.util.text.TextFormatting;
@@ -825,16 +823,14 @@ public class TextCacheProcessor {
                 char o = text[stripIndex];
                 /* Digits are not on SMP */
                 if (o == '0') {
-                    data.minimalList.add(new ProcessingGlyph(stripIndex, offset,
-                            digits, effect, ProcessingGlyph.DYNAMIC_DIGIT));
+                    data.minimalList.add(new DigitGlyphInfo(digits, effect, stripIndex, offset));
                     continue;
                 }
 
                 int glyphCode = vector.getGlyphCode(i);
                 TexturedGlyph glyph = glyphManager.lookupGlyph(font, glyphCode);
 
-                data.minimalList.add(new ProcessingGlyph(stripIndex, offset,
-                        glyph, effect, ProcessingGlyph.STATIC_TEXT));
+                data.minimalList.add(new StandardGlyphInfo(glyph, effect, stripIndex, offset));
             }
 
             float totalAdvance = (float) (vector.getGlyphPosition(num).getX() / 2);
@@ -874,8 +870,7 @@ public class TextCacheProcessor {
 
         /* Process code point */
         for (int i = start; i < limit; i++) {
-            data.minimalList.add(new ProcessingGlyph(start + i, offset,
-                    digits, effect, ProcessingGlyph.RANDOM_DIGIT));
+            data.minimalList.add(new RandomGlyphInfo(digits, effect, start + i, offset));
 
             offset += stdAdv;
 
@@ -905,14 +900,14 @@ public class TextCacheProcessor {
      */
     private void adjustGlyphIndex(@Nonnull TextProcessData data) {
         /* Sort by stripIndex, mixed with LTR and RTL layout */
-        data.allList.sort(Comparator.comparingInt(ProcessingGlyph::getStringIndex));
+        data.allList.sort(Comparator.comparingInt(g -> g.stringIndex));
 
         final List<FormattingStyle> codes = data.codes;
-        final List<ProcessingGlyph> glyphs = data.allList;
+        final List<GlyphRenderInfo> glyphs = data.allList;
         /* Shift stripIndex to stringIndex */
         /* Skip the default code */
         int codeIndex = 1, shift = 0;
-        for (ProcessingGlyph glyph : glyphs) {
+        for (GlyphRenderInfo glyph : glyphs) {
             /*
              * Adjust the string index for each glyph to point into the original string with un-stripped color codes. The while
              * loop is necessary to handle multiple consecutive color codes with no visible glyphs between them. These new adjusted
@@ -929,7 +924,7 @@ public class TextCacheProcessor {
 
     private void insertColorState(@Nonnull TextProcessData data) {
         final List<FormattingStyle> codes = data.codes;
-        final List<ProcessingGlyph> glyphs = data.allList;
+        final List<GlyphRenderInfo> glyphs = data.allList;
 
         int codeIndex = 0;
         while (codeIndex < codes.size() - 1 &&
@@ -946,7 +941,7 @@ public class TextCacheProcessor {
         }
 
         if (++codeIndex < codes.size()) {
-            ProcessingGlyph glyph;
+            GlyphRenderInfo glyph;
             for (int glyphIndex = 1; glyphIndex < glyphs.size(); glyphIndex++) {
                 glyph = glyphs.get(glyphIndex);
                 /*if (underline) {

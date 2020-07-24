@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.font.style;
+package icyllis.modernui.font.text;
 
 public class TextComponent {
 }

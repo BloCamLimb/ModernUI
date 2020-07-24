@@ -18,7 +18,7 @@
 
 package icyllis.modernui.impl.setting;
 
-import icyllis.modernui.font.style.TextAlign;
+import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.widget.SliderSmooth;
 

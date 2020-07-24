@@ -32,22 +32,27 @@ public abstract class GlyphRenderInfo {
      * Glyph effect
      */
     @Nullable
-    private final TextRenderEffect effect;
+    public TextRenderEffect effect;
 
     /**
      * RGB color node
      */
     @Nullable
-    public final Integer color;
+    public Integer color;
 
     /**
-     * Offset X to the start of the text
+     * First assignment is stripIndex, and it will be adjusted to stringIndex later.
      */
-    protected final float offsetX;
+    public int stringIndex;
 
-    public GlyphRenderInfo(@Nullable TextRenderEffect effect, @Nullable Integer color, float offsetX) {
+    /**
+     * Offset X to the start of the text, it will be adjusted in RTL layout
+     */
+    public float offsetX;
+
+    public GlyphRenderInfo(@Nullable TextRenderEffect effect, int stringIndex, float offsetX) {
         this.effect = effect;
-        this.color = color;
+        this.stringIndex = stringIndex;
         this.offsetX = offsetX;
     }
 
