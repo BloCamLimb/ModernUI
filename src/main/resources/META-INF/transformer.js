@@ -28,7 +28,7 @@ var MethodInsnNode = Java.type('org.objectweb.asm.tree.MethodInsnNode');
 
 function initializeCoreMod() {
     return wrapMethodTransformers({
-        'displayInGameMenu': {
+        /*'displayInGameMenu': {
             'target': {
                 'type': 'METHOD',
                 'class': 'net.minecraft.client.Minecraft',
@@ -46,7 +46,7 @@ function initializeCoreMod() {
                     } else if (inst.getType() === AbstractInsnNode.LINE) {
                         var cast = ASMAPI.listOf(
                             new VarInsnNode(Opcodes.ILOAD, 1),
-                            new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/ModernUI", "displayInGameMenu", "(Z)V", false),
+                            new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/CoreMod", "displayInGameMenu", "(Z)V", false),
                             new InsnNode(Opcodes.RETURN));
                         list.insert(inst, cast);
                         finish = true;
@@ -54,7 +54,7 @@ function initializeCoreMod() {
                 }
                 return methodNode;
             }
-        },
+        },*/
         'guiScaleAlgorithm': {
             'target': {
                 'type': 'METHOD',
@@ -77,7 +77,7 @@ function initializeCoreMod() {
                             new FieldInsnNode(Opcodes.GETFIELD, "net/minecraft/client/MainWindow", "field_198131_r", "I"), // framebufferWidth
                             new VarInsnNode(Opcodes.ALOAD, 0),
                             new FieldInsnNode(Opcodes.GETFIELD, "net/minecraft/client/MainWindow", "field_198132_s", "I"), // framebufferHeight*/
-                            new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/ModernUI", "calcGuiScale", "(I)I", false),
+                            new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/CoreMod", "calcGuiScale", "(I)I", false),
                             new InsnNode(Opcodes.IRETURN));
                         list.insert(inst, cast);
                         finish = true;
@@ -100,8 +100,8 @@ function initializeCoreMod() {
                     var inst = iterator.next();
                     if (inst.getType() === AbstractInsnNode.LDC_INSN) {
                         var next = inst.getNext();
-                        list.set(inst, new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/ModernUI", "getScreenBackgroundColor", "()I", false));
-                        list.set(next, new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/ModernUI", "getScreenBackgroundColor", "()I", false));
+                        list.set(inst, new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/CoreMod", "getScreenBackgroundColor", "()I", false));
+                        list.set(next, new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/CoreMod", "getScreenBackgroundColor", "()I", false));
                         break;
                     }
                 }
@@ -111,14 +111,13 @@ function initializeCoreMod() {
                 list.remove(ldc1);
                 list.remove(ldc2);
                 var cast = ASMAPI.listOf(
-                    new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/ModernUI", "getScreenBackgroundColor", "()I", false),
-                    new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/ModernUI", "getScreenBackgroundColor", "()I", false)
+                    new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/CoreMod", "getScreenBackgroundColor", "()I", false),
+                    new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/CoreMod", "getScreenBackgroundColor", "()I", false)
                 );
                 list.insertBefore(invoke, cast);*/
                 return methodNode;
             }
         },
-        /* This is really a shit thing, but I see it has been removed from here in 1.16.2 snapshot */
         'removeBidiReorder': {
             'target': {
                 'type': 'METHOD',

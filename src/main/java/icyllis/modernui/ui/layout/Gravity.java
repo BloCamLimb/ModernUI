@@ -180,7 +180,7 @@ public class Gravity {
      * @param h         The vertical size of the object.
      * @param container The frame of the containing space, in which the object
      *                  will be placed.  Should be large enough to contain the
-     *                  width and height of the object.
+     *                  width and height of the object. (L,T,R,B)
      * @param xAdj      Offset to apply to the X axis.  If gravity is LEFT this
      *                  pushes it to the right; if gravity is RIGHT it pushes it to
      *                  the left; if gravity is CENTER_HORIZONTAL it pushes it to the
@@ -190,7 +190,7 @@ public class Gravity {
      *                  CENTER_VERTICAL it pushes it down or up; otherwise it is
      *                  ignored.
      * @param outRect   Receives the computed frame of the object in its
-     *                  container.
+     *                  container. (L,T,R,B)
      */
     public static void apply(int gravity, int w, int h, int[] container,
                              int xAdj, int yAdj, int[] outRect) {

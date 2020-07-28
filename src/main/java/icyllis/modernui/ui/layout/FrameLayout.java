@@ -26,6 +26,9 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * @since 2.0
+ */
 public class FrameLayout extends ViewGroup {
 
     private final List<View> matchParentChildren = new ArrayList<>(1);
@@ -167,7 +170,7 @@ public class FrameLayout extends ViewGroup {
     @Override
     protected ViewGroup.LayoutParams convertLayoutParams(@Nonnull ViewGroup.LayoutParams params) {
         if (params instanceof LayoutParams) {
-            return new LayoutParams((LayoutParams) params);
+            return params;
         } else if (params instanceof MarginLayoutParams) {
             return new LayoutParams((MarginLayoutParams) params);
         }

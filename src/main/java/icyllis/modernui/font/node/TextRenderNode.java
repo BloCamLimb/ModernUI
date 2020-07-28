@@ -22,7 +22,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import icyllis.modernui.font.glyph.GlyphManager;
 import icyllis.modernui.font.process.FormattingStyle;
-import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.WorldVertexBufferUploader;

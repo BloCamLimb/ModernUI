@@ -253,6 +253,47 @@ public abstract class ViewGroup extends View implements IViewParent {
     }
 
     /**
+     * Ask all of the children of this view to measure themselves, taking into
+     * account both the MeasureSpec requirements for this view and its padding.
+     * We skip children that are in the GONE state The heavy lifting is done in
+     * getChildMeasureSpec.
+     *
+     * @param widthMeasureSpec The width requirements for this view
+     * @param heightMeasureSpec The height requirements for this view
+     */
+    protected void measureChildren(int widthMeasureSpec, int heightMeasureSpec) {
+        final int size = childrenCount;
+        final View[] children = this.children;
+        for (int i = 0; i < size; i++) {
+            View child = children[i];
+            if (child.getVisibility() != GONE) {
+                measureChild(child, widthMeasureSpec, heightMeasureSpec);
+            }
+        }
+    }
+
+    /**
+     * Ask one of the children of this view to measure itself, taking into
+     * account both the MeasureSpec requirements for this view and its padding.
+     * The heavy lifting is done in getChildMeasureSpec.
+     *
+     * @param child            The child to measure
+     * @param parentWidthSpec  The width requirements for this view
+     * @param parentHeightSpec The height requirements for this view
+     */
+    protected void measureChild(@Nonnull View child, int parentWidthSpec,
+                                int parentHeightSpec) {
+        LayoutParams lp = child.getLayoutParams();
+
+        int childWidthMeasureSpec = getChildMeasureSpec(parentWidthSpec,
+                0, lp.width);
+        int childHeightMeasureSpec = getChildMeasureSpec(parentHeightSpec,
+                0, lp.height);
+
+        child.measure(childWidthMeasureSpec, childHeightMeasureSpec);
+    }
+
+    /**
      * Ask one of the children of this view to measure itself, taking into
      * account both the MeasureSpec requirements for this view and its padding
      * and margins. The child must have MarginLayoutParams The heavy lifting is

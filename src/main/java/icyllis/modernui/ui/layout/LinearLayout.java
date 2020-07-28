@@ -26,6 +26,9 @@ import icyllis.modernui.ui.master.ViewGroup;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+/**
+ * @since 2.0
+ */
 @SuppressWarnings("unused")
 public class LinearLayout extends ViewGroup {
 
@@ -48,17 +51,17 @@ public class LinearLayout extends ViewGroup {
 
 
     /**
-     * {@link #setOrientation(Orientation)}
+     * @see #setOrientation(Orientation)
      */
     private Orientation orientation;
 
     /**
-     * {@link #setGravity(int)}
+     * @see #setGravity(int)
      */
     private int gravity = Gravity.TOP_LEFT;
 
     /**
-     * {@link #setWeightSum(float)}
+     * @see #setWeightSum(float)
      */
     private float weightSum;
 
@@ -106,7 +109,7 @@ public class LinearLayout extends ViewGroup {
      *
      * @param showDividers show dividers a combination of
      *                     {@link #SHOW_DIVIDER_BEGINNING} or {@link #SHOW_DIVIDER_MIDDLE}
-     *                     or {@link #SHOW_DIVIDER_END}
+     *                     or {@link #SHOW_DIVIDER_END}, or {@link #SHOW_DIVIDER_NONE} to show no dividers.
      */
     public void setShowDividers(int showDividers) {
         if (this.showDividers == showDividers) {
@@ -1005,7 +1008,8 @@ public class LinearLayout extends ViewGroup {
     /**
      * Should the layout be a column or a row.
      *
-     * @param orientation {@link Orientation}, default is HORIZONTAL
+     * @param orientation orientation to set, default is {@link Orientation#HORIZONTAL}
+     * @see #getOrientation()
      */
     public void setOrientation(Orientation orientation) {
         if (this.orientation != orientation) {
@@ -1014,6 +1018,12 @@ public class LinearLayout extends ViewGroup {
         }
     }
 
+    /**
+     * Returns the current orientation.
+     *
+     * @return either {@link Orientation#HORIZONTAL} or {@link Orientation#VERTICAL}
+     * @see #setOrientation(Orientation)
+     */
     public Orientation getOrientation() {
         return orientation;
     }
@@ -1065,7 +1075,7 @@ public class LinearLayout extends ViewGroup {
     @Override
     protected ViewGroup.LayoutParams convertLayoutParams(@Nonnull ViewGroup.LayoutParams params) {
         if (params instanceof LayoutParams) {
-            return new LayoutParams((LayoutParams) params);
+            return params;
         } else if (params instanceof MarginLayoutParams) {
             return new LayoutParams((MarginLayoutParams) params);
         }
