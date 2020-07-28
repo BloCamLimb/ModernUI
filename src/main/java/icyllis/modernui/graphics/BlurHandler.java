@@ -24,6 +24,7 @@ import icyllis.modernui.ui.master.UIManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraft.client.gui.screen.DownloadTerrainScreen;
+import net.minecraft.client.gui.screen.MainMenuScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.shader.Shader;
@@ -98,10 +99,10 @@ public enum BlurHandler {
     @SuppressWarnings("JavadocReference")
     @SubscribeEvent(priority = EventPriority.LOW)
     void gGuiOpen(@Nonnull GuiOpenEvent event) {
-        if (minecraft.world == null) {
+        @Nullable Screen gui = event.getGui();
+        if (minecraft.world == null && !(gui instanceof MainMenuScreen)) {
             return;
         }
-        @Nullable Screen gui = event.getGui();
 
         boolean excluded = gui != null && !(gui instanceof ModernScreen)
                 && !(gui instanceof ModernContainerScreen<?>)

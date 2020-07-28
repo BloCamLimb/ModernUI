@@ -30,6 +30,9 @@ import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * @since 2.0
+ */
 @SuppressWarnings("unused")
 public class RelativeLayout extends ViewGroup {
 
@@ -781,6 +784,12 @@ public class RelativeLayout extends ViewGroup {
         }
     }
 
+    /**
+     * Describes how the child views are positioned.
+     *
+     * @return the gravity.
+     * @see #setGravity(int)
+     */
     public int getGravity() {
         return gravity;
     }
@@ -795,7 +804,7 @@ public class RelativeLayout extends ViewGroup {
     @Override
     protected ViewGroup.LayoutParams convertLayoutParams(@Nonnull ViewGroup.LayoutParams params) {
         if (params instanceof LayoutParams) {
-            return new LayoutParams((LayoutParams) params);
+            return params;
         } else if (params instanceof MarginLayoutParams) {
             return new LayoutParams((MarginLayoutParams) params);
         }

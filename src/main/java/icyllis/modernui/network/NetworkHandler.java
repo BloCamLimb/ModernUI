@@ -46,23 +46,26 @@ import java.util.function.Supplier;
 
 @SuppressWarnings("unused")
 public class NetworkHandler {
+
     /**
-     * Main network channel
+     * Main network channel, lazy-loading.
      */
     public static final NetworkHandler INSTANCE = new NetworkHandler(ModernUI.MODID, "main_network");
 
     protected SimpleChannel channel;
 
+    protected String protocol;
+
     private int index = 0;
 
     public NetworkHandler(@Nonnull String modid, @Nonnull String name) {
-        String protocol = ModList.get().getModFileById(modid).getMods().get(0).getVersion().getQualifier();
         channel = NetworkRegistry.ChannelBuilder
                 .named(new ResourceLocation(modid, name))
-                .networkProtocolVersion(() -> protocol)
-                .clientAcceptedVersions(protocol::equals)
-                .serverAcceptedVersions(protocol::equals)
+                .networkProtocolVersion(this::getProtocolVersion)
+                .clientAcceptedVersions(this::checkProtocolOnClient)
+                .serverAcceptedVersions(this::checkProtocolOnServer)
                 .simpleChannel();
+        protocol = ModList.get().getModFileById(modid).getMods().get(0).getVersion().getQualifier();
     }
 
     public NetworkHandler(@Nonnull SimpleChannel channel) {
@@ -73,12 +76,24 @@ public class NetworkHandler {
 
     }
 
+    public String getProtocolVersion() {
+        return protocol;
+    }
+
+    public boolean checkProtocolOnClient(@Nonnull String serverProtocol) {
+        return serverProtocol.equals(NetworkRegistry.ABSENT) || serverProtocol.equals(protocol);
+    }
+
+    public boolean checkProtocolOnServer(@Nonnull String clientProtocol) {
+        return clientProtocol.equals(protocol);
+    }
+
     /**
      * Register a network message
      *
      * @param type      message class
-     * @param factory   factory to create default new instance, should be a empty constructor
-     * @param direction message direction, null for bi-directional message or unclear, either
+     * @param factory   factory to create default new instance every time, should be an empty constructor
+     * @param direction message direction, either {@code null} for bi-directional message,
      *                  {@link NetworkDirection#PLAY_TO_CLIENT} or {@link NetworkDirection#PLAY_TO_SERVER}
      * @param <MSG>     message type
      */
@@ -140,7 +155,7 @@ public class NetworkHandler {
 
     /**
      * A helper version of {@link #sendToPlayer(IMessage, ServerPlayerEntity)}
-     * auto cast player entity to server player entity
+     * to cast player entity to server player entity
      *
      * @param message message to send
      * @param player  player entity on server
@@ -162,7 +177,7 @@ public class NetworkHandler {
     }
 
     /**
-     * Send a message to all players on server
+     * Send a message to all players on the server
      *
      * @param message message to send
      * @param <MSG>   message type
@@ -239,7 +254,7 @@ public class NetworkHandler {
      * @param chunk   chunk that players in
      * @param <MSG>   message type
      */
-    public <MSG extends IMessage> void sendToAllTracking(MSG message, @Nonnull Chunk chunk) {
+    public <MSG extends IMessage> void sendToChunk(MSG message, @Nonnull Chunk chunk) {
         final IPacket<?> packet = channel.toVanillaPacket(message, NetworkDirection.PLAY_TO_CLIENT);
         ((ServerWorld) chunk.getWorld()).getChunkProvider().chunkManager.getTrackingPlayers(
                 chunk.getPos(), false).forEach(e -> e.connection.sendPacket(packet));

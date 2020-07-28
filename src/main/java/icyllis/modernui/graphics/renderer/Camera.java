@@ -24,6 +24,7 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 
+@Deprecated
 public class Camera {
 
     private List<Matrix4f> matrix4fs = new ArrayList<>();

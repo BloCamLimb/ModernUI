@@ -155,13 +155,13 @@ public class Canvas {
     /**
      * Set current paint color with alpha
      *
-     * @param rgba like 0x80404040 (=R64,G64,B64,A128)
+     * @param argb like 0x80404040 (=R64,G64,B64,A128)
      */
-    public void setARGB(int rgba) {
-        a = rgba >> 24 & 0xff;
-        r = rgba >> 16 & 0xff;
-        g = rgba >> 8 & 0xff;
-        b = rgba & 0xff;
+    public void setARGB(int argb) {
+        a = argb >> 24 & 0xff;
+        r = argb >> 16 & 0xff;
+        g = argb >> 8 & 0xff;
+        b = argb & 0xff;
     }
 
     /**
@@ -193,12 +193,14 @@ public class Canvas {
         this.a = a;
     }
 
+    @Deprecated
     public void setColor(@Nonnull Color3i color) {
         r = color.getRed();
         g = color.getGreen();
         b = color.getBlue();
     }
 
+    @Deprecated
     public void setColor(@Nonnull Color3i color, int a) {
         r = color.getRed();
         g = color.getGreen();
@@ -284,9 +286,7 @@ public class Canvas {
      * @param text formatted string
      * @param x    x pos
      * @param y    y pos
-     * @return text advance (text width), different from the vanilla method,
-     * which returns x with text advance, see
-     * @see ModernFontRenderer#drawStringInternal(String, float, float, int, boolean, IRenderTypeBuffer, Matrix4f, int)
+     * @return text advance (text width)
      */
     public float drawText(String text, float x, float y) {
         return fontRenderer.drawFromCanvas(text, x + drawingX, y + drawingY, r, g, b, a, textAlign);

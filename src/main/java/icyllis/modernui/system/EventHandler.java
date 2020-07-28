@@ -34,7 +34,7 @@ import javax.annotation.Nonnull;
  * Listens global common events
  */
 @Mod.EventBusSubscriber
-public class EventsHandler {
+public class EventHandler {
 
     @SubscribeEvent
     static void rightClickItem(@Nonnull PlayerInteractEvent.RightClickItem event) {
