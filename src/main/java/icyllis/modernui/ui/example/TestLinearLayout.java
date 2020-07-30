@@ -28,6 +28,7 @@ import icyllis.modernui.ui.layout.LinearLayout;
 import icyllis.modernui.ui.layout.Orientation;
 import icyllis.modernui.ui.master.UIManager;
 import icyllis.modernui.ui.master.View;
+import net.minecraft.item.Items;
 import net.minecraft.util.text.TextFormatting;
 
 import javax.annotation.Nonnull;
@@ -65,6 +66,7 @@ public class TestLinearLayout extends LinearLayout {
         super.onDraw(canvas);
         canvas.moveTo(this);
         canvas.resetColor();
+        canvas.drawItem(Items.DIAMOND, 0, 0);
         canvas.drawText(TextFormatting.GOLD + "LinearLayout " + canvas.getDrawingTime(), 0, 0);
     }
 

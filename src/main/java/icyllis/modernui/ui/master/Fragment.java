@@ -46,9 +46,8 @@ public class Fragment {
      * If this fragment is main fragment of a UI, this method
      * should create the main view of the UI, and can't be null.
      * <p>
-     * The main view of a UI is considered as a child of FrameLayout,
-     * so you can use LayoutParams of FrameLayout to layout the view.
-     * See {@link FrameLayout.LayoutParams}
+     * The main view of a UI is considered as a window.
+     * See {@link UIManager.LayoutParams}
      *
      * @return view instance or null
      */

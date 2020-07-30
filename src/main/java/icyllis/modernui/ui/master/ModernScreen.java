@@ -55,7 +55,7 @@ public final class ModernScreen extends Screen {
     }
 
     @Override
-    public void removed() {
+    public void onClose() {
         manager.destroy();
     }
 
@@ -97,7 +97,7 @@ public final class ModernScreen extends Screen {
             if (manager.sBack()) {
                 return true;
             }
-            manager.closeGuiScreen();
+            manager.closeGui();
             return true;
         } else if (keyCode == GLFW.GLFW_KEY_TAB) {
             boolean searchNext = !hasShiftDown();

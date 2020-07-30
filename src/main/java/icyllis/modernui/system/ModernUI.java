@@ -58,7 +58,7 @@ public class ModernUI {
     }
 
     // Java 1.8.0_51 which is officially used by Mojang will produce bugs with Modern UI
-    private void checkJava() {
+    private static void checkJava() {
         String javaVersion = System.getProperty("java.version");
         if (javaVersion.startsWith("1.8")) {
             String[] s = javaVersion.split("_");

@@ -31,6 +31,10 @@ public class MeasureSpec {
     private static final int MODE_SHIFT = 30;
     private static final int MODE_MASK  = 0x3 << MODE_SHIFT;
 
+    public static final Mode UNSPECIFIED = Mode.UNSPECIFIED;
+    public static final Mode EXACTLY     = Mode.EXACTLY;
+    public static final Mode AT_MOST     = Mode.AT_MOST;
+
     /**
      * Make measure specification based on the size and mode
      *

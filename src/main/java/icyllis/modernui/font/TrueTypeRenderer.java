@@ -25,6 +25,8 @@ import icyllis.modernui.font.process.FormattingStyle;
 import icyllis.modernui.font.process.TextCacheProcessor;
 import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.math.Color3i;
+import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.ui.master.UIManager;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.Tessellator;
@@ -64,15 +66,13 @@ public class TrueTypeRenderer implements IFontRenderer {
 
     /**
      * Note: When Minecraft load completed, MainMenuScreen will be open and post GuiOpenEvent
-     * UIManager will listen the event and create new Canvas instance, Canvas will call
+     * {@link UIManager} will listen the event and create new {@link Canvas} instance, Canvas will call
      * {@link #getInstance()} and init to perform this constructor
      */
     private TrueTypeRenderer() {
 
         // init constructor and hook
-        if (sGlobalRenderer) {
-            ModernFontRenderer.getInstance().hook();
-        }
+        ModernFontRenderer.getInstance().hook(sGlobalRenderer);
     }
 
     /**
@@ -99,6 +99,7 @@ public class TrueTypeRenderer implements IFontRenderer {
         return node.drawText(Tessellator.getInstance().getBuffer(), str, x, y, r, g, b, a);
     }
 
+    @Deprecated
     @Override
     public float drawString(@Nullable String str, float startX, float startY, int r, int g, int b, int a, TextAlign align) {
         /* Check for invalid arguments */
@@ -294,6 +295,7 @@ public class TrueTypeRenderer implements IFontRenderer {
      * @param startY the y coordinate to draw at
      * @return the total advance (horizontal distance) of this string
      */
+    @Deprecated
     float drawStringGlobal(@Nullable String str, float startX, float startY, int red, int green, int blue, int alpha, boolean isShadow, Matrix4f matrix, IRenderTypeBuffer typeBuffer, int packedLight) {
         /* Check for invalid arguments */
         if (str == null || str.isEmpty()) {

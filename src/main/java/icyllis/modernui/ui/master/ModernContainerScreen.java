@@ -71,13 +71,13 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
     }
 
     @Override
-    protected void func_230450_a_(@Nonnull MatrixStack matrixStack, float partialTicks, int mouseX, int mouseY) {
+    protected void drawGuiContainerBackgroundLayer(@Nonnull MatrixStack matrixStack, float partialTicks, int x, int y) {
         renderBackground(matrixStack);
     }
 
     @Override
-    public void removed() {
-        super.removed();
+    public void onClose() {
+        super.onClose();
         manager.destroy();
     }
 
@@ -130,7 +130,7 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
                 return true;
             }
 
-            if (this.func_195363_d(keyCode, scanCode))
+            if (this.itemStackMoved(keyCode, scanCode))
                 return true;
             if (this.hoveredSlot != null && this.hoveredSlot.getHasStack()) {
                 if (this.minecraft.gameSettings.keyBindPickBlock.isActiveAndMatches(mouseKey)) {

@@ -46,14 +46,14 @@ public class DigitGlyphInfo extends GlyphRenderInfo {
     @Override
     public void drawGlyph(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a) {
         builder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR_TEX);
-        glyphs[raw.charAt(stringIndex) - '0'].drawGlyph(builder, x + offsetX, y, r, g, b, a);
+        glyphs[raw.charAt(stringIndex) - 48].drawGlyph(builder, x + offsetX, y, r, g, b, a);
         builder.finishDrawing();
         WorldVertexBufferUploader.draw(builder);
     }
 
     @Override
     public void drawGlyph(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, int light) {
-        glyphs[raw.charAt(stringIndex) - '0'].drawGlyph(matrix, buffer, x + offsetX, y, r, g, b, a, light);
+        glyphs[raw.charAt(stringIndex) - 48].drawGlyph(matrix, buffer, x + offsetX, y, r, g, b, a, light);
     }
 
     @Override

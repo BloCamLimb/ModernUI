@@ -30,6 +30,8 @@ import net.minecraft.util.math.vector.Vector3f;
 import net.minecraft.util.text.CharacterManager;
 import net.minecraft.util.text.ITextProperties;
 import net.minecraft.util.text.Style;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import org.apache.commons.lang3.mutable.MutableFloat;
 
@@ -38,8 +40,8 @@ import java.util.Optional;
 
 /**
  * Replace vanilla renderer with Modern UI renderer
- * INTERNAL USE ONLY, developers can't use this for any reason
  */
+@OnlyIn(Dist.CLIENT)
 public class ModernFontRenderer extends FontRenderer {
 
     /**
@@ -56,6 +58,8 @@ public class ModernFontRenderer extends FontRenderer {
 
 
     private final TextCacheProcessor processor = TextCacheProcessor.getInstance();
+
+    private final MutableFloat mutableFloat = new MutableFloat();
 
     private ModernFontRenderer() {
         super($ -> null);
@@ -82,7 +86,10 @@ public class ModernFontRenderer extends FontRenderer {
         return INSTANCE;
     }
 
-    void hook() {
+    void hook(boolean doHook) {
+        if (!doHook) {
+            return;
+        }
         try {
             ObfuscationReflectionHelper.findField(Minecraft.class, "field_71466_p")
                     .set(Minecraft.getInstance(), this);
@@ -105,13 +112,14 @@ public class ModernFontRenderer extends FontRenderer {
     @Override
     public int func_238416_a_(@Nonnull ITextProperties text, float x, float y, int color, boolean dropShadow, Matrix4f matrix,
                               @Nonnull IRenderTypeBuffer buffer, boolean transparent, int colorBackground, int packedLight) {
-        MutableFloat mx = new MutableFloat(x);
+        mutableFloat.setValue(x);
         // iterate all siblings
         text.func_230439_a_((style, string) -> {
-            mx.add(drawLayer0(string, mx.floatValue(), y, color, dropShadow, matrix, buffer, packedLight, style));
+            mutableFloat.add(drawLayer0(string, mutableFloat.floatValue(), y, color, dropShadow, matrix, buffer, packedLight, style));
+            // continue
             return Optional.empty();
         }, Style.EMPTY);
-        return mx.getValue().intValue() + (dropShadow ? 1 : 0);
+        return mutableFloat.intValue() + (dropShadow ? 1 : 0);
     }
 
     private float drawLayer0(@Nonnull String string, float x, float y, int color, boolean dropShadow, Matrix4f matrix,
@@ -212,7 +220,8 @@ public class ModernFontRenderer extends FontRenderer {
     }
 
     /**
-     * Bidi always works no matter what language is in
+     * Bidi always works no matter what language is in.
+     * So we should analyze the original string without reordering.
      *
      * @param text text
      * @return text
