@@ -1,6 +1,7 @@
 {
   "minVersion": "0.8",
   "compatibilityLevel": "JAVA_8",
+  "plugin": "icyllis.modernui.system.MixinConfigPlugin",
   "package": "icyllis.modernui.system.mixin",
   "client": [
     "MixinMainWindow",
