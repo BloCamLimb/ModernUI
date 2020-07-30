@@ -24,7 +24,7 @@ import net.minecraft.util.math.MathHelper;
 
 import javax.annotation.Nonnull;
 
-public class MixinMethods {
+public class MixinTools {
 
     public static int calcGuiScales() {
         MainWindow mainWindow = Minecraft.getInstance().getMainWindow();

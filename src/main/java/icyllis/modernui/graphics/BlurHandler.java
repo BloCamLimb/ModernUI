@@ -100,7 +100,7 @@ public enum BlurHandler {
     @SubscribeEvent(priority = EventPriority.LOW)
     void gGuiOpen(@Nonnull GuiOpenEvent event) {
         @Nullable Screen gui = event.getGui();
-        if (minecraft.world == null && !(gui instanceof MainMenuScreen)) {
+        if (minecraft.world == null) {
             return;
         }
 
