@@ -23,7 +23,6 @@ import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.system.Config;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.ui.animation.Animation;
-import icyllis.modernui.ui.layout.FrameLayout;
 import icyllis.modernui.ui.layout.Gravity;
 import icyllis.modernui.ui.layout.MeasureSpec;
 import icyllis.modernui.ui.test.IModule;
@@ -55,8 +54,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * Modern UI - UI system service, almost everything is here.
- * Use this correctly, or...
+ * UI system service, almost everything is here.
+ * Manage HUD and the current UI window, and all the windows that accompany the UI.
  */
 @SuppressWarnings("unused")
 @OnlyIn(Dist.CLIENT)
@@ -83,8 +82,10 @@ public enum UIManager implements IViewParent {
     // main fragment of a UI
     private Fragment fragment;
 
-    // main view that created from main fragment
+    // main UI view that created from main fragment
     private View view;
+
+    private final List<View> upperViews = new ArrayList<>();
 
     @Deprecated
     @Nullable
@@ -111,7 +112,7 @@ public enum UIManager implements IViewParent {
     // the canvas to draw things shared in all views and drawables
     // lazy loading because this class is loaded before GL initialization
     // will be init when Minecraft finished loading, and open MainMenuScreen
-    // also init ttf font renderer when loaded
+    // also init font renderer when loaded
     private Canvas canvas;
 
     // the most child hovered view, render at the top of other hovered ancestor views
@@ -138,47 +139,60 @@ public enum UIManager implements IViewParent {
     }
 
     /**
-     * Open a gui screen
+     * Render thread instance only
+     *
+     * @return instance
+     */
+    public static UIManager getInstance() {
+        return INSTANCE;
+    }
+
+    /**
+     * Open GUI screen and UI window
      *
      * @param mainFragment main fragment of the UI
+     * @see #init(Screen, int, int)
      */
-    public void openGuiScreen(@Nonnull Fragment mainFragment) {
+    public void openGui(@Nonnull Fragment mainFragment) {
         this.fragment = mainFragment;
         minecraft.displayGuiScreen(new ModernScreen());
     }
 
     /**
-     * Close current gui screen
+     * Close GUI screen, put UI window and all windows above it into recycler
+     *
+     * @see #destroy()
      */
-    public void closeGuiScreen() {
+    public void closeGui() {
         minecraft.displayGuiScreen(null);
     }
 
     /**
-     * Register a container screen. To open the gui screen,
-     * see {@link net.minecraftforge.fml.network.NetworkHooks#openGui(ServerPlayerEntity, INamedContainerProvider, Consumer)}
+     * Register a container screen to open the gui screen.
      *
      * @param type    container type
      * @param factory main fragment factory
-     * @param <T>     container
+     * @param <T>     container class type
+     * @see net.minecraftforge.fml.network.NetworkHooks#openGui(ServerPlayerEntity, INamedContainerProvider, Consumer)
      */
-    public <T extends Container> void registerContainerScreen(@Nonnull ContainerType<? extends T> type,
-                                                              @Nonnull Function<T, Fragment> factory) {
-        ScreenManager.registerFactory(type, castModernScreen(factory));
+    public <T extends Container, U extends Screen & IHasContainer<T>> void registerContainerScreen(
+            @Nonnull ContainerType<? extends T> type, @Nonnull Function<T, Fragment> factory) {
+        // prevent compiler error
+        ScreenManager.registerFactory(type, cast(factory));
     }
 
-    @SuppressWarnings({"unchecked", "ConstantConditions"})
     @Nonnull
-    private <T extends Container, U extends Screen & IHasContainer<T>> ScreenManager.IScreenFactory<T, U> castModernScreen(
+    @SuppressWarnings({"unchecked", "ConstantConditions"})
+    private <T extends Container, U extends Screen & IHasContainer<T>> ScreenManager.IScreenFactory<T, U> cast(
             @Nonnull Function<T, Fragment> factory) {
-        return (c, p, t) -> {
+        return (container, playerInventory, title) -> {
             // The client container can be null sometimes, but a container screen doesn't allow the container to be null
             // so return null, there's no gui will be open, and the server container will be closed automatically
-            if (c == null) {
+            if (container == null) {
                 return null;
             }
-            this.fragment = factory.apply(c);
-            return (U) new ModernContainerScreen<>(c, p, t);
+            this.fragment = factory.apply(container);
+            return (U) new ModernContainerScreen<>(container, playerInventory, title);
         };
     }
 
@@ -231,7 +245,7 @@ public enum UIManager implements IViewParent {
         if (view == null) {
             if (fragment == null) {
                 ModernUI.LOGGER.fatal(MARKER, "Fragment can't be null when opening a gui screen");
-                closeGuiScreen();
+                closeGui();
                 return;
             }
             view = fragment.createView();
@@ -243,14 +257,11 @@ public enum UIManager implements IViewParent {
 
             ViewGroup.LayoutParams params = view.getLayoutParams();
             // convert layout params
-            if (!(params instanceof FrameLayout.LayoutParams)) {
-                if (params instanceof ViewGroup.MarginLayoutParams) {
-                    params = new FrameLayout.LayoutParams((ViewGroup.MarginLayoutParams) params);
-                } else {
-                    params = new FrameLayout.LayoutParams(params);
-                }
+            if (!(params instanceof LayoutParams)) {
+                params = new LayoutParams(LayoutParams.UI_WINDOW);
                 view.setLayoutParams(params);
             }
+            ((LayoutParams) params).type = LayoutParams.UI_WINDOW;
 
             view.assignParent(this);
         }
@@ -529,7 +540,8 @@ public enum UIManager implements IViewParent {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableAlphaTest();
-        RenderSystem.disableDepthTest();
+        RenderSystem.enableDepthTest();
+        RenderSystem.depthMask(false);
         canvas.setDrawingTime(time);
         canvas.moveTo(view);
         view.draw(canvas);
@@ -566,25 +578,25 @@ public enum UIManager implements IViewParent {
         double scale = minecraft.getMainWindow().getGuiScaleFactor();
         mouseX = (minecraft.mouseHelper.getMouseX() / scale);
         mouseY = (minecraft.mouseHelper.getMouseY() / scale);
-        layout();
+        layoutUI();
     }
 
     /**
      * Layout entire UI views, a bit performance hungry
      * {@link #requestLayout()}
      */
-    private void layout() {
+    private void layoutUI() {
         long startTime = System.nanoTime();
-        // main view should be forced to layout as FrameLayout
+
         int widthSpec = MeasureSpec.makeMeasureSpec(width, MeasureSpec.Mode.EXACTLY);
         int heightSpec = MeasureSpec.makeMeasureSpec(height, MeasureSpec.Mode.EXACTLY);
 
-        FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) view.getLayoutParams();
+        LayoutParams lp = (LayoutParams) view.getLayoutParams();
 
         int childWidthMeasureSpec = ViewGroup.getChildMeasureSpec(widthSpec,
-                lp.leftMargin + lp.rightMargin, lp.width);
+                0, lp.width);
         int childHeightMeasureSpec = ViewGroup.getChildMeasureSpec(heightSpec,
-                lp.topMargin + lp.bottomMargin, lp.height);
+                0, lp.height);
 
         view.measure(childWidthMeasureSpec, childHeightMeasureSpec);
 
@@ -596,26 +608,24 @@ public enum UIManager implements IViewParent {
 
         switch (lp.gravity & Gravity.HORIZONTAL_GRAVITY_MASK) {
             case Gravity.HORIZONTAL_CENTER:
-                childLeft = (width - measuredWidth) / 2 +
-                        lp.leftMargin - lp.rightMargin;
+                childLeft = (width - measuredWidth) / 2;
                 break;
             case Gravity.RIGHT:
-                childLeft = width - measuredWidth - lp.rightMargin;
+                childLeft = width - measuredWidth;
                 break;
             default:
-                childLeft = lp.leftMargin;
+                childLeft = 0;
         }
 
         switch (lp.gravity & Gravity.VERTICAL_GRAVITY_MASK) {
             case Gravity.VERTICAL_CENTER:
-                childTop = (height - measuredHeight) / 2 +
-                        lp.topMargin - lp.bottomMargin;
+                childTop = (height - measuredHeight) / 2;
                 break;
             case Gravity.BOTTOM:
-                childTop = height - measuredHeight - lp.bottomMargin;
+                childTop = height - measuredHeight;
                 break;
             default:
-                childTop = lp.topMargin;
+                childTop = 0;
         }
 
         view.layout(childLeft, childTop, childLeft + measuredWidth, childTop + measuredHeight);
@@ -639,6 +649,7 @@ public enum UIManager implements IViewParent {
             popup = null;
             fragment = null;
             modernScreen = null;
+            upperViews.clear();
             lastDClickTick = Integer.MIN_VALUE;
             lastLayoutTime = 0;
             layoutRequested = false;
@@ -704,7 +715,7 @@ public enum UIManager implements IViewParent {
                 // fixed at 40Hz
                 if (time - lastLayoutTime >= 25) {
                     lastLayoutTime = time;
-                    layout();
+                    layoutUI();
                 }
             }
         }
@@ -733,7 +744,7 @@ public enum UIManager implements IViewParent {
      *
      * @return window width
      */
-    public int getWindowWidth() {
+    public int getGameWidth() {
         return width;
     }
 
@@ -742,7 +753,7 @@ public enum UIManager implements IViewParent {
      *
      * @return window height
      */
-    public int getWindowHeight() {
+    public int getGameHeight() {
         return height;
     }
 
@@ -909,4 +920,63 @@ public enum UIManager implements IViewParent {
         throw new RuntimeException("System view!");
     }
 
+    /**
+     * Window layout params
+     */
+    public static class LayoutParams extends ViewGroup.LayoutParams {
+
+        public static final int UI_WINDOW = 500;
+
+        public static final int UI_OVERLAY = 2500;
+
+        /**
+         * The general type of window.
+         */
+        public int type;
+
+        /*
+         * X position for this window.  With the default gravity it is ignored.
+         * When using {@link Gravity#LEFT} or {@link Gravity#RIGHT} it provides
+         * an offset from the given edge.
+         */
+        //public int x;
+
+        /*
+         * Y position for this window.  With the default gravity it is ignored.
+         * When using {@link Gravity#TOP} or {@link Gravity#BOTTOM} it provides
+         * an offset from the given edge.
+         */
+        //public int y;
+
+        /**
+         * Placement of window within the screen as per {@link Gravity}.
+         *
+         * @see Gravity
+         */
+        public int gravity = Gravity.TOP_LEFT;
+
+        public LayoutParams() {
+            super(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
+        }
+
+        public LayoutParams(int type) {
+            this();
+            this.type = type;
+        }
+
+        public LayoutParams(int width, int height) {
+            super(width, height);
+        }
+
+        public LayoutParams(int width, int height, int type) {
+            super(width, height);
+            this.type = type;
+        }
+
+        public LayoutParams(int width, int height, int type, int gravity) {
+            super(width, height);
+            this.type = type;
+            this.gravity = gravity;
+        }
+    }
 }

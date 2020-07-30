@@ -69,7 +69,7 @@ public final class GuiChat extends Screen {
     }
 
     @Override
-    public void removed() {
+    public void onClose() {
         Minecraft.getInstance().keyboardListener.enableRepeatEvents(false);
     }
 

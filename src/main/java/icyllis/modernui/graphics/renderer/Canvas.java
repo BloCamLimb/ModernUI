@@ -265,6 +265,7 @@ public class Canvas {
      *
      * @param z target z
      */
+    @Deprecated
     public void setZ(double z) {
         this.z = z;
     }
@@ -604,7 +605,6 @@ public class Canvas {
         itemRenderer.renderItemIntoGUI(item.getDefaultInstance(), (int) (x + drawingX), (int) (y + drawingY));
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        RenderSystem.disableDepthTest();
     }
 
     /**
@@ -618,7 +618,6 @@ public class Canvas {
         itemRenderer.renderItemAndEffectIntoGUI(stack, (int) (x + drawingX), (int) (y + drawingY));
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        RenderSystem.disableDepthTest();
     }
 
     /**
@@ -634,7 +633,6 @@ public class Canvas {
         itemRenderer.renderItemOverlays(ModernFontRenderer.getInstance(), stack, (int) (x + drawingX), (int) (y + drawingY));
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        RenderSystem.disableDepthTest();
     }
 
     /**

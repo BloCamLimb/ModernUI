@@ -18,6 +18,8 @@
 
 package icyllis.modernui.ui.layout;
 
+import javax.annotation.Nonnull;
+
 /**
  * The position and size relationship of objects in containers.
  */
@@ -192,8 +194,11 @@ public class Gravity {
      * @param outRect   Receives the computed frame of the object in its
      *                  container. (L,T,R,B)
      */
-    public static void apply(int gravity, int w, int h, int[] container,
+    public static void apply(int gravity, int w, int h, @Nonnull int[] container,
                              int xAdj, int yAdj, int[] outRect) {
+        if (container.length < 4 || outRect.length < 4) {
+            throw new IllegalArgumentException();
+        }
         switch (gravity & ((AXIS_PULL_BEFORE | AXIS_PULL_AFTER) << AXIS_X_SHIFT)) {
             case 0:
                 outRect[0] = container[0]
@@ -276,5 +281,4 @@ public class Gravity {
                 break;
         }
     }
-
 }

@@ -21,6 +21,7 @@ package icyllis.modernui.ui.example;
 import icyllis.modernui.ui.layout.FrameLayout;
 import icyllis.modernui.ui.layout.Gravity;
 import icyllis.modernui.ui.master.Fragment;
+import icyllis.modernui.ui.master.UIManager;
 import icyllis.modernui.ui.master.View;
 import icyllis.modernui.ui.master.ViewGroup;
 import icyllis.modernui.ui.widget.ScrollView;
@@ -34,7 +35,9 @@ public class TestFragment extends Fragment {
     public View createView() {
         ScrollView scrollView = new ScrollView();
         // main view can use FrameLayout params
-        scrollView.setLayoutParams(new FrameLayout.LayoutParams(140, 140, Gravity.CENTER));
+        UIManager.LayoutParams params = new UIManager.LayoutParams(140, 140);
+        params.gravity = Gravity.CENTER;
+        scrollView.setLayoutParams(params);
         View content = new TestLinearLayout();
         content.setLayoutParams(new FrameLayout.LayoutParams(140, 800));
         scrollView.addView(content);

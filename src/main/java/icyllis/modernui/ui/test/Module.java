@@ -19,7 +19,6 @@
 package icyllis.modernui.ui.test;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.master.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.SimpleSound;
@@ -189,12 +188,12 @@ public abstract class Module implements IModule, IHost {
 
     @Override
     public int getGameWidth() {
-        return manager.getWindowWidth();
+        return manager.getGameWidth();
     }
 
     @Override
     public int getGameHeight() {
-        return manager.getWindowHeight();
+        return manager.getGameHeight();
     }
 
     @Override

@@ -55,7 +55,7 @@ function initializeCoreMod() {
                 return methodNode;
             }
         },*/
-        'guiScaleAlgorithm': {
+        /*'guiScaleAlgorithm': {
             'target': {
                 'type': 'METHOD',
                 'class': 'net.minecraft.client.MainWindow',
@@ -73,10 +73,10 @@ function initializeCoreMod() {
                     } else if (inst.getType() === AbstractInsnNode.LINE) {
                         var cast = ASMAPI.listOf(
                             new VarInsnNode(Opcodes.ILOAD, 1),
-                            /*new VarInsnNode(Opcodes.ALOAD, 0),
+                            /!*new VarInsnNode(Opcodes.ALOAD, 0),
                             new FieldInsnNode(Opcodes.GETFIELD, "net/minecraft/client/MainWindow", "field_198131_r", "I"), // framebufferWidth
                             new VarInsnNode(Opcodes.ALOAD, 0),
-                            new FieldInsnNode(Opcodes.GETFIELD, "net/minecraft/client/MainWindow", "field_198132_s", "I"), // framebufferHeight*/
+                            new FieldInsnNode(Opcodes.GETFIELD, "net/minecraft/client/MainWindow", "field_198132_s", "I"), // framebufferHeight*!/
                             new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/CoreMod", "calcGuiScale", "(I)I", false),
                             new InsnNode(Opcodes.IRETURN));
                         list.insert(inst, cast);
@@ -85,8 +85,8 @@ function initializeCoreMod() {
                 }
                 return methodNode;
             }
-        },
-        'renderBackgroundColor': {
+        },*/
+        /*'renderBackgroundColor': {
             'target': {
                 'type': 'METHOD',
                 'class': 'net.minecraft.client.gui.screen.Screen',
@@ -105,7 +105,7 @@ function initializeCoreMod() {
                         break;
                     }
                 }
-                /*var invoke = ASMAPI.findFirstMethodCall(methodNode, ASMAPI.MethodType.VIRTUAL, "net/minecraft/client/gui/screen/Screen", "fillGradient", "(Lcom/mojang/blaze3d/matrix/MatrixStack;IIIIII)V")
+                /!*var invoke = ASMAPI.findFirstMethodCall(methodNode, ASMAPI.MethodType.VIRTUAL, "net/minecraft/client/gui/screen/Screen", "fillGradient", "(Lcom/mojang/blaze3d/matrix/MatrixStack;IIIIII)V")
                 var ldc1 = invoke.getPrevious();
                 var ldc2 = ldc1.getPrevious();
                 list.remove(ldc1);
@@ -114,10 +114,10 @@ function initializeCoreMod() {
                     new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/CoreMod", "getScreenBackgroundColor", "()I", false),
                     new MethodInsnNode(Opcodes.INVOKESTATIC, "icyllis/modernui/system/CoreMod", "getScreenBackgroundColor", "()I", false)
                 );
-                list.insertBefore(invoke, cast);*/
+                list.insertBefore(invoke, cast);*!/
                 return methodNode;
             }
-        },
+        },*/
         'removeBidiReorder': {
             'target': {
                 'type': 'METHOD',

@@ -579,7 +579,8 @@ public class TextCacheProcessor {
             shift += 2;
         }
 
-        return Objects.requireNonNull(TextFormatting.getTextWithoutFormattingCodes(string)).toCharArray();
+        //noinspection ConstantConditions
+        return TextFormatting.getTextWithoutFormattingCodes(string).toCharArray();
     }
 
     /**

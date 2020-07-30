@@ -155,8 +155,8 @@ public class Scroller {
         }
         // fast scroll
         dis = startTime - lastTime;
-        if (dis < 150.0) {
-            duration *= (dis / 300.0f) + 0.5f;
+        if (dis < 120.0) {
+            duration *= (dis / 300.0f) + 0.6f;
         }
     }
 

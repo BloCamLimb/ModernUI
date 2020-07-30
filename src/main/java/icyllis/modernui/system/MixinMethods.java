@@ -18,45 +18,33 @@
 
 package icyllis.modernui.system;
 
-import icyllis.modernui.graphics.BlurHandler;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.math.MathHelper;
 
-@SuppressWarnings("unused")
-public class CoreMod {
+import javax.annotation.Nonnull;
 
-    /* Screen */
-    public static int getScreenBackgroundColor() {
-        return (int) (BlurHandler.INSTANCE.getBackgroundAlpha() * 255.0f) << 24;
-    }
+public class MixinMethods {
 
-    /* MainWindow */
-    public static int calcGuiScale(int guiScaleIn) {
-        int r = calcGuiScales();
-        return guiScaleIn > 0 ? MathHelper.clamp(guiScaleIn, r >> 8 & 0xf, r & 0xf) : r >> 4 & 0xf;
-    }
-
-    /* Core function */
     public static int calcGuiScales() {
         MainWindow mainWindow = Minecraft.getInstance().getMainWindow();
-        return calcGuiScales(mainWindow.getFramebufferWidth(), mainWindow.getFramebufferHeight());
+        return calcGuiScales(mainWindow);
     }
 
-    private static int calcGuiScales(int framebufferWidth, int framebufferHeight) {
+    public static int calcGuiScales(@Nonnull MainWindow mainWindow) {
 
-        double a1 = Math.floor(framebufferWidth / 16.0d);
-        double a2 = Math.floor(framebufferHeight / 9.0d);
+        double w = Math.floor(mainWindow.getFramebufferWidth() / 16.0d);
+        double h = Math.floor(mainWindow.getFramebufferHeight() / 9.0d);
 
-        if (a1 % 2 != 0) {
-            a1++;
+        if (w % 2 != 0) {
+            w++;
         }
-        if (a2 % 2 != 0) {
-            a2++;
+        if (h % 2 != 0) {
+            h++;
         }
 
-        double base = Math.min(a1, a2);
-        double top = Math.max(a1, a2);
+        double base = Math.min(w, h);
+        double top = Math.max(w, h);
 
         int min;
         int max = MathHelper.clamp((int) (base / 27), 1, 10);
@@ -84,6 +72,11 @@ public class CoreMod {
 
         return min << 8 | best << 4 | max;
     }
+
+    /* Screen */
+    /*public static int getScreenBackgroundColor() {
+        return (int) (BlurHandler.INSTANCE.getBackgroundAlpha() * 255.0f) << 24;
+    }*/
 
     /* Minecraft */
     /*public static void displayInGameMenu(boolean usePauseScreen) {

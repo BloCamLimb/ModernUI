@@ -498,7 +498,7 @@ public class GlyphManager {
         int standardRenderWidth = 0;
 
         for (int i = 0; i < 10; i++) {
-            chars[0] = (char) ('0' + i);
+            chars[0] = (char) (48 + i);
             GlyphVector vector = font.createGlyphVector(glyphTextureGraphics.getFontRenderContext(), chars);
 
             Rectangle renderBounds = vector.getGlyphPixelBounds(0, glyphTextureGraphics.getFontRenderContext(), 0, 0);
@@ -780,7 +780,8 @@ public class GlyphManager {
         GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, x, y, width, height,
                 GL11.GL_ALPHA, GL11.GL_UNSIGNED_BYTE, uploadBuffer);
 
-        /* WRONG CODE HERE int mipmapLevel = sEnableMipmap ? sMipmapLevel : 0;
+        // WRONG CODE HERE
+        /* int mipmapLevel = sEnableMipmap ? sMipmapLevel : 0;
 
         for (int level = 0; level <= mipmapLevel; level++) {
             GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, level, x, y, width, height,

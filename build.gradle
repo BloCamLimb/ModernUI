@@ -5,16 +5,22 @@ buildscript {
             name "forge"
             url "https://files.minecraftforge.net/maven"
         }
+        maven {
+            name "sponge"
+            url = "https://repo.spongepowered.org/maven"
+        }
     }
     dependencies {
         classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.+', changing: true
+        classpath 'org.spongepowered:mixingradle:0.7-SNAPSHOT'
     }
 }
 plugins {
-    id "com.matthewprenger.cursegradle" version '1.4.0'
+    id 'com.matthewprenger.cursegradle' version '1.4.0'
     id 'com.github.johnrengelman.shadow' version '4.0.4'
 }
 apply plugin: 'net.minecraftforge.gradle'
+apply plugin: 'org.spongepowered.mixin'
 apply plugin: 'java-library'
 apply plugin: 'maven-publish'
 
@@ -37,6 +43,7 @@ sourceSets {
         }
         compileClasspath += sourceSets.api.output
         runtimeClasspath += sourceSets.api.output
+        ext.refMap = "mixins.modernui.refmap.json"
     }
     test {
         compileClasspath += sourceSets.api.output + sourceSets.main.output
@@ -62,7 +69,7 @@ configurations {
 }
 
 minecraft {
-    mappings channel: 'snapshot', version: '20200707-1.16.1'
+    mappings channel: 'snapshot', version: '20200723-1.16.1'
 
     accessTransformer(file('src/main/resources/META-INF/accesstransformer.cfg'))
 
@@ -158,7 +165,8 @@ jar {
                 "Implementation-Title"    : project.name,
                 "Implementation-Version"  : "${version}",
                 "Implementation-Vendor"   : "BloCamLimb",
-                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
+                "MixinConnector"          : "icyllis.modernui.system.MixinConnector"
         ])
     }
 }
