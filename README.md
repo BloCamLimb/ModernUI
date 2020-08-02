@@ -15,7 +15,7 @@
 ### Adding Modern UI to your project
 #### Development environment
 - Java 8u251
-- Forge 1.16.1-32.0.57
+- Forge 1.16.1-32.0.93
 #### Gradle configuration
 Add followings to `build.gradle`
 ```

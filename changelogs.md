@@ -1,3 +1,10 @@
+### 1.16.1-2.0.2.59 (2020-08-02)
+**Font Engine works fine, UI is developing, keep update!**
+ 
+* Fix text color background rendering
+* Fix invalid text formatting codes not being removed
+* Require Forge 32.0.93+
+
 ### 1.16.1-2.0.1.58 (2020-07-24)
 **Font Engine works fine, UI is developing, keep update!**
  

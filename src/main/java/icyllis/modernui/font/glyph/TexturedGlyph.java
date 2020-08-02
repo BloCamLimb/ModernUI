@@ -21,7 +21,6 @@ package icyllis.modernui.font.glyph;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import icyllis.modernui.font.node.TextRenderType;
-import icyllis.modernui.system.extension.IMixinMatrix4f;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.util.math.vector.Matrix4f;
 
@@ -35,21 +34,14 @@ import javax.annotation.Nonnull;
  */
 public class TexturedGlyph {
 
-    public static final Matrix4f MATRIX_IDENTITY;
-
-    static {
-        MATRIX_IDENTITY = new Matrix4f();
-        MATRIX_IDENTITY.setIdentity();
-    }
-
     /**
      * Render type for render type buffer system.
      */
     private final TextRenderType renderType;
+    private final TextRenderType seeThroughType;
 
     /**
      * The horizontal advance in high-precision pixels of this glyph.
-     * This will be used for text trimming.
      */
     public final float advance;
 
@@ -104,7 +96,8 @@ public class TexturedGlyph {
     private final float v2;
 
     public TexturedGlyph(int textureName, float advance, float baselineX, float baselineY, float width, float height, float u1, float v1, float u2, float v2) {
-        renderType = TextRenderType.getOrCacheType(textureName);
+        renderType = TextRenderType.getOrCacheType(textureName, false);
+        seeThroughType = TextRenderType.getOrCacheType(textureName, true);
         this.advance = advance;
         this.baselineX = baselineX;
         this.baselineY = baselineY;
@@ -126,13 +119,10 @@ public class TexturedGlyph {
         builder.pos(x + width, y, 0).color(r, g, b, a).tex(u2, v1).endVertex();
     }
 
-    public void drawGlyph(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, float x, float y, int r, int g, int b, int a, int packedLight) {
-        IVertexBuilder builder = buffer.getBuffer(renderType);
+    public void drawGlyph(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, float x, float y, int r, int g, int b, int a, boolean transparent, int packedLight) {
+        IVertexBuilder builder = buffer.getBuffer(transparent ? seeThroughType : renderType);
         x += baselineX;
         y += baselineY;
-        if (((IMixinMatrix4f) matrix).isIdentity()) {
-
-        }
         builder.pos(matrix, x, y, 0).color(r, g, b, a).tex(u1, v1).lightmap(packedLight).endVertex();
         builder.pos(matrix, x, y + height, 0).color(r, g, b, a).tex(u1, v2).lightmap(packedLight).endVertex();
         builder.pos(matrix, x + width, y + height, 0).color(r, g, b, a).tex(u2, v2).lightmap(packedLight).endVertex();

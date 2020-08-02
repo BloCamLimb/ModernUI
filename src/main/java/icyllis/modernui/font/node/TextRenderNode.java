@@ -47,7 +47,7 @@ public class TextRenderNode {
         }
 
         @Override
-        public float drawText(Matrix4f matrix, IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, boolean isShadow, int packedLight) {
+        public float drawText(Matrix4f matrix, IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, boolean isShadow, boolean transparent, int colorBackground, int packedLight) {
             return 0;
         }
     };
@@ -91,9 +91,11 @@ public class TextRenderNode {
         final int startR = r;
         final int startG = g;
         final int startB = b;
+
         y += BASELINE_OFFSET;
         x -= GlyphManager.GLYPH_OFFSET;
         RenderSystem.enableTexture();
+
         for (GlyphRenderInfo glyph : glyphs) {
             if (glyph.color != null) {
                 int color = glyph.color;
@@ -109,6 +111,7 @@ public class TextRenderNode {
             }
             glyph.drawGlyph(builder, raw, x, y, r, g, b, a);
         }
+
         if (hasEffect) {
             r = startR;
             g = startG;
@@ -137,15 +140,17 @@ public class TextRenderNode {
         return advance;
     }
 
-    public float drawText(Matrix4f matrix, IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, boolean isShadow, int packedLight) {
+    public float drawText(Matrix4f matrix, IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, boolean isShadow, boolean transparent, int colorBackground, int packedLight) {
         final int startR = r;
         final int startG = g;
         final int startB = b;
         if (buffer instanceof IRenderTypeBuffer.Impl) {
             ((IRenderTypeBuffer.Impl) buffer).finish();
         }
+
         y += VANILLA_BASELINE_OFFSET;
         x -= GlyphManager.GLYPH_OFFSET;
+
         for (GlyphRenderInfo glyph : glyphs) {
             if (glyph.color != null) {
                 int color = glyph.color;
@@ -164,14 +169,17 @@ public class TextRenderNode {
                     }
                 }
             }
-            glyph.drawGlyph(matrix, buffer, raw, x, y, r, g, b, a, packedLight);
+            glyph.drawGlyph(matrix, buffer, raw, x, y, r, g, b, a, transparent, packedLight);
         }
+
+        IVertexBuilder builder;
+        x += GlyphManager.GLYPH_OFFSET;
+
         if (hasEffect) {
             r = startR;
             g = startG;
             b = startB;
-            x += GlyphManager.GLYPH_OFFSET;
-            IVertexBuilder builder = buffer.getBuffer(EffectRenderType.INSTANCE);
+            builder = buffer.getBuffer(EffectRenderType.getRenderType(true));
             for (GlyphRenderInfo glyph : glyphs) {
                 if (glyph.color != null) {
                     int color = glyph.color;
@@ -193,6 +201,20 @@ public class TextRenderNode {
                 glyph.drawEffect(matrix, builder, x, y, r, g, b, a, packedLight);
             }
         }
+
+        if (colorBackground != 0) {
+            builder = buffer.getBuffer(EffectRenderType.getRenderType(transparent));
+            y -= VANILLA_BASELINE_OFFSET;
+            a = colorBackground >> 24 & 0xff;
+            r = colorBackground >> 16 & 0xff;
+            g = colorBackground >> 8 & 0xff;
+            b = colorBackground & 0xff;
+            builder.pos(matrix, x - 1, y + 9, TextRenderEffect.EFFECT_DEPTH).color(r, g, b, a).lightmap(packedLight).endVertex();
+            builder.pos(matrix, x + advance + 1, y + 9, TextRenderEffect.EFFECT_DEPTH).color(r, g, b, a).lightmap(packedLight).endVertex();
+            builder.pos(matrix, x + advance + 1, y, TextRenderEffect.EFFECT_DEPTH).color(r, g, b, a).lightmap(packedLight).endVertex();
+            builder.pos(matrix, x - 1, y, TextRenderEffect.EFFECT_DEPTH).color(r, g, b, a).lightmap(packedLight).endVertex();
+        }
+
         return advance;
     }
 }
