@@ -657,6 +657,11 @@ public class Canvas {
         drawingY = drawable.getTop();
     }
 
+    public void moveToZero() {
+        drawingX = 0;
+        drawingY = 0;
+    }
+
     public void save() {
         RenderSystem.pushMatrix();
     }
