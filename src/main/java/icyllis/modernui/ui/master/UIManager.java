@@ -18,6 +18,7 @@
 
 package icyllis.modernui.ui.master;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.system.Config;
@@ -542,15 +543,24 @@ public enum UIManager implements IViewParent {
         RenderSystem.disableAlphaTest();
         RenderSystem.enableDepthTest();
         RenderSystem.depthMask(false);
+
+        /*canvas.moveToZero();
+        canvas.setColor(0, 0, 0, 51);
+        canvas.drawRect(0, 0, width, height);
+        RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.DST_COLOR, GlStateManager.DestFactor.SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+        canvas.setColor(255, 255, 255, (int) (255 * (255.0f / (255 - 51) - 1)));
+        canvas.drawRect(60, 60, width - 60, height - 60);
+        RenderSystem.defaultBlendFunc();*/
+
         canvas.setDrawingTime(time);
         canvas.moveTo(view);
         view.draw(canvas);
         /*if (popup != null) {
             popup.draw(drawTime);
         }*/
-        UIEditor.INSTANCE.draw(canvas);
+        //UIEditor.INSTANCE.draw(canvas);
         GL11.glDisable(GL11.GL_LINE_SMOOTH);
-        RenderSystem.lineWidth(1.0f);
+        GL11.glLineWidth(1.0f);
         RenderSystem.enableTexture();
         RenderSystem.disableBlend();
     }

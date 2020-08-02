@@ -21,6 +21,7 @@ package icyllis.modernui.font.glyph;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import icyllis.modernui.font.node.TextRenderType;
+import icyllis.modernui.system.extension.IMixinMatrix4f;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.util.math.vector.Matrix4f;
 
@@ -33,6 +34,13 @@ import javax.annotation.Nonnull;
  * @since 2.0
  */
 public class TexturedGlyph {
+
+    public static final Matrix4f MATRIX_IDENTITY;
+
+    static {
+        MATRIX_IDENTITY = new Matrix4f();
+        MATRIX_IDENTITY.setIdentity();
+    }
 
     /**
      * Render type for render type buffer system.
@@ -122,6 +130,9 @@ public class TexturedGlyph {
         IVertexBuilder builder = buffer.getBuffer(renderType);
         x += baselineX;
         y += baselineY;
+        if (((IMixinMatrix4f) matrix).isIdentity()) {
+
+        }
         builder.pos(matrix, x, y, 0).color(r, g, b, a).tex(u1, v1).lightmap(packedLight).endVertex();
         builder.pos(matrix, x, y + height, 0).color(r, g, b, a).tex(u1, v2).lightmap(packedLight).endVertex();
         builder.pos(matrix, x + width, y + height, 0).color(r, g, b, a).tex(u2, v2).lightmap(packedLight).endVertex();
