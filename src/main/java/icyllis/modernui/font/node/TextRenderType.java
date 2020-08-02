@@ -35,12 +35,14 @@ public class TextRenderType extends RenderType {
      * Texture id to render type map
      */
     //TODO remove some old textures depend on put order
-    private static final Map<Integer, TextRenderType> TYPES = new Int2ObjectLinkedOpenHashMap<>();
+    private static final Map<Integer, TextRenderType> TYPES             = new Int2ObjectLinkedOpenHashMap<>();
+    private static final Map<Integer, TextRenderType> SEE_THROUGH_TYPES = new Int2ObjectLinkedOpenHashMap<>();
 
     /**
      * Only the texture id is different, the rest state are same
      */
     private static final ImmutableList<RenderState> GENERAL_STATES;
+    private static final ImmutableList<RenderState> SEE_THROUGH_STATES;
 
     static {
         GENERAL_STATES = ImmutableList.of(
@@ -57,7 +59,24 @@ public class TextRenderType extends RenderType {
                 RenderState.MAIN_TARGET,
                 RenderState.DEFAULT_TEXTURING,
                 RenderState.COLOR_DEPTH_WRITE,
-                RenderState.DEFAULT_LINE);
+                RenderState.DEFAULT_LINE
+        );
+        SEE_THROUGH_STATES = ImmutableList.of(
+                RenderState.TRANSLUCENT_TRANSPARENCY,
+                RenderState.DIFFUSE_LIGHTING_DISABLED,
+                RenderState.SHADE_DISABLED,
+                RenderState.DEFAULT_ALPHA,
+                RenderState.DEPTH_ALWAYS,
+                RenderState.CULL_ENABLED,
+                RenderState.LIGHTMAP_ENABLED,
+                RenderState.OVERLAY_DISABLED,
+                RenderState.FOG,
+                RenderState.NO_LAYERING,
+                RenderState.MAIN_TARGET,
+                RenderState.DEFAULT_TEXTURING,
+                RenderState.COLOR_WRITE,
+                RenderState.DEFAULT_LINE
+        );
     }
 
     private final int hashCode;
@@ -81,12 +100,26 @@ public class TextRenderType extends RenderType {
         this.hashCode = Objects.hash(super.hashCode(), GENERAL_STATES, textureName);
     }
 
-    public static TextRenderType getOrCacheType(int textureName) {
-        return TYPES.computeIfAbsent(textureName, TextRenderType::new);
+    //TODO see through type bug
+    private TextRenderType(int textureName, String t) {
+        super(t,
+                DefaultVertexFormats.POSITION_COLOR_TEX_LIGHTMAP,
+                GL11.GL_QUADS, 256, false, true,
+                () -> {
+                    SEE_THROUGH_STATES.forEach(RenderState::setupRenderState);
+                    RenderSystem.enableTexture();
+                    RenderSystem.bindTexture(textureName);
+                },
+                () -> SEE_THROUGH_STATES.forEach(RenderState::clearRenderState));
+        this.textureName = textureName;
+        this.hashCode = Objects.hash(super.hashCode(), SEE_THROUGH_STATES, textureName);
     }
 
-    public static boolean removeCachedType(int textureName) {
-        return TYPES.remove(textureName) != null;
+    public static TextRenderType getOrCacheType(int textureName, boolean seeThrough) {
+        if (seeThrough) {
+            return SEE_THROUGH_TYPES.computeIfAbsent(textureName, n -> new TextRenderType(n, "modern_text_see_through"));
+        }
+        return TYPES.computeIfAbsent(textureName, TextRenderType::new);
     }
 
     @Override

@@ -39,7 +39,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 //TODO Really Experimental, all changes won't be saved
-@Deprecated // :p will replaced by FragmentEditGui
 @OnlyIn(Dist.CLIENT)
 public enum UIEditor {
     INSTANCE;
@@ -75,24 +74,25 @@ public enum UIEditor {
             treeInfo.clear();
             List<String> temp = new ArrayList<>();
             IViewParent parent = hoveredView.getParent();
-            temp.add(hoveredView.getClass().getSimpleName());
-            temp.add(0, parent.getClass().getSimpleName());
-            while (parent != UIManager.INSTANCE) {
-                parent = parent.getParent();
-                temp.add(0, parent.getClass().getSimpleName());
-            }
-            for (int i = 0; i < temp.size(); i++) {
-                StringBuilder builder = new StringBuilder();
-                if (i != 0) {
-                    for (int j = 0; j < i; j++) {
-                        builder.append("   ");
+            if (parent != null) {
+                temp.add(hoveredView.getClass().getSimpleName());
+                do {
+                    temp.add(0, parent.getClass().getSimpleName());
+                    parent = parent.getParent();
+                } while (parent != null);
+                for (int i = 0; i < temp.size(); i++) {
+                    StringBuilder builder = new StringBuilder();
+                    if (i != 0) {
+                        for (int j = 0; j < i; j++) {
+                            builder.append("   ");
+                        }
                     }
+                    builder.append(temp.get(i));
+                    if (i == 0) {
+                        builder.append(" (System)");
+                    }
+                    treeInfo.add(builder.toString());
                 }
-                builder.append(temp.get(i));
-                if (i == 0) {
-                    builder.append(" (System)");
-                }
-                treeInfo.add(builder.toString());
             }
             bottom = 14 + temp.size() * 9;
         }

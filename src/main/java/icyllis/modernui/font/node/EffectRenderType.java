@@ -28,9 +28,11 @@ import java.util.Objects;
 
 public class EffectRenderType extends RenderType {
 
-    public static final EffectRenderType INSTANCE = new EffectRenderType();
+    private static final EffectRenderType INSTANCE    = new EffectRenderType();
+    private static final EffectRenderType SEE_THROUGH = new EffectRenderType("modern_text_effect_see_through");
 
     private static final ImmutableList<RenderState> STATES;
+    private static final ImmutableList<RenderState> SEE_THROUGH_STATES;
 
     static {
         STATES = ImmutableList.of(
@@ -48,7 +50,25 @@ public class EffectRenderType extends RenderType {
                 RenderState.MAIN_TARGET,
                 RenderState.DEFAULT_TEXTURING,
                 RenderState.COLOR_DEPTH_WRITE,
-                RenderState.DEFAULT_LINE);
+                RenderState.DEFAULT_LINE
+        );
+        SEE_THROUGH_STATES = ImmutableList.of(
+                RenderState.NO_TEXTURE,
+                RenderState.TRANSLUCENT_TRANSPARENCY,
+                RenderState.DIFFUSE_LIGHTING_DISABLED,
+                RenderState.SHADE_DISABLED,
+                RenderState.DEFAULT_ALPHA,
+                RenderState.DEPTH_ALWAYS,
+                RenderState.CULL_ENABLED,
+                RenderState.LIGHTMAP_ENABLED,
+                RenderState.OVERLAY_DISABLED,
+                RenderState.FOG,
+                RenderState.NO_LAYERING,
+                RenderState.MAIN_TARGET,
+                RenderState.DEFAULT_TEXTURING,
+                RenderState.COLOR_WRITE,
+                RenderState.DEFAULT_LINE
+        );
     }
 
     private final int hashCode;
@@ -60,6 +80,19 @@ public class EffectRenderType extends RenderType {
                 () -> STATES.forEach(RenderState::setupRenderState),
                 () -> STATES.forEach(RenderState::clearRenderState));
         this.hashCode = Objects.hash(super.hashCode(), STATES);
+    }
+
+    private EffectRenderType(String t) {
+        super(t,
+                DefaultVertexFormats.POSITION_COLOR_LIGHTMAP,
+                GL11.GL_QUADS, 256, false, true,
+                () -> SEE_THROUGH_STATES.forEach(RenderState::setupRenderState),
+                () -> SEE_THROUGH_STATES.forEach(RenderState::clearRenderState));
+        this.hashCode = Objects.hash(super.hashCode(), SEE_THROUGH_STATES);
+    }
+
+    public static EffectRenderType getRenderType(boolean seeThrough) {
+        return seeThrough ? SEE_THROUGH : INSTANCE;
     }
 
     @Override

@@ -21,6 +21,7 @@ package icyllis.modernui.font;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.node.TextRenderNode;
 import icyllis.modernui.font.process.TextCacheProcessor;
+import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
@@ -105,7 +106,7 @@ public class ModernFontRenderer extends FontRenderer {
                               @Nonnull IRenderTypeBuffer buffer, boolean transparent, int colorBackground, int packedLight, boolean bidiFlag) {
         // it seems that transparent (seeThroughType) and colorBackground are only available in Minecraft Debug Mode
         // bidiFlag is useless, we have our layout system
-        x += drawLayer0(string, x, y, color, dropShadow, matrix, buffer, packedLight, Style.EMPTY);
+        x += drawLayer0(string, x, y, color, dropShadow, matrix, buffer, transparent, colorBackground, packedLight, Style.EMPTY);
         return (int) x + (dropShadow ? 1 : 0);
     }
 
@@ -115,7 +116,8 @@ public class ModernFontRenderer extends FontRenderer {
         mutableFloat.setValue(x);
         // iterate all siblings
         text.func_230439_a_((style, string) -> {
-            mutableFloat.add(drawLayer0(string, mutableFloat.floatValue(), y, color, dropShadow, matrix, buffer, packedLight, style));
+            mutableFloat.add(drawLayer0(string, mutableFloat.floatValue(), y, color, dropShadow, matrix,
+                    buffer, transparent, colorBackground, packedLight, style));
             // continue
             return Optional.empty();
         }, Style.EMPTY);
@@ -123,7 +125,7 @@ public class ModernFontRenderer extends FontRenderer {
     }
 
     private float drawLayer0(@Nonnull String string, float x, float y, int color, boolean dropShadow, Matrix4f matrix,
-                             @Nonnull IRenderTypeBuffer buffer, int packedLight, Style style) {
+                             @Nonnull IRenderTypeBuffer buffer, boolean transparent, int colorBackground, int packedLight, Style style) {
         if (string.isEmpty()) {
             return 0;
         }
@@ -140,12 +142,13 @@ public class ModernFontRenderer extends FontRenderer {
 
         TextRenderNode node = processor.lookupVanillaNode(string, style);
         if (dropShadow && sAllowFontShadow) {
-            node.drawText(matrix, buffer, string, x + 1, y + 1, r >> 2, g >> 2, b >> 2, a, true, packedLight);
+            node.drawText(matrix, buffer, string, x + 1, y + 1, r >> 2, g >> 2, b >> 2, a, true,
+                    transparent, colorBackground, packedLight);
             matrix = matrix.copy();
             matrix.translate(SHADOW_LIFTING);
         }
 
-        return node.drawText(matrix, buffer, string, x, y, r, g, b, a, false, packedLight);
+        return node.drawText(matrix, buffer, string, x, y, r, g, b, a, false, transparent, colorBackground, packedLight);
     }
 
     /*@Override

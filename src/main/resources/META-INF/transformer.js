@@ -118,7 +118,7 @@ function initializeCoreMod() {
                 return methodNode;
             }
         },*/
-        'removeBidiReorder': {
+        /*'removeBidiReorder': {
             'target': {
                 'type': 'METHOD',
                 'class': 'net.minecraft.client.resources.ClientLanguageMap',
@@ -144,7 +144,7 @@ function initializeCoreMod() {
                 }
                 return methodNode;
             }
-        }
+        }*/
         /*,
         'replaceScreenPauseGame': {
             'target': {

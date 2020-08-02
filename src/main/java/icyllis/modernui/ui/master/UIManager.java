@@ -18,7 +18,6 @@
 
 package icyllis.modernui.ui.master;
 
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.system.Config;
@@ -375,7 +374,7 @@ public enum UIManager implements IViewParent {
                     parent = mHovered.getParent();
                     double viewMX2 = viewMX;
                     double viewMY2 = viewMY;
-                    while (parent != this) {
+                    while (parent != null) {
                         view = (View) parent;
                         viewMX2 -= parent.getScrollX();
                         viewMY2 -= parent.getScrollY();
@@ -392,7 +391,7 @@ public enum UIManager implements IViewParent {
                 return true;
             }
             parent = mHovered.getParent();
-            while (parent != this) {
+            while (parent != null) {
                 view = (View) parent;
                 viewMX -= parent.getScrollX();
                 viewMY -= parent.getScrollY();
@@ -423,7 +422,7 @@ public enum UIManager implements IViewParent {
             }
             IViewParent parent = mHovered.getParent();
             View view;
-            while (parent != this) {
+            while (parent != null) {
                 view = (View) parent;
                 viewMX -= parent.getScrollX();
                 viewMY -= parent.getScrollY();
@@ -462,7 +461,7 @@ public enum UIManager implements IViewParent {
             }
             IViewParent parent = mHovered.getParent();
             View view;
-            while (parent != this) {
+            while (parent != null) {
                 view = (View) parent;
                 viewMX -= parent.getScrollX();
                 viewMY -= parent.getScrollY();
@@ -795,7 +794,7 @@ public enum UIManager implements IViewParent {
         IViewParent parent = view.getParent();
         double mouseX = this.mouseX;
 
-        while (parent != this) {
+        while (parent != null) {
             mouseX += parent.getScrollX();
             parent = parent.getParent();
         }
@@ -813,7 +812,7 @@ public enum UIManager implements IViewParent {
         IViewParent parent = view.getParent();
         double mouseY = this.mouseY;
 
-        while (parent != this) {
+        while (parent != null) {
             mouseY += parent.getScrollY();
             parent = parent.getParent();
         }
@@ -906,10 +905,10 @@ public enum UIManager implements IViewParent {
     /**
      * Inner method, do not call
      */
-    @Deprecated
+    @Nullable
     @Override
     public IViewParent getParent() {
-        throw new RuntimeException("System view!");
+        return null;
     }
 
     /**

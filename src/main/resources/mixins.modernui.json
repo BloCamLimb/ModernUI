@@ -4,6 +4,7 @@
   "plugin": "icyllis.modernui.system.MixinConfigPlugin",
   "package": "icyllis.modernui.system.mixin",
   "client": [
+    "MixinClientLanguageMap",
     "MixinMainWindow",
     "MixinMatrix4f",
     "MixinScreen"

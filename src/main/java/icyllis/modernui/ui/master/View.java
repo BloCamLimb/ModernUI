@@ -503,6 +503,7 @@ public class View {
      *
      * @return parent of this view
      */
+    @Nullable
     public final IViewParent getParent() {
         return parent;
     }
@@ -798,7 +799,7 @@ public class View {
         float y = top;
 
         IViewParent parent = this.parent;
-        while (parent != UIManager.INSTANCE) {
+        while (parent != null) {
             x -= parent.getScrollX();
             y -= parent.getScrollY();
             parent = parent.getParent();

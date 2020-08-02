@@ -138,6 +138,7 @@ dependencies {
     runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}")
 
     compileOnly files('/libs/OptiFine_1.15.2_HD_U_G1_pre14_MOD_dev.jar')
+    implementation 'org.jetbrains:annotations:15.0'
 }
 
 processResources {

@@ -39,6 +39,7 @@ import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 /**
  * layout text and extract key info and generate or cache text render node
@@ -101,6 +102,11 @@ public class TextCacheProcessor {
      * Cache temporary processing results
      */
     private final TextProcessData data = new TextProcessData();
+
+    /**
+     * Remove all formatting code even though it's invalid {@link #fromFormattingCode(char)} == null
+     */
+    private static final Pattern FORMATTING_REMOVE_PATTERN = Pattern.compile("\u00a7.");
 
     /**
      * A single StringCache object is allocated by Minecraft's FontRenderer which forwards all string drawing and requests for
@@ -579,8 +585,7 @@ public class TextCacheProcessor {
             shift += 2;
         }
 
-        //noinspection ConstantConditions
-        return TextFormatting.getTextWithoutFormattingCodes(string).toCharArray();
+        return FORMATTING_REMOVE_PATTERN.matcher(string).replaceAll("").toCharArray();
     }
 
     /**

@@ -20,33 +20,26 @@ package icyllis.modernui.ui.master;
 
 import javax.annotation.Nullable;
 
-/**
- * Defines an object that can act as a parent of a view
- * Extends by {@link ViewGroup} and {@link UIManager}
- */
-public interface IViewParent {
+public final class ViewRootImpl implements IViewParent {
 
-    /**
-     * Get parent view
-     *
-     * @return parent view, {@code null} if parent is ViewRoot
-     */
     @Nullable
-    IViewParent getParent();
+    @Override
+    public IViewParent getParent() {
+        return null;
+    }
 
-    /**
-     * Request layout when something changed
-     */
-    void requestLayout();
+    @Override
+    public void requestLayout() {
 
-    /**
-     * Available in scrollable view
-     */
-    float getScrollX();
+    }
 
-    /**
-     * Available in scrollable view
-     */
-    float getScrollY();
+    @Override
+    public float getScrollX() {
+        return 0;
+    }
 
+    @Override
+    public float getScrollY() {
+        return 0;
+    }
 }
