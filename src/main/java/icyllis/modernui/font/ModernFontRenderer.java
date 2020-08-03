@@ -21,7 +21,6 @@ package icyllis.modernui.font;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.node.TextRenderNode;
 import icyllis.modernui.font.process.TextCacheProcessor;
-import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
@@ -62,6 +61,8 @@ public class ModernFontRenderer extends FontRenderer {
 
     private final MutableFloat mutableFloat = new MutableFloat();
 
+    private FontRenderer originalRenderer;
+
     private ModernFontRenderer() {
         super($ -> null);
     }
@@ -88,16 +89,29 @@ public class ModernFontRenderer extends FontRenderer {
     }
 
     void hook(boolean doHook) {
-        if (!doHook) {
+        boolean working = Minecraft.getInstance().fontRenderer instanceof ModernFontRenderer;
+        if (working == doHook) {
             return;
         }
-        try {
-            ObfuscationReflectionHelper.findField(Minecraft.class, "field_71466_p")
-                    .set(Minecraft.getInstance(), this);
-            ObfuscationReflectionHelper.findField(EntityRendererManager.class, "field_78736_p")
-                    .set(Minecraft.getInstance().getRenderManager(), this);
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
+        if (doHook) {
+            originalRenderer = Minecraft.getInstance().fontRenderer;
+            try {
+                ObfuscationReflectionHelper.findField(Minecraft.class, "field_71466_p")
+                        .set(Minecraft.getInstance(), this);
+                ObfuscationReflectionHelper.findField(EntityRendererManager.class, "field_78736_p")
+                        .set(Minecraft.getInstance().getRenderManager(), this);
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        } else {
+            try {
+                ObfuscationReflectionHelper.findField(Minecraft.class, "field_71466_p")
+                        .set(Minecraft.getInstance(), originalRenderer);
+                ObfuscationReflectionHelper.findField(EntityRendererManager.class, "field_78736_p")
+                        .set(Minecraft.getInstance().getRenderManager(), originalRenderer);
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
         }
     }
 

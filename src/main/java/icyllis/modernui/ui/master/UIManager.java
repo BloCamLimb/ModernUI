@@ -374,7 +374,7 @@ public enum UIManager implements IViewParent {
                     parent = mHovered.getParent();
                     double viewMX2 = viewMX;
                     double viewMY2 = viewMY;
-                    while (parent != null) {
+                    while (parent instanceof View) {
                         view = (View) parent;
                         viewMX2 -= parent.getScrollX();
                         viewMY2 -= parent.getScrollY();
@@ -391,7 +391,7 @@ public enum UIManager implements IViewParent {
                 return true;
             }
             parent = mHovered.getParent();
-            while (parent != null) {
+            while (parent instanceof View) {
                 view = (View) parent;
                 viewMX -= parent.getScrollX();
                 viewMY -= parent.getScrollY();
@@ -422,7 +422,7 @@ public enum UIManager implements IViewParent {
             }
             IViewParent parent = mHovered.getParent();
             View view;
-            while (parent != null) {
+            while (parent instanceof View) {
                 view = (View) parent;
                 viewMX -= parent.getScrollX();
                 viewMY -= parent.getScrollY();
@@ -917,7 +917,7 @@ public enum UIManager implements IViewParent {
     @Deprecated
     @Override
     public float getScrollX() {
-        throw new RuntimeException("System view!");
+        return 0;
     }
 
     /**
@@ -926,7 +926,7 @@ public enum UIManager implements IViewParent {
     @Deprecated
     @Override
     public float getScrollY() {
-        throw new RuntimeException("System view!");
+        return 0;
     }
 
     /**

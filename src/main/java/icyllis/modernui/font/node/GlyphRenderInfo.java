@@ -72,17 +72,18 @@ public abstract class GlyphRenderInfo {
 
     /**
      * Draw the glyph of this info.
-     *  @param matrix matrix
-     * @param buffer buffer source
-     * @param raw    needed by {@link DigitGlyphInfo}
-     * @param x      start x of the whole text
-     * @param y      start y of the whole text
-     * @param r      final red
-     * @param g      final green
-     * @param b      final blue
-     * @param a      final alpha
-     * @param transparent
-     * @param light  packed light
+     *
+     * @param matrix      matrix
+     * @param buffer      buffer source
+     * @param raw         needed by {@link DigitGlyphInfo}
+     * @param x           start x of the whole text
+     * @param y           start y of the whole text
+     * @param r           final red
+     * @param g           final green
+     * @param b           final blue
+     * @param a           final alpha
+     * @param transparent is see through type
+     * @param light       packed light
      */
     public abstract void drawGlyph(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, boolean transparent, int light);
 
@@ -107,7 +108,7 @@ public abstract class GlyphRenderInfo {
     /**
      * Draw the effect of this info
      *
-     * @param matrix matrix
+     * @param matrix  matrix
      * @param builder vertex builder
      * @param x       start x of the whole text
      * @param y       start y of the whole text
@@ -115,7 +116,7 @@ public abstract class GlyphRenderInfo {
      * @param g       final green
      * @param b       final blue
      * @param a       final alpha
-     * @param light  packed light
+     * @param light   packed light
      */
     public void drawEffect(Matrix4f matrix, @Nonnull IVertexBuilder builder, float x, float y, int r, int g, int b, int a, int light) {
         if (effect != null) {

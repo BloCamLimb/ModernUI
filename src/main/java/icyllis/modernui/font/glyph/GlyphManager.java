@@ -419,12 +419,12 @@ public class GlyphManager {
         int renderWidth = (int) renderBounds.getWidth();
         int renderHeight = (int) renderBounds.getHeight();
 
-        if (currPosX + renderWidth + GLYPH_SPACING > TEXTURE_WIDTH) {
+        if (currPosX + renderWidth + GLYPH_SPACING >= TEXTURE_WIDTH) {
             currPosX = GLYPH_SPACING;
             currPosY += currLineHeight + GLYPH_SPACING * 2;
             currLineHeight = 0;
         }
-        if (currPosY + renderHeight + GLYPH_SPACING > TEXTURE_HEIGHT) {
+        if (currPosY + renderHeight + GLYPH_SPACING >= TEXTURE_HEIGHT) {
             currPosX = GLYPH_SPACING;
             currPosY = GLYPH_SPACING;
             allocateGlyphTexture();
@@ -505,12 +505,12 @@ public class GlyphManager {
             int renderWidth = (int) renderBounds.getWidth();
             int renderHeight = (int) renderBounds.getHeight();
 
-            if (currPosX + renderWidth + GLYPH_SPACING > TEXTURE_WIDTH) {
+            if (currPosX + renderWidth + GLYPH_SPACING >= TEXTURE_WIDTH) {
                 currPosX = GLYPH_SPACING;
                 currPosY += currLineHeight + GLYPH_SPACING * 2;
                 currLineHeight = 0;
             }
-            if (currPosY + renderHeight + GLYPH_SPACING > TEXTURE_HEIGHT) {
+            if (currPosY + renderHeight + GLYPH_SPACING >= TEXTURE_HEIGHT) {
                 currPosX = GLYPH_SPACING;
                 currPosY = GLYPH_SPACING;
                 allocateGlyphTexture();

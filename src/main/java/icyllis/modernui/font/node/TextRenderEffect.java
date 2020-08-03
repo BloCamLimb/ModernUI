@@ -19,6 +19,7 @@
 package icyllis.modernui.font.node;
 
 import com.mojang.blaze3d.vertex.IVertexBuilder;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.util.math.vector.Matrix4f;
 
 import javax.annotation.Nonnull;
@@ -103,6 +104,10 @@ public abstract class TextRenderEffect {
     @Nonnull
     public static EffectRenderInfo strikethrough(float start, float end, int color) {
         return new EffectRenderInfo(start, end, color, STRIKETHROUGH);
+    }*/
+
+    /*private static RenderType getRenderType(boolean seeThrough) {
+        return seeThrough ? seeThroughType : normalType;
     }*/
 
     private static class Underline extends TextRenderEffect {

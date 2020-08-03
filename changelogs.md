@@ -1,13 +1,16 @@
-### 1.16.1-2.0.2.59 (2020-08-02)
+### 1.16.1-2.0.3.60 (2020-08-03)
 **Font Engine works fine, UI is developing, keep update!**
  
+* Fix text texture out of limit bounds
+* Fix empty text node can't be processed
+* Adjust text render layer, avoid performance loss
+
+### 1.16.1-2.0.2.59 (2020-08-02)
 * Fix text color background rendering
 * Fix invalid text formatting codes not being removed
 * Require Forge 32.0.93+
 
 ### 1.16.1-2.0.1.58 (2020-07-24)
-**Font Engine works fine, UI is developing, keep update!**
- 
 * Rewrite text processing, fix text formatting
 * Remove vanilla bidi analysis for every text in every frame
 * Fix fragmentary bidirectional text layout (mixed LTR RTL)

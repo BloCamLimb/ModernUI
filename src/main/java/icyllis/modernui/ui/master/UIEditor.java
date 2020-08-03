@@ -18,6 +18,8 @@
 
 package icyllis.modernui.ui.master;
 
+import icyllis.modernui.font.ModernFontRenderer;
+import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.graphics.renderer.Canvas;
@@ -195,6 +197,9 @@ public enum UIEditor {
                 if (UIManager.INSTANCE.getModernScreen() != null) {
                     iterateWorking();
                 }
+                break;
+            case GLFW.GLFW_KEY_A:
+                TrueTypeRenderer.hook();
                 break;
             case GLFW.GLFW_KEY_P:
                 if (Minecraft.getInstance().currentScreen == null) {
