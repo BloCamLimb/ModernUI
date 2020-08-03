@@ -22,9 +22,8 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import icyllis.modernui.font.glyph.GlyphManager;
 import icyllis.modernui.font.process.FormattingStyle;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.IRenderTypeBuffer;
-import net.minecraft.client.renderer.WorldVertexBufferUploader;
+import icyllis.modernui.system.ModernUI;
+import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.math.vector.Matrix4f;
 import org.lwjgl.opengl.GL11;
@@ -39,7 +38,7 @@ public class TextRenderNode {
     /**
      * Sometimes naive, too simple
      */
-    public static final TextRenderNode EMPTY = new TextRenderNode(null, 0, false) {
+    public static final TextRenderNode EMPTY = new TextRenderNode(new GlyphRenderInfo[0], 0, false) {
 
         @Override
         public float drawText(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a) {
@@ -144,8 +143,9 @@ public class TextRenderNode {
         final int startR = r;
         final int startG = g;
         final int startB = b;
+        // I found only sign now, maybe there will be other types
         if (buffer instanceof IRenderTypeBuffer.Impl) {
-            ((IRenderTypeBuffer.Impl) buffer).finish();
+            ((IRenderTypeBuffer.Impl) buffer).finish(Atlases.getSignType());
         }
 
         y += VANILLA_BASELINE_OFFSET;
@@ -172,14 +172,14 @@ public class TextRenderNode {
             glyph.drawGlyph(matrix, buffer, raw, x, y, r, g, b, a, transparent, packedLight);
         }
 
-        IVertexBuilder builder;
+        IVertexBuilder builder = null;
         x += GlyphManager.GLYPH_OFFSET;
 
         if (hasEffect) {
             r = startR;
             g = startG;
             b = startB;
-            builder = buffer.getBuffer(EffectRenderType.getRenderType(true));
+            builder = buffer.getBuffer(EffectRenderType.getRenderType(transparent));
             for (GlyphRenderInfo glyph : glyphs) {
                 if (glyph.color != null) {
                     int color = glyph.color;
@@ -203,12 +203,14 @@ public class TextRenderNode {
         }
 
         if (colorBackground != 0) {
-            builder = buffer.getBuffer(EffectRenderType.getRenderType(transparent));
             y -= VANILLA_BASELINE_OFFSET;
             a = colorBackground >> 24 & 0xff;
             r = colorBackground >> 16 & 0xff;
             g = colorBackground >> 8 & 0xff;
             b = colorBackground & 0xff;
+            if (builder == null) {
+                builder = buffer.getBuffer(EffectRenderType.getRenderType(transparent));
+            }
             builder.pos(matrix, x - 1, y + 9, TextRenderEffect.EFFECT_DEPTH).color(r, g, b, a).lightmap(packedLight).endVertex();
             builder.pos(matrix, x + advance + 1, y + 9, TextRenderEffect.EFFECT_DEPTH).color(r, g, b, a).lightmap(packedLight).endVertex();
             builder.pos(matrix, x + advance + 1, y, TextRenderEffect.EFFECT_DEPTH).color(r, g, b, a).lightmap(packedLight).endVertex();

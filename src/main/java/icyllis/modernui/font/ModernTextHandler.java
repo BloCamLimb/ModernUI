@@ -101,10 +101,10 @@ public class ModernTextHandler extends CharacterManager {
      */
     @Override
     public int func_238352_a_(@Nonnull String text, int width, @Nonnull Style style) {
-        return sizeToWidth(text, width, style);
+        return sizeToWidth0(text, width, style);
     }
 
-    private int sizeToWidth(@Nonnull String text, float width, @Nonnull Style style) {
+    private int sizeToWidth0(@Nonnull String text, float width, @Nonnull Style style) {
         if (text.isEmpty()) {
             return 0;
         }
@@ -139,7 +139,7 @@ public class ModernTextHandler extends CharacterManager {
     @Nonnull
     @Override
     public String func_238361_b_(@Nonnull String text, int width, @Nonnull Style style) {
-        return text.substring(0, sizeToWidth(text, width, style));
+        return text.substring(0, sizeToWidth0(text, width, style));
     }
 
     /**
@@ -190,7 +190,7 @@ public class ModernTextHandler extends CharacterManager {
         mutableFloat.setValue(width);
         // iterate all siblings
         return text.func_230439_a_((s, t) -> {
-            if (sizeToWidth(t, mutableFloat.floatValue(), s) < t.length()) {
+            if (sizeToWidth0(t, mutableFloat.floatValue(), s) < t.length()) {
                 return Optional.of(s);
             }
             mutableFloat.subtract(processor.lookupVanillaNode(t, s).advance);
@@ -216,7 +216,7 @@ public class ModernTextHandler extends CharacterManager {
         // iterate all siblings
         return textIn.func_230439_a_((style, text) -> {
             int size;
-            if ((size = sizeToWidth(text, mutableFloat.floatValue(), style)) < text.length()) {
+            if ((size = sizeToWidth0(text, mutableFloat.floatValue(), style)) < text.length()) {
                 String s2 = text.substring(0, size);
                 if (!s2.isEmpty()) {
                     // add

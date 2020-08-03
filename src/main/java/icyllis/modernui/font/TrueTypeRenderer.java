@@ -72,7 +72,7 @@ public class TrueTypeRenderer implements IFontRenderer {
     private TrueTypeRenderer() {
 
         // init constructor and hook
-        ModernFontRenderer.getInstance().hook(sGlobalRenderer);
+        hook();
     }
 
     /**
@@ -87,6 +87,10 @@ public class TrueTypeRenderer implements IFontRenderer {
             INSTANCE = new TrueTypeRenderer();
         }
         return INSTANCE;
+    }
+
+    public static void hook() {
+        ModernFontRenderer.getInstance().hook(sGlobalRenderer);
     }
 
     public float drawFromCanvas(@Nullable String str, float x, float y, int r, int g, int b, int a, TextAlign align) {

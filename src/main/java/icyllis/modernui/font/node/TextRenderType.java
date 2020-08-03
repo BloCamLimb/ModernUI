@@ -20,6 +20,7 @@ package icyllis.modernui.font.node;
 
 import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.system.ModernUI;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 import net.minecraft.client.renderer.RenderState;
 import net.minecraft.client.renderer.RenderType;
@@ -50,7 +51,7 @@ public class TextRenderType extends RenderType {
                 RenderState.DIFFUSE_LIGHTING_DISABLED,
                 RenderState.SHADE_DISABLED,
                 RenderState.DEFAULT_ALPHA,
-                RenderState.DEPTH_LEQUAL,
+                RenderState.DEPTH_ALWAYS,
                 RenderState.CULL_ENABLED,
                 RenderState.LIGHTMAP_ENABLED,
                 RenderState.OVERLAY_DISABLED,
@@ -100,7 +101,6 @@ public class TextRenderType extends RenderType {
         this.hashCode = Objects.hash(super.hashCode(), GENERAL_STATES, textureName);
     }
 
-    //TODO see through type bug
     private TextRenderType(int textureName, String t) {
         super(t,
                 DefaultVertexFormats.POSITION_COLOR_TEX_LIGHTMAP,
