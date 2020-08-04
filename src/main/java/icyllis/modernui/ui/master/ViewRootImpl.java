@@ -18,9 +18,35 @@
 
 package icyllis.modernui.ui.master;
 
+import icyllis.modernui.graphics.math.Point;
+
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+/**
+ * The top of a view hierarchy, implementing the needed protocol between View
+ * and the UIManager.
+ */
 public final class ViewRootImpl implements IViewParent {
+
+    public boolean startDragAndDrop(@Nonnull View view, @Nullable Object data, @Nullable View.DragShadow shadow, int flags) {
+        final UIManager uiManager = UIManager.INSTANCE;
+
+        Point center = new Point();
+        if (shadow == null) {
+            shadow = new View.DragShadow(view);
+            if (view.isMouseHovered()) {
+                // default strategy
+                center.x = (int) uiManager.getViewMouseX(view);
+                center.y = (int) uiManager.getViewMouseY(view);
+            } else {
+                shadow.onProvideShadowCenter(center);
+            }
+        } else {
+            shadow.onProvideShadowCenter(center);
+        }
+
+    }
 
     @Nullable
     @Override

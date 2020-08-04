@@ -1,7 +1,7 @@
 ### 1.16.1-2.0.3.60 (2020-08-03)
 **Font Engine works fine, UI is developing, keep update!**
  
-* Fix text texture out of limit bounds
+* Fix text position texture out of limit bounds
 * Fix empty text node can't be processed
 * Adjust text render layer, avoid performance loss
 

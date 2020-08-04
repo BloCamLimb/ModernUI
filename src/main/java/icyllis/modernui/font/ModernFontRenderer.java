@@ -117,21 +117,20 @@ public class ModernFontRenderer extends FontRenderer {
 
     @Override
     public int func_238411_a_(@Nonnull String string, float x, float y, int color, boolean dropShadow, Matrix4f matrix,
-                              @Nonnull IRenderTypeBuffer buffer, boolean transparent, int colorBackground, int packedLight, boolean bidiFlag) {
-        // it seems that transparent (seeThroughType) and colorBackground are only available in Minecraft Debug Mode
+                              @Nonnull IRenderTypeBuffer buffer, boolean seeThrough, int colorBackground, int packedLight, boolean bidiFlag) {
         // bidiFlag is useless, we have our layout system
-        x += drawLayer0(string, x, y, color, dropShadow, matrix, buffer, transparent, colorBackground, packedLight, Style.EMPTY);
+        x += drawLayer0(string, x, y, color, dropShadow, matrix, buffer, seeThrough, colorBackground, packedLight, Style.EMPTY);
         return (int) x + (dropShadow ? 1 : 0);
     }
 
     @Override
     public int func_238416_a_(@Nonnull ITextProperties text, float x, float y, int color, boolean dropShadow, Matrix4f matrix,
-                              @Nonnull IRenderTypeBuffer buffer, boolean transparent, int colorBackground, int packedLight) {
+                              @Nonnull IRenderTypeBuffer buffer, boolean seeThrough, int colorBackground, int packedLight) {
         mutableFloat.setValue(x);
         // iterate all siblings
         text.func_230439_a_((style, string) -> {
             mutableFloat.add(drawLayer0(string, mutableFloat.floatValue(), y, color, dropShadow, matrix,
-                    buffer, transparent, colorBackground, packedLight, style));
+                    buffer, seeThrough, colorBackground, packedLight, style));
             // continue
             return Optional.empty();
         }, Style.EMPTY);

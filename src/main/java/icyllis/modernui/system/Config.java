@@ -124,7 +124,7 @@ public class Config {
 
             builder.pop();
 
-            builder.comment("Font Config")
+            builder.comment("Font Engine Config")
                     .push("font");
 
             globalRenderer = builder.comment(
@@ -134,8 +134,8 @@ public class Config {
                     "The font name with the highest priority to use, the built-in font is always the second choice.")
                     .define("preferredName", "");
             allowShadow = builder.comment(
-                    "Allow font renderer to draw text with shadow, setting to false can improve performance.")
-                    .define("allowShadow", true);
+                    "Allow global font renderer to draw text with shadow, setting to false can improve performance.")
+                    .define("allowShadow", false);
             antiAliasing = builder.comment(
                     "Enable font anti-aliasing.")
                     .define("antiAliasing", true);
