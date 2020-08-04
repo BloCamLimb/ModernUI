@@ -19,6 +19,7 @@
 package icyllis.modernui.ui.master;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.graphics.math.Point;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.system.Config;
 import icyllis.modernui.system.ModernUI;
@@ -61,7 +62,7 @@ import java.util.function.Function;
 @OnlyIn(Dist.CLIENT)
 public enum UIManager implements IViewParent {
     /**
-     * Render thread instance only
+     * Render thread instance
      */
     INSTANCE;
 
@@ -134,12 +135,16 @@ public enum UIManager implements IViewParent {
     // to fix layout freq at 40Hz at most
     private int lastLayoutTime = 0;
 
+    // drag center, also marks whether a drag and drop operation is ongoing
+    @Nullable
+    private Point dragCenter;
+
     UIManager() {
 
     }
 
     /**
-     * Render thread instance only
+     * Returns the instance on render thread
      *
      * @return instance
      */

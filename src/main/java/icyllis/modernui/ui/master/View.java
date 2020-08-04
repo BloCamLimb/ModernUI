@@ -19,16 +19,21 @@
 package icyllis.modernui.ui.master;
 
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.graphics.math.Point;
 import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.ui.layout.MeasureSpec;
 import icyllis.modernui.ui.widget.Scroller;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.lang.ref.WeakReference;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -43,9 +48,14 @@ import java.util.function.Consumer;
 public class View {
 
     /**
-     * {@link #generateViewId()}
+     * @see #generateViewId()
      */
     private static final AtomicInteger GENERATED_ID = new AtomicInteger(1);
+
+    /**
+     * Log marker.
+     */
+    public static final Marker MARKER = MarkerManager.getMarker("VIEW");
 
     /**
      * Used to mark a View that has no ID.
@@ -109,6 +119,11 @@ public class View {
      * {@link #assignParent(IViewParent)}
      */
     private IViewParent parent;
+
+    /**
+     * Internal use
+     */
+    ViewRootImpl viewRoot;
 
     /**
      * View id to identify this view in UI hierarchy
@@ -761,6 +776,10 @@ public class View {
 
     }
 
+    void dispatchAttachedToWindow(ViewRootImpl viewRoot) {
+        this.viewRoot = viewRoot;
+    }
+
     /**
      * Request layout if layout information changed.
      * This will schedule a layout pass of the view tree.
@@ -837,6 +856,39 @@ public class View {
             return (T) this;
         }
         return null;
+    }
+
+    /**
+     * Starts a drag and drop operation. This method passes a {@link DragShadow} object to
+     * the window system. The system calls {@link DragShadow#onDrawShadow(Canvas)}
+     * to draw the drag shadow itself at proper level.
+     * <p>
+     * Once the system has the drag shadow, it begins the drag and drop operation by sending
+     * drag events to all the View objects in all windows that are currently visible. It does
+     * this either by calling the View object's drag listener (an implementation of
+     * {@link android.view.View.OnDragListener#onDrag(View, DragEvent) onDrag()} or by calling the
+     * View object's {@link #onDragEvent(DragEvent)} method.
+     * Both are passed a {@link DragEvent} object that has a
+     * {@link DragEvent#getAction()} value of {@link DragEvent#ACTION_DRAG_STARTED}.
+     *
+     * @param data   The data to be transferred by the drag and drop operation. It can be in any form,
+     *               which can not only store the required data, but also let the view identify whether
+     *               it can accept the followed DragEvent.
+     * @param shadow The shadow object to draw the shadow, {@code null} will generate a default shadow.
+     * @param flags  Flags, 0 for no flags.
+     * @return {@code true} if operation successfully started, {@code false} means the system was
+     * unable to start the operation because of another ongoing operation or some other reasons.
+     */
+    public final boolean startDragAndDrop(@Nullable Object data, @Nullable DragShadow shadow, int flags) {
+        if (viewRoot == null) {
+            ModernUI.LOGGER.error(MARKER, "startDragAndDrop called out of a window");
+            return false;
+        }
+        return viewRoot.startDragAndDrop(this, data, shadow, flags);
+    }
+
+    public boolean onDragEvent(DragEvent event) {
+        return true;
     }
 
     /**
@@ -1591,6 +1643,58 @@ public class View {
                 return delta / (getHeight() - getThumbLength());
             } else {
                 return delta / (getWidth() - getThumbLength());
+            }
+        }
+    }
+
+    /**
+     * Creates an image that the system displays during the drag and drop operation.
+     */
+    public static class DragShadow {
+
+        private final WeakReference<View> viewRef;
+
+        public DragShadow(View view) {
+            viewRef = new WeakReference<>(view);
+        }
+
+        /**
+         * Construct a shadow builder object with no associated View. This
+         * constructor variant is only useful when the {@link #onProvideShadowCenter(Point)}}
+         * and {@link #onDrawShadow(Canvas)} methods are also overridden in order
+         * to supply the drag shadow's dimensions and appearance without
+         * reference to any View object.
+         */
+        public DragShadow() {
+            viewRef = new WeakReference<>(null);
+        }
+
+        @Nullable
+        public final View getView() {
+            return viewRef.get();
+        }
+
+        /**
+         * Called when the view is not mouse hovered or shadow is nonnull, to determine
+         * where the mouse cursor position is in the shadow.
+         *
+         * @param outShadowCenter the center point in the shadow
+         */
+        public void onProvideShadowCenter(@Nonnull Point outShadowCenter) {
+
+        }
+
+        /**
+         * Draw the shadow.
+         *
+         * @param canvas canvas to draw content
+         */
+        public void onDrawShadow(@Nonnull Canvas canvas) {
+            View view = viewRef.get();
+            if (view != null) {
+                view.onDraw(canvas);
+            } else {
+                ModernUI.LOGGER.error(MARKER, "No view found on draw shadow");
             }
         }
     }

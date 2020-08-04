@@ -187,6 +187,11 @@ public abstract class ViewGroup extends View implements IViewParent {
         addInArray(child, index);
 
         child.assignParent(this);
+
+        ViewRootImpl viewRoot = this.viewRoot;
+        if (viewRoot != null) {
+            child.dispatchAttachedToWindow(viewRoot);
+        }
     }
 
     public View getChildAt(int index) {
@@ -407,6 +412,11 @@ public abstract class ViewGroup extends View implements IViewParent {
         }
 
         return MeasureSpec.makeMeasureSpec(resultSize, resultMode);
+    }
+
+    @Override
+    final void dispatchAttachedToWindow(ViewRootImpl viewRoot) {
+        super.dispatchAttachedToWindow(viewRoot);
     }
 
     @Override

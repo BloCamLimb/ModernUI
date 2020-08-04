@@ -46,7 +46,7 @@ public class TextRenderNode {
         }
 
         @Override
-        public float drawText(Matrix4f matrix, IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, boolean isShadow, boolean transparent, int colorBackground, int packedLight) {
+        public float drawText(Matrix4f matrix, IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, boolean isShadow, boolean seeThrough, int colorBackground, int packedLight) {
             return 0;
         }
     };
@@ -139,7 +139,7 @@ public class TextRenderNode {
         return advance;
     }
 
-    public float drawText(Matrix4f matrix, IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, boolean isShadow, boolean transparent, int colorBackground, int packedLight) {
+    public float drawText(Matrix4f matrix, IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, boolean isShadow, boolean seeThrough, int colorBackground, int packedLight) {
         final int startR = r;
         final int startG = g;
         final int startB = b;
@@ -169,7 +169,7 @@ public class TextRenderNode {
                     }
                 }
             }
-            glyph.drawGlyph(matrix, buffer, raw, x, y, r, g, b, a, transparent, packedLight);
+            glyph.drawGlyph(matrix, buffer, raw, x, y, r, g, b, a, seeThrough, packedLight);
         }
 
         IVertexBuilder builder = null;
@@ -179,7 +179,7 @@ public class TextRenderNode {
             r = startR;
             g = startG;
             b = startB;
-            builder = buffer.getBuffer(EffectRenderType.getRenderType(transparent));
+            builder = buffer.getBuffer(EffectRenderType.getRenderType(seeThrough));
             for (GlyphRenderInfo glyph : glyphs) {
                 if (glyph.color != null) {
                     int color = glyph.color;
@@ -209,7 +209,7 @@ public class TextRenderNode {
             g = colorBackground >> 8 & 0xff;
             b = colorBackground & 0xff;
             if (builder == null) {
-                builder = buffer.getBuffer(EffectRenderType.getRenderType(transparent));
+                builder = buffer.getBuffer(EffectRenderType.getRenderType(seeThrough));
             }
             builder.pos(matrix, x - 1, y + 9, TextRenderEffect.EFFECT_DEPTH).color(r, g, b, a).lightmap(packedLight).endVertex();
             builder.pos(matrix, x + advance + 1, y + 9, TextRenderEffect.EFFECT_DEPTH).color(r, g, b, a).lightmap(packedLight).endVertex();

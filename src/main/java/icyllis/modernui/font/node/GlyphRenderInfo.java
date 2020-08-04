@@ -82,10 +82,10 @@ public abstract class GlyphRenderInfo {
      * @param g           final green
      * @param b           final blue
      * @param a           final alpha
-     * @param transparent is see through type
+     * @param seeThrough is see through type
      * @param light       packed light
      */
-    public abstract void drawGlyph(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, boolean transparent, int light);
+    public abstract void drawGlyph(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, boolean seeThrough, int light);
 
     /**
      * Draw the effect of this info

@@ -51,7 +51,7 @@ public class TextRenderType extends RenderType {
                 RenderState.DIFFUSE_LIGHTING_DISABLED,
                 RenderState.SHADE_DISABLED,
                 RenderState.DEFAULT_ALPHA,
-                RenderState.DEPTH_ALWAYS,
+                RenderState.DEPTH_LEQUAL,
                 RenderState.CULL_ENABLED,
                 RenderState.LIGHTMAP_ENABLED,
                 RenderState.OVERLAY_DISABLED,
