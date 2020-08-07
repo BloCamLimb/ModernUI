@@ -18,7 +18,6 @@
 
 package icyllis.modernui.ui.master;
 
-import icyllis.modernui.ui.layout.FrameLayout;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -47,7 +46,7 @@ public class Fragment {
      * should create the main view of the UI, and can't be null.
      * <p>
      * The main view of a UI is considered as a window.
-     * See {@link UIManager.LayoutParams}
+     * See {@link ViewRootImpl.LayoutParams}
      *
      * @return view instance or null
      */

@@ -18,35 +18,13 @@
 
 package icyllis.modernui.ui.master;
 
-import javax.annotation.Nonnull;
+public class MouseEvent {
 
-/**
- * Delayed task used in UI
- *
- * @see UIManager#postTask(Runnable, int)
- */
-public class DelayedTask {
+    public static final int TYPE_DYNAMIC = 1;
 
-    @Nonnull
-    private final Runnable runnable;
+    public static final int TYPE_OPERATION = 2;
 
-    private final int finishTick;
+    public static final int TYPE_NOTIFY = 3;
 
-    private boolean finish = false;
-
-    DelayedTask(@Nonnull Runnable runnable, int delayedTicks) {
-        this.runnable = runnable;
-        finishTick = UIManager.getInstance().getElapsedTicks() + delayedTicks;
-    }
-
-    void tick(int ticks) {
-        if (ticks >= finishTick) {
-            runnable.run();
-            finish = true;
-        }
-    }
-
-    boolean shouldRemove() {
-        return finish;
-    }
+    int action;
 }

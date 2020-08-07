@@ -23,7 +23,7 @@ import icyllis.modernui.graphics.math.Point;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.ui.layout.MeasureSpec;
-import icyllis.modernui.ui.widget.Scroller;
+import icyllis.modernui.ui.widget.ScrollController;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -866,7 +866,7 @@ public class View {
      * Once the system has the drag shadow, it begins the drag and drop operation by sending
      * drag events to all the View objects in all windows that are currently visible. It does
      * this either by calling the View object's drag listener (an implementation of
-     * {@link android.view.View.OnDragListener#onDrag(View, DragEvent) onDrag()} or by calling the
+     * {@link View.OnDragListener#onDrag(View, DragEvent)} or by calling the
      * View object's {@link #onDragEvent(DragEvent)} method.
      * Both are passed a {@link DragEvent} object that has a
      * {@link DragEvent#getAction()} value of {@link DragEvent#ACTION_DRAG_STARTED}.
@@ -879,7 +879,7 @@ public class View {
      * @return {@code true} if operation successfully started, {@code false} means the system was
      * unable to start the operation because of another ongoing operation or some other reasons.
      */
-    public final boolean startDragAndDrop(@Nullable Object data, @Nullable DragShadow shadow, int flags) {
+    public final boolean startDragAndDrop(@Nullable DragData data, @Nullable DragShadow shadow, int flags) {
         if (viewRoot == null) {
             ModernUI.LOGGER.error(MARKER, "startDragAndDrop called out of a window");
             return false;
@@ -902,7 +902,7 @@ public class View {
         final boolean prevHovered = hasPrivateFlag(PFLAG_HOVERED);
         if (mouseX >= left && mouseX < right && mouseY >= top && mouseY < bottom) {
             if (handleScrollBarsHover(mouseX, mouseY)) {
-                UIManager.INSTANCE.setHovered(this);
+                UIManager.getInstance().setHovered(this);
                 return true;
             }
             if (!prevHovered) {
@@ -911,7 +911,7 @@ public class View {
             }
             onMouseHoverMoved(mouseX, mouseY);
             if (!dispatchUpdateMouseHover(mouseX, mouseY)) {
-                UIManager.INSTANCE.setHovered(this);
+                UIManager.getInstance().setHovered(this);
             }
             return true;
         } else {
@@ -1166,7 +1166,7 @@ public class View {
     /**
      * This class encapsulated methods to handle events of and draw the scroll bar.
      * Scrollbar is integrated in the view it's created.
-     * To control the scroll amount, use {@link Scroller}
+     * To control the scroll amount, use {@link ScrollController}
      *
      * @since 1.6
      */

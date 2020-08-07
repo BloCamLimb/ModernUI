@@ -18,35 +18,5 @@
 
 package icyllis.modernui.ui.master;
 
-import javax.annotation.Nonnull;
-
-/**
- * Delayed task used in UI
- *
- * @see UIManager#postTask(Runnable, int)
- */
-public class DelayedTask {
-
-    @Nonnull
-    private final Runnable runnable;
-
-    private final int finishTick;
-
-    private boolean finish = false;
-
-    DelayedTask(@Nonnull Runnable runnable, int delayedTicks) {
-        this.runnable = runnable;
-        finishTick = UIManager.getInstance().getElapsedTicks() + delayedTicks;
-    }
-
-    void tick(int ticks) {
-        if (ticks >= finishTick) {
-            runnable.run();
-            finish = true;
-        }
-    }
-
-    boolean shouldRemove() {
-        return finish;
-    }
+public class DragData {
 }

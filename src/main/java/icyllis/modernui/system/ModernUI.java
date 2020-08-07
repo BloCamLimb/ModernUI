@@ -22,7 +22,6 @@ import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.shader.ShaderTools;
 import icyllis.modernui.ui.data.LayoutResourceManager;
 import icyllis.modernui.ui.master.UIEditor;
-import icyllis.modernui.ui.master.UIManager;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLEnvironment;
@@ -53,7 +52,6 @@ public class ModernUI {
             ShaderTools.init();
             MinecraftForge.EVENT_BUS.register(BlurHandler.INSTANCE);
             MinecraftForge.EVENT_BUS.register(UIEditor.INSTANCE);
-            MinecraftForge.EVENT_BUS.register(UIManager.INSTANCE);
         }
     }
 

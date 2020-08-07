@@ -87,7 +87,7 @@ public abstract class ModuleGroup extends Module {
         tid = id;
         int cKeep = op[1];
         if (op[0] > 0) {
-            UIManager.INSTANCE.postTask(() -> switchToTid(cKeep), op[0]);
+            UIManager.getInstance().postTask(() -> switchToTid(cKeep), op[0]);
             return;
         }
         switchToTid(cKeep);
@@ -96,7 +96,7 @@ public abstract class ModuleGroup extends Module {
     private void switchToTid(int cKeep) {
         if (cKeep > 0) {
             shadow = child;
-            UIManager.INSTANCE.postTask(() -> shadow = null, cKeep);
+            UIManager.getInstance().postTask(() -> shadow = null, cKeep);
         }
         child = childModules.getOrDefault(tid, () -> null).get();
         if (child != null) {

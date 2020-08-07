@@ -169,7 +169,7 @@ public class DropdownSettingEntry extends SettingEntry {
                     .build(window)
                     .buildCallback(this::onValueChanged);
             menu.locate(window.toAbsoluteX(x2 - 4), window.toAbsoluteY(y1 + 18));
-            UIManager.INSTANCE.openPopup(new PopupMenu(menu), false);
+            UIManager.getInstance().openPopup(new PopupMenu(menu), false);
             return true;
         }
         return super.onMouseLeftClick(mouseX, mouseY);

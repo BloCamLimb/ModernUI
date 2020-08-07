@@ -136,7 +136,7 @@ public class IngameMenuSettings extends ModuleGroup {
                 .setAlign(Align9D.TOP_RIGHT).build(this).buildCallback(this::assetsButtonMenuActions);
         LineTextButton t = buttons.get(4);
         menu.locate(t.getRight() - 8, t.getBottom() + 1);
-        UIManager.INSTANCE.openPopup(new PopupMenu(menu), false);
+        UIManager.getInstance().openPopup(new PopupMenu(menu), false);
     }
 
     private void assetsButtonMenuActions(int index) {

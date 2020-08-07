@@ -18,9 +18,7 @@
 
 package icyllis.modernui.ui.test;
 
-import icyllis.modernui.ui.test.IHost;
-import icyllis.modernui.ui.test.IWidget;
-import icyllis.modernui.ui.widget.Scroller;
+import icyllis.modernui.ui.widget.ScrollController;
 
 @Deprecated
 public interface IScrollHost extends IHost, IWidget {
@@ -40,5 +38,5 @@ public interface IScrollHost extends IHost, IWidget {
 
     void callbackScrollAmount(float scrollAmount);
 
-    Scroller getScrollController();
+    ScrollController getScrollController();
 }

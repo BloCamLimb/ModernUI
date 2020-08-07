@@ -30,7 +30,7 @@ import javax.annotation.Nonnull;
  * @since 1.6
  */
 @SuppressWarnings("unused")
-public class Scroller {
+public class ScrollController {
 
     private float startValue;
     private float targetValue;
@@ -45,7 +45,7 @@ public class Scroller {
     @Nonnull
     private final IListener listener;
 
-    public Scroller(@Nonnull IListener listener) {
+    public ScrollController(@Nonnull IListener listener) {
         this.listener = listener;
     }
 
@@ -125,9 +125,9 @@ public class Scroller {
      * @param duration scroll duration in milliseconds
      */
     public void scrollTo(float target, int duration) {
-        startTime = UIManager.INSTANCE.getDrawingTime();
+        startTime = UIManager.getInstance().getDrawingTime();
         startValue = currValue;
-        float scale = UIManager.INSTANCE.getGuiScale();
+        float scale = (float) UIManager.getInstance().getGuiScale();
         float endX = MathHelper.clamp(target, 0, maxValue) * scale;
         targetValue = (int) endX / scale;
         this.duration = duration;
@@ -140,9 +140,9 @@ public class Scroller {
      */
     public void scrollTo(float target) {
         float lastTime = startTime;
-        startTime = UIManager.INSTANCE.getDrawingTime();
+        startTime = UIManager.getInstance().getDrawingTime();
         startValue = currValue;
-        float scale = UIManager.INSTANCE.getGuiScale();
+        float scale = (float) UIManager.getInstance().getGuiScale();
         float end = MathHelper.clamp(target, 0, maxValue) * scale;
         targetValue = (int) end / scale;
 
@@ -179,9 +179,9 @@ public class Scroller {
         /**
          * Apply the scroll value to listener
          *
-         * @param scroller scroller to call the method
-         * @param amount   current scroll amount
+         * @param controller scroller to call the method
+         * @param amount     current scroll amount
          */
-        void onScrollAmountUpdated(Scroller scroller, float amount);
+        void onScrollAmountUpdated(ScrollController controller, float amount);
     }
 }

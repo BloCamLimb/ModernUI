@@ -22,30 +22,30 @@ import javax.annotation.Nullable;
 
 /**
  * Defines an object that can act as a parent of a view
- * Extends by {@link ViewGroup} and {@link UIManager}
  */
 public interface IViewParent {
 
     /**
-     * Get parent view
+     * Returns the parent of this ViewParent
      *
-     * @return parent view, {@code null} if parent is ViewRoot
+     * @return the parent or {@code null} if parent is ViewRoot
      */
     @Nullable
     IViewParent getParent();
 
     /**
-     * Request layout when something changed
+     * Called when something has changed which has invalidated the layout of a
+     * child of this view parent. This will schedule a layout pass of the view tree.
      */
     void requestLayout();
 
     /**
-     * Available in scrollable view
+     * The scroll offset in horizontal direction, used for view coordinate transformation.
      */
     float getScrollX();
 
     /**
-     * Available in scrollable view
+     * The scroll offset in vertical direction, used for view coordinate transformation.
      */
     float getScrollY();
 

@@ -114,7 +114,7 @@ public class PopupConfirm extends Module {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if (super.mouseClicked(mouseX, mouseY, mouseButton)) {
-            UIManager.INSTANCE.closePopup();
+            UIManager.getInstance().closePopup();
             return true;
         }
         return false;

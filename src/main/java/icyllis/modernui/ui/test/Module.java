@@ -33,7 +33,7 @@ import java.util.List;
 @Deprecated
 public abstract class Module implements IModule, IHost {
 
-    private final UIManager manager = UIManager.INSTANCE;
+    private final UIManager manager = UIManager.getInstance();
 
     protected final Minecraft minecraft = Minecraft.getInstance();
 
@@ -188,12 +188,12 @@ public abstract class Module implements IModule, IHost {
 
     @Override
     public int getGameWidth() {
-        return manager.getGameWidth();
+        return manager.getScreenWidth();
     }
 
     @Override
     public int getGameHeight() {
-        return manager.getGameHeight();
+        return manager.getScreenHeight();
     }
 
     @Override

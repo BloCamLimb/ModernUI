@@ -21,7 +21,7 @@ package icyllis.modernui.ui.test;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.master.View;
-import icyllis.modernui.ui.widget.Scroller;
+import icyllis.modernui.ui.widget.ScrollController;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
@@ -44,7 +44,7 @@ public class ScrollWindow<T extends ScrollGroup> extends Window implements IScro
 
     protected View.ScrollBar scrollbar;
 
-    protected Scroller controller;
+    protected ScrollController controller;
 
     protected ScrollList<T> scrollList;
 
@@ -220,7 +220,7 @@ public class ScrollWindow<T extends ScrollGroup> extends Window implements IScro
     }
 
     @Override
-    public Scroller getScrollController() {
+    public ScrollController getScrollController() {
         return controller;
     }
 

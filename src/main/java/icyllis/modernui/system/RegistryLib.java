@@ -78,7 +78,7 @@ public class RegistryLib {
     @SubscribeEvent
     static void setupClient(@Nonnull FMLClientSetupEvent event) {
         //SettingsManager.INSTANCE.buildAllSettings();
-        UIManager.INSTANCE.registerContainerScreen(RegistryLib.TEST_CONTAINER, c -> new TestFragment());
+        UIManager.getInstance().registerContainerScreen(RegistryLib.TEST_CONTAINER, c -> new TestFragment());
     }
 
     @Nonnull

@@ -20,7 +20,7 @@ package icyllis.modernui.ui.test;
 
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.master.View;
-import icyllis.modernui.ui.widget.Scroller;
+import icyllis.modernui.ui.widget.ScrollController;
 import icyllis.modernui.ui.widget.UniformScrollEntry;
 import icyllis.modernui.ui.widget.UniformScrollGroup;
 
@@ -40,7 +40,7 @@ public class ScrollPanel<E extends UniformScrollEntry, G extends UniformScrollGr
 
     protected View.ScrollBar scrollbar;
 
-    protected Scroller controller;
+    protected ScrollController controller;
 
     /**
      * This cannot used in inner class
@@ -155,7 +155,7 @@ public class ScrollPanel<E extends UniformScrollEntry, G extends UniformScrollGr
     }
 
     @Override
-    public Scroller getScrollController() {
+    public ScrollController getScrollController() {
         return controller;
     }
 

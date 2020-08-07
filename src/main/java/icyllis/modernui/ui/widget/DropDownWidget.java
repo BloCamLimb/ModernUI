@@ -104,7 +104,7 @@ public class DropDownWidget extends Widget {
     protected boolean onMouseLeftClick(double mouseX, double mouseY) {
         DropDownMenu menu = new DropDownMenu.Builder(list, index).setAlign(align).build(getParent()).buildCallback(this::updateValue);
         menu.locate(getParent().toAbsoluteX(x2 - 4), getParent().toAbsoluteY(y2));
-        UIManager.INSTANCE.openPopup(new PopupMenu(menu), false);
+        UIManager.getInstance().openPopup(new PopupMenu(menu), false);
         return true;
     }
 

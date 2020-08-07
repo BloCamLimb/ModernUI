@@ -47,7 +47,7 @@ public class ModernFontRenderer extends FontRenderer {
     /**
      * Render thread instance
      */
-    private static ModernFontRenderer INSTANCE;
+    private static ModernFontRenderer instance;
 
     public static final Vector3f SHADOW_LIFTING = new Vector3f(0.0f, 0.0f, 0.03f);
 
@@ -75,17 +75,17 @@ public class ModernFontRenderer extends FontRenderer {
      */
     public static ModernFontRenderer getInstance() {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
-        if (INSTANCE == null) {
-            INSTANCE = new ModernFontRenderer();
+        if (instance == null) {
+            instance = new ModernFontRenderer();
             CharacterManager o = ObfuscationReflectionHelper.getPrivateValue(FontRenderer.class,
                     Minecraft.getInstance().fontRenderer, "field_238402_e_");
             CharacterManager.ICharWidthProvider c = ObfuscationReflectionHelper.getPrivateValue(CharacterManager.class,
                     o, "field_238347_a_");
             ModernTextHandler t = new ModernTextHandler(c);
             ObfuscationReflectionHelper.setPrivateValue(FontRenderer.class,
-                    INSTANCE, t, "field_238402_e_");
+                    instance, t, "field_238402_e_");
         }
-        return INSTANCE;
+        return instance;
     }
 
     void hook(boolean doHook) {

@@ -18,7 +18,14 @@
 
 package icyllis.modernui.ui.master;
 
-public class DragEvent {
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
+/**
+ * A drag and drop operation shares the same DragEvent instance
+ *
+ * @since 2.0
+ */
+public final class DragEvent {
 
     public static final int ACTION_DRAG_STARTED = 1;
 
@@ -34,10 +41,10 @@ public class DragEvent {
 
     private int action;
 
-    private float x;
-    private float y;
+    private double x;
+    private double y;
 
-    private final Object data;
+    private final DragData data;
 
     private boolean result;
 
@@ -46,7 +53,7 @@ public class DragEvent {
      *
      * @param data drag data
      */
-    DragEvent(Object data) {
+    DragEvent(DragData data) {
         this.data = data;
     }
 
@@ -54,11 +61,11 @@ public class DragEvent {
         return action;
     }
 
-    public float getX() {
+    public double getX() {
         return x;
     }
 
-    public float getY() {
+    public double getY() {
         return y;
     }
 
@@ -84,5 +91,16 @@ public class DragEvent {
     // Internal method
     void setResult(boolean result) {
         this.result = result;
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .append("action", action)
+                .append("x", x)
+                .append("y", y)
+                .append("data", data)
+                .append("result", result)
+                .toString();
     }
 }

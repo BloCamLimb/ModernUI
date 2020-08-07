@@ -92,6 +92,7 @@ public class Config {
         private final ForgeConfigSpec.BooleanValue        highPrecision;
         private final ForgeConfigSpec.BooleanValue        enableMipmap;
         private final ForgeConfigSpec.IntValue            mipmapLevel;
+        private final ForgeConfigSpec.IntValue            resolutionLevel;
         private final ForgeConfigSpec.IntValue            defaultFontSize;
 
         private Client(@Nonnull ForgeConfigSpec.Builder builder) {
@@ -111,7 +112,7 @@ public class Config {
                     .defineInRange("animationDuration", 200, 0, 800);
             blurRadius = builder.comment(
                     "Blur effect radius if enabled, higher value can severely degrade performance.")
-                    .defineInRange("blurRadius", 12, 2, 18);
+                    .defineInRange("blurRadius", 10, 2, 18);
 
             blurExclusions = builder.comment(
                     "A list of GUI screen superclasses that won't activate blur effect when opened.")
@@ -148,6 +149,10 @@ public class Config {
             mipmapLevel = builder.comment(
                     "The mipmap level for font textures.")
                     .defineInRange("mipmapLevel", 4, 0, 4);
+            resolutionLevel = builder.comment(
+                    "The resolution level of font, higher levels would better work with high resolution monitors.",
+                    "Reference: 1 (Standard, 1.5K Fullscreen), 2 (High, 2K~3K Fullscreen), 3 (Ultra, 4K Fullscreen)")
+                    .defineInRange("resolutionLevel", 2, 1, 3);
             defaultFontSize = builder.comment(
                     "The default font size for texts with no size specified.")
                     .defineInRange("defaultFontSize", 16, 12, 20);
@@ -171,6 +176,7 @@ public class Config {
             GlyphManager.sHighPrecision = highPrecision.get();
             GlyphManager.sEnableMipmap = enableMipmap.get();
             GlyphManager.sMipmapLevel = mipmapLevel.get();
+            GlyphManager.sResolutionLevel = resolutionLevel.get();
             TextCacheProcessor.sDefaultFontSize = defaultFontSize.get();
             ModernFontRenderer.sAllowFontShadow = allowShadow.get();
         }

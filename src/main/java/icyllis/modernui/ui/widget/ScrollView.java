@@ -29,12 +29,12 @@ import javax.annotation.Nonnull;
 /**
  * Vertical scroll view
  */
-public class ScrollView extends FrameLayout implements Scroller.IListener {
+public class ScrollView extends FrameLayout implements ScrollController.IListener {
 
     private int   scrollRange;
     private float scrollAmount;
 
-    private final Scroller scroller = new Scroller(this);
+    private final ScrollController scrollController = new ScrollController(this);
 
     public ScrollView() {
         setVerticalScrollBarEnabled(true);
@@ -58,7 +58,7 @@ public class ScrollView extends FrameLayout implements Scroller.IListener {
 
     @Override
     protected void dispatchDraw(@Nonnull Canvas canvas) {
-        scroller.update(canvas.getDrawingTime());
+        scrollController.update(canvas.getDrawingTime());
         canvas.clipVertical(this);
         super.dispatchDraw(canvas);
         canvas.clipEnd();
@@ -69,7 +69,7 @@ public class ScrollView extends FrameLayout implements Scroller.IListener {
         super.onLayout(changed);
         scrollRange = getScrollRange();
         // we must specify max scroll amount
-        scroller.setMaxScroll(scrollRange);
+        scrollController.setMaxScroll(scrollRange);
         // scroller may not callback this method
         runVerticalScrollBar(bar -> bar.setParameters(scrollRange, scrollAmount, getHeight()));
     }
@@ -85,23 +85,23 @@ public class ScrollView extends FrameLayout implements Scroller.IListener {
 
     @Override
     protected boolean onMouseScrolled(double mouseX, double mouseY, double amount) {
-        scroller.scrollBy(Math.round(amount * -20.0f));
+        scrollController.scrollBy(Math.round(amount * -20.0f));
         return true;
     }
 
     @Override
     protected void onScrollBarClicked(boolean vertical, float scrollDelta) {
-        scroller.scrollBy(scrollDelta);
+        scrollController.scrollBy(scrollDelta);
     }
 
     @Override
     protected void onScrollBarDragged(boolean vertical, float scrollDelta) {
-        scroller.scrollBy(scrollDelta);
-        scroller.abortAnimation();
+        scrollController.scrollBy(scrollDelta);
+        scrollController.abortAnimation();
     }
 
     @Override
-    public void onScrollAmountUpdated(Scroller scroller, float amount) {
+    public void onScrollAmountUpdated(ScrollController controller, float amount) {
         scrollAmount = amount;
         runVerticalScrollBar(bar -> bar.setParameters(scrollRange, scrollAmount, getHeight()));
     }
