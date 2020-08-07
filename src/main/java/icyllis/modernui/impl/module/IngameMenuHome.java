@@ -65,7 +65,7 @@ public class IngameMenuHome extends ModuleGroup {
                         .setLocator(new Locator(Align9D.TOP_LEFT, 8, 8))
                         .build(this)
                         .buildCallback(() -> {
-                            UIManager.INSTANCE.closeGui();
+                            UIManager.getInstance().closeGui();
                             playSound(RegistryLib.BUTTON_CLICK_2);
                         })
         );
@@ -98,7 +98,7 @@ public class IngameMenuHome extends ModuleGroup {
                         .build(this)
                         .buildCallback(
                                 () -> {
-                                    minecraft.displayGuiScreen(new ModListScreen(UIManager.INSTANCE.getModernScreen()));
+                                    minecraft.displayGuiScreen(new ModListScreen(UIManager.getInstance().getModernScreen()));
                                     playSound(RegistryLib.BUTTON_CLICK_2);
                                 }
                         )
@@ -168,7 +168,7 @@ public class IngameMenuHome extends ModuleGroup {
         IModule popup = new PopupConfirm(this::confirmExit)
                 .setConfirmTitle(I18n.format("gui.modernui.button.exit"))
                 .setDescription(I18n.format("gui.modernui.popup.exit"));
-        UIManager.INSTANCE.openPopup(popup, true);
+        UIManager.getInstance().openPopup(popup, true);
     }
 
     private void confirmExit(int callback) {

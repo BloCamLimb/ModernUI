@@ -115,7 +115,7 @@ public class KeyBindingEntry extends SettingEntry {
                 .buildCallback(this::menuActions);
 
         menu.locate((float) getParent().getAbsoluteMouseX() + 1, (float) getParent().getAbsoluteMouseY() + 1);
-        UIManager.INSTANCE.openPopup(new PopupMenu(menu), false);
+        UIManager.getInstance().openPopup(new PopupMenu(menu), false);
         lightUp();
         return true;
     }

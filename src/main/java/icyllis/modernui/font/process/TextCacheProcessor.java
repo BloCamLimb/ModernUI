@@ -54,7 +54,7 @@ public class TextCacheProcessor {
     /**
      * Instance on render thread, initialized when MainMenuScreen opened
      */
-    private static TextCacheProcessor INSTANCE;
+    private static TextCacheProcessor instance;
 
     /**
      * Config values
@@ -130,10 +130,10 @@ public class TextCacheProcessor {
      */
     public static TextCacheProcessor getInstance() {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
-        if (INSTANCE == null) {
-            INSTANCE = new TextCacheProcessor();
+        if (instance == null) {
+            instance = new TextCacheProcessor();
         }
-        return INSTANCE;
+        return instance;
     }
 
     /**
@@ -810,6 +810,7 @@ public class TextCacheProcessor {
             int num = vector.getNumGlyphs();
 
             final TexturedGlyph[] digits = glyphManager.lookupDigits(font);
+            final float factor = glyphManager.getResolutionFactor();
 
             for (int i = 0; i < num; i++) {
                 /* Exclude some auxiliary characters (e.g in Hindi) */
@@ -820,7 +821,7 @@ public class TextCacheProcessor {
                 int stripIndex = vector.getGlyphCharIndex(i) + start;
                 Point2D point = vector.getGlyphPosition(i);
 
-                float offset = (float) (point.getX() / 2);
+                float offset = (float) (point.getX() / factor);
 
                 if (flag == Font.LAYOUT_RIGHT_TO_LEFT) {
                     offset += data.layoutRight;
@@ -841,7 +842,7 @@ public class TextCacheProcessor {
                 data.minimalList.add(new StandardGlyphInfo(glyph, effect, stripIndex, offset));
             }
 
-            float totalAdvance = (float) (vector.getGlyphPosition(num).getX() / 2);
+            float totalAdvance = (float) (vector.getGlyphPosition(num).getX() / factor);
             data.advance += totalAdvance;
 
             if (flag == Font.LAYOUT_RIGHT_TO_LEFT) {

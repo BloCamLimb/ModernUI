@@ -82,7 +82,7 @@ public class SettingGeneral extends Module {
                         IModule popup = new PopupConfirm(this::lockDifficulty, 3)
                                 .setConfirmTitle(I18n.format("gui.modernui.button.Lock"))
                                 .setDescription(I18n.format("gui.modernui.popup.lockDifficulty"));
-                        UIManager.INSTANCE.openPopup(popup, true);
+                        UIManager.getInstance().openPopup(popup, true);
                     }
                 }, true);
                 difficultyEntry.setAvailable(!locked);
@@ -179,7 +179,7 @@ public class SettingGeneral extends Module {
     }
 
     private void lockDifficulty(int callback) {
-        UIManager.INSTANCE.closePopup();
+        UIManager.getInstance().closePopup();
         if (callback == ConfirmCallback.CONFIRM) {
             if (this.minecraft.world != null) {
                 minecraft.getConnection().sendPacket(new CLockDifficultyPacket(true));

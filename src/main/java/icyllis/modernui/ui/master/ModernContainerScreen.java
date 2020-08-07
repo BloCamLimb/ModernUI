@@ -39,15 +39,15 @@ import java.util.Objects;
 // And render layer for tooltips etc
 
 /**
- * This is required because most of mods will check if instanceof {@link ContainerScreen} rather than {@link IHasContainer}.
- * see {@link ScreenManager.IScreenFactory}.
+ * This is required because most of mods check if instanceof {@link ContainerScreen} rather than {@link IHasContainer}.
  *
  * @param <G> container type
+ * @see ScreenManager.IScreenFactory
  */
 @OnlyIn(Dist.CLIENT)
-public final class ModernContainerScreen<G extends Container> extends ContainerScreen<G> implements IHasContainer<G> {
+public final class ModernContainerScreen<G extends Container> extends ContainerScreen<G> {
 
-    private final UIManager manager = UIManager.INSTANCE;
+    private final UIManager manager = UIManager.getInstance();
 
     ModernContainerScreen(@Nonnull G container, PlayerInventory inventory, ITextComponent title) {
         super(container, inventory, title);
@@ -56,12 +56,12 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
     @Override
     public void init(Minecraft minecraft, int width, int height) {
         super.init(minecraft, width, height);
-        manager.init(this, width, height);
+        manager.prepareWindows(this, width, height);
     }
 
     @Override
     public void resize(@Nonnull Minecraft minecraft, int width, int height) {
-        super.resize(minecraft, width, height);
+        manager.prepareWindows(this, width, height);
     }
 
     @Override
@@ -76,13 +76,18 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
     }
 
     @Override
-    public void onClose() {
-        super.onClose();
-        manager.destroy();
+    protected void drawGuiContainerForegroundLayer(@Nonnull MatrixStack matrixStack, int x, int y) {
+
     }
 
     @Override
-    public final void mouseMoved(double mouseX, double mouseY) {
+    public void onClose() {
+        super.onClose();
+        manager.recycleWindows();
+    }
+
+    @Override
+    public void mouseMoved(double mouseX, double mouseY) {
         manager.sMouseMoved(mouseX, mouseY);
     }
 
@@ -158,9 +163,6 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
     @Nonnull
     @Override
     public String toString() {
-        if (manager.getMainView() != null) {
-            return getClass().getSimpleName() + "-" + manager.getMainView().getClass().getSimpleName() + "@" + Integer.toHexString(hashCode());
-        }
-        return super.toString();
+        return "ModernContainerScreen{view=" + manager.getMainView() + ", container=" + container + "}, Powered by Modern UI";
     }
 }

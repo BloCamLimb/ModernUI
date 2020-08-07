@@ -29,10 +29,15 @@ import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
 
+/**
+ * The Screen class has been enjoyed by Forge, Modern UI or other mods.
+ * This class only serves as a bridge to receive events from vanilla.
+ * The vanilla methods were completely deprecated by Modern UI.
+ */
 @OnlyIn(Dist.CLIENT)
 public final class ModernScreen extends Screen {
 
-    private final UIManager manager = UIManager.INSTANCE;
+    private final UIManager manager = UIManager.getInstance();
 
     ModernScreen() {
         super(new StringTextComponent(""));
@@ -40,13 +45,13 @@ public final class ModernScreen extends Screen {
 
     @Override
     public void init(Minecraft minecraft, int width, int height) {
-        manager.init(this, width, height);
+        manager.prepareWindows(this, width, height);
         BlurHandler.INSTANCE.forceBlur();
     }
 
     @Override
     public void resize(@Nonnull Minecraft minecraft, int width, int height) {
-        manager.resize(width, height);
+        manager.prepareWindows(this, width, height);
     }
 
     @Override
@@ -56,7 +61,7 @@ public final class ModernScreen extends Screen {
 
     @Override
     public void onClose() {
-        manager.destroy();
+        manager.recycleWindows();
     }
 
     @Override
@@ -65,7 +70,7 @@ public final class ModernScreen extends Screen {
     }
 
     @Override
-    public final void mouseMoved(double mouseX, double mouseY) {
+    public void mouseMoved(double mouseX, double mouseY) {
         manager.sMouseMoved(mouseX, mouseY);
     }
 
@@ -122,9 +127,6 @@ public final class ModernScreen extends Screen {
     @Nonnull
     @Override
     public String toString() {
-        if (manager.getMainView() != null) {
-            return getClass().getSimpleName() + "-" + manager.getMainView().getClass().getSimpleName() + "@" + Integer.toHexString(hashCode());
-        }
-        return super.toString();
+        return "ModernScreen{view=" + manager.getMainView() + "}, Powered by Modern UI";
     }
 }

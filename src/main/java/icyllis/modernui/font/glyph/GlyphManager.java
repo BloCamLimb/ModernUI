@@ -54,8 +54,8 @@ import java.util.List;
 /**
  * Draw using glyphs of different sizes and fonts, and store them in auto generated OpenGL textures
  * <p>
- * Memory usage: < 10MB
- * Graphics memory usage: < 22MB
+ * RAM usage: < 10MB
+ * GPU memory usage: < 22MB
  */
 @SuppressWarnings("unused")
 public class GlyphManager {
@@ -72,6 +72,7 @@ public class GlyphManager {
     public static boolean sHighPrecision;
     public static boolean sEnableMipmap;
     public static int     sMipmapLevel;
+    public static int     sResolutionLevel;
 
     /**
      * The width in pixels of every texture used for caching pre-rendered glyph images. Used by GlyphCache when calculating
@@ -319,10 +320,15 @@ public class GlyphManager {
      */
     @Nonnull
     public Font deriveFont(@Nonnull Font font, int fontStyle, int fontSize) {
+        fontSize *= sResolutionLevel;
         font = font.deriveFont(fontStyle, fontSize);
         /* Ensure this font is already in fontKeyMap so it can be referenced by lookupGlyph() later on */
         fontKeyMap.putIfAbsent(font, fontKeyMap.size());
         return font;
+    }
+
+    public float getResolutionFactor() {
+        return sResolutionLevel * 2.0f;
     }
 
     /**
@@ -447,9 +453,10 @@ public class GlyphManager {
 
         currLineHeight = Math.max(currLineHeight, renderHeight);
         currPosX += renderWidth + GLYPH_SPACING * 2;
+        final float f = getResolutionFactor();
 
-        return new TexturedGlyph(textureName, advance / 2.0f, baselineX / 2.0f, baselineY / 2.0f,
-                width / 2.0f, height / 2.0f,
+        return new TexturedGlyph(textureName, advance / f, baselineX / f, baselineY / f,
+                width / f, height / f,
                 (float) x / TEXTURE_WIDTH, (float) y / TEXTURE_HEIGHT,
                 (float) (x + width) / TEXTURE_WIDTH, (float) (y + height) / TEXTURE_HEIGHT);
     }
@@ -496,6 +503,7 @@ public class GlyphManager {
 
         float standardAdvance = 0.0f;
         int standardRenderWidth = 0;
+        final float f = getResolutionFactor();
 
         for (int i = 0; i < 10; i++) {
             chars[0] = (char) (48 + i);
@@ -536,6 +544,7 @@ public class GlyphManager {
             if (i == 0) {
                 glyphTextureGraphics.drawString(String.valueOf(chars), currPosX - baselineX, currPosY - baselineY);
             } else {
+                // align
                 int offset = Math.round((standardRenderWidth - renderWidth) / 2.0f);
                 glyphTextureGraphics.drawString(String.valueOf(chars), currPosX + offset - baselineX, currPosY - baselineY);
             }
@@ -546,8 +555,8 @@ public class GlyphManager {
             currPosX += standardRenderWidth + GLYPH_SPACING * 2;
 
             digits[i] = new TexturedGlyph(textureName,
-                    standardAdvance / 2.0f, baselineX / 2.0f, baselineY / 2.0f,
-                    width / 2.0f, height / 2.0f,
+                    standardAdvance / f, baselineX / f, baselineY / f,
+                    width / f, height / f,
                     (float) x / TEXTURE_WIDTH, (float) y / TEXTURE_HEIGHT,
                     (float) (x + width) / TEXTURE_WIDTH, (float) (y + height) / TEXTURE_HEIGHT);
         }

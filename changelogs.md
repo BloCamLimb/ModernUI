@@ -1,6 +1,10 @@
-### 1.16.1-2.0.3.60 (2020-08-03)
+### 1.16.1-2.0.4.61 (2020-08-07)
 **Font Engine works fine, UI is developing, keep update!**
  
+* Fix font renderer see through type
+* Add ultra high definition for font rendering
+
+### 1.16.1-2.0.3.60 (2020-08-03)
 * Fix text position texture out of limit bounds
 * Fix empty text node can't be processed
 * Adjust text render layer, avoid performance loss
@@ -43,7 +47,7 @@
 * Fix keyboard listener auto lose focus, and integrated in module
 * Fix widget relocate method
 * Fix pause only main menu screen logic
-* Fix scroller minimum precision
+* Fix scrollController minimum precision
 * Fix not disable keyboard listener repeat mode when gui closed
 * Change layout editor shortcut key
 * Update icon textures

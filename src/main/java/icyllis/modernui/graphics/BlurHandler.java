@@ -176,7 +176,7 @@ public enum BlurHandler {
     @SubscribeEvent
     void gRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
         if (changingProgress && event.phase == TickEvent.Phase.END) {
-            float p = Math.min(UIManager.INSTANCE.getDrawingTime() / sAnimationDuration, 1.0f);
+            float p = Math.min(UIManager.getInstance().getDrawingTime() / sAnimationDuration, 1.0f);
             if (blurring) {
                 updateRadius(p * sBlurRadius);
             }

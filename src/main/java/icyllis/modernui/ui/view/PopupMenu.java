@@ -49,7 +49,7 @@ public class PopupMenu implements IModule {
             init = true;
             return;
         }
-        UIManager.INSTANCE.closePopup();
+        UIManager.getInstance().closePopup();
     }
 
     @Override
@@ -64,7 +64,7 @@ public class PopupMenu implements IModule {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        UIManager.INSTANCE.closePopup();
+        UIManager.getInstance().closePopup();
         /*if (menu.isMouseHovered()) {
             menu.mouseClicked(mouseX, mouseY, mouseButton);
         }*/

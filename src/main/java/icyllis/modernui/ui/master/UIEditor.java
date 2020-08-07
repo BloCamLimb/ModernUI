@@ -194,7 +194,7 @@ public enum UIEditor {
         }
         switch (event.getKey()) {
             case GLFW.GLFW_KEY_T:
-                if (UIManager.INSTANCE.getModernScreen() != null) {
+                if (UIManager.getInstance().getModernScreen() != null) {
                     iterateWorking();
                 }
                 break;
@@ -209,19 +209,19 @@ public enum UIEditor {
                 builder.append("Modern UI Debug Info:\n");
 
                 builder.append("[0] Is Modern Screen: ");
-                builder.append(UIManager.INSTANCE.getModernScreen() != null);
+                builder.append(UIManager.getInstance().getModernScreen() != null);
                 builder.append("\n");
 
                 builder.append("[1] Has Container: ");
                 builder.append(Minecraft.getInstance().player != null && Minecraft.getInstance().player.openContainer != null);
                 builder.append("\n");
 
-                if (UIManager.INSTANCE.getModernScreen() == null) {
+                if (UIManager.getInstance().getModernScreen() == null) {
                     builder.append("[2] Open Gui: ");
                     builder.append(Minecraft.getInstance().currentScreen);
                 } else {
                     builder.append("[2] Main View: ");
-                    builder.append(UIManager.INSTANCE.getMainView());
+                    builder.append(UIManager.getInstance().getMainView());
                 }
                 builder.append("\n");
 
