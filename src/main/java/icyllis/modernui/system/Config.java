@@ -136,7 +136,7 @@ public class Config {
                     .define("preferredName", "");
             allowShadow = builder.comment(
                     "Allow global font renderer to draw text with shadow, setting to false can improve performance.")
-                    .define("allowShadow", false);
+                    .define("allowShadow", true);
             antiAliasing = builder.comment(
                     "Enable font anti-aliasing.")
                     .define("antiAliasing", true);

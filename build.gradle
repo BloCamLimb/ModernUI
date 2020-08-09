@@ -64,8 +64,8 @@ configurations {
     for (def runtimeOnlyExtender : runtimeOnlyExtenders) {
         runtimeOnlyExtender.extendsFrom(runtimeOnly)
     }
-    caffeine
-    compile.extendsFrom(caffeine)
+    shade
+    compile.extendsFrom(shade)
 }
 
 minecraft {
@@ -132,13 +132,17 @@ repositories {
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
-    caffeine "com.github.ben-manes.caffeine:caffeine:${caffeine_version}"
+    shade "com.github.ben-manes.caffeine:caffeine:${caffeine_version}"
 
     compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}:api")
     runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}")
 
     compileOnly files('/libs/OptiFine_1.15.2_HD_U_G1_pre14_MOD_dev.jar')
     implementation 'org.jetbrains:annotations:15.0'
+
+    compile 'com.dslplatform:dsl-json-java8:1.9.5'
+    annotationProcessor 'com.dslplatform:dsl-json-java8:1.9.5'
+    compileOnly 'javax.json.bind:javax.json.bind-api:1.0'
 }
 
 processResources {
@@ -174,7 +178,7 @@ jar {
 
 shadowJar {
     classifier("universal")
-    configurations = [project.configurations.caffeine]
+    configurations = [project.configurations.shade]
 
     relocate 'com.google.errorprone', 'icyllis.errorprone'
     relocate 'org.checkerframe', 'icyllis.checkerframe'

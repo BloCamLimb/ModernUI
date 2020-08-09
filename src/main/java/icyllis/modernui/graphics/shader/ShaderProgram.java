@@ -24,8 +24,6 @@ import net.minecraft.client.shader.ShaderLinkHelper;
 import net.minecraft.client.shader.ShaderLoader;
 import net.minecraft.resources.IResourceManager;
 import net.minecraft.util.ResourceLocation;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
 
 import javax.annotation.Nonnull;
 import java.io.BufferedInputStream;
@@ -34,44 +32,34 @@ import java.io.InputStream;
 
 public class ShaderProgram implements IShaderManager {
 
-    public static final Marker MARKER = MarkerManager.getMarker("SHADER");
-
-    static int compileCount = 0;
-
     private int program;
 
     private ShaderLoader vertex;
     private ShaderLoader fragment;
 
     @Nonnull
-    private final ResourceLocation vert;
+    private final ResourceLocation vertLoc;
     @Nonnull
-    private final ResourceLocation frag;
+    private final ResourceLocation fragLoc;
 
-    public ShaderProgram(@Nonnull ResourceLocation vert, @Nonnull ResourceLocation frag) {
-        this.vert = vert;
-        this.frag = frag;
+    public ShaderProgram(@Nonnull ResourceLocation vertLoc, @Nonnull ResourceLocation fragLoc) {
+        this.vertLoc = vertLoc;
+        this.fragLoc = fragLoc;
     }
 
-    public ShaderProgram(@Nonnull String vert, @Nonnull String frag) {
-        this(new ResourceLocation(ModernUI.MODID, String.format("shaders/%s.vert", vert)),
-                new ResourceLocation(ModernUI.MODID, String.format("shaders/%s.frag", frag)));
+    public ShaderProgram(@Nonnull String vertLoc, @Nonnull String fragLoc) {
+        this(new ResourceLocation(ModernUI.MODID, String.format("shaders/%s.vert", vertLoc)),
+                new ResourceLocation(ModernUI.MODID, String.format("shaders/%s.frag", fragLoc)));
     }
 
-    protected void compile(IResourceManager manager) {
+    public void compile(IResourceManager manager) throws IOException {
         if (vertex != null || fragment != null) {
             ShaderLinkHelper.deleteShader(this);
         }
-        try {
-            vertex = createShader(manager, vert, ShaderLoader.ShaderType.VERTEX);
-            fragment = createShader(manager, frag, ShaderLoader.ShaderType.FRAGMENT);
-            program = ShaderLinkHelper.createProgram();
-            ShaderLinkHelper.linkProgram(this);
-            ++compileCount;
-        } catch (IOException e) {
-            ModernUI.LOGGER.fatal(MARKER, "Can't create program {}, please report this issue", getClass().getSimpleName());
-            e.printStackTrace();
-        }
+        vertex = createShader(manager, vertLoc, ShaderLoader.ShaderType.VERTEX);
+        fragment = createShader(manager, fragLoc, ShaderLoader.ShaderType.FRAGMENT);
+        program = ShaderLinkHelper.createProgram();
+        ShaderLinkHelper.linkProgram(this);
     }
 
     @Nonnull

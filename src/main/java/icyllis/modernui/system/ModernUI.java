@@ -18,11 +18,8 @@
 
 package icyllis.modernui.system;
 
-import icyllis.modernui.graphics.BlurHandler;
-import icyllis.modernui.graphics.shader.ShaderTools;
-import icyllis.modernui.ui.data.LayoutResourceManager;
-import icyllis.modernui.ui.master.UIEditor;
-import net.minecraftforge.common.MinecraftForge;
+import icyllis.modernui.graphics.renderer.RenderTools;
+import icyllis.modernui.ui.data.LayoutInflater;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.apache.logging.log4j.LogManager;
@@ -37,8 +34,7 @@ public class ModernUI {
     public static final String NAME_COMPACT = "ModernUI";
 
     public static final Logger LOGGER = LogManager.getLogger(NAME_COMPACT);
-
-    public static final Marker MARKER = MarkerManager.getMarker("SYSTEM");
+    public static final Marker MARKER = MarkerManager.getMarker("System");
 
     public ModernUI() {
         checkJava();
@@ -48,10 +44,8 @@ public class ModernUI {
         StorageManager.init();
 
         if (FMLEnvironment.dist.isClient()) {
-            LayoutResourceManager.init();
-            ShaderTools.init();
-            MinecraftForge.EVENT_BUS.register(BlurHandler.INSTANCE);
-            MinecraftForge.EVENT_BUS.register(UIEditor.INSTANCE);
+            LayoutInflater.init();
+            RenderTools.init();
         }
     }
 
@@ -61,7 +55,7 @@ public class ModernUI {
         if (javaVersion.startsWith("1.8")) {
             String[] s = javaVersion.split("_");
             if (Integer.parseInt(s[1]) < 60) {
-                throw new RuntimeException(
+                throw new IllegalStateException(
                         "You're using java " + javaVersion + " which is not compatible with Modern UI, " +
                                 "a minimum of java 1.8.0_200 or above is required");
             }

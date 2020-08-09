@@ -18,30 +18,20 @@
 
 package icyllis.modernui.ui.data;
 
-import icyllis.modernui.graphics.shader.ShaderTools;
 import icyllis.modernui.ui.master.View;
-import net.minecraft.client.Minecraft;
-import net.minecraft.resources.IReloadableResourceManager;
-import net.minecraft.resources.IResourceManager;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.resource.IResourceType;
-import net.minecraftforge.resource.ISelectiveResourceReloadListener;
-import net.minecraftforge.resource.ReloadRequirements;
-import net.minecraftforge.resource.SelectiveReloadStateHandler;
 
-import javax.annotation.Nonnull;
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Predicate;
 
 /**
  * Serialize and deserialize layout file and instantiate views
  */
-@SuppressWarnings("unused")
 @OnlyIn(Dist.CLIENT)
-public enum LayoutResourceManager {
+public enum LayoutInflater {
     INSTANCE;
 
     public static final Type UI_RESOURCE_TYPE = new Type();

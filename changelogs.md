@@ -47,7 +47,7 @@
 * Fix keyboard listener auto lose focus, and integrated in module
 * Fix widget relocate method
 * Fix pause only main menu screen logic
-* Fix scrollController minimum precision
+* Fix scroll controller minimum precision
 * Fix not disable keyboard listener repeat mode when gui closed
 * Change layout editor shortcut key
 * Update icon textures

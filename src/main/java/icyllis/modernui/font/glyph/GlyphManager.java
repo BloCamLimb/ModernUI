@@ -60,7 +60,7 @@ import java.util.List;
 @SuppressWarnings("unused")
 public class GlyphManager {
 
-    private static final Marker MARKER = MarkerManager.getMarker("FONT");
+    private static final Marker MARKER = MarkerManager.getMarker("Font");
 
     /**
      * Config values.
@@ -78,12 +78,16 @@ public class GlyphManager {
      * The width in pixels of every texture used for caching pre-rendered glyph images. Used by GlyphCache when calculating
      * floating point 0.0-1.0 texture coordinates. Must be a power of two for mip-mapping to work.
      */
-    private static final int TEXTURE_WIDTH  = 1024;
+    @Deprecated
+    private static final int TEXTURE_WIDTH  = 256;
     /**
      * The height in pixels of every texture used for caching pre-rendered glyph images. Used by GlyphCache when calculating
      * floating point 0.0-1.0 texture coordinates. Must be a power of two for mip-mapping to work.
      */
-    private static final int TEXTURE_HEIGHT = 1024;
+    @Deprecated
+    private static final int TEXTURE_HEIGHT = 256;
+
+    public static final int TEXTURE_SIZE = 1024;
 
     /**
      * Initial width in pixels of the stringImage buffer used to extract individual glyph images.
@@ -137,7 +141,7 @@ public class GlyphManager {
     /**
      * All font glyphs are packed inside this image and are then loaded from here into an OpenGL texture.
      */
-    private final BufferedImage glyphTextureImage = new BufferedImage(TEXTURE_WIDTH, TEXTURE_HEIGHT, BufferedImage.TYPE_INT_ARGB);
+    private final BufferedImage glyphTextureImage = new BufferedImage(TEXTURE_SIZE, TEXTURE_SIZE, BufferedImage.TYPE_INT_ARGB);
 
     /**
      * The Graphics2D associated with glyphTextureImage and used for bit blit between stringImage.
@@ -148,13 +152,13 @@ public class GlyphManager {
     /**
      * Intermediate data array for use with textureImage.getRgb().
      */
-    private final int[] imageData = new int[TEXTURE_WIDTH * TEXTURE_HEIGHT >> 8];
+    private final int[] imageData = new int[8192];
 
     /**
      * A direct buffer used with glTexSubImage2D(). Used for loading the pre-rendered glyph
      * images from the glyphCacheImage BufferedImage into OpenGL textures.
      */
-    private final ByteBuffer uploadBuffer = BufferUtils.createByteBuffer(TEXTURE_WIDTH * TEXTURE_HEIGHT >> 8);
+    private final ByteBuffer uploadBuffer = BufferUtils.createByteBuffer(imageData.length);
 
     /**
      * A single integer direct buffer with native byte ordering used for returning values from glGenTextures().
@@ -425,12 +429,12 @@ public class GlyphManager {
         int renderWidth = (int) renderBounds.getWidth();
         int renderHeight = (int) renderBounds.getHeight();
 
-        if (currPosX + renderWidth + GLYPH_SPACING >= TEXTURE_WIDTH) {
+        if (currPosX + renderWidth + GLYPH_SPACING >= TEXTURE_SIZE) {
             currPosX = GLYPH_SPACING;
             currPosY += currLineHeight + GLYPH_SPACING * 2;
             currLineHeight = 0;
         }
-        if (currPosY + renderHeight + GLYPH_SPACING >= TEXTURE_HEIGHT) {
+        if (currPosY + renderHeight + GLYPH_SPACING >= TEXTURE_SIZE) {
             currPosX = GLYPH_SPACING;
             currPosY = GLYPH_SPACING;
             allocateGlyphTexture();
@@ -457,8 +461,8 @@ public class GlyphManager {
 
         return new TexturedGlyph(textureName, advance / f, baselineX / f, baselineY / f,
                 width / f, height / f,
-                (float) x / TEXTURE_WIDTH, (float) y / TEXTURE_HEIGHT,
-                (float) (x + width) / TEXTURE_WIDTH, (float) (y + height) / TEXTURE_HEIGHT);
+                (float) x / TEXTURE_SIZE, (float) y / TEXTURE_SIZE,
+                (float) (x + width) / TEXTURE_SIZE, (float) (y + height) / TEXTURE_SIZE);
     }
 
     /**
@@ -513,12 +517,12 @@ public class GlyphManager {
             int renderWidth = (int) renderBounds.getWidth();
             int renderHeight = (int) renderBounds.getHeight();
 
-            if (currPosX + renderWidth + GLYPH_SPACING >= TEXTURE_WIDTH) {
+            if (currPosX + renderWidth + GLYPH_SPACING >= TEXTURE_SIZE) {
                 currPosX = GLYPH_SPACING;
                 currPosY += currLineHeight + GLYPH_SPACING * 2;
                 currLineHeight = 0;
             }
-            if (currPosY + renderHeight + GLYPH_SPACING >= TEXTURE_HEIGHT) {
+            if (currPosY + renderHeight + GLYPH_SPACING >= TEXTURE_SIZE) {
                 currPosX = GLYPH_SPACING;
                 currPosY = GLYPH_SPACING;
                 allocateGlyphTexture();
@@ -557,8 +561,8 @@ public class GlyphManager {
             digits[i] = new TexturedGlyph(textureName,
                     standardAdvance / f, baselineX / f, baselineY / f,
                     width / f, height / f,
-                    (float) x / TEXTURE_WIDTH, (float) y / TEXTURE_HEIGHT,
-                    (float) (x + width) / TEXTURE_WIDTH, (float) (y + height) / TEXTURE_HEIGHT);
+                    (float) x / TEXTURE_SIZE, (float) y / TEXTURE_SIZE,
+                    (float) (x + width) / TEXTURE_SIZE, (float) (y + height) / TEXTURE_SIZE);
         }
 
         return digits;
@@ -858,7 +862,7 @@ public class GlyphManager {
      */
     private void allocateGlyphTexture() {
         /* Initialize the background to all black but fully transparent. */
-        glyphTextureGraphics.clearRect(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+        glyphTextureGraphics.clearRect(0, 0, TEXTURE_SIZE, TEXTURE_SIZE);
 
         /* Allocate new OpenGL texture */
         textureGenBuffer.position(0);
@@ -890,8 +894,8 @@ public class GlyphManager {
         }
 
         for (int level = 0; level <= mipmapLevel; level++) {
-            GL11.glTexImage2D(GL11.GL_TEXTURE_2D, level, GL11.GL_ALPHA, TEXTURE_WIDTH >> level,
-                    TEXTURE_HEIGHT >> level, 0, GL11.GL_ALPHA, GL11.GL_UNSIGNED_BYTE, (IntBuffer) null);
+            GL11.glTexImage2D(GL11.GL_TEXTURE_2D, level, GL11.GL_ALPHA, TEXTURE_SIZE >> level,
+                    TEXTURE_SIZE >> level, 0, GL11.GL_ALPHA, GL11.GL_UNSIGNED_BYTE, (IntBuffer) null);
         }
 
         /* We set MinMag params here, just call once for a texture */

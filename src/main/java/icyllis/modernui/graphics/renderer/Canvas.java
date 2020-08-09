@@ -25,7 +25,6 @@ import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.font.node.TextRenderType;
 import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.graphics.shader.ShaderTools;
 import icyllis.modernui.graphics.shader.program.*;
 import icyllis.modernui.ui.master.View;
 import net.minecraft.client.MainWindow;
@@ -59,6 +58,8 @@ import javax.annotation.Nonnull;
 @SuppressWarnings("unused")
 //TODO use int RGBA color rather than float
 public class Canvas {
+
+    private static Canvas instance;
 
     /**
      * Instances
@@ -119,9 +120,18 @@ public class Canvas {
     private static boolean lineAA = false;
 
 
-    public Canvas(@Nonnull Minecraft minecraft) {
+    private Canvas(@Nonnull Minecraft minecraft) {
         mainWindow = minecraft.getMainWindow();
         itemRenderer = minecraft.getItemRenderer();
+    }
+
+    public static Canvas getInstance() {
+        RenderSystem.assertThread(RenderSystem::isOnRenderThread);
+        if (instance == null) {
+            RenderTools.checkCapabilities();
+            instance = new Canvas(Minecraft.getInstance());
+        }
+        return instance;
     }
 
     /**
@@ -460,11 +470,11 @@ public class Canvas {
      * @param outerRadius outer circle radius
      */
     public void drawRing(float centerX, float centerY, float innerRadius, float outerRadius) {
-        ShaderTools.useShader(ring);
+        RenderTools.useShader(ring);
         ring.setRadius(innerRadius, outerRadius);
         ring.setCenterPos(centerX, centerY);
         drawRect(centerX - outerRadius, centerY - outerRadius, centerX + outerRadius, centerY + outerRadius);
-        ShaderTools.releaseShader();
+        RenderTools.releaseShader();
     }
 
     /**
@@ -477,11 +487,11 @@ public class Canvas {
      * @param radius  circle radius
      */
     public void drawCircle(float centerX, float centerY, float radius) {
-        ShaderTools.useShader(circle);
+        RenderTools.useShader(circle);
         circle.setRadius(radius);
         circle.setCenterPos(centerX, centerY);
         drawRect(centerX - radius, centerY - radius, centerX + radius, centerY + radius);
-        ShaderTools.releaseShader();
+        RenderTools.releaseShader();
     }
 
     /**
@@ -519,11 +529,11 @@ public class Canvas {
      * @param radius rounded radius, actually must >= 2
      */
     public void drawRoundedRect(float left, float top, float right, float bottom, float radius) {
-        ShaderTools.useShader(roundedRect);
+        RenderTools.useShader(roundedRect);
         roundedRect.setRadius(radius - 1); // we have feather radius 1px
         roundedRect.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
         drawRect(left, top, right, bottom);
-        ShaderTools.releaseShader();
+        RenderTools.releaseShader();
     }
 
     /**
@@ -540,11 +550,11 @@ public class Canvas {
      * @param radius rounded radius, must >= 1.5
      */
     public void drawRoundedFrame(float left, float top, float right, float bottom, float radius) {
-        ShaderTools.useShader(roundedFrame);
+        RenderTools.useShader(roundedFrame);
         roundedRect.setRadius(radius - 1);
         roundedRect.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
         drawRect(left, top, right, bottom);
-        ShaderTools.releaseShader();
+        RenderTools.releaseShader();
     }
 
     /**
@@ -559,11 +569,11 @@ public class Canvas {
      * @param thickness feather thickness (>= 0.5 is better)
      */
     public void drawFeatheredRect(float left, float top, float right, float bottom, float thickness) {
-        ShaderTools.useShader(featheredRect);
+        RenderTools.useShader(featheredRect);
         featheredRect.setThickness(thickness);
         featheredRect.setInnerRect(left + thickness, top + thickness, right - thickness, bottom - thickness);
         drawRect(left, top, right, bottom);
-        ShaderTools.releaseShader();
+        RenderTools.releaseShader();
     }
 
     /**

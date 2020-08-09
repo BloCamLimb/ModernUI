@@ -31,7 +31,7 @@ public final class DragEvent {
 
     public static final int ACTION_DRAG_ENTERED = 2;
 
-    public static final int ACTION_DRAG_UPDATED = 3;
+    public static final int ACTION_DRAG_MOVED = 3;
 
     public static final int ACTION_DRAG_EXITED = 4;
 

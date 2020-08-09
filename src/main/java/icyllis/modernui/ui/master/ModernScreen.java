@@ -71,32 +71,32 @@ public final class ModernScreen extends Screen {
 
     @Override
     public void mouseMoved(double mouseX, double mouseY) {
-        manager.sMouseMoved(mouseX, mouseY);
+        manager.screenMouseMove(mouseX, mouseY);
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        return manager.sMouseClicked(mouseX, mouseY, mouseButton);
+        return manager.screenMouseDown(mouseX, mouseY, mouseButton);
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
-        return manager.sMouseReleased(mouseX, mouseY, mouseButton);
+        return manager.screenMouseUp(mouseX, mouseY, mouseButton);
     }
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double deltaX, double deltaY) {
-        return manager.sMouseDragged(mouseX, mouseY, deltaX, deltaY);
+        return manager.screenMouseDrag(mouseX, mouseY, deltaX, deltaY);
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        return manager.sMouseScrolled(mouseX, mouseY, delta);
+        return manager.screenMouseScroll(mouseX, mouseY, delta);
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (manager.sKeyPressed(keyCode, scanCode, modifiers)) {
+        if (manager.screenKeyDown(keyCode, scanCode, modifiers)) {
             return true;
         } else if (keyCode == GLFW.GLFW_KEY_ESCAPE && shouldCloseOnEsc()) {
             if (manager.sBack()) {
@@ -116,7 +116,7 @@ public final class ModernScreen extends Screen {
 
     @Override
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-        return manager.sKeyReleased(keyCode, scanCode, modifiers);
+        return manager.screenKeyUp(keyCode, scanCode, modifiers);
     }
 
     @Override
