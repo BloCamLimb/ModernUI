@@ -46,6 +46,10 @@ public class MixinScreen {
     )
     private void renderBackgroundInWorld(@Nonnull Screen screen, @Nonnull MatrixStack stack, int x1, int y1, int x2, int y2,
                                          int colorA, int colorB) {
+        int a = (int) (BlurHandler.INSTANCE.getBackgroundAlpha() * 255.0f);
+        if (a == 0) {
+            return;
+        }
         RenderSystem.disableTexture();
         RenderSystem.enableBlend();
         RenderSystem.disableAlphaTest();
@@ -54,7 +58,6 @@ public class MixinScreen {
         BufferBuilder builder = Tessellator.getInstance().getBuffer();
         Matrix4f matrix = stack.getLast().getMatrix();
         int z = screen.getBlitOffset();
-        int a = (int) (BlurHandler.INSTANCE.getBackgroundAlpha() * 255.0f);
         builder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
         builder.pos(matrix, x2, y1, z).color(0, 0, 0, a).endVertex();
         builder.pos(matrix, x1, y1, z).color(0, 0, 0, a).endVertex();

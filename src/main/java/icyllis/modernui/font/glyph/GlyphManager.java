@@ -253,10 +253,10 @@ public class GlyphManager {
                 ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", f.getName());
             });
         }
+
         try {
             Font f = Font.createFont(Font.TRUETYPE_FONT, getClass().getResourceAsStream("/assets/modernui/font/biliw.otf"));
             selectedFonts.add(f);
-            ModernUI.LOGGER.debug(MARKER, "Built-in font {} was loaded", f.getName());
         } catch (FontFormatException | IOException e) {
             e.printStackTrace();
             ModernUI.LOGGER.warn(MARKER, "Built-in font failed to load");

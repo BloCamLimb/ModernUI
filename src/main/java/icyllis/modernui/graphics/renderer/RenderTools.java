@@ -97,7 +97,6 @@ public class RenderTools {
      */
     static void checkCapabilities() {
         GLCapabilities capabilities = GL.getCapabilities();
-        ModernUI.LOGGER.debug(MARKER, "Checking GL capabilities...");
         int i = 0;
         if (!capabilities.GL_ARB_vertex_buffer_object) {
             ModernUI.LOGGER.fatal(MARKER, "Vertex buffer object is not supported");
@@ -123,11 +122,13 @@ public class RenderTools {
             ModernUI.LOGGER.fatal(MARKER, "Explicit uniform location is not supported");
             i++;
         }
+
         int v;
         if ((v = GL11.glGetInteger(GL11.GL_MAX_TEXTURE_SIZE)) < GlyphManager.TEXTURE_SIZE) {
             ModernUI.LOGGER.fatal(MARKER, "Max texture size is too small, supplies {} but requires {}", v, GlyphManager.TEXTURE_SIZE);
             i++;
         }
+
         if (i == 0) {
             ModernUI.LOGGER.debug(MARKER, "All GL capabilities are successfully passed");
         } else {
