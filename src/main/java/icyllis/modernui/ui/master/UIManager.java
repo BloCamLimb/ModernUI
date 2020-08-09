@@ -19,6 +19,7 @@
 package icyllis.modernui.ui.master;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.math.Point;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.system.Config;
@@ -65,7 +66,7 @@ public final class UIManager {
     private static volatile UIManager instance;
 
     // logger marker
-    public static final Marker MARKER = MarkerManager.getMarker("UI");
+    public static final Marker MARKER = MarkerManager.getMarker("Window");
 
     // cached minecraft instance
     private final Minecraft minecraft = Minecraft.getInstance();
@@ -152,6 +153,8 @@ public final class UIManager {
     {
         windows.add(appWindow = new ViewRootImpl(this, ViewRootImpl.TYPE_APPLICATION));
         MinecraftForge.EVENT_BUS.register(this);
+        MinecraftForge.EVENT_BUS.register(BlurHandler.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(UIEditor.INSTANCE);
     }
 
     /**
@@ -173,11 +176,11 @@ public final class UIManager {
     /**
      * Open GUI screen and UI window
      *
-     * @param appFragment main fragment of the UI
+     * @param fragment main fragment of the UI
      * @see #prepareWindows(Screen, int, int)
      */
-    public void openGui(@Nonnull Fragment appFragment) {
-        this.fragment = appFragment;
+    public void openGui(@Nonnull Fragment fragment) {
+        this.fragment = fragment;
         minecraft.displayGuiScreen(new ModernScreen());
     }
 
@@ -201,21 +204,21 @@ public final class UIManager {
     public <T extends Container, U extends Screen & IHasContainer<T>> void registerContainerScreen(
             @Nonnull ContainerType<? extends T> type, @Nonnull Function<T, Fragment> factory) {
         // prevent compiler error
-        ScreenManager.registerFactory(type, cast(factory));
+        ScreenManager.registerFactory(type, castFactory(factory));
     }
 
     @Nonnull
     @SuppressWarnings({"unchecked", "ConstantConditions"})
-    private <T extends Container, U extends Screen & IHasContainer<T>> ScreenManager.IScreenFactory<T, U> cast(
+    private <T extends Container, U extends Screen & IHasContainer<T>> ScreenManager.IScreenFactory<T, U> castFactory(
             @Nonnull Function<T, Fragment> factory) {
-        return (container, playerInventory, title) -> {
+        return (container, playerInv, title) -> {
             // The client container can be null sometimes, but a container screen doesn't allow the container to be null
             // so return null, there's no gui will be open, and the server container will be closed automatically
             if (container == null) {
                 return null;
             }
             this.fragment = factory.apply(container);
-            return (U) new ModernContainerScreen<>(container, playerInventory, title);
+            return (U) new ModernContainerScreen<>(container, playerInv, title);
         };
     }
 
@@ -227,7 +230,7 @@ public final class UIManager {
      *                confirm window should reset mouse
      *                context menu should not reset mouse
      */
-    //TODO new popup system
+    @Deprecated
     public void openPopup(IModule popup, boolean refresh) {
         /*if (root == null) {
             ModernUI.LOGGER.fatal(MARKER, "#openPopup() shouldn't be called when there's NO gui open");
@@ -237,7 +240,7 @@ public final class UIManager {
             ModernUI.LOGGER.warn(MARKER, "#openPopup() shouldn't be called when there's already a popup, the previous one has been overwritten");
         }
         if (refresh) {
-            this.sMouseMoved(-1, -1);
+            this.screenMouseMove(-1, -1);
         }
         this.popup = popup;
         this.popup.resize(width, height);
@@ -273,7 +276,7 @@ public final class UIManager {
             }
             View view = fragment.createView();
             if (view == null) {
-                ModernUI.LOGGER.fatal(MARKER, "The main view created from the fragment shouldn't be null");
+                ModernUI.LOGGER.fatal(MARKER, "The view created from the main fragment shouldn't be null");
                 closeGui();
                 return;
             }
@@ -292,7 +295,7 @@ public final class UIManager {
 
         // create canvas, also font renderer
         if (canvas == null) {
-            canvas = new Canvas(minecraft);
+            canvas = Canvas.getInstance();
         }
 
         if (screenToOpen == null) {
@@ -312,7 +315,7 @@ public final class UIManager {
         }
         // hotfix 1.5.2, but there's no way to work with screens that will pause game
         if (modernScreen != screenToOpen && modernScreen != null) {
-            sMouseMoved(-1, -1);
+            screenMouseMove(-1, -1);
         }
         // for non-modern-ui screens
         if (modernScreen == null) {
@@ -324,9 +327,9 @@ public final class UIManager {
     /**
      * Get current open screen differently from Minecraft's,
      * which will only return Modern UI's screen or null
-     * {@link Minecraft#currentScreen}
      *
      * @return open modern screen
+     * @see Minecraft#currentScreen
      */
     @Nullable
     public Screen getModernScreen() {
@@ -358,17 +361,18 @@ public final class UIManager {
         tasks.add(new DelayedTask(runnable, delayedTicks));
     }
 
-    void sMouseMoved(double mouseX, double mouseY) {
+    // OS EVENT HANDLE IN SCREEN
+
+    void screenMouseMove(double mouseX, double mouseY) {
         this.mouseX = mouseX;
         this.mouseY = mouseY;
-        mouseMoved();
         /*if (popup != null) {
             popup.mouseMoved(mouseX, mouseY);
             return;
         }*/
     }
 
-    boolean sMouseClicked(double mouseX, double mouseY, int mouseButton) {
+    boolean screenMouseDown(double mouseX, double mouseY, int mouseButton) {
         this.mouseX = mouseX;
         this.mouseY = mouseY;
         /*if (popup != null) {
@@ -419,7 +423,7 @@ public final class UIManager {
         return false;
     }
 
-    boolean sMouseReleased(double mouseX, double mouseY, int mouseButton) {
+    boolean screenMouseUp(double mouseX, double mouseY, int mouseButton) {
         this.mouseX = mouseX;
         this.mouseY = mouseY;
         /*if (popup != null) {
@@ -450,7 +454,7 @@ public final class UIManager {
         return false;//root.mouseReleased(mouseX, mouseY, mouseButton);
     }
 
-    boolean sMouseDragged(double mouseX, double mouseY, double deltaX, double deltaY) {
+    boolean screenMouseDrag(double mouseX, double mouseY, double deltaX, double deltaY) {
         this.mouseX = mouseX;
         this.mouseY = mouseY;
         /*if (popup != null) {
@@ -462,7 +466,7 @@ public final class UIManager {
         return false;
     }
 
-    boolean sMouseScrolled(double mouseX, double mouseY, double amount) {
+    boolean screenMouseScroll(double mouseX, double mouseY, double amount) {
         this.mouseX = mouseX;
         this.mouseY = mouseY;
         /*if (popup != null) {
@@ -489,17 +493,18 @@ public final class UIManager {
         return false;
     }
 
-    boolean sKeyPressed(int keyCode, int scanCode, int modifiers) {
+    boolean screenKeyDown(int keyCode, int scanCode, int modifiers) {
         /*if (popup != null) {
             return popup.keyPressed(keyCode, scanCode, modifiers);
         }*/
+        ModernUI.LOGGER.info("KeyDown{keyCode:{}, scanCode:{}, mod:{}}", keyCode, scanCode, modifiers);
         if (mKeyboard != null) {
             return mKeyboard.onKeyPressed(keyCode, scanCode, modifiers);
         }
         return false;
     }
 
-    boolean sKeyReleased(int keyCode, int scanCode, int modifiers) {
+    boolean screenKeyUp(int keyCode, int scanCode, int modifiers) {
         /*if (popup != null) {
             return popup.keyReleased(keyCode, scanCode, modifiers);
         }*/
@@ -539,18 +544,16 @@ public final class UIManager {
     /**
      * Refocus mouse cursor and update mouse hovering state
      */
+    @Deprecated
     public void refreshMouse() {
-        mouseMoved();
+        //mouseMoved();
     }
 
-    /**
-     * Find mouse hovering focus for entire UI
-     */
-    private void mouseMoved() {
+    /*private void mouseMoved() {
         if (view != null && !view.updateMouseHover(mouseX, mouseY)) {
             setHovered(null);
         }
-    }
+    }*/
 
     /**
      * Raw draw method, draw entire UI
@@ -561,6 +564,7 @@ public final class UIManager {
         RenderSystem.disableAlphaTest();
         RenderSystem.enableDepthTest();
         RenderSystem.depthMask(false);
+
         /*canvas.moveToZero();
         canvas.setColor(0, 0, 0, 51);
         canvas.drawRect(0, 0, width, height);
@@ -622,7 +626,8 @@ public final class UIManager {
         if (Config.isDeveloperMode()) {
             ModernUI.LOGGER.debug(MARKER, "Layout performed in {} \u03bcs", (System.nanoTime() - startTime) / 1000.0f);
         }
-        mouseMoved();
+        //TODO
+        //mouseMoved();
     }
 
     void recycleWindows() {

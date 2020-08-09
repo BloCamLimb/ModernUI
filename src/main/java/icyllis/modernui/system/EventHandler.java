@@ -18,11 +18,16 @@
 
 package icyllis.modernui.system;
 
+import icyllis.modernui.graphics.renderer.RenderTools;
 import icyllis.modernui.ui.example.ContainerTest;
+import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.Items;
+import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -58,6 +63,16 @@ public class EventHandler {
     @OnlyIn(Dist.CLIENT)
     @Mod.EventBusSubscriber(Dist.CLIENT)
     static class Client {
+
+        @SubscribeEvent
+        static void onPlayerLogIn(@Nonnull ClientPlayerNetworkEvent.LoggedInEvent event) {
+            ClientPlayerEntity playerEntity = event.getPlayer();
+            if (playerEntity != null && RenderTools.glCapabilitiesErrors > 0) {
+                playerEntity.sendMessage(new StringTextComponent("[Modern UI] There are " + RenderTools.glCapabilitiesErrors +
+                        " GL capabilities that are not supported by your GPU, render system is not working properly")
+                        .mergeStyle(TextFormatting.RED), null);
+            }
+        }
 
         /*@SubscribeEvent(receiveCanceled = true)
         static void onGuiOpen(@Nonnull GuiOpenEvent event) {

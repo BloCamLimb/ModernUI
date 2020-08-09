@@ -38,7 +38,8 @@ public class ViscousFluidInterpolator implements ITimeInterpolator {
 
     /**
      * Singleton, do not new one
-     * See {@link ITimeInterpolator#VISCOUS_FLUID}
+     *
+     * @see ITimeInterpolator#VISCOUS_FLUID
      */
     public ViscousFluidInterpolator() {
 

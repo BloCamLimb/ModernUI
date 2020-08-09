@@ -13,14 +13,12 @@ uniform float Progress;
 void main() {
     vec4 blurred = vec4(0.0);
 
-    float tAlpha = 0.0;
-    float pRadius = floor(Progress);
+    float radius = floor(Progress);
 
-    for(float r = -pRadius; r <= pRadius; r += 1.0) {
+    for (float r = -radius; r <= radius; r += 1.0) {
         vec4 sample0 = texture2D(DiffuseSampler, texCoord + oneTexel * r * BlurDir);
-        tAlpha = tAlpha + sample0.a;
         blurred = blurred + sample0;
     }
 
-    gl_FragColor = vec4(blurred.rgb / (pRadius * 2.0 + 1.0), tAlpha);
+    gl_FragColor = vec4(blurred.rgb / (radius * 2.0 + 1.0), 1.0);
 }

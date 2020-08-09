@@ -40,6 +40,7 @@ import java.util.Objects;
 
 /**
  * This is required because most of mods check if instanceof {@link ContainerScreen} rather than {@link IHasContainer}.
+ * ContainerScreen can hold a container including item slots and network communication.
  *
  * @param <G> container type
  * @see ScreenManager.IScreenFactory
@@ -55,6 +56,7 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
 
     @Override
     public void init(Minecraft minecraft, int width, int height) {
+        //TODO remove super.init()
         super.init(minecraft, width, height);
         manager.prepareWindows(this, width, height);
     }
@@ -88,35 +90,35 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
 
     @Override
     public void mouseMoved(double mouseX, double mouseY) {
-        manager.sMouseMoved(mouseX, mouseY);
+        manager.screenMouseMove(mouseX, mouseY);
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         super.mouseClicked(mouseX, mouseY, mouseButton);
-        return manager.sMouseClicked(mouseX, mouseY, mouseButton);
+        return manager.screenMouseDown(mouseX, mouseY, mouseButton);
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
         super.mouseReleased(mouseX, mouseY, mouseButton);
-        return manager.sMouseReleased(mouseX, mouseY, mouseButton);
+        return manager.screenMouseUp(mouseX, mouseY, mouseButton);
     }
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double deltaX, double deltaY) {
         super.mouseDragged(mouseX, mouseY, mouseButton, deltaX, deltaY);
-        return manager.sMouseDragged(mouseX, mouseY, deltaX, deltaY);
+        return manager.screenMouseDrag(mouseX, mouseY, deltaX, deltaY);
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        return manager.sMouseScrolled(mouseX, mouseY, delta);
+        return manager.screenMouseScroll(mouseX, mouseY, delta);
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (manager.sKeyPressed(keyCode, scanCode, modifiers)) {
+        if (manager.screenKeyDown(keyCode, scanCode, modifiers)) {
             return true;
         } else {
             InputMappings.Input mouseKey = InputMappings.getInputByCode(keyCode, scanCode);
@@ -152,7 +154,7 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
 
     @Override
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-        return manager.sKeyReleased(keyCode, scanCode, modifiers);
+        return manager.screenKeyUp(keyCode, scanCode, modifiers);
     }
 
     @Override

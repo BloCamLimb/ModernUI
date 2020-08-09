@@ -55,7 +55,7 @@ public class View {
     /**
      * Log marker.
      */
-    public static final Marker MARKER = MarkerManager.getMarker("VIEW");
+    public static final Marker MARKER = MarkerManager.getMarker("View");
 
     /**
      * Used to mark a View that has no ID.
