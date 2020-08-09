@@ -143,6 +143,14 @@ dependencies {
     compile 'com.dslplatform:dsl-json-java8:1.9.5'
     annotationProcessor 'com.dslplatform:dsl-json-java8:1.9.5'
     compileOnly 'javax.json.bind:javax.json.bind-api:1.0'
+
+    annotationProcessor 'com.google.guava:guava:21.0'
+    annotationProcessor 'org.apache.logging.log4j:log4j-core:2.0-beta9'
+    annotationProcessor 'org.ow2.asm:asm-tree:6.2'
+    annotationProcessor 'org.ow2.asm:asm-commons:6.2'
+    annotationProcessor 'org.ow2.asm:asm-util:6.2'
+    annotationProcessor 'com.google.code.gson:gson:2.2.4'
+    annotationProcessor 'org.spongepowered:mixin:0.8'
 }
 
 processResources {

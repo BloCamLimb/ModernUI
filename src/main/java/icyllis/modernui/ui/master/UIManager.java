@@ -45,6 +45,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL43;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

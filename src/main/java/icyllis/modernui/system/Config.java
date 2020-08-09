@@ -78,7 +78,7 @@ public class Config {
         //public boolean keepRunningInScreen;
 
         //private final ForgeConfigSpec.BooleanValue keepRunningInScreenV;
-        private final ForgeConfigSpec.BooleanValue blurBackground;
+        private final ForgeConfigSpec.BooleanValue blurEffect;
         private final ForgeConfigSpec.IntValue     animationDuration;
         private final ForgeConfigSpec.IntValue     blurRadius;
         private final ForgeConfigSpec.DoubleValue  backgroundAlpha;
@@ -101,22 +101,23 @@ public class Config {
 
             /*keepRunningInScreenV = builder.comment("Keep game running no matter what screen is open. Modern UI's GUIs will never pause game.")
                     .define("keepGameRunning", true);*/
-            blurBackground = builder.comment(
-                    "Blur GUI background, this is incompatible with OptiFine's FXAA shader or some mods.")
-                    .define("blurBackground", true);
-            backgroundAlpha = builder.comment(
-                    "GUI background opacity in world.")
-                    .defineInRange("backgroundAlpha", 0.4, 0, 0.8);
             animationDuration = builder.comment(
-                    "The duration of GUI background alpha and blur radius animation in milliseconds. (0 = OFF)")
+                    "The duration of screen background and blur radius animation in milliseconds. (0 = OFF)")
                     .defineInRange("animationDuration", 200, 0, 800);
-            blurRadius = builder.comment(
-                    "Blur effect radius if enabled, higher value can severely degrade performance.")
-                    .defineInRange("blurRadius", 10, 2, 18);
+            backgroundAlpha = builder.comment(
+                    "Screen black background opacity in game, higher values will get darker.")
+                    .defineInRange("backgroundAlpha", 0.4, 0, 0.8);
 
+            blurEffect = builder.comment(
+                    "Add blur effect to world renderer when opened, it is incompatible with OptiFine's FXAA shader or some mods.")
+                    .define("blurEffect", true);
+            blurRadius = builder.comment(
+                    "The blur effect radius, higher values result in a small loss of performance.")
+                    .defineInRange("blurRadius", 10, 2, 18);
             blurExclusions = builder.comment(
                     "A list of GUI screen superclasses that won't activate blur effect when opened.")
                     .defineList("blurExclusions", ArrayList::new, s -> true);
+
 
             builder.pop();
 
@@ -164,7 +165,7 @@ public class Config {
         private void load() {
             //keepRunningInScreen = keepRunningInScreenV.get();
 
-            BlurHandler.sBlurBackground = blurBackground.get();
+            BlurHandler.sBlurEffect = blurEffect.get();
             BlurHandler.sAnimationDuration = animationDuration.get();
             BlurHandler.sBlurRadius = blurRadius.get();
             BlurHandler.sBackgroundAlpha = backgroundAlpha.get().floatValue();

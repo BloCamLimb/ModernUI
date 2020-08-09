@@ -21,10 +21,10 @@ package icyllis.modernui.graphics;
 import icyllis.modernui.ui.master.ModernContainerScreen;
 import icyllis.modernui.ui.master.ModernScreen;
 import icyllis.modernui.ui.master.UIManager;
+import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraft.client.gui.screen.DownloadTerrainScreen;
-import net.minecraft.client.gui.screen.MainMenuScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.shader.Shader;
@@ -41,8 +41,8 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Better than Blur (mod) in every respect, and surely they are incompatible
@@ -56,7 +56,7 @@ public enum BlurHandler {
      *
      * @see icyllis.modernui.system.Config.Client
      */
-    public static boolean sBlurBackground;
+    public static boolean sBlurEffect;
     public static float   sAnimationDuration;
     public static float   sBlurRadius;
     public static float   sBackgroundAlpha;
@@ -65,7 +65,7 @@ public enum BlurHandler {
 
     private final Minecraft minecraft = Minecraft.getInstance();
 
-    private final List<Class<?>> exclusions = new ArrayList<>();
+    private final Set<Class<?>> exclusions = new ObjectArraySet<>();
 
     /**
      * If is playing animation
@@ -107,7 +107,7 @@ public enum BlurHandler {
         boolean excluded = gui != null && !(gui instanceof ModernScreen)
                 && !(gui instanceof ModernContainerScreen<?>)
                 && exclusions.stream().anyMatch(c -> c.isAssignableFrom(gui.getClass()));
-        boolean notBlur = excluded || !sBlurBackground;
+        boolean notBlur = excluded || !sBlurEffect;
         if (notBlur && excluded && blurring) {
             minecraft.gameRenderer.stopUseShader();
             changingProgress = false;
@@ -146,7 +146,7 @@ public enum BlurHandler {
      */
     public void forceBlur() {
         // no need to check if is excluded, this method is only called by opened ModernScreen
-        if (!sBlurBackground) {
+        if (!sBlurEffect) {
             return;
         }
         if (minecraft.world != null) {
@@ -203,5 +203,4 @@ public enum BlurHandler {
     public float getBackgroundAlpha() {
         return backgroundAlpha;
     }
-
 }
