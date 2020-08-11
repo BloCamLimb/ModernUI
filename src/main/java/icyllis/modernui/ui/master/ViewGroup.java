@@ -70,6 +70,47 @@ public abstract class ViewGroup extends View implements IViewParent {
     protected abstract void onLayout(boolean changed);
 
     @Override
+    public boolean dispatchMouseEvent(@Nonnull MouseEvent event) {
+        final double mouseX = event.x;
+        final double mouseY = event.y;
+        final int action = event.action;
+
+        event.x += getScrollX();
+        event.y += getScrollY();
+
+        final View[] views = children;
+        View child;
+        boolean anyHovered = false;
+
+        switch (action) {
+            case MouseEvent.ACTION_MOVE:
+                for (int i = childrenCount - 1; i >= 0; i--) {
+                    child = views[i];
+                    if (!anyHovered && child.onMouseEvent(event)) {
+                        anyHovered = true;
+                    } else {
+                        child.ensureMouseHoverExit();
+                    }
+                }
+                return anyHovered;
+            case MouseEvent.ACTION_PRESS:
+            case MouseEvent.ACTION_SCROLL:
+                for (int i = childrenCount - 1; i >= 0; i--) {
+                    child = views[i];
+                    if (child.onMouseEvent(event)) {
+                        return true;
+                    }
+                }
+                return false;
+        }
+
+        event.x = mouseX;
+        event.y = mouseY;
+        return super.dispatchMouseEvent(event);
+    }
+
+    /*@Deprecated
+    @Override
     final boolean dispatchUpdateMouseHover(double mouseX, double mouseY) {
         final double mx = mouseX + getScrollX();
         final double my = mouseY + getScrollY();
@@ -85,7 +126,7 @@ public abstract class ViewGroup extends View implements IViewParent {
             }
         }
         return anyHovered;
-    }
+    }*/
 
     @Override
     final void ensureMouseHoverExit() {
@@ -162,10 +203,10 @@ public abstract class ViewGroup extends View implements IViewParent {
      * @param params layout params of the view
      */
     public void addView(@Nonnull View child, int index, @Nonnull LayoutParams params) {
-        addView0(child, index, params);
+        addViewInner(child, index, params);
     }
 
-    private void addView0(@Nonnull final View child, int index, @Nonnull LayoutParams params) {
+    private void addViewInner(@Nonnull final View child, int index, @Nonnull LayoutParams params) {
         if (child.getParent() != null) {
             ModernUI.LOGGER.fatal(UIManager.MARKER,
                     "Failed to add child view {} to {}. The child has already a parent.", child, this);
@@ -263,7 +304,7 @@ public abstract class ViewGroup extends View implements IViewParent {
      * We skip children that are in the GONE state The heavy lifting is done in
      * getChildMeasureSpec.
      *
-     * @param widthMeasureSpec The width requirements for this view
+     * @param widthMeasureSpec  The width requirements for this view
      * @param heightMeasureSpec The height requirements for this view
      */
     protected void measureChildren(int widthMeasureSpec, int heightMeasureSpec) {

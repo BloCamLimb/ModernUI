@@ -18,6 +18,7 @@
 
 package icyllis.modernui.graphics.renderer;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.glyph.GlyphManager;
 import icyllis.modernui.graphics.shader.ShaderProgram;
 import icyllis.modernui.graphics.shader.program.*;
@@ -57,27 +58,14 @@ public class RenderTools {
         if (!t.test(VanillaResourceType.SHADERS)) {
             return;
         }
-        boolean successful;
-        int count = 0;
         try {
             RingShader.INSTANCE.compile(manager);
-            count++;
             RoundedRectShader.INSTANCE.compile(manager);
-            count++;
             RoundedFrameShader.INSTANCE.compile(manager);
-            count++;
             CircleShader.INSTANCE.compile(manager);
-            count++;
             FeatheredRectShader.INSTANCE.compile(manager);
-            count++;
-            successful = true;
         } catch (IOException e) {
             ModernUI.LOGGER.fatal(MARKER, "An error occurred while compiling shaders", e);
-            successful = false;
-        }
-
-        if (successful) {
-            ModernUI.LOGGER.debug(MARKER, "There are {} shaders compiled successfully", count);
         }
     }
 
@@ -118,21 +106,23 @@ public class RenderTools {
             ModernUI.LOGGER.fatal(MARKER, "Uniform buffer object is not supported");
             i++;
         }
+        if (!capabilities.GL_ARB_separate_shader_objects) {
+            ModernUI.LOGGER.fatal(MARKER, "Separate shader objects is not supported");
+            i++;
+        }
         if (!capabilities.GL_ARB_explicit_uniform_location) {
             ModernUI.LOGGER.fatal(MARKER, "Explicit uniform location is not supported");
             i++;
         }
 
         int v;
-        if ((v = GL11.glGetInteger(GL11.GL_MAX_TEXTURE_SIZE)) < GlyphManager.TEXTURE_SIZE) {
+        if ((v = RenderSystem.maxSupportedTextureSize()) < GlyphManager.TEXTURE_SIZE ||
+                (GlyphManager.TEXTURE_SIZE <= 1024 && (v = GL11.glGetInteger(GL11.GL_MAX_TEXTURE_SIZE)) < GlyphManager.TEXTURE_SIZE)) {
             ModernUI.LOGGER.fatal(MARKER, "Max texture size is too small, supplies {} but requires {}", v, GlyphManager.TEXTURE_SIZE);
             i++;
         }
 
-        if (i == 0) {
-            ModernUI.LOGGER.debug(MARKER, "All GL capabilities are successfully passed");
-        } else {
-            ModernUI.LOGGER.fatal(MARKER, "There are {} GL capabilities that are not supported, render system is not working properly", i);
+        if (i != 0) {
             glCapabilitiesErrors = i;
         }
     }

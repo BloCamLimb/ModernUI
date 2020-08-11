@@ -36,7 +36,7 @@ public class TestFragment extends Fragment {
         params.gravity = Gravity.CENTER;
         scrollView.setLayoutParams(params);
         View content = new TestLinearLayout();
-        content.setLayoutParams(new FrameLayout.LayoutParams(140, 800));
+        content.setLayoutParams(new FrameLayout.LayoutParams(140, 200));
         scrollView.addView(content);
         return scrollView;
     }

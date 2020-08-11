@@ -45,7 +45,6 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL43;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -113,8 +112,8 @@ public final class UIManager {
     // elapsed ticks from a gui open, update every tick, 20 = 1 second
     private int ticks = 0;
 
-    // elapsed time from a gui open in milliseconds
-    private int time = 0;
+    // elapsed time from a gui open in milliseconds, update every frame
+    private long timeMillis;
 
     // the canvas to draw things shared in all views and drawables
     // lazy loading because this class is loaded before GL initialization
@@ -132,14 +131,18 @@ public final class UIManager {
     @Nullable
     private View mKeyboard;
 
+    private final MouseEvent mouseEvent = new MouseEvent();
+
     // for double click check, default 10 tick = 0.5s
     private int lastDClickTick = Integer.MIN_VALUE;
 
     // to schedule layout on next frame
     boolean layoutRequested = false;
 
+    boolean mouseRefreshRequested = false;
+
     // to fix layout freq at 40Hz at most
-    private int lastLayoutTime = 0;
+    private long lastLayoutTime = 0;
 
     // drag event instance, also marks whether a drag and drop operation is ongoing
     @Nullable
@@ -245,7 +248,6 @@ public final class UIManager {
         }
         this.popup = popup;
         this.popup.resize(width, height);
-        refreshMouse();
     }
 
     /**
@@ -254,7 +256,6 @@ public final class UIManager {
     public void closePopup() {
         if (popup != null) {
             popup = null;
-            refreshMouse();
         }
     }
 
@@ -312,7 +313,7 @@ public final class UIManager {
                 return;
             }
             ticks = 0;
-            time = 0;
+            timeMillis = 0;
         }
         // hotfix 1.5.2, but there's no way to work with screens that will pause game
         if (modernScreen != screenToOpen && modernScreen != null) {
@@ -321,7 +322,7 @@ public final class UIManager {
         // for non-modern-ui screens
         if (modernScreen == null) {
             ticks = 0;
-            time = 0;
+            timeMillis = 0;
         }
     }
 
@@ -362,24 +363,44 @@ public final class UIManager {
         tasks.add(new DelayedTask(runnable, delayedTicks));
     }
 
+    private void setMousePos(double mouseX, double mouseY) {
+        this.mouseX = mouseEvent.x = mouseEvent.rawX = mouseX;
+        this.mouseY = mouseEvent.y = mouseEvent.rawY = mouseY;
+    }
+
     // OS EVENT HANDLE IN SCREEN
 
     void screenMouseMove(double mouseX, double mouseY) {
-        this.mouseX = mouseX;
-        this.mouseY = mouseY;
-        /*if (popup != null) {
-            popup.mouseMoved(mouseX, mouseY);
-            return;
-        }*/
+        setMousePos(mouseX, mouseY);
+        MouseEvent event = mouseEvent;
+        event.action = MouseEvent.ACTION_MOVE;
+        List<ViewRootImpl> windows = this.windows;
+        boolean anyHovered = false;
+        for (int i = windows.size() - 1; i >= 0; i--) {
+            if (!anyHovered && windows.get(i).onMouseEvent(event)) {
+                anyHovered = true;
+            } else {
+                windows.get(i).ensureMouseHoverExit();
+            }
+        }
+        mouseRefreshRequested = false;
     }
 
     boolean screenMouseDown(double mouseX, double mouseY, int mouseButton) {
-        this.mouseX = mouseX;
-        this.mouseY = mouseY;
+        setMousePos(mouseX, mouseY);
+        MouseEvent event = mouseEvent;
+        event.action = MouseEvent.ACTION_PRESS;
+        event.button = mouseButton;
+        List<ViewRootImpl> windows = this.windows;
+        for (int i = windows.size() - 1; i >= 0; i--) {
+            if (windows.get(i).onMouseEvent(event)) {
+                break;
+            }
+        }
         /*if (popup != null) {
             return popup.mouseClicked(mouseX, mouseY, mouseButton);
         }*/
-        if (mHovered != null) {
+        /*if (mHovered != null) {
             IViewParent parent;
             View view;
             double viewMX = getViewMouseX(mHovered);
@@ -407,20 +428,20 @@ public final class UIManager {
                     lastDClickTick = ticks;
                 }
             }
-            if (mHovered.mouseClicked(viewMX, viewMY, mouseButton)) {
+            *//*if (mHovered.mouseClicked(viewMX, viewMY, mouseButton)) {
                 return true;
-            }
+            }*//*
             parent = mHovered.getParent();
             while (parent instanceof View) {
                 view = (View) parent;
                 viewMX -= parent.getScrollX();
                 viewMY -= parent.getScrollY();
-                if (view.mouseClicked(viewMX, viewMY, mouseButton)) {
+                *//*if (view.mouseClicked(viewMX, viewMY, mouseButton)) {
                     return true;
-                }
+                }*//*
                 parent = parent.getParent();
             }
-        }
+        }*/
         return false;
     }
 
@@ -456,8 +477,7 @@ public final class UIManager {
     }
 
     boolean screenMouseDrag(double mouseX, double mouseY, double deltaX, double deltaY) {
-        this.mouseX = mouseX;
-        this.mouseY = mouseY;
+        setMousePos(mouseX, mouseY);
         /*if (popup != null) {
             return popup.mouseDragged(mouseX, mouseY, deltaX, deltaY);
         }*/
@@ -468,12 +488,20 @@ public final class UIManager {
     }
 
     boolean screenMouseScroll(double mouseX, double mouseY, double amount) {
-        this.mouseX = mouseX;
-        this.mouseY = mouseY;
+        setMousePos(mouseX, mouseY);
+        MouseEvent event = mouseEvent;
+        event.action = MouseEvent.ACTION_SCROLL;
+        event.scrollDelta = amount;
+        List<ViewRootImpl> windows = this.windows;
+        for (int i = windows.size() - 1; i >= 0; i--) {
+            if (windows.get(i).onMouseEvent(event)) {
+                break;
+            }
+        }
         /*if (popup != null) {
             return popup.mouseScrolled(mouseX, mouseY, amount);
         }*/
-        if (mHovered != null) {
+        /*if (mHovered != null) {
             double viewMX = getViewMouseX(mHovered);
             double viewMY = getViewMouseY(mHovered);
             if (mHovered.onMouseScrolled(viewMX, getViewMouseY(mHovered), amount)) {
@@ -490,7 +518,7 @@ public final class UIManager {
                 }
                 parent = parent.getParent();
             }
-        }
+        }*/
         return false;
     }
 
@@ -498,7 +526,7 @@ public final class UIManager {
         /*if (popup != null) {
             return popup.keyPressed(keyCode, scanCode, modifiers);
         }*/
-        ModernUI.LOGGER.info("KeyDown{keyCode:{}, scanCode:{}, mod:{}}", keyCode, scanCode, modifiers);
+        //ModernUI.LOGGER.info("KeyDown{keyCode:{}, scanCode:{}, mod:{}}", keyCode, scanCode, modifiers);
         if (mKeyboard != null) {
             return mKeyboard.onKeyPressed(keyCode, scanCode, modifiers);
         }
@@ -542,14 +570,6 @@ public final class UIManager {
 
     }
 
-    /**
-     * Refocus mouse cursor and update mouse hovering state
-     */
-    @Deprecated
-    public void refreshMouse() {
-        //mouseMoved();
-    }
-
     /*private void mouseMoved() {
         if (view != null && !view.updateMouseHover(mouseX, mouseY)) {
             setHovered(null);
@@ -563,8 +583,7 @@ public final class UIManager {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableAlphaTest();
-        RenderSystem.enableDepthTest();
-        RenderSystem.depthMask(false);
+        RenderSystem.disableDepthTest();
 
         /*canvas.moveToZero();
         canvas.setColor(0, 0, 0, 51);
@@ -574,8 +593,10 @@ public final class UIManager {
         canvas.drawRect(60, 60, width - 60, height - 60);
         RenderSystem.defaultBlendFunc();*/
 
-        canvas.setDrawingTime(time);
-        windows.forEach(w -> w.performDraw(canvas));
+        canvas.setDrawingTime(timeMillis);
+        for (ViewRootImpl w : windows) {
+            w.onDraw(canvas);
+        }
         /*if (popup != null) {
             popup.draw(drawTime);
         }*/
@@ -627,8 +648,7 @@ public final class UIManager {
         if (Config.isDeveloperMode()) {
             ModernUI.LOGGER.debug(MARKER, "Layout performed in {} \u03bcs", (System.nanoTime() - startTime) / 1000.0f);
         }
-        //TODO
-        //mouseMoved();
+        screenMouseMove(mouseX, mouseY);
     }
 
     void recycleWindows() {
@@ -683,42 +703,43 @@ public final class UIManager {
     /**
      * Inner method
      */
-    @SuppressWarnings("ForLoopReplaceableByForEach")
     @SubscribeEvent
     void globalRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
-            // remove animations from loop in next frame
+            // ticks to millis
+            timeMillis = (long) ((ticks + event.renderTickTime) * 50.0f);
+
+            for (Animation animation : animations) {
+                animation.update(timeMillis);
+            }
+        } else {
+            // remove animations from loop
             if (!animations.isEmpty()) {
                 animations.removeIf(Animation::shouldRemove);
             }
 
-        } else {
-            // convert ticks to milliseconds
-            time = (int) ((ticks + event.renderTickTime) * 50.0f);
-
-            // list size is dynamically changeable, because updating animation may add new animation to the list
-            for (int i = 0; i < animations.size(); i++) {
-                animations.get(i).update(time);
-            }
-
             // layout after updating animations and before drawing
-            if (layoutRequested) {
+            if (layoutRequested || mouseRefreshRequested) {
                 // fixed at 40Hz
-                if (time - lastLayoutTime >= 25) {
-                    lastLayoutTime = time;
-                    layoutWindows(false);
+                if (timeMillis - lastLayoutTime >= 25) {
+                    lastLayoutTime = timeMillis;
+                    if (layoutRequested) {
+                        layoutWindows(false);
+                    } else {
+                        screenMouseMove(mouseX, mouseY);
+                    }
                 }
             }
         }
     }
 
     /**
-     * Get elapsed time from a gui open, update every frame
+     * Get elapsed time in UI window, update every frame
      *
      * @return drawing time in milliseconds
      */
-    public int getDrawingTime() {
-        return time;
+    public long getDrawingTime() {
+        return timeMillis;
     }
 
     /**
@@ -813,6 +834,10 @@ public final class UIManager {
      */
     public View getMainView() {
         return appWindow.view;
+    }
+
+    public void requestMouseRefresh() {
+        mouseRefreshRequested = true;
     }
 
     /**

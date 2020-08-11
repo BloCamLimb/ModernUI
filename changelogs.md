@@ -1,6 +1,10 @@
-### 1.16.1-2.0.4.61 (2020-08-07)
+### 1.16.1-2.0.5.62 (2020-08-??)
 **Font Engine works fine, UI is developing, keep update!**
  
+* Optimize blur effect further
+* Add OpenGL capabilities check
+
+### 1.16.1-2.0.4.61 (2020-08-07)
 * Fix font renderer see through type
 * Add ultra high definition for font rendering
 

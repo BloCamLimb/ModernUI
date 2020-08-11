@@ -35,13 +35,12 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 
 /**
  * View is the basic component of UI. View has its own rectangular area on screen,
  * which is also responsible for drawing and event handling.
  *
- * @since 1.6
+ * @since 2.0
  */
 @SuppressWarnings("unused")
 @OnlyIn(Dist.CLIENT)
@@ -72,19 +71,16 @@ public class View {
      *                      1                PFLAG_LAYOUT_REQUIRED
      * |--------|--------|--------|--------|
      */
-    private static final int PFLAG_HOVERED                = 1;
-    private static final int PFLAG_MEASURED_DIMENSION_SET = 1 << 11;
-    private static final int PFLAG_FORCE_LAYOUT           = 1 << 12;
-    private static final int PFLAG_LAYOUT_REQUIRED        = 1 << 13;
+    static final int PFLAG_HOVERED                = 1;
+    static final int PFLAG_MEASURED_DIMENSION_SET = 1 << 11;
+    static final int PFLAG_FORCE_LAYOUT           = 1 << 12;
+    static final int PFLAG_LAYOUT_REQUIRED        = 1 << 13;
 
     /**
      * Private status flags for different stages or processes
      * Internal use only
-     * {@link #addPrivateFlag(int)}
-     * {@link #removePrivateFlag(int)}
-     * {@link #hasPrivateFlag(int)}
      */
-    private int privateFlags;
+    int privateFlags;
 
     /**
      * View visibility.
@@ -93,26 +89,82 @@ public class View {
      * <p>
      * This view is visible, as view's default value
      */
-    public static final int VISIBLE   = 0x0;
+    public static final int VISIBLE = 0x00000000;
+
     /**
      * This view is invisible, but it still takes up space for layout.
      */
-    public static final int INVISIBLE = 0x1;
+    public static final int INVISIBLE = 0x00000001;
+
     /**
      * This view is invisible, and it doesn't take any space for layout.
      */
-    public static final int GONE      = 0x2;
+    public static final int GONE = 0x00000002;
 
     /**
      * View visibility mask
      */
-    private static final int VISIBILITY_MASK = 0x3;
+    static final int VISIBILITY_MASK = 0x00000003;
 
     /**
-     * View states flags
+     * This view can receive keyboard events
+     */
+    static final int FOCUSABLE = 0x00000004;
+
+    /**
+     * This view is enabled. Interpretation varies by subclass.
+     * Use with ENABLED_MASK when calling setFlags.
+     */
+    static final int ENABLED = 0x00000000;
+
+    /**
+     * This view is disabled. Interpretation varies by subclass.
+     * Use with ENABLED_MASK when calling setFlags.
+     */
+    static final int DISABLED = 0x00000008;
+
+    /**
+     * Mask indicating bits used for indicating whether this view is enabled
+     */
+    static final int ENABLED_MASK = 0x00000008;
+
+    /**
+     * This view doesn't show scrollbars.
+     */
+    static final int SCROLLBARS_NONE = 0x00000000;
+
+    /**
+     * This view shows horizontal scrollbar.
+     */
+    static final int SCROLLBARS_HORIZONTAL = 0x00000020;
+
+    /**
+     * This view shows vertical scrollbar.
+     */
+    static final int SCROLLBARS_VERTICAL = 0x00000040;
+
+    /**
+     * Mask for use with setFlags indicating bits used for indicating which
+     * scrollbars are enabled.
+     */
+    static final int SCROLLBARS_MASK = 0x00000060;
+
+    /*
+     * View masks
+     * |--------|--------|--------|--------|
+     *                                   11  VISIBILITY
+     *                                  1    FOCUSABLE
+     *                                 1     ENABLED
+     *                              11       SCROLLBARS
+     * |--------|--------|--------|--------|
+     *
+     * |--------|--------|--------|--------|
+     */
+    /**
+     * View flags
      * {@link #setStateFlag(int, int)}
      */
-    private int viewFlags;
+    int viewFlags;
 
     /**
      * Parent view of this view
@@ -156,7 +208,7 @@ public class View {
      */
     private int bottom;
 
-    private boolean listening = true;
+    //private boolean listening = true;
 
     private int minWidth;
     private int minHeight;
@@ -173,6 +225,9 @@ public class View {
     private int measuredWidth;
     private int measuredHeight;
 
+    /**
+     * Scrollbars
+     */
     @Nullable
     private ScrollBar horizontalScrollBar;
     @Nullable
@@ -196,7 +251,10 @@ public class View {
 
             dispatchDraw(canvas);
 
-            runVerticalScrollBar(bar -> bar.draw(canvas));
+            //TODO Draw scrollbars
+            if (verticalScrollBar != null) {
+                verticalScrollBar.draw(canvas);
+            }
         }
     }
 
@@ -247,15 +305,15 @@ public class View {
     public void layout(int left, int top, int right, int bottom) {
         boolean changed = setFrame(left, top, right, bottom);
 
-        if (changed || hasPrivateFlag(PFLAG_LAYOUT_REQUIRED)) {
+        if (changed || (privateFlags & PFLAG_LAYOUT_REQUIRED) != 0) {
             layoutScrollBars();
 
             onLayout(changed);
 
-            removePrivateFlag(PFLAG_LAYOUT_REQUIRED);
+            privateFlags &= ~PFLAG_LAYOUT_REQUIRED;
         }
 
-        removePrivateFlag(PFLAG_FORCE_LAYOUT);
+        privateFlags &= ~PFLAG_FORCE_LAYOUT;
     }
 
     /**
@@ -352,7 +410,7 @@ public class View {
      */
     public final void measure(int widthMeasureSpec, int heightMeasureSpec) {
 
-        boolean needsLayout = hasPrivateFlag(PFLAG_FORCE_LAYOUT);
+        boolean needsLayout = (privateFlags & PFLAG_FORCE_LAYOUT) != 0;
 
         if (!needsLayout) {
 
@@ -371,16 +429,16 @@ public class View {
 
         if (needsLayout) {
             // remove the flag first anyway
-            removePrivateFlag(PFLAG_MEASURED_DIMENSION_SET);
+            privateFlags &= ~PFLAG_MEASURED_DIMENSION_SET;
 
             onMeasure(widthMeasureSpec, heightMeasureSpec);
 
             // the flag should be added in onMeasure() by calling setMeasuredDimension()
-            if (!hasPrivateFlag(PFLAG_MEASURED_DIMENSION_SET)) {
+            if ((privateFlags & PFLAG_MEASURED_DIMENSION_SET) == 0) {
                 throw new IllegalStateException("Measured dimension unspecified on measure");
             }
 
-            addPrivateFlag(PFLAG_LAYOUT_REQUIRED);
+            privateFlags |= PFLAG_LAYOUT_REQUIRED;
         }
 
         prevWidthMeasureSpec = widthMeasureSpec;
@@ -402,7 +460,7 @@ public class View {
     }
 
     /**
-     * Set measurement result, should be called in {@link #onMeasure(int, int)}
+     * Set measurement result, should be called on {@link #onMeasure(int, int)}
      *
      * @param measuredWidth  measured width of this view
      * @param measuredHeight measured height of this view
@@ -411,7 +469,7 @@ public class View {
         this.measuredWidth = measuredWidth;
         this.measuredHeight = measuredHeight;
 
-        addPrivateFlag(PFLAG_MEASURED_DIMENSION_SET);
+        privateFlags |= PFLAG_MEASURED_DIMENSION_SET;
     }
 
     /**
@@ -579,18 +637,6 @@ public class View {
         }
     }
 
-    private void addPrivateFlag(int flag) {
-        privateFlags |= flag;
-    }
-
-    private void removePrivateFlag(int flag) {
-        privateFlags &= ~flag;
-    }
-
-    private boolean hasPrivateFlag(int flag) {
-        return (privateFlags & flag) != 0;
-    }
-
     //TODO state switching events
     void setStateFlag(int flag, int mask) {
         final int old = viewFlags;
@@ -627,14 +673,11 @@ public class View {
      *
      * @param enabled true if the horizontal scrollbar should be enabled
      * @see #isHorizontalScrollBarEnabled()
+     * @see #setHorizontalScrollBar(ScrollBar)
      */
     public final void setHorizontalScrollBarEnabled(boolean enabled) {
-        if (enabled) {
-            if (horizontalScrollBar == null) {
-                horizontalScrollBar = new ScrollBar(false);
-            }
-        } else {
-            horizontalScrollBar = null;
+        if (isHorizontalScrollBarEnabled() != enabled) {
+            viewFlags ^= SCROLLBARS_HORIZONTAL;
         }
     }
 
@@ -644,14 +687,11 @@ public class View {
      *
      * @param enabled true if the vertical scrollbar should be enabled
      * @see #isVerticalScrollBarEnabled()
+     * @see #setVerticalScrollBar(ScrollBar)
      */
     public final void setVerticalScrollBarEnabled(boolean enabled) {
-        if (enabled) {
-            if (verticalScrollBar == null) {
-                verticalScrollBar = new ScrollBar(true);
-            }
-        } else {
-            verticalScrollBar = null;
+        if (isVerticalScrollBarEnabled() != enabled) {
+            viewFlags ^= SCROLLBARS_VERTICAL;
         }
     }
 
@@ -661,9 +701,10 @@ public class View {
      *
      * @return true if the horizontal scrollbar already created, false otherwise
      * @see #setHorizontalScrollBarEnabled(boolean)
+     * @see #setHorizontalScrollBar(ScrollBar)
      */
     public final boolean isHorizontalScrollBarEnabled() {
-        return horizontalScrollBar != null;
+        return (viewFlags & SCROLLBARS_HORIZONTAL) != 0;
     }
 
     /**
@@ -672,28 +713,58 @@ public class View {
      *
      * @return true if the vertical scrollbar already created, false otherwise
      * @see #setVerticalScrollBarEnabled(boolean)
+     * @see #setVerticalScrollBar(ScrollBar)
      */
     public final boolean isVerticalScrollBarEnabled() {
-        return verticalScrollBar != null;
+        return (viewFlags & SCROLLBARS_VERTICAL) != 0;
     }
 
-    public final void runHorizontalScrollBar(Consumer<ScrollBar> consumer) {
-        if (horizontalScrollBar != null) {
-            consumer.accept(horizontalScrollBar);
+    /**
+     * Set horizontal scrollbar, ensure it's nonnull if enabled
+     *
+     * @param scrollBar scrollbar
+     * @see #setHorizontalScrollBarEnabled(boolean)
+     * @see #isHorizontalScrollBarEnabled()
+     */
+    public final void setHorizontalScrollBar(@Nullable ScrollBar scrollBar) {
+        if (horizontalScrollBar != scrollBar) {
+            horizontalScrollBar = scrollBar;
         }
     }
 
-    public final void runVerticalScrollBar(Consumer<ScrollBar> consumer) {
-        if (verticalScrollBar != null) {
-            consumer.accept(verticalScrollBar);
+    /**
+     * Set vertical scrollbar, ensure it's nonnull if enabled
+     *
+     * @param scrollBar scrollbar
+     * @see #setVerticalScrollBarEnabled(boolean)
+     * @see #isVerticalScrollBarEnabled()
+     */
+    public final void setVerticalScrollBar(@Nullable ScrollBar scrollBar) {
+        if (verticalScrollBar != scrollBar) {
+            verticalScrollBar = scrollBar;
+            if (scrollBar != null) {
+                scrollBar.flags |= ScrollBar.VERTICAL;
+            }
         }
     }
 
+    /**
+     * Get horizontal scrollbar if set
+     *
+     * @return scrollbar
+     * @see #setHorizontalScrollBar(ScrollBar)
+     */
     @Nullable
     public final ScrollBar getHorizontalScrollBar() {
         return horizontalScrollBar;
     }
 
+    /**
+     * Get vertical scrollbar if set
+     *
+     * @return scrollbar
+     * @see #setVerticalScrollBar(ScrollBar)
+     */
     @Nullable
     public final ScrollBar getVerticalScrollBar() {
         return verticalScrollBar;
@@ -757,7 +828,7 @@ public class View {
         return bottom;
     }
 
-    public final void setListening(boolean listening) {
+    /*public final void setListening(boolean listening) {
         if (this.listening != listening) {
             this.listening = listening;
             onListeningChanged(listening);
@@ -774,7 +845,7 @@ public class View {
 
     protected void onVisibleChanged(boolean visible) {
 
-    }
+    }*/
 
     void dispatchAttachedToWindow(ViewRootImpl viewRoot) {
         this.viewRoot = viewRoot;
@@ -785,9 +856,9 @@ public class View {
      * This will schedule a layout pass of the view tree.
      */
     public void requestLayout() {
-        boolean requestParent = !hasPrivateFlag(PFLAG_FORCE_LAYOUT);
+        boolean requestParent = (privateFlags & PFLAG_FORCE_LAYOUT) == 0;
 
-        addPrivateFlag(PFLAG_FORCE_LAYOUT);
+        privateFlags |= PFLAG_FORCE_LAYOUT;
 
         if (requestParent && parent != null) {
             parent.requestLayout();
@@ -799,7 +870,7 @@ public class View {
      * layout pass.
      */
     public void forceLayout() {
-        addPrivateFlag(PFLAG_FORCE_LAYOUT);
+        privateFlags |= PFLAG_FORCE_LAYOUT;
     }
 
     /**
@@ -887,26 +958,97 @@ public class View {
         return viewRoot.startDragAndDrop(this, data, shadow, flags);
     }
 
+    /**
+     * Handle primitive drag event of this view
+     *
+     * @param event the event to be handled
+     * @return {@code true} if the event was consumed by the view, {@code false} otherwise
+     */
+    //TODO
     public boolean onDragEvent(DragEvent event) {
         return true;
     }
 
     /**
+     * Handle primitive mouse event of this view
+     *
+     * @param event the event to be handled
+     * @return {@code true} if the event was consumed by the view, {@code false} otherwise
+     */
+    public final boolean onMouseEvent(@Nonnull MouseEvent event) {
+        if ((viewFlags & ENABLED_MASK) == DISABLED) {
+            return false;
+        }
+
+        final double mouseX = event.x;
+        final double mouseY = event.y;
+        final int action = event.action;
+
+        switch (action) {
+            case MouseEvent.ACTION_MOVE:
+                final boolean prevHovered = (privateFlags & PFLAG_HOVERED) != 0;
+                if (mouseX >= left && mouseX < right && mouseY >= top && mouseY < bottom) {
+                    if (!prevHovered) {
+                        privateFlags |= PFLAG_HOVERED;
+                        onMouseHoverEnter(mouseX, mouseY);
+                    }
+                    onMouseHoverMoved(mouseX, mouseY);
+                    dispatchMouseEvent(event);
+                    return true;
+                } else {
+                    if (prevHovered) {
+                        privateFlags &= ~PFLAG_HOVERED;
+                        onMouseHoverExit();
+                    }
+                }
+                return false;
+            case MouseEvent.ACTION_PRESS:
+                if ((privateFlags & PFLAG_HOVERED) != 0) {
+                    if (dispatchMouseEvent(event)) {
+                        return true;
+                    }
+                    return onMousePressed(event.x, event.y, event.button);
+                }
+                return false;
+            case MouseEvent.ACTION_SCROLL:
+                if ((privateFlags & PFLAG_HOVERED) != 0) {
+                    if (dispatchMouseEvent(event)) {
+                        return true;
+                    }
+                    return onMouseScrolled(event.x, event.y, event.scrollDelta);
+                }
+                return false;
+        }
+        return false;
+    }
+
+    /**
+     * Pass the mouse event down to the target view, or this view if it is the target.
+     *
+     * @param event the event to be dispatched
+     * @return {@code true} if the event was consumed by the view, {@code false} otherwise
+     */
+    public boolean dispatchMouseEvent(@Nonnull MouseEvent event) {
+        return false;
+    }
+
+    /*
      * Internal method. Check if mouse hover this view.
      *
      * @param mouseX relative mouse X pos
      * @param mouseY relative mouse Y pos
      * @return return {@code true} if certain view hovered
      */
+    /*@Deprecated
     final boolean updateMouseHover(double mouseX, double mouseY) {
-        final boolean prevHovered = hasPrivateFlag(PFLAG_HOVERED);
+        final boolean prevHovered = (privateFlags & PFLAG_HOVERED) != 0;
         if (mouseX >= left && mouseX < right && mouseY >= top && mouseY < bottom) {
             if (handleScrollBarsHover(mouseX, mouseY)) {
                 UIManager.getInstance().setHovered(this);
                 return true;
             }
             if (!prevHovered) {
-                addPrivateFlag(PFLAG_HOVERED);
+                privateFlags |= PFLAG_HOVERED;
                 onMouseHoverEnter(mouseX, mouseY);
             }
             onMouseHoverMoved(mouseX, mouseY);
@@ -916,7 +1058,7 @@ public class View {
             return true;
         } else {
             if (prevHovered) {
-                removePrivateFlag(PFLAG_HOVERED);
+                privateFlags &= ~PFLAG_HOVERED;
                 onMouseHoverExit();
             }
         }
@@ -930,9 +1072,9 @@ public class View {
         }
         scrollBar = horizontalScrollBar;
         return scrollBar != null && scrollBar.updateMouseHover(mouseX, mouseY);
-    }
+    }*/
 
-    /**
+    /*
      * Internal method. Dispatch events to child views if present,
      * check if mouse hovered a child view.
      *
@@ -940,16 +1082,16 @@ public class View {
      * @param mouseY relative mouse Y pos
      * @return return {@code true} if certain child view hovered
      */
-    boolean dispatchUpdateMouseHover(double mouseX, double mouseY) {
+    /*boolean dispatchUpdateMouseHover(double mouseX, double mouseY) {
         return false;
-    }
+    }*/
 
     /**
      * Internal method. Ensure rest of views of other branches to hover exit.
      */
     void ensureMouseHoverExit() {
-        if (hasPrivateFlag(PFLAG_HOVERED)) {
-            removePrivateFlag(PFLAG_HOVERED);
+        if ((privateFlags & PFLAG_HOVERED) != 0) {
+            privateFlags &= ~PFLAG_HOVERED;
             onMouseHoverExit();
         }
     }
@@ -959,8 +1101,8 @@ public class View {
      *
      * @return {@code true} if the view is currently mouse hovered
      */
-    public boolean isMouseHovered() {
-        return hasPrivateFlag(PFLAG_HOVERED);
+    public final boolean isMouseHovered() {
+        return (privateFlags & PFLAG_HOVERED) != 0;
     }
 
     /**
@@ -991,7 +1133,7 @@ public class View {
 
     }
 
-    /**
+    /*
      * Internal method. Called when mouse hovered on this view and a mouse button clicked.
      *
      * @param mouseX      relative mouse x pos
@@ -999,7 +1141,7 @@ public class View {
      * @param mouseButton mouse button, for example {@link GLFW#GLFW_MOUSE_BUTTON_LEFT}
      * @return {@code true} if action performed
      */
-    final boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+    /*final boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         ScrollBar scrollBar = verticalScrollBar;
         if (scrollBar != null && scrollBar.onMouseClicked(mouseX, mouseY, mouseButton)) {
             return true;
@@ -1009,6 +1151,22 @@ public class View {
             return true;
         }
         return onMouseClicked(mouseX, mouseY, mouseButton);
+    }*/
+
+    protected boolean onMousePressed(double mouseX, double mouseY, int mouseButton) {
+        return false;
+    }
+
+    /**
+     * Called when mouse hovered on this view and a mouse button released.
+     *
+     * @param mouseX      relative mouse x pos
+     * @param mouseY      relative mouse y pos
+     * @param mouseButton mouse button, for example {@link GLFW#GLFW_MOUSE_BUTTON_LEFT}
+     * @return {@code true} if action performed
+     */
+    protected boolean onMouseReleased(double mouseX, double mouseY, int mouseButton) {
+        return false;
     }
 
     /**
@@ -1032,18 +1190,6 @@ public class View {
      * @return {@code true} if action performed
      */
     protected boolean onMouseDoubleClicked(double mouseX, double mouseY) {
-        return false;
-    }
-
-    /**
-     * Called when mouse hovered on this view and a mouse button released.
-     *
-     * @param mouseX      relative mouse x pos
-     * @param mouseY      relative mouse y pos
-     * @param mouseButton mouse button, for example {@link GLFW#GLFW_MOUSE_BUTTON_LEFT}
-     * @return {@code true} if action performed
-     */
-    protected boolean onMouseReleased(double mouseX, double mouseY, int mouseButton) {
         return false;
     }
 
@@ -1185,7 +1331,7 @@ public class View {
         //Nonnull
         private Drawable thumb;
 
-        private int flags;
+        public int flags;
 
         private float thumbOffset;
         private float scrollRange;
@@ -1200,7 +1346,7 @@ public class View {
          * {@link #setAlternativeSize(int)}
          * {@link #getSize()}
          */
-        private int size;
+        private int altSize;
 
         /**
          * left, top, right, bottom padding
@@ -1208,12 +1354,9 @@ public class View {
          */
         private int padding;
 
-        private ScrollBar(boolean vertical) {
-            if (vertical) {
-                flags |= VERTICAL;
-            }
+        public ScrollBar() {
             //TODO config for default size
-            size = 5;
+            altSize = 5;
         }
 
         private void draw(@Nonnull Canvas canvas) {
@@ -1333,7 +1476,7 @@ public class View {
          * @param alternativeSize alternative scrollbar thickness
          */
         public void setAlternativeSize(int alternativeSize) {
-            size = alternativeSize;
+            altSize = alternativeSize;
         }
 
         /**
@@ -1380,7 +1523,7 @@ public class View {
                 }
             }
             if (s <= 0) {
-                return size;
+                return altSize;
             }
             return s;
         }
@@ -1696,6 +1839,51 @@ public class View {
             } else {
                 ModernUI.LOGGER.error(MARKER, "No view found on draw shadow");
             }
+        }
+    }
+
+    @FunctionalInterface
+    public interface MouseHoverListener {
+
+        void onEvent();
+    }
+
+    /**
+     * Defines mouse hover type
+     */
+    private enum HoverType {
+
+        /**
+         * For a View
+         */
+        TREE,
+
+        /**
+         * For a ViewGroup
+         */
+        STRICT,
+
+        /**
+         * For a ViewGroup or it's children
+         */
+        BOTH;
+
+        /**
+         * Returns true if mouse is hovering a View or one of its children
+         *
+         * @return {@code true} if it's general
+         */
+        public boolean isGeneral() {
+            return this != STRICT;
+        }
+
+        /**
+         * Returns true if mouse is hovering a View or there's no child is hovered
+         *
+         * @return {@code true} if it's foremost
+         */
+        public boolean isForemost() {
+            return this != TREE;
         }
     }
 }

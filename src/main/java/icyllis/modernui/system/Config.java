@@ -66,10 +66,10 @@ public class Config {
         ForgeConfigSpec spec = event.getConfig().getSpec();
         if (spec == CLIENT_SPEC) {
             CLIENT.load();
-            ModernUI.LOGGER.debug(ModernUI.MARKER, "Client config was loaded or reloaded");
+            ModernUI.LOGGER.debug(ModernUI.MARKER, "Client config loaded or reloaded");
         } else if (spec == COMMON_SPEC) {
             COMMON.load();
-            ModernUI.LOGGER.debug(ModernUI.MARKER, "Common config was loaded or reloaded");
+            ModernUI.LOGGER.debug(ModernUI.MARKER, "Common config loaded or reloaded");
         }
     }
 
@@ -225,7 +225,7 @@ public class Config {
 
         private void enableDeveloperMode() {
             developerMode = true;
-            ModernUI.LOGGER.debug(ModernUI.MARKER, "Enables Developer Mode");
+            ModernUI.LOGGER.debug(ModernUI.MARKER, "Developer mode enabled");
         }
     }
 }
