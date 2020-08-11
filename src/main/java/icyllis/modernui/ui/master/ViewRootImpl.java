@@ -120,10 +120,27 @@ public final class ViewRootImpl implements IViewParent {
         layoutRequested = false;
     }
 
-    void performDraw(Canvas canvas) {
+    void onDraw(Canvas canvas) {
         if (view != null) {
             canvas.moveTo(view);
             view.draw(canvas);
+        }
+    }
+
+    boolean onMouseEvent(MouseEvent event) {
+        if (view != null) {
+            final boolean handled = view.onMouseEvent(event);
+            if (!handled && event.action == MouseEvent.ACTION_MOVE) {
+                view.ensureMouseHoverExit();
+            }
+            return handled;
+        }
+        return false;
+    }
+
+    void ensureMouseHoverExit() {
+        if (view != null) {
+            view.ensureMouseHoverExit();
         }
     }
 

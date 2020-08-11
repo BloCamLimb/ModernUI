@@ -57,7 +57,7 @@ public class ModernUI {
             if (Integer.parseInt(s[1]) < 60) {
                 throw new IllegalStateException(
                         "You're using java " + javaVersion + " which is not compatible with Modern UI, " +
-                                "a minimum of java 1.8.0_200 or above is required");
+                                "a minimum of java 1.8.0_251 or above is required");
             }
         }
     }

@@ -19,17 +19,20 @@
 package icyllis.modernui.graphics.renderer;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.font.ModernFontRenderer;
 import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.font.node.TextRenderType;
 import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.graphics.shader.program.*;
 import icyllis.modernui.ui.master.View;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.*;
+import net.minecraft.client.renderer.BufferBuilder;
+import net.minecraft.client.renderer.ItemRenderer;
+import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.WorldVertexBufferUploader;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -56,7 +59,7 @@ import javax.annotation.Nonnull;
  * @see TrueTypeRenderer
  */
 @SuppressWarnings("unused")
-//TODO use int RGBA color rather than float
+//TODO New render system
 public class Canvas {
 
     private static Canvas instance;
@@ -105,7 +108,7 @@ public class Canvas {
     /**
      * Elapsed time from a gui open
      */
-    private int drawingTime = 0;
+    private long drawingTime = 0;
 
 
     /**
@@ -229,16 +232,16 @@ public class Canvas {
     }
 
     /**
-     * Get elapsed time from a gui open, update every frame
+     * Get elapsed time in UI window, update every frame
      *
      * @return drawing time in milliseconds
      */
-    public int getDrawingTime() {
+    public long getDrawingTime() {
         return drawingTime;
     }
 
     // inner use
-    public void setDrawingTime(int drawingTime) {
+    public void setDrawingTime(long drawingTime) {
         this.drawingTime = drawingTime;
     }
 
@@ -489,7 +492,7 @@ public class Canvas {
     public void drawCircle(float centerX, float centerY, float radius) {
         RenderTools.useShader(circle);
         circle.setRadius(radius);
-        circle.setCenterPos(centerX, centerY);
+        circle.setCenterPos(centerX + drawingX, centerY + drawingY);
         drawRect(centerX - radius, centerY - radius, centerX + radius, centerY + radius);
         RenderTools.releaseShader();
     }
@@ -531,7 +534,7 @@ public class Canvas {
     public void drawRoundedRect(float left, float top, float right, float bottom, float radius) {
         RenderTools.useShader(roundedRect);
         roundedRect.setRadius(radius - 1); // we have feather radius 1px
-        roundedRect.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
+        roundedRect.setInnerRect(left + radius + drawingX, top + radius + drawingY, right - radius + drawingX, bottom - radius + drawingY);
         drawRect(left, top, right, bottom);
         RenderTools.releaseShader();
     }
@@ -715,12 +718,11 @@ public class Canvas {
         RenderSystem.translatef(dx, dy, 0.0f);
     }
 
-    public void clipStart(@Nonnull View view) {
-        clipStart(view.getLeft(), view.getTop(), view.getWidth(), view.getHeight());
-    }
-
     public void clipVertical(@Nonnull View view) {
-        clipStart(0, view.getTop(), mainWindow.getScaledWidth(), view.getHeight());
+        int scale = (int) mainWindow.getGuiScaleFactor();
+        GL11.glEnable(GL11.GL_SCISSOR_TEST);
+        GL11.glScissor(0, mainWindow.getFramebufferHeight() - (view.getBottom() * scale),
+                mainWindow.getFramebufferWidth(), view.getHeight() * scale);
     }
 
     public void clipStart(float x, float y, float width, float height) {

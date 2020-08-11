@@ -39,7 +39,7 @@ public class ScrollController {
 
     private float currValue;
 
-    private int startTime;
+    private long startTime;
     private int duration;
 
     @Nonnull
@@ -54,7 +54,7 @@ public class ScrollController {
      *
      * @param time current drawing time
      */
-    public void update(int time) {
+    public void update(long time) {
         if (currValue != targetValue) {
             float p = Math.min((float) (time - startTime) / duration, 1);
             p = ITimeInterpolator.SINE.getInterpolation(p);

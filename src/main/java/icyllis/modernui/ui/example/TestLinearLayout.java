@@ -20,6 +20,7 @@ package icyllis.modernui.ui.example;
 
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.ui.animation.Animation;
 import icyllis.modernui.ui.animation.Applier;
 import icyllis.modernui.ui.animation.ITimeInterpolator;
@@ -66,7 +67,6 @@ public class TestLinearLayout extends LinearLayout {
         super.onDraw(canvas);
         canvas.moveTo(this);
         canvas.resetColor();
-        canvas.drawItem(Items.DIAMOND, 0, 0);
         canvas.drawText(TextFormatting.GOLD + "LinearLayout " + canvas.getDrawingTime(), 0, 0);
     }
 
@@ -75,9 +75,13 @@ public class TestLinearLayout extends LinearLayout {
         @Override
         protected void onDraw(@Nonnull Canvas canvas) {
             canvas.moveTo(this);
+            String str = "AAAAAAAAAAAA";//TextFormatting.UNDERLINE + "Modern" + TextFormatting.AQUA + " UI " + TextFormatting.OBFUSCATED + "\u0629\u064a\u0628\u0631\u0639\u0644\u0627" + TextFormatting.STRIKETHROUGH + "\u2642";
+            if (isMouseHovered()) {
+                canvas.setColor(140, 200, 240, 128);
+                canvas.drawRoundedRect(0, 1, getWidth(), getHeight() - 2, 4);
+            }
             canvas.resetColor();
-            String str = "AAAAAAAAAAAAAAAAAAAAA";//TextFormatting.UNDERLINE + "Modern" + TextFormatting.AQUA + " UI " + TextFormatting.OBFUSCATED + "\u0629\u064a\u0628\u0631\u0639\u0644\u0627" + TextFormatting.STRIKETHROUGH + "\u2642";
-            canvas.drawText(str, 0, 4);
+            canvas.drawText(str, 4, 4);
         }
     }
 

@@ -894,7 +894,7 @@ public class GlyphManager {
         }
 
         for (int level = 0; level <= mipmapLevel; level++) {
-            GL11.glTexImage2D(GL11.GL_TEXTURE_2D, level, GL11.GL_ALPHA, TEXTURE_SIZE >> level,
+            GL11.glTexImage2D(GL11.GL_TEXTURE_2D, level, GL11.GL_ALPHA4, TEXTURE_SIZE >> level,
                     TEXTURE_SIZE >> level, 0, GL11.GL_ALPHA, GL11.GL_UNSIGNED_BYTE, (IntBuffer) null);
         }
 

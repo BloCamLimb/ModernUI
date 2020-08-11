@@ -30,7 +30,7 @@ public class Animation {
 
     private int duration;
 
-    private int startTime;
+    private long startTime;
 
     private int delayTime;
 
@@ -166,7 +166,7 @@ public class Animation {
         }
     }
 
-    public void update(int time) {
+    public void update(long time) {
         if (waiting || time <= startTime) {
             return;
         }

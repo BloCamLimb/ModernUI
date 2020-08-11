@@ -69,7 +69,7 @@ public class EventHandler {
             ClientPlayerEntity playerEntity = event.getPlayer();
             if (playerEntity != null && RenderTools.glCapabilitiesErrors > 0) {
                 playerEntity.sendMessage(new StringTextComponent("[Modern UI] There are " + RenderTools.glCapabilitiesErrors +
-                        " GL capabilities that are not supported by your GPU, render system is not working properly")
+                        " GL capabilities that are not supported by your GPU, see debug.log for detailed info")
                         .mergeStyle(TextFormatting.RED), null);
             }
         }

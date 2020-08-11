@@ -24,7 +24,7 @@ package icyllis.modernui.ui.master;
  */
 public final class MouseEvent {
 
-    /**
+    /*
      * Dynamic action represents high frequency events
      *
      * @see #ACTION_MOVE
@@ -32,9 +32,9 @@ public final class MouseEvent {
      * @see #ACTION_HOVER_MOVE
      * @see #ACTION_SCROLL
      */
-    public static final int TYPE_DYNAMIC = 1;
+    //public static final int TYPE_DYNAMIC = 1;
 
-    /**
+    /*
      * Operation action represents low frequency events
      *
      * @see #ACTION_PRESS
@@ -42,9 +42,9 @@ public final class MouseEvent {
      * @see #ACTION_CLICK
      * @see #ACTION_DOUBLE_CLICK
      */
-    public static final int TYPE_OPERATION = 2;
+    //public static final int TYPE_OPERATION = 2;
 
-    /**
+    /*
      * Notify action represents having view states updated
      *
      * @see #ACTION_HOVER_ENTER
@@ -52,25 +52,24 @@ public final class MouseEvent {
      * @see #ACTION_HOVER_EXIT
      * @see #ACTION_TREE_EXIT
      */
-    public static final int TYPE_NOTIFY = 3;
+    //public static final int TYPE_NOTIFY = 3;
 
     // EXT
-    private static final int TYPE_SHIFT = 3;
+    //private static final int TYPE_SHIFT = 3;
 
-    public static final int ACTION_MOVE       = TYPE_DYNAMIC << TYPE_SHIFT;
-    public static final int ACTION_DRAG       = (TYPE_DYNAMIC << TYPE_SHIFT) + 1;
-    public static final int ACTION_HOVER_MOVE = (TYPE_DYNAMIC << TYPE_SHIFT) + 2;
-    public static final int ACTION_SCROLL     = (TYPE_DYNAMIC << TYPE_SHIFT) + 3;
+    public static final int ACTION_MOVE       = 1;
+    public static final int ACTION_DRAG       = 2;
+    public static final int ACTION_SCROLL     = 3;
 
-    public static final int ACTION_PRESS        = TYPE_OPERATION << TYPE_SHIFT;
-    public static final int ACTION_RELEASE      = (TYPE_OPERATION << TYPE_SHIFT) + 1;
-    public static final int ACTION_CLICK        = (TYPE_OPERATION << TYPE_SHIFT) + 2;
-    public static final int ACTION_DOUBLE_CLICK = (TYPE_OPERATION << TYPE_SHIFT) + 3;
+    public static final int ACTION_PRESS        = 4;
+    public static final int ACTION_RELEASE      = 5;
+    public static final int ACTION_CLICK        = 6;
+    public static final int ACTION_DOUBLE_CLICK = 7;
 
-    public static final int ACTION_HOVER_ENTER = TYPE_NOTIFY << TYPE_SHIFT;
+    /*public static final int ACTION_HOVER_ENTER = TYPE_NOTIFY << TYPE_SHIFT;
     public static final int ACTION_TREE_ENTER  = (TYPE_NOTIFY << TYPE_SHIFT) + 1;
     public static final int ACTION_HOVER_EXIT  = (TYPE_NOTIFY << TYPE_SHIFT) + 2;
-    public static final int ACTION_TREE_EXIT   = (TYPE_NOTIFY << TYPE_SHIFT) + 3;
+    public static final int ACTION_TREE_EXIT   = (TYPE_NOTIFY << TYPE_SHIFT) + 3;*/
 
     int action;
 
@@ -80,19 +79,23 @@ public final class MouseEvent {
     double rawX;
     double rawY;
 
+    int button;
+
+    double scrollDelta;
+
     // singleton, created by system
     MouseEvent() {
 
     }
 
-    /**
+    /*
      * Returns the action type of this event
      *
      * @return either {@link #TYPE_DYNAMIC} or {@link #TYPE_OPERATION} or {@link #TYPE_NOTIFY}
      */
-    public int getType() {
+    /*public int getType() {
         return action >> TYPE_SHIFT;
-    }
+    }*/
 
     /**
      * Returns the action of this event
@@ -143,5 +146,19 @@ public final class MouseEvent {
      */
     public double getRawY() {
         return rawY;
+    }
+
+    /**
+     * Returns the mouse button of this event.
+     *
+     * @return mouse button
+     * @see org.lwjgl.glfw.GLFW
+     */
+    public int getButton() {
+        return button;
+    }
+
+    public double getScrollDelta() {
+        return scrollDelta;
     }
 }

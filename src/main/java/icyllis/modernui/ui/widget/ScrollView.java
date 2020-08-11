@@ -22,6 +22,7 @@ import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.drawable.ScrollThumbDrawable;
 import icyllis.modernui.ui.layout.FrameLayout;
+import icyllis.modernui.ui.master.UIManager;
 import icyllis.modernui.ui.master.View;
 
 import javax.annotation.Nonnull;
@@ -38,17 +39,17 @@ public class ScrollView extends FrameLayout implements ScrollController.IListene
 
     public ScrollView() {
         setVerticalScrollBarEnabled(true);
-        runVerticalScrollBar(bar -> {
-            bar.setThumbDrawable(new ScrollThumbDrawable());
-            bar.setTrackDrawable(new Drawable() {
-                @Override
-                public void draw(@Nonnull Canvas canvas) {
-                    canvas.moveTo(this);
-                    canvas.setColor(16, 16, 16, 40);
-                    canvas.drawRect(0, 0, getWidth(), getHeight());
-                }
-            });
+        ScrollBar bar = new ScrollBar();
+        bar.setThumbDrawable(new ScrollThumbDrawable());
+        bar.setTrackDrawable(new Drawable() {
+            @Override
+            public void draw(@Nonnull Canvas canvas) {
+                canvas.moveTo(this);
+                canvas.setColor(16, 16, 16, 40);
+                canvas.drawRect(0, 0, getWidth(), getHeight());
+            }
         });
+        setVerticalScrollBar(bar);
     }
 
     @Override
@@ -71,7 +72,9 @@ public class ScrollView extends FrameLayout implements ScrollController.IListene
         // we must specify max scroll amount
         scrollController.setMaxScroll(scrollRange);
         // scroller may not callback this method
-        runVerticalScrollBar(bar -> bar.setParameters(scrollRange, scrollAmount, getHeight()));
+        if (getVerticalScrollBar() != null) {
+            getVerticalScrollBar().setParameters(scrollRange, scrollAmount, getHeight());
+        }
     }
 
     private int getScrollRange() {
@@ -103,6 +106,9 @@ public class ScrollView extends FrameLayout implements ScrollController.IListene
     @Override
     public void onScrollAmountUpdated(ScrollController controller, float amount) {
         scrollAmount = amount;
-        runVerticalScrollBar(bar -> bar.setParameters(scrollRange, scrollAmount, getHeight()));
+        if (getVerticalScrollBar() != null) {
+            getVerticalScrollBar().setParameters(scrollRange, scrollAmount, getHeight());
+        }
+        UIManager.getInstance().requestMouseRefresh();
     }
 }
