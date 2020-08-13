@@ -70,7 +70,7 @@ public abstract class ViewGroup extends View implements IViewParent {
     protected abstract void onLayout(boolean changed);
 
     @Override
-    public boolean dispatchMouseEvent(@Nonnull MouseEvent event) {
+    public final boolean dispatchMouseEvent(@Nonnull MouseEvent event) {
         final double mouseX = event.x;
         final double mouseY = event.y;
         final int action = event.action;
@@ -94,6 +94,8 @@ public abstract class ViewGroup extends View implements IViewParent {
                 }
                 return anyHovered;
             case MouseEvent.ACTION_PRESS:
+            case MouseEvent.ACTION_RELEASE:
+            case MouseEvent.ACTION_DOUBLE_CLICK:
             case MouseEvent.ACTION_SCROLL:
                 for (int i = childrenCount - 1; i >= 0; i--) {
                     child = views[i];

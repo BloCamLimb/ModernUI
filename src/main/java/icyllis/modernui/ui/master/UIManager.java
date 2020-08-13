@@ -44,6 +44,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
@@ -133,8 +134,15 @@ public final class UIManager {
 
     private final MouseEvent mouseEvent = new MouseEvent();
 
-    // for double click check, default 10 tick = 0.5s
-    private int lastDClickTick = Integer.MIN_VALUE;
+    // for double click check
+    private int lastLmTick = Integer.MIN_VALUE;
+    @Nullable
+    private View lastLmView;
+
+    private final List<View> eventRoute = new ArrayList<>();
+
+    @Nullable
+    private View capturedView;
 
     // to schedule layout on next frame
     boolean layoutRequested = false;
@@ -364,8 +372,8 @@ public final class UIManager {
     }
 
     private void setMousePos(double mouseX, double mouseY) {
-        this.mouseX = mouseEvent.x = mouseEvent.rawX = mouseX;
-        this.mouseY = mouseEvent.y = mouseEvent.rawY = mouseY;
+        this.mouseX = mouseEvent.x = mouseX;
+        this.mouseY = mouseEvent.y = mouseY;
     }
 
     // OS EVENT HANDLE IN SCREEN
@@ -389,12 +397,28 @@ public final class UIManager {
     boolean screenMouseDown(double mouseX, double mouseY, int mouseButton) {
         setMousePos(mouseX, mouseY);
         MouseEvent event = mouseEvent;
-        event.action = MouseEvent.ACTION_PRESS;
         event.button = mouseButton;
         List<ViewRootImpl> windows = this.windows;
+        boolean handled = false;
+        if (mouseButton == GLFW.GLFW_MOUSE_BUTTON_LEFT && lastLmTick >= 0 && ticks - lastLmTick < 6) {
+            event.action = MouseEvent.ACTION_DOUBLE_CLICK;
+            /*for (int i = windows.size() - 1; i >= 0; i--) {
+                if (windows.get(i).onMouseEvent(event)) {
+                    return true;
+                }
+            }*/
+            if (lastLmView != null && lastLmView.isMouseHovered() && lastLmView.onMouseEvent(event)) {
+                handled = true;
+            }
+        }
+        lastLmView = null;
+        if (handled) {
+            return true;
+        }
+        event.action = MouseEvent.ACTION_PRESS;
         for (int i = windows.size() - 1; i >= 0; i--) {
             if (windows.get(i).onMouseEvent(event)) {
-                break;
+                return true;
             }
         }
         /*if (popup != null) {
@@ -446,8 +470,34 @@ public final class UIManager {
     }
 
     boolean screenMouseUp(double mouseX, double mouseY, int mouseButton) {
-        this.mouseX = mouseX;
-        this.mouseY = mouseY;
+        setMousePos(mouseX, mouseY);
+        MouseEvent event = mouseEvent;
+        event.action = MouseEvent.ACTION_RELEASE;
+        event.button = mouseButton;
+        boolean dCheck = false;
+        if (mouseButton == GLFW.GLFW_MOUSE_BUTTON_LEFT && lastLmTick < 0) {
+            dCheck = event.pressMap.get(mouseButton) != null;
+        } else {
+            lastLmTick = Integer.MIN_VALUE;
+        }
+        List<ViewRootImpl> windows = this.windows;
+        boolean handled = false;
+        for (int i = windows.size() - 1; i >= 0; i--) {
+            if (windows.get(i).onMouseEvent(event)) {
+                handled = true;
+                break;
+            }
+        }
+        if (dCheck && event.clicked != null) {
+            lastLmTick = ticks;
+        } else {
+            lastLmTick = Integer.MIN_VALUE;
+        }
+        lastLmView = event.clicked;
+        event.clicked = null;
+        if (handled) {
+            return true;
+        }
         /*if (popup != null) {
             return popup.mouseReleased(mouseX, mouseY, mouseButton);
         }*/
@@ -455,7 +505,7 @@ public final class UIManager {
             setDragging(null);
             return true;
         }
-        if (mHovered != null) {
+        /*if (mHovered != null) {
             double viewMX = getViewMouseX(mHovered);
             double viewMY = getViewMouseY(mHovered);
             if (mHovered.onMouseReleased(viewMX, viewMY, mouseButton)) {
@@ -472,10 +522,11 @@ public final class UIManager {
                 }
                 parent = parent.getParent();
             }
-        }
+        }*/
         return false;//root.mouseReleased(mouseX, mouseY, mouseButton);
     }
 
+    //TODO
     boolean screenMouseDrag(double mouseX, double mouseY, double deltaX, double deltaY) {
         setMousePos(mouseX, mouseY);
         /*if (popup != null) {
@@ -495,7 +546,7 @@ public final class UIManager {
         List<ViewRootImpl> windows = this.windows;
         for (int i = windows.size() - 1; i >= 0; i--) {
             if (windows.get(i).onMouseEvent(event)) {
-                break;
+                return true;
             }
         }
         /*if (popup != null) {
@@ -661,9 +712,11 @@ public final class UIManager {
             fragment = null;
             modernScreen = null;
             appWindow.view = null;
-            lastDClickTick = Integer.MIN_VALUE;
+            lastLmTick = Integer.MIN_VALUE;
+            lastLmView = null;
             lastLayoutTime = 0;
             layoutRequested = false;
+            mouseEvent.pressMap.clear();
             UIEditor.INSTANCE.setHoveredWidget(null);
             UITools.useDefaultCursor();
             // Hotfix 1.5.8
