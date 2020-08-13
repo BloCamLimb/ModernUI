@@ -27,6 +27,7 @@ import icyllis.modernui.font.glyph.GlyphManager;
 import icyllis.modernui.font.glyph.TexturedGlyph;
 import icyllis.modernui.font.node.*;
 import icyllis.modernui.graphics.math.Color3i;
+import net.minecraft.client.Minecraft;
 import net.minecraft.util.text.Style;
 import net.minecraft.util.text.TextFormatting;
 
@@ -41,6 +42,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 /**
@@ -95,6 +97,10 @@ public class TextCacheProcessor {
      */
     private final VanillaTextKey lookupKey = new VanillaTextKey();
 
+    private final Object lock = new Object();
+
+    private final AtomicReference<TextRenderNode> atomicNode = new AtomicReference<>();
+
     /*
      * True if digitGlyphs[] has been assigned and cacheString() can begin replacing all digits with '0' in the string.
      */
@@ -114,7 +120,7 @@ public class TextCacheProcessor {
      * A single StringCache object is allocated by Minecraft's FontRenderer which forwards all string drawing and requests for
      * string width to this class.
      */
-    public TextCacheProcessor() {
+    private TextCacheProcessor() {
         /* StringCache is created by the main game thread; remember it for later thread safety checks */
         //mainThread = Thread.currentThread();
 
@@ -129,9 +135,12 @@ public class TextCacheProcessor {
      * @see TrueTypeRenderer#getInstance()
      */
     public static TextCacheProcessor getInstance() {
-        RenderSystem.assertThread(RenderSystem::isOnRenderThread);
         if (instance == null) {
-            instance = new TextCacheProcessor();
+            synchronized (TextCacheProcessor.class) {
+                if (instance == null) {
+                    instance = new TextCacheProcessor();
+                }
+            }
         }
         return instance;
     }
@@ -398,6 +407,27 @@ public class TextCacheProcessor {
         //addStringAndEffectInfo(processState);
 
         //register.finishProcess();
+
+        // Async work
+        if (!RenderSystem.isOnRenderThread()) {
+            // The game thread is equal to render thread now
+            synchronized (lock) {
+                Minecraft.getInstance().supplyAsync(() -> generateVanillaNode(key, string, style)).whenComplete((n, t) -> {
+                    atomicNode.set(n);
+                    synchronized (lock) {
+                        lock.notify();
+                    }
+                });
+                try {
+                    lock.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                TextRenderNode node = atomicNode.get();
+                atomicNode.set(null);
+                return node;
+            }
+        }
 
         final TextProcessData data = this.data;
 

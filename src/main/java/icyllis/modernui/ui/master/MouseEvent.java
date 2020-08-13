@@ -18,6 +18,11 @@
 
 package icyllis.modernui.ui.master;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
+
+import javax.annotation.Nullable;
+import java.util.Map;
+
 /**
  * Dispatch of all events shares the same instance.
  * Don't change the inner logic.
@@ -57,14 +62,13 @@ public final class MouseEvent {
     // EXT
     //private static final int TYPE_SHIFT = 3;
 
-    public static final int ACTION_MOVE       = 1;
-    public static final int ACTION_DRAG       = 2;
-    public static final int ACTION_SCROLL     = 3;
+    public static final int ACTION_MOVE   = 1;
+    public static final int ACTION_DRAG   = 2;
+    public static final int ACTION_SCROLL = 3;
 
     public static final int ACTION_PRESS        = 4;
     public static final int ACTION_RELEASE      = 5;
-    public static final int ACTION_CLICK        = 6;
-    public static final int ACTION_DOUBLE_CLICK = 7;
+    public static final int ACTION_DOUBLE_CLICK = 6;
 
     /*public static final int ACTION_HOVER_ENTER = TYPE_NOTIFY << TYPE_SHIFT;
     public static final int ACTION_TREE_ENTER  = (TYPE_NOTIFY << TYPE_SHIFT) + 1;
@@ -76,12 +80,13 @@ public final class MouseEvent {
     double x;
     double y;
 
-    double rawX;
-    double rawY;
-
     int button;
 
     double scrollDelta;
+
+    final Map<Integer, View> pressMap = new Int2ObjectArrayMap<>();
+    @Nullable
+    View clicked;
 
     // singleton, created by system
     MouseEvent() {
@@ -97,14 +102,14 @@ public final class MouseEvent {
         return action >> TYPE_SHIFT;
     }*/
 
-    /**
+    /*
      * Returns the action of this event
      *
      * @return action, such as {@link #ACTION_PRESS}
      */
-    public int getAction() {
+    /*public int getAction() {
         return action;
-    }
+    }*/
 
     /**
      * Returns the X coordinate of this event,
@@ -124,7 +129,7 @@ public final class MouseEvent {
         return y;
     }
 
-    /**
+    /*
      * Returns the original raw X coordinate of this event.  For touch
      * events on the screen, this is the original location of the event
      * on the screen, before it had been adjusted for the containing window
@@ -132,11 +137,11 @@ public final class MouseEvent {
      *
      * @return raw X
      */
-    public double getRawX() {
+    /*public double getRawX() {
         return rawX;
-    }
+    }*/
 
-    /**
+    /*
      * Returns the original raw Y coordinate of this event.  For touch
      * events on the screen, this is the original location of the event
      * on the screen, before it had been adjusted for the containing window
@@ -144,9 +149,9 @@ public final class MouseEvent {
      *
      * @return raw Y
      */
-    public double getRawY() {
+    /*public double getRawY() {
         return rawY;
-    }
+    }*/
 
     /**
      * Returns the mouse button of this event.
@@ -156,9 +161,5 @@ public final class MouseEvent {
      */
     public int getButton() {
         return button;
-    }
-
-    public double getScrollDelta() {
-        return scrollDelta;
     }
 }

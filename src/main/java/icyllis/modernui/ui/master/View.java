@@ -1007,7 +1007,30 @@ public class View {
                     if (dispatchMouseEvent(event)) {
                         return true;
                     }
-                    return onMousePressed(event.x, event.y, event.button);
+                    event.pressMap.putIfAbsent(event.button, this);
+                    return onMousePressed(mouseX, mouseY, event.button);
+                }
+                return false;
+            case MouseEvent.ACTION_RELEASE:
+                if ((privateFlags & PFLAG_HOVERED) != 0) {
+                    if (dispatchMouseEvent(event)) {
+                        return true;
+                    }
+                    boolean handled;
+                    handled = onMouseReleased(mouseX, mouseY, event.button);
+                    if (event.pressMap.remove(event.button) == this) {
+                        handled = onMouseClicked(mouseX, mouseY, event.button);
+                        event.clicked = this;
+                    }
+                    return handled;
+                }
+                return false;
+            case MouseEvent.ACTION_DOUBLE_CLICK:
+                if ((privateFlags & PFLAG_HOVERED) != 0) {
+                    /*if (dispatchMouseEvent(event)) {
+                        return true;
+                    }*/
+                    return onMouseDoubleClicked(mouseX, mouseY);
                 }
                 return false;
             case MouseEvent.ACTION_SCROLL:
@@ -1015,7 +1038,7 @@ public class View {
                     if (dispatchMouseEvent(event)) {
                         return true;
                     }
-                    return onMouseScrolled(event.x, event.y, event.scrollDelta);
+                    return onMouseScrolled(mouseX, mouseY, event.scrollDelta);
                 }
                 return false;
         }
@@ -1153,6 +1176,15 @@ public class View {
         return onMouseClicked(mouseX, mouseY, mouseButton);
     }*/
 
+    /**
+     * Called when mouse hovered on this view and a mouse button pressed.
+     *
+     * @param mouseX      relative mouse x pos
+     * @param mouseY      relative mouse y pos
+     * @param mouseButton mouse button, for example {@link GLFW#GLFW_MOUSE_BUTTON_LEFT}
+     * @return {@code true} if action performed
+     * @see GLFW
+     */
     protected boolean onMousePressed(double mouseX, double mouseY, int mouseButton) {
         return false;
     }
@@ -1164,18 +1196,21 @@ public class View {
      * @param mouseY      relative mouse y pos
      * @param mouseButton mouse button, for example {@link GLFW#GLFW_MOUSE_BUTTON_LEFT}
      * @return {@code true} if action performed
+     * @see GLFW
      */
     protected boolean onMouseReleased(double mouseX, double mouseY, int mouseButton) {
         return false;
     }
 
     /**
-     * Called when mouse hovered on this view and a mouse button clicked.
+     * Called when mouse pressed and released on this view with the mouse button.
+     * Called after onMouseReleased no matter whether it's consumed or not.
      *
      * @param mouseX      relative mouse x pos
      * @param mouseY      relative mouse y pos
      * @param mouseButton mouse button, for example {@link GLFW#GLFW_MOUSE_BUTTON_LEFT}
      * @return {@code true} if action performed
+     * @see GLFW
      */
     protected boolean onMouseClicked(double mouseX, double mouseY, int mouseButton) {
         return false;
@@ -1183,13 +1218,14 @@ public class View {
 
     /**
      * Called when mouse hovered on this view and left button double clicked.
-     * If no action performed in this method, onMouseClicked will be called.
+     * If no action performed in this method, onMousePressed will be called.
      *
      * @param mouseX relative mouse x pos
      * @param mouseY relative mouse y pos
      * @return {@code true} if action performed
      */
     protected boolean onMouseDoubleClicked(double mouseX, double mouseY) {
+        ModernUI.LOGGER.info("DClick {}", this);
         return false;
     }
 

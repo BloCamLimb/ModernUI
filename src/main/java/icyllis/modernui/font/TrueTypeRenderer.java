@@ -45,7 +45,7 @@ public class TrueTypeRenderer implements IFontRenderer {
     /**
      * Render thread instance
      */
-    private static TrueTypeRenderer INSTANCE;
+    private static TrueTypeRenderer instance;
 
     /**
      * Config values
@@ -82,11 +82,14 @@ public class TrueTypeRenderer implements IFontRenderer {
      * @see #TrueTypeRenderer()
      */
     public static TrueTypeRenderer getInstance() {
-        RenderSystem.assertThread(RenderSystem::isOnRenderThread);
-        if (INSTANCE == null) {
-            INSTANCE = new TrueTypeRenderer();
+        if (instance == null) {
+            synchronized (TrueTypeRenderer.class) {
+                if (instance == null) {
+                    instance = new TrueTypeRenderer();
+                }
+            }
         }
-        return INSTANCE;
+        return instance;
     }
 
     public static void hook() {
