@@ -63,9 +63,9 @@ public class ShaderProgram implements IShaderManager {
     }
 
     @Nonnull
-    private static ShaderLoader createShader(IResourceManager manager, @Nonnull ResourceLocation location, ShaderLoader.ShaderType type) throws IOException {
+    private ShaderLoader createShader(IResourceManager manager, @Nonnull ResourceLocation location, ShaderLoader.ShaderType type) throws IOException {
         try (InputStream stream = new BufferedInputStream(manager.getResource(location).getInputStream())) {
-            return ShaderLoader.func_216534_a(type, location.toString(), stream);
+            return ShaderLoader.func_216534_a(type, location.toString(), stream, getClass().getSimpleName());
         }
     }
 

@@ -7,7 +7,7 @@ buildscript {
         }
         maven {
             name "sponge"
-            url = "https://repo.spongepowered.org/maven"
+            url "https://repo.spongepowered.org/maven"
         }
     }
     dependencies {
@@ -65,7 +65,7 @@ configurations {
         runtimeOnlyExtender.extendsFrom(runtimeOnly)
     }
     shade
-    compile.extendsFrom(shade)
+    api.extendsFrom(shade)
 }
 
 minecraft {
@@ -120,11 +120,11 @@ repositories {
     }
     maven {
         // location of the maven that hosts JEI files
-        name = "Progwml6 maven"
-        url = "https://dvs1.progwml6.com/files/maven/"
+        name "Progwml6 maven"
+        url "https://dvs1.progwml6.com/files/maven/"
     }
     maven {
-        name = "tterrag maven"
+        name "tterrag maven"
         url "https://maven.tterrag.com/"
     }
 }
@@ -134,13 +134,14 @@ dependencies {
 
     shade "com.github.ben-manes.caffeine:caffeine:${caffeine_version}"
 
-    compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}:api")
-    runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}")
+    /*compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}:api")
+    runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}")*/
 
     compileOnly files('/libs/OptiFine_1.15.2_HD_U_G1_pre14_MOD_dev.jar')
     implementation 'org.jetbrains:annotations:15.0'
 
-    compile 'com.dslplatform:dsl-json-java8:1.9.5'
+    // shade this
+    api 'com.dslplatform:dsl-json-java8:1.9.5'
     annotationProcessor 'com.dslplatform:dsl-json-java8:1.9.5'
     compileOnly 'javax.json.bind:javax.json.bind-api:1.0'
 

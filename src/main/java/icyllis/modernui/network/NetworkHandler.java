@@ -18,7 +18,7 @@
 
 package icyllis.modernui.network;
 
-import icyllis.modernui.system.ModernUI;
+import icyllis.modernui.network.message.IMessage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -47,10 +47,7 @@ import java.util.function.Supplier;
 @SuppressWarnings("unused")
 public class NetworkHandler {
 
-    /**
-     * Main network channel, lazy-loading.
-     */
-    public static final NetworkHandler INSTANCE = new NetworkHandler(ModernUI.MODID, "main_network");
+    //public static final NetworkHandler INSTANCE = new NetworkHandler(ModernUI.MODID, "main_network");
 
     protected SimpleChannel channel;
 
@@ -68,10 +65,6 @@ public class NetworkHandler {
         protocol = ModList.get().getModFileById(modid).getMods().get(0).getVersion().getQualifier();
     }
 
-    public NetworkHandler(@Nonnull SimpleChannel channel) {
-        this.channel = channel;
-    }
-
     public NetworkHandler() {
 
     }
@@ -81,7 +74,7 @@ public class NetworkHandler {
     }
 
     public boolean checkProtocolOnClient(@Nonnull String serverProtocol) {
-        return serverProtocol.equals(NetworkRegistry.ABSENT) || serverProtocol.equals(protocol);
+        return serverProtocol.equals(protocol);
     }
 
     public boolean checkProtocolOnServer(@Nonnull String clientProtocol) {
@@ -174,6 +167,20 @@ public class NetworkHandler {
      */
     public <MSG extends IMessage> void sendToPlayer(MSG message, @Nonnull ServerPlayerEntity playerMP) {
         playerMP.connection.sendPacket(channel.toVanillaPacket(message, NetworkDirection.PLAY_TO_CLIENT));
+    }
+
+    /**
+     * Send a message to all given players, call this on server side
+     *
+     * @param message message to send
+     * @param players players on server
+     * @param <MSG>   message type
+     */
+    public <MSG extends IMessage> void sendToPlayers(MSG message, @Nonnull Iterable<PlayerEntity> players) {
+        final IPacket<?> packet = channel.toVanillaPacket(message, NetworkDirection.PLAY_TO_CLIENT);
+        for (PlayerEntity player : players) {
+            ((ServerPlayerEntity) player).connection.sendPacket(packet);
+        }
     }
 
     /**

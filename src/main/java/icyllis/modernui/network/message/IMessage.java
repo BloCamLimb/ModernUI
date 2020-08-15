@@ -16,8 +16,9 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.network;
+package icyllis.modernui.network.message;
 
+import icyllis.modernui.network.NetworkHandler;
 import net.minecraft.network.PacketBuffer;
 import net.minecraftforge.fml.network.NetworkEvent;
 
@@ -28,16 +29,16 @@ public interface IMessage {
     /**
      * Encode message to byte buffer
      *
-     * @param buf buf to write
+     * @param buffer buffer to write
      */
-    void encode(@Nonnull PacketBuffer buf);
+    void encode(@Nonnull PacketBuffer buffer);
 
     /**
      * Decode message from byte buffer
      *
-     * @param buf buf to read
+     * @param buffer buffer to read
      */
-    void decode(@Nonnull PacketBuffer buf);
+    void decode(@Nonnull PacketBuffer buffer);
 
     /**
      * Handle message on sided effective thread
@@ -45,7 +46,7 @@ public interface IMessage {
      * To reply a message {@link NetworkHandler#reply(IMessage, NetworkEvent.Context)}
      * There's no need to call {@link NetworkEvent.Context#setPacketHandled(boolean)}
      *
-     * @param ctx network context
+     * @param context network context
      */
-    void handle(@Nonnull NetworkEvent.Context ctx);
+    void handle(@Nonnull NetworkEvent.Context context);
 }

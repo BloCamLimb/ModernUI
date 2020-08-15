@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.ui.data;
+package icyllis.modernui.ui.storage;
 
 import icyllis.modernui.ui.master.View;
 import net.minecraftforge.api.distmarker.Dist;

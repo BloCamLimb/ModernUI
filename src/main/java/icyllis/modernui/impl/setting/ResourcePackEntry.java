@@ -19,21 +19,21 @@
 package icyllis.modernui.impl.setting;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.ui.master.UITools;
 import icyllis.modernui.font.text.TextAlign;
+import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.impl.module.SettingResourcePack;
+import icyllis.modernui.ui.master.UITools;
 import icyllis.modernui.ui.test.Align9D;
 import icyllis.modernui.ui.test.ScrollWindow;
-import icyllis.modernui.impl.module.SettingResourcePack;
 import icyllis.modernui.ui.widget.UniformScrollEntry;
-import icyllis.modernui.graphics.math.Color3i;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.client.resources.ClientResourcePackInfo;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.resources.ResourcePackInfo;
 import net.minecraft.util.text.TextFormatting;
 
 import javax.annotation.Nonnull;
@@ -43,7 +43,7 @@ public class ResourcePackEntry extends UniformScrollEntry {
 
     private final TextureManager textureManager = Minecraft.getInstance().getTextureManager();
 
-    private final ClientResourcePackInfo resourcePack;
+    private final ResourcePackInfo resourcePack;
 
     private final SettingResourcePack module;
 
@@ -51,7 +51,7 @@ public class ResourcePackEntry extends UniformScrollEntry {
 
     private String[] desc = new String[0];
 
-    public ResourcePackEntry(SettingResourcePack module, ScrollWindow<?> window, ClientResourcePackInfo resourcePack, Align9D align) {
+    public ResourcePackEntry(SettingResourcePack module, ScrollWindow<?> window, ResourcePackInfo resourcePack, Align9D align) {
         super(window, 200, ResourcePackGroup.ENTRY_HEIGHT, align);
         this.module = module;
         this.resourcePack = resourcePack;
@@ -194,8 +194,9 @@ public class ResourcePackEntry extends UniformScrollEntry {
         this.desc = UITools.splitTextToWidth(resourcePack.getDescription().getString(), width - 39);
     }
 
+    @Deprecated
     public void bindTexture() {
-        resourcePack.func_195808_a(textureManager);
+        //resourcePack.func_195808_a(textureManager);
     }
 
     public boolean canIntoSelected() {
@@ -218,7 +219,7 @@ public class ResourcePackEntry extends UniformScrollEntry {
         return i >= 0 && i < list.size() - 1 && !(list.get(i + 1)).resourcePack.isOrderLocked();
     }
 
-    public ClientResourcePackInfo getResourcePack() {
+    public ResourcePackInfo getResourcePack() {
         return resourcePack;
     }
 

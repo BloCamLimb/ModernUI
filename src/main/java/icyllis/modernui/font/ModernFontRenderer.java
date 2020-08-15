@@ -23,11 +23,14 @@ import icyllis.modernui.font.node.TextRenderNode;
 import icyllis.modernui.font.process.TextCacheProcessor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.client.gui.fonts.Font;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.entity.EntityRendererManager;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.math.vector.Vector3f;
 import net.minecraft.util.text.CharacterManager;
+import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.ITextProperties;
 import net.minecraft.util.text.Style;
 import net.minecraftforge.api.distmarker.Dist;
@@ -37,6 +40,7 @@ import org.apache.commons.lang3.mutable.MutableFloat;
 
 import javax.annotation.Nonnull;
 import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * Replace vanilla renderer with Modern UI renderer
@@ -79,11 +83,15 @@ public class ModernFontRenderer extends FontRenderer {
             instance = new ModernFontRenderer();
             CharacterManager o = ObfuscationReflectionHelper.getPrivateValue(FontRenderer.class,
                     Minecraft.getInstance().fontRenderer, "field_238402_e_");
+            Function<ResourceLocation, Font> r = ObfuscationReflectionHelper.getPrivateValue(FontRenderer.class,
+                    Minecraft.getInstance().fontRenderer, "field_211127_e");
             CharacterManager.ICharWidthProvider c = ObfuscationReflectionHelper.getPrivateValue(CharacterManager.class,
                     o, "field_238347_a_");
             ModernTextHandler t = new ModernTextHandler(c);
             ObfuscationReflectionHelper.setPrivateValue(FontRenderer.class,
                     instance, t, "field_238402_e_");
+            ObfuscationReflectionHelper.setPrivateValue(FontRenderer.class,
+                    instance, r, "field_211127_e");
         }
         return instance;
     }
@@ -124,8 +132,8 @@ public class ModernFontRenderer extends FontRenderer {
     }
 
     @Override
-    public int func_238416_a_(@Nonnull ITextProperties text, float x, float y, int color, boolean dropShadow, Matrix4f matrix,
-                              @Nonnull IRenderTypeBuffer buffer, boolean seeThrough, int colorBackground, int packedLight) {
+    public int func_243247_a(@Nonnull ITextComponent text, float x, float y, int color, boolean dropShadow, @Nonnull Matrix4f matrix,
+                             @Nonnull IRenderTypeBuffer buffer, boolean seeThrough, int colorBackground, int packedLight) {
         mutableFloat.setValue(x);
         // iterate all siblings
         text.func_230439_a_((style, string) -> {

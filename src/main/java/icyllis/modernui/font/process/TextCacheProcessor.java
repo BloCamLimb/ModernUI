@@ -412,12 +412,14 @@ public class TextCacheProcessor {
         if (!RenderSystem.isOnRenderThread()) {
             // The game thread is equal to render thread now
             synchronized (lock) {
-                Minecraft.getInstance().supplyAsync(() -> generateVanillaNode(key, string, style)).whenComplete((n, t) -> {
-                    atomicNode.set(n);
-                    synchronized (lock) {
-                        lock.notify();
-                    }
-                });
+                Minecraft.getInstance()
+                        .supplyAsync(() -> generateVanillaNode(key, string, style))
+                        .whenComplete((n, t) -> {
+                            atomicNode.set(n);
+                            synchronized (lock) {
+                                lock.notify();
+                            }
+                        });
                 try {
                     lock.wait();
                 } catch (InterruptedException e) {
