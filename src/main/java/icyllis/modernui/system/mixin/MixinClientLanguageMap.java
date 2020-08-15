@@ -27,16 +27,16 @@ import org.spongepowered.asm.mixin.Shadow;
 @Mixin(ClientLanguageMap.class)
 public abstract class MixinClientLanguageMap {
 
-    @Shadow
+    /*@Shadow
     public abstract boolean func_230505_b_();
 
     @Shadow
     protected abstract String func_239500_d_(String p_239500_1_);
 
-    /**
+    *//**
      * @author BloCamLimb
      * @reason Fix vanilla's bug
-     */
+     *//*
     @Overwrite
     public String func_230504_a_(String text, boolean token) {
         if (TrueTypeRenderer.sGlobalRenderer || !func_230505_b_()) {
@@ -47,5 +47,5 @@ public abstract class MixinClientLanguageMap {
             }
             return func_239500_d_(text);
         }
-    }
+    }*/
 }

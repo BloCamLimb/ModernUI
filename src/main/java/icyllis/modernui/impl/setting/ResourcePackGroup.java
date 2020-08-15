@@ -21,12 +21,12 @@ package icyllis.modernui.impl.setting;
 import com.google.common.collect.Lists;
 import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.ui.test.Align9D;
 import icyllis.modernui.impl.module.SettingResourcePack;
+import icyllis.modernui.ui.test.Align9D;
 import icyllis.modernui.ui.test.ScrollWindow;
 import icyllis.modernui.ui.widget.UniformScrollGroup;
-import net.minecraft.client.resources.ClientResourcePackInfo;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.resources.ResourcePackInfo;
 import net.minecraft.resources.ResourcePackList;
 import net.minecraft.util.text.TextFormatting;
 
@@ -49,23 +49,23 @@ public class ResourcePackGroup extends UniformScrollGroup<ResourcePackEntry> {
 
     private final SettingResourcePack module;
 
-    public ResourcePackGroup(SettingResourcePack module, ScrollWindow<?> window, ResourcePackList<ClientResourcePackInfo> list, Type type) {
+    public ResourcePackGroup(SettingResourcePack module, ScrollWindow<?> window, ResourcePackList list, Type type) {
         super(window, ENTRY_HEIGHT);
         this.module = module;
         this.type = type;
         if (type == Type.AVAILABLE) {
-            this.title = TextFormatting.BOLD + I18n.format("resourcePack.available.title");
+            this.title = TextFormatting.BOLD + I18n.format("pack.available.title");
 
-            List<ClientResourcePackInfo> infoList = Lists.newArrayList(list.getAllPacks());
+            List<ResourcePackInfo> infoList = Lists.newArrayList(list.getAllPacks());
             infoList.removeAll(list.getEnabledPacks());
-            infoList.removeIf(ClientResourcePackInfo::isHidden);
+            infoList.removeIf(ResourcePackInfo::isHidden);
 
             infoList.forEach(t -> entries.add(new ResourcePackEntry(module, window, t, Align9D.TOP_RIGHT)));
         } else {
-            this.title = TextFormatting.BOLD + I18n.format("resourcePack.selected.title");
+            this.title = TextFormatting.BOLD + I18n.format("pack.selected.title");
 
-            List<ClientResourcePackInfo> enabledList = Lists.newArrayList(list.getEnabledPacks());
-            enabledList.removeIf(ClientResourcePackInfo::isHidden);
+            List<ResourcePackInfo> enabledList = Lists.newArrayList(list.getEnabledPacks());
+            enabledList.removeIf(ResourcePackInfo::isHidden);
             Collections.reverse(enabledList);
 
             enabledList.forEach(t -> entries.add(new ResourcePackEntry(module, window, t, Align9D.TOP_LEFT)));

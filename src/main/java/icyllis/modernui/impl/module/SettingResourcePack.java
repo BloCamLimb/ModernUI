@@ -19,23 +19,16 @@
 package icyllis.modernui.impl.module;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.ui.test.WidgetStatus;
-import icyllis.modernui.ui.test.WidgetLayout;
-import icyllis.modernui.ui.test.Module;
-import icyllis.modernui.ui.test.Widget;
-import icyllis.modernui.ui.test.Align9D;
-import icyllis.modernui.ui.test.Direction4D;
-import icyllis.modernui.ui.test.Locator;
-import icyllis.modernui.ui.test.ScrollWindow;
-import icyllis.modernui.ui.widget.StaticFrameButton;
-import icyllis.modernui.ui.widget.TriangleButton;
 import icyllis.modernui.impl.background.ResourcePackBG;
 import icyllis.modernui.impl.setting.ResourcePackEntry;
 import icyllis.modernui.impl.setting.ResourcePackGroup;
+import icyllis.modernui.ui.test.*;
+import icyllis.modernui.ui.widget.StaticFrameButton;
+import icyllis.modernui.ui.widget.TriangleButton;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.resources.ClientResourcePackInfo;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.resources.ResourcePackInfo;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nullable;
@@ -130,7 +123,7 @@ public class SettingResourcePack extends Module {
     }
 
     private void applyResourcePacks() {
-        List<ClientResourcePackInfo> list = Lists.newArrayList();
+        List<ResourcePackInfo> list = Lists.newArrayList();
         GameSettings gameSettings = minecraft.gameSettings;
 
         for (ResourcePackEntry c2 : selectedGroup.getEntries()) {
@@ -143,7 +136,7 @@ public class SettingResourcePack extends Module {
         gameSettings.resourcePacks.clear();
         gameSettings.incompatibleResourcePacks.clear();
 
-        for (ClientResourcePackInfo c3 : list) {
+        for (ResourcePackInfo c3 : list) {
             if (!c3.isOrderLocked()) {
                 gameSettings.resourcePacks.add(c3.getName());
                 if (!c3.getCompatibility().isCompatible()) {

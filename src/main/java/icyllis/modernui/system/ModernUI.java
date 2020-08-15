@@ -19,7 +19,7 @@
 package icyllis.modernui.system;
 
 import icyllis.modernui.graphics.renderer.RenderTools;
-import icyllis.modernui.ui.data.LayoutInflater;
+import icyllis.modernui.ui.storage.LayoutInflater;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.apache.logging.log4j.LogManager;
