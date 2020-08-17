@@ -29,7 +29,7 @@ import java.util.function.Function;
  * Example
  */
 @Deprecated
-public class StandardEventListener implements IGuiEventListener {
+public class StandardEventListener /*implements IGuiEventListener*/ {
 
     protected Function<Integer, Float> xResizer, yResizer;
 
@@ -58,7 +58,6 @@ public class StandardEventListener implements IGuiEventListener {
         this.y = y;
     }
 
-    @Override
     public void mouseMoved(double mouseX, double mouseY) {
         if (!available) {
             return;
@@ -74,7 +73,6 @@ public class StandardEventListener implements IGuiEventListener {
         }
     }
 
-    @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if (!available) {
             return false;
@@ -90,7 +88,6 @@ public class StandardEventListener implements IGuiEventListener {
         this.available = available;
     }
 
-    @Override
     public boolean isMouseOver(double mouseX, double mouseY) {
         return shape.isMouseInArea(x, y, mouseX, mouseY);
     }

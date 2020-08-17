@@ -53,8 +53,8 @@ public final class GuiChat extends Screen {
         Minecraft.getInstance().keyboardListener.enableRepeatEvents(true);
         inputBox = new ChatInputBox();
         inputBox.resize(width, height);
-        children.add(inputBox);
-        setFocusedDefault(inputBox);
+        /*children.add(inputBox);
+        setFocusedDefault(inputBox);*/
         emojiTab = new EmojiTab(inputBox);
         emojiTab.resize(width, height);
         inputBox.setLineChanged(emojiTab::setDoubleLine);

@@ -18,23 +18,38 @@
 
 package icyllis.modernui.ui.example;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.ui.animation.Animation;
 import icyllis.modernui.ui.animation.Applier;
 import icyllis.modernui.ui.animation.ITimeInterpolator;
 import icyllis.modernui.ui.layout.Gravity;
 import icyllis.modernui.ui.layout.LinearLayout;
 import icyllis.modernui.ui.layout.Orientation;
-import icyllis.modernui.ui.master.UIManager;
 import icyllis.modernui.ui.master.View;
-import net.minecraft.item.Items;
 import net.minecraft.util.text.TextFormatting;
 
 import javax.annotation.Nonnull;
 
 public class TestLinearLayout extends LinearLayout {
+
+    private float c = 10;
+    private float f = 0;
+
+    private Animation cAnim;
+
+    private Animation circleAnimation1;
+    private Animation circleAnimation2;
+    private Animation circleAnimation3;
+    private Animation circleAnimation4;
+
+    private float circleAcc1;
+    private float circleAcc2;
+    private float circleAcc3;
+    private float circleAcc4;
+
+    private boolean b;
 
     public TestLinearLayout() {
         setOrientation(Orientation.VERTICAL);
@@ -60,6 +75,28 @@ public class TestLinearLayout extends LinearLayout {
         }
         addView(new DView(ITimeInterpolator.DECELERATE, 0), new LinearLayout.LayoutParams(60, 20));
         //addView(new DView(ITimeInterpolator.VISCOUS_FLUID, 30), new LinearLayout.LayoutParams(60, 20));
+        cAnim = new Animation(200).applyTo(new Applier(10, 0, () -> c, v -> c = v).setInterpolator(ITimeInterpolator.DECELERATE));
+
+        circleAnimation1 = new Animation(600)
+                .applyTo(
+                        new Applier((float) Math.PI, (float) -Math.PI, () -> circleAcc1, v -> circleAcc1 = v)
+                                .setInterpolator(ITimeInterpolator.ACC_DEC)
+                );
+        circleAnimation2 = new Animation(600)
+                .applyTo(
+                        new Applier((float) Math.PI, (float) -Math.PI, () -> circleAcc2, v -> circleAcc2 = v)
+                                .setInterpolator(ITimeInterpolator.ACC_DEC)
+                );
+        circleAnimation3 = new Animation(600)
+                .applyTo(
+                        new Applier((float) Math.PI, (float) -Math.PI, () -> circleAcc3, v -> circleAcc3 = v)
+                                .setInterpolator(ITimeInterpolator.ACC_DEC)
+                );
+        circleAnimation4 = new Animation(600)
+                .applyTo(
+                        new Applier((float) Math.PI, (float) -Math.PI, () -> circleAcc4, v -> circleAcc4 = v)
+                                .setInterpolator(ITimeInterpolator.ACC_DEC)
+                );
     }
 
     @Override
@@ -67,7 +104,110 @@ public class TestLinearLayout extends LinearLayout {
         super.onDraw(canvas);
         canvas.moveTo(this);
         canvas.resetColor();
-        canvas.drawText(TextFormatting.GOLD + "LinearLayout " + canvas.getDrawingTime(), 0, 0);
+        //canvas.drawText(TextFormatting.GOLD + "LinearLayout " + canvas.getDrawingTime(), 0, 0);
+
+        // 1
+
+        RenderSystem.depthMask(true);
+
+        RenderSystem.pushMatrix();
+        //canvas.scale(f, f, getLeft() + 10, getTop() + 10);
+        RenderSystem.translatef(0, 0, 0.001f);
+        RenderSystem.colorMask(false, false, false, false);
+        canvas.setColor(0, 0, 0, 128);
+
+        canvas.drawRect(c, c, 20 - c, 20 - c);
+        RenderSystem.translatef(0, 0, -0.001f);
+        RenderSystem.colorMask(true, true, true, true);
+
+
+        canvas.setColor(80, 210, 240, 128);
+        canvas.drawRoundedRect(0, 0, 20, 20, 3);
+
+        RenderSystem.popMatrix();
+        RenderSystem.depthMask(false);
+
+        canvas.setAlpha(255);
+        canvas.save();
+        canvas.translate((float) Math.sin(circleAcc1) * 8, (float) Math.cos(circleAcc1) * 8);
+        canvas.drawCircle(40, 18, 3);
+        canvas.restore();
+        canvas.save();
+        canvas.translate((float) Math.sin(circleAcc2) * 8, (float) Math.cos(circleAcc2) * 8);
+        canvas.drawCircle(40, 18, 2.5f);
+        canvas.restore();
+        canvas.save();
+        canvas.translate((float) Math.sin(circleAcc3) * 8, (float) Math.cos(circleAcc3) * 8);
+        canvas.drawCircle(40, 18, 2);
+        canvas.restore();
+        canvas.save();
+        canvas.translate((float) Math.sin(circleAcc4) * 8, (float) Math.cos(circleAcc4) * 8);
+        canvas.drawCircle(40, 18, 1.5f);
+        canvas.restore();
+
+        // 2
+        /*GL11.glEnable(GL11.GL_STENCIL_TEST);
+        GL11.glClearStencil(0);
+        GL11.glClear(GL11.GL_STENCIL_BUFFER_BIT);
+
+        GL11.glStencilMask(0xff);
+
+        GL11.glStencilFunc(GL11.GL_ALWAYS, 1, 0xff);
+        GL11.glStencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_REPLACE);
+
+        canvas.setColor(255, 255, 255, 128);
+        canvas.drawRect(5, 2, 15, 8);
+
+        GL11.glStencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_KEEP);
+        GL11.glStencilFunc(GL11.GL_NOTEQUAL, 1, 0xff);
+
+        canvas.setColor(0, 0, 0, 128);
+        canvas.drawRect(0, 0, 20, 10);
+
+        GL11.glDisable(GL11.GL_STENCIL_TEST);*/
+    }
+
+    @Override
+    protected boolean onMousePressed(double mouseX, double mouseY, int mouseButton) {
+        if (!b) {
+            cAnim.start();
+            b = true;
+        } else {
+            cAnim.invert();
+            b = false;
+        }
+        f = 0.95f;
+        return true;
+    }
+
+    @Override
+    protected boolean onMouseReleased(double mouseX, double mouseY, int mouseButton) {
+        f = 1;
+        return true;
+    }
+
+    @Override
+    protected void tick(int ticks) {
+        super.tick(ticks);
+        if ((ticks & 15) == 0) {
+            if (!b) {
+                cAnim.start();
+                b = true;
+            } else {
+                cAnim.invert();
+                b = false;
+            }
+        }
+        int a = ticks % 20;
+        if (a == 1) {
+            circleAnimation1.startFull();
+        } else if (a == 3) {
+            circleAnimation2.startFull();
+        } else if (a == 5) {
+            circleAnimation3.startFull();
+        } else if (a == 7) {
+            circleAnimation4.startFull();
+        }
     }
 
     private static class CView extends View {

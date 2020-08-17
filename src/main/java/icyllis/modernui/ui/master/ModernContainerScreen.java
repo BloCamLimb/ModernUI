@@ -63,6 +63,8 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
 
     @Override
     public void resize(@Nonnull Minecraft minecraft, int width, int height) {
+        this.width = width;
+        this.height = height;
         manager.prepareWindows(this, width, height);
     }
 
@@ -90,7 +92,7 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
 
     @Override
     public void mouseMoved(double mouseX, double mouseY) {
-        manager.screenMouseMove(mouseX, mouseY);
+        manager.eventDispatcher.onCursorPosEvent(mouseX, mouseY);
     }
 
     @Override

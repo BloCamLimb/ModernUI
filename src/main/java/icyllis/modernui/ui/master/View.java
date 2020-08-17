@@ -34,6 +34,7 @@ import org.lwjgl.glfw.GLFW;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
+import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -182,31 +183,31 @@ public class View {
      * {@link #getId()}
      * {@link #setId(int)}
      */
-    private int id = NO_ID;
+    int id = NO_ID;
 
     /**
      * View left on screen
      * {@link #getLeft()}
      */
-    private int left;
+    int left;
 
     /**
      * View top on screen
      * {@link #getTop()}
      */
-    private int top;
+    int top;
 
     /**
      * View right on screen
      * {@link #getRight()}
      */
-    private int right;
+    int right;
 
     /**
      * View bottom on screen
      * {@link #getBottom()}
      */
-    private int bottom;
+    int bottom;
 
     //private boolean listening = true;
 
@@ -607,7 +608,7 @@ public class View {
     }
 
     /**
-     * ID should not be repeated in the same view group and a positive number
+     * ID should not be repeated in the same view group and should be a positive number
      *
      * @param id view id
      */
@@ -927,6 +928,17 @@ public class View {
             return (T) this;
         }
         return null;
+    }
+
+    boolean onCursorPosEvent(LinkedList<View> route, double x, double y) {
+        if ((viewFlags & ENABLED_MASK) == DISABLED) {
+            return false;
+        }
+        if (x >= left && x < right && y >= top && y < bottom) {
+            route.add(this);
+            return true;
+        }
+        return false;
     }
 
     /**

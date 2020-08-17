@@ -20,6 +20,7 @@ package icyllis.modernui.font;
 
 import icyllis.modernui.font.node.GlyphRenderInfo;
 import icyllis.modernui.font.process.TextCacheProcessor;
+import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.text.CharacterManager;
 import net.minecraft.util.text.ITextProperties;
 import net.minecraft.util.text.Style;
@@ -27,6 +28,7 @@ import net.minecraft.util.text.TextPropertiesManager;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.mutable.MutableFloat;
+import org.apache.commons.lang3.mutable.MutableObject;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -88,6 +90,24 @@ public class ModernTextHandler extends CharacterManager {
     }
 
     /**
+     * Get text width
+     *
+     * @param text text
+     * @return total width
+     */
+    @Override
+    public float func_243238_a(@Nonnull IReorderingProcessor text) {
+        mutableFloat.setValue(0);
+        processor.copier.copyAndConsume(text, (t, s) -> {
+            if (t.length() != 0) {
+                mutableFloat.add(processor.lookupVanillaNode(t, s).advance);
+            }
+            return false;
+        });
+        return mutableFloat.floatValue();
+    }
+
+    /**
      * Get trimmed length / size to width.
      * <p>
      * Return the number of characters in a text that will completely fit inside
@@ -104,8 +124,8 @@ public class ModernTextHandler extends CharacterManager {
         return sizeToWidth0(text, width, style);
     }
 
-    private int sizeToWidth0(@Nonnull String text, float width, @Nonnull Style style) {
-        if (text.isEmpty()) {
+    private int sizeToWidth0(@Nonnull CharSequence text, float width, @Nonnull Style style) {
+        if (text.length() == 0) {
             return 0;
         }
         /* The glyph array for a string is sorted by the string's logical character position */
@@ -200,6 +220,33 @@ public class ModernTextHandler extends CharacterManager {
     }
 
     /**
+     * Trim a text to find the last sibling text style to handle its click or hover event
+     *
+     * @param text  the text to trim
+     * @param width the max width
+     * @return the last sibling text style
+     */
+    @Nullable
+    @Override
+    public Style func_243239_a(@Nonnull IReorderingProcessor text, int width) {
+        mutableFloat.setValue(width);
+        MutableObject<Style> sr = new MutableObject<>();
+        // iterate all siblings
+        if (!processor.copier.copyAndConsume(text, (t, s) -> {
+            if (sizeToWidth0(t, mutableFloat.floatValue(), s) < t.length()) {
+                sr.setValue(s);
+                return true;
+            }
+            mutableFloat.subtract(processor.lookupVanillaNode(t, s).advance);
+            // continue
+            return false;
+        })) {
+            return sr.getValue();
+        }
+        return null;
+    }
+
+    /**
      * Trim to width
      *
      * @param textIn  the text to trim
@@ -217,10 +264,10 @@ public class ModernTextHandler extends CharacterManager {
         return textIn.func_230439_a_((style, text) -> {
             int size;
             if ((size = sizeToWidth0(text, mutableFloat.floatValue(), style)) < text.length()) {
-                String s2 = text.substring(0, size);
-                if (!s2.isEmpty()) {
+                String sub = text.substring(0, size);
+                if (!sub.isEmpty()) {
                     // add
-                    collector.func_238155_a_(ITextProperties.func_240653_a_(s2, style));
+                    collector.func_238155_a_(ITextProperties.func_240653_a_(sub, style));
                 }
                 // combine and break
                 return Optional.of(collector.func_238156_b_());

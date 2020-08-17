@@ -159,7 +159,6 @@ public final class ChatInputBox extends StandardEventListener {
         return mouseX >= x && mouseX <= x + sizeW && mouseY >= y + (isDoubleLined ? -12 : 0) && mouseY <= y + 12;
     }
 
-    @Override
     public boolean keyPressed(int key, int scanCode, int modifier) {
         this.shiftDown = Screen.hasShiftDown();
         if (Screen.isSelectAll(key)) {
@@ -223,7 +222,6 @@ public final class ChatInputBox extends StandardEventListener {
         return false;
     }
 
-    @Override
     public boolean charTyped(char c, int i) {
         if (SharedConstants.isAllowedCharacter(c)) {
             writeText(Character.toString(c));

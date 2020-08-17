@@ -37,9 +37,7 @@ import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.geom.Point2D;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
+import java.util.*;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -111,6 +109,8 @@ public class TextCacheProcessor {
      */
     private final TextProcessData data = new TextProcessData();
 
+    public final ReorderTextCopier copier = new ReorderTextCopier();
+
     /**
      * Remove all formatting code even though it's invalid {@link #fromFormattingCode(char)} == null
      */
@@ -175,7 +175,7 @@ public class TextCacheProcessor {
      * @return cached render node
      */
     @Nonnull
-    public TextRenderNode lookupVanillaNode(@Nonnull String string, @Nonnull Style style) {
+    public TextRenderNode lookupVanillaNode(@Nonnull CharSequence string, @Nonnull Style style) {
         lookupKey.updateKey(string, style);
         TextRenderNode node = stringCache.getIfPresent(lookupKey);
         if (node == null) {
@@ -198,7 +198,7 @@ public class TextCacheProcessor {
     }
 
     @Nonnull
-    private TextRenderNode generateVanillaNode(VanillaTextKey key, @Nonnull String string, @Nonnull final Style style) {
+    private TextRenderNode generateVanillaNode(VanillaTextKey key, @Nonnull CharSequence string, @Nonnull final Style style) {
         /*final int length = string.length();
         final TextProcessRegister register = this.register;
 
@@ -589,26 +589,42 @@ public class TextCacheProcessor {
      * @return a new char array with all formatting codes removed from the given string
      */
     @Nonnull
-    private char[] resolveFormattingCodes(@Nonnull TextProcessData data, @Nonnull final String string, @Nonnull Style style) {
-        int start = 0, shift = 0, next;
+    private char[] resolveFormattingCodes(@Nonnull TextProcessData data, @Nonnull final CharSequence string, @Nonnull Style style) {
+        int shift = 0;
 
         data.codes.add(new FormattingStyle(0, 0, style));
 
-        while ((next = string.indexOf('\u00a7', start)) != -1 && next + 1 < string.length()) {
+        int limit = string.length() - 1;
+        for (int next = 0; next < limit; next++) {
+            if (string.charAt(next) == '\u00a7') {
+                TextFormatting formatting = fromFormattingCode(string.charAt(next + 1));
+
+                if (formatting != null) {
+                    /* forceFormatting will set all FancyStyling (like BOLD, UNDERLINE) to false if this is a color formatting */
+                    style = style.forceFormatting(formatting);
+                    data.codes.add(new FormattingStyle(next, next - shift, style));
+                }
+
+                next++;
+                shift += 2;
+            }
+        }
+
+        /*while ((next = string.indexOf('\u00a7', start)) != -1 && next + 1 < string.length()) {
             TextFormatting formatting = fromFormattingCode(string.charAt(next + 1));
 
-            /*
+            *//*
              * Remove the two char color code from text[] by shifting the remaining data in the array over on top of it.
              * The "start" and "next" variables all contain offsets into the original unmodified "str" string. The "shift"
              * variable keeps track of how many characters have been stripped so far, and it's used to compute offsets into
              * the text[] array based on the start/next offsets in the original string.
              *
              * If string only contains 1 formatting code (2 chars in total), this doesn't work
-             */
+             *//*
             //System.arraycopy(text, next - shift + 2, text, next - shift, text.length - next - 2);
 
             if (formatting != null) {
-                /* forceFormatting will set all FancyStyling (like BOLD, UNDERLINE) to false if this is a color formatting */
+                *//* forceFormatting will set all FancyStyling (like BOLD, UNDERLINE) to false if this is a color formatting *//*
                 style = style.forceFormatting(formatting);
 
 
@@ -617,10 +633,14 @@ public class TextCacheProcessor {
 
             start = next + 2;
             shift += 2;
-        }
+        }*/
 
         return FORMATTING_REMOVE_PATTERN.matcher(string).replaceAll("").toCharArray();
     }
+
+    /*private char[] resolveFormattingCodes(@Nonnull TextProcessData data) {
+
+    }*/
 
     /**
      * Split the full text into contiguous LTR or RTL sections by applying the Unicode Bidirectional Algorithm. Calls
@@ -1116,7 +1136,7 @@ public class TextCacheProcessor {
      * @param str        the string from which color codes will be stripped
      * @param text       on input it should be an identical copy of str; on output it will be string with all color codes removed
      * @return the length of the new stripped string in text[]; actual text.length will not change because the array is not reallocated
-     * @deprecated {@link #resolveFormattingCodes(TextProcessData, String, Style)}
+     * @deprecated {@link #resolveFormattingCodes(TextProcessData, CharSequence, Style)}
      */
     @Deprecated
     private int extractFormattingCodes(Entry cacheEntry, @Nonnull String str, char[] text) {
