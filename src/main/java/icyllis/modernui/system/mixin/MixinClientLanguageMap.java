@@ -20,23 +20,27 @@ package icyllis.modernui.system.mixin;
 
 import icyllis.modernui.font.TrueTypeRenderer;
 import net.minecraft.client.resources.ClientLanguageMap;
+import net.minecraft.client.util.BidiReorderer;
+import net.minecraft.util.IReorderingProcessor;
+import net.minecraft.util.text.ITextProperties;
+import net.minecraft.util.text.Style;
+import net.minecraft.util.text.TextProcessing;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 
+import java.util.Optional;
+
 @Mixin(ClientLanguageMap.class)
 public abstract class MixinClientLanguageMap {
 
-    /*@Shadow
+    @Shadow
     public abstract boolean func_230505_b_();
 
-    @Shadow
+    /*@Shadow
     protected abstract String func_239500_d_(String p_239500_1_);
 
-    *//**
-     * @author BloCamLimb
-     * @reason Fix vanilla's bug
-     *//*
+
     @Overwrite
     public String func_230504_a_(String text, boolean token) {
         if (TrueTypeRenderer.sGlobalRenderer || !func_230505_b_()) {
@@ -48,4 +52,18 @@ public abstract class MixinClientLanguageMap {
             return func_239500_d_(text);
         }
     }*/
+
+    /**
+     * Present = stopped, so return false
+     *
+     * @author BloCamLimb
+     * @reason Do not reorder, mojang
+     */
+    @Overwrite
+    public IReorderingProcessor func_241870_a(ITextProperties text) {
+        return TrueTypeRenderer.sGlobalRenderer ? copier -> !text.func_230439_a_((s, t) -> {
+            TextProcessing.func_238346_c_(t, s, copier);
+            return Optional.empty();
+        }, Style.EMPTY).isPresent() : BidiReorderer.func_243508_a(text, func_230505_b_());
+    }
 }

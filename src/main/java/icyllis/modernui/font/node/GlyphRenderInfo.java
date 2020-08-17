@@ -72,8 +72,7 @@ public abstract class GlyphRenderInfo {
 
     /**
      * Draw the glyph of this info.
-     *
-     * @param matrix      matrix
+     *  @param matrix      matrix
      * @param buffer      buffer source
      * @param raw         needed by {@link DigitGlyphInfo}
      * @param x           start x of the whole text
@@ -85,7 +84,7 @@ public abstract class GlyphRenderInfo {
      * @param seeThrough is see through type
      * @param light       packed light
      */
-    public abstract void drawGlyph(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, @Nonnull String raw, float x, float y, int r, int g, int b, int a, boolean seeThrough, int light);
+    public abstract void drawGlyph(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, @Nonnull CharSequence raw, float x, float y, int r, int g, int b, int a, boolean seeThrough, int light);
 
     /**
      * Draw the effect of this info

@@ -26,12 +26,12 @@ import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.fonts.Font;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.entity.EntityRendererManager;
+import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.math.vector.Vector3f;
 import net.minecraft.util.text.CharacterManager;
 import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.ITextProperties;
 import net.minecraft.util.text.Style;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -145,9 +145,23 @@ public class ModernFontRenderer extends FontRenderer {
         return mutableFloat.intValue() + (dropShadow ? 1 : 0);
     }
 
-    private float drawLayer0(@Nonnull String string, float x, float y, int color, boolean dropShadow, Matrix4f matrix,
+    @Override
+    public int func_238416_a_(@Nonnull IReorderingProcessor text, float x, float y, int color, boolean dropShadow, @Nonnull Matrix4f matrix,
+                              @Nonnull IRenderTypeBuffer buffer, boolean seeThrough, int colorBackground, int packedLight) {
+        mutableFloat.setValue(x);
+        processor.copier.copyAndConsume(text, (string, style) -> {
+                    mutableFloat.add(drawLayer0(string, mutableFloat.floatValue(), y, color, dropShadow, matrix,
+                            buffer, seeThrough, colorBackground, packedLight, style));
+                    // continue, equals to Optional.empty()
+                    return false;
+                }
+        );
+        return mutableFloat.intValue() + (dropShadow ? 1 : 0);
+    }
+
+    private float drawLayer0(@Nonnull CharSequence string, float x, float y, int color, boolean dropShadow, Matrix4f matrix,
                              @Nonnull IRenderTypeBuffer buffer, boolean transparent, int colorBackground, int packedLight, Style style) {
-        if (string.isEmpty()) {
+        if (string.length() == 0) {
             return 0;
         }
         // ensure alpha, color can be ARGB, or can be RGB

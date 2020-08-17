@@ -42,7 +42,7 @@ public class VanillaTextKey {
      * and the WeakHashMaps in StringCache will allow this Key object and its associated Entry object to be garbage
      * collected as well. This string contains TextFormatting codes.
      */
-    private String str;
+    private CharSequence str;
 
     /**
      * Reference to vanilla's {@link Style}, we extract the value that will only affect the rendering effect
@@ -64,8 +64,8 @@ public class VanillaTextKey {
     /**
      * Copy constructor
      */
-    private VanillaTextKey(String str, int style, int hash) {
-        this.str = str;
+    private VanillaTextKey(@Nonnull CharSequence str, int style, int hash) {
+        this.str = str.toString(); // copy to String
         this.style = style;
         this.hash = hash;
     }
@@ -76,7 +76,7 @@ public class VanillaTextKey {
      * @param str   raw formatted string
      * @param style text component style
      */
-    public void updateKey(String str, @Nonnull Style style) {
+    public void updateKey(CharSequence str, @Nonnull Style style) {
         this.str = str;
         // text formatting may render same as style, but we can't separate them easily
         this.style = parseStyle(style);
@@ -136,7 +136,7 @@ public class VanillaTextKey {
         }
 
         /* Calling toString on a String object simply returns itself so no new object allocation is performed */
-        final String other = o.toString();
+        final CharSequence other = ((VanillaTextKey) o).str;
         final int length = str.length();
 
         if (length != other.length()) {
@@ -204,7 +204,7 @@ public class VanillaTextKey {
      */
     @Override
     public String toString() {
-        return str;
+        return str.toString();
     }
 
     /**

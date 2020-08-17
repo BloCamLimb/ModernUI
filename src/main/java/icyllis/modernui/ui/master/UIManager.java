@@ -100,10 +100,6 @@ public final class UIManager {
     private int width;
     private int height;
 
-    // scaled mouseX, mouseY on screen
-    private double mouseX;
-    private double mouseY;
-
     // a list of animations in render loop
     private final List<Animation> animations = new ArrayList<>();
 
@@ -139,15 +135,13 @@ public final class UIManager {
     @Nullable
     private View lastLmView;
 
-    private final List<View> eventRoute = new ArrayList<>();
-
     @Nullable
     private View capturedView;
 
     // to schedule layout on next frame
     boolean layoutRequested = false;
 
-    boolean mouseRefreshRequested = false;
+    boolean cursorRefreshRequested = false;
 
     // to fix layout freq at 40Hz at most
     private long lastLayoutTime = 0;
@@ -161,6 +155,9 @@ public final class UIManager {
 
     // drag shadow center for render offset
     Point dragShadowCenter;
+
+    // dispatch mouse/key/drag event
+    final GlobalEventDispatcher eventDispatcher = new GlobalEventDispatcher(windows);
 
     {
         windows.add(appWindow = new ViewRootImpl(this, ViewRootImpl.TYPE_APPLICATION));
@@ -372,8 +369,8 @@ public final class UIManager {
     }
 
     private void setMousePos(double mouseX, double mouseY) {
-        this.mouseX = mouseEvent.x = mouseX;
-        this.mouseY = mouseEvent.y = mouseY;
+        /*this.mouseX = mouseEvent.x = mouseX;
+        this.mouseY = mouseEvent.y = mouseY;*/
     }
 
     // OS EVENT HANDLE IN SCREEN
@@ -391,7 +388,7 @@ public final class UIManager {
                 windows.get(i).ensureMouseHoverExit();
             }
         }
-        mouseRefreshRequested = false;
+        cursorRefreshRequested = false;
     }
 
     boolean screenMouseDown(double mouseX, double mouseY, int mouseButton) {
@@ -634,7 +631,8 @@ public final class UIManager {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableAlphaTest();
-        RenderSystem.disableDepthTest();
+        RenderSystem.enableDepthTest();
+        RenderSystem.depthMask(false);
 
         /*canvas.moveToZero();
         canvas.setColor(0, 0, 0, 51);
@@ -679,9 +677,9 @@ public final class UIManager {
     void resizeWindows(int width, int height) {
         this.width = width;
         this.height = height;
-        double scale = getGuiScale();
-        mouseX = (minecraft.mouseHelper.getMouseX() / scale);
-        mouseY = (minecraft.mouseHelper.getMouseY() / scale);
+        double scale = minecraft.getMainWindow().getGuiScaleFactor();
+        eventDispatcher.mouseX = (minecraft.mouseHelper.getMouseX() / scale);
+        eventDispatcher.mouseY = (minecraft.mouseHelper.getMouseY() / scale);
         layoutWindows(true);
     }
 
@@ -699,7 +697,7 @@ public final class UIManager {
         if (Config.isDeveloperMode()) {
             ModernUI.LOGGER.debug(MARKER, "Layout performed in {} \u03bcs", (System.nanoTime() - startTime) / 1000.0f);
         }
-        screenMouseMove(mouseX, mouseY);
+        //screenMouseMove(mouseX, mouseY);
     }
 
     void recycleWindows() {
@@ -739,6 +737,11 @@ public final class UIManager {
         if (view != null) {
             view.tick(ticks);
         }
+        for (ViewRootImpl window : windows) {
+            if (window.view != null) {
+                window.view.tick(ticks);
+            }
+        }
         // view ticking is always performed before tasks
         if (!tasks.isEmpty()) {
             Iterator<DelayedTask> iterator = tasks.iterator();
@@ -772,14 +775,14 @@ public final class UIManager {
             }
 
             // layout after updating animations and before drawing
-            if (layoutRequested || mouseRefreshRequested) {
+            if (layoutRequested || cursorRefreshRequested) {
                 // fixed at 40Hz
                 if (timeMillis - lastLayoutTime >= 25) {
                     lastLayoutTime = timeMillis;
                     if (layoutRequested) {
                         layoutWindows(false);
                     } else {
-                        screenMouseMove(mouseX, mouseY);
+                        //screenMouseMove(mouseX, mouseY);
                     }
                 }
             }
@@ -828,7 +831,7 @@ public final class UIManager {
      * @return mouse x
      */
     public double getMouseX() {
-        return mouseX;
+        return eventDispatcher.mouseX;
     }
 
     /**
@@ -837,7 +840,7 @@ public final class UIManager {
      * @return mouse y
      */
     public double getMouseY() {
-        return mouseY;
+        return eventDispatcher.mouseY;
     }
 
     /**
@@ -848,7 +851,7 @@ public final class UIManager {
      */
     public double getViewMouseX(@Nonnull View view) {
         IViewParent parent = view.getParent();
-        double mouseX = this.mouseX;
+        double mouseX = eventDispatcher.mouseX;
 
         while (parent != null) {
             mouseX += parent.getScrollX();
@@ -866,7 +869,7 @@ public final class UIManager {
      */
     public double getViewMouseY(@Nonnull View view) {
         IViewParent parent = view.getParent();
-        double mouseY = this.mouseY;
+        double mouseY = eventDispatcher.mouseY;
 
         while (parent != null) {
             mouseY += parent.getScrollY();
@@ -889,8 +892,8 @@ public final class UIManager {
         return appWindow.view;
     }
 
-    public void requestMouseRefresh() {
-        mouseRefreshRequested = true;
+    public void requestCursorRefresh() {
+        cursorRefreshRequested = true;
     }
 
     /**

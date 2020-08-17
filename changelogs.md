@@ -1,9 +1,11 @@
-### 1.16.1-2.0.5.62 (2020-08-??)
-**Font Engine works fine, UI is developing, keep update!**
+### 1.16.2-2.1.0.62 (2020-08-18)
+**Font Engine basically works fine, UI is developing**
  
+* Port to 1.16.2
+* Use a very hacky way to replace vanilla's bidi reordering
 * Optimize blur shader
 * Add OpenGL capabilities check
-* Make text caching work async
+* Make text caching work asynchronously
 
 ### 1.16.1-2.0.4.61 (2020-08-07)
 * Fix font renderer see through type

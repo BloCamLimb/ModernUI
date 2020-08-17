@@ -26,6 +26,7 @@ import icyllis.modernui.ui.layout.MeasureSpec;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.LinkedList;
 
 /**
  * The top of a view hierarchy, implementing the needed protocol between View
@@ -125,6 +126,13 @@ public final class ViewRootImpl implements IViewParent {
             canvas.moveTo(view);
             view.draw(canvas);
         }
+    }
+
+    boolean onCursorPosEvent(LinkedList<View> route, double x, double y) {
+        if (view != null) {
+            return view.onCursorPosEvent(route, x, y);
+        }
+        return false;
     }
 
     boolean onMouseEvent(MouseEvent event) {

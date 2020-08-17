@@ -26,6 +26,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.LinkedList;
 
 @SuppressWarnings("unused")
 @OnlyIn(Dist.CLIENT)
@@ -279,7 +280,7 @@ public abstract class ViewGroup extends View implements IViewParent {
     @Nullable
     @Override
     final <T extends View> T findViewTraversal(int id) {
-        if (id == getId()) {
+        if (id == this.id) {
             return (T) this;
         }
 
@@ -298,6 +299,26 @@ public abstract class ViewGroup extends View implements IViewParent {
         }
 
         return null;
+    }
+
+    @Override
+    final boolean onCursorPosEvent(LinkedList<View> route, double x, double y) {
+        if (x >= left && x < right && y >= top && y < bottom) {
+            if ((viewFlags & ENABLED_MASK) == ENABLED) {
+                route.add(this);
+            }
+            x += getScrollX();
+            y += getScrollY();
+            if (x >= left && x < right && y >= top && y < bottom) {
+                for (int i = childrenCount - 1; i >= 0; i--) {
+                    if (children[i].onCursorPosEvent(route, x, y)) {
+                        break;
+                    }
+                }
+            }
+            return true;
+        }
+        return false;
     }
 
     /**

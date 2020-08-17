@@ -109,6 +109,6 @@ public class ScrollView extends FrameLayout implements ScrollController.IListene
         if (getVerticalScrollBar() != null) {
             getVerticalScrollBar().setParameters(scrollRange, scrollAmount, getHeight());
         }
-        UIManager.getInstance().requestMouseRefresh();
+        UIManager.getInstance().requestCursorRefresh();
     }
 }
