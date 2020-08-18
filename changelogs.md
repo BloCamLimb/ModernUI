@@ -2,7 +2,7 @@
 **Font Engine basically works fine, UI is developing**
  
 * Port to 1.16.2
-* Use a very hacky way to replace vanilla's bidi reordering
+* Add support for IReorderingProcessor
 * Optimize blur shader
 * Add OpenGL capabilities check
 * Make text caching work asynchronously
