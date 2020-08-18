@@ -47,8 +47,7 @@ public class ReorderTextCopier implements ICharacterConsumer {
             // stopped
             return false;
         }
-        finish();
-        return true;
+        return finish();
     }
 
     @Override
@@ -56,6 +55,8 @@ public class ReorderTextCopier implements ICharacterConsumer {
         if (style != lastStyle) {
             if (!mutableString.chars.isEmpty() && lastStyle != null) {
                 if (behavior.consumeText(mutableString, lastStyle)) {
+                    mutableString.chars.clear();
+                    lastStyle = style;
                     // stop
                     return false;
                 }
@@ -73,12 +74,17 @@ public class ReorderTextCopier implements ICharacterConsumer {
         return true;
     }
 
-    private void finish() {
+    private boolean finish() {
         if (!mutableString.chars.isEmpty() && lastStyle != null) {
-            behavior.consumeText(mutableString, lastStyle);
+            if (behavior.consumeText(mutableString, lastStyle)) {
+                mutableString.chars.clear();
+                lastStyle = null;
+                return false;
+            }
         }
         mutableString.chars.clear();
         lastStyle = null;
+        return true;
     }
 
     @FunctionalInterface

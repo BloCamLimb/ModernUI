@@ -204,7 +204,7 @@ public class VanillaTextKey {
      */
     @Override
     public String toString() {
-        return str.toString();
+        throw new UnsupportedOperationException();
     }
 
     /**

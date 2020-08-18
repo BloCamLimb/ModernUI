@@ -29,8 +29,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 
-import java.util.Optional;
-
 @Mixin(ClientLanguageMap.class)
 public abstract class MixinClientLanguageMap {
 
@@ -61,9 +59,8 @@ public abstract class MixinClientLanguageMap {
      */
     @Overwrite
     public IReorderingProcessor func_241870_a(ITextProperties text) {
-        return TrueTypeRenderer.sGlobalRenderer ? copier -> !text.func_230439_a_((s, t) -> {
-            TextProcessing.func_238346_c_(t, s, copier);
-            return Optional.empty();
-        }, Style.EMPTY).isPresent() : BidiReorderer.func_243508_a(text, func_230505_b_());
+        return TrueTypeRenderer.sGlobalRenderer ?
+                copier -> TextProcessing.func_238343_a_(text, Style.EMPTY, copier)
+                : BidiReorderer.func_243508_a(text, func_230505_b_());
     }
 }

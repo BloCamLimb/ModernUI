@@ -235,6 +235,7 @@ public class ModernTextHandler extends CharacterManager {
         if (!processor.copier.copyAndConsume(text, (t, s) -> {
             if (sizeToWidth0(t, mutableFloat.floatValue(), s) < t.length()) {
                 sr.setValue(s);
+                // break with result
                 return true;
             }
             mutableFloat.subtract(processor.lookupVanillaNode(t, s).advance);
