@@ -738,9 +738,7 @@ public final class UIManager {
             view.tick(ticks);
         }
         for (ViewRootImpl window : windows) {
-            if (window.view != null) {
-                window.view.tick(ticks);
-            }
+            window.tick(ticks);
         }
         // view ticking is always performed before tasks
         if (!tasks.isEmpty()) {

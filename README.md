@@ -15,19 +15,21 @@
 ### Adding Modern UI to your project
 #### Development environment
 - Java 8u251
-- Forge 1.16.1-32.0.93
+- Forge 1.16.2-33.0.0
 #### Gradle configuration
 Add followings to `build.gradle`
 ```
-plugins {
-    id "com.wynprice.cursemaven" version "2.1.5"
+repositories {
+    maven {
+        name 'CurseMaven'
+        url 'https://www.cursemaven.com/'
+    }
 }
 ```
 ```
 dependencies {
-    compileOnly fg.deobf("curse.maven:ModernUI:[FileID -userdev]")
-    runtimeOnly fg.deobf("curse.maven:ModernUI:[FileID -universal]")
+    compile fg.deobf("curse.maven:ModernUI:[FileID -userdev]")
 }
 ```
-Latest version: (no stable build for 1.16.1) (FileID: )
+Latest version: (no stable build for 1.16.2) (FileID: )
 

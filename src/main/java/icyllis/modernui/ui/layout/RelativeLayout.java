@@ -707,17 +707,13 @@ public class RelativeLayout extends ViewGroup {
 
     @Override
     protected void onLayout(boolean changed) {
-        int count = getChildCount();
-
-        int left = getLeft();
-        int top = getTop();
+        final int count = getChildCount();
 
         for (int i = 0; i < count; i++) {
             View child = getChildAt(i);
             if (child.getVisibility() != GONE) {
                 LayoutParams lp = (LayoutParams) child.getLayoutParams();
-                child.layout(lp.mLeft + left, lp.mTop + top,
-                        lp.mRight + left, lp.mBottom + top);
+                child.layout(lp.mLeft, lp.mTop, lp.mRight, lp.mBottom);
             }
         }
     }

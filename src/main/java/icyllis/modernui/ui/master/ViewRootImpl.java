@@ -158,6 +158,12 @@ public final class ViewRootImpl implements IViewParent {
         }
     }
 
+    void tick(int ticks) {
+        if (view != null) {
+            view.tick(ticks);
+        }
+    }
+
     @Nullable
     @Override
     public IViewParent getParent() {

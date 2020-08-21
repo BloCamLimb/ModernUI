@@ -1,11 +1,10 @@
 ### 1.16.2-2.1.0.62 (2020-08-18)
-**Font Engine basically works fine, UI is developing**
+**Font Engine works fine, UI is developing, keep update!**
  
-* Port to 1.16.2
-* Add support for IReorderingProcessor
 * Optimize blur shader
 * Add OpenGL capabilities check
 * Make text caching work asynchronously
+* Add support for IReorderingProcessor
 
 ### 1.16.1-2.0.4.61 (2020-08-07)
 * Fix font renderer see through type
