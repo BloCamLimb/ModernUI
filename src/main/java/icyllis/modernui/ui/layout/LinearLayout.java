@@ -850,11 +850,11 @@ public class LinearLayout extends ViewGroup {
     private void layoutVertical() {
         int count = getChildCount();
 
-        int parentLeft = getLeft();
-        int parentRight = getRight();
+        int parentLeft = 0;
+        int parentRight = getWidth();
 
-        int parentTop = getTop();
-        int parentBottom = getBottom();
+        int parentTop = 0;
+        int parentBottom = getHeight();
 
         int parentWidth = getWidth();
         int parentHeight = getHeight();

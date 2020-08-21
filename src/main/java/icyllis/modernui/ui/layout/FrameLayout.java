@@ -112,11 +112,11 @@ public class FrameLayout extends ViewGroup {
     protected void onLayout(boolean changed) {
         int count = getChildCount();
 
-        int parentLeft = getLeft();
-        int parentRight = getRight();
+        int parentLeft = 0;
+        int parentRight = getWidth();
 
-        int parentTop = getTop();
-        int parentBottom = getBottom();
+        int parentTop = 0;
+        int parentBottom = getHeight();
 
         int parentWidth = getWidth();
         int parentHeight = getHeight();
