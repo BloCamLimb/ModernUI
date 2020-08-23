@@ -99,11 +99,11 @@ public class Canvas {
      */
     private double z = 0.0D;
 
-    /**
+    /*
      * Drawing location offset, view or drawable
      */
-    private int drawingX = 0;
-    private int drawingY = 0;
+    /*private int drawingX = 0;
+    private int drawingY = 0;*/
 
     /**
      * Elapsed time from a gui open
@@ -303,7 +303,7 @@ public class Canvas {
      * @return text advance (text width)
      */
     public float drawText(String text, float x, float y) {
-        return fontRenderer.drawFromCanvas(text, x + drawingX, y + drawingY, r, g, b, a, textAlign);
+        return fontRenderer.drawFromCanvas(text, x, y, r, g, b, a, textAlign);
     }
 
     /**
@@ -317,10 +317,10 @@ public class Canvas {
     public void drawRect(float left, float top, float right, float bottom) {
         RenderSystem.disableTexture();
 
-        left += drawingX;
+        /*left += drawingX;
         top += drawingY;
         right += drawingX;
-        bottom += drawingY;
+        bottom += drawingY;*/
 
         bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
         bufferBuilder.pos(left, bottom, z).color(r, g, b, a).endVertex();
@@ -343,10 +343,10 @@ public class Canvas {
     public void drawRectOutline(float left, float top, float right, float bottom, float thickness) {
         RenderSystem.disableTexture();
 
-        left += drawingX;
+        /*left += drawingX;
         top += drawingY;
         right += drawingX;
-        bottom += drawingY;
+        bottom += drawingY;*/
 
         /*ShaderTools.useShader(featheredRect);
         featheredRect.setThickness(0.25f);
@@ -412,10 +412,10 @@ public class Canvas {
     public void drawOctagonRectFrame(float left, float top, float right, float bottom, float bevel) {
         RenderSystem.disableTexture();
 
-        left += drawingX;
+        /*left += drawingX;
         top += drawingY;
         right += drawingX;
-        bottom += drawingY;
+        bottom += drawingY;*/
 
         final int r = this.r;
         final int g = this.g;
@@ -448,10 +448,10 @@ public class Canvas {
     public void drawRectLines(float left, float top, float right, float bottom) {
         RenderSystem.disableTexture();
 
-        left += drawingX;
+        /*left += drawingX;
         top += drawingY;
         right += drawingX;
-        bottom += drawingY;
+        bottom += drawingY;*/
 
         bufferBuilder.begin(GL11.GL_LINE_LOOP, DefaultVertexFormats.POSITION_COLOR);
         bufferBuilder.pos(left, bottom, z).color(r, g, b, a).endVertex();
@@ -492,7 +492,7 @@ public class Canvas {
     public void drawCircle(float centerX, float centerY, float radius) {
         RenderTools.useShader(circle);
         circle.setRadius(radius);
-        circle.setCenterPos(centerX + drawingX, centerY + drawingY);
+        circle.setCenterPos(centerX, centerY);
         drawRect(centerX - radius, centerY - radius, centerX + radius, centerY + radius);
         RenderTools.releaseShader();
     }
@@ -508,10 +508,10 @@ public class Canvas {
     public void drawLine(float startX, float startY, float stopX, float stopY) {
         RenderSystem.disableTexture();
 
-        startX += drawingX;
+        /*startX += drawingX;
         stopX += drawingX;
         startY += drawingY;
-        stopY += drawingY;
+        stopY += drawingY;*/
 
         bufferBuilder.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);
         bufferBuilder.pos(startX, startY, z).color(r, g, b, a).endVertex();
@@ -534,7 +534,7 @@ public class Canvas {
     public void drawRoundedRect(float left, float top, float right, float bottom, float radius) {
         RenderTools.useShader(roundedRect);
         roundedRect.setRadius(radius - 1); // we have feather radius 1px
-        roundedRect.setInnerRect(left + radius + drawingX, top + radius + drawingY, right - radius + drawingX, bottom - radius + drawingY);
+        roundedRect.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
         drawRect(left, top, right, bottom);
         RenderTools.releaseShader();
     }
@@ -592,10 +592,10 @@ public class Canvas {
         RenderSystem.enableTexture();
         icon.bindTexture();
 
-        left += drawingX;
+        /*left += drawingX;
         top += drawingY;
         right += drawingX;
-        bottom += drawingY;
+        bottom += drawingY;*/
 
         bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR_TEX);
         bufferBuilder.pos(left, bottom, z).color(r, g, b, a).tex(icon.getLeft(), icon.getBottom()).endVertex();
@@ -615,7 +615,7 @@ public class Canvas {
      * @param y    y pos
      */
     public void drawItem(@Nonnull Item item, float x, float y) {
-        itemRenderer.renderItemIntoGUI(item.getDefaultInstance(), (int) (x + drawingX), (int) (y + drawingY));
+        itemRenderer.renderItemIntoGUI(item.getDefaultInstance(), (int) (x), (int) (y));
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
     }
@@ -628,7 +628,7 @@ public class Canvas {
      * @param y     y pos
      */
     public void drawItemStack(@Nonnull ItemStack stack, float x, float y) {
-        itemRenderer.renderItemAndEffectIntoGUI(stack, (int) (x + drawingX), (int) (y + drawingY));
+        itemRenderer.renderItemAndEffectIntoGUI(stack, (int) (x), (int) (y));
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
     }
@@ -641,9 +641,9 @@ public class Canvas {
      * @param y     y pos
      */
     public void drawItemStackWithOverlays(@Nonnull ItemStack stack, float x, float y) {
-        itemRenderer.renderItemAndEffectIntoGUI(stack, (int) (x + drawingX), (int) (y + drawingY));
+        itemRenderer.renderItemAndEffectIntoGUI(stack, (int) (x), (int) (y));
         // force to use ModernUI font renderer
-        itemRenderer.renderItemOverlays(ModernFontRenderer.getInstance(), stack, (int) (x + drawingX), (int) (y + drawingY));
+        itemRenderer.renderItemOverlays(ModernFontRenderer.getInstance(), stack, (int) (x), (int) (y));
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
     }
@@ -654,9 +654,10 @@ public class Canvas {
      *
      * @param view view to move
      */
+    @Deprecated
     public void moveTo(@Nonnull View view) {
-        drawingX = view.getLeft();
-        drawingY = view.getTop();
+        /*drawingX = view.getLeft();
+        drawingY = view.getTop();*/
     }
 
     /**
@@ -665,14 +666,16 @@ public class Canvas {
      *
      * @param drawable drawable to move
      */
+    @Deprecated
     public void moveTo(@Nonnull Drawable drawable) {
-        drawingX = drawable.getLeft();
-        drawingY = drawable.getTop();
+        /*drawingX = drawable.getLeft();
+        drawingY = drawable.getTop();*/
     }
 
+    @Deprecated
     public void moveToZero() {
-        drawingX = 0;
-        drawingY = 0;
+        /*drawingX = 0;
+        drawingY = 0;*/
     }
 
     public void save() {

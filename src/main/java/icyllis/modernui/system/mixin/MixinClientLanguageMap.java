@@ -19,6 +19,7 @@
 package icyllis.modernui.system.mixin;
 
 import icyllis.modernui.font.TrueTypeRenderer;
+import icyllis.modernui.font.process.ReorderTextCopier;
 import net.minecraft.client.resources.ClientLanguageMap;
 import net.minecraft.client.util.BidiReorderer;
 import net.minecraft.util.IReorderingProcessor;
@@ -28,6 +29,8 @@ import net.minecraft.util.text.TextProcessing;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
+
+import java.util.Optional;
 
 @Mixin(ClientLanguageMap.class)
 public abstract class MixinClientLanguageMap {
@@ -60,7 +63,9 @@ public abstract class MixinClientLanguageMap {
     @Overwrite
     public IReorderingProcessor func_241870_a(ITextProperties text) {
         return TrueTypeRenderer.sGlobalRenderer ?
-                copier -> TextProcessing.func_238343_a_(text, Style.EMPTY, copier)
+                copier -> !text.func_230439_a_((s, t) ->
+                        TextProcessing.func_238341_a_(t, s, copier) ? Optional.empty()
+                                : AccessorTextProcessing.stopIteration(), Style.EMPTY).isPresent()
                 : BidiReorderer.func_243508_a(text, func_230505_b_());
     }
 }
