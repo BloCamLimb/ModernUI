@@ -18,11 +18,13 @@
 
 package icyllis.modernui.ui.example;
 
+import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.layout.FrameLayout;
 import icyllis.modernui.ui.layout.Gravity;
 import icyllis.modernui.ui.master.*;
 import icyllis.modernui.ui.widget.ScrollView;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public class TestFragment extends Fragment {
@@ -39,5 +41,13 @@ public class TestFragment extends Fragment {
         content.setLayoutParams(new FrameLayout.LayoutParams(140, 240));
         scrollView.addView(content);
         return scrollView;
+    }
+
+    private static class TestView extends View {
+
+        @Override
+        protected void onDraw(@Nonnull Canvas canvas) {
+            canvas.drawRing(100, 20, 5, 8);
+        }
     }
 }

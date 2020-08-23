@@ -46,7 +46,8 @@ public class TextRenderNode {
         }
 
         @Override
-        public float drawText(Matrix4f matrix, IRenderTypeBuffer buffer, @Nonnull CharSequence raw, float x, float y, int r, int g, int b, int a, boolean isShadow, boolean seeThrough, int colorBackground, int packedLight) {
+        public float drawText(Matrix4f matrix, IRenderTypeBuffer buffer, @Nonnull CharSequence raw, float x, float y,
+                              int r, int g, int b, int a, boolean isShadow, boolean seeThrough, int colorBackground, int packedLight) {
             return 0;
         }
     };
@@ -139,7 +140,8 @@ public class TextRenderNode {
         return advance;
     }
 
-    public float drawText(Matrix4f matrix, IRenderTypeBuffer buffer, @Nonnull CharSequence raw, float x, float y, int r, int g, int b, int a, boolean isShadow, boolean seeThrough, int colorBackground, int packedLight) {
+    public float drawText(Matrix4f matrix, IRenderTypeBuffer buffer, @Nonnull CharSequence raw, float x, float y,
+                          int r, int g, int b, int a, boolean isShadow, boolean seeThrough, int colorBackground, int packedLight) {
         final int startR = r;
         final int startG = g;
         final int startB = b;

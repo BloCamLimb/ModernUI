@@ -123,7 +123,6 @@ public final class ViewRootImpl implements IViewParent {
 
     void onDraw(Canvas canvas) {
         if (view != null) {
-            canvas.moveTo(view);
             view.draw(canvas);
         }
     }

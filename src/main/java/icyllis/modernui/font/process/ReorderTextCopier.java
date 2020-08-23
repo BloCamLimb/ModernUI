@@ -26,8 +26,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * A very hacky way to copy Mojang's (non) reordered text
- * There may be bugs
+ * Copy vanilla text from IReorderingProcessor
  */
 public class ReorderTextCopier implements ICharacterConsumer {
 
@@ -89,6 +88,7 @@ public class ReorderTextCopier implements ICharacterConsumer {
 
     @FunctionalInterface
     public interface Behavior {
+
         /**
          * @return {@code true} to stop action
          */

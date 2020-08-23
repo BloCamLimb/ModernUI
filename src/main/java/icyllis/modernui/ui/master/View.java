@@ -247,6 +247,8 @@ public class View {
      */
     public void draw(@Nonnull Canvas canvas) {
         if ((viewFlags & VISIBILITY_MASK) == 0) {
+            canvas.save();
+            canvas.translate(left, top);
 
             onDraw(canvas);
 
@@ -256,6 +258,7 @@ public class View {
             if (verticalScrollBar != null) {
                 verticalScrollBar.draw(canvas);
             }
+            canvas.restore();
         }
     }
 
