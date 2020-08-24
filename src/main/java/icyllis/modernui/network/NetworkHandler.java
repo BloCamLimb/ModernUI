@@ -38,29 +38,33 @@ import net.minecraftforge.fml.network.NetworkEvent;
 import net.minecraftforge.fml.network.NetworkRegistry;
 import net.minecraftforge.fml.network.simple.SimpleChannel;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
+import net.minecraftforge.fml.unsafe.UnsafeHacks;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+/**
+ * Modern UI does not require a network channel, you can copy this class and {@link IMessage} at your disposal
+ */
 @SuppressWarnings("unused")
 public class NetworkHandler {
 
     //public static final NetworkHandler INSTANCE = new NetworkHandler(ModernUI.MODID, "main_network");
 
-    protected SimpleChannel channel;
+    private SimpleChannel channel;
 
-    protected String protocol;
+    private String protocol;
 
-    private int index = 0;
+    private short index = 0;
 
     public NetworkHandler(@Nonnull String modid, @Nonnull String name) {
         channel = NetworkRegistry.ChannelBuilder
                 .named(new ResourceLocation(modid, name))
                 .networkProtocolVersion(this::getProtocolVersion)
-                .clientAcceptedVersions(this::checkProtocolOnClient)
-                .serverAcceptedVersions(this::checkProtocolOnServer)
+                .clientAcceptedVersions(this::checkServerProtocol)
+                .serverAcceptedVersions(this::checkClientProtocol)
                 .simpleChannel();
         protocol = ModList.get().getModFileById(modid).getMods().get(0).getVersion().getQualifier();
     }
@@ -69,43 +73,61 @@ public class NetworkHandler {
 
     }
 
+    /**
+     * Get the protocol version of this channel on current side
+     *
+     * @return the protocol
+     */
     public String getProtocolVersion() {
         return protocol;
     }
 
-    public boolean checkProtocolOnClient(@Nonnull String serverProtocol) {
+    /**
+     * Check the server protocol on client side
+     *
+     * @param serverProtocol the protocol of this channel sent from server side
+     * @return {@code true} to accept the protocol, {@code false} otherwise
+     */
+    public boolean checkServerProtocol(@Nonnull String serverProtocol) {
         return serverProtocol.equals(protocol);
     }
 
-    public boolean checkProtocolOnServer(@Nonnull String clientProtocol) {
+    /**
+     * Check the remote client protocol on server side
+     *
+     * @param clientProtocol the protocol of this channel sent from client side
+     * @return {@code true} to accept the protocol, {@code false} otherwise
+     */
+    public boolean checkClientProtocol(@Nonnull String clientProtocol) {
         return clientProtocol.equals(protocol);
     }
 
     /**
      * Register a network message
      *
-     * @param type      message class
-     * @param factory   factory to create default new instance every time, should be an empty constructor
+     * @param clazz     message class
      * @param direction message direction, either {@code null} for bi-directional message,
      *                  {@link NetworkDirection#PLAY_TO_CLIENT} or {@link NetworkDirection#PLAY_TO_SERVER}
      * @param <MSG>     message type
      */
-    public <MSG extends IMessage> void registerMessage(@Nonnull Class<MSG> type, @Nonnull Supplier<? extends MSG> factory,
-                                                       @Nullable NetworkDirection direction) {
+    public <MSG extends IMessage> void registerMessage(@Nonnull Class<MSG> clazz, @Nullable NetworkDirection direction) {
         /*CHANNEL.messageBuilder(type, ++index, direction)
                 .encoder(IMessage::encode)
                 .decoder(buf -> decode(factory, buf))
                 .consumer((BiConsumer<MSG, Supplier<NetworkEvent.Context>>) this::handle)
                 .add();*/
         synchronized (this) {
-            channel.registerMessage(index++, type, IMessage::encode, buf -> decode(factory, buf),
+            if (index == 0x100) {
+                throw new IllegalStateException("Maximum index reached when registering message");
+            }
+            channel.registerMessage(index++, clazz, IMessage::encode, buf -> decode(clazz, buf),
                     NetworkHandler::handle, Optional.ofNullable(direction));
         }
     }
 
     @Nonnull
-    private static <MSG extends IMessage> MSG decode(@Nonnull Supplier<MSG> factory, PacketBuffer buf) {
-        MSG msg = factory.get();
+    private static <MSG extends IMessage> MSG decode(@Nonnull Class<MSG> clazz, PacketBuffer buf) {
+        MSG msg = UnsafeHacks.newInstance(clazz);
         msg.decode(buf);
         return msg;
     }
@@ -115,6 +137,12 @@ public class NetworkHandler {
         ctx.get().setPacketHandled(true);
     }
 
+    /**
+     * Get player on current side depending on given network context for bi-directional message
+     *
+     * @param context network context
+     * @return player entity
+     */
     @Nullable
     public static PlayerEntity getPlayer(@Nonnull NetworkEvent.Context context) {
         if (context.getDirection().getOriginationSide().isClient()) {
@@ -125,7 +153,7 @@ public class NetworkHandler {
     }
 
     /**
-     * Reply a message depend on network context
+     * Reply a message depending on network context
      *
      * @param message message to reply
      * @param context network context
@@ -264,6 +292,6 @@ public class NetworkHandler {
     public <MSG extends IMessage> void sendToChunk(MSG message, @Nonnull Chunk chunk) {
         final IPacket<?> packet = channel.toVanillaPacket(message, NetworkDirection.PLAY_TO_CLIENT);
         ((ServerWorld) chunk.getWorld()).getChunkProvider().chunkManager.getTrackingPlayers(
-                chunk.getPos(), false).forEach(e -> e.connection.sendPacket(packet));
+                chunk.getPos(), false).forEach(player -> player.connection.sendPacket(packet));
     }
 }

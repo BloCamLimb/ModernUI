@@ -442,17 +442,22 @@ public class TextCacheProcessor {
             /* Step 2-5 */
             startBidiAnalysis(data, text);
 
-            /* Step 6 */
-            adjustGlyphIndex(data);
+            if (data.allList.isEmpty()) {
+                /* Sometimes naive, too young too simple */
+                node = TextRenderNode.EMPTY;
+            } else {
+                /* Step 6 */
+                adjustGlyphIndex(data);
 
-            /* Step 7 */
-            insertColorState(data);
+                /* Step 7 */
+                insertColorState(data);
 
-            /* Step 8 */
-            GlyphRenderInfo[] glyphs = data.wrapGlyphs();
+                /* Step 8 */
+                GlyphRenderInfo[] glyphs = data.wrapGlyphs();
 
-            /* Step 9 */
-            node = new TextRenderNode(glyphs, data.advance, data.hasEffect);
+                /* Step 9 */
+                node = new TextRenderNode(glyphs, data.advance, data.hasEffect);
+            }
         }
 
         /* Sometimes naive, too young too simple */

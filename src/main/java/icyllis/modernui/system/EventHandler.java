@@ -65,7 +65,7 @@ public class EventHandler {
     static class Client {
 
         @SubscribeEvent
-        static void onPlayerLogIn(@Nonnull ClientPlayerNetworkEvent.LoggedInEvent event) {
+        static void onPlayerLogin(@Nonnull ClientPlayerNetworkEvent.LoggedInEvent event) {
             ClientPlayerEntity playerEntity = event.getPlayer();
             if (playerEntity != null && RenderTools.glCapabilitiesErrors > 0) {
                 playerEntity.sendMessage(new StringTextComponent("[Modern UI] There are " + RenderTools.glCapabilitiesErrors +
