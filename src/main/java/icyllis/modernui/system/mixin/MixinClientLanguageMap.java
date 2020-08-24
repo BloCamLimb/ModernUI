@@ -19,7 +19,6 @@
 package icyllis.modernui.system.mixin;
 
 import icyllis.modernui.font.TrueTypeRenderer;
-import icyllis.modernui.font.process.ReorderTextCopier;
 import net.minecraft.client.resources.ClientLanguageMap;
 import net.minecraft.client.util.BidiReorderer;
 import net.minecraft.util.IReorderingProcessor;
@@ -58,7 +57,7 @@ public abstract class MixinClientLanguageMap {
      * Present = stopped, so return false
      *
      * @author BloCamLimb
-     * @reason Do not reorder, mojang
+     * @reason Do not reorder, Mojang
      */
     @Overwrite
     public IReorderingProcessor func_241870_a(ITextProperties text) {

@@ -27,24 +27,27 @@ import javax.annotation.Nonnull;
 public interface IMessage {
 
     /**
-     * Encode message to byte buffer
+     * Encode this message to byte buffer
      *
      * @param buffer buffer to write
      */
     void encode(@Nonnull PacketBuffer buffer);
 
     /**
-     * Decode message from byte buffer
+     * Decode this message from byte buffer
      *
      * @param buffer buffer to read
      */
     void decode(@Nonnull PacketBuffer buffer);
 
     /**
-     * Handle message on sided effective thread
+     * Handle this message on sided effective thread.
+     * <p>
      * To get the player {@link NetworkHandler#getPlayer(NetworkEvent.Context)}
      * To reply a message {@link NetworkHandler#reply(IMessage, NetworkEvent.Context)}
-     * There's no need to call {@link NetworkEvent.Context#setPacketHandled(boolean)}
+     * <p>
+     * It is not allowed to call {@link NetworkEvent.Context#setPacketHandled(boolean)}
+     * or {@link NetworkEvent.Context#enqueueWork(Runnable)}, they are redundant
      *
      * @param context network context
      */
