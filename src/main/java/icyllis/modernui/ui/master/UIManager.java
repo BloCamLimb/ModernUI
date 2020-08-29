@@ -663,7 +663,7 @@ public final class UIManager {
             event.setCanceled(true);
         }
         if (event.getType() == RenderGameOverlayEvent.ElementType.HOTBAR) {
-            // hotfix 1.16 for BlurHandler shader, I don't why...
+            // hotfix 1.16 for BlurHandler shader, I don't know why...
             RenderSystem.enableTexture();
         }
     }

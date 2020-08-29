@@ -21,6 +21,7 @@ package icyllis.modernui.ui.example;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.ui.animation.Animation;
 import icyllis.modernui.ui.animation.Applier;
 import icyllis.modernui.ui.animation.ITimeInterpolator;
@@ -28,9 +29,14 @@ import icyllis.modernui.ui.layout.Gravity;
 import icyllis.modernui.ui.layout.LinearLayout;
 import icyllis.modernui.ui.layout.Orientation;
 import icyllis.modernui.ui.master.View;
+import net.minecraft.client.MainWindow;
+import net.minecraft.client.Minecraft;
+import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.text.TextFormatting;
+import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
+import java.util.Arrays;
 
 public class TestLinearLayout extends LinearLayout {
 
@@ -104,17 +110,17 @@ public class TestLinearLayout extends LinearLayout {
         super.onDraw(canvas);
         canvas.moveTo(this);
         canvas.resetColor();
-        //canvas.drawText(TextFormatting.GOLD + "LinearLayout " + canvas.getDrawingTime(), 0, 0);
+        canvas.drawText(TextFormatting.GOLD + "LinearLayout " + canvas.getDrawingTime(), 0, 0);
 
         // 1
 
+        canvas.save();
         RenderSystem.depthMask(true);
 
-        RenderSystem.pushMatrix();
         //canvas.scale(f, f, getLeft() + 10, getTop() + 10);
         RenderSystem.translatef(0, 0, 0.001f);
         RenderSystem.colorMask(false, false, false, false);
-        canvas.setColor(0, 0, 0, 128);
+        //canvas.setColor(0, 0, 0, 128);
 
         canvas.drawRect(c, c, 20 - c, 20 - c);
         RenderSystem.translatef(0, 0, -0.001f);
@@ -124,8 +130,12 @@ public class TestLinearLayout extends LinearLayout {
         canvas.setColor(80, 210, 240, 128);
         canvas.drawRoundedRect(0, 0, 20, 20, 3);
 
-        RenderSystem.popMatrix();
+        canvas.restore();
         RenderSystem.depthMask(false);
+
+
+
+        // 4
 
         canvas.setAlpha(255);
         canvas.save();
@@ -144,6 +154,7 @@ public class TestLinearLayout extends LinearLayout {
         canvas.translate((float) Math.sin(circleAcc4) * 8, (float) Math.cos(circleAcc4) * 8);
         canvas.drawCircle(40, 18, 1.5f);
         canvas.restore();
+
 
         // 2
         /*GL11.glEnable(GL11.GL_STENCIL_TEST);

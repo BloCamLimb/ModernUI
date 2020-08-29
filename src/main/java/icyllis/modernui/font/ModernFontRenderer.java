@@ -21,6 +21,7 @@ package icyllis.modernui.font;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.node.TextRenderNode;
 import icyllis.modernui.font.process.TextCacheProcessor;
+import icyllis.modernui.system.mixin.AccessorFontRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.fonts.Font;
@@ -29,7 +30,6 @@ import net.minecraft.client.renderer.entity.EntityRendererManager;
 import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.vector.Matrix4f;
-import net.minecraft.util.math.vector.Vector3f;
 import net.minecraft.util.text.CharacterManager;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.Style;
@@ -53,8 +53,6 @@ public class ModernFontRenderer extends FontRenderer {
      */
     private static ModernFontRenderer instance;
 
-    public static final Vector3f SHADOW_LIFTING = new Vector3f(0.0f, 0.0f, 0.03f);
-
     /**
      * Config value
      */
@@ -63,7 +61,7 @@ public class ModernFontRenderer extends FontRenderer {
 
     private final TextCacheProcessor processor = TextCacheProcessor.getInstance();
 
-    private final MutableFloat mutableFloat = new MutableFloat();
+    private final MutableFloat tempFloat = new MutableFloat();
 
     private FontRenderer originalRenderer;
 
@@ -134,29 +132,29 @@ public class ModernFontRenderer extends FontRenderer {
     @Override
     public int func_243247_a(@Nonnull ITextComponent text, float x, float y, int color, boolean dropShadow, @Nonnull Matrix4f matrix,
                              @Nonnull IRenderTypeBuffer buffer, boolean seeThrough, int colorBackground, int packedLight) {
-        mutableFloat.setValue(x);
+        tempFloat.setValue(x);
         // iterate all siblings
         text.func_230439_a_((style, string) -> {
-            mutableFloat.add(drawLayer0(string, mutableFloat.floatValue(), y, color, dropShadow, matrix,
+            tempFloat.add(drawLayer0(string, tempFloat.floatValue(), y, color, dropShadow, matrix,
                     buffer, seeThrough, colorBackground, packedLight, style));
             // continue
             return Optional.empty();
         }, Style.EMPTY);
-        return mutableFloat.intValue() + (dropShadow ? 1 : 0);
+        return tempFloat.intValue() + (dropShadow ? 1 : 0);
     }
 
     @Override
     public int func_238416_a_(@Nonnull IReorderingProcessor text, float x, float y, int color, boolean dropShadow, @Nonnull Matrix4f matrix,
                               @Nonnull IRenderTypeBuffer buffer, boolean seeThrough, int colorBackground, int packedLight) {
-        mutableFloat.setValue(x);
+        tempFloat.setValue(x);
         processor.copier.copyAndConsume(text, (string, style) -> {
-                    mutableFloat.add(drawLayer0(string, mutableFloat.floatValue(), y, color, dropShadow, matrix,
+                    tempFloat.add(drawLayer0(string, tempFloat.floatValue(), y, color, dropShadow, matrix,
                             buffer, seeThrough, colorBackground, packedLight, style));
                     // continue, equals to Optional.empty()
                     return false;
                 }
         );
-        return mutableFloat.intValue() + (dropShadow ? 1 : 0);
+        return tempFloat.intValue() + (dropShadow ? 1 : 0);
     }
 
     private float drawLayer0(@Nonnull CharSequence string, float x, float y, int color, boolean dropShadow, Matrix4f matrix,
@@ -180,7 +178,7 @@ public class ModernFontRenderer extends FontRenderer {
             node.drawText(matrix, buffer, string, x + 1, y + 1, r >> 2, g >> 2, b >> 2, a, true,
                     transparent, colorBackground, packedLight);
             matrix = matrix.copy();
-            matrix.translate(SHADOW_LIFTING);
+            matrix.translate(AccessorFontRenderer.shadowLifting());
         }
 
         return node.drawText(matrix, buffer, string, x, y, r, g, b, a, false, transparent, colorBackground, packedLight);
