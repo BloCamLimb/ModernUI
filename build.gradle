@@ -69,7 +69,7 @@ configurations {
 }
 
 minecraft {
-    mappings channel: 'snapshot', version: '20200723-1.16.1'
+    mappings channel: 'snapshot', version: '20200820-1.16.1'
 
     accessTransformer(file('src/main/resources/META-INF/accesstransformer.cfg'))
 
@@ -124,8 +124,12 @@ repositories {
         url "https://dvs1.progwml6.com/files/maven/"
     }
     maven {
-        name "tterrag maven"
+        name 'tterrag maven'
         url "https://maven.tterrag.com/"
+    }
+    maven {
+        name 'Gigaherz maven'
+        url 'https://www.dogforce-games.com/maven/'
     }
 }
 

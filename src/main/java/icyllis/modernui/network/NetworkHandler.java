@@ -38,7 +38,6 @@ import net.minecraftforge.fml.network.NetworkEvent;
 import net.minecraftforge.fml.network.NetworkRegistry;
 import net.minecraftforge.fml.network.simple.SimpleChannel;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
-import net.minecraftforge.fml.unsafe.UnsafeHacks;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -103,14 +102,17 @@ public class NetworkHandler {
     }
 
     /**
-     * Register a network message
+     * Register a network message, for example
+     * "registerMessage(MyMessage.class, MyMessage::new, NetworkDirection.PLAY_TO_SERVER)"
      *
      * @param clazz     message class
+     * @param factory   factory to create new instance
      * @param direction message direction, either {@code null} for bi-directional message,
      *                  {@link NetworkDirection#PLAY_TO_CLIENT} or {@link NetworkDirection#PLAY_TO_SERVER}
      * @param <MSG>     message type
      */
-    public <MSG extends IMessage> void registerMessage(@Nonnull Class<MSG> clazz, @Nullable NetworkDirection direction) {
+    public <MSG extends IMessage> void registerMessage(@Nonnull Class<MSG> clazz, @Nonnull Supplier<MSG> factory,
+                                                       @Nullable NetworkDirection direction) {
         /*CHANNEL.messageBuilder(type, ++index, direction)
                 .encoder(IMessage::encode)
                 .decoder(buf -> decode(factory, buf))
@@ -120,14 +122,14 @@ public class NetworkHandler {
             if (index == 0x100) {
                 throw new IllegalStateException("Maximum index reached when registering message");
             }
-            channel.registerMessage(index++, clazz, IMessage::encode, buf -> decode(clazz, buf),
+            channel.registerMessage(index++, clazz, IMessage::encode, buf -> decode(factory, buf),
                     NetworkHandler::handle, Optional.ofNullable(direction));
         }
     }
 
     @Nonnull
-    private static <MSG extends IMessage> MSG decode(@Nonnull Class<MSG> clazz, PacketBuffer buf) {
-        MSG msg = UnsafeHacks.newInstance(clazz);
+    private static <MSG extends IMessage> MSG decode(@Nonnull Supplier<MSG> factory, PacketBuffer buf) {
+        MSG msg = factory.get();
         msg.decode(buf);
         return msg;
     }
@@ -204,7 +206,7 @@ public class NetworkHandler {
      * @param players players on server
      * @param <MSG>   message type
      */
-    public <MSG extends IMessage> void sendToPlayers(MSG message, @Nonnull Iterable<PlayerEntity> players) {
+    public <MSG extends IMessage> void sendToPlayers(MSG message, @Nonnull Iterable<? extends PlayerEntity> players) {
         final IPacket<?> packet = channel.toVanillaPacket(message, NetworkDirection.PLAY_TO_CLIENT);
         for (PlayerEntity player : players) {
             ((ServerPlayerEntity) player).connection.sendPacket(packet);

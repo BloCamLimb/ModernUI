@@ -29,7 +29,7 @@ public final class GlobalEventDispatcher {
     double mouseX;
     double mouseY;
 
-    // absolute hovered and enabled views
+    // mouse hovered views, no matter whether the view is enabled or not
     private final LinkedList<View> route = new LinkedList<>();
 
     GlobalEventDispatcher(List<ViewRootImpl> windows) {
