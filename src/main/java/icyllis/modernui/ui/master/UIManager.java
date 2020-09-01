@@ -25,6 +25,7 @@ import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.system.Config;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.ui.animation.Animation;
+import icyllis.modernui.ui.example.TestHUD;
 import icyllis.modernui.ui.layout.MeasureSpec;
 import icyllis.modernui.ui.test.IModule;
 import net.minecraft.client.Minecraft;
@@ -131,7 +132,7 @@ public final class UIManager {
     private final MouseEvent mouseEvent = new MouseEvent();
 
     // for double click check
-    private int lastLmTick = Integer.MIN_VALUE;
+    private int  lastLmTick = Integer.MIN_VALUE;
     @Nullable
     private View lastLmView;
 
@@ -659,12 +660,21 @@ public final class UIManager {
 
     @SubscribeEvent
     void gRenderGameOverlay(@Nonnull RenderGameOverlayEvent.Pre event) {
-        if (modernScreen != null && event.getType() == RenderGameOverlayEvent.ElementType.CROSSHAIRS) {
-            event.setCanceled(true);
-        }
-        if (event.getType() == RenderGameOverlayEvent.ElementType.HOTBAR) {
-            // hotfix 1.16 for BlurHandler shader, I don't know why...
-            RenderSystem.enableTexture();
+        switch (event.getType()) {
+            case CROSSHAIRS:
+                if (modernScreen != null) {
+                    event.setCanceled(true);
+                }
+                break;
+            case HOTBAR:
+            case HELMET:
+                // hotfix 1.16 for BlurHandler shader
+                RenderSystem.enableTexture();
+                break;
+            case HEALTH:
+                if (Config.isDeveloperMode())
+                    TestHUD.drawHealth(canvas);
+                break;
         }
     }
 
@@ -760,14 +770,14 @@ public final class UIManager {
     @SubscribeEvent
     void globalRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
-            // ticks to millis
-            timeMillis = (long) ((ticks + event.renderTickTime) * 50.0f);
+            // ticks to millis, the Timer in Minecraft is different from that in Event when game paused
+            timeMillis = (long) ((ticks + minecraft.getRenderPartialTicks()) * 50.0f);
 
             for (Animation animation : animations) {
                 animation.update(timeMillis);
             }
         } else {
-            // remove animations from loop
+            // remove animations from loop on end
             if (!animations.isEmpty()) {
                 animations.removeIf(Animation::shouldRemove);
             }
