@@ -1,6 +1,13 @@
-### 1.16.2-2.1.0.62 (2020-08-18)
+### 1.16.2-2.1.1.63 (2020-09-01)
 **Font Engine works fine, UI is developing, keep update!**
  
+* Fix IReorderingProcessor generator
+* Fix empty layout node not being considered
+* Fix blur effect with pumpkin on the head
+* Fix animation time disruption between frames
+* Fix animation timer on game paused
+
+### 1.16.2-2.1.0.62 (2020-08-18)
 * Optimize blur shader
 * Add OpenGL capabilities check
 * Make text caching work asynchronously
