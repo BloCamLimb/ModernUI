@@ -21,21 +21,22 @@ package icyllis.modernui.ui.example;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.system.mixin.AccessorFoodStats;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.AbstractGui;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.FoodStats;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraftforge.client.model.animation.Animation;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
-import java.text.DecimalFormat;
 
 public class TestHUD {
 
-    private static DecimalFormat decimalFormat = new DecimalFormat("#.00");
+    //private static DecimalFormat decimalFormat = new DecimalFormat("#.00");
 
     public static void drawHealth(@Nonnull Canvas canvas) {
         RenderSystem.enableBlend();
@@ -71,10 +72,19 @@ public class TestHUD {
         GL11.glRotatef(Math.abs(MathHelper.cos(f1 * (float) Math.PI - 0.2f) * f2) * 5.0f, 1, 0, 0);
 
         canvas.setColor(255, 19, 19, 128);
-        canvas.drawRoundedRect(0, 25, player.getHealth() * 140 / player.getMaxHealth(), 39, 4);
+        canvas.drawRoundedRect(0, 25, player.getHealth() * 140 / player.getMaxHealth(), 37, 4);
+        canvas.setColor(86, 184, 255, 128);
+        canvas.drawRoundedRect(0, 11, player.getAir() * 140f / player.getMaxAir(), 23, 4);
+        canvas.setColor(184, 132, 88, 128);
+        FoodStats foodStats = player.getFoodStats();
+        canvas.drawRoundedRect(0, -3, foodStats.getFoodLevel() * 7, 9, 4);
+
         canvas.resetColor();
         canvas.setTextAlign(TextAlign.CENTER);
-        canvas.drawText(String.format("%.2f %s %.2f", player.getHealth(), "/", player.getMaxHealth()), 70, 28);
+        canvas.drawText(String.format("%.2f / %.2f", player.getHealth(), player.getMaxHealth()), 70, 27);
+        canvas.drawText(String.format("%d / %d", player.getAir(), player.getMaxAir()), 70, 13);
+        canvas.drawText(String.format("%d / %.2f / %.2f", foodStats.getFoodLevel(), foodStats.getSaturationLevel(),
+                ((AccessorFoodStats) foodStats).getExhaustionLevel()), 70, -1);
 
         RenderSystem.enableDepthTest();
         GL11.glPopMatrix();

@@ -53,8 +53,8 @@ public class ModernUI {
     private static void checkJava() {
         String javaVersion = System.getProperty("java.version");
         if (javaVersion.startsWith("1.8")) {
-            String[] s = javaVersion.split("_");
-            if (Integer.parseInt(s[1]) < 60) {
+            int update = Integer.parseInt(javaVersion.split("_")[1]);
+            if (update < 60) {
                 throw new IllegalStateException(
                         "You're using java " + javaVersion + " which is not compatible with Modern UI, " +
                                 "a minimum of java 1.8.0_251 or above is required");
