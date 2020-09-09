@@ -19,6 +19,7 @@
 package icyllis.modernui.network;
 
 import icyllis.modernui.network.message.IMessage;
+import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -50,7 +51,7 @@ import java.util.function.Supplier;
 @SuppressWarnings("unused")
 public class NetworkHandler {
 
-    //public static final NetworkHandler INSTANCE = new NetworkHandler(ModernUI.MODID, "main_network");
+    public static final NetworkHandler INSTANCE = new NetworkHandler(ModernUI.MODID, "main_network");
 
     private SimpleChannel channel;
 
@@ -59,13 +60,13 @@ public class NetworkHandler {
     private short index = 0;
 
     public NetworkHandler(@Nonnull String modid, @Nonnull String name) {
+        protocol = ModList.get().getModFileById(modid).getMods().get(0).getVersion().getQualifier();
         channel = NetworkRegistry.ChannelBuilder
                 .named(new ResourceLocation(modid, name))
                 .networkProtocolVersion(this::getProtocolVersion)
-                .clientAcceptedVersions(this::checkServerProtocol)
-                .serverAcceptedVersions(this::checkClientProtocol)
+                .clientAcceptedVersions(this::verifyServerProtocol)
+                .serverAcceptedVersions(this::verifyClientProtocol)
                 .simpleChannel();
-        protocol = ModList.get().getModFileById(modid).getMods().get(0).getVersion().getQualifier();
     }
 
     public NetworkHandler() {
@@ -82,23 +83,24 @@ public class NetworkHandler {
     }
 
     /**
-     * Check the server protocol on client side
+     * This method will run on client to verify the server protocol that sent by handshake network channel
      *
      * @param serverProtocol the protocol of this channel sent from server side
      * @return {@code true} to accept the protocol, {@code false} otherwise
      */
-    public boolean checkServerProtocol(@Nonnull String serverProtocol) {
-        return serverProtocol.equals(protocol);
+    public boolean verifyServerProtocol(@Nonnull String serverProtocol) {
+        return serverProtocol.equals(protocol) || serverProtocol.equals(NetworkRegistry.ABSENT);
     }
 
     /**
-     * Check the remote client protocol on server side
+     * This method will run on server to verify the remote client protocol that sent by handshake network channel
      *
      * @param clientProtocol the protocol of this channel sent from client side
      * @return {@code true} to accept the protocol, {@code false} otherwise
      */
-    public boolean checkClientProtocol(@Nonnull String clientProtocol) {
-        return clientProtocol.equals(protocol);
+    public boolean verifyClientProtocol(@Nonnull String clientProtocol) {
+        return clientProtocol.equals(protocol) || clientProtocol.equals(NetworkRegistry.ABSENT)
+                || clientProtocol.equals(NetworkRegistry.ACCEPTVANILLA);
     }
 
     /**

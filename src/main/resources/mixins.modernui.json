@@ -5,8 +5,10 @@
   "package": "icyllis.modernui.system.mixin",
   "client": [
     "AccessorFontRenderer",
+    "AccessorFoodStats",
     "AccessorTextProcessing",
     "MixinClientLanguageMap",
+    "MixinFoodStats",
     "MixinMainWindow",
     "MixinMatrix4f",
     "MixinScreen"

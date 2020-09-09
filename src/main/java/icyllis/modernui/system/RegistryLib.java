@@ -18,6 +18,8 @@
 
 package icyllis.modernui.system;
 
+import icyllis.modernui.network.NetworkHandler;
+import icyllis.modernui.network.message.FoodSaturationMessage;
 import icyllis.modernui.ui.example.ContainerTest;
 import icyllis.modernui.ui.example.TestFragment;
 import icyllis.modernui.ui.master.UIManager;
@@ -35,6 +37,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.network.IContainerFactory;
+import net.minecraftforge.fml.network.NetworkDirection;
 import net.minecraftforge.registries.IForgeRegistry;
 
 import javax.annotation.Nonnull;
@@ -65,13 +68,12 @@ public class RegistryLib {
     @SubscribeEvent
     static void registerContainers(@Nonnull RegistryEvent.Register<ContainerType<?>> event) {
         final IForgeRegistry<ContainerType<?>> registry = event.getRegistry();
-
         TEST_CONTAINER = registerContainer(registry, ContainerTest::new, "test");
     }
 
     @SubscribeEvent
     static void setupCommon(@Nonnull FMLCommonSetupEvent event) {
-
+        NetworkHandler.INSTANCE.registerMessage(FoodSaturationMessage.class, FoodSaturationMessage::new, NetworkDirection.PLAY_TO_CLIENT);
     }
 
     @OnlyIn(Dist.CLIENT)
