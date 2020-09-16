@@ -18,9 +18,11 @@
 
 package icyllis.modernui.system;
 
+import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
-import net.optifine.shaders.gui.GuiShaders;
+import net.minecraft.client.gui.screen.Screen;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 public class ModIntegration {
@@ -32,7 +34,7 @@ public class ModIntegration {
             Class<?> clazz = Class.forName("optifine.Installer");
             String ver = (String) clazz.getMethod("getOptiFineVersion").invoke(null);
             optifineLoaded = true;
-            ModernUI.LOGGER.debug(ModernUI.MARKER, "OptiFine Loaded : {}", ver);
+            ModernUI.LOGGER.debug(ModernUI.MARKER, "OptiFine loaded: {}", ver);
         } catch (ClassNotFoundException | NoSuchMethodException ignored) {
 
         } catch (IllegalAccessException | InvocationTargetException e) {
@@ -44,7 +46,14 @@ public class ModIntegration {
 
         public static void openShadersGui() {
             Minecraft minecraft = Minecraft.getInstance();
-            minecraft.displayGuiScreen(new GuiShaders(minecraft.currentScreen, minecraft.gameSettings));
+            try {
+                Class<?> clazz = Class.forName("net.optifine.shaders.gui.GuiShaders");
+                Constructor<?> con = clazz.getConstructor(Screen.class, GameSettings.class);
+                minecraft.displayGuiScreen((Screen) con.newInstance(minecraft.currentScreen, minecraft.gameSettings));
+            } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException |
+                    InstantiationException | InvocationTargetException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

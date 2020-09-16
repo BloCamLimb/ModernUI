@@ -62,7 +62,7 @@ public abstract class MixinClientLanguageMap {
     @Overwrite
     public IReorderingProcessor func_241870_a(ITextProperties text) {
         return TrueTypeRenderer.sGlobalRenderer ?
-                copier -> !text.func_230439_a_((s, t) ->
+                copier -> !text.getComponentWithStyle((s, t) ->
                         TextProcessing.func_238341_a_(t, s, copier) ? Optional.empty()
                                 : AccessorTextProcessing.stopIteration(), Style.EMPTY).isPresent()
                 : BidiReorderer.func_243508_a(text, func_230505_b_());

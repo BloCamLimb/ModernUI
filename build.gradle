@@ -69,7 +69,7 @@ configurations {
 }
 
 minecraft {
-    mappings channel: 'snapshot', version: '20200820-1.16.1'
+    mappings channel: 'snapshot', version: '20200916-1.16.2'
 
     accessTransformer(file('src/main/resources/META-INF/accesstransformer.cfg'))
 
@@ -138,8 +138,8 @@ dependencies {
 
     shade "com.github.ben-manes.caffeine:caffeine:${caffeine_version}"
 
-    compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}:api")
-    runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}")
+    //compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}:api")
+    //runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}")
 
     compileOnly files('/libs/OptiFine_1.15.2_HD_U_G1_pre14_MOD_dev.jar')
     implementation 'org.jetbrains:annotations:15.0'

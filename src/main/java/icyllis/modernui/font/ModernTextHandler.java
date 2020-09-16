@@ -79,7 +79,7 @@ public class ModernTextHandler extends CharacterManager {
     public float func_238356_a_(@Nonnull ITextProperties text) {
         mutableFloat.setValue(0);
         // iterate all siblings
-        text.func_230439_a_((s, t) -> {
+        text.getComponentWithStyle((s, t) -> {
             if (!t.isEmpty()) {
                 mutableFloat.add(processor.lookupVanillaNode(t, s).advance);
             }
@@ -209,7 +209,7 @@ public class ModernTextHandler extends CharacterManager {
     public Style func_238357_a_(@Nonnull ITextProperties text, int width) {
         mutableFloat.setValue(width);
         // iterate all siblings
-        return text.func_230439_a_((s, t) -> {
+        return text.getComponentWithStyle((s, t) -> {
             if (sizeToWidth0(t, mutableFloat.floatValue(), s) < t.length()) {
                 return Optional.of(s);
             }
@@ -262,7 +262,7 @@ public class ModernTextHandler extends CharacterManager {
         TextPropertiesManager collector = new TextPropertiesManager();
         mutableFloat.setValue(width);
         // iterate all siblings
-        return textIn.func_230439_a_((style, text) -> {
+        return textIn.getComponentWithStyle((style, text) -> {
             int size;
             if ((size = sizeToWidth0(text, mutableFloat.floatValue(), style)) < text.length()) {
                 String sub = text.substring(0, size);

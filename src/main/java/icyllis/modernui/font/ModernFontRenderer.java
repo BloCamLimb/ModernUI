@@ -134,7 +134,7 @@ public class ModernFontRenderer extends FontRenderer {
                              @Nonnull IRenderTypeBuffer buffer, boolean seeThrough, int colorBackground, int packedLight) {
         tempFloat.setValue(x);
         // iterate all siblings
-        text.func_230439_a_((style, string) -> {
+        text.getComponentWithStyle((style, string) -> {
             tempFloat.add(drawLayer0(string, tempFloat.floatValue(), y, color, dropShadow, matrix,
                     buffer, seeThrough, colorBackground, packedLight, style));
             // continue

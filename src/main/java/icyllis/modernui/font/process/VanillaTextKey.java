@@ -96,7 +96,7 @@ public class VanillaTextKey {
         int r = 0;
         if (style.getColor() != null) {
             // RGB - 24 bit
-            r |= style.getColor().func_240742_a_();
+            r |= style.getColor().getColor();
         }
         if (style.getBold()) {
             r |= 1 << 24;
