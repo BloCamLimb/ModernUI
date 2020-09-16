@@ -86,7 +86,7 @@ public class TextProcessRegister {
      */
     public void beginProcess(@Nonnull Style style) {
         if (style.getColor() != null) {
-            defaultColor = style.getColor().func_240742_a_();
+            defaultColor = style.getColor().getColor();
             //colors.add(new ColorStateInfo(0, defaultColor));
         } else {
             defaultColor = NO_COLOR;

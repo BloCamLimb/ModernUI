@@ -101,7 +101,7 @@ public class FormattingStyle {
     }
 
     public static int getColor(@Nonnull Style style) {
-        return style.getColor() == null ? NO_COLOR : style.getColor().func_240742_a_();
+        return style.getColor() == null ? NO_COLOR : style.getColor().getColor();
     }
 
     /**

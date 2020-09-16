@@ -27,10 +27,6 @@ import icyllis.modernui.system.SettingsManager;
 import icyllis.modernui.ui.test.Module;
 import net.minecraft.client.AbstractOption;
 import net.minecraft.client.resources.I18n;
-import net.optifine.config.IteratableOptionOF;
-import net.optifine.gui.GuiAnimationSettingsOF;
-import net.optifine.gui.GuiDetailSettingsOF;
-import net.optifine.gui.GuiPerformanceSettingsOF;
 
 import javax.annotation.Nonnull;
 import java.lang.reflect.Field;
@@ -150,14 +146,15 @@ public class SettingVideo extends Module {
 
         if (ModIntegration.optifineLoaded) {
             try {
-                Field field = GuiDetailSettingsOF.class.getDeclaredField("enumOptions");
+                Field field = Class.forName("net.optifine.gui.GuiDetailSettingsOF").getDeclaredField("enumOptions");
                 field.setAccessible(true);
                 for (AbstractOption option : (AbstractOption[]) field.get(null)) {
-                    if (option instanceof IteratableOptionOF) {
+                    // deprecated
+                    /*if (option instanceof IteratableOptionOF) {
                         list.add(SettingsManager.INSTANCE.transformToOptiFine(window, (IteratableOptionOF) option));
-                    }
+                    }*/
                 }
-            } catch (NoSuchFieldException | IllegalAccessException e) {
+            } catch (NoSuchFieldException | IllegalAccessException | ClassNotFoundException e) {
                 e.printStackTrace();
             }
             //  Clouds, Cloud Height, Trees, Rain, Sky, Stars, Sun Moon, Show Capes, Fog Fancy, Fog Start,
@@ -174,7 +171,7 @@ public class SettingVideo extends Module {
         list.add(SettingsManager.PARTICLES.apply(window));
 
         if (ModIntegration.optifineLoaded) {
-            try {
+            /*try {
                 Field field = GuiAnimationSettingsOF.class.getDeclaredField("enumOptions");
                 field.setAccessible(true);
                 for (AbstractOption option : (AbstractOption[]) field.get(null)) {
@@ -184,7 +181,7 @@ public class SettingVideo extends Module {
                 }
             } catch (NoSuchFieldException | IllegalAccessException e) {
                 e.printStackTrace();
-            }
+            }*/
             //  Animated Water, Animated Lava, Animated Fire, Animated Portal, Animated Redstone, Animated Explosion, Animated Flame, Animated Smoke, Void Particles, Water Particles,
             //  Rain Splash, Portal Particles, Potion Particles, Dripping Water Lava, Animated Terrain, Animated Textures, Firework Particles
         }
@@ -196,7 +193,7 @@ public class SettingVideo extends Module {
     private void addPerformanceCategory(List<SettingCategoryGroup> groups) {
         List<SettingEntry> list = new ArrayList<>();
 
-        try {
+        /*try {
             Field field = GuiPerformanceSettingsOF.class.getDeclaredField("enumOptions");
             field.setAccessible(true);
             for (AbstractOption option : (AbstractOption[]) field.get(null)) {
@@ -206,7 +203,7 @@ public class SettingVideo extends Module {
             }
         } catch (NoSuchFieldException | IllegalAccessException e) {
             e.printStackTrace();
-        }
+        }*/
         //  Smooth Fps, Smooth World, Fast Render, Fast Math, Chunk Updates, Chunk Updates Dynamic, Render Regions, Lazy Chunk Loading, Smart Animations
 
         SettingCategoryGroup categoryGroup = new SettingCategoryGroup(window, I18n.format("gui.modernui.settings.category.performance"), list);
