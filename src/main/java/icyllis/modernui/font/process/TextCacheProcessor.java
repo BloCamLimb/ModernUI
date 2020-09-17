@@ -871,7 +871,10 @@ public class TextCacheProcessor {
 
             for (int i = 0; i < num; i++) {
                 /* Exclude some auxiliary characters (e.g in Hindi) */
-                if (vector.getGlyphMetrics(i).getAdvanceX() == 0) {
+                /*if (vector.getGlyphMetrics(i).getAdvanceX() == 0) {
+                    continue;
+                }*/
+                if (vector.getGlyphMetrics(i).getBounds2D().getWidth() == 0) {
                     continue;
                 }
 
