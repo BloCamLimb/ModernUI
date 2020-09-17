@@ -1,9 +1,12 @@
-### 1.16.2-2.1.1.63 (2020-09-01)
+### 1.16.3-2.2.0.64 (2020-09-17)
 **Font Engine works fine, UI is developing, keep update!**
  
+* Port to 1.16.3
+
+### 1.16.2-2.1.1.63 (2020-09-01)
 * Fix IReorderingProcessor generator
 * Fix empty layout node not being considered
-* Fix blur effect with pumpkin on the head
+* Fix blur effect with pumpkins on the head
 * Fix animation time disruption between frames
 * Fix animation timer on game paused
 
@@ -42,7 +45,7 @@
 * Reduce the requirement of OpenGL 4.6 to OpenGL 4.3
 * Improve the text layout accuracy of font renderer
 * Improve the size and advance accuracy of glyph
-* Improve the align accuracy of digit rendering
+* Improve the alignment accuracy of digit rendering
 * Improve the rule of font priority to use
 * Use grayscale pixels to store font textures to reduce memory usage
 * Use render nodes for text rendering to improve performance
@@ -66,7 +69,7 @@
 * Update icon textures
 
 ### 1.15.2-1.5.7.54 (2020-05-15)
-* Reimplement double click event, make it work in resource packs GUI  
+* Reimplement double-click event, make it work in resource packs GUI  
 * Adjust status changing behaviour (API broken)  
 * Fix multi-page scroll panel page bug  
 * Fix animation chain crash  
@@ -84,7 +87,7 @@
 * Fix characters not display / layout properly (extremely confused) while game is paused  
 * Fix characters get dislocated (combined with other chars) when a new texture mapping started  
 * Add new methods to animation, and fix button brightness bug  
-* Add config to set whether allow to draw font with shadow  
+* Add config to set whether allow drawing font with shadow  
 * Add config to set whether pause game when any screen is open  
 * Add multi-page scroll panel  
 * Add clip to canvas  

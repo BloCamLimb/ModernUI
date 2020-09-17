@@ -26,8 +26,8 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 public interface AccessorFoodStats {
 
     @Accessor("foodExhaustionLevel")
-    float getExhaustionLevel();
+    float getFoodExhaustionLevel();
 
     @Accessor("foodExhaustionLevel")
-    void setExhaustionLevel(float exhaustionLevel);
+    void setFoodExhaustionLevel(float exhaustionLevel);
 }

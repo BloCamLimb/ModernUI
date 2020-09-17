@@ -26,6 +26,7 @@ import net.minecraft.util.FoodStats;
 import net.minecraftforge.fml.network.NetworkEvent;
 
 import javax.annotation.Nonnull;
+import java.util.function.Supplier;
 
 /**
  * This message send to self, no tracking players
@@ -34,10 +35,6 @@ public class FoodSaturationMessage implements IMessage {
 
     private float foodSaturationLevel;
     private float foodExhaustionLevel;
-
-    public FoodSaturationMessage() {
-
-    }
 
     public FoodSaturationMessage(float foodSaturationLevel, float foodExhaustionLevel) {
         this.foodSaturationLevel = foodSaturationLevel;
@@ -57,12 +54,12 @@ public class FoodSaturationMessage implements IMessage {
     }
 
     @Override
-    public void handle(@Nonnull NetworkEvent.Context context) {
+    public void handle(@Nonnull Supplier<NetworkEvent.Context> context) {
         ClientPlayerEntity player = Minecraft.getInstance().player;
         if (player != null) {
             FoodStats foodStats = player.getFoodStats();
             foodStats.setFoodSaturationLevel(foodSaturationLevel);
-            ((AccessorFoodStats) foodStats).setExhaustionLevel(foodExhaustionLevel);
+            ((AccessorFoodStats) foodStats).setFoodExhaustionLevel(foodExhaustionLevel);
         }
     }
 }
