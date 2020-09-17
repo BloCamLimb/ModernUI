@@ -84,7 +84,7 @@ public class TestHUD {
         canvas.drawText(String.format("%.2f / %.2f", player.getHealth(), player.getMaxHealth()), 70, 27);
         canvas.drawText(String.format("%d / %d", player.getAir(), player.getMaxAir()), 70, 13);
         canvas.drawText(String.format("%d / %.2f / %.2f", foodStats.getFoodLevel(), foodStats.getSaturationLevel(),
-                ((AccessorFoodStats) foodStats).getExhaustionLevel()), 70, -1);
+                ((AccessorFoodStats) foodStats).getFoodExhaustionLevel()), 70, -1);
 
         RenderSystem.enableDepthTest();
         GL11.glPopMatrix();

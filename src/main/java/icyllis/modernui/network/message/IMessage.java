@@ -23,6 +23,7 @@ import net.minecraft.network.PacketBuffer;
 import net.minecraftforge.fml.network.NetworkEvent;
 
 import javax.annotation.Nonnull;
+import java.util.function.Supplier;
 
 public interface IMessage {
 
@@ -51,5 +52,5 @@ public interface IMessage {
      *
      * @param context network context
      */
-    void handle(@Nonnull NetworkEvent.Context context);
+    void handle(@Nonnull Supplier<NetworkEvent.Context> context);
 }
