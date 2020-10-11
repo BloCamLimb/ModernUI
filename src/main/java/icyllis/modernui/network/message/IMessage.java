@@ -35,14 +35,7 @@ public interface IMessage {
     void encode(@Nonnull PacketBuffer buffer);
 
     /**
-     * Decode this message from byte buffer
-     *
-     * @param buffer buffer to read
-     */
-    void decode(@Nonnull PacketBuffer buffer);
-
-    /**
-     * Handle this message on sided effective thread.
+     * Decode this message from byte buffer and handle this message on sided effective thread.
      * <p>
      * To get the player {@link NetworkHandler#getPlayer(NetworkEvent.Context)}
      * To reply a message {@link NetworkHandler#reply(IMessage, NetworkEvent.Context)}
@@ -50,7 +43,8 @@ public interface IMessage {
      * It is not allowed to call {@link NetworkEvent.Context#setPacketHandled(boolean)}
      * or {@link NetworkEvent.Context#enqueueWork(Runnable)}, they are redundant
      *
+     * @param buffer  buffer to read
      * @param context network context
      */
-    void handle(@Nonnull Supplier<NetworkEvent.Context> context);
+    void handle(@Nonnull PacketBuffer buffer, @Nonnull NetworkEvent.Context context);
 }
