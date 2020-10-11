@@ -44,7 +44,6 @@ import net.minecraftforge.fml.network.NetworkEvent;
 import net.minecraftforge.fml.network.NetworkInstance;
 import net.minecraftforge.fml.network.NetworkRegistry;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
-import net.minecraftforge.fml.unsafe.UnsafeHacks;
 import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.Nonnull;
@@ -60,12 +59,12 @@ public class NetworkHandler {
 
     public static final NetworkHandler INSTANCE = new NetworkHandler(ModernUI.MODID, "main_network");
 
-    private final Byte2ObjectArrayMap<Class<? extends IMessage>> indices = new Byte2ObjectArrayMap<>();
-    private final Object2ByteArrayMap<Class<? extends IMessage>> types   = new Object2ByteArrayMap<>();
+    private final Byte2ObjectArrayMap<Supplier<? extends IMessage>> indices = new Byte2ObjectArrayMap<>();
+    private final Object2ByteArrayMap<Class<? extends IMessage>> types = new Object2ByteArrayMap<>();
 
-    private NetworkInstance instance;
+    private final NetworkInstance network;
 
-    private String protocol;
+    private final String protocol;
 
     private byte index = Byte.MIN_VALUE;
 
@@ -82,18 +81,14 @@ public class NetworkHandler {
                 .clientAcceptedVersions(this::verifyServerProtocol)
                 .serverAcceptedVersions(this::verifyClientProtocol);
         try {
-            instance = (NetworkInstance) ObfuscationReflectionHelper.findMethod(
+            network = (NetworkInstance) ObfuscationReflectionHelper.findMethod(
                     NetworkRegistry.ChannelBuilder.class,
                     "createNetworkInstance").invoke(builder);
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new IllegalStateException(e);
         }
-        instance.addListener(this::onS2CMessageReceived);
-        instance.addListener(this::onC2SMessageReceived);
-    }
-
-    public NetworkHandler() {
-
+        network.addListener(this::onS2CMessageReceived);
+        network.addListener(this::onC2SMessageReceived);
     }
 
     /**
@@ -128,12 +123,13 @@ public class NetworkHandler {
 
     /**
      * Register a network message, for example
-     * "registerMessage(MyMessage.class, MyMessage::new, NetworkDirection.PLAY_TO_SERVER)"
+     * {@code registerMessage(MyMessage.class, MyMessage::new)}
      *
-     * @param clazz message class
-     * @param <MSG> message type
+     * @param clazz   message class
+     * @param factory factory to create new instance
+     * @param <MSG>   message type
      */
-    public <MSG extends IMessage> void registerMessage(@Nonnull Class<MSG> clazz) {
+    public <MSG extends IMessage> void registerMessage(@Nonnull Class<MSG> clazz, @Nonnull Supplier<? extends MSG> factory) {
         /*CHANNEL.messageBuilder(type, ++index, direction)
                 .encoder(IMessage::encode)
                 .decoder(buf -> decode(factory, buf))
@@ -143,7 +139,7 @@ public class NetworkHandler {
             if (index == Byte.MAX_VALUE) {
                 throw new IllegalStateException("Maximum index reached when registering message");
             }
-            indices.put(index, clazz);
+            indices.put(index, factory);
             types.put(clazz, index++);
         }
     }
@@ -160,13 +156,12 @@ public class NetworkHandler {
 
     private void handleMessage(PacketBuffer buffer, Supplier<NetworkEvent.Context> ctx) {
         byte index = buffer.readByte();
-        Class<? extends IMessage> clazz = indices.get(index);
-        if (clazz == null) {
+        Supplier<? extends IMessage> factory = indices.get(index);
+        if (factory == null) {
             throw new IllegalStateException("Unregistered message with index: " + index);
         }
-        IMessage message = UnsafeHacks.newInstance(clazz);
-        message.decode(buffer);
-        message.handle(ctx);
+        IMessage message = factory.get();
+        message.handle(buffer, ctx.get());
         ctx.get().setPacketHandled(true);
     }
 
@@ -214,11 +209,11 @@ public class NetworkHandler {
     }
 
     private <MSG extends IMessage> IPacket<?> toC2SPacket(MSG message) {
-        return NetworkDirection.PLAY_TO_SERVER.buildPacket(toBufferPair(message), instance.getChannelName()).getThis();
+        return NetworkDirection.PLAY_TO_SERVER.buildPacket(toBufferPair(message), network.getChannelName()).getThis();
     }
 
     private <MSG extends IMessage> IPacket<?> toS2CPacket(MSG message) {
-        return NetworkDirection.PLAY_TO_CLIENT.buildPacket(toBufferPair(message), instance.getChannelName()).getThis();
+        return NetworkDirection.PLAY_TO_CLIENT.buildPacket(toBufferPair(message), network.getChannelName()).getThis();
     }
 
     /**
@@ -229,7 +224,7 @@ public class NetworkHandler {
      * @param <MSG>   message type
      */
     public <MSG extends IMessage> void reply(MSG message, NetworkEvent.Context context) {
-        context.getPacketDispatcher().sendPacket(instance.getChannelName(), toBuffer(message));
+        context.getPacketDispatcher().sendPacket(network.getChannelName(), toBuffer(message));
     }
 
     /**
@@ -352,13 +347,13 @@ public class NetworkHandler {
     }
 
     /**
-     * Send a message to all players in specified chunk
+     * Send a message to all players who loaded the specified chunk
      *
      * @param message message to send
      * @param chunk   chunk that players in
      * @param <MSG>   message type
      */
-    public <MSG extends IMessage> void sendToChunk(MSG message, @Nonnull Chunk chunk) {
+    public <MSG extends IMessage> void sendToChunkTracking(MSG message, @Nonnull Chunk chunk) {
         final IPacket<?> packet = toS2CPacket(message);
         ((ServerWorld) chunk.getWorld()).getChunkProvider().chunkManager.getTrackingPlayers(
                 chunk.getPos(), false).forEach(player -> player.connection.sendPacket(packet));

@@ -72,7 +72,7 @@ public class RegistryLib {
 
     @SubscribeEvent
     static void setupCommon(@Nonnull FMLCommonSetupEvent event) {
-        NetworkHandler.INSTANCE.registerMessage(FoodSaturationMessage.class);
+        NetworkHandler.INSTANCE.registerMessage(FoodSaturationMessage.class, FoodSaturationMessage::new);
     }
 
     @OnlyIn(Dist.CLIENT)
