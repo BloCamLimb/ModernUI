@@ -19,7 +19,7 @@
 package icyllis.modernui.system;
 
 import icyllis.modernui.network.NetworkHandler;
-import icyllis.modernui.network.message.FoodSaturationMessage;
+import icyllis.modernui.network.message.FoodSaturationMsg;
 import icyllis.modernui.ui.example.ContainerTest;
 import icyllis.modernui.ui.example.TestFragment;
 import icyllis.modernui.ui.master.UIManager;
@@ -72,14 +72,14 @@ public class RegistryLib {
 
     @SubscribeEvent
     static void setupCommon(@Nonnull FMLCommonSetupEvent event) {
-        NetworkHandler.INSTANCE.registerMessage(FoodSaturationMessage.class, FoodSaturationMessage::new);
+        NetworkHandler.INSTANCE.registerMessage(FoodSaturationMsg.class, FoodSaturationMsg::new);
     }
 
     @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
     static void setupClient(@Nonnull FMLClientSetupEvent event) {
         //SettingsManager.INSTANCE.buildAllSettings();
-        UIManager.getInstance().registerContainerScreen(RegistryLib.TEST_CONTAINER, c -> new TestFragment());
+        UIManager.getInstance().registerFactory(RegistryLib.TEST_CONTAINER, c -> new TestFragment());
     }
 
     @Nonnull

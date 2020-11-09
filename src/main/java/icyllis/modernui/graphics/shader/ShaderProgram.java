@@ -18,6 +18,7 @@
 
 package icyllis.modernui.graphics.shader;
 
+import icyllis.modernui.graphics.renderer.RenderTools;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.shader.IShaderManager;
 import net.minecraft.client.shader.ShaderLinkHelper;
@@ -52,14 +53,18 @@ public class ShaderProgram implements IShaderManager {
                 new ResourceLocation(ModernUI.MODID, String.format("shaders/%s.frag", fragLoc)));
     }
 
-    public void compile(IResourceManager manager) throws IOException {
+    public void compile(IResourceManager manager) {
         if (vertex != null || fragment != null) {
             ShaderLinkHelper.deleteShader(this);
         }
-        vertex = createShader(manager, vertLoc, ShaderLoader.ShaderType.VERTEX);
-        fragment = createShader(manager, fragLoc, ShaderLoader.ShaderType.FRAGMENT);
-        program = ShaderLinkHelper.createProgram();
-        ShaderLinkHelper.linkProgram(this);
+        try {
+            vertex = createShader(manager, vertLoc, ShaderLoader.ShaderType.VERTEX);
+            fragment = createShader(manager, fragLoc, ShaderLoader.ShaderType.FRAGMENT);
+            program = ShaderLinkHelper.createProgram();
+            ShaderLinkHelper.linkProgram(this);
+        } catch (IOException e) {
+            ModernUI.LOGGER.fatal(RenderTools.MARKER, "An error occurred while compiling shaders", e);
+        }
     }
 
     @Nonnull

@@ -140,7 +140,9 @@ public class NetworkHandler {
                 throw new IllegalStateException("Maximum index reached when registering message");
             }
             indices.put(index, factory);
-            types.put(clazz, index++);
+            if (types.put(clazz, index++) != Byte.MAX_VALUE) {
+                throw new IllegalStateException("Duplicated registration when registering message");
+            }
         }
     }
 
@@ -188,7 +190,7 @@ public class NetworkHandler {
         if (context.getDirection().getOriginationSide().isClient()) {
             return context.getSender();
         } else {
-            return Minecraft.getInstance().player;
+            return Helper.getPlayer();
         }
     }
 
@@ -311,7 +313,7 @@ public class NetworkHandler {
      * @param dimension dimension that players in
      * @param <MSG>     message type
      */
-    public <MSG extends IMessage> void sendToNearby(MSG message, @Nullable ServerPlayerEntity excluded,
+    public <MSG extends IMessage> void sendToRadius(MSG message, @Nullable ServerPlayerEntity excluded,
                                                     double x, double y, double z, double radius,
                                                     @Nonnull RegistryKey<World> dimension) {
         ServerLifecycleHooks.getCurrentServer().getPlayerList().sendToAllNearExcept(
@@ -327,7 +329,7 @@ public class NetworkHandler {
      * @param entity  entity is tracking
      * @param <MSG>   message type
      */
-    public <MSG extends IMessage> void sendToAllTracking(MSG message, @Nonnull Entity entity) {
+    public <MSG extends IMessage> void sendToEntityTracking(MSG message, @Nonnull Entity entity) {
         ((ServerWorld) entity.getEntityWorld()).getChunkProvider().sendToAllTracking(
                 entity, toS2CPacket(message));
     }
@@ -357,5 +359,17 @@ public class NetworkHandler {
         final IPacket<?> packet = toS2CPacket(message);
         ((ServerWorld) chunk.getWorld()).getChunkProvider().chunkManager.getTrackingPlayers(
                 chunk.getPos(), false).forEach(player -> player.connection.sendPacket(packet));
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private static class Helper {
+
+        private Helper() {
+        }
+
+        @Nullable
+        private static PlayerEntity getPlayer() {
+            return Minecraft.getInstance().player;
+        }
     }
 }

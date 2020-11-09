@@ -30,15 +30,15 @@ import javax.annotation.Nonnull;
 /**
  * This message send to self, no tracking players
  */
-public class FoodSaturationMessage implements IMessage {
+public class FoodSaturationMsg implements IMessage {
 
     private float foodSaturationLevel;
     private float foodExhaustionLevel;
 
-    public FoodSaturationMessage() {
+    public FoodSaturationMsg() {
     }
 
-    public FoodSaturationMessage(float foodSaturationLevel, float foodExhaustionLevel) {
+    public FoodSaturationMsg(float foodSaturationLevel, float foodExhaustionLevel) {
         this.foodSaturationLevel = foodSaturationLevel;
         this.foodExhaustionLevel = foodExhaustionLevel;
     }

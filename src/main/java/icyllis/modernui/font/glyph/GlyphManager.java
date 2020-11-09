@@ -29,8 +29,10 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2IntArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.texture.TextureUtil;
+import net.minecraft.util.ResourceLocation;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.BufferUtils;
@@ -46,10 +48,12 @@ import java.awt.font.GlyphVector;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Draw using glyphs of different sizes and fonts, and store them in auto generated OpenGL textures
@@ -67,7 +71,7 @@ public class GlyphManager {
      *
      * @see icyllis.modernui.system.Config.Client
      */
-    public static String  sPreferredFontName;
+    public static String sPreferredFont;
     public static boolean sAntiAliasing;
     public static boolean sHighPrecision;
     public static boolean sEnableMipmap;
@@ -168,7 +172,7 @@ public class GlyphManager {
     /**
      * List of all available physical fonts on the system. Used by lookupFont() to find alternate fonts.
      */
-    private final List<Font> allFonts = Arrays.asList(GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts());
+    private final List<Font> allFonts;
 
     /**
      * A list of all fonts that have been returned so far by lookupFont(), and that will always be searched first for a usable font before
@@ -238,8 +242,11 @@ public class GlyphManager {
         allocateGlyphTexture();
         //allocateStringImage(STRING_WIDTH, STRING_HEIGHT);
 
+        GraphicsEnvironment environment = GraphicsEnvironment.getLocalGraphicsEnvironment();
         /* Use Java's logical font as the default initial font if user does not override it in some configuration file */
-        java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().preferLocaleFonts();
+        environment.preferLocaleFonts();
+
+        allFonts = Arrays.asList(environment.getAllFonts());
 
         loadPreferredFonts();
 
@@ -247,25 +254,36 @@ public class GlyphManager {
     }
 
     private void loadPreferredFonts() {
-        if (!sPreferredFontName.isEmpty()) {
-            allFonts.stream().filter(f -> f.getName().equals(sPreferredFontName)).findFirst().ifPresent(f -> {
-                selectedFonts.add(f);
-                ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", f.getName());
-            });
+        if (!sPreferredFont.isEmpty()) {
+            if (sPreferredFont.contains(":") && (sPreferredFont.endsWith(".ttf") || sPreferredFont.endsWith(".otf"))) {
+                try (InputStream stream = Minecraft.getInstance().getResourceManager().getResource(
+                        new ResourceLocation(sPreferredFont)).getInputStream()) {
+                    Font f = Font.createFont(Font.TRUETYPE_FONT, stream);
+                    selectedFonts.add(f);
+                } catch (FontFormatException | IOException e) {
+                    ModernUI.LOGGER.warn(MARKER, "Preferred font failed to load", e);
+                }
+            } else {
+                Optional<Font> font = allFonts.stream().filter(f -> f.getName().equals(sPreferredFont)).findFirst();
+                if (font.isPresent()) {
+                    selectedFonts.add(font.get());
+                    ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", sPreferredFont);
+                } else {
+                    ModernUI.LOGGER.warn(MARKER, "Preferred font cannot found");
+                }
+            }
         }
 
-        try {
-            Font f = Font.createFont(Font.TRUETYPE_FONT, getClass().getResourceAsStream("/assets/modernui/font/biliw.otf"));
+        try (InputStream stream = getClass().getResourceAsStream("/assets/modernui/font/biliw.otf")) {
+            Font f = Font.createFont(Font.TRUETYPE_FONT, stream);
             selectedFonts.add(f);
         } catch (FontFormatException | IOException e) {
-            e.printStackTrace();
-            ModernUI.LOGGER.warn(MARKER, "Built-in font failed to load");
+            ModernUI.LOGGER.warn(MARKER, "Built-in font failed to load", e);
         } catch (NullPointerException e) {
-            e.printStackTrace();
             ModernUI.LOGGER.warn(MARKER, "Built-in font was missing");
         }
         // Generally is Arial
-        selectedFonts.add(new Font(Font.SANS_SERIF, Font.PLAIN, 72)); //size 1 > 72
+        selectedFonts.add(new Font(Font.SANS_SERIF, Font.PLAIN, 72)); // size 1 > 72
     }
 
     /**
@@ -295,6 +313,7 @@ public class GlyphManager {
         for (Font font : selectedFonts) {
             /* Only use the font if it can layout at least the first character of the requested string range */
             if (font.canDisplay(codePoint)) {
+                ModernUI.LOGGER.debug("Lookup Font: {}", font);
                 return font;
             }
         }

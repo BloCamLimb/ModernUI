@@ -28,8 +28,11 @@ import java.io.IOException;
 public class TestMain {
 
     public static void main(String[] args) throws IOException {
+        int b = 256;
+        b &= (~1) << 8;
+        System.out.println(b);
 
-        BufferedImage image = new BufferedImage(1024, 1024, BufferedImage.TYPE_INT_ARGB);
+        /*BufferedImage image = new BufferedImage(1024, 1024, BufferedImage.TYPE_INT_ARGB);
         Graphics2D graphics2D = image.createGraphics();
         Font font = new Font(Font.SANS_SERIF, Font.PLAIN, 32);
         graphics2D.setFont(font);
@@ -73,6 +76,6 @@ public class TestMain {
         }
 
 
-        ImageIO.write(image, "png", new File("F:/a.png"));
+        ImageIO.write(image, "png", new File("F:/a.png"));*/
     }
 }

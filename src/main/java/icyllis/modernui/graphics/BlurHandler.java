@@ -18,13 +18,11 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.ui.master.ModernContainerScreen;
-import icyllis.modernui.ui.master.ModernScreen;
+import icyllis.modernui.ui.master.MuiNetScreen;
+import icyllis.modernui.ui.master.MuiScreen;
 import icyllis.modernui.ui.master.UIManager;
 import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screen.ChatScreen;
-import net.minecraft.client.gui.screen.DownloadTerrainScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.shader.Shader;
@@ -34,7 +32,6 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.GuiOpenEvent;
-import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -57,20 +54,20 @@ public enum BlurHandler {
      * @see icyllis.modernui.system.Config.Client
      */
     public static boolean sBlurEffect;
-    public static float   sAnimationDuration;
-    public static float   sBlurRadius;
-    public static float   sBackgroundAlpha;
+    public static float sAnimationDuration;
+    public static float sBlurRadius;
+    public static float sBackgroundAlpha;
 
     private final ResourceLocation shader = new ResourceLocation("shaders/post/blur_fast.json");
 
     private final Minecraft minecraft = Minecraft.getInstance();
 
-    private final Set<Class<?>> exclusions = new ObjectArraySet<>();
+    private final Set<Class<?>> blacklist = new ObjectArraySet<>();
 
     /**
      * If is playing animation
      */
-    private boolean changingProgress;
+    private boolean fadingIn;
 
     /**
      * If blur shader is activated
@@ -93,31 +90,31 @@ public enum BlurHandler {
 
     /**
      * Use blur shader in game renderer post-processing.
-     * Hotfix 1.16, see
-     * {@link UIManager#gRenderGameOverlay(RenderGameOverlayEvent.Pre)}
      */
-    @SuppressWarnings("JavadocReference")
     @SubscribeEvent(priority = EventPriority.LOW)
     void gGuiOpen(@Nonnull GuiOpenEvent event) {
         @Nullable Screen gui = event.getGui();
         if (minecraft.world == null) {
             return;
         }
-
-        boolean excluded = gui != null && !(gui instanceof ModernScreen)
-                && !(gui instanceof ModernContainerScreen<?>)
-                && exclusions.stream().anyMatch(c -> c.isAssignableFrom(gui.getClass()));
-        boolean notBlur = excluded || !sBlurEffect;
-        if (notBlur && excluded && blurring) {
+        boolean excluded;
+        if (gui == null || gui instanceof MuiScreen || gui instanceof MuiNetScreen<?>)
+            excluded = false;
+        else {
+            Class<?> t = gui.getClass();
+            excluded = blacklist.stream().anyMatch(c -> c.isAssignableFrom(t));
+        }
+        boolean blurDisabled = excluded || !sBlurEffect;
+        if (blurDisabled && excluded && blurring) {
             minecraft.gameRenderer.stopUseShader();
-            changingProgress = false;
+            fadingIn = false;
             blurring = false;
         }
 
-        boolean toBlur = gui != null;
+        boolean hasGui = gui != null;
         GameRenderer gr = minecraft.gameRenderer;
-        if (toBlur && !blurring && !guiOpened) {
-            if (!notBlur && gr.getShaderGroup() == null) {
+        if (hasGui && !blurring && !guiOpened) {
+            if (!blurDisabled && gr.getShaderGroup() == null) {
                 gr.loadShader(shader);
                 blurring = true;
                 if (sAnimationDuration <= 0) {
@@ -125,24 +122,24 @@ public enum BlurHandler {
                 }
             }
             if (sAnimationDuration > 0) {
-                changingProgress = true;
+                fadingIn = true;
                 backgroundAlpha = 0;
             } else {
-                changingProgress = false;
+                fadingIn = false;
                 backgroundAlpha = sBackgroundAlpha;
             }
-        } else if (!toBlur && blurring) {
+        } else if (!hasGui && blurring) {
             gr.stopUseShader();
-            changingProgress = false;
+            fadingIn = false;
             blurring = false;
         }
-        guiOpened = toBlur;
+        guiOpened = hasGui;
     }
 
     /**
      * Internal method, to re-blur after resources (including shaders) reloaded in in-game menu
      *
-     * @see ModernScreen#init(Minecraft, int, int)
+     * @see MuiScreen#init(Minecraft, int, int)
      */
     public void forceBlur() {
         // no need to check if is excluded, this method is only called by opened ModernScreen
@@ -153,20 +150,18 @@ public enum BlurHandler {
             GameRenderer gr = minecraft.gameRenderer;
             if (gr.getShaderGroup() == null) {
                 gr.loadShader(shader);
-                changingProgress = true;
+                fadingIn = true;
                 blurring = true;
             }
         }
     }
 
-    public void loadExclusions(@Nonnull List<? extends String> names) {
-        exclusions.clear();
-        exclusions.add(ChatScreen.class);
-        exclusions.add(DownloadTerrainScreen.class);
+    public void loadBlacklist(@Nonnull List<? extends String> names) {
+        blacklist.clear();
         for (String s : names) {
             try {
                 Class<?> clazz = Class.forName(s);
-                exclusions.add(clazz);
+                blacklist.add(clazz);
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             }
@@ -175,7 +170,7 @@ public enum BlurHandler {
 
     @SubscribeEvent
     void gRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
-        if (changingProgress && event.phase == TickEvent.Phase.START) {
+        if (fadingIn && event.phase == TickEvent.Phase.START) {
             float p = Math.min(UIManager.getInstance().getDrawingTime() / sAnimationDuration, 1.0f);
             if (blurring) {
                 updateRadius(p * sBlurRadius);
@@ -184,7 +179,7 @@ public enum BlurHandler {
                 backgroundAlpha = p * sBackgroundAlpha;
             }
             if (p == 1.0f) {
-                changingProgress = false;
+                fadingIn = false;
             }
         }
     }

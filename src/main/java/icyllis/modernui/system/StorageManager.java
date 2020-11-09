@@ -18,10 +18,10 @@
 
 package icyllis.modernui.system;
 
-import it.unimi.dsi.fastutil.objects.Object2IntArrayMap;
-import javafx.util.Pair;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import org.apache.commons.lang3.tuple.Pair;
 
-import javax.script.ScriptEngineManager;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,17 +34,11 @@ import java.util.stream.Collectors;
 public enum StorageManager {
     INSTANCE;
 
-    private static final Object2IntArrayMap<String>  EMOJI_MAP     = new Object2IntArrayMap<>();
+    private static final Object2IntMap<String> EMOJI_MAP = new Object2IntOpenHashMap<>();
     private static final List<Pair<String, Integer>> EMOJI_HISTORY = new ArrayList<>();
-
-    private final ScriptEngineManager scriptManager = new ScriptEngineManager();
 
     static void init() {
 
-    }
-
-    public ScriptEngineManager getScriptManager() {
-        return scriptManager;
     }
 
     /**
@@ -54,7 +48,7 @@ public enum StorageManager {
      * @return emoji code collection
      */
     public static List<Pair<String, Integer>> findEmoji(String keyword) {
-        return EMOJI_MAP.object2IntEntrySet().stream().filter(e -> e.getKey().contains(keyword)).map(e -> new Pair<>(e.getKey(), e.getIntValue())).collect(Collectors.toList());
+        return EMOJI_MAP.object2IntEntrySet().stream().filter(e -> e.getKey().contains(keyword)).map(e -> Pair.of(e.getKey(), e.getIntValue())).collect(Collectors.toList());
     }
 
     public synchronized static void addToEmojiHistory(Pair<String, Integer> emoji) {

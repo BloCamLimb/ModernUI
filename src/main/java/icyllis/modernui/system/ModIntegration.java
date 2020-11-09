@@ -34,7 +34,7 @@ public class ModIntegration {
             Class<?> clazz = Class.forName("optifine.Installer");
             String ver = (String) clazz.getMethod("getOptiFineVersion").invoke(null);
             optifineLoaded = true;
-            ModernUI.LOGGER.debug(ModernUI.MARKER, "OptiFine loaded: {}", ver);
+            ModernUI.LOGGER.debug(ModernUI.MARKER, "OptiFine installed: {}", ver);
         } catch (ClassNotFoundException | NoSuchMethodException ignored) {
 
         } catch (IllegalAccessException | InvocationTargetException e) {
@@ -48,8 +48,8 @@ public class ModIntegration {
             Minecraft minecraft = Minecraft.getInstance();
             try {
                 Class<?> clazz = Class.forName("net.optifine.shaders.gui.GuiShaders");
-                Constructor<?> con = clazz.getConstructor(Screen.class, GameSettings.class);
-                minecraft.displayGuiScreen((Screen) con.newInstance(minecraft.currentScreen, minecraft.gameSettings));
+                Constructor<?> constructor = clazz.getConstructor(Screen.class, GameSettings.class);
+                minecraft.displayGuiScreen((Screen) constructor.newInstance(minecraft.currentScreen, minecraft.gameSettings));
             } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException |
                     InstantiationException | InvocationTargetException e) {
                 e.printStackTrace();

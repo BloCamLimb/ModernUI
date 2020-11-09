@@ -23,10 +23,10 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.system.StorageManager;
 import icyllis.modernui.ui.master.UITools;
 import icyllis.modernui.ui.test.DrawTools;
-import javafx.util.Pair;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.renderer.texture.TextureManager;
+import org.apache.commons.lang3.tuple.Pair;
 import org.lwjgl.opengl.GL11;
 
 import java.util.List;

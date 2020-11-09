@@ -23,6 +23,7 @@ import icyllis.modernui.ui.example.ContainerTest;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.Items;
+import net.minecraft.util.Util;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.api.distmarker.Dist;
@@ -66,11 +67,13 @@ public class EventHandler {
 
         @SubscribeEvent
         static void onPlayerLogin(@Nonnull ClientPlayerNetworkEvent.LoggedInEvent event) {
-            ClientPlayerEntity playerEntity = event.getPlayer();
-            if (playerEntity != null && RenderTools.glCapabilitiesErrors > 0) {
-                playerEntity.sendMessage(new StringTextComponent("[Modern UI] There are " + RenderTools.glCapabilitiesErrors +
-                        " GL capabilities that are not supported by your GPU, see debug.log for detailed info")
-                        .mergeStyle(TextFormatting.RED), null);
+            if (Config.isDeveloperMode()) {
+                ClientPlayerEntity playerEntity = event.getPlayer();
+                if (playerEntity != null && RenderTools.glCapabilitiesErrors > 0) {
+                    playerEntity.sendMessage(new StringTextComponent("[Modern UI] There are " + RenderTools.glCapabilitiesErrors +
+                            " GL capabilities that are not supported by your GPU, see debug.log for detailed info")
+                            .mergeStyle(TextFormatting.RED), Util.DUMMY_UUID);
+                }
             }
         }
 

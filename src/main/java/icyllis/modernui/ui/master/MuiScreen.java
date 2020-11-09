@@ -25,26 +25,26 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
 
 /**
- * The Screen class has been enjoyed by Forge, Modern UI or other mods.
- * This class only serves as a bridge to receive events from vanilla.
- * The vanilla methods were completely deprecated by Modern UI.
+ * This class serves as a bridge to receive events from system.
+ * All vanilla methods are completely deprecated by Modern UI.
  */
 @OnlyIn(Dist.CLIENT)
-public final class ModernScreen extends Screen {
+public final class MuiScreen extends Screen {
 
     private final UIManager manager = UIManager.getInstance();
 
-    ModernScreen() {
-        super(new StringTextComponent(""));
+    MuiScreen() {
+        super(StringTextComponent.EMPTY);
     }
 
     @Override
-    public void init(Minecraft minecraft, int width, int height) {
+    public void init(@NotNull Minecraft minecraft, int width, int height) {
         manager.prepareWindows(this, width, height);
         BlurHandler.INSTANCE.forceBlur();
     }
@@ -122,11 +122,5 @@ public final class ModernScreen extends Screen {
     @Override
     public boolean charTyped(char codePoint, int modifiers) {
         return manager.sCharTyped(codePoint, modifiers);
-    }
-
-    @Nonnull
-    @Override
-    public String toString() {
-        return "ModernScreen{view=" + manager.getMainView() + "}, Powered by Modern UI";
     }
 }

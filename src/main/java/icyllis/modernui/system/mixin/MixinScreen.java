@@ -46,7 +46,7 @@ public class MixinScreen {
     )
     private void renderBackgroundInWorld(@Nonnull Screen screen, @Nonnull MatrixStack stack, int x1, int y1, int x2, int y2,
                                          int colorA, int colorB) {
-        int a = (int) (BlurHandler.INSTANCE.getBackgroundAlpha() * 255.0f);
+        int a = (int) (BlurHandler.INSTANCE.getBackgroundAlpha() * 0xff);
         if (a == 0) {
             return;
         }

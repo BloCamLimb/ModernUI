@@ -30,6 +30,7 @@ import net.minecraft.inventory.container.Container;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
@@ -42,20 +43,20 @@ import java.util.Objects;
  * This is required because most of mods check if instanceof {@link ContainerScreen} rather than {@link IHasContainer}.
  * ContainerScreen can hold a container including item slots and network communication.
  *
- * @param <G> container type
+ * @param <T> container type
  * @see ScreenManager.IScreenFactory
  */
 @OnlyIn(Dist.CLIENT)
-public final class ModernContainerScreen<G extends Container> extends ContainerScreen<G> {
+public final class MuiNetScreen<T extends Container> extends ContainerScreen<T> {
 
     private final UIManager manager = UIManager.getInstance();
 
-    ModernContainerScreen(@Nonnull G container, PlayerInventory inventory, ITextComponent title) {
+    MuiNetScreen(@Nonnull T container, PlayerInventory inventory, ITextComponent title) {
         super(container, inventory, title);
     }
 
     @Override
-    public void init(Minecraft minecraft, int width, int height) {
+    public void init(@NotNull Minecraft minecraft, int width, int height) {
         //TODO remove super.init()
         super.init(minecraft, width, height);
         manager.prepareWindows(this, width, height);
@@ -162,11 +163,5 @@ public final class ModernContainerScreen<G extends Container> extends ContainerS
     @Override
     public boolean charTyped(char codePoint, int modifiers) {
         return manager.sCharTyped(codePoint, modifiers);
-    }
-
-    @Nonnull
-    @Override
-    public String toString() {
-        return "ModernContainerScreen{view=" + manager.getMainView() + ", container=" + container + "}, Powered by Modern UI";
     }
 }

@@ -1015,6 +1015,7 @@ public class View {
                         privateFlags &= ~PFLAG_HOVERED;
                         onMouseHoverExit();
                     }
+
                 }
                 return false;
             case MouseEvent.ACTION_PRESS:
