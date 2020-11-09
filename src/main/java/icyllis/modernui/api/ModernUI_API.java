@@ -19,7 +19,10 @@
 package icyllis.modernui.api;
 
 /**
- * Modern UI just is API, RUA!
+ * Modern UI is API
  */
 public class ModernUI_API {
+
+    private ModernUI_API() {
+    }
 }

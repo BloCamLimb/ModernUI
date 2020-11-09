@@ -29,7 +29,6 @@ import icyllis.modernui.ui.example.TestHUD;
 import icyllis.modernui.ui.layout.MeasureSpec;
 import icyllis.modernui.ui.test.IModule;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.IHasContainer;
 import net.minecraft.client.gui.ScreenManager;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.entity.player.ServerPlayerEntity;
@@ -42,6 +41,7 @@ import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -132,7 +132,7 @@ public final class UIManager {
     private final MouseEvent mouseEvent = new MouseEvent();
 
     // for double click check
-    private int  lastLmTick = Integer.MIN_VALUE;
+    private int lastLmTick = Integer.MIN_VALUE;
     @Nullable
     private View lastLmView;
 
@@ -191,7 +191,7 @@ public final class UIManager {
      */
     public void openGui(@Nonnull Fragment fragment) {
         this.fragment = fragment;
-        minecraft.displayGuiScreen(new ModernScreen());
+        minecraft.displayGuiScreen(new MuiScreen());
     }
 
     /**
@@ -211,24 +211,18 @@ public final class UIManager {
      * @param <T>     container class type
      * @see net.minecraftforge.fml.network.NetworkHooks#openGui(ServerPlayerEntity, INamedContainerProvider, Consumer)
      */
-    public <T extends Container, U extends Screen & IHasContainer<T>> void registerContainerScreen(
-            @Nonnull ContainerType<? extends T> type, @Nonnull Function<T, Fragment> factory) {
-        // prevent compiler error
-        ScreenManager.registerFactory(type, castFactory(factory));
+    public <T extends Container> void registerFactory(@Nonnull ContainerType<? extends T> type,
+                                                      @Nonnull Function<T, Fragment> factory) {
+        ScreenManager.registerFactory(type, getFactory(factory));
     }
 
+    // prevent compiler error
     @Nonnull
-    @SuppressWarnings({"unchecked", "ConstantConditions"})
-    private <T extends Container, U extends Screen & IHasContainer<T>> ScreenManager.IScreenFactory<T, U> castFactory(
+    private <T extends Container> ScreenManager.IScreenFactory<T, MuiNetScreen<T>> getFactory(
             @Nonnull Function<T, Fragment> factory) {
-        return (container, playerInv, title) -> {
-            // The client container can be null sometimes, but a container screen doesn't allow the container to be null
-            // so return null, there's no gui will be open, and the server container will be closed automatically
-            if (container == null) {
-                return null;
-            }
+        return (container, inventory, title) -> {
             this.fragment = factory.apply(container);
-            return (U) new ModernContainerScreen<>(container, playerInv, title);
+            return new MuiNetScreen<>(container, inventory, title);
         };
     }
 
@@ -312,7 +306,7 @@ public final class UIManager {
         }
 
         if (modernScreen != screenToOpen &&
-                ((screenToOpen instanceof ModernScreen) || (screenToOpen instanceof ModernContainerScreen<?>))) {
+                ((screenToOpen instanceof MuiScreen) || (screenToOpen instanceof MuiNetScreen<?>))) {
             if (view != null) {
                 // prevent repeated opening sometimes
                 event.setCanceled(true);
@@ -537,6 +531,7 @@ public final class UIManager {
     }
 
     boolean screenMouseScroll(double mouseX, double mouseY, double amount) {
+        ModernUI.LOGGER.debug(MARKER, "SHIGAO {}", amount);
         setMousePos(mouseX, mouseY);
         MouseEvent event = mouseEvent;
         event.action = MouseEvent.ACTION_SCROLL;
@@ -767,7 +762,7 @@ public final class UIManager {
     /**
      * Inner method
      */
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.HIGH)
     void globalRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
             // ticks to millis, the Timer in Minecraft is different from that in Event when game paused

@@ -23,6 +23,8 @@ import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.font.glyph.GlyphManager;
 import icyllis.modernui.font.process.TextCacheProcessor;
 import icyllis.modernui.graphics.BlurHandler;
+import net.minecraft.client.gui.screen.ChatScreen;
+import net.minecraft.client.gui.screen.DownloadTerrainScreen;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.config.ModConfig;
@@ -83,9 +85,9 @@ public class Config {
         private final ForgeConfigSpec.IntValue     blurRadius;
         private final ForgeConfigSpec.DoubleValue  backgroundAlpha;
 
-        private final ForgeConfigSpec.ConfigValue<List<? extends String>> blurExclusions;
+        private final ForgeConfigSpec.ConfigValue<List<? extends String>> blurBlacklist;
 
-        private final ForgeConfigSpec.ConfigValue<String> preferredFontName;
+        private final ForgeConfigSpec.ConfigValue<String> preferredFont;
         private final ForgeConfigSpec.BooleanValue        globalRenderer;
         private final ForgeConfigSpec.BooleanValue        allowShadow;
         private final ForgeConfigSpec.BooleanValue        antiAliasing;
@@ -114,9 +116,14 @@ public class Config {
             blurRadius = builder.comment(
                     "The blur effect radius, higher values result in a small loss of performance.")
                     .defineInRange("blurRadius", 10, 2, 18);
-            blurExclusions = builder.comment(
+            blurBlacklist = builder.comment(
                     "A list of GUI screen superclasses that won't activate blur effect when opened.")
-                    .defineList("blurExclusions", ArrayList::new, s -> true);
+                    .defineList("blurBlacklist", () -> {
+                        List<String> list = new ArrayList<>();
+                        list.add(ChatScreen.class.getName());
+                        list.add(DownloadTerrainScreen.class.getName());
+                        return list;
+                    }, s -> true);
 
 
             builder.pop();
@@ -132,9 +139,11 @@ public class Config {
             globalRenderer = builder.comment(
                     "Replace the default font renderer of vanilla to that of Modern UI.")
                     .define("globalRenderer", true);
-            preferredFontName = builder.comment(
-                    "The font name with the highest priority to use, the built-in font is always the second choice.")
-                    .define("preferredName", "");
+            preferredFont = builder.comment(
+                    "The font with the highest priority to use, the built-in font is always the second choice.",
+                    "This can be font name if you want to use fonts that installed on your PC, for instance: Microsoft YaHei",
+                    "Or can be resource location if you want to use fonts in resource packs, for instance: modernui:font/biliw.otf")
+                    .define("preferredFont", "");
             allowShadow = builder.comment(
                     "Allow global font renderer to draw text with shadow, setting to false can improve performance.")
                     .define("allowShadow", true);
@@ -169,10 +178,10 @@ public class Config {
             BlurHandler.sAnimationDuration = animationDuration.get();
             BlurHandler.sBlurRadius = blurRadius.get();
             BlurHandler.sBackgroundAlpha = backgroundAlpha.get().floatValue();
-            BlurHandler.INSTANCE.loadExclusions(blurExclusions.get());
+            BlurHandler.INSTANCE.loadBlacklist(blurBlacklist.get());
 
             TrueTypeRenderer.sGlobalRenderer = globalRenderer.get();
-            GlyphManager.sPreferredFontName = preferredFontName.get();
+            GlyphManager.sPreferredFont = preferredFont.get();
             GlyphManager.sAntiAliasing = antiAliasing.get();
             GlyphManager.sHighPrecision = highPrecision.get();
             GlyphManager.sEnableMipmap = enableMipmap.get();
@@ -216,7 +225,7 @@ public class Config {
                 Path path = FMLPaths.GAMEDIR.get().getParent();
                 // the root directory of your project
                 File dir = path.toFile();
-                String[] r = dir.list((f, n) -> n.equals("build.gradle"));
+                String[] r = dir.list((file, name) -> name.equals("build.gradle"));
                 if (r != null && r.length > 0) {
                     enableDeveloperMode();
                 }

@@ -31,7 +31,6 @@ archivesBaseName = 'ModernUI'
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
 
 sourceSets {
-    // no API, actually
     api {
         java {
             srcDir 'src/api/java'
@@ -131,6 +130,10 @@ repositories {
         name 'Gigaherz maven'
         url 'https://www.dogforce-games.com/maven/'
     }
+    maven {
+        name 'Google maven'
+        url 'https://maven.google.com/'
+    }
 }
 
 dependencies {
@@ -138,8 +141,8 @@ dependencies {
 
     shade "com.github.ben-manes.caffeine:caffeine:${caffeine_version}"
 
-    //compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}:api")
-    //runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}")
+    compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}:api")
+    runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}")
 
     compileOnly files('/libs/OptiFine_1.15.2_HD_U_G1_pre14_MOD_dev.jar')
     implementation 'org.jetbrains:annotations:15.0'
@@ -149,6 +152,7 @@ dependencies {
     annotationProcessor 'com.dslplatform:dsl-json-java8:1.9.5'
     compileOnly 'javax.json.bind:javax.json.bind-api:1.0'
 
+    // see https://github.com/SpongePowered/Mixin/blob/0.8/build.gradle
     annotationProcessor 'com.google.guava:guava:21.0'
     annotationProcessor 'org.apache.logging.log4j:log4j-core:2.0-beta9'
     annotationProcessor 'org.ow2.asm:asm-tree:6.2'
@@ -212,7 +216,6 @@ reobf {
     shadowJar {}
 }
 
-// this doesn't work due to Cloudflare
 if (System.getenv("CurseForgeAPI") != null) {
     curseforge {
         apiKey = System.getenv("CurseForgeAPI")

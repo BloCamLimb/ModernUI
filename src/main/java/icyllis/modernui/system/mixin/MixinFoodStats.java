@@ -19,7 +19,7 @@
 package icyllis.modernui.system.mixin;
 
 import icyllis.modernui.network.NetworkHandler;
-import icyllis.modernui.network.message.FoodSaturationMessage;
+import icyllis.modernui.network.message.FoodSaturationMsg;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.FoodStats;
 import org.spongepowered.asm.mixin.Mixin;
@@ -44,7 +44,7 @@ public class MixinFoodStats {
         if (foodSaturationLevel != prevSaturationLevel || foodExhaustionLevel != prevExhaustionLevel) {
             prevSaturationLevel = foodSaturationLevel;
             prevExhaustionLevel = foodExhaustionLevel;
-            NetworkHandler.INSTANCE.sendToPlayer(new FoodSaturationMessage(foodSaturationLevel, foodExhaustionLevel), player);
+            NetworkHandler.INSTANCE.sendToPlayer(new FoodSaturationMsg(foodSaturationLevel, foodExhaustionLevel), player);
         }
     }
 }

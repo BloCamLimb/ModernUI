@@ -39,7 +39,6 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GLCapabilities;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 import java.util.function.Predicate;
 
 @OnlyIn(Dist.CLIENT)
@@ -58,15 +57,11 @@ public class RenderTools {
         if (!t.test(VanillaResourceType.SHADERS)) {
             return;
         }
-        try {
-            RingShader.INSTANCE.compile(manager);
-            RoundedRectShader.INSTANCE.compile(manager);
-            RoundedFrameShader.INSTANCE.compile(manager);
-            CircleShader.INSTANCE.compile(manager);
-            FeatheredRectShader.INSTANCE.compile(manager);
-        } catch (IOException e) {
-            ModernUI.LOGGER.fatal(MARKER, "An error occurred while compiling shaders", e);
-        }
+        RingShader.INSTANCE.compile(manager);
+        RoundedRectShader.INSTANCE.compile(manager);
+        RoundedFrameShader.INSTANCE.compile(manager);
+        CircleShader.INSTANCE.compile(manager);
+        FeatheredRectShader.INSTANCE.compile(manager);
     }
 
     public static <T extends ShaderProgram> void useShader(@Nonnull T shader) {
