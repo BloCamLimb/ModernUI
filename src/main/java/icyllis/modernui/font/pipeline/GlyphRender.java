@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.font.node;
+package icyllis.modernui.font.pipeline;
 
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -26,7 +26,7 @@ import net.minecraft.util.math.vector.Matrix4f;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public abstract class GlyphRenderInfo {
+public abstract class GlyphRender {
 
     /**
      * Glyph effect
@@ -35,7 +35,7 @@ public abstract class GlyphRenderInfo {
     public TextRenderEffect effect;
 
     /**
-     * RGB color node
+     * RGB color
      */
     @Nullable
     public Integer color;
@@ -50,7 +50,7 @@ public abstract class GlyphRenderInfo {
      */
     public float offsetX;
 
-    public GlyphRenderInfo(@Nullable TextRenderEffect effect, int stringIndex, float offsetX) {
+    public GlyphRender(@Nullable TextRenderEffect effect, int stringIndex, float offsetX) {
         this.effect = effect;
         this.stringIndex = stringIndex;
         this.offsetX = offsetX;
@@ -60,7 +60,7 @@ public abstract class GlyphRenderInfo {
      * Draw the glyph of this info.
      *
      * @param builder vertex builder
-     * @param raw     needed by {@link DigitGlyphInfo}
+     * @param raw     needed by {@link DigitGlyphRender}
      * @param x       start x of the whole text
      * @param y       start y of the whole text
      * @param r       final red
@@ -74,7 +74,7 @@ public abstract class GlyphRenderInfo {
      * Draw the glyph of this info.
      *  @param matrix      matrix
      * @param buffer      buffer source
-     * @param raw         needed by {@link DigitGlyphInfo}
+     * @param raw         needed by {@link DigitGlyphRender}
      * @param x           start x of the whole text
      * @param y           start y of the whole text
      * @param r           final red

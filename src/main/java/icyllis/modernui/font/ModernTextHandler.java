@@ -18,7 +18,7 @@
 
 package icyllis.modernui.font;
 
-import icyllis.modernui.font.node.GlyphRenderInfo;
+import icyllis.modernui.font.pipeline.GlyphRender;
 import icyllis.modernui.font.process.TextCacheProcessor;
 import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.text.CharacterManager;
@@ -129,7 +129,7 @@ public class ModernTextHandler extends CharacterManager {
             return 0;
         }
         /* The glyph array for a string is sorted by the string's logical character position */
-        GlyphRenderInfo[] glyphs = processor.lookupVanillaNode(text, style).glyphs;
+        GlyphRender[] glyphs = processor.lookupVanillaNode(text, style).glyphs;
 
         /* Add up the individual advance of each glyph until it exceeds the specified width */
         float advance = 0;
@@ -177,7 +177,7 @@ public class ModernTextHandler extends CharacterManager {
             return text;
         }
         /* The glyph array for a string is sorted by the string's logical character position */
-        GlyphRenderInfo[] glyphs = processor.lookupVanillaNode(text, style).glyphs;
+        GlyphRender[] glyphs = processor.lookupVanillaNode(text, style).glyphs;
 
         /* Add up the individual advance of each glyph until it exceeds the specified width */
         float advance = 0;

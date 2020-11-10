@@ -20,7 +20,7 @@ package icyllis.modernui.font.glyph;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
-import icyllis.modernui.font.node.TextRenderType;
+import icyllis.modernui.font.pipeline.TextRenderType;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.util.math.vector.Matrix4f;
 

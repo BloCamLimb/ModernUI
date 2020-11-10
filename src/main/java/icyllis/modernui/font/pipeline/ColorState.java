@@ -16,15 +16,15 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.font.node;
+package icyllis.modernui.font.pipeline;
 
 @Deprecated
-public class ColorStateInfo {
+public class ColorState {
 
     /**
      * In case no text formatting or specific style
      */
-    public static final ColorStateInfo[] NO_COLOR_STATE = new ColorStateInfo[]{new ColorStateInfo(-1, -1)};
+    public static final ColorState[] NO_COLOR_STATE = new ColorState[]{new ColorState(-1, -1)};
 
     /**
      * The index of glyphs rendered in the current string of where this color would appeared.
@@ -37,7 +37,7 @@ public class ColorStateInfo {
      */
     public final int color;
 
-    public ColorStateInfo(int glyphIndex, int color) {
+    public ColorState(int glyphIndex, int color) {
         this.glyphIndex = glyphIndex;
         this.color = color;
     }

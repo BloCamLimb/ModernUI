@@ -21,7 +21,7 @@ package icyllis.modernui.graphics.renderer;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.ModernFontRenderer;
 import icyllis.modernui.font.TrueTypeRenderer;
-import icyllis.modernui.font.node.TextRenderType;
+import icyllis.modernui.font.pipeline.TextRenderType;
 import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.math.Color3i;

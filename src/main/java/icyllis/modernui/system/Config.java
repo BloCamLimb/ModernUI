@@ -39,21 +39,21 @@ import java.util.List;
 
 public class Config {
 
-    public static final  Client          CLIENT;
+    private static final Client CLIENT_CONFIG;
     private static final ForgeConfigSpec CLIENT_SPEC;
 
-    public static final  Common          COMMON;
+    private static final Common COMMON_CONFIG;
     private static final ForgeConfigSpec COMMON_SPEC;
 
     static {
         ForgeConfigSpec.Builder builder;
 
         builder = new ForgeConfigSpec.Builder();
-        CLIENT = new Client(builder);
+        CLIENT_CONFIG = new Client(builder);
         CLIENT_SPEC = builder.build();
 
         builder = new ForgeConfigSpec.Builder();
-        COMMON = new Common(builder);
+        COMMON_CONFIG = new Common(builder);
         COMMON_SPEC = builder.build();
     }
 
@@ -67,11 +67,11 @@ public class Config {
     static void reload(@Nonnull ModConfig.ModConfigEvent event) {
         ForgeConfigSpec spec = event.getConfig().getSpec();
         if (spec == CLIENT_SPEC) {
-            CLIENT.load();
-            ModernUI.LOGGER.debug(ModernUI.MARKER, "Client config loaded or reloaded");
+            CLIENT_CONFIG.load();
+            ModernUI.LOGGER.debug(ModernUI.MARKER, "Client config reloaded");
         } else if (spec == COMMON_SPEC) {
-            COMMON.load();
-            ModernUI.LOGGER.debug(ModernUI.MARKER, "Common config loaded or reloaded");
+            COMMON_CONFIG.load();
+            ModernUI.LOGGER.debug(ModernUI.MARKER, "Common config reloaded");
         }
     }
 
@@ -81,21 +81,21 @@ public class Config {
 
         //private final ForgeConfigSpec.BooleanValue keepRunningInScreenV;
         private final ForgeConfigSpec.BooleanValue blurEffect;
-        private final ForgeConfigSpec.IntValue     animationDuration;
-        private final ForgeConfigSpec.IntValue     blurRadius;
-        private final ForgeConfigSpec.DoubleValue  backgroundAlpha;
+        private final ForgeConfigSpec.IntValue animationDuration;
+        private final ForgeConfigSpec.IntValue blurRadius;
+        private final ForgeConfigSpec.DoubleValue backgroundAlpha;
 
         private final ForgeConfigSpec.ConfigValue<List<? extends String>> blurBlacklist;
 
         private final ForgeConfigSpec.ConfigValue<String> preferredFont;
-        private final ForgeConfigSpec.BooleanValue        globalRenderer;
-        private final ForgeConfigSpec.BooleanValue        allowShadow;
-        private final ForgeConfigSpec.BooleanValue        antiAliasing;
-        private final ForgeConfigSpec.BooleanValue        highPrecision;
-        private final ForgeConfigSpec.BooleanValue        enableMipmap;
-        private final ForgeConfigSpec.IntValue            mipmapLevel;
-        private final ForgeConfigSpec.IntValue            resolutionLevel;
-        private final ForgeConfigSpec.IntValue            defaultFontSize;
+        private final ForgeConfigSpec.BooleanValue globalRenderer;
+        private final ForgeConfigSpec.BooleanValue allowShadow;
+        private final ForgeConfigSpec.BooleanValue antiAliasing;
+        private final ForgeConfigSpec.BooleanValue highPrecision;
+        private final ForgeConfigSpec.BooleanValue enableMipmap;
+        private final ForgeConfigSpec.IntValue mipmapLevel;
+        private final ForgeConfigSpec.IntValue resolutionLevel;
+        private final ForgeConfigSpec.IntValue defaultFontSize;
 
         private Client(@Nonnull ForgeConfigSpec.Builder builder) {
             builder.comment("Screen Config")
@@ -142,6 +142,7 @@ public class Config {
             preferredFont = builder.comment(
                     "The font with the highest priority to use, the built-in font is always the second choice.",
                     "This can be font name if you want to use fonts that installed on your PC, for instance: Microsoft YaHei",
+                    "Or can be file path if you want to use external fonts, for instance: D:/Fonts/biliw.otf",
                     "Or can be resource location if you want to use fonts in resource packs, for instance: modernui:font/biliw.otf")
                     .define("preferredFont", "");
             allowShadow = builder.comment(
@@ -216,25 +217,16 @@ public class Config {
         }
 
         private void load() {
-            if (!developerMode) {
-                if (enableDeveloperModeV.get()) {
-                    enableDeveloperMode();
-                    return;
-                }
-                // get '/run' parent
-                Path path = FMLPaths.GAMEDIR.get().getParent();
-                // the root directory of your project
-                File dir = path.toFile();
-                String[] r = dir.list((file, name) -> name.equals("build.gradle"));
-                if (r != null && r.length > 0) {
-                    enableDeveloperMode();
-                }
+            if (enableDeveloperModeV.get()) {
+                developerMode = true;
+                return;
             }
-        }
-
-        private void enableDeveloperMode() {
-            developerMode = true;
-            ModernUI.LOGGER.debug(ModernUI.MARKER, "Developer mode enabled");
+            // get '/run' parent
+            Path path = FMLPaths.GAMEDIR.get().getParent();
+            // the root directory of your project
+            File dir = path.toFile();
+            String[] r = dir.list((file, name) -> name.equals("build.gradle"));
+            developerMode = r != null && r.length > 0;
         }
     }
 }

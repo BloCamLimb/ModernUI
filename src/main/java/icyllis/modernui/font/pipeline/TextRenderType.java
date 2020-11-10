@@ -16,11 +16,10 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.font.node;
+package icyllis.modernui.font.pipeline;
 
 import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.system.ModernUI;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 import net.minecraft.client.renderer.RenderState;
 import net.minecraft.client.renderer.RenderType;

@@ -16,9 +16,10 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.font.node;
+package icyllis.modernui.font.pipeline;
 
 import com.google.common.collect.ImmutableList;
+import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.renderer.RenderState;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
@@ -29,7 +30,7 @@ import java.util.Objects;
 public class EffectRenderType extends RenderType {
 
     private static final EffectRenderType INSTANCE    = new EffectRenderType();
-    private static final EffectRenderType SEE_THROUGH = new EffectRenderType("modern_text_effect_see_through");
+    private static final EffectRenderType SEE_THROUGH = new EffectRenderType(ModernUI.MODID + ":text_effect_see_through");
 
     private static final ImmutableList<RenderState> STATES;
     private static final ImmutableList<RenderState> SEE_THROUGH_STATES;
@@ -74,7 +75,7 @@ public class EffectRenderType extends RenderType {
     private final int hashCode;
 
     private EffectRenderType() {
-        super("modern_text_effect",
+        super(ModernUI.MODID + ":text_effect",
                 DefaultVertexFormats.POSITION_COLOR_LIGHTMAP,
                 GL11.GL_QUADS, 256, false, true,
                 () -> STATES.forEach(RenderState::setupRenderState),

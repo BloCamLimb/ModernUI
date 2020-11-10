@@ -16,13 +16,12 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.font.node;
+package icyllis.modernui.font.pipeline;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import icyllis.modernui.font.glyph.GlyphManager;
 import icyllis.modernui.font.process.FormattingStyle;
-import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.math.vector.Matrix4f;
@@ -38,7 +37,7 @@ public class TextRenderNode {
     /**
      * Sometimes naive, too simple
      */
-    public static final TextRenderNode EMPTY = new TextRenderNode(new GlyphRenderInfo[0], 0, false) {
+    public static final TextRenderNode EMPTY = new TextRenderNode(new GlyphRender[0], 0, false) {
 
         @Override
         public float drawText(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a) {
@@ -66,7 +65,7 @@ public class TextRenderNode {
     /**
      * All glyphs to render.
      */
-    public final GlyphRenderInfo[] glyphs;
+    public final GlyphRender[] glyphs;
 
     /*
      * Switch current color
@@ -80,7 +79,7 @@ public class TextRenderNode {
 
     private final boolean hasEffect;
 
-    public TextRenderNode(GlyphRenderInfo[] glyphs, float advance, boolean hasEffect) {
+    public TextRenderNode(GlyphRender[] glyphs, float advance, boolean hasEffect) {
         this.glyphs = glyphs;
         //this.colors = colors;
         this.advance = advance;
@@ -96,7 +95,7 @@ public class TextRenderNode {
         x -= GlyphManager.GLYPH_OFFSET;
         RenderSystem.enableTexture();
 
-        for (GlyphRenderInfo glyph : glyphs) {
+        for (GlyphRender glyph : glyphs) {
             if (glyph.color != null) {
                 int color = glyph.color;
                 if (color == FormattingStyle.NO_COLOR) {
@@ -119,7 +118,7 @@ public class TextRenderNode {
             x += GlyphManager.GLYPH_OFFSET;
             RenderSystem.disableTexture();
             builder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
-            for (GlyphRenderInfo glyph : glyphs) {
+            for (GlyphRender glyph : glyphs) {
                 if (glyph.color != null) {
                     int color = glyph.color;
                     if (color == FormattingStyle.NO_COLOR) {
@@ -153,7 +152,7 @@ public class TextRenderNode {
         y += VANILLA_BASELINE_OFFSET;
         x -= GlyphManager.GLYPH_OFFSET;
 
-        for (GlyphRenderInfo glyph : glyphs) {
+        for (GlyphRender glyph : glyphs) {
             if (glyph.color != null) {
                 int color = glyph.color;
                 if (color == FormattingStyle.NO_COLOR) {
@@ -182,7 +181,7 @@ public class TextRenderNode {
             g = startG;
             b = startB;
             builder = buffer.getBuffer(EffectRenderType.getRenderType(seeThrough));
-            for (GlyphRenderInfo glyph : glyphs) {
+            for (GlyphRender glyph : glyphs) {
                 if (glyph.color != null) {
                     int color = glyph.color;
                     if (color == FormattingStyle.NO_COLOR) {
