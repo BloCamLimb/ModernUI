@@ -18,7 +18,7 @@
 
 package icyllis.modernui.font.process;
 
-import icyllis.modernui.font.node.GlyphRenderInfo;
+import icyllis.modernui.font.pipeline.GlyphRender;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -37,17 +37,17 @@ public class TextProcessData {
     /**
      * List of all processing glyphs
      */
-    public final List<GlyphRenderInfo> allList = new ArrayList<>();
+    public final List<GlyphRender> allList = new ArrayList<>();
 
     /**
      * List of processing glyphs with same layout direction
      */
-    public final List<GlyphRenderInfo> layoutList = new ArrayList<>();
+    public final List<GlyphRender> layoutList = new ArrayList<>();
 
     /**
      * Used in layoutFont
      */
-    public final List<GlyphRenderInfo> minimalList = new ArrayList<>();
+    public final List<GlyphRender> minimalList = new ArrayList<>();
 
     /*
      * All color states
@@ -112,9 +112,9 @@ public class TextProcessData {
     }*/
 
     @Nonnull
-    public GlyphRenderInfo[] wrapGlyphs() {
+    public GlyphRender[] wrapGlyphs() {
         //return allList.stream().map(ProcessingGlyph::toGlyph).toArray(GlyphRenderInfo[]::new);
-        return allList.toArray(new GlyphRenderInfo[0]);
+        return allList.toArray(new GlyphRender[0]);
     }
 
     /*@Nonnull

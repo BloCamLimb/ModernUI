@@ -19,7 +19,7 @@
 package icyllis.modernui.font.glyph;
 
 import com.mojang.blaze3d.platform.GlStateManager;
-import icyllis.modernui.font.node.TextRenderNode;
+import icyllis.modernui.font.pipeline.TextRenderNode;
 import icyllis.modernui.font.process.VanillaTextKey;
 import icyllis.modernui.system.ModernUI;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
@@ -32,6 +32,7 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.texture.TextureUtil;
+import net.minecraft.resources.IResource;
 import net.minecraft.util.ResourceLocation;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -47,6 +48,7 @@ import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -75,15 +77,15 @@ public class GlyphManager {
     public static boolean sAntiAliasing;
     public static boolean sHighPrecision;
     public static boolean sEnableMipmap;
-    public static int     sMipmapLevel;
-    public static int     sResolutionLevel;
+    public static int sMipmapLevel;
+    public static int sResolutionLevel;
 
     /**
      * The width in pixels of every texture used for caching pre-rendered glyph images. Used by GlyphCache when calculating
      * floating point 0.0-1.0 texture coordinates. Must be a power of two for mip-mapping to work.
      */
     @Deprecated
-    private static final int TEXTURE_WIDTH  = 256;
+    private static final int TEXTURE_WIDTH = 256;
     /**
      * The height in pixels of every texture used for caching pre-rendered glyph images. Used by GlyphCache when calculating
      * floating point 0.0-1.0 texture coordinates. Must be a power of two for mip-mapping to work.
@@ -97,7 +99,7 @@ public class GlyphManager {
      * Initial width in pixels of the stringImage buffer used to extract individual glyph images.
      */
     @Deprecated
-    private static final int STRING_WIDTH  = 256;
+    private static final int STRING_WIDTH = 256;
     /**
      * Initial height in pixels of the stringImage buffer used to extract individual glyph images.
      */
@@ -255,13 +257,24 @@ public class GlyphManager {
 
     private void loadPreferredFonts() {
         if (!sPreferredFont.isEmpty()) {
-            if (sPreferredFont.contains(":") && (sPreferredFont.endsWith(".ttf") || sPreferredFont.endsWith(".otf"))) {
-                try (InputStream stream = Minecraft.getInstance().getResourceManager().getResource(
-                        new ResourceLocation(sPreferredFont)).getInputStream()) {
-                    Font f = Font.createFont(Font.TRUETYPE_FONT, stream);
-                    selectedFonts.add(f);
-                } catch (FontFormatException | IOException e) {
-                    ModernUI.LOGGER.warn(MARKER, "Preferred font failed to load", e);
+            if (sPreferredFont.endsWith(".ttf") || sPreferredFont.endsWith(".otf")) {
+                if (sPreferredFont.contains(":/")) {
+                    try {
+                        Font f = Font.createFont(Font.TRUETYPE_FONT, new File(sPreferredFont));
+                        selectedFonts.add(f);
+                        ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", f.getName());
+                    } catch (FontFormatException | IOException e) {
+                        ModernUI.LOGGER.warn(MARKER, "Preferred font failed to load", e);
+                    }
+                } else if (sPreferredFont.contains(":")) {
+                    try (IResource resource = Minecraft.getInstance().getResourceManager()
+                            .getResource(new ResourceLocation(sPreferredFont))) {
+                        Font f = Font.createFont(Font.TRUETYPE_FONT, resource.getInputStream());
+                        selectedFonts.add(f);
+                        ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", f.getName());
+                    } catch (FontFormatException | IOException e) {
+                        ModernUI.LOGGER.warn(MARKER, "Preferred font failed to load", e);
+                    }
                 }
             } else {
                 Optional<Font> font = allFonts.stream().filter(f -> f.getName().equals(sPreferredFont)).findFirst();
@@ -269,7 +282,7 @@ public class GlyphManager {
                     selectedFonts.add(font.get());
                     ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", sPreferredFont);
                 } else {
-                    ModernUI.LOGGER.warn(MARKER, "Preferred font cannot found");
+                    ModernUI.LOGGER.warn(MARKER, "Preferred font cannot found or invalid");
                 }
             }
         }
@@ -313,7 +326,6 @@ public class GlyphManager {
         for (Font font : selectedFonts) {
             /* Only use the font if it can layout at least the first character of the requested string range */
             if (font.canDisplay(codePoint)) {
-                ModernUI.LOGGER.debug("Lookup Font: {}", font);
                 return font;
             }
         }

@@ -18,8 +18,8 @@
 
 package icyllis.modernui.font.process;
 
-import icyllis.modernui.font.node.TextRenderEffect;
-import icyllis.modernui.font.node.GlyphRenderInfo;
+import icyllis.modernui.font.pipeline.TextRenderEffect;
+import icyllis.modernui.font.pipeline.GlyphRender;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.util.text.Style;
 import net.minecraft.util.text.TextFormatting;
@@ -75,7 +75,7 @@ public class TextProcessRegister {
 
     private float advance;
 
-    private final List<GlyphRenderInfo>  glyphs  = new ObjectArrayList<>();
+    private final List<GlyphRender>  glyphs  = new ObjectArrayList<>();
     private final List<TextRenderEffect> effects = new ObjectArrayList<>();
     //private final List<ColorStateInfo>   colors  = new ObjectArrayList<>();
 
@@ -138,8 +138,8 @@ public class TextProcessRegister {
     }
 
     @Nonnull
-    public GlyphRenderInfo[] wrapGlyphs() {
-        GlyphRenderInfo[] r = glyphs.toArray(new GlyphRenderInfo[0]);
+    public GlyphRender[] wrapGlyphs() {
+        GlyphRender[] r = glyphs.toArray(new GlyphRender[0]);
         glyphs.clear();
         return r;
     }

@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.font.node;
+package icyllis.modernui.font.pipeline;
 
 import icyllis.modernui.font.glyph.TexturedGlyph;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -27,18 +27,18 @@ import net.minecraft.util.math.vector.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
+import java.util.Random;
 
-/**
- * The key to fast render digit
- */
-public class DigitGlyphInfo extends GlyphRenderInfo {
+public class RandomGlyphRender extends GlyphRender {
+
+    private static final Random RANDOM = new Random();
 
     /**
-     * A reference of cached array in GlyphManager, 0-9 textured glyphs (in that order)
+     * Array of glyphs with same advance
      */
     private final TexturedGlyph[] glyphs;
 
-    public DigitGlyphInfo(TexturedGlyph[] glyphs, TextRenderEffect effect, int stringIndex, float offsetX) {
+    public RandomGlyphRender(TexturedGlyph[] glyphs, TextRenderEffect effect, int stringIndex, float offsetX) {
         super(effect, stringIndex, offsetX);
         this.glyphs = glyphs;
     }
@@ -46,14 +46,14 @@ public class DigitGlyphInfo extends GlyphRenderInfo {
     @Override
     public void drawGlyph(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a) {
         builder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR_TEX);
-        glyphs[raw.charAt(stringIndex) - 48].drawGlyph(builder, x + offsetX, y, r, g, b, a);
+        glyphs[RANDOM.nextInt(glyphs.length)].drawGlyph(builder, x + offsetX, y, r, g, b, a);
         builder.finishDrawing();
         WorldVertexBufferUploader.draw(builder);
     }
 
     @Override
     public void drawGlyph(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, @Nonnull CharSequence raw, float x, float y, int r, int g, int b, int a, boolean seeThrough, int light) {
-        glyphs[raw.charAt(stringIndex) - 48].drawGlyph(matrix, buffer, x + offsetX, y, r, g, b, a, seeThrough, light);
+        glyphs[RANDOM.nextInt(glyphs.length)].drawGlyph(matrix, buffer, x + offsetX, y, r, g, b, a, seeThrough, light);
     }
 
     @Override
@@ -68,9 +68,9 @@ public class DigitGlyphInfo extends GlyphRenderInfo {
             g = this.color >> 8 & 0xff;
             b = this.color & 0xff;
         }
-        for (int i : indexArray) {
+        for (int i = 0; i < count; i++) {
             builder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR_TEX);
-            x = glyphs[raw.charAt(i) - '0'].drawGlyph(builder, x, y, r, g, b, a);
+            x = glyphs[RANDOM.nextInt(10)].drawGlyph(builder, x, y, r, g, b, a);
             builder.finishDrawing();
             WorldVertexBufferUploader.draw(builder);
         }

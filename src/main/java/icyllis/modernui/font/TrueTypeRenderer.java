@@ -20,7 +20,7 @@ package icyllis.modernui.font;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.font.node.TextRenderNode;
+import icyllis.modernui.font.pipeline.TextRenderNode;
 import icyllis.modernui.font.process.FormattingStyle;
 import icyllis.modernui.font.process.TextCacheProcessor;
 import icyllis.modernui.font.text.TextAlign;

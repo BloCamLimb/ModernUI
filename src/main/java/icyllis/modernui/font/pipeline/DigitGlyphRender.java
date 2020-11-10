@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.font.node;
+package icyllis.modernui.font.pipeline;
 
 import icyllis.modernui.font.glyph.TexturedGlyph;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -28,63 +28,52 @@ import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 
-public class StandardGlyphInfo extends GlyphRenderInfo {
+/**
+ * The key to fast render digit
+ */
+public class DigitGlyphRender extends GlyphRender {
 
     /**
-     * The immutable glyph to render
+     * A reference of cached array in GlyphManager, 0-9 textured glyphs (in that order)
      */
-    private final TexturedGlyph glyph;
+    private final TexturedGlyph[] glyphs;
 
-    public StandardGlyphInfo(TexturedGlyph glyph, TextRenderEffect effect, int stringIndex, float offsetX) {
+    public DigitGlyphRender(TexturedGlyph[] glyphs, TextRenderEffect effect, int stringIndex, float offsetX) {
         super(effect, stringIndex, offsetX);
-        this.glyph = glyph;
+        this.glyphs = glyphs;
     }
 
     @Override
     public void drawGlyph(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a) {
         builder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR_TEX);
-        glyph.drawGlyph(builder, x + offsetX, y, r, g, b, a);
+        glyphs[raw.charAt(stringIndex) - 48].drawGlyph(builder, x + offsetX, y, r, g, b, a);
         builder.finishDrawing();
         WorldVertexBufferUploader.draw(builder);
     }
 
     @Override
     public void drawGlyph(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, @Nonnull CharSequence raw, float x, float y, int r, int g, int b, int a, boolean seeThrough, int light) {
-        glyph.drawGlyph(matrix, buffer, x + offsetX, y, r, g, b, a, seeThrough, light);
+        glyphs[raw.charAt(stringIndex) - 48].drawGlyph(matrix, buffer, x + offsetX, y, r, g, b, a, seeThrough, light);
     }
 
     @Override
     public float getAdvance() {
-        return glyph.advance;
+        return glyphs[0].advance;
     }
 
-    /*public float drawString(@Nonnull BufferBuilder builder, @Nonnull String raw, int color, float x, float y, int r, int g, int b, int a) {
-        if (color != -1) {
-            r = color >> 16 & 0xff;
-            g = color >> 8 & 0xff;
-            b = color & 0xff;
+    /*@Override
+    public float drawString(@Nonnull BufferBuilder builder, @Nonnull String raw, int color, float x, float y, int r, int g, int b, int a) {
+        if (this.color != -1) {
+            r = this.color >> 16 & 0xff;
+            g = this.color >> 8 & 0xff;
+            b = this.color & 0xff;
         }
-        for (TexturedGlyph glyph : glyphs) {
+        for (int i : indexArray) {
             builder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR_TEX);
-            x = glyph.drawGlyph(builder, x, y, r, g, b, a);
+            x = glyphs[raw.charAt(i) - '0'].drawGlyph(builder, x, y, r, g, b, a);
             builder.finishDrawing();
             WorldVertexBufferUploader.draw(builder);
         }
         return x;
-    }
-
-    @Nonnull
-    public static CodePointInfo ofText(TexturedGlyph[] glyphs, int color) {
-        return new CodePointInfo(glyphs, color);
-    }
-
-    @Nonnull
-    public static DigitRenderInfo ofDigit(TexturedGlyph[] digits, int color, int[] indexMap) {
-        return new DigitRenderInfo(digits, color, indexMap);
-    }
-
-    @Nonnull
-    public static ObfuscatedInfo ofObfuscated(TexturedGlyph[] digits, int color, int count) {
-        return new ObfuscatedInfo(digits, color, count);
     }*/
 }
