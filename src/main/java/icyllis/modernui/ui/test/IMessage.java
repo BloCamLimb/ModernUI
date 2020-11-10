@@ -16,15 +16,15 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.network.message;
+package icyllis.modernui.ui.test;
 
 import icyllis.modernui.network.NetworkHandler;
 import net.minecraft.network.PacketBuffer;
 import net.minecraftforge.fml.network.NetworkEvent;
 
 import javax.annotation.Nonnull;
-import java.util.function.Supplier;
 
+@Deprecated
 public interface IMessage {
 
     /**

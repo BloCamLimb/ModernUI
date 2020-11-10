@@ -216,7 +216,6 @@ public final class UIManager {
         ScreenManager.registerFactory(type, getFactory(factory));
     }
 
-    // prevent compiler error
     @Nonnull
     private <T extends Container> ScreenManager.IScreenFactory<T, MuiNetScreen<T>> getFactory(
             @Nonnull Function<T, Fragment> factory) {

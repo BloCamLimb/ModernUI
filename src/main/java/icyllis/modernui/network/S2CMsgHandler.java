@@ -16,46 +16,33 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.network.message;
+package icyllis.modernui.network;
 
 import icyllis.modernui.system.mixin.AccessorFoodStats;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.FoodStats;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
-import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
-/**
- * This message send to self, no tracking players
- */
-public class FoodSaturationMsg implements IMessage {
+@OnlyIn(Dist.CLIENT)
+public class S2CMsgHandler {
 
-    private float foodSaturationLevel;
-    private float foodExhaustionLevel;
+    static final IConsumer[] CONSUMERS = new IConsumer[]{S2CMsgHandler::food};
 
-    public FoodSaturationMsg() {
-    }
-
-    public FoodSaturationMsg(float foodSaturationLevel, float foodExhaustionLevel) {
-        this.foodSaturationLevel = foodSaturationLevel;
-        this.foodExhaustionLevel = foodExhaustionLevel;
-    }
-
-    @Override
-    public void encode(@Nonnull PacketBuffer buffer) {
-        buffer.writeFloat(foodSaturationLevel);
-        buffer.writeFloat(foodExhaustionLevel);
-    }
-
-    @Override
-    public void handle(@Nonnull PacketBuffer buffer, @Nonnull NetworkEvent.Context context) {
-        ClientPlayerEntity player = Minecraft.getInstance().player;
+    private static void food(PacketBuffer buffer, @Nullable ClientPlayerEntity player) {
         if (player != null) {
             FoodStats foodStats = player.getFoodStats();
             foodStats.setFoodSaturationLevel(buffer.readFloat());
             ((AccessorFoodStats) foodStats).setFoodExhaustionLevel(buffer.readFloat());
         }
+    }
+
+    @FunctionalInterface
+    interface IConsumer {
+
+        void handle(PacketBuffer buffer, @Nullable ClientPlayerEntity player);
     }
 }
