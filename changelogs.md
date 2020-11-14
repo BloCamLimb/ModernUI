@@ -3,6 +3,7 @@
  
 * Fix rendering with Thai
 * Add support for external fonts
+* Expose built-in blacklist
 
 ### 1.16.3-2.2.0.64 (2020-09-17)
 * Port to 1.16.3
