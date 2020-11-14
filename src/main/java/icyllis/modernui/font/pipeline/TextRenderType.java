@@ -21,12 +21,12 @@ package icyllis.modernui.font.pipeline;
 import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import net.minecraft.client.renderer.RenderState;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import org.lwjgl.opengl.GL11;
 
-import java.util.Map;
 import java.util.Objects;
 
 public class TextRenderType extends RenderType {
@@ -35,8 +35,8 @@ public class TextRenderType extends RenderType {
      * Texture id to render type map
      */
     //TODO remove some old textures depend on put order
-    private static final Map<Integer, TextRenderType> TYPES             = new Int2ObjectLinkedOpenHashMap<>();
-    private static final Map<Integer, TextRenderType> SEE_THROUGH_TYPES = new Int2ObjectLinkedOpenHashMap<>();
+    private static final Int2ObjectMap<TextRenderType> TYPES             = new Int2ObjectLinkedOpenHashMap<>();
+    private static final Int2ObjectMap<TextRenderType> SEE_THROUGH_TYPES = new Int2ObjectLinkedOpenHashMap<>();
 
     /**
      * Only the texture id is different, the rest state are same

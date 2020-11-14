@@ -1,4 +1,4 @@
-### 1.16.*-2.2.1.65 (2020-11)
+### 1.16.4-2.2.1.65 (2020-11-14)
 **Font Engine works fine, UI is developing, keep update!**
  
 * Fix rendering with Thai
