@@ -18,10 +18,10 @@
 
 package icyllis.modernui.ui.widget;
 
-import icyllis.modernui.ui.animation.ITimeInterpolator;
+import icyllis.modernui.animation.ITimeInterpolator;
 import icyllis.modernui.font.text.TextAlign;
-import icyllis.modernui.ui.animation.Animation;
-import icyllis.modernui.ui.animation.Applier;
+import icyllis.modernui.animation.Animation;
+import icyllis.modernui.animation.Applier;
 import icyllis.modernui.graphics.renderer.Canvas;
 import org.lwjgl.opengl.GL11;
 

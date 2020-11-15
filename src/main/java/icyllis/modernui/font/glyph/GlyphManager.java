@@ -363,6 +363,7 @@ public class GlyphManager {
     }
 
     public float getResolutionFactor() {
+        // based on a gui scale of 2
         return sResolutionLevel * 2.0f;
     }
 
@@ -819,7 +820,7 @@ public class GlyphManager {
         GL11.glPixelStorei(GL11.GL_UNPACK_ROW_LENGTH, width); // not full texture
         GL11.glPixelStorei(GL11.GL_UNPACK_SKIP_ROWS, 0);
         GL11.glPixelStorei(GL11.GL_UNPACK_SKIP_PIXELS, 0);
-        GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1); // 1 is alpha, 1 channel
+        GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1); // 1 is alpha, 4 bytes
 
         GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, x, y, width, height,
                 GL11.GL_ALPHA, GL11.GL_UNSIGNED_BYTE, uploadBuffer);

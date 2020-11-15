@@ -16,13 +16,22 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.api;
+package icyllis.modernui.lifecycle;
 
-/**
- * Modern UI is API
- */
-public class ModernUI_API {
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.MarkerManager;
 
-    private ModernUI_API() {
+public abstract class ViewModel {
+
+    public static final Marker MARKER = MarkerManager.getMarker("ViewModel");
+
+    /**
+     * This method will be called when this ViewModel is no longer used and will be destroyed.
+     * <p>
+     * It is useful when ViewModel observes some data and you need to clear this subscription to
+     * prevent a leak of this ViewModel.
+     */
+    protected void onCleared() {
+
     }
 }

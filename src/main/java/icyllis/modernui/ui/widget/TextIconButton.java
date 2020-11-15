@@ -20,8 +20,8 @@ package icyllis.modernui.ui.widget;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
-import icyllis.modernui.ui.animation.Animation;
-import icyllis.modernui.ui.animation.Applier;
+import icyllis.modernui.animation.Animation;
+import icyllis.modernui.animation.Applier;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.test.IHost;
 import icyllis.modernui.graphics.renderer.Icon;

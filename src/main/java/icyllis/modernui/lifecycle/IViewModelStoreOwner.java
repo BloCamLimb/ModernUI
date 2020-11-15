@@ -16,23 +16,24 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.ui.animation.interpolator;
+package icyllis.modernui.lifecycle;
 
-import icyllis.modernui.ui.animation.ITimeInterpolator;
+import javax.annotation.Nonnull;
 
-public class DecelerateInterpolator implements ITimeInterpolator {
+/**
+ * A scope that owns {@link ViewModelStore}.
+ * <p>
+ * A responsibility of an implementation of this interface is to retain owned ViewModelStore
+ * during the configuration changes and call {@link ViewModelStore#clear()}, when this scope is
+ * going to be destroyed.
+ */
+public interface IViewModelStoreOwner {
 
-    private final float factor;
-
-    public DecelerateInterpolator(float factor) {
-        this.factor = factor;
-    }
-
-    @Override
-    public float getInterpolation(float progress) {
-        if (factor == 1.0f) {
-            return 1.0f - (1.0f - progress) * (1.0f - progress);
-        }
-        return (float) (1.0f - Math.pow((1.0f - progress), factor * 2));
-    }
+    /**
+     * Returns owned {@link ViewModelStore}
+     *
+     * @return a {@code ViewModelStore}
+     */
+    @Nonnull
+    ViewModelStore getViewModelStore();
 }

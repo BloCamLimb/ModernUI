@@ -16,18 +16,20 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.system.mixin;
+package icyllis.modernui.animation.interpolator;
 
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.util.math.vector.Vector3f;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.gen.Accessor;
+import icyllis.modernui.animation.ITimeInterpolator;
 
-@Mixin(FontRenderer.class)
-public interface AccessorFontRenderer {
+public class CycleInterpolator implements ITimeInterpolator {
 
-    @Accessor("FONT_OFFSET")
-    static Vector3f shadowLifting() {
-        throw new IllegalStateException();
+    private final float cycle;
+
+    public CycleInterpolator(float cycle) {
+        this.cycle = cycle;
+    }
+
+    @Override
+    public float getInterpolation(float progress) {
+        return (float) Math.sin(2 * Math.PI * cycle * progress);
     }
 }

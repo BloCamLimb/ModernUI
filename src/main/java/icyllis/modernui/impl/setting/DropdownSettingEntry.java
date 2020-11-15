@@ -20,8 +20,8 @@ package icyllis.modernui.impl.setting;
 
 import icyllis.modernui.ui.master.UITools;
 import icyllis.modernui.font.text.TextAlign;
-import icyllis.modernui.ui.animation.Animation;
-import icyllis.modernui.ui.animation.Applier;
+import icyllis.modernui.animation.Animation;
+import icyllis.modernui.animation.Applier;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.master.UIManager;
 import icyllis.modernui.graphics.renderer.Icon;

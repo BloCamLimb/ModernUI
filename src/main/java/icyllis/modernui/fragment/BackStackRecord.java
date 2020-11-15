@@ -16,14 +16,22 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.ui.animation;
+package icyllis.modernui.fragment;
 
-import it.unimi.dsi.fastutil.objects.ObjectArraySet;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
-import java.util.Set;
+final class BackStackRecord extends FragmentTransaction {
 
-//TODO
-public class AnimationManager {
+    final FragmentManagerImpl mManager;
 
-    private final Set<Animation> animations = new ObjectArraySet<>();
+    public BackStackRecord(FragmentManagerImpl manager) {
+        mManager = manager;
+    }
+
+    @Override
+    void doAddOp(int containerViewId, @Nonnull Fragment fragment, @Nullable String tag, int cmd) {
+        super.doAddOp(containerViewId, fragment, tag, cmd);
+        fragment.mFragmentManager = mManager;
+    }
 }

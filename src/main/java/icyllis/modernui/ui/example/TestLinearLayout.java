@@ -21,22 +21,16 @@ package icyllis.modernui.ui.example;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.system.ModernUI;
-import icyllis.modernui.ui.animation.Animation;
-import icyllis.modernui.ui.animation.Applier;
-import icyllis.modernui.ui.animation.ITimeInterpolator;
+import icyllis.modernui.animation.Animation;
+import icyllis.modernui.animation.Applier;
+import icyllis.modernui.animation.ITimeInterpolator;
 import icyllis.modernui.ui.layout.Gravity;
 import icyllis.modernui.ui.layout.LinearLayout;
 import icyllis.modernui.ui.layout.Orientation;
 import icyllis.modernui.ui.master.View;
-import net.minecraft.client.MainWindow;
-import net.minecraft.client.Minecraft;
-import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.text.TextFormatting;
-import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
-import java.util.Arrays;
 
 public class TestLinearLayout extends LinearLayout {
 

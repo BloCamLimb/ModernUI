@@ -18,30 +18,22 @@
 
 package icyllis.modernui.ui.example;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.layout.FrameLayout;
 import icyllis.modernui.ui.layout.Gravity;
-import icyllis.modernui.ui.master.Fragment;
+import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.ui.master.View;
 import icyllis.modernui.ui.master.ViewRootImpl;
 import icyllis.modernui.ui.widget.ScrollView;
-import net.minecraft.client.MainWindow;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.player.ClientPlayerEntity;
-import net.minecraft.util.math.vector.Matrix4f;
-import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.text.DecimalFormat;
 
 public class TestFragment extends Fragment {
 
     @Nullable
     @Override
-    public View createView() {
+    public View onCreateView() {
         ScrollView scrollView = new ScrollView();
         // main view can use FrameLayout params
         ViewRootImpl.LayoutParams params = new ViewRootImpl.LayoutParams(140, 140);

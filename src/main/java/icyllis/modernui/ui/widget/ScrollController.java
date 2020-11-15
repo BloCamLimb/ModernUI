@@ -18,7 +18,7 @@
 
 package icyllis.modernui.ui.widget;
 
-import icyllis.modernui.ui.animation.ITimeInterpolator;
+import icyllis.modernui.animation.ITimeInterpolator;
 import icyllis.modernui.ui.master.UIManager;
 import net.minecraft.util.math.MathHelper;
 

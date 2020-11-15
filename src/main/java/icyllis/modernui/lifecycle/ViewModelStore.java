@@ -16,18 +16,33 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.system.mixin;
+package icyllis.modernui.lifecycle;
 
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.util.math.vector.Vector3f;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.gen.Accessor;
+import java.util.HashMap;
+import java.util.Map;
 
-@Mixin(FontRenderer.class)
-public interface AccessorFontRenderer {
+public class ViewModelStore {
 
-    @Accessor("FONT_OFFSET")
-    static Vector3f shadowLifting() {
-        throw new IllegalStateException();
+    private final Map<String, ViewModel> map = new HashMap<>();
+
+    final void put(String key, ViewModel viewModel) {
+        ViewModel oldViewModel = map.put(key, viewModel);
+        if (oldViewModel != null) {
+            oldViewModel.onCleared();
+        }
+    }
+
+    final ViewModel get(String key) {
+        return map.get(key);
+    }
+
+    /**
+     * Clears internal storage and notifies ViewModels that they are no longer used.
+     */
+    public final void clear() {
+        for (ViewModel vm : map.values()) {
+            vm.onCleared();
+        }
+        map.clear();
     }
 }

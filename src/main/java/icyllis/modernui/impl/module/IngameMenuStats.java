@@ -18,9 +18,9 @@
 
 package icyllis.modernui.impl.module;
 
-import icyllis.modernui.ui.animation.Animation;
-import icyllis.modernui.ui.animation.Applier;
-import icyllis.modernui.ui.animation.ITimeInterpolator;
+import icyllis.modernui.animation.Animation;
+import icyllis.modernui.animation.Applier;
+import icyllis.modernui.animation.ITimeInterpolator;
 import icyllis.modernui.impl.background.MenuSettingsBG;
 import icyllis.modernui.ui.test.WidgetLayout;
 import icyllis.modernui.ui.test.ModuleGroup;

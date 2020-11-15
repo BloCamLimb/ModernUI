@@ -16,9 +16,9 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.ui.animation.interpolator;
+package icyllis.modernui.animation.interpolator;
 
-import icyllis.modernui.ui.animation.ITimeInterpolator;
+import icyllis.modernui.animation.ITimeInterpolator;
 
 public class ViscousFluidInterpolator implements ITimeInterpolator {
 

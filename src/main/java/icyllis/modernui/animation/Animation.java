@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.ui.animation;
+package icyllis.modernui.animation;
 
 import com.google.common.collect.Lists;
 import icyllis.modernui.ui.master.UIManager;
@@ -28,7 +28,7 @@ import java.util.List;
 
 public class Animation {
 
-    private int duration;
+    private final int duration;
 
     private long startTime;
 
