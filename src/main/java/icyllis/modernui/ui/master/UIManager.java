@@ -19,12 +19,13 @@
 package icyllis.modernui.ui.master;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.math.Point;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.system.Config;
 import icyllis.modernui.system.ModernUI;
-import icyllis.modernui.ui.animation.Animation;
+import icyllis.modernui.animation.Animation;
 import icyllis.modernui.ui.example.TestHUD;
 import icyllis.modernui.ui.layout.MeasureSpec;
 import icyllis.modernui.ui.test.IModule;
@@ -275,7 +276,7 @@ public final class UIManager {
                 closeGui();
                 return;
             }
-            View view = fragment.createView();
+            View view = fragment.onCreateView();
             if (view == null) {
                 ModernUI.LOGGER.fatal(MARKER, "The view created from the main fragment shouldn't be null");
                 closeGui();
@@ -956,4 +957,6 @@ public final class UIManager {
     public View getKeyboard() {
         return mKeyboard;
     }
+
+    // act
 }

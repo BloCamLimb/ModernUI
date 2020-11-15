@@ -16,23 +16,21 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.ui.animation.interpolator;
+package icyllis.modernui.animation.interpolator;
 
-import icyllis.modernui.ui.animation.ITimeInterpolator;
+import icyllis.modernui.animation.ITimeInterpolator;
 
-public class AccelerateInterpolator implements ITimeInterpolator {
+public class OvershootInterpolator implements ITimeInterpolator {
 
-    private final float factor;
+    private final float tension;
 
-    public AccelerateInterpolator(float factor) {
-        this.factor = factor;
+    public OvershootInterpolator(float tension) {
+        this.tension = tension;
     }
 
     @Override
     public float getInterpolation(float progress) {
-        if (factor == 1.0f) {
-            return progress * progress;
-        }
-        return (float) Math.pow(progress, factor * 2);
+        progress -= 1.0f;
+        return progress * progress * ((tension + 1) * progress + tension) + 1.0f;
     }
 }

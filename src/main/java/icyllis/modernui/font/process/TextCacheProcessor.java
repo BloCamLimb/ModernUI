@@ -1244,7 +1244,6 @@ public class TextCacheProcessor {
      * @param limit     the (offset + length) at which to stop performing the layout
      * @return the total advance (horizontal distance) of this string
      */
-    @SuppressWarnings("ConstantConditions")
     @Deprecated
     private float layoutBidiString(List<Glyph> glyphList, char[] text, int start, int limit, FormattingCode[] codes) {
         float advance = 0;

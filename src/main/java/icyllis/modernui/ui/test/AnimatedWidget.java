@@ -18,7 +18,7 @@
 
 package icyllis.modernui.ui.test;
 
-import icyllis.modernui.ui.animation.AnimationControl;
+import icyllis.modernui.animation.AnimationControl;
 
 @Deprecated
 public abstract class AnimatedWidget extends AnimationControl implements IWidget {

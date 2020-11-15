@@ -20,8 +20,8 @@ package icyllis.modernui.ui.widget;
 
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.graphics.renderer.Icon;
-import icyllis.modernui.ui.animation.Animation;
-import icyllis.modernui.ui.animation.Applier;
+import icyllis.modernui.animation.Animation;
+import icyllis.modernui.animation.Applier;
 import icyllis.modernui.ui.master.UITools;
 import icyllis.modernui.ui.test.Align9D;
 import icyllis.modernui.ui.test.Locator;

@@ -20,9 +20,9 @@ package icyllis.modernui.impl.module;
 
 import com.google.common.collect.Lists;
 import icyllis.modernui.system.ModIntegration;
-import icyllis.modernui.ui.animation.Animation;
-import icyllis.modernui.ui.animation.Applier;
-import icyllis.modernui.ui.animation.ITimeInterpolator;
+import icyllis.modernui.animation.Animation;
+import icyllis.modernui.animation.Applier;
+import icyllis.modernui.animation.ITimeInterpolator;
 import icyllis.modernui.ui.test.WidgetLayout;
 import icyllis.modernui.ui.master.UIManager;
 import icyllis.modernui.ui.test.ModuleGroup;

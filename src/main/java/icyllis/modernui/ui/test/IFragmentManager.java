@@ -18,7 +18,7 @@
 
 package icyllis.modernui.ui.test;
 
-import icyllis.modernui.ui.master.Fragment;
+import icyllis.modernui.fragment.Fragment;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.container.INamedContainerProvider;
 import net.minecraft.util.text.ITextComponent;

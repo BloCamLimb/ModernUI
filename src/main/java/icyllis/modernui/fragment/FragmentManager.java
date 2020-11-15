@@ -16,20 +16,16 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.ui.animation.interpolator;
+package icyllis.modernui.fragment;
 
-import icyllis.modernui.ui.animation.ITimeInterpolator;
+import javax.annotation.Nonnull;
 
-public class CycleInterpolator implements ITimeInterpolator {
+public abstract class FragmentManager {
 
-    private final float cycle;
-
-    public CycleInterpolator(float cycle) {
-        this.cycle = cycle;
-    }
-
-    @Override
-    public float getInterpolation(float progress) {
-        return (float) Math.sin(2 * Math.PI * cycle * progress);
-    }
+    /**
+     * Start a series of edit operations on the Fragments associated with
+     * this FragmentManager.
+     */
+    @Nonnull
+    public abstract FragmentTransaction beginTransaction();
 }

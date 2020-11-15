@@ -19,8 +19,8 @@
 package icyllis.modernui.impl.setting;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.ui.animation.Animation;
-import icyllis.modernui.ui.animation.Applier;
+import icyllis.modernui.animation.Animation;
+import icyllis.modernui.animation.Applier;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.master.UIManager;
 import icyllis.modernui.ui.view.PopupMenu;

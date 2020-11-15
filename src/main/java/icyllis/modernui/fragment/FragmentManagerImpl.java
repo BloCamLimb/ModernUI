@@ -16,18 +16,24 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.system.mixin;
+package icyllis.modernui.fragment;
 
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.util.math.vector.Vector3f;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.gen.Accessor;
+import icyllis.modernui.lifecycle.ViewModelStore;
 
-@Mixin(FontRenderer.class)
-public interface AccessorFontRenderer {
+import javax.annotation.Nonnull;
 
-    @Accessor("FONT_OFFSET")
-    static Vector3f shadowLifting() {
-        throw new IllegalStateException();
+final class FragmentManagerImpl extends FragmentManager {
+
+    private ViewModelStore mViewModelStore;
+
+    @Nonnull
+    ViewModelStore getViewModelStore() {
+        return mViewModelStore;
+    }
+
+    @Nonnull
+    @Override
+    public FragmentTransaction beginTransaction() {
+        return new BackStackRecord(this);
     }
 }

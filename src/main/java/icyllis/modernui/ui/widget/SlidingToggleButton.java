@@ -20,9 +20,9 @@ package icyllis.modernui.ui.widget;
 
 import com.google.gson.annotations.Expose;
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.ui.animation.Animation;
-import icyllis.modernui.ui.animation.Applier;
-import icyllis.modernui.ui.animation.ITimeInterpolator;
+import icyllis.modernui.animation.Animation;
+import icyllis.modernui.animation.Applier;
+import icyllis.modernui.animation.ITimeInterpolator;
 import icyllis.modernui.ui.test.Align9D;
 import icyllis.modernui.ui.test.Locator;
 import icyllis.modernui.ui.test.IHost;
