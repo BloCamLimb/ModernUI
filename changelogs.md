@@ -1,6 +1,10 @@
-### 1.16.4-2.2.1.65 (2020-11-14)
+### 1.16.4-2.2.2.66 (2020-11-16)
 **Font Engine works fine, UI is developing, keep update!**
  
+* Fix rendering with space
+
+### 1.16.4-2.2.1.65 (2020-11-14)
+
 * Fix rendering with Thai
 * Add support for external fonts
 * Expose built-in blacklist

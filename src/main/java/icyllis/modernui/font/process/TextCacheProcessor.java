@@ -37,7 +37,9 @@ import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.geom.Point2D;
 import java.lang.ref.WeakReference;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -619,13 +621,13 @@ public class TextCacheProcessor {
             TextFormatting formatting = fromFormattingCode(string.charAt(next + 1));
 
             *//*
-             * Remove the two char color code from text[] by shifting the remaining data in the array over on top of it.
-             * The "start" and "next" variables all contain offsets into the original unmodified "str" string. The "shift"
-             * variable keeps track of how many characters have been stripped so far, and it's used to compute offsets into
-             * the text[] array based on the start/next offsets in the original string.
-             *
-             * If string only contains 1 formatting code (2 chars in total), this doesn't work
-             *//*
+         * Remove the two char color code from text[] by shifting the remaining data in the array over on top of it.
+         * The "start" and "next" variables all contain offsets into the original unmodified "str" string. The "shift"
+         * variable keeps track of how many characters have been stripped so far, and it's used to compute offsets into
+         * the text[] array based on the start/next offsets in the original string.
+         *
+         * If string only contains 1 formatting code (2 chars in total), this doesn't work
+         *//*
             //System.arraycopy(text, next - shift + 2, text, next - shift, text.length - next - 2);
 
             if (formatting != null) {
@@ -870,11 +872,12 @@ public class TextCacheProcessor {
             final float factor = glyphManager.getResolutionFactor();
 
             for (int i = 0; i < num; i++) {
-                /* Exclude some auxiliary characters (e.g in Hindi) */
                 /*if (vector.getGlyphMetrics(i).getAdvanceX() == 0) {
                     continue;
                 }*/
-                if (vector.getGlyphMetrics(i).getBounds2D().getWidth() == 0) {
+                /* Exclude some auxiliary characters (e.g in Hindi), but include space or Thai */
+                if (vector.getGlyphMetrics(i).getAdvanceX() == 0 &&
+                        vector.getGlyphMetrics(i).getBounds2D().getWidth() == 0) {
                     continue;
                 }
 
