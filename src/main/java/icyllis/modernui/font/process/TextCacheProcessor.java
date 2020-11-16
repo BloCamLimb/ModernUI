@@ -592,13 +592,14 @@ public class TextCacheProcessor {
      *
      * @param data   an object to store the results
      * @param string text with formatting codes to strip
-     * @param style  default/reset style
+     * @param defStyle  default/reset style
      * @return a new char array with all formatting codes removed from the given string
      */
     @Nonnull
-    private char[] resolveFormattingCodes(@Nonnull TextProcessData data, @Nonnull final CharSequence string, @Nonnull Style style) {
+    private char[] resolveFormattingCodes(@Nonnull TextProcessData data, @Nonnull final CharSequence string, @Nonnull Style defStyle) {
         int shift = 0;
 
+        Style style = defStyle;
         data.codes.add(new FormattingStyle(0, 0, style));
 
         int limit = string.length() - 1;
@@ -608,9 +609,9 @@ public class TextCacheProcessor {
 
                 if (formatting != null) {
                     /* Classic formatting will set all FancyStyling (like BOLD, UNDERLINE) to false if it's a color formatting */
-                    style = style.forceFormatting(formatting);
-                    data.codes.add(new FormattingStyle(next, next - shift, style));
+                    style = formatting == TextFormatting.RESET ? defStyle : style.forceFormatting(formatting);
                 }
+                data.codes.add(new FormattingStyle(next, next - shift, style));
 
                 next++;
                 shift += 2;

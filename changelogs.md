@@ -1,6 +1,10 @@
-### 1.16.4-2.2.2.66 (2020-11-16)
+### 1.16.4-2.2.3.67 (2020-11-17)
 **Font Engine works fine, UI is developing, keep update!**
  
+* Fix rendering when an invalid formatting applied
+
+### 1.16.4-2.2.2.66 (2020-11-16)
+
 * Fix rendering with space
 
 ### 1.16.4-2.2.1.65 (2020-11-14)
