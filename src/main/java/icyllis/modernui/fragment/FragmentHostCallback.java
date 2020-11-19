@@ -18,38 +18,24 @@
 
 package icyllis.modernui.fragment;
 
-import icyllis.modernui.lifecycle.ViewModelStore;
+import icyllis.modernui.ui.master.View;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-final class FragmentManagerImpl extends FragmentManager {
-
-    FragmentHostCallback<?> mHost;
-    FragmentContainer mContainer;
-    Fragment mParent;
-
-    private ViewModelStore mViewModelStore;
+public abstract class FragmentHostCallback<T> extends FragmentContainer {
 
     @Nonnull
-    ViewModelStore getViewModelStore() {
-        return mViewModelStore;
-    }
+    final FragmentManagerImpl mFragmentManager = new FragmentManagerImpl();
 
-    @Nonnull
+    @Nullable
     @Override
-    public FragmentTransaction beginTransaction() {
-        return new BackStackRecord(this);
+    public View onFindViewById(int id) {
+        return null;
     }
 
-    public void attachController(@Nonnull FragmentHostCallback<?> host, @Nonnull FragmentContainer container,
-                                 @Nullable Fragment parent) {
-        if (mHost != null)
-            throw new IllegalStateException("Already attached");
-        mHost = host;
-        mContainer = container;
-        mParent = parent;
-
-        mViewModelStore = new ViewModelStore();
+    @Override
+    public boolean onHasView() {
+        return true;
     }
 }

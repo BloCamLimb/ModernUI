@@ -21,19 +21,15 @@ package icyllis.modernui.lifecycle;
 import javax.annotation.Nonnull;
 
 /**
- * A scope that owns {@link ViewModelStore}.
- * <p>
- * A responsibility of an implementation of this interface is to retain owned ViewModelStore
- * during the configuration changes and call {@link ViewModelStore#clear()}, when this scope is
- * going to be destroyed.
+ * Defines an object that holds a lifecycle
  */
-public interface IViewModelStoreOwner {
+public interface ILifecycleOwner {
 
     /**
-     * Returns the {@link ViewModelStore} of the provider.
+     * Returns the {@link Lifecycle} of the provider.
      *
-     * @return a {@code ViewModelStore}
+     * @return a {@code lifecycle}
      */
     @Nonnull
-    ViewModelStore getViewModelStore();
+    Lifecycle getLifecycle();
 }
