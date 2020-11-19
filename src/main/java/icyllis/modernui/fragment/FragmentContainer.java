@@ -16,24 +16,16 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.lifecycle;
+package icyllis.modernui.fragment;
 
-import javax.annotation.Nonnull;
+import icyllis.modernui.ui.master.View;
 
-/**
- * A scope that owns {@link ViewModelStore}.
- * <p>
- * A responsibility of an implementation of this interface is to retain owned ViewModelStore
- * during the configuration changes and call {@link ViewModelStore#clear()}, when this scope is
- * going to be destroyed.
- */
-public interface IViewModelStoreOwner {
+import javax.annotation.Nullable;
 
-    /**
-     * Returns the {@link ViewModelStore} of the provider.
-     *
-     * @return a {@code ViewModelStore}
-     */
-    @Nonnull
-    ViewModelStore getViewModelStore();
+public abstract class FragmentContainer {
+
+    @Nullable
+    public abstract View onFindViewById(int id);
+
+    public abstract boolean onHasView();
 }

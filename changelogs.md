@@ -31,7 +31,7 @@
 
 ### 1.16.1-2.0.4.61 (2020-08-07)
 * Fix font renderer see through type
-* Add ultra high definition for font rendering
+* Add ultra-high definition for font rendering
 
 ### 1.16.1-2.0.3.60 (2020-08-03)
 * Fix text position texture out of limit bounds

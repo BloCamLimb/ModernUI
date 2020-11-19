@@ -16,24 +16,30 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.lifecycle;
+package icyllis.modernui.fragment;
 
 import javax.annotation.Nonnull;
 
 /**
- * A scope that owns {@link ViewModelStore}.
+ * Provides integration points with a {@link FragmentManager} for a fragment host.
  * <p>
- * A responsibility of an implementation of this interface is to retain owned ViewModelStore
- * during the configuration changes and call {@link ViewModelStore#clear()}, when this scope is
- * going to be destroyed.
+ * It is the responsibility of the host to take care of the Fragment's lifecycle.
+ * The methods provided by {@link FragmentController} are for that purpose.
  */
-public interface IViewModelStoreOwner {
+public class FragmentController {
+
+    @Nonnull
+    private final FragmentHostCallback<?> mHost;
+
+    public FragmentController(@Nonnull FragmentHostCallback<?> callbacks) {
+        mHost = callbacks;
+    }
 
     /**
-     * Returns the {@link ViewModelStore} of the provider.
-     *
-     * @return a {@code ViewModelStore}
+     * Returns a {@link FragmentManager} for this controller.
      */
     @Nonnull
-    ViewModelStore getViewModelStore();
+    public FragmentManager getFragmentManager() {
+        return mHost.mFragmentManager;
+    }
 }

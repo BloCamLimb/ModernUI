@@ -84,35 +84,28 @@ public class VanillaTextKey {
     }
 
     /**
-     * Extract info that can produce a visual change from given style to an integer
+     * Extract info that can produce a visual change from given style to an int value
      *
      * @param style style to parse
      * @return result
      */
     public static int parseStyle(@Nonnull Style style) {
-        if (style == Style.EMPTY) {
+        if (style == Style.EMPTY)
             return 0;
-        }
         int r = 0;
-        if (style.getColor() != null) {
+        if (style.getColor() != null)
             // RGB - 24 bit
             r |= style.getColor().getColor();
-        }
-        if (style.getBold()) {
+        if (style.getBold())
             r |= 1 << 24;
-        }
-        if (style.getItalic()) {
+        if (style.getItalic())
             r |= 1 << 25;
-        }
-        if (style.getStrikethrough()) {
+        if (style.getStrikethrough())
             r |= 1 << 26;
-        }
-        if (style.getUnderlined()) {
+        if (style.getUnderlined())
             r |= 1 << 27;
-        }
-        if (style.getObfuscated()) {
+        if (style.getObfuscated())
             r |= 1 << 28;
-        }
         return r;
     }
 
@@ -125,23 +118,19 @@ public class VanillaTextKey {
     @Override
     public boolean equals(Object o) {
 
-        // Suppression
-        if (getClass() != o.getClass()) {
+        if (getClass() != o.getClass())
             return false;
-        }
 
         /* First check if styles are equal */
-        if (style != (((VanillaTextKey) o).style)) {
+        if (style != (((VanillaTextKey) o).style))
             return false;
-        }
 
         /* Calling toString on a String object simply returns itself so no new object allocation is performed */
         final CharSequence other = ((VanillaTextKey) o).str;
         final int length = str.length();
 
-        if (length != other.length()) {
+        if (length != other.length())
             return false;
-        }
 
         /*
          * true if a section mark character was last seen. In this case, if the next character is a digit, it must
@@ -150,13 +139,15 @@ public class VanillaTextKey {
          */
         boolean formatting = false;
 
-        for (int index = 0; index < length; index++) {
-            char c1 = str.charAt(index);
-            char c2 = other.charAt(index);
+        char c1;
+        char c2;
 
-            if (c1 != c2 && (c1 > '9' || c1 < '0' || formatting || c2 > '9' || c2 < '0')) {
+        for (int index = 0; index < length; index++) {
+            c1 = str.charAt(index);
+            c2 = other.charAt(index);
+
+            if (c1 != c2 && (c1 > '9' || c1 < '0' || formatting || c2 > '9' || c2 < '0'))
                 return false;
-            }
             formatting = (c1 == '\u00a7');
         }
 
@@ -182,11 +173,12 @@ public class VanillaTextKey {
              */
             boolean formatting = false;
 
+            char c;
+
             for (int index = 0; index < length; index++) {
-                char c = str.charAt(index);
-                if (c <= '9' && c >= '0' && !formatting) {
+                c = str.charAt(index);
+                if (c <= '9' && c >= '0' && !formatting)
                     c = '0';
-                }
                 code = code * 31 + c;
                 formatting = (c == '\u00a7');
             }
