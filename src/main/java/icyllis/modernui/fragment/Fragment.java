@@ -18,7 +18,9 @@
 
 package icyllis.modernui.fragment;
 
+import icyllis.modernui.lifecycle.ILifecycleOwner;
 import icyllis.modernui.lifecycle.IViewModelStoreOwner;
+import icyllis.modernui.lifecycle.Lifecycle;
 import icyllis.modernui.lifecycle.ViewModelStore;
 import icyllis.modernui.ui.master.View;
 import icyllis.modernui.ui.master.ViewRootImpl;
@@ -34,7 +36,7 @@ import java.util.UUID;
  * Different fragments can communicate with each other,
  * and there can be transition animation when switching etc.
  */
-public class Fragment implements IViewModelStoreOwner {
+public class Fragment implements ILifecycleOwner, IViewModelStoreOwner {
 
     // Internal unique identifier
     @Nonnull
@@ -70,6 +72,11 @@ public class Fragment implements IViewModelStoreOwner {
     // The View generated for this fragment.
     @Nullable
     View mView;
+
+    Lifecycle mLifecycle;
+
+    @Nullable
+    FragmentViewLifecycleOwner mViewLifecycleOwner;
 
     /**
      * Create the view belong to this fragment.
@@ -107,7 +114,8 @@ public class Fragment implements IViewModelStoreOwner {
     public final View requireView() {
         View view = getView();
         if (view == null) {
-            throw new IllegalStateException();
+            throw new IllegalStateException("Fragment " + this + " did not return a View from"
+                    + " onCreateView() or this was called before onCreateView().");
         }
         return view;
     }
@@ -116,6 +124,8 @@ public class Fragment implements IViewModelStoreOwner {
      * Returns the {@link ViewModelStore} associated with this Fragment
      *
      * @return a {@code ViewModelStore}
+     * @throws IllegalStateException if called before the Fragment is attached i.e., before
+     * onAttach().
      */
     @Nonnull
     @Override
@@ -133,5 +143,40 @@ public class Fragment implements IViewModelStoreOwner {
     @Nullable
     public final Fragment getParentFragment() {
         return mParentFragment;
+    }
+
+    @Nonnull
+    @Override
+    public final Lifecycle getLifecycle() {
+        return mLifecycle;
+    }
+
+    /**
+     * Get a {@link ILifecycleOwner} that represents the {@link #getView() Fragment's View}
+     * lifecycle. In most cases, this mirrors the lifecycle of the Fragment itself, but in cases
+     * of {@link FragmentTransaction#detach(Fragment) detached} Fragments, the lifecycle of the
+     * Fragment can be considerably longer than the lifecycle of the View itself.
+     *
+     * The first method where it is safe to access the view lifecycle is
+     * {@link #onCreateView(LayoutInflater, ViewGroup, Bundle)} under the condition that you must
+     * return a non-null view (an IllegalStateException will be thrown if you access the view
+     * lifecycle but don't return a non-null view).
+     * <p>The view lifecycle remains valid through the call to {@link #onDestroyView()}, after which
+     * {@link #getView()} will return null, the view lifecycle will be destroyed, and this method
+     * will throw an IllegalStateException. Consider using
+     * {@link #getViewLifecycleOwnerLiveData()} or {@link FragmentTransaction#runOnCommit(Runnable)}
+     * to receive a callback for when the Fragment's view lifecycle is available.
+     *
+     * @return A {@link ILifecycleOwner} that represents the {@link #getView() Fragment's View}
+     * lifecycle.
+     * @throws IllegalStateException if the {@link #getView() Fragment's View is null}.
+     */
+    @Nonnull
+    public final ILifecycleOwner getViewLifecycleOwner() {
+        if (mViewLifecycleOwner == null) {
+            throw new IllegalStateException("Can't access the Fragment View's LifecycleOwner when "
+                    + "the View of this Fragment is currently unavailable");
+        }
+        return mViewLifecycleOwner;
     }
 }

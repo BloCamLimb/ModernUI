@@ -549,10 +549,18 @@ public class GlyphManager {
             int renderWidth = (int) renderBounds.getWidth();
             int renderHeight = (int) renderBounds.getHeight();
 
-            if (currPosX + renderWidth + GLYPH_SPACING >= TEXTURE_SIZE) {
-                currPosX = GLYPH_SPACING;
-                currPosY += currLineHeight + GLYPH_SPACING * 2;
-                currLineHeight = 0;
+            if (i == 0) {
+                if (currPosX + renderWidth + GLYPH_SPACING >= TEXTURE_SIZE) {
+                    currPosX = GLYPH_SPACING;
+                    currPosY += currLineHeight + GLYPH_SPACING * 2;
+                    currLineHeight = 0;
+                }
+            } else {
+                if (currPosX + standardRenderWidth + GLYPH_SPACING >= TEXTURE_SIZE) {
+                    currPosX = GLYPH_SPACING;
+                    currPosY += currLineHeight + GLYPH_SPACING * 2;
+                    currLineHeight = 0;
+                }
             }
             if (currPosY + renderHeight + GLYPH_SPACING >= TEXTURE_SIZE) {
                 currPosX = GLYPH_SPACING;
@@ -577,10 +585,11 @@ public class GlyphManager {
             }
             int height = renderHeight + GLYPH_BORDER * 2;
 
+            // ASCII digits are not allowed to be laid-out into other code points
             if (i == 0) {
                 glyphTextureGraphics.drawString(String.valueOf(chars), currPosX - baselineX, currPosY - baselineY);
             } else {
-                // align
+                // align to center
                 int offset = Math.round((standardRenderWidth - renderWidth) / 2.0f);
                 glyphTextureGraphics.drawString(String.valueOf(chars), currPosX + offset - baselineX, currPosY - baselineY);
             }

@@ -30,7 +30,7 @@ import javax.annotation.Nullable;
  */
 public class ReorderTextCopier implements ICharacterConsumer {
 
-    private Behavior behavior;
+    private IConsumer consumer;
 
     private final MutableString mutableString = new MutableString();
 
@@ -40,8 +40,8 @@ public class ReorderTextCopier implements ICharacterConsumer {
     /**
      * @return {@code false} if action stopped
      */
-    public boolean copyAndConsume(@Nonnull IReorderingProcessor reorderingProcessor, Behavior behavior) {
-        this.behavior = behavior;
+    public boolean copyAndConsume(@Nonnull IReorderingProcessor reorderingProcessor, IConsumer consumer) {
+        this.consumer = consumer;
         if (!reorderingProcessor.accept(this)) {
             // stopped
             return false;
@@ -53,7 +53,7 @@ public class ReorderTextCopier implements ICharacterConsumer {
     public boolean accept(int index, @Nonnull Style style, int codePoint) {
         if (style != lastStyle) {
             if (!mutableString.chars.isEmpty() && lastStyle != null) {
-                if (behavior.consumeText(mutableString, lastStyle)) {
+                if (consumer.consumeText(mutableString, lastStyle)) {
                     mutableString.chars.clear();
                     lastStyle = style;
                     // stop
@@ -75,7 +75,7 @@ public class ReorderTextCopier implements ICharacterConsumer {
 
     private boolean finish() {
         if (!mutableString.chars.isEmpty() && lastStyle != null) {
-            if (behavior.consumeText(mutableString, lastStyle)) {
+            if (consumer.consumeText(mutableString, lastStyle)) {
                 mutableString.chars.clear();
                 lastStyle = null;
                 return false;
@@ -87,7 +87,7 @@ public class ReorderTextCopier implements ICharacterConsumer {
     }
 
     @FunctionalInterface
-    public interface Behavior {
+    public interface IConsumer {
 
         /**
          * @return {@code true} to stop action
