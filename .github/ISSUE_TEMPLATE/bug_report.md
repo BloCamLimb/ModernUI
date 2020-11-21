@@ -1,7 +1,7 @@
 ---
-name: Bug report
+name: Bug Report
 about: Create a report to help us improve
-title: "[Bug]"
+title: "[Bug] Untitled"
 labels: ''
 assignees: ''
 
@@ -23,6 +23,8 @@ A clear and concise description of what you expected to happen.
 **Screenshots**
 If applicable, add screenshots to help explain your problem.
 
-**Versions you are on**
+**Environment**
  - Mod Version:
  - Forge Version:
+ - Operating System:
+ - Graphics Card:

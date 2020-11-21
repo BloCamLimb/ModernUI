@@ -59,43 +59,43 @@ public class LifecycleEvent extends Event {
 
     public static class Create extends LifecycleEvent {
 
-        public Create(ILifecycleOwner owner) {
-            super(owner, Type.ON_CREATE);
+        Create(ILifecycleOwner source) {
+            super(source, Type.ON_CREATE);
         }
     }
 
     public static class Start extends LifecycleEvent {
 
-        public Start(ILifecycleOwner owner) {
-            super(owner, Type.ON_START);
+        Start(ILifecycleOwner source) {
+            super(source, Type.ON_START);
         }
     }
 
     public static class Resume extends LifecycleEvent {
 
-        public Resume(ILifecycleOwner owner) {
-            super(owner, Type.ON_RESUME);
+        Resume(ILifecycleOwner source) {
+            super(source, Type.ON_RESUME);
         }
     }
 
     public static class Pause extends LifecycleEvent {
 
-        public Pause(ILifecycleOwner owner) {
-            super(owner, Type.ON_PAUSE);
+        Pause(ILifecycleOwner source) {
+            super(source, Type.ON_PAUSE);
         }
     }
 
     public static class Stop extends LifecycleEvent {
 
-        public Stop(ILifecycleOwner owner) {
-            super(owner, Type.ON_STOP);
+        Stop(ILifecycleOwner source) {
+            super(source, Type.ON_STOP);
         }
     }
 
     public static class Destroy extends LifecycleEvent {
 
-        public Destroy(ILifecycleOwner owner) {
-            super(owner, Type.ON_DESTROY);
+        Destroy(ILifecycleOwner source) {
+            super(source, Type.ON_DESTROY);
         }
     }
 }

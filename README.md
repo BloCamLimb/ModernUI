@@ -14,22 +14,20 @@
 ![b](https://i.loli.net/2020/04/10/LDBFc1qo5wtnS8u.png)
 ### Adding Modern UI to your project
 #### Development environment
-- Java 8u251
-- Forge 1.16.2-33.0.0
+- Java 8u271
+- Forge 1.16.4-35.1.0
 #### Gradle configuration
 Add followings to `build.gradle`
 ```
 repositories {
     maven {
-        name 'CurseMaven'
-        url 'https://www.cursemaven.com/'
+        name 'jihuayu maven'
+        url 'https://maven2.jihuayu.site'
     }
 }
 ```
 ```
 dependencies {
-    compile fg.deobf("curse.maven:ModernUI:[FileID -userdev]")
+    compile fg.deobf("icyllis.modernui:ModernUI:[-version]")
 }
 ```
-Latest version: (no stable build for 1.16.2) (FileID: )
-
