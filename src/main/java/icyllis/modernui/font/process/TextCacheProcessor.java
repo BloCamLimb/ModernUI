@@ -46,7 +46,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 /**
- * layout text and extract key info and generate or cache text render node
+ * Layout text and extract key info and generate or cache text render node
  *
  * @since 2.0
  */

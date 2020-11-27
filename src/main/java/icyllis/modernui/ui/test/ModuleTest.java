@@ -18,13 +18,13 @@
 
 package icyllis.modernui.ui.test;
 
-import icyllis.modernui.ui.master.UITools;
-import icyllis.modernui.ui.widget.SSExpandableBox;
-import icyllis.modernui.ui.widget.MultiPageScrollPanel;
-import icyllis.modernui.ui.widget.NumberInputField;
-import icyllis.modernui.ui.widget.SlidingToggleButton;
-import icyllis.modernui.ui.widget.StaticFrameButton;
-import icyllis.modernui.ui.widget.TextField;
+import icyllis.modernui.view.UITools;
+import icyllis.modernui.widget.SSExpandableBox;
+import icyllis.modernui.widget.MultiPageScrollPanel;
+import icyllis.modernui.widget.NumberInputField;
+import icyllis.modernui.widget.SlidingToggleButton;
+import icyllis.modernui.widget.StaticFrameButton;
+import icyllis.modernui.widget.TextField;
 
 @Deprecated
 public class ModuleTest extends Module {

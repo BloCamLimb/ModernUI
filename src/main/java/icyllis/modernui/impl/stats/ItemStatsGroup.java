@@ -23,7 +23,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.test.DrawTools;
 import icyllis.modernui.ui.test.ScrollWindow;
-import icyllis.modernui.ui.widget.UniformScrollGroup;
+import icyllis.modernui.widget.UniformScrollGroup;
 import icyllis.modernui.graphics.math.Color3i;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.AbstractGui;

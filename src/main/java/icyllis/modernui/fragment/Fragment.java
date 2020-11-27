@@ -22,8 +22,8 @@ import icyllis.modernui.lifecycle.ILifecycleOwner;
 import icyllis.modernui.lifecycle.IViewModelStoreOwner;
 import icyllis.modernui.lifecycle.Lifecycle;
 import icyllis.modernui.lifecycle.ViewModelStore;
-import icyllis.modernui.ui.master.View;
-import icyllis.modernui.ui.master.ViewRootImpl;
+import icyllis.modernui.view.View;
+import icyllis.modernui.view.ViewRootImpl;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

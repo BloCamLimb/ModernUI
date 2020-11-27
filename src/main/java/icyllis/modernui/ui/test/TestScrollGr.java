@@ -20,8 +20,8 @@ package icyllis.modernui.ui.test;
 
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.font.text.TextAlign;
-import icyllis.modernui.ui.widget.UniformScrollEntry;
-import icyllis.modernui.ui.widget.UniformScrollGroup;
+import icyllis.modernui.widget.UniformScrollEntry;
+import icyllis.modernui.widget.UniformScrollGroup;
 
 import javax.annotation.Nonnull;
 

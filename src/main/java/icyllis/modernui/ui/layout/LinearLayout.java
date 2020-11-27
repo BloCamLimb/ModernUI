@@ -20,8 +20,8 @@ package icyllis.modernui.ui.layout;
 
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.ui.master.View;
-import icyllis.modernui.ui.master.ViewGroup;
+import icyllis.modernui.view.View;
+import icyllis.modernui.view.ViewGroup;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

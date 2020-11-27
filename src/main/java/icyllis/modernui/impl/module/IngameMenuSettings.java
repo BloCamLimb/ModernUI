@@ -19,17 +19,18 @@
 package icyllis.modernui.impl.module;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.system.ModIntegration;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
 import icyllis.modernui.animation.ITimeInterpolator;
+import icyllis.modernui.system.ModernUI;
+import icyllis.modernui.system.integration.OptiFineIntegration;
 import icyllis.modernui.ui.test.WidgetLayout;
-import icyllis.modernui.ui.master.UIManager;
+import icyllis.modernui.view.UIManager;
 import icyllis.modernui.ui.test.ModuleGroup;
 import icyllis.modernui.ui.test.Align9D;
-import icyllis.modernui.ui.view.DropDownMenu;
-import icyllis.modernui.ui.view.PopupMenu;
-import icyllis.modernui.ui.widget.LineTextButton;
+import icyllis.modernui.ui.popup.DropDownMenu;
+import icyllis.modernui.ui.popup.PopupMenu;
+import icyllis.modernui.widget.LineTextButton;
 import icyllis.modernui.impl.background.MenuSettingsBG;
 import net.minecraft.client.resources.I18n;
 
@@ -128,7 +129,7 @@ public class IngameMenuSettings extends ModuleGroup {
     private void openAssetsMenu() {
         List<String> tabs = Lists.newArrayList(I18n.format("gui.modernui.settings.tab.resourcePacks"),
                 I18n.format("gui.modernui.settings.tab.language"));
-        if (ModIntegration.optifineLoaded) {
+        if (ModernUI.optifineLoaded) {
             tabs.add(I18n.format("of.options.shadersTitle"));
         }
         DropDownMenu menu = new DropDownMenu.Builder(
@@ -150,7 +151,7 @@ public class IngameMenuSettings extends ModuleGroup {
                 } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException | ClassCastException e) {
                     e.printStackTrace();
                 }*/
-                ModIntegration.OptiFine.openShadersGui();
+                OptiFineIntegration.openShadersGui();
                 return;
             }
             switchChildModule(5 + index);

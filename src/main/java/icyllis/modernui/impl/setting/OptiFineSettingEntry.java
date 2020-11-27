@@ -21,7 +21,7 @@ package icyllis.modernui.impl.setting;
 import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.graphics.renderer.Icon;
-import icyllis.modernui.ui.master.UITools;
+import icyllis.modernui.view.UITools;
 import net.minecraft.client.AbstractOption;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;

@@ -21,7 +21,7 @@ package icyllis.modernui.impl.chat;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.system.StorageManager;
-import icyllis.modernui.ui.master.UITools;
+import icyllis.modernui.view.UITools;
 import icyllis.modernui.ui.test.DrawTools;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;

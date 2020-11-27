@@ -18,8 +18,7 @@
 
 package icyllis.modernui.ui.test;
 
-import icyllis.modernui.ui.widget.WidgetArea;
-import net.minecraft.client.gui.IGuiEventListener;
+import icyllis.modernui.widget.WidgetArea;
 
 import java.util.ArrayList;
 import java.util.List;

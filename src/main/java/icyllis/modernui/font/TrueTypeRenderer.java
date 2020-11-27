@@ -26,7 +26,7 @@ import icyllis.modernui.font.process.TextCacheProcessor;
 import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.ui.master.UIManager;
+import icyllis.modernui.view.UIManager;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.Tessellator;

@@ -22,7 +22,7 @@ import icyllis.modernui.impl.setting.GuiScaleSettingEntry;
 import icyllis.modernui.impl.setting.SettingCategoryGroup;
 import icyllis.modernui.impl.setting.SettingEntry;
 import icyllis.modernui.impl.setting.SettingScrollWindow;
-import icyllis.modernui.system.ModIntegration;
+import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.system.SettingsManager;
 import icyllis.modernui.ui.test.Module;
 import net.minecraft.client.AbstractOption;
@@ -49,7 +49,7 @@ public class SettingVideo extends Module {
         addDetailsCategory(groups);
         addAnimationsCategory(groups);
 
-        if (ModIntegration.optifineLoaded) {
+        if (ModernUI.optifineLoaded) {
             addPerformanceCategory(groups);
             addOtherCategory(groups);
         }
@@ -81,7 +81,7 @@ public class SettingVideo extends Module {
 
         list.add(SettingsManager.VSYNC.apply(window));
 
-        if (ModIntegration.optifineLoaded) {
+        if (ModernUI.optifineLoaded) {
 
             list.add(SettingsManager.DYNAMIC_FOV.apply(window));
 
@@ -99,13 +99,13 @@ public class SettingVideo extends Module {
 
         list.add(SettingsManager.AO.apply(window));
 
-        if (ModIntegration.optifineLoaded) {
+        if (ModernUI.optifineLoaded) {
             list.add(SettingsManager.AO_LEVEL.apply(window));
         }
 
         list.add(SettingsManager.MIPMAP_LEVEL.apply(window));
 
-        if (ModIntegration.optifineLoaded) {
+        if (ModernUI.optifineLoaded) {
 
             list.add(SettingsManager.MIPMAP_TYPE.apply(window));
             //TODO optifine (WIP) AF Level, AA Level
@@ -144,7 +144,7 @@ public class SettingVideo extends Module {
         list.add(SettingsManager.ENTITY_SHADOWS.apply(window));
         list.add(SettingsManager.BIOME_BLEND_RADIUS.apply(window));
 
-        if (ModIntegration.optifineLoaded) {
+        if (ModernUI.optifineLoaded) {
             try {
                 Field field = Class.forName("net.optifine.gui.GuiDetailSettingsOF").getDeclaredField("enumOptions");
                 field.setAccessible(true);
@@ -170,7 +170,7 @@ public class SettingVideo extends Module {
 
         list.add(SettingsManager.PARTICLES.apply(window));
 
-        if (ModIntegration.optifineLoaded) {
+        if (ModernUI.optifineLoaded) {
             /*try {
                 Field field = GuiAnimationSettingsOF.class.getDeclaredField("enumOptions");
                 field.setAccessible(true);

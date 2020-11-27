@@ -22,7 +22,7 @@ import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.layout.Gravity;
 import icyllis.modernui.ui.layout.RelativeLayout;
-import icyllis.modernui.ui.master.View;
+import icyllis.modernui.view.View;
 
 import javax.annotation.Nonnull;
 

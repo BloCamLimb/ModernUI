@@ -19,7 +19,7 @@
 package icyllis.modernui.impl.module;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.ui.master.UITools;
+import icyllis.modernui.view.UITools;
 import icyllis.modernui.ui.test.Module;
 import icyllis.modernui.impl.setting.SettingCategoryGroup;
 import icyllis.modernui.impl.setting.SettingEntry;

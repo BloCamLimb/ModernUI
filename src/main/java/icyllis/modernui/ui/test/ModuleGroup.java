@@ -20,8 +20,8 @@ package icyllis.modernui.ui.test;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.system.ModernUI;
-import icyllis.modernui.ui.master.UIManager;
-import icyllis.modernui.ui.master.UITools;
+import icyllis.modernui.view.UIManager;
+import icyllis.modernui.view.UITools;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;

@@ -26,7 +26,7 @@ import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.graphics.shader.program.*;
-import icyllis.modernui.ui.master.View;
+import icyllis.modernui.view.View;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -295,7 +295,7 @@ public class Canvas {
     /**
      * Draw text on screen, text formatting and bidi are supported.
      * This method returns the text width, or you can get width by
-     * {@link icyllis.modernui.ui.master.UITools#getTextWidth(String)}
+     * {@link icyllis.modernui.view.UITools#getTextWidth(String)}
      *
      * @param text formatted string
      * @param x    x pos
