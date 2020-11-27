@@ -20,7 +20,6 @@ package icyllis.modernui.fragment;
 
 import icyllis.modernui.lifecycle.ILifecycleOwner;
 import icyllis.modernui.lifecycle.Lifecycle;
-import icyllis.modernui.lifecycle.LifecycleEvent;
 
 import javax.annotation.Nonnull;
 
@@ -45,7 +44,7 @@ class FragmentViewLifecycleOwner implements ILifecycleOwner {
         return mLifecycle;
     }
 
-    void handleLifecycleEvent(LifecycleEvent.Type type) {
-        mLifecycle.handleLifecycleEvent(type);
+    void handleLifecycleEvent(Lifecycle.Event event) {
+        mLifecycle.handleLifecycleEvent(event);
     }
 }

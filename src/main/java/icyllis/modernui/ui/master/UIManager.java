@@ -19,13 +19,13 @@
 package icyllis.modernui.ui.master;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.animation.Animation;
 import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.math.Point;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.system.Config;
 import icyllis.modernui.system.ModernUI;
-import icyllis.modernui.animation.Animation;
 import icyllis.modernui.ui.example.TestHUD;
 import icyllis.modernui.ui.layout.MeasureSpec;
 import icyllis.modernui.ui.test.IModule;
@@ -42,7 +42,9 @@ import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.BusBuilder;
 import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -73,6 +75,9 @@ public final class UIManager {
 
     // cached minecraft instance
     private final Minecraft minecraft = Minecraft.getInstance();
+
+    // UI event bus
+    private final IEventBus mActivityEventBus = BusBuilder.builder().setTrackPhases(false).build();
 
     // cached screen to open for logic check
     @Nullable
@@ -205,24 +210,24 @@ public final class UIManager {
     }
 
     /**
-     * Register a container screen to open the gui screen.
+     * Register an activity factory relative to a menu type to open the gui screen.
      *
-     * @param type    container type
-     * @param factory main fragment factory
-     * @param <T>     container class type
+     * @param type    registered menu type
+     * @param factory activity factory
+     * @param <T>     menu type
      * @see net.minecraftforge.fml.network.NetworkHooks#openGui(ServerPlayerEntity, INamedContainerProvider, Consumer)
      */
-    public <T extends Container> void registerFactory(@Nonnull ContainerType<? extends T> type,
-                                                      @Nonnull Function<T, Fragment> factory) {
+    public <T extends Container> void registerFactory(
+            @Nonnull ContainerType<? extends T> type, @Nonnull Function<T, Fragment> factory) {
         ScreenManager.registerFactory(type, getFactory(factory));
     }
 
     @Nonnull
-    private <T extends Container> ScreenManager.IScreenFactory<T, MuiNetScreen<T>> getFactory(
+    private <T extends Container> ScreenManager.IScreenFactory<T, MuiMenuScreen<T>> getFactory(
             @Nonnull Function<T, Fragment> factory) {
         return (container, inventory, title) -> {
             this.fragment = factory.apply(container);
-            return new MuiNetScreen<>(container, inventory, title);
+            return new MuiMenuScreen<>(container, inventory, title);
         };
     }
 
@@ -306,7 +311,7 @@ public final class UIManager {
         }
 
         if (modernScreen != screenToOpen &&
-                ((screenToOpen instanceof MuiScreen) || (screenToOpen instanceof MuiNetScreen<?>))) {
+                ((screenToOpen instanceof MuiScreen) || (screenToOpen instanceof MuiMenuScreen<?>))) {
             if (view != null) {
                 // prevent repeated opening sometimes
                 event.setCanceled(true);

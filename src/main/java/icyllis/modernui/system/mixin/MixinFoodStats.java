@@ -18,7 +18,6 @@
 
 package icyllis.modernui.system.mixin;
 
-import icyllis.modernui.network.NetworkHandler;
 import icyllis.modernui.network.S2CMsgEncoder;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.FoodStats;
@@ -39,12 +38,18 @@ public class MixinFoodStats {
     private float prevSaturationLevel;
     private float prevExhaustionLevel;
 
+    private boolean needSync;
+
     @Inject(method = "tick", at = @At("TAIL"))
     private void postTick(PlayerEntity player, CallbackInfo ci) {
         if (foodSaturationLevel != prevSaturationLevel || foodExhaustionLevel != prevExhaustionLevel) {
             prevSaturationLevel = foodSaturationLevel;
             prevExhaustionLevel = foodExhaustionLevel;
-            NetworkHandler.INSTANCE.sendToPlayer(S2CMsgEncoder.food(foodSaturationLevel, foodExhaustionLevel), player);
+            needSync = true;
+        }
+        if (needSync && (player.world.getGameTime() & 0x7) == 0) {
+            S2CMsgEncoder.food(foodSaturationLevel, foodExhaustionLevel).sendToPlayer(player);
+            needSync = false;
         }
     }
 }

@@ -19,7 +19,9 @@
 package icyllis.modernui.network;
 
 import icyllis.modernui.system.ModernUI;
+import io.netty.buffer.Unpooled;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.network.play.ClientPlayNetHandler;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -36,55 +38,78 @@ import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.network.NetworkEvent;
-import net.minecraftforge.fml.network.NetworkInstance;
 import net.minecraftforge.fml.network.NetworkRegistry;
+import net.minecraftforge.fml.network.event.EventNetworkChannel;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * Modern UI does not require a network channel, you can copy this class at your disposal
+ * For handling a network channel more faster, you can create an instance for your mod
  */
 @SuppressWarnings("unused")
-public enum NetworkHandler {
-    INSTANCE(ModernUI.MODID, "main_network");
+public class NetworkHandler {
 
-    private final NetworkInstance network;
+    /**
+     * The internal network channel of Modern UI
+     */
+    static NetworkHandler instance;
 
+    private final ResourceLocation channel;
     private final String protocol;
 
-    NetworkHandler(@Nonnull String modid, @Nonnull String name) {
-        // get protocol first
+    private final boolean allowClientOnly;
+    private final boolean allowServerOnly;
+
+    @Nullable
+    private final IClientHandler clientHandler;
+    @Nullable
+    private final IServerHandler serverHandler;
+
+    private PacketBuffer buffer;
+
+    public NetworkHandler(@Nonnull String modid, @Nonnull String name, boolean allowClientOnly, boolean allowServerOnly,
+                          @Nullable IClientHandler clientHandler, @Nullable IServerHandler serverHandler) {
         protocol = UUID.nameUUIDFromBytes(ModList.get().getModFileById(modid).getMods().stream()
                 .map(iModInfo -> iModInfo.getVersion().getQualifier())
                 .collect(Collectors.joining(",")).getBytes(StandardCharsets.UTF_8)).toString();
-        NetworkRegistry.ChannelBuilder builder = NetworkRegistry.ChannelBuilder
-                .named(new ResourceLocation(modid, name))
+        this.allowClientOnly = allowClientOnly;
+        this.allowServerOnly = allowServerOnly;
+        this.clientHandler = clientHandler;
+        this.serverHandler = serverHandler;
+        EventNetworkChannel network = NetworkRegistry.ChannelBuilder
+                .named(channel = new ResourceLocation(modid, name))
                 .networkProtocolVersion(this::getProtocolVersion)
-                .clientAcceptedVersions(this::verifyServerProtocol)
-                .serverAcceptedVersions(this::verifyClientProtocol);
-        try {
-            network = (NetworkInstance) ObfuscationReflectionHelper.findMethod(
-                    NetworkRegistry.ChannelBuilder.class,
-                    "createNetworkInstance").invoke(builder);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new IllegalStateException(e);
+                .clientAcceptedVersions(this::checkS2CProtocol)
+                .serverAcceptedVersions(this::checkC2SProtocol)
+                .eventNetworkChannel();
+        if (FMLEnvironment.dist.isClient()) {
+            network.addListener(this::onS2CMessageReceived);
+        }
+        network.addListener(this::onC2SMessageReceived);
+    }
+
+    public static void registerNetwork() {
+        if (instance == null) {
+            synchronized (NetworkHandler.class) {
+                if (instance == null) {
+                    instance = new NetworkHandler(ModernUI.MODID, "main_network", true, true, S2CMsgHandler::handle, C2SMsgHandler::handle);
+                }
+            }
         }
     }
 
-    /**
-     * Add network event listeners
-     */
-    public void addListeners() {
-        network.addListener(this::onS2CMessageReceived);
-        network.addListener(this::onC2SMessageReceived);
+    @Nonnull
+    public PacketBuffer allocBuffer(int index) {
+        buffer = new PacketBuffer(Unpooled.buffer());
+        buffer.writeByte(index);
+        return buffer;
     }
 
     /**
@@ -102,8 +127,12 @@ public enum NetworkHandler {
      * @param serverProtocol the protocol of this channel sent from server side
      * @return {@code true} to accept the protocol, {@code false} otherwise
      */
-    private boolean verifyServerProtocol(@Nonnull String serverProtocol) {
-        return serverProtocol.equals(protocol) || serverProtocol.equals(NetworkRegistry.ABSENT);
+    public boolean checkS2CProtocol(@Nonnull String serverProtocol) {
+        boolean allowAbsent = allowClientOnly && serverProtocol.equals(NetworkRegistry.ABSENT);
+        if (allowAbsent) {
+            ModernUI.LOGGER.debug(ModernUI.MARKER, "Connecting to a server that does not have {} channel available", channel);
+        }
+        return allowAbsent || serverProtocol.equals(protocol);
     }
 
     /**
@@ -112,107 +141,111 @@ public enum NetworkHandler {
      * @param clientProtocol the protocol of this channel sent from client side
      * @return {@code true} to accept the protocol, {@code false} otherwise
      */
-    private boolean verifyClientProtocol(@Nonnull String clientProtocol) {
-        return clientProtocol.equals(protocol) || clientProtocol.equals(NetworkRegistry.ABSENT)
-                || clientProtocol.equals(NetworkRegistry.ACCEPTVANILLA);
+    public boolean checkC2SProtocol(@Nonnull String clientProtocol) {
+        if (clientProtocol.equals(NetworkRegistry.ACCEPTVANILLA)) {
+            return false;
+        }
+        boolean allowAbsent = allowServerOnly && clientProtocol.equals(NetworkRegistry.ABSENT);
+        return allowAbsent || clientProtocol.equals(protocol);
     }
 
+    @OnlyIn(Dist.CLIENT)
     private void onS2CMessageReceived(NetworkEvent.ServerCustomPayloadEvent event) {
         // received on main thread of effective side
-        try {
-            S2CMsgHandler.CONSUMERS[event.getPayload().readUnsignedByte()]
-                    .handle(event.getPayload(), Minecraft.getInstance().player);
-        } catch (RuntimeException e) {
-            ModernUI.LOGGER.warn("An error occurred while handling server-to-client message", e);
+        if (clientHandler != null) {
+            try {
+                clientHandler.handle(event.getPayload().readUnsignedByte(), event.getPayload(), Minecraft.getInstance().player);
+            } catch (Exception e) {
+                ModernUI.LOGGER.warn(ModernUI.MARKER, "An error occurred while handling server-to-client message", e);
+            }
         }
-        event.getPayload().release();
+        event.getPayload().release(); // forge disabled this on client
         event.getSource().get().setPacketHandled(true);
     }
 
     private void onC2SMessageReceived(NetworkEvent.ClientCustomPayloadEvent event) {
         // received on main thread of effective side
-        try {
-            C2SMsgHandler.CONSUMERS[event.getPayload().readUnsignedByte()]
-                    .handle(event.getPayload(), event.getSource().get().getSender());
-        } catch (RuntimeException e) {
-            ModernUI.LOGGER.warn("An error occurred while handling client-to-server message", e);
+        if (serverHandler != null) {
+            try {
+                serverHandler.handle(event.getPayload().readUnsignedByte(), event.getPayload(), event.getSource().get().getSender());
+            } catch (Exception e) {
+                ModernUI.LOGGER.warn(ModernUI.MARKER, "An error occurred while handling client-to-server message", e);
+            }
         }
         event.getSource().get().setPacketHandled(true);
     }
 
     /**
      * Send a message to server, call this on client side
-     *
-     * @param buffer message to send
      */
     @OnlyIn(Dist.CLIENT)
-    public void sendToServer(PacketBuffer buffer) {
+    public void sendToServer() {
         ClientPlayNetHandler connection = Minecraft.getInstance().getConnection();
         if (connection != null) {
-            connection.sendPacket(new CCustomPayloadPacket(network.getChannelName(), buffer));
+            connection.sendPacket(new CCustomPayloadPacket(channel, buffer));
         }
+        buffer = null;
     }
 
     /**
      * Send a message to a player
      *
-     * @param buffer message to send
      * @param player player entity on server
      */
-    public void sendToPlayer(PacketBuffer buffer, @Nonnull PlayerEntity player) {
-        ((ServerPlayerEntity) player).connection.sendPacket(new SCustomPayloadPlayPacket(network.getChannelName(), buffer));
+    public void sendToPlayer(@Nonnull PlayerEntity player) {
+        ((ServerPlayerEntity) player).connection.sendPacket(new SCustomPayloadPlayPacket(channel, buffer));
+        buffer = null;
     }
 
     /**
      * Send a message to all specific players
      *
-     * @param buffer  message to send
      * @param players players on server
      */
-    public void sendToPlayers(PacketBuffer buffer, @Nonnull Iterable<? extends PlayerEntity> players) {
-        final IPacket<?> packet = new SCustomPayloadPlayPacket(network.getChannelName(), buffer);
+    public void sendToPlayers(@Nonnull Iterable<? extends PlayerEntity> players) {
+        final IPacket<?> packet = new SCustomPayloadPlayPacket(channel, buffer);
         for (PlayerEntity player : players) {
             ((ServerPlayerEntity) player).connection.sendPacket(packet);
         }
+        buffer = null;
     }
 
     /**
      * Send a message to all players on the server
-     *
-     * @param buffer message to send
      */
-    public void sendToAll(PacketBuffer buffer) {
+    public void sendToAll() {
         ServerLifecycleHooks.getCurrentServer().getPlayerList()
-                .sendPacketToAllPlayers(new SCustomPayloadPlayPacket(network.getChannelName(), buffer));
+                .sendPacketToAllPlayers(new SCustomPayloadPlayPacket(channel, buffer));
+        buffer = null;
     }
 
     /**
      * Send a message to all players in specified dimension
      *
-     * @param buffer    message to send
      * @param dimension dimension that players in
      */
-    public void sendToDimension(PacketBuffer buffer, @Nonnull RegistryKey<World> dimension) {
+    public void sendToDimension(@Nonnull RegistryKey<World> dimension) {
         ServerLifecycleHooks.getCurrentServer().getPlayerList()
-                .func_232642_a_(new SCustomPayloadPlayPacket(network.getChannelName(), buffer), dimension);
+                .func_232642_a_(new SCustomPayloadPlayPacket(channel, buffer), dimension);
+        buffer = null;
     }
 
     /**
      * Send a message to all players nearby a point with specified radius in specified dimension
      *
-     * @param buffer    message to send
-     * @param excluded  excluded player to send the packet
+     * @param excluded  the player that will not be sent the packet
      * @param x         target point x
      * @param y         target point y
      * @param z         target point z
      * @param radius    radius to target point
      * @param dimension dimension that players in
      */
-    public void sendToAllNear(PacketBuffer buffer, @Nullable ServerPlayerEntity excluded,
+    public void sendToAllNear(@Nullable ServerPlayerEntity excluded,
                               double x, double y, double z, double radius,
                               @Nonnull RegistryKey<World> dimension) {
         ServerLifecycleHooks.getCurrentServer().getPlayerList().sendToAllNearExcept(excluded,
-                x, y, z, radius, dimension, new SCustomPayloadPlayPacket(network.getChannelName(), buffer));
+                x, y, z, radius, dimension, new SCustomPayloadPlayPacket(channel, buffer));
+        buffer = null;
     }
 
     /**
@@ -220,12 +253,12 @@ public enum NetworkHandler {
      * on the client contains the chunk where the entity is located, and then the player is
      * tracking the entity.
      *
-     * @param buffer message to send
      * @param entity entity is tracking
      */
-    public void sendToTrackingEntity(PacketBuffer buffer, @Nonnull Entity entity) {
+    public void sendToTrackingEntity(@Nonnull Entity entity) {
         ((ServerWorld) entity.getEntityWorld()).getChunkProvider().sendToAllTracking(
-                entity, new SCustomPayloadPlayPacket(network.getChannelName(), buffer));
+                entity, new SCustomPayloadPlayPacket(channel, buffer));
+        buffer = null;
     }
 
     /**
@@ -233,23 +266,35 @@ public enum NetworkHandler {
      * the entity if it is a player. If a chunk that player loaded on the client contains the
      * chunk where the entity is located, and then the player is tracking the entity.
      *
-     * @param buffer message to send
      * @param entity entity is tracking
      */
-    public void sendToTrackingAndSelf(PacketBuffer buffer, @Nonnull Entity entity) {
+    public void sendToTrackingAndSelf(@Nonnull Entity entity) {
         ((ServerWorld) entity.getEntityWorld()).getChunkProvider().sendToTrackingAndSelf(
-                entity, new SCustomPayloadPlayPacket(network.getChannelName(), buffer));
+                entity, new SCustomPayloadPlayPacket(channel, buffer));
+        buffer = null;
     }
 
     /**
      * Send a message to all players who loaded the specified chunk
      *
-     * @param buffer message to send
-     * @param chunk  chunk that players in
+     * @param chunk chunk that players in
      */
-    public void sendToTrackingChunk(PacketBuffer buffer, @Nonnull Chunk chunk) {
-        final IPacket<?> packet = new SCustomPayloadPlayPacket(network.getChannelName(), buffer);
+    public void sendToTrackingChunk(@Nonnull Chunk chunk) {
+        final IPacket<?> packet = new SCustomPayloadPlayPacket(channel, buffer);
         ((ServerWorld) chunk.getWorld()).getChunkProvider().chunkManager.getTrackingPlayers(
                 chunk.getPos(), false).forEach(player -> player.connection.sendPacket(packet));
+        buffer = null;
+    }
+
+    @FunctionalInterface
+    public interface IClientHandler {
+
+        void handle(short index, @Nonnull PacketBuffer payload, @Nullable ClientPlayerEntity player) throws Exception;
+    }
+
+    @FunctionalInterface
+    public interface IServerHandler {
+
+        void handle(short index, @Nonnull PacketBuffer payload, @Nullable ServerPlayerEntity player) throws Exception;
     }
 }

@@ -25,12 +25,17 @@ import net.minecraft.util.FoodStats;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 @OnlyIn(Dist.CLIENT)
 public class S2CMsgHandler {
 
-    static final IConsumer[] CONSUMERS = new IConsumer[]{S2CMsgHandler::food};
+    private static final IConsumer[] CONSUMERS = new IConsumer[]{S2CMsgHandler::food};
+
+    static void handle(short index, @Nonnull PacketBuffer payload, @Nullable ClientPlayerEntity player) {
+        CONSUMERS[index].consume(payload, player);
+    }
 
     private static void food(PacketBuffer buffer, @Nullable ClientPlayerEntity player) {
         if (player != null) {
@@ -41,8 +46,8 @@ public class S2CMsgHandler {
     }
 
     @FunctionalInterface
-    interface IConsumer {
+    public interface IConsumer {
 
-        void handle(PacketBuffer buffer, @Nullable ClientPlayerEntity player);
+        void consume(PacketBuffer buffer, @Nullable ClientPlayerEntity player);
     }
 }
