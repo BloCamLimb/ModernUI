@@ -12,7 +12,7 @@ license="All Rights Reserved"
     authors="BloCamLimb"
     credits="BloCamLimb"
     description='''
-    Modern UI gives you a slick, easy-to-use and data-driven UI framework combining a wealth of functionality and a new font engine with high quality, better language compatibility and good optimization.
+    Modern UI gives you a powerful UI development framework for minecraft desktop application combining a wealth of functionality and a font engine with high quality, better language compatibility and good optimization.
     '''
 
 [[dependencies.modernui]]

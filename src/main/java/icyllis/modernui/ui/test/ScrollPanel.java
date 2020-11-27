@@ -19,10 +19,10 @@
 package icyllis.modernui.ui.test;
 
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.ui.master.View;
-import icyllis.modernui.ui.widget.ScrollController;
-import icyllis.modernui.ui.widget.UniformScrollEntry;
-import icyllis.modernui.ui.widget.UniformScrollGroup;
+import icyllis.modernui.view.View;
+import icyllis.modernui.widget.ScrollController;
+import icyllis.modernui.widget.UniformScrollEntry;
+import icyllis.modernui.widget.UniformScrollGroup;
 
 import javax.annotation.Nonnull;
 import java.util.function.Function;

@@ -18,8 +18,8 @@
 
 package icyllis.modernui.ui.layout;
 
-import icyllis.modernui.ui.master.View;
-import icyllis.modernui.ui.master.ViewGroup;
+import icyllis.modernui.view.View;
+import icyllis.modernui.view.ViewGroup;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 

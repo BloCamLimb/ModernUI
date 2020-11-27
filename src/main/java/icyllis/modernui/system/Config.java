@@ -58,9 +58,9 @@ public class Config {
     }
 
     static void init() {
-        FMLPaths.getOrCreateGameRelativePath(FMLPaths.CONFIGDIR.get().resolve(ModernUI.NAME_COMPACT), ModernUI.NAME_COMPACT);
-        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, CLIENT_SPEC, ModernUI.NAME_COMPACT + "/client.toml");
-        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, COMMON_SPEC, ModernUI.NAME_COMPACT + "/common.toml");
+        FMLPaths.getOrCreateGameRelativePath(FMLPaths.CONFIGDIR.get().resolve(ModernUI.NAME_CPT), ModernUI.NAME_CPT);
+        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, CLIENT_SPEC, ModernUI.NAME_CPT + "/client.toml");
+        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, COMMON_SPEC, ModernUI.NAME_CPT + "/common.toml");
         FMLJavaModLoadingContext.get().getModEventBus().addListener(Config::reload);
     }
 

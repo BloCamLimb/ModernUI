@@ -19,7 +19,7 @@
 package icyllis.modernui.animation;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.ui.master.UIManager;
+import icyllis.modernui.view.UIManager;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

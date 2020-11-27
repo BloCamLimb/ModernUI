@@ -18,7 +18,7 @@
 
 package icyllis.modernui.ui.layout;
 
-import icyllis.modernui.ui.master.ViewGroup;
+import icyllis.modernui.view.ViewGroup;
 
 //TODO developing
 public class GridLayout extends ViewGroup {

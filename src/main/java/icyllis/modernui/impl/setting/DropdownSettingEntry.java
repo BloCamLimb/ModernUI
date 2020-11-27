@@ -18,16 +18,16 @@
 
 package icyllis.modernui.impl.setting;
 
-import icyllis.modernui.ui.master.UITools;
+import icyllis.modernui.view.UITools;
 import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.ui.master.UIManager;
+import icyllis.modernui.view.UIManager;
 import icyllis.modernui.graphics.renderer.Icon;
 import icyllis.modernui.ui.test.Align9D;
-import icyllis.modernui.ui.view.PopupMenu;
-import icyllis.modernui.ui.view.DropDownMenu;
+import icyllis.modernui.ui.popup.PopupMenu;
+import icyllis.modernui.ui.popup.DropDownMenu;
 
 import javax.annotation.Nonnull;
 import java.util.List;

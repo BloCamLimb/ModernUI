@@ -27,7 +27,7 @@ import icyllis.modernui.animation.ITimeInterpolator;
 import icyllis.modernui.ui.layout.Gravity;
 import icyllis.modernui.ui.layout.LinearLayout;
 import icyllis.modernui.ui.layout.Orientation;
-import icyllis.modernui.ui.master.View;
+import icyllis.modernui.view.View;
 import net.minecraft.util.text.TextFormatting;
 
 import javax.annotation.Nonnull;

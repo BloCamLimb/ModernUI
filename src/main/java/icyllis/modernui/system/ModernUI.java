@@ -19,7 +19,7 @@
 package icyllis.modernui.system;
 
 import icyllis.modernui.graphics.renderer.RenderTools;
-import icyllis.modernui.ui.storage.LayoutInflater;
+import icyllis.modernui.view.LayoutInflater;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.apache.logging.log4j.LogManager;
@@ -27,26 +27,32 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
+import java.lang.reflect.InvocationTargetException;
+
 @Mod(ModernUI.MODID)
 public class ModernUI {
 
-    public static final String MODID        = "modernui";
-    public static final String NAME_COMPACT = "ModernUI";
+    public static final String MODID = "modernui";
+    public static final String NAME_CPT = "ModernUI";
 
-    public static final Logger LOGGER = LogManager.getLogger(NAME_COMPACT);
+    public static final Logger LOGGER = LogManager.getLogger(NAME_CPT);
     public static final Marker MARKER = MarkerManager.getMarker("System");
+
+    public static boolean optifineLoaded;
 
     public ModernUI() {
         checkJava();
 
+        init();
         Config.init();
-        ModIntegration.init();
         StorageManager.init();
 
         if (FMLEnvironment.dist.isClient()) {
             LayoutInflater.init();
             RenderTools.init();
         }
+
+        LOGGER.debug(MARKER, "Modern UI initialized");
     }
 
     // Java 1.8.0_51 which is officially used by Mojang will produce bugs with Modern UI
@@ -59,6 +65,19 @@ public class ModernUI {
                         "You're using java " + javaVersion + " which is not compatible with Modern UI, " +
                                 "a minimum of java 1.8.0_251 or above is required");
             }
+        }
+    }
+
+    private static void init() {
+        try {
+            Class<?> clazz = Class.forName("optifine.Installer");
+            String version = (String) clazz.getMethod("getOptiFineVersion").invoke(null);
+            optifineLoaded = true;
+            LOGGER.debug(MARKER, "OptiFine installed: {}", version);
+        } catch (ClassNotFoundException | NoSuchMethodException ignored) {
+
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            e.printStackTrace();
         }
     }
 }

@@ -18,7 +18,7 @@
 
 package icyllis.modernui.ui.test;
 
-import icyllis.modernui.ui.master.UIManager;
+import icyllis.modernui.view.UIManager;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

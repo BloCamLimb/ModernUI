@@ -18,7 +18,6 @@
 
 package icyllis.modernui.ui.test;
 
-import icyllis.modernui.ui.master.UIManager;
 import org.lwjgl.glfw.GLFW;
 
 /**

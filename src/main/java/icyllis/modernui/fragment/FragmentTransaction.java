@@ -18,7 +18,7 @@
 
 package icyllis.modernui.fragment;
 
-import icyllis.modernui.ui.master.View;
+import icyllis.modernui.view.View;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

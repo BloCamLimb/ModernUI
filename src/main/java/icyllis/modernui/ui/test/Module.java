@@ -19,7 +19,7 @@
 package icyllis.modernui.ui.test;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.ui.master.*;
+import icyllis.modernui.view.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.SimpleSound;
 import net.minecraft.util.ResourceLocation;

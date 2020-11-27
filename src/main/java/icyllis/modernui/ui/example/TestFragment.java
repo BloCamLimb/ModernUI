@@ -22,9 +22,9 @@ import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.layout.FrameLayout;
 import icyllis.modernui.ui.layout.Gravity;
 import icyllis.modernui.fragment.Fragment;
-import icyllis.modernui.ui.master.View;
-import icyllis.modernui.ui.master.ViewRootImpl;
-import icyllis.modernui.ui.widget.ScrollView;
+import icyllis.modernui.view.View;
+import icyllis.modernui.view.ViewRootImpl;
+import icyllis.modernui.widget.ScrollView;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

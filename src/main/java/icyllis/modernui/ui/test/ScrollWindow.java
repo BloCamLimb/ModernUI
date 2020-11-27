@@ -20,8 +20,8 @@ package icyllis.modernui.ui.test;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.ui.master.View;
-import icyllis.modernui.ui.widget.ScrollController;
+import icyllis.modernui.view.View;
+import icyllis.modernui.widget.ScrollController;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;

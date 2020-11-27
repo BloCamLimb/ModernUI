@@ -18,7 +18,7 @@
 
 package icyllis.modernui.ui.test;
 
-import icyllis.modernui.ui.widget.ScrollController;
+import icyllis.modernui.widget.ScrollController;
 
 @Deprecated
 public interface IScrollHost extends IHost, IWidget {

@@ -18,9 +18,9 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.ui.master.MuiMenuScreen;
-import icyllis.modernui.ui.master.MuiScreen;
-import icyllis.modernui.ui.master.UIManager;
+import icyllis.modernui.view.MuiMenuScreen;
+import icyllis.modernui.view.MuiScreen;
+import icyllis.modernui.view.UIManager;
 import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;

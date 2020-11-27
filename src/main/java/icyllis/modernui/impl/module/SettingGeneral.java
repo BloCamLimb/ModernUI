@@ -19,13 +19,13 @@
 package icyllis.modernui.impl.module;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.system.ModIntegration;
+import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.ui.test.IModule;
 import icyllis.modernui.ui.test.Module;
 import icyllis.modernui.impl.setting.*;
-import icyllis.modernui.ui.master.UIManager;
-import icyllis.modernui.ui.view.ConfirmCallback;
-import icyllis.modernui.ui.view.PopupConfirm;
+import icyllis.modernui.view.UIManager;
+import icyllis.modernui.ui.popup.ConfirmCallback;
+import icyllis.modernui.ui.popup.PopupConfirm;
 import icyllis.modernui.impl.setting.SettingScrollWindow;
 import icyllis.modernui.system.SettingsManager;
 import net.minecraft.client.GameSettings;
@@ -120,7 +120,7 @@ public class SettingGeneral extends Module {
 
         list.add(SettingsManager.CHAT_HEIGHT_UNFOCUSED.apply(window));
 
-        if (ModIntegration.optifineLoaded) {
+        if (ModernUI.optifineLoaded) {
 
             list.add(SettingsManager.CHAT_BACKGROUND.apply(window));
 
