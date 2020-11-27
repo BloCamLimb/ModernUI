@@ -104,7 +104,7 @@ public class TestLinearLayout extends LinearLayout {
         super.onDraw(canvas);
         canvas.moveTo(this);
         canvas.resetColor();
-        canvas.drawText(TextFormatting.GOLD + "LinearLayout " + canvas.getDrawingTime(), 0, 0);
+        canvas.drawText("Ll" + TextFormatting.BOLD + "Ll " + canvas.getDrawingTime(), 0, 0);
 
         // 1
 

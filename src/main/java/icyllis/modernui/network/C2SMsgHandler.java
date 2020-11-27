@@ -21,15 +21,20 @@ package icyllis.modernui.network;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.network.PacketBuffer;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public class C2SMsgHandler {
 
-    static final IConsumer[] CONSUMERS = new IConsumer[]{};
+    private static final IConsumer[] CONSUMERS = new IConsumer[]{};
+
+    static void handle(short index, @Nonnull PacketBuffer payload, @Nullable ServerPlayerEntity player) {
+
+    }
 
     @FunctionalInterface
-    interface IConsumer {
+    public interface IConsumer {
 
-        void handle(PacketBuffer buffer, @Nullable ServerPlayerEntity player);
+        void consume(PacketBuffer buffer, @Nullable ServerPlayerEntity player);
     }
 }

@@ -41,17 +41,17 @@ import java.util.Objects;
 
 /**
  * This is required because most of mods check if instanceof {@link ContainerScreen} rather than {@link IHasContainer}.
- * ContainerScreen can hold a container including item slots and network communication.
+ * ContainerScreen can hold a menu including item stack interaction and network communication.
  *
- * @param <T> container type
+ * @param <T> menu type
  * @see ScreenManager.IScreenFactory
  */
 @OnlyIn(Dist.CLIENT)
-public final class MuiNetScreen<T extends Container> extends ContainerScreen<T> {
+public final class MuiMenuScreen<T extends Container> extends ContainerScreen<T> {
 
     private final UIManager manager = UIManager.getInstance();
 
-    MuiNetScreen(@Nonnull T container, PlayerInventory inventory, ITextComponent title) {
+    MuiMenuScreen(@Nonnull T container, PlayerInventory inventory, ITextComponent title) {
         super(container, inventory, title);
     }
 

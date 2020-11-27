@@ -71,7 +71,7 @@ public class RegistryLib {
 
     @SubscribeEvent
     static void setupCommon(@Nonnull FMLCommonSetupEvent event) {
-        NetworkHandler.INSTANCE.addListeners();
+        NetworkHandler.registerNetwork();
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -91,7 +91,8 @@ public class RegistryLib {
     }
 
     @Nonnull
-    public static <T extends Container> ContainerType<T> registerContainer(@Nonnull IForgeRegistry<ContainerType<?>> registry, IContainerFactory<T> factory, String name) {
+    public static <T extends Container> ContainerType<T> registerContainer(
+            @Nonnull IForgeRegistry<ContainerType<?>> registry, IContainerFactory<T> factory, String name) {
         ContainerType<T> type = IForgeContainerType.create(factory);
         type.setRegistryName(name);
         registry.register(type);

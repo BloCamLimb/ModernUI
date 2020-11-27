@@ -18,16 +18,18 @@
 
 package icyllis.modernui.network;
 
-import io.netty.buffer.Unpooled;
 import net.minecraft.network.PacketBuffer;
+
+import javax.annotation.Nonnull;
 
 public class S2CMsgEncoder {
 
-    public static PacketBuffer food(float foodSaturationLevel, float foodExhaustionLevel) {
-        PacketBuffer buffer = new PacketBuffer(Unpooled.buffer());
-        buffer.writeByte(0);
+    @Nonnull
+    public static NetworkHandler food(float foodSaturationLevel, float foodExhaustionLevel) {
+        NetworkHandler network = NetworkHandler.instance;
+        PacketBuffer buffer = network.allocBuffer(0);
         buffer.writeFloat(foodSaturationLevel);
         buffer.writeFloat(foodExhaustionLevel);
-        return buffer;
+        return network;
     }
 }

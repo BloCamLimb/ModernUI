@@ -18,12 +18,11 @@
 
 package icyllis.modernui.lifecycle;
 
-import net.minecraftforge.eventbus.api.BusBuilder;
-import net.minecraftforge.eventbus.api.IEventBus;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import javax.annotation.Nonnull;
 import java.lang.ref.WeakReference;
-import java.util.function.Consumer;
+import java.util.List;
 
 /**
  * The Lifecycle of {@link icyllis.modernui.fragment.Fragment}
@@ -39,10 +38,7 @@ public class Lifecycle {
      */
     private final WeakReference<ILifecycleOwner> mLifecycleOwner;
 
-    private final IEventBus mLifecycleEventBus = BusBuilder.builder()
-            .setTrackPhases(false)
-            .markerType(LifecycleEvent.class)
-            .build();
+    private final List<IListener> mListeners = new ObjectArrayList<>();
 
     /**
      * Current state
@@ -65,18 +61,18 @@ public class Lifecycle {
      * Add a listener what will be called when LifecycleOwner changes state.
      *
      * @param listener the listener to call
-     * @param <T>      event type
      */
-    public <T extends LifecycleEvent> void addListener(Consumer<T> listener) {
-        mLifecycleEventBus.addListener(listener);
+    public void addListener(@Nonnull IListener listener) {
+        mListeners.add(listener);
     }
 
-    public void registerObject(Object object) {
-        mLifecycleEventBus.register(object);
-    }
-
-    public void unregisterObject(Object object) {
-        mLifecycleEventBus.unregister(object);
+    /**
+     * Remove a listener from the listener list.
+     *
+     * @param listener the listener to remove
+     */
+    public void removeListener(@Nonnull IListener listener) {
+        mListeners.remove(listener);
     }
 
     /**
@@ -94,10 +90,10 @@ public class Lifecycle {
      * Note that if the {@code currentState} is the same state as the last call to this method,
      * calling this method has no effect.
      *
-     * @param type The event type that was received
+     * @param event The event type that was received
      */
-    public void handleLifecycleEvent(@Nonnull LifecycleEvent.Type type) {
-        State next = getStateAfter(type);
+    public void handleLifecycleEvent(@Nonnull Event event) {
+        State next = getStateAfter(event);
         moveToState(next);
     }
 
@@ -112,15 +108,15 @@ public class Lifecycle {
         }
         int diff;
         while ((diff = state.compareTo(mState)) != 0) {
-            if (diff < 0)
-                mLifecycleEventBus.post(downEvent(lifecycleOwner, mState));
-            else
-                mLifecycleEventBus.post(upEvent(lifecycleOwner, mState));
+            Event event = diff < 0 ? downEvent(mState) : upEvent(mState);
+            for (IListener l : mListeners) {
+                l.onLifecycleEvent(lifecycleOwner, event);
+            }
         }
     }
 
     @Nonnull
-    private static State getStateAfter(@Nonnull LifecycleEvent.Type event) {
+    private static State getStateAfter(@Nonnull Event event) {
         switch (event) {
             case ON_CREATE:
             case ON_STOP:
@@ -137,37 +133,37 @@ public class Lifecycle {
     }
 
     @Nonnull
-    private LifecycleEvent downEvent(ILifecycleOwner owner, @Nonnull State state) {
+    private Event downEvent(@Nonnull State state) {
         switch (state) {
             case INITIALIZED:
             case DESTROYED:
                 throw new IllegalArgumentException();
             case CREATED:
                 mState = State.DESTROYED;
-                return new LifecycleEvent.Destroy(owner);
+                return Event.ON_DESTROY;
             case STARTED:
                 mState = State.CREATED;
-                return new LifecycleEvent.Stop(owner);
+                return Event.ON_STOP;
             case RESUMED:
                 mState = State.STARTED;
-                return new LifecycleEvent.Pause(owner);
+                return Event.ON_PAUSE;
         }
         throw new IllegalArgumentException("Unexpected state value " + state);
     }
 
     @Nonnull
-    private LifecycleEvent upEvent(ILifecycleOwner owner, @Nonnull State state) {
+    private Event upEvent(@Nonnull State state) {
         switch (state) {
             case INITIALIZED:
             case DESTROYED:
                 mState = State.CREATED;
-                return new LifecycleEvent.Create(owner);
+                return Event.ON_CREATE;
             case CREATED:
                 mState = State.STARTED;
-                return new LifecycleEvent.Start(owner);
+                return Event.ON_START;
             case STARTED:
                 mState = State.RESUMED;
-                return new LifecycleEvent.Resume(owner);
+                return Event.ON_RESUME;
             case RESUMED:
                 throw new IllegalArgumentException();
         }
@@ -182,6 +178,12 @@ public class Lifecycle {
     @Nonnull
     public State getCurrentState() {
         return mState;
+    }
+
+    @FunctionalInterface
+    public interface IListener {
+
+        void onLifecycleEvent(@Nonnull ILifecycleOwner source, Event event);
     }
 
     public enum State {
@@ -220,5 +222,14 @@ public class Lifecycle {
         public boolean isAtLeast(@Nonnull State state) {
             return compareTo(state) >= 0;
         }
+    }
+
+    public enum Event {
+        ON_CREATE,
+        ON_START,
+        ON_RESUME,
+        ON_PAUSE,
+        ON_STOP,
+        ON_DESTROY
     }
 }

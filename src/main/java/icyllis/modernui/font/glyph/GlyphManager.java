@@ -275,6 +275,8 @@ public class GlyphManager {
                     } catch (FontFormatException | IOException e) {
                         ModernUI.LOGGER.warn(MARKER, "Preferred font failed to load", e);
                     }
+                } else {
+                    ModernUI.LOGGER.warn(MARKER, "Preferred font is invalid");
                 }
             } else {
                 Optional<Font> font = allFonts.stream().filter(f -> f.getName().equals(sPreferredFont)).findFirst();

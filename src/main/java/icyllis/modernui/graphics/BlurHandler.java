@@ -18,7 +18,7 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.ui.master.MuiNetScreen;
+import icyllis.modernui.ui.master.MuiMenuScreen;
 import icyllis.modernui.ui.master.MuiScreen;
 import icyllis.modernui.ui.master.UIManager;
 import it.unimi.dsi.fastutil.objects.ObjectArraySet;
@@ -41,15 +41,12 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Better than Blur (mod) in every respect, and surely they are incompatible
- */
 @OnlyIn(Dist.CLIENT)
 public enum BlurHandler {
     INSTANCE;
 
     /**
-     * Config value
+     * Config values
      *
      * @see icyllis.modernui.system.Config.Client
      */
@@ -58,6 +55,7 @@ public enum BlurHandler {
     public static float sBlurRadius;
     public static float sBackgroundAlpha;
 
+    // minecraft namespace
     private final ResourceLocation shader = new ResourceLocation("shaders/post/blur_fast.json");
 
     private final Minecraft minecraft = Minecraft.getInstance();
@@ -97,10 +95,10 @@ public enum BlurHandler {
         if (minecraft.world == null) {
             return;
         }
-        boolean excluded;
-        if (gui == null || gui instanceof MuiScreen || gui instanceof MuiNetScreen<?>)
+        final boolean excluded;
+        if (gui == null || gui instanceof MuiScreen || gui instanceof MuiMenuScreen<?>) {
             excluded = false;
-        else {
+        } else {
             Class<?> t = gui.getClass();
             excluded = blacklist.stream().anyMatch(c -> c.isAssignableFrom(t));
         }
@@ -142,7 +140,7 @@ public enum BlurHandler {
      * @see MuiScreen#init(Minecraft, int, int)
      */
     public void forceBlur() {
-        // no need to check if is excluded, this method is only called by opened ModernScreen
+        // no need to check if is excluded, this method is only called by opened ModernUI Screen
         if (!sBlurEffect) {
             return;
         }
