@@ -16,20 +16,18 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.network;
+package icyllis.modernui.system.mixin;
 
-import net.minecraft.network.PacketBuffer;
+import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.util.math.vector.Vector3f;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
 
-import javax.annotation.Nonnull;
+@Mixin(FontRenderer.class)
+public interface AccessFontRenderer {
 
-public class S2CMsgEncoder {
-
-    @Nonnull
-    public static NetworkHandler food(float foodSaturationLevel, float foodExhaustionLevel) {
-        NetworkHandler network = NetworkHandler.instance;
-        PacketBuffer buffer = network.allocBuffer(0);
-        buffer.writeFloat(foodSaturationLevel);
-        buffer.writeFloat(foodExhaustionLevel);
-        return network;
+    @Accessor("FONT_OFFSET")
+    static Vector3f shadowLifting() {
+        throw new IllegalStateException();
     }
 }

@@ -129,7 +129,7 @@ public class IngameMenuSettings extends ModuleGroup {
     private void openAssetsMenu() {
         List<String> tabs = Lists.newArrayList(I18n.format("gui.modernui.settings.tab.resourcePacks"),
                 I18n.format("gui.modernui.settings.tab.language"));
-        if (ModernUI.optifineLoaded) {
+        if (ModernUI.isOptiFineLoaded()) {
             tabs.add(I18n.format("of.options.shadersTitle"));
         }
         DropDownMenu menu = new DropDownMenu.Builder(

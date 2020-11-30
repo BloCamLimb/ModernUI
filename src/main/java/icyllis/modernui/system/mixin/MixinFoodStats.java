@@ -18,7 +18,7 @@
 
 package icyllis.modernui.system.mixin;
 
-import icyllis.modernui.network.S2CMsgEncoder;
+import icyllis.modernui.system.MsgEncoder;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.FoodStats;
 import org.spongepowered.asm.mixin.Mixin;
@@ -48,7 +48,7 @@ public class MixinFoodStats {
             needSync = true;
         }
         if (needSync && (player.world.getGameTime() & 0x7) == 0) {
-            S2CMsgEncoder.food(foodSaturationLevel, foodExhaustionLevel).sendToPlayer(player);
+            MsgEncoder.food(foodSaturationLevel, foodExhaustionLevel).sendToPlayer(player);
             needSync = false;
         }
     }

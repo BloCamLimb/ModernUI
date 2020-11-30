@@ -22,7 +22,6 @@ import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.system.Config;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
@@ -185,7 +184,7 @@ public enum UIEditor {
 
     @SubscribeEvent
     void gKeyInput(@Nonnull InputEvent.KeyInputEvent event) {
-        if (!Config.isDeveloperMode() || event.getAction() != GLFW.GLFW_PRESS) {
+        if (!ModernUI.isDeveloperMode() || event.getAction() != GLFW.GLFW_PRESS) {
             return;
         }
         if (!Screen.hasControlDown()) {

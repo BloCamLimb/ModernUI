@@ -16,25 +16,18 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.network;
+package icyllis.modernui.plugin;
 
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.network.PacketBuffer;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
-public class C2SMsgHandler {
-
-    private static final IConsumer[] CONSUMERS = new IConsumer[]{};
-
-    static void handle(short index, @Nonnull PacketBuffer payload, @Nullable ServerPlayerEntity player) {
-
-    }
-
-    @FunctionalInterface
-    public interface IConsumer {
-
-        void consume(PacketBuffer buffer, @Nullable ServerPlayerEntity player);
-    }
+/**
+ * The interface to implement to create a Modern UI plugin.
+ * <p>
+ * The implementation class should have {@link MuiPlugin} annotation to
+ * make this plugin work.
+ * <p>
+ * The implementation class should not have any fields or other methods,
+ * and should be unloaded once runtime available.
+ *
+ * @see MuiPlugin
+ */
+public interface IModPlugin {
 }

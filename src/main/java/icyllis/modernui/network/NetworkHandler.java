@@ -56,11 +56,6 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 public class NetworkHandler {
 
-    /**
-     * The internal network channel of Modern UI
-     */
-    static NetworkHandler instance;
-
     private final ResourceLocation channel;
     private final String protocol;
 
@@ -72,8 +67,19 @@ public class NetworkHandler {
     @Nullable
     private final IServerHandler serverHandler;
 
+    // temporary buffer
     private PacketBuffer buffer;
 
+    /**
+     * Create a network handler of a mod
+     *
+     * @param modid           the mod identifier
+     * @param name            network channel name
+     * @param allowClientOnly allow the mod can be installed only on client, generally is false
+     * @param allowServerOnly allow the mod can be installed only on server, generally is false
+     * @param clientHandler   server to client message handler
+     * @param serverHandler   client to server message handler
+     */
     public NetworkHandler(@Nonnull String modid, @Nonnull String name, boolean allowClientOnly, boolean allowServerOnly,
                           @Nullable IClientHandler clientHandler, @Nullable IServerHandler serverHandler) {
         protocol = UUID.nameUUIDFromBytes(ModList.get().getModFileById(modid).getMods().stream()
@@ -93,16 +99,6 @@ public class NetworkHandler {
             network.addListener(this::onS2CMessageReceived);
         }
         network.addListener(this::onC2SMessageReceived);
-    }
-
-    public static void registerNetwork() {
-        if (instance == null) {
-            synchronized (NetworkHandler.class) {
-                if (instance == null) {
-                    instance = new NetworkHandler(ModernUI.MODID, "main_network", true, true, S2CMsgHandler::handle, C2SMsgHandler::handle);
-                }
-            }
-        }
     }
 
     @Nonnull

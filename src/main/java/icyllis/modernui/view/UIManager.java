@@ -24,7 +24,6 @@ import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.math.Point;
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.system.Config;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.ui.example.TestHUD;
 import icyllis.modernui.ui.layout.MeasureSpec;
@@ -71,7 +70,7 @@ public final class UIManager {
     private static volatile UIManager instance;
 
     // logger marker
-    public static final Marker MARKER = MarkerManager.getMarker("Window");
+    public static final Marker MARKER = MarkerManager.getMarker("UIService");
 
     // cached minecraft instance
     private final Minecraft minecraft = Minecraft.getInstance();
@@ -178,6 +177,7 @@ public final class UIManager {
      *
      * @return instance
      */
+    @Nonnull
     public static UIManager getInstance() {
         if (instance == null) {
             synchronized (UIManager.class) {
@@ -672,7 +672,7 @@ public final class UIManager {
                 RenderSystem.enableTexture();
                 break;
             case HEALTH:
-                if (Config.isDeveloperMode())
+                if (ModernUI.isDeveloperMode())
                     TestHUD.drawHealth(canvas);
                 break;
         }
@@ -704,7 +704,7 @@ public final class UIManager {
 
         windows.forEach(w -> w.performLayout(widthSpec, heightSpec, forceLayout));
 
-        if (Config.isDeveloperMode()) {
+        if (ModernUI.isDeveloperMode()) {
             ModernUI.LOGGER.debug(MARKER, "Layout performed in {} \u03bcs", (System.nanoTime() - startTime) / 1000.0f);
         }
         //screenMouseMove(mouseX, mouseY);

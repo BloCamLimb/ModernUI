@@ -120,7 +120,7 @@ public class SettingGeneral extends Module {
 
         list.add(SettingsManager.CHAT_HEIGHT_UNFOCUSED.apply(window));
 
-        if (ModernUI.optifineLoaded) {
+        if (ModernUI.isOptiFineLoaded()) {
 
             list.add(SettingsManager.CHAT_BACKGROUND.apply(window));
 

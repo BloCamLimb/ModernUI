@@ -147,12 +147,16 @@ dependencies {
     compileOnly files('/libs/OptiFine_1.15.2_HD_U_G1_pre14_MOD_dev.jar')
     implementation 'org.jetbrains:annotations:15.0'
 
-    //TODO shade this
-    api 'com.dslplatform:dsl-json-java8:1.9.5'
+    // no longer use
+    /*shade 'com.dslplatform:dsl-json-java8:1.9.5'
     annotationProcessor 'com.dslplatform:dsl-json-java8:1.9.5'
-    compileOnly 'javax.json.bind:javax.json.bind-api:1.0'
+    compileOnly 'javax.json.bind:javax.json.bind-api:1.0'*/
 
-    // see https://github.com/SpongePowered/Mixin/blob/0.8.2/build.gradle
+    //TODO shade this
+    implementation "com.vladsch.flexmark:flexmark-all:${flexmark_version}"
+
+    // fix mixin refMap generation because we have another annotation processor, mixin version depends on forge version
+    // see https://github.com/SpongePowered/Mixin/blob/0.8.2/build.gradle for the following list
     annotationProcessor 'com.google.guava:guava:21.0'
     annotationProcessor 'org.apache.logging.log4j:log4j-core:2.0-beta9'
     annotationProcessor 'org.ow2.asm:asm-tree:7.2'
@@ -197,11 +201,20 @@ shadowJar {
     classifier("universal")
     configurations = [project.configurations.shade]
 
+    dependencies {
+        exclude 'icu4j-59.1.jar' // flexmark dependency, minecraft includes the 66.1 one
+    }
+
     relocate 'com.google.errorprone', 'icyllis.errorprone'
     relocate 'org.checkerframe', 'icyllis.checkerframe'
     relocate 'com.github.benmanes.caffeine', 'icyllis.caffeine'
+    relocate 'com.vladsch.flexmark', 'icyllis.flexmark'
 
+    exclude 'META-INF/CHANGES'
+    exclude 'META-INF/DEPENDENCIES'
     exclude 'META-INF/LICENSE**'
+    exclude 'META-INF/NOTICE**'
+    exclude 'META-INF/README**'
     exclude 'META-INF/maven/**'
 }
 

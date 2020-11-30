@@ -19,6 +19,8 @@
 package icyllis.modernui.system;
 
 import icyllis.modernui.network.NetworkHandler;
+import icyllis.modernui.plugin.IModPlugin;
+import icyllis.modernui.plugin.MuiPlugin;
 import icyllis.modernui.ui.example.ContainerTest;
 import icyllis.modernui.ui.example.TestFragment;
 import icyllis.modernui.view.UIManager;
@@ -31,17 +33,23 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.extensions.IForgeContainerType;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.network.IContainerFactory;
+import net.minecraftforge.fml.unsafe.UnsafeHacks;
+import net.minecraftforge.forgespi.language.ModFileScanData;
 import net.minecraftforge.registries.IForgeRegistry;
+import org.objectweb.asm.Type;
 
 import javax.annotation.Nonnull;
+import java.util.HashMap;
+import java.util.Map;
 
 @Mod.EventBusSubscriber(modid = ModernUI.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
-public class Registration {
+public final class Registration {
 
     /**
      * Sounds
@@ -71,7 +79,24 @@ public class Registration {
 
     @SubscribeEvent
     static void setupCommon(@Nonnull FMLCommonSetupEvent event) {
-        NetworkHandler.registerNetwork();
+        Map<String, IModPlugin> plugins = new HashMap<>();
+        Type target = Type.getType(MuiPlugin.class);
+        for (ModFileScanData scanData : ModList.get().getAllScanData()) {
+            for (ModFileScanData.AnnotationData data : scanData.getAnnotations()) {
+                if (data.getAnnotationType().equals(target)) {
+                    try {
+                        plugins.putIfAbsent((String) data.getAnnotationData().get("namespace"),
+                                UnsafeHacks.newInstance(Class.forName(data.getMemberName()).asSubclass(IModPlugin.class)));
+                    } catch (Throwable throwable) {
+                        ModernUI.LOGGER.error(ModernUI.MARKER, "Failed to load plugin: {}", data.getMemberName(), throwable);
+                    }
+                }
+            }
+        }
+        if (!plugins.isEmpty()) {
+            ModernUI.LOGGER.debug(ModernUI.MARKER, "Found Modern UI plugins: {}", plugins.keySet());
+        }
+        MsgEncoder.network = new NetworkHandler(ModernUI.MODID, "main_network", plugins.isEmpty(), plugins.isEmpty(), MsgHandler.C::handle, MsgHandler::handle);
     }
 
     @OnlyIn(Dist.CLIENT)

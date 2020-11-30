@@ -21,13 +21,13 @@ Add followings to `build.gradle`
 ```
 repositories {
     maven {
-        name 'jihuayu maven'
-        url 'https://maven2.jihuayu.site'
+        name 'CurseForge Maven'
+        url 'https://www.cursemaven.com/'
     }
 }
 ```
 ```
 dependencies {
-    compile fg.deobf("icyllis.modernui:ModernUI:[-version]")
+    compile fg.deobf("curse.maven:ModernUI:[-version]")
 }
 ```

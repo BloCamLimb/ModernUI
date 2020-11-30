@@ -23,3 +23,4 @@ resource
 run
 classes
 *.psd
+logs
