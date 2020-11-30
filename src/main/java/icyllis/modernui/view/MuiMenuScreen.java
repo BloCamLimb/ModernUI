@@ -51,8 +51,8 @@ public final class MuiMenuScreen<T extends Container> extends ContainerScreen<T>
 
     private final UIManager manager = UIManager.getInstance();
 
-    MuiMenuScreen(@Nonnull T container, PlayerInventory inventory, ITextComponent title) {
-        super(container, inventory, title);
+    MuiMenuScreen(@Nonnull T menu, PlayerInventory inventory, ITextComponent title) {
+        super(menu, inventory, title);
     }
 
     @Override

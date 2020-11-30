@@ -37,7 +37,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Config {
+public final class Config {
 
     private static final Client CLIENT_CONFIG;
     private static final ForgeConfigSpec CLIENT_SPEC;
@@ -193,18 +193,12 @@ public class Config {
         }
     }
 
-    private static boolean developerMode;
-
-    public static boolean isDeveloperMode() {
-        return developerMode;
-    }
-
     public static class Common {
 
         private final ForgeConfigSpec.BooleanValue enableDeveloperModeV;
         //private final ForgeConfigSpec.IntValue workingDirLevelV;
 
-        public Common(@Nonnull ForgeConfigSpec.Builder builder) {
+        private Common(@Nonnull ForgeConfigSpec.Builder builder) {
             builder.comment("Developer Config")
                     .push("developer");
 
@@ -218,7 +212,7 @@ public class Config {
 
         private void load() {
             if (enableDeveloperModeV.get()) {
-                developerMode = true;
+                ModernUI.developerMode = true;
                 return;
             }
             // get '/run' parent
@@ -226,7 +220,7 @@ public class Config {
             // the root directory of your project
             File dir = path.toFile();
             String[] r = dir.list((file, name) -> name.equals("build.gradle"));
-            developerMode = r != null && r.length > 0;
+            ModernUI.developerMode = r != null && r.length > 0;
         }
     }
 }

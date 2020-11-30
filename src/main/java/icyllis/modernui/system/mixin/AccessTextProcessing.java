@@ -25,7 +25,7 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 import java.util.Optional;
 
 @Mixin(TextProcessing.class)
-public interface AccessorTextProcessing {
+public interface AccessTextProcessing {
 
     @Accessor("field_238336_a_")
     static Optional<?> stopIteration() {

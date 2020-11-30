@@ -16,18 +16,29 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.system.mixin;
+package icyllis.modernui.system;
 
-import net.minecraft.util.FoodStats;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.gen.Accessor;
+import icyllis.modernui.network.NetworkHandler;
+import net.minecraft.network.PacketBuffer;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
-@Mixin(FoodStats.class)
-public interface AccessorFoodStats {
+import javax.annotation.Nonnull;
 
-    @Accessor("foodExhaustionLevel")
-    float getFoodExhaustionLevel();
+public final class MsgEncoder {
 
-    @Accessor("foodExhaustionLevel")
-    void setFoodExhaustionLevel(float exhaustionLevel);
+    static NetworkHandler network;
+
+    @Nonnull
+    public static NetworkHandler food(float foodSaturationLevel, float foodExhaustionLevel) {
+        PacketBuffer buffer = network.allocBuffer(0);
+        buffer.writeFloat(foodSaturationLevel);
+        buffer.writeFloat(foodExhaustionLevel);
+        return network;
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public static class C {
+
+    }
 }

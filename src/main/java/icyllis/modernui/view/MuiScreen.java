@@ -66,6 +66,7 @@ public final class MuiScreen extends Screen {
 
     @Override
     public boolean isPauseScreen() {
+        //TODO configurable
         return false;
     }
 

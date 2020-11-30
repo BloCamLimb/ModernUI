@@ -21,7 +21,7 @@ package icyllis.modernui.font;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.pipeline.TextRenderNode;
 import icyllis.modernui.font.process.TextCacheProcessor;
-import icyllis.modernui.system.mixin.AccessorFontRenderer;
+import icyllis.modernui.system.mixin.AccessFontRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.fonts.Font;
@@ -180,7 +180,7 @@ public class ModernFontRenderer extends FontRenderer {
             node.drawText(matrix, buffer, string, x + 1, y + 1, r >> 2, g >> 2, b >> 2, a, true,
                     transparent, colorBackground, packedLight);
             matrix = matrix.copy();
-            matrix.translate(AccessorFontRenderer.shadowLifting());
+            matrix.translate(AccessFontRenderer.shadowLifting());
         }
 
         return node.drawText(matrix, buffer, string, x, y, r, g, b, a, false, transparent, colorBackground, packedLight);

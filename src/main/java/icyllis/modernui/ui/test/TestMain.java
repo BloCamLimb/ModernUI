@@ -18,20 +18,45 @@
 
 package icyllis.modernui.ui.test;
 
-import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.font.GlyphVector;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
+import com.vladsch.flexmark.parser.Parser;
+import com.vladsch.flexmark.util.ast.Document;
+import com.vladsch.flexmark.util.ast.Node;
+import icyllis.modernui.system.ModernUI;
 
 public class TestMain {
 
-    public static void main(String[] args) throws IOException {
-        int b = 256;
-        b &= (~1) << 8;
-        System.out.println(b);
+    public static void main(String[] args) {
+        Parser parser = Parser.builder().build();
+        Document document = parser.parse("Advanced Page\r\n---\r\nMy **One** Line\r\n> My Two");
+        iterateNode(document, 0);
 
+    }
+
+    /*
+        Heading font size
+        level 1: 32
+        level 2: 24
+        level 3: 19
+        level 4: 16 (default size for vanilla)
+        level 5: 14 (default size for paragraph)
+        level 6: 14 (lighter color)
+     */
+
+    private static void iterateNode(Node node, int depth) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < depth; i++) {
+            sb.append("  ");
+        }
+        depth++;
+        ModernUI.LOGGER.info("{}{}", sb, node);
+        Node child = Node.AST_ADAPTER.getFirstChild(node);
+        while (child != null) {
+            iterateNode(child, depth);
+            child = Node.AST_ADAPTER.getNext(child);
+        }
+    }
+
+    private static void drawText() {
         /*BufferedImage image = new BufferedImage(1024, 1024, BufferedImage.TYPE_INT_ARGB);
         Graphics2D graphics2D = image.createGraphics();
         Font font = new Font(Font.SANS_SERIF, Font.PLAIN, 32);

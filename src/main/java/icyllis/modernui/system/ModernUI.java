@@ -29,8 +29,11 @@ import org.apache.logging.log4j.MarkerManager;
 
 import java.lang.reflect.InvocationTargetException;
 
+/**
+ * The Modern UI mod class for internal use only
+ */
 @Mod(ModernUI.MODID)
-public class ModernUI {
+public final class ModernUI {
 
     public static final String MODID = "modernui";
     public static final String NAME_CPT = "ModernUI";
@@ -38,7 +41,9 @@ public class ModernUI {
     public static final Logger LOGGER = LogManager.getLogger(NAME_CPT);
     public static final Marker MARKER = MarkerManager.getMarker("System");
 
-    public static boolean optifineLoaded;
+    private static boolean optiFineLoaded;
+
+    static boolean developerMode;
 
     public ModernUI() {
         checkJava();
@@ -55,6 +60,19 @@ public class ModernUI {
         LOGGER.debug(MARKER, "Modern UI initialized");
     }
 
+    private static void init() {
+        try {
+            Class<?> clazz = Class.forName("optifine.Installer");
+            String version = (String) clazz.getMethod("getOptiFineVersion").invoke(null);
+            optiFineLoaded = true;
+            LOGGER.debug(MARKER, "OptiFine installed: {}", version);
+        } catch (ClassNotFoundException | NoSuchMethodException ignored) {
+
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            e.printStackTrace();
+        }
+    }
+
     // Java 1.8.0_51 which is officially used by Mojang will produce bugs with Modern UI
     private static void checkJava() {
         String javaVersion = System.getProperty("java.version");
@@ -68,16 +86,11 @@ public class ModernUI {
         }
     }
 
-    private static void init() {
-        try {
-            Class<?> clazz = Class.forName("optifine.Installer");
-            String version = (String) clazz.getMethod("getOptiFineVersion").invoke(null);
-            optifineLoaded = true;
-            LOGGER.debug(MARKER, "OptiFine installed: {}", version);
-        } catch (ClassNotFoundException | NoSuchMethodException ignored) {
+    public static boolean isDeveloperMode() {
+        return developerMode;
+    }
 
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            e.printStackTrace();
-        }
+    public static boolean isOptiFineLoaded() {
+        return optiFineLoaded;
     }
 }

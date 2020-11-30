@@ -49,7 +49,7 @@ public class SettingVideo extends Module {
         addDetailsCategory(groups);
         addAnimationsCategory(groups);
 
-        if (ModernUI.optifineLoaded) {
+        if (ModernUI.isOptiFineLoaded()) {
             addPerformanceCategory(groups);
             addOtherCategory(groups);
         }
@@ -81,7 +81,7 @@ public class SettingVideo extends Module {
 
         list.add(SettingsManager.VSYNC.apply(window));
 
-        if (ModernUI.optifineLoaded) {
+        if (ModernUI.isOptiFineLoaded()) {
 
             list.add(SettingsManager.DYNAMIC_FOV.apply(window));
 
@@ -99,13 +99,13 @@ public class SettingVideo extends Module {
 
         list.add(SettingsManager.AO.apply(window));
 
-        if (ModernUI.optifineLoaded) {
+        if (ModernUI.isOptiFineLoaded()) {
             list.add(SettingsManager.AO_LEVEL.apply(window));
         }
 
         list.add(SettingsManager.MIPMAP_LEVEL.apply(window));
 
-        if (ModernUI.optifineLoaded) {
+        if (ModernUI.isOptiFineLoaded()) {
 
             list.add(SettingsManager.MIPMAP_TYPE.apply(window));
             //TODO optifine (WIP) AF Level, AA Level
@@ -144,7 +144,7 @@ public class SettingVideo extends Module {
         list.add(SettingsManager.ENTITY_SHADOWS.apply(window));
         list.add(SettingsManager.BIOME_BLEND_RADIUS.apply(window));
 
-        if (ModernUI.optifineLoaded) {
+        if (ModernUI.isOptiFineLoaded()) {
             try {
                 Field field = Class.forName("net.optifine.gui.GuiDetailSettingsOF").getDeclaredField("enumOptions");
                 field.setAccessible(true);
@@ -170,7 +170,7 @@ public class SettingVideo extends Module {
 
         list.add(SettingsManager.PARTICLES.apply(window));
 
-        if (ModernUI.optifineLoaded) {
+        if (ModernUI.isOptiFineLoaded()) {
             /*try {
                 Field field = GuiAnimationSettingsOF.class.getDeclaredField("enumOptions");
                 field.setAccessible(true);

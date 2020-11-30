@@ -37,14 +37,14 @@ import net.minecraftforge.fml.network.NetworkHooks;
 import javax.annotation.Nonnull;
 
 /**
- * Listens global common events
+ * Handles game server or client events from Forge event bus
  */
 @Mod.EventBusSubscriber
-public class EventHandler {
+final class EventHandler {
 
     @SubscribeEvent
-    static void rightClickItem(@Nonnull PlayerInteractEvent.RightClickItem event) {
-        if (Config.isDeveloperMode()) {
+    static void onRightClickItem(@Nonnull PlayerInteractEvent.RightClickItem event) {
+        if (ModernUI.isDeveloperMode()) {
             if (event.getItemStack().getItem() == Items.DIAMOND) {
                 if (event.getSide().isServer()) {
                     NetworkHooks.openGui((ServerPlayerEntity) event.getPlayer(), new ContainerTest.Provider());
@@ -59,7 +59,7 @@ public class EventHandler {
     }*/
 
     /**
-     * Listens global client events
+     * Handles game client events from Forge event bus
      */
     @OnlyIn(Dist.CLIENT)
     @Mod.EventBusSubscriber(Dist.CLIENT)
@@ -67,7 +67,7 @@ public class EventHandler {
 
         @SubscribeEvent
         static void onPlayerLogin(@Nonnull ClientPlayerNetworkEvent.LoggedInEvent event) {
-            if (Config.isDeveloperMode()) {
+            if (ModernUI.isDeveloperMode()) {
                 ClientPlayerEntity playerEntity = event.getPlayer();
                 if (playerEntity != null && RenderTools.glCapabilitiesErrors > 0) {
                     playerEntity.sendMessage(new StringTextComponent("[Modern UI] There are " + RenderTools.glCapabilitiesErrors +

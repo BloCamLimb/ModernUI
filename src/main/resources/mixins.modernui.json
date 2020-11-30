@@ -4,9 +4,9 @@
   "plugin": "icyllis.modernui.system.MixinConfigPlugin",
   "package": "icyllis.modernui.system.mixin",
   "client": [
-    "AccessorFontRenderer",
-    "AccessorFoodStats",
-    "AccessorTextProcessing",
+    "AccessFontRenderer",
+    "AccessFoodStats",
+    "AccessTextProcessing",
     "MixinClientLanguageMap",
     "MixinFoodStats",
     "MixinMainWindow",

@@ -18,7 +18,7 @@
 
 package icyllis.modernui.ui.test;
 
-import icyllis.modernui.system.mixin.AccessorFoodStats;
+import icyllis.modernui.system.mixin.AccessFoodStats;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.network.PacketBuffer;
@@ -56,7 +56,7 @@ public class FoodSaturationMsg implements IMessage {
         if (player != null) {
             FoodStats foodStats = player.getFoodStats();
             foodStats.setFoodSaturationLevel(buffer.readFloat());
-            ((AccessorFoodStats) foodStats).setFoodExhaustionLevel(buffer.readFloat());
+            ((AccessFoodStats) foodStats).setFoodExhaustionLevel(buffer.readFloat());
         }
     }
 }

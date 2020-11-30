@@ -16,10 +16,11 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.network;
+package icyllis.modernui.system;
 
-import icyllis.modernui.system.mixin.AccessorFoodStats;
+import icyllis.modernui.system.mixin.AccessFoodStats;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.FoodStats;
 import net.minecraftforge.api.distmarker.Dist;
@@ -28,26 +29,27 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-@OnlyIn(Dist.CLIENT)
-public class S2CMsgHandler {
+final class MsgHandler {
 
-    private static final IConsumer[] CONSUMERS = new IConsumer[]{S2CMsgHandler::food};
+    static void handle(short index, @Nonnull PacketBuffer payload, @Nullable ServerPlayerEntity player) {
 
-    static void handle(short index, @Nonnull PacketBuffer payload, @Nullable ClientPlayerEntity player) {
-        CONSUMERS[index].consume(payload, player);
     }
 
-    private static void food(PacketBuffer buffer, @Nullable ClientPlayerEntity player) {
-        if (player != null) {
+    @OnlyIn(Dist.CLIENT)
+    static class C {
+
+        static void handle(short index, @Nonnull PacketBuffer payload, @Nullable ClientPlayerEntity player) {
+            if (player != null) {
+                if (index == 0) {
+                    food(payload, player);
+                }
+            }
+        }
+
+        private static void food(@Nonnull PacketBuffer buffer, @Nonnull ClientPlayerEntity player) {
             FoodStats foodStats = player.getFoodStats();
             foodStats.setFoodSaturationLevel(buffer.readFloat());
-            ((AccessorFoodStats) foodStats).setFoodExhaustionLevel(buffer.readFloat());
+            ((AccessFoodStats) foodStats).setFoodExhaustionLevel(buffer.readFloat());
         }
-    }
-
-    @FunctionalInterface
-    public interface IConsumer {
-
-        void consume(PacketBuffer buffer, @Nullable ClientPlayerEntity player);
     }
 }

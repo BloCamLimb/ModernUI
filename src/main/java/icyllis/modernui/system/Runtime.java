@@ -16,18 +16,9 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.system.mixin;
+package icyllis.modernui.system;
 
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.util.math.vector.Vector3f;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.gen.Accessor;
+import icyllis.modernui.plugin.IMuiRuntime;
 
-@Mixin(FontRenderer.class)
-public interface AccessorFontRenderer {
-
-    @Accessor("FONT_OFFSET")
-    static Vector3f shadowLifting() {
-        throw new IllegalStateException();
-    }
+final class Runtime implements IMuiRuntime {
 }

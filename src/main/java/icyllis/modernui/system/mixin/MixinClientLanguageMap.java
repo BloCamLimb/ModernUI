@@ -64,7 +64,7 @@ public abstract class MixinClientLanguageMap {
         return TrueTypeRenderer.sGlobalRenderer ?
                 copier -> !text.getComponentWithStyle((s, t) ->
                         TextProcessing.func_238341_a_(t, s, copier) ? Optional.empty()
-                                : AccessorTextProcessing.stopIteration(), Style.EMPTY).isPresent()
+                                : AccessTextProcessing.stopIteration(), Style.EMPTY).isPresent()
                 : BidiReorderer.func_243508_a(text, func_230505_b_());
     }
 }
