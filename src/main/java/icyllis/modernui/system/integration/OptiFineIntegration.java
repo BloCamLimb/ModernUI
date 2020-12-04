@@ -21,10 +21,13 @@ package icyllis.modernui.system.integration;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
+@OnlyIn(Dist.CLIENT)
 public class OptiFineIntegration {
 
     public static void openShadersGui() {

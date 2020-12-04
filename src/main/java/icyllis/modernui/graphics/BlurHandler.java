@@ -18,23 +18,31 @@
 
 package icyllis.modernui.graphics;
 
+import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.view.MuiMenuScreen;
 import icyllis.modernui.view.MuiScreen;
 import icyllis.modernui.view.UIManager;
 import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.WorldVertexBufferUploader;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.shader.Shader;
 import net.minecraft.client.shader.ShaderDefault;
 import net.minecraft.client.shader.ShaderGroup;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -193,7 +201,29 @@ public enum BlurHandler {
         }
     }
 
-    public float getBackgroundAlpha() {
-        return backgroundAlpha;
+    public void drawScreenBackground(@Nonnull Screen screen, @Nonnull MatrixStack stack, int x1, int y1, int x2, int y2) {
+        int a = (int) (backgroundAlpha * 0xff);
+        if (a == 0) {
+            return;
+        }
+        RenderSystem.disableTexture();
+        RenderSystem.enableBlend();
+        RenderSystem.disableAlphaTest();
+        RenderSystem.defaultBlendFunc();
+
+        BufferBuilder builder = Tessellator.getInstance().getBuffer();
+        Matrix4f matrix = stack.getLast().getMatrix();
+        int z = screen.getBlitOffset();
+        builder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+        builder.pos(matrix, x2, y1, z).color(0, 0, 0, a).endVertex();
+        builder.pos(matrix, x1, y1, z).color(0, 0, 0, a).endVertex();
+        builder.pos(matrix, x1, y2, z).color(0, 0, 0, a).endVertex();
+        builder.pos(matrix, x2, y2, z).color(0, 0, 0, a).endVertex();
+        builder.finishDrawing();
+        WorldVertexBufferUploader.draw(builder);
+
+        RenderSystem.disableBlend();
+        RenderSystem.enableAlphaTest();
+        RenderSystem.enableTexture();
     }
 }

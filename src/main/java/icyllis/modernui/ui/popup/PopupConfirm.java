@@ -21,8 +21,8 @@ package icyllis.modernui.ui.popup;
 import icyllis.modernui.view.UITools;
 import icyllis.modernui.view.UIManager;
 import icyllis.modernui.widget.ConfirmPopupBG;
-import icyllis.modernui.ui.test.Module;
-import icyllis.modernui.ui.test.WidgetLayout;
+import icyllis.modernui.ui.discard.Module;
+import icyllis.modernui.ui.discard.WidgetLayout;
 import icyllis.modernui.widget.DynamicFrameButton;
 import net.minecraft.client.resources.I18n;
 

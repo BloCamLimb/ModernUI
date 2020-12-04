@@ -19,7 +19,7 @@
 package icyllis.modernui.impl.background;
 
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.ui.test.IDrawable;
+import icyllis.modernui.ui.discard.IDrawable;
 
 import javax.annotation.Nonnull;
 

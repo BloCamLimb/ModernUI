@@ -25,6 +25,9 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nonnull;
 
+/**
+ * Internal Use Only
+ */
 public final class MsgEncoder {
 
     static NetworkHandler network;

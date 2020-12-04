@@ -21,8 +21,6 @@ package icyllis.modernui.view;
 import icyllis.modernui.graphics.math.Point;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.system.ModernUI;
-import icyllis.modernui.ui.layout.Gravity;
-import icyllis.modernui.ui.layout.MeasureSpec;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -30,7 +28,7 @@ import java.util.LinkedList;
 
 /**
  * The top of a view hierarchy, implementing the needed protocol between View
- * and the UIManager.
+ * and the system
  */
 public final class ViewRootImpl implements IViewParent {
 
@@ -134,10 +132,10 @@ public final class ViewRootImpl implements IViewParent {
         return false;
     }
 
-    boolean onMouseEvent(MouseEvent event) {
+    boolean onMouseEvent(MotionEvent event) {
         if (view != null) {
             final boolean handled = view.onMouseEvent(event);
-            if (!handled && event.action == MouseEvent.ACTION_MOVE) {
+            if (!handled && event.action == MotionEvent.ACTION_MOVE) {
                 view.ensureMouseHoverExit();
             }
             return handled;

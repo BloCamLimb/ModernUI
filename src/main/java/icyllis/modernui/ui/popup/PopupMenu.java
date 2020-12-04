@@ -19,8 +19,8 @@
 package icyllis.modernui.ui.popup;
 
 import icyllis.modernui.view.UIManager;
-import icyllis.modernui.ui.test.IModule;
-import icyllis.modernui.ui.test.IWidget;
+import icyllis.modernui.ui.discard.IModule;
+import icyllis.modernui.ui.discard.IWidget;
 
 /**
  * Open a drop down menu or context menu, resize and mouse release will close this popup

@@ -21,10 +21,10 @@ package icyllis.modernui.widget;
 import com.google.gson.annotations.Expose;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.font.text.TextAlign;
-import icyllis.modernui.ui.test.Align9D;
-import icyllis.modernui.ui.test.Locator;
-import icyllis.modernui.ui.test.IHost;
-import icyllis.modernui.ui.test.Widget;
+import icyllis.modernui.ui.discard.Align9D;
+import icyllis.modernui.ui.discard.Locator;
+import icyllis.modernui.ui.discard.IHost;
+import icyllis.modernui.ui.discard.Widget;
 import net.minecraft.client.resources.I18n;
 
 import javax.annotation.Nonnull;

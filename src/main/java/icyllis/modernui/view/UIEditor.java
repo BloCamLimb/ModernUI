@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 //TODO Really Experimental, all changes won't be saved
+@Deprecated
 @OnlyIn(Dist.CLIENT)
 public enum UIEditor {
     INSTANCE;

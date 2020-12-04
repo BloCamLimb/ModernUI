@@ -21,8 +21,8 @@ package icyllis.modernui.system;
 import icyllis.modernui.network.NetworkHandler;
 import icyllis.modernui.plugin.IModPlugin;
 import icyllis.modernui.plugin.MuiPlugin;
-import icyllis.modernui.ui.example.ContainerTest;
-import icyllis.modernui.ui.example.TestFragment;
+import icyllis.modernui.ui.TestMenu;
+import icyllis.modernui.ui.TestFragment;
 import icyllis.modernui.view.UIManager;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.inventory.container.ContainerType;
@@ -45,6 +45,7 @@ import net.minecraftforge.registries.IForgeRegistry;
 import org.objectweb.asm.Type;
 
 import javax.annotation.Nonnull;
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -58,9 +59,9 @@ public final class Registration {
     public static SoundEvent BUTTON_CLICK_2;
 
     /**
-     * Containers
+     * Menus
      */
-    public static ContainerType<ContainerTest> TEST_CONTAINER;
+    public static ContainerType<TestMenu> TEST_MENU;
 
     @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
@@ -72,9 +73,9 @@ public final class Registration {
     }
 
     @SubscribeEvent
-    static void registerContainers(@Nonnull RegistryEvent.Register<ContainerType<?>> event) {
+    static void registerMenus(@Nonnull RegistryEvent.Register<ContainerType<?>> event) {
         final IForgeRegistry<ContainerType<?>> registry = event.getRegistry();
-        TEST_CONTAINER = registerContainer(registry, ContainerTest::new, "test");
+        TEST_MENU = registerMenu(registry, TestMenu::new, "test");
     }
 
     @SubscribeEvent
@@ -93,17 +94,31 @@ public final class Registration {
                 }
             }
         }
-        if (!plugins.isEmpty()) {
+
+        NetworkHandler network = new NetworkHandler(ModernUI.MODID, "main_network", MsgHandler.C::handle, MsgHandler::handle);
+        if (plugins.isEmpty()) {
+            try {
+                Field field = NetworkHandler.class.getDeclaredField("optional");
+                field.setAccessible(true);
+                field.setBoolean(network, true);
+            } catch (IllegalAccessException | NoSuchFieldException e) {
+                e.printStackTrace();
+            }
+        } else {
             ModernUI.LOGGER.debug(ModernUI.MARKER, "Found Modern UI plugins: {}", plugins.keySet());
         }
-        MsgEncoder.network = new NetworkHandler(ModernUI.MODID, "main_network", plugins.isEmpty(), plugins.isEmpty(), MsgHandler.C::handle, MsgHandler::handle);
+        MsgEncoder.network = network;
+
+        //
+
+        plugins.clear();
     }
 
     @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
     static void setupClient(@Nonnull FMLClientSetupEvent event) {
         //SettingsManager.INSTANCE.buildAllSettings();
-        UIManager.getInstance().registerFactory(Registration.TEST_CONTAINER, c -> new TestFragment());
+        UIManager.getInstance().registerFactory(Registration.TEST_MENU, c -> new TestFragment());
     }
 
     @Nonnull
@@ -116,7 +131,7 @@ public final class Registration {
     }
 
     @Nonnull
-    public static <T extends Container> ContainerType<T> registerContainer(
+    public static <T extends Container> ContainerType<T> registerMenu(
             @Nonnull IForgeRegistry<ContainerType<?>> registry, IContainerFactory<T> factory, String name) {
         ContainerType<T> type = IForgeContainerType.create(factory);
         type.setRegistryName(name);

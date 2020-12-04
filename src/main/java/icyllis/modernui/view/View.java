@@ -22,7 +22,6 @@ import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.math.Point;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.system.ModernUI;
-import icyllis.modernui.ui.layout.MeasureSpec;
 import icyllis.modernui.widget.ScrollController;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraftforge.api.distmarker.Dist;
@@ -990,7 +989,7 @@ public class View {
      * @param event the event to be handled
      * @return {@code true} if the event was consumed by the view, {@code false} otherwise
      */
-    public final boolean onMouseEvent(@Nonnull MouseEvent event) {
+    public final boolean onMouseEvent(@Nonnull MotionEvent event) {
         if ((viewFlags & ENABLED_MASK) == DISABLED) {
             return false;
         }
@@ -1000,7 +999,7 @@ public class View {
         final int action = event.action;
 
         switch (action) {
-            case MouseEvent.ACTION_MOVE:
+            case MotionEvent.ACTION_MOVE:
                 final boolean prevHovered = (privateFlags & PFLAG_HOVERED) != 0;
                 if (mouseX >= left && mouseX < right && mouseY >= top && mouseY < bottom) {
                     if (!prevHovered) {
@@ -1018,7 +1017,7 @@ public class View {
 
                 }
                 return false;
-            case MouseEvent.ACTION_PRESS:
+            case MotionEvent.ACTION_PRESS:
                 if ((privateFlags & PFLAG_HOVERED) != 0) {
                     if (dispatchMouseEvent(event)) {
                         return true;
@@ -1027,7 +1026,7 @@ public class View {
                     return onMousePressed(mouseX, mouseY, event.button);
                 }
                 return false;
-            case MouseEvent.ACTION_RELEASE:
+            case MotionEvent.ACTION_RELEASE:
                 if ((privateFlags & PFLAG_HOVERED) != 0) {
                     if (dispatchMouseEvent(event)) {
                         return true;
@@ -1041,7 +1040,7 @@ public class View {
                     return handled;
                 }
                 return false;
-            case MouseEvent.ACTION_DOUBLE_CLICK:
+            case MotionEvent.ACTION_DOUBLE_CLICK:
                 if ((privateFlags & PFLAG_HOVERED) != 0) {
                     /*if (dispatchMouseEvent(event)) {
                         return true;
@@ -1049,7 +1048,7 @@ public class View {
                     return onMouseDoubleClicked(mouseX, mouseY);
                 }
                 return false;
-            case MouseEvent.ACTION_SCROLL:
+            case MotionEvent.ACTION_SCROLL:
                 if ((privateFlags & PFLAG_HOVERED) != 0) {
                     if (dispatchMouseEvent(event)) {
                         return true;
@@ -1067,7 +1066,7 @@ public class View {
      * @param event the event to be dispatched
      * @return {@code true} if the event was consumed by the view, {@code false} otherwise
      */
-    public boolean dispatchMouseEvent(@Nonnull MouseEvent event) {
+    public boolean dispatchMouseEvent(@Nonnull MotionEvent event) {
         return false;
     }
 

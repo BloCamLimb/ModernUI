@@ -19,7 +19,7 @@
 package icyllis.modernui.system;
 
 import icyllis.modernui.graphics.renderer.RenderTools;
-import icyllis.modernui.ui.example.ContainerTest;
+import icyllis.modernui.ui.TestMenu;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.Items;
@@ -47,7 +47,7 @@ final class EventHandler {
         if (ModernUI.isDeveloperMode()) {
             if (event.getItemStack().getItem() == Items.DIAMOND) {
                 if (event.getSide().isServer()) {
-                    NetworkHooks.openGui((ServerPlayerEntity) event.getPlayer(), new ContainerTest.Provider());
+                    NetworkHooks.openGui((ServerPlayerEntity) event.getPlayer(), new TestMenu.Provider());
                 }
             }
         }

@@ -19,6 +19,7 @@
 package icyllis.modernui.view;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
+import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IHasContainer;
 import net.minecraft.client.gui.ScreenManager;
@@ -30,7 +31,6 @@ import net.minecraft.inventory.container.Container;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
@@ -56,7 +56,7 @@ public final class MuiMenuScreen<T extends Container> extends ContainerScreen<T>
     }
 
     @Override
-    public void init(@NotNull Minecraft minecraft, int width, int height) {
+    public void init(@Nonnull Minecraft minecraft, int width, int height) {
         //TODO remove super.init()
         super.init(minecraft, width, height);
         manager.prepareWindows(this, width, height);
@@ -67,6 +67,8 @@ public final class MuiMenuScreen<T extends Container> extends ContainerScreen<T>
         this.width = width;
         this.height = height;
         manager.prepareWindows(this, width, height);
+        ModernUI.LOGGER.debug("Scaled: {}x{} Framebuffer: {}x{} Window: {}x{}", width, height, minecraft.getMainWindow().getFramebufferWidth(),
+                minecraft.getMainWindow().getFramebufferHeight(), minecraft.getMainWindow().getWidth(), minecraft.getMainWindow().getHeight());
     }
 
     @Override

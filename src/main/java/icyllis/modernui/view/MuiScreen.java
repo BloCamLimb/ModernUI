@@ -25,7 +25,6 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
@@ -44,7 +43,7 @@ public final class MuiScreen extends Screen {
     }
 
     @Override
-    public void init(@NotNull Minecraft minecraft, int width, int height) {
+    public void init(@Nonnull Minecraft minecraft, int width, int height) {
         manager.prepareWindows(this, width, height);
         BlurHandler.INSTANCE.forceBlur();
     }

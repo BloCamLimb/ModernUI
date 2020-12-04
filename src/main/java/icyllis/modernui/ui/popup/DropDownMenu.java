@@ -24,11 +24,11 @@ import icyllis.modernui.animation.ITimeInterpolator;
 import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
-import icyllis.modernui.ui.test.Align9D;
+import icyllis.modernui.ui.discard.Align9D;
 import icyllis.modernui.graphics.math.Color3i;
-import icyllis.modernui.ui.test.IHost;
-import icyllis.modernui.ui.test.Locator;
-import icyllis.modernui.ui.test.Widget;
+import icyllis.modernui.ui.discard.IHost;
+import icyllis.modernui.ui.discard.Locator;
+import icyllis.modernui.ui.discard.Widget;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
