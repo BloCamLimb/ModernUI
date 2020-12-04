@@ -22,7 +22,7 @@ import com.google.common.collect.Lists;
 import icyllis.modernui.impl.background.ResourcePackBG;
 import icyllis.modernui.impl.setting.ResourcePackEntry;
 import icyllis.modernui.impl.setting.ResourcePackGroup;
-import icyllis.modernui.ui.test.*;
+import icyllis.modernui.ui.discard.*;
 import icyllis.modernui.widget.StaticFrameButton;
 import icyllis.modernui.widget.TriangleButton;
 import net.minecraft.client.GameSettings;

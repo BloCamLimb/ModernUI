@@ -22,7 +22,7 @@ import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
 import icyllis.modernui.animation.ITimeInterpolator;
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.ui.test.IDrawable;
+import icyllis.modernui.ui.discard.IDrawable;
 import icyllis.modernui.impl.module.IngameMenuHome;
 
 import javax.annotation.Nonnull;

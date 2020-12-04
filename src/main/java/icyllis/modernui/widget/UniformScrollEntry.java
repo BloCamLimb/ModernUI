@@ -18,9 +18,9 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.ui.test.IScrollHost;
-import icyllis.modernui.ui.test.Widget;
-import icyllis.modernui.ui.test.Align9D;
+import icyllis.modernui.ui.discard.IScrollHost;
+import icyllis.modernui.ui.discard.Widget;
+import icyllis.modernui.ui.discard.Align9D;
 
 import javax.annotation.Nonnull;
 

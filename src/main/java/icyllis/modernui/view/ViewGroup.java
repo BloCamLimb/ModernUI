@@ -20,7 +20,6 @@ package icyllis.modernui.view;
 
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.system.ModernUI;
-import icyllis.modernui.ui.layout.MeasureSpec;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -71,7 +70,7 @@ public abstract class ViewGroup extends View implements IViewParent {
     protected abstract void onLayout(boolean changed);
 
     @Override
-    public final boolean dispatchMouseEvent(@Nonnull MouseEvent event) {
+    public final boolean dispatchMouseEvent(@Nonnull MotionEvent event) {
         final double mouseX = event.x;
         final double mouseY = event.y;
         final int action = event.action;
@@ -84,7 +83,7 @@ public abstract class ViewGroup extends View implements IViewParent {
         boolean anyHovered = false;
 
         switch (action) {
-            case MouseEvent.ACTION_MOVE:
+            case MotionEvent.ACTION_MOVE:
                 for (int i = childrenCount - 1; i >= 0; i--) {
                     child = views[i];
                     if (!anyHovered && child.onMouseEvent(event)) {
@@ -94,10 +93,10 @@ public abstract class ViewGroup extends View implements IViewParent {
                     }
                 }
                 return anyHovered;
-            case MouseEvent.ACTION_PRESS:
-            case MouseEvent.ACTION_RELEASE:
-            case MouseEvent.ACTION_DOUBLE_CLICK:
-            case MouseEvent.ACTION_SCROLL:
+            case MotionEvent.ACTION_PRESS:
+            case MotionEvent.ACTION_RELEASE:
+            case MotionEvent.ACTION_DOUBLE_CLICK:
+            case MotionEvent.ACTION_SCROLL:
                 for (int i = childrenCount - 1; i >= 0; i--) {
                     child = views[i];
                     if (child.onMouseEvent(event)) {

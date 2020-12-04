@@ -19,6 +19,7 @@
 package icyllis.modernui.system;
 
 import icyllis.modernui.graphics.renderer.RenderTools;
+import icyllis.modernui.plugin.IMuiRuntime;
 import icyllis.modernui.view.LayoutInflater;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLEnvironment;
@@ -30,10 +31,12 @@ import org.apache.logging.log4j.MarkerManager;
 import java.lang.reflect.InvocationTargetException;
 
 /**
- * The Modern UI mod class for internal use only
+ * The Modern UI mod class for Internal Use Only.
+ *
+ * You must get access to the functions of Modern UI on runtime via {@link icyllis.modernui.plugin.IMuiRuntime}
  */
 @Mod(ModernUI.MODID)
-public final class ModernUI {
+public final class ModernUI implements IMuiRuntime {
 
     public static final String MODID = "modernui";
     public static final String NAME_CPT = "ModernUI";

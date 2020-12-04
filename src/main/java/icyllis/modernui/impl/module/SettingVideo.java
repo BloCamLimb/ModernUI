@@ -24,7 +24,7 @@ import icyllis.modernui.impl.setting.SettingEntry;
 import icyllis.modernui.impl.setting.SettingScrollWindow;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.system.SettingsManager;
-import icyllis.modernui.ui.test.Module;
+import icyllis.modernui.ui.discard.Module;
 import net.minecraft.client.AbstractOption;
 import net.minecraft.client.resources.I18n;
 

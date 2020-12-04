@@ -20,8 +20,8 @@ package icyllis.modernui.impl.module;
 
 import com.google.common.collect.Lists;
 import icyllis.modernui.system.ModernUI;
-import icyllis.modernui.ui.test.IModule;
-import icyllis.modernui.ui.test.Module;
+import icyllis.modernui.ui.discard.IModule;
+import icyllis.modernui.ui.discard.Module;
 import icyllis.modernui.impl.setting.*;
 import icyllis.modernui.view.UIManager;
 import icyllis.modernui.ui.popup.ConfirmCallback;

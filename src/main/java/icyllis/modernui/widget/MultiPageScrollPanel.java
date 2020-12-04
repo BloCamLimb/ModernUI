@@ -19,7 +19,7 @@
 package icyllis.modernui.widget;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.ui.test.*;
+import icyllis.modernui.ui.discard.*;
 import net.minecraft.util.math.MathHelper;
 
 import javax.annotation.Nonnull;

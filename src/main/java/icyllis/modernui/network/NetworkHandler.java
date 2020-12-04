@@ -21,7 +21,6 @@ package icyllis.modernui.network;
 import icyllis.modernui.system.ModernUI;
 import io.netty.buffer.Unpooled;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.network.play.ClientPlayNetHandler;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -59,13 +58,13 @@ public class NetworkHandler {
     private final ResourceLocation channel;
     private final String protocol;
 
-    private final boolean allowClientOnly;
-    private final boolean allowServerOnly;
+    // system variable
+    private boolean optional;
 
     @Nullable
-    private final IClientHandler clientHandler;
+    private final IClientMsgHandler clientHandler;
     @Nullable
-    private final IServerHandler serverHandler;
+    private final IServerMsgHandler serverHandler;
 
     // temporary buffer
     private PacketBuffer buffer;
@@ -75,18 +74,13 @@ public class NetworkHandler {
      *
      * @param modid           the mod identifier
      * @param name            network channel name
-     * @param allowClientOnly allow the mod can be installed only on client, generally is false
-     * @param allowServerOnly allow the mod can be installed only on server, generally is false
      * @param clientHandler   server to client message handler
      * @param serverHandler   client to server message handler
      */
-    public NetworkHandler(@Nonnull String modid, @Nonnull String name, boolean allowClientOnly, boolean allowServerOnly,
-                          @Nullable IClientHandler clientHandler, @Nullable IServerHandler serverHandler) {
+    public NetworkHandler(@Nonnull String modid, @Nonnull String name, @Nullable IClientMsgHandler clientHandler, @Nullable IServerMsgHandler serverHandler) {
         protocol = UUID.nameUUIDFromBytes(ModList.get().getModFileById(modid).getMods().stream()
                 .map(iModInfo -> iModInfo.getVersion().getQualifier())
                 .collect(Collectors.joining(",")).getBytes(StandardCharsets.UTF_8)).toString();
-        this.allowClientOnly = allowClientOnly;
-        this.allowServerOnly = allowServerOnly;
         this.clientHandler = clientHandler;
         this.serverHandler = serverHandler;
         EventNetworkChannel network = NetworkRegistry.ChannelBuilder
@@ -124,7 +118,7 @@ public class NetworkHandler {
      * @return {@code true} to accept the protocol, {@code false} otherwise
      */
     public boolean checkS2CProtocol(@Nonnull String serverProtocol) {
-        boolean allowAbsent = allowClientOnly && serverProtocol.equals(NetworkRegistry.ABSENT);
+        boolean allowAbsent = optional && serverProtocol.equals(NetworkRegistry.ABSENT);
         if (allowAbsent) {
             ModernUI.LOGGER.debug(ModernUI.MARKER, "Connecting to a server that does not have {} channel available", channel);
         }
@@ -141,7 +135,7 @@ public class NetworkHandler {
         if (clientProtocol.equals(NetworkRegistry.ACCEPTVANILLA)) {
             return false;
         }
-        boolean allowAbsent = allowServerOnly && clientProtocol.equals(NetworkRegistry.ABSENT);
+        boolean allowAbsent = optional && clientProtocol.equals(NetworkRegistry.ABSENT);
         return allowAbsent || clientProtocol.equals(protocol);
     }
 
@@ -280,17 +274,5 @@ public class NetworkHandler {
         ((ServerWorld) chunk.getWorld()).getChunkProvider().chunkManager.getTrackingPlayers(
                 chunk.getPos(), false).forEach(player -> player.connection.sendPacket(packet));
         buffer = null;
-    }
-
-    @FunctionalInterface
-    public interface IClientHandler {
-
-        void handle(short index, @Nonnull PacketBuffer payload, @Nullable ClientPlayerEntity player) throws Exception;
-    }
-
-    @FunctionalInterface
-    public interface IServerHandler {
-
-        void handle(short index, @Nonnull PacketBuffer payload, @Nullable ServerPlayerEntity player) throws Exception;
     }
 }

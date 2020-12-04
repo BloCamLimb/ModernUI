@@ -25,9 +25,8 @@ import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.math.Point;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.system.ModernUI;
-import icyllis.modernui.ui.example.TestHUD;
-import icyllis.modernui.ui.layout.MeasureSpec;
-import icyllis.modernui.ui.test.IModule;
+import icyllis.modernui.ui.discard.IModule;
+import icyllis.modernui.ui.TestHUD;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScreenManager;
 import net.minecraft.client.gui.screen.Screen;
@@ -60,23 +59,22 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * UI system service, almost everything is here.
- * Manage HUD and the current UI window, and all the windows that accompany the UI.
+ * UI system service, manages everything related to UI in Modern UI
  */
 @SuppressWarnings("unused")
 @OnlyIn(Dist.CLIENT)
 public final class UIManager {
 
-    private static volatile UIManager instance;
+    private static UIManager instance;
 
     // logger marker
-    public static final Marker MARKER = MarkerManager.getMarker("UIService");
+    public static final Marker MARKER = MarkerManager.getMarker("UIManager");
 
-    // cached minecraft instance
-    private final Minecraft minecraft = Minecraft.getInstance();
+    // minecraft client instance
+    private final Minecraft mMinecraft = Minecraft.getInstance();
 
     // UI event bus
-    private final IEventBus mActivityEventBus = BusBuilder.builder().setTrackPhases(false).build();
+    private final IEventBus mEventBus = BusBuilder.builder().setTrackPhases(false).build();
 
     // cached screen to open for logic check
     @Nullable
@@ -93,9 +91,7 @@ public final class UIManager {
     // main UI view that created from main fragment
     private View view;
 
-    // all UI windows sorted by z-level
-    private final List<ViewRootImpl> windows = new ArrayList<>();
-
+    // application window
     private final ViewRootImpl appWindow;
 
     @Deprecated
@@ -134,7 +130,7 @@ public final class UIManager {
     @Nullable
     private View mKeyboard;
 
-    private final MouseEvent mouseEvent = new MouseEvent();
+    private final MotionEvent motionEvent = new MotionEvent();
 
     // for double click check
     private int lastLmTick = Integer.MIN_VALUE;
@@ -163,10 +159,11 @@ public final class UIManager {
     Point dragShadowCenter;
 
     // dispatch mouse/key/drag event
-    final GlobalEventDispatcher eventDispatcher = new GlobalEventDispatcher(windows);
+    @Deprecated
+    final GlobalEventDispatcher eventDispatcher = new GlobalEventDispatcher(new ArrayList<>());
 
     {
-        windows.add(appWindow = new ViewRootImpl(this, ViewRootImpl.TYPE_APPLICATION));
+        appWindow = new ViewRootImpl(this, ViewRootImpl.TYPE_APPLICATION);
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(BlurHandler.INSTANCE);
         MinecraftForge.EVENT_BUS.register(UIEditor.INSTANCE);
@@ -197,7 +194,7 @@ public final class UIManager {
      */
     public void openGui(@Nonnull Fragment fragment) {
         this.fragment = fragment;
-        minecraft.displayGuiScreen(new MuiScreen());
+        mMinecraft.displayGuiScreen(new MuiScreen());
     }
 
     /**
@@ -206,7 +203,7 @@ public final class UIManager {
      * @see #recycleWindows()
      */
     public void closeGui() {
-        minecraft.displayGuiScreen(null);
+        mMinecraft.displayGuiScreen(null);
     }
 
     /**
@@ -377,9 +374,9 @@ public final class UIManager {
 
     void screenMouseMove(double mouseX, double mouseY) {
         setMousePos(mouseX, mouseY);
-        MouseEvent event = mouseEvent;
-        event.action = MouseEvent.ACTION_MOVE;
-        List<ViewRootImpl> windows = this.windows;
+        MotionEvent event = motionEvent;
+        event.action = MotionEvent.ACTION_MOVE;
+        /*List<ViewRootImpl> windows = this.windows;
         boolean anyHovered = false;
         for (int i = windows.size() - 1; i >= 0; i--) {
             if (!anyHovered && windows.get(i).onMouseEvent(event)) {
@@ -387,18 +384,20 @@ public final class UIManager {
             } else {
                 windows.get(i).ensureMouseHoverExit();
             }
-        }
+        }*/
+        appWindow.onMouseEvent(event);
         cursorRefreshRequested = false;
     }
 
     boolean screenMouseDown(double mouseX, double mouseY, int mouseButton) {
+        ModernUI.LOGGER.debug("MouseButtonDown: {}", mouseButton);
         setMousePos(mouseX, mouseY);
-        MouseEvent event = mouseEvent;
+        MotionEvent event = motionEvent;
         event.button = mouseButton;
-        List<ViewRootImpl> windows = this.windows;
+        //List<ViewRootImpl> windows = this.windows;
         boolean handled = false;
         if (mouseButton == GLFW.GLFW_MOUSE_BUTTON_LEFT && lastLmTick >= 0 && ticks - lastLmTick < 6) {
-            event.action = MouseEvent.ACTION_DOUBLE_CLICK;
+            event.action = MotionEvent.ACTION_DOUBLE_CLICK;
             /*for (int i = windows.size() - 1; i >= 0; i--) {
                 if (windows.get(i).onMouseEvent(event)) {
                     return true;
@@ -412,12 +411,13 @@ public final class UIManager {
         if (handled) {
             return true;
         }
-        event.action = MouseEvent.ACTION_PRESS;
-        for (int i = windows.size() - 1; i >= 0; i--) {
+        event.action = MotionEvent.ACTION_PRESS;
+        return appWindow.onMouseEvent(event);
+        /*for (int i = windows.size() - 1; i >= 0; i--) {
             if (windows.get(i).onMouseEvent(event)) {
                 return true;
             }
-        }
+        }*/
         /*if (popup != null) {
             return popup.mouseClicked(mouseX, mouseY, mouseButton);
         }*/
@@ -463,13 +463,12 @@ public final class UIManager {
                 parent = parent.getParent();
             }
         }*/
-        return false;
     }
 
     boolean screenMouseUp(double mouseX, double mouseY, int mouseButton) {
         setMousePos(mouseX, mouseY);
-        MouseEvent event = mouseEvent;
-        event.action = MouseEvent.ACTION_RELEASE;
+        MotionEvent event = motionEvent;
+        event.action = MotionEvent.ACTION_RELEASE;
         event.button = mouseButton;
         boolean dCheck = false;
         if (mouseButton == GLFW.GLFW_MOUSE_BUTTON_LEFT && lastLmTick < 0) {
@@ -477,13 +476,16 @@ public final class UIManager {
         } else {
             lastLmTick = Integer.MIN_VALUE;
         }
-        List<ViewRootImpl> windows = this.windows;
+        //List<ViewRootImpl> windows = this.windows;
         boolean handled = false;
-        for (int i = windows.size() - 1; i >= 0; i--) {
+        /*for (int i = windows.size() - 1; i >= 0; i--) {
             if (windows.get(i).onMouseEvent(event)) {
                 handled = true;
                 break;
             }
+        }*/
+        if (appWindow.onMouseEvent(event)) {
+            handled = true;
         }
         if (dCheck && event.clicked != null) {
             lastLmTick = ticks;
@@ -538,15 +540,16 @@ public final class UIManager {
     boolean screenMouseScroll(double mouseX, double mouseY, double amount) {
         ModernUI.LOGGER.debug(MARKER, "SHIGAO {}", amount);
         setMousePos(mouseX, mouseY);
-        MouseEvent event = mouseEvent;
-        event.action = MouseEvent.ACTION_SCROLL;
+        MotionEvent event = motionEvent;
+        event.action = MotionEvent.ACTION_SCROLL;
         event.scrollDelta = amount;
-        List<ViewRootImpl> windows = this.windows;
+        /*List<ViewRootImpl> windows = this.windows;
         for (int i = windows.size() - 1; i >= 0; i--) {
             if (windows.get(i).onMouseEvent(event)) {
                 return true;
             }
-        }
+        }*/
+        return appWindow.onMouseEvent(event);
         /*if (popup != null) {
             return popup.mouseScrolled(mouseX, mouseY, amount);
         }*/
@@ -568,7 +571,6 @@ public final class UIManager {
                 parent = parent.getParent();
             }
         }*/
-        return false;
     }
 
     boolean screenKeyDown(int keyCode, int scanCode, int modifiers) {
@@ -644,9 +646,8 @@ public final class UIManager {
         RenderSystem.defaultBlendFunc();*/
 
         canvas.setDrawingTime(timeMillis);
-        for (ViewRootImpl w : windows) {
-            w.onDraw(canvas);
-        }
+
+        appWindow.onDraw(canvas);
         /*if (popup != null) {
             popup.draw(drawTime);
         }*/
@@ -673,7 +674,7 @@ public final class UIManager {
                 break;
             case HEALTH:
                 if (ModernUI.isDeveloperMode())
-                    TestHUD.drawHealth(canvas);
+                    TestHUD.drawHUD(canvas);
                 break;
         }
     }
@@ -687,9 +688,9 @@ public final class UIManager {
     void resizeWindows(int width, int height) {
         this.width = width;
         this.height = height;
-        double scale = minecraft.getMainWindow().getGuiScaleFactor();
-        eventDispatcher.mouseX = (minecraft.mouseHelper.getMouseX() / scale);
-        eventDispatcher.mouseY = (minecraft.mouseHelper.getMouseY() / scale);
+        double scale = mMinecraft.getMainWindow().getGuiScaleFactor();
+        eventDispatcher.mouseX = (mMinecraft.mouseHelper.getMouseX() / scale);
+        eventDispatcher.mouseY = (mMinecraft.mouseHelper.getMouseY() / scale);
         layoutWindows(true);
     }
 
@@ -702,7 +703,7 @@ public final class UIManager {
         int widthSpec = MeasureSpec.makeMeasureSpec(width, MeasureSpec.Mode.EXACTLY);
         int heightSpec = MeasureSpec.makeMeasureSpec(height, MeasureSpec.Mode.EXACTLY);
 
-        windows.forEach(w -> w.performLayout(widthSpec, heightSpec, forceLayout));
+        appWindow.performLayout(widthSpec, heightSpec, forceLayout);
 
         if (ModernUI.isDeveloperMode()) {
             ModernUI.LOGGER.debug(MARKER, "Layout performed in {} \u03bcs", (System.nanoTime() - startTime) / 1000.0f);
@@ -724,11 +725,11 @@ public final class UIManager {
             lastLmView = null;
             lastLayoutTime = 0;
             layoutRequested = false;
-            mouseEvent.pressMap.clear();
+            motionEvent.pressMap.clear();
             UIEditor.INSTANCE.setHoveredWidget(null);
             UITools.useDefaultCursor();
             // Hotfix 1.5.8
-            minecraft.keyboardListener.enableRepeatEvents(false);
+            mMinecraft.keyboardListener.enableRepeatEvents(false);
         }
     }
 
@@ -747,9 +748,7 @@ public final class UIManager {
         if (view != null) {
             view.tick(ticks);
         }
-        for (ViewRootImpl window : windows) {
-            window.tick(ticks);
-        }
+        appWindow.tick(ticks);
         // view ticking is always performed before tasks
         if (!tasks.isEmpty()) {
             Iterator<DelayedTask> iterator = tasks.iterator();
@@ -771,7 +770,7 @@ public final class UIManager {
     void globalRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
             // ticks to millis, the Timer in Minecraft is different from that in Event when game paused
-            timeMillis = (long) ((ticks + minecraft.getRenderPartialTicks()) * 50.0f);
+            timeMillis = (long) ((ticks + mMinecraft.getRenderPartialTicks()) * 50.0f);
 
             for (Animation animation : animations) {
                 animation.update(timeMillis);
@@ -888,7 +887,7 @@ public final class UIManager {
     }
 
     public double getGuiScale() {
-        return minecraft.getMainWindow().getGuiScaleFactor();
+        return mMinecraft.getMainWindow().getGuiScaleFactor();
     }
 
     /**
@@ -947,7 +946,7 @@ public final class UIManager {
      */
     public void setKeyboard(@Nullable View view) {
         if (mKeyboard != view) {
-            minecraft.keyboardListener.enableRepeatEvents(view != null);
+            mMinecraft.keyboardListener.enableRepeatEvents(view != null);
             if (mKeyboard != null) {
                 mKeyboard.onStopKeyboard();
             }

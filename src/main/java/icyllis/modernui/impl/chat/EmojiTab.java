@@ -22,7 +22,7 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.system.StorageManager;
 import icyllis.modernui.view.UITools;
-import icyllis.modernui.ui.test.DrawTools;
+import icyllis.modernui.ui.discard.DrawTools;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.renderer.texture.TextureManager;
