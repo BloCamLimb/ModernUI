@@ -590,9 +590,9 @@ public class TextCacheProcessor {
      * from a formatted text into a stripped text. The color codes must be removed for a font's context
      * sensitive glyph substitution to work (like Arabic letter middle form) or Bidi analysis.
      *
-     * @param data   an object to store the results
-     * @param string text with formatting codes to strip
-     * @param defStyle  default/reset style
+     * @param data     an object to store the results
+     * @param string   text with formatting codes to strip
+     * @param defStyle default/reset style
      * @return a new char array with all formatting codes removed from the given string
      */
     @Nonnull
@@ -829,7 +829,8 @@ public class TextCacheProcessor {
             } else {
                 Font f = glyphManager.lookupFont(codePoint);
                 /* singleton, so don't have to use equals(); space character (32) should not affect the font */
-                if (font != f && codePoint != 32) {
+                boolean layout = font != f && codePoint != 32;
+                if (layout) {
                     layoutFont(data, text, last, next, flag, glyphManager.deriveFont(
                             font, style.getFontStyle(), sDefaultFontSize), style.isObfuscated(),
                             effect);
@@ -915,6 +916,28 @@ public class TextCacheProcessor {
             } else {
                 data.finishFontLayout(0);
             }
+        }
+    }
+
+    private void layoutEmoji(TextProcessData data, int codePoint, int start, int flag) {
+        float offset;
+        if (flag == Font.LAYOUT_RIGHT_TO_LEFT) {
+            offset = data.layoutRight;
+        } else {
+            offset = data.advance;
+        }
+
+        data.minimalList.add(new StandardGlyphRender(glyphManager.lookupEmoji(codePoint), null, start, offset));
+
+        offset += 12;
+
+        data.advance += offset;
+
+        if (flag == Font.LAYOUT_RIGHT_TO_LEFT) {
+            data.finishFontLayout(-offset);
+            data.layoutRight -= offset;
+        } else {
+            data.finishFontLayout(0);
         }
     }
 

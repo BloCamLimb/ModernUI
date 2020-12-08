@@ -44,7 +44,7 @@ public final class ViewRootImpl implements IViewParent {
     private boolean layoutRequested = false;
 
     final int type;
-    View view;
+    View mView;
 
     private final int[] inBounds  = new int[]{0, 0, 0, 0};
     private final int[] outBounds = new int[4];
@@ -55,7 +55,7 @@ public final class ViewRootImpl implements IViewParent {
     }
 
     void install(@Nonnull View view) {
-        this.view = view;
+        this.mView = view;
         ViewGroup.LayoutParams params = view.getLayoutParams();
         // convert layout params
         if (!(params instanceof LayoutParams)) {
@@ -97,46 +97,46 @@ public final class ViewRootImpl implements IViewParent {
     }
 
     void performLayout(int widthSpec, int heightSpec, boolean forceLayout) {
-        if (view == null || (!forceLayout && !layoutRequested)) {
+        if (mView == null || (!forceLayout && !layoutRequested)) {
             return;
         }
-        LayoutParams lp = (LayoutParams) view.getLayoutParams();
+        LayoutParams lp = (LayoutParams) mView.getLayoutParams();
 
         int childWidthMeasureSpec = ViewGroup.getChildMeasureSpec(widthSpec,
                 0, lp.width);
         int childHeightMeasureSpec = ViewGroup.getChildMeasureSpec(heightSpec,
                 0, lp.height);
 
-        view.measure(childWidthMeasureSpec, childHeightMeasureSpec);
+        mView.measure(childWidthMeasureSpec, childHeightMeasureSpec);
 
         inBounds[2] = MeasureSpec.getSize(widthSpec);
         inBounds[3] = MeasureSpec.getSize(heightSpec);
 
-        Gravity.apply(lp.gravity, view.getMeasuredWidth(), view.getMeasuredHeight(),
+        Gravity.apply(lp.gravity, mView.getMeasuredWidth(), mView.getMeasuredHeight(),
                 inBounds, lp.x, lp.y, outBounds);
 
-        view.layout(outBounds[0], outBounds[1], outBounds[2], outBounds[3]);
+        mView.layout(outBounds[0], outBounds[1], outBounds[2], outBounds[3]);
         layoutRequested = false;
     }
 
     void onDraw(Canvas canvas) {
-        if (view != null) {
-            view.draw(canvas);
+        if (mView != null) {
+            mView.draw(canvas);
         }
     }
 
     boolean onCursorPosEvent(LinkedList<View> route, double x, double y) {
-        if (view != null) {
-            return view.onCursorPosEvent(route, x, y);
+        if (mView != null) {
+            return mView.onCursorPosEvent(route, x, y);
         }
         return false;
     }
 
     boolean onMouseEvent(MotionEvent event) {
-        if (view != null) {
-            final boolean handled = view.onMouseEvent(event);
-            if (!handled && event.action == MotionEvent.ACTION_MOVE) {
-                view.ensureMouseHoverExit();
+        if (mView != null) {
+            final boolean handled = mView.onMouseEvent(event);
+            if (!handled && event.getAction() == MotionEvent.ACTION_MOVE) {
+                mView.ensureMouseHoverExit();
             }
             return handled;
         }
@@ -144,8 +144,8 @@ public final class ViewRootImpl implements IViewParent {
     }
 
     void ensureMouseHoverExit() {
-        if (view != null) {
-            view.ensureMouseHoverExit();
+        if (mView != null) {
+            mView.ensureMouseHoverExit();
         }
     }
 
@@ -156,8 +156,8 @@ public final class ViewRootImpl implements IViewParent {
     }
 
     void tick(int ticks) {
-        if (view != null) {
-            view.tick(ticks);
+        if (mView != null) {
+            mView.tick(ticks);
         }
     }
 

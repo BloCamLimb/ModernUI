@@ -20,6 +20,7 @@ package icyllis.modernui.view;
 
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.system.ModernUI;
+import net.minecraft.util.Util;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -33,12 +34,22 @@ public abstract class ViewGroup extends View implements IViewParent {
 
     private static final int ARRAY_CAPACITY_INCREMENT = 12;
 
+    /**
+     * When set, this ViewGroup should not intercept touch events.
+     */
+    private static final int FLAG_DISALLOW_INTERCEPT = 0x80000;
+
+    private int mGroupFlags;
+
     // child views
     private View[] children = new View[ARRAY_CAPACITY_INCREMENT];
 
     // number of valid children in the children array, the rest
     // should be null or not considered as children
     private int childrenCount = 0;
+
+    // First touch target in the linked list of touch targets.
+    private TouchTarget mFirstTouchTarget;
 
     public ViewGroup() {
 
@@ -73,7 +84,7 @@ public abstract class ViewGroup extends View implements IViewParent {
     public final boolean dispatchMouseEvent(@Nonnull MotionEvent event) {
         final double mouseX = event.x;
         final double mouseY = event.y;
-        final int action = event.action;
+        final int action = event.getAction();
 
         event.x += getScrollX();
         event.y += getScrollY();
@@ -106,8 +117,8 @@ public abstract class ViewGroup extends View implements IViewParent {
                 return false;
         }
 
-        event.x = mouseX;
-        event.y = mouseY;
+        /*event.x = mouseX;
+        event.y = mouseY;*/
         return super.dispatchMouseEvent(event);
     }
 
@@ -138,6 +149,153 @@ public abstract class ViewGroup extends View implements IViewParent {
         for (int i = 0; i < count; i++) {
             views[i].ensureMouseHoverExit();
         }
+    }
+
+    private void resetTouchState() {
+
+    }
+
+    /**
+     * Resets the cancel next up flag.
+     *
+     * @return true if the flag was previously set.
+     */
+    private static boolean resetCancelNextUpFlag(@Nonnull View view) {
+        if ((view.mPrivateFlags & PFLAG_CANCEL_NEXT_UP_EVENT) != 0) {
+            view.mPrivateFlags &= ~PFLAG_CANCEL_NEXT_UP_EVENT;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Clears all touch targets.
+     */
+    private void clearTouchTargets() {
+        TouchTarget target = mFirstTouchTarget;
+        if (target != null) {
+            do {
+                TouchTarget next = target.next;
+                target.recycle();
+                target = next;
+            } while (target != null);
+            mFirstTouchTarget = null;
+        }
+    }
+
+    /**
+     * Cancels and clears all touch targets.
+     */
+    private void cancelAndClearTouchTargets(MotionEvent event) {
+        if (mFirstTouchTarget != null) {
+            boolean syntheticEvent = false;
+            if (event == null) {
+                final long time = Util.nanoTime();
+                /*event = MotionEvent.obtain(now, now,
+                        MotionEvent.ACTION_CANCEL, 0.0f, 0.0f, 0);*/
+                syntheticEvent = true;
+            }
+
+            for (TouchTarget target = mFirstTouchTarget; target != null; target = target.next) {
+                resetCancelNextUpFlag(target.child);
+                //dispatchTransformedTouchEvent(event, true, target.child, target.pointerIdBits);
+            }
+            clearTouchTargets();
+
+            if (syntheticEvent) {
+                event.recycle();
+            }
+        }
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        boolean handled = false;
+
+        final int action = ev.getAction();
+        final int actionMasked = ev.getActionMasked();
+
+        // Handle an initial down.
+        if (actionMasked == MotionEvent.ACTION_DOWN) {
+            // Throw away all previous state when starting a new touch gesture.
+            // The framework may have dropped the up or cancel event for the previous gesture
+            // due to an app switch, ANR, or some other state change.
+            cancelAndClearTouchTargets(ev);
+            resetTouchState();
+        }
+
+        // Check for interception.
+        final boolean intercepted;
+        if (actionMasked == MotionEvent.ACTION_DOWN || mFirstTouchTarget != null) {
+            final boolean allowIntercept = (mGroupFlags & FLAG_DISALLOW_INTERCEPT) == 0;
+            if (allowIntercept) {
+                intercepted = onInterceptTouchEvent(ev);
+                ev.setAction(action); // restore action in case it was changed
+            } else {
+                intercepted = false;
+            }
+        } else {
+            // There are no touch targets and this action is not an initial down
+            // so this view group continues to intercept touches.
+            intercepted = true;
+        }
+
+        // Check for cancellation.
+        final boolean canceled = resetCancelNextUpFlag(this)
+                || actionMasked == MotionEvent.ACTION_CANCEL;
+
+        if (!canceled && !intercepted) {
+
+        }
+
+        return handled;
+    }
+
+
+    /**
+     * Implement this method to intercept all touch screen motion events.  This
+     * allows you to watch events as they are dispatched to your children, and
+     * take ownership of the current gesture at any point.
+     *
+     * <p>Using this function takes some care, as it has a fairly complicated
+     * interaction with {@link View#onTouchEvent(MotionEvent)
+     * View.onTouchEvent(MotionEvent)}, and using it requires implementing
+     * that method as well as this one in the correct way.  Events will be
+     * received in the following order:
+     *
+     * <ol>
+     * <li> You will receive the down event here.
+     * <li> The down event will be handled either by a child of this view
+     * group, or given to your own onTouchEvent() method to handle; this means
+     * you should implement onTouchEvent() to return true, so you will
+     * continue to see the rest of the gesture (instead of looking for
+     * a parent view to handle it).  Also, by returning true from
+     * onTouchEvent(), you will not receive any following
+     * events in onInterceptTouchEvent() and all touch processing must
+     * happen in onTouchEvent() like normal.
+     * <li> For as long as you return false from this function, each following
+     * event (up to and including the final up) will be delivered first here
+     * and then to the target's onTouchEvent().
+     * <li> If you return true from here, you will not receive any
+     * following events: the target view will receive the same event but
+     * with the action {@link MotionEvent#ACTION_CANCEL}, and all further
+     * events will be delivered to your onTouchEvent() method and no longer
+     * appear here.
+     * </ol>
+     *
+     * @param ev The motion event being dispatched down the hierarchy.
+     * @return Return true to steal motion events from the children and have
+     * them dispatched to this ViewGroup through onTouchEvent().
+     * The current target will receive an ACTION_CANCEL event, and no further
+     * messages will be delivered here.
+     */
+    public boolean onInterceptTouchEvent(MotionEvent ev) {
+        if (ev.getAction() == MotionEvent.ACTION_DOWN
+                && ev.isButtonPressed(MotionEvent.BUTTON_PRIMARY)
+                && isOnScrollbarThumb(ev.getX(), ev.getY())) {
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -677,6 +835,69 @@ public abstract class ViewGroup extends View implements IViewParent {
         @Override
         public MarginLayoutParams copy() {
             return new MarginLayoutParams(this);
+        }
+    }
+
+    /* Describes a touched view and the ids of the pointers that it has captured.
+     *
+     * This code assumes that pointer ids are always in the range 0..31 such that
+     * it can use a bitfield to track which pointer ids are present.
+     * As it happens, the lower layers of the input dispatch pipeline also use the
+     * same trick so the assumption should be safe here...
+     */
+    private static final class TouchTarget {
+
+        private static final int MAX_RECYCLED = 32;
+        private static final Object sRecyclerLock = new Object();
+        private static TouchTarget sRecyclerTop;
+        private static int sRecyclerUsed;
+
+        public static final int ALL_POINTER_IDS = ~0; // all ones
+
+        // The touched view, one of the child of this ViewGroup
+        public View child;
+
+        // The combined bit mask of pointer ids for all pointers captured by the target.
+        public int pointerIdBits;
+
+        // The next target in the linked list (recycler).
+        public TouchTarget next;
+
+        private TouchTarget() {
+        }
+
+        @Nonnull
+        public static TouchTarget obtain(@Nonnull View child, int pointerIdBits) {
+            final TouchTarget target;
+            synchronized (sRecyclerLock) {
+                if (sRecyclerTop == null) {
+                    target = new TouchTarget();
+                } else {
+                    target = sRecyclerTop;
+                    sRecyclerTop = target.next;
+                    sRecyclerUsed--;
+                    target.next = null;
+                }
+            }
+            target.child = child;
+            target.pointerIdBits = pointerIdBits;
+            return target;
+        }
+
+        public void recycle() {
+            if (child == null) {
+                throw new IllegalStateException(this + " already recycled");
+            }
+            synchronized (sRecyclerLock) {
+                if (sRecyclerUsed < MAX_RECYCLED) {
+                    sRecyclerUsed++;
+                    next = sRecyclerTop;
+                    sRecyclerTop = this;
+                } else {
+                    next = null;
+                }
+                child = null;
+            }
         }
     }
 }

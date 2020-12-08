@@ -25,8 +25,6 @@ package icyllis.modernui.view;
  * thread (i.e Render thread), this object is encapsulated by Modern UI.
  *
  * @see org.lwjgl.glfw.GLFW
- * @see net.minecraft.client.MouseHelper
- * @see net.minecraft.client.KeyboardListener
  * @see net.minecraft.client.util.InputMappings
  */
 public abstract class InputEvent {
@@ -50,7 +48,7 @@ public abstract class InputEvent {
      */
     public void recycle() {
         if (mRecycled) {
-            throw new IllegalStateException(this + " recycled twice!");
+            throw new IllegalStateException(this + " recycled twice");
         }
         mRecycled = true;
     }

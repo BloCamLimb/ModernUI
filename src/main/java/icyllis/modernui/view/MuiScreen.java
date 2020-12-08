@@ -36,7 +36,7 @@ import javax.annotation.Nonnull;
 @OnlyIn(Dist.CLIENT)
 public final class MuiScreen extends Screen {
 
-    private final UIManager manager = UIManager.getInstance();
+    private final UIManager mMaster = UIManager.getInstance();
 
     MuiScreen() {
         super(StringTextComponent.EMPTY);
@@ -44,23 +44,23 @@ public final class MuiScreen extends Screen {
 
     @Override
     public void init(@Nonnull Minecraft minecraft, int width, int height) {
-        manager.prepareWindows(this, width, height);
+        mMaster.prepareWindows(this, width, height);
         BlurHandler.INSTANCE.forceBlur();
     }
 
     @Override
     public void resize(@Nonnull Minecraft minecraft, int width, int height) {
-        manager.prepareWindows(this, width, height);
+        mMaster.prepareWindows(this, width, height);
     }
 
     @Override
     public void render(@Nonnull MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        manager.draw();
+        mMaster.draw();
     }
 
     @Override
     public void onClose() {
-        manager.recycleWindows();
+        mMaster.recycleWindows();
     }
 
     @Override
@@ -71,43 +71,43 @@ public final class MuiScreen extends Screen {
 
     @Override
     public void mouseMoved(double mouseX, double mouseY) {
-        manager.screenMouseMove(mouseX, mouseY);
+        mMaster.mInputHandler.onHoverMove(mouseX, mouseY);
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        return manager.screenMouseDown(mouseX, mouseY, mouseButton);
+        return mMaster.screenMouseDown(mouseX, mouseY, mouseButton);
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
-        return manager.screenMouseUp(mouseX, mouseY, mouseButton);
+        return mMaster.screenMouseUp(mouseX, mouseY, mouseButton);
     }
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double deltaX, double deltaY) {
-        return manager.screenMouseDrag(mouseX, mouseY, deltaX, deltaY);
+        return mMaster.screenMouseDrag(mouseX, mouseY, deltaX, deltaY);
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        return manager.screenMouseScroll(mouseX, mouseY, delta);
+        return mMaster.screenMouseScroll(mouseX, mouseY, delta);
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (manager.screenKeyDown(keyCode, scanCode, modifiers)) {
+        if (mMaster.screenKeyDown(keyCode, scanCode, modifiers)) {
             return true;
         } else if (keyCode == GLFW.GLFW_KEY_ESCAPE && shouldCloseOnEsc()) {
-            if (manager.sBack()) {
+            if (mMaster.sBack()) {
                 return true;
             }
-            manager.closeGui();
+            mMaster.closeGui();
             return true;
         } else if (keyCode == GLFW.GLFW_KEY_TAB) {
             boolean searchNext = !hasShiftDown();
-            if (!manager.sChangeKeyboard(searchNext)) {
-                return manager.sChangeKeyboard(searchNext);
+            if (!mMaster.sChangeKeyboard(searchNext)) {
+                return mMaster.sChangeKeyboard(searchNext);
             }
             return true;
         }
@@ -116,11 +116,11 @@ public final class MuiScreen extends Screen {
 
     @Override
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-        return manager.screenKeyUp(keyCode, scanCode, modifiers);
+        return mMaster.screenKeyUp(keyCode, scanCode, modifiers);
     }
 
     @Override
     public boolean charTyped(char codePoint, int modifiers) {
-        return manager.sCharTyped(codePoint, modifiers);
+        return mMaster.sCharTyped(codePoint, modifiers);
     }
 }
