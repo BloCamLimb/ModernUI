@@ -54,12 +54,12 @@ public class TextRenderNode {
     /**
      * Vertical adjustment to string position.
      */
-    private static final int BASELINE_OFFSET = 7;
+    public static final int BASELINE_OFFSET = 7;
 
     /**
      * Vertical adjustment to string position.
      */
-    private static final int VANILLA_BASELINE_OFFSET = 6;
+    public static final int VANILLA_BASELINE_OFFSET = 6;
 
 
     /**

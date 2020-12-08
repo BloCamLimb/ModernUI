@@ -31,6 +31,8 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
+import net.minecraft.client.renderer.texture.SimpleTexture;
+import net.minecraft.client.renderer.texture.Texture;
 import net.minecraft.client.renderer.texture.TextureUtil;
 import net.minecraft.resources.IResource;
 import net.minecraft.util.ResourceLocation;
@@ -209,6 +211,10 @@ public class GlyphManager {
      */
     private final Int2ObjectMap<TexturedGlyph[]> digitsMap = new Int2ObjectArrayMap<>(4);
 
+    private final Int2ObjectMap<TexturedGlyph> emojiMap = new Int2ObjectArrayMap<>(32);
+
+    private int emojiTexture;
+
 
     /**
      * The X coordinate of the upper=left corner in glyphCacheImage where the next glyph image should be stored. Glyphs are
@@ -345,6 +351,18 @@ public class GlyphManager {
 
         /* If no supported fonts found, use the default one (first in selectedFonts) so it can draw its unknown character glyphs */
         return selectedFonts.get(0);
+    }
+
+    public TexturedGlyph lookupEmoji(int codePoint) {
+        return emojiMap.computeIfAbsent(codePoint, l -> {
+           if (emojiTexture == 0) {
+               ResourceLocation resourceLocation = new ResourceLocation(ModernUI.MODID, "textures/gui/emoji.png");
+               Texture texture = new SimpleTexture(resourceLocation);
+               Minecraft.getInstance().textureManager.loadTexture(resourceLocation, texture);
+               emojiTexture = texture.getGlTextureId();
+           }
+           return new TexturedGlyph(emojiTexture, 12, 0, -8, 12, 12, 0, 0, 0.046875f, 0.046875f);
+        });
     }
 
     /**

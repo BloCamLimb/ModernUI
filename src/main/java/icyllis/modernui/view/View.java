@@ -71,16 +71,18 @@ public class View {
      *                      1                PFLAG_LAYOUT_REQUIRED
      * |--------|--------|--------|--------|
      */
-    static final int PFLAG_HOVERED                = 1;
+    static final int PFLAG_HOVERED = 1;
     static final int PFLAG_MEASURED_DIMENSION_SET = 1 << 11;
-    static final int PFLAG_FORCE_LAYOUT           = 1 << 12;
-    static final int PFLAG_LAYOUT_REQUIRED        = 1 << 13;
+    static final int PFLAG_FORCE_LAYOUT = 1 << 12;
+    static final int PFLAG_LAYOUT_REQUIRED = 1 << 13;
 
     /**
-     * Private status flags for different stages or processes
-     * Internal use only
+     * Indicates whether the view is temporarily detached.
      */
-    int privateFlags;
+    static final int PFLAG_CANCEL_NEXT_UP_EVENT = 0x04000000;
+
+    // private flags
+    int mPrivateFlags;
 
     /**
      * View visibility.
@@ -216,7 +218,7 @@ public class View {
     /**
      * Cached previous measure spec to avoid unnecessary measurements
      */
-    private int prevWidthMeasureSpec  = Integer.MIN_VALUE;
+    private int prevWidthMeasureSpec = Integer.MIN_VALUE;
     private int prevHeightMeasureSpec = Integer.MIN_VALUE;
 
     /**
@@ -308,15 +310,15 @@ public class View {
     public void layout(int left, int top, int right, int bottom) {
         boolean changed = setFrame(left, top, right, bottom);
 
-        if (changed || (privateFlags & PFLAG_LAYOUT_REQUIRED) != 0) {
+        if (changed || (mPrivateFlags & PFLAG_LAYOUT_REQUIRED) != 0) {
             layoutScrollBars();
 
             onLayout(changed);
 
-            privateFlags &= ~PFLAG_LAYOUT_REQUIRED;
+            mPrivateFlags &= ~PFLAG_LAYOUT_REQUIRED;
         }
 
-        privateFlags &= ~PFLAG_FORCE_LAYOUT;
+        mPrivateFlags &= ~PFLAG_FORCE_LAYOUT;
     }
 
     /**
@@ -413,7 +415,7 @@ public class View {
      */
     public final void measure(int widthMeasureSpec, int heightMeasureSpec) {
 
-        boolean needsLayout = (privateFlags & PFLAG_FORCE_LAYOUT) != 0;
+        boolean needsLayout = (mPrivateFlags & PFLAG_FORCE_LAYOUT) != 0;
 
         if (!needsLayout) {
 
@@ -432,16 +434,16 @@ public class View {
 
         if (needsLayout) {
             // remove the flag first anyway
-            privateFlags &= ~PFLAG_MEASURED_DIMENSION_SET;
+            mPrivateFlags &= ~PFLAG_MEASURED_DIMENSION_SET;
 
             onMeasure(widthMeasureSpec, heightMeasureSpec);
 
             // the flag should be added in onMeasure() by calling setMeasuredDimension()
-            if ((privateFlags & PFLAG_MEASURED_DIMENSION_SET) == 0) {
+            if ((mPrivateFlags & PFLAG_MEASURED_DIMENSION_SET) == 0) {
                 throw new IllegalStateException("Measured dimension unspecified on measure");
             }
 
-            privateFlags |= PFLAG_LAYOUT_REQUIRED;
+            mPrivateFlags |= PFLAG_LAYOUT_REQUIRED;
         }
 
         prevWidthMeasureSpec = widthMeasureSpec;
@@ -472,7 +474,7 @@ public class View {
         this.measuredWidth = measuredWidth;
         this.measuredHeight = measuredHeight;
 
-        privateFlags |= PFLAG_MEASURED_DIMENSION_SET;
+        mPrivateFlags |= PFLAG_MEASURED_DIMENSION_SET;
     }
 
     /**
@@ -859,9 +861,9 @@ public class View {
      * This will schedule a layout pass of the view tree.
      */
     public void requestLayout() {
-        boolean requestParent = (privateFlags & PFLAG_FORCE_LAYOUT) == 0;
+        boolean requestParent = (mPrivateFlags & PFLAG_FORCE_LAYOUT) == 0;
 
-        privateFlags |= PFLAG_FORCE_LAYOUT;
+        mPrivateFlags |= PFLAG_FORCE_LAYOUT;
 
         if (requestParent && parent != null) {
             parent.requestLayout();
@@ -873,7 +875,7 @@ public class View {
      * layout pass.
      */
     public void forceLayout() {
-        privateFlags |= PFLAG_FORCE_LAYOUT;
+        mPrivateFlags |= PFLAG_FORCE_LAYOUT;
     }
 
     /**
@@ -996,14 +998,14 @@ public class View {
 
         final double mouseX = event.x;
         final double mouseY = event.y;
-        final int action = event.action;
+        final int action = event.getAction();
 
         switch (action) {
             case MotionEvent.ACTION_MOVE:
-                final boolean prevHovered = (privateFlags & PFLAG_HOVERED) != 0;
+                final boolean prevHovered = (mPrivateFlags & PFLAG_HOVERED) != 0;
                 if (mouseX >= left && mouseX < right && mouseY >= top && mouseY < bottom) {
                     if (!prevHovered) {
-                        privateFlags |= PFLAG_HOVERED;
+                        mPrivateFlags |= PFLAG_HOVERED;
                         onMouseHoverEnter(mouseX, mouseY);
                     }
                     onMouseHoverMoved(mouseX, mouseY);
@@ -1011,14 +1013,14 @@ public class View {
                     return true;
                 } else {
                     if (prevHovered) {
-                        privateFlags &= ~PFLAG_HOVERED;
+                        mPrivateFlags &= ~PFLAG_HOVERED;
                         onMouseHoverExit();
                     }
 
                 }
                 return false;
             case MotionEvent.ACTION_PRESS:
-                if ((privateFlags & PFLAG_HOVERED) != 0) {
+                if ((mPrivateFlags & PFLAG_HOVERED) != 0) {
                     if (dispatchMouseEvent(event)) {
                         return true;
                     }
@@ -1027,7 +1029,7 @@ public class View {
                 }
                 return false;
             case MotionEvent.ACTION_RELEASE:
-                if ((privateFlags & PFLAG_HOVERED) != 0) {
+                if ((mPrivateFlags & PFLAG_HOVERED) != 0) {
                     if (dispatchMouseEvent(event)) {
                         return true;
                     }
@@ -1041,7 +1043,7 @@ public class View {
                 }
                 return false;
             case MotionEvent.ACTION_DOUBLE_CLICK:
-                if ((privateFlags & PFLAG_HOVERED) != 0) {
+                if ((mPrivateFlags & PFLAG_HOVERED) != 0) {
                     /*if (dispatchMouseEvent(event)) {
                         return true;
                     }*/
@@ -1049,7 +1051,7 @@ public class View {
                 }
                 return false;
             case MotionEvent.ACTION_SCROLL:
-                if ((privateFlags & PFLAG_HOVERED) != 0) {
+                if ((mPrivateFlags & PFLAG_HOVERED) != 0) {
                     if (dispatchMouseEvent(event)) {
                         return true;
                     }
@@ -1128,10 +1130,59 @@ public class View {
      * Internal method. Ensure rest of views of other branches to hover exit.
      */
     void ensureMouseHoverExit() {
-        if ((privateFlags & PFLAG_HOVERED) != 0) {
-            privateFlags &= ~PFLAG_HOVERED;
+        if ((mPrivateFlags & PFLAG_HOVERED) != 0) {
+            mPrivateFlags &= ~PFLAG_HOVERED;
             onMouseHoverExit();
         }
+    }
+
+    /**
+     * Pass the touch screen motion event down to the target view, or this view if
+     * it is the target.
+     *
+     * @param event The motion event to be dispatched.
+     * @return {@code true} if the event was handled by the view, {@code false}
+     * otherwise.
+     */
+    public boolean dispatchTouchEvent(MotionEvent event) {
+        boolean handled = false;
+
+        final int actionMasked = event.getActionMasked();
+        if (actionMasked == MotionEvent.ACTION_DOWN) {
+            //TODO
+        }
+
+        if (onTouchEvent(event)) {
+            handled = true;
+        }
+
+        return handled;
+    }
+
+
+    /**
+     * Implement this method to handle touch screen motion events.
+     * <p>
+     * If this method is used to detect click actions, it is recommended that
+     * the actions be performed by implementing and calling
+     * {@link #performClick()}. This will ensure consistent system behavior,
+     * including:
+     * <ul>
+     * <li>obeying click sound preferences
+     * <li>dispatching OnClickListener calls
+     * <li>handling {@link AccessibilityNodeInfo#ACTION_CLICK ACTION_CLICK} when
+     * accessibility features are enabled
+     * </ul>
+     *
+     * @param event The motion event.
+     * @return True if the event was handled, false otherwise.
+     */
+    public boolean onTouchEvent(MotionEvent event) {
+        return false;
+    }
+
+    boolean isOnScrollbarThumb(float x, float y) {
+        return false;
     }
 
     /**
@@ -1140,7 +1191,7 @@ public class View {
      * @return {@code true} if the view is currently mouse hovered
      */
     public final boolean isMouseHovered() {
-        return (privateFlags & PFLAG_HOVERED) != 0;
+        return (mPrivateFlags & PFLAG_HOVERED) != 0;
     }
 
     /**
@@ -1370,12 +1421,12 @@ public class View {
     public class ScrollBar {
 
         // scrollbar masks
-        private static final int DRAW_TRACK        = 1;
-        private static final int DRAW_THUMB        = 1 << 1;
+        private static final int DRAW_TRACK = 1;
+        private static final int DRAW_THUMB = 1 << 1;
         private static final int ALWAYS_DRAW_TRACK = 1 << 2;
-        private static final int TRACK_HOVERED     = 1 << 3;
-        private static final int THUMB_HOVERED     = 1 << 4;
-        private static final int VERTICAL          = 1 << 5;
+        private static final int TRACK_HOVERED = 1 << 3;
+        private static final int THUMB_HOVERED = 1 << 4;
+        private static final int VERTICAL = 1 << 5;
 
         @Nullable
         private Drawable track;
