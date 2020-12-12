@@ -21,6 +21,7 @@ package icyllis.modernui.system;
 import icyllis.modernui.graphics.renderer.RenderTools;
 import icyllis.modernui.plugin.IMuiRuntime;
 import icyllis.modernui.view.LayoutInflater;
+import net.minecraft.client.Minecraft;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.apache.logging.log4j.LogManager;
@@ -32,7 +33,7 @@ import java.lang.reflect.InvocationTargetException;
 
 /**
  * The Modern UI mod class for Internal Use Only.
- *
+ * <p>
  * You must get access to the functions of Modern UI on runtime via {@link icyllis.modernui.plugin.IMuiRuntime}
  */
 @Mod(ModernUI.MODID)
@@ -48,6 +49,7 @@ public final class ModernUI implements IMuiRuntime {
 
     static boolean developerMode;
 
+    // mod-loading thread
     public ModernUI() {
         checkJava();
 
@@ -60,7 +62,7 @@ public final class ModernUI implements IMuiRuntime {
             RenderTools.init();
         }
 
-        LOGGER.debug(MARKER, "Modern UI initialized");
+        LOGGER.debug(MARKER, "Modern UI initialized, {}", LOGGER);
     }
 
     private static void init() {
@@ -82,8 +84,8 @@ public final class ModernUI implements IMuiRuntime {
         if (javaVersion != null && javaVersion.startsWith("1.8")) {
             int update = Integer.parseInt(javaVersion.split("_")[1]);
             if (update < 60) {
-                throw new IllegalStateException(
-                        "You're using java " + javaVersion + " which is not compatible with Modern UI, " +
+                throw new RuntimeException(
+                        "Java " + javaVersion + " is not compatible with Modern UI, " +
                                 "a minimum of java 1.8.0_251 or above is required");
             }
         }

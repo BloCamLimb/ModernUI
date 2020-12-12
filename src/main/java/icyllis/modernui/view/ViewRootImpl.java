@@ -125,6 +125,10 @@ public final class ViewRootImpl implements IViewParent {
         }
     }
 
+    void onInputEvent(InputEvent event) {
+
+    }
+
     boolean onCursorPosEvent(LinkedList<View> route, double x, double y) {
         if (mView != null) {
             return mView.onCursorPosEvent(route, x, y);
@@ -134,7 +138,7 @@ public final class ViewRootImpl implements IViewParent {
 
     boolean onMouseEvent(MotionEvent event) {
         if (mView != null) {
-            final boolean handled = mView.onMouseEvent(event);
+            final boolean handled = mView.onGenericMotionEvent(event);
             if (!handled && event.getAction() == MotionEvent.ACTION_MOVE) {
                 mView.ensureMouseHoverExit();
             }

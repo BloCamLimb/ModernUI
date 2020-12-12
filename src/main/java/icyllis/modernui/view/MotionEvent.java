@@ -31,6 +31,14 @@ import java.util.Map;
  */
 public final class MotionEvent extends InputEvent {
 
+    /**
+     * An invalid pointer id.
+     * <p>
+     * This value (-1) can be used as a placeholder to indicate that a pointer id
+     * has not been assigned or is not available.  It cannot appear as
+     * a pointer id inside a {@link MotionEvent}.
+     */
+    public static final int INVALID_POINTER_ID = -1;
 
     /**
      * Bit mask of the parts of the action code that are the action itself.
@@ -79,8 +87,7 @@ public final class MotionEvent extends InputEvent {
      * bounds of the view hierarchy, it will not get dispatched to
      * any children of a ViewGroup by default. Therefore,
      * movements with ACTION_OUTSIDE should be handled in either the
-     * root {@link View} or in the appropriate {@link Window.Callback}
-     * (e.g. {@link android.app.Activity} or {@link android.app.Dialog}).
+     * root {@link View}.
      * </p>
      */
     public static final int ACTION_OUTSIDE = 4;
@@ -249,16 +256,76 @@ public final class MotionEvent extends InputEvent {
      */
     public static final int BUTTON_FORWARD = 1 << 4;
 
-    public static final int ACTION_DRAG = 2;
+
+    /**
+     * Tool type constant: Unknown tool type.
+     * This constant is used when the tool type is not known or is not relevant,
+     * such as for a trackball or other non-pointing device.
+     *
+     * @see #getToolType
+     */
+    public static final int TOOL_TYPE_UNKNOWN = 0;
+
+    /**
+     * Tool type constant: The tool is a finger.
+     *
+     * @see #getToolType
+     */
+    public static final int TOOL_TYPE_FINGER = 1;
+
+    /**
+     * Tool type constant: The tool is a stylus.
+     *
+     * @see #getToolType
+     */
+    public static final int TOOL_TYPE_STYLUS = 2;
+
+    /**
+     * Tool type constant: The tool is a mouse.
+     *
+     * @see #getToolType
+     */
+    public static final int TOOL_TYPE_MOUSE = 3;
+
+    /**
+     * Tool type constant: The tool is an eraser or a stylus being used in an inverted posture.
+     *
+     * @see #getToolType
+     */
+    public static final int TOOL_TYPE_ERASER = 4;
 
     public static final int ACTION_PRESS = 4;
     public static final int ACTION_RELEASE = 5;
     public static final int ACTION_DOUBLE_CLICK = 6;
 
+    // This is essentially the same as native AMOTION_EVENT_INVALID_CURSOR_POSITION as they're all
+    // NaN and we use isnan() everywhere to check validity.
+    private static final float INVALID_CURSOR_POSITION = Float.NaN;
+
     private static final int MAX_RECYCLED = 10;
     private static final Object sRecyclerLock = new Object();
     private static MotionEvent sRecyclerTop;
     private static int sRecyclerUsed;
+
+    // Shared temporary objects used when translating coordinates supplied by
+    // the caller into single element PointerCoords and pointer id arrays.
+    private static final Object gSharedTempLock = new Object();
+    private static PointerCoords[] gSharedTempPointerCoords;
+    private static PointerProperties[] gSharedTempPointerProperties;
+    private static int[] gSharedTempPointerIndexMap;
+
+    private static void ensureSharedTempPointerCapacity(int desiredCapacity) {
+        if (gSharedTempPointerCoords == null
+                || gSharedTempPointerCoords.length < desiredCapacity) {
+            int capacity = gSharedTempPointerCoords != null ? gSharedTempPointerCoords.length : 1;
+            while (capacity < desiredCapacity) {
+                capacity *= 2;
+            }
+            gSharedTempPointerCoords = PointerCoords.createArray(capacity);
+            gSharedTempPointerProperties = PointerProperties.createArray(capacity);
+            gSharedTempPointerIndexMap = new int[capacity];
+        }
+    }
 
     private MotionEvent mNext;
 
@@ -295,6 +362,50 @@ public final class MotionEvent extends InputEvent {
         event.mNext = null;
         event.prepareForReuse();
         return event;
+    }
+
+    @Nonnull
+    public static MotionEvent obtain(long downTime, long eventTime, int action,
+                                     float x, float y, int modifiers) {
+        MotionEvent event = obtain();
+        synchronized (gSharedTempLock) {
+            ensureSharedTempPointerCapacity(1);
+            final PointerProperties[] properties = gSharedTempPointerProperties;
+            properties[0].reset();
+            properties[0].id = 0;
+
+            final PointerCoords[] coords = gSharedTempPointerCoords;
+            coords[0].clear();
+            coords[0].x = x;
+            coords[0].y = y;
+            coords[0].pressure = pressure;
+            coords[0].size = size;
+
+            event.initialize(deviceId, source, displayId,
+                    action, 0, edgeFlags, metaState, 0 /*buttonState*/, CLASSIFICATION_NONE,
+                    0, 0, xPrecision, yPrecision,
+                    downTime, eventTime,
+                    1, properties, coords);
+            return event;
+        }
+    }
+
+    private void initialize(int deviceId, int source, int displayId, int action, int flags,
+                            int edgeFlags, int metaState, int buttonState, int classification,
+                            float xOffset, float yOffset, float xPrecision, float yPrecision,
+                            long downTimeNanos, long eventTimeNanos, int pointerCount,
+                            @Nonnull PointerProperties[] pointerProperties, @Nonnull PointerCoords[] pointerCoords) {
+        if (pointerCount < 1) {
+            throw new IllegalArgumentException("pointerCount must be at least 1");
+        }
+        if (pointerProperties.length < pointerCount) {
+            throw new IllegalArgumentException("pointerProperties array must be large enough to hold all pointers");
+        }
+        if (pointerCoords.length < pointerCount) {
+            throw new IllegalArgumentException("pointerCoords array must be large enough to hold all pointers");
+        }
+        mAction = action;
+        updateCursorPosition();
     }
 
     /**
@@ -353,16 +464,41 @@ public final class MotionEvent extends InputEvent {
     }
 
     /**
+     * Returns true if this motion event is a touch event.
+     * <p>
+     * Specifically excludes pointer events with action {@link #ACTION_HOVER_MOVE},
+     * {@link #ACTION_HOVER_ENTER}, {@link #ACTION_HOVER_EXIT}, {@link #ACTION_SCROLL},
+     * {@link #ACTION_BUTTON_PRESS} or {@link #ACTION_BUTTON_RELEASE}, because they
+     * are not actually touch events (the pointer is not down).
+     * </p>
+     *
+     * @return true if this motion event is a touch event.
+     */
+    public final boolean isTouchEvent() {
+        // to-add: check source is a pointer device
+        switch (mAction & ACTION_MASK) {
+            case ACTION_DOWN:
+            case ACTION_UP:
+            case ACTION_MOVE:
+            case ACTION_CANCEL:
+            case ACTION_OUTSIDE:
+            case ACTION_POINTER_DOWN:
+            case ACTION_POINTER_UP:
+                return true;
+        }
+        return false;
+    }
+
+    /**
      * Sets this event's action.
      */
     public final void setAction(int action) {
         mAction = action;
     }
 
-
     /**
      * Gets the state of all buttons that are pressed such as a mouse,
-     * use an OR operation to get the state of a button.
+     * use an AND operation to get the state of a button.
      *
      * @return The button state.
      * @see #BUTTON_PRIMARY
@@ -377,7 +513,7 @@ public final class MotionEvent extends InputEvent {
     }
 
     /**
-     * Checks if a mouse or stylus button (or combination of buttons) is pressed.
+     * Checks if a mouse button (or combination of buttons) is pressed.
      *
      * @param button Button (or combination of buttons).
      * @return {@code true} if specified buttons are pressed.
@@ -414,24 +550,6 @@ public final class MotionEvent extends InputEvent {
     public void cancel() {
 
     }
-
-    /*
-     * Returns the action type of this event
-     *
-     * @return either {@link #TYPE_DYNAMIC} or {@link #TYPE_OPERATION} or {@link #TYPE_NOTIFY}
-     */
-    /*public int getType() {
-        return action >> TYPE_SHIFT;
-    }*/
-
-    /*
-     * Returns the action of this event
-     *
-     * @return action, such as {@link #ACTION_PRESS}
-     */
-    /*public int getAction() {
-        return action;
-    }*/
 
     /**
      * Returns the X coordinate of this event,
@@ -483,5 +601,126 @@ public final class MotionEvent extends InputEvent {
      */
     public int getButton() {
         return button;
+    }
+
+    /**
+     * Transfer object for pointer coordinates.
+     * <p>
+     * Objects of this type can be used to specify the pointer coordinates when
+     * creating new {@link MotionEvent} objects and to query pointer coordinates
+     * in bulk.
+     */
+    public static final class PointerCoords {
+
+        /**
+         * The X component of the pointer movement.
+         *
+         * @see MotionEvent#AXIS_X
+         */
+        public float x;
+
+        /**
+         * The Y component of the pointer movement.
+         *
+         * @see MotionEvent#AXIS_Y
+         */
+        public float y;
+
+        /**
+         * Creates a pointer coords object with all axes initialized to zero.
+         */
+        public PointerCoords() {
+        }
+
+        @Nonnull
+        public static PointerCoords[] createArray(int size) {
+            PointerCoords[] array = new PointerCoords[size];
+            for (int i = 0; i < size; i++) {
+                array[i] = new PointerCoords();
+            }
+            return array;
+        }
+    }
+
+    /**
+     * Transfer object for pointer properties.
+     * <p>
+     * Objects of this type can be used to specify the pointer id and tool type
+     * when creating new {@link MotionEvent} objects and to query pointer properties in bulk.
+     */
+    public static final class PointerProperties {
+
+        /**
+         * The pointer id.
+         * Initially set to {@link #INVALID_POINTER_ID} (-1).
+         *
+         * @see MotionEvent#getPointerId(int)
+         */
+        public int id;
+
+        /**
+         * The pointer tool type.
+         * Initially set to 0.
+         *
+         * @see MotionEvent#getToolType(int)
+         */
+        public int toolType;
+
+        /**
+         * Creates a pointer properties object with an invalid pointer id.
+         */
+        public PointerProperties() {
+            reset();
+        }
+
+        /**
+         * Creates a pointer properties object as a copy of the contents of
+         * another pointer properties object.
+         *
+         * @param other The pointer properties object that copied from
+         */
+        public PointerProperties(PointerProperties other) {
+            copyFrom(other);
+        }
+
+        @Nonnull
+        public static PointerProperties[] createArray(int size) {
+            PointerProperties[] array = new PointerProperties[size];
+            for (int i = 0; i < size; i++) {
+                array[i] = new PointerProperties();
+            }
+            return array;
+        }
+
+        /**
+         * Resets the pointer properties to their initial values.
+         */
+        public void reset() {
+            id = INVALID_POINTER_ID;
+            toolType = TOOL_TYPE_UNKNOWN;
+        }
+
+        /**
+         * Copies the contents of another pointer properties object.
+         *
+         * @param other The pointer properties object to copy.
+         */
+        public void copyFrom(@Nonnull PointerProperties other) {
+            id = other.id;
+            toolType = other.toolType;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            PointerProperties that = (PointerProperties) o;
+            return id == that.id && toolType == that.toolType;
+        }
+
+        @Override
+        public int hashCode() {
+            return id | (toolType << 8);
+        }
     }
 }

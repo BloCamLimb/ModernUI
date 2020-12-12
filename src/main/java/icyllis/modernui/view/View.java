@@ -986,12 +986,64 @@ public class View {
     }
 
     /**
-     * Handle primitive mouse event of this view
+     * Dispatch a pointer event.
+     * <p>
+     * Dispatches touch related pointer events to {@link #onTouchEvent(MotionEvent)} and all
+     * other events to {@link #onGenericMotionEvent(MotionEvent)}.  This separation of concerns
+     * reinforces the invariant that {@link #onTouchEvent(MotionEvent)} is really about touches
+     * and should not be expected to handle other pointing device features.
+     * </p>
      *
-     * @param event the event to be handled
+     * @param event the motion event to be dispatched.
+     * @return true if the event was handled by the view, false otherwise.
+     */
+    public final boolean dispatchPointerEvent(MotionEvent event) {
+        if (event.isTouchEvent()) {
+            return dispatchTouchEvent(event);
+        } else {
+            return dispatchGenericMotionEvent(event);
+        }
+    }
+
+    /**
+     * Pass the mouse event down to the target view, or this view if it is the target.
+     *
+     * @param event the event to be dispatched
      * @return {@code true} if the event was consumed by the view, {@code false} otherwise
      */
-    public final boolean onMouseEvent(@Nonnull MotionEvent event) {
+    public boolean dispatchGenericMotionEvent(MotionEvent event) {
+        final int actionMasked = event.getActionMasked();
+        if (actionMasked == MotionEvent.ACTION_HOVER_MOVE
+                || actionMasked == MotionEvent.ACTION_HOVER_ENTER
+                || actionMasked == MotionEvent.ACTION_HOVER_EXIT) {
+            if (dispatchHoverEvent(event)) {
+                return true;
+            }
+        }
+        return onGenericMotionEvent(event);
+    }
+
+    /**
+     * Dispatch a hover event.
+     * <p>
+     * Do not call this method directly.
+     * Call {@link #dispatchGenericMotionEvent(MotionEvent)} instead.
+     * </p>
+     *
+     * @param event The motion event to be dispatched.
+     * @return True if the event was handled by the view, false otherwise.
+     */
+    protected boolean dispatchHoverEvent(MotionEvent event) {
+        return onHoverEvent(event);
+    }
+
+    /**
+     * Implement this method to handle generic motion events.
+     *
+     * @param event the generic motion event being processed.
+     * @return {@code true} if the event was consumed by the view, {@code false} otherwise
+     */
+    public boolean onGenericMotionEvent(@Nonnull MotionEvent event) {
         if ((viewFlags & ENABLED_MASK) == DISABLED) {
             return false;
         }
@@ -1009,7 +1061,7 @@ public class View {
                         onMouseHoverEnter(mouseX, mouseY);
                     }
                     onMouseHoverMoved(mouseX, mouseY);
-                    dispatchMouseEvent(event);
+                    dispatchGenericMotionEvent(event);
                     return true;
                 } else {
                     if (prevHovered) {
@@ -1021,7 +1073,7 @@ public class View {
                 return false;
             case MotionEvent.ACTION_PRESS:
                 if ((mPrivateFlags & PFLAG_HOVERED) != 0) {
-                    if (dispatchMouseEvent(event)) {
+                    if (dispatchGenericMotionEvent(event)) {
                         return true;
                     }
                     event.pressMap.putIfAbsent(event.button, this);
@@ -1030,7 +1082,7 @@ public class View {
                 return false;
             case MotionEvent.ACTION_RELEASE:
                 if ((mPrivateFlags & PFLAG_HOVERED) != 0) {
-                    if (dispatchMouseEvent(event)) {
+                    if (dispatchGenericMotionEvent(event)) {
                         return true;
                     }
                     boolean handled;
@@ -1052,7 +1104,7 @@ public class View {
                 return false;
             case MotionEvent.ACTION_SCROLL:
                 if ((mPrivateFlags & PFLAG_HOVERED) != 0) {
-                    if (dispatchMouseEvent(event)) {
+                    if (dispatchGenericMotionEvent(event)) {
                         return true;
                     }
                     return onMouseScrolled(mouseX, mouseY, event.scrollDelta);
@@ -1062,13 +1114,7 @@ public class View {
         return false;
     }
 
-    /**
-     * Pass the mouse event down to the target view, or this view if it is the target.
-     *
-     * @param event the event to be dispatched
-     * @return {@code true} if the event was consumed by the view, {@code false} otherwise
-     */
-    public boolean dispatchMouseEvent(@Nonnull MotionEvent event) {
+    public boolean onHoverEvent(MotionEvent event) {
         return false;
     }
 
@@ -1141,16 +1187,12 @@ public class View {
      * it is the target.
      *
      * @param event The motion event to be dispatched.
-     * @return {@code true} if the event was handled by the view, {@code false}
-     * otherwise.
+     * @return {@code true} if the event was handled by the view, {@code false} otherwise
      */
     public boolean dispatchTouchEvent(MotionEvent event) {
         boolean handled = false;
 
         final int actionMasked = event.getActionMasked();
-        if (actionMasked == MotionEvent.ACTION_DOWN) {
-            //TODO
-        }
 
         if (onTouchEvent(event)) {
             handled = true;
@@ -1162,20 +1204,9 @@ public class View {
 
     /**
      * Implement this method to handle touch screen motion events.
-     * <p>
-     * If this method is used to detect click actions, it is recommended that
-     * the actions be performed by implementing and calling
-     * {@link #performClick()}. This will ensure consistent system behavior,
-     * including:
-     * <ul>
-     * <li>obeying click sound preferences
-     * <li>dispatching OnClickListener calls
-     * <li>handling {@link AccessibilityNodeInfo#ACTION_CLICK ACTION_CLICK} when
-     * accessibility features are enabled
-     * </ul>
      *
-     * @param event The motion event.
-     * @return True if the event was handled, false otherwise.
+     * @param event the touch event
+     * @return {@code true} if the event was handled by the view, {@code false} otherwise
      */
     public boolean onTouchEvent(MotionEvent event) {
         return false;
