@@ -81,7 +81,7 @@ public abstract class ViewGroup extends View implements IViewParent {
     protected abstract void onLayout(boolean changed);
 
     @Override
-    public final boolean dispatchMouseEvent(@Nonnull MotionEvent event) {
+    public final boolean dispatchGenericMotionEvent(@Nonnull MotionEvent event) {
         final double mouseX = event.x;
         final double mouseY = event.y;
         final int action = event.getAction();
@@ -97,7 +97,7 @@ public abstract class ViewGroup extends View implements IViewParent {
             case MotionEvent.ACTION_MOVE:
                 for (int i = childrenCount - 1; i >= 0; i--) {
                     child = views[i];
-                    if (!anyHovered && child.onMouseEvent(event)) {
+                    if (!anyHovered && child.onGenericMotionEvent(event)) {
                         anyHovered = true;
                     } else {
                         child.ensureMouseHoverExit();
@@ -110,7 +110,7 @@ public abstract class ViewGroup extends View implements IViewParent {
             case MotionEvent.ACTION_SCROLL:
                 for (int i = childrenCount - 1; i >= 0; i--) {
                     child = views[i];
-                    if (child.onMouseEvent(event)) {
+                    if (child.onGenericMotionEvent(event)) {
                         return true;
                     }
                 }
@@ -119,7 +119,7 @@ public abstract class ViewGroup extends View implements IViewParent {
 
         /*event.x = mouseX;
         event.y = mouseY;*/
-        return super.dispatchMouseEvent(event);
+        return super.dispatchGenericMotionEvent(event);
     }
 
     /*@Deprecated

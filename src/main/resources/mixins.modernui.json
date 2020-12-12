@@ -11,6 +11,7 @@
     "MixinFoodStats",
     "MixinMainWindow",
     "MixinMatrix4f",
+    "MixinMouseHelper",
     "MixinScreen"
   ],
   "server": [

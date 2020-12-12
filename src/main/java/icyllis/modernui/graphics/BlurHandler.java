@@ -20,8 +20,7 @@ package icyllis.modernui.graphics;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.view.MuiMenuScreen;
-import icyllis.modernui.view.MuiScreen;
+import icyllis.modernui.view.IMuiScreen;
 import icyllis.modernui.view.UIManager;
 import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import net.minecraft.client.Minecraft;
@@ -104,7 +103,7 @@ public enum BlurHandler {
             return;
         }
         final boolean excluded;
-        if (gui == null || gui instanceof MuiScreen || gui instanceof MuiMenuScreen<?>) {
+        if (gui == null || gui instanceof IMuiScreen) {
             excluded = false;
         } else {
             Class<?> t = gui.getClass();
@@ -144,8 +143,6 @@ public enum BlurHandler {
 
     /**
      * Internal method, to re-blur after resources (including shaders) reloaded in in-game menu
-     *
-     * @see MuiScreen#init(Minecraft, int, int)
      */
     public void forceBlur() {
         // no need to check if is excluded, this method is only called by opened ModernUI Screen

@@ -198,22 +198,22 @@ public abstract class Module implements IModule, IHost {
 
     @Override
     public double getAbsoluteMouseX() {
-        return manager.getMouseX();
+        return manager.getCursorX();
     }
 
     @Override
     public double getAbsoluteMouseY() {
-        return manager.getMouseY();
+        return manager.getCursorY();
     }
 
     @Override
     public double getRelativeMouseX() {
-        return manager.getMouseX();
+        return manager.getCursorX();
     }
 
     @Override
     public double getRelativeMouseY() {
-        return manager.getMouseY();
+        return manager.getCursorY();
     }
 
     @Override

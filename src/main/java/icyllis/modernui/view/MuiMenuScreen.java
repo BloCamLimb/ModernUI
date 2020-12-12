@@ -40,16 +40,17 @@ import java.util.Objects;
 // And render layer for tooltips etc
 
 /**
- * This is required because most of mods check if instanceof {@link ContainerScreen} rather than {@link IHasContainer}.
  * ContainerScreen can hold a menu including item stack interaction and network communication.
+ * This is required because most of mods check if instanceof {@link ContainerScreen} rather than {@link IHasContainer}.
  *
  * @param <T> menu type
+ * @see MuiMainScreen
  * @see ScreenManager.IScreenFactory
  */
 @OnlyIn(Dist.CLIENT)
-public final class MuiMenuScreen<T extends Container> extends ContainerScreen<T> {
+final class MuiMenuScreen<T extends Container> extends ContainerScreen<T> implements IMuiScreen {
 
-    private final UIManager manager = UIManager.getInstance();
+    private final UIManager mService = UIManager.getInstance();
 
     MuiMenuScreen(@Nonnull T menu, PlayerInventory inventory, ITextComponent title) {
         super(menu, inventory, title);
@@ -59,14 +60,14 @@ public final class MuiMenuScreen<T extends Container> extends ContainerScreen<T>
     public void init(@Nonnull Minecraft minecraft, int width, int height) {
         //TODO remove super.init()
         super.init(minecraft, width, height);
-        manager.prepareWindows(this, width, height);
+        mService.prepareWindows(this, width, height);
     }
 
     @Override
     public void resize(@Nonnull Minecraft minecraft, int width, int height) {
         this.width = width;
         this.height = height;
-        manager.prepareWindows(this, width, height);
+        mService.prepareWindows(this, width, height);
         ModernUI.LOGGER.debug("Scaled: {}x{} Framebuffer: {}x{} Window: {}x{}", width, height, minecraft.getMainWindow().getFramebufferWidth(),
                 minecraft.getMainWindow().getFramebufferHeight(), minecraft.getMainWindow().getWidth(), minecraft.getMainWindow().getHeight());
     }
@@ -74,7 +75,7 @@ public final class MuiMenuScreen<T extends Container> extends ContainerScreen<T>
     @Override
     public void render(@Nonnull MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         super.render(matrixStack, mouseX, mouseY, partialTicks);
-        manager.draw();
+        mService.draw();
     }
 
     @Override
@@ -90,45 +91,46 @@ public final class MuiMenuScreen<T extends Container> extends ContainerScreen<T>
     @Override
     public void onClose() {
         super.onClose();
-        manager.recycleWindows();
+        mService.recycleWindows();
     }
+
+    // IMPL - IGuiEventListener
 
     @Override
     public void mouseMoved(double mouseX, double mouseY) {
-        manager.eventDispatcher.onCursorPosEvent(mouseX, mouseY);
+        mService.onCursorPosCallback(mouseX, mouseY);
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        super.mouseClicked(mouseX, mouseY, mouseButton);
-        return manager.screenMouseDown(mouseX, mouseY, mouseButton);
+        throw new IllegalStateException("Unexpected call");
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
-        super.mouseReleased(mouseX, mouseY, mouseButton);
-        return manager.screenMouseUp(mouseX, mouseY, mouseButton);
+        throw new IllegalStateException("Unexpected call");
     }
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double deltaX, double deltaY) {
-        super.mouseDragged(mouseX, mouseY, mouseButton, deltaX, deltaY);
-        return manager.screenMouseDrag(mouseX, mouseY, deltaX, deltaY);
+        // Consume the event but do nothing
+        return true;
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        return manager.screenMouseScroll(mouseX, mouseY, delta);
+        // Consume the event but do nothing
+        return true;
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (manager.screenKeyDown(keyCode, scanCode, modifiers)) {
+        if (mService.screenKeyDown(keyCode, scanCode, modifiers)) {
             return true;
         } else {
             InputMappings.Input mouseKey = InputMappings.getInputByCode(keyCode, scanCode);
             if (keyCode == GLFW.GLFW_KEY_ESCAPE || Objects.requireNonNull(this.minecraft).gameSettings.keyBindInventory.isActiveAndMatches(mouseKey)) {
-                if (manager.sBack()) {
+                if (mService.sBack()) {
                     return true;
                 }
                 Objects.requireNonNull(Objects.requireNonNull(this.minecraft).player).closeScreen();
@@ -136,8 +138,8 @@ public final class MuiMenuScreen<T extends Container> extends ContainerScreen<T>
             }
             if (keyCode == GLFW.GLFW_KEY_TAB) {
                 boolean searchNext = !hasShiftDown();
-                if (!manager.sChangeKeyboard(searchNext)) {
-                    return manager.sChangeKeyboard(searchNext);
+                if (!mService.sChangeKeyboard(searchNext)) {
+                    return mService.sChangeKeyboard(searchNext);
                 }
                 return true;
             }
@@ -159,11 +161,11 @@ public final class MuiMenuScreen<T extends Container> extends ContainerScreen<T>
 
     @Override
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-        return manager.screenKeyUp(keyCode, scanCode, modifiers);
+        return mService.screenKeyUp(keyCode, scanCode, modifiers);
     }
 
     @Override
     public boolean charTyped(char codePoint, int modifiers) {
-        return manager.sCharTyped(codePoint, modifiers);
+        return mService.sCharTyped(codePoint, modifiers);
     }
 }

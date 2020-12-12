@@ -28,6 +28,7 @@ import icyllis.modernui.ui.discard.ModuleGroup;
 import icyllis.modernui.ui.popup.ConfirmCallback;
 import icyllis.modernui.ui.popup.PopupConfirm;
 import icyllis.modernui.widget.MenuButton;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.advancements.AdvancementsScreen;
 import net.minecraft.client.gui.screen.DirtMessageScreen;
 import net.minecraft.client.gui.screen.MainMenuScreen;
@@ -98,7 +99,7 @@ public class IngameMenuHome extends ModuleGroup {
                         .build(this)
                         .buildCallback(
                                 () -> {
-                                    minecraft.displayGuiScreen(new ModListScreen(UIManager.getInstance().getModernScreen()));
+                                    minecraft.displayGuiScreen(new ModListScreen(Minecraft.getInstance().currentScreen));
                                     playSound(Registration.BUTTON_CLICK_2);
                                 }
                         )

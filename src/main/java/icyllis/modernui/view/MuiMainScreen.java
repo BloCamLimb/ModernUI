@@ -30,37 +30,39 @@ import org.lwjgl.glfw.GLFW;
 import javax.annotation.Nonnull;
 
 /**
- * This class serves as a bridge to receive events from system.
- * All vanilla methods are completely deprecated by Modern UI.
+ * This class serves as a junction to receive events from system.
+ * All vanilla methods are completely taken over by Modern UI.
+ *
+ * @see MuiMenuScreen
  */
 @OnlyIn(Dist.CLIENT)
-public final class MuiScreen extends Screen {
+final class MuiMainScreen extends Screen implements IMuiScreen {
 
-    private final UIManager mMaster = UIManager.getInstance();
+    private final UIManager mService = UIManager.getInstance();
 
-    MuiScreen() {
+    MuiMainScreen() {
         super(StringTextComponent.EMPTY);
     }
 
     @Override
     public void init(@Nonnull Minecraft minecraft, int width, int height) {
-        mMaster.prepareWindows(this, width, height);
+        mService.prepareWindows(this, width, height);
         BlurHandler.INSTANCE.forceBlur();
     }
 
     @Override
     public void resize(@Nonnull Minecraft minecraft, int width, int height) {
-        mMaster.prepareWindows(this, width, height);
+        mService.prepareWindows(this, width, height);
     }
 
     @Override
     public void render(@Nonnull MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        mMaster.draw();
+        mService.draw();
     }
 
     @Override
     public void onClose() {
-        mMaster.recycleWindows();
+        mService.recycleWindows();
     }
 
     @Override
@@ -69,45 +71,49 @@ public final class MuiScreen extends Screen {
         return false;
     }
 
+    // IMPL - IGuiEventListener
+
     @Override
     public void mouseMoved(double mouseX, double mouseY) {
-        mMaster.mInputHandler.onHoverMove(mouseX, mouseY);
+        mService.onCursorPosCallback(mouseX, mouseY);
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        return mMaster.screenMouseDown(mouseX, mouseY, mouseButton);
+        throw new IllegalStateException("Unexpected call");
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
-        return mMaster.screenMouseUp(mouseX, mouseY, mouseButton);
+        throw new IllegalStateException("Unexpected call");
     }
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double deltaX, double deltaY) {
-        return mMaster.screenMouseDrag(mouseX, mouseY, deltaX, deltaY);
+        // Consume the event but do nothing
+        return true;
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        return mMaster.screenMouseScroll(mouseX, mouseY, delta);
+        // Consume the event but do nothing
+        return true;
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (mMaster.screenKeyDown(keyCode, scanCode, modifiers)) {
+        if (mService.screenKeyDown(keyCode, scanCode, modifiers)) {
             return true;
         } else if (keyCode == GLFW.GLFW_KEY_ESCAPE && shouldCloseOnEsc()) {
-            if (mMaster.sBack()) {
+            if (mService.sBack()) {
                 return true;
             }
-            mMaster.closeGui();
+            mService.closeGui();
             return true;
         } else if (keyCode == GLFW.GLFW_KEY_TAB) {
             boolean searchNext = !hasShiftDown();
-            if (!mMaster.sChangeKeyboard(searchNext)) {
-                return mMaster.sChangeKeyboard(searchNext);
+            if (!mService.sChangeKeyboard(searchNext)) {
+                return mService.sChangeKeyboard(searchNext);
             }
             return true;
         }
@@ -116,11 +122,11 @@ public final class MuiScreen extends Screen {
 
     @Override
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-        return mMaster.screenKeyUp(keyCode, scanCode, modifiers);
+        return mService.screenKeyUp(keyCode, scanCode, modifiers);
     }
 
     @Override
     public boolean charTyped(char codePoint, int modifiers) {
-        return mMaster.sCharTyped(codePoint, modifiers);
+        return mService.sCharTyped(codePoint, modifiers);
     }
 }
