@@ -18,17 +18,20 @@
 
 package icyllis.modernui.view;
 
-import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.minecraft.client.Minecraft;
+import net.minecraft.util.Util;
+import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.Map;
 
 /**
  * An object that indicates movement events (mouse, touchpad etc)
  *
+ * @see GLFW
  * @see net.minecraft.client.MouseHelper
  */
+@SuppressWarnings("unused")
 public final class MotionEvent extends InputEvent {
 
     /**
@@ -294,12 +297,86 @@ public final class MotionEvent extends InputEvent {
      */
     public static final int TOOL_TYPE_ERASER = 4;
 
-    public static final int ACTION_PRESS = 4;
-    public static final int ACTION_RELEASE = 5;
-    public static final int ACTION_DOUBLE_CLICK = 6;
 
-    // This is essentially the same as native AMOTION_EVENT_INVALID_CURSOR_POSITION as they're all
-    // NaN and we use isnan() everywhere to check validity.
+    /**
+     * Axis constant: X axis of a motion event.
+     * <p>
+     * <ul>
+     * <li>For a touch screen, reports the absolute X screen position of the center of
+     * the touch contact area.  The units are display pixels.
+     * <li>For a touch pad, reports the absolute X surface position of the center of the touch
+     * contact area.
+     * <li>For a mouse, reports the absolute X screen position of the mouse pointer.
+     * The units are display pixels.
+     * <li>For a trackball, reports the relative horizontal displacement of the trackball.
+     * The value is normalized to a range from -1.0 (left) to 1.0 (right).
+     * <li>For a joystick, reports the absolute X position of the joystick.
+     * The value is normalized to a range from -1.0 (left) to 1.0 (right).
+     * </ul>
+     * </p>
+     *
+     * @see #getX(int)
+     * @see MotionEvent.PointerCoords#getAxisValue(int)
+     */
+    public static final int AXIS_X = 0;
+
+    /**
+     * Axis constant: Y axis of a motion event.
+     * <p>
+     * <ul>
+     * <li>For a touch screen, reports the absolute Y screen position of the center of
+     * the touch contact area.  The units are display pixels.
+     * <li>For a touch pad, reports the absolute Y surface position of the center of the touch
+     * contact area.
+     * <li>For a mouse, reports the absolute Y screen position of the mouse pointer.
+     * The units are display pixels.
+     * <li>For a trackball, reports the relative vertical displacement of the trackball.
+     * The value is normalized to a range from -1.0 (up) to 1.0 (down).
+     * <li>For a joystick, reports the absolute Y position of the joystick.
+     * The value is normalized to a range from -1.0 (up or far) to 1.0 (down or near).
+     * </ul>
+     * </p>
+     *
+     * @see #getY(int)
+     * @see MotionEvent.PointerCoords#getAxisValue(int)
+     */
+    public static final int AXIS_Y = 1;
+
+    /**
+     * Axis constant: Vertical Scroll axis of a motion event.
+     * <p>
+     * <ul>
+     * <li>For a mouse, reports the relative movement of the vertical scroll wheel.
+     * The value is normalized to a range from -1.0 (down) to 1.0 (up).
+     * </ul>
+     * </p><p>
+     * This axis should be used to scroll views vertically.
+     * </p>
+     *
+     * @see #getAxisValue(int, int)
+     * @see MotionEvent.PointerCoords#getAxisValue(int)
+     */
+    public static final int AXIS_VSCROLL = 9;
+
+    /**
+     * Axis constant: Horizontal Scroll axis of a motion event.
+     * <p>
+     * <ul>
+     * <li>For a mouse, reports the relative movement of the horizontal scroll wheel.
+     * The value is normalized to a range from -1.0 (left) to 1.0 (right).
+     * </ul>
+     * </p><p>
+     * This axis should be used to scroll views horizontally.
+     * </p>
+     *
+     * @see #getAxisValue(int, int)
+     * @see MotionEvent.PointerCoords#getAxisValue(int)
+     */
+    public static final int AXIS_HSCROLL = 10;
+
+    @Deprecated
+    private static final int HISTORY_CURRENT = Integer.MIN_VALUE;
+
     private static final float INVALID_CURSOR_POSITION = Float.NaN;
 
     private static final int MAX_RECYCLED = 10;
@@ -312,8 +389,8 @@ public final class MotionEvent extends InputEvent {
     private static final Object gSharedTempLock = new Object();
     private static PointerCoords[] gSharedTempPointerCoords;
     private static PointerProperties[] gSharedTempPointerProperties;
-    private static int[] gSharedTempPointerIndexMap;
 
+    @SuppressWarnings("SameParameterValue")
     private static void ensureSharedTempPointerCapacity(int desiredCapacity) {
         if (gSharedTempPointerCoords == null
                 || gSharedTempPointerCoords.length < desiredCapacity) {
@@ -323,33 +400,34 @@ public final class MotionEvent extends InputEvent {
             }
             gSharedTempPointerCoords = PointerCoords.createArray(capacity);
             gSharedTempPointerProperties = PointerProperties.createArray(capacity);
-            gSharedTempPointerIndexMap = new int[capacity];
         }
     }
 
     private MotionEvent mNext;
 
     private int mAction;
-
+    private int mActionButton;
+    private int mFlags;
+    private int mModifiers;
     private int mButtonState;
 
-    float x;
-    float y;
+    private float mXOffset;
+    private float mYOffset;
+    private float mRawXCursorPosition;
+    private float mRawYCursorPosition;
 
-    int button;
+    private long mDownTime;
+    private long mEventTime;
 
-    double scrollDelta;
-
-    final Map<Integer, View> pressMap = new Int2ObjectArrayMap<>();
-    @Nullable
-    View clicked;
+    private final ObjectArrayList<PointerProperties> mPointerProperties = new ObjectArrayList<>();
+    private final ObjectArrayList<PointerCoords> mPointerCoords = new ObjectArrayList<>();
 
     private MotionEvent() {
 
     }
 
     @Nonnull
-    static MotionEvent obtain() {
+    private static MotionEvent obtain() {
         final MotionEvent event;
         synchronized (sRecyclerLock) {
             event = sRecyclerTop;
@@ -364,9 +442,69 @@ public final class MotionEvent extends InputEvent {
         return event;
     }
 
+    /**
+     * Create a new MotionEvent, filling in all of the basic values that
+     * define the motion.
+     *
+     * @param downTime     The time (in ns) when the user originally pressed down to start
+     *                     a stream of position events.  This must be obtained from {@link Util#nanoTime()}.
+     * @param eventTime    The the time (in ns) when this specific event was generated.  This
+     *                     must be obtained from {@link Util#nanoTime()}.
+     * @param action       The kind of action being performed, such as {@link #ACTION_DOWN}.
+     * @param pointerCount The number of pointers that will be in this event.
+     * @param properties   An array of <em>pointerCount</em> values providing
+     *                     a {@link PointerProperties} property object for each pointer, which must
+     *                     include the pointer identifier.
+     * @param coords       An array of <em>pointerCount</em> values providing
+     *                     a {@link PointerCoords} coordinate object for each pointer.
+     * @param modifiers    The modifier keys that were in effect when the event was generated.
+     * @param buttonState  The state of buttons that are pressed.
+     * @param flags        The motion event flags.
+     */
+    @Nonnull
+    public static MotionEvent obtain(long downTime, long eventTime, int action,
+                                     int pointerCount, PointerProperties[] properties,
+                                     PointerCoords[] coords, int modifiers,
+                                     int buttonState, int flags) {
+        MotionEvent event = obtain();
+        event.initialize(action, 0, flags, modifiers, buttonState,
+                0, 0, INVALID_CURSOR_POSITION, INVALID_CURSOR_POSITION,
+                downTime, eventTime, pointerCount, properties, coords);
+        return event;
+    }
+
     @Nonnull
     public static MotionEvent obtain(long downTime, long eventTime, int action,
                                      float x, float y, int modifiers) {
+        return obtain(downTime, eventTime, action, 0, x, y, modifiers, 0, 0);
+    }
+
+    /**
+     * Create a new MotionEvent, filling in a subset of the basic motion
+     * values.
+     *
+     * @param downTime     The time (in ns) when the user originally pressed down to start
+     *                     a stream of position events.  This must be obtained from {@link Util#nanoTime()}.
+     * @param eventTime    The the time (in ns) when this specific event was generated.  This
+     *                     must be obtained from {@link Util#nanoTime()}.
+     * @param action       The kind of action being performed, such as {@link #ACTION_DOWN}.
+     * @param actionButton The button of press or release action, such as {@link GLFW#GLFW_MOUSE_BUTTON_LEFT}
+     * @param x            The X coordinate of this event.
+     * @param y            The Y coordinate of this event.
+     * @param modifiers    The modifier keys that were in effect when the event was generated.
+     * @param buttonState  The state of buttons that are pressed.
+     * @param flags        The motion event flags.
+     */
+    @Nonnull
+    public static MotionEvent obtain(long downTime, long eventTime, int action,
+                                     int actionButton, float x, float y,
+                                     int modifiers, int buttonState, int flags) {
+        final int actionMasked = action & ACTION_MASK;
+        if (actionButton != 0
+                && actionMasked != ACTION_BUTTON_PRESS
+                && actionMasked != ACTION_BUTTON_RELEASE) {
+            throw new IllegalArgumentException("actionButton should be undefined except press or release action");
+        }
         MotionEvent event = obtain();
         synchronized (gSharedTempLock) {
             ensureSharedTempPointerCapacity(1);
@@ -375,25 +513,50 @@ public final class MotionEvent extends InputEvent {
             properties[0].id = 0;
 
             final PointerCoords[] coords = gSharedTempPointerCoords;
-            coords[0].clear();
-            coords[0].x = x;
-            coords[0].y = y;
-            coords[0].pressure = pressure;
-            coords[0].size = size;
+            coords[0].reset();
+            coords[0].setAxisValue(AXIS_X, x);
+            coords[0].setAxisValue(AXIS_Y, y);
 
-            event.initialize(deviceId, source, displayId,
-                    action, 0, edgeFlags, metaState, 0 /*buttonState*/, CLASSIFICATION_NONE,
-                    0, 0, xPrecision, yPrecision,
+            event.initialize(action, actionButton, flags, modifiers, buttonState,
+                    0, 0, INVALID_CURSOR_POSITION, INVALID_CURSOR_POSITION,
                     downTime, eventTime,
                     1, properties, coords);
             return event;
         }
     }
 
-    private void initialize(int deviceId, int source, int displayId, int action, int flags,
-                            int edgeFlags, int metaState, int buttonState, int classification,
-                            float xOffset, float yOffset, float xPrecision, float yPrecision,
-                            long downTimeNanos, long eventTimeNanos, int pointerCount,
+    /**
+     * Create a new MotionEvent, copying from an existing one.
+     */
+    @Nonnull
+    public static MotionEvent obtain(@Nonnull MotionEvent other) {
+        MotionEvent ev = obtain();
+        ev.copyFrom(other);
+        return ev;
+    }
+
+    private void copyFrom(@Nonnull MotionEvent other) {
+        mAction = other.mAction;
+        mActionButton = other.mActionButton;
+        mFlags = other.mFlags;
+        mModifiers = other.mModifiers;
+        mButtonState = other.mButtonState;
+        mXOffset = other.mXOffset;
+        mYOffset = other.mYOffset;
+        mRawXCursorPosition = other.mRawXCursorPosition;
+        mRawYCursorPosition = other.mRawYCursorPosition;
+        mDownTime = other.mDownTime;
+        mEventTime = other.mEventTime;
+        mPointerProperties.clear();
+        mPointerProperties.addAll(other.mPointerProperties);
+        mPointerCoords.clear();
+        mPointerCoords.addAll(other.mPointerCoords);
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private void initialize(int action, int actionButton, int flags, int modifiers, int buttonState,
+                            float xOffset, float yOffset, float rawXCursorPosition, float rawYCursorPosition,
+                            long downTime, long eventTime, int pointerCount,
                             @Nonnull PointerProperties[] pointerProperties, @Nonnull PointerCoords[] pointerCoords) {
         if (pointerCount < 1) {
             throw new IllegalArgumentException("pointerCount must be at least 1");
@@ -405,7 +568,53 @@ public final class MotionEvent extends InputEvent {
             throw new IllegalArgumentException("pointerCoords array must be large enough to hold all pointers");
         }
         mAction = action;
+        mActionButton = actionButton;
+        mFlags = flags;
+        mModifiers = modifiers;
+        mButtonState = buttonState;
+        mXOffset = xOffset;
+        mYOffset = yOffset;
+        mRawXCursorPosition = rawXCursorPosition;
+        mRawYCursorPosition = rawYCursorPosition;
+        mDownTime = downTime;
+        mEventTime = eventTime;
+        mPointerProperties.clear();
+        mPointerProperties.addElements(0, pointerProperties, 0, pointerCount);
+        mPointerCoords.clear();
+        mPointerCoords.addElements(0, pointerCoords, 0, pointerCount);
         updateCursorPosition();
+    }
+
+    /**
+     * Calculate new cursor position for events from mouse. This is used to split, clamp and inject
+     * events.
+     *
+     * <p>If the source is mouse, it sets cursor position to the centroid of all pointers because
+     * InputReader maps multiple fingers on a touchpad to locations around cursor position in screen
+     * coordinates so that the mouse cursor is at the centroid of all pointers.
+     *
+     * <p>If the source is not mouse it sets cursor position to NaN.
+     */
+    private void updateCursorPosition() {
+        float x = 0;
+        float y = 0;
+
+        final int pointerCount = getPointerCount();
+        for (int i = 0; i < pointerCount; ++i) {
+            x += getX(i);
+            y += getY(i);
+        }
+
+        // If pointer count is 0, divisions below yield NaN, which is an acceptable result for this
+        // corner case.
+        x /= pointerCount;
+        y /= pointerCount;
+        setCursorPosition(x, y);
+    }
+
+    private void setCursorPosition(float x, float y) {
+        mRawXCursorPosition = x - mXOffset;
+        mRawYCursorPosition = y - mYOffset;
     }
 
     /**
@@ -453,9 +662,8 @@ public final class MotionEvent extends InputEvent {
      * as returned by {@link #getActionMasked}, this returns the associated
      * pointer index.
      * The index may be used with {@link #getPointerId(int)},
-     * {@link #getX(int)}, {@link #getY(int)}, {@link #getPressure(int)},
-     * and {@link #getSize(int)} to get information about the pointer that has
-     * gone down or up.
+     * {@link #getX(int)} and {@link #getY(int)} to get information about
+     * the pointer that has gone down or up.
      *
      * @return The index associated with the action.
      */
@@ -531,76 +739,383 @@ public final class MotionEvent extends InputEvent {
         return (mButtonState & button) == button;
     }
 
+    /**
+     * The number of pointers of data contained in this event.  Always
+     * >= 1.
+     */
+    public final int getPointerCount() {
+        return mPointerProperties.size();
+    }
+
+    /**
+     * Return the pointer identifier associated with a particular pointer
+     * data index in this event.  The identifier tells you the actual pointer
+     * number associated with the data, accounting for individual pointers
+     * going up and down since the start of the current gesture.
+     *
+     * @param pointerIndex Raw index of pointer to retrieve.  Value may be from 0
+     *                     (the first pointer that is down) to {@link #getPointerCount()}-1.
+     */
+    public final int getPointerId(int pointerIndex) {
+        if (pointerIndex < 0 || pointerIndex >= getPointerCount()) {
+            throw new IllegalArgumentException("pointerIndex out of range");
+        }
+        return mPointerProperties.get(pointerIndex).id;
+    }
+
+    /**
+     * Gets the tool type of a pointer for the given pointer index.
+     * The tool type indicates the type of tool used to make contact such
+     * as a finger or stylus, if known.
+     *
+     * @param pointerIndex Raw index of pointer to retrieve.  Value may be from 0
+     *                     (the first pointer that is down) to {@link #getPointerCount()}-1.
+     * @return The tool type of the pointer.
+     * @see #TOOL_TYPE_UNKNOWN
+     * @see #TOOL_TYPE_FINGER
+     * @see #TOOL_TYPE_STYLUS
+     * @see #TOOL_TYPE_MOUSE
+     */
+    public final int getToolType(int pointerIndex) {
+        if (pointerIndex < 0 || pointerIndex >= getPointerCount()) {
+            throw new IllegalArgumentException("pointerIndex out of range");
+        }
+        return mPointerProperties.get(pointerIndex).toolType;
+    }
+
+    @Nonnull
     @Override
-    public InputEvent copy() {
-        return null;
+    public MotionEvent copy() {
+        return obtain(this);
     }
 
     @Override
     public long getEventTime() {
-        return 0;
+        return mEventTime / 1000000;
     }
 
     @Override
     public long getEventTimeNano() {
-        return 0;
+        return mEventTime;
     }
 
     @Override
     public void cancel() {
+        setAction(ACTION_CANCEL);
+    }
 
+    /*private long getEventTimeNanos(int historyPos) {
+        if (historyPos == HISTORY_CURRENT) {
+            return mSampleEventTimes.getLong(getHistorySize());
+        } else {
+            if (historyPos < 0 || historyPos >= getHistorySize()) {
+                throw new IllegalArgumentException("historyPos out of range");
+            }
+            return mSampleEventTimes.getLong(historyPos);
+        }
+    }*/
+
+    private PointerCoords getRawPointerCoords(int pointerIndex) {
+        return mPointerCoords.get(pointerIndex);
+    }
+
+    /*private PointerCoords getHistoricalRawPointerCoords(int pointerIndex, int historyIndex) {
+        return mSamplePointerCoords.get(historyIndex * getPointerCount() + pointerIndex);
+    }*/
+
+    /*private float getAxisValue(int axis, int pointerIndex, int historyPos) {
+        if (pointerIndex < 0 || pointerIndex >= getPointerCount()) {
+            throw new IllegalArgumentException("pointerIndex out of range");
+        }
+        if (historyPos == HISTORY_CURRENT) {
+            return getAxisValue(axis, pointerIndex);
+        } else {
+            if (historyPos < 0 || historyPos >= getHistorySize()) {
+                throw new IllegalArgumentException("historyPos out of range");
+            }
+            return getHistoricalAxisValue(axis, pointerIndex, historyPos);
+        }
+    }*/
+
+    private float getRawAxisValue(int axis, int pointerIndex) {
+        if (pointerIndex < 0 || pointerIndex >= getPointerCount()) {
+            throw new IllegalArgumentException("pointerIndex out of range");
+        }
+        return getRawPointerCoords(pointerIndex).getAxisValue(axis);
+    }
+
+    private float getAxisValue(int axis, int pointerIndex) {
+        if (pointerIndex < 0 || pointerIndex >= getPointerCount()) {
+            throw new IllegalArgumentException("pointerIndex out of range");
+        }
+        float value = getRawPointerCoords(pointerIndex).getAxisValue(axis);
+        switch (axis) {
+            case AXIS_X:
+                return value + mXOffset;
+            case AXIS_Y:
+                return value + mYOffset;
+        }
+        return value;
+    }
+
+    /*private float getHistoricalAxisValue(int axis, int pointerIndex, int historyIndex) {
+        float value = getHistoricalRawPointerCoords(pointerIndex, historyIndex).getAxisValue(axis);
+        switch (axis) {
+            case AXIS_X:
+                return value + mXOffset;
+            case AXIS_Y:
+                return value + mYOffset;
+        }
+        return value;
+    }*/
+
+    /**
+     * Get axis value for the first pointer index (may be an
+     * arbitrary pointer identifier).
+     *
+     * @param axis The axis identifier for the axis value to retrieve.
+     * @see #AXIS_X
+     * @see #AXIS_Y
+     */
+    public final float getAxisValue(int axis) {
+        return getAxisValue(axis, 0);
     }
 
     /**
-     * Returns the X coordinate of this event,
+     * {@link #getX(int)} for the first pointer index (may be an
+     * arbitrary pointer identifier).
      *
-     * @return X
+     * @see #AXIS_X
      */
-    public float getX() {
-        return x;
+    public final float getX() {
+        return getAxisValue(AXIS_X, 0);
     }
 
     /**
-     * Returns the Y coordinate of this event,
+     * {@link #getY(int)} for the first pointer index (may be an
+     * arbitrary pointer identifier).
      *
-     * @return Y
+     * @see #AXIS_Y
      */
-    public float getY() {
-        return y;
+    public final float getY() {
+        return getAxisValue(AXIS_Y, 0);
     }
 
-    /*
+    /**
+     * Returns the X coordinate of this event for the given pointer
+     * <em>index</em> (use {@link #getPointerId(int)} to find the pointer
+     * identifier for this index).
+     * Whole numbers are pixels; the
+     * value may have a fraction for input devices that are sub-pixel precise.
+     *
+     * @param pointerIndex Raw index of pointer to retrieve.  Value may be from 0
+     *                     (the first pointer that is down) to {@link #getPointerCount()}-1.
+     * @see #AXIS_X
+     */
+    public final float getX(int pointerIndex) {
+        return getAxisValue(AXIS_X, pointerIndex);
+    }
+
+    /**
+     * Returns the Y coordinate of this event for the given pointer
+     * <em>index</em> (use {@link #getPointerId(int)} to find the pointer
+     * identifier for this index).
+     * Whole numbers are pixels; the
+     * value may have a fraction for input devices that are sub-pixel precise.
+     *
+     * @param pointerIndex Raw index of pointer to retrieve.  Value may be from 0
+     *                     (the first pointer that is down) to {@link #getPointerCount()}-1.
+     * @see #AXIS_Y
+     */
+    public final float getY(int pointerIndex) {
+        return getAxisValue(AXIS_Y, pointerIndex);
+    }
+
+    /**
      * Returns the original raw X coordinate of this event.  For touch
      * events on the screen, this is the original location of the event
      * on the screen, before it had been adjusted for the containing window
      * and views.
      *
-     * @return raw X
+     * @see #getX(int)
+     * @see #AXIS_X
      */
-    /*public double getRawX() {
-        return rawX;
-    }*/
+    public final float getRawX() {
+        return getRawAxisValue(AXIS_X, 0);
+    }
 
-    /*
+    /**
      * Returns the original raw Y coordinate of this event.  For touch
      * events on the screen, this is the original location of the event
      * on the screen, before it had been adjusted for the containing window
      * and views.
      *
-     * @return raw Y
+     * @see #getY(int)
+     * @see #AXIS_Y
      */
-    /*public double getRawY() {
-        return rawY;
-    }*/
+    public final float getRawY() {
+        return getRawAxisValue(AXIS_Y, 0);
+    }
 
     /**
-     * Returns the mouse button of this event.
+     * Returns the original raw X coordinate of this event.  For touch
+     * events on the screen, this is the original location of the event
+     * on the screen, before it had been adjusted for the containing window
+     * and views.
      *
-     * @return mouse button
+     * @param pointerIndex Raw index of pointer to retrieve.  Value may be from 0
+     *                     (the first pointer that is down) to {@link #getPointerCount()}-1.
+     * @see #getX(int)
+     * @see #AXIS_X
+     */
+    public float getRawX(int pointerIndex) {
+        return getRawAxisValue(AXIS_X, pointerIndex);
+    }
+
+    /**
+     * Returns the original raw Y coordinate of this event.  For touch
+     * events on the screen, this is the original location of the event
+     * on the screen, before it had been adjusted for the containing window
+     * and views.
+     *
+     * @param pointerIndex Raw index of pointer to retrieve.  Value may be from 0
+     *                     (the first pointer that is down) to {@link #getPointerCount()}-1.
+     * @see #getY(int)
+     * @see #AXIS_Y
+     */
+    public float getRawY(int pointerIndex) {
+        return getRawAxisValue(AXIS_Y, pointerIndex);
+    }
+
+    /**
+     * Gets which button has been modified during a press or release action.
+     * <p>
+     * For actions other than {@link #ACTION_BUTTON_PRESS} and {@link #ACTION_BUTTON_RELEASE}
+     * the returned value is undefined.
+     *
+     * @see #getButtonState()
      * @see org.lwjgl.glfw.GLFW
      */
-    public int getButton() {
-        return button;
+    public int getActionButton() {
+        return mActionButton;
+    }
+
+    /**
+     * Returns the x coordinate of mouse cursor position when this event is
+     * reported. This value is only valid if the device is a mouse.
+     */
+    public float getXCursorPosition() {
+        return mRawXCursorPosition + mXOffset;
+    }
+
+    /**
+     * Returns the y coordinate of mouse cursor position when this event is
+     * reported. This value is only valid if the device is a mouse.
+     */
+    public float getYCursorPosition() {
+        return mRawYCursorPosition + mYOffset;
+    }
+
+    /**
+     * Adjust this event's location.
+     *
+     * @param deltaX Amount to add to the current X coordinate of the event.
+     * @param deltaY Amount to add to the current Y coordinate of the event.
+     */
+    public final void offsetLocation(float deltaX, float deltaY) {
+        mXOffset += deltaX;
+        mYOffset += deltaY;
+    }
+
+    /**
+     * Set this event's location.  Applies {@link #offsetLocation} with a
+     * delta from the current location to the given new location.
+     *
+     * @param x New absolute X location.
+     * @param y New absolute Y location.
+     */
+    public final void setLocation(float x, float y) {
+        float oldX = getX();
+        float oldY = getY();
+        offsetLocation(x - oldX, y - oldY);
+    }
+
+    /**
+     * Returns true if only the specified modifiers keys are pressed.
+     * Returns false if a different combination of modifier keys are pressed.
+     * <p>
+     * If the specified modifier mask includes non-directional modifiers, such as
+     * {@link GLFW#GLFW_MOD_SHIFT}, then this method ensures that the modifier
+     * is pressed on either side.
+     * </p>
+     *
+     * @param modifiers The modifier keys to check.  May be a combination of modifier keys.
+     *                  May be 0 to ensure that no modifier keys are pressed.
+     * @return true if only the specified modifier keys are pressed.
+     */
+    public final boolean hasModifiers(int modifiers) {
+        if (modifiers == 0) {
+            return mModifiers == 0;
+        }
+        return (mModifiers & modifiers) == modifiers;
+    }
+
+    /**
+     * Returns the pressed state of the SHIFT key.
+     *
+     * @return true if the SHIFT key is pressed, false otherwise
+     */
+    public final boolean isShiftPressed() {
+        return (mModifiers & GLFW.GLFW_MOD_SHIFT) != 0;
+    }
+
+    /**
+     * Returns the pressed state of the CTRL key.  If it's running on OSX,
+     * returns the pressed state of the SUPER key.
+     *
+     * @return true if the CTRL key is pressed, false otherwise
+     */
+    public final boolean isCtrlPressed() {
+        if (Minecraft.IS_RUNNING_ON_MAC) {
+            return (mModifiers & GLFW.GLFW_MOD_SUPER) != 0;
+        }
+        return (mModifiers & GLFW.GLFW_MOD_CONTROL) != 0;
+    }
+
+    /**
+     * Returns the pressed state of the ALT key.
+     *
+     * @return true if the ALT key is pressed, false otherwise
+     */
+    public final boolean isAltPressed() {
+        return (mModifiers & GLFW.GLFW_MOD_ALT) != 0;
+    }
+
+    /**
+     * Returns the pressed state of the SUPER key.
+     *
+     * @return true if the SUPER key is pressed, false otherwise
+     */
+    public final boolean isSuperPressed() {
+        return (mModifiers & GLFW.GLFW_MOD_SUPER) != 0;
+    }
+
+    /**
+     * Returns the locked state of the CAPS LOCK key.
+     *
+     * @return true if the CAPS LOCK key is on, false otherwise
+     */
+    public final boolean isCapsLockOn() {
+        return (mModifiers & GLFW.GLFW_MOD_CAPS_LOCK) != 0;
+    }
+
+    /**
+     * Returns the locked state of the NUM LOCK key.
+     *
+     * @return true if the NUM LOCK key is on, false otherwise
+     */
+    public final boolean isNumLockOn() {
+        return (mModifiers & GLFW.GLFW_MOD_NUM_LOCK) != 0;
     }
 
     /**
@@ -612,24 +1127,26 @@ public final class MotionEvent extends InputEvent {
      */
     public static final class PointerCoords {
 
-        /**
-         * The X component of the pointer movement.
-         *
-         * @see MotionEvent#AXIS_X
-         */
-        public float x;
+        private static final int INITIAL_PACKED_AXIS_VALUES = 8;
 
-        /**
-         * The Y component of the pointer movement.
-         *
-         * @see MotionEvent#AXIS_Y
-         */
-        public float y;
+        private long mPackedAxisBits;
+        private float[] mPackedAxisValues;
 
         /**
          * Creates a pointer coords object with all axes initialized to zero.
          */
         public PointerCoords() {
+
+        }
+
+        /**
+         * Creates a pointer coords object as a copy of the
+         * contents of another pointer coords object.
+         *
+         * @param other The pointer coords object to copy.
+         */
+        public PointerCoords(PointerCoords other) {
+            copyFrom(other);
         }
 
         @Nonnull
@@ -639,6 +1156,96 @@ public final class MotionEvent extends InputEvent {
                 array[i] = new PointerCoords();
             }
             return array;
+        }
+
+        /**
+         * Clears the contents of this object.
+         * Resets all axes to zero.
+         */
+        public void reset() {
+            mPackedAxisBits = 0;
+        }
+
+        /**
+         * Copies the contents of another pointer coords object.
+         *
+         * @param other The pointer coords object to copy.
+         */
+        public void copyFrom(@Nonnull PointerCoords other) {
+            final long bits = other.mPackedAxisBits;
+            mPackedAxisBits = bits;
+            if (bits != 0) {
+                final float[] otherValues = other.mPackedAxisValues;
+                final int count = Long.bitCount(bits);
+                float[] values = mPackedAxisValues;
+                if (values == null || count > values.length) {
+                    values = new float[otherValues.length];
+                    mPackedAxisValues = values;
+                }
+                System.arraycopy(otherValues, 0, values, 0, count);
+            }
+        }
+
+        /**
+         * Gets the value associated with the specified axis.
+         *
+         * @param axis The axis identifier for the axis value to retrieve.
+         * @return The value associated with the axis, or 0 if none.
+         * @see MotionEvent#AXIS_X
+         * @see MotionEvent#AXIS_Y
+         */
+        public float getAxisValue(int axis) {
+            if (axis < 0 || axis > 63) {
+                throw new IllegalArgumentException("Axis out of range.");
+            }
+            final long bits = mPackedAxisBits;
+            final long axisBit = 0x8000000000000000L >>> axis;
+            if ((bits & axisBit) == 0) {
+                return 0;
+            }
+            final int index = Long.bitCount(bits & ~(0xFFFFFFFFFFFFFFFFL >>> axis));
+            return mPackedAxisValues[index];
+        }
+
+        /**
+         * Sets the value associated with the specified axis.
+         *
+         * @param axis  The axis identifier for the axis value to assign.
+         * @param value The value to set.
+         * @see MotionEvent#AXIS_X
+         * @see MotionEvent#AXIS_Y
+         */
+        public void setAxisValue(int axis, float value) {
+            if (axis < 0 || axis > 63) {
+                throw new IllegalArgumentException("Axis out of range.");
+            }
+            final long bits = mPackedAxisBits;
+            final long axisBit = 0x8000000000000000L >>> axis;
+            final int index = Long.bitCount(bits & ~(0xFFFFFFFFFFFFFFFFL >>> axis));
+            float[] values = mPackedAxisValues;
+            if ((bits & axisBit) == 0) {
+                if (values == null) {
+                    values = new float[INITIAL_PACKED_AXIS_VALUES];
+                    mPackedAxisValues = values;
+                } else {
+                    final int count = Long.bitCount(bits);
+                    if (count < values.length) {
+                        if (index != count) {
+                            System.arraycopy(values, index, values, index + 1,
+                                    count - index);
+                        }
+                    } else {
+                        float[] newValues = new float[count * 2];
+                        System.arraycopy(values, 0, newValues, 0, index);
+                        System.arraycopy(values, index, newValues, index + 1,
+                                count - index);
+                        values = newValues;
+                        mPackedAxisValues = values;
+                    }
+                }
+                mPackedAxisBits = bits | axisBit;
+            }
+            values[index] = value;
         }
     }
 
@@ -720,7 +1327,7 @@ public final class MotionEvent extends InputEvent {
 
         @Override
         public int hashCode() {
-            return id | (toolType << 8);
+            return (id << 5) - id + toolType;
         }
     }
 }

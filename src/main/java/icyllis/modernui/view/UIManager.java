@@ -72,7 +72,7 @@ public final class UIManager {
     public static final Marker MARKER = MarkerManager.getMarker("UIManager");
 
     // minecraft client instance
-    private final Minecraft mClient = Minecraft.getInstance();
+    private final Minecraft mMinecraft = Minecraft.getInstance();
 
     // activity event bus
     private final IEventBus mEventBus = BusBuilder.builder().setTrackPhases(false).build();
@@ -192,7 +192,7 @@ public final class UIManager {
      */
     public void openGui(@Nonnull Fragment fragment) {
         this.fragment = fragment;
-        mClient.displayGuiScreen(new MuiMainScreen());
+        mMinecraft.displayGuiScreen(new MuiMainScreen());
     }
 
     /**
@@ -201,7 +201,7 @@ public final class UIManager {
      * @see #recycleWindows()
      */
     public void closeGui() {
-        mClient.displayGuiScreen(null);
+        mMinecraft.displayGuiScreen(null);
     }
 
     /**
@@ -388,14 +388,14 @@ public final class UIManager {
         cursorRefreshRequested = false;
     }*/
 
-    // Post Input Event
+    // Receive Input Event
 
     /**
      * @see org.lwjgl.glfw.GLFWCursorPosCallbackI
      */
     void onCursorPosCallback(double cursorX, double cursorY) {
-        MotionEvent event = MotionEvent.obtain();
-        mAppWindow.onInputEvent(event);
+        /*MotionEvent event = MotionEvent.obtain();
+        mAppWindow.onInputEvent(event);*/
     }
 
     /**
@@ -403,9 +403,10 @@ public final class UIManager {
      */
     @SubscribeEvent
     void onRawMouseButton(InputEvent.RawMouseEvent event) {
-        if (mClient.loadingGui != null || mMuiScreen == null) {
+        if (mMinecraft.loadingGui != null || mMuiScreen == null) {
             return;
         }
+        ModernUI.LOGGER.debug(MARKER, "Button: {}", event.getButton());
         event.setCanceled(true);
     }
 
@@ -416,7 +417,7 @@ public final class UIManager {
         if (mMuiScreen == null) {
             return;
         }
-        //TODO
+        ModernUI.LOGGER.debug(MARKER, "Scroll: {} {}", deltaX, deltaY);
     }
 
     /*@Deprecated
@@ -608,7 +609,7 @@ public final class UIManager {
         /*if (popup != null) {
             return popup.keyPressed(keyCode, scanCode, modifiers);
         }*/
-        //ModernUI.LOGGER.info("KeyDown{keyCode:{}, scanCode:{}, mod:{}}", keyCode, scanCode, modifiers);
+        ModernUI.LOGGER.debug(MARKER, "KeyDown{keyCode:{}, scanCode:{}, mods:{}}", keyCode, scanCode, modifiers);
         if (mKeyboard != null) {
             return mKeyboard.onKeyPressed(keyCode, scanCode, modifiers);
         }
@@ -719,9 +720,9 @@ public final class UIManager {
     void resizeWindows(int width, int height) {
         mWidth = width;
         mHeight = height;
-        final MainWindow window = mClient.getMainWindow();
-        mCursorX = mClient.mouseHelper.getMouseX() * (double) window.getScaledWidth() / (double) window.getWidth();
-        mCursorY = mClient.mouseHelper.getMouseY() * (double) window.getScaledHeight() / (double) window.getHeight();
+        final MainWindow window = mMinecraft.getMainWindow();
+        mCursorX = mMinecraft.mouseHelper.getMouseX() * (double) window.getScaledWidth() / (double) window.getWidth();
+        mCursorY = mMinecraft.mouseHelper.getMouseY() * (double) window.getScaledHeight() / (double) window.getHeight();
         layoutWindows(true);
     }
 
@@ -759,7 +760,7 @@ public final class UIManager {
             UIEditor.INSTANCE.setHoveredWidget(null);
             UITools.useDefaultCursor();
             // Hotfix 1.5.8
-            mClient.keyboardListener.enableRepeatEvents(false);
+            mMinecraft.keyboardListener.enableRepeatEvents(false);
         }
     }
 
@@ -794,7 +795,7 @@ public final class UIManager {
     void onRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
             // ticks to millis, the Timer in Minecraft is different from that in Event when game paused
-            timeMillis = (long) ((ticks + mClient.getRenderPartialTicks()) * 50.0f);
+            timeMillis = (long) ((ticks + mMinecraft.getRenderPartialTicks()) * 50.0f);
 
             for (Animation animation : animations) {
                 animation.update(timeMillis);
@@ -911,7 +912,7 @@ public final class UIManager {
     }
 
     public double getGuiScale() {
-        return mClient.getMainWindow().getGuiScaleFactor();
+        return mMinecraft.getMainWindow().getGuiScaleFactor();
     }
 
     /**
@@ -970,7 +971,7 @@ public final class UIManager {
      */
     public void setKeyboard(@Nullable View view) {
         if (mKeyboard != view) {
-            mClient.keyboardListener.enableRepeatEvents(view != null);
+            mMinecraft.keyboardListener.enableRepeatEvents(view != null);
             if (mKeyboard != null) {
                 mKeyboard.onStopKeyboard();
             }
