@@ -25,6 +25,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+// net.minecraft.client.MouseHandler
 @Mixin(MouseHelper.class)
 public class MixinMouseHelper {
 

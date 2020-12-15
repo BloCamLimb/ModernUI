@@ -82,12 +82,11 @@ public abstract class ViewGroup extends View implements IViewParent {
 
     @Override
     public final boolean dispatchGenericMotionEvent(@Nonnull MotionEvent event) {
-        final double mouseX = event.x;
-        final double mouseY = event.y;
         final int action = event.getAction();
 
-        event.x += getScrollX();
-        event.y += getScrollY();
+        float scrollX = getScrollX();
+        float scrollY = getScrollY();
+        event.offsetLocation(scrollX, scrollY);
 
         final View[] views = children;
         View child;
@@ -104,9 +103,9 @@ public abstract class ViewGroup extends View implements IViewParent {
                     }
                 }
                 return anyHovered;
-            case MotionEvent.ACTION_PRESS:
+            /*case MotionEvent.ACTION_PRESS:
             case MotionEvent.ACTION_RELEASE:
-            case MotionEvent.ACTION_DOUBLE_CLICK:
+            case MotionEvent.ACTION_DOUBLE_CLICK:*/
             case MotionEvent.ACTION_SCROLL:
                 for (int i = childrenCount - 1; i >= 0; i--) {
                     child = views[i];
@@ -117,8 +116,7 @@ public abstract class ViewGroup extends View implements IViewParent {
                 return false;
         }
 
-        /*event.x = mouseX;
-        event.y = mouseY;*/
+        event.offsetLocation(-scrollX, -scrollY);
         return super.dispatchGenericMotionEvent(event);
     }
 

@@ -1048,8 +1048,8 @@ public class View {
             return false;
         }
 
-        final double mouseX = event.x;
-        final double mouseY = event.y;
+        final double mouseX = event.getX();
+        final double mouseY = event.getY();
         final int action = event.getAction();
 
         switch (action) {
@@ -1071,13 +1071,13 @@ public class View {
 
                 }
                 return false;
-            case MotionEvent.ACTION_PRESS:
+            /*case MotionEvent.ACTION_PRESS:
                 if ((mPrivateFlags & PFLAG_HOVERED) != 0) {
                     if (dispatchGenericMotionEvent(event)) {
                         return true;
                     }
-                    event.pressMap.putIfAbsent(event.button, this);
-                    return onMousePressed(mouseX, mouseY, event.button);
+                    event.pressMap.putIfAbsent(event.mActionButton, this);
+                    return onMousePressed(mouseX, mouseY, event.mActionButton);
                 }
                 return false;
             case MotionEvent.ACTION_RELEASE:
@@ -1086,9 +1086,9 @@ public class View {
                         return true;
                     }
                     boolean handled;
-                    handled = onMouseReleased(mouseX, mouseY, event.button);
-                    if (event.pressMap.remove(event.button) == this) {
-                        handled = onMouseClicked(mouseX, mouseY, event.button);
+                    handled = onMouseReleased(mouseX, mouseY, event.mActionButton);
+                    if (event.pressMap.remove(event.mActionButton) == this) {
+                        handled = onMouseClicked(mouseX, mouseY, event.mActionButton);
                         event.clicked = this;
                     }
                     return handled;
@@ -1096,9 +1096,9 @@ public class View {
                 return false;
             case MotionEvent.ACTION_DOUBLE_CLICK:
                 if ((mPrivateFlags & PFLAG_HOVERED) != 0) {
-                    /*if (dispatchMouseEvent(event)) {
+                    *//*if (dispatchMouseEvent(event)) {
                         return true;
-                    }*/
+                    }*//*
                     return onMouseDoubleClicked(mouseX, mouseY);
                 }
                 return false;
@@ -1109,7 +1109,7 @@ public class View {
                     }
                     return onMouseScrolled(mouseX, mouseY, event.scrollDelta);
                 }
-                return false;
+                return false;*/
         }
         return false;
     }
