@@ -18,33 +18,25 @@
 
 package icyllis.modernui.view;
 
-import java.util.LinkedList;
-import java.util.List;
+public class KeyEvent extends InputEvent {
 
-public final class GlobalEventDispatcher {
-
-    private final List<ViewRootImpl> windows;
-
-    // scaled mouseX, mouseY on screen
-    double mouseX;
-    double mouseY;
-
-    // mouse hovered views, no matter whether the view is enabled or not
-    private final LinkedList<View> route = new LinkedList<>();
-
-    GlobalEventDispatcher(List<ViewRootImpl> windows) {
-        this.windows = windows;
+    @Override
+    public InputEvent copy() {
+        return null;
     }
 
-    void onCursorPosEvent(double x, double y) {
-        mouseX = x;
-        mouseY = y;
+    @Override
+    public long getEventTime() {
+        return 0;
+    }
 
-        route.clear();
-        for (int i = windows.size() - 1; i >= 0; i--) {
-            if (windows.get(i).onCursorPosEvent(route, x, y)) {
-                break;
-            }
-        }
+    @Override
+    public long getEventTimeNano() {
+        return 0;
+    }
+
+    @Override
+    public void cancel() {
+
     }
 }

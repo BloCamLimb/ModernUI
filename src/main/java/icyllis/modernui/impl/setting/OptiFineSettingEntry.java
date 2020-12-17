@@ -19,7 +19,7 @@
 package icyllis.modernui.impl.setting;
 
 import icyllis.modernui.font.text.TextAlign;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.renderer.Plotter;
 import icyllis.modernui.graphics.renderer.Icon;
 import icyllis.modernui.view.UITools;
 import net.minecraft.client.AbstractOption;
@@ -64,16 +64,16 @@ public class OptiFineSettingEntry extends SettingEntry {
     }
 
     @Override
-    protected void drawExtra(@Nonnull Canvas canvas, float time) {
+    protected void drawExtra(@Nonnull Plotter plotter, float time) {
         if (drawOptionFrame) {
             float bl = x2 - 10 - textLength;
-            //canvas.setColor(0.377f, 0.377f, 0.377f, 0.25f);
-            canvas.drawRect(bl, y1 + 2, x2, y1 + 18);
+            //plotter.setColor(0.377f, 0.377f, 0.377f, 0.25f);
+            plotter.drawRect(bl, y1 + 2, x2, y1 + 18);
         }
-        canvas.setTextAlign(TextAlign.RIGHT);
-        //canvas.setColor(titleBrightness, titleBrightness, titleBrightness, 1);
-        canvas.drawText(optionText, x2 - 10, y1 + 6);
-        canvas.drawIcon(ICON, x2 - 8, y1 + 6, x2, y1 + 14);
+        plotter.setTextAlign(TextAlign.RIGHT);
+        //plotter.setColor(titleBrightness, titleBrightness, titleBrightness, 1);
+        plotter.drawText(optionText, x2 - 10, y1 + 6);
+        plotter.drawIcon(ICON, x2 - 8, y1 + 6, x2, y1 + 14);
     }
 
     @Override

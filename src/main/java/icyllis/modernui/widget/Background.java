@@ -20,7 +20,7 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.renderer.Plotter;
 import icyllis.modernui.ui.discard.IDrawable;
 
 import javax.annotation.Nonnull;
@@ -43,9 +43,9 @@ public class Background implements IDrawable {
     }
 
     @Override
-    public void draw(@Nonnull Canvas canvas, float time) {
-        //canvas.setColor(0, 0, 0, alpha);
-        canvas.drawRect(0, 0, width, height);
+    public void draw(@Nonnull Plotter plotter, float time) {
+        //plotter.setColor(0, 0, 0, alpha);
+        plotter.drawRect(0, 0, width, height);
     }
 
     public void resize(int width, int height) {

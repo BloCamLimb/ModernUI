@@ -70,13 +70,7 @@ public class ModernFontRenderer extends FontRenderer {
         super($ -> null);
     }
 
-    /**
-     * INTERNAL USE ONLY, developers can't use this for any reason
-     *
-     * @return instance
-     * @see TrueTypeRenderer#getInstance()
-     */
-    public static ModernFontRenderer getInstance() {
+    static void hook(boolean doHook) {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
         if (instance == null) {
             instance = new ModernFontRenderer();
@@ -93,10 +87,10 @@ public class ModernFontRenderer extends FontRenderer {
             ObfuscationReflectionHelper.setPrivateValue(FontRenderer.class,
                     instance, r, "field_211127_e");
         }
-        return instance;
+        instance.hook0(doHook);
     }
 
-    void hook(boolean doHook) {
+    private void hook0(boolean doHook) {
         final Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.fontRenderer == instance == doHook) {
             return;

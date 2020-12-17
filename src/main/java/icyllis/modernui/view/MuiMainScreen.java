@@ -38,7 +38,7 @@ import javax.annotation.Nonnull;
 @OnlyIn(Dist.CLIENT)
 final class MuiMainScreen extends Screen implements IMuiScreen {
 
-    private final UIManager mService = UIManager.getInstance();
+    private final UIManager master = UIManager.getInstance();
 
     MuiMainScreen() {
         super(StringTextComponent.EMPTY);
@@ -46,23 +46,24 @@ final class MuiMainScreen extends Screen implements IMuiScreen {
 
     @Override
     public void init(@Nonnull Minecraft minecraft, int width, int height) {
-        mService.prepareWindows(this, width, height);
+        master.prepareWindows(this, width, height);
         BlurHandler.INSTANCE.forceBlur();
     }
 
     @Override
     public void resize(@Nonnull Minecraft minecraft, int width, int height) {
-        mService.prepareWindows(this, width, height);
+        master.prepareWindows(this, width, height);
     }
 
     @Override
     public void render(@Nonnull MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        mService.draw();
+        master.render();
     }
 
     @Override
     public void onClose() {
-        mService.recycleWindows();
+        super.onClose();
+        master.recycleWindows();
     }
 
     @Override
@@ -75,17 +76,19 @@ final class MuiMainScreen extends Screen implements IMuiScreen {
 
     @Override
     public void mouseMoved(double mouseX, double mouseY) {
-        mService.onCursorPosCallback(mouseX, mouseY);
+        master.onCursorPosCallback(mouseX, mouseY);
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        throw new IllegalStateException("Unexpected call");
+        // Pass the event
+        return false;
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
-        throw new IllegalStateException("Unexpected call");
+        // Pass the event
+        return false;
     }
 
     @Override
@@ -96,24 +99,23 @@ final class MuiMainScreen extends Screen implements IMuiScreen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        // Consume the event but do nothing
-        return true;
+        return master.onScrollEvent();
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (mService.screenKeyDown(keyCode, scanCode, modifiers)) {
+        if (master.screenKeyDown(keyCode, scanCode, modifiers)) {
             return true;
         } else if (keyCode == GLFW.GLFW_KEY_ESCAPE && shouldCloseOnEsc()) {
-            if (mService.sBack()) {
+            if (master.sBack()) {
                 return true;
             }
-            mService.closeGui();
+            master.closeGui();
             return true;
         } else if (keyCode == GLFW.GLFW_KEY_TAB) {
             boolean searchNext = !hasShiftDown();
-            if (!mService.sChangeKeyboard(searchNext)) {
-                return mService.sChangeKeyboard(searchNext);
+            if (!master.sChangeKeyboard(searchNext)) {
+                return master.sChangeKeyboard(searchNext);
             }
             return true;
         }
@@ -122,11 +124,11 @@ final class MuiMainScreen extends Screen implements IMuiScreen {
 
     @Override
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-        return mService.screenKeyUp(keyCode, scanCode, modifiers);
+        return master.screenKeyUp(keyCode, scanCode, modifiers);
     }
 
     @Override
     public boolean charTyped(char codePoint, int modifiers) {
-        return mService.sCharTyped(codePoint, modifiers);
+        return master.sCharTyped(codePoint, modifiers);
     }
 }

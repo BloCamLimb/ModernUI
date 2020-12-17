@@ -21,7 +21,7 @@ package icyllis.modernui.impl.setting;
 import com.google.common.collect.Lists;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.renderer.Plotter;
 import icyllis.modernui.view.UIManager;
 import icyllis.modernui.ui.popup.PopupMenu;
 import icyllis.modernui.ui.popup.DropDownMenu;
@@ -71,12 +71,12 @@ public class KeyBindingEntry extends SettingEntry {
     }
 
     @Override
-    public void drawExtra(Canvas canvas, float time) {
+    public void drawExtra(Plotter plotter, float time) {
         if (light > 0) {
-            //canvas.setColor(0.5f, 0.5f, 0.5f, light);
-            canvas.drawRect(x1 - 1, y1 + 1, x2 + 1, y2 - 1);
+            //plotter.setColor(0.5f, 0.5f, 0.5f, light);
+            plotter.drawRect(x1 - 1, y1 + 1, x2 + 1, y2 - 1);
         }
-        inputBox.draw(canvas, time);
+        inputBox.draw(plotter, time);
     }
 
     @Override

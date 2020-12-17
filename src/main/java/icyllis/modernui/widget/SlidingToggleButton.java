@@ -19,7 +19,7 @@
 package icyllis.modernui.widget;
 
 import com.google.gson.annotations.Expose;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.renderer.Plotter;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
 import icyllis.modernui.animation.ITimeInterpolator;
@@ -143,14 +143,14 @@ public class SlidingToggleButton extends Widget {
     }
 
     @Override
-    public void onDraw(@Nonnull Canvas canvas, float time) {
+    public void onDraw(@Nonnull Plotter plotter, float time) {
         //ac.update();
-        //canvas.setColor(r, g, b, a);
-        canvas.drawRoundedRect(x1, y1, x2, y2, height / 2f);
-        //canvas.setColor(brightness, brightness, brightness, 1);
-        canvas.drawRoundedFrame(x1, y1, x2, y2, height / 2f);
-        canvas.setAlpha(0.9f);
-        canvas.drawCircle(x1 + circleOffset, y1 + height / 2f, height / 2f - 0.5f);
+        //plotter.setColor(r, g, b, a);
+        plotter.drawRoundedRect(x1, y1, x2, y2, height / 2f);
+        //plotter.setColor(brightness, brightness, brightness, 1);
+        plotter.drawRoundedFrame(x1, y1, x2, y2, height / 2f);
+        plotter.setAlpha(0.9f);
+        plotter.drawCircle(x1 + circleOffset, y1 + height / 2f, height / 2f - 0.5f);
     }
 
     /*@Override

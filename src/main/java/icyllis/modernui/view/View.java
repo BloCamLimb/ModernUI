@@ -20,7 +20,7 @@ package icyllis.modernui.view;
 
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.math.Point;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.renderer.Plotter;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.widget.ScrollController;
 import net.minecraft.client.gui.screen.Screen;
@@ -184,7 +184,7 @@ public class View {
      * {@link #getId()}
      * {@link #setId(int)}
      */
-    int id = NO_ID;
+    int mId = NO_ID;
 
     /**
      * View left on screen
@@ -244,45 +244,45 @@ public class View {
     /**
      * Raw draw method, do not override this
      *
-     * @param canvas canvas to draw content
+     * @param plotter plotter to draw content
      */
-    public void draw(@Nonnull Canvas canvas) {
+    public void draw(@Nonnull Plotter plotter) {
         if ((viewFlags & VISIBILITY_MASK) == 0) {
-            canvas.save();
-            canvas.translate(left, top);
+            plotter.save();
+            plotter.translate(left, top);
 
-            onDraw(canvas);
+            onDraw(plotter);
 
-            dispatchDraw(canvas);
+            dispatchDraw(plotter);
 
             //TODO Draw scrollbars
             if (verticalScrollBar != null) {
-                verticalScrollBar.draw(canvas);
+                verticalScrollBar.draw(plotter);
             }
-            canvas.restore();
+            plotter.restore();
         }
     }
 
     /**
      * Draw this view if visible
-     * Before you draw in the method, you have to call {@link Canvas#moveTo(View)},
+     * Before you draw in the method, you have to call {@link Plotter#moveTo(View)},
      * (0, 0) will be the top left of the bounds,
      * (width, height) will be the bottom right of the bounds.
      * See {@link #getWidth()}
      * See {@link #getHeight()}
      *
-     * @param canvas canvas to draw content
+     * @param plotter plotter to draw content
      */
-    protected void onDraw(@Nonnull Canvas canvas) {
+    protected void onDraw(@Nonnull Plotter plotter) {
 
     }
 
     /**
      * Draw child views if visible
      *
-     * @param canvas canvas to draw content
+     * @param plotter plotter to draw content
      */
-    protected void dispatchDraw(@Nonnull Canvas canvas) {
+    protected void dispatchDraw(@Nonnull Plotter plotter) {
 
     }
 
@@ -608,7 +608,7 @@ public class View {
      * @return view id
      */
     public int getId() {
-        return id;
+        return mId;
     }
 
     /**
@@ -618,9 +618,9 @@ public class View {
      */
     public void setId(int id) {
         if (id == NO_ID) {
-            this.id = generateViewId();
+            this.mId = generateViewId();
         } else {
-            this.id = id;
+            this.mId = id;
         }
     }
 
@@ -928,7 +928,7 @@ public class View {
     @SuppressWarnings("unchecked")
     @Nullable
     <T extends View> T findViewTraversal(int id) {
-        if (id == this.id) {
+        if (id == mId) {
             return (T) this;
         }
         return null;
@@ -947,7 +947,7 @@ public class View {
 
     /**
      * Starts a drag and drop operation. This method passes a {@link DragShadow} object to
-     * the window system. The system calls {@link DragShadow#onDrawShadow(Canvas)}
+     * the window system. The system calls {@link DragShadow#onDrawShadow(Plotter)}
      * to draw the drag shadow itself at proper level.
      * <p>
      * Once the system has the drag shadow, it begins the drag and drop operation by sending
@@ -1012,13 +1012,16 @@ public class View {
      * @return {@code true} if the event was consumed by the view, {@code false} otherwise
      */
     public boolean dispatchGenericMotionEvent(MotionEvent event) {
-        final int actionMasked = event.getActionMasked();
-        if (actionMasked == MotionEvent.ACTION_HOVER_MOVE
-                || actionMasked == MotionEvent.ACTION_HOVER_ENTER
-                || actionMasked == MotionEvent.ACTION_HOVER_EXIT) {
+        final int action = event.getAction();
+        if (action == MotionEvent.ACTION_HOVER_ENTER
+                || action == MotionEvent.ACTION_HOVER_MOVE
+                || action == MotionEvent.ACTION_HOVER_EXIT) {
             if (dispatchHoverEvent(event)) {
                 return true;
             }
+        }
+        if (dispatchPointerEvent(event)) {
+            return true;
         }
         return onGenericMotionEvent(event);
     }
@@ -1035,6 +1038,20 @@ public class View {
      */
     protected boolean dispatchHoverEvent(MotionEvent event) {
         return onHoverEvent(event);
+    }
+
+    /**
+     * Dispatch a generic motion event to the view under the first pointer.
+     * <p>
+     * Do not call this method directly.
+     * Call {@link #dispatchGenericMotionEvent(MotionEvent)} instead.
+     * </p>
+     *
+     * @param event The motion event to be dispatched.
+     * @return True if the event was handled by the view, false otherwise.
+     */
+    protected boolean dispatchGenericPointerEvent(MotionEvent event) {
+        return false;
     }
 
     /**
@@ -1172,15 +1189,12 @@ public class View {
         return false;
     }*/
 
-    /**
-     * Internal method. Ensure rest of views of other branches to hover exit.
-     */
-    void ensureMouseHoverExit() {
+    /*void ensureMouseHoverExit() {
         if ((mPrivateFlags & PFLAG_HOVERED) != 0) {
             mPrivateFlags &= ~PFLAG_HOVERED;
             onMouseHoverExit();
         }
-    }
+    }*/
 
     /**
      * Pass the touch screen motion event down to the target view, or this view if
@@ -1200,7 +1214,6 @@ public class View {
 
         return handled;
     }
-
 
     /**
      * Implement this method to handle touch screen motion events.
@@ -1492,32 +1505,32 @@ public class View {
             altSize = 5;
         }
 
-        private void draw(@Nonnull Canvas canvas) {
+        private void draw(@Nonnull Plotter plotter) {
             /*if (!barHovered && !isDragging && brightness > 0.5f) {
-                if (canvas.getDrawingTime() > startTime) {
-                    float change = (startTime - canvas.getDrawingTime()) / 2000.0f;
+                if (plotter.getDrawingTime() > startTime) {
+                    float change = (startTime - plotter.getDrawingTime()) / 2000.0f;
                     brightness = Math.max(0.75f + change, 0.5f);
                 }
             }
-            canvas.setColor(16, 16, 16, 40);
-            canvas.drawRect(getLeft(), getTop(), getRight(), getBottom());
+            plotter.setColor(16, 16, 16, 40);
+            plotter.drawRect(getLeft(), getTop(), getRight(), getBottom());
             int br = (int) (brightness * 255.0f);
-            canvas.setColor(br, br, br, 128);
-            canvas.drawRect(getLeft(), barY, getRight(), barY + barLength);*/
+            plotter.setColor(br, br, br, 128);
+            plotter.drawRect(getLeft(), barY, getRight(), barY + barLength);*/
 
             if ((flags & DRAW_TRACK) != 0 && track != null) {
-                track.draw(canvas);
+                track.draw(plotter);
             }
             if ((flags & DRAW_THUMB) != 0) {
                 // due to gui scaling, we have to do with float rather than integer
-                canvas.save();
+                plotter.save();
                 if (isVertical()) {
-                    canvas.translate(0, thumbOffset);
+                    plotter.translate(0, thumbOffset);
                 } else {
-                    canvas.translate(thumbOffset, 0);
+                    plotter.translate(thumbOffset, 0);
                 }
-                thumb.draw(canvas);
-                canvas.restore();
+                thumb.draw(plotter);
+                plotter.restore();
             }
         }
 
@@ -1937,7 +1950,7 @@ public class View {
         /**
          * Construct a shadow builder object with no associated View. This
          * constructor variant is only useful when the {@link #onProvideShadowCenter(Point)}}
-         * and {@link #onDrawShadow(Canvas)} methods are also overridden in order
+         * and {@link #onDrawShadow(Plotter)} methods are also overridden in order
          * to supply the drag shadow's dimensions and appearance without
          * reference to any View object.
          */
@@ -1963,12 +1976,12 @@ public class View {
         /**
          * Draw the shadow.
          *
-         * @param canvas canvas to draw content
+         * @param plotter plotter to draw content
          */
-        public void onDrawShadow(@Nonnull Canvas canvas) {
+        public void onDrawShadow(@Nonnull Plotter plotter) {
             View view = viewRef.get();
             if (view != null) {
-                view.onDraw(canvas);
+                view.onDraw(plotter);
             } else {
                 ModernUI.LOGGER.error(MARKER, "No view found on draw shadow");
             }

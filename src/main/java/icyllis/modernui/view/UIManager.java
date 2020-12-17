@@ -23,8 +23,9 @@ import icyllis.modernui.animation.Animation;
 import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.math.Point;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.renderer.Plotter;
 import icyllis.modernui.system.ModernUI;
+import icyllis.modernui.system.mixin.MixinMouseHandler;
 import icyllis.modernui.ui.TestHUD;
 import icyllis.modernui.ui.discard.IModule;
 import net.minecraft.client.MainWindow;
@@ -35,6 +36,7 @@ import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.inventory.container.ContainerType;
 import net.minecraft.inventory.container.INamedContainerProvider;
+import net.minecraft.util.Util;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.GuiOpenEvent;
@@ -72,14 +74,13 @@ public final class UIManager {
     public static final Marker MARKER = MarkerManager.getMarker("UIManager");
 
     // minecraft client instance
-    private final Minecraft mMinecraft = Minecraft.getInstance();
+    private final Minecraft minecraft = Minecraft.getInstance();
 
     // activity event bus
     private final IEventBus mEventBus = BusBuilder.builder().setTrackPhases(false).build();
 
     // cached screen to open for logic check
-    @Nullable
-    private Screen screenToOpen;
+    private boolean mCloseScreen;
 
     // current modern screen instance, must be ModernScreen or ModernContainerScreen or null
     // indicates whether the current screen is a Modern UI screen
@@ -110,16 +111,16 @@ public final class UIManager {
     private final List<DelayedTask> tasks = new CopyOnWriteArrayList<>();
 
     // elapsed ticks from a gui open, update every tick, 20 = 1 second
-    private int ticks = 0;
+    private int mTicks = 0;
 
     // elapsed time from a gui open in milliseconds, update every frame
-    private long timeMillis;
+    private long mDrawingTimeMillis;
 
-    // the canvas to draw things shared in all views and drawables
+    // the plotter to draw things shared in all views and drawables
     // lazy loading because this class is loaded before GL initialization
     // will be init when Minecraft finished loading, and open MainMenuScreen
     // also init font renderer when loaded
-    private Canvas canvas;
+    private Plotter mPlotter;
 
     // the most child hovered view, render at the top of other hovered ancestor views
     @Nullable
@@ -134,6 +135,9 @@ public final class UIManager {
     // current scaled cursor position on the gui screen
     double mCursorX;
     double mCursorY;
+
+    private double mScrollX;
+    private double mScrollY;
 
     // for double click check
     private int lastLmTick = Integer.MIN_VALUE;
@@ -192,7 +196,7 @@ public final class UIManager {
      */
     public void openGui(@Nonnull Fragment fragment) {
         this.fragment = fragment;
-        mMinecraft.displayGuiScreen(new MuiMainScreen());
+        minecraft.displayGuiScreen(new MuiMainScreen());
     }
 
     /**
@@ -201,7 +205,7 @@ public final class UIManager {
      * @see #recycleWindows()
      */
     public void closeGui() {
-        mMinecraft.displayGuiScreen(null);
+        minecraft.displayGuiScreen(null);
     }
 
     /**
@@ -293,34 +297,35 @@ public final class UIManager {
 
     @SubscribeEvent
     void onGuiOpen(@Nonnull GuiOpenEvent event) {
-        screenToOpen = event.getGui();
+        final Screen guiToOpen = event.getGui();
+        mCloseScreen = guiToOpen == null;
 
-        // create canvas, init render engine, also font engine
-        if (canvas == null) {
-            canvas = Canvas.getInstance();
+        // create plotter, init render engine, also font engine
+        if (mPlotter == null) {
+            mPlotter = Plotter.getInstance();
         }
 
-        if (screenToOpen == null) {
+        if (mCloseScreen) {
             recycleWindows();
             return;
         }
 
-        if (mMuiScreen != screenToOpen && screenToOpen instanceof IMuiScreen) {
+        if (mMuiScreen != guiToOpen && guiToOpen instanceof IMuiScreen) {
             if (view != null) {
                 // prevent repeated opening sometimes
                 event.setCanceled(true);
                 return;
             }
-            ticks = 0;
-            timeMillis = 0;
+            mTicks = 0;
+            mDrawingTimeMillis = 0;
         }
-        if (mMuiScreen != screenToOpen && mMuiScreen != null) {
+        if (mMuiScreen != guiToOpen && mMuiScreen != null) {
             onCursorPosCallback(-1, -1);
         }
         // for non-mui screens
         if (mMuiScreen == null) {
-            ticks = 0;
-            timeMillis = 0;
+            mTicks = 0;
+            mDrawingTimeMillis = 0;
         }
     }
 
@@ -388,36 +393,54 @@ public final class UIManager {
         cursorRefreshRequested = false;
     }*/
 
-    // Receive Input Event
-
     /**
+     * From screen
+     *
      * @see org.lwjgl.glfw.GLFWCursorPosCallbackI
+     * @see net.minecraft.client.MouseHelper
+     * @see MuiMainScreen
+     * @see MuiMenuScreen
      */
     void onCursorPosCallback(double cursorX, double cursorY) {
-        /*MotionEvent event = MotionEvent.obtain();
-        mAppWindow.onInputEvent(event);*/
+        // The caller is mui screen, we don't need to check anything
+        final long now = Util.nanoTime();
+        MotionEvent event = MotionEvent.obtain(now, now, MotionEvent.ACTION_HOVER_MOVE,
+                (float) cursorX, (float) cursorY, 0);
+        mAppWindow.onInputEvent(event);
     }
 
     /**
+     * Intercept the Forge event
+     *
      * @see org.lwjgl.glfw.GLFWMouseButtonCallbackI
+     * @see net.minecraft.client.MouseHelper
+     * @see net.minecraftforge.client.event.InputEvent
      */
     @SubscribeEvent
     void onRawMouseButton(InputEvent.RawMouseEvent event) {
-        if (mMinecraft.loadingGui != null || mMuiScreen == null) {
-            return;
+        // We should ensure (overlay == null && screen != null)
+        // and the screen must be a mui screen
+        if (minecraft.loadingGui == null && mMuiScreen != null) {
+            ModernUI.LOGGER.debug(MARKER, "Button: {} {} {}", event.getButton(), event.getAction(), event.getMods());
         }
-        ModernUI.LOGGER.debug(MARKER, "Button: {}", event.getButton());
-        event.setCanceled(true);
     }
 
     /**
+     * From mouse or touchpad, we need the horizontal scroll offset
+     *
      * @see org.lwjgl.glfw.GLFWScrollCallbackI
+     * @see net.minecraft.client.MouseHelper
+     * @see MixinMouseHandler
      */
-    public void onScrollCallback(double deltaX, double deltaY) {
-        if (mMuiScreen == null) {
-            return;
-        }
-        ModernUI.LOGGER.debug(MARKER, "Scroll: {} {}", deltaX, deltaY);
+    boolean onScrollEvent() {
+        ModernUI.LOGGER.debug(MARKER, "Scroll: {} {}", mScrollX, mScrollY);
+        return false;
+    }
+
+    // Internal method
+    public void setCapturedScrollParams(double scrollX, double scrollY) {
+        mScrollX = scrollX;
+        mScrollY = scrollY;
     }
 
     /*@Deprecated
@@ -660,30 +683,30 @@ public final class UIManager {
     }*/
 
     /**
-     * Raw draw method, draw entire UI
+     * Runtime rendering
      */
-    void draw() {
+    void render() {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableAlphaTest();
         RenderSystem.enableDepthTest();
         RenderSystem.depthMask(false);
 
-        /*canvas.moveToZero();
-        canvas.setColor(0, 0, 0, 51);
-        canvas.drawRect(0, 0, width, height);
+        /*plotter.moveToZero();
+        plotter.setColor(0, 0, 0, 51);
+        plotter.drawRect(0, 0, width, height);
         RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.DST_COLOR, GlStateManager.DestFactor.SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
-        canvas.setColor(255, 255, 255, (int) (255 * (255.0f / (255 - 51) - 1)));
-        canvas.drawRect(60, 60, width - 60, height - 60);
+        plotter.setColor(255, 255, 255, (int) (255 * (255.0f / (255 - 51) - 1)));
+        plotter.drawRect(60, 60, width - 60, height - 60);
         RenderSystem.defaultBlendFunc();*/
 
-        canvas.setDrawingTime(timeMillis);
+        mPlotter.setDrawingTime(mDrawingTimeMillis);
 
-        mAppWindow.onDraw(canvas);
+        mAppWindow.onDraw(mPlotter);
         /*if (popup != null) {
             popup.draw(drawTime);
         }*/
-        //UIEditor.INSTANCE.draw(canvas);
+        //UIEditor.INSTANCE.draw(plotter);
         //TODO use shader
         GL11.glDisable(GL11.GL_LINE_SMOOTH);
         GL11.glLineWidth(1.0f);
@@ -706,7 +729,7 @@ public final class UIManager {
                 break;
             case HEALTH:
                 if (ModernUI.isDeveloperMode())
-                    TestHUD.drawHUD(canvas);
+                    TestHUD.drawHUD(mPlotter);
                 break;
         }
     }
@@ -720,9 +743,9 @@ public final class UIManager {
     void resizeWindows(int width, int height) {
         mWidth = width;
         mHeight = height;
-        final MainWindow window = mMinecraft.getMainWindow();
-        mCursorX = mMinecraft.mouseHelper.getMouseX() * (double) window.getScaledWidth() / (double) window.getWidth();
-        mCursorY = mMinecraft.mouseHelper.getMouseY() * (double) window.getScaledHeight() / (double) window.getHeight();
+        final MainWindow window = minecraft.getMainWindow();
+        mCursorX = minecraft.mouseHelper.getMouseX() * (double) window.getScaledWidth() / (double) window.getWidth();
+        mCursorY = minecraft.mouseHelper.getMouseY() * (double) window.getScaledHeight() / (double) window.getHeight();
         layoutWindows(true);
     }
 
@@ -745,7 +768,7 @@ public final class UIManager {
 
     void recycleWindows() {
         // Hotfix 1.4.7
-        if (screenToOpen == null) {
+        if (mCloseScreen) {
             animations.clear();
             tasks.clear();
             view = null;
@@ -760,7 +783,7 @@ public final class UIManager {
             UIEditor.INSTANCE.setHoveredWidget(null);
             UITools.useDefaultCursor();
             // Hotfix 1.5.8
-            mMinecraft.keyboardListener.enableRepeatEvents(false);
+            minecraft.keyboardListener.enableRepeatEvents(false);
         }
     }
 
@@ -769,21 +792,21 @@ public final class UIManager {
         if (event.phase != TickEvent.Phase.START) {
             return;
         }
-        ++ticks;
+        ++mTicks;
         /*if (popup != null) {
             popup.tick(ticks);
         }*/
         if (view != null) {
-            view.tick(ticks);
+            view.tick(mTicks);
         }
-        mAppWindow.tick(ticks);
+        mAppWindow.tick(mTicks);
         // view ticking is always performed before tasks
         if (!tasks.isEmpty()) {
             Iterator<DelayedTask> iterator = tasks.iterator();
             DelayedTask task;
             while (iterator.hasNext()) {
                 task = iterator.next();
-                task.tick(ticks);
+                task.tick(mTicks);
                 if (task.shouldRemove()) {
                     iterator.remove();
                 }
@@ -795,10 +818,10 @@ public final class UIManager {
     void onRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
             // ticks to millis, the Timer in Minecraft is different from that in Event when game paused
-            timeMillis = (long) ((ticks + mMinecraft.getRenderPartialTicks()) * 50.0f);
+            mDrawingTimeMillis = (long) ((mTicks + minecraft.getRenderPartialTicks()) * 50.0f);
 
             for (Animation animation : animations) {
-                animation.update(timeMillis);
+                animation.update(mDrawingTimeMillis);
             }
         } else {
             // remove animations from loop on end
@@ -809,8 +832,8 @@ public final class UIManager {
             // layout after updating animations and before drawing
             if (layoutRequested || cursorRefreshRequested) {
                 // fixed at 40Hz
-                if (timeMillis - lastLayoutTime >= 25) {
-                    lastLayoutTime = timeMillis;
+                if (mDrawingTimeMillis - lastLayoutTime >= 25) {
+                    lastLayoutTime = mDrawingTimeMillis;
                     if (layoutRequested) {
                         layoutWindows(false);
                     } else {
@@ -827,7 +850,7 @@ public final class UIManager {
      * @return drawing time in milliseconds
      */
     public long getDrawingTime() {
-        return timeMillis;
+        return mDrawingTimeMillis;
     }
 
     /**
@@ -836,7 +859,7 @@ public final class UIManager {
      * @return elapsed ticks
      */
     public int getElapsedTicks() {
-        return ticks;
+        return mTicks;
     }
 
     /**
@@ -912,7 +935,7 @@ public final class UIManager {
     }
 
     public double getGuiScale() {
-        return mMinecraft.getMainWindow().getGuiScaleFactor();
+        return minecraft.getMainWindow().getGuiScaleFactor();
     }
 
     /**
@@ -971,7 +994,7 @@ public final class UIManager {
      */
     public void setKeyboard(@Nullable View view) {
         if (mKeyboard != view) {
-            mMinecraft.keyboardListener.enableRepeatEvents(view != null);
+            minecraft.keyboardListener.enableRepeatEvents(view != null);
             if (mKeyboard != null) {
                 mKeyboard.onStopKeyboard();
             }

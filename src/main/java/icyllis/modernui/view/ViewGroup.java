@@ -18,7 +18,7 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.renderer.Plotter;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.util.Util;
 import net.minecraftforge.api.distmarker.Dist;
@@ -35,6 +35,12 @@ public abstract class ViewGroup extends View implements IViewParent {
     private static final int ARRAY_CAPACITY_INCREMENT = 12;
 
     /**
+     * When set, the drawing method will call {@link #getChildDrawingOrder(int, int)}
+     * to get the index of the child to draw for that iteration.
+     */
+    static final int FLAG_USE_CHILD_DRAWING_ORDER = 0x400;
+
+    /**
      * When set, this ViewGroup should not intercept touch events.
      */
     private static final int FLAG_DISALLOW_INTERCEPT = 0x80000;
@@ -46,29 +52,36 @@ public abstract class ViewGroup extends View implements IViewParent {
 
     // number of valid children in the children array, the rest
     // should be null or not considered as children
-    private int childrenCount = 0;
+    private int mChildrenCount = 0;
 
     // First touch target in the linked list of touch targets.
     private TouchTarget mFirstTouchTarget;
+
+    // First hover target in the linked list of hover targets.
+    // The hover targets are children which have received ACTION_HOVER_ENTER.
+    // They might not have actually handled the hover event, but we will
+    // continue sending hover events to them as long as the pointer remains over
+    // their bounds and the view group does not intercept hover.
+    private HoverTarget mFirstHoverTarget;
 
     public ViewGroup() {
 
     }
 
     @Override
-    protected void dispatchDraw(@Nonnull Canvas canvas) {
+    protected void dispatchDraw(@Nonnull Plotter plotter) {
         final boolean doTranslate = (getScrollX() != 0 || getScrollY() != 0);
         if (doTranslate) {
-            canvas.save();
-            canvas.translate(-getScrollX(), -getScrollY());
+            plotter.save();
+            plotter.translate(-getScrollX(), -getScrollY());
         }
         final View[] views = children;
-        final int count = childrenCount;
+        final int count = mChildrenCount;
         for (int i = 0; i < count; i++) {
-            views[i].draw(canvas);
+            views[i].draw(plotter);
         }
         if (doTranslate) {
-            canvas.restore();
+            plotter.restore();
         }
     }
 
@@ -81,6 +94,70 @@ public abstract class ViewGroup extends View implements IViewParent {
     protected abstract void onLayout(boolean changed);
 
     @Override
+    protected boolean dispatchHoverEvent(MotionEvent event) {
+        final int action = event.getAction();
+
+        final boolean intercepted = onInterceptHoverEvent(event);
+        event.setAction(action); // restore action in case it was changed
+
+        if (!intercepted && action != MotionEvent.ACTION_HOVER_EXIT
+                && mChildrenCount != 0) {
+            final float x = event.getX();
+            final float y = event.getY();
+            final int childrenCount = mChildrenCount;
+        }
+
+        boolean handled = false;
+        return super.dispatchHoverEvent(event);
+    }
+
+    /**
+     * Implement this method to intercept hover events before they are handled
+     * by child views.
+     * <p>
+     * This method is called before dispatching a hover event to a child of
+     * the view group or to the view group's own {@link #onHoverEvent} to allow
+     * the view group a chance to intercept the hover event.
+     * This method can also be used to watch all pointer motions that occur within
+     * the bounds of the view group even when the pointer is hovering over
+     * a child of the view group rather than over the view group itself.
+     * </p><p>
+     * The view group can prevent its children from receiving hover events by
+     * implementing this method and returning <code>true</code> to indicate
+     * that it would like to intercept hover events.  The view group must
+     * continuously return <code>true</code> from this method for as long as
+     * it wishes to continue intercepting hover events from its children.
+     * </p><p>
+     * Interception preserves the invariant that at most one view can be
+     * hovered at a time by transferring hover focus from the currently hovered
+     * child to the view group or vice-versa as needed.
+     * </p><p>
+     * If this method returns <code>true</code> and a child is already hovered, then the
+     * child view will first receive a hover exit event and then the view group
+     * itself will receive a hover enter event in {@link #onHoverEvent}.
+     * Likewise, if this method had previously returned <code>true</code> to intercept hover
+     * events and instead returns <code>false</code> while the pointer is hovering
+     * within the bounds of one of a child, then the view group will first receive a
+     * hover exit event in {@link #onHoverEvent} and then the hovered child will
+     * receive a hover enter event.
+     * </p><p>
+     * The default implementation handles mouse hover on the scroll bars.
+     * </p>
+     *
+     * @param event The motion event that describes the hover.
+     * @return True if the view group would like to intercept the hover event
+     * and prevent its children from receiving it.
+     */
+    public boolean onInterceptHoverEvent(MotionEvent event) {
+        /*final int action = event.getAction();
+        final float x = event.getX();
+        final float y = event.getY();
+        return (action == MotionEvent.ACTION_HOVER_MOVE
+                || action == MotionEvent.ACTION_HOVER_ENTER) && isOnScrollbar(x, y);*/
+        return false;
+    }
+
+    /*@Override
     public final boolean dispatchGenericMotionEvent(@Nonnull MotionEvent event) {
         final int action = event.getAction();
 
@@ -103,9 +180,9 @@ public abstract class ViewGroup extends View implements IViewParent {
                     }
                 }
                 return anyHovered;
-            /*case MotionEvent.ACTION_PRESS:
+            *//*case MotionEvent.ACTION_PRESS:
             case MotionEvent.ACTION_RELEASE:
-            case MotionEvent.ACTION_DOUBLE_CLICK:*/
+            case MotionEvent.ACTION_DOUBLE_CLICK:*//*
             case MotionEvent.ACTION_SCROLL:
                 for (int i = childrenCount - 1; i >= 0; i--) {
                     child = views[i];
@@ -118,7 +195,7 @@ public abstract class ViewGroup extends View implements IViewParent {
 
         event.offsetLocation(-scrollX, -scrollY);
         return super.dispatchGenericMotionEvent(event);
-    }
+    }*/
 
     /*@Deprecated
     @Override
@@ -139,7 +216,7 @@ public abstract class ViewGroup extends View implements IViewParent {
         return anyHovered;
     }*/
 
-    @Override
+    /*@Override
     final void ensureMouseHoverExit() {
         super.ensureMouseHoverExit();
         final View[] views = children;
@@ -147,7 +224,7 @@ public abstract class ViewGroup extends View implements IViewParent {
         for (int i = 0; i < count; i++) {
             views[i].ensureMouseHoverExit();
         }
-    }
+    }*/
 
     private void resetTouchState() {
 
@@ -380,7 +457,7 @@ public abstract class ViewGroup extends View implements IViewParent {
         child.setLayoutParams(params);
 
         if (index < 0) {
-            index = childrenCount;
+            index = mChildrenCount;
         }
 
         addInArray(child, index);
@@ -394,19 +471,19 @@ public abstract class ViewGroup extends View implements IViewParent {
     }
 
     public View getChildAt(int index) {
-        if (index < 0 || index >= childrenCount) {
+        if (index < 0 || index >= mChildrenCount) {
             return null;
         }
         return children[index];
     }
 
     public int getChildCount() {
-        return childrenCount;
+        return mChildrenCount;
     }
 
     private void addInArray(@Nonnull View child, int index) {
         View[] views = children;
-        final int count = childrenCount;
+        final int count = mChildrenCount;
         final int size = views.length;
         if (index == count) {
             if (size == count) {
@@ -414,7 +491,7 @@ public abstract class ViewGroup extends View implements IViewParent {
                 System.arraycopy(views, 0, children, 0, size);
                 views = children;
             }
-            views[childrenCount++] = child;
+            views[mChildrenCount++] = child;
         } else if (index < count) {
             if (size == count) {
                 children = new View[size + ARRAY_CAPACITY_INCREMENT];
@@ -425,7 +502,7 @@ public abstract class ViewGroup extends View implements IViewParent {
                 System.arraycopy(views, index, views, index + 1, count - index);
             }
             views[index] = child;
-            childrenCount++;
+            mChildrenCount++;
         } else {
             throw new IndexOutOfBoundsException("index=" + index + " count=" + count);
         }
@@ -435,18 +512,16 @@ public abstract class ViewGroup extends View implements IViewParent {
     @Nullable
     @Override
     final <T extends View> T findViewTraversal(int id) {
-        if (id == this.id) {
+        if (id == mId) {
             return (T) this;
         }
 
         final View[] views = children;
-        final int count = childrenCount;
+        final int count = mChildrenCount;
 
         View view;
         for (int i = 0; i < count; i++) {
-            view = views[i];
-
-            view = view.findViewTraversal(id);
+            view = views[i].findViewTraversal(id);
 
             if (view != null) {
                 return (T) view;
@@ -454,6 +529,76 @@ public abstract class ViewGroup extends View implements IViewParent {
         }
 
         return null;
+    }
+
+    private void setBooleanFlag(int flag, boolean value) {
+        if (value) {
+            mGroupFlags |= flag;
+        } else {
+            mGroupFlags &= ~flag;
+        }
+    }
+
+    /**
+     * Indicates whether the ViewGroup is drawing its children in the order defined by
+     * {@link #getChildDrawingOrder(int, int)}.
+     *
+     * @return true if children drawing order is defined by {@link #getChildDrawingOrder(int, int)},
+     * false otherwise
+     * @see #setChildrenDrawingOrderEnabled(boolean)
+     * @see #getChildDrawingOrder(int, int)
+     */
+    protected boolean isChildrenDrawingOrderEnabled() {
+        return (mGroupFlags & FLAG_USE_CHILD_DRAWING_ORDER) == FLAG_USE_CHILD_DRAWING_ORDER;
+    }
+
+    /**
+     * Tells the ViewGroup whether to draw its children in the order defined by the method
+     * {@link #getChildDrawingOrder(int, int)}.
+     * <p>
+     * Note that {@link View#getZ() Z} reordering, done by {@link #dispatchDraw(Plotter)},
+     * will override custom child ordering done via this method.
+     *
+     * @param enabled true if the order of the children when drawing is determined by
+     *                {@link #getChildDrawingOrder(int, int)}, false otherwise
+     * @see #isChildrenDrawingOrderEnabled()
+     * @see #getChildDrawingOrder(int, int)
+     */
+    protected void setChildrenDrawingOrderEnabled(boolean enabled) {
+        setBooleanFlag(FLAG_USE_CHILD_DRAWING_ORDER, enabled);
+    }
+
+    /**
+     * Converts drawing order position to container position. Override this
+     * if you want to change the drawing order of children. By default, it
+     * returns drawingPosition.
+     * <p>
+     * NOTE: In order for this method to be called, you must enable child ordering
+     * first by calling {@link #setChildrenDrawingOrderEnabled(boolean)}.
+     *
+     * @param drawingPosition the drawing order position.
+     * @return the container position of a child for this drawing order position.
+     * @see #setChildrenDrawingOrderEnabled(boolean)
+     * @see #isChildrenDrawingOrderEnabled()
+     */
+    protected int getChildDrawingOrder(int childCount, int drawingPosition) {
+        return drawingPosition;
+    }
+
+    /**
+     * Converts drawing order position to container position.
+     * <p>
+     * Children are not necessarily drawn in the order in which they appear in the container.
+     * ViewGroups can enable a custom ordering via {@link #setChildrenDrawingOrderEnabled(boolean)}.
+     * This method returns the container position of a child that appears in the given position
+     * in the current drawing order.
+     *
+     * @param drawingPosition the drawing order position.
+     * @return the container position of a child for this drawing order position.
+     * @see #getChildDrawingOrder(int, int)}
+     */
+    public final int getChildDrawingOrder(int drawingPosition) {
+        return getChildDrawingOrder(getChildCount(), drawingPosition);
     }
 
     @Override
@@ -465,7 +610,7 @@ public abstract class ViewGroup extends View implements IViewParent {
             x += getScrollX();
             y += getScrollY();
             if (x >= left && x < right && y >= top && y < bottom) {
-                for (int i = childrenCount - 1; i >= 0; i--) {
+                for (int i = mChildrenCount - 1; i >= 0; i--) {
                     if (children[i].onCursorPosEvent(route, x, y)) {
                         break;
                     }
@@ -486,7 +631,7 @@ public abstract class ViewGroup extends View implements IViewParent {
      * @param heightMeasureSpec The height requirements for this view
      */
     protected void measureChildren(int widthMeasureSpec, int heightMeasureSpec) {
-        final int size = childrenCount;
+        final int size = mChildrenCount;
         final View[] children = this.children;
         for (int i = 0; i < size; i++) {
             View child = children[i];
@@ -641,7 +786,7 @@ public abstract class ViewGroup extends View implements IViewParent {
     @Override
     protected void tick(int ticks) {
         final View[] views = children;
-        final int count = childrenCount;
+        final int count = mChildrenCount;
         for (int i = 0; i < count; i++) {
             views[i].tick(ticks);
         }
@@ -836,8 +981,62 @@ public abstract class ViewGroup extends View implements IViewParent {
         }
     }
 
-    /* Describes a touched view and the ids of the pointers that it has captured.
-     *
+    /**
+     * Describes a hovered view.
+     */
+    private static final class HoverTarget {
+
+        private static final int MAX_RECYCLED = 32;
+        private static final Object sRecyclerLock = new Object();
+        private static HoverTarget sRecyclerTop;
+        private static int sRecyclerUsed;
+
+        // The hovered view, one of the child of this ViewGroup
+        public View child;
+
+        // The next target in the linked list.
+        public HoverTarget next;
+
+        private HoverTarget() {
+        }
+
+        @Nonnull
+        public static HoverTarget obtain(@Nonnull View child) {
+            final HoverTarget target;
+            synchronized (sRecyclerLock) {
+                if (sRecyclerTop == null) {
+                    target = new HoverTarget();
+                } else {
+                    target = sRecyclerTop;
+                    sRecyclerTop = target.next;
+                    sRecyclerUsed--;
+                    target.next = null;
+                }
+            }
+            target.child = child;
+            return target;
+        }
+
+        public void recycle() {
+            if (child == null) {
+                throw new IllegalStateException(this + " already recycled");
+            }
+            synchronized (sRecyclerLock) {
+                if (sRecyclerUsed < MAX_RECYCLED) {
+                    sRecyclerUsed++;
+                    next = sRecyclerTop;
+                    sRecyclerTop = this;
+                } else {
+                    next = null;
+                }
+                child = null;
+            }
+        }
+    }
+
+    /**
+     * Describes a touched view and the ids of the pointers that it has captured.
+     * <p>
      * This code assumes that pointer ids are always in the range 0..31 such that
      * it can use a bitfield to track which pointer ids are present.
      * As it happens, the lower layers of the input dispatch pipeline also use the
@@ -858,7 +1057,7 @@ public abstract class ViewGroup extends View implements IViewParent {
         // The combined bit mask of pointer ids for all pointers captured by the target.
         public int pointerIdBits;
 
-        // The next target in the linked list (recycler).
+        // The next target in the linked list.
         public TouchTarget next;
 
         private TouchTarget() {

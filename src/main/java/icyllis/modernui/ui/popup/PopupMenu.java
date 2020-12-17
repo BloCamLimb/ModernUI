@@ -27,7 +27,7 @@ import icyllis.modernui.ui.discard.IWidget;
  */
 public class PopupMenu implements IModule {
 
-    //private final Canvas canvas = new Canvas();
+    //private final Canvas plotter = new Canvas();
 
     private final IWidget menu;
 
@@ -39,7 +39,7 @@ public class PopupMenu implements IModule {
 
     @Override
     public void draw(float time) {
-        //menu.draw(canvas, time);
+        //menu.draw(plotter, time);
     }
 
     @Override

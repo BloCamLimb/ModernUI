@@ -20,7 +20,7 @@ package icyllis.modernui.ui;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.text.TextAlign;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.renderer.Plotter;
 import icyllis.modernui.system.mixin.AccessFoodStats;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
@@ -38,7 +38,7 @@ public class TestHUD {
 
     //private static DecimalFormat decimalFormat = new DecimalFormat("#.00");
 
-    public static void drawHUD(@Nonnull Canvas canvas) {
+    public static void drawHUD(@Nonnull Plotter plotter) {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableAlphaTest();
@@ -71,19 +71,19 @@ public class TestHUD {
         GL11.glRotatef(MathHelper.sin(f1 * (float) Math.PI) * f2 * 3.0f, 0, 0, 1);
         GL11.glRotatef(Math.abs(MathHelper.cos(f1 * (float) Math.PI - 0.2f) * f2) * 5.0f, 1, 0, 0);
 
-        canvas.setColor(255, 19, 19, 128);
-        canvas.drawRoundedRect(0, 25, player.getHealth() * 140 / player.getMaxHealth(), 37, 4);
-        canvas.setColor(86, 184, 255, 128);
-        canvas.drawRoundedRect(0, 11, player.getAir() * 140f / player.getMaxAir(), 23, 4);
-        canvas.setColor(184, 132, 88, 128);
+        plotter.setColor(255, 19, 19, 128);
+        plotter.drawRoundedRect(0, 25, player.getHealth() * 140 / player.getMaxHealth(), 37, 4);
+        plotter.setColor(86, 184, 255, 128);
+        plotter.drawRoundedRect(0, 11, player.getAir() * 140f / player.getMaxAir(), 23, 4);
+        plotter.setColor(184, 132, 88, 128);
         FoodStats foodStats = player.getFoodStats();
-        canvas.drawRoundedRect(0, -3, foodStats.getFoodLevel() * 7, 9, 4);
+        plotter.drawRoundedRect(0, -3, foodStats.getFoodLevel() * 7, 9, 4);
 
-        canvas.resetColor();
-        canvas.setTextAlign(TextAlign.CENTER);
-        canvas.drawText(String.format("%.2f / %.2f", player.getHealth(), player.getMaxHealth()), 70, 27);
-        canvas.drawText(String.format("%d / %d", player.getAir(), player.getMaxAir()), 70, 13);
-        canvas.drawText(String.format("%d / %.2f / %.2f", foodStats.getFoodLevel(), foodStats.getSaturationLevel(),
+        plotter.resetColor();
+        plotter.setTextAlign(TextAlign.CENTER);
+        plotter.drawText(String.format("%.2f / %.2f", player.getHealth(), player.getMaxHealth()), 70, 27);
+        plotter.drawText(String.format("%d / %d", player.getAir(), player.getMaxAir()), 70, 13);
+        plotter.drawText(String.format("%d / %.2f / %.2f", foodStats.getFoodLevel(), foodStats.getSaturationLevel(),
                 ((AccessFoodStats) foodStats).getFoodExhaustionLevel()), 70, -1);
 
         RenderSystem.enableDepthTest();

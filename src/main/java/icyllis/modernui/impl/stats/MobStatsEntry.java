@@ -19,7 +19,7 @@
 package icyllis.modernui.impl.stats;
 
 import icyllis.modernui.font.text.TextAlign;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.renderer.Plotter;
 import icyllis.modernui.ui.discard.ScrollWindow;
 import icyllis.modernui.widget.UniformScrollEntry;
 import net.minecraft.client.resources.I18n;
@@ -48,12 +48,12 @@ public class MobStatsEntry extends UniformScrollEntry {
     }
 
     @Override
-    public void onDraw(@Nonnull Canvas canvas, float time) {
-        canvas.setTextAlign(TextAlign.LEFT);
-        canvas.resetColor();
-        canvas.drawText(entityName, x1 + 2, y1 + 1);
-        canvas.drawText(kill, x1 + 12, y1 + 10);
-        canvas.drawText(death, x1 + 12, y1 + 19);
+    public void onDraw(@Nonnull Plotter plotter, float time) {
+        plotter.setTextAlign(TextAlign.LEFT);
+        plotter.resetColor();
+        plotter.drawText(entityName, x1 + 2, y1 + 1);
+        plotter.drawText(kill, x1 + 12, y1 + 10);
+        plotter.drawText(death, x1 + 12, y1 + 19);
     }
 
     public void updateValue(@Nonnull StatisticsManager manager) {

@@ -488,7 +488,7 @@ public final class MotionEvent extends InputEvent {
      * @param eventTime    The the time (in ns) when this specific event was generated.  This
      *                     must be obtained from {@link Util#nanoTime()}.
      * @param action       The kind of action being performed, such as {@link #ACTION_DOWN}.
-     * @param actionButton The button of press or release action, such as {@link GLFW#GLFW_MOUSE_BUTTON_LEFT}
+     * @param actionButton The button of press or release action, such as {@link #BUTTON_PRIMARY}
      * @param x            The X coordinate of this event.
      * @param y            The Y coordinate of this event.
      * @param modifiers    The modifier keys that were in effect when the event was generated.
@@ -500,10 +500,9 @@ public final class MotionEvent extends InputEvent {
                                      int actionButton, float x, float y,
                                      int modifiers, int buttonState, int flags) {
         final int actionMasked = action & ACTION_MASK;
-        if (actionButton != 0
-                && actionMasked != ACTION_BUTTON_PRESS
-                && actionMasked != ACTION_BUTTON_RELEASE) {
-            throw new IllegalArgumentException("actionButton should be undefined except press or release action");
+        if ((actionMasked == ACTION_BUTTON_PRESS
+                || actionMasked == ACTION_BUTTON_RELEASE) && actionButton == 0) {
+            throw new IllegalArgumentException("actionButton should be defined for action press or release");
         }
         MotionEvent event = obtain();
         synchronized (gSharedTempLock) {
@@ -596,6 +595,7 @@ public final class MotionEvent extends InputEvent {
      * <p>If the source is not mouse it sets cursor position to NaN.
      */
     private void updateCursorPosition() {
+        // to-add: check source is mouse
         float x = 0;
         float y = 0;
 
@@ -994,7 +994,6 @@ public final class MotionEvent extends InputEvent {
      * the returned value is undefined.
      *
      * @see #getButtonState()
-     * @see org.lwjgl.glfw.GLFW
      */
     public int getActionButton() {
         return mActionButton;
@@ -1092,7 +1091,7 @@ public final class MotionEvent extends InputEvent {
     }
 
     /**
-     * Returns the pressed state of the SUPER key.
+     * Returns the pressed state of the SUPER key (a.k.a META or WIN key).
      *
      * @return true if the SUPER key is pressed, false otherwise
      */
@@ -1258,7 +1257,7 @@ public final class MotionEvent extends InputEvent {
     public static final class PointerProperties {
 
         /**
-         * The pointer id.
+         * The pointer id, range between 0 and 31.
          * Initially set to {@link #INVALID_POINTER_ID} (-1).
          *
          * @see MotionEvent#getPointerId(int)
@@ -1327,7 +1326,7 @@ public final class MotionEvent extends InputEvent {
 
         @Override
         public int hashCode() {
-            return (id << 5) - id + toolType;
+            return id | (toolType << 8);
         }
     }
 }

@@ -20,7 +20,7 @@ package icyllis.modernui.impl.stats;
 
 import com.google.common.collect.Sets;
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.renderer.Plotter;
 import icyllis.modernui.ui.discard.DrawTools;
 import icyllis.modernui.ui.discard.ScrollWindow;
 import icyllis.modernui.widget.UniformScrollGroup;
@@ -171,8 +171,8 @@ public class ItemStatsGroup extends UniformScrollGroup<ItemStatsEntry> {
     }
 
     @Override
-    public void draw(@Nonnull Canvas canvas, float time) {
-        super.draw(canvas, time);
+    public void draw(@Nonnull Plotter plotter, float time) {
+        super.draw(plotter, time);
         RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
         textureManager.bindTexture(AbstractGui.STATS_ICON_LOCATION);
         int i = 0;

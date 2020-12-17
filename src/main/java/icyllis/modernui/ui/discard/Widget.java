@@ -19,7 +19,7 @@
 package icyllis.modernui.ui.discard;
 
 import com.google.gson.annotations.Expose;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.renderer.Plotter;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -82,13 +82,13 @@ public abstract class Widget implements IWidget {
     }
 
     @Override
-    public final void draw(@Nonnull Canvas canvas, float time) {
+    public final void draw(@Nonnull Plotter plotter, float time) {
         if (status.isDrawing()) {
-            onDraw(canvas, time);
+            onDraw(plotter, time);
         }
     }
 
-    protected abstract void onDraw(@Nonnull Canvas canvas, float time);
+    protected abstract void onDraw(@Nonnull Plotter plotter, float time);
 
     /**
      * Set widget position

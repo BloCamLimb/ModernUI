@@ -18,7 +18,7 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.renderer.Plotter;
 import icyllis.modernui.ui.discard.IScrollHost;
 import icyllis.modernui.ui.discard.ScrollGroup;
 
@@ -57,9 +57,9 @@ public abstract class UniformScrollGroup<T extends UniformScrollEntry> extends S
     }
 
     @Override
-    public void draw(@Nonnull Canvas canvas, float time) {
+    public void draw(@Nonnull Plotter plotter, float time) {
         for (UniformScrollEntry entry : visible) {
-            entry.draw(canvas, time);
+            entry.draw(plotter, time);
         }
     }
 

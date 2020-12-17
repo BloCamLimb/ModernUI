@@ -18,11 +18,11 @@
 
 package icyllis.modernui.impl.setting;
 
+import icyllis.modernui.graphics.renderer.Plotter;
 import icyllis.modernui.view.UITools;
 import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
-import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.view.UIManager;
 import icyllis.modernui.graphics.renderer.Icon;
 import icyllis.modernui.ui.discard.Align9D;
@@ -86,7 +86,7 @@ public class DropdownSettingEntry extends SettingEntry {
     }
 
     @Override
-    public void drawExtra(Canvas canvas, float time) {
+    public void drawExtra(Plotter plotter, float time) {
         if (frameAlpha > 0) {
             /*Tessellator tessellator = Tessellator.getInstance();
             BufferBuilder bufferBuilder = tessellator.getBuffer();
@@ -99,14 +99,14 @@ public class DropdownSettingEntry extends SettingEntry {
             bufferBuilder.pos(bl, y1 + 2, 0.0D).color(96, 96, 96, frameAlpha).endVertex();
             tessellator.draw();
             RenderSystem.enableTexture();*/
-            //canvas.setColor(0.377f, 0.377f, 0.377f, frameAlpha);
-            canvas.drawRect(bl, y1 + 2, x2, y1 + 18);
+            //plotter.setColor(0.377f, 0.377f, 0.377f, frameAlpha);
+            plotter.drawRect(bl, y1 + 2, x2, y1 + 18);
         }
-        canvas.setTextAlign(TextAlign.RIGHT);
-        //canvas.setColor(optionBrightness, optionBrightness, optionBrightness, 1);
-        canvas.drawText(optionText, x2 - 10, y1 + 6);
+        plotter.setTextAlign(TextAlign.RIGHT);
+        //plotter.setColor(optionBrightness, optionBrightness, optionBrightness, 1);
+        plotter.drawText(optionText, x2 - 10, y1 + 6);
         //fontRenderer.drawString(optionText, x2 - 10, y1 + 6, optionBrightness, 1, TextAlign.RIGHT);
-        canvas.drawIcon(ICON, x2 - 8, y1 + 6, x2, y1 + 14);
+        plotter.drawIcon(ICON, x2 - 8, y1 + 6, x2, y1 + 14);
         /*RenderSystem.pushMatrix();
         GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
         GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);

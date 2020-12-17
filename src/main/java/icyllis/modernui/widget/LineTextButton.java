@@ -20,7 +20,7 @@ package icyllis.modernui.widget;
 
 import com.google.common.collect.Lists;
 import com.google.gson.annotations.Expose;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.renderer.Plotter;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.AnimationControl;
 import icyllis.modernui.animation.Applier;
@@ -79,13 +79,13 @@ public class LineTextButton extends Widget {
     }
 
     @Override
-    public void onDraw(@Nonnull Canvas canvas, float time) {
+    public void onDraw(@Nonnull Plotter plotter, float time) {
         lineAC.update();
-        //canvas.setColor(textBrightness, textBrightness, textBrightness, 1.0f);
-        canvas.setTextAlign(TextAlign.CENTER);
-        canvas.drawText(text, x1 + width / 2f, y1 + 2);
-        canvas.resetColor();
-        canvas.drawRect(x1 + lineOffset, y1 + 11, x2 - lineOffset, y1 + 12);
+        //plotter.setColor(textBrightness, textBrightness, textBrightness, 1.0f);
+        plotter.setTextAlign(TextAlign.CENTER);
+        plotter.drawText(text, x1 + width / 2f, y1 + 2);
+        plotter.resetColor();
+        plotter.drawRect(x1 + lineOffset, y1 + 11, x2 - lineOffset, y1 + 12);
     }
 
     /*@Override
