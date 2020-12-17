@@ -18,7 +18,7 @@
 
 package icyllis.modernui.impl.setting;
 
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.renderer.Plotter;
 
 public class CheckboxSettingEntry extends SettingEntry {
 
@@ -27,7 +27,7 @@ public class CheckboxSettingEntry extends SettingEntry {
     }
 
     @Override
-    protected void drawExtra(Canvas canvas, float time) {
+    protected void drawExtra(Plotter plotter, float time) {
 
     }
 }

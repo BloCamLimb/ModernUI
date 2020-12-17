@@ -21,7 +21,7 @@ package icyllis.modernui.impl.setting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.math.Color3i;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.renderer.Plotter;
 import icyllis.modernui.impl.module.SettingResourcePack;
 import icyllis.modernui.view.UITools;
 import icyllis.modernui.ui.discard.Align9D;
@@ -73,18 +73,18 @@ public class ResourcePackEntry extends UniformScrollEntry {
     }
 
     @Override
-    public final void onDraw(@Nonnull Canvas canvas, float time) {
+    public final void onDraw(@Nonnull Plotter plotter, float time) {
         /*Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();*/
 
         if (module.getHighlightEntry() == this) {
-            //canvas.setColor(0.5f, 0.5f, 0.5f, 0.377f);
-            canvas.drawRect(x1 + 1, y1, x2 - 1, y2);
+            //plotter.setColor(0.5f, 0.5f, 0.5f, 0.377f);
+            plotter.drawRect(x1 + 1, y1, x2 - 1, y2);
 
-            canvas.setLineAntiAliasing(true);
-            //canvas.setColor(1, 1, 1, 0.879f);
-            canvas.drawRectLines(x1 + 1, y1, x2 - 1, y2);
-            canvas.setLineAntiAliasing(false);
+            plotter.setLineAntiAliasing(true);
+            //plotter.setColor(1, 1, 1, 0.879f);
+            plotter.drawRectLines(x1 + 1, y1, x2 - 1, y2);
+            plotter.setLineAntiAliasing(false);
             /*RenderSystem.disableTexture();
             bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
             bufferBuilder.pos(x1 + 1, y2, 0.0D).color(128, 128, 128, 96).endVertex();
@@ -104,10 +104,10 @@ public class ResourcePackEntry extends UniformScrollEntry {
             GL11.glDisable(GL11.GL_LINE_SMOOTH);
             RenderSystem.enableTexture();*/
         } else if (isMouseHovered()) {
-            canvas.setLineAntiAliasing(true);
-            //canvas.setColor(0.879f, 0.879f, 0.879f, 0.7f);
-            canvas.drawRectLines(x1 + 1, y1, x2 - 1, y2);
-            canvas.setLineAntiAliasing(false);
+            plotter.setLineAntiAliasing(true);
+            //plotter.setColor(0.879f, 0.879f, 0.879f, 0.7f);
+            plotter.drawRectLines(x1 + 1, y1, x2 - 1, y2);
+            plotter.setLineAntiAliasing(false);
             /*RenderSystem.disableTexture();
             GL11.glEnable(GL11.GL_LINE_SMOOTH);
             GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
@@ -126,14 +126,14 @@ public class ResourcePackEntry extends UniformScrollEntry {
         bindTexture();
         blitIcon(x1 + 3, y1 + 2);
 
-        canvas.resetColor();
-        canvas.setTextAlign(TextAlign.LEFT);
-        canvas.drawText(title, x1 + 39, y1 + 4);
+        plotter.resetColor();
+        plotter.setTextAlign(TextAlign.LEFT);
+        plotter.drawText(title, x1 + 39, y1 + 4);
 
-        canvas.setColor(Color3i.GRAY);
+        plotter.setColor(Color3i.GRAY);
         int i = 0;
         for (String d : desc) {
-            canvas.drawText(d, x1 + 39, y1 + 14 + i * 10);
+            plotter.drawText(d, x1 + 39, y1 + 14 + i * 10);
             i++;
             if (i > 1) {
                 break;

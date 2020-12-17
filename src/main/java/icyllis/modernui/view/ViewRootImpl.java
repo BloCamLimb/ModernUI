@@ -19,16 +19,15 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.graphics.math.Point;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.renderer.Plotter;
 import icyllis.modernui.system.ModernUI;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.LinkedList;
 
 /**
  * The top of a view hierarchy, implementing the needed protocol between View
- * and the system
+ * and the WindowManager
  */
 public final class ViewRootImpl implements IViewParent {
 
@@ -36,7 +35,7 @@ public final class ViewRootImpl implements IViewParent {
 
     public static final int TYPE_OVERLAY = 2500;
 
-    private final UIManager manager;
+    private final UIManager master;
 
     private boolean hasDragOperation;
 
@@ -50,7 +49,7 @@ public final class ViewRootImpl implements IViewParent {
     private final int[] outBounds = new int[4];
 
     public ViewRootImpl(UIManager manager, int type) {
-        this.manager = manager;
+        this.master = manager;
         this.type = type;
     }
 
@@ -67,7 +66,7 @@ public final class ViewRootImpl implements IViewParent {
     }
 
     boolean startDragAndDrop(@Nonnull View view, @Nullable DragData data, @Nullable View.DragShadow shadow, int flags) {
-        if (manager.dragEvent != null) {
+        if (master.dragEvent != null) {
             ModernUI.LOGGER.error(View.MARKER, "startDragAndDrop failed by another ongoing operation");
             return false;
         }
@@ -77,8 +76,8 @@ public final class ViewRootImpl implements IViewParent {
             shadow = new View.DragShadow(view);
             if (view.isMouseHovered()) {
                 // default strategy
-                center.x = (int) manager.getViewMouseX(view);
-                center.y = (int) manager.getViewMouseY(view);
+                center.x = (int) master.getViewMouseX(view);
+                center.y = (int) master.getViewMouseY(view);
             } else {
                 shadow.onProvideShadowCenter(center);
             }
@@ -86,13 +85,13 @@ public final class ViewRootImpl implements IViewParent {
             shadow.onProvideShadowCenter(center);
         }
 
-        manager.dragEvent = new DragEvent(data);
-        manager.dragShadow = shadow;
-        manager.dragShadowCenter = center;
+        master.dragEvent = new DragEvent(data);
+        master.dragShadow = shadow;
+        master.dragShadowCenter = center;
 
         hasDragOperation = true;
 
-        manager.performDrag(DragEvent.ACTION_DRAG_STARTED);
+        master.performDrag(DragEvent.ACTION_DRAG_STARTED);
         return true;
     }
 
@@ -119,17 +118,32 @@ public final class ViewRootImpl implements IViewParent {
         layoutRequested = false;
     }
 
-    void onDraw(Canvas canvas) {
+    void onDraw(Plotter plotter) {
         if (mView != null) {
-            mView.draw(canvas);
+            mView.draw(plotter);
         }
     }
 
-    void onInputEvent(InputEvent event) {
-
+    boolean onInputEvent(InputEvent event) {
+        if (mView != null) {
+            if (event instanceof KeyEvent) {
+                return processKeyEvent((KeyEvent) event);
+            } else {
+                return processPointerEvent((MotionEvent) event);
+            }
+        }
+        return false;
     }
 
-    boolean onCursorPosEvent(LinkedList<View> route, double x, double y) {
+    private boolean processKeyEvent(KeyEvent event) {
+        return false;
+    }
+
+    private boolean processPointerEvent(MotionEvent event) {
+        return mView.dispatchPointerEvent(event);
+    }
+
+    /*boolean onCursorPosEvent(LinkedList<View> route, double x, double y) {
         if (mView != null) {
             return mView.onCursorPosEvent(route, x, y);
         }
@@ -151,7 +165,7 @@ public final class ViewRootImpl implements IViewParent {
         if (mView != null) {
             mView.ensureMouseHoverExit();
         }
-    }
+    }*/
 
     void performDragEvent(DragEvent event) {
         if (hasDragOperation) {
@@ -180,7 +194,7 @@ public final class ViewRootImpl implements IViewParent {
     @Override
     public void requestLayout() {
         layoutRequested = true;
-        manager.layoutRequested = true;
+        master.layoutRequested = true;
     }
 
     @Override

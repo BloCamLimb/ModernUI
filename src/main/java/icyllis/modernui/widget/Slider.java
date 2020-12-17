@@ -18,7 +18,7 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.renderer.Plotter;
 import icyllis.modernui.ui.discard.IDraggable;
 import icyllis.modernui.ui.discard.IHost;
 import icyllis.modernui.ui.discard.Widget;
@@ -42,15 +42,15 @@ public abstract class Slider extends Widget implements IDraggable {
     }
 
     @Override
-    public void onDraw(@Nonnull Canvas canvas, float time) {
+    public void onDraw(@Nonnull Plotter plotter, float time) {
         float cx = (float) (x1 + slideOffset);
-        //canvas.setColor(0.63f, 0.63f, 0.63f, 1.0f);
-        canvas.drawRect(x1, y1, cx, y2);
-        //canvas.setColor(0.315f, 0.315f, 0.315f, 0.863f);
-        canvas.drawRect(cx, y1, x2, y2);
+        //plotter.setColor(0.63f, 0.63f, 0.63f, 1.0f);
+        plotter.drawRect(x1, y1, cx, y2);
+        //plotter.setColor(0.315f, 0.315f, 0.315f, 0.863f);
+        plotter.drawRect(cx, y1, x2, y2);
         float c = (thumbHovered || isDragging) ? 1.0f : 0.8f;
-        //canvas.setColor(c, c, c, 1.0f);
-        canvas.drawRect(cx, y1 - 1, cx + 4, y2 + 1);
+        //plotter.setColor(c, c, c, 1.0f);
+        plotter.drawRect(cx, y1 - 1, cx + 4, y2 + 1);
     }
 
     /*@Override

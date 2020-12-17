@@ -50,7 +50,7 @@ import java.util.Objects;
 @OnlyIn(Dist.CLIENT)
 final class MuiMenuScreen<T extends Container> extends ContainerScreen<T> implements IMuiScreen {
 
-    private final UIManager mService = UIManager.getInstance();
+    private final UIManager master = UIManager.getInstance();
 
     MuiMenuScreen(@Nonnull T menu, PlayerInventory inventory, ITextComponent title) {
         super(menu, inventory, title);
@@ -60,14 +60,14 @@ final class MuiMenuScreen<T extends Container> extends ContainerScreen<T> implem
     public void init(@Nonnull Minecraft minecraft, int width, int height) {
         //TODO remove super.init()
         super.init(minecraft, width, height);
-        mService.prepareWindows(this, width, height);
+        master.prepareWindows(this, width, height);
     }
 
     @Override
     public void resize(@Nonnull Minecraft minecraft, int width, int height) {
         this.width = width;
         this.height = height;
-        mService.prepareWindows(this, width, height);
+        master.prepareWindows(this, width, height);
         ModernUI.LOGGER.debug("Scaled: {}x{} Framebuffer: {}x{} Window: {}x{}", width, height, minecraft.getMainWindow().getFramebufferWidth(),
                 minecraft.getMainWindow().getFramebufferHeight(), minecraft.getMainWindow().getWidth(), minecraft.getMainWindow().getHeight());
     }
@@ -75,7 +75,7 @@ final class MuiMenuScreen<T extends Container> extends ContainerScreen<T> implem
     @Override
     public void render(@Nonnull MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         super.render(matrixStack, mouseX, mouseY, partialTicks);
-        mService.draw();
+        master.render();
     }
 
     @Override
@@ -91,24 +91,26 @@ final class MuiMenuScreen<T extends Container> extends ContainerScreen<T> implem
     @Override
     public void onClose() {
         super.onClose();
-        mService.recycleWindows();
+        master.recycleWindows();
     }
 
     // IMPL - IGuiEventListener
 
     @Override
     public void mouseMoved(double mouseX, double mouseY) {
-        mService.onCursorPosCallback(mouseX, mouseY);
+        master.onCursorPosCallback(mouseX, mouseY);
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        throw new IllegalStateException("Unexpected call");
+        // Pass the event
+        return false;
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
-        throw new IllegalStateException("Unexpected call");
+        // Pass the event
+        return false;
     }
 
     @Override
@@ -119,18 +121,17 @@ final class MuiMenuScreen<T extends Container> extends ContainerScreen<T> implem
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        // Consume the event but do nothing
-        return true;
+        return master.onScrollEvent();
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (mService.screenKeyDown(keyCode, scanCode, modifiers)) {
+        if (master.screenKeyDown(keyCode, scanCode, modifiers)) {
             return true;
         } else {
             InputMappings.Input mouseKey = InputMappings.getInputByCode(keyCode, scanCode);
             if (keyCode == GLFW.GLFW_KEY_ESCAPE || Objects.requireNonNull(this.minecraft).gameSettings.keyBindInventory.isActiveAndMatches(mouseKey)) {
-                if (mService.sBack()) {
+                if (master.sBack()) {
                     return true;
                 }
                 Objects.requireNonNull(Objects.requireNonNull(this.minecraft).player).closeScreen();
@@ -138,8 +139,8 @@ final class MuiMenuScreen<T extends Container> extends ContainerScreen<T> implem
             }
             if (keyCode == GLFW.GLFW_KEY_TAB) {
                 boolean searchNext = !hasShiftDown();
-                if (!mService.sChangeKeyboard(searchNext)) {
-                    return mService.sChangeKeyboard(searchNext);
+                if (!master.sChangeKeyboard(searchNext)) {
+                    return master.sChangeKeyboard(searchNext);
                 }
                 return true;
             }
@@ -161,11 +162,11 @@ final class MuiMenuScreen<T extends Container> extends ContainerScreen<T> implem
 
     @Override
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-        return mService.screenKeyUp(keyCode, scanCode, modifiers);
+        return master.screenKeyUp(keyCode, scanCode, modifiers);
     }
 
     @Override
     public boolean charTyped(char codePoint, int modifiers) {
-        return mService.sCharTyped(codePoint, modifiers);
+        return master.sCharTyped(codePoint, modifiers);
     }
 }

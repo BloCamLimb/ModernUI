@@ -18,7 +18,7 @@
 
 package icyllis.modernui.ui.discard;
 
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.renderer.Plotter;
 
 import javax.annotation.Nonnull;
 
@@ -33,11 +33,11 @@ public interface IDrawable {
     /**
      * Draw things you want, called every frame
      *
-     * @param canvas canvas to draw content
+     * @param plotter plotter to draw content
      * @param time   elapsed time from a gui open
      *               unit: floating point ticks, 20.0 ticks = 1 second
      */
-    void draw(@Nonnull Canvas canvas, float time);
+    void draw(@Nonnull Plotter plotter, float time);
 
     /**
      * Ticks something you like, used by % calculation to update gui values or state

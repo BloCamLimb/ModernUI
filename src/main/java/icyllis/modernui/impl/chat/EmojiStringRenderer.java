@@ -32,7 +32,7 @@ import org.lwjgl.opengl.GL11;
 
 import java.util.*;
 
-//TODO
+@Deprecated
 public class EmojiStringRenderer implements IFontRenderer {
 
     public static final EmojiStringRenderer INSTANCE = new EmojiStringRenderer();

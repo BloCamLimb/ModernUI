@@ -19,7 +19,7 @@
 package icyllis.modernui.impl.setting;
 
 import icyllis.modernui.font.text.TextAlign;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.renderer.Plotter;
 import icyllis.modernui.widget.SliderDiscrete;
 
 import java.util.function.Consumer;
@@ -69,11 +69,11 @@ public class DSliderSettingEntry extends SettingEntry implements SliderDiscrete.
     }
 
     @Override
-    public void drawExtra(Canvas canvas, float time) {
-        slider.draw(canvas, time);
-        //canvas.setColor(titleBrightness, titleBrightness, titleBrightness, 1);
-        canvas.setTextAlign(TextAlign.RIGHT);
-        canvas.drawText(displayString, x2 - 6, y1 + 6);
+    public void drawExtra(Plotter plotter, float time) {
+        slider.draw(plotter, time);
+        //plotter.setColor(titleBrightness, titleBrightness, titleBrightness, 1);
+        plotter.setTextAlign(TextAlign.RIGHT);
+        plotter.drawText(displayString, x2 - 6, y1 + 6);
     }
 
     @Override

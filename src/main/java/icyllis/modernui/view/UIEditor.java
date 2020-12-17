@@ -21,7 +21,7 @@ package icyllis.modernui.view;
 import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.math.Color3i;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.renderer.Plotter;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
@@ -103,41 +103,41 @@ public enum UIEditor {
         working = !working;
     }
 
-    void draw(@Nonnull Canvas canvas) {
+    void draw(@Nonnull Plotter plotter) {
         if (!working) {
             return;
         }
-        canvas.setColor(128, 128, 128, 64);
-        canvas.drawRoundedRect(1, 1, 120, bottom, 4);
-        canvas.setTextAlign(TextAlign.LEFT);
+        plotter.setColor(128, 128, 128, 64);
+        plotter.drawRoundedRect(1, 1, 120, bottom, 4);
+        plotter.setTextAlign(TextAlign.LEFT);
 
-        canvas.setColor(Color3i.BLUE_C, 1);
-        canvas.drawText(TextFormatting.GOLD + "Gui Editing Mode: ON", 4, 3);
+        plotter.setColor(Color3i.BLUE_C, 1);
+        plotter.drawText(TextFormatting.GOLD + "Gui Editing Mode: ON", 4, 3);
         if (hoveredView != null) {
             /*Locator l = hoveredView.getLocator();
             if (l != null) {
-                canvas.drawText("X Offset: " + l.getXOffset(), 4, 12);
-                canvas.drawText("Y Offset: " + l.getYOffset(), 4, 21);
+                plotter.drawText("X Offset: " + l.getXOffset(), 4, 12);
+                plotter.drawText("Y Offset: " + l.getYOffset(), 4, 21);
             }*/
-            /*canvas.drawText(hoveredView.getClass().getSimpleName(), 4, 12);
+            /*plotter.drawText(hoveredView.getClass().getSimpleName(), 4, 12);
 
             IViewParent parent = hoveredView.getParent();
-            canvas.drawText(parent.getClass().getSimpleName() + '\u2191', 4, 21);
+            plotter.drawText(parent.getClass().getSimpleName() + '\u2191', 4, 21);
 
             float ty = 30;
             while (parent != UIManager.INSTANCE) {
                 parent = parent.getParent();
-                canvas.drawText(parent.getClass().getSimpleName() + '\u2191', 4, ty);
+                plotter.drawText(parent.getClass().getSimpleName() + '\u2191', 4, ty);
                 ty += 9;
             }*/
             float ty = 12;
             for (String str : treeInfo) {
-                canvas.drawText(str, 4, ty);
+                plotter.drawText(str, 4, ty);
                 ty += 9;
             }
 
             hoveredView.getLocationInWindow(hoveredLocation);
-            canvas.drawRoundedFrame(
+            plotter.drawRoundedFrame(
                     hoveredLocation[0] - 1,
                     hoveredLocation[1] - 1,
                     hoveredLocation[0] + hoveredView.getWidth() + 1,

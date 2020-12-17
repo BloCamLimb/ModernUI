@@ -19,7 +19,7 @@
 package icyllis.modernui.widget;
 
 import com.google.gson.annotations.Expose;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.renderer.Plotter;
 import icyllis.modernui.ui.discard.IHost;
 import icyllis.modernui.ui.discard.Widget;
 import icyllis.modernui.ui.discard.Align9D;
@@ -56,12 +56,12 @@ public class ColorSelectButton extends Widget {
     }
 
     @Override
-    public void onDraw(@Nonnull Canvas canvas, float time) {
-        //canvas.setColor(r, g, b, 0.8f);
-        canvas.drawRect(x1, y1, x2, y2);
+    public void onDraw(@Nonnull Plotter plotter, float time) {
+        //plotter.setColor(r, g, b, 0.8f);
+        plotter.drawRect(x1, y1, x2, y2);
         if (frameAlpha > 0) {
-            //canvas.setColor(1, 1, 1, frameAlpha);
-            canvas.drawRectOutline(x1, y1, x2, y2, 0.51f);
+            //plotter.setColor(1, 1, 1, frameAlpha);
+            plotter.drawRectOutline(x1, y1, x2, y2, 0.51f);
         }
     }
 

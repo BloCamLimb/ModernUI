@@ -97,6 +97,9 @@ public class NetworkHandler {
 
     @Nonnull
     public PacketBuffer allocBuffer(int index) {
+        if (buffer != null) {
+            throw new IllegalStateException("Previous packet was not dispatched");
+        }
         buffer = new PacketBuffer(Unpooled.buffer());
         buffer.writeByte(index);
         return buffer;

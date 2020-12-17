@@ -19,7 +19,7 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.renderer.Plotter;
 import icyllis.modernui.ui.drawable.ScrollThumbDrawable;
 import icyllis.modernui.view.UIManager;
 import icyllis.modernui.view.View;
@@ -42,10 +42,10 @@ public class ScrollView extends FrameLayout implements ScrollController.IListene
         bar.setThumbDrawable(new ScrollThumbDrawable());
         bar.setTrackDrawable(new Drawable() {
             @Override
-            public void draw(@Nonnull Canvas canvas) {
-                canvas.moveTo(this);
-                canvas.setColor(16, 16, 16, 40);
-                canvas.drawRect(0, 0, getWidth(), getHeight());
+            public void draw(@Nonnull Plotter plotter) {
+                plotter.moveTo(this);
+                plotter.setColor(16, 16, 16, 40);
+                plotter.drawRect(0, 0, getWidth(), getHeight());
             }
         });
         setVerticalScrollBar(bar);
@@ -57,11 +57,11 @@ public class ScrollView extends FrameLayout implements ScrollController.IListene
     }
 
     @Override
-    protected void dispatchDraw(@Nonnull Canvas canvas) {
-        scrollController.update(canvas.getDrawingTime());
-        canvas.clipVertical(this);
-        super.dispatchDraw(canvas);
-        canvas.clipEnd();
+    protected void dispatchDraw(@Nonnull Plotter plotter) {
+        scrollController.update(plotter.getDrawingTime());
+        plotter.clipVertical(this);
+        super.dispatchDraw(plotter);
+        plotter.clipEnd();
     }
 
     @Override

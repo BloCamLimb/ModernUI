@@ -25,9 +25,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-// net.minecraft.client.MouseHandler
 @Mixin(MouseHelper.class)
-public class MixinMouseHelper {
+public class MixinMouseHandler {
 
     /*@Inject(method = "mouseButtonCallback",
             at = @At(value = "JUMP",
@@ -45,14 +44,13 @@ public class MixinMouseHelper {
                                     boolean flag, int i, boolean[] aboolean, double d0, double d1) {
     }*/
 
-    private final UIManager mService = UIManager.getInstance();
+    private final UIManager master = UIManager.getInstance();
 
-    @Inject(method = "scrollCallback",
-            at = @At(value = "INVOKE",
-                    target = "Lnet/minecraft/client/MainWindow;getHeight()I",
-                    shift = At.Shift.BY,
-                    by = 4))
+    /**
+     * Capture the horizontal scroll offset
+     */
+    @Inject(method = "scrollCallback", at = @At("HEAD"))
     private void onScrollCallback(long handle, double xoffset, double yoffset, CallbackInfo ci) {
-        mService.onScrollCallback(xoffset, yoffset);
+        master.setCapturedScrollParams(xoffset, yoffset);
     }
 }

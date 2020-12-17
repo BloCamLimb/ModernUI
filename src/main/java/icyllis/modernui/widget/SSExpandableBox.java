@@ -21,7 +21,7 @@ package icyllis.modernui.widget;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
 import icyllis.modernui.animation.ITimeInterpolator;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.renderer.Plotter;
 import icyllis.modernui.ui.discard.IDrawable;
 
 import javax.annotation.Nonnull;
@@ -56,16 +56,16 @@ public class SSExpandableBox implements IDrawable, Animation.IListener {
     }
 
     @Override
-    public void draw(@Nonnull Canvas canvas, float time) {
+    public void draw(@Nonnull Plotter plotter, float time) {
         if (panelLength > 0) {
-            //canvas.setColor(0, 0, 0, 0.5f);
-            canvas.drawFeatheredRect(x + width - 3 - panelLength, y + 1, x + width - 1, y + barLength - 1, 1);
-            canvas.resetColor();
-            canvas.drawFeatheredRect(x + width - 4 - panelLength, y, x + width - 2 - panelLength, y + barLength, 1);
+            //plotter.setColor(0, 0, 0, 0.5f);
+            plotter.drawFeatheredRect(x + width - 3 - panelLength, y + 1, x + width - 1, y + barLength - 1, 1);
+            plotter.resetColor();
+            plotter.drawFeatheredRect(x + width - 4 - panelLength, y, x + width - 2 - panelLength, y + barLength, 1);
         }
         if (barLength > 0) {
-            canvas.resetColor();
-            canvas.drawFeatheredRect(x + width - 2, y, x + width, y + barLength, 1);
+            plotter.resetColor();
+            plotter.drawFeatheredRect(x + width - 2, y, x + width, y + barLength, 1);
         }
     }
 

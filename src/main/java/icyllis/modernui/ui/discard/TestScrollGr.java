@@ -18,7 +18,7 @@
 
 package icyllis.modernui.ui.discard;
 
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.renderer.Plotter;
 import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.widget.UniformScrollEntry;
 import icyllis.modernui.widget.UniformScrollGroup;
@@ -54,12 +54,12 @@ public class TestScrollGr extends UniformScrollGroup<TestScrollGr.TestScrollEn> 
         }
 
         @Override
-        protected void onDraw(@Nonnull Canvas canvas, float time) {
-            //canvas.setColor(0, 0, 0, 0.1f);
-            canvas.drawRect(x1, y1 + 1, x2, y2 - 1);
-            canvas.resetColor();
-            canvas.setTextAlign(TextAlign.LEFT);
-            canvas.drawText(String.valueOf(hashCode()), x1 + 10, y1 + 5);
+        protected void onDraw(@Nonnull Plotter plotter, float time) {
+            //plotter.setColor(0, 0, 0, 0.1f);
+            plotter.drawRect(x1, y1 + 1, x2, y2 - 1);
+            plotter.resetColor();
+            plotter.setTextAlign(TextAlign.LEFT);
+            plotter.drawText(String.valueOf(hashCode()), x1 + 10, y1 + 5);
         }
     }
 }

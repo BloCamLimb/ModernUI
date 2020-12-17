@@ -21,7 +21,7 @@ package icyllis.modernui.impl.background;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
 import icyllis.modernui.animation.ITimeInterpolator;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.renderer.Plotter;
 import icyllis.modernui.ui.discard.IDrawable;
 import icyllis.modernui.impl.module.IngameMenuHome;
 
@@ -51,17 +51,17 @@ public class MenuSettingsBG implements IDrawable {
     }
 
     @Override
-    public void draw(@Nonnull Canvas canvas, float time) {
+    public void draw(@Nonnull Plotter plotter, float time) {
         float x = 40, y = 16;
-        canvas.translate(xOffset, 0);
-        //canvas.setColor(0, 0, 0, 0.377f);
-        canvas.drawRect(x, y + 20, x + w, y + h - 20);
-        canvas.setAlpha(0.755f);
-        canvas.drawRect(x, y, x + w, y + 20);
-        canvas.drawRect(x, y + h - 20, x + w, y + h);
-        //canvas.setColor(0.55f, 0.55f, 0.55f, 0.863f);
-        canvas.drawLine(x, y + 20, x + w, y + 20);
-        canvas.drawLine(x, y + h - 19.5f, x + w, y + h - 19.5f);
+        plotter.translate(xOffset, 0);
+        //plotter.setColor(0, 0, 0, 0.377f);
+        plotter.drawRect(x, y + 20, x + w, y + h - 20);
+        plotter.setAlpha(0.755f);
+        plotter.drawRect(x, y, x + w, y + 20);
+        plotter.drawRect(x, y + h - 20, x + w, y + h);
+        //plotter.setColor(0.55f, 0.55f, 0.55f, 0.863f);
+        plotter.drawLine(x, y + 20, x + w, y + 20);
+        plotter.drawLine(x, y + h - 19.5f, x + w, y + h - 19.5f);
     }
 
     /*@Override

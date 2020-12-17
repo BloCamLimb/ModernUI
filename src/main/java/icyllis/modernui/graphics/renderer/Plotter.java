@@ -41,7 +41,7 @@ import org.lwjgl.opengl.GL11;
 import javax.annotation.Nonnull;
 
 /**
- * Use paint to draw things in or especially for Modern UI's UI:
+ * Draw things in View or especially for Modern UI:
  * likes rect, rounded rect, circle, ring, line, point
  * textured icon, etc.
  * This avoided RenderType being used in gui, for better performance
@@ -51,8 +51,6 @@ import javax.annotation.Nonnull;
  * the global one is using RenderType, make ModernUI's font renderer work everywhere,
  * because it's not always called in gui, likes non-ModernUI GUI, TileEntityRenderer
  * or in world renderer, that also need matrix transformation to be compatible with vanilla
- * <p>
- * You shouldn't create instances, the canvas will be given in draw method
  *
  * @see net.minecraft.client.renderer.RenderType
  * @see TextRenderType
@@ -60,9 +58,9 @@ import javax.annotation.Nonnull;
  */
 @SuppressWarnings("unused")
 //TODO New render system
-public class Canvas {
+public class Plotter {
 
-    private static Canvas instance;
+    private static Plotter instance;
 
     /**
      * Instances
@@ -123,16 +121,16 @@ public class Canvas {
     private static boolean lineAA = false;
 
 
-    private Canvas(@Nonnull Minecraft minecraft) {
+    private Plotter(@Nonnull Minecraft minecraft) {
         mainWindow = minecraft.getMainWindow();
         itemRenderer = minecraft.getItemRenderer();
     }
 
-    public static Canvas getInstance() {
+    public static Plotter getInstance() {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
         if (instance == null) {
             RenderTools.checkCapabilities();
-            instance = new Canvas(Minecraft.getInstance());
+            instance = new Plotter(Minecraft.getInstance());
         }
         return instance;
     }
@@ -303,7 +301,7 @@ public class Canvas {
      * @return text advance (text width)
      */
     public float drawText(String text, float x, float y) {
-        return fontRenderer.drawFromCanvas(text, x, y, r, g, b, a, textAlign);
+        return fontRenderer.draw(text, x, y, r, g, b, a, textAlign);
     }
 
     /**
@@ -642,8 +640,7 @@ public class Canvas {
      */
     public void drawItemStackWithOverlays(@Nonnull ItemStack stack, float x, float y) {
         itemRenderer.renderItemAndEffectIntoGUI(stack, (int) (x), (int) (y));
-        // force to use ModernUI font renderer
-        itemRenderer.renderItemOverlays(ModernFontRenderer.getInstance(), stack, (int) (x), (int) (y));
+        itemRenderer.renderItemOverlays(Minecraft.getInstance().fontRenderer, stack, (int) (x), (int) (y));
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
     }
@@ -695,7 +692,7 @@ public class Canvas {
     }
 
     /**
-     * Scale the canvas and translate to pos
+     * Scale the plotter and translate to pos
      *
      * @param sx x scale
      * @param sy y scale

@@ -19,7 +19,7 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.font.text.TextAlign;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.renderer.Plotter;
 import icyllis.modernui.ui.discard.IDrawable;
 
 import javax.annotation.Nonnull;
@@ -37,10 +37,10 @@ public class TextDrawable implements IDrawable {
     }
 
     @Override
-    public void draw(@Nonnull Canvas canvas, float time) {
-        canvas.resetColor();
-        canvas.setTextAlign(align);
-        canvas.drawText(text, x, y);
+    public void draw(@Nonnull Plotter plotter, float time) {
+        plotter.resetColor();
+        plotter.setTextAlign(align);
+        plotter.drawText(text, x, y);
     }
 
     public void setText(String text) {

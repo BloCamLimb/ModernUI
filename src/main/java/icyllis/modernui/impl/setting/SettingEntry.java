@@ -19,7 +19,7 @@
 package icyllis.modernui.impl.setting;
 
 import icyllis.modernui.font.text.TextAlign;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.renderer.Plotter;
 import icyllis.modernui.widget.UniformScrollEntry;
 
 import javax.annotation.Nonnull;
@@ -50,18 +50,18 @@ public abstract class SettingEntry extends UniformScrollEntry {
     }
 
     @Override
-    public final void onDraw(@Nonnull Canvas canvas, float time) {
+    public final void onDraw(@Nonnull Plotter plotter, float time) {
         /*Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();*/
-        //canvas.setColor(titleBrightness, titleBrightness, titleBrightness, 1);
-        canvas.setTextAlign(TextAlign.LEFT);
-        canvas.drawText(title, x1, y1 + 6);
+        //plotter.setColor(titleBrightness, titleBrightness, titleBrightness, 1);
+        plotter.setTextAlign(TextAlign.LEFT);
+        plotter.drawText(title, x1, y1 + 6);
         /*if (desc.length > 0) {
 
         }*/
-        drawExtra(canvas, time);
-        //canvas.setColor(0.55f, 0.55f, 0.55f, 0.863f);
-        canvas.drawLine(x1, y2, x2, y2);
+        drawExtra(plotter, time);
+        //plotter.setColor(0.55f, 0.55f, 0.55f, 0.863f);
+        plotter.drawLine(x1, y2, x2, y2);
         /*RenderSystem.disableTexture();
         bufferBuilder.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);
         GL11.glLineWidth(1.0f);
@@ -71,7 +71,7 @@ public abstract class SettingEntry extends UniformScrollEntry {
         RenderSystem.enableTexture();*/
     }
 
-    protected abstract void drawExtra(Canvas canvas, float time);
+    protected abstract void drawExtra(Plotter plotter, float time);
 
     @Override
     public void onMouseHoverEnter(double mouseX, double mouseY) {
