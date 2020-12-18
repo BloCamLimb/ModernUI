@@ -21,6 +21,8 @@ package icyllis.modernui.view;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Util;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
@@ -1141,6 +1143,17 @@ public final class MotionEvent extends InputEvent {
      */
     public final boolean isNumLockOn() {
         return (mModifiers & GLFW.GLFW_MOD_NUM_LOCK) != 0;
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
+                .append("action", actionToString(mAction))
+                .append("x", getX())
+                .append("y", getY())
+                .append("flags", "0x" + Integer.toHexString(mFlags))
+                .append("eventTime", getEventTime())
+                .toString();
     }
 
     /**

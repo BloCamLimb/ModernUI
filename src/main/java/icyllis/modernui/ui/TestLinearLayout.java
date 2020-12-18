@@ -72,7 +72,10 @@ public class TestLinearLayout extends LinearLayout {
         setDividerPadding(8);
         LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(100, 18);
         for (int i = 0; i < 8; i++) {
-            addView(new CView(), p);
+            View v = new CView();
+            v.setEnabled(true);
+            v.setClickable(true);
+            addView(v, p);
         }
         addView(new DView(ITimeInterpolator.DECELERATE, 0), new LinearLayout.LayoutParams(60, 20));
         //addView(new DView(ITimeInterpolator.VISCOUS_FLUID, 30), new LinearLayout.LayoutParams(60, 20));
@@ -228,8 +231,8 @@ public class TestLinearLayout extends LinearLayout {
         @Override
         protected void onDraw(@Nonnull Canvas canvas) {
             canvas.moveTo(this);
-            String str = "AAAAAAAAAAAA";//TextFormatting.UNDERLINE + "Modern" + TextFormatting.AQUA + " UI " + TextFormatting.OBFUSCATED + "\u0629\u064a\u0628\u0631\u0639\u0644\u0627" + TextFormatting.STRIKETHROUGH + "\u2642";
-            if (isMouseHovered()) {
+            String str = TextFormatting.UNDERLINE + "Modern" + TextFormatting.AQUA + " UI"/* + TextFormatting.OBFUSCATED + "\u0629\u064a\u0628\u0631\u0639\u0644\u0627" + TextFormatting.STRIKETHROUGH + "\u2642"*/;
+            if (isHovered()) {
                 canvas.setColor(140, 200, 240, 128);
                 canvas.drawRoundedRect(0, 1, getWidth(), getHeight() - 2, 4);
             }

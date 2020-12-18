@@ -91,6 +91,7 @@ public final class UIManager {
     private Fragment fragment;
 
     // main UI view that created from main fragment
+    @Deprecated
     private View view;
 
     // application window
@@ -311,7 +312,7 @@ public final class UIManager {
         }
 
         if (mMuiScreen != guiToOpen && guiToOpen instanceof IMuiScreen) {
-            if (view != null) {
+            if (mAppWindow.mView != null) {
                 // prevent repeated opening sometimes
                 event.setCanceled(true);
                 return;
@@ -664,7 +665,7 @@ public final class UIManager {
         return false;
     }
 
-    boolean sBack() {
+    boolean onBackPressed() {
         if (popup != null) {
             closePopup();
             return true;
@@ -722,9 +723,8 @@ public final class UIManager {
                     event.setCanceled(true);
                 }
                 break;
-            case HOTBAR:
-            case HELMET:
-                // hotfix 1.16 for BlurHandler shader
+            case ALL:
+                // hotfix 1.16 vanilla, using shader makes TEXTURE_2D disabled
                 RenderSystem.enableTexture();
                 break;
             case HEALTH:
@@ -796,9 +796,9 @@ public final class UIManager {
         /*if (popup != null) {
             popup.tick(ticks);
         }*/
-        if (view != null) {
+        /*if (view != null) {
             view.tick(mTicks);
-        }
+        }*/
         mAppWindow.tick(mTicks);
         // view ticking is always performed before tasks
         if (!tasks.isEmpty()) {

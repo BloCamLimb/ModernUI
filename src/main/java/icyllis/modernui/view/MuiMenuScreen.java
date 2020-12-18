@@ -131,7 +131,7 @@ final class MuiMenuScreen<T extends Container> extends ContainerScreen<T> implem
         } else {
             InputMappings.Input mouseKey = InputMappings.getInputByCode(keyCode, scanCode);
             if (keyCode == GLFW.GLFW_KEY_ESCAPE || Objects.requireNonNull(this.minecraft).gameSettings.keyBindInventory.isActiveAndMatches(mouseKey)) {
-                if (master.sBack()) {
+                if (master.onBackPressed()) {
                     return true;
                 }
                 Objects.requireNonNull(Objects.requireNonNull(this.minecraft).player).closeScreen();
