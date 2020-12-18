@@ -18,7 +18,7 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.graphics.renderer.Icon;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
@@ -75,15 +75,15 @@ public class CheckboxButton extends Widget {
     }
 
     @Override
-    public void onDraw(@Nonnull Plotter plotter, float time) {
-        //plotter.setColor(brightness, brightness, brightness, 1.0f);
-        plotter.drawRectOutline(x1, y1, x2, y2, 0.51f);
+    public void onDraw(@Nonnull Canvas canvas, float time) {
+        //canvas.setColor(brightness, brightness, brightness, 1.0f);
+        canvas.drawRectOutline(x1, y1, x2, y2, 0.51f);
         if (markAlpha > 0) {
-            plotter.setAlpha(markAlpha);
+            canvas.setAlpha(markAlpha);
             if (getStatus().isListening()) {
-                plotter.setColor(1, 1, 1);
+                canvas.setColor(1, 1, 1);
             }
-            plotter.drawIcon(icon, x1, y1, x2, y2);
+            canvas.drawIcon(icon, x1, y1, x2, y2);
         }
     }
 

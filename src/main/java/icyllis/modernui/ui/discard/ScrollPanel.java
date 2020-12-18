@@ -18,7 +18,7 @@
 
 package icyllis.modernui.ui.discard;
 
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.view.View;
 import icyllis.modernui.widget.ScrollController;
 import icyllis.modernui.widget.UniformScrollEntry;
@@ -53,19 +53,19 @@ public class ScrollPanel<E extends UniformScrollEntry, G extends UniformScrollGr
     }
 
     @Override
-    protected void onDraw(@Nonnull Plotter plotter, float time) {
+    protected void onDraw(@Nonnull Canvas canvas, float time) {
         //controller.update(time);
 
-        plotter.clipStart(x1, y1, width, height);
+        canvas.clipStart(x1, y1, width, height);
 
-        plotter.save();
-        plotter.translate(0, -getVisibleOffset());
-        group.draw(plotter, time);
-        plotter.restore();
+        canvas.save();
+        canvas.translate(0, -getVisibleOffset());
+        group.draw(canvas, time);
+        canvas.restore();
 
-        //scrollbar.draw(plotter, time);
+        //scrollbar.draw(canvas, time);
 
-        plotter.clipEnd();
+        canvas.clipEnd();
     }
 
     /*@Override

@@ -19,7 +19,7 @@
 package icyllis.modernui.ui.discard;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.view.View;
 import icyllis.modernui.widget.ScrollController;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -56,11 +56,11 @@ public class ScrollWindow<T extends ScrollGroup> extends Window implements IScro
     }
 
     @Override
-    public final void draw(@Nonnull Plotter plotter, float time) {
+    public final void draw(@Nonnull Canvas canvas, float time) {
         //controller.update(time);
 
         /* For horizontal transition animation */
-        plotter.clipStart(0, y1, getGameWidth(), height);
+        canvas.clipStart(0, y1, getGameWidth(), height);
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -68,10 +68,10 @@ public class ScrollWindow<T extends ScrollGroup> extends Window implements IScro
 
         RenderSystem.enableTexture();
 
-        plotter.save();
-        plotter.translate(0, -getVisibleOffset());
-        scrollList.draw(plotter, time);
-        plotter.restore();
+        canvas.save();
+        canvas.translate(0, -getVisibleOffset());
+        scrollList.draw(canvas, time);
+        canvas.restore();
 
         RenderSystem.disableDepthTest();
         RenderSystem.enableBlend();
@@ -98,11 +98,11 @@ public class ScrollWindow<T extends ScrollGroup> extends Window implements IScro
 
         RenderSystem.shadeModel(GL11.GL_FLAT);
 
-        //scrollbar.draw(plotter, time);
+        //scrollbar.draw(canvas, time);
 
         RenderSystem.enableTexture();
 
-        plotter.clipEnd();
+        canvas.clipEnd();
     }
 
     /*@Override

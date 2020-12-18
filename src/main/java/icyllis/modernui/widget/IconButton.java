@@ -19,7 +19,7 @@
 package icyllis.modernui.widget;
 
 import com.google.gson.annotations.Expose;
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.graphics.renderer.Icon;
 import icyllis.modernui.ui.discard.Align9D;
 import icyllis.modernui.ui.discard.Locator;
@@ -45,10 +45,10 @@ public class IconButton extends Button {
     }
 
     @Override
-    public void onDraw(@Nonnull Plotter plotter, float time) {
-        super.onDraw(plotter, time);
-        //plotter.setColor(getModulatedBrightness(), getModulatedBrightness(), getModulatedBrightness(), 1.0f);
-        plotter.drawIcon(icon, x1, y1, x2, y2);
+    public void onDraw(@Nonnull Canvas canvas, float time) {
+        super.onDraw(canvas, time);
+        //canvas.setColor(getModulatedBrightness(), getModulatedBrightness(), getModulatedBrightness(), 1.0f);
+        canvas.drawIcon(icon, x1, y1, x2, y2);
     }
 
     public static class Builder extends Widget.Builder {

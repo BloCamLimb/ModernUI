@@ -37,7 +37,7 @@ public abstract class Module implements IModule, IHost {
 
     protected final Minecraft minecraft = Minecraft.getInstance();
 
-    //private final Canvas plotter = new Canvas();
+    //private final Canvas canvas = new Canvas();
 
     private final List<IDrawable> drawables = new ArrayList<>();
 
@@ -69,11 +69,11 @@ public abstract class Module implements IModule, IHost {
         if (overDraw) {
             drawChild(time);
             for (IDrawable drawable : drawables) {
-                //drawable.draw(plotter, time);
+                //drawable.draw(canvas, time);
             }
         } else {
             for (IDrawable drawable : drawables) {
-                //drawable.draw(plotter, time);
+                //drawable.draw(canvas, time);
             }
             drawChild(time);
         }

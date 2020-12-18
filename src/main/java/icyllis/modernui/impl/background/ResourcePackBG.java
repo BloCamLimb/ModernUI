@@ -18,7 +18,7 @@
 
 package icyllis.modernui.impl.background;
 
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.discard.IDrawable;
 
 import javax.annotation.Nonnull;
@@ -32,12 +32,12 @@ public class ResourcePackBG implements IDrawable {
     private float x3, x4, x5, x6;
 
     @Override
-    public void draw(@Nonnull Plotter plotter, float time) {
-        //plotter.setColor(0, 0, 0, 0.27f);
-        plotter.drawRect(x1, y1, x2, y2);
+    public void draw(@Nonnull Canvas canvas, float time) {
+        //canvas.setColor(0, 0, 0, 0.27f);
+        canvas.drawRect(x1, y1, x2, y2);
         if (drawSide) {
-            plotter.drawRect(x3, y1, x4, y2);
-            plotter.drawRect(x5, y1, x6, y2);
+            canvas.drawRect(x3, y1, x4, y2);
+            canvas.drawRect(x5, y1, x6, y2);
         }
     }
 

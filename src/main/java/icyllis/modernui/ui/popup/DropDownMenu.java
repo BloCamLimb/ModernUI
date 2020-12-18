@@ -18,7 +18,7 @@
 
 package icyllis.modernui.ui.popup;
 
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.view.UITools;
 import icyllis.modernui.animation.ITimeInterpolator;
 import icyllis.modernui.font.text.TextAlign;
@@ -86,37 +86,37 @@ public class DropDownMenu extends Widget {
     }
 
     @Override
-    public void onDraw(@Nonnull Plotter plotter, float time) {
+    public void onDraw(@Nonnull Canvas canvas, float time) {
         float top = upward ? y2 - heightOffset : y1;
         float bottom = upward ? y2 : y1 + heightOffset;
 
-        //plotter.setColor(0.032f, 0.032f, 0.032f, 0.63f);
-        plotter.drawRect(x1, top, x2, bottom);
+        //canvas.setColor(0.032f, 0.032f, 0.032f, 0.63f);
+        canvas.drawRect(x1, top, x2, bottom);
 
-        plotter.setLineAntiAliasing(true);
-        //plotter.setColor(Color3i.WHITE, 0.315f);
-        plotter.drawRectLines(x1, top, x2, bottom);
-        plotter.setLineAntiAliasing(false);
+        canvas.setLineAntiAliasing(true);
+        //canvas.setColor(Color3i.WHITE, 0.315f);
+        canvas.drawRectLines(x1, top, x2, bottom);
+        canvas.setLineAntiAliasing(false);
 
         for (int i = 0; i < list.size(); i++) {
             String text = list.get(i);
             float cy = y1 + ENTRY_HEIGHT * i;
             if (i == hovered) {
-                //plotter.setColor(0.5f, 0.5f, 0.5f, 0.315f);
-                plotter.drawRect(x1, cy, x2, cy + ENTRY_HEIGHT);
+                //canvas.setColor(0.5f, 0.5f, 0.5f, 0.315f);
+                canvas.drawRect(x1, cy, x2, cy + ENTRY_HEIGHT);
             }
-            plotter.setAlpha(textAlpha);
+            canvas.setAlpha(textAlpha);
             if (i == selected) {
-                plotter.setColor(Color3i.BLUE_C);
+                canvas.setColor(Color3i.BLUE_C);
             } else {
-                plotter.setColor(Color3i.WHITE);
+                canvas.setColor(Color3i.WHITE);
             }
             if (align.isLeft()) {
-                plotter.setTextAlign(TextAlign.LEFT);
-                plotter.drawText(text, x1 + 3, cy + 2);
+                canvas.setTextAlign(TextAlign.LEFT);
+                canvas.drawText(text, x1 + 3, cy + 2);
             } else {
-                plotter.setTextAlign(TextAlign.RIGHT);
-                plotter.drawText(text, x2 - 3, cy + 2);
+                canvas.setTextAlign(TextAlign.RIGHT);
+                canvas.drawText(text, x2 - 3, cy + 2);
             }
         }
     }

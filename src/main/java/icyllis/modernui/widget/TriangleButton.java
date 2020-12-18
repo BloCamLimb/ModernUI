@@ -18,7 +18,7 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.graphics.renderer.Icon;
 import icyllis.modernui.view.UITools;
 import icyllis.modernui.ui.discard.Align9D;
@@ -42,8 +42,8 @@ public class TriangleButton extends IconButton {
     }
 
     @Override
-    public void onDraw(@Nonnull Plotter plotter, float time) {
-        super.onDraw(plotter, time);
+    public void onDraw(@Nonnull Canvas canvas, float time) {
+        super.onDraw(canvas, time);
         /*RenderSystem.pushMatrix();
         RenderSystem.scalef(0.375f, 0.375f, 1);
         RenderSystem.color3f(brightness, brightness, brightness);

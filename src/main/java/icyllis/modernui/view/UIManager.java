@@ -23,7 +23,7 @@ import icyllis.modernui.animation.Animation;
 import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.math.Point;
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.system.mixin.MixinMouseHandler;
 import icyllis.modernui.ui.TestHUD;
@@ -116,11 +116,11 @@ public final class UIManager {
     // elapsed time from a gui open in milliseconds, update every frame
     private long mDrawingTimeMillis;
 
-    // the plotter to draw things shared in all views and drawables
+    // the canvas to draw things shared in all views and drawables
     // lazy loading because this class is loaded before GL initialization
     // will be init when Minecraft finished loading, and open MainMenuScreen
     // also init font renderer when loaded
-    private Plotter mPlotter;
+    private Canvas mCanvas;
 
     // the most child hovered view, render at the top of other hovered ancestor views
     @Nullable
@@ -300,9 +300,9 @@ public final class UIManager {
         final Screen guiToOpen = event.getGui();
         mCloseScreen = guiToOpen == null;
 
-        // create plotter, init render engine, also font engine
-        if (mPlotter == null) {
-            mPlotter = Plotter.getInstance();
+        // create canvas, init render engine, also font engine
+        if (mCanvas == null) {
+            mCanvas = Canvas.getInstance();
         }
 
         if (mCloseScreen) {
@@ -692,21 +692,21 @@ public final class UIManager {
         RenderSystem.enableDepthTest();
         RenderSystem.depthMask(false);
 
-        /*plotter.moveToZero();
-        plotter.setColor(0, 0, 0, 51);
-        plotter.drawRect(0, 0, width, height);
+        /*canvas.moveToZero();
+        canvas.setColor(0, 0, 0, 51);
+        canvas.drawRect(0, 0, width, height);
         RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.DST_COLOR, GlStateManager.DestFactor.SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
-        plotter.setColor(255, 255, 255, (int) (255 * (255.0f / (255 - 51) - 1)));
-        plotter.drawRect(60, 60, width - 60, height - 60);
+        canvas.setColor(255, 255, 255, (int) (255 * (255.0f / (255 - 51) - 1)));
+        canvas.drawRect(60, 60, width - 60, height - 60);
         RenderSystem.defaultBlendFunc();*/
 
-        mPlotter.setDrawingTime(mDrawingTimeMillis);
+        mCanvas.setDrawingTime(mDrawingTimeMillis);
 
-        mAppWindow.onDraw(mPlotter);
+        mAppWindow.onDraw(mCanvas);
         /*if (popup != null) {
             popup.draw(drawTime);
         }*/
-        //UIEditor.INSTANCE.draw(plotter);
+        //UIEditor.INSTANCE.draw(canvas);
         //TODO use shader
         GL11.glDisable(GL11.GL_LINE_SMOOTH);
         GL11.glLineWidth(1.0f);
@@ -729,7 +729,7 @@ public final class UIManager {
                 break;
             case HEALTH:
                 if (ModernUI.isDeveloperMode())
-                    TestHUD.drawHUD(mPlotter);
+                    TestHUD.drawHUD(mCanvas);
                 break;
         }
     }

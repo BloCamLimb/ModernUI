@@ -18,7 +18,7 @@
 
 package icyllis.modernui.ui;
 
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.widget.FrameLayout;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.fragment.Fragment;
@@ -48,8 +48,8 @@ public class TestFragment extends Fragment {
     private static class TestView extends View {
 
         @Override
-        protected void onDraw(@Nonnull Plotter plotter) {
-            plotter.drawRing(100, 20, 5, 8);
+        protected void onDraw(@Nonnull Canvas canvas) {
+            canvas.drawRing(100, 20, 5, 8);
             // 3
 
 
@@ -72,9 +72,9 @@ public class TestFragment extends Fragment {
             GL11.glTranslatef(-2.8f, -1.0f, -1.8f);
             GL11.glScalef(1 / 90f, -1 / 90f, 1 / 90f);
             //GL11.glTranslatef(0, 3, 1984);
-            //GL11.glRotatef((plotter.getDrawingTime() / 10f) % 360 - 180, 0, 1, 0);
+            //GL11.glRotatef((canvas.getDrawingTime() / 10f) % 360 - 180, 0, 1, 0);
             GL11.glRotatef(12, 0, 1, 0);
-            *//*if ((plotter.getDrawingTime() ^ 127) % 40 == 0) {
+            *//*if ((canvas.getDrawingTime() ^ 127) % 40 == 0) {
              *//**//*float[] pj = new float[16];
                 GL11.glGetFloatv(GL11.GL_PROJECTION_MATRIX, pj);
                 ModernUI.LOGGER.info(Arrays.toString(pj));
@@ -83,18 +83,18 @@ public class TestFragment extends Fragment {
                 ModernUI.LOGGER.info(GL11.glGetBoolean(GL30.GL_RESCALE_NORMAL));
             }*//*
             ClientPlayerEntity player = Minecraft.getInstance().player;
-            plotter.setColor(170, 220, 240, 128);
+            canvas.setColor(170, 220, 240, 128);
             if (player != null) {
-                plotter.drawRoundedRect(0, 25, player.getHealth() * 140 / player.getMaxHealth(), 39, 4);
+                canvas.drawRoundedRect(0, 25, player.getHealth() * 140 / player.getMaxHealth(), 39, 4);
             }
-            *//*plotter.setAlpha(255);
-            plotter.drawRoundedFrame(1, 26, 141, 40, 4);*//*
-            *//*plotter.setColor(53, 159, 210, 192);
-            plotter.drawRoundedFrame(0, 25, 140, 39, 4);*//*
+            *//*canvas.setAlpha(255);
+            canvas.drawRoundedFrame(1, 26, 141, 40, 4);*//*
+            *//*canvas.setColor(53, 159, 210, 192);
+            canvas.drawRoundedFrame(0, 25, 140, 39, 4);*//*
             if (player != null) {
-                plotter.resetColor();
-                plotter.setTextAlign(TextAlign.RIGHT);
-                plotter.drawText(decimalFormat.format(player.getHealth()) + " / " + decimalFormat.format(player.getMaxHealth()), 137, 28);
+                canvas.resetColor();
+                canvas.setTextAlign(TextAlign.RIGHT);
+                canvas.drawText(decimalFormat.format(player.getHealth()) + " / " + decimalFormat.format(player.getMaxHealth()), 137, 28);
             }
             RenderSystem.enableDepthTest();
             GL11.glPopMatrix();
@@ -104,7 +104,7 @@ public class TestFragment extends Fragment {
             //GL11.glEnable(GL11.GL_CULL_FACE);
             //RenderHelper.setupGui3DDiffuseLighting();
 
-            //plotter.drawRoundedRect(0, 25, 48, 45, 6);*/
+            //canvas.drawRoundedRect(0, 25, 48, 45, 6);*/
         }
     }
 }

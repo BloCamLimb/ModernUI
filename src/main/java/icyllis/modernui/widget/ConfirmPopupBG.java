@@ -22,7 +22,7 @@ import icyllis.modernui.animation.ITimeInterpolator;
 import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
@@ -47,30 +47,30 @@ public class ConfirmPopupBG extends Background {
     }
 
     @Override
-    public void draw(@Nonnull Plotter plotter, float time) {
-        super.draw(plotter, time);
-        //plotter.setColor(0.064f, 0.064f, 0.064f, 0.7f);
-        plotter.drawRect(x, y, x + 180, y + heightOffset);
+    public void draw(@Nonnull Canvas canvas, float time) {
+        super.draw(canvas, time);
+        //canvas.setColor(0.064f, 0.064f, 0.064f, 0.7f);
+        canvas.drawRect(x, y, x + 180, y + heightOffset);
 
-        //plotter.setColor(0.032f, 0.032f, 0.032f, 0.85f);
-        plotter.drawRect(x, y, x + 180, y + 16);
+        //canvas.setColor(0.032f, 0.032f, 0.032f, 0.85f);
+        canvas.drawRect(x, y, x + 180, y + 16);
 
-        //plotter.setColor(0.5f, 0.5f, 0.5f, 1.0f);
+        //canvas.setColor(0.5f, 0.5f, 0.5f, 1.0f);
         GL11.glEnable(GL11.GL_POLYGON_SMOOTH);
         GL11.glHint(GL11.GL_POLYGON_SMOOTH_HINT, GL11.GL_NICEST);
-        plotter.drawRectOutline(x, y, x + 180, y + heightOffset, 0.51f);
+        canvas.drawRectOutline(x, y, x + 180, y + heightOffset, 0.51f);
         GL11.glDisable(GL11.GL_POLYGON_SMOOTH);
 
-        //plotter.drawRectLines(x, y, x + 180f, y + heightOffset);
+        //canvas.drawRectLines(x, y, x + 180f, y + heightOffset);
 
-        plotter.resetColor();
-        plotter.setTextAlign(TextAlign.CENTER);
-        plotter.drawText(title, x + 90, y + 4);
+        canvas.resetColor();
+        canvas.setTextAlign(TextAlign.CENTER);
+        canvas.drawText(title, x + 90, y + 4);
 
-        plotter.setTextAlign(TextAlign.LEFT);
+        canvas.setTextAlign(TextAlign.LEFT);
         int i = 0;
         for (String t : desc) {
-            plotter.drawText(t, x + 8, y + 24 + i++ * 12);
+            canvas.drawText(t, x + 8, y + 24 + i++ * 12);
         }
     }
 

@@ -19,7 +19,7 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.MeasureSpec;
 import icyllis.modernui.view.View;
@@ -217,17 +217,17 @@ public class LinearLayout extends ViewGroup {
     }
 
     @Override
-    protected void onDraw(@Nonnull Plotter plotter) {
+    protected void onDraw(@Nonnull Canvas canvas) {
         if (divider != null) {
             if (orientation == Orientation.VERTICAL) {
-                drawDividersVertical(plotter);
+                drawDividersVertical(canvas);
             } else {
-                drawDividersHorizontal(plotter);
+                drawDividersHorizontal(canvas);
             }
         }
     }
 
-    private void drawDividersVertical(@Nonnull Plotter plotter) {
+    private void drawDividersVertical(@Nonnull Canvas canvas) {
         // draw the divider before first non-GONE child
         // faster than Android API, because we draw every frame
         boolean began = false;
@@ -241,12 +241,12 @@ public class LinearLayout extends ViewGroup {
                 int top = child.getTop() - lp.topMargin - dividerHeight;
                 if (!began) {
                     if ((showDividers & SHOW_DIVIDER_BEGINNING) != 0) {
-                        drawHorizontalDivider(plotter, top);
+                        drawHorizontalDivider(canvas, top);
                     }
                     began = true;
                 } else {
                     if ((showDividers & SHOW_DIVIDER_MIDDLE) != 0) {
-                        drawHorizontalDivider(plotter, top);
+                        drawHorizontalDivider(canvas, top);
                     }
                 }
                 lastDraw = child;
@@ -262,16 +262,16 @@ public class LinearLayout extends ViewGroup {
             } else {
                 bottom = getBottom() - dividerHeight;
             }
-            drawHorizontalDivider(plotter, bottom);
+            drawHorizontalDivider(canvas, bottom);
         }
     }
 
-    private void drawHorizontalDivider(@Nonnull Plotter plotter, int top) {
+    private void drawHorizontalDivider(@Nonnull Canvas canvas, int top) {
         divider.setBounds(getLeft() + dividerPadding, top, getRight() - dividerPadding, top + dividerHeight);
-        divider.draw(plotter);
+        divider.draw(canvas);
     }
 
-    private void drawDividersHorizontal(@Nonnull Plotter plotter) {
+    private void drawDividersHorizontal(@Nonnull Canvas canvas) {
         boolean began = false;
         View lastDraw = null;
 
@@ -283,12 +283,12 @@ public class LinearLayout extends ViewGroup {
                 int left = child.getLeft() - lp.leftMargin - dividerWidth;
                 if (!began) {
                     if ((showDividers & SHOW_DIVIDER_BEGINNING) != 0) {
-                        drawVerticalDivider(plotter, left);
+                        drawVerticalDivider(canvas, left);
                     }
                     began = true;
                 } else {
                     if ((showDividers & SHOW_DIVIDER_MIDDLE) != 0) {
-                        drawVerticalDivider(plotter, left);
+                        drawVerticalDivider(canvas, left);
                     }
                 }
                 lastDraw = child;
@@ -303,13 +303,13 @@ public class LinearLayout extends ViewGroup {
             } else {
                 right = getRight() - dividerWidth;
             }
-            drawVerticalDivider(plotter, right);
+            drawVerticalDivider(canvas, right);
         }
     }
 
-    private void drawVerticalDivider(@Nonnull Plotter plotter, int left) {
+    private void drawVerticalDivider(@Nonnull Canvas canvas, int left) {
         divider.setBounds(left, getTop() + dividerPadding, left + dividerWidth, getBottom() - dividerPadding);
-        divider.draw(plotter);
+        divider.draw(canvas);
     }
 
     @Override

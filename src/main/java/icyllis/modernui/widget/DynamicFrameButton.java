@@ -20,7 +20,7 @@ package icyllis.modernui.widget;
 
 import com.google.common.collect.Lists;
 import com.google.gson.annotations.Expose;
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.animation.AnimationControl;
 import icyllis.modernui.animation.ITimeInterpolator;
 import icyllis.modernui.font.text.TextAlign;
@@ -78,15 +78,15 @@ public class DynamicFrameButton extends Button {
     }
 
     @Override
-    public void onDraw(@Nonnull Plotter plotter, float time) {
-        super.onDraw(plotter, time);
+    public void onDraw(@Nonnull Canvas canvas, float time) {
+        super.onDraw(canvas, time);
         frameAC.update();
-        //plotter.setColor(getModulatedBrightness(), getModulatedBrightness(), getModulatedBrightness(), 1.0f);
-        plotter.setTextAlign(TextAlign.CENTER);
-        plotter.drawText(text, x1 + width / 2f, y1 + 2);
+        //canvas.setColor(getModulatedBrightness(), getModulatedBrightness(), getModulatedBrightness(), 1.0f);
+        canvas.setTextAlign(TextAlign.CENTER);
+        canvas.drawText(text, x1 + width / 2f, y1 + 2);
         if (frameAlpha > 0) {
-            //plotter.setColor(0.5f, 0.5f, 0.5f, frameAlpha);
-            plotter.drawRectOutline(x1 - fwo, y1 - fho, x2 + fwo, y2 + fho, 0.51f);
+            //canvas.setColor(0.5f, 0.5f, 0.5f, frameAlpha);
+            canvas.drawRectOutline(x1 - fwo, y1 - fho, x2 + fwo, y2 + fho, 0.51f);
         }
     }
 
@@ -162,13 +162,13 @@ public class DynamicFrameButton extends Button {
         }*/
 
         @Override
-        public void onDraw(@Nonnull Plotter plotter, float time) {
-            super.onDraw(plotter, time);
+        public void onDraw(@Nonnull Canvas canvas, float time) {
+            super.onDraw(canvas, time);
             if (counting) {
-                //plotter.setColor(0.03f, 0.03f, 0.03f, 0.7f);
-                plotter.drawRect(x1, y1, x2, y2);
-                plotter.resetColor();
-                plotter.drawText(displayCount + "s", x1 + width / 2f, y1 + 2);
+                //canvas.setColor(0.03f, 0.03f, 0.03f, 0.7f);
+                canvas.drawRect(x1, y1, x2, y2);
+                canvas.resetColor();
+                canvas.drawText(displayCount + "s", x1 + width / 2f, y1 + 2);
             }
         }
 

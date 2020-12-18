@@ -25,7 +25,7 @@ import icyllis.modernui.font.process.FormattingStyle;
 import icyllis.modernui.font.process.TextCacheProcessor;
 import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.math.Color3i;
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.view.UIManager;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
@@ -66,7 +66,7 @@ public class TrueTypeRenderer implements IFontRenderer {
 
     /**
      * Note: When Minecraft load completed, MainMenuScreen will be open and post GuiOpenEvent
-     * {@link UIManager} will listen the event and create new {@link Plotter} instance, and then
+     * {@link UIManager} will listen the event and create new {@link Canvas} instance, and then
      * a call to {@link #getInstance()} to perform this constructor
      */
     private TrueTypeRenderer() {

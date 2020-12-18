@@ -20,7 +20,7 @@ package icyllis.modernui.widget;
 
 import com.google.common.collect.Lists;
 import com.google.gson.annotations.Expose;
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.graphics.renderer.Icon;
 import icyllis.modernui.animation.AnimationControl;
 import icyllis.modernui.view.UITools;
@@ -89,16 +89,16 @@ public class MenuButton extends IconButton {
     }
 
     @Override
-    public void onDraw(@Nonnull Plotter plotter, float time) {
-        super.onDraw(plotter, time);
+    public void onDraw(@Nonnull Canvas canvas, float time) {
+        super.onDraw(canvas, time);
         sideTextAC.update();
         if (sideTextAC.isAnimationOpen()) {
-            //plotter.setColor(0.0f, 0.0f, 0.0f, 0.5f * frameAlpha);
-            plotter.drawRoundedRect(x1 + 27, y1 + 1, x1 + 32 + frameSizeW, y1 + 15, 6);
-            //plotter.setColor(0.5f, 0.5f, 0.5f, frameAlpha);
-            plotter.drawRoundedFrame(x1 + 27, y1 + 1, x1 + 32 + frameSizeW, y1 + 15, 6);
-            //plotter.setColor(1.0f, 1.0f, 1.0f, textAlpha);
-            plotter.drawText(text, x1 + 32, y1 + 4);
+            //canvas.setColor(0.0f, 0.0f, 0.0f, 0.5f * frameAlpha);
+            canvas.drawRoundedRect(x1 + 27, y1 + 1, x1 + 32 + frameSizeW, y1 + 15, 6);
+            //canvas.setColor(0.5f, 0.5f, 0.5f, frameAlpha);
+            canvas.drawRoundedFrame(x1 + 27, y1 + 1, x1 + 32 + frameSizeW, y1 + 15, 6);
+            //canvas.setColor(1.0f, 1.0f, 1.0f, textAlpha);
+            canvas.drawText(text, x1 + 32, y1 + 4);
         }
     }
 

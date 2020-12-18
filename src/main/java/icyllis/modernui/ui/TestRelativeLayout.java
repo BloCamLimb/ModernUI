@@ -19,7 +19,7 @@
 package icyllis.modernui.ui;
 
 import icyllis.modernui.font.text.TextAlign;
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.widget.RelativeLayout;
 import icyllis.modernui.view.View;
@@ -61,10 +61,10 @@ public class TestRelativeLayout extends RelativeLayout {
         public String text;
 
         @Override
-        protected void onDraw(@Nonnull Plotter plotter) {
-            plotter.resetColor();
-            plotter.setTextAlign(TextAlign.CENTER);
-            plotter.drawText(text, getLeft() + getWidth() / 2.0f, getTop() + 4.0f);
+        protected void onDraw(@Nonnull Canvas canvas) {
+            canvas.resetColor();
+            canvas.setTextAlign(TextAlign.CENTER);
+            canvas.drawText(text, getLeft() + getWidth() / 2.0f, getTop() + 4.0f);
         }
     }
 }

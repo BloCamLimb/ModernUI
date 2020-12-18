@@ -18,7 +18,7 @@
 
 package icyllis.modernui.ui.discard;
 
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -53,9 +53,9 @@ public class ScrollList<T extends ScrollGroup> implements IMouseListener {
         }
     }
 
-    protected void draw(Plotter plotter, float time) {
+    protected void draw(Canvas canvas, float time) {
         for (T group : visible) {
-            group.draw(plotter, time);
+            group.draw(canvas, time);
         }
     }
 

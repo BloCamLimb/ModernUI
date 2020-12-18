@@ -18,7 +18,7 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.util.Util;
 import net.minecraftforge.api.distmarker.Dist;
@@ -26,6 +26,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.LinkedList;
 
 @SuppressWarnings("unused")
@@ -48,11 +49,14 @@ public abstract class ViewGroup extends View implements IViewParent {
     private int mGroupFlags;
 
     // child views
-    private View[] children = new View[ARRAY_CAPACITY_INCREMENT];
+    private View[] mChildren = new View[ARRAY_CAPACITY_INCREMENT];
 
     // number of valid children in the children array, the rest
     // should be null or not considered as children
     private int mChildrenCount = 0;
+
+    // Lazily-created holder for point computations.
+    private float[] mTempPosition;
 
     // First touch target in the linked list of touch targets.
     private TouchTarget mFirstTouchTarget;
@@ -64,24 +68,28 @@ public abstract class ViewGroup extends View implements IViewParent {
     // their bounds and the view group does not intercept hover.
     private HoverTarget mFirstHoverTarget;
 
+    // True if the view group itself received a hover event.
+    // It might not have actually handled the hover event.
+    private boolean mHoveredSelf;
+
     public ViewGroup() {
 
     }
 
     @Override
-    protected void dispatchDraw(@Nonnull Plotter plotter) {
+    protected void dispatchDraw(@Nonnull Canvas canvas) {
         final boolean doTranslate = (getScrollX() != 0 || getScrollY() != 0);
         if (doTranslate) {
-            plotter.save();
-            plotter.translate(-getScrollX(), -getScrollY());
+            canvas.save();
+            canvas.translate(-getScrollX(), -getScrollY());
         }
-        final View[] views = children;
+        final View[] views = mChildren;
         final int count = mChildrenCount;
         for (int i = 0; i < count; i++) {
-            views[i].draw(plotter);
+            views[i].draw(canvas);
         }
         if (doTranslate) {
-            plotter.restore();
+            canvas.restore();
         }
     }
 
@@ -93,6 +101,22 @@ public abstract class ViewGroup extends View implements IViewParent {
     @Override
     protected abstract void onLayout(boolean changed);
 
+    private int getAndVerifyPreorderedIndex(int childrenCount, int i, boolean customOrder) {
+        final int childIndex;
+        if (customOrder) {
+            final int childIndex1 = getChildDrawingOrder(childrenCount, i);
+            if (childIndex1 >= childrenCount) {
+                throw new IndexOutOfBoundsException("getChildDrawingOrder() "
+                        + "returned invalid index " + childIndex1
+                        + " (child count is " + childrenCount + ")");
+            }
+            childIndex = childIndex1;
+        } else {
+            childIndex = i;
+        }
+        return childIndex;
+    }
+
     @Override
     protected boolean dispatchHoverEvent(MotionEvent event) {
         final int action = event.getAction();
@@ -100,15 +124,185 @@ public abstract class ViewGroup extends View implements IViewParent {
         final boolean intercepted = onInterceptHoverEvent(event);
         event.setAction(action); // restore action in case it was changed
 
+        boolean handled = false;
+
+        // Send events to the hovered children and build a new list of hover targets until
+        // one is found that handles the event.
+        HoverTarget firstOldHoverTarget = mFirstHoverTarget;
+        mFirstHoverTarget = null;
         if (!intercepted && action != MotionEvent.ACTION_HOVER_EXIT
                 && mChildrenCount != 0) {
             final float x = event.getX();
             final float y = event.getY();
+            final View[] children = mChildren;
             final int childrenCount = mChildrenCount;
+            final boolean customOrder = isChildrenDrawingOrderEnabled();
+            HoverTarget lastHoverTarget = null;
+            for (int i = childrenCount - 1; i >= 0; i--) {
+                final int childIndex = getAndVerifyPreorderedIndex(
+                        childrenCount, i, customOrder);
+                final View child = getAndVerifyPreorderedView(
+                        null, children, childIndex);
+                if (!child.canReceivePointerEvents()
+                        || !isTransformedTouchPointInView(x, y, child, null)) {
+                    continue;
+                }
+
+                // Obtain a hover target for this child.  Dequeue it from the
+                // old hover target list if the child was previously hovered.
+                HoverTarget hoverTarget = firstOldHoverTarget;
+                final boolean wasHovered;
+                for (HoverTarget predecessor = null; ;) {
+                    if (hoverTarget == null) {
+                        hoverTarget = HoverTarget.obtain(child);
+                        wasHovered = false;
+                        break;
+                    }
+
+                    if (hoverTarget.child == child) {
+                        if (predecessor != null) {
+                            predecessor.next = hoverTarget.next;
+                        } else {
+                            firstOldHoverTarget = hoverTarget.next;
+                        }
+                        hoverTarget.next = null;
+                        wasHovered = true;
+                        break;
+                    }
+
+                    predecessor = hoverTarget;
+                    hoverTarget = hoverTarget.next;
+                }
+
+                // Enqueue the hover target onto the new hover target list.
+                if (lastHoverTarget != null) {
+                    lastHoverTarget.next = hoverTarget;
+                } else {
+                    mFirstHoverTarget = hoverTarget;
+                }
+                lastHoverTarget = hoverTarget;
+
+                // Dispatch the event to the child.
+                if (action == MotionEvent.ACTION_HOVER_ENTER) {
+                    if (!wasHovered) {
+                        // Send the enter as is.
+                        handled = dispatchTransformedGenericPointerEvent(
+                                event, child); // enter
+                    }
+                } else if (action == MotionEvent.ACTION_HOVER_MOVE) {
+                    if (!wasHovered) {
+                        event.setAction(MotionEvent.ACTION_HOVER_ENTER);
+                        handled = dispatchTransformedGenericPointerEvent(
+                                event, child); // enter
+                        event.setAction(action);
+
+                    }
+                    // Send the move as is.
+                    handled |= dispatchTransformedGenericPointerEvent(
+                            event, child); // move
+                }
+                if (handled) {
+                    break;
+                }
+            }
         }
 
-        boolean handled = false;
-        return super.dispatchHoverEvent(event);
+        // Send exit events to all previously hovered children that are no longer hovered.
+        while (firstOldHoverTarget != null) {
+            final View child = firstOldHoverTarget.child;
+
+            // Exit the old hovered child.
+            if (action == MotionEvent.ACTION_HOVER_EXIT) {
+                // Send the exit as is.
+                handled |= dispatchTransformedGenericPointerEvent(
+                        event, child); // exit
+            } else {
+                // Synthesize an exit from a move or enter.
+                // Ignore the result because hover focus has moved to a different view.
+                if (action == MotionEvent.ACTION_HOVER_MOVE) {
+                    final boolean hoverExitPending = event.isHoverExitPending();
+                    event.setHoverExitPending(true);
+                    dispatchTransformedGenericPointerEvent(
+                            event, child); // move
+                    event.setHoverExitPending(hoverExitPending);
+                }
+                event.setAction(MotionEvent.ACTION_HOVER_EXIT);
+                dispatchTransformedGenericPointerEvent(
+                        event, child); // exit
+                event.setAction(action);
+            }
+
+            final HoverTarget nextOldHoverTarget = firstOldHoverTarget.next;
+            firstOldHoverTarget.recycle();
+            firstOldHoverTarget = nextOldHoverTarget;
+        }
+
+        // Send events to the view group itself if no children have handled it and the view group
+        // itself is not currently being hover-exited.
+        boolean newHoveredSelf = !handled &&
+                (action != MotionEvent.ACTION_HOVER_EXIT) && !event.isHoverExitPending();
+        if (newHoveredSelf == mHoveredSelf) {
+            if (newHoveredSelf) {
+                // Send event to the view group as before.
+                handled = super.dispatchHoverEvent(event);
+            }
+        } else {
+            if (mHoveredSelf) {
+                // Exit the view group.
+                if (action == MotionEvent.ACTION_HOVER_EXIT) {
+                    // Send the exit as is.
+                    handled |= super.dispatchHoverEvent(event); // exit
+                } else {
+                    // Synthesize an exit from a move or enter.
+                    // Ignore the result because hover focus is moving to a different view.
+                    if (action == MotionEvent.ACTION_HOVER_MOVE) {
+                        super.dispatchHoverEvent(event); // move
+                    }
+                    event.setAction(MotionEvent.ACTION_HOVER_EXIT);
+                    super.dispatchHoverEvent(event); // exit
+                    event.setAction(action);
+                }
+                mHoveredSelf = false;
+            }
+
+            if (newHoveredSelf) {
+                // Enter the view group.
+                if (action == MotionEvent.ACTION_HOVER_ENTER) {
+                    // Send the enter as is.
+                    handled = super.dispatchHoverEvent(event); // enter
+                    mHoveredSelf = true;
+                } else if (action == MotionEvent.ACTION_HOVER_MOVE) {
+                    // Synthesize an enter from a move.
+                    event.setAction(MotionEvent.ACTION_HOVER_ENTER);
+                    handled = super.dispatchHoverEvent(event); // enter
+                    event.setAction(action);
+
+                    handled |= super.dispatchHoverEvent(event); // move
+                    mHoveredSelf = true;
+                }
+            }
+        }
+
+        return handled;
+    }
+
+
+    /**
+     * Dispatches a generic pointer event to a child, taking into account
+     * transformations that apply to the child.
+     *
+     * @param event The event to send.
+     * @param child The view to send the event to.
+     * @return {@code true} if the child handled the event.
+     */
+    private boolean dispatchTransformedGenericPointerEvent(MotionEvent event, View child) {
+        boolean handled;
+        final float offsetX = getScrollX() - child.mLeft;
+        final float offsetY = getScrollY() - child.mTop;
+        event.offsetLocation(offsetX, offsetY);
+        handled = child.dispatchGenericMotionEvent(event);
+        event.offsetLocation(-offsetX, -offsetY);
+        return handled;
     }
 
     /**
@@ -155,6 +349,21 @@ public abstract class ViewGroup extends View implements IViewParent {
         return (action == MotionEvent.ACTION_HOVER_MOVE
                 || action == MotionEvent.ACTION_HOVER_ENTER) && isOnScrollbar(x, y);*/
         return false;
+    }
+
+    private static View getAndVerifyPreorderedView(ArrayList<View> preorderedList, View[] children,
+                                                   int childIndex) {
+        final View child;
+        if (preorderedList != null) {
+            child = preorderedList.get(childIndex);
+            if (child == null) {
+                throw new RuntimeException("Invalid preorderedList contained null child at index "
+                        + childIndex);
+            }
+        } else {
+            child = children[childIndex];
+        }
+        return child;
     }
 
     /*@Override
@@ -326,7 +535,6 @@ public abstract class ViewGroup extends View implements IViewParent {
         return handled;
     }
 
-
     /**
      * Implement this method to intercept all touch screen motion events.  This
      * allows you to watch events as they are dispatched to your children, and
@@ -381,6 +589,38 @@ public abstract class ViewGroup extends View implements IViewParent {
     @Override
     public float getScrollY() {
         return 0;
+    }
+
+    private float[] getTempLocationF() {
+        if (mTempPosition == null) {
+            mTempPosition = new float[2];
+        }
+        return mTempPosition;
+    }
+
+
+    /**
+     * Returns true if a child view contains the specified point when transformed
+     * into its coordinate space.
+     * Child must not be null.
+     */
+    boolean isTransformedTouchPointInView(float x, float y, View child,
+                                                    float[] outLocalPoint) {
+        final float[] point = getTempLocationF();
+        point[0] = x;
+        point[1] = y;
+        transformPointToViewLocal(point, child);
+        final boolean isInView = child.pointInView(point[0], point[1]);
+        if (isInView && outLocalPoint != null) {
+            outLocalPoint[0] = point[0];
+            outLocalPoint[1] = point[1];
+        }
+        return isInView;
+    }
+
+    void transformPointToViewLocal(float[] point, View child) {
+        point[0] += getScrollX() - child.mLeft;
+        point[1] += getScrollY() - child.mTop;
     }
 
     /**
@@ -474,7 +714,7 @@ public abstract class ViewGroup extends View implements IViewParent {
         if (index < 0 || index >= mChildrenCount) {
             return null;
         }
-        return children[index];
+        return mChildren[index];
     }
 
     public int getChildCount() {
@@ -482,22 +722,22 @@ public abstract class ViewGroup extends View implements IViewParent {
     }
 
     private void addInArray(@Nonnull View child, int index) {
-        View[] views = children;
+        View[] views = mChildren;
         final int count = mChildrenCount;
         final int size = views.length;
         if (index == count) {
             if (size == count) {
-                children = new View[size + ARRAY_CAPACITY_INCREMENT];
-                System.arraycopy(views, 0, children, 0, size);
-                views = children;
+                mChildren = new View[size + ARRAY_CAPACITY_INCREMENT];
+                System.arraycopy(views, 0, mChildren, 0, size);
+                views = mChildren;
             }
             views[mChildrenCount++] = child;
         } else if (index < count) {
             if (size == count) {
-                children = new View[size + ARRAY_CAPACITY_INCREMENT];
-                System.arraycopy(views, 0, children, 0, index);
-                System.arraycopy(views, index, children, index + 1, count - index);
-                views = children;
+                mChildren = new View[size + ARRAY_CAPACITY_INCREMENT];
+                System.arraycopy(views, 0, mChildren, 0, index);
+                System.arraycopy(views, index, mChildren, index + 1, count - index);
+                views = mChildren;
             } else {
                 System.arraycopy(views, index, views, index + 1, count - index);
             }
@@ -516,7 +756,7 @@ public abstract class ViewGroup extends View implements IViewParent {
             return (T) this;
         }
 
-        final View[] views = children;
+        final View[] views = mChildren;
         final int count = mChildrenCount;
 
         View view;
@@ -556,7 +796,7 @@ public abstract class ViewGroup extends View implements IViewParent {
      * Tells the ViewGroup whether to draw its children in the order defined by the method
      * {@link #getChildDrawingOrder(int, int)}.
      * <p>
-     * Note that {@link View#getZ() Z} reordering, done by {@link #dispatchDraw(Plotter)},
+     * Note that {@link View#getZ() Z} reordering, done by {@link #dispatchDraw(Canvas)},
      * will override custom child ordering done via this method.
      *
      * @param enabled true if the order of the children when drawing is determined by
@@ -603,15 +843,15 @@ public abstract class ViewGroup extends View implements IViewParent {
 
     @Override
     final boolean onCursorPosEvent(LinkedList<View> route, double x, double y) {
-        if (x >= left && x < right && y >= top && y < bottom) {
-            if ((viewFlags & ENABLED_MASK) == ENABLED) {
+        if (x >= mLeft && x < mRight && y >= mTop && y < mBottom) {
+            if ((mViewFlags & ENABLED_MASK) == ENABLED) {
                 route.add(this);
             }
             x += getScrollX();
             y += getScrollY();
-            if (x >= left && x < right && y >= top && y < bottom) {
+            if (x >= mLeft && x < mRight && y >= mTop && y < mBottom) {
                 for (int i = mChildrenCount - 1; i >= 0; i--) {
-                    if (children[i].onCursorPosEvent(route, x, y)) {
+                    if (mChildren[i].onCursorPosEvent(route, x, y)) {
                         break;
                     }
                 }
@@ -632,7 +872,7 @@ public abstract class ViewGroup extends View implements IViewParent {
      */
     protected void measureChildren(int widthMeasureSpec, int heightMeasureSpec) {
         final int size = mChildrenCount;
-        final View[] children = this.children;
+        final View[] children = this.mChildren;
         for (int i = 0; i < size; i++) {
             View child = children[i];
             if (child.getVisibility() != GONE) {
@@ -785,7 +1025,7 @@ public abstract class ViewGroup extends View implements IViewParent {
 
     @Override
     protected void tick(int ticks) {
-        final View[] views = children;
+        final View[] views = mChildren;
         final int count = mChildrenCount;
         for (int i = 0; i < count; i++) {
             views[i].tick(ticks);

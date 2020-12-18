@@ -19,7 +19,7 @@
 package icyllis.modernui.impl.setting;
 
 import icyllis.modernui.font.text.TextAlign;
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.discard.ScrollWindow;
 import icyllis.modernui.impl.module.SettingLanguage;
 import icyllis.modernui.widget.UniformScrollEntry;
@@ -48,18 +48,18 @@ public class LanguageEntry extends UniformScrollEntry {
     }
 
     @Override
-    public final void onDraw(@Nonnull Plotter plotter, float time) {
+    public final void onDraw(@Nonnull Canvas canvas, float time) {
         /*Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();*/
 
         if (module.getHighlight() == this) {
-            //plotter.setColor(0.5f, 0.5f, 0.5f, 0.377f);
-            plotter.drawRect(x1 + 1, y1, x2 - 1, y2);
+            //canvas.setColor(0.5f, 0.5f, 0.5f, 0.377f);
+            canvas.drawRect(x1 + 1, y1, x2 - 1, y2);
 
-            plotter.setLineAntiAliasing(true);
-            //plotter.setColor(1, 1, 1, 0.879f);
-            plotter.drawRectLines(x1 + 1, y1, x2 - 1, y2);
-            plotter.setLineAntiAliasing(false);
+            canvas.setLineAntiAliasing(true);
+            //canvas.setColor(1, 1, 1, 0.879f);
+            canvas.drawRectLines(x1 + 1, y1, x2 - 1, y2);
+            canvas.setLineAntiAliasing(false);
             /*RenderSystem.disableTexture();
             bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
             bufferBuilder.pos(x1 + 1, y2, 0.0D).color(128, 128, 128, 96).endVertex();
@@ -80,10 +80,10 @@ public class LanguageEntry extends UniformScrollEntry {
             RenderSystem.enableTexture();*/
         } else if (isMouseHovered()) {
 
-            plotter.setLineAntiAliasing(true);
-            //plotter.setColor(0.879f, 0.879f, 0.879f, 0.7f);
-            plotter.drawRectLines(x1 + 1, y1, x2 - 1, y2);
-            plotter.setLineAntiAliasing(false);
+            canvas.setLineAntiAliasing(true);
+            //canvas.setColor(0.879f, 0.879f, 0.879f, 0.7f);
+            canvas.drawRectLines(x1 + 1, y1, x2 - 1, y2);
+            canvas.setLineAntiAliasing(false);
 
             /*RenderSystem.disableTexture();
             GL11.glEnable(GL11.GL_LINE_SMOOTH);
@@ -99,9 +99,9 @@ public class LanguageEntry extends UniformScrollEntry {
             RenderSystem.enableTexture();*/
         }
 
-        plotter.setTextAlign(TextAlign.CENTER);
-        plotter.resetColor();
-        plotter.drawText(language.toString(), centerX, y1 + 4);
+        canvas.setTextAlign(TextAlign.CENTER);
+        canvas.resetColor();
+        canvas.drawText(language.toString(), centerX, y1 + 4);
     }
 
     /*@Override
