@@ -21,11 +21,11 @@ package icyllis.modernui.view;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
- * A drag and drop operation shares the same DragEvent instance
+ * A drag and drop operation
  *
  * @since 2.0
  */
-public final class DragEvent {
+public class DragEvent {
 
     public static final int ACTION_DRAG_STARTED = 1;
 

@@ -107,7 +107,7 @@ final class MuiMainScreen extends Screen implements IMuiScreen {
         if (master.screenKeyDown(keyCode, scanCode, modifiers)) {
             return true;
         } else if (keyCode == GLFW.GLFW_KEY_ESCAPE && shouldCloseOnEsc()) {
-            if (master.sBack()) {
+            if (master.onBackPressed()) {
                 return true;
             }
             master.closeGui();

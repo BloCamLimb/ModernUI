@@ -20,7 +20,6 @@ package icyllis.modernui.graphics.renderer;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.TrueTypeRenderer;
-import icyllis.modernui.font.pipeline.TextRenderType;
 import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.math.Color3i;
@@ -43,20 +42,22 @@ import javax.annotation.Nonnull;
  * Draw things in View or especially for Modern UI:
  * likes rect, rounded rect, circle, ring, line, point
  * textured icon, etc.
- * This avoided RenderType being used in gui, for better performance
+ * <p>
+ * The canvas actually uses shaders (hardware-accelerated)
+ * to render in real-time, so there's no need to control redrawing.
+ * Also avoided RenderType being used in GUI, for better performance
  * (reduces GL callings, because render states changed little)
  * <p>
- * The font renderer uses another system, which has two parts, one for ModernUI's UI, and
- * the global one is using RenderType, make ModernUI's font renderer work everywhere,
- * because it's not always called in gui, likes non-ModernUI GUI, TileEntityRenderer
- * or in world renderer, that also need matrix transformation to be compatible with vanilla
+ * The font renderer uses another system, which has two parts, one for Modern UI, and
+ * the global one is using RenderType, make Modern UI font renderer work everywhere,
+ * because it's not always called in GUI, likes screens of other mods, TileEntityRenderer
+ * or in world rendering, that also need matrix transformation to be compatible with vanilla
  *
- * @see net.minecraft.client.renderer.RenderType
- * @see TextRenderType
+ * @author BloCamLimb
  * @see TrueTypeRenderer
  */
 @SuppressWarnings("unused")
-//TODO New render system
+//TODO New render system (LOWEST PRIORITY)
 public class Canvas {
 
     private static Canvas instance;
@@ -64,7 +65,7 @@ public class Canvas {
     /**
      * Instances
      */
-    private final MainWindow   mainWindow;
+    private final MainWindow mainWindow;
     private final ItemRenderer itemRenderer;
 
     private final TrueTypeRenderer fontRenderer = TrueTypeRenderer.getInstance();
@@ -75,10 +76,10 @@ public class Canvas {
     /**
      * Shaders instance
      */
-    private final RingShader          ring          = RingShader.INSTANCE;
-    private final RoundedRectShader   roundedRect   = RoundedRectShader.INSTANCE;
-    private final RoundedFrameShader  roundedFrame  = RoundedFrameShader.INSTANCE;
-    private final CircleShader        circle        = CircleShader.INSTANCE;
+    private final RingShader ring = RingShader.INSTANCE;
+    private final RoundedRectShader roundedRect = RoundedRectShader.INSTANCE;
+    private final RoundedFrameShader roundedFrame = RoundedFrameShader.INSTANCE;
+    private final CircleShader circle = CircleShader.INSTANCE;
     private final FeatheredRectShader featheredRect = FeatheredRectShader.INSTANCE;
 
 

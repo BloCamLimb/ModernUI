@@ -40,6 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * View is the basic component of UI. View has its own rectangular area on screen,
  * which is also responsible for drawing and event handling.
  *
+ * @author The Android Open Source Project, BloCamLimb
  * @since 2.0
  */
 @SuppressWarnings("unused")
@@ -151,6 +152,12 @@ public class View {
      */
     static final int SCROLLBARS_MASK = 0x00000060;
 
+    /**
+     * Indicates this view can be clicked. When clickable, a View reacts
+     * to clicks by notifying the OnClickListener.
+     */
+    static final int CLICKABLE = 0x00004000;
+
     /*
      * View masks
      * |--------|--------|--------|--------|
@@ -159,7 +166,7 @@ public class View {
      *                                 1     ENABLED
      *                              11       SCROLLBARS
      * |--------|--------|--------|--------|
-     *
+     *                     1                 CLICKABLE
      * |--------|--------|--------|--------|
      */
     /**
@@ -239,12 +246,12 @@ public class View {
      * The layout parameters associated with this view and used by the parent
      * {@link ViewGroup} to determine how this view should be laid out.
      */
-    private ViewGroup.LayoutParams layoutParams;
+    private ViewGroup.LayoutParams mLayoutParams;
 
     /**
      * Raw draw method, do not override this
      *
-     * @param canvas canvas to draw content
+     * @param canvas the canvas to draw content
      */
     public void draw(@Nonnull Canvas canvas) {
         if ((mViewFlags & VISIBILITY_MASK) == 0) {
@@ -515,7 +522,7 @@ public class View {
      * parameters have been set yet
      */
     public ViewGroup.LayoutParams getLayoutParams() {
-        return layoutParams;
+        return mLayoutParams;
     }
 
     /**
@@ -528,7 +535,7 @@ public class View {
      * @param params layout parameters for this view
      */
     public void setLayoutParams(@Nonnull ViewGroup.LayoutParams params) {
-        layoutParams = params;
+        mLayoutParams = params;
         requestLayout();
     }
 
@@ -670,6 +677,72 @@ public class View {
      */
     public int getVisibility() {
         return mViewFlags & VISIBILITY_MASK;
+    }
+
+    /**
+     * Returns the enabled status for this view. The interpretation of the
+     * enabled state varies by subclass.
+     *
+     * @return True if this view is enabled, false otherwise.
+     */
+    public boolean isEnabled() {
+        return (mViewFlags & ENABLED_MASK) == ENABLED;
+    }
+
+    /**
+     * Set the enabled state of this view. The interpretation of the enabled
+     * state varies by subclass.
+     *
+     * @param enabled True if this view is enabled, false otherwise.
+     */
+    public void setEnabled(boolean enabled) {
+        if (enabled == isEnabled()) return;
+
+        setFlags(enabled ? ENABLED : DISABLED, ENABLED_MASK);
+
+        /*
+         * The View most likely has to change its appearance, so refresh
+         * the drawable state.
+         */
+        //refreshDrawableState();
+
+        // Invalidate too, since the default behavior for views is to be
+        // be drawn at 50% alpha rather than to change the drawable.
+        //invalidate(true);
+
+        if (!enabled) {
+            //cancelPendingInputEvents();
+        }
+    }
+
+    /**
+     * Indicates whether this view reacts to click events or not.
+     *
+     * @return true if the view is clickable, false otherwise
+     *
+     * @see #setClickable(boolean)
+     */
+    public boolean isClickable() {
+        return (mViewFlags & CLICKABLE) == CLICKABLE;
+    }
+
+    /**
+     * Enables or disables click events for this view. When a view
+     * is clickable it will change its state to "pressed" on every click.
+     * Subclasses should set the view clickable to visually react to
+     * user's clicks.
+     *
+     * @param clickable true to make the view clickable, false otherwise
+     *
+     * @see #isClickable()
+     */
+    public void setClickable(boolean clickable) {
+        setFlags(clickable ? CLICKABLE : 0, CLICKABLE);
+    }
+
+    void setFlags(int flags, int mask) {
+        int old = mViewFlags;
+        mViewFlags = (mViewFlags & ~mask) | (flags & mask);
     }
 
     /**
@@ -1006,7 +1079,13 @@ public class View {
     }
 
     /**
-     * Pass the mouse event down to the target view, or this view if it is the target.
+     * Dispatch a generic motion event.
+     * <p>
+     * Generic motion events with source class pointer are delivered to the view under the
+     * pointer.  All other generic motion events are delivered to the focused view.
+     * Hover events are handled specially and are delivered to {@link #onHoverEvent(MotionEvent)}.
+     * <p>
+     * Generally, this method should not be overridden.
      *
      * @param event the event to be dispatched
      * @return {@code true} if the event was consumed by the view, {@code false} otherwise
@@ -1023,7 +1102,18 @@ public class View {
         if (dispatchGenericPointerEvent(event)) {
             return true;
         }
-        return onGenericMotionEvent(event);
+        return dispatchGenericMotionEventInternal(event);
+    }
+
+    private boolean dispatchGenericMotionEventInternal(MotionEvent event) {
+        if (onGenericMotionEvent(event)) {
+            return true;
+        }
+        if ((mViewFlags & ENABLED_MASK) == DISABLED) {
+            return false;
+        }
+        final int action = event.getAction();
+        return false;
     }
 
     /**
@@ -1056,19 +1146,16 @@ public class View {
 
     /**
      * Implement this method to handle generic motion events.
+     * <p>
+     * Implementations of this method should check if this view ENABLED and CLICKABLE.
      *
      * @param event the generic motion event being processed.
      * @return {@code true} if the event was consumed by the view, {@code false} otherwise
      */
-    public boolean onGenericMotionEvent(@Nonnull MotionEvent event) {
-        if ((mViewFlags & ENABLED_MASK) == DISABLED) {
-            return false;
-        }
-
-        final double mouseX = event.getX();
+    public boolean onGenericMotionEvent(MotionEvent event) {
+        /*final double mouseX = event.getX();
         final double mouseY = event.getY();
         final int action = event.getAction();
-
         switch (action) {
             case MotionEvent.ACTION_MOVE:
                 final boolean prevHovered = (mPrivateFlags & PFLAG_HOVERED) != 0;
@@ -1088,7 +1175,7 @@ public class View {
 
                 }
                 return false;
-            /*case MotionEvent.ACTION_PRESS:
+            case MotionEvent.ACTION_PRESS:
                 if ((mPrivateFlags & PFLAG_HOVERED) != 0) {
                     if (dispatchGenericMotionEvent(event)) {
                         return true;
@@ -1126,14 +1213,144 @@ public class View {
                     }
                     return onMouseScrolled(mouseX, mouseY, event.scrollDelta);
                 }
-                return false;*/
+                return false;
+        }*/
+        return false;
+    }
+
+    /**
+     * Implement this method to handle hover events.
+     * <p>
+     * This method is called whenever a pointer is hovering into, over, or out of the
+     * bounds of a view and the view is not currently being touched.
+     * Hover events are represented as pointer events with action
+     * {@link MotionEvent#ACTION_HOVER_ENTER}, {@link MotionEvent#ACTION_HOVER_MOVE},
+     * or {@link MotionEvent#ACTION_HOVER_EXIT}.
+     * </p>
+     * <ul>
+     * <li>The view receives a hover event with action {@link MotionEvent#ACTION_HOVER_ENTER}
+     * when the pointer enters the bounds of the view.</li>
+     * <li>The view receives a hover event with action {@link MotionEvent#ACTION_HOVER_MOVE}
+     * when the pointer has already entered the bounds of the view and has moved.</li>
+     * <li>The view receives a hover event with action {@link MotionEvent#ACTION_HOVER_EXIT}
+     * when the pointer has exited the bounds of the view or when the pointer is
+     * about to go down due to a button click, tap, or similar user action that
+     * causes the view to be touched.</li>
+     * </ul>
+     * <p>
+     * The view should implement this method to return true to indicate that it is
+     * handling the hover event, such as by changing its drawable state.
+     * </p><p>
+     * The default implementation calls {@link #setHovered} to update the hovered state
+     * of the view when a hover enter or hover exit event is received, if the view
+     * is enabled and is clickable.  The default implementation also sends hover
+     * accessibility events.
+     * </p>
+     *
+     * @param event The motion event that describes the hover.
+     * @return True if the view handled the hover event.
+     * @see #isHovered
+     * @see #setHovered
+     * @see #onHoverChanged
+     */
+    public boolean onHoverEvent(MotionEvent event) {
+        final int action = event.getAction();
+        // If we consider ourself hoverable, or if we we're already hovered,
+        // handle changing state in response to ENTER and EXIT events.
+        if (isHoverable() || isHovered()) {
+            switch (action) {
+                case MotionEvent.ACTION_HOVER_ENTER:
+                    setHovered(true);
+                    break;
+                case MotionEvent.ACTION_HOVER_EXIT:
+                    setHovered(false);
+                    break;
+            }
+
+            // Dispatch the event to onGenericMotionEvent before returning true.
+            // This is to provide compatibility with existing applications that
+            // handled HOVER_MOVE events in onGenericMotionEvent and that would
+            // break because of the new default handling for hoverable views
+            // in onHoverEvent.
+            // Note that onGenericMotionEvent will be called by default when
+            // onHoverEvent returns false (refer to dispatchGenericMotionEvent).
+            dispatchGenericMotionEventInternal(event);
+            // The event was already handled by calling setHovered(), so always
+            // return true.
+            return true;
         }
         return false;
     }
 
-    public boolean onHoverEvent(MotionEvent event) {
-        ModernUI.LOGGER.debug("ReceiveHoverEvent: {}", MotionEvent.actionToString(event.getAction()));
-        return false;
+    /**
+     * Returns true if the view should handle {@link #onHoverEvent}
+     * by calling {@link #setHovered} to change its hovered state.
+     *
+     * @return True if the view is hoverable.
+     */
+    private boolean isHoverable() {
+        final int viewFlags = mViewFlags;
+        if ((viewFlags & ENABLED_MASK) == DISABLED) {
+            return false;
+        }
+
+        return (viewFlags & CLICKABLE) == CLICKABLE;
+    }
+
+    /**
+     * Returns true if the view is currently hovered.
+     *
+     * @return True if the view is currently hovered.
+     * @see #setHovered
+     * @see #onHoverChanged
+     */
+    public boolean isHovered() {
+        return (mPrivateFlags & PFLAG_HOVERED) != 0;
+    }
+
+    /**
+     * Sets whether the view is currently hovered.
+     * <p>
+     * Calling this method also changes the drawable state of the view.  This
+     * enables the view to react to hover by using different drawable resources
+     * to change its appearance.
+     * </p><p>
+     * The {@link #onHoverChanged} method is called when the hovered state changes.
+     * </p>
+     *
+     * @param hovered True if the view is hovered.
+     * @see #isHovered
+     * @see #onHoverChanged
+     */
+    public void setHovered(boolean hovered) {
+        if (hovered) {
+            if ((mPrivateFlags & PFLAG_HOVERED) == 0) {
+                mPrivateFlags |= PFLAG_HOVERED;
+                //refreshDrawableState();
+                onHoverChanged(true);
+            }
+        } else {
+            if ((mPrivateFlags & PFLAG_HOVERED) != 0) {
+                mPrivateFlags &= ~PFLAG_HOVERED;
+                //refreshDrawableState();
+                onHoverChanged(false);
+            }
+        }
+    }
+
+    /**
+     * Implement this method to handle hover state changes.
+     * <p>
+     * This method is called whenever the hover state changes as a result of a
+     * call to {@link #setHovered}.
+     * </p>
+     *
+     * @param hovered The current hover state, as returned by {@link #isHovered}.
+     * @see #isHovered
+     * @see #setHovered
+     */
+    public void onHoverChanged(boolean hovered) {
+
     }
 
     /*
@@ -1239,42 +1456,42 @@ public class View {
         return false;
     }
 
-    /**
+    /*
      * Returns true if the view is currently mouse hovered
      *
      * @return {@code true} if the view is currently mouse hovered
      */
-    public final boolean isMouseHovered() {
+    /*public final boolean isMouseHovered() {
         return (mPrivateFlags & PFLAG_HOVERED) != 0;
-    }
+    }*/
 
-    /**
+    /*
      * Called when mouse start to hover on this view
      *
      * @param mouseX relative mouse x pos
      * @param mouseY relative mouse y pos
      */
-    protected void onMouseHoverEnter(double mouseX, double mouseY) {
+    /*protected void onMouseHoverEnter(double mouseX, double mouseY) {
 
-    }
+    }*/
 
-    /**
+    /*
      * Called when mouse hovered on this view and moved
      * Also called at the same time as onMouseHoverEnter()
      *
      * @param mouseX relative mouse x pos
      * @param mouseY relative mouse y pos
      */
-    protected void onMouseHoverMoved(double mouseX, double mouseY) {
+    /*protected void onMouseHoverMoved(double mouseX, double mouseY) {
 
-    }
+    }*/
 
-    /**
+    /*
      * Called when mouse no longer hover on this view
      */
-    protected void onMouseHoverExit() {
+    /*protected void onMouseHoverExit() {
 
-    }
+    }*/
 
     /*
      * Internal method. Called when mouse hovered on this view and a mouse button clicked.

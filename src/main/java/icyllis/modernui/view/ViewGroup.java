@@ -152,7 +152,7 @@ public abstract class ViewGroup extends View implements IViewParent {
                 // old hover target list if the child was previously hovered.
                 HoverTarget hoverTarget = firstOldHoverTarget;
                 final boolean wasHovered;
-                for (HoverTarget predecessor = null; ;) {
+                for (HoverTarget predecessor = null; ; ) {
                     if (hoverTarget == null) {
                         hoverTarget = HoverTarget.obtain(child);
                         wasHovered = false;
@@ -349,6 +349,34 @@ public abstract class ViewGroup extends View implements IViewParent {
         return (action == MotionEvent.ACTION_HOVER_MOVE
                 || action == MotionEvent.ACTION_HOVER_ENTER) && isOnScrollbar(x, y);*/
         return false;
+    }
+
+    @Override
+    protected boolean dispatchGenericPointerEvent(MotionEvent event) {
+        // Send the event to the child under the pointer.
+        final int childrenCount = mChildrenCount;
+        if (childrenCount != 0) {
+            final float x = event.getX();
+            final float y = event.getY();
+
+            final boolean customOrder = isChildrenDrawingOrderEnabled();
+            final View[] children = mChildren;
+            for (int i = childrenCount - 1; i >= 0; i--) {
+                final int childIndex = getAndVerifyPreorderedIndex(childrenCount, i, customOrder);
+                final View child = getAndVerifyPreorderedView(null, children, childIndex);
+                if (!child.canReceivePointerEvents()
+                        || !isTransformedTouchPointInView(x, y, child, null)) {
+                    continue;
+                }
+
+                if (dispatchTransformedGenericPointerEvent(event, child)) {
+                    return true;
+                }
+            }
+        }
+
+        // Send to this view group.
+        return super.dispatchGenericPointerEvent(event);
     }
 
     private static View getAndVerifyPreorderedView(ArrayList<View> preorderedList, View[] children,
@@ -605,7 +633,7 @@ public abstract class ViewGroup extends View implements IViewParent {
      * Child must not be null.
      */
     boolean isTransformedTouchPointInView(float x, float y, View child,
-                                                    float[] outLocalPoint) {
+                                          float[] outLocalPoint) {
         final float[] point = getTempLocationF();
         point[0] = x;
         point[1] = y;

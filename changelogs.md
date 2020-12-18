@@ -1,18 +1,18 @@
-### 1.16.4-2.2.4.68 (2020-11-21)
+### 1.16.4-2.2.5.69 (2020-)
 **Font Engine works fine, UI is developing, keep update!**
  
+* Fix ingame GUI rendering
+
+### 1.16.4-2.2.4.68 (2020-11-21)
 * Fix possible crash when caching digits
+> (2.2.3.67) (2020-11-17) Fix rendering when an invalid formatting applied
 
-### 1.16.4-2.2.3.67 (2020-11-17)
-* Fix rendering when an invalid formatting applied
+> (2.2.2.66) (2020-11-16) Fix rendering with space
 
-### 1.16.4-2.2.2.66 (2020-11-16)
-* Fix rendering with space
-
-### 1.16.4-2.2.1.65 (2020-11-14)
-* Fix rendering with Thai
-* Add support for external fonts
-* Expose built-in blacklist
+> (2.2.1.65) (2020-11-14)
+> * Fix rendering with Thai
+> * Add support for external fonts
+> * Expose built-in blacklist
 
 ### 1.16.3-2.2.0.64 (2020-09-17)
 * Port to 1.16.3

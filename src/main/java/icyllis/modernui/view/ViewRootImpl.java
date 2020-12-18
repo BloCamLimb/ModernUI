@@ -74,7 +74,7 @@ public final class ViewRootImpl implements IViewParent {
         Point center = new Point();
         if (shadow == null) {
             shadow = new View.DragShadow(view);
-            if (view.isMouseHovered()) {
+            if (view.isHovered()) {
                 // default strategy
                 center.x = (int) master.getViewMouseX(view);
                 center.y = (int) master.getViewMouseY(view);
@@ -140,6 +140,7 @@ public final class ViewRootImpl implements IViewParent {
     }
 
     private boolean processPointerEvent(MotionEvent event) {
+        event.offsetLocation(-mView.mLeft, -mView.mTop);
         return mView.dispatchPointerEvent(event);
     }
 
