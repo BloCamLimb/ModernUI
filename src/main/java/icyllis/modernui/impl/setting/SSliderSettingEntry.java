@@ -19,7 +19,7 @@
 package icyllis.modernui.impl.setting;
 
 import icyllis.modernui.font.text.TextAlign;
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.widget.SliderSmooth;
 
 import javax.annotation.Nonnull;
@@ -82,11 +82,11 @@ public class SSliderSettingEntry extends SettingEntry implements SliderSmooth.IL
     }
 
     @Override
-    public void drawExtra(Plotter plotter, float time) {
-        slider.draw(plotter, time);
-        //plotter.setColor(titleBrightness, titleBrightness, titleBrightness, 1);
-        plotter.setTextAlign(TextAlign.RIGHT);
-        plotter.drawText(displayString, x2 - 6, y1 + 6);
+    public void drawExtra(Canvas canvas, float time) {
+        slider.draw(canvas, time);
+        //canvas.setColor(titleBrightness, titleBrightness, titleBrightness, 1);
+        canvas.setTextAlign(TextAlign.RIGHT);
+        canvas.drawText(displayString, x2 - 6, y1 + 6);
         //fontRenderer.drawString(displayString, x2 - 6, y1 + 6, titleBrightness, 1.0f, TextAlign.RIGHT);
     }
 

@@ -18,7 +18,7 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.view.UITools;
 import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.ui.discard.Align9D;
@@ -127,9 +127,9 @@ public class TextField extends Widget implements IKeyboardListener {
     }
 
     @Override
-    public void onDraw(@Nonnull Plotter plotter, float time) {
+    public void onDraw(@Nonnull Canvas canvas, float time) {
         if (decoration != null) {
-            decoration.draw(plotter, time);
+            decoration.draw(canvas, time);
         }
 
         int ds = this.cursorPosition - this.lineScrollOffset;
@@ -144,12 +144,12 @@ public class TextField extends Widget implements IKeyboardListener {
             de = s.length();
         }
 
-        plotter.setTextAlign(TextAlign.LEFT);
+        canvas.setTextAlign(TextAlign.LEFT);
 
         if (!s.isEmpty()) {
             String s1 = b ? s.substring(0, ds) : s;
-            //plotter.setColor(0.88f, 0.88f, 0.88f, 1);
-            plotter.drawText(s1, lx, ty);
+            //canvas.setColor(0.88f, 0.88f, 0.88f, 1);
+            canvas.drawText(s1, lx, ty);
             float c = UITools.getTextWidth(s1);
             cx += c;
         }
@@ -162,19 +162,19 @@ public class TextField extends Widget implements IKeyboardListener {
         // draw selection box
         if (de != ds) {
             float l1 = lx + UITools.getTextWidth(s.substring(0, de));
-            //plotter.setColor(Color3i.BLUE_C, 0.5f);
-            plotter.drawRect(kx, ty - 1, l1, ty + 10);
+            //canvas.setColor(Color3i.BLUE_C, 0.5f);
+            canvas.drawRect(kx, ty - 1, l1, ty + 10);
         }
 
-        //plotter.setColor(0.88f, 0.88f, 0.88f, 1);
+        //canvas.setColor(0.88f, 0.88f, 0.88f, 1);
 
         if (!s.isEmpty() && b && ds < s.length()) {
-            plotter.drawText(s.substring(ds), cx, ty);
+            canvas.drawText(s.substring(ds), cx, ty);
         }
 
         // draw cursor
         if (editing && timer < 10) {
-            plotter.drawRect(kx, ty - 1, kx + 0.5f, ty + 10);
+            canvas.drawRect(kx, ty - 1, kx + 0.5f, ty + 10);
         }
     }
 
@@ -594,7 +594,7 @@ public class TextField extends Widget implements IKeyboardListener {
             this.instance = instance;
         }
 
-        public abstract void draw(@Nonnull Plotter plotter, float time);
+        public abstract void draw(@Nonnull Canvas canvas, float time);
 
         public abstract float getHeaderLength();
 
@@ -618,14 +618,14 @@ public class TextField extends Widget implements IKeyboardListener {
         }
 
         @Override
-        public void draw(@Nonnull Plotter plotter, float time) {
-            //plotter.setColor(0, 0, 0, 0.25f);
-            plotter.drawRect(instance.x1 - getHeaderLength(), instance.y1, instance.x2 + getTrailerLength(), instance.y2);
-            //plotter.setColor(r, g, b, a);
-            plotter.drawRoundedFrame(instance.x1 - getHeaderLength() - 1, instance.y1 - 1, instance.x2 + 1 + getTrailerLength(), instance.y2 + 1, 1.5f);
+        public void draw(@Nonnull Canvas canvas, float time) {
+            //canvas.setColor(0, 0, 0, 0.25f);
+            canvas.drawRect(instance.x1 - getHeaderLength(), instance.y1, instance.x2 + getTrailerLength(), instance.y2);
+            //canvas.setColor(r, g, b, a);
+            canvas.drawRoundedFrame(instance.x1 - getHeaderLength() - 1, instance.y1 - 1, instance.x2 + 1 + getTrailerLength(), instance.y2 + 1, 1.5f);
             if (title != null) {
-                plotter.setTextAlign(TextAlign.LEFT);
-                plotter.drawText(title, instance.x1 - titleLength, instance.y1 + (instance.height - 8) / 2f);
+                canvas.setTextAlign(TextAlign.LEFT);
+                canvas.drawText(title, instance.x1 - titleLength, instance.y1 + (instance.height - 8) / 2f);
             }
         }
 

@@ -19,7 +19,6 @@
 package icyllis.modernui.graphics.renderer;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.font.ModernFontRenderer;
 import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.font.pipeline.TextRenderType;
 import icyllis.modernui.font.text.TextAlign;
@@ -58,9 +57,9 @@ import javax.annotation.Nonnull;
  */
 @SuppressWarnings("unused")
 //TODO New render system
-public class Plotter {
+public class Canvas {
 
-    private static Plotter instance;
+    private static Canvas instance;
 
     /**
      * Instances
@@ -121,16 +120,16 @@ public class Plotter {
     private static boolean lineAA = false;
 
 
-    private Plotter(@Nonnull Minecraft minecraft) {
+    private Canvas(@Nonnull Minecraft minecraft) {
         mainWindow = minecraft.getMainWindow();
         itemRenderer = minecraft.getItemRenderer();
     }
 
-    public static Plotter getInstance() {
+    public static Canvas getInstance() {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
         if (instance == null) {
             RenderTools.checkCapabilities();
-            instance = new Plotter(Minecraft.getInstance());
+            instance = new Canvas(Minecraft.getInstance());
         }
         return instance;
     }
@@ -692,7 +691,7 @@ public class Plotter {
     }
 
     /**
-     * Scale the plotter and translate to pos
+     * Scale the canvas and translate to pos
      *
      * @param sx x scale
      * @param sy y scale

@@ -19,7 +19,7 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.graphics.math.Point;
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.system.ModernUI;
 
 import javax.annotation.Nonnull;
@@ -118,9 +118,9 @@ public final class ViewRootImpl implements IViewParent {
         layoutRequested = false;
     }
 
-    void onDraw(Plotter plotter) {
+    void onDraw(Canvas canvas) {
         if (mView != null) {
-            mView.draw(plotter);
+            mView.draw(canvas);
         }
     }
 

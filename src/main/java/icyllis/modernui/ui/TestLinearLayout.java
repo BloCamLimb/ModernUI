@@ -20,7 +20,7 @@ package icyllis.modernui.ui;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
 import icyllis.modernui.animation.ITimeInterpolator;
@@ -29,6 +29,7 @@ import icyllis.modernui.widget.LinearLayout;
 import icyllis.modernui.widget.Orientation;
 import icyllis.modernui.view.View;
 import net.minecraft.util.text.TextFormatting;
+import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 
@@ -56,10 +57,10 @@ public class TestLinearLayout extends LinearLayout {
         setGravity(Gravity.CENTER);
         setDivider(new Drawable() {
             @Override
-            public void draw(@Nonnull Plotter plotter) {
-                plotter.moveTo(this);
-                plotter.setColor(192, 192, 192, 128);
-                plotter.drawLine(0, 0, getWidth(), 0);
+            public void draw(@Nonnull Canvas canvas) {
+                canvas.moveTo(this);
+                canvas.setColor(192, 192, 192, 128);
+                canvas.drawLine(0, 0, getWidth(), 0);
             }
 
             @Override
@@ -100,55 +101,62 @@ public class TestLinearLayout extends LinearLayout {
     }
 
     @Override
-    protected void onDraw(@Nonnull Plotter plotter) {
-        super.onDraw(plotter);
-        plotter.moveTo(this);
-        plotter.resetColor();
-        plotter.drawText("Ll" + TextFormatting.BOLD + "Ll " + plotter.getDrawingTime(), 0, 0);
+    protected void onDraw(@Nonnull Canvas canvas) {
+        super.onDraw(canvas);
+        canvas.moveTo(this);
+        canvas.resetColor();
+        canvas.drawText("Ll" + TextFormatting.BOLD + "Ll " + canvas.getDrawingTime(), 0, 0);
 
         // 1
 
-        plotter.save();
+        canvas.save();
         RenderSystem.depthMask(true);
 
-        //plotter.scale(f, f, getLeft() + 10, getTop() + 10);
+        //canvas.scale(f, f, getLeft() + 10, getTop() + 10);
         RenderSystem.translatef(0, 0, 0.001f);
         RenderSystem.colorMask(false, false, false, false);
-        //plotter.setColor(0, 0, 0, 128);
+        //canvas.setColor(0, 0, 0, 128);
 
-        plotter.drawRect(c, c, 20 - c, 20 - c);
+        canvas.drawRect(c, c, 20 - c, 20 - c);
         RenderSystem.translatef(0, 0, -0.001f);
         RenderSystem.colorMask(true, true, true, true);
 
 
-        plotter.setColor(80, 210, 240, 128);
-        plotter.drawRoundedRect(0, 0, 20, 20, 3);
+        canvas.setColor(80, 210, 240, 128);
+        canvas.drawRoundedRect(0, 0, 20, 20, 3);
 
-        plotter.restore();
+        canvas.restore();
         RenderSystem.depthMask(false);
 
 
 
         // 4
 
-        plotter.setAlpha(255);
-        plotter.save();
-        plotter.translate((float) Math.sin(circleAcc1) * 8, (float) Math.cos(circleAcc1) * 8);
-        plotter.drawCircle(40, 18, 3);
-        plotter.restore();
-        plotter.save();
-        plotter.translate((float) Math.sin(circleAcc2) * 8, (float) Math.cos(circleAcc2) * 8);
-        plotter.drawCircle(40, 18, 2.5f);
-        plotter.restore();
-        plotter.save();
-        plotter.translate((float) Math.sin(circleAcc3) * 8, (float) Math.cos(circleAcc3) * 8);
-        plotter.drawCircle(40, 18, 2);
-        plotter.restore();
-        plotter.save();
-        plotter.translate((float) Math.sin(circleAcc4) * 8, (float) Math.cos(circleAcc4) * 8);
-        plotter.drawCircle(40, 18, 1.5f);
-        plotter.restore();
+        canvas.setAlpha(255);
+        canvas.save();
+        canvas.translate((float) Math.sin(circleAcc1) * 8, (float) Math.cos(circleAcc1) * 8);
+        canvas.drawCircle(40, 18, 3);
+        canvas.restore();
+        canvas.save();
+        canvas.translate((float) Math.sin(circleAcc2) * 8, (float) Math.cos(circleAcc2) * 8);
+        canvas.drawCircle(40, 18, 2.5f);
+        canvas.restore();
+        canvas.save();
+        canvas.translate((float) Math.sin(circleAcc3) * 8, (float) Math.cos(circleAcc3) * 8);
+        canvas.drawCircle(40, 18, 2);
+        canvas.restore();
+        canvas.save();
+        canvas.translate((float) Math.sin(circleAcc4) * 8, (float) Math.cos(circleAcc4) * 8);
+        canvas.drawCircle(40, 18, 1.5f);
+        canvas.restore();
 
+
+        // 5
+
+        /*canvas.drawRect(35, 55, 45, 65);
+        RenderSystem.blendFuncSeparate(GL11.GL_ONE_MINUS_DST_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE_MINUS_DST_ALPHA, GL11.GL_ZERO);
+        canvas.drawCircle(40, 60, 4);
+        RenderSystem.defaultBlendFunc();*/
 
         // 2
         /*GL11.glEnable(GL11.GL_STENCIL_TEST);
@@ -160,14 +168,14 @@ public class TestLinearLayout extends LinearLayout {
         GL11.glStencilFunc(GL11.GL_ALWAYS, 1, 0xff);
         GL11.glStencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_REPLACE);
 
-        plotter.setColor(255, 255, 255, 128);
-        plotter.drawRect(5, 2, 15, 8);
+        canvas.setColor(255, 255, 255, 128);
+        canvas.drawRect(5, 2, 15, 8);
 
         GL11.glStencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_KEEP);
         GL11.glStencilFunc(GL11.GL_NOTEQUAL, 1, 0xff);
 
-        plotter.setColor(0, 0, 0, 128);
-        plotter.drawRect(0, 0, 20, 10);
+        canvas.setColor(0, 0, 0, 128);
+        canvas.drawRect(0, 0, 20, 10);
 
         GL11.glDisable(GL11.GL_STENCIL_TEST);*/
     }
@@ -218,15 +226,15 @@ public class TestLinearLayout extends LinearLayout {
     private static class CView extends View {
 
         @Override
-        protected void onDraw(@Nonnull Plotter plotter) {
-            plotter.moveTo(this);
+        protected void onDraw(@Nonnull Canvas canvas) {
+            canvas.moveTo(this);
             String str = "AAAAAAAAAAAA";//TextFormatting.UNDERLINE + "Modern" + TextFormatting.AQUA + " UI " + TextFormatting.OBFUSCATED + "\u0629\u064a\u0628\u0631\u0639\u0644\u0627" + TextFormatting.STRIKETHROUGH + "\u2642";
             if (isMouseHovered()) {
-                plotter.setColor(140, 200, 240, 128);
-                plotter.drawRoundedRect(0, 1, getWidth(), getHeight() - 2, 4);
+                canvas.setColor(140, 200, 240, 128);
+                canvas.drawRoundedRect(0, 1, getWidth(), getHeight() - 2, 4);
             }
-            plotter.resetColor();
-            plotter.drawText(str, 4, 4);
+            canvas.resetColor();
+            canvas.drawText(str, 4, 4);
         }
     }
 
@@ -246,9 +254,9 @@ public class TestLinearLayout extends LinearLayout {
         }
 
         @Override
-        protected void onDraw(@Nonnull Plotter plotter) {
-            plotter.moveTo(this);
-            plotter.drawText("" + TextFormatting.RED + TextFormatting.BLUE + "G", offset, offsetY + 4);
+        protected void onDraw(@Nonnull Canvas canvas) {
+            canvas.moveTo(this);
+            canvas.drawText("" + TextFormatting.RED + TextFormatting.BLUE + "G", offset, offsetY + 4);
         }
 
         @Override

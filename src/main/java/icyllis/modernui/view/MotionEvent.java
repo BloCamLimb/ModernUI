@@ -222,6 +222,14 @@ public final class MotionEvent extends InputEvent {
 
 
     /**
+     * This private flag is only set on {@link #ACTION_HOVER_MOVE} events and indicates that
+     * this event will be immediately followed by a {@link #ACTION_HOVER_EXIT}. It is used to
+     * prevent generating redundant {@link #ACTION_HOVER_ENTER} events.
+     */
+    public static final int FLAG_HOVER_EXIT_PENDING = 0x4;
+
+
+    /**
      * Button constant: Primary button (left mouse button).
      * <p>
      * This button constant is not set in response to simple touches with a finger
@@ -783,10 +791,28 @@ public final class MotionEvent extends InputEvent {
         return mPointerProperties.get(pointerIndex).toolType;
     }
 
+    public final boolean isHoverExitPending() {
+        return (mFlags & FLAG_HOVER_EXIT_PENDING) != 0;
+    }
+
+    public void setHoverExitPending(boolean hoverExitPending) {
+        mFlags = hoverExitPending
+                ? mFlags | FLAG_HOVER_EXIT_PENDING
+                : mFlags & ~FLAG_HOVER_EXIT_PENDING;
+    }
+
     @Nonnull
     @Override
     public MotionEvent copy() {
         return obtain(this);
+    }
+
+    /**
+     * Returns the time (in ms) when the user originally pressed down to start
+     * a stream of position events.
+     */
+    public final long getDownTime() {
+        return mDownTime / 1000000;
     }
 
     @Override
@@ -1115,6 +1141,51 @@ public final class MotionEvent extends InputEvent {
      */
     public final boolean isNumLockOn() {
         return (mModifiers & GLFW.GLFW_MOD_NUM_LOCK) != 0;
+    }
+
+    /**
+     * Returns a string that represents the symbolic name of the specified unmasked action
+     * such as "ACTION_DOWN", "ACTION_POINTER_DOWN(3)" or an equivalent numeric constant
+     * such as "35" if unknown.
+     *
+     * @param action The unmasked action.
+     * @return The symbolic name of the specified action.
+     * @see #getAction()
+     */
+    public static String actionToString(int action) {
+        switch (action) {
+            case ACTION_DOWN:
+                return "ACTION_DOWN";
+            case ACTION_UP:
+                return "ACTION_UP";
+            case ACTION_CANCEL:
+                return "ACTION_CANCEL";
+            case ACTION_OUTSIDE:
+                return "ACTION_OUTSIDE";
+            case ACTION_MOVE:
+                return "ACTION_MOVE";
+            case ACTION_HOVER_MOVE:
+                return "ACTION_HOVER_MOVE";
+            case ACTION_SCROLL:
+                return "ACTION_SCROLL";
+            case ACTION_HOVER_ENTER:
+                return "ACTION_HOVER_ENTER";
+            case ACTION_HOVER_EXIT:
+                return "ACTION_HOVER_EXIT";
+            case ACTION_BUTTON_PRESS:
+                return "ACTION_BUTTON_PRESS";
+            case ACTION_BUTTON_RELEASE:
+                return "ACTION_BUTTON_RELEASE";
+        }
+        int index = (action & ACTION_POINTER_INDEX_MASK) >> ACTION_POINTER_INDEX_SHIFT;
+        switch (action & ACTION_MASK) {
+            case ACTION_POINTER_DOWN:
+                return "ACTION_POINTER_DOWN(" + index + ")";
+            case ACTION_POINTER_UP:
+                return "ACTION_POINTER_UP(" + index + ")";
+            default:
+                return Integer.toString(action);
+        }
     }
 
     /**

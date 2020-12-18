@@ -20,7 +20,7 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.discard.IHost;
 import icyllis.modernui.ui.discard.Widget;
 import icyllis.modernui.ui.discard.WidgetStatus;
@@ -84,7 +84,7 @@ public abstract class Button extends Widget {
     }
 
     @Override
-    protected void onDraw(@Nonnull Plotter plotter, float time) {
+    protected void onDraw(@Nonnull Canvas canvas, float time) {
         //brightAC.update();
     }
 

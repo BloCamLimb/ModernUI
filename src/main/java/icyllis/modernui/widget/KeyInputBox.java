@@ -19,7 +19,7 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.font.text.TextAlign;
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.view.*;
 import icyllis.modernui.ui.discard.IHost;
 import icyllis.modernui.ui.discard.IKeyboardListener;
@@ -61,18 +61,18 @@ public class KeyInputBox extends Widget implements IKeyboardListener {
     }
 
     @Override
-    public void onDraw(@Nonnull Plotter plotter, float time) {
-        //plotter.setColor(0.377f, 0.377f, 0.377f, backAlpha);
-        plotter.drawRect(x1, y1, x2, y2);
+    public void onDraw(@Nonnull Canvas canvas, float time) {
+        //canvas.setColor(0.377f, 0.377f, 0.377f, backAlpha);
+        canvas.drawRect(x1, y1, x2, y2);
         if (editing) {
-            plotter.setLineAntiAliasing(true);
-            //plotter.setColor(Color3i.BLUE_C, 0.863f);
-            plotter.drawRectLines(x1, y1, x2, y2);
-            plotter.setLineAntiAliasing(false);
+            canvas.setLineAntiAliasing(true);
+            //canvas.setColor(Color3i.BLUE_C, 0.863f);
+            canvas.drawRectLines(x1, y1, x2, y2);
+            canvas.setLineAntiAliasing(false);
         }
-        plotter.setTextAlign(TextAlign.CENTER);
-        //plotter.setColor(textBrightness, textBrightness, textBrightness, 1.0f);
-        plotter.drawText(keyText, x1 + 42, y1 + 4);
+        canvas.setTextAlign(TextAlign.CENTER);
+        //canvas.setColor(textBrightness, textBrightness, textBrightness, 1.0f);
+        canvas.drawText(keyText, x1 + 42, y1 + 4);
     }
 
     /*@Override

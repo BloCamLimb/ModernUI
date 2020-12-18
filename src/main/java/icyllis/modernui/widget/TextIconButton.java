@@ -22,7 +22,7 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.discard.IHost;
 import icyllis.modernui.graphics.renderer.Icon;
 import icyllis.modernui.font.text.TextAlign;
@@ -71,26 +71,26 @@ public class TextIconButton extends IconButton {
     }
 
     @Override
-    public void onDraw(@Nonnull Plotter plotter, float time) {
-        super.onDraw(plotter, time);
+    public void onDraw(@Nonnull Canvas canvas, float time) {
+        super.onDraw(canvas, time);
         if (textAlpha > 0) {
-            //plotter.setColor(1, 1, 1, textAlpha);
+            //canvas.setColor(1, 1, 1, textAlpha);
             switch (direction) {
                 case UP:
-                    plotter.setTextAlign(TextAlign.CENTER);
-                    plotter.drawText(text, x1 + width / 2f, y1 - 12);
+                    canvas.setTextAlign(TextAlign.CENTER);
+                    canvas.drawText(text, x1 + width / 2f, y1 - 12);
                     break;
                 case DOWN:
-                    plotter.setTextAlign(TextAlign.CENTER);
-                    plotter.drawText(text, x1 + width / 2f, y2 + 3);
+                    canvas.setTextAlign(TextAlign.CENTER);
+                    canvas.drawText(text, x1 + width / 2f, y2 + 3);
                     break;
                 case LEFT:
-                    plotter.setTextAlign(TextAlign.RIGHT);
-                    plotter.drawText(text, x1 - 4, y1 + (height - 8) / 2f);
+                    canvas.setTextAlign(TextAlign.RIGHT);
+                    canvas.drawText(text, x1 - 4, y1 + (height - 8) / 2f);
                     break;
                 case RIGHT:
-                    plotter.setTextAlign(TextAlign.LEFT);
-                    plotter.drawText(text, x2 + 4, y1 + (height - 8) / 2f);
+                    canvas.setTextAlign(TextAlign.LEFT);
+                    canvas.drawText(text, x2 + 4, y1 + (height - 8) / 2f);
                     break;
             }
         }

@@ -18,7 +18,7 @@
 
 package icyllis.modernui.impl.stats;
 
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.view.UITools;
 import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.math.Color3i;
@@ -54,26 +54,26 @@ public class ItemStatsEntry extends UniformScrollEntry {
     }
 
     @Override
-    public void onDraw(@Nonnull Plotter plotter, float time) {
+    public void onDraw(@Nonnull Canvas canvas, float time) {
         //itemRenderer.renderItemIntoGUI(item.getDefaultInstance(), (int) x1 + 2, (int) y1 + 2);
-        plotter.setColor(color, 1);
-        plotter.setTextAlign(TextAlign.RIGHT);
+        canvas.setColor(color, 1);
+        canvas.setTextAlign(TextAlign.RIGHT);
         int i = 0;
         for (String var : vars) {
-            plotter.drawText(var, x1 + 80 + i * 50, y1 + 6);
+            canvas.drawText(var, x1 + 80 + i * 50, y1 + 6);
             i++;
         }
         if (drawTooltip) {
-            //plotter.setColor(0.5f, 0.5f, 0.5f, 0.25f);
-            plotter.drawRect(x1 + 1, y1 + 1, x1 + 19, y2 - 1);
+            //canvas.setColor(0.5f, 0.5f, 0.5f, 0.25f);
+            canvas.drawRect(x1 + 1, y1 + 1, x1 + 19, y2 - 1);
             float l = UITools.getTextWidth(itemName);
-            //plotter.setColor(0, 0, 0, 0.5f);
-            plotter.drawRect(x1 + 22, y1 + 3, x1 + 28 + l, y2 - 3);
-            plotter.setTextAlign(TextAlign.LEFT);
-            plotter.resetColor();
-            plotter.drawText(itemName, x1 + 25, y1 + 6);
+            //canvas.setColor(0, 0, 0, 0.5f);
+            canvas.drawRect(x1 + 22, y1 + 3, x1 + 28 + l, y2 - 3);
+            canvas.setTextAlign(TextAlign.LEFT);
+            canvas.resetColor();
+            canvas.drawText(itemName, x1 + 25, y1 + 6);
         }
-        plotter.drawItem(item, x1 + 2, y1 + 2);
+        canvas.drawItem(item, x1 + 2, y1 + 2);
     }
 
     public void updateValue(StatisticsManager manager) {

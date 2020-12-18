@@ -21,7 +21,7 @@ package icyllis.modernui.impl.background;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
 import icyllis.modernui.animation.ITimeInterpolator;
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.discard.IDrawable;
 
 import javax.annotation.Nonnull;
@@ -60,12 +60,12 @@ public class MenuHomeBG implements IDrawable {
     }*/
 
     @Override
-    public void draw(@Nonnull Plotter plotter, float time) {
-        plotter.translate(xOffset, 0);
-        //plotter.setColor(0, 0, 0, 0.7f);
-        plotter.drawRect(0, 0, 32, height);
-        //plotter.setColor(0.55f, 0.55f, 0.55f, 0.85f);
-        plotter.drawLine(32, 0, 32, height);
+    public void draw(@Nonnull Canvas canvas, float time) {
+        canvas.translate(xOffset, 0);
+        //canvas.setColor(0, 0, 0, 0.7f);
+        canvas.drawRect(0, 0, 32, height);
+        //canvas.setColor(0.55f, 0.55f, 0.55f, 0.85f);
+        canvas.drawLine(32, 0, 32, height);
     }
 
     public void resize(int width, int height) {

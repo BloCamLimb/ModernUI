@@ -20,7 +20,7 @@ package icyllis.modernui.view;
 
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.math.Point;
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.widget.ScrollController;
 import net.minecraft.client.gui.screen.Screen;
@@ -166,7 +166,7 @@ public class View {
      * View flags
      * {@link #setStateFlag(int, int)}
      */
-    int viewFlags;
+    int mViewFlags;
 
     /**
      * Parent view of this view
@@ -190,25 +190,25 @@ public class View {
      * View left on screen
      * {@link #getLeft()}
      */
-    int left;
+    int mLeft;
 
     /**
      * View top on screen
      * {@link #getTop()}
      */
-    int top;
+    int mTop;
 
     /**
      * View right on screen
      * {@link #getRight()}
      */
-    int right;
+    int mRight;
 
     /**
      * View bottom on screen
      * {@link #getBottom()}
      */
-    int bottom;
+    int mBottom;
 
     //private boolean listening = true;
 
@@ -244,45 +244,45 @@ public class View {
     /**
      * Raw draw method, do not override this
      *
-     * @param plotter plotter to draw content
+     * @param canvas canvas to draw content
      */
-    public void draw(@Nonnull Plotter plotter) {
-        if ((viewFlags & VISIBILITY_MASK) == 0) {
-            plotter.save();
-            plotter.translate(left, top);
+    public void draw(@Nonnull Canvas canvas) {
+        if ((mViewFlags & VISIBILITY_MASK) == 0) {
+            canvas.save();
+            canvas.translate(mLeft, mTop);
 
-            onDraw(plotter);
+            onDraw(canvas);
 
-            dispatchDraw(plotter);
+            dispatchDraw(canvas);
 
             //TODO Draw scrollbars
             if (verticalScrollBar != null) {
-                verticalScrollBar.draw(plotter);
+                verticalScrollBar.draw(canvas);
             }
-            plotter.restore();
+            canvas.restore();
         }
     }
 
     /**
      * Draw this view if visible
-     * Before you draw in the method, you have to call {@link Plotter#moveTo(View)},
+     * Before you draw in the method, you have to call {@link Canvas#moveTo(View)},
      * (0, 0) will be the top left of the bounds,
      * (width, height) will be the bottom right of the bounds.
      * See {@link #getWidth()}
      * See {@link #getHeight()}
      *
-     * @param plotter plotter to draw content
+     * @param canvas canvas to draw content
      */
-    protected void onDraw(@Nonnull Plotter plotter) {
+    protected void onDraw(@Nonnull Canvas canvas) {
 
     }
 
     /**
      * Draw child views if visible
      *
-     * @param plotter plotter to draw content
+     * @param canvas canvas to draw content
      */
-    protected void dispatchDraw(@Nonnull Plotter plotter) {
+    protected void dispatchDraw(@Nonnull Canvas canvas) {
 
     }
 
@@ -328,19 +328,19 @@ public class View {
         ScrollBar scrollBar = verticalScrollBar;
         if (scrollBar != null) {
             int thickness = scrollBar.getSize();
-            int r = right - scrollBar.getRightPadding();
-            int l = Math.max(r - thickness, left);
-            int t = top + scrollBar.getTopPadding();
-            int b = bottom - scrollBar.getBottomPadding();
+            int r = mRight - scrollBar.getRightPadding();
+            int l = Math.max(r - thickness, mLeft);
+            int t = mTop + scrollBar.getTopPadding();
+            int b = mBottom - scrollBar.getBottomPadding();
             scrollBar.setFrame(l, t, r, b);
         }
         scrollBar = horizontalScrollBar;
         if (scrollBar != null) {
             int thickness = scrollBar.getSize();
-            int b = bottom - scrollBar.getBottomPadding();
-            int t = Math.max(b - thickness, top);
-            int l = left + scrollBar.getLeftPadding();
-            int r = right - scrollBar.getRightPadding();
+            int b = mBottom - scrollBar.getBottomPadding();
+            int t = Math.max(b - thickness, mTop);
+            int l = mLeft + scrollBar.getLeftPadding();
+            int r = mRight - scrollBar.getRightPadding();
             if (isVerticalScrollBarEnabled()) {
                 r -= verticalScrollBar.getWidth();
             }
@@ -367,15 +367,15 @@ public class View {
      * @return whether the rect area of this view was changed
      */
     protected boolean setFrame(int l, int t, int r, int b) {
-        if (left != l || right != r || top != t || bottom != b) {
+        if (mLeft != l || mRight != r || mTop != t || mBottom != b) {
 
             int oldWidth = getWidth();
             int oldHeight = getHeight();
 
-            left = l;
-            top = t;
-            right = r;
-            bottom = b;
+            mLeft = l;
+            mTop = t;
+            mRight = r;
+            mBottom = b;
 
             int newWidth = getWidth();
             int newHeight = getHeight();
@@ -644,11 +644,11 @@ public class View {
 
     //TODO state switching events
     void setStateFlag(int flag, int mask) {
-        final int old = viewFlags;
+        final int old = mViewFlags;
 
-        viewFlags = (viewFlags & ~mask) | (flag & mask);
+        mViewFlags = (mViewFlags & ~mask) | (flag & mask);
 
-        final int change = viewFlags ^ old;
+        final int change = mViewFlags ^ old;
 
     }
 
@@ -669,7 +669,7 @@ public class View {
      * @return visibility
      */
     public int getVisibility() {
-        return viewFlags & VISIBILITY_MASK;
+        return mViewFlags & VISIBILITY_MASK;
     }
 
     /**
@@ -682,7 +682,7 @@ public class View {
      */
     public final void setHorizontalScrollBarEnabled(boolean enabled) {
         if (isHorizontalScrollBarEnabled() != enabled) {
-            viewFlags ^= SCROLLBARS_HORIZONTAL;
+            mViewFlags ^= SCROLLBARS_HORIZONTAL;
         }
     }
 
@@ -696,7 +696,7 @@ public class View {
      */
     public final void setVerticalScrollBarEnabled(boolean enabled) {
         if (isVerticalScrollBarEnabled() != enabled) {
-            viewFlags ^= SCROLLBARS_VERTICAL;
+            mViewFlags ^= SCROLLBARS_VERTICAL;
         }
     }
 
@@ -709,7 +709,7 @@ public class View {
      * @see #setHorizontalScrollBar(ScrollBar)
      */
     public final boolean isHorizontalScrollBarEnabled() {
-        return (viewFlags & SCROLLBARS_HORIZONTAL) != 0;
+        return (mViewFlags & SCROLLBARS_HORIZONTAL) != 0;
     }
 
     /**
@@ -721,7 +721,7 @@ public class View {
      * @see #setVerticalScrollBar(ScrollBar)
      */
     public final boolean isVerticalScrollBarEnabled() {
-        return (viewFlags & SCROLLBARS_VERTICAL) != 0;
+        return (mViewFlags & SCROLLBARS_VERTICAL) != 0;
     }
 
     /**
@@ -781,7 +781,7 @@ public class View {
      * @return width
      */
     public final int getWidth() {
-        return right - left;
+        return mRight - mLeft;
     }
 
     /**
@@ -790,7 +790,7 @@ public class View {
      * @return height
      */
     public final int getHeight() {
-        return bottom - top;
+        return mBottom - mTop;
     }
 
     /**
@@ -800,7 +800,7 @@ public class View {
      * @return left
      */
     public final int getLeft() {
-        return left;
+        return mLeft;
     }
 
     /**
@@ -810,7 +810,7 @@ public class View {
      * @return top
      */
     public final int getTop() {
-        return top;
+        return mTop;
     }
 
     /**
@@ -820,7 +820,7 @@ public class View {
      * @return right
      */
     public final int getRight() {
-        return right;
+        return mRight;
     }
 
     /**
@@ -830,7 +830,7 @@ public class View {
      * @return bottom
      */
     public final int getBottom() {
-        return bottom;
+        return mBottom;
     }
 
     /*public final void setListening(boolean listening) {
@@ -890,8 +890,8 @@ public class View {
             throw new IllegalArgumentException("Location array length must be two at least");
         }
 
-        float x = left;
-        float y = top;
+        float x = mLeft;
+        float y = mTop;
 
         IViewParent parent = this.parent;
         while (parent != null) {
@@ -935,10 +935,10 @@ public class View {
     }
 
     boolean onCursorPosEvent(LinkedList<View> route, double x, double y) {
-        if ((viewFlags & ENABLED_MASK) == DISABLED) {
+        if ((mViewFlags & ENABLED_MASK) == DISABLED) {
             return false;
         }
-        if (x >= left && x < right && y >= top && y < bottom) {
+        if (x >= mLeft && x < mRight && y >= mTop && y < mBottom) {
             route.add(this);
             return true;
         }
@@ -947,7 +947,7 @@ public class View {
 
     /**
      * Starts a drag and drop operation. This method passes a {@link DragShadow} object to
-     * the window system. The system calls {@link DragShadow#onDrawShadow(Plotter)}
+     * the window system. The system calls {@link DragShadow#onDrawShadow(Canvas)}
      * to draw the drag shadow itself at proper level.
      * <p>
      * Once the system has the drag shadow, it begins the drag and drop operation by sending
@@ -1020,7 +1020,7 @@ public class View {
                 return true;
             }
         }
-        if (dispatchPointerEvent(event)) {
+        if (dispatchGenericPointerEvent(event)) {
             return true;
         }
         return onGenericMotionEvent(event);
@@ -1061,7 +1061,7 @@ public class View {
      * @return {@code true} if the event was consumed by the view, {@code false} otherwise
      */
     public boolean onGenericMotionEvent(@Nonnull MotionEvent event) {
-        if ((viewFlags & ENABLED_MASK) == DISABLED) {
+        if ((mViewFlags & ENABLED_MASK) == DISABLED) {
             return false;
         }
 
@@ -1072,7 +1072,7 @@ public class View {
         switch (action) {
             case MotionEvent.ACTION_MOVE:
                 final boolean prevHovered = (mPrivateFlags & PFLAG_HOVERED) != 0;
-                if (mouseX >= left && mouseX < right && mouseY >= top && mouseY < bottom) {
+                if (mouseX >= mLeft && mouseX < mRight && mouseY >= mTop && mouseY < mBottom) {
                     if (!prevHovered) {
                         mPrivateFlags |= PFLAG_HOVERED;
                         onMouseHoverEnter(mouseX, mouseY);
@@ -1132,6 +1132,7 @@ public class View {
     }
 
     public boolean onHoverEvent(MotionEvent event) {
+        ModernUI.LOGGER.debug("ReceiveHoverEvent: {}", MotionEvent.actionToString(event.getAction()));
         return false;
     }
 
@@ -1195,6 +1196,15 @@ public class View {
             onMouseHoverExit();
         }
     }*/
+
+    /**
+     * Returns whether this view can receive pointer events.
+     *
+     * @return {@code true} if this view can receive pointer events.
+     */
+    protected boolean canReceivePointerEvents() {
+        return (mViewFlags & VISIBILITY_MASK) == VISIBLE;
+    }
 
     /**
      * Pass the touch screen motion event down to the target view, or this view if
@@ -1285,6 +1295,24 @@ public class View {
         }
         return onMouseClicked(mouseX, mouseY, mouseButton);
     }*/
+
+    /**
+     * Determines whether the given point, in local coordinates is inside the view.
+     */
+    final boolean pointInView(float localX, float localY) {
+        return pointInView(localX, localY, 0);
+    }
+
+    /**
+     * Utility method to determine whether the given point, in local coordinates,
+     * is inside the view, where the area of the view is expanded by the slop factor.
+     * This method is called while processing touch-move events to determine if the event
+     * is still within the view.
+     */
+    boolean pointInView(float localX, float localY, float slop) {
+        return localX >= -slop && localY >= -slop && localX < ((mRight - mLeft) + slop) &&
+                localY < ((mBottom - mTop) + slop);
+    }
 
     /**
      * Called when mouse hovered on this view and a mouse button pressed.
@@ -1505,32 +1533,32 @@ public class View {
             altSize = 5;
         }
 
-        private void draw(@Nonnull Plotter plotter) {
+        private void draw(@Nonnull Canvas canvas) {
             /*if (!barHovered && !isDragging && brightness > 0.5f) {
-                if (plotter.getDrawingTime() > startTime) {
-                    float change = (startTime - plotter.getDrawingTime()) / 2000.0f;
+                if (canvas.getDrawingTime() > startTime) {
+                    float change = (startTime - canvas.getDrawingTime()) / 2000.0f;
                     brightness = Math.max(0.75f + change, 0.5f);
                 }
             }
-            plotter.setColor(16, 16, 16, 40);
-            plotter.drawRect(getLeft(), getTop(), getRight(), getBottom());
+            canvas.setColor(16, 16, 16, 40);
+            canvas.drawRect(getLeft(), getTop(), getRight(), getBottom());
             int br = (int) (brightness * 255.0f);
-            plotter.setColor(br, br, br, 128);
-            plotter.drawRect(getLeft(), barY, getRight(), barY + barLength);*/
+            canvas.setColor(br, br, br, 128);
+            canvas.drawRect(getLeft(), barY, getRight(), barY + barLength);*/
 
             if ((flags & DRAW_TRACK) != 0 && track != null) {
-                track.draw(plotter);
+                track.draw(canvas);
             }
             if ((flags & DRAW_THUMB) != 0) {
                 // due to gui scaling, we have to do with float rather than integer
-                plotter.save();
+                canvas.save();
                 if (isVertical()) {
-                    plotter.translate(0, thumbOffset);
+                    canvas.translate(0, thumbOffset);
                 } else {
-                    plotter.translate(thumbOffset, 0);
+                    canvas.translate(thumbOffset, 0);
                 }
-                thumb.draw(plotter);
-                plotter.restore();
+                thumb.draw(canvas);
+                canvas.restore();
             }
         }
 
@@ -1950,7 +1978,7 @@ public class View {
         /**
          * Construct a shadow builder object with no associated View. This
          * constructor variant is only useful when the {@link #onProvideShadowCenter(Point)}}
-         * and {@link #onDrawShadow(Plotter)} methods are also overridden in order
+         * and {@link #onDrawShadow(Canvas)} methods are also overridden in order
          * to supply the drag shadow's dimensions and appearance without
          * reference to any View object.
          */
@@ -1976,12 +2004,12 @@ public class View {
         /**
          * Draw the shadow.
          *
-         * @param plotter plotter to draw content
+         * @param canvas canvas to draw content
          */
-        public void onDrawShadow(@Nonnull Plotter plotter) {
+        public void onDrawShadow(@Nonnull Canvas canvas) {
             View view = viewRef.get();
             if (view != null) {
-                view.onDraw(plotter);
+                view.onDraw(canvas);
             } else {
                 ModernUI.LOGGER.error(MARKER, "No view found on draw shadow");
             }

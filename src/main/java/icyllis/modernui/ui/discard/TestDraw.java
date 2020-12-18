@@ -23,7 +23,7 @@ import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
 import icyllis.modernui.animation.ITimeInterpolator;
 import icyllis.modernui.animation.interpolator.OvershootInterpolator;
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 
 import javax.annotation.Nonnull;
 
@@ -57,43 +57,43 @@ public class TestDraw implements IDrawable {
     }
 
     @Override
-    public void draw(@Nonnull Plotter plotter, float time) {
-        plotter.save();
-        plotter.translate(xOffset, 0);
-        /*plotter.setLineWidth(2);
-        plotter.setLineAntiAliasing(true);
-        plotter.drawOctagonRectFrame(100, 40, 200, 60, 3);
-        plotter.setLineAntiAliasing(false);*/
-        //plotter.setColor(Color3i.BLUE_C, 0.5f);
-        plotter.drawCircle(150, 50, 11);
-        plotter.restore();
+    public void draw(@Nonnull Canvas canvas, float time) {
+        canvas.save();
+        canvas.translate(xOffset, 0);
+        /*canvas.setLineWidth(2);
+        canvas.setLineAntiAliasing(true);
+        canvas.drawOctagonRectFrame(100, 40, 200, 60, 3);
+        canvas.setLineAntiAliasing(false);*/
+        //canvas.setColor(Color3i.BLUE_C, 0.5f);
+        canvas.drawCircle(150, 50, 11);
+        canvas.restore();
 
-        plotter.save();
-        plotter.translate(yOffset / 2.0f, yOffset);
-        plotter.drawCircle(100, 80, 6);
-        plotter.restore();
+        canvas.save();
+        canvas.translate(yOffset / 2.0f, yOffset);
+        canvas.drawCircle(100, 80, 6);
+        canvas.restore();
 
         RenderSystem.enableDepthTest();
         RenderSystem.depthMask(false);
-        plotter.setZ(20);
-        plotter.drawCircle(20, 120, 8);
+        canvas.setZ(20);
+        canvas.drawCircle(20, 120, 8);
         RenderSystem.depthMask(true);
-        plotter.setZ(0);
-        plotter.setColor(1, 1, 1);
-        plotter.drawCircle(20, 130, 8);
+        canvas.setZ(0);
+        canvas.setColor(1, 1, 1);
+        canvas.drawCircle(20, 130, 8);
         RenderSystem.disableDepthTest();
 
-        plotter.resetColor();
-        plotter.drawText("Modern UI Library", 20, 64);
+        canvas.resetColor();
+        canvas.drawText("Modern UI Library", 20, 64);
 
-        plotter.save();
-        plotter.translate((float) Math.sin(circleAcc) * 16, (float) Math.cos(circleAcc) * 16);
-        //plotter.setColor(Color3i.LIGHT_PURPLE, 0.5f);
-        plotter.drawCircle(60, 160, 3);
-        plotter.restore();
+        canvas.save();
+        canvas.translate((float) Math.sin(circleAcc) * 16, (float) Math.cos(circleAcc) * 16);
+        //canvas.setColor(Color3i.LIGHT_PURPLE, 0.5f);
+        canvas.drawCircle(60, 160, 3);
+        canvas.restore();
 
-        plotter.resetColor();
-        plotter.drawFeatheredRect(80, 114, 110, 116, 0.5f);
+        canvas.resetColor();
+        canvas.drawFeatheredRect(80, 114, 110, 116, 0.5f);
     }
 
     @Override

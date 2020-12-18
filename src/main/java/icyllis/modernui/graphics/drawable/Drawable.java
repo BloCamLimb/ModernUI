@@ -18,7 +18,7 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 
 import javax.annotation.Nonnull;
 
@@ -34,15 +34,15 @@ public abstract class Drawable {
 
     /**
      * Draw things in bounds.
-     * Before you draw in the method, you have to call {@link Plotter#moveTo(Drawable)},
+     * Before you draw in the method, you have to call {@link Canvas#moveTo(Drawable)},
      * (0, 0) will be the top left of the bounds,
      * (width, height) will be the bottom right of the bounds.
      * See {@link #getWidth()}
      * See {@link #getHeight()}
      *
-     * @param plotter the plotter to draw things
+     * @param canvas the canvas to draw things
      */
-    public abstract void draw(@Nonnull Plotter plotter);
+    public abstract void draw(@Nonnull Canvas canvas);
 
     /**
      * Returns the drawable's intrinsic width. Actually a layout params.

@@ -19,7 +19,7 @@
 package icyllis.modernui.impl.setting;
 
 import icyllis.modernui.font.text.TextAlign;
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.ui.discard.ScrollWindow;
 import icyllis.modernui.widget.UniformScrollGroup;
 import net.minecraft.util.text.TextFormatting;
@@ -77,11 +77,11 @@ public class SettingCategoryGroup extends UniformScrollGroup<SettingEntry> {
     }*/
 
     @Override
-    public void draw(@Nonnull Plotter plotter, float time) {
-        plotter.resetColor();
-        plotter.setTextAlign(TextAlign.LEFT);
-        plotter.drawText(title, centerX - 160, y1 + 14);
-        super.draw(plotter, time);
+    public void draw(@Nonnull Canvas canvas, float time) {
+        canvas.resetColor();
+        canvas.setTextAlign(TextAlign.LEFT);
+        canvas.drawText(title, centerX - 160, y1 + 14);
+        super.draw(canvas, time);
     }
 
     /*@Override

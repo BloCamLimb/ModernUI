@@ -19,17 +19,17 @@
 package icyllis.modernui.ui.drawable;
 
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 
 import javax.annotation.Nonnull;
 
 public class ScrollThumbDrawable extends Drawable {
 
     @Override
-    public void draw(@Nonnull Plotter plotter) {
-        plotter.moveTo(this);
-        plotter.setColor(128, 128, 128, 128);
-        plotter.drawRect(0, 0, getWidth(), getHeight());
+    public void draw(@Nonnull Canvas canvas) {
+        canvas.moveTo(this);
+        canvas.setColor(128, 128, 128, 128);
+        canvas.drawRect(0, 0, getWidth(), getHeight());
     }
 
     @Override

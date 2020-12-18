@@ -18,7 +18,7 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.graphics.renderer.Plotter;
+import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.graphics.renderer.Icon;
 import icyllis.modernui.view.UITools;
 import icyllis.modernui.view.UIManager;
@@ -74,15 +74,15 @@ public class DropDownWidget extends Widget {
     }
 
     @Override
-    public void onDraw(@Nonnull Plotter plotter, float time) {
+    public void onDraw(@Nonnull Canvas canvas, float time) {
         if (backAlpha > 0) {
-            //plotter.setColor(0.377f, 0.377f, 0.377f, backAlpha);
-            plotter.drawRect(x1, y1, x2, y2);
+            //canvas.setColor(0.377f, 0.377f, 0.377f, backAlpha);
+            canvas.drawRect(x1, y1, x2, y2);
         }
-        plotter.setTextAlign(TextAlign.RIGHT);
-        //plotter.setColor(brightness, brightness, brightness, 1);
-        plotter.drawText(text, x2 - 10, y1 + 4);
-        plotter.drawIcon(icon, x2 - 8, y1 + 5, x2, y2 - 3);
+        canvas.setTextAlign(TextAlign.RIGHT);
+        //canvas.setColor(brightness, brightness, brightness, 1);
+        canvas.drawText(text, x2 - 10, y1 + 4);
+        canvas.drawIcon(icon, x2 - 8, y1 + 5, x2, y2 - 3);
     }
 
     @Override
