@@ -19,10 +19,11 @@
 package icyllis.modernui.system;
 
 import icyllis.modernui.network.NetworkHandler;
-import icyllis.modernui.plugin.IModPlugin;
+import icyllis.modernui.plugin.IMuiPlugin;
 import icyllis.modernui.plugin.MuiPlugin;
-import icyllis.modernui.ui.TestMenu;
-import icyllis.modernui.ui.TestFragment;
+import icyllis.modernui.test.TestMenu;
+import icyllis.modernui.test.TestFragment;
+import icyllis.modernui.test.TestScreen;
 import icyllis.modernui.view.UIManager;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.inventory.container.ContainerType;
@@ -80,14 +81,14 @@ public final class Registration {
 
     @SubscribeEvent
     static void setupCommon(@Nonnull FMLCommonSetupEvent event) {
-        Map<String, IModPlugin> plugins = new HashMap<>();
+        Map<String, IMuiPlugin> plugins = new HashMap<>();
         Type target = Type.getType(MuiPlugin.class);
         for (ModFileScanData scanData : ModList.get().getAllScanData()) {
             for (ModFileScanData.AnnotationData data : scanData.getAnnotations()) {
                 if (data.getAnnotationType().equals(target)) {
                     try {
                         plugins.putIfAbsent((String) data.getAnnotationData().get("namespace"),
-                                UnsafeHacks.newInstance(Class.forName(data.getMemberName()).asSubclass(IModPlugin.class)));
+                                UnsafeHacks.newInstance(Class.forName(data.getMemberName()).asSubclass(IMuiPlugin.class)));
                     } catch (Throwable throwable) {
                         ModernUI.LOGGER.error(ModernUI.MARKER, "Failed to load plugin: {}", data.getMemberName(), throwable);
                     }
@@ -118,7 +119,7 @@ public final class Registration {
     @SubscribeEvent
     static void setupClient(@Nonnull FMLClientSetupEvent event) {
         //SettingsManager.INSTANCE.buildAllSettings();
-        UIManager.getInstance().registerFactory(Registration.TEST_MENU, c -> new TestFragment());
+        UIManager.getInstance().registerMenuScreen(Registration.TEST_MENU, menu -> new TestScreen());
     }
 
     @Nonnull

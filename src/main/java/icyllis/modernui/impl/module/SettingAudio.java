@@ -20,7 +20,7 @@ package icyllis.modernui.impl.module;
 
 import com.google.common.collect.Lists;
 import icyllis.modernui.view.UITools;
-import icyllis.modernui.ui.discard.Module;
+import icyllis.modernui.test.discard.Module;
 import icyllis.modernui.impl.setting.SettingCategoryGroup;
 import icyllis.modernui.impl.setting.SettingEntry;
 import icyllis.modernui.impl.setting.SSliderSettingEntry;

@@ -18,9 +18,9 @@
 
 package icyllis.modernui.impl.chat;
 
-import icyllis.modernui.ui.discard.StandardEventListener;
+import icyllis.modernui.test.discard.StandardEventListener;
 import icyllis.modernui.font.IFontRenderer;
-import icyllis.modernui.ui.discard.DrawTools;
+import icyllis.modernui.test.discard.DrawTools;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.SharedConstants;

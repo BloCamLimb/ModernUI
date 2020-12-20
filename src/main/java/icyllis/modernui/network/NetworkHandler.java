@@ -58,7 +58,7 @@ public class NetworkHandler {
     private final ResourceLocation channel;
     private final String protocol;
 
-    // system variable
+    // internal value
     private boolean optional;
 
     @Nullable
@@ -66,18 +66,19 @@ public class NetworkHandler {
     @Nullable
     private final IServerMsgHandler serverHandler;
 
-    // temporary buffer
+    // temp byte buf
     private PacketBuffer buffer;
 
     /**
      * Create a network handler of a mod
      *
-     * @param modid           the mod identifier
-     * @param name            network channel name
-     * @param clientHandler   server to client message handler
-     * @param serverHandler   client to server message handler
+     * @param modid         mod identifier
+     * @param name          network channel name
+     * @param clientHandler message handler to process server-to-client packets
+     * @param serverHandler message handler to process client-to-server packets
      */
-    public NetworkHandler(@Nonnull String modid, @Nonnull String name, @Nullable IClientMsgHandler clientHandler, @Nullable IServerMsgHandler serverHandler) {
+    public NetworkHandler(@Nonnull String modid, @Nonnull String name,
+                          @Nullable IClientMsgHandler clientHandler, @Nullable IServerMsgHandler serverHandler) {
         protocol = UUID.nameUUIDFromBytes(ModList.get().getModFileById(modid).getMods().stream()
                 .map(iModInfo -> iModInfo.getVersion().getQualifier())
                 .collect(Collectors.joining(",")).getBytes(StandardCharsets.UTF_8)).toString();
@@ -95,13 +96,20 @@ public class NetworkHandler {
         network.addListener(this::onC2SMessageReceived);
     }
 
+    /**
+     * Allocate a buffer to write packet data with index.  The packet must
+     * be dispatched later, using {@link #sendToPlayer(PlayerEntity)} for instance.
+     *
+     * @param index The handling index, range from 0 to 32767
+     * @return A byte buf with the index written
+     */
     @Nonnull
     public PacketBuffer allocBuffer(int index) {
         if (buffer != null) {
             throw new IllegalStateException("Previous packet was not dispatched");
         }
         buffer = new PacketBuffer(Unpooled.buffer());
-        buffer.writeByte(index);
+        buffer.writeShort(index);
         return buffer;
     }
 
@@ -147,7 +155,7 @@ public class NetworkHandler {
         // received on main thread of effective side
         if (clientHandler != null) {
             try {
-                clientHandler.handle(event.getPayload().readUnsignedByte(), event.getPayload(), Minecraft.getInstance().player);
+                clientHandler.handle(event.getPayload().readShort(), event.getPayload(), Minecraft.getInstance().player);
             } catch (Exception e) {
                 ModernUI.LOGGER.warn(ModernUI.MARKER, "An error occurred while handling server-to-client message", e);
             }
@@ -160,7 +168,7 @@ public class NetworkHandler {
         // received on main thread of effective side
         if (serverHandler != null) {
             try {
-                serverHandler.handle(event.getPayload().readUnsignedByte(), event.getPayload(), event.getSource().get().getSender());
+                serverHandler.handle(event.getPayload().readShort(), event.getPayload(), event.getSource().get().getSender());
             } catch (Exception e) {
                 ModernUI.LOGGER.warn(ModernUI.MARKER, "An error occurred while handling client-to-server message", e);
             }
@@ -187,6 +195,16 @@ public class NetworkHandler {
      */
     public void sendToPlayer(@Nonnull PlayerEntity player) {
         ((ServerPlayerEntity) player).connection.sendPacket(new SCustomPayloadPlayPacket(channel, buffer));
+        buffer = null;
+    }
+
+    /**
+     * Send a message to a player
+     *
+     * @param player player entity on server
+     */
+    public void sendToPlayer(@Nonnull ServerPlayerEntity player) {
+        player.connection.sendPacket(new SCustomPayloadPlayPacket(channel, buffer));
         buffer = null;
     }
 

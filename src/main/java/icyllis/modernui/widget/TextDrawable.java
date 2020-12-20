@@ -20,7 +20,7 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.ui.discard.IDrawable;
+import icyllis.modernui.test.discard.IDrawable;
 
 import javax.annotation.Nonnull;
 

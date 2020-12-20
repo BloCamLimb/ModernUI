@@ -33,7 +33,6 @@ import org.lwjgl.glfw.GLFW;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
-import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -719,7 +718,6 @@ public class View {
      * Indicates whether this view reacts to click events or not.
      *
      * @return true if the view is clickable, false otherwise
-     *
      * @see #setClickable(boolean)
      */
     public boolean isClickable() {
@@ -733,7 +731,6 @@ public class View {
      * user's clicks.
      *
      * @param clickable true to make the view clickable, false otherwise
-     *
      * @see #isClickable()
      */
     public void setClickable(boolean clickable) {
@@ -1007,7 +1004,7 @@ public class View {
         return null;
     }
 
-    boolean onCursorPosEvent(LinkedList<View> route, double x, double y) {
+    /*boolean onCursorPosEvent(LinkedList<View> route, double x, double y) {
         if ((mViewFlags & ENABLED_MASK) == DISABLED) {
             return false;
         }
@@ -1016,7 +1013,7 @@ public class View {
             return true;
         }
         return false;
-    }
+    }*/
 
     /**
      * Starts a drag and drop operation. This method passes a {@link DragShadow} object to
@@ -1293,7 +1290,6 @@ public class View {
         if ((viewFlags & ENABLED_MASK) == DISABLED) {
             return false;
         }
-
         return (viewFlags & CLICKABLE) == CLICKABLE;
     }
 
@@ -2234,47 +2230,8 @@ public class View {
     }
 
     @FunctionalInterface
-    public interface MouseHoverListener {
+    public interface OnHoverListener {
 
-        void onEvent();
-    }
-
-    /**
-     * Defines mouse hover type
-     */
-    private enum HoverType {
-
-        /**
-         * For a View
-         */
-        TREE,
-
-        /**
-         * For a ViewGroup
-         */
-        STRICT,
-
-        /**
-         * For a ViewGroup or it's children
-         */
-        BOTH;
-
-        /**
-         * Returns true if mouse is hovering a View or one of its children
-         *
-         * @return {@code true} if it's general
-         */
-        public boolean isGeneral() {
-            return this != STRICT;
-        }
-
-        /**
-         * Returns true if mouse is hovering a View or there's no child is hovered
-         *
-         * @return {@code true} if it's foremost
-         */
-        public boolean isForemost() {
-            return this != TREE;
-        }
+        void onHover(View v, MotionEvent event);
     }
 }

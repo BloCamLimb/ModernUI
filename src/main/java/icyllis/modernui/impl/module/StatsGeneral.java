@@ -19,8 +19,8 @@
 package icyllis.modernui.impl.module;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.ui.discard.Module;
-import icyllis.modernui.ui.discard.ScrollWindow;
+import icyllis.modernui.test.discard.Module;
+import icyllis.modernui.test.discard.ScrollWindow;
 import icyllis.modernui.impl.stats.GeneralStatsGroup;
 import net.minecraft.client.Minecraft;
 import net.minecraft.stats.StatisticsManager;

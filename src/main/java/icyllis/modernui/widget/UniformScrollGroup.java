@@ -19,8 +19,8 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.ui.discard.IScrollHost;
-import icyllis.modernui.ui.discard.ScrollGroup;
+import icyllis.modernui.test.discard.IScrollHost;
+import icyllis.modernui.test.discard.ScrollGroup;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;

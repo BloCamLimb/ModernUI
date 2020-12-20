@@ -24,7 +24,7 @@ import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.font.IFontRenderer;
 import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.system.ModernUI;
-import icyllis.modernui.ui.discard.DrawTools;
+import icyllis.modernui.test.discard.DrawTools;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.util.ResourceLocation;

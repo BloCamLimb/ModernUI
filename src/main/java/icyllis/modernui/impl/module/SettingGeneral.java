@@ -20,12 +20,12 @@ package icyllis.modernui.impl.module;
 
 import com.google.common.collect.Lists;
 import icyllis.modernui.system.ModernUI;
-import icyllis.modernui.ui.discard.IModule;
-import icyllis.modernui.ui.discard.Module;
+import icyllis.modernui.test.discard.IModule;
+import icyllis.modernui.test.discard.Module;
 import icyllis.modernui.impl.setting.*;
 import icyllis.modernui.view.UIManager;
-import icyllis.modernui.ui.popup.ConfirmCallback;
-import icyllis.modernui.ui.popup.PopupConfirm;
+import icyllis.modernui.test.popup.ConfirmCallback;
+import icyllis.modernui.test.popup.PopupConfirm;
 import icyllis.modernui.impl.setting.SettingScrollWindow;
 import icyllis.modernui.system.SettingsManager;
 import net.minecraft.client.GameSettings;

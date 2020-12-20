@@ -30,7 +30,7 @@ import org.lwjgl.glfw.GLFW;
 import javax.annotation.Nonnull;
 
 /**
- * This class serves as a junction to receive events from system.
+ * Represents the GUI screen that receives events from Minecraft.
  * All vanilla methods are completely taken over by Modern UI.
  *
  * @see MuiMenuScreen
@@ -38,21 +38,22 @@ import javax.annotation.Nonnull;
 @OnlyIn(Dist.CLIENT)
 final class MuiMainScreen extends Screen implements IMuiScreen {
 
-    private final UIManager master = UIManager.getInstance();
+    private final UIManager master;
 
-    MuiMainScreen() {
+    MuiMainScreen(UIManager window) {
         super(StringTextComponent.EMPTY);
+        master = window;
     }
 
     @Override
     public void init(@Nonnull Minecraft minecraft, int width, int height) {
-        master.prepareWindows(this, width, height);
+        master.start(this, width, height);
         BlurHandler.INSTANCE.forceBlur();
     }
 
     @Override
     public void resize(@Nonnull Minecraft minecraft, int width, int height) {
-        master.prepareWindows(this, width, height);
+        master.start(this, width, height);
     }
 
     @Override
@@ -63,7 +64,7 @@ final class MuiMainScreen extends Screen implements IMuiScreen {
     @Override
     public void onClose() {
         super.onClose();
-        master.recycleWindows();
+        master.destroy();
     }
 
     @Override

@@ -21,10 +21,10 @@ package icyllis.modernui.widget;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.graphics.renderer.Icon;
 import icyllis.modernui.view.UITools;
-import icyllis.modernui.ui.discard.Align9D;
-import icyllis.modernui.ui.discard.Direction4D;
-import icyllis.modernui.ui.discard.Locator;
-import icyllis.modernui.ui.discard.IHost;
+import icyllis.modernui.test.discard.Align9D;
+import icyllis.modernui.test.discard.Direction4D;
+import icyllis.modernui.test.discard.Locator;
+import icyllis.modernui.test.discard.IHost;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
