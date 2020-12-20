@@ -19,7 +19,7 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.view.UITools;
-import icyllis.modernui.ui.discard.IHost;
+import icyllis.modernui.test.discard.IHost;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

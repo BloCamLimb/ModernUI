@@ -38,7 +38,7 @@ public class Lifecycle {
      */
     private final WeakReference<ILifecycleOwner> mLifecycleOwner;
 
-    private final List<IListener> mListeners = new ObjectArrayList<>();
+    private final List<IObserver> mObservers = new ObjectArrayList<>();
 
     /**
      * Current state
@@ -62,8 +62,8 @@ public class Lifecycle {
      *
      * @param listener the listener to call
      */
-    public void addListener(@Nonnull IListener listener) {
-        mListeners.add(listener);
+    public void addObserver(@Nonnull IObserver listener) {
+        mObservers.add(listener);
     }
 
     /**
@@ -71,8 +71,8 @@ public class Lifecycle {
      *
      * @param listener the listener to remove
      */
-    public void removeListener(@Nonnull IListener listener) {
-        mListeners.remove(listener);
+    public void removeObserver(@Nonnull IObserver listener) {
+        mObservers.remove(listener);
     }
 
     /**
@@ -106,10 +106,10 @@ public class Lifecycle {
             throw new IllegalStateException("LifecycleOwner of this Lifecycle is already garbage collected. " +
                     "It is too late to change lifecycle state.");
         }
-        int diff;
-        while ((diff = state.compareTo(mState)) != 0) {
-            Event event = diff < 0 ? downEvent(mState) : upEvent(mState);
-            for (IListener l : mListeners) {
+        int i;
+        while ((i = state.compareTo(mState)) != 0) {
+            Event event = i < 0 ? downEvent(mState) : upEvent(mState);
+            for (IObserver l : mObservers) {
                 l.onLifecycleEvent(lifecycleOwner, event);
             }
         }
@@ -181,7 +181,7 @@ public class Lifecycle {
     }
 
     @FunctionalInterface
-    public interface IListener {
+    public interface IObserver {
 
         void onLifecycleEvent(@Nonnull ILifecycleOwner source, Event event);
     }

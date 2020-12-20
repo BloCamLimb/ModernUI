@@ -19,9 +19,9 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.ui.discard.IDraggable;
-import icyllis.modernui.ui.discard.IHost;
-import icyllis.modernui.ui.discard.Widget;
+import icyllis.modernui.test.discard.IDraggable;
+import icyllis.modernui.test.discard.IHost;
+import icyllis.modernui.test.discard.Widget;
 
 import javax.annotation.Nonnull;
 

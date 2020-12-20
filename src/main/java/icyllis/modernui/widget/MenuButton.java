@@ -27,9 +27,9 @@ import icyllis.modernui.view.UITools;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
 import icyllis.modernui.animation.ITimeInterpolator;
-import icyllis.modernui.ui.discard.Align9D;
-import icyllis.modernui.ui.discard.Locator;
-import icyllis.modernui.ui.discard.IHost;
+import icyllis.modernui.test.discard.Align9D;
+import icyllis.modernui.test.discard.Locator;
+import icyllis.modernui.test.discard.IHost;
 import net.minecraft.client.resources.I18n;
 
 import javax.annotation.Nonnull;

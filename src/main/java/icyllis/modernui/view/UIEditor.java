@@ -38,7 +38,6 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-//TODO Really Experimental, all changes won't be saved
 @Deprecated
 @OnlyIn(Dist.CLIENT)
 public enum UIEditor {
@@ -193,7 +192,7 @@ public enum UIEditor {
         }
         switch (event.getKey()) {
             case GLFW.GLFW_KEY_T:
-                if (UIManager.getInstance().isMuiScreenOpen()) {
+                if (UIManager.getInstance().hasMuiScreen()) {
                     iterateWorking();
                 }
                 break;
@@ -208,19 +207,19 @@ public enum UIEditor {
                 builder.append("Modern UI Debug Info:\n");
 
                 builder.append("[0] Is Modern Screen: ");
-                builder.append(UIManager.getInstance().isMuiScreenOpen());
+                builder.append(UIManager.getInstance().hasMuiScreen());
                 builder.append("\n");
 
                 builder.append("[1] Has Container: ");
                 builder.append(Minecraft.getInstance().player != null && Minecraft.getInstance().player.openContainer != null);
                 builder.append("\n");
 
-                if (!UIManager.getInstance().isMuiScreenOpen()) {
+                if (!UIManager.getInstance().hasMuiScreen()) {
                     builder.append("[2] Open Gui: ");
                     builder.append(Minecraft.getInstance().currentScreen);
                 } else {
-                    builder.append("[2] Main View: ");
-                    builder.append(UIManager.getInstance().getMainView());
+                    builder.append("[2] Open App Gui: ");
+                    builder.append(UIManager.getInstance().getAppScreen());
                 }
                 builder.append("\n");
 

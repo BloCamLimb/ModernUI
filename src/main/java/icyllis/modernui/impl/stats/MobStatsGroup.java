@@ -19,7 +19,7 @@
 package icyllis.modernui.impl.stats;
 
 import com.google.common.collect.Sets;
-import icyllis.modernui.ui.discard.ScrollWindow;
+import icyllis.modernui.test.discard.ScrollWindow;
 import icyllis.modernui.widget.UniformScrollGroup;
 import net.minecraft.entity.EntityType;
 import net.minecraft.stats.StatisticsManager;

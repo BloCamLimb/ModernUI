@@ -21,7 +21,7 @@ package icyllis.modernui.widget;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.ui.discard.IDrawable;
+import icyllis.modernui.test.discard.IDrawable;
 
 import javax.annotation.Nonnull;
 

@@ -27,7 +27,6 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
-import java.util.LinkedList;
 
 @SuppressWarnings("unused")
 @OnlyIn(Dist.CLIENT)
@@ -776,6 +775,96 @@ public abstract class ViewGroup extends View implements IViewParent {
         }
     }
 
+    /**
+     * Call this method to remove all child views from the
+     * ViewGroup.
+     *
+     * <p><strong>Note:</strong> do not invoke this method from
+     * {@link #draw(Canvas)}, {@link #onDraw(Canvas)},
+     * {@link #dispatchDraw(Canvas)} or any related method.</p>
+     */
+    public void removeAllViews() {
+        removeAllViewsInLayout();
+        requestLayout();
+    }
+
+    /**
+     * Called by a ViewGroup subclass to remove child views from itself,
+     * when it must first know its size on screen before it can calculate how many
+     * child views it will render. An example is a Gallery or a ListView, which
+     * may "have" 50 children, but actually only render the number of children
+     * that can currently fit inside the object on screen. Do not call
+     * this method unless you are extending ViewGroup and understand the
+     * view measuring and layout pipeline.
+     *
+     * <p><strong>Note:</strong> do not invoke this method from
+     * {@link #draw(Canvas)}, {@link #onDraw(Canvas)},
+     * {@link #dispatchDraw(Canvas)} or any related method.</p>
+     */
+    public void removeAllViewsInLayout() {
+        final int count = mChildrenCount;
+        if (count <= 0) {
+            return;
+        }
+
+        final View[] children = mChildren;
+        mChildrenCount = 0;
+
+        /*final View focused = mFocused;
+        final boolean detach = mAttachInfo != null;
+        boolean clearChildFocus = false;
+
+        needGlobalAttributesUpdate(false);*/
+
+        for (int i = count - 1; i >= 0; i--) {
+            final View view = children[i];
+
+            /*if (mTransition != null) {
+                mTransition.removeChild(this, view);
+            }
+
+            if (view == focused) {
+                view.unFocus(null);
+                clearChildFocus = true;
+            }
+
+            view.clearAccessibilityFocus();
+
+            cancelTouchTarget(view);
+            cancelHoverTarget(view);
+
+            if (view.getAnimation() != null ||
+                    (mTransitioningViews != null && mTransitioningViews.contains(view))) {
+                addDisappearingView(view);
+            } else if (detach) {
+                view.dispatchDetachedFromWindow();
+            }
+
+            if (view.hasTransientState()) {
+                childHasTransientStateChanged(view, false);
+            }
+
+            dispatchViewRemoved(view);
+
+            view.mParent = null;*/
+            children[i] = null;
+        }
+
+        /*if (mDefaultFocus != null) {
+            clearDefaultFocus(mDefaultFocus);
+        }
+        if (mFocusedInCluster != null) {
+            clearFocusedInCluster(mFocusedInCluster);
+        }
+        if (clearChildFocus) {
+            clearChildFocus(focused);
+            if (!rootViewRequestFocus()) {
+                notifyGlobalFocusCleared(focused);
+            }
+        }*/
+    }
+
+
     @SuppressWarnings("unchecked")
     @Nullable
     @Override
@@ -869,7 +958,7 @@ public abstract class ViewGroup extends View implements IViewParent {
         return getChildDrawingOrder(getChildCount(), drawingPosition);
     }
 
-    @Override
+    /*@Override
     final boolean onCursorPosEvent(LinkedList<View> route, double x, double y) {
         if (x >= mLeft && x < mRight && y >= mTop && y < mBottom) {
             if ((mViewFlags & ENABLED_MASK) == ENABLED) {
@@ -887,7 +976,7 @@ public abstract class ViewGroup extends View implements IViewParent {
             return true;
         }
         return false;
-    }
+    }*/
 
     /**
      * Ask all of the children of this view to measure themselves, taking into

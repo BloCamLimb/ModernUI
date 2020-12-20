@@ -21,7 +21,15 @@ package icyllis.modernui.system;
 import icyllis.modernui.graphics.renderer.RenderTools;
 import icyllis.modernui.plugin.IMuiRuntime;
 import icyllis.modernui.view.LayoutInflater;
-import net.minecraft.client.Minecraft;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.inventory.container.Container;
+import net.minecraft.inventory.container.IContainerProvider;
+import net.minecraft.network.PacketBuffer;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.registry.Registry;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.player.PlayerContainerEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.apache.logging.log4j.LogManager;
@@ -29,12 +37,15 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.lang.reflect.InvocationTargetException;
+import java.util.function.Consumer;
 
 /**
- * The Modern UI mod class for Internal Use Only.
+ * The Modern UI mod class for INTERNAL USE ONLY.
  * <p>
- * You must get access to the functions of Modern UI on runtime via {@link icyllis.modernui.plugin.IMuiRuntime}
+ * You must get access to the functions of Modern UI on runtime via {@link IMuiRuntime}
  */
 @Mod(ModernUI.MODID)
 public final class ModernUI implements IMuiRuntime {
@@ -45,12 +56,15 @@ public final class ModernUI implements IMuiRuntime {
     public static final Logger LOGGER = LogManager.getLogger(NAME_CPT);
     public static final Marker MARKER = MarkerManager.getMarker("System");
 
+    private static ModernUI instance;
+
     private static boolean optiFineLoaded;
 
     static boolean developerMode;
 
     // mod-loading thread
     public ModernUI() {
+        instance = this;
         checkJava();
 
         init();
@@ -63,6 +77,10 @@ public final class ModernUI implements IMuiRuntime {
         }
 
         LOGGER.debug(MARKER, "Modern UI initialized, {}", LOGGER);
+    }
+
+    public static ModernUI getInstance() {
+        return instance;
     }
 
     private static void init() {
@@ -97,5 +115,37 @@ public final class ModernUI implements IMuiRuntime {
 
     public static boolean isOptiFineLoaded() {
         return optiFineLoaded;
+    }
+
+    @Override
+    public void openGui(@Nonnull PlayerEntity player, @Nonnull IContainerProvider constructor) {
+        openGui((ServerPlayerEntity) player, constructor, (Consumer<PacketBuffer>) null);
+    }
+
+    @Override
+    public void openGui(@Nonnull PlayerEntity player, @Nonnull IContainerProvider constructor, @Nonnull BlockPos pos) {
+        openGui((ServerPlayerEntity) player, constructor, buf -> buf.writeBlockPos(pos));
+    }
+
+    @Override
+    public void openGui(@Nonnull PlayerEntity player, @Nonnull IContainerProvider constructor, @Nullable Consumer<PacketBuffer> dataWriter) {
+        openGui((ServerPlayerEntity) player, constructor, dataWriter);
+    }
+
+    private void openGui(@Nonnull ServerPlayerEntity player, @Nonnull IContainerProvider constructor, @Nullable Consumer<PacketBuffer> writer) {
+        // do the same thing as ServerPlayer.openMenu()
+        if (player.openContainer != player.container) {
+            player.closeScreen();
+        }
+        player.getNextWindowId();
+        int containerId = player.currentWindowId;
+        Container menu = constructor.createMenu(containerId, player.inventory, player);
+        if (menu == null) {
+            return;
+        }
+        MsgEncoder.menu(containerId, Registry.MENU.getId(menu.getType()), writer).sendToPlayer(player);
+        player.openContainer.addListener(player);
+        player.openContainer = menu;
+        MinecraftForge.EVENT_BUS.post(new PlayerContainerEvent.Open(player, menu));
     }
 }

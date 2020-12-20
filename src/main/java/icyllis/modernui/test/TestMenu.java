@@ -1,0 +1,50 @@
+/*
+ * Modern UI.
+ * Copyright (C) 2019-2020 BloCamLimb. All rights reserved.
+ *
+ * Modern UI is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Modern UI is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+package icyllis.modernui.test;
+
+import icyllis.modernui.system.Registration;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.inventory.container.Container;
+import net.minecraft.network.PacketBuffer;
+
+import javax.annotation.Nonnull;
+
+public class TestMenu extends Container {
+
+    // client
+    public TestMenu(int windowId, PlayerInventory inventory, PacketBuffer buffer) {
+        super(Registration.TEST_MENU, windowId);
+    }
+
+    // server
+    public TestMenu(int windowId, PlayerInventory inventory, PlayerEntity player) {
+        super(Registration.TEST_MENU, windowId);
+    }
+
+    @Override
+    public void onContainerClosed(@Nonnull PlayerEntity playerIn) {
+        super.onContainerClosed(playerIn);
+    }
+
+    @Override
+    public boolean canInteractWith(@Nonnull PlayerEntity playerIn) {
+        return true;
+    }
+}

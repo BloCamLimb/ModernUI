@@ -19,9 +19,8 @@
 package icyllis.modernui.system;
 
 import icyllis.modernui.graphics.renderer.RenderTools;
-import icyllis.modernui.ui.TestMenu;
+import icyllis.modernui.test.TestMenu;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
-import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.Items;
 import net.minecraft.util.Util;
 import net.minecraft.util.text.StringTextComponent;
@@ -32,7 +31,6 @@ import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.network.NetworkHooks;
 
 import javax.annotation.Nonnull;
 
@@ -45,10 +43,8 @@ final class EventHandler {
     @SubscribeEvent
     static void onRightClickItem(@Nonnull PlayerInteractEvent.RightClickItem event) {
         if (ModernUI.isDeveloperMode()) {
-            if (event.getItemStack().getItem() == Items.DIAMOND) {
-                if (event.getSide().isServer()) {
-                    NetworkHooks.openGui((ServerPlayerEntity) event.getPlayer(), new TestMenu.Provider());
-                }
+            if (event.getSide().isServer() && event.getItemStack().getItem() == Items.DIAMOND) {
+                ModernUI.getInstance().openGui(event.getPlayer(), TestMenu::new);
             }
         }
     }

@@ -31,10 +31,6 @@ import javax.annotation.Nullable;
  */
 public final class ViewRootImpl implements IViewParent {
 
-    public static final int TYPE_APPLICATION = 500;
-
-    public static final int TYPE_OVERLAY = 2500;
-
     private final UIManager master;
 
     private boolean hasDragOperation;
@@ -42,19 +38,17 @@ public final class ViewRootImpl implements IViewParent {
     // to schedule layout on next frame
     private boolean layoutRequested = false;
 
-    final int type;
-    View mView;
+    private View mView;
 
     private final int[] inBounds  = new int[]{0, 0, 0, 0};
     private final int[] outBounds = new int[4];
 
-    public ViewRootImpl(UIManager manager, int type) {
-        this.master = manager;
-        this.type = type;
+    public ViewRootImpl(UIManager service) {
+        master = service;
     }
 
-    void install(@Nonnull View view) {
-        this.mView = view;
+    void setView(@Nonnull View view) {
+        mView = view;
         ViewGroup.LayoutParams params = view.getLayoutParams();
         // convert layout params
         if (!(params instanceof LayoutParams)) {

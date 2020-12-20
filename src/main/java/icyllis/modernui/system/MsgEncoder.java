@@ -24,9 +24,11 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.function.Consumer;
 
 /**
- * Internal Use Only
+ * For internal use
  */
 public final class MsgEncoder {
 
@@ -37,6 +39,19 @@ public final class MsgEncoder {
         PacketBuffer buffer = network.allocBuffer(0);
         buffer.writeFloat(foodSaturationLevel);
         buffer.writeFloat(foodExhaustionLevel);
+        return network;
+    }
+
+    static NetworkHandler menu(int containerId, int menuId, Consumer<PacketBuffer> writer) {
+        PacketBuffer buffer = network.allocBuffer(1);
+        buffer.writeVarInt(containerId);
+        buffer.writeVarInt(menuId);
+        if (writer != null) {
+            writer.accept(buffer);
+        }
+        if (buffer.readerIndex() > 32768) {
+            throw new IllegalArgumentException("openMenu packet may not be larger than 32KB");
+        }
         return network;
     }
 

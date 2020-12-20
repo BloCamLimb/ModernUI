@@ -27,9 +27,9 @@ import java.lang.annotation.Target;
  * Defines a plugin to Modern UI.
  * <p>
  * Any class found with this annotation will be loaded as a Modern UI plugin,
- * all these classes must implement {@link IModPlugin} to work
+ * all these classes must implement {@link IMuiPlugin} to work
  *
- * @see IModPlugin
+ * @see IMuiPlugin
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
@@ -38,7 +38,7 @@ public @interface MuiPlugin {
     /**
      * The namespace of the plugin, should be the identifier of your mod
      *
-     * @return the namespace (i.e. modid)
+     * @return the namespace (modid)
      */
     String namespace();
 }

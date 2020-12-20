@@ -29,6 +29,7 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.container.ClickType;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lwjgl.glfw.GLFW;
@@ -50,24 +51,25 @@ import java.util.Objects;
 @OnlyIn(Dist.CLIENT)
 final class MuiMenuScreen<T extends Container> extends ContainerScreen<T> implements IMuiScreen {
 
-    private final UIManager master = UIManager.getInstance();
+    private final UIManager master;
 
-    MuiMenuScreen(@Nonnull T menu, PlayerInventory inventory, ITextComponent title) {
-        super(menu, inventory, title);
+    MuiMenuScreen(@Nonnull T menu, PlayerInventory inventory, UIManager window) {
+        super(menu, inventory, StringTextComponent.EMPTY);
+        master = window;
     }
 
     @Override
     public void init(@Nonnull Minecraft minecraft, int width, int height) {
         //TODO remove super.init()
         super.init(minecraft, width, height);
-        master.prepareWindows(this, width, height);
+        master.start(this, width, height);
     }
 
     @Override
     public void resize(@Nonnull Minecraft minecraft, int width, int height) {
         this.width = width;
         this.height = height;
-        master.prepareWindows(this, width, height);
+        master.start(this, width, height);
         ModernUI.LOGGER.debug("Scaled: {}x{} Framebuffer: {}x{} Window: {}x{}", width, height, minecraft.getMainWindow().getFramebufferWidth(),
                 minecraft.getMainWindow().getFramebufferHeight(), minecraft.getMainWindow().getWidth(), minecraft.getMainWindow().getHeight());
     }
@@ -91,7 +93,7 @@ final class MuiMenuScreen<T extends Container> extends ContainerScreen<T> implem
     @Override
     public void onClose() {
         super.onClose();
-        master.recycleWindows();
+        master.destroy();
     }
 
     // IMPL - IGuiEventListener

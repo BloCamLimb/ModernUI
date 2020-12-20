@@ -25,9 +25,9 @@ import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
 import icyllis.modernui.view.UIManager;
 import icyllis.modernui.graphics.renderer.Icon;
-import icyllis.modernui.ui.discard.Align9D;
-import icyllis.modernui.ui.popup.PopupMenu;
-import icyllis.modernui.ui.popup.DropDownMenu;
+import icyllis.modernui.test.discard.Align9D;
+import icyllis.modernui.test.popup.PopupMenu;
+import icyllis.modernui.test.popup.DropDownMenu;
 
 import javax.annotation.Nonnull;
 import java.util.List;

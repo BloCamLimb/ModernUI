@@ -20,7 +20,7 @@ package icyllis.modernui.impl.stats;
 
 import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.ui.discard.ScrollWindow;
+import icyllis.modernui.test.discard.ScrollWindow;
 import icyllis.modernui.widget.UniformScrollEntry;
 import icyllis.modernui.graphics.math.Color3i;
 import net.minecraft.client.resources.I18n;
