@@ -214,11 +214,10 @@ public enum UIEditor {
                 builder.append(Minecraft.getInstance().player != null && Minecraft.getInstance().player.openContainer != null);
                 builder.append("\n");
 
+                builder.append("[2] Open Gui: ");
                 if (!UIManager.getInstance().hasMuiScreen()) {
-                    builder.append("[2] Open Gui: ");
                     builder.append(Minecraft.getInstance().currentScreen);
                 } else {
-                    builder.append("[2] Open App Gui: ");
                     builder.append(UIManager.getInstance().getAppScreen());
                 }
                 builder.append("\n");

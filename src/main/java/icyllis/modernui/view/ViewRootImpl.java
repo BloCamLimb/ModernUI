@@ -40,23 +40,25 @@ public final class ViewRootImpl implements IViewParent {
 
     private View mView;
 
-    private final int[] inBounds  = new int[]{0, 0, 0, 0};
-    private final int[] outBounds = new int[4];
+    /*private final int[] inBounds  = new int[]{0, 0, 0, 0};
+    private final int[] outBounds = new int[4];*/
 
     public ViewRootImpl(UIManager service) {
         master = service;
     }
 
     void setView(@Nonnull View view) {
-        mView = view;
-        ViewGroup.LayoutParams params = view.getLayoutParams();
-        // convert layout params
-        if (!(params instanceof LayoutParams)) {
-            params = new LayoutParams();
-            view.setLayoutParams(params);
+        if (mView == null) {
+            mView = view;
+            /*ViewGroup.LayoutParams params = view.getLayoutParams();
+            // convert layout params
+            if (!(params instanceof LayoutParams)) {
+                params = new LayoutParams();
+                view.setLayoutParams(params);
+            }*/
+            view.assignParent(this);
+            view.dispatchAttachedToWindow(this);
         }
-        view.assignParent(this);
-        view.dispatchAttachedToWindow(this);
     }
 
     boolean startDragAndDrop(@Nonnull View view, @Nullable DragData data, @Nullable View.DragShadow shadow, int flags) {
@@ -93,22 +95,16 @@ public final class ViewRootImpl implements IViewParent {
         if (mView == null || (!forceLayout && !layoutRequested)) {
             return;
         }
-        LayoutParams lp = (LayoutParams) mView.getLayoutParams();
 
-        int childWidthMeasureSpec = ViewGroup.getChildMeasureSpec(widthSpec,
-                0, lp.width);
-        int childHeightMeasureSpec = ViewGroup.getChildMeasureSpec(heightSpec,
-                0, lp.height);
+        mView.measure(widthSpec, heightSpec);
 
-        mView.measure(childWidthMeasureSpec, childHeightMeasureSpec);
-
-        inBounds[2] = MeasureSpec.getSize(widthSpec);
+        /*inBounds[2] = MeasureSpec.getSize(widthSpec);
         inBounds[3] = MeasureSpec.getSize(heightSpec);
 
         Gravity.apply(lp.gravity, mView.getMeasuredWidth(), mView.getMeasuredHeight(),
-                inBounds, lp.x, lp.y, outBounds);
+                inBounds, lp.x, lp.y, outBounds);*/
 
-        mView.layout(outBounds[0], outBounds[1], outBounds[2], outBounds[3]);
+        mView.layout(0, 0, mView.getMeasuredWidth(), mView.getMeasuredHeight());
         layoutRequested = false;
     }
 
@@ -202,30 +198,28 @@ public final class ViewRootImpl implements IViewParent {
         return 0;
     }
 
-    /**
-     * Window layout params
-     */
+    /*@Deprecated
     public static class LayoutParams extends ViewGroup.LayoutParams {
 
-        /**
-         * X position for this window.  With the default gravity it is ignored.
-         * When using {@link Gravity#LEFT} or {@link Gravity#RIGHT} it provides
-         * an offset from the given edge.
-         */
+        *//*
+     * X position for this window.  With the default gravity it is ignored.
+     * When using {@link Gravity#LEFT} or {@link Gravity#RIGHT} it provides
+     * an offset from the given edge.
+     *//*
         public int x;
 
-        /**
-         * Y position for this window.  With the default gravity it is ignored.
-         * When using {@link Gravity#TOP} or {@link Gravity#BOTTOM} it provides
-         * an offset from the given edge.
-         */
+        *//*
+     * Y position for this window.  With the default gravity it is ignored.
+     * When using {@link Gravity#TOP} or {@link Gravity#BOTTOM} it provides
+     * an offset from the given edge.
+     *//*
         public int y;
 
-        /**
-         * Placement of window within the screen as per {@link Gravity}.
-         *
-         * @see Gravity
-         */
+        *//*
+     * Placement of window within the screen as per {@link Gravity}.
+     *
+     * @see Gravity
+     *//*
         public int gravity = Gravity.TOP_LEFT;
 
         public LayoutParams() {
@@ -240,5 +234,5 @@ public final class ViewRootImpl implements IViewParent {
             super(width, height);
             this.gravity = gravity;
         }
-    }
+    }*/
 }

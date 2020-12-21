@@ -24,6 +24,7 @@ import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.math.Point;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.system.ModernUI;
+import icyllis.modernui.system.mixin.MixinHooks;
 import icyllis.modernui.system.mixin.MixinMouseHandler;
 import icyllis.modernui.test.TestHUD;
 import icyllis.modernui.test.discard.IModule;
@@ -32,10 +33,10 @@ import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.inventory.container.ContainerType;
-import net.minecraft.inventory.container.INamedContainerProvider;
+import net.minecraft.inventory.container.IContainerProvider;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.Util;
 import net.minecraft.util.registry.Registry;
@@ -56,7 +57,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -77,7 +77,7 @@ public final class UIManager {
     private final Minecraft minecraft = Minecraft.getInstance();
 
     // registered menu screens
-    private final Map<ContainerType<?>, Function<? extends Container, IAppScreen>> mScreenRegistry = new HashMap<>();
+    private final Map<ContainerType<?>, Function<? extends Container, AppScreen>> mScreenRegistry = new HashMap<>();
 
     // application window
     private final ViewRootImpl mAppWindow = new ViewRootImpl(this);
@@ -93,7 +93,7 @@ public final class UIManager {
     private IMuiScreen mMuiScreen;
 
     // application screen used to send lifecycle events
-    private IAppScreen mAppScreen;
+    private AppScreen mAppScreen;
 
     // main fragment of a UI
     //private Fragment fragment;
@@ -172,6 +172,8 @@ public final class UIManager {
 
     private UIManager() {
         mAppWindow.setView(mDecorView);
+        MixinHooks.C.setInputEventReceiver(new InputEventReceiver());
+        ModernUI.LOGGER.debug(MARKER, "Modern UI service created");
     }
 
     /**
@@ -197,7 +199,7 @@ public final class UIManager {
      * @param appScreen the application screen
      * @see #start(IMuiScreen, int, int)
      */
-    public void openGui(@Nonnull IAppScreen appScreen) {
+    public void openGui(@Nonnull AppScreen appScreen) {
         mAppScreen = appScreen;
         minecraft.displayGuiScreen(new MuiMainScreen(this));
     }
@@ -211,7 +213,8 @@ public final class UIManager {
         minecraft.displayGuiScreen(null);
     }
 
-    public void setContentView(View view, FrameLayout.LayoutParams params) {
+    void setContentView(View view, FrameLayout.LayoutParams params) {
+        mDecorView.removeAllViews();
         mDecorView.addView(view, params);
     }
 
@@ -221,26 +224,26 @@ public final class UIManager {
      * @param type    menu type
      * @param factory screen factory
      * @param <T>     container menu type
-     * @see net.minecraftforge.fml.network.NetworkHooks#openGui(ServerPlayerEntity, INamedContainerProvider, Consumer)
+     * @see icyllis.modernui.system.ModernUIServer#openMenu(PlayerEntity, IContainerProvider)
      */
     public <T extends Container> void registerMenuScreen(
-            @Nonnull ContainerType<? extends T> type, @Nonnull Function<T, IAppScreen> factory) {
+            @Nonnull ContainerType<? extends T> type, @Nonnull Function<T, AppScreen> factory) {
         mScreenRegistry.putIfAbsent(type, factory);
     }
 
-    // internal method
+    // Internal method
     @SuppressWarnings({"unchecked", "ConstantConditions"})
     public void openGui(@Nonnull ClientPlayerEntity player, int containerId, int menuId, @Nonnull PacketBuffer buffer) {
         ContainerType<?> type = Registry.MENU.getByValue(menuId);
         if (type == null) {
             ModernUI.LOGGER.warn(MARKER, "Trying to open invalid screen for menu id: {}", menuId);
         } else {
-            Function<Container, IAppScreen> factory = (Function<Container, IAppScreen>) mScreenRegistry.get(type);
+            Function<Container, AppScreen> factory = (Function<Container, AppScreen>) mScreenRegistry.get(type);
             if (factory == null) {
                 ModernUI.LOGGER.warn(MARKER, "Failed to create screen for menu type: {}", Registry.MENU.getKey(type));
             } else {
                 Container menu = type.create(containerId, player.inventory, buffer);
-                IAppScreen screen = factory.apply(menu);
+                AppScreen screen = factory.apply(menu);
                 if (screen == null || menu == null) {
                     ModernUI.LOGGER.warn(MARKER, "Failed to create screen for menu type: {}", Registry.MENU.getKey(type));
                 } else {
@@ -306,6 +309,7 @@ public final class UIManager {
      */
     void start(@Nonnull IMuiScreen screen, int width, int height) {
         if (mMuiScreen == null) {
+            mAppScreen.window = this;
             mAppScreen.onCreate();
         }
         mMuiScreen = screen;
@@ -349,7 +353,7 @@ public final class UIManager {
             mDrawingTimeMillis = 0;
         }
         if (mMuiScreen != nextScreen && mMuiScreen != null) {
-            onCursorPosCallback(-1, -1);
+            onCursorEvent(-1, -1);
         }
         // for non-mui screens
         if (mMuiScreen == null) {
@@ -372,6 +376,11 @@ public final class UIManager {
 
     public boolean hasMuiScreen() {
         return mMuiScreen != null;
+    }
+
+    @Nullable
+    public AppScreen getAppScreen() {
+        return mAppScreen;
     }
 
     /**
@@ -430,12 +439,13 @@ public final class UIManager {
      * @see MuiMainScreen
      * @see MuiMenuScreen
      */
-    void onCursorPosCallback(double cursorX, double cursorY) {
+    void onCursorEvent(double cursorX, double cursorY) {
         // The caller is mui screen, we don't need to check anything
         final long now = Util.nanoTime();
         MotionEvent event = MotionEvent.obtain(now, now, MotionEvent.ACTION_HOVER_MOVE,
                 (float) cursorX, (float) cursorY, 0);
         mAppWindow.onInputEvent(event);
+        cursorRefreshRequested = false;
     }
 
     /**
@@ -464,12 +474,6 @@ public final class UIManager {
     boolean onScrollEvent() {
         ModernUI.LOGGER.debug(MARKER, "Scroll: {} {}", mScrollX, mScrollY);
         return false;
-    }
-
-    // internal method
-    public void setCapturedScrollParams(double scrollX, double scrollY) {
-        mScrollX = scrollX;
-        mScrollY = scrollY;
     }
 
     /*@Deprecated
@@ -790,7 +794,8 @@ public final class UIManager {
         if (ModernUI.isDeveloperMode()) {
             ModernUI.LOGGER.debug(MARKER, "Layout performed in {} \u03bcs", (System.nanoTime() - startTime) / 1000.0f);
         }
-        onCursorPosCallback(mCursorX, mCursorY);
+        onCursorEvent(mCursorX, mCursorY);
+        layoutRequested = false;
     }
 
     void destroy() {
@@ -799,7 +804,10 @@ public final class UIManager {
             animations.clear();
             tasks.clear();
             mMuiScreen = null;
-            mAppScreen = null;
+            if (mAppScreen != null) {
+                mAppScreen.window = null;
+                mAppScreen = null;
+            }
             lastLayoutTime = 0;
             layoutRequested = false;
             UIEditor.INSTANCE.setHoveredWidget(null);
@@ -860,16 +868,11 @@ public final class UIManager {
                     if (layoutRequested) {
                         layoutWindows(false);
                     } else {
-                        onCursorPosCallback(mCursorX, mCursorY);
+                        onCursorEvent(mCursorX, mCursorY);
                     }
                 }
             }
         }
-    }
-
-    @Nullable
-    public IAppScreen getAppScreen() {
-        return mAppScreen;
     }
 
     /**
@@ -1027,5 +1030,16 @@ public final class UIManager {
     @Nullable
     public View getKeyboard() {
         return mKeyboard;
+    }
+
+    public class InputEventReceiver {
+
+        private InputEventReceiver() {
+        }
+
+        public void onScrollCallback(double scrollX, double scrollY) {
+            mScrollX = scrollX;
+            mScrollY = scrollY;
+        }
     }
 }

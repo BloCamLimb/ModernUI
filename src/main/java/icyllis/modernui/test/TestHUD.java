@@ -21,7 +21,7 @@ package icyllis.modernui.test;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.system.mixin.AccessFoodStats;
+import icyllis.modernui.system.mixin.AccessFoodData;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.AbstractGui;
@@ -84,7 +84,7 @@ public class TestHUD {
         canvas.drawText(String.format("%.2f / %.2f", player.getHealth(), player.getMaxHealth()), 70, 27);
         canvas.drawText(String.format("%d / %d", player.getAir(), player.getMaxAir()), 70, 13);
         canvas.drawText(String.format("%d / %.2f / %.2f", foodStats.getFoodLevel(), foodStats.getSaturationLevel(),
-                ((AccessFoodStats) foodStats).getFoodExhaustionLevel()), 70, -1);
+                ((AccessFoodData) foodStats).getFoodExhaustionLevel()), 70, -1);
 
         RenderSystem.enableDepthTest();
         GL11.glPopMatrix();

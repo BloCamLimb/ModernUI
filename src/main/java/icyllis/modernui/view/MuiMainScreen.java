@@ -77,7 +77,7 @@ final class MuiMainScreen extends Screen implements IMuiScreen {
 
     @Override
     public void mouseMoved(double mouseX, double mouseY) {
-        master.onCursorPosCallback(mouseX, mouseY);
+        master.onCursorEvent(mouseX, mouseY);
     }
 
     @Override

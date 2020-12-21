@@ -49,9 +49,6 @@ public final class MsgEncoder {
         if (writer != null) {
             writer.accept(buffer);
         }
-        if (buffer.readerIndex() > 32768) {
-            throw new IllegalArgumentException("openMenu packet may not be larger than 32KB");
-        }
         return network;
     }
 

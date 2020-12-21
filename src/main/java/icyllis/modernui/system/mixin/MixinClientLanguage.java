@@ -32,7 +32,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import java.util.Optional;
 
 @Mixin(ClientLanguageMap.class)
-public abstract class MixinClientLanguageMap {
+public abstract class MixinClientLanguage {
 
     @Shadow
     public abstract boolean func_230505_b_();

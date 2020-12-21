@@ -5,16 +5,16 @@
   "package": "icyllis.modernui.system.mixin",
   "client": [
     "AccessFontRenderer",
-    "AccessFoodStats",
+    "AccessFoodData",
     "AccessTextProcessing",
-    "MixinClientLanguageMap",
-    "MixinFoodStats",
+    "MixinClientLanguage",
+    "MixinFoodData",
     "MixinMainWindow",
     "MixinMatrix4f",
     "MixinMouseHandler",
     "MixinScreen"
   ],
   "server": [
-    "MixinFoodStats"
+    "MixinFoodData"
   ]
 }

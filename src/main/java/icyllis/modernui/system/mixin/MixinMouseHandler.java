@@ -44,13 +44,13 @@ public class MixinMouseHandler {
                                     boolean flag, int i, boolean[] aboolean, double d0, double d1) {
     }*/
 
-    private final UIManager master = UIManager.getInstance();
+    private final UIManager.InputEventReceiver mInputEventReceiver = MixinHooks.C.inputEventReceiver;
 
     /**
      * Capture the horizontal scroll offset
      */
     @Inject(method = "scrollCallback", at = @At("HEAD"))
     private void onScrollCallback(long handle, double xoffset, double yoffset, CallbackInfo ci) {
-        master.setCapturedScrollParams(xoffset, yoffset);
+        mInputEventReceiver.onScrollCallback(xoffset, yoffset);
     }
 }

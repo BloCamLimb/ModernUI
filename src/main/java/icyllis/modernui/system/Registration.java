@@ -22,7 +22,6 @@ import icyllis.modernui.network.NetworkHandler;
 import icyllis.modernui.plugin.IMuiPlugin;
 import icyllis.modernui.plugin.MuiPlugin;
 import icyllis.modernui.test.TestMenu;
-import icyllis.modernui.test.TestFragment;
 import icyllis.modernui.test.TestScreen;
 import icyllis.modernui.view.UIManager;
 import net.minecraft.inventory.container.Container;

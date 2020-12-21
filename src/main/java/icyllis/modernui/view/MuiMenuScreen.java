@@ -28,7 +28,6 @@ import net.minecraft.client.util.InputMappings;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.container.ClickType;
 import net.minecraft.inventory.container.Container;
-import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -100,7 +99,7 @@ final class MuiMenuScreen<T extends Container> extends ContainerScreen<T> implem
 
     @Override
     public void mouseMoved(double mouseX, double mouseY) {
-        master.onCursorPosCallback(mouseX, mouseY);
+        master.onCursorEvent(mouseX, mouseY);
     }
 
     @Override

@@ -102,7 +102,8 @@ public class TrueTypeRenderer implements IFontRenderer {
         }
         TextRenderNode node = processor.lookupVanillaNode(str, Style.EMPTY);
 
-        x -= node.advance * align.offsetFactor;
+        if (align != TextAlign.LEFT)
+            x -= node.advance * align.offsetFactor;
         return node.drawText(Tessellator.getInstance().getBuffer(), str, x, y, r, g, b, a);
     }
 

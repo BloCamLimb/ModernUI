@@ -18,12 +18,20 @@
 
 package icyllis.modernui.test;
 
-import icyllis.modernui.view.IAppScreen;
+import icyllis.modernui.view.*;
+import icyllis.modernui.widget.FrameLayout;
+import icyllis.modernui.widget.ScrollView;
 
-public class TestScreen implements IAppScreen {
+public class TestScreen extends AppScreen {
 
     @Override
     public void onCreate() {
-
+        ViewGroup parent = new ScrollView();
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(140, 140);
+        params.gravity = Gravity.CENTER;
+        View content = new TestLinearLayout();
+        content.setLayoutParams(new FrameLayout.LayoutParams(140, 240));
+        parent.addView(content);
+        setContentView(parent, params);
     }
 }
