@@ -18,7 +18,7 @@
 
 package icyllis.modernui.system;
 
-import icyllis.modernui.system.mixin.AccessFoodStats;
+import icyllis.modernui.system.mixin.AccessFoodData;
 import icyllis.modernui.view.UIManager;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
@@ -55,7 +55,7 @@ final class MsgHandler {
         private static void food(@Nonnull PacketBuffer buffer, @Nonnull ClientPlayerEntity player) {
             FoodStats foodStats = player.getFoodStats();
             foodStats.setFoodSaturationLevel(buffer.readFloat());
-            ((AccessFoodStats) foodStats).setFoodExhaustionLevel(buffer.readFloat());
+            ((AccessFoodData) foodStats).setFoodExhaustionLevel(buffer.readFloat());
         }
 
         private static void menu(@Nonnull PacketBuffer buffer, @Nonnull ClientPlayerEntity player) {

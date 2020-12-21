@@ -34,15 +34,7 @@ public class TestFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView() {
-        ScrollView scrollView = new ScrollView();
-        // main view can use FrameLayout params
-        ViewRootImpl.LayoutParams params = new ViewRootImpl.LayoutParams(140, 140);
-        params.gravity = Gravity.CENTER;
-        scrollView.setLayoutParams(params);
-        View content = new TestLinearLayout();
-        content.setLayoutParams(new FrameLayout.LayoutParams(140, 240));
-        scrollView.addView(content);
-        return scrollView;
+        return null;
     }
 
     private static class TestView extends View {

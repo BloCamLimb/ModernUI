@@ -44,7 +44,7 @@ final class EventHandler {
     static void onRightClickItem(@Nonnull PlayerInteractEvent.RightClickItem event) {
         if (ModernUI.isDeveloperMode()) {
             if (event.getSide().isServer() && event.getItemStack().getItem() == Items.DIAMOND) {
-                ModernUI.getInstance().openGui(event.getPlayer(), TestMenu::new);
+                ModernUIServer.openMenu(event.getPlayer(), TestMenu::new);
             }
         }
     }

@@ -23,7 +23,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(FoodStats.class)
-public interface AccessFoodStats {
+public interface AccessFoodData {
 
     @Accessor("foodExhaustionLevel")
     float getFoodExhaustionLevel();

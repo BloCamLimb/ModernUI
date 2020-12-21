@@ -18,11 +18,19 @@
 
 package icyllis.modernui.view;
 
+import icyllis.modernui.widget.FrameLayout;
+
 /**
  * Represents the current application screen, for handling lifecycle event.
  */
-public interface IAppScreen {
+public abstract class AppScreen {
 
-    default void onCreate() {
+    UIManager window;
+
+    public void onCreate() {
+    }
+
+    public void setContentView(View view, FrameLayout.LayoutParams params) {
+        window.setContentView(view, params);
     }
 }
