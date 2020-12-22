@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.widget;
+package icyllis.modernui.test.drawable;
 
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;

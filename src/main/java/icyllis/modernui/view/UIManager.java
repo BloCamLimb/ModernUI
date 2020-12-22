@@ -24,7 +24,6 @@ import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.math.Point;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.system.ModernUI;
-import icyllis.modernui.system.mixin.MixinHooks;
 import icyllis.modernui.system.mixin.MixinMouseHandler;
 import icyllis.modernui.test.TestHUD;
 import icyllis.modernui.test.discard.IModule;
@@ -137,19 +136,18 @@ public final class UIManager {
     private View mKeyboard;
 
     // current scaled cursor position on the gui screen
-    double mCursorX;
-    double mCursorY;
+    private double mCursorX;
+    private double mCursorY;
 
+    // captured input event values
     private double mScrollX;
     private double mScrollY;
 
-    @Nullable
-    private View capturedView;
+    // schedule layout on next frame
+    boolean mPendingLayout = false;
 
-    // to schedule layout on next frame
-    boolean layoutRequested = false;
-
-    boolean cursorRefreshRequested = false;
+    // schedule a cursor event on next tick due to scroll amount changed
+    boolean mPendingRepostCursorEvent = false;
 
     // to fix layout freq at 40Hz at most
     private long lastLayoutTime = 0;
@@ -172,8 +170,6 @@ public final class UIManager {
 
     private UIManager() {
         mAppWindow.setView(mDecorView);
-        MixinHooks.C.setInputEventReceiver(new InputEventReceiver());
-        ModernUI.LOGGER.debug(MARKER, "Modern UI service created");
     }
 
     /**
@@ -440,12 +436,13 @@ public final class UIManager {
      * @see MuiMenuScreen
      */
     void onCursorEvent(double cursorX, double cursorY) {
-        // The caller is mui screen, we don't need to check anything
+        mCursorX = cursorX;
+        mCursorY = cursorY;
         final long now = Util.nanoTime();
         MotionEvent event = MotionEvent.obtain(now, now, MotionEvent.ACTION_HOVER_MOVE,
                 (float) cursorX, (float) cursorY, 0);
         mAppWindow.onInputEvent(event);
-        cursorRefreshRequested = false;
+        mPendingRepostCursorEvent = false;
     }
 
     /**
@@ -472,8 +469,26 @@ public final class UIManager {
      * @see MixinMouseHandler
      */
     boolean onScrollEvent() {
-        ModernUI.LOGGER.debug(MARKER, "Scroll: {} {}", mScrollX, mScrollY);
-        return false;
+        final long now = Util.nanoTime();
+        MotionEvent event = MotionEvent.obtain(now, now, MotionEvent.ACTION_SCROLL,
+                (float) mCursorX, (float) mCursorY, 0);
+        event.setRawAxisValue(MotionEvent.AXIS_HSCROLL, (float) mScrollX);
+        event.setRawAxisValue(MotionEvent.AXIS_VSCROLL, (float) mScrollY);
+        boolean handled = mAppWindow.onInputEvent(event);
+        if (handled) {
+            mPendingRepostCursorEvent = true;
+        }
+        return handled;
+    }
+
+    // Internal method
+    public void onEarlyScrollCallback(double scrollX, double scrollY) {
+        mScrollX = scrollX;
+        mScrollY = scrollY;
+    }
+
+    public void repostCursorEvent() {
+        mPendingRepostCursorEvent = true;
     }
 
     /*@Deprecated
@@ -777,13 +792,13 @@ public final class UIManager {
         final MainWindow window = minecraft.getMainWindow();
         mCursorX = minecraft.mouseHelper.getMouseX() * (double) window.getScaledWidth() / (double) window.getWidth();
         mCursorY = minecraft.mouseHelper.getMouseY() * (double) window.getScaledHeight() / (double) window.getHeight();
-        layoutWindows(true);
+        layout(true);
     }
 
     /**
-     * Layout all windows
+     * Layout UI window
      */
-    private void layoutWindows(boolean forceLayout) {
+    private void layout(boolean forceLayout) {
         long startTime = System.nanoTime();
 
         int widthSpec = MeasureSpec.makeMeasureSpec(mWidth, MeasureSpec.Mode.EXACTLY);
@@ -795,7 +810,7 @@ public final class UIManager {
             ModernUI.LOGGER.debug(MARKER, "Layout performed in {} \u03bcs", (System.nanoTime() - startTime) / 1000.0f);
         }
         onCursorEvent(mCursorX, mCursorY);
-        layoutRequested = false;
+        mPendingLayout = false;
     }
 
     void destroy() {
@@ -809,7 +824,7 @@ public final class UIManager {
                 mAppScreen = null;
             }
             lastLayoutTime = 0;
-            layoutRequested = false;
+            mPendingLayout = false;
             UIEditor.INSTANCE.setHoveredWidget(null);
             mDecorView.removeAllViews();
             UITools.useDefaultCursor();
@@ -820,27 +835,30 @@ public final class UIManager {
 
     @SubscribeEvent
     void onClientTick(@Nonnull TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.START) {
-            return;
-        }
-        ++mTicks;
+        if (event.phase == TickEvent.Phase.START) {
+            ++mTicks;
         /*if (popup != null) {
             popup.tick(ticks);
         }*/
         /*if (view != null) {
             view.tick(mTicks);
         }*/
-        mAppWindow.tick(mTicks);
-        // view ticking is always performed before tasks
-        if (!tasks.isEmpty()) {
-            Iterator<DelayedTask> iterator = tasks.iterator();
-            DelayedTask task;
-            while (iterator.hasNext()) {
-                task = iterator.next();
-                task.tick(mTicks);
-                if (task.shouldRemove()) {
-                    iterator.remove();
+            mAppWindow.tick(mTicks);
+            // view ticking is always performed before tasks
+            if (!tasks.isEmpty()) {
+                Iterator<DelayedTask> iterator = tasks.iterator();
+                DelayedTask task;
+                while (iterator.hasNext()) {
+                    task = iterator.next();
+                    task.tick(mTicks);
+                    if (task.shouldRemove()) {
+                        iterator.remove();
+                    }
                 }
+            }
+        } else {
+            if (mPendingRepostCursorEvent) {
+                onCursorEvent(mCursorX, mCursorY);
             }
         }
     }
@@ -861,15 +879,11 @@ public final class UIManager {
             }
 
             // layout after updating animations and before drawing
-            if (layoutRequested || cursorRefreshRequested) {
+            if (mPendingLayout) {
                 // fixed at 40Hz
                 if (mDrawingTimeMillis - lastLayoutTime >= 25) {
                     lastLayoutTime = mDrawingTimeMillis;
-                    if (layoutRequested) {
-                        layoutWindows(false);
-                    } else {
-                        onCursorEvent(mCursorX, mCursorY);
-                    }
+                    layout(false);
                 }
             }
         }
@@ -969,10 +983,6 @@ public final class UIManager {
         return minecraft.getMainWindow().getGuiScaleFactor();
     }
 
-    public void requestCursorRefresh() {
-        cursorRefreshRequested = true;
-    }
-
     /**
      * Internal method, to tell the manager the most child view hovered
      *
@@ -1030,16 +1040,5 @@ public final class UIManager {
     @Nullable
     public View getKeyboard() {
         return mKeyboard;
-    }
-
-    public class InputEventReceiver {
-
-        private InputEventReceiver() {
-        }
-
-        public void onScrollCallback(double scrollX, double scrollY) {
-            mScrollX = scrollX;
-            mScrollY = scrollY;
-        }
     }
 }

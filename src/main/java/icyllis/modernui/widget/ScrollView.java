@@ -21,6 +21,7 @@ package icyllis.modernui.widget;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.test.drawable.ScrollThumbDrawable;
+import icyllis.modernui.view.MotionEvent;
 import icyllis.modernui.view.UIManager;
 import icyllis.modernui.view.View;
 
@@ -92,6 +93,15 @@ public class ScrollView extends FrameLayout implements ScrollController.IListene
     }
 
     @Override
+    public boolean onGenericMotionEvent(MotionEvent event) {
+        if (event.getAction() == MotionEvent.ACTION_SCROLL) {
+            float delta = event.getAxisValue(MotionEvent.AXIS_VSCROLL);
+            return scrollController.scrollBy(Math.round(delta * -20.0f));
+        }
+        return super.onGenericMotionEvent(event);
+    }
+
+    @Override
     protected void onScrollBarClicked(boolean vertical, float scrollDelta) {
         scrollController.scrollBy(scrollDelta);
     }
@@ -108,6 +118,5 @@ public class ScrollView extends FrameLayout implements ScrollController.IListene
         if (getVerticalScrollBar() != null) {
             getVerticalScrollBar().setParameters(scrollRange, scrollAmount, getHeight());
         }
-        UIManager.getInstance().requestCursorRefresh();
     }
 }

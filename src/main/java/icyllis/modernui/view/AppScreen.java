@@ -27,8 +27,7 @@ public abstract class AppScreen {
 
     UIManager window;
 
-    public void onCreate() {
-    }
+    public abstract void onCreate();
 
     public void setContentView(View view, FrameLayout.LayoutParams params) {
         window.setContentView(view, params);

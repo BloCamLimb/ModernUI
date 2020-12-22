@@ -18,5 +18,6 @@
 
 package icyllis.modernui.view;
 
+@Deprecated
 public class DragData {
 }

@@ -43,8 +43,8 @@ public final class ViewRootImpl implements IViewParent {
     /*private final int[] inBounds  = new int[]{0, 0, 0, 0};
     private final int[] outBounds = new int[4];*/
 
-    public ViewRootImpl(UIManager service) {
-        master = service;
+    public ViewRootImpl(UIManager manager) {
+        master = manager;
     }
 
     void setView(@Nonnull View view) {
@@ -185,7 +185,7 @@ public final class ViewRootImpl implements IViewParent {
     @Override
     public void requestLayout() {
         layoutRequested = true;
-        master.layoutRequested = true;
+        master.mPendingLayout = true;
     }
 
     @Override

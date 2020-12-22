@@ -16,10 +16,11 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.widget;
+package icyllis.modernui.test.widget;
 
 import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.test.widget.TextField;
 import icyllis.modernui.view.*;
 import icyllis.modernui.test.discard.IHost;
 import icyllis.modernui.test.discard.IKeyboardListener;

@@ -20,10 +20,10 @@ package icyllis.modernui.test.popup;
 
 import icyllis.modernui.view.UITools;
 import icyllis.modernui.view.UIManager;
-import icyllis.modernui.widget.ConfirmPopupBG;
+import icyllis.modernui.test.drawable.ConfirmPopupBG;
 import icyllis.modernui.test.discard.Module;
 import icyllis.modernui.test.discard.WidgetLayout;
-import icyllis.modernui.widget.DynamicFrameButton;
+import icyllis.modernui.test.widget.DynamicFrameButton;
 import net.minecraft.client.resources.I18n;
 
 import javax.annotation.Nullable;

@@ -21,7 +21,7 @@ package icyllis.modernui.view;
 import icyllis.modernui.widget.FrameLayout;
 
 /**
- * System view, the parent of user-defined content view, the child of ViewRoot
+ * System view, the top-level view, the parent of content view
  */
 public class DecorView extends FrameLayout {
 }

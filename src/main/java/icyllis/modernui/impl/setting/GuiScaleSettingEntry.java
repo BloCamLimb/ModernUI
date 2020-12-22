@@ -19,7 +19,7 @@
 package icyllis.modernui.impl.setting;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.system.mixin.MixinHooks;
+import icyllis.modernui.system.MixinHooks;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.I18n;
 
