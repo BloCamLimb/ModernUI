@@ -19,7 +19,7 @@
 package icyllis.modernui.font;
 
 import icyllis.modernui.font.pipeline.GlyphRender;
-import icyllis.modernui.font.process.TextCacheProcessor;
+import icyllis.modernui.font.process.TextLayoutProcessor;
 import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.text.CharacterManager;
 import net.minecraft.util.text.ITextProperties;
@@ -39,11 +39,11 @@ import java.util.Optional;
  * Handle line breaks, get text width, etc.
  */
 @OnlyIn(Dist.CLIENT)
-public class ModernTextHandler extends CharacterManager {
+public class MuiTextHandler extends CharacterManager {
 
-    private final TextCacheProcessor processor = TextCacheProcessor.getInstance();
+    private final TextLayoutProcessor processor = TextLayoutProcessor.getInstance();
 
-    private final MutableFloat mutableFloat = new MutableFloat();
+    private final MutableFloat v = new MutableFloat();
 
     /**
      * Constructor
@@ -51,7 +51,7 @@ public class ModernTextHandler extends CharacterManager {
      * @param widthRetriever retrieve char width with given codePoint
      */
     //TODO remove width retriever as long as complex line wrapping finished
-    public ModernTextHandler(ICharWidthProvider widthRetriever) {
+    public MuiTextHandler(ICharWidthProvider widthRetriever) {
         super(widthRetriever);
     }
 
@@ -77,16 +77,16 @@ public class ModernTextHandler extends CharacterManager {
      */
     @Override
     public float func_238356_a_(@Nonnull ITextProperties text) {
-        mutableFloat.setValue(0);
+        v.setValue(0);
         // iterate all siblings
         text.getComponentWithStyle((s, t) -> {
             if (!t.isEmpty()) {
-                mutableFloat.add(processor.lookupVanillaNode(t, s).advance);
+                v.add(processor.lookupVanillaNode(t, s).advance);
             }
             // continue
             return Optional.empty();
         }, Style.EMPTY);
-        return mutableFloat.floatValue();
+        return v.floatValue();
     }
 
     /**
@@ -97,14 +97,14 @@ public class ModernTextHandler extends CharacterManager {
      */
     @Override
     public float func_243238_a(@Nonnull IReorderingProcessor text) {
-        mutableFloat.setValue(0);
-        processor.copier.copyAndConsume(text, (t, s) -> {
+        v.setValue(0);
+        processor.handleReorder(text, (t, s) -> {
             if (t.length() != 0) {
-                mutableFloat.add(processor.lookupVanillaNode(t, s).advance);
+                v.add(processor.lookupVanillaNode(t, s).advance);
             }
             return false;
         });
-        return mutableFloat.floatValue();
+        return v.floatValue();
     }
 
     /**
@@ -207,13 +207,13 @@ public class ModernTextHandler extends CharacterManager {
     @Nullable
     @Override
     public Style func_238357_a_(@Nonnull ITextProperties text, int width) {
-        mutableFloat.setValue(width);
+        v.setValue(width);
         // iterate all siblings
         return text.getComponentWithStyle((s, t) -> {
-            if (sizeToWidth0(t, mutableFloat.floatValue(), s) < t.length()) {
+            if (sizeToWidth0(t, v.floatValue(), s) < t.length()) {
                 return Optional.of(s);
             }
-            mutableFloat.subtract(processor.lookupVanillaNode(t, s).advance);
+            v.subtract(processor.lookupVanillaNode(t, s).advance);
             // continue
             return Optional.empty();
         }, Style.EMPTY).orElse(null);
@@ -229,16 +229,16 @@ public class ModernTextHandler extends CharacterManager {
     @Nullable
     @Override
     public Style func_243239_a(@Nonnull IReorderingProcessor text, int width) {
-        mutableFloat.setValue(width);
+        v.setValue(width);
         MutableObject<Style> sr = new MutableObject<>();
         // iterate all siblings
-        if (!processor.copier.copyAndConsume(text, (t, s) -> {
-            if (sizeToWidth0(t, mutableFloat.floatValue(), s) < t.length()) {
+        if (!processor.handleReorder(text, (t, s) -> {
+            if (sizeToWidth0(t, v.floatValue(), s) < t.length()) {
                 sr.setValue(s);
                 // break with result
                 return true;
             }
-            mutableFloat.subtract(processor.lookupVanillaNode(t, s).advance);
+            v.subtract(processor.lookupVanillaNode(t, s).advance);
             // continue
             return false;
         })) {
@@ -260,11 +260,11 @@ public class ModernTextHandler extends CharacterManager {
     @Override
     public ITextProperties func_238358_a_(@Nonnull ITextProperties textIn, int width, @Nonnull Style styleIn) {
         TextPropertiesManager collector = new TextPropertiesManager();
-        mutableFloat.setValue(width);
+        v.setValue(width);
         // iterate all siblings
         return textIn.getComponentWithStyle((style, text) -> {
             int size;
-            if ((size = sizeToWidth0(text, mutableFloat.floatValue(), style)) < text.length()) {
+            if ((size = sizeToWidth0(text, v.floatValue(), style)) < text.length()) {
                 String sub = text.substring(0, size);
                 if (!sub.isEmpty()) {
                     // add
@@ -277,7 +277,7 @@ public class ModernTextHandler extends CharacterManager {
                 // add
                 collector.func_238155_a_(ITextProperties.func_240653_a_(text, style));
             }
-            mutableFloat.subtract(processor.lookupVanillaNode(text, style).advance);
+            v.subtract(processor.lookupVanillaNode(text, style).advance);
             // continue
             return Optional.empty();
         }, styleIn).orElse(textIn); // full text

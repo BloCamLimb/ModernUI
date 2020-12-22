@@ -35,6 +35,27 @@ public class MutableString implements CharSequence {
         }
     }
 
+    public void addChar(char c) {
+        chars.add(c);
+    }
+
+    public void addCodePoint(int codePoint) {
+        if (Character.isBmpCodePoint(codePoint)) {
+            chars.add((char) codePoint);
+        } else {
+            chars.add(Character.highSurrogate(codePoint));
+            chars.add(Character.lowSurrogate(codePoint));
+        }
+    }
+
+    public boolean isEmpty() {
+        return chars.isEmpty();
+    }
+
+    public void clear() {
+        chars.clear();
+    }
+
     @Override
     public int length() {
         return chars.size();

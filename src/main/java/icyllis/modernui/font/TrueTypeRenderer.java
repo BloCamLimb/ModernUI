@@ -22,7 +22,7 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.pipeline.TextRenderNode;
 import icyllis.modernui.font.process.FormattingStyle;
-import icyllis.modernui.font.process.TextCacheProcessor;
+import icyllis.modernui.font.process.TextLayoutProcessor;
 import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.graphics.renderer.Canvas;
@@ -48,13 +48,6 @@ public class TrueTypeRenderer implements IFontRenderer {
     private static TrueTypeRenderer instance;
 
     /**
-     * Config values
-     *
-     * @see icyllis.modernui.system.Config.Client
-     */
-    public static boolean sGlobalRenderer;
-
-    /**
      * Vertical adjustment (in pixels * 2) to string position because Minecraft uses top of string instead of baseline
      */
     private static final int BASELINE_OFFSET = 7;
@@ -62,7 +55,7 @@ public class TrueTypeRenderer implements IFontRenderer {
     /**
      * Cache and pre-process string for much better performance
      */
-    private final TextCacheProcessor processor = TextCacheProcessor.getInstance();
+    private final TextLayoutProcessor processor = TextLayoutProcessor.getInstance();
 
     /**
      * Note: When Minecraft load completed, MainMenuScreen will be open and post GuiOpenEvent
@@ -71,8 +64,9 @@ public class TrueTypeRenderer implements IFontRenderer {
      */
     private TrueTypeRenderer() {
 
-        // init constructor and hook
-        hook();
+        // init and hook
+        //hook();
+        processor.initRenderSystem();
     }
 
     /**
@@ -92,9 +86,9 @@ public class TrueTypeRenderer implements IFontRenderer {
         return instance;
     }
 
-    public static void hook() {
+    /*public static void hook() {
         ModernFontRenderer.hook(sGlobalRenderer);
-    }
+    }*/
 
     public float draw(@Nullable String str, float x, float y, int r, int g, int b, int a, TextAlign align) {
         if (str == null || str.isEmpty()) {

@@ -8,6 +8,7 @@
     "AccessFoodData",
     "AccessTextProcessing",
     "MixinClientLanguage",
+    "MixinFontManager",
     "MixinFoodData",
     "MixinMainWindow",
     "MixinMatrix4f",
