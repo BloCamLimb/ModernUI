@@ -18,11 +18,11 @@
 
 package icyllis.modernui.system;
 
-import icyllis.modernui.font.ModernFontRenderer;
-import icyllis.modernui.font.TrueTypeRenderer;
+import icyllis.modernui.font.MuiFontRenderer;
 import icyllis.modernui.font.glyph.GlyphManager;
-import icyllis.modernui.font.process.TextCacheProcessor;
+import icyllis.modernui.font.process.TextLayoutProcessor;
 import icyllis.modernui.graphics.BlurHandler;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraft.client.gui.screen.DownloadTerrainScreen;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -181,15 +181,16 @@ public final class Config {
             BlurHandler.sBackgroundAlpha = backgroundAlpha.get().floatValue();
             BlurHandler.INSTANCE.loadBlacklist(blurBlacklist.get());
 
-            TrueTypeRenderer.sGlobalRenderer = globalRenderer.get();
+            final boolean global = globalRenderer.get();
+            Minecraft.getInstance().runAsync(() -> MuiFontRenderer.change(global));
             GlyphManager.sPreferredFont = preferredFont.get();
             GlyphManager.sAntiAliasing = antiAliasing.get();
             GlyphManager.sHighPrecision = highPrecision.get();
             GlyphManager.sEnableMipmap = enableMipmap.get();
             GlyphManager.sMipmapLevel = mipmapLevel.get();
             GlyphManager.sResolutionLevel = resolutionLevel.get();
-            TextCacheProcessor.sDefaultFontSize = defaultFontSize.get();
-            ModernFontRenderer.sAllowFontShadow = allowShadow.get();
+            TextLayoutProcessor.sDefaultFontSize = defaultFontSize.get();
+            MuiFontRenderer.setAllowShadow(allowShadow.get());
         }
     }
 

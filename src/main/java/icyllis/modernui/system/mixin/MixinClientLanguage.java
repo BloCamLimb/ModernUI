@@ -18,7 +18,7 @@
 
 package icyllis.modernui.system.mixin;
 
-import icyllis.modernui.font.TrueTypeRenderer;
+import icyllis.modernui.font.MuiFontRenderer;
 import net.minecraft.client.resources.ClientLanguageMap;
 import net.minecraft.client.util.BidiReorderer;
 import net.minecraft.util.IReorderingProcessor;
@@ -61,7 +61,7 @@ public abstract class MixinClientLanguage {
      */
     @Overwrite
     public IReorderingProcessor func_241870_a(ITextProperties text) {
-        return TrueTypeRenderer.sGlobalRenderer ?
+        return MuiFontRenderer.isGlobalRenderer() ?
                 copier -> !text.getComponentWithStyle((s, t) ->
                         TextProcessing.func_238341_a_(t, s, copier) ? Optional.empty()
                                 : AccessTextProcessing.stopIteration(), Style.EMPTY).isPresent()

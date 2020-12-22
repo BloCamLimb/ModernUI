@@ -28,6 +28,7 @@ import icyllis.modernui.font.glyph.TexturedGlyph;
 import icyllis.modernui.font.pipeline.*;
 import icyllis.modernui.graphics.math.Color3i;
 import net.minecraft.client.Minecraft;
+import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.text.Style;
 import net.minecraft.util.text.TextFormatting;
 
@@ -51,12 +52,12 @@ import java.util.regex.Pattern;
  * @since 2.0
  */
 @SuppressWarnings("unused")
-public class TextCacheProcessor {
+public class TextLayoutProcessor {
 
     /**
      * Instance on render thread, initialized when MainMenuScreen opened
      */
-    private static TextCacheProcessor instance;
+    private static TextLayoutProcessor instance;
 
     /**
      * Config values
@@ -68,8 +69,9 @@ public class TextCacheProcessor {
 
     /**
      * Draw and cache all glyphs of all fonts needed
+     * Lazy-loading because we are waiting for render system to initialize
      */
-    private final GlyphManager glyphManager = new GlyphManager();
+    private GlyphManager glyphManager;
 
     /*
      * A cache of recently seen strings to their fully laid-out state, complete with color changes and texture coordinates of
@@ -111,7 +113,7 @@ public class TextCacheProcessor {
      */
     private final TextProcessData data = new TextProcessData();
 
-    public final ReorderTextCopier copier = new ReorderTextCopier();
+    private final ReorderTextHandler reorder = new ReorderTextHandler();
 
     /**
      * Remove all formatting code even though it's invalid {@link #fromFormattingCode(char)} == null
@@ -122,7 +124,7 @@ public class TextCacheProcessor {
      * A single StringCache object is allocated by Minecraft's FontRenderer which forwards all string drawing and requests for
      * string width to this class.
      */
-    private TextCacheProcessor() {
+    private TextLayoutProcessor() {
         /* StringCache is created by the main game thread; remember it for later thread safety checks */
         //mainThread = Thread.currentThread();
 
@@ -136,11 +138,11 @@ public class TextCacheProcessor {
      * @return instance
      * @see TrueTypeRenderer#getInstance()
      */
-    public static TextCacheProcessor getInstance() {
+    public static TextLayoutProcessor getInstance() {
         if (instance == null) {
-            synchronized (TextCacheProcessor.class) {
+            synchronized (TextLayoutProcessor.class) {
                 if (instance == null) {
-                    instance = new TextCacheProcessor();
+                    instance = new TextLayoutProcessor();
                 }
             }
         }
@@ -167,6 +169,27 @@ public class TextCacheProcessor {
         digitGlyphs[FormattingCode.ITALIC] = getOrCacheString("\u00a7o0123456789").glyphs;
         digitGlyphs[FormattingCode.BOLD | FormattingCode.ITALIC] = getOrCacheString("\u00a7l\u00a7o0123456789").glyphs;*/
         //digitGlyphsReady = true;
+    }
+
+    public void initRenderSystem() {
+        if (glyphManager == null) {
+            glyphManager = new GlyphManager();
+        } else {
+            throw new IllegalStateException("Already initialized");
+        }
+    }
+
+    /**
+     * Vanilla only left IReorderingProcessor interface, so we have to make the
+     * IReorderingProcessor not a reordered text, see {@link icyllis.modernui.system.mixin.MixinClientLanguage}
+     * So actually it's a copy of original (unordered) text, so we can use our layout engine later
+     *
+     * @param text   a copied text
+     * @param action what to do with a part of styled text
+     * @return {@code false} if action stopped on the way, {@code true} if the whole text was handled
+     */
+    public boolean handleReorder(IReorderingProcessor text, ReorderTextHandler.IAction action) {
+        return reorder.handle(text, action);
     }
 
     /**

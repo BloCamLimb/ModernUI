@@ -196,9 +196,9 @@ public enum UIEditor {
                     iterateWorking();
                 }
                 break;
-            case GLFW.GLFW_KEY_A:
+            /*case GLFW.GLFW_KEY_A:
                 TrueTypeRenderer.hook();
-                break;
+                break;*/
             case GLFW.GLFW_KEY_P:
                 if (Minecraft.getInstance().currentScreen == null) {
                     break;

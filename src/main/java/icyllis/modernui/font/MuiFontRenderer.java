@@ -20,13 +20,11 @@ package icyllis.modernui.font;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.pipeline.TextRenderNode;
-import icyllis.modernui.font.process.TextCacheProcessor;
+import icyllis.modernui.font.process.TextLayoutProcessor;
 import icyllis.modernui.system.mixin.AccessFontRenderer;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.fonts.Font;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
-import net.minecraft.client.renderer.entity.EntityRendererManager;
 import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.vector.Matrix4f;
@@ -47,43 +45,81 @@ import java.util.function.Function;
  * Replace vanilla renderer with Modern UI renderer
  */
 @OnlyIn(Dist.CLIENT)
-public class ModernFontRenderer extends FontRenderer {
+public class MuiFontRenderer extends FontRenderer {
 
     /**
      * Render thread instance
      */
-    private static ModernFontRenderer instance;
+    private static MuiFontRenderer instance;
 
     /**
-     * Config value
+     * Config values
+     *
+     * @see icyllis.modernui.system.Config.Client
      */
-    public static boolean sAllowFontShadow;
+    private boolean allowShadow;
+    private boolean globalRenderer;
 
+    private final TextLayoutProcessor processor = TextLayoutProcessor.getInstance();
 
-    private final TextCacheProcessor processor = TextCacheProcessor.getInstance();
+    // temporary float value
+    private final MutableFloat v = new MutableFloat();
 
-    private final MutableFloat tempFloat = new MutableFloat();
+    private MuiTextHandler textHandler;
+    private CharacterManager stringDecomposer; // vanilla
 
-    private FontRenderer vanillaRenderer;
-
-    private ModernFontRenderer() {
-        super($ -> null);
+    private MuiFontRenderer(Function<ResourceLocation, Font> font) {
+        super(font);
     }
 
-    static void hook(boolean doHook) {
+    public static FontRenderer create(Function<ResourceLocation, Font> font) {
+        RenderSystem.assertThread(RenderSystem::isOnRenderThread);
+        if (instance == null) {
+            instance = new MuiFontRenderer(font);
+            CharacterManager o = ObfuscationReflectionHelper.getPrivateValue(FontRenderer.class,
+                    instance, "field_238402_e_");
+            @Deprecated
+            CharacterManager.ICharWidthProvider c = ObfuscationReflectionHelper.getPrivateValue(CharacterManager.class,
+                    o, "field_238347_a_");
+            instance.textHandler = new MuiTextHandler(c);
+            instance.stringDecomposer = o;
+            return instance;
+        } else {
+            throw new IllegalStateException("Already created");
+        }
+    }
+
+    public static void change(boolean global) {
+        RenderSystem.assertThread(RenderSystem::isOnRenderThread);
+        if (instance.globalRenderer != global) {
+            if (global) {
+                ObfuscationReflectionHelper.setPrivateValue(FontRenderer.class,
+                        instance, instance.textHandler, "field_238402_e_");
+            } else {
+                ObfuscationReflectionHelper.setPrivateValue(FontRenderer.class,
+                        instance, instance.stringDecomposer, "field_238402_e_");
+            }
+        }
+        instance.globalRenderer = global;
+    }
+
+    public static boolean isGlobalRenderer() {
+        return instance.globalRenderer;
+    }
+
+    public static void setAllowShadow(boolean allow) {
+        instance.allowShadow = allow;
+    }
+
+    /*static void hook(boolean doHook) {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
         if (instance == null) {
             instance = new ModernFontRenderer();
             Minecraft minecraft = Minecraft.getInstance();
-            CharacterManager o = ObfuscationReflectionHelper.getPrivateValue(FontRenderer.class,
-                    minecraft.fontRenderer, "field_238402_e_");
+
             Function<ResourceLocation, Font> r = ObfuscationReflectionHelper.getPrivateValue(FontRenderer.class,
                     minecraft.fontRenderer, "field_211127_e");
-            CharacterManager.ICharWidthProvider c = ObfuscationReflectionHelper.getPrivateValue(CharacterManager.class,
-                    o, "field_238347_a_");
-            ModernTextHandler t = new ModernTextHandler(c);
-            ObfuscationReflectionHelper.setPrivateValue(FontRenderer.class,
-                    instance, t, "field_238402_e_");
+
             ObfuscationReflectionHelper.setPrivateValue(FontRenderer.class,
                     instance, r, "field_211127_e");
         }
@@ -115,42 +151,51 @@ public class ModernFontRenderer extends FontRenderer {
                 e.printStackTrace();
             }
         }
-    }
+    }*/
 
     @Override
     public int func_238411_a_(@Nonnull String string, float x, float y, int color, boolean dropShadow, @NotNull Matrix4f matrix,
                               @Nonnull IRenderTypeBuffer buffer, boolean seeThrough, int colorBackground, int packedLight, boolean bidiFlag) {
-        // bidiFlag is useless, we have our layout system
-        x += drawLayer0(string, x, y, color, dropShadow, matrix, buffer, seeThrough, colorBackground, packedLight, Style.EMPTY);
-        return (int) x + (dropShadow ? 1 : 0);
+        if (globalRenderer) {
+            // bidiFlag is useless, we have our layout system
+            x += drawLayer0(string, x, y, color, dropShadow, matrix, buffer, seeThrough, colorBackground, packedLight, Style.EMPTY);
+            return (int) x + (dropShadow ? 1 : 0);
+        }
+        return super.func_238411_a_(string, x, y, color, dropShadow, matrix, buffer, seeThrough, colorBackground, packedLight, bidiFlag);
     }
 
     @Override
     public int func_243247_a(@Nonnull ITextComponent text, float x, float y, int color, boolean dropShadow, @Nonnull Matrix4f matrix,
                              @Nonnull IRenderTypeBuffer buffer, boolean seeThrough, int colorBackground, int packedLight) {
-        tempFloat.setValue(x);
-        // iterate all siblings
-        text.getComponentWithStyle((style, string) -> {
-            tempFloat.add(drawLayer0(string, tempFloat.floatValue(), y, color, dropShadow, matrix,
-                    buffer, seeThrough, colorBackground, packedLight, style));
-            // continue
-            return Optional.empty();
-        }, Style.EMPTY);
-        return tempFloat.intValue() + (dropShadow ? 1 : 0);
+        if (globalRenderer) {
+            v.setValue(x);
+            // iterate all siblings
+            text.getComponentWithStyle((style, string) -> {
+                v.add(drawLayer0(string, v.floatValue(), y, color, dropShadow, matrix,
+                        buffer, seeThrough, colorBackground, packedLight, style));
+                // continue
+                return Optional.empty();
+            }, Style.EMPTY);
+            return v.intValue() + (dropShadow ? 1 : 0);
+        }
+        return super.func_243247_a(text, x, y, color, dropShadow, matrix, buffer, seeThrough, colorBackground, packedLight);
     }
 
     @Override
     public int func_238416_a_(@Nonnull IReorderingProcessor text, float x, float y, int color, boolean dropShadow, @Nonnull Matrix4f matrix,
                               @Nonnull IRenderTypeBuffer buffer, boolean seeThrough, int colorBackground, int packedLight) {
-        tempFloat.setValue(x);
-        processor.copier.copyAndConsume(text, (string, style) -> {
-                    tempFloat.add(drawLayer0(string, tempFloat.floatValue(), y, color, dropShadow, matrix,
-                            buffer, seeThrough, colorBackground, packedLight, style));
-                    // continue, equals to Optional.empty()
-                    return false;
-                }
-        );
-        return tempFloat.intValue() + (dropShadow ? 1 : 0);
+        if (globalRenderer) {
+            v.setValue(x);
+            processor.handleReorder(text, (string, style) -> {
+                        v.add(drawLayer0(string, v.floatValue(), y, color, dropShadow, matrix,
+                                buffer, seeThrough, colorBackground, packedLight, style));
+                        // continue, equals to Optional.empty()
+                        return false;
+                    }
+            );
+            return v.intValue() + (dropShadow ? 1 : 0);
+        }
+        return super.func_238416_a_(text, x, y, color, dropShadow, matrix, buffer, seeThrough, colorBackground, packedLight);
     }
 
     private float drawLayer0(@Nonnull CharSequence string, float x, float y, int color, boolean dropShadow, Matrix4f matrix,
@@ -170,10 +215,10 @@ public class ModernFontRenderer extends FontRenderer {
         int b = color & 0xff;
 
         TextRenderNode node = processor.lookupVanillaNode(string, style);
-        if (dropShadow && sAllowFontShadow) {
+        if (dropShadow && allowShadow) {
             node.drawText(matrix, buffer, string, x + 1, y + 1, r >> 2, g >> 2, b >> 2, a, true,
                     transparent, colorBackground, packedLight);
-            matrix = matrix.copy();
+            matrix = matrix.copy(); // if not drop shadow, we don't need to copy the matrix
             matrix.translate(AccessFontRenderer.shadowLifting());
         }
 
@@ -248,7 +293,10 @@ public class ModernFontRenderer extends FontRenderer {
     @Deprecated
     @Override
     public boolean getBidiFlag() {
-        return false;
+        if (globalRenderer) {
+            return false;
+        }
+        return super.getBidiFlag();
     }
 
     /**
@@ -262,6 +310,9 @@ public class ModernFontRenderer extends FontRenderer {
     @Nonnull
     @Override
     public String bidiReorder(@Nonnull String text) {
-        return text;
+        if (globalRenderer) {
+            return text;
+        }
+        return super.bidiReorder(text);
     }
 }
