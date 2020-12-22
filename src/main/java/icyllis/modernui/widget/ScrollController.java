@@ -60,6 +60,7 @@ public class ScrollController {
             p = ITimeInterpolator.SINE.getInterpolation(p);
             currValue = MathHelper.lerp(p, startValue, targetValue);
             listener.onScrollAmountUpdated(this, currValue);
+            UIManager.getInstance().repostCursorEvent();
         }
     }
 
@@ -114,8 +115,8 @@ public class ScrollController {
      *
      * @param delta the change from previous target to new target
      */
-    public void scrollBy(float delta) {
-        scrollTo(targetValue + delta);
+    public boolean scrollBy(float delta) {
+        return scrollTo(targetValue + delta);
     }
 
     /**
@@ -138,13 +139,16 @@ public class ScrollController {
      *
      * @param target the target scroll amount
      */
-    public void scrollTo(float target) {
+    public boolean scrollTo(float target) {
         float lastTime = startTime;
         startTime = UIManager.getInstance().getDrawingTime();
         startValue = currValue;
         float scale = (float) UIManager.getInstance().getGuiScale();
         float end = MathHelper.clamp(target, 0, maxValue) * scale;
         targetValue = (int) end / scale;
+        if (startValue == targetValue) {
+            return false;
+        }
 
         // smooth
         float dis = Math.abs(targetValue - currValue);
@@ -158,6 +162,7 @@ public class ScrollController {
         if (dis < 120.0) {
             duration *= (dis / 300.0f) + 0.6f;
         }
+        return true;
     }
 
     /**
@@ -167,6 +172,7 @@ public class ScrollController {
     public void abortAnimation() {
         currValue = targetValue;
         listener.onScrollAmountUpdated(this, currValue);
+        UIManager.getInstance().repostCursorEvent();
     }
 
     public boolean isScrolling() {

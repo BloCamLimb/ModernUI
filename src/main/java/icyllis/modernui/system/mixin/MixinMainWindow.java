@@ -18,6 +18,7 @@
 
 package icyllis.modernui.system.mixin;
 
+import icyllis.modernui.system.MixinHooks;
 import net.minecraft.client.MainWindow;
 import net.minecraft.util.math.MathHelper;
 import org.spongepowered.asm.mixin.Mixin;

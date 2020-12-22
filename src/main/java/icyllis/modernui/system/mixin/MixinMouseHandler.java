@@ -18,6 +18,7 @@
 
 package icyllis.modernui.system.mixin;
 
+import icyllis.modernui.system.MixinHooks;
 import icyllis.modernui.view.UIManager;
 import net.minecraft.client.MouseHelper;
 import org.spongepowered.asm.mixin.Mixin;
@@ -44,13 +45,13 @@ public class MixinMouseHandler {
                                     boolean flag, int i, boolean[] aboolean, double d0, double d1) {
     }*/
 
-    private final UIManager.InputEventReceiver mInputEventReceiver = MixinHooks.C.inputEventReceiver;
+    private final UIManager receiver = UIManager.getInstance();
 
     /**
      * Capture the horizontal scroll offset
      */
     @Inject(method = "scrollCallback", at = @At("HEAD"))
     private void onScrollCallback(long handle, double xoffset, double yoffset, CallbackInfo ci) {
-        mInputEventReceiver.onScrollCallback(xoffset, yoffset);
+        receiver.onEarlyScrollCallback(xoffset, yoffset);
     }
 }

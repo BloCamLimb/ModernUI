@@ -48,5 +48,4 @@ public interface IViewParent {
      * The scroll offset in vertical direction, used for view coordinate transformation.
      */
     float getScrollY();
-
 }

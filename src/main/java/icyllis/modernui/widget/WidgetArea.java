@@ -35,7 +35,7 @@ public interface WidgetArea {
 
     final class Circle implements WidgetArea {
 
-        private float radius;
+        private final float radius;
 
         public Circle(float radius) {
             this.radius = radius;
@@ -53,9 +53,9 @@ public interface WidgetArea {
 
     final class Sector implements WidgetArea {
 
-        private float radius;
+        private final float radius;
 
-        private double clockwise, flare;
+        private final double clockwise, flare;
 
         /**
          * Use radian, and clockwise direction

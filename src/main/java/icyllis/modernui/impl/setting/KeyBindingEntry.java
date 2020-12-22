@@ -25,7 +25,7 @@ import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.view.UIManager;
 import icyllis.modernui.test.popup.PopupMenu;
 import icyllis.modernui.test.popup.DropDownMenu;
-import icyllis.modernui.widget.KeyInputBox;
+import icyllis.modernui.test.widget.KeyInputBox;
 import net.minecraft.client.GameSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.I18n;

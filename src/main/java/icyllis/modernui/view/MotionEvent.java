@@ -886,6 +886,17 @@ public final class MotionEvent extends InputEvent {
         return value;
     }
 
+    void setRawAxisValue(int axis, float value) {
+        getRawPointerCoords(0).setAxisValue(axis, value);
+    }
+
+    void setRawAxisValue(int axis, float value, int pointerIndex) {
+        if (pointerIndex < 0 || pointerIndex >= getPointerCount()) {
+            throw new IllegalArgumentException("pointerIndex out of range");
+        }
+        getRawPointerCoords(pointerIndex).setAxisValue(axis, value);
+    }
+
     /*private float getHistoricalAxisValue(int axis, int pointerIndex, int historyIndex) {
         float value = getHistoricalRawPointerCoords(pointerIndex, historyIndex).getAxisValue(axis);
         switch (axis) {

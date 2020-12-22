@@ -59,7 +59,7 @@ public final class Registration {
     public static SoundEvent BUTTON_CLICK_2;
 
     /**
-     * Menus
+     * Container Menus
      */
     public static ContainerType<TestMenu> TEST_MENU;
 

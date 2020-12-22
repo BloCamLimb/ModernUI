@@ -23,6 +23,8 @@ import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.ast.Node;
 import icyllis.modernui.system.ModernUI;
 
+import javax.annotation.Nonnull;
+
 public class TestMain {
 
     public static void main(String[] args) {
@@ -42,7 +44,7 @@ public class TestMain {
         level 6: 14 (lighter color)
      */
 
-    private static void iterateNode(Node node, int depth) {
+    private static void iterateNode(@Nonnull Node node, int depth) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < depth; i++) {
             sb.append("  ");

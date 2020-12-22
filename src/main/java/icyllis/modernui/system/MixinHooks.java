@@ -16,9 +16,8 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.system.mixin;
+package icyllis.modernui.system;
 
-import icyllis.modernui.view.UIManager;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.math.MathHelper;
@@ -38,15 +37,7 @@ public final class MixinHooks {
     @OnlyIn(Dist.CLIENT)
     public static final class C {
 
-        static UIManager.InputEventReceiver inputEventReceiver;
-
         private C() {
-        }
-
-        public static void setInputEventReceiver(UIManager.InputEventReceiver inputEventReceiver) {
-            if (C.inputEventReceiver == null) {
-                C.inputEventReceiver = inputEventReceiver;
-            }
         }
 
         public static int calcGuiScales() {
