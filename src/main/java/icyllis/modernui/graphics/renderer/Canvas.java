@@ -20,6 +20,8 @@ package icyllis.modernui.graphics.renderer;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.TrueTypeRenderer;
+import icyllis.modernui.font.pipeline.TextRenderNode;
+import icyllis.modernui.font.process.TextLayoutProcessor;
 import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.math.Color3i;
@@ -34,9 +36,11 @@ import net.minecraft.client.renderer.WorldVertexBufferUploader;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.text.Style;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Draw things in View or especially for Modern UI:
@@ -68,7 +72,7 @@ public class Canvas {
     private final MainWindow mainWindow;
     private final ItemRenderer itemRenderer;
 
-    private final TrueTypeRenderer fontRenderer = TrueTypeRenderer.getInstance();
+    private final TextLayoutProcessor fontEngine = TextLayoutProcessor.getInstance();
 
     private final BufferBuilder bufferBuilder = Tessellator.getInstance().getBuffer();
 
@@ -112,6 +116,7 @@ public class Canvas {
     /**
      * Text align
      */
+    @Nonnull
     private TextAlign textAlign = TextAlign.LEFT;
 
 
@@ -122,14 +127,23 @@ public class Canvas {
 
 
     private Canvas(@Nonnull Minecraft minecraft) {
+        RenderTools.checkCapabilities();
         mainWindow = minecraft.getMainWindow();
         itemRenderer = minecraft.getItemRenderer();
+        fontEngine.initRenderer();
     }
 
+    /**
+     * The canvas must be created when MainMenuScreen is about to open.
+     * This will start render system of Modern UI. Always do not call this
+     * at the wrong time.
+     *
+     * @return the instance
+     * @see icyllis.modernui.view.UIManager
+     */
     public static Canvas getInstance() {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
         if (instance == null) {
-            RenderTools.checkCapabilities();
             instance = new Canvas(Minecraft.getInstance());
         }
         return instance;
@@ -286,7 +300,7 @@ public class Canvas {
      *
      * @param align align
      */
-    public void setTextAlign(TextAlign align) {
+    public void setTextAlign(@Nonnull TextAlign align) {
         textAlign = align;
     }
 
@@ -301,7 +315,17 @@ public class Canvas {
      * @return text advance (text width)
      */
     public float drawText(String text, float x, float y) {
-        return fontRenderer.draw(text, x, y, r, g, b, a, textAlign);
+        return drawText(text, x, y, r, g, b, a, textAlign);
+    }
+
+    private float drawText(@Nullable String t, float x, float y, int r, int g, int b, int a, TextAlign align) {
+        if (t == null || t.isEmpty()) {
+            return 0;
+        }
+        final TextRenderNode node = fontEngine.lookupVanillaNode(t, Style.EMPTY);
+        if (align != TextAlign.LEFT)
+            x -= node.advance * align.offsetFactor;
+        return node.drawText(bufferBuilder, t, x, y, r, g, b, a);
     }
 
     /**

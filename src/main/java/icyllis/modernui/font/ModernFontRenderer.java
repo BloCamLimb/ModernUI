@@ -45,12 +45,12 @@ import java.util.function.Function;
  * Replace vanilla renderer with Modern UI renderer
  */
 @OnlyIn(Dist.CLIENT)
-public class MuiFontRenderer extends FontRenderer {
+public class ModernFontRenderer extends FontRenderer {
 
     /**
      * Render thread instance
      */
-    private static MuiFontRenderer instance;
+    private static ModernFontRenderer instance;
 
     /**
      * Config values
@@ -65,23 +65,23 @@ public class MuiFontRenderer extends FontRenderer {
     // temporary float value
     private final MutableFloat v = new MutableFloat();
 
-    private MuiTextHandler textHandler;
+    private ModernTextHandler textHandler;
     private CharacterManager stringDecomposer; // vanilla
 
-    private MuiFontRenderer(Function<ResourceLocation, Font> font) {
-        super(font);
+    private ModernFontRenderer(Function<ResourceLocation, Font> fonts) {
+        super(fonts);
     }
 
-    public static FontRenderer create(Function<ResourceLocation, Font> font) {
+    public static FontRenderer create(Function<ResourceLocation, Font> fonts) {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
         if (instance == null) {
-            instance = new MuiFontRenderer(font);
+            instance = new ModernFontRenderer(fonts);
             CharacterManager o = ObfuscationReflectionHelper.getPrivateValue(FontRenderer.class,
                     instance, "field_238402_e_");
             @Deprecated
             CharacterManager.ICharWidthProvider c = ObfuscationReflectionHelper.getPrivateValue(CharacterManager.class,
                     o, "field_238347_a_");
-            instance.textHandler = new MuiTextHandler(c);
+            instance.textHandler = new ModernTextHandler(c);
             instance.stringDecomposer = o;
             return instance;
         } else {

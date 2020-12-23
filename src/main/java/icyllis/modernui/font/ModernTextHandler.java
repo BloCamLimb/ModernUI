@@ -39,7 +39,7 @@ import java.util.Optional;
  * Handle line breaks, get text width, etc.
  */
 @OnlyIn(Dist.CLIENT)
-public class MuiTextHandler extends CharacterManager {
+public class ModernTextHandler extends CharacterManager {
 
     private final TextLayoutProcessor processor = TextLayoutProcessor.getInstance();
 
@@ -48,10 +48,10 @@ public class MuiTextHandler extends CharacterManager {
     /**
      * Constructor
      *
-     * @param widthRetriever retrieve char width with given codePoint
+     * @param widthRetriever retrieve char width with given codePoint and Style(BOLD)
      */
     //TODO remove width retriever as long as complex line wrapping finished
-    public MuiTextHandler(ICharWidthProvider widthRetriever) {
+    ModernTextHandler(ICharWidthProvider widthRetriever) {
         super(widthRetriever);
     }
 

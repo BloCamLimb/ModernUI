@@ -18,7 +18,7 @@
 
 package icyllis.modernui.system;
 
-import icyllis.modernui.font.MuiFontRenderer;
+import icyllis.modernui.font.ModernFontRenderer;
 import icyllis.modernui.font.glyph.GlyphManager;
 import icyllis.modernui.font.process.TextLayoutProcessor;
 import icyllis.modernui.graphics.BlurHandler;
@@ -137,7 +137,7 @@ public final class Config {
                     .push("font");
 
             globalRenderer = builder.comment(
-                    "Replace the default font renderer of vanilla to that of Modern UI.")
+                    "Apply Modern UI font renderer to the entire game rather than only Modern UI itself.")
                     .define("globalRenderer", true);
             preferredFont = builder.comment(
                     "The font with the highest priority to use, the built-in font is always the second choice.",
@@ -162,7 +162,8 @@ public final class Config {
                     .defineInRange("mipmapLevel", 4, 0, 4);
             resolutionLevel = builder.comment(
                     "The resolution level of font, higher levels would better work with high resolution monitors.",
-                    "Reference: 1 (Standard, 1.5K Fullscreen), 2 (High, 2K~3K Fullscreen), 3 (Ultra, 4K Fullscreen)")
+                    "Reference: 1 (Standard, 1.5K Fullscreen), 2 (High, 2K~3K Fullscreen), 3 (Ultra, 4K Fullscreen)",
+                    "This should match your GUI scale. Scale -> Level: [1,2] -> 1; [3,4] -> 2; [5,) -> 3")
                     .defineInRange("resolutionLevel", 2, 1, 3);
             defaultFontSize = builder.comment(
                     "The default font size for texts with no size specified.")
@@ -182,7 +183,7 @@ public final class Config {
             BlurHandler.INSTANCE.loadBlacklist(blurBlacklist.get());
 
             final boolean global = globalRenderer.get();
-            Minecraft.getInstance().runAsync(() -> MuiFontRenderer.change(global));
+            Minecraft.getInstance().runAsync(() -> ModernFontRenderer.change(global));
             GlyphManager.sPreferredFont = preferredFont.get();
             GlyphManager.sAntiAliasing = antiAliasing.get();
             GlyphManager.sHighPrecision = highPrecision.get();
@@ -190,7 +191,7 @@ public final class Config {
             GlyphManager.sMipmapLevel = mipmapLevel.get();
             GlyphManager.sResolutionLevel = resolutionLevel.get();
             TextLayoutProcessor.sDefaultFontSize = defaultFontSize.get();
-            MuiFontRenderer.setAllowShadow(allowShadow.get());
+            ModernFontRenderer.setAllowShadow(allowShadow.get());
         }
     }
 

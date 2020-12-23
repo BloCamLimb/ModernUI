@@ -39,6 +39,7 @@ import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nullable;
 
+@Deprecated
 @OnlyIn(Dist.CLIENT)
 public class TrueTypeRenderer implements IFontRenderer {
 
@@ -66,7 +67,6 @@ public class TrueTypeRenderer implements IFontRenderer {
 
         // init and hook
         //hook();
-        processor.initRenderSystem();
     }
 
     /**

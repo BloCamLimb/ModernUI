@@ -53,7 +53,7 @@ final class MuiMainScreen extends Screen implements IMuiScreen {
 
     @Override
     public void resize(@Nonnull Minecraft minecraft, int width, int height) {
-        master.start(this, width, height);
+        master.resize(width, height);
     }
 
     @Override

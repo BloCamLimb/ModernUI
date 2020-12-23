@@ -21,8 +21,6 @@ package icyllis.modernui.view;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.IHasContainer;
-import net.minecraft.client.gui.ScreenManager;
 import net.minecraft.client.gui.screen.inventory.ContainerScreen;
 import net.minecraft.client.util.InputMappings;
 import net.minecraft.entity.player.PlayerInventory;
@@ -40,12 +38,15 @@ import java.util.Objects;
 // And render layer for tooltips etc
 
 /**
- * ContainerScreen can hold a menu including item stack interaction and network communication.
- * This is required because most of mods check if instanceof {@link ContainerScreen} rather than {@link IHasContainer}.
+ * ContainerScreen can hold a container menu including item stack interaction and
+ * network communication. Actually we don't know the menu type, so generic doesn't matter.
+ * This is required because most of mods (e.g JEI) check if instanceof {@link ContainerScreen}
+ * rather than {@link net.minecraft.client.gui.IHasContainer}, however, we don't need
+ * anything in the parent class.
  *
  * @param <T> menu type
  * @see MuiMainScreen
- * @see ScreenManager.IScreenFactory
+ * @see net.minecraft.client.gui.ScreenManager.IScreenFactory
  */
 @OnlyIn(Dist.CLIENT)
 final class MuiMenuScreen<T extends Container> extends ContainerScreen<T> implements IMuiScreen {
@@ -68,7 +69,7 @@ final class MuiMenuScreen<T extends Container> extends ContainerScreen<T> implem
     public void resize(@Nonnull Minecraft minecraft, int width, int height) {
         this.width = width;
         this.height = height;
-        master.start(this, width, height);
+        master.resize(width, height);
         ModernUI.LOGGER.debug("Scaled: {}x{} Framebuffer: {}x{} Window: {}x{}", width, height, minecraft.getMainWindow().getFramebufferWidth(),
                 minecraft.getMainWindow().getFramebufferHeight(), minecraft.getMainWindow().getWidth(), minecraft.getMainWindow().getHeight());
     }
