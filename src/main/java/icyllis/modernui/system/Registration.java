@@ -95,7 +95,7 @@ public final class Registration {
             }
         }
 
-        NetworkHandler network = new NetworkHandler(ModernUI.MODID, "main_network", MsgHandler.C::handle, MsgHandler::handle);
+        NetworkHandler network = new NetworkHandler(ModernUI.MODID, "main_network", NetMessages.C::handle, NetMessages::handle);
         if (plugins.isEmpty()) {
             try {
                 Field field = NetworkHandler.class.getDeclaredField("optional");
@@ -107,7 +107,7 @@ public final class Registration {
         } else {
             ModernUI.LOGGER.debug(ModernUI.MARKER, "Found Modern UI plugins: {}", plugins.keySet());
         }
-        MsgEncoder.network = network;
+        NetMessages.network = network;
 
         //
 

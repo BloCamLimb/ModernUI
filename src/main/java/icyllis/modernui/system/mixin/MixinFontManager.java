@@ -18,7 +18,7 @@
 
 package icyllis.modernui.system.mixin;
 
-import icyllis.modernui.font.MuiFontRenderer;
+import icyllis.modernui.font.ModernFontRenderer;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.fonts.Font;
 import net.minecraft.client.gui.fonts.FontResourceManager;
@@ -34,7 +34,7 @@ public class MixinFontManager {
 
     @Redirect(method = "func_238548_a_",
             at = @At(value = "NEW", target = "net/minecraft/client/gui/FontRenderer"))
-    private FontRenderer createFontRenderer(Function<ResourceLocation, Font> font) {
-        return MuiFontRenderer.create(font);
+    private FontRenderer createFontRenderer(Function<ResourceLocation, Font> fonts) {
+        return ModernFontRenderer.create(fonts);
     }
 }

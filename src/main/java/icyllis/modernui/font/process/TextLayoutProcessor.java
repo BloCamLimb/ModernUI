@@ -47,7 +47,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 /**
- * Layout text and extract key info and generate or cache text render node
+ * The Font Engine, layout text component and extract key info and generate
+ * or cache render node.
  *
  * @since 2.0
  */
@@ -171,7 +172,7 @@ public class TextLayoutProcessor {
         //digitGlyphsReady = true;
     }
 
-    public void initRenderSystem() {
+    public void initRenderer() {
         if (glyphManager == null) {
             glyphManager = new GlyphManager();
         } else {

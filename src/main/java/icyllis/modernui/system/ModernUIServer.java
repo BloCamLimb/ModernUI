@@ -103,7 +103,7 @@ public final class ModernUIServer {
         if (menu == null) {
             return;
         }
-        MsgEncoder.menu(containerId, Registry.MENU.getId(menu.getType()), writer).sendToPlayer(player);
+        NetMessages.menu(containerId, Registry.MENU.getId(menu.getType()), writer).sendToPlayer(player);
         menu.addListener(player);
         player.openContainer = menu;
         MinecraftForge.EVENT_BUS.post(new PlayerContainerEvent.Open(player, menu));
