@@ -97,7 +97,7 @@ public enum BlurHandler {
      * Use blur shader in game renderer post-processing.
      */
     @SubscribeEvent(priority = EventPriority.LOW)
-    void gGuiOpen(@Nonnull GuiOpenEvent event) {
+    void onGuiOpen(@Nonnull GuiOpenEvent event) {
         @Nullable Screen gui = event.getGui();
         if (minecraft.world == null) {
             return;
@@ -172,7 +172,7 @@ public enum BlurHandler {
     }
 
     @SubscribeEvent
-    void gRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
+    void onRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
         if (fadingIn && event.phase == TickEvent.Phase.START) {
             float p = Math.min(UIManager.getInstance().getDrawingTime() / sAnimationDuration, 1.0f);
             if (blurring) {

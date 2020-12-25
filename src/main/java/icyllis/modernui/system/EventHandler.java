@@ -19,7 +19,9 @@
 package icyllis.modernui.system;
 
 import icyllis.modernui.graphics.renderer.RenderTools;
+import icyllis.modernui.plugin.event.OpenMenuEvent;
 import icyllis.modernui.test.TestMenu;
+import icyllis.modernui.test.TestUI;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.item.Items;
 import net.minecraft.util.Util;
@@ -44,7 +46,7 @@ final class EventHandler {
     static void onRightClickItem(@Nonnull PlayerInteractEvent.RightClickItem event) {
         if (ModernUI.isDeveloperMode()) {
             if (event.getSide().isServer() && event.getItemStack().getItem() == Items.DIAMOND) {
-                ModernUIServer.openMenu(event.getPlayer(), TestMenu::new);
+                MServerContext.openMenu(event.getPlayer(), TestMenu::new);
             }
         }
     }
@@ -53,6 +55,15 @@ final class EventHandler {
     static void onContainerClosed(PlayerContainerEvent.Close event) {
 
     }*/
+
+    static class Internal {
+
+        @SubscribeEvent
+        static void onMenuOpen(@Nonnull OpenMenuEvent<?> event) {
+            if (event.getMenu().getType() == Registration.TEST_MENU)
+                event.setApplicationUI(new TestUI());
+        }
+    }
 
     /**
      * Handles game client events from Forge event bus

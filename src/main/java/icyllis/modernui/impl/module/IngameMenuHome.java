@@ -66,7 +66,7 @@ public class IngameMenuHome extends ModuleGroup {
                         .setLocator(new Locator(Align9D.TOP_LEFT, 8, 8))
                         .build(this)
                         .buildCallback(() -> {
-                            UIManager.getInstance().closeGui();
+                            UIManager.getInstance().closeUI();
                             playSound(Registration.BUTTON_CLICK_2);
                         })
         );

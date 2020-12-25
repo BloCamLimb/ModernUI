@@ -22,8 +22,6 @@ import icyllis.modernui.network.NetworkHandler;
 import icyllis.modernui.plugin.IMuiPlugin;
 import icyllis.modernui.plugin.MuiPlugin;
 import icyllis.modernui.test.TestMenu;
-import icyllis.modernui.test.TestScreen;
-import icyllis.modernui.view.UIManager;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.inventory.container.ContainerType;
 import net.minecraft.util.ResourceLocation;
@@ -118,7 +116,7 @@ public final class Registration {
     @SubscribeEvent
     static void setupClient(@Nonnull FMLClientSetupEvent event) {
         //SettingsManager.INSTANCE.buildAllSettings();
-        UIManager.getInstance().registerMenuScreen(Registration.TEST_MENU, menu -> new TestScreen());
+        //UIManager.getInstance().registerMenuScreen(Registration.TEST_MENU, menu -> new TestUI());
     }
 
     @Nonnull

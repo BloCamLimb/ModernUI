@@ -31,6 +31,18 @@ public class ViewModelProvider {
     private final ViewModelStore viewModelStore;
 
     /**
+     * Creates {@code ViewModelProvider}. This will create {@code ViewModels}
+     * and retain them in a store of the given {@code ViewModelStoreOwner}.
+     * A {@link NewInstanceFactory} will be used as the factory.
+     *
+     * @param owner   a {@code ViewModelStoreOwner} whose {@link ViewModelStore} will be used to
+     *                retain {@code ViewModels}
+     */
+    public ViewModelProvider(@Nonnull IViewModelStoreOwner owner) {
+        this(owner.getViewModelStore(), NewInstanceFactory.getInstance());
+    }
+
+    /**
      * Creates {@code ViewModelProvider}, which will create {@code ViewModels} via the given
      * {@code Factory} and retain them in a store of the given {@code ViewModelStoreOwner}.
      *
@@ -133,6 +145,21 @@ public class ViewModelProvider {
      * Simple factory, which calls empty constructor on the give class.
      */
     public static class NewInstanceFactory implements IFactory {
+
+        private static NewInstanceFactory sInstance;
+
+        /**
+         * Retrieve a singleton instance of NewInstanceFactory.
+         *
+         * @return A valid {@link NewInstanceFactory}
+         */
+        @Nonnull
+        static NewInstanceFactory getInstance() {
+            if (sInstance == null) {
+                sInstance = new NewInstanceFactory();
+            }
+            return sInstance;
+        }
 
         @Nonnull
         @Override

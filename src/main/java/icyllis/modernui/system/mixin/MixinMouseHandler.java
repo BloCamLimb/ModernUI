@@ -18,7 +18,6 @@
 
 package icyllis.modernui.system.mixin;
 
-import icyllis.modernui.system.MixinHooks;
 import icyllis.modernui.view.UIManager;
 import net.minecraft.client.MouseHelper;
 import org.spongepowered.asm.mixin.Mixin;

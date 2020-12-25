@@ -18,10 +18,10 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.impl.PauseMenuUI;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
@@ -190,15 +190,18 @@ public enum UIEditor {
         if (!Screen.hasControlDown()) {
             return;
         }
+        Minecraft minecraft = Minecraft.getInstance();
         switch (event.getKey()) {
             case GLFW.GLFW_KEY_T:
-                if (UIManager.getInstance().hasMuiScreen()) {
+                if (UIManager.getInstance().hasRunningUI()) {
                     iterateWorking();
                 }
                 break;
-            /*case GLFW.GLFW_KEY_A:
-                TrueTypeRenderer.hook();
-                break;*/
+            case GLFW.GLFW_KEY_A:
+                if (minecraft.currentScreen == null)
+                    if (minecraft.isSingleplayer() && !minecraft.getIntegratedServer().getPublic())
+                        UIManager.getInstance().openUI(new PauseMenuUI());
+                break;
             case GLFW.GLFW_KEY_P:
                 if (Minecraft.getInstance().currentScreen == null) {
                     break;
@@ -207,7 +210,7 @@ public enum UIEditor {
                 builder.append("Modern UI Debug Info:\n");
 
                 builder.append("[0] Is Modern Screen: ");
-                builder.append(UIManager.getInstance().hasMuiScreen());
+                builder.append(UIManager.getInstance().hasRunningUI());
                 builder.append("\n");
 
                 builder.append("[1] Has Container: ");
@@ -215,10 +218,10 @@ public enum UIEditor {
                 builder.append("\n");
 
                 builder.append("[2] Open Gui: ");
-                if (!UIManager.getInstance().hasMuiScreen()) {
+                if (!UIManager.getInstance().hasRunningUI()) {
                     builder.append(Minecraft.getInstance().currentScreen);
                 } else {
-                    builder.append(UIManager.getInstance().getAppScreen());
+                    builder.append(UIManager.getInstance().getApplicationUI());
                 }
                 builder.append("\n");
 
