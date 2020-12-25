@@ -23,6 +23,8 @@ import icyllis.modernui.animation.Animation;
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.math.Point;
 import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.plugin.event.OpenMenuEvent;
+import icyllis.modernui.system.MServerContext;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.system.mixin.MixinMouseHandler;
 import icyllis.modernui.test.TestHUD;
@@ -60,7 +62,6 @@ import java.util.function.Function;
 
 /**
  * UI system service, manages everything related to UI in Modern UI.
- * This class is only available on client.
  */
 @SuppressWarnings("unused")
 @OnlyIn(Dist.CLIENT)
@@ -76,7 +77,7 @@ public final class UIManager {
     private final Minecraft minecraft = Minecraft.getInstance();
 
     // registered menu screens
-    private final Map<ContainerType<?>, Function<? extends Container, AppScreen>> mScreenRegistry = new HashMap<>();
+    //private final Map<ContainerType<?>, Function<? extends Container, ApplicationUI>> mScreenRegistry = new HashMap<>();
 
     // application window
     private final ViewRootImpl mAppWindow = new ViewRootImpl(this);
@@ -91,8 +92,8 @@ public final class UIManager {
     @Nullable
     private IMuiScreen mMuiScreen;
 
-    // application screen used to send lifecycle events
-    private AppScreen mAppScreen;
+    // application UI used to send lifecycle events
+    private ApplicationUI mApplicationUI;
 
     // main fragment of a UI
     //private Fragment fragment;
@@ -177,6 +178,7 @@ public final class UIManager {
      *
      * @return the instance
      */
+    //TODO remove this method
     @Nonnull
     public static UIManager getInstance() {
         if (instance == null) {
@@ -192,26 +194,21 @@ public final class UIManager {
     /**
      * Open an application screen and create view
      *
-     * @param appScreen the application screen
+     * @param applicationUI the application user interface
      * @see #start(IMuiScreen, int, int)
      */
-    public void openGui(@Nonnull AppScreen appScreen) {
-        mAppScreen = appScreen;
-        minecraft.displayGuiScreen(new MuiMainScreen(this));
+    public void openUI(@Nonnull ApplicationUI applicationUI) {
+        mApplicationUI = applicationUI;
+        minecraft.displayGuiScreen(new MMainScreen(this));
     }
 
     /**
      * Close and destroy application screen
      *
-     * @see #destroy()
+     * @see #stop()
      */
-    public void closeGui() {
+    public void closeUI() {
         minecraft.displayGuiScreen(null);
-    }
-
-    void setContentView(View view, FrameLayout.LayoutParams params) {
-        mDecorView.removeAllViews();
-        mDecorView.addView(view, params);
     }
 
     /**
@@ -220,32 +217,32 @@ public final class UIManager {
      * @param type    menu type
      * @param factory screen factory
      * @param <T>     container menu type
-     * @see icyllis.modernui.system.ModernUIServer#openMenu(PlayerEntity, IContainerProvider)
+     * @see MServerContext#openMenu(PlayerEntity, IContainerProvider)
      */
-    public <T extends Container> void registerMenuScreen(
-            @Nonnull ContainerType<? extends T> type, @Nonnull Function<T, AppScreen> factory) {
-        mScreenRegistry.putIfAbsent(type, factory);
+    @Deprecated
+    private <T extends Container> void registerMenuScreen(
+            @Nonnull ContainerType<? extends T> type, @Nonnull Function<T, ApplicationUI> factory) {
+        //mScreenRegistry.putIfAbsent(type, factory);
     }
 
     // Internal method
-    @SuppressWarnings({"unchecked", "ConstantConditions"})
-    public void openGui(@Nonnull ClientPlayerEntity player, int containerId, int menuId, @Nonnull PacketBuffer buffer) {
+    public void openUI(@Nonnull ClientPlayerEntity player, int containerId, int menuId, @Nonnull PacketBuffer buffer) {
         ContainerType<?> type = Registry.MENU.getByValue(menuId);
         if (type == null) {
             ModernUI.LOGGER.warn(MARKER, "Trying to open invalid screen for menu id: {}", menuId);
         } else {
-            Function<Container, AppScreen> factory = (Function<Container, AppScreen>) mScreenRegistry.get(type);
-            if (factory == null) {
-                ModernUI.LOGGER.warn(MARKER, "Failed to create screen for menu type: {}", Registry.MENU.getKey(type));
+            Container menu = type.create(containerId, player.inventory, buffer);
+            //noinspection ConstantConditions
+            if (menu == null) {
+                ModernUI.LOGGER.warn(MARKER, "Failed to create menu for type: {}", Registry.MENU.getKey(type));
             } else {
-                Container menu = type.create(containerId, player.inventory, buffer);
-                AppScreen screen = factory.apply(menu);
-                if (screen == null || menu == null) {
-                    ModernUI.LOGGER.warn(MARKER, "Failed to create screen for menu type: {}", Registry.MENU.getKey(type));
-                } else {
-                    mAppScreen = screen;
+                OpenMenuEvent<?> event = new OpenMenuEvent<>(menu);
+                ModernUI.post(event);
+                ApplicationUI applicationUI = event.getApplicationUI();
+                if (applicationUI != null) {
+                    mApplicationUI = applicationUI;
                     player.openContainer = menu;
-                    minecraft.displayGuiScreen(new MuiMenuScreen<>(menu, player.inventory, this));
+                    minecraft.displayGuiScreen(new MMenuScreen<>(menu, player.inventory, this));
                 }
             }
         }
@@ -296,6 +293,11 @@ public final class UIManager {
         }*/
     }
 
+    void setContentView(View view, FrameLayout.LayoutParams params) {
+        mDecorView.removeAllViews();
+        mDecorView.addView(view, params);
+    }
+
     /**
      * Called when open a mui screen, or back to the mui screen
      *
@@ -305,8 +307,8 @@ public final class UIManager {
      */
     void start(@Nonnull IMuiScreen screen, int width, int height) {
         if (mMuiScreen == null) {
-            mAppScreen.window = this;
-            mAppScreen.onCreate();
+            mApplicationUI.window = this;
+            mApplicationUI.onCreate();
         }
         mMuiScreen = screen;
 
@@ -340,7 +342,7 @@ public final class UIManager {
         }
 
         if (mCloseScreen) {
-            destroy();
+            stop();
             return;
         }
 
@@ -370,13 +372,13 @@ public final class UIManager {
         return mMuiScreen;
     }*/
 
-    public boolean hasMuiScreen() {
+    public boolean hasRunningUI() {
         return mMuiScreen != null;
     }
 
     @Nullable
-    public AppScreen getAppScreen() {
-        return mAppScreen;
+    public ApplicationUI getApplicationUI() {
+        return mApplicationUI;
     }
 
     /**
@@ -432,8 +434,8 @@ public final class UIManager {
      *
      * @see org.lwjgl.glfw.GLFWCursorPosCallbackI
      * @see net.minecraft.client.MouseHelper
-     * @see MuiMainScreen
-     * @see MuiMenuScreen
+     * @see MMainScreen
+     * @see MMenuScreen
      */
     void onCursorEvent(double cursorX, double cursorY) {
         mCursorX = cursorX;
@@ -813,15 +815,15 @@ public final class UIManager {
         mPendingLayout = false;
     }
 
-    void destroy() {
+    void stop() {
         // Hotfix 1.4.7
         if (mCloseScreen) {
             animations.clear();
             tasks.clear();
             mMuiScreen = null;
-            if (mAppScreen != null) {
-                mAppScreen.window = null;
-                mAppScreen = null;
+            if (mApplicationUI != null) {
+                mApplicationUI.window = null;
+                mApplicationUI = null;
             }
             lastLayoutTime = 0;
             mPendingLayout = false;

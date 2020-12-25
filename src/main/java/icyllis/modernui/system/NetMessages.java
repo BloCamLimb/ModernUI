@@ -90,7 +90,7 @@ public final class NetMessages {
         }
 
         private static void menu(@Nonnull PacketBuffer buffer, @Nonnull ClientPlayerEntity player) {
-            UIManager.getInstance().openGui(player, buffer.readVarInt(), buffer.readVarInt(), buffer);
+            UIManager.getInstance().openUI(player, buffer.readVarInt(), buffer.readVarInt(), buffer);
         }
     }
 }

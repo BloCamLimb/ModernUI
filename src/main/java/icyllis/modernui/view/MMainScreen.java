@@ -33,14 +33,14 @@ import javax.annotation.Nonnull;
  * Represents the GUI screen that receives events from Minecraft.
  * All vanilla methods are completely taken over by Modern UI.
  *
- * @see MuiMenuScreen
+ * @see MMenuScreen
  */
 @OnlyIn(Dist.CLIENT)
-final class MuiMainScreen extends Screen implements IMuiScreen {
+final class MMainScreen extends Screen implements IMuiScreen {
 
     private final UIManager master;
 
-    MuiMainScreen(UIManager window) {
+    MMainScreen(UIManager window) {
         super(StringTextComponent.EMPTY);
         master = window;
     }
@@ -64,7 +64,7 @@ final class MuiMainScreen extends Screen implements IMuiScreen {
     @Override
     public void onClose() {
         super.onClose();
-        master.destroy();
+        master.stop();
     }
 
     @Override
@@ -111,7 +111,7 @@ final class MuiMainScreen extends Screen implements IMuiScreen {
             if (master.onBackPressed()) {
                 return true;
             }
-            master.closeGui();
+            master.closeUI();
             return true;
         } else if (keyCode == GLFW.GLFW_KEY_TAB) {
             boolean searchNext = !hasShiftDown();

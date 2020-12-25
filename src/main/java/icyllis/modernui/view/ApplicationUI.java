@@ -23,7 +23,7 @@ import icyllis.modernui.widget.FrameLayout;
 /**
  * Represents the current application screen, for handling lifecycle event.
  */
-public abstract class AppScreen {
+public abstract class ApplicationUI {
 
     UIManager window;
 

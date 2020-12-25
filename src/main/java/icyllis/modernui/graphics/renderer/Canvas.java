@@ -19,7 +19,6 @@
 package icyllis.modernui.graphics.renderer;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.font.pipeline.TextRenderNode;
 import icyllis.modernui.font.process.TextLayoutProcessor;
 import icyllis.modernui.font.text.TextAlign;
@@ -43,9 +42,8 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * Draw things in View or especially for Modern UI:
- * likes rect, rounded rect, circle, ring, line, point
- * textured icon, etc.
+ * The main renderer of Modern UI, draw things for View:
+ * likes rect, rounded rect, circle, ring, text, line, point, image etc.
  * <p>
  * The canvas actually uses shaders (hardware-accelerated)
  * to render in real-time, so there's no need to control redrawing.
@@ -58,7 +56,6 @@ import javax.annotation.Nullable;
  * or in world rendering, that also need matrix transformation to be compatible with vanilla
  *
  * @author BloCamLimb
- * @see TrueTypeRenderer
  */
 @SuppressWarnings("unused")
 //TODO New render system (LOWEST PRIORITY)
@@ -319,9 +316,8 @@ public class Canvas {
     }
 
     private float drawText(@Nullable String t, float x, float y, int r, int g, int b, int a, TextAlign align) {
-        if (t == null || t.isEmpty()) {
+        if (t == null || t.isEmpty())
             return 0;
-        }
         final TextRenderNode node = fontEngine.lookupVanillaNode(t, Style.EMPTY);
         if (align != TextAlign.LEFT)
             x -= node.advance * align.offsetFactor;

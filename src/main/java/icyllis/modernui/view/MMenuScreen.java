@@ -45,15 +45,15 @@ import java.util.Objects;
  * anything in the parent class.
  *
  * @param <T> menu type
- * @see MuiMainScreen
+ * @see MMainScreen
  * @see net.minecraft.client.gui.ScreenManager.IScreenFactory
  */
 @OnlyIn(Dist.CLIENT)
-final class MuiMenuScreen<T extends Container> extends ContainerScreen<T> implements IMuiScreen {
+final class MMenuScreen<T extends Container> extends ContainerScreen<T> implements IMuiScreen {
 
     private final UIManager master;
 
-    MuiMenuScreen(@Nonnull T menu, PlayerInventory inventory, UIManager window) {
+    MMenuScreen(@Nonnull T menu, PlayerInventory inventory, UIManager window) {
         super(menu, inventory, StringTextComponent.EMPTY);
         master = window;
     }
@@ -93,7 +93,7 @@ final class MuiMenuScreen<T extends Container> extends ContainerScreen<T> implem
     @Override
     public void onClose() {
         super.onClose();
-        master.destroy();
+        master.stop();
     }
 
     // IMPL - IGuiEventListener

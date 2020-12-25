@@ -22,7 +22,7 @@ import icyllis.modernui.view.*;
 import icyllis.modernui.widget.FrameLayout;
 import icyllis.modernui.widget.ScrollView;
 
-public class TestScreen extends AppScreen {
+public class TestUI extends ApplicationUI {
 
     @Override
     public void onCreate() {

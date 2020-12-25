@@ -36,7 +36,7 @@ import java.util.function.Consumer;
 /**
  * Modern UI server service
  */
-public final class ModernUIServer {
+public final class MServerContext {
 
     /**
      * Open a container menu on server, generate an id represents the next screen.

@@ -19,6 +19,7 @@
 package icyllis.modernui.test;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.animation.Animation;
@@ -107,6 +108,7 @@ public class TestLinearLayout extends LinearLayout {
         super.onDraw(canvas);
         canvas.moveTo(this);
         canvas.resetColor();
+        canvas.setTextAlign(TextAlign.LEFT);
         canvas.drawText("Ll" + TextFormatting.BOLD + "Ll " + canvas.getDrawingTime(), 0, 0);
 
         // 1
@@ -236,7 +238,8 @@ public class TestLinearLayout extends LinearLayout {
                 canvas.drawRoundedRect(0, 1, getWidth(), getHeight() - 2, 4);
             }
             canvas.resetColor();
-            canvas.drawText(str, 4, 4);
+            canvas.setTextAlign(TextAlign.CENTER);
+            canvas.drawText(str, getWidth() >> 1, 4);
         }
     }
 
@@ -258,6 +261,7 @@ public class TestLinearLayout extends LinearLayout {
         @Override
         protected void onDraw(@Nonnull Canvas canvas) {
             canvas.moveTo(this);
+            canvas.setTextAlign(TextAlign.LEFT);
             canvas.drawText("" + TextFormatting.RED + TextFormatting.BLUE + "G", offset, offsetY + 4);
         }
 
