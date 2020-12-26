@@ -31,8 +31,7 @@ import java.util.stream.Collectors;
  * There are different work on the server and the client.
  */
 //TODO functional
-public enum StorageManager {
-    INSTANCE;
+public final class LocalStorage {
 
     private static final Object2IntMap<String> EMOJI_MAP = new Object2IntOpenHashMap<>();
     private static final List<Pair<String, Integer>> EMOJI_HISTORY = new ArrayList<>();

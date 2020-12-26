@@ -1,3 +1,5 @@
+import net.minecraftforge.gradle.common.task.SignJar
+
 buildscript {
     repositories {
         jcenter()
@@ -152,8 +154,8 @@ dependencies {
     annotationProcessor 'com.dslplatform:dsl-json-java8:1.9.5'
     compileOnly 'javax.json.bind:javax.json.bind-api:1.0'*/
 
-    //TODO shade this
-    implementation "com.vladsch.flexmark:flexmark-all:${flexmark_version}"
+    // no need to use flexmark-all
+    shade "com.vladsch.flexmark:flexmark:${flexmark_version}"
 
     // fix mixin refMap generation because we have another annotation processor, mixin version depends on forge version
     // see https://github.com/SpongePowered/Mixin/blob/0.8.2/build.gradle for the following list
@@ -202,13 +204,23 @@ shadowJar {
     configurations = [project.configurations.shade]
 
     dependencies {
-        exclude 'icu4j-59.1.jar' // flexmark dependency, minecraft includes the 66.1 one
+        exclude 'icu4j-59.1.jar'
+        exclude 'commons-logging-1.2.jar'
     }
 
-    relocate 'com.google.errorprone', 'icyllis.errorprone'
+    relocate 'com.google.errorprone.annotations', 'icyllis.annotations'
     relocate 'org.checkerframe', 'icyllis.checkerframe'
     relocate 'com.github.benmanes.caffeine', 'icyllis.caffeine'
+    /*relocate 'com.openhtmltopdf', 'icyllis.openhtmltopdf'
+    relocate 'de.rototor.pdfbox', 'icyllis.pdfbox'
+    relocate 'org.apache.fontbox', 'icyllis.fontbox'
+    relocate 'org.apache.pdfbox', 'icyllis.pdfbox'
+    relocate 'org.apache.xmpbox', 'icyllis.xmpbox'
+    relocate 'org.jsoup', 'icyllis.jsoup'
+    relocate 'org.nibor.autolink', 'icyllis.autolink'*/
     relocate 'com.vladsch.flexmark', 'icyllis.flexmark'
+    relocate 'org.intellij.lang.annotations', 'icyllis.annotations'
+    relocate 'org.jetbrains.annotations', 'icyllis.annotations'
 
     exclude 'META-INF/CHANGES'
     exclude 'META-INF/DEPENDENCIES'
@@ -228,6 +240,25 @@ task buildDevJar(type: Jar) {
 reobf {
     shadowJar {}
 }
+
+task signJar(type: SignJar, dependsOn: reobfShadowJar) {
+    onlyIf {
+        project.hasProperty("jks")
+    }
+    if (project.hasProperty("jks")) {
+        keyStore = project.getProperty("jks")
+        alias = project.getProperty("jks_alias")
+        storePass = project.getProperty("jks_pass")
+        keyPass = project.getProperty("jks_keypass")
+        inputFile = shadowJar.archivePath
+        outputFile = shadowJar.archivePath
+        /*exclude 'icyllis/annotations/**'
+        exclude 'icyllis/caffeine/**'
+        exclude 'icyllis/checkerframework/**'
+        exclude 'icyllis/flexmark/**'*/
+    }
+}
+build.dependsOn signJar
 
 if (System.getenv("CurseForgeAPI") != null) {
     curseforge {

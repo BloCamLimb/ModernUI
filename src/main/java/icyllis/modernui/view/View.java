@@ -39,7 +39,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * View is the basic component of UI. View has its own rectangular area on screen,
  * which is also responsible for drawing and event handling.
  *
- * @author The Android Open Source Project, BloCamLimb
  * @since 2.0
  */
 @SuppressWarnings("unused")

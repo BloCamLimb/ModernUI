@@ -18,7 +18,7 @@
 
 package icyllis.modernui.graphics.shader;
 
-import icyllis.modernui.graphics.renderer.RenderTools;
+import icyllis.modernui.graphics.renderer.RenderCore;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.shader.IShaderManager;
 import net.minecraft.client.shader.ShaderLinkHelper;
@@ -63,7 +63,7 @@ public class ShaderProgram implements IShaderManager {
             program = ShaderLinkHelper.createProgram();
             ShaderLinkHelper.linkProgram(this);
         } catch (IOException e) {
-            ModernUI.LOGGER.fatal(RenderTools.MARKER, "An error occurred while compiling shaders", e);
+            ModernUI.LOGGER.fatal(RenderCore.MARKER, "An error occurred while compiling shaders", e);
         }
     }
 

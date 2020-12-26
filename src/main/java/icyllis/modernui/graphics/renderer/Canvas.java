@@ -59,7 +59,7 @@ import javax.annotation.Nullable;
  */
 @SuppressWarnings("unused")
 //TODO New render system (LOWEST PRIORITY)
-public class Canvas {
+public class Canvas extends RenderCore {
 
     private static Canvas instance;
 
@@ -124,7 +124,7 @@ public class Canvas {
 
 
     private Canvas(@Nonnull Minecraft minecraft) {
-        RenderTools.checkCapabilities();
+        checkCapabilities();
         mainWindow = minecraft.getMainWindow();
         itemRenderer = minecraft.getItemRenderer();
         fontEngine.initRenderer();
@@ -491,11 +491,11 @@ public class Canvas {
      * @param outerRadius outer circle radius
      */
     public void drawRing(float centerX, float centerY, float innerRadius, float outerRadius) {
-        RenderTools.useShader(ring);
+        useShader(ring);
         ring.setRadius(innerRadius, outerRadius);
         ring.setCenterPos(centerX, centerY);
         drawRect(centerX - outerRadius, centerY - outerRadius, centerX + outerRadius, centerY + outerRadius);
-        RenderTools.releaseShader();
+        releaseShader();
     }
 
     /**
@@ -508,11 +508,11 @@ public class Canvas {
      * @param radius  circle radius
      */
     public void drawCircle(float centerX, float centerY, float radius) {
-        RenderTools.useShader(circle);
+        useShader(circle);
         circle.setRadius(radius);
         circle.setCenterPos(centerX, centerY);
         drawRect(centerX - radius, centerY - radius, centerX + radius, centerY + radius);
-        RenderTools.releaseShader();
+        releaseShader();
     }
 
     /**
@@ -550,11 +550,11 @@ public class Canvas {
      * @param radius rounded radius, actually must >= 2
      */
     public void drawRoundedRect(float left, float top, float right, float bottom, float radius) {
-        RenderTools.useShader(roundedRect);
+        useShader(roundedRect);
         roundedRect.setRadius(radius - 1); // we have feather radius 1px
         roundedRect.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
         drawRect(left, top, right, bottom);
-        RenderTools.releaseShader();
+        releaseShader();
     }
 
     /**
@@ -571,11 +571,11 @@ public class Canvas {
      * @param radius rounded radius, must >= 1.5
      */
     public void drawRoundedFrame(float left, float top, float right, float bottom, float radius) {
-        RenderTools.useShader(roundedFrame);
+        useShader(roundedFrame);
         roundedRect.setRadius(radius - 1);
         roundedRect.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
         drawRect(left, top, right, bottom);
-        RenderTools.releaseShader();
+        releaseShader();
     }
 
     /**
@@ -590,11 +590,11 @@ public class Canvas {
      * @param thickness feather thickness (>= 0.5 is better)
      */
     public void drawFeatheredRect(float left, float top, float right, float bottom, float thickness) {
-        RenderTools.useShader(featheredRect);
+        useShader(featheredRect);
         featheredRect.setThickness(thickness);
         featheredRect.setInnerRect(left + thickness, top + thickness, right - thickness, bottom - thickness);
         drawRect(left, top, right, bottom);
-        RenderTools.releaseShader();
+        releaseShader();
     }
 
     /**

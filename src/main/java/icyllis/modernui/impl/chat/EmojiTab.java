@@ -20,7 +20,7 @@ package icyllis.modernui.impl.chat;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.system.StorageManager;
+import icyllis.modernui.system.LocalStorage;
 import icyllis.modernui.view.UITools;
 import icyllis.modernui.test.discard.DrawTools;
 import net.minecraft.client.Minecraft;
@@ -46,7 +46,7 @@ public class EmojiTab implements IGuiEventListener {
 
     EmojiTab(ChatInputBox inputBox) {
         this.inputBox = inputBox;
-        cachedEmoji = StorageManager.findEmoji("");
+        cachedEmoji = LocalStorage.findEmoji("");
     }
 
     public void draw(int mouseX, int mouseY) {
@@ -70,12 +70,12 @@ public class EmojiTab implements IGuiEventListener {
             for(int y = 0; y < 3; y++) {
                 for(int x = 0; x < 5; x++) {
                     int index = y * 5 + x;
-                    if(index >= StorageManager.getEmojiHistory().size()) {
+                    if(index >= LocalStorage.getEmojiHistory().size()) {
                         break CYCLE;
                     }
                     int rx = 4 + x * 13;
                     int ry = hisY1 + 2 + y * 13;
-                    anyFound = isAnyFound(mouseX, mouseY, anyFound, rx, ry, StorageManager.getEmojiHistory().get(index));
+                    anyFound = isAnyFound(mouseX, mouseY, anyFound, rx, ry, LocalStorage.getEmojiHistory().get(index));
                 }
             }
             if(!anyFound) {
@@ -175,7 +175,7 @@ public class EmojiTab implements IGuiEventListener {
             if(showMode == 1) {
                 if(hoverEmoji != null) {
                     inputBox.writeText("\u256a" + Integer.toHexString(hoverEmoji.getValue() | 0x10000).substring(1) + "\u256a");
-                    StorageManager.addToEmojiHistory(hoverEmoji);
+                    LocalStorage.addToEmojiHistory(hoverEmoji);
                     return true;
                 }
             }
@@ -187,7 +187,7 @@ public class EmojiTab implements IGuiEventListener {
             if(showMode == 2) {
                 if(hoverEmoji != null) {
                     inputBox.writeText("\u256a" + Integer.toHexString(hoverEmoji.getValue() | 0x10000).substring(1) + "\u256a");
-                    StorageManager.addToEmojiHistory(hoverEmoji);
+                    LocalStorage.addToEmojiHistory(hoverEmoji);
                     return true;
                 }
                 if(mouseX < 2 || mouseX > selX2 || mouseY > hisY2 || mouseY < selY1) {

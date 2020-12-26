@@ -1,16 +1,17 @@
-### 1.16.4-2.2.5.69 (2020-)
-**Font Engine works fine, UI is developing, keep update!**
- 
-* Fix ingame GUI rendering
-* Deeply hook font renderer
+Changelogs
+===
+### 1.16.4-2.3.0.69 (2020-12-26)
+* Fix ingame GUI rendering with no texture
+* Fix font renderer not override some mods (like InventoryHud)
+* Add input event handling
 
 ### 1.16.4-2.2.4.68 (2020-11-21)
-* Fix possible crash when caching digits
+* Fix sometimes crash when caching digit texture
 > (2.2.3.67) (2020-11-17)
-> * Fix rendering when an invalid formatting applied
+> * Fix rendering when an invalid formatting code applied
 
 > (2.2.2.66) (2020-11-16)
-> * Fix rendering with space
+> * Fix rendering with space character
 
 ### 1.16.4-2.2.1.65 (2020-11-14)
 * Fix rendering with Thai

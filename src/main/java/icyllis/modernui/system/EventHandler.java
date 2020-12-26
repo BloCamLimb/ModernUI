@@ -18,7 +18,7 @@
 
 package icyllis.modernui.system;
 
-import icyllis.modernui.graphics.renderer.RenderTools;
+import icyllis.modernui.graphics.renderer.RenderCore;
 import icyllis.modernui.plugin.event.OpenMenuEvent;
 import icyllis.modernui.test.TestMenu;
 import icyllis.modernui.test.TestUI;
@@ -76,8 +76,8 @@ final class EventHandler {
         static void onPlayerLogin(@Nonnull ClientPlayerNetworkEvent.LoggedInEvent event) {
             if (ModernUI.isDeveloperMode()) {
                 ClientPlayerEntity playerEntity = event.getPlayer();
-                if (playerEntity != null && RenderTools.glCapabilitiesErrors > 0) {
-                    playerEntity.sendMessage(new StringTextComponent("[Modern UI] There are " + RenderTools.glCapabilitiesErrors +
+                if (playerEntity != null && RenderCore.glCapabilitiesErrors > 0) {
+                    playerEntity.sendMessage(new StringTextComponent("[Modern UI] There are " + RenderCore.glCapabilitiesErrors +
                             " GL capabilities that are not supported by your GPU, see debug.log for detailed info")
                             .mergeStyle(TextFormatting.RED), Util.DUMMY_UUID);
                 }

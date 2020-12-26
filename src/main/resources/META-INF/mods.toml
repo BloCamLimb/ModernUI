@@ -10,9 +10,10 @@ license="All Rights Reserved"
     displayName="Modern UI"
     displayURL="https://curseforge.com/minecraft/mc-mods/modern-ui"
     authors="BloCamLimb"
-    credits="BloCamLimb"
+    credits="mosquitozzi, et al., The Android Open Source Project"
     description='''
-    Modern UI gives you a powerful UI development framework for minecraft desktop application combining a wealth of functionality and a font engine with high quality, better language compatibility and good optimization.
+    Modern UI is a UI Engine for desktop application development, which provides a wealth of functionality.
+    It has a stand-alone high performance render engine to draw graphs and a font engine with better language compatibility.
     '''
 
 [[dependencies.modernui]]
