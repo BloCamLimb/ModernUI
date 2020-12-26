@@ -27,12 +27,7 @@ import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Serialize and deserialize layout file and instantiate views
- */
-@OnlyIn(Dist.CLIENT)
-public enum LayoutInflater {
-    INSTANCE;
+public final class LayoutIO {
 
     public static final Type UI_RESOURCE_TYPE = new Type();
 

@@ -41,7 +41,7 @@ import java.util.Optional;
 @OnlyIn(Dist.CLIENT)
 public class ModernTextHandler extends CharacterManager {
 
-    private final TextLayoutProcessor processor = TextLayoutProcessor.getInstance();
+    private final TextLayoutProcessor fontEngine = TextLayoutProcessor.getInstance();
 
     private final MutableFloat v = new MutableFloat();
 
@@ -66,7 +66,7 @@ public class ModernTextHandler extends CharacterManager {
         if (text == null || text.isEmpty()) {
             return 0;
         }
-        return processor.lookupVanillaNode(text, Style.EMPTY).advance;
+        return fontEngine.lookupVanillaNode(text, Style.EMPTY).advance;
     }
 
     /**
@@ -81,7 +81,7 @@ public class ModernTextHandler extends CharacterManager {
         // iterate all siblings
         text.getComponentWithStyle((s, t) -> {
             if (!t.isEmpty()) {
-                v.add(processor.lookupVanillaNode(t, s).advance);
+                v.add(fontEngine.lookupVanillaNode(t, s).advance);
             }
             // continue
             return Optional.empty();
@@ -98,9 +98,9 @@ public class ModernTextHandler extends CharacterManager {
     @Override
     public float func_243238_a(@Nonnull IReorderingProcessor text) {
         v.setValue(0);
-        processor.handleReorder(text, (t, s) -> {
+        fontEngine.handleReorder(text, (t, s) -> {
             if (t.length() != 0) {
-                v.add(processor.lookupVanillaNode(t, s).advance);
+                v.add(fontEngine.lookupVanillaNode(t, s).advance);
             }
             return false;
         });
@@ -129,7 +129,7 @@ public class ModernTextHandler extends CharacterManager {
             return 0;
         }
         /* The glyph array for a string is sorted by the string's logical character position */
-        GlyphRender[] glyphs = processor.lookupVanillaNode(text, style).glyphs;
+        GlyphRender[] glyphs = fontEngine.lookupVanillaNode(text, style).glyphs;
 
         /* Add up the individual advance of each glyph until it exceeds the specified width */
         float advance = 0;
@@ -177,7 +177,7 @@ public class ModernTextHandler extends CharacterManager {
             return text;
         }
         /* The glyph array for a string is sorted by the string's logical character position */
-        GlyphRender[] glyphs = processor.lookupVanillaNode(text, style).glyphs;
+        GlyphRender[] glyphs = fontEngine.lookupVanillaNode(text, style).glyphs;
 
         /* Add up the individual advance of each glyph until it exceeds the specified width */
         float advance = 0;
@@ -213,7 +213,7 @@ public class ModernTextHandler extends CharacterManager {
             if (sizeToWidth0(t, v.floatValue(), s) < t.length()) {
                 return Optional.of(s);
             }
-            v.subtract(processor.lookupVanillaNode(t, s).advance);
+            v.subtract(fontEngine.lookupVanillaNode(t, s).advance);
             // continue
             return Optional.empty();
         }, Style.EMPTY).orElse(null);
@@ -232,13 +232,13 @@ public class ModernTextHandler extends CharacterManager {
         v.setValue(width);
         MutableObject<Style> sr = new MutableObject<>();
         // iterate all siblings
-        if (!processor.handleReorder(text, (t, s) -> {
+        if (!fontEngine.handleReorder(text, (t, s) -> {
             if (sizeToWidth0(t, v.floatValue(), s) < t.length()) {
                 sr.setValue(s);
                 // break with result
                 return true;
             }
-            v.subtract(processor.lookupVanillaNode(t, s).advance);
+            v.subtract(fontEngine.lookupVanillaNode(t, s).advance);
             // continue
             return false;
         })) {
@@ -277,7 +277,7 @@ public class ModernTextHandler extends CharacterManager {
                 // add
                 collector.func_238155_a_(ITextProperties.func_240653_a_(text, style));
             }
-            v.subtract(processor.lookupVanillaNode(text, style).advance);
+            v.subtract(fontEngine.lookupVanillaNode(text, style).advance);
             // continue
             return Optional.empty();
         }, styleIn).orElse(textIn); // full text

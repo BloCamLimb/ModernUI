@@ -42,10 +42,8 @@ public class PauseMenuUI extends ApplicationUI {
 
         @Override
         protected void onDraw(@Nonnull Canvas canvas) {
-            canvas.setColor(186, 227, 249, 96);
+            canvas.setColor(64, 64, 64, 192);
             canvas.drawRect(0, 0, getRight(), getBottom());
-            canvas.setColor(128, 128, 128, 255);
-            canvas.drawRect(getRight() - 1, 0, getRight(), getBottom());
         }
     }
 }

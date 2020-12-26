@@ -18,8 +18,8 @@
 
 package icyllis.modernui.system;
 
-import icyllis.modernui.graphics.renderer.RenderTools;
-import icyllis.modernui.view.LayoutInflater;
+import icyllis.modernui.graphics.renderer.RenderCore;
+import icyllis.modernui.view.LayoutIO;
 import net.minecraftforge.eventbus.api.BusBuilder;
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -56,15 +56,15 @@ public final class ModernUI {
 
         init();
         Config.init();
-        StorageManager.init();
+        LocalStorage.init();
 
         if (FMLEnvironment.dist.isClient()) {
-            LayoutInflater.init();
-            RenderTools.init();
+            LayoutIO.init();
+            RenderCore.init();
         }
 
         EVENT_BUS.register(EventHandler.Internal.class);
-        LOGGER.debug(MARKER, "Modern UI initialized, {}", LOGGER);
+        LOGGER.debug(MARKER, "Modern UI initialized, signed: {}", ModernUI.class.getSigners() != null);
     }
 
     private static void init() {

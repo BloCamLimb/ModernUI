@@ -42,7 +42,7 @@ import javax.annotation.Nonnull;
 import java.util.function.Predicate;
 
 @OnlyIn(Dist.CLIENT)
-public class RenderTools {
+public class RenderCore {
 
     public static final Marker MARKER = MarkerManager.getMarker("Render");
 
@@ -50,7 +50,7 @@ public class RenderTools {
 
     public static void init() {
         ((IReloadableResourceManager) Minecraft.getInstance().getResourceManager()).addReloadListener(
-                (ISelectiveResourceReloadListener) RenderTools::onResourcesReload);
+                (ISelectiveResourceReloadListener) RenderCore::onResourcesReload);
     }
 
     private static void onResourcesReload(IResourceManager manager, @Nonnull Predicate<IResourceType> t) {

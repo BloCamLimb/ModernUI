@@ -60,7 +60,7 @@ public class ModernFontRenderer extends FontRenderer {
     private boolean allowShadow;
     private boolean globalRenderer;
 
-    private final TextLayoutProcessor processor = TextLayoutProcessor.getInstance();
+    private final TextLayoutProcessor fontEngine = TextLayoutProcessor.getInstance();
 
     // temporary float value
     private final MutableFloat v = new MutableFloat();
@@ -186,7 +186,7 @@ public class ModernFontRenderer extends FontRenderer {
                               @Nonnull IRenderTypeBuffer buffer, boolean seeThrough, int colorBackground, int packedLight) {
         if (globalRenderer) {
             v.setValue(x);
-            processor.handleReorder(text, (string, style) -> {
+            fontEngine.handleReorder(text, (string, style) -> {
                         v.add(drawLayer0(string, v.floatValue(), y, color, dropShadow, matrix,
                                 buffer, seeThrough, colorBackground, packedLight, style));
                         // continue, equals to Optional.empty()
@@ -214,7 +214,7 @@ public class ModernFontRenderer extends FontRenderer {
         int g = color >> 8 & 0xff;
         int b = color & 0xff;
 
-        TextRenderNode node = processor.lookupVanillaNode(string, style);
+        TextRenderNode node = fontEngine.lookupVanillaNode(string, style);
         if (dropShadow && allowShadow) {
             node.drawText(matrix, buffer, string, x + 1, y + 1, r >> 2, g >> 2, b >> 2, a, true,
                     transparent, colorBackground, packedLight);
