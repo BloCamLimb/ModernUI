@@ -20,7 +20,7 @@ package icyllis.modernui.impl.setting;
 
 import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.widget.SliderSmooth;
+import icyllis.modernui.test.widget.SliderSmooth;
 
 import javax.annotation.Nonnull;
 import java.util.function.Consumer;

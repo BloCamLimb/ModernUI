@@ -48,14 +48,14 @@ public final class NetMessages {
 
     @Nonnull
     public static NetworkHandler food(float foodSaturationLevel, float foodExhaustionLevel) {
-        PacketBuffer buffer = network.allocBuffer(0);
+        PacketBuffer buffer = network.allocBuf(0);
         buffer.writeFloat(foodSaturationLevel);
         buffer.writeFloat(foodExhaustionLevel);
         return network;
     }
 
     static NetworkHandler menu(int containerId, int menuId, Consumer<PacketBuffer> writer) {
-        PacketBuffer buffer = network.allocBuffer(1);
+        PacketBuffer buffer = network.allocBuf(1);
         buffer.writeVarInt(containerId);
         buffer.writeVarInt(menuId);
         if (writer != null) {

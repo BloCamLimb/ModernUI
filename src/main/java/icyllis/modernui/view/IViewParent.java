@@ -48,4 +48,12 @@ public interface IViewParent {
      * The scroll offset in vertical direction, used for view coordinate transformation.
      */
     float getScrollY();
+
+    /**
+     * This method is called on the parent when a child's drawable state
+     * has changed.
+     *
+     * @param child The child whose drawable state has changed.
+     */
+    void childDrawableStateChanged(View child);
 }

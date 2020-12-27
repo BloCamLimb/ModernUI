@@ -22,7 +22,6 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.ibm.icu.text.Bidi;
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.font.TrueTypeRenderer;
 import icyllis.modernui.font.glyph.GlyphManager;
 import icyllis.modernui.font.glyph.TexturedGlyph;
 import icyllis.modernui.font.pipeline.*;
@@ -56,7 +55,7 @@ import java.util.regex.Pattern;
 public class TextLayoutProcessor {
 
     /**
-     * Instance on render thread, initialized when MainMenuScreen opened
+     * Instance on render thread
      */
     private static TextLayoutProcessor instance;
 
@@ -90,7 +89,7 @@ public class TextLayoutProcessor {
     //private WeakHashMap<String, Key> weakRefCache = new WeakHashMap<>();
 
     private final Cache<VanillaTextKey, TextRenderNode> stringCache = Caffeine.newBuilder()
-            .expireAfterAccess(60, TimeUnit.SECONDS)
+            .expireAfterAccess(20, TimeUnit.SECONDS)
             .build();
 
     /**
@@ -102,6 +101,7 @@ public class TextLayoutProcessor {
 
     private final Object lock = new Object();
 
+    // for async result
     private final AtomicReference<TextRenderNode> atomicNode = new AtomicReference<>();
 
     /*
@@ -137,7 +137,6 @@ public class TextLayoutProcessor {
      * Get processor instance
      *
      * @return instance
-     * @see TrueTypeRenderer#getInstance()
      */
     public static TextLayoutProcessor getInstance() {
         if (instance == null) {
@@ -181,9 +180,9 @@ public class TextLayoutProcessor {
     }
 
     /**
-     * Vanilla only left IReorderingProcessor interface, so we have to make the
-     * IReorderingProcessor not a reordered text, see {@link icyllis.modernui.system.mixin.MixinClientLanguage}
-     * So actually it's a copy of original (unordered) text, so we can use our layout engine later
+     * Minecraft vanilla only left IReorderingProcessor interface, so we have to make the
+     * IReorderingProcessor not a reordered text, see {@link icyllis.modernui.system.mixin.MixinClientLanguage}.
+     * So actually it's a copy of original (unordered) text, then we can use our layout engine later
      *
      * @param text   a copied text
      * @param action what to do with a part of styled text
@@ -204,9 +203,8 @@ public class TextLayoutProcessor {
     public TextRenderNode lookupVanillaNode(@Nonnull CharSequence string, @Nonnull Style style) {
         lookupKey.updateKey(string, style);
         TextRenderNode node = stringCache.getIfPresent(lookupKey);
-        if (node == null) {
+        if (node == null)
             return generateVanillaNode(lookupKey.copy(), string, style);
-        }
         return node;
     }
 
@@ -434,7 +432,7 @@ public class TextLayoutProcessor {
 
         //register.finishProcess();
 
-        // Async work
+        // Async work, waiting for render thread
         if (!RenderSystem.isOnRenderThread()) {
             // The game thread is equal to render thread now
             synchronized (lock) {

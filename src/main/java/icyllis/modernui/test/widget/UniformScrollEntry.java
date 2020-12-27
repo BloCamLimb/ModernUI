@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.widget;
+package icyllis.modernui.test.widget;
 
 import icyllis.modernui.test.discard.IScrollHost;
 import icyllis.modernui.test.discard.Widget;
@@ -27,6 +27,7 @@ import javax.annotation.Nonnull;
 /**
  * Entry in uniform scroll group with same height
  */
+@Deprecated
 public abstract class UniformScrollEntry extends Widget {
 
     protected final IScrollHost window;

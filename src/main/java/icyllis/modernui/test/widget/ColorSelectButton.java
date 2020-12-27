@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.widget;
+package icyllis.modernui.test.widget;
 
 import com.google.gson.annotations.Expose;
 import icyllis.modernui.graphics.renderer.Canvas;
@@ -33,6 +33,7 @@ import java.util.function.Consumer;
 /**
  * Used for selecting a color
  */
+@Deprecated
 public class ColorSelectButton extends Widget {
 
     private float r, g, b;

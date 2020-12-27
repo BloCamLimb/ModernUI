@@ -24,7 +24,7 @@ import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.impl.module.SettingResourcePack;
 import icyllis.modernui.test.discard.Align9D;
 import icyllis.modernui.test.discard.ScrollWindow;
-import icyllis.modernui.widget.UniformScrollGroup;
+import icyllis.modernui.test.widget.UniformScrollGroup;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.resources.ResourcePackInfo;
 import net.minecraft.resources.ResourcePackList;

@@ -132,7 +132,7 @@ public class Canvas extends RenderCore {
 
     /**
      * The canvas must be created when MainMenuScreen is about to open.
-     * This will start render system of Modern UI. Always do not call this
+     * This will init the render system of Modern UI. Always do not call this
      * at the wrong time.
      *
      * @return the instance

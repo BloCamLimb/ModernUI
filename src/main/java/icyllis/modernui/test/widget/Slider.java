@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.widget;
+package icyllis.modernui.test.widget;
 
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.test.discard.IDraggable;
@@ -29,6 +29,7 @@ import javax.annotation.Nonnull;
  * Horizontal slider
  * Slider doesn't store current value
  */
+@Deprecated
 public abstract class Slider extends Widget implements IDraggable {
 
     protected double slideOffset;

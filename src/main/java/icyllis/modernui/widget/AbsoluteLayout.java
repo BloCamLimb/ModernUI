@@ -28,9 +28,6 @@ import javax.annotation.Nullable;
  * A layout that lets you specify exact locations (x/y coordinates) of its
  * children. Absolute layouts are less flexible and harder to maintain than
  * other types of layouts without absolute positioning.
- * But it can be useful in the transitional phase. Because other
- * layouts have not been developed, and the traditional Minecraft UI layout is
- * a fixed coordinate layout.
  *
  * @since 2.0.1
  */

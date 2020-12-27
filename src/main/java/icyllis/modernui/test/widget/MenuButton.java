@@ -16,14 +16,13 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.widget;
+package icyllis.modernui.test.widget;
 
 import com.google.common.collect.Lists;
 import com.google.gson.annotations.Expose;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.graphics.renderer.Icon;
 import icyllis.modernui.animation.AnimationControl;
-import icyllis.modernui.test.widget.IconButton;
 import icyllis.modernui.view.UITools;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
@@ -38,6 +37,7 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
+@Deprecated
 public class MenuButton extends IconButton {
 
     private AnimationControl sideTextAC;

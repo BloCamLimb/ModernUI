@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.widget;
+package icyllis.modernui.test.widget;
 
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.test.discard.IScrollHost;
@@ -29,6 +29,7 @@ import java.util.List;
 /**
  * Contains uniform entries with same height
  */
+@Deprecated
 public abstract class UniformScrollGroup<T extends UniformScrollEntry> extends ScrollGroup {
 
     protected List<T> entries = new ArrayList<>();
