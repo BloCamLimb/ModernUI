@@ -33,6 +33,7 @@ import javax.annotation.Nullable;
 /**
  * Text, Frame, Click, Repeatability
  */
+@Deprecated
 public class StaticFrameButton extends Button {
 
     private final String text;

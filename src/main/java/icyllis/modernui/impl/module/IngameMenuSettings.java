@@ -30,7 +30,7 @@ import icyllis.modernui.test.discard.ModuleGroup;
 import icyllis.modernui.test.discard.Align9D;
 import icyllis.modernui.test.popup.DropDownMenu;
 import icyllis.modernui.test.popup.PopupMenu;
-import icyllis.modernui.widget.LineTextButton;
+import icyllis.modernui.test.widget.LineTextButton;
 import icyllis.modernui.impl.background.MenuSettingsBG;
 import net.minecraft.client.resources.I18n;
 

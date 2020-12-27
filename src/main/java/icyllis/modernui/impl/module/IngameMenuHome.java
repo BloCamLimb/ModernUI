@@ -27,7 +27,7 @@ import icyllis.modernui.test.discard.Locator;
 import icyllis.modernui.test.discard.ModuleGroup;
 import icyllis.modernui.test.popup.ConfirmCallback;
 import icyllis.modernui.test.popup.PopupConfirm;
-import icyllis.modernui.widget.MenuButton;
+import icyllis.modernui.test.widget.MenuButton;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.advancements.AdvancementsScreen;
 import net.minecraft.client.gui.screen.DirtMessageScreen;

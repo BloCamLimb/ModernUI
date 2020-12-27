@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.widget;
+package icyllis.modernui.test.widget;
 
 import com.google.common.collect.Lists;
 import com.google.gson.annotations.Expose;
@@ -35,6 +35,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.function.Predicate;
 
+@Deprecated
 public class LineTextButton extends Widget {
 
     private final AnimationControl lineAC;

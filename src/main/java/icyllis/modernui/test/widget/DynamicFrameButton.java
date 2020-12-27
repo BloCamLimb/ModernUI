@@ -39,6 +39,7 @@ import javax.annotation.Nullable;
 /**
  * Used in confirm popup
  */
+@Deprecated
 public class DynamicFrameButton extends Button {
 
     private final AnimationControl frameAC;

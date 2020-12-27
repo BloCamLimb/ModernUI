@@ -63,22 +63,34 @@ public class View {
     /*
      * Private masks
      * |--------|--------|--------|--------|
-     *                                    1  PFLAG_HOVERED
+     *
      * |--------|--------|--------|--------|
+     *                         1             PFLAG_DRAWABLE_STATE_DIRTY
      *                        1              PFLAG_MEASURED_DIMENSION_SET
      *                       1               PFLAG_FORCE_LAYOUT
      *                      1                PFLAG_LAYOUT_REQUIRED
      * |--------|--------|--------|--------|
+     *       1                               PFLAG_CANCEL_NEXT_UP_EVENT
+     *     1                                 PFLAG_HOVERED
+     * |--------|--------|--------|--------|
      */
-    static final int PFLAG_HOVERED = 1;
+    static final int PFLAG_DRAWABLE_STATE_DIRTY = 0x00000400;
+
     static final int PFLAG_MEASURED_DIMENSION_SET = 1 << 11;
+
     static final int PFLAG_FORCE_LAYOUT = 1 << 12;
+
     static final int PFLAG_LAYOUT_REQUIRED = 1 << 13;
 
     /**
      * Indicates whether the view is temporarily detached.
      */
     static final int PFLAG_CANCEL_NEXT_UP_EVENT = 0x04000000;
+
+    /**
+     * Indicates that the view has received HOVER_ENTER.  Cleared on HOVER_EXIT.
+     */
+    private static final int PFLAG_HOVERED = 0x10000000;
 
     // private flags
     int mPrivateFlags;
@@ -177,7 +189,7 @@ public class View {
      * Parent view of this view
      * {@link #assignParent(IViewParent)}
      */
-    private IViewParent parent;
+    private IViewParent mParent;
 
     /**
      * Internal use
@@ -239,6 +251,8 @@ public class View {
     private ScrollBar horizontalScrollBar;
     @Nullable
     private ScrollBar verticalScrollBar;
+
+    private int[] mDrawableState = null;
 
     /**
      * The layout parameters associated with this view and used by the parent
@@ -588,7 +602,7 @@ public class View {
      */
     @Nullable
     public final IViewParent getParent() {
-        return parent;
+        return mParent;
     }
 
     /**
@@ -600,8 +614,8 @@ public class View {
      * @throws RuntimeException parent is already assigned
      */
     final void assignParent(@Nonnull IViewParent parent) {
-        if (this.parent == null) {
-            this.parent = parent;
+        if (this.mParent == null) {
+            this.mParent = parent;
         } else {
             throw new RuntimeException("Parent of view " + this + " has been assigned");
         }
@@ -934,8 +948,8 @@ public class View {
 
         mPrivateFlags |= PFLAG_FORCE_LAYOUT;
 
-        if (requestParent && parent != null) {
-            parent.requestLayout();
+        if (requestParent && mParent != null) {
+            mParent.requestLayout();
         }
     }
 
@@ -945,6 +959,73 @@ public class View {
      */
     public void forceLayout() {
         mPrivateFlags |= PFLAG_FORCE_LAYOUT;
+    }
+
+    /**
+     * Call this to force a view to update its drawable state. This will cause
+     * drawableStateChanged to be called on this view. Views that are interested
+     * in the new state should call getDrawableState.
+     *
+     * @see #drawableStateChanged
+     * @see #getDrawableState
+     */
+    public void refreshDrawableState() {
+        mPrivateFlags |= PFLAG_DRAWABLE_STATE_DIRTY;
+        drawableStateChanged();
+
+        IViewParent parent = mParent;
+        if (parent != null) {
+            parent.childDrawableStateChanged(this);
+        }
+    }
+
+    /**
+     * This function is called whenever the state of the view changes in such
+     * a way that it impacts the state of drawables being shown.
+     * <p>
+     * If the View has a StateListAnimator, it will also be called to run necessary state
+     * change animations.
+     * <p>
+     * Be sure to call through to the superclass when overriding this function.
+     *
+     * @see Drawable#setState(int[])
+     */
+    protected void drawableStateChanged() {
+
+    }
+
+    /**
+     * Return an array of resource IDs of the drawable states representing the
+     * current state of the view.
+     *
+     * @return The current drawable state
+     * @see Drawable#setState(int[])
+     * @see #drawableStateChanged()
+     * @see #onCreateDrawableState(int)
+     */
+    public final int[] getDrawableState() {
+        if (mDrawableState == null || (mPrivateFlags & PFLAG_DRAWABLE_STATE_DIRTY) != 0) {
+            mDrawableState = onCreateDrawableState(0);
+            mPrivateFlags &= ~PFLAG_DRAWABLE_STATE_DIRTY;
+        }
+        return mDrawableState;
+    }
+
+    /**
+     * Generate the new {@link Drawable} state for
+     * this view. This is called by the view
+     * system when the cached Drawable state is determined to be invalid.  To
+     * retrieve the current state, you should use {@link #getDrawableState}.
+     *
+     * @param extraSpace if non-zero, this is the number of extra entries you
+     *                   would like in the returned array in which you can place your own
+     *                   states.
+     * @return an array holding the current {@link Drawable} state of
+     * the view.
+     * @see #mergeDrawableStates(int[], int[])
+     */
+    protected int[] onCreateDrawableState(int extraSpace) {
+        return new int[0];
     }
 
     /**
@@ -962,7 +1043,7 @@ public class View {
         float x = mLeft;
         float y = mTop;
 
-        IViewParent parent = this.parent;
+        IViewParent parent = this.mParent;
         while (parent != null) {
             x -= parent.getScrollX();
             y -= parent.getScrollY();
@@ -1321,13 +1402,13 @@ public class View {
         if (hovered) {
             if ((mPrivateFlags & PFLAG_HOVERED) == 0) {
                 mPrivateFlags |= PFLAG_HOVERED;
-                //refreshDrawableState();
+                refreshDrawableState();
                 onHoverChanged(true);
             }
         } else {
             if ((mPrivateFlags & PFLAG_HOVERED) != 0) {
                 mPrivateFlags &= ~PFLAG_HOVERED;
-                //refreshDrawableState();
+                refreshDrawableState();
                 onHoverChanged(false);
             }
         }

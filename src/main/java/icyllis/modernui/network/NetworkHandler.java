@@ -66,7 +66,7 @@ public class NetworkHandler {
     @Nullable
     private final IServerMsgHandler serverHandler;
 
-    // temp byte buf
+    // pending friendly byte buf
     private PacketBuffer buffer;
 
     /**
@@ -74,8 +74,8 @@ public class NetworkHandler {
      *
      * @param modid         mod identifier
      * @param name          network channel name
-     * @param clientHandler message handler to process server-to-client packets
-     * @param serverHandler message handler to process client-to-server packets
+     * @param clientHandler a handler to handle server-to-client messages
+     * @param serverHandler a handler to handle client-to-server messages
      */
     public NetworkHandler(@Nonnull String modid, @Nonnull String name,
                           @Nullable IClientMsgHandler clientHandler, @Nullable IServerMsgHandler serverHandler) {
@@ -98,13 +98,13 @@ public class NetworkHandler {
 
     /**
      * Allocate a buffer to write packet data with index.  The packet must
-     * be dispatched later, using {@link #sendToPlayer(PlayerEntity)} for instance.
+     * be dispatched later, for example {@link #sendToPlayer(PlayerEntity)}
      *
-     * @param index The handling index, range from 0 to 32767
+     * @param index The message index used on the opposite side, range from 0 to 32767
      * @return A byte buf with the index written
      */
     @Nonnull
-    public PacketBuffer allocBuffer(int index) {
+    public PacketBuffer allocBuf(int index) {
         if (buffer != null) {
             throw new IllegalStateException("Previous packet was not dispatched");
         }

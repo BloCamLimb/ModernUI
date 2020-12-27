@@ -16,7 +16,18 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.test.event;
+package icyllis.modernui.widget;
 
-public class MouseEnterEvent {
+import icyllis.modernui.view.View;
+
+/**
+ * A user interface element the user can tap or click to perform an action.
+ * <p>
+ * Note that all events are handled on main thread, this means your onClick code
+ * must execute quickly to avoid delaying your app's response to further user actions.
+ */
+public class Button extends View {
+
+    public Button() {
+    }
 }

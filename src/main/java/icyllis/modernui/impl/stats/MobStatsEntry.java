@@ -21,7 +21,7 @@ package icyllis.modernui.impl.stats;
 import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.test.discard.ScrollWindow;
-import icyllis.modernui.widget.UniformScrollEntry;
+import icyllis.modernui.test.widget.UniformScrollEntry;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.EntityType;
 import net.minecraft.stats.StatisticsManager;

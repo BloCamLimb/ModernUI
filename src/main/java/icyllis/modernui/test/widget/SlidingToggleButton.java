@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.widget;
+package icyllis.modernui.test.widget;
 
 import com.google.gson.annotations.Expose;
 import icyllis.modernui.graphics.renderer.Canvas;
@@ -35,6 +35,7 @@ import java.util.function.Consumer;
 /**
  * Sliding toggle button
  */
+@Deprecated
 public class SlidingToggleButton extends Widget {
 
     /*private final AnimationControl ac;

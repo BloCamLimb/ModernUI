@@ -34,6 +34,7 @@ import net.minecraft.client.resources.I18n;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+@Deprecated
 public class TextIconButton extends IconButton {
 
     private final Direction4D direction;

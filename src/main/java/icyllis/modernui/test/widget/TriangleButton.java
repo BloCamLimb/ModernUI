@@ -29,6 +29,7 @@ import icyllis.modernui.test.discard.IHost;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+@Deprecated
 public class TriangleButton extends IconButton {
 
     public TriangleButton(IHost host, Builder builder) {

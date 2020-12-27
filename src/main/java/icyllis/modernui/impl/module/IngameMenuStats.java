@@ -24,7 +24,7 @@ import icyllis.modernui.animation.ITimeInterpolator;
 import icyllis.modernui.impl.background.MenuSettingsBG;
 import icyllis.modernui.test.discard.WidgetLayout;
 import icyllis.modernui.test.discard.ModuleGroup;
-import icyllis.modernui.widget.LineTextButton;
+import icyllis.modernui.test.widget.LineTextButton;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.network.play.ClientPlayNetHandler;
 import net.minecraft.client.resources.I18n;

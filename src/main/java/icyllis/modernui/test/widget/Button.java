@@ -28,6 +28,7 @@ import icyllis.modernui.test.discard.WidgetStatus;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+@Deprecated
 public abstract class Button extends Widget {
 
     @Nullable

@@ -43,6 +43,8 @@ import java.util.function.Function;
 
 /**
  * Replace vanilla renderer with Modern UI renderer
+ *
+ * @author BloCamLimb
  */
 @OnlyIn(Dist.CLIENT)
 public class ModernFontRenderer extends FontRenderer {
@@ -57,8 +59,8 @@ public class ModernFontRenderer extends FontRenderer {
      *
      * @see icyllis.modernui.system.Config.Client
      */
-    private boolean allowShadow;
-    private boolean globalRenderer;
+    private boolean allowShadow = true;
+    private boolean globalRenderer = false;
 
     private final TextLayoutProcessor fontEngine = TextLayoutProcessor.getInstance();
 
@@ -66,7 +68,7 @@ public class ModernFontRenderer extends FontRenderer {
     private final MutableFloat v = new MutableFloat();
 
     private ModernTextHandler textHandler;
-    private CharacterManager stringDecomposer; // vanilla
+    private CharacterManager stringSplitter; // vanilla
 
     private ModernFontRenderer(Function<ResourceLocation, Font> fonts) {
         super(fonts);
@@ -82,7 +84,7 @@ public class ModernFontRenderer extends FontRenderer {
             CharacterManager.ICharWidthProvider c = ObfuscationReflectionHelper.getPrivateValue(CharacterManager.class,
                     o, "field_238347_a_");
             instance.textHandler = new ModernTextHandler(c);
-            instance.stringDecomposer = o;
+            instance.stringSplitter = o;
             return instance;
         } else {
             throw new IllegalStateException("Already created");
@@ -97,7 +99,7 @@ public class ModernFontRenderer extends FontRenderer {
                         instance, instance.textHandler, "field_238402_e_");
             } else {
                 ObfuscationReflectionHelper.setPrivateValue(FontRenderer.class,
-                        instance, instance.stringDecomposer, "field_238402_e_");
+                        instance, instance.stringSplitter, "field_238402_e_");
             }
         }
         instance.globalRenderer = global;
@@ -186,7 +188,8 @@ public class ModernFontRenderer extends FontRenderer {
                               @Nonnull IRenderTypeBuffer buffer, boolean seeThrough, int colorBackground, int packedLight) {
         if (globalRenderer) {
             v.setValue(x);
-            fontEngine.handleReorder(text, (string, style) -> {
+            fontEngine.handleReorder(text,
+                    (string, style) -> {
                         v.add(drawLayer0(string, v.floatValue(), y, color, dropShadow, matrix,
                                 buffer, seeThrough, colorBackground, packedLight, style));
                         // continue, equals to Optional.empty()
@@ -200,14 +203,13 @@ public class ModernFontRenderer extends FontRenderer {
 
     private float drawLayer0(@Nonnull CharSequence string, float x, float y, int color, boolean dropShadow, Matrix4f matrix,
                              @Nonnull IRenderTypeBuffer buffer, boolean transparent, int colorBackground, int packedLight, Style style) {
-        if (string.length() == 0) {
+        if (string.length() == 0)
             return 0;
-        }
+
         // ensure alpha, color can be ARGB, or can be RGB
-        // if alpha <= 1, make alpha = 255
-        if ((color & 0xfe000000) == 0) {
+        // we check if alpha <= 1, then make alpha = 255 (fully opaque)
+        if ((color & 0xfe000000) == 0)
             color |= 0xff000000;
-        }
 
         int a = color >> 24 & 0xff;
         int r = color >> 16 & 0xff;

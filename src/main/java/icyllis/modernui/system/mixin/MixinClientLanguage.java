@@ -57,7 +57,7 @@ public abstract class MixinClientLanguage {
      * Present = stopped, so return false
      *
      * @author BloCamLimb
-     * @reason Do not reorder, Mojang
+     * @reason We have a text layout engine
      */
     @Overwrite
     public IReorderingProcessor func_241870_a(ITextProperties text) {

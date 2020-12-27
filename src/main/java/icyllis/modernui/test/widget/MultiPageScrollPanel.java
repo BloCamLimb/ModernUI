@@ -16,10 +16,12 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.widget;
+package icyllis.modernui.test.widget;
 
 import com.google.common.collect.Lists;
 import icyllis.modernui.test.discard.*;
+import icyllis.modernui.test.widget.UniformScrollEntry;
+import icyllis.modernui.test.widget.UniformScrollGroup;
 import net.minecraft.util.math.MathHelper;
 
 import javax.annotation.Nonnull;
@@ -35,6 +37,7 @@ import java.util.function.Function;
  * @param <E> entry type
  * @param <G> group type
  */
+@Deprecated
 public class MultiPageScrollPanel<E extends UniformScrollEntry, G extends UniformScrollGroup<E>> extends ScrollPanel<E, G> {
 
     protected final int maxEntry;

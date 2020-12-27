@@ -29,6 +29,7 @@ import icyllis.modernui.test.discard.Widget;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+@Deprecated
 public class IconButton extends Button {
 
     private final Icon icon;

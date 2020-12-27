@@ -41,6 +41,12 @@ public abstract class ViewGroup extends View implements IViewParent {
     static final int FLAG_USE_CHILD_DRAWING_ORDER = 0x400;
 
     /**
+     * When set, this ViewGroup's drawable states also include those
+     * of its children.
+     */
+    private static final int FLAG_ADD_STATES_FROM_CHILDREN = 0x2000;
+
+    /**
      * When set, this ViewGroup should not intercept touch events.
      */
     private static final int FLAG_DISALLOW_INTERCEPT = 0x80000;
@@ -956,6 +962,17 @@ public abstract class ViewGroup extends View implements IViewParent {
      */
     public final int getChildDrawingOrder(int drawingPosition) {
         return getChildDrawingOrder(getChildCount(), drawingPosition);
+    }
+
+    /**
+     * If {@link #addStatesFromChildren} is true, refreshes this group's
+     * drawable state (to include the states from its children).
+     */
+    @Override
+    public void childDrawableStateChanged(View child) {
+        if ((mGroupFlags & FLAG_ADD_STATES_FROM_CHILDREN) != 0) {
+            refreshDrawableState();
+        }
     }
 
     /*@Override

@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.widget;
+package icyllis.modernui.test.widget;
 
 import com.google.gson.annotations.Expose;
 import icyllis.modernui.test.discard.IHost;
@@ -27,23 +27,24 @@ import net.minecraft.util.math.MathHelper;
 
 import javax.annotation.Nonnull;
 
-public class SliderSmooth extends Slider {
+@Deprecated
+public class SliderDiscrete extends Slider {
 
-    private double value;
+    private int segment;
 
-    private final double minValue;
+    private final int maxSegment;
 
-    private final double maxValue;
+    private final int minValue;
 
-    private final float stepSize;
+    private final int maxValue;
 
     private IListener listener;
 
-    public SliderSmooth(IHost host, Builder builder) {
+    public SliderDiscrete(IHost host, Builder builder) {
         super(host, builder);
         minValue = builder.minValue;
         maxValue = builder.maxValue;
-        stepSize = builder.stepSize;
+        this.maxSegment = (maxValue - minValue) / builder.stepSize;
     }
 
     /**
@@ -52,52 +53,59 @@ public class SliderSmooth extends Slider {
      * @param listener value listener
      * @return instance
      */
-    public SliderSmooth buildCallback(double value, @Nonnull IListener listener) {
+    public SliderDiscrete buildCallback(int value, @Nonnull IListener listener) {
         value = MathHelper.clamp(value, minValue, maxValue);
-        double p = (value - minValue) / (maxValue - minValue);
-        this.slideOffset = getMaxSlideOffset() * p;
+        double p = (value - minValue) / (double) (maxValue - minValue);
+        segment = (int) Math.round(p * maxSegment);
         this.listener = listener;
+        updateSlideOffset();
         return this;
     }
 
     @Override
-    protected void onStopDragging() {
-        listener.onSliderStopChange(this, value);
+    protected void slideToOffset(double offset) {
+        int prev = segment;
+        double p = MathHelper.clamp(offset / getMaxSlideOffset(), 0.0, 1.0);
+        segment = (int) Math.round(p * maxSegment);
+        if (prev != segment) {
+            updateSlideOffset();
+            int value = minValue + segment;
+            listener.onSliderChanged(this, value);
+        }
     }
 
     @Override
-    protected void slideToOffset(double offset) {
-        double prev = slideOffset;
-        slideOffset = MathHelper.clamp(offset, 0, getMaxSlideOffset());
-        if (prev != slideOffset) {
-            double slidePercent = slideOffset / getMaxSlideOffset();
-            value = MathHelper.lerp(slidePercent, minValue, maxValue);
-            if (stepSize > 0) {
-                value = stepSize * (Math.round(value / stepSize));
-            }
-            listener.onSliderChanged(this, value);
+    protected void onStopDragging() {
+        listener.onSliderStopChange(this, minValue + segment);
+    }
+
+    private void updateSlideOffset() {
+        if (maxSegment == 0) {
+            slideOffset = getMaxSlideOffset();
+        } else {
+            slideOffset = getMaxSlideOffset() * segment / maxSegment;
         }
     }
 
     public static class Builder extends Widget.Builder {
 
         @Expose
-        protected final double minValue;
+        private final int minValue;
 
         @Expose
-        protected final double maxValue;
+        private final int maxValue;
 
         @Expose
-        protected float stepSize = 0.01f;
+        private int stepSize = 1;
 
-        public Builder(double minValue, double maxValue) {
+        public Builder(int minValue, int maxValue) {
             this.minValue = minValue;
             this.maxValue = maxValue;
             super.setHeight(3);
         }
 
-        public Builder setStepSize(float stepSize) {
-            this.stepSize = Math.max(0.0000001f, stepSize);
+        public Builder setStepSize(int stepSize) {
+            this.stepSize = Math.max(1, stepSize);
             return this;
         }
 
@@ -110,8 +118,7 @@ public class SliderSmooth extends Slider {
         @Deprecated
         @Override
         public Builder setHeight(float height) {
-            super.setHeight(height);
-            return this;
+            throw new RuntimeException();
         }
 
         @Override
@@ -128,8 +135,8 @@ public class SliderSmooth extends Slider {
 
         @Nonnull
         @Override
-        public SliderSmooth build(IHost host) {
-            return new SliderSmooth(host, this);
+        public SliderDiscrete build(IHost host) {
+            return new SliderDiscrete(host, this);
         }
     }
 
@@ -143,13 +150,13 @@ public class SliderSmooth extends Slider {
          * @param slider slider
          * @param value new value
          */
-        void onSliderChanged(SliderSmooth slider, double value);
+        void onSliderChanged(SliderDiscrete slider, int value);
 
         /**
          * Called when stopped dragging
          * @param slider slider
          * @param value current value
          */
-        void onSliderStopChange(SliderSmooth slider, double value);
+        void onSliderStopChange(SliderDiscrete slider, int value);
     }
 }
