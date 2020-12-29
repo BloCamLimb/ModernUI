@@ -22,6 +22,7 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.inventory.ContainerScreen;
+import net.minecraft.client.gui.widget.Widget;
 import net.minecraft.client.util.InputMappings;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.container.ClickType;
@@ -29,6 +30,8 @@ import net.minecraft.inventory.container.Container;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.event.GuiScreenEvent;
+import net.minecraftforge.common.MinecraftForge;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
@@ -40,11 +43,11 @@ import java.util.Objects;
 /**
  * ContainerScreen can hold a container menu including item stack interaction and
  * network communication. Actually we don't know the menu type, so generic doesn't matter.
- * This is required because most of mods (e.g JEI) check if instanceof {@link ContainerScreen}
+ * This is required because most of mods (like JEI) check if instanceof {@link ContainerScreen}
  * rather than {@link net.minecraft.client.gui.IHasContainer}, however, we don't need
- * anything in the parent class.
+ * anything in the super class.
  *
- * @param <T> menu type
+ * @param <T> container menu type
  * @see MMainScreen
  * @see net.minecraft.client.gui.ScreenManager.IScreenFactory
  */
@@ -67,11 +70,22 @@ final class MMenuScreen<T extends Container> extends ContainerScreen<T> implemen
 
     @Override
     public void resize(@Nonnull Minecraft minecraft, int width, int height) {
+        // these are two public fields
         this.width = width;
         this.height = height;
+
         master.resize(width, height);
-        ModernUI.LOGGER.debug("Scaled: {}x{} Framebuffer: {}x{} Window: {}x{}", width, height, minecraft.getMainWindow().getFramebufferWidth(),
-                minecraft.getMainWindow().getFramebufferHeight(), minecraft.getMainWindow().getWidth(), minecraft.getMainWindow().getHeight());
+
+        // compatibility with Forge mods, like JEI
+        if (!MinecraftForge.EVENT_BUS.post(new GuiScreenEvent.InitGuiEvent.Pre(this, buttons, this::logWidget, this::logWidget)))
+            MinecraftForge.EVENT_BUS.post(new GuiScreenEvent.InitGuiEvent.Post(this, buttons, this::logWidget, this::logWidget));
+
+        /*ModernUI.LOGGER.debug("Scaled: {}x{} Framebuffer: {}x{} Window: {}x{}", width, height, minecraft.getMainWindow().getFramebufferWidth(),
+                minecraft.getMainWindow().getFramebufferHeight(), minecraft.getMainWindow().getWidth(), minecraft.getMainWindow().getHeight());*/
+    }
+
+    private void logWidget(Widget widget) {
+        ModernUI.LOGGER.warn(UIManager.MARKER, "Vanilla Widget is deprecated in Modern UI, target: {}", widget);
     }
 
     @Override

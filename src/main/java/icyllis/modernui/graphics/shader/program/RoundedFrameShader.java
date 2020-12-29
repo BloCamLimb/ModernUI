@@ -19,14 +19,15 @@
 package icyllis.modernui.graphics.shader.program;
 
 import icyllis.modernui.graphics.shader.ShaderProgram;
+import icyllis.modernui.system.ModernUI;
 import org.lwjgl.opengl.GL20;
 
 public class RoundedFrameShader extends ShaderProgram {
 
-    public static RoundedFrameShader INSTANCE = new RoundedFrameShader("rect", "rounded_rect_frame");
+    public static RoundedFrameShader INSTANCE = new RoundedFrameShader();
 
-    public RoundedFrameShader(String vert, String frag) {
-        super(vert, frag);
+    private RoundedFrameShader() {
+        super(ModernUI.MODID, "rect", "rounded_rect_frame");
     }
 
     public void setRadius(float radius) {

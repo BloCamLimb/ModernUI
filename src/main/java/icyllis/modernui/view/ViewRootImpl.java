@@ -35,9 +35,6 @@ public final class ViewRootImpl implements IViewParent {
 
     private boolean hasDragOperation;
 
-    // to schedule layout on next frame
-    private boolean layoutRequested = false;
-
     private View mView;
 
     /*private final int[] inBounds  = new int[]{0, 0, 0, 0};
@@ -91,8 +88,8 @@ public final class ViewRootImpl implements IViewParent {
         return true;
     }
 
-    void performLayout(int widthSpec, int heightSpec, boolean forceLayout) {
-        if (mView == null || (!forceLayout && !layoutRequested)) {
+    void performLayout(int widthSpec, int heightSpec) {
+        if (mView == null) {
             return;
         }
 
@@ -105,7 +102,6 @@ public final class ViewRootImpl implements IViewParent {
                 inBounds, lp.x, lp.y, outBounds);*/
 
         mView.layout(0, 0, mView.getMeasuredWidth(), mView.getMeasuredHeight());
-        layoutRequested = false;
     }
 
     void onDraw(Canvas canvas) {
@@ -130,7 +126,6 @@ public final class ViewRootImpl implements IViewParent {
     }
 
     private boolean processPointerEvent(MotionEvent event) {
-        event.offsetLocation(-mView.mLeft, -mView.mTop);
         return mView.dispatchPointerEvent(event);
     }
 
@@ -184,8 +179,7 @@ public final class ViewRootImpl implements IViewParent {
      */
     @Override
     public void requestLayout() {
-        layoutRequested = true;
-        master.mPendingLayout = true;
+        master.mLayoutRequested = true;
     }
 
     @Override
@@ -196,6 +190,11 @@ public final class ViewRootImpl implements IViewParent {
     @Override
     public float getScrollY() {
         return 0;
+    }
+
+    @Override
+    public void childDrawableStateChanged(View child) {
+
     }
 
     /*@Deprecated

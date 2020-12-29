@@ -64,6 +64,7 @@ public final class NetMessages {
         return network;
     }
 
+    // on logical client
     @OnlyIn(Dist.CLIENT)
     public static final class C {
 
@@ -90,7 +91,7 @@ public final class NetMessages {
         }
 
         private static void menu(@Nonnull PacketBuffer buffer, @Nonnull ClientPlayerEntity player) {
-            UIManager.getInstance().openUI(player, buffer.readVarInt(), buffer.readVarInt(), buffer);
+            UIManager.getInstance().openGUI(player, buffer.readVarInt(), buffer.readVarInt(), buffer);
         }
     }
 }

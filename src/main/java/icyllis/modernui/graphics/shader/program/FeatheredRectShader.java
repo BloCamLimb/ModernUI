@@ -19,14 +19,15 @@
 package icyllis.modernui.graphics.shader.program;
 
 import icyllis.modernui.graphics.shader.ShaderProgram;
+import icyllis.modernui.system.ModernUI;
 import org.lwjgl.opengl.GL20;
 
 public class FeatheredRectShader extends ShaderProgram {
 
     public static FeatheredRectShader INSTANCE = new FeatheredRectShader("rect", "feathered_rect");
 
-    public FeatheredRectShader(String vert, String frag) {
-        super(vert, frag);
+    private FeatheredRectShader(String vert, String frag) {
+        super(ModernUI.MODID, vert, frag);
     }
 
     public void setThickness(float thickness) {

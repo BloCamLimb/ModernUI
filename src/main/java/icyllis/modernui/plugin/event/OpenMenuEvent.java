@@ -23,32 +23,59 @@ import net.minecraft.inventory.container.Container;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.eventbus.api.Cancelable;
+import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.GenericEvent;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+/**
+ * This event occurred when the server requires the client to open a user
+ * interface to display the container menu, this event is cancelled after
+ * setting the application UI. The menu is created on the client by registered
+ * {@link net.minecraftforge.fml.network.IContainerFactory factory}, which
+ * contains custom network data from server, you can set the application UI
+ * through the data and the menu type.  For example:
+ *
+ * <pre>
+ * &#64;SubscribeEvent
+ * static void onMenuOpen(@Nonnull OpenMenuEvent event) {
+ *     if (event.getMenu().getType() == Registration.TEST_MENU) {
+ *         event.setApplicationUI(new TestUI());
+ *     }
+ * }
+ * </pre>
+ */
 @Cancelable
 @OnlyIn(Dist.CLIENT)
-public class OpenMenuEvent<T extends Container> extends GenericEvent<T> {
+public class OpenMenuEvent extends Event {
 
     @Nonnull
-    private final T menu;
+    private final Container menu;
 
     @Nullable
     private ApplicationUI applicationUI;
 
-    @SuppressWarnings("unchecked")
-    public OpenMenuEvent(@Nonnull T menu) {
-        super((Class<T>) menu.getClass());
+    public OpenMenuEvent(@Nonnull Container menu) {
         this.menu = menu;
     }
 
+    /**
+     * Get the source of the event.
+     *
+     * @return container menu
+     */
     @Nonnull
-    public T getMenu() {
+    public Container getMenu() {
         return menu;
     }
 
+    /**
+     * Set the application UI for the menu. After calling this method,
+     * the event will be canceled.
+     *
+     * @param applicationUI the application user interface
+     */
     public void setApplicationUI(@Nonnull ApplicationUI applicationUI) {
         this.applicationUI = applicationUI;
         setCanceled(true);
