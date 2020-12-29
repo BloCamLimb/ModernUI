@@ -21,6 +21,7 @@ package icyllis.modernui.network;
 import icyllis.modernui.system.ModernUI;
 import io.netty.buffer.Unpooled;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.network.play.ClientPlayNetHandler;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -146,8 +147,7 @@ public class NetworkHandler {
         if (clientProtocol.equals(NetworkRegistry.ACCEPTVANILLA)) {
             return false;
         }
-        boolean allowAbsent = optional && clientProtocol.equals(NetworkRegistry.ABSENT);
-        return allowAbsent || clientProtocol.equals(protocol);
+        return clientProtocol.equals(protocol) || optional && clientProtocol.equals(NetworkRegistry.ABSENT);
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -157,7 +157,7 @@ public class NetworkHandler {
             try {
                 clientHandler.handle(event.getPayload().readShort(), event.getPayload(), Minecraft.getInstance().player);
             } catch (Exception e) {
-                ModernUI.LOGGER.warn(ModernUI.MARKER, "An error occurred while handling server-to-client message", e);
+                ModernUI.LOGGER.error(ModernUI.MARKER, "An error occurred while handling server-to-client message", e);
             }
         }
         event.getPayload().release(); // forge disabled this on client
@@ -170,7 +170,7 @@ public class NetworkHandler {
             try {
                 serverHandler.handle(event.getPayload().readShort(), event.getPayload(), event.getSource().get().getSender());
             } catch (Exception e) {
-                ModernUI.LOGGER.warn(ModernUI.MARKER, "An error occurred while handling client-to-server message", e);
+                ModernUI.LOGGER.error(ModernUI.MARKER, "An error occurred while handling client-to-server message", e);
             }
         }
         event.getSource().get().setPacketHandled(true);
@@ -295,5 +295,17 @@ public class NetworkHandler {
         ((ServerWorld) chunk.getWorld()).getChunkProvider().chunkManager.getTrackingPlayers(
                 chunk.getPos(), false).forEach(player -> player.connection.sendPacket(packet));
         buffer = null;
+    }
+
+    @FunctionalInterface
+    public interface IClientMsgHandler {
+
+        void handle(short index, @Nonnull PacketBuffer payload, @Nullable ClientPlayerEntity player);
+    }
+
+    @FunctionalInterface
+    public interface IServerMsgHandler {
+
+        void handle(short index, @Nonnull PacketBuffer payload, @Nullable ServerPlayerEntity player);
     }
 }

@@ -16,16 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.network;
+package icyllis.modernui.graphics.drawable;
 
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.network.PacketBuffer;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
-@FunctionalInterface
-public interface IServerMsgHandler {
-
-    void handle(short index, @Nonnull PacketBuffer payload, @Nullable ServerPlayerEntity player) throws Exception;
+public class DrawableContainer {
 }

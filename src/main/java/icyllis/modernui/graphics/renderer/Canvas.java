@@ -25,6 +25,8 @@ import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.graphics.shader.program.*;
+import icyllis.modernui.system.ModernUI;
+import icyllis.modernui.view.UIManager;
 import icyllis.modernui.view.View;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
@@ -131,17 +133,17 @@ public class Canvas extends RenderCore {
     }
 
     /**
-     * The canvas must be created when MainMenuScreen is about to open.
      * This will init the render system of Modern UI. Always do not call this
      * at the wrong time.
      *
      * @return the instance
-     * @see icyllis.modernui.view.UIManager
+     * @see UIManager#initRenderer()
      */
     public static Canvas getInstance() {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
         if (instance == null) {
             instance = new Canvas(Minecraft.getInstance());
+            ModernUI.LOGGER.debug(MARKER, "Render system initialized");
         }
         return instance;
     }
@@ -493,7 +495,7 @@ public class Canvas extends RenderCore {
     public void drawRing(float centerX, float centerY, float innerRadius, float outerRadius) {
         useShader(ring);
         ring.setRadius(innerRadius, outerRadius);
-        ring.setCenterPos(centerX, centerY);
+        ring.setCenter(centerX, centerY);
         drawRect(centerX - outerRadius, centerY - outerRadius, centerX + outerRadius, centerY + outerRadius);
         releaseShader();
     }
@@ -510,7 +512,7 @@ public class Canvas extends RenderCore {
     public void drawCircle(float centerX, float centerY, float radius) {
         useShader(circle);
         circle.setRadius(radius);
-        circle.setCenterPos(centerX, centerY);
+        circle.setCenter(centerX, centerY);
         drawRect(centerX - radius, centerY - radius, centerX + radius, centerY + radius);
         releaseShader();
     }
@@ -540,18 +542,17 @@ public class Canvas extends RenderCore {
 
     /**
      * Draw rounded rectangle on screen with given rect area and rounded radius
-     * <p>
-     * Default feather radius: 1 px
      *
-     * @param left   rect left
-     * @param top    rect top
-     * @param right  rect right
-     * @param bottom rect bottom
-     * @param radius rounded radius, actually must >= 2
+     * @param left   the left of the rectangle
+     * @param top    the top of the rectangle
+     * @param right  the right of the rectangle
+     * @param bottom the bottom of the rectangle
+     * @param radius the corner radius, ranging from 1.0 to half the length of the
+     *               shorter side of the rectangle (Math.min(right - left, bottom - top) / 2.0)
      */
     public void drawRoundedRect(float left, float top, float right, float bottom, float radius) {
         useShader(roundedRect);
-        roundedRect.setRadius(radius - 1); // we have feather radius 1px
+        roundedRect.setRadius(radius);
         roundedRect.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
         drawRect(left, top, right, bottom);
         releaseShader();
@@ -564,16 +565,17 @@ public class Canvas extends RenderCore {
      * Default feather radius: 1 px
      * Default frame thickness: 1.5 px
      *
-     * @param left   rect left
-     * @param top    rect top
-     * @param right  rect right
-     * @param bottom rect bottom
-     * @param radius rounded radius, must >= 1.5
+     * @param left   the left of the rectangle
+     * @param top    the top of the rectangle
+     * @param right  the right of the rectangle
+     * @param bottom the bottom of the rectangle
+     * @param radius the corner radius, ranging from 1.0 to half the length of the
+     *               shorter side of the rectangle (Math.min(right - left, bottom - top) / 2.0)
      */
     public void drawRoundedFrame(float left, float top, float right, float bottom, float radius) {
         useShader(roundedFrame);
-        roundedRect.setRadius(radius - 1);
-        roundedRect.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
+        roundedFrame.setRadius(radius);
+        roundedFrame.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
         drawRect(left, top, right, bottom);
         releaseShader();
     }
@@ -609,6 +611,7 @@ public class Canvas extends RenderCore {
     public void drawIcon(@Nonnull Icon icon, float left, float top, float right, float bottom) {
         RenderSystem.enableTexture();
         icon.bindTexture();
+        BufferBuilder bufferBuilder = this.bufferBuilder;
 
         /*left += drawingX;
         top += drawingY;

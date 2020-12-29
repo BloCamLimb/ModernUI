@@ -22,6 +22,7 @@ import icyllis.modernui.network.NetworkHandler;
 import icyllis.modernui.plugin.IMuiPlugin;
 import icyllis.modernui.plugin.MuiPlugin;
 import icyllis.modernui.test.TestMenu;
+import icyllis.modernui.view.UIManager;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.inventory.container.ContainerType;
 import net.minecraft.util.ResourceLocation;
@@ -47,6 +48,9 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * This class handles mod loading events
+ */
 @Mod.EventBusSubscriber(modid = ModernUI.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class Registration {
 
@@ -117,6 +121,7 @@ public final class Registration {
     static void setupClient(@Nonnull FMLClientSetupEvent event) {
         //SettingsManager.INSTANCE.buildAllSettings();
         //UIManager.getInstance().registerMenuScreen(Registration.TEST_MENU, menu -> new TestUI());
+        event.getMinecraftSupplier().get().runAsync(UIManager::initRenderer);
     }
 
     @Nonnull

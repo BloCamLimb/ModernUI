@@ -19,21 +19,22 @@
 package icyllis.modernui.graphics.shader.program;
 
 import icyllis.modernui.graphics.shader.ShaderProgram;
+import icyllis.modernui.system.ModernUI;
 import org.lwjgl.opengl.GL20;
 
 public class RingShader extends ShaderProgram {
 
     public static RingShader INSTANCE = new RingShader("rect", "ring");
 
-    public RingShader(String vert, String frag) {
-        super(vert, frag);
+    private RingShader(String vert, String frag) {
+        super(ModernUI.MODID, vert, frag);
     }
 
     public void setRadius(float inner, float radius) {
         GL20.glUniform2f(0, inner, radius);
     }
 
-    public void setCenterPos(float x, float y) {
+    public void setCenter(float x, float y) {
         GL20.glUniform2f(1, x, y);
     }
 }

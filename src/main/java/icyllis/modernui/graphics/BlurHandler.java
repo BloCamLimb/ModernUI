@@ -200,9 +200,8 @@ public enum BlurHandler {
 
     public void drawScreenBackground(@Nonnull Screen screen, @Nonnull MatrixStack stack, int x1, int y1, int x2, int y2) {
         int a = (int) (backgroundAlpha * 0xff);
-        if (a == 0) {
+        if (a == 0)
             return;
-        }
         RenderSystem.disableTexture();
         RenderSystem.enableBlend();
         RenderSystem.disableAlphaTest();

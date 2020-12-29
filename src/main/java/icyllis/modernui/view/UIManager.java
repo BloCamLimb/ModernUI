@@ -24,7 +24,6 @@ import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.math.Point;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.plugin.event.OpenMenuEvent;
-import icyllis.modernui.system.MServerContext;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.system.mixin.MixinMouseHandler;
 import icyllis.modernui.test.TestHUD;
@@ -34,10 +33,8 @@ import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.inventory.container.ContainerType;
-import net.minecraft.inventory.container.IContainerProvider;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.Util;
 import net.minecraft.util.registry.Registry;
@@ -56,9 +53,10 @@ import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Function;
 
 /**
  * UI system service, manages everything related to UI in Modern UI.
@@ -145,13 +143,13 @@ public final class UIManager {
     private double mScrollY;
 
     // schedule layout on next frame
-    boolean mPendingLayout = false;
+    boolean mLayoutRequested = false;
 
     // schedule a cursor event on next tick due to scroll amount changed
     boolean mPendingRepostCursorEvent = false;
 
     // to fix layout freq at 40Hz at most
-    private long lastLayoutTime = 0;
+    private long mLastLayoutTime = 0;
 
     // drag event instance, also marks whether a drag and drop operation is ongoing
     @Nullable
@@ -191,42 +189,38 @@ public final class UIManager {
         return instance;
     }
 
+    // internal method
+    public static void initRenderer() {
+        RenderSystem.assertThread(RenderSystem::isOnRenderThread);
+        if (instance.mCanvas == null) {
+            instance.mCanvas = Canvas.getInstance();
+        } else {
+            throw new IllegalStateException("Already initialized");
+        }
+    }
+
     /**
-     * Open an application screen and create view
+     * Open an application UI and create views
      *
      * @param applicationUI the application user interface
      * @see #start(IMuiScreen, int, int)
      */
-    public void openUI(@Nonnull ApplicationUI applicationUI) {
+    public void openGUI(@Nonnull ApplicationUI applicationUI) {
         mApplicationUI = applicationUI;
         minecraft.displayGuiScreen(new MMainScreen(this));
     }
 
     /**
-     * Close and destroy application screen
+     * Close all screens and destroy current application UI
      *
      * @see #stop()
      */
-    public void closeUI() {
+    public void closeGUI() {
         minecraft.displayGuiScreen(null);
     }
 
-    /**
-     * Register screen factory relative to a menu type to open the gui screen.
-     *
-     * @param type    menu type
-     * @param factory screen factory
-     * @param <T>     container menu type
-     * @see MServerContext#openMenu(PlayerEntity, IContainerProvider)
-     */
-    @Deprecated
-    private <T extends Container> void registerMenuScreen(
-            @Nonnull ContainerType<? extends T> type, @Nonnull Function<T, ApplicationUI> factory) {
-        //mScreenRegistry.putIfAbsent(type, factory);
-    }
-
     // Internal method
-    public void openUI(@Nonnull ClientPlayerEntity player, int containerId, int menuId, @Nonnull PacketBuffer buffer) {
+    public void openGUI(@Nonnull ClientPlayerEntity player, int containerId, int menuId, @Nonnull PacketBuffer buffer) {
         ContainerType<?> type = Registry.MENU.getByValue(menuId);
         if (type == null) {
             ModernUI.LOGGER.warn(MARKER, "Trying to open invalid screen for menu id: {}", menuId);
@@ -236,7 +230,7 @@ public final class UIManager {
             if (menu == null) {
                 ModernUI.LOGGER.warn(MARKER, "Failed to create menu for type: {}", Registry.MENU.getKey(type));
             } else {
-                OpenMenuEvent<?> event = new OpenMenuEvent<>(menu);
+                OpenMenuEvent event = new OpenMenuEvent(menu);
                 ModernUI.post(event);
                 ApplicationUI applicationUI = event.getApplicationUI();
                 if (applicationUI != null) {
@@ -757,7 +751,7 @@ public final class UIManager {
             popup.draw(drawTime);
         }*/
         //UIEditor.INSTANCE.draw(canvas);
-        //TODO use shader
+        //TODO use shader uniforms
         GL11.glDisable(GL11.GL_LINE_SMOOTH);
         GL11.glLineWidth(1.0f);
         RenderSystem.enableTexture();
@@ -794,25 +788,25 @@ public final class UIManager {
         final MainWindow window = minecraft.getMainWindow();
         mCursorX = minecraft.mouseHelper.getMouseX() * (double) window.getScaledWidth() / (double) window.getWidth();
         mCursorY = minecraft.mouseHelper.getMouseY() * (double) window.getScaledHeight() / (double) window.getHeight();
-        layout(true);
+        doLayout();
     }
 
     /**
-     * Layout UI window
+     * Directly layout UI window
      */
-    private void layout(boolean forceLayout) {
+    private void doLayout() {
         long startTime = System.nanoTime();
 
         int widthSpec = MeasureSpec.makeMeasureSpec(mWidth, MeasureSpec.Mode.EXACTLY);
         int heightSpec = MeasureSpec.makeMeasureSpec(mHeight, MeasureSpec.Mode.EXACTLY);
 
-        mAppWindow.performLayout(widthSpec, heightSpec, forceLayout);
+        mAppWindow.performLayout(widthSpec, heightSpec);
 
         if (ModernUI.isDeveloperMode()) {
             ModernUI.LOGGER.debug(MARKER, "Layout performed in {} \u03bcs", (System.nanoTime() - startTime) / 1000.0f);
         }
         onCursorEvent(mCursorX, mCursorY);
-        mPendingLayout = false;
+        mLayoutRequested = false;
     }
 
     void stop() {
@@ -825,8 +819,8 @@ public final class UIManager {
                 mApplicationUI.window = null;
                 mApplicationUI = null;
             }
-            lastLayoutTime = 0;
-            mPendingLayout = false;
+            mLastLayoutTime = 0;
+            mLayoutRequested = false;
             UIEditor.INSTANCE.setHoveredWidget(null);
             mDecorView.removeAllViews();
             UITools.useDefaultCursor();
@@ -839,12 +833,6 @@ public final class UIManager {
     void onClientTick(@Nonnull TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
             ++mTicks;
-        /*if (popup != null) {
-            popup.tick(ticks);
-        }*/
-        /*if (view != null) {
-            view.tick(mTicks);
-        }*/
             mAppWindow.tick(mTicks);
             // view ticking is always performed before tasks
             if (!tasks.isEmpty()) {
@@ -881,11 +869,11 @@ public final class UIManager {
             }
 
             // layout after updating animations and before drawing
-            if (mPendingLayout) {
+            if (mLayoutRequested) {
                 // fixed at 40Hz
-                if (mDrawingTimeMillis - lastLayoutTime >= 25) {
-                    lastLayoutTime = mDrawingTimeMillis;
-                    layout(false);
+                if (mDrawingTimeMillis - mLastLayoutTime >= 25) {
+                    mLastLayoutTime = mDrawingTimeMillis;
+                    doLayout();
                 }
             }
         }

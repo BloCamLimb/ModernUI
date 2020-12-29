@@ -79,5 +79,4 @@ public final class LayoutIO {
     private static class Type implements IResourceType {
 
     }
-
 }

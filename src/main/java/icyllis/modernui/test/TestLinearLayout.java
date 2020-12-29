@@ -38,12 +38,12 @@ public class TestLinearLayout extends LinearLayout {
     private float c = 10;
     private float f = 0;
 
-    private Animation cAnim;
+    private final Animation cAnim;
 
-    private Animation circleAnimation1;
-    private Animation circleAnimation2;
-    private Animation circleAnimation3;
-    private Animation circleAnimation4;
+    private final Animation circleAnimation1;
+    private final Animation circleAnimation2;
+    private final Animation circleAnimation3;
+    private final Animation circleAnimation4;
 
     private float circleAcc1;
     private float circleAcc2;
@@ -110,6 +110,8 @@ public class TestLinearLayout extends LinearLayout {
         canvas.resetColor();
         canvas.setTextAlign(TextAlign.LEFT);
         canvas.drawText("Ll" + TextFormatting.BOLD + "Ll " + canvas.getDrawingTime(), 0, 0);
+        canvas.drawRoundedRect(6, 90, 46, 104, 7);
+        canvas.drawRoundedFrame(6, 108, 46, 124, 5);
 
         // 1
 

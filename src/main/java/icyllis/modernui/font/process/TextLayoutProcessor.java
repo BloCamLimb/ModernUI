@@ -26,6 +26,9 @@ import icyllis.modernui.font.glyph.GlyphManager;
 import icyllis.modernui.font.glyph.TexturedGlyph;
 import icyllis.modernui.font.pipeline.*;
 import icyllis.modernui.graphics.math.Color3i;
+import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.renderer.RenderCore;
+import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.text.Style;
@@ -171,9 +174,13 @@ public class TextLayoutProcessor {
         //digitGlyphsReady = true;
     }
 
+    /**
+     * @see Canvas#getInstance()
+     */
     public void initRenderer() {
         if (glyphManager == null) {
             glyphManager = new GlyphManager();
+            ModernUI.LOGGER.debug(RenderCore.MARKER, "Font renderer initialized");
         } else {
             throw new IllegalStateException("Already initialized");
         }

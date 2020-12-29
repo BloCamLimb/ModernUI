@@ -19,10 +19,13 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.widget.FrameLayout;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * Represents the current application screen, for handling lifecycle event.
  */
+@OnlyIn(Dist.CLIENT)
 public abstract class ApplicationUI {
 
     UIManager window;

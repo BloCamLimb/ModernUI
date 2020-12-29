@@ -21,7 +21,7 @@ package icyllis.modernui.view;
 import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.impl.PauseMenuUI;
+import icyllis.modernui.test.TestPauseUI;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
@@ -200,7 +200,7 @@ public enum UIEditor {
             case GLFW.GLFW_KEY_A:
                 if (minecraft.currentScreen == null)
                     if (minecraft.isSingleplayer() && !minecraft.getIntegratedServer().getPublic())
-                        UIManager.getInstance().openUI(new PauseMenuUI());
+                        UIManager.getInstance().openGUI(new TestPauseUI());
                 break;
             case GLFW.GLFW_KEY_P:
                 if (Minecraft.getInstance().currentScreen == null) {

@@ -67,9 +67,9 @@ final class MMainScreen extends Screen implements IMuiScreen {
         master.stop();
     }
 
+    //TODO configurable
     @Override
     public boolean isPauseScreen() {
-        //TODO configurable
         return false;
     }
 
@@ -111,7 +111,7 @@ final class MMainScreen extends Screen implements IMuiScreen {
             if (master.onBackPressed()) {
                 return true;
             }
-            master.closeUI();
+            master.closeGUI();
             return true;
         } else if (keyCode == GLFW.GLFW_KEY_TAB) {
             boolean searchNext = !hasShiftDown();

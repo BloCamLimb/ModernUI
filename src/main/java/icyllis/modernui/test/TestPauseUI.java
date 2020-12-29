@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.impl;
+package icyllis.modernui.test;
 
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.view.ApplicationUI;
@@ -27,7 +27,7 @@ import javax.annotation.Nonnull;
 
 import static icyllis.modernui.view.ViewGroup.LayoutParams.MATCH_PARENT;
 
-public class PauseMenuUI extends ApplicationUI {
+public class TestPauseUI extends ApplicationUI {
 
     @Override
     public void onCreate() {
@@ -42,7 +42,7 @@ public class PauseMenuUI extends ApplicationUI {
 
         @Override
         protected void onDraw(@Nonnull Canvas canvas) {
-            canvas.setColor(64, 64, 64, 192);
+            canvas.setColor(96, 96, 96, 128);
             canvas.drawRect(0, 0, getRight(), getBottom());
         }
     }
