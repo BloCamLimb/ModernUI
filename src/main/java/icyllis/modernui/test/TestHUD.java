@@ -72,12 +72,12 @@ public class TestHUD {
         GL11.glRotatef(Math.abs(MathHelper.cos(f1 * (float) Math.PI - 0.2f) * f2) * 5.0f, 1, 0, 0);
 
         canvas.setColor(255, 19, 19, 128);
-        canvas.drawRoundedRect(0, 25, player.getHealth() * 140 / player.getMaxHealth(), 37, 4);
+        canvas.drawRoundedRect(0, 25, player.getHealth() * 140 / player.getMaxHealth(), 37, 6);
         canvas.setColor(86, 184, 255, 128);
-        canvas.drawRoundedRect(0, 11, player.getAir() * 140f / player.getMaxAir(), 23, 4);
+        canvas.drawRoundedRect(0, 11, player.getAir() * 140f / player.getMaxAir(), 23, 6);
         canvas.setColor(184, 132, 88, 128);
         FoodStats foodStats = player.getFoodStats();
-        canvas.drawRoundedRect(0, -3, foodStats.getFoodLevel() * 7, 9, 4);
+        canvas.drawRoundedRect(0, -3, foodStats.getFoodLevel() * 7, 9, 6);
 
         canvas.resetColor();
         canvas.setTextAlign(TextAlign.CENTER);

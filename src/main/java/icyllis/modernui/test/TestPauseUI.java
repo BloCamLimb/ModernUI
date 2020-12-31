@@ -18,6 +18,8 @@
 
 package icyllis.modernui.test;
 
+import icyllis.modernui.animation.Animation;
+import icyllis.modernui.animation.Applier;
 import icyllis.modernui.graphics.renderer.Canvas;
 import icyllis.modernui.view.ApplicationUI;
 import icyllis.modernui.view.View;
@@ -40,9 +42,15 @@ public class TestPauseUI extends ApplicationUI {
 
     private static class NavigationBar extends View {
 
+        private float a = 0;
+
+        public NavigationBar() {
+            new Animation(200).applyTo(new Applier(0, 0.51f, () -> a, v -> a = v)).start();
+        }
+
         @Override
         protected void onDraw(@Nonnull Canvas canvas) {
-            canvas.setColor(96, 96, 96, 128);
+            canvas.setColor(96, 96, 96, (int) (a * 255));
             canvas.drawRect(0, 0, getRight(), getBottom());
         }
     }

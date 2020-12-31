@@ -547,8 +547,7 @@ public class Canvas extends RenderCore {
      * @param top    the top of the rectangle
      * @param right  the right of the rectangle
      * @param bottom the bottom of the rectangle
-     * @param radius the corner radius, ranging from 1.0 to half the length of the
-     *               shorter side of the rectangle (Math.min(right - left, bottom - top) / 2.0)
+     * @param radius the rounded corner radius
      */
     public void drawRoundedRect(float left, float top, float right, float bottom, float radius) {
         useShader(roundedRect);
@@ -569,8 +568,7 @@ public class Canvas extends RenderCore {
      * @param top    the top of the rectangle
      * @param right  the right of the rectangle
      * @param bottom the bottom of the rectangle
-     * @param radius the corner radius, ranging from 1.0 to half the length of the
-     *               shorter side of the rectangle (Math.min(right - left, bottom - top) / 2.0)
+     * @param radius the rounded corner radius
      */
     public void drawRoundedFrame(float left, float top, float right, float bottom, float radius) {
         useShader(roundedFrame);

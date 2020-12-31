@@ -166,7 +166,8 @@ public final class Config {
                     "This should match your GUI scale. Scale -> Level: [1,2] -> 1; [3,4] -> 2; [5,) -> 3")
                     .defineInRange("resolutionLevel", 2, 1, 3);
             defaultFontSize = builder.comment(
-                    "The default font size for texts with no size specified.")
+                    "The default font size for texts with no size specified.",
+                    "The font size feature is provided by Modern UI, and other mod's are achieved by matrix transformation.")
                     .defineInRange("defaultFontSize", 16, 12, 20);
 
             builder.pop();

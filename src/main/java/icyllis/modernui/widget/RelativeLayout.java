@@ -23,6 +23,7 @@ import icyllis.modernui.view.MeasureSpec;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import javax.annotation.Nonnull;
@@ -832,7 +833,7 @@ public class RelativeLayout extends ViewGroup {
          * If the anchor view is not found,
          * it will use the parent as the anchor.
          */
-        private int[] rules = new int[VERB_COUNT];
+        private final int[] rules = new int[VERB_COUNT];
 
         /**
          * The align or position relation to the anchor or parent.
@@ -909,7 +910,7 @@ public class RelativeLayout extends ViewGroup {
          * List of nodes in the graph. Each node is identified by its
          * view id (see View#getId()).
          */
-        private final Map<Integer, Node> keyNodes = new Int2ObjectArrayMap<>();
+        private final Int2ObjectMap<Node> keyNodes = new Int2ObjectArrayMap<>();
 
         /**
          * Temporary data structure used to build the list of roots
@@ -1061,7 +1062,7 @@ public class RelativeLayout extends ViewGroup {
             /**
              * The list of dependencies for this node.
              */
-            final Map<Integer, Node> dependencies = new Int2ObjectArrayMap<>();
+            final Int2ObjectMap<Node> dependencies = new Int2ObjectArrayMap<>();
         }
     }
 }

@@ -77,8 +77,9 @@ final class MMenuScreen<T extends Container> extends ContainerScreen<T> implemen
         master.resize(width, height);
 
         // compatibility with Forge mods, like JEI
-        if (!MinecraftForge.EVENT_BUS.post(new GuiScreenEvent.InitGuiEvent.Pre(this, buttons, this::logWidget, this::logWidget)))
+        if (!MinecraftForge.EVENT_BUS.post(new GuiScreenEvent.InitGuiEvent.Pre(this, buttons, this::logWidget, this::logWidget))) {
             MinecraftForge.EVENT_BUS.post(new GuiScreenEvent.InitGuiEvent.Post(this, buttons, this::logWidget, this::logWidget));
+        }
 
         /*ModernUI.LOGGER.debug("Scaled: {}x{} Framebuffer: {}x{} Window: {}x{}", width, height, minecraft.getMainWindow().getFramebufferWidth(),
                 minecraft.getMainWindow().getFramebufferHeight(), minecraft.getMainWindow().getWidth(), minecraft.getMainWindow().getHeight());*/

@@ -218,7 +218,7 @@ public class ModernFontRenderer extends FontRenderer {
 
         TextRenderNode node = fontEngine.lookupVanillaNode(string, style);
         if (dropShadow && allowShadow) {
-            node.drawText(matrix, buffer, string, x + 1, y + 1, r >> 2, g >> 2, b >> 2, a, true,
+            node.drawText(matrix, buffer, string, x + 0.8f, y + 0.8f, r >> 2, g >> 2, b >> 2, a, true,
                     transparent, colorBackground, packedLight);
             matrix = matrix.copy(); // if not drop shadow, we don't need to copy the matrix
             matrix.translate(AccessFontRenderer.shadowLifting());

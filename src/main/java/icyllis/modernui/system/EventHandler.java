@@ -59,12 +59,14 @@ final class EventHandler {
     /**
      * Handles Modern UI events internally
      */
+    @OnlyIn(Dist.CLIENT)
     static class Internal {
 
         @SubscribeEvent
         static void onMenuOpen(@Nonnull OpenMenuEvent event) {
-            if (event.getMenu().getType() == Registration.TEST_MENU)
+            if (event.getMenu().getType() == Registration.TEST_MENU) {
                 event.setApplicationUI(new TestUI());
+            }
         }
     }
 

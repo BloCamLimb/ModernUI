@@ -231,7 +231,7 @@ public final class UIManager {
                 ModernUI.LOGGER.warn(MARKER, "Failed to create menu for type: {}", Registry.MENU.getKey(type));
             } else {
                 OpenMenuEvent event = new OpenMenuEvent(menu);
-                ModernUI.post(event);
+                ModernUI.EVENT_BUS.post(event);
                 ApplicationUI applicationUI = event.getApplicationUI();
                 if (applicationUI != null) {
                     mApplicationUI = applicationUI;

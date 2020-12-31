@@ -32,6 +32,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.extensions.IForgeContainerType;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
@@ -97,7 +98,8 @@ public final class Registration {
             }
         }
 
-        NetworkHandler network = new NetworkHandler(ModernUI.MODID, "main_network", NetMessages.C::handle, NetMessages::handle);
+        NetworkHandler network = new NetworkHandler(ModernUI.MODID, "main_network",
+                DistExecutor.safeRunForDist(() -> NetMessages::handle, () -> NetMessages::ignore), NetMessages::handle);
         if (plugins.isEmpty()) {
             try {
                 Field field = NetworkHandler.class.getDeclaredField("optional");

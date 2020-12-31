@@ -67,13 +67,14 @@ public class NetworkHandler {
     @Nullable
     private final IServerMsgHandler serverHandler;
 
-    // pending friendly byte buf
+    // a ByteBuf wrapper for write data more friendly
+    // the wrapped ByteBuf will be deallocate by netty
     private PacketBuffer buffer;
 
     /**
      * Create a network handler of a mod
      *
-     * @param modid         mod identifier
+     * @param modid         mod id
      * @param name          network channel name
      * @param clientHandler a handler to handle server-to-client messages
      * @param serverHandler a handler to handle client-to-server messages
@@ -102,12 +103,14 @@ public class NetworkHandler {
      * be dispatched later, for example {@link #sendToPlayer(PlayerEntity)}
      *
      * @param index The message index used on the opposite side, range from 0 to 32767
-     * @return A byte buf with the index written
+     * @return A byte buf to write the packet data (message)
+     * @see IClientMsgHandler
+     * @see IServerMsgHandler
      */
     @Nonnull
     public PacketBuffer allocBuf(int index) {
         if (buffer != null) {
-            throw new IllegalStateException("Previous packet was not dispatched");
+            throw new IllegalStateException("Previous payload was not dispatched");
         }
         buffer = new PacketBuffer(Unpooled.buffer());
         buffer.writeShort(index);
@@ -177,7 +180,10 @@ public class NetworkHandler {
     }
 
     /**
-     * Send a message to server, call this on client side
+     * Send a message to server
+     * <p>
+     * This is the only method to be called on the client, the rest needs
+     * to be called on the server side
      */
     @OnlyIn(Dist.CLIENT)
     public void sendToServer() {
@@ -191,7 +197,7 @@ public class NetworkHandler {
     /**
      * Send a message to a player
      *
-     * @param player player entity on server
+     * @param player the server player
      */
     public void sendToPlayer(@Nonnull PlayerEntity player) {
         ((ServerPlayerEntity) player).connection.sendPacket(new SCustomPayloadPlayPacket(channel, buffer));
@@ -201,7 +207,7 @@ public class NetworkHandler {
     /**
      * Send a message to a player
      *
-     * @param player player entity on server
+     * @param player the server player
      */
     public void sendToPlayer(@Nonnull ServerPlayerEntity player) {
         player.connection.sendPacket(new SCustomPayloadPlayPacket(channel, buffer));
@@ -262,7 +268,7 @@ public class NetworkHandler {
     /**
      * Send a message to all players tracking the specified entity. If a chunk that player loaded
      * on the client contains the chunk where the entity is located, and then the player is
-     * tracking the entity.
+     * tracking the entity changes.
      *
      * @param entity entity is tracking
      */
@@ -275,9 +281,9 @@ public class NetworkHandler {
     /**
      * Send a message to all players tracking the specified entity, and also send the message to
      * the entity if it is a player. If a chunk that player loaded on the client contains the
-     * chunk where the entity is located, and then the player is tracking the entity.
+     * chunk where the entity is located, and then the player is tracking the entity changes.
      *
-     * @param entity entity is tracking
+     * @param entity the entity is tracking
      */
     public void sendToTrackingAndSelf(@Nonnull Entity entity) {
         ((ServerWorld) entity.getEntityWorld()).getChunkProvider().sendToTrackingAndSelf(
@@ -288,7 +294,7 @@ public class NetworkHandler {
     /**
      * Send a message to all players who loaded the specified chunk
      *
-     * @param chunk chunk that players in
+     * @param chunk the chunk that players in
      */
     public void sendToTrackingChunk(@Nonnull Chunk chunk) {
         final IPacket<?> packet = new SCustomPayloadPlayPacket(channel, buffer);
@@ -300,12 +306,28 @@ public class NetworkHandler {
     @FunctionalInterface
     public interface IClientMsgHandler {
 
+        /**
+         * Handle a server-to-client network message
+         *
+         * @param index   message index
+         * @param payload packet payload
+         * @param player  the client player, when you receive the packet, it should
+         *                not be null, so you have to check if it's non-null
+         */
         void handle(short index, @Nonnull PacketBuffer payload, @Nullable ClientPlayerEntity player);
     }
 
     @FunctionalInterface
     public interface IServerMsgHandler {
 
+        /**
+         * Handle a client-to-server network message
+         *
+         * @param index   message index
+         * @param payload packet payload
+         * @param player  the server player, when you receive the packet, it should
+         *                not be null, so you have to check if it's non-null
+         */
         void handle(short index, @Nonnull PacketBuffer payload, @Nullable ServerPlayerEntity player);
     }
 }

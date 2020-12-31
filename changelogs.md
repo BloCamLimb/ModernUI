@@ -1,5 +1,9 @@
 Changelogs
 ===
+### 1.16.4-2.3.1.70 (2020-12-31)
+* Fix crash when forge event bus not started
+* Fix crash on dedicated server
+
 ### 1.16.4-2.3.0.69 (2020-12-26)
 * Fix ingame GUI rendering with no texture in some case
 * Fix font renderer not override some mods (like InventoryHud)
