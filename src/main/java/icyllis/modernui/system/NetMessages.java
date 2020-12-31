@@ -47,6 +47,16 @@ public final class NetMessages {
     }
 
     @Nonnull
+    static NetworkHandler.IClientMsgHandler handle() {
+        return C::handle;
+    }
+
+    @Nullable
+    static NetworkHandler.IClientMsgHandler ignore() {
+        return null;
+    }
+
+    @Nonnull
     public static NetworkHandler food(float foodSaturationLevel, float foodExhaustionLevel) {
         PacketBuffer buffer = network.allocBuf(0);
         buffer.writeFloat(foodSaturationLevel);
@@ -71,7 +81,7 @@ public final class NetMessages {
         private C() {
         }
 
-        static void handle(short index, @Nonnull PacketBuffer payload, @Nullable ClientPlayerEntity player) {
+        private static void handle(short index, @Nonnull PacketBuffer payload, @Nullable ClientPlayerEntity player) {
             if (player != null) {
                 switch (index) {
                     case 0:

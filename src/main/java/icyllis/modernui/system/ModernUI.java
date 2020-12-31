@@ -21,7 +21,6 @@ package icyllis.modernui.system;
 import icyllis.modernui.graphics.renderer.RenderCore;
 import icyllis.modernui.view.LayoutIO;
 import net.minecraftforge.eventbus.api.BusBuilder;
-import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLEnvironment;
@@ -44,7 +43,7 @@ public final class ModernUI {
     public static final Logger LOGGER = LogManager.getLogger(NAME_CPT);
     public static final Marker MARKER = MarkerManager.getMarker("System");
 
-    private static final IEventBus EVENT_BUS = BusBuilder.builder().build();
+    public static final IEventBus EVENT_BUS = BusBuilder.builder().build();
 
     private static boolean optiFineLoaded;
 
@@ -61,9 +60,9 @@ public final class ModernUI {
         if (FMLEnvironment.dist.isClient()) {
             LayoutIO.init();
             RenderCore.init();
+            EVENT_BUS.register(EventHandler.Internal.class);
         }
 
-        EVENT_BUS.register(EventHandler.Internal.class);
         LOGGER.debug(MARKER, "Modern UI initialized, signed: {}", ModernUI.class.getSigners() != null);
     }
 
@@ -91,10 +90,6 @@ public final class ModernUI {
                                 "a minimum of java 1.8.0_251 or above is required");
             }
         }
-    }
-
-    public static boolean post(Event event) {
-        return EVENT_BUS.post(event);
     }
 
     public static boolean isDeveloperMode() {

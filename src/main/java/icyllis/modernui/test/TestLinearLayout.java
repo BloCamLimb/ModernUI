@@ -111,7 +111,7 @@ public class TestLinearLayout extends LinearLayout {
         canvas.setTextAlign(TextAlign.LEFT);
         canvas.drawText("Ll" + TextFormatting.BOLD + "Ll " + canvas.getDrawingTime(), 0, 0);
         canvas.drawRoundedRect(6, 90, 46, 104, 7);
-        canvas.drawRoundedFrame(6, 108, 46, 124, 5);
+        canvas.drawRoundedFrame(6, 108, 46, 122, 7);
 
         // 1
 

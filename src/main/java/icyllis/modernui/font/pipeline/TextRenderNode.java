@@ -144,7 +144,7 @@ public class TextRenderNode {
         final int startR = r;
         final int startG = g;
         final int startB = b;
-        // I found only sign now, maybe there will be other types
+        //TODO mixin GameRenderer to disable depth test
         if (buffer instanceof IRenderTypeBuffer.Impl) {
             ((IRenderTypeBuffer.Impl) buffer).finish(Atlases.getSignType());
         }
