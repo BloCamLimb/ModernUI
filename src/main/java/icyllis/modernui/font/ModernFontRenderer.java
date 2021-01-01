@@ -188,7 +188,7 @@ public class ModernFontRenderer extends FontRenderer {
                               @Nonnull IRenderTypeBuffer buffer, boolean seeThrough, int colorBackground, int packedLight) {
         if (globalRenderer) {
             v.setValue(x);
-            fontEngine.handleReorder(text,
+            fontEngine.handleSequence(text,
                     (string, style) -> {
                         v.add(drawLayer0(string, v.floatValue(), y, color, dropShadow, matrix,
                                 buffer, seeThrough, colorBackground, packedLight, style));

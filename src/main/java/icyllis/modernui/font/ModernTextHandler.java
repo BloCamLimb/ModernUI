@@ -98,7 +98,7 @@ public class ModernTextHandler extends CharacterManager {
     @Override
     public float func_243238_a(@Nonnull IReorderingProcessor text) {
         v.setValue(0);
-        fontEngine.handleReorder(text, (t, s) -> {
+        fontEngine.handleSequence(text, (t, s) -> {
             if (t.length() != 0) {
                 v.add(fontEngine.lookupVanillaNode(t, s).advance);
             }
@@ -232,7 +232,7 @@ public class ModernTextHandler extends CharacterManager {
         v.setValue(width);
         MutableObject<Style> sr = new MutableObject<>();
         // iterate all siblings
-        if (!fontEngine.handleReorder(text, (t, s) -> {
+        if (!fontEngine.handleSequence(text, (t, s) -> {
             if (sizeToWidth0(t, v.floatValue(), s) < t.length()) {
                 sr.setValue(s);
                 // break with result

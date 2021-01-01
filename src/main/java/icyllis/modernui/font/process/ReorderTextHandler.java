@@ -26,7 +26,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * Copy vanilla text from IReorderingProcessor
+ * Copy vanilla text from {@link IReorderingProcessor}
  */
 public class ReorderTextHandler {
 
@@ -37,8 +37,8 @@ public class ReorderTextHandler {
 
     private IAction action;
 
-    // create segments
-    private final ICharacterConsumer output = new ICharacterConsumer() {
+    // composite
+    private final ICharacterConsumer sink = new ICharacterConsumer() {
 
         @Override
         public boolean accept(int index, @Nonnull Style style, int codePoint) {
@@ -63,13 +63,14 @@ public class ReorderTextHandler {
     /**
      * @return {@code false} if action stopped on the way
      */
-    public boolean handle(@Nonnull IReorderingProcessor processor, IAction action) {
+    public boolean handle(@Nonnull IReorderingProcessor sequence, IAction action) {
         this.action = action;
-        if (!processor.accept(output)) {
-            // stopped
-            return false;
+        if (sequence.accept(sink)) {
+            // iteration completed
+            return finish();
         }
-        return finish();
+        // stopped
+        return false;
     }
 
     private boolean finish() {

@@ -184,16 +184,16 @@ public class TextLayoutProcessor {
     }
 
     /**
-     * Minecraft vanilla only left IReorderingProcessor interface, so we have to make the
+     * Minecraft gives us a deeply processed IReorderingProcessor, so we have to make the
      * IReorderingProcessor not a reordered text, see {@link icyllis.modernui.system.mixin.MixinClientLanguage}.
-     * So actually it's a copy of original (unordered) text, then we can use our layout engine later
+     * So actually it's a copy of original text, then we can use our layout engine later
      *
-     * @param text   a copied text
-     * @param action what to do with a part of styled text
+     * @param sequence a char sequence copied from the original string
+     * @param action   what to do with a part of styled char sequence
      * @return {@code false} if action stopped on the way, {@code true} if the whole text was handled
      */
-    public boolean handleReorder(IReorderingProcessor text, ReorderTextHandler.IAction action) {
-        return reorder.handle(text, action);
+    public boolean handleSequence(IReorderingProcessor sequence, ReorderTextHandler.IAction action) {
+        return reorder.handle(sequence, action);
     }
 
     /**
