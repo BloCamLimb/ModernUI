@@ -38,10 +38,10 @@ import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.text.Style;
+import net.minecraft.util.text.TextFormatting;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * The main renderer of Modern UI, draw things for View:
@@ -115,8 +115,7 @@ public class Canvas extends RenderCore {
     /**
      * Text align
      */
-    @Nonnull
-    private TextAlign textAlign = TextAlign.LEFT;
+    private float textAlignFactor = TextAlign.LEFT.offsetFactor;
 
 
     /**
@@ -295,35 +294,44 @@ public class Canvas extends RenderCore {
     }
 
     /**
-     * Set current text align, left, center or right
+     * Set current text alignment for next drawing
      *
-     * @param align align
+     * @param align the align to set
+     * @see #drawText(String, float, float)
      */
     public void setTextAlign(@Nonnull TextAlign align) {
-        textAlign = align;
+        textAlignFactor = align.offsetFactor;
     }
 
     /**
-     * Draw text on screen, text formatting and bidi are supported.
-     * This method returns the text width, or you can get width by
-     * {@link icyllis.modernui.view.UITools#getTextWidth(String)}
+     * Draw a single line of text on screen, {@link TextFormatting}
+     * and bidirectional algorithm are supported, returns the text width.
+     * All digits are laid-out with the same width as '0', because we don't know
+     * whether it is static layout or dynamic layout, so we don't want to
+     * re-layout when the numbers are changing too fast as it's performance hungry.
+     * <p>
+     * This method is convenient to use at any time but inflexible, such as,
+     * you can't do cross line text layout, auto translatable text, formatting with
+     * multiple arguments, hyperlinks, hover tooltips, or add various styles (such as
+     * custom color, font size, etc) to different parts of the text. Because of
+     * localization, the length of each part of the text is uncertain.
+     * <p>
+     * To achieve these things, use a {@link TextView}, we also support markdown
+     * syntax using commonmark specification.
      *
-     * @param text formatted string
-     * @param x    x pos
-     * @param y    y pos
-     * @return text advance (text width)
+     * @param text the text to draw
+     * @param x    the x-coordinate of origin for where to draw the text
+     * @param y    the y-coordinate of origin for where to draw the text
+     * @return the total advance of the text (text line width)
+     * @see #setTextAlign(TextAlign)
      */
     public float drawText(String text, float x, float y) {
-        return drawText(text, x, y, r, g, b, a, textAlign);
-    }
-
-    private float drawText(@Nullable String t, float x, float y, int r, int g, int b, int a, TextAlign align) {
-        if (t == null || t.isEmpty())
+        if (text == null || text.isEmpty())
             return 0;
-        final TextRenderNode node = fontEngine.lookupVanillaNode(t, Style.EMPTY);
-        if (align != TextAlign.LEFT)
-            x -= node.advance * align.offsetFactor;
-        return node.drawText(bufferBuilder, t, x, y, r, g, b, a);
+        final TextRenderNode node = fontEngine.lookupVanillaNode(text, Style.EMPTY);
+        if (textAlignFactor > 0)
+            x -= node.advance * textAlignFactor;
+        return node.drawText(bufferBuilder, text, x, y, r, g, b, a);
     }
 
     /**
