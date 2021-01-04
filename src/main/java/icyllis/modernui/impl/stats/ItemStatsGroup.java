@@ -20,7 +20,7 @@ package icyllis.modernui.impl.stats;
 
 import com.google.common.collect.Sets;
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.test.discard.DrawTools;
 import icyllis.modernui.test.discard.ScrollWindow;
 import icyllis.modernui.test.widget.UniformScrollGroup;

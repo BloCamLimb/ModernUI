@@ -18,6 +18,7 @@
 
 package icyllis.modernui.system;
 
+import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import icyllis.modernui.font.ModernFontRenderer;
 import icyllis.modernui.font.glyph.GlyphManager;
 import icyllis.modernui.font.process.TextLayoutProcessor;
@@ -25,10 +26,15 @@ import icyllis.modernui.graphics.BlurHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraft.client.gui.screen.DownloadTerrainScreen;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
+import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.config.ConfigFileTypeHandler;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLPaths;
 
 import javax.annotation.Nonnull;
@@ -36,45 +42,105 @@ import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 public final class Config {
 
-    private static final Client CLIENT_CONFIG;
+    static final Client CLIENT_CONFIG;
     private static final ForgeConfigSpec CLIENT_SPEC;
 
-    private static final Common COMMON_CONFIG;
+    static final Common COMMON_CONFIG;
     private static final ForgeConfigSpec COMMON_SPEC;
+
+    static final Server SERVER_CONFIG;
+    private static final ForgeConfigSpec SERVER_SPEC;
 
     static {
         ForgeConfigSpec.Builder builder;
 
-        builder = new ForgeConfigSpec.Builder();
-        CLIENT_CONFIG = new Client(builder);
-        CLIENT_SPEC = builder.build();
+        if (FMLEnvironment.dist.isClient()) {
+            builder = new ForgeConfigSpec.Builder();
+            CLIENT_CONFIG = new Client(builder);
+            CLIENT_SPEC = builder.build();
+        } else {
+            CLIENT_CONFIG = null;
+            CLIENT_SPEC = null;
+        }
 
         builder = new ForgeConfigSpec.Builder();
         COMMON_CONFIG = new Common(builder);
         COMMON_SPEC = builder.build();
+
+        builder = new ForgeConfigSpec.Builder();
+        SERVER_CONFIG = new Server(builder);
+        SERVER_SPEC = builder.build();
     }
 
     static void init() {
         FMLPaths.getOrCreateGameRelativePath(FMLPaths.CONFIGDIR.get().resolve(ModernUI.NAME_CPT), ModernUI.NAME_CPT);
-        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, CLIENT_SPEC, ModernUI.NAME_CPT + "/client.toml");
-        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, COMMON_SPEC, ModernUI.NAME_CPT + "/common.toml");
+        ModContainer mod = ModLoadingContext.get().getActiveContainer();
+        if (FMLEnvironment.dist.isClient()) {
+            mod.addConfig(new Cfg(Cfg.Type.CLIENT, CLIENT_SPEC, mod, "client"));
+        }
+        mod.addConfig(new Cfg(Cfg.Type.COMMON, COMMON_SPEC, mod, "common"));
+        mod.addConfig(new Cfg(Cfg.Type.SERVER, SERVER_SPEC, mod, "server"));
         FMLJavaModLoadingContext.get().getModEventBus().addListener(Config::reload);
     }
 
-    static void reload(@Nonnull ModConfig.ModConfigEvent event) {
-        ForgeConfigSpec spec = event.getConfig().getSpec();
+    static void reload(@Nonnull Cfg.ModConfigEvent event) {
+        final ForgeConfigSpec spec = event.getConfig().getSpec();
         if (spec == CLIENT_SPEC) {
             CLIENT_CONFIG.load();
             ModernUI.LOGGER.debug(ModernUI.MARKER, "Client config reloaded");
         } else if (spec == COMMON_SPEC) {
             COMMON_CONFIG.load();
             ModernUI.LOGGER.debug(ModernUI.MARKER, "Common config reloaded");
+        } else if (spec == SERVER_SPEC) {
+            SERVER_CONFIG.load();
+            ModernUI.LOGGER.debug(ModernUI.MARKER, "Server config reloaded");
         }
     }
 
+    private static class Cfg extends ModConfig {
+
+        private static final Toml _TOML = new Toml();
+
+        public Cfg(Type type, ForgeConfigSpec spec, ModContainer container, String name) {
+            super(type, spec, container, ModernUI.NAME_CPT + "/" + name + ".toml");
+        }
+
+        @Override
+        public ConfigFileTypeHandler getHandler() {
+            return _TOML;
+        }
+    }
+
+    private static class Toml extends ConfigFileTypeHandler {
+
+        private Toml() {
+        }
+
+        private static Path getPath(Path configBasePath) {
+            // reroute it to the global config directory
+            // see ServerLifecycleHooks, ModConfig.Type.SERVER
+            if (configBasePath.endsWith("serverconfig")) {
+                return FMLPaths.CONFIGDIR.get();
+            }
+            return configBasePath;
+        }
+
+        @Override
+        public Function<ModConfig, CommentedFileConfig> reader(Path configBasePath) {
+            return super.reader(getPath(configBasePath));
+        }
+
+        @Override
+        public void unload(Path configBasePath, ModConfig config) {
+            super.unload(getPath(configBasePath), config);
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
     public static class Client {
 
         //public boolean keepRunningInScreen;
@@ -88,7 +154,8 @@ public final class Config {
         private final ForgeConfigSpec.ConfigValue<List<? extends String>> blurBlacklist;
 
         private final ForgeConfigSpec.ConfigValue<String> preferredFont;
-        private final ForgeConfigSpec.BooleanValue globalRenderer;
+
+        final ForgeConfigSpec.BooleanValue globalRenderer;
         private final ForgeConfigSpec.BooleanValue allowShadow;
         private final ForgeConfigSpec.BooleanValue antiAliasing;
         private final ForgeConfigSpec.BooleanValue highPrecision;
@@ -196,34 +263,73 @@ public final class Config {
         }
     }
 
+    // common config exists on physical client and physical server once game loaded
+    // they are independent and do not sync with each other
     public static class Common {
 
-        private final ForgeConfigSpec.BooleanValue enableDeveloperModeV;
+        private final ForgeConfigSpec.BooleanValue developerMode;
         //private final ForgeConfigSpec.IntValue workingDirLevelV;
+
+        final ForgeConfigSpec.BooleanValue autoShutdown;
+
+        final ForgeConfigSpec.ConfigValue<List<? extends String>> shutdownTimes;
 
         private Common(@Nonnull ForgeConfigSpec.Builder builder) {
             builder.comment("Developer Config")
                     .push("developer");
 
-            enableDeveloperModeV = builder.comment("Whether to enable developer mode.")
+            developerMode = builder.comment("Whether to enable developer mode.")
                     .define("enableDeveloperMode", false);
             /*workingDirLevelV = builder.comment("The level of your working directory, determines the root directory of your project.")
                     .defineInRange("workingDirLevel", 1, 0, Integer.MAX_VALUE);*/
 
             builder.pop();
+
+            builder.comment("Auto Shutdown Config")
+                    .push("autoShutdown");
+
+            autoShutdown = builder.comment(
+                    "Enable auto-shutdown for server.")
+                    .define("enable", false);
+            shutdownTimes = builder.comment(
+                    "The time points of when server will auto-shutdown. Format: HH:mm.")
+                    .defineList("times", () -> {
+                        List<String> list = new ArrayList<>();
+                        list.add("04:00");
+                        list.add("16:00");
+                        return list;
+                    }, s -> true);
+
+            builder.pop();
         }
 
         private void load() {
-            if (enableDeveloperModeV.get()) {
+            if (developerMode.get()) {
                 ModernUI.developerMode = true;
-                return;
+            } else {
+                // get '/run' parent
+                Path path = FMLPaths.GAMEDIR.get().getParent();
+                // the root directory of your project
+                File dir = path.toFile();
+                String[] r = dir.list((file, name) -> name.equals("build.gradle"));
+                ModernUI.developerMode = r != null && r.length > 0;
             }
-            // get '/run' parent
-            Path path = FMLPaths.GAMEDIR.get().getParent();
-            // the root directory of your project
-            File dir = path.toFile();
-            String[] r = dir.list((file, name) -> name.equals("build.gradle"));
-            ModernUI.developerMode = r != null && r.length > 0;
+            if (MServerContext.serverStarted) {
+                MServerContext.determineShutdownTime();
+            }
+        }
+    }
+
+    // server config is available when integrated server or dedicated server started
+    // if on dedicated server, all config data will sync to remote client via network
+    public static class Server {
+
+        private Server(@Nonnull ForgeConfigSpec.Builder builder) {
+
+        }
+
+        private void load() {
+
         }
     }
 }

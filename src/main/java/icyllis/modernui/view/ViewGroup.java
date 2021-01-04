@@ -18,7 +18,7 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.util.Util;
 import net.minecraftforge.api.distmarker.Dist;
@@ -919,7 +919,7 @@ public abstract class ViewGroup extends View implements IViewParent {
      * Tells the ViewGroup whether to draw its children in the order defined by the method
      * {@link #getChildDrawingOrder(int, int)}.
      * <p>
-     * Note that {@link View#getZ() Z} reordering, done by {@link #dispatchDraw(Canvas)},
+     * Note that View#getZ() reordering, done by {@link #dispatchDraw(Canvas)},
      * will override custom child ordering done via this method.
      *
      * @param enabled true if the order of the children when drawing is determined by
@@ -962,6 +962,32 @@ public abstract class ViewGroup extends View implements IViewParent {
      */
     public final int getChildDrawingOrder(int drawingPosition) {
         return getChildDrawingOrder(getChildCount(), drawingPosition);
+    }
+
+    /**
+     * Sets whether this ViewGroup's drawable states also include
+     * its children's drawable states.  This is used, for example, to
+     * make a group appear to be focused when its child EditText or button
+     * is focused.
+     */
+    public void setAddStatesFromChildren(boolean addsStates) {
+        if (addsStates) {
+            mGroupFlags |= FLAG_ADD_STATES_FROM_CHILDREN;
+        } else {
+            mGroupFlags &= ~FLAG_ADD_STATES_FROM_CHILDREN;
+        }
+
+        refreshDrawableState();
+    }
+
+    /**
+     * Returns whether this ViewGroup's drawable states also include
+     * its children's drawable states.  This is used, for example, to
+     * make a group appear to be focused when its child EditText or button
+     * is focused.
+     */
+    public boolean addStatesFromChildren() {
+        return (mGroupFlags & FLAG_ADD_STATES_FROM_CHILDREN) != 0;
     }
 
     /**

@@ -26,7 +26,7 @@ import icyllis.modernui.font.glyph.GlyphManager;
 import icyllis.modernui.font.glyph.TexturedGlyph;
 import icyllis.modernui.font.pipeline.*;
 import icyllis.modernui.graphics.math.Color3i;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.Canvas;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.text.Style;

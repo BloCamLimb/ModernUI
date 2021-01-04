@@ -16,14 +16,15 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.renderer;
+package icyllis.modernui.graphics;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.pipeline.TextRenderNode;
 import icyllis.modernui.font.process.TextLayoutProcessor;
-import icyllis.modernui.font.text.TextAlign;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.math.Color3i;
+import icyllis.modernui.graphics.math.Icon;
+import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.graphics.shader.program.*;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.view.UIManager;
@@ -61,7 +62,7 @@ import javax.annotation.Nonnull;
  */
 @SuppressWarnings("unused")
 //TODO New render system (LOWEST PRIORITY)
-public class Canvas extends RenderCore {
+public class Canvas {
 
     private static Canvas instance;
 
@@ -115,7 +116,7 @@ public class Canvas extends RenderCore {
     /**
      * Text align
      */
-    private float textAlignFactor = TextAlign.LEFT.offsetFactor;
+    private float alignFactor = TextAlign.LEFT.offsetFactor;
 
 
     /**
@@ -125,14 +126,14 @@ public class Canvas extends RenderCore {
 
 
     private Canvas(@Nonnull Minecraft minecraft) {
-        checkCapabilities();
+        RenderCore.startRenderEngine();
         mainWindow = minecraft.getMainWindow();
         itemRenderer = minecraft.getItemRenderer();
         fontEngine.initRenderer();
     }
 
     /**
-     * This will init the render system of Modern UI. Always do not call this
+     * This will start the render engine of Modern UI. Always do not call this
      * at the wrong time.
      *
      * @return the instance
@@ -142,7 +143,7 @@ public class Canvas extends RenderCore {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
         if (instance == null) {
             instance = new Canvas(Minecraft.getInstance());
-            ModernUI.LOGGER.debug(MARKER, "Render system initialized");
+            ModernUI.LOGGER.debug(RenderCore.MARKER, "Render engine started");
         }
         return instance;
     }
@@ -300,7 +301,7 @@ public class Canvas extends RenderCore {
      * @see #drawText(String, float, float)
      */
     public void setTextAlign(@Nonnull TextAlign align) {
-        textAlignFactor = align.offsetFactor;
+        alignFactor = align.offsetFactor;
     }
 
     /**
@@ -316,8 +317,8 @@ public class Canvas extends RenderCore {
      * custom color, font size, etc) to different parts of the text. Because of
      * localization, the length of each part of the text is uncertain.
      * <p>
-     * To achieve these things, use a {@link TextView}, we also support markdown
-     * syntax using commonmark specification.
+     * To achieve these things, use a {@link icyllis.modernui.widget.TextView}, we
+     * also support markdown syntax using commonmark specification.
      *
      * @param text the text to draw
      * @param x    the x-coordinate of origin for where to draw the text
@@ -329,8 +330,8 @@ public class Canvas extends RenderCore {
         if (text == null || text.isEmpty())
             return 0;
         final TextRenderNode node = fontEngine.lookupVanillaNode(text, Style.EMPTY);
-        if (textAlignFactor > 0)
-            x -= node.advance * textAlignFactor;
+        if (alignFactor > 0)
+            x -= node.advance * alignFactor;
         return node.drawText(bufferBuilder, text, x, y, r, g, b, a);
     }
 
@@ -501,11 +502,11 @@ public class Canvas extends RenderCore {
      * @param outerRadius outer circle radius
      */
     public void drawRing(float centerX, float centerY, float innerRadius, float outerRadius) {
-        useShader(ring);
+        RenderCore.useShader(ring);
         ring.setRadius(innerRadius, outerRadius);
         ring.setCenter(centerX, centerY);
         drawRect(centerX - outerRadius, centerY - outerRadius, centerX + outerRadius, centerY + outerRadius);
-        releaseShader();
+        RenderCore.releaseShader();
     }
 
     /**
@@ -518,11 +519,11 @@ public class Canvas extends RenderCore {
      * @param radius  circle radius
      */
     public void drawCircle(float centerX, float centerY, float radius) {
-        useShader(circle);
+        RenderCore.useShader(circle);
         circle.setRadius(radius);
         circle.setCenter(centerX, centerY);
         drawRect(centerX - radius, centerY - radius, centerX + radius, centerY + radius);
-        releaseShader();
+        RenderCore.releaseShader();
     }
 
     /**
@@ -558,11 +559,11 @@ public class Canvas extends RenderCore {
      * @param radius the rounded corner radius
      */
     public void drawRoundedRect(float left, float top, float right, float bottom, float radius) {
-        useShader(roundedRect);
+        RenderCore.useShader(roundedRect);
         roundedRect.setRadius(radius);
         roundedRect.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
         drawRect(left, top, right, bottom);
-        releaseShader();
+        RenderCore.releaseShader();
     }
 
     /**
@@ -579,11 +580,11 @@ public class Canvas extends RenderCore {
      * @param radius the rounded corner radius
      */
     public void drawRoundedFrame(float left, float top, float right, float bottom, float radius) {
-        useShader(roundedFrame);
+        RenderCore.useShader(roundedFrame);
         roundedFrame.setRadius(radius);
         roundedFrame.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
         drawRect(left, top, right, bottom);
-        releaseShader();
+        RenderCore.releaseShader();
     }
 
     /**
@@ -595,14 +596,14 @@ public class Canvas extends RenderCore {
      * @param top       rect top
      * @param right     rect right
      * @param bottom    rect bottom
-     * @param thickness feather thickness (>= 0.5 is better)
+     * @param thickness feather thickness (&lt;= 0.5 is better)
      */
     public void drawFeatheredRect(float left, float top, float right, float bottom, float thickness) {
-        useShader(featheredRect);
+        RenderCore.useShader(featheredRect);
         featheredRect.setThickness(thickness);
         featheredRect.setInnerRect(left + thickness, top + thickness, right - thickness, bottom - thickness);
         drawRect(left, top, right, bottom);
-        releaseShader();
+        RenderCore.releaseShader();
     }
 
     /**

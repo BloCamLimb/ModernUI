@@ -18,9 +18,9 @@
 
 package icyllis.modernui.test.widget;
 
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.view.UITools;
-import icyllis.modernui.font.text.TextAlign;
+import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.test.discard.Align9D;
 import icyllis.modernui.test.discard.Locator;
 import icyllis.modernui.test.discard.IHost;

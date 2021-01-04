@@ -19,7 +19,7 @@
 package icyllis.modernui.test.drawable;
 
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.Canvas;
 
 import javax.annotation.Nonnull;
 

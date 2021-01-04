@@ -18,8 +18,8 @@
 
 package icyllis.modernui.test;
 
-import icyllis.modernui.font.text.TextAlign;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.math.TextAlign;
+import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.widget.RelativeLayout;
 import icyllis.modernui.view.View;

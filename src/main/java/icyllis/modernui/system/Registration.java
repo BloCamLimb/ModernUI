@@ -18,6 +18,7 @@
 
 package icyllis.modernui.system;
 
+import icyllis.modernui.font.ModernFontRenderer;
 import icyllis.modernui.network.NetworkHandler;
 import icyllis.modernui.plugin.IMuiPlugin;
 import icyllis.modernui.plugin.MuiPlugin;
@@ -29,6 +30,7 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundEvent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.event.ParticleFactoryRegisterEvent;
 import net.minecraftforge.common.extensions.IForgeContainerType;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -81,6 +83,13 @@ public final class Registration {
         TEST_MENU = registerMenu(registry, TestMenu::new, "test");
     }
 
+    @OnlyIn(Dist.CLIENT)
+    @SubscribeEvent
+    static void loadingClient(ParticleFactoryRegisterEvent event) {
+        // this event fired after LOAD_REGISTRIES and before COMMON_SETUP on client main thread
+        // we use this because we want a ResourceReloadListener after language data reloaded
+    }
+
     @SubscribeEvent
     static void setupCommon(@Nonnull FMLCommonSetupEvent event) {
         Map<String, IMuiPlugin> plugins = new HashMap<>();
@@ -123,7 +132,12 @@ public final class Registration {
     static void setupClient(@Nonnull FMLClientSetupEvent event) {
         //SettingsManager.INSTANCE.buildAllSettings();
         //UIManager.getInstance().registerMenuScreen(Registration.TEST_MENU, menu -> new TestUI());
-        event.getMinecraftSupplier().get().runAsync(UIManager::initRenderer);
+
+        // this event fired after client config first loaded
+        event.getMinecraftSupplier().get().runAsync(() -> {
+            UIManager.initRenderer();
+            ModernFontRenderer.change(Config.CLIENT_CONFIG.globalRenderer.get());
+        });
     }
 
     @Nonnull

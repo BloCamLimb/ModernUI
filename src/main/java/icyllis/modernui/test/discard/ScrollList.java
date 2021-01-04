@@ -18,7 +18,7 @@
 
 package icyllis.modernui.test.discard;
 
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.Canvas;
 
 import java.util.ArrayList;
 import java.util.Collection;

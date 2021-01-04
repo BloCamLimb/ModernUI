@@ -16,16 +16,9 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.font.text;
+package icyllis.modernui.widget;
 
-public enum TextAlign {
-    LEFT(0.0f),
-    CENTER(0.5f),
-    RIGHT(1.0f);
+import icyllis.modernui.view.View;
 
-    public final float offsetFactor;
-
-    TextAlign(float offsetFactor) {
-        this.offsetFactor = offsetFactor;
-    }
+public class TextView extends View {
 }

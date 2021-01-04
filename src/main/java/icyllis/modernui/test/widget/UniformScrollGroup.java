@@ -18,7 +18,7 @@
 
 package icyllis.modernui.test.widget;
 
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.test.discard.IScrollHost;
 import icyllis.modernui.test.discard.ScrollGroup;
 

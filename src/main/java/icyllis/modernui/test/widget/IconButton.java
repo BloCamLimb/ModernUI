@@ -19,8 +19,8 @@
 package icyllis.modernui.test.widget;
 
 import com.google.gson.annotations.Expose;
-import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.graphics.renderer.Icon;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.math.Icon;
 import icyllis.modernui.test.discard.Align9D;
 import icyllis.modernui.test.discard.Locator;
 import icyllis.modernui.test.discard.IHost;

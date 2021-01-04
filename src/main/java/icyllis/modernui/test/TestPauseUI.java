@@ -20,7 +20,7 @@ package icyllis.modernui.test;
 
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.view.ApplicationUI;
 import icyllis.modernui.view.View;
 import icyllis.modernui.widget.FrameLayout;

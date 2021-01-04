@@ -18,8 +18,8 @@
 
 package icyllis.modernui.test.discard;
 
-import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.font.text.TextAlign;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.test.widget.UniformScrollEntry;
 import icyllis.modernui.test.widget.UniformScrollGroup;
 

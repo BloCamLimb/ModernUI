@@ -20,7 +20,7 @@ package icyllis.modernui.view;
 
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.math.Point;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.widget.ScrollController;
 import net.minecraft.client.gui.screen.Screen;

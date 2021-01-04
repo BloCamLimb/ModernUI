@@ -68,16 +68,22 @@ public class NetworkHandler {
     private final IServerMsgHandler serverHandler;
 
     // a ByteBuf wrapper for write data more friendly
-    // the wrapped ByteBuf will be deallocate by netty
     private PacketBuffer buffer;
 
     /**
-     * Create a network handler of a mod
+     * Create a network handler of a mod. This is a dist-sensitive operation,
+     * you may consider the following example:
+     *
+     * <pre>
+     * network = new NetworkHandler(ModernUI.MODID, "main_network", DistExecutor.safeRunForDist(() -> NetMessages::handle, () -> NetMessages::ignore), NetMessages::handle);
+     * </pre>
      *
      * @param modid         mod id
      * @param name          network channel name
      * @param clientHandler a handler to handle server-to-client messages
      * @param serverHandler a handler to handle client-to-server messages
+     * @see net.minecraftforge.fml.DistExecutor
+     * @see icyllis.modernui.system.NetMessages
      */
     public NetworkHandler(@Nonnull String modid, @Nonnull String name,
                           @Nullable IClientMsgHandler clientHandler, @Nullable IServerMsgHandler serverHandler) {

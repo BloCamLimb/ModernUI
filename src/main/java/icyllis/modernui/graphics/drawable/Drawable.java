@@ -18,7 +18,7 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.Canvas;
 
 import javax.annotation.Nonnull;
 
