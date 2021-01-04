@@ -19,8 +19,8 @@
 package icyllis.modernui.test;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.font.text.TextAlign;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.math.TextAlign;
+import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.system.mixin.AccessFoodData;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;

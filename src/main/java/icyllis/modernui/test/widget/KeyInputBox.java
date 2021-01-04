@@ -18,9 +18,8 @@
 
 package icyllis.modernui.test.widget;
 
-import icyllis.modernui.font.text.TextAlign;
-import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.test.widget.TextField;
+import icyllis.modernui.graphics.math.TextAlign;
+import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.view.*;
 import icyllis.modernui.test.discard.IHost;
 import icyllis.modernui.test.discard.IKeyboardListener;

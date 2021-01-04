@@ -119,8 +119,8 @@ public class TexturedGlyph {
         builder.pos(x + width, y, 0).color(r, g, b, a).tex(u2, v1).endVertex();
     }
 
-    public void drawGlyph(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, float x, float y, int r, int g, int b, int a, boolean transparent, int packedLight) {
-        IVertexBuilder builder = buffer.getBuffer(transparent ? seeThroughType : renderType);
+    public void drawGlyph(Matrix4f matrix, @Nonnull IRenderTypeBuffer buffer, float x, float y, int r, int g, int b, int a, boolean seeThrough, int packedLight) {
+        IVertexBuilder builder = buffer.getBuffer(seeThrough ? seeThroughType : renderType);
         x += baselineX;
         y += baselineY;
         builder.pos(matrix, x, y, 0).color(r, g, b, a).tex(u1, v1).lightmap(packedLight).endVertex();

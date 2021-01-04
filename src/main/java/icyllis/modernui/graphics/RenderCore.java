@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.renderer;
+package icyllis.modernui.graphics;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.glyph.GlyphManager;
@@ -42,11 +42,13 @@ import javax.annotation.Nonnull;
 import java.util.function.Predicate;
 
 @OnlyIn(Dist.CLIENT)
-public class RenderCore {
+public final class RenderCore {
 
     public static final Marker MARKER = MarkerManager.getMarker("Render");
 
     public static int glCapabilitiesErrors;
+
+    static boolean renderEngineStarted = false;
 
     public static void init() {
         ((IReloadableResourceManager) Minecraft.getInstance().getResourceManager()).addReloadListener(
@@ -78,7 +80,10 @@ public class RenderCore {
      *
      * @since 2.0.5
      */
-    static void checkCapabilities() {
+    static void startRenderEngine() {
+        if (renderEngineStarted) {
+            return;
+        }
         GLCapabilities capabilities = GL.getCapabilities();
         int i = 0;
         if (!capabilities.GL_ARB_vertex_buffer_object) {
@@ -120,6 +125,12 @@ public class RenderCore {
         if (i != 0) {
             glCapabilitiesErrors = i;
         }
+
+        renderEngineStarted = true;
+    }
+
+    public static boolean isRenderEngineStarted() {
+        return renderEngineStarted;
     }
 
     /*@Nonnull

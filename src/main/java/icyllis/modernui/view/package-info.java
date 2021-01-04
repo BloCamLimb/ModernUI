@@ -16,18 +16,8 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.impl.setting;
-
-import icyllis.modernui.graphics.Canvas;
-
-public class CheckboxSettingEntry extends SettingEntry {
-
-    public CheckboxSettingEntry(SettingScrollWindow windowString, String optionTitle) {
-        super(windowString, optionTitle);
-    }
-
-    @Override
-    protected void drawExtra(Canvas canvas, float time) {
-
-    }
-}
+/**
+ * Provides classes that expose basic user interface classes that
+ * handle screen layout and interaction with the user.
+ */
+package icyllis.modernui.view;

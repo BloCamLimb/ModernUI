@@ -83,9 +83,6 @@ public class Fragment implements ILifecycleOwner, IViewModelStoreOwner {
      * <p>
      * If this fragment is main fragment of a UI, this method
      * should create the main view of the UI, and can't be null.
-     * <p>
-     * The main view of a UI is considered as a window.
-     * See {@link ViewRootImpl.LayoutParams}
      *
      * @return view instance or null
      */
@@ -156,16 +153,6 @@ public class Fragment implements ILifecycleOwner, IViewModelStoreOwner {
      * lifecycle. In most cases, this mirrors the lifecycle of the Fragment itself, but in cases
      * of {@link FragmentTransaction#detach(Fragment) detached} Fragments, the lifecycle of the
      * Fragment can be considerably longer than the lifecycle of the View itself.
-     *
-     * The first method where it is safe to access the view lifecycle is
-     * {@link #onCreateView(LayoutInflater, ViewGroup, Bundle)} under the condition that you must
-     * return a non-null view (an IllegalStateException will be thrown if you access the view
-     * lifecycle but don't return a non-null view).
-     * <p>The view lifecycle remains valid through the call to {@link #onDestroyView()}, after which
-     * {@link #getView()} will return null, the view lifecycle will be destroyed, and this method
-     * will throw an IllegalStateException. Consider using
-     * {@link #getViewLifecycleOwnerLiveData()} or {@link FragmentTransaction#runOnCommit(Runnable)}
-     * to receive a callback for when the Fragment's view lifecycle is available.
      *
      * @return A {@link ILifecycleOwner} that represents the {@link #getView() Fragment's View}
      * lifecycle.

@@ -19,7 +19,7 @@
 package icyllis.modernui.test.widget;
 
 import com.google.gson.annotations.Expose;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.test.discard.IHost;
 import icyllis.modernui.test.discard.Widget;
 import icyllis.modernui.test.discard.Align9D;

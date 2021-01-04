@@ -31,20 +31,23 @@ import javax.annotation.Nullable;
 
 /**
  * This event occurred when the server requires the client to open a user
- * interface to display the container menu, this event is cancelled after
- * setting the application UI. The menu is created on the client by registered
+ * interface to display a container menu in a world, this event is cancelled
+ * after setting the application UI. The menu is created on the client by registered
  * {@link net.minecraftforge.fml.network.IContainerFactory factory}, which
  * contains custom network data from server, you can set the application UI
  * through the data and the menu type.  For example:
  *
  * <pre>
  * &#64;SubscribeEvent
- * static void onMenuOpen(@Nonnull OpenMenuEvent event) {
+ * static void onMenuOpen(OpenMenuEvent event) {
  *     if (event.getMenu().getType() == Registration.TEST_MENU) {
  *         event.setApplicationUI(new TestUI());
  *     }
  * }
  * </pre>
+ *
+ * If no application UI set along with this event, the server container menu
+ * will be closed.
  */
 @Cancelable
 @OnlyIn(Dist.CLIENT)

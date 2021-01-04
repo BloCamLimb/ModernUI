@@ -19,9 +19,9 @@
 package icyllis.modernui.impl.setting;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.font.text.TextAlign;
+import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.graphics.math.Color3i;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.impl.module.SettingResourcePack;
 import icyllis.modernui.view.UITools;
 import icyllis.modernui.test.discard.Align9D;

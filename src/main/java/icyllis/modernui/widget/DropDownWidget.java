@@ -18,14 +18,14 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.graphics.renderer.Icon;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.math.Icon;
 import icyllis.modernui.view.UITools;
 import icyllis.modernui.view.UIManager;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
 import icyllis.modernui.test.discard.Align9D;
-import icyllis.modernui.font.text.TextAlign;
+import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.test.popup.DropDownMenu;
 import icyllis.modernui.test.popup.PopupMenu;
 import icyllis.modernui.test.discard.IHost;

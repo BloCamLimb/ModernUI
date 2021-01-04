@@ -19,7 +19,7 @@
 package icyllis.modernui.test.discard;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.view.View;
 import icyllis.modernui.widget.ScrollController;
 import net.minecraft.client.renderer.BufferBuilder;

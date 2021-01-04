@@ -18,7 +18,7 @@
 
 package icyllis.modernui.system;
 
-import icyllis.modernui.graphics.renderer.RenderCore;
+import icyllis.modernui.graphics.RenderCore;
 import icyllis.modernui.view.LayoutIO;
 import net.minecraftforge.eventbus.api.BusBuilder;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -82,12 +82,18 @@ public final class ModernUI {
     // Java 1.8.0_51 which is officially used by Mojang will produce bugs with Modern UI
     private static void checkJava() {
         String javaVersion = System.getProperty("java.version");
-        if (javaVersion != null && javaVersion.startsWith("1.8")) {
-            int update = Integer.parseInt(javaVersion.split("_")[1]);
-            if (update < 60) {
-                throw new RuntimeException(
-                        "Java " + javaVersion + " is not compatible with Modern UI, " +
-                                "a minimum of java 1.8.0_251 or above is required");
+        if (javaVersion == null) {
+            LOGGER.fatal(MARKER, "Java version is missing");
+        } else if (javaVersion.startsWith("1.8")) {
+            try {
+                int update = Integer.parseInt(javaVersion.split("_")[1].split("-")[0]);
+                if (update < 251) {
+                    throw new RuntimeException(
+                            "Java " + javaVersion + " is not compatible with Modern UI, " +
+                                    "a minimum of java 1.8.0_251 or above is required");
+                }
+            } catch (NumberFormatException | IndexOutOfBoundsException e) {
+                LOGGER.warn(MARKER, "Failed to check java version: {}", javaVersion, e);
             }
         }
     }

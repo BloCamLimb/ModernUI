@@ -18,7 +18,7 @@
 
 package icyllis.modernui.system;
 
-import icyllis.modernui.graphics.renderer.RenderCore;
+import icyllis.modernui.graphics.RenderCore;
 import icyllis.modernui.plugin.event.OpenMenuEvent;
 import icyllis.modernui.test.TestMenu;
 import icyllis.modernui.test.TestUI;
@@ -30,9 +30,14 @@ import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.server.FMLServerStartedEvent;
+import net.minecraftforge.fml.event.server.FMLServerStoppingEvent;
+import net.minecraftforge.fml.server.ServerLifecycleHooks;
 
 import javax.annotation.Nonnull;
 
@@ -49,6 +54,30 @@ final class EventHandler {
                 MServerContext.openMenu(event.getPlayer(), TestMenu::new);
             }
         }
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    static void onServerTick(@Nonnull TickEvent.ServerTickEvent event) {
+        if (event.phase == TickEvent.Phase.END) {
+            if (MServerContext.getShutdownTime() > 0) {
+                long countdown = MServerContext.getShutdownTime() - System.currentTimeMillis();
+                MServerContext.sendShutdownNotification(countdown);
+                if (countdown <= 0) {
+                    ServerLifecycleHooks.getCurrentServer().initiateShutdown(false);
+                }
+            }
+        }
+    }
+
+    @SubscribeEvent
+    static void onServerStarted(@Nonnull FMLServerStartedEvent event) {
+        MServerContext.serverStarted = true;
+        MServerContext.determineShutdownTime();
+    }
+
+    @SubscribeEvent
+    static void onServerStopping(@Nonnull FMLServerStoppingEvent event) {
+        MServerContext.serverStarted = false;
     }
 
     /*@SubscribeEvent

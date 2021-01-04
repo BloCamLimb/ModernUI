@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.renderer;
+package icyllis.modernui.graphics.math;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;

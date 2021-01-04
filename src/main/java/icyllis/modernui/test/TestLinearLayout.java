@@ -19,9 +19,9 @@
 package icyllis.modernui.test;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.font.text.TextAlign;
+import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
 import icyllis.modernui.animation.ITimeInterpolator;

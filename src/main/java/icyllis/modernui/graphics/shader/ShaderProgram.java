@@ -18,7 +18,7 @@
 
 package icyllis.modernui.graphics.shader;
 
-import icyllis.modernui.graphics.renderer.RenderCore;
+import icyllis.modernui.graphics.RenderCore;
 import icyllis.modernui.system.ModernUI;
 import net.minecraft.client.shader.IShaderManager;
 import net.minecraft.client.shader.ShaderLinkHelper;

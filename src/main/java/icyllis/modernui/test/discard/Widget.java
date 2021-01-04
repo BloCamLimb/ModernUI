@@ -19,7 +19,7 @@
 package icyllis.modernui.test.discard;
 
 import com.google.gson.annotations.Expose;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.Canvas;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

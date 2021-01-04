@@ -19,11 +19,10 @@
 package icyllis.modernui.test.drawable;
 
 import icyllis.modernui.animation.ITimeInterpolator;
-import icyllis.modernui.font.text.TextAlign;
+import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
-import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.test.drawable.Background;
+import icyllis.modernui.graphics.Canvas;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;

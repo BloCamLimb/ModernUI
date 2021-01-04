@@ -21,6 +21,7 @@ package icyllis.modernui.font;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.font.pipeline.TextRenderNode;
 import icyllis.modernui.font.process.TextLayoutProcessor;
+import icyllis.modernui.graphics.RenderCore;
 import icyllis.modernui.system.mixin.AccessFontRenderer;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.fonts.Font;
@@ -93,16 +94,18 @@ public class ModernFontRenderer extends FontRenderer {
 
     public static void change(boolean global) {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
-        if (instance.globalRenderer != global) {
-            if (global) {
-                ObfuscationReflectionHelper.setPrivateValue(FontRenderer.class,
-                        instance, instance.textHandler, "field_238402_e_");
-            } else {
-                ObfuscationReflectionHelper.setPrivateValue(FontRenderer.class,
-                        instance, instance.stringSplitter, "field_238402_e_");
+        if (RenderCore.isRenderEngineStarted()) {
+            if (instance.globalRenderer != global) {
+                if (global) {
+                    ObfuscationReflectionHelper.setPrivateValue(FontRenderer.class,
+                            instance, instance.textHandler, "field_238402_e_");
+                } else {
+                    ObfuscationReflectionHelper.setPrivateValue(FontRenderer.class,
+                            instance, instance.stringSplitter, "field_238402_e_");
+                }
             }
+            instance.globalRenderer = global;
         }
-        instance.globalRenderer = global;
     }
 
     public static boolean isGlobalRenderer() {
@@ -202,7 +205,7 @@ public class ModernFontRenderer extends FontRenderer {
     }
 
     private float drawLayer0(@Nonnull CharSequence string, float x, float y, int color, boolean dropShadow, Matrix4f matrix,
-                             @Nonnull IRenderTypeBuffer buffer, boolean transparent, int colorBackground, int packedLight, Style style) {
+                             @Nonnull IRenderTypeBuffer buffer, boolean seeThrough, int colorBackground, int packedLight, Style style) {
         if (string.length() == 0)
             return 0;
 
@@ -219,12 +222,12 @@ public class ModernFontRenderer extends FontRenderer {
         TextRenderNode node = fontEngine.lookupVanillaNode(string, style);
         if (dropShadow && allowShadow) {
             node.drawText(matrix, buffer, string, x + 0.8f, y + 0.8f, r >> 2, g >> 2, b >> 2, a, true,
-                    transparent, colorBackground, packedLight);
+                    seeThrough, colorBackground, packedLight);
             matrix = matrix.copy(); // if not drop shadow, we don't need to copy the matrix
             matrix.translate(AccessFontRenderer.shadowLifting());
         }
 
-        return node.drawText(matrix, buffer, string, x, y, r, g, b, a, false, transparent, colorBackground, packedLight);
+        return node.drawText(matrix, buffer, string, x, y, r, g, b, a, false, seeThrough, colorBackground, packedLight);
     }
 
     /*@Override

@@ -20,8 +20,8 @@ package icyllis.modernui.test.widget;
 
 import com.google.common.collect.Lists;
 import com.google.gson.annotations.Expose;
-import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.graphics.renderer.Icon;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.math.Icon;
 import icyllis.modernui.animation.AnimationControl;
 import icyllis.modernui.view.UITools;
 import icyllis.modernui.animation.Animation;

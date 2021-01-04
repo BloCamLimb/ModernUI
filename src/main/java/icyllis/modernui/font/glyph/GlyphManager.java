@@ -62,8 +62,8 @@ import java.util.Optional;
 /**
  * Draw using glyphs of different sizes and fonts, and store them in auto generated OpenGL textures
  * <p>
- * RAM usage: < 10MB
- * GPU memory usage: < 22MB
+ * RAM usage: &lt; 10MB
+ * GPU memory usage: &lt; 22MB
  */
 @SuppressWarnings("unused")
 public class GlyphManager {

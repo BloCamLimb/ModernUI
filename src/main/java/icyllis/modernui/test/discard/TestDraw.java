@@ -23,7 +23,7 @@ import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
 import icyllis.modernui.animation.ITimeInterpolator;
 import icyllis.modernui.animation.interpolator.OvershootInterpolator;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.Canvas;
 
 import javax.annotation.Nonnull;
 

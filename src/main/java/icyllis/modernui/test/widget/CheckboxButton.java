@@ -18,8 +18,8 @@
 
 package icyllis.modernui.test.widget;
 
-import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.graphics.renderer.Icon;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.math.Icon;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
 import icyllis.modernui.view.UITools;

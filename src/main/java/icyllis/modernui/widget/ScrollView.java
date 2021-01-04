@@ -19,10 +19,9 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.test.drawable.ScrollThumbDrawable;
 import icyllis.modernui.view.MotionEvent;
-import icyllis.modernui.view.UIManager;
 import icyllis.modernui.view.View;
 
 import javax.annotation.Nonnull;

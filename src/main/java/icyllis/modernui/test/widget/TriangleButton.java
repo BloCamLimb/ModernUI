@@ -18,8 +18,8 @@
 
 package icyllis.modernui.test.widget;
 
-import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.graphics.renderer.Icon;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.math.Icon;
 import icyllis.modernui.view.UITools;
 import icyllis.modernui.test.discard.Align9D;
 import icyllis.modernui.test.discard.Direction4D;

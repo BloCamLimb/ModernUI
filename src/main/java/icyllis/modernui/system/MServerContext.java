@@ -25,18 +25,102 @@ import net.minecraft.inventory.container.IContainerProvider;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.PlayerContainerEvent;
 import net.minecraftforge.fml.network.IContainerFactory;
+import net.minecraftforge.fml.server.ServerLifecycleHooks;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.function.Consumer;
 
 /**
- * Modern UI server service
+ * Modern UI server service, both for dedicated server or integrated server
  */
 public final class MServerContext {
+
+    static boolean serverStarted = false;
+
+    // time in millis that server will auto-shutdown
+    private static long shutdownTime = 0;
+
+    private static long nextShutdownNotifyTime = 0;
+    private static final long[] shutdownNotifyTimes = new long[]{
+            1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 60000, 300000, 600000, 1800000};
+
+    static void determineShutdownTime() {
+        if (Config.COMMON_CONFIG.autoShutdown.get()) {
+            Calendar calendar = Calendar.getInstance();
+            int current = calendar.get(Calendar.HOUR_OF_DAY) * 3600 + calendar.get(Calendar.MINUTE) * 60 + calendar.get(Calendar.SECOND);
+            int target = Integer.MAX_VALUE;
+            for (String s : Config.COMMON_CONFIG.shutdownTimes.get()) {
+                try {
+                    String[] s1 = s.split(":", 2);
+                    int h = Integer.parseInt(s1[0]);
+                    int m = Integer.parseInt(s1[1]);
+                    if (h >= 0 && h < 24 && m >= 0 && m < 60) {
+                        int t = h * 3600 + m * 60;
+                        if (t < current) {
+                            t += 86400;
+                        }
+                        target = Math.min(t, target);
+                    } else {
+                        ModernUI.LOGGER.error(ModernUI.MARKER, "Wrong time format while setting auto-shutdown time, input: {}", s);
+                    }
+                } catch (NumberFormatException | IndexOutOfBoundsException e) {
+                    ModernUI.LOGGER.error(ModernUI.MARKER, "Wrong time format while setting auto-shutdown time, input: {}", s, e);
+                }
+            }
+            if (target < Integer.MAX_VALUE && target > current) {
+                shutdownTime = System.currentTimeMillis() + (target - current) * 1000L;
+                ModernUI.LOGGER.debug(ModernUI.MARKER, "Server will shutdown at {}",
+                        new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(shutdownTime)));
+                nextShutdownNotifyTime = shutdownNotifyTimes[shutdownNotifyTimes.length - 1];
+            } else {
+                shutdownTime = 0;
+            }
+        } else {
+            shutdownTime = 0;
+        }
+    }
+
+    static void sendShutdownNotification(long countdown) {
+        if (countdown < nextShutdownNotifyTime) {
+            while (countdown < nextShutdownNotifyTime) {
+                int index = Arrays.binarySearch(shutdownNotifyTimes, nextShutdownNotifyTime);
+                if (index > 0) {
+                    nextShutdownNotifyTime = shutdownNotifyTimes[index - 1];
+                } else if (index == 0) {
+                    nextShutdownNotifyTime = 0;
+                    break;
+                } else {
+                    nextShutdownNotifyTime = shutdownNotifyTimes[0];
+                }
+            }
+            long l = Math.round(countdown / 1000D);
+            String text;
+            if (l > 60) {
+                l = Math.round(l / 60D);
+                text = "Server will shutdown in " + l + " minutes";
+            } else {
+                text = "Server will shutdown in " + l + " seconds";
+            }
+            ModernUI.LOGGER.info(ModernUI.MARKER, text);
+            ITextComponent component = new StringTextComponent(text).mergeStyle(TextFormatting.LIGHT_PURPLE);
+            ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers().forEach(p -> p.sendStatusMessage(component, true));
+        }
+    }
+
+    static long getShutdownTime() {
+        return shutdownTime;
+    }
 
     /**
      * Open a container menu on server, generate an id represents the next screen.

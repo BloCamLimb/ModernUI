@@ -18,13 +18,9 @@
 
 package icyllis.modernui.test;
 
-import icyllis.modernui.graphics.renderer.Canvas;
-import icyllis.modernui.widget.FrameLayout;
-import icyllis.modernui.view.Gravity;
+import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.view.View;
-import icyllis.modernui.view.ViewRootImpl;
-import icyllis.modernui.widget.ScrollView;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

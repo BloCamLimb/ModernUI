@@ -19,7 +19,7 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.MeasureSpec;
 import icyllis.modernui.view.View;

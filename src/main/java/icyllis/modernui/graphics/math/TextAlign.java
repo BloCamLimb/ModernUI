@@ -16,18 +16,16 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.impl.setting;
+package icyllis.modernui.graphics.math;
 
-import icyllis.modernui.graphics.Canvas;
+public enum TextAlign {
+    LEFT(0.0f),
+    CENTER(0.5f),
+    RIGHT(1.0f);
 
-public class CheckboxSettingEntry extends SettingEntry {
+    public final float offsetFactor;
 
-    public CheckboxSettingEntry(SettingScrollWindow windowString, String optionTitle) {
-        super(windowString, optionTitle);
-    }
-
-    @Override
-    protected void drawExtra(Canvas canvas, float time) {
-
+    TextAlign(float offsetFactor) {
+        this.offsetFactor = offsetFactor;
     }
 }

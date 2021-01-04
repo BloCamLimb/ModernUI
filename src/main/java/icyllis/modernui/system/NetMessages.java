@@ -42,15 +42,18 @@ public final class NetMessages {
     private NetMessages() {
     }
 
+    // handle c2s messages
     static void handle(short index, @Nonnull PacketBuffer payload, @Nullable ServerPlayerEntity player) {
 
     }
 
+    // return a safe supplier of a s2c handler on client
     @Nonnull
     static NetworkHandler.IClientMsgHandler handle() {
         return C::handle;
     }
 
+    // return a safe supplier of a s2c handler on dedicated server
     @Nullable
     static NetworkHandler.IClientMsgHandler ignore() {
         return null;
@@ -74,7 +77,7 @@ public final class NetMessages {
         return network;
     }
 
-    // on logical client
+    // this class doesn't exist on dedicated server
     @OnlyIn(Dist.CLIENT)
     public static final class C {
 

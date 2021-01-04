@@ -19,12 +19,12 @@
 package icyllis.modernui.impl.module;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.graphics.renderer.Icon;
+import icyllis.modernui.graphics.math.Icon;
 import icyllis.modernui.test.widget.SearchBox;
 import icyllis.modernui.test.widget.TextIconButton;
 import icyllis.modernui.test.widget.TriangleButton;
 import icyllis.modernui.view.UIManager;
-import icyllis.modernui.font.text.TextAlign;
+import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.view.UITools;
 import icyllis.modernui.test.drawable.TextDrawable;
 import icyllis.modernui.test.discard.Align9D;

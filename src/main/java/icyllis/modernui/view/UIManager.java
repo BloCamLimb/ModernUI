@@ -22,7 +22,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.math.Point;
-import icyllis.modernui.graphics.renderer.Canvas;
+import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.plugin.event.OpenMenuEvent;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.system.mixin.MixinMouseHandler;
@@ -221,11 +221,12 @@ public final class UIManager {
 
     // Internal method
     public void openGUI(@Nonnull ClientPlayerEntity player, int containerId, int menuId, @Nonnull PacketBuffer buffer) {
-        ContainerType<?> type = Registry.MENU.getByValue(menuId);
+        final ContainerType<?> type = Registry.MENU.getByValue(menuId);
+        boolean success = false;
         if (type == null) {
             ModernUI.LOGGER.warn(MARKER, "Trying to open invalid screen for menu id: {}", menuId);
         } else {
-            Container menu = type.create(containerId, player.inventory, buffer);
+            final Container menu = type.create(containerId, player.inventory, buffer);
             //noinspection ConstantConditions
             if (menu == null) {
                 ModernUI.LOGGER.warn(MARKER, "Failed to create menu for type: {}", Registry.MENU.getKey(type));
@@ -237,9 +238,11 @@ public final class UIManager {
                     mApplicationUI = applicationUI;
                     player.openContainer = menu;
                     minecraft.displayGuiScreen(new MMenuScreen<>(menu, player.inventory, this));
+                    success = true;
                 }
             }
         }
+        if (!success) player.closeScreen();
     }
 
     /*@Nonnull
