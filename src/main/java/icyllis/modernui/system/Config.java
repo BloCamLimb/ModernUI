@@ -46,13 +46,13 @@ import java.util.function.Function;
 
 public final class Config {
 
-    static final Client CLIENT_CONFIG;
+    static final Client CLIENT;
     private static final ForgeConfigSpec CLIENT_SPEC;
 
-    static final Common COMMON_CONFIG;
+    static final Common COMMON;
     private static final ForgeConfigSpec COMMON_SPEC;
 
-    static final Server SERVER_CONFIG;
+    static final Server SERVER;
     private static final ForgeConfigSpec SERVER_SPEC;
 
     static {
@@ -60,19 +60,19 @@ public final class Config {
 
         if (FMLEnvironment.dist.isClient()) {
             builder = new ForgeConfigSpec.Builder();
-            CLIENT_CONFIG = new Client(builder);
+            CLIENT = new Client(builder);
             CLIENT_SPEC = builder.build();
         } else {
-            CLIENT_CONFIG = null;
+            CLIENT = null;
             CLIENT_SPEC = null;
         }
 
         builder = new ForgeConfigSpec.Builder();
-        COMMON_CONFIG = new Common(builder);
+        COMMON = new Common(builder);
         COMMON_SPEC = builder.build();
 
         builder = new ForgeConfigSpec.Builder();
-        SERVER_CONFIG = new Server(builder);
+        SERVER = new Server(builder);
         SERVER_SPEC = builder.build();
     }
 
@@ -90,13 +90,13 @@ public final class Config {
     static void reload(@Nonnull Cfg.ModConfigEvent event) {
         final ForgeConfigSpec spec = event.getConfig().getSpec();
         if (spec == CLIENT_SPEC) {
-            CLIENT_CONFIG.load();
+            CLIENT.load();
             ModernUI.LOGGER.debug(ModernUI.MARKER, "Client config reloaded");
         } else if (spec == COMMON_SPEC) {
-            COMMON_CONFIG.load();
+            COMMON.load();
             ModernUI.LOGGER.debug(ModernUI.MARKER, "Common config reloaded");
         } else if (spec == SERVER_SPEC) {
-            SERVER_CONFIG.load();
+            SERVER.load();
             ModernUI.LOGGER.debug(ModernUI.MARKER, "Server config reloaded");
         }
     }
@@ -314,9 +314,7 @@ public final class Config {
                 String[] r = dir.list((file, name) -> name.equals("build.gradle"));
                 ModernUI.developerMode = r != null && r.length > 0;
             }
-            if (MServerContext.serverStarted) {
-                MServerContext.determineShutdownTime();
-            }
+            ServerHandler.INSTANCE.determineShutdownTime();
         }
     }
 

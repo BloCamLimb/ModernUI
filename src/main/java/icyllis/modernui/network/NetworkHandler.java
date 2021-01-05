@@ -43,11 +43,11 @@ import net.minecraftforge.fml.network.NetworkEvent;
 import net.minecraftforge.fml.network.NetworkRegistry;
 import net.minecraftforge.fml.network.event.EventNetworkChannel;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
+import org.apache.commons.codec.digest.DigestUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -78,8 +78,8 @@ public class NetworkHandler {
      * network = new NetworkHandler(ModernUI.MODID, "main_network", DistExecutor.safeRunForDist(() -> NetMessages::handle, () -> NetMessages::ignore), NetMessages::handle);
      * </pre>
      *
-     * @param modid         mod id
-     * @param name          network channel name
+     * @param modid         the mod id
+     * @param name          the network channel name
      * @param clientHandler a handler to handle server-to-client messages
      * @param serverHandler a handler to handle client-to-server messages
      * @see net.minecraftforge.fml.DistExecutor
@@ -87,9 +87,9 @@ public class NetworkHandler {
      */
     public NetworkHandler(@Nonnull String modid, @Nonnull String name,
                           @Nullable IClientMsgHandler clientHandler, @Nullable IServerMsgHandler serverHandler) {
-        protocol = UUID.nameUUIDFromBytes(ModList.get().getModFileById(modid).getMods().stream()
+        protocol = DigestUtils.md5Hex(ModList.get().getModFileById(modid).getMods().stream()
                 .map(iModInfo -> iModInfo.getVersion().getQualifier())
-                .collect(Collectors.joining(",")).getBytes(StandardCharsets.UTF_8)).toString();
+                .collect(Collectors.joining(",")).getBytes(StandardCharsets.UTF_8));
         this.clientHandler = clientHandler;
         this.serverHandler = serverHandler;
         EventNetworkChannel network = NetworkRegistry.ChannelBuilder
@@ -102,25 +102,6 @@ public class NetworkHandler {
             network.addListener(this::onS2CMessageReceived);
         }
         network.addListener(this::onC2SMessageReceived);
-    }
-
-    /**
-     * Allocate a buffer to write packet data with index.  The packet must
-     * be dispatched later, for example {@link #sendToPlayer(PlayerEntity)}
-     *
-     * @param index The message index used on the opposite side, range from 0 to 32767
-     * @return A byte buf to write the packet data (message)
-     * @see IClientMsgHandler
-     * @see IServerMsgHandler
-     */
-    @Nonnull
-    public PacketBuffer allocBuf(int index) {
-        if (buffer != null) {
-            throw new IllegalStateException("Previous payload was not dispatched");
-        }
-        buffer = new PacketBuffer(Unpooled.buffer());
-        buffer.writeShort(index);
-        return buffer;
     }
 
     /**
@@ -138,7 +119,7 @@ public class NetworkHandler {
      * @param serverProtocol the protocol of this channel sent from server side
      * @return {@code true} to accept the protocol, {@code false} otherwise
      */
-    public boolean checkS2CProtocol(@Nonnull String serverProtocol) {
+    private boolean checkS2CProtocol(@Nonnull String serverProtocol) {
         boolean allowAbsent = optional && serverProtocol.equals(NetworkRegistry.ABSENT);
         if (allowAbsent) {
             ModernUI.LOGGER.debug(ModernUI.MARKER, "Connecting to a server that does not have {} channel available", channel);
@@ -152,7 +133,7 @@ public class NetworkHandler {
      * @param clientProtocol the protocol of this channel sent from client side
      * @return {@code true} to accept the protocol, {@code false} otherwise
      */
-    public boolean checkC2SProtocol(@Nonnull String clientProtocol) {
+    private boolean checkC2SProtocol(@Nonnull String clientProtocol) {
         if (clientProtocol.equals(NetworkRegistry.ACCEPTVANILLA)) {
             return false;
         }
@@ -183,6 +164,25 @@ public class NetworkHandler {
             }
         }
         event.getSource().get().setPacketHandled(true);
+    }
+
+    /**
+     * Allocate a buffer to write packet data with index.  The packet must
+     * be dispatched later, for example {@link #sendToPlayer(PlayerEntity)}
+     *
+     * @param index The message index used on the opposite side, range from 0 to 32767
+     * @return A byte buf to write the packet data (message)
+     * @see IClientMsgHandler
+     * @see IServerMsgHandler
+     */
+    @Nonnull
+    public PacketBuffer allocBuf(int index) {
+        if (buffer != null) {
+            throw new IllegalStateException("Previous payload was not dispatched");
+        }
+        buffer = new PacketBuffer(Unpooled.buffer());
+        buffer.writeShort(index);
+        return buffer;
     }
 
     /**
