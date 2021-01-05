@@ -18,11 +18,15 @@
 
 package icyllis.modernui.system;
 
+import cpw.mods.modlauncher.Environment;
+import cpw.mods.modlauncher.Launcher;
+import cpw.mods.modlauncher.api.IEnvironment;
 import icyllis.modernui.graphics.RenderCore;
 import icyllis.modernui.view.LayoutIO;
 import net.minecraftforge.eventbus.api.BusBuilder;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.loading.FMLCommonLaunchHandler;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -53,14 +57,25 @@ public final class ModernUI {
     public ModernUI() {
         checkJava();
 
+        boolean isDataGen = false;
+        try {
+            Environment environment = Launcher.INSTANCE.environment();
+            isDataGen = environment.findLaunchHandler(
+                    environment.getProperty(IEnvironment.Keys.LAUNCHTARGET.get())
+                            .orElse("missing"))
+                    .map(l -> ((FMLCommonLaunchHandler) l).isData())
+                    .orElse(Boolean.FALSE);
+        } catch (Exception ignored) {
+            // Non-FML environment
+        }
+
         init();
         Config.init();
         LocalStorage.init();
 
-        if (FMLEnvironment.dist.isClient()) {
+        if (!isDataGen && FMLEnvironment.dist.isClient()) {
             LayoutIO.init();
             RenderCore.init();
-            EVENT_BUS.register(EventHandler.Internal.class);
         }
 
         LOGGER.debug(MARKER, "Modern UI initialized, signed: {}", ModernUI.class.getSigners() != null);
@@ -87,10 +102,10 @@ public final class ModernUI {
         } else if (javaVersion.startsWith("1.8")) {
             try {
                 int update = Integer.parseInt(javaVersion.split("_")[1].split("-")[0]);
-                if (update < 251) {
+                if (update < 201) {
                     throw new RuntimeException(
                             "Java " + javaVersion + " is not compatible with Modern UI, " +
-                                    "a minimum of java 1.8.0_251 or above is required");
+                                    "a minimum of java 1.8.0_271 or above is required");
                 }
             } catch (NumberFormatException | IndexOutOfBoundsException e) {
                 LOGGER.warn(MARKER, "Failed to check java version: {}", javaVersion, e);

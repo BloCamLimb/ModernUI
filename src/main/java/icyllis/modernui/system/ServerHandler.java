@@ -1,0 +1,137 @@
+/*
+ * Modern UI.
+ * Copyright (C) 2019-2020 BloCamLimb. All rights reserved.
+ *
+ * Modern UI is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Modern UI is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+package icyllis.modernui.system;
+
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.event.server.FMLServerStartedEvent;
+import net.minecraftforge.fml.event.server.FMLServerStoppingEvent;
+import net.minecraftforge.fml.server.ServerLifecycleHooks;
+
+import javax.annotation.Nonnull;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+
+final class ServerHandler {
+
+    static final ServerHandler INSTANCE = new ServerHandler();
+
+    boolean serverStarted = false;
+
+    // time in millis that server will auto-shutdown
+    private long shutdownTime = 0;
+
+    private long nextShutdownNotify = 0;
+    private final long[] shutdownNotifyTimes = new long[]{
+            1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 60000, 300000, 600000, 1800000};
+
+    @SubscribeEvent
+    void onStart(@Nonnull FMLServerStartedEvent event) {
+        serverStarted = true;
+        determineShutdownTime();
+    }
+
+    @SubscribeEvent
+    void onStop(@Nonnull FMLServerStoppingEvent event) {
+        serverStarted = false;
+    }
+
+    void determineShutdownTime() {
+        if (!serverStarted) {
+            return;
+        }
+        if (Config.COMMON.autoShutdown.get()) {
+            Calendar calendar = Calendar.getInstance();
+            int current = calendar.get(Calendar.HOUR_OF_DAY) * 3600 + calendar.get(Calendar.MINUTE) * 60 + calendar.get(Calendar.SECOND);
+            int target = Integer.MAX_VALUE;
+            for (String s : Config.COMMON.shutdownTimes.get()) {
+                try {
+                    String[] s1 = s.split(":", 2);
+                    int h = Integer.parseInt(s1[0]);
+                    int m = Integer.parseInt(s1[1]);
+                    if (h >= 0 && h < 24 && m >= 0 && m < 60) {
+                        int t = h * 3600 + m * 60;
+                        if (t < current) {
+                            t += 86400;
+                        }
+                        target = Math.min(t, target);
+                    } else {
+                        ModernUI.LOGGER.error(ModernUI.MARKER, "Wrong time format while setting auto-shutdown time, input: {}", s);
+                    }
+                } catch (NumberFormatException | IndexOutOfBoundsException e) {
+                    ModernUI.LOGGER.error(ModernUI.MARKER, "Wrong time format while setting auto-shutdown time, input: {}", s, e);
+                }
+            }
+            if (target < Integer.MAX_VALUE && target > current) {
+                shutdownTime = System.currentTimeMillis() + (target - current) * 1000L;
+                ModernUI.LOGGER.debug(ModernUI.MARKER, "Server will shutdown at {}",
+                        new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(shutdownTime)));
+                nextShutdownNotify = shutdownNotifyTimes[shutdownNotifyTimes.length - 1];
+            } else {
+                shutdownTime = 0;
+            }
+        } else {
+            shutdownTime = 0;
+        }
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    void onLastEndTick(@Nonnull TickEvent.ServerTickEvent event) {
+        if (event.phase == TickEvent.Phase.END && shutdownTime > 0) {
+            long countdown = shutdownTime - System.currentTimeMillis();
+            sendShutdownNotification(countdown);
+            if (countdown <= 0) {
+                ServerLifecycleHooks.getCurrentServer().initiateShutdown(false);
+            }
+        }
+    }
+
+    private void sendShutdownNotification(long countdown) {
+        if (countdown < nextShutdownNotify) {
+            while (countdown < nextShutdownNotify) {
+                int index = Arrays.binarySearch(shutdownNotifyTimes, nextShutdownNotify);
+                if (index > 0) {
+                    nextShutdownNotify = shutdownNotifyTimes[index - 1];
+                } else if (index == 0) {
+                    nextShutdownNotify = 0;
+                    break;
+                } else {
+                    nextShutdownNotify = shutdownNotifyTimes[0];
+                }
+            }
+            long l = Math.round(countdown / 1000D);
+            String text;
+            if (l > 60) {
+                l = Math.round(l / 60D);
+                text = "Server will shutdown in " + l + " minutes";
+            } else {
+                text = "Server will shutdown in " + l + " seconds";
+            }
+            ModernUI.LOGGER.info(ModernUI.MARKER, text);
+            ITextComponent component = new StringTextComponent(text).mergeStyle(TextFormatting.LIGHT_PURPLE);
+            ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers().forEach(p -> p.sendStatusMessage(component, true));
+        }
+    }
+}

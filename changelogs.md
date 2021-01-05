@@ -1,8 +1,8 @@
 Changelogs
 ===
 ### 1.16.4-2.3.2.71 (2021-01-04)
-* Fix crash due to parallel mod loading on client
-* Add auto-shutdown service for server
+* Fix client crash due to parallel mod loading
+* Add auto-shutdown for server
 
 ### 1.16.4-2.3.1.70 (2020-12-31)
 * Fix crash when forge event bus not started

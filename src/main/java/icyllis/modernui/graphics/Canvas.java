@@ -137,7 +137,7 @@ public class Canvas {
      * at the wrong time.
      *
      * @return the instance
-     * @see UIManager#initRenderer()
+     * @see UIManager#initialize()
      */
     public static Canvas getInstance() {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
@@ -305,9 +305,11 @@ public class Canvas {
     }
 
     /**
-     * Draw a single line of text on screen, {@link TextFormatting}
+     * Layout and draw a single line of text on screen, {@link TextFormatting}
      * and bidirectional algorithm are supported, returns the text width.
-     * All digits are laid-out with the same width as '0', because we don't know
+     * <p>
+     * It's recommended to use this when you draw a fast changing number,
+     * all digits are laid-out with the same width as '0', because we don't know
      * whether it is static layout or dynamic layout, so we don't want to
      * re-layout when the numbers are changing too fast as it's performance hungry.
      * <p>

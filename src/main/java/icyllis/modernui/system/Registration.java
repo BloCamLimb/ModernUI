@@ -31,6 +31,7 @@ import net.minecraft.util.SoundEvent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.ParticleFactoryRegisterEvent;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.extensions.IForgeContainerType;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -125,6 +126,8 @@ public final class Registration {
         //
 
         plugins.clear();
+
+        MinecraftForge.EVENT_BUS.register(ServerHandler.INSTANCE);
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -132,11 +135,10 @@ public final class Registration {
     static void setupClient(@Nonnull FMLClientSetupEvent event) {
         //SettingsManager.INSTANCE.buildAllSettings();
         //UIManager.getInstance().registerMenuScreen(Registration.TEST_MENU, menu -> new TestUI());
-
-        // this event fired after client config first loaded
+        ModernUI.EVENT_BUS.register(EventHandler.Internal.class);
         event.getMinecraftSupplier().get().runAsync(() -> {
-            UIManager.initRenderer();
-            ModernFontRenderer.change(Config.CLIENT_CONFIG.globalRenderer.get());
+            UIManager.initialize();
+            ModernFontRenderer.change(Config.CLIENT.globalRenderer.get());
         });
     }
 

@@ -21,8 +21,8 @@ package icyllis.modernui.view;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.graphics.BlurHandler;
-import icyllis.modernui.graphics.math.Point;
 import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.math.Point;
 import icyllis.modernui.plugin.event.OpenMenuEvent;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.system.mixin.MixinMouseHandler;
@@ -190,7 +190,7 @@ public final class UIManager {
     }
 
     // internal method
-    public static void initRenderer() {
+    public static void initialize() {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
         if (instance.mCanvas == null) {
             instance.mCanvas = Canvas.getInstance();
@@ -229,7 +229,7 @@ public final class UIManager {
             final Container menu = type.create(containerId, player.inventory, buffer);
             //noinspection ConstantConditions
             if (menu == null) {
-                ModernUI.LOGGER.warn(MARKER, "Failed to create menu for type: {}", Registry.MENU.getKey(type));
+                ModernUI.LOGGER.error(MARKER, "Menu type {} didn't create anything", Registry.MENU.getKey(type));
             } else {
                 OpenMenuEvent event = new OpenMenuEvent(menu);
                 ModernUI.EVENT_BUS.post(event);
@@ -242,7 +242,7 @@ public final class UIManager {
                 }
             }
         }
-        if (!success) player.closeScreen();
+        if (!success) player.closeScreen(); // close server menu
     }
 
     /*@Nonnull
@@ -369,12 +369,12 @@ public final class UIManager {
         return mMuiScreen;
     }*/
 
-    public boolean hasRunningUI() {
+    public boolean hasOpenGUI() {
         return mMuiScreen != null;
     }
 
     @Nullable
-    public ApplicationUI getApplicationUI() {
+    public ApplicationUI getOpenGUI() {
         return mApplicationUI;
     }
 
