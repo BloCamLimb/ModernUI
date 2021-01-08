@@ -14,7 +14,7 @@
 ![b](https://i.loli.net/2020/04/10/LDBFc1qo5wtnS8u.png)
 ### Adding Modern UI to your project
 #### Development environment
-- Liberica OpenJDK 8u271
+- Liberica OpenJDK 8u275
 - Forge 1.16.4-35.1.0
 #### Gradle configuration
 Add followings to `build.gradle`

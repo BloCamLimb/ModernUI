@@ -18,27 +18,36 @@
 
 package icyllis.modernui.test;
 
+import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.graphics.math.TextAlign;
+import icyllis.modernui.font.ModernFontRenderer;
 import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.system.mixin.AccessFoodData;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.AbstractGui;
+import net.minecraft.client.renderer.IRenderTypeBuffer;
+import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.FoodStats;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Matrix4f;
+import net.minecraft.util.text.ITextProperties;
+import net.minecraft.util.text.Style;
 import net.minecraftforge.client.model.animation.Animation;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 public class TestHUD {
 
     //private static DecimalFormat decimalFormat = new DecimalFormat("#.00");
 
-    public static void drawHUD(@Nonnull Canvas canvas) {
+    public static void drawBars(@Nonnull Canvas canvas) {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableAlphaTest();
@@ -59,7 +68,9 @@ public class TestHUD {
         GL11.glScalef(1 / 90f, -1 / 90f, 1 / 90f);
         GL11.glRotatef(12, 0, 1, 0);
 
+        // see ForgeIngameGUI
         PlayerEntity player = (PlayerEntity) minecraft.getRenderViewEntity();
+        Objects.requireNonNull(player);
 
         float partialTicks = Animation.getPartialTickTime();
 
@@ -105,5 +116,90 @@ public class TestHUD {
         RenderSystem.disableBlend();
 
         minecraft.textureManager.bindTexture(AbstractGui.GUI_ICONS_LOCATION);
+    }
+
+    private static final List<ITextProperties> sTempTexts = new ArrayList<>();
+
+    // config value
+    public static boolean sTooltip;
+
+    public static boolean drawTooltip(Canvas canvas, List<? extends ITextProperties> texts, ModernFontRenderer font,
+                                      MatrixStack matrix, float mouseX, float mouseY, float width, float height) {
+        if (!sTooltip)
+            return false;
+
+        // space between mouse and tooltip: 12
+        // horizontal border thickness: 5
+        // vertical border thickness: 4
+        float tooltipX = mouseX + 12;
+        float tooltipY = mouseY - 12;
+        int tooltipWidth = 0;
+        int tooltipHeight = 4 * 2;
+
+        for (ITextProperties text : texts)
+            tooltipWidth = Math.max(tooltipWidth, font.getStringPropertyWidth(text));
+
+        boolean needWrap = false;
+        if (tooltipX + tooltipWidth + 5 > width) {
+            tooltipX = mouseX - 12 - 5 - tooltipWidth;
+            if (tooltipX < 5) {
+                tooltipWidth = (int) ((mouseX > width / 2) ? mouseX - 12 - 5 * 2 : width - 12 - 5 - mouseX);
+                needWrap = true;
+            }
+        }
+
+        int titleLinesCount = 1;
+        if (needWrap) {
+            int w = 0;
+            final List<ITextProperties> l = sTempTexts;
+            for (int i = 0; i < texts.size(); i++) {
+                List<ITextProperties> wrapped = font.getCharacterManager().func_238362_b_(texts.get(i), tooltipWidth, Style.EMPTY);
+                if (i == 0) titleLinesCount = wrapped.size();
+                for (ITextProperties text : wrapped) {
+                    w = Math.max(w, font.getStringPropertyWidth(text));
+                    l.add(text);
+                }
+            }
+            tooltipWidth = w;
+            texts = l;
+            tooltipX = (mouseX > width / 2) ? mouseX - 12 - 5 - tooltipWidth : mouseX + 12;
+        }
+
+        if (texts.size() > 1) {
+            tooltipHeight += (texts.size() - 1) * 10; // line height
+            if (texts.size() > titleLinesCount) tooltipHeight += 2; // gap
+        }
+
+        if (tooltipY < 4) tooltipY = 4;
+        else if (tooltipY + tooltipHeight + 4 > height)
+            tooltipY = height - tooltipHeight - 4;
+
+        RenderSystem.disableDepthTest();
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        GL11.glPushMatrix();
+        GL11.glTranslatef(0, 0, 400);
+
+        canvas.setColor(0, 0, 0, 208);
+        canvas.drawRoundedRect(tooltipX - 5, tooltipY - 4, tooltipX + tooltipWidth + 5, tooltipY + tooltipHeight + 4, 3);
+        canvas.setColor(170, 220, 240, 240);
+        canvas.drawRoundedFrame(tooltipX - 5, tooltipY - 4, tooltipX + tooltipWidth + 5, tooltipY + tooltipHeight + 4, 3);
+
+        final Matrix4f mat = matrix.getLast().getMatrix();
+        final IRenderTypeBuffer.Impl buf = IRenderTypeBuffer.getImpl(Tessellator.getInstance().getBuffer());
+        for (int i = 0; i < texts.size(); i++) {
+            ITextProperties text = texts.get(i);
+            if (text != null)
+                font.drawText(text, tooltipX, tooltipY, 0xffffffff, true, mat, buf, false, 0, 0xf000f0);
+            if (i + 1 == titleLinesCount) tooltipY += 2; // gap
+            tooltipY += 10; // line height
+        }
+        buf.finish();
+
+        GL11.glPopMatrix();
+        RenderSystem.disableTexture();
+        RenderSystem.enableDepthTest();
+        sTempTexts.clear();
+        return true;
     }
 }
