@@ -20,6 +20,7 @@ package icyllis.modernui.view;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.animation.Animation;
+import icyllis.modernui.font.ModernFontRenderer;
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.math.Point;
@@ -43,6 +44,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
+import net.minecraftforge.client.event.RenderTooltipEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -774,9 +776,15 @@ public final class UIManager {
                 break;
             case HEALTH:
                 if (ModernUI.isDeveloperMode())
-                    TestHUD.drawHUD(mCanvas);
+                    TestHUD.drawBars(mCanvas);
                 break;
         }
+    }
+
+    @SubscribeEvent
+    void onRenderTooltip(@Nonnull RenderTooltipEvent.Pre event) {
+        event.setCanceled(TestHUD.drawTooltip(mCanvas, event.getLines(), (ModernFontRenderer) minecraft.fontRenderer,
+                event.getMatrixStack(), event.getX(), event.getY(), event.getScreenWidth(), event.getScreenHeight()));
     }
 
     /**

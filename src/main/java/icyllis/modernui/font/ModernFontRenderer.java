@@ -31,6 +31,7 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.text.CharacterManager;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.ITextProperties;
 import net.minecraft.util.text.Style;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -184,6 +185,17 @@ public class ModernFontRenderer extends FontRenderer {
             return v.intValue() + (dropShadow ? 1 : 0);
         }
         return super.func_243247_a(text, x, y, color, dropShadow, matrix, buffer, seeThrough, colorBackground, packedLight);
+    }
+
+    public int drawText(@Nonnull ITextProperties text, float x, float y, int color, boolean dropShadow, @Nonnull Matrix4f matrix,
+                        @Nonnull IRenderTypeBuffer buffer, boolean seeThrough, int colorBackground, int packedLight) {
+        v.setValue(x);
+        text.getComponentWithStyle((style, string) -> {
+            v.add(drawLayer0(string, v.floatValue(), y, color, dropShadow, matrix,
+                    buffer, seeThrough, colorBackground, packedLight, style));
+            return Optional.empty();
+        }, Style.EMPTY);
+        return v.intValue() + (dropShadow ? 1 : 0);
     }
 
     @Override

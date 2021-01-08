@@ -23,6 +23,7 @@ import icyllis.modernui.font.ModernFontRenderer;
 import icyllis.modernui.font.glyph.GlyphManager;
 import icyllis.modernui.font.process.TextLayoutProcessor;
 import icyllis.modernui.graphics.BlurHandler;
+import icyllis.modernui.test.TestHUD;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraft.client.gui.screen.DownloadTerrainScreen;
@@ -150,6 +151,7 @@ public final class Config {
         private final ForgeConfigSpec.IntValue animationDuration;
         private final ForgeConfigSpec.IntValue blurRadius;
         private final ForgeConfigSpec.DoubleValue backgroundAlpha;
+        private final ForgeConfigSpec.BooleanValue tooltip;
 
         private final ForgeConfigSpec.ConfigValue<List<? extends String>> blurBlacklist;
 
@@ -192,6 +194,10 @@ public final class Config {
                         return list;
                     }, s -> true);
 
+            tooltip = builder.comment(
+                    "Use Modern UI's tooltip style. (Test Function)")
+                    .define("tooltip", true);
+
 
             builder.pop();
 
@@ -208,7 +214,7 @@ public final class Config {
                     .define("globalRenderer", true);
             preferredFont = builder.comment(
                     "The font with the highest priority to use, the built-in font is always the second choice.",
-                    "This can be font name if you want to use fonts that installed on your PC, for instance: Microsoft YaHei",
+                    "This can be font family name if you want to use fonts that installed on your PC, for instance: Microsoft YaHei",
                     "Or can be file path if you want to use external fonts, for instance: D:/Fonts/biliw.otf",
                     "Or can be resource location if you want to use fonts in resource packs, for instance: modernui:font/biliw.otf")
                     .define("preferredFont", "");
@@ -249,6 +255,8 @@ public final class Config {
             BlurHandler.sBlurRadius = blurRadius.get();
             BlurHandler.sBackgroundAlpha = backgroundAlpha.get().floatValue();
             BlurHandler.INSTANCE.loadBlacklist(blurBlacklist.get());
+
+            TestHUD.sTooltip = tooltip.get();
 
             final boolean global = globalRenderer.get();
             Minecraft.getInstance().runAsync(() -> ModernFontRenderer.change(global));

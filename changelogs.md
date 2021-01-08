@@ -1,6 +1,7 @@
 Changelogs
 ===
-### 1.16.4-2.3.3.72 (2021-01-07)
+### 1.16.4-2.3.3.72 (2021-01-08)
+* Add new tooltip style
 * Fix crash with some java versions
 * Fix crash when running data generator
 * Update the network protocol
