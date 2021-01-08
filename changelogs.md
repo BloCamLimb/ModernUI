@@ -1,5 +1,10 @@
 Changelogs
 ===
+### 1.16.4-2.3.3.72 (2021-01-07)
+* Fix crash with some java versions
+* Fix crash when running data generator
+* Update the network protocol
+
 ### 1.16.4-2.3.2.71 (2021-01-04)
 * Fix client crash due to parallel mod loading
 * Add auto-shutdown for server

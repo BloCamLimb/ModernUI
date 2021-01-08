@@ -44,7 +44,7 @@ public final class MServerContext {
      * @return {@code true} if server started
      */
     public static boolean isServerStarted() {
-        return ServerHandler.INSTANCE.serverStarted;
+        return ServerHandler.INSTANCE.started;
     }
 
     /**

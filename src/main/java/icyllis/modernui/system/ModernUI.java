@@ -18,15 +18,12 @@
 
 package icyllis.modernui.system;
 
-import cpw.mods.modlauncher.Environment;
-import cpw.mods.modlauncher.Launcher;
-import cpw.mods.modlauncher.api.IEnvironment;
 import icyllis.modernui.graphics.RenderCore;
 import icyllis.modernui.view.LayoutIO;
 import net.minecraftforge.eventbus.api.BusBuilder;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.*;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.loading.FMLCommonLaunchHandler;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -57,8 +54,8 @@ public final class ModernUI {
     public ModernUI() {
         checkJava();
 
-        boolean isDataGen = false;
-        try {
+        final boolean isDataGen = DatagenModLoader.isRunningDataGen();
+        /*try {
             Environment environment = Launcher.INSTANCE.environment();
             isDataGen = environment.findLaunchHandler(
                     environment.getProperty(IEnvironment.Keys.LAUNCHTARGET.get())
@@ -67,14 +64,14 @@ public final class ModernUI {
                     .orElse(Boolean.FALSE);
         } catch (Exception ignored) {
             // Non-FML environment
-        }
+        }*/
 
         init();
         Config.init();
+        LayoutIO.init();
         LocalStorage.init();
 
         if (!isDataGen && FMLEnvironment.dist.isClient()) {
-            LayoutIO.init();
             RenderCore.init();
         }
 
@@ -91,6 +88,10 @@ public final class ModernUI {
 
         } catch (IllegalAccessException | InvocationTargetException e) {
             e.printStackTrace();
+        }
+        if (ModList.get().isLoaded("performant")) {
+            ModLoader.get().addWarning(new ModLoadingWarning(null, ModLoadingStage.CONSTRUCT,
+                    "\u00a76Performant\u00a7r mod is very likely to produce fatal errors, please consider this closely"));
         }
     }
 

@@ -3,19 +3,18 @@
   "compatibilityLevel": "JAVA_8",
   "plugin": "icyllis.modernui.system.MixinConfigPlugin",
   "package": "icyllis.modernui.system.mixin",
+  "mixins": [
+    "MixinFoodData"
+  ],
   "client": [
     "AccessFontRenderer",
     "AccessFoodData",
     "AccessTextProcessing",
     "MixinClientLanguage",
     "MixinFontManager",
-    "MixinFoodData",
     "MixinMainWindow",
     "MixinMatrix4f",
     "MixinMouseHandler",
     "MixinScreen"
-  ],
-  "server": [
-    "MixinFoodData"
   ]
 }

@@ -18,20 +18,39 @@
 
 package icyllis.modernui.test;
 
+import com.google.common.collect.Streams;
+import com.ibm.icu.text.NumberFormat;
+import com.ibm.icu.text.RuleBasedNumberFormat;
+import com.ibm.icu.util.ULocale;
 import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.ast.Node;
 import icyllis.modernui.system.ModernUI;
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.MarkerManager;
+import org.lwjgl.system.CallbackI;
 
 import javax.annotation.Nonnull;
+import java.util.Arrays;
+import java.util.Locale;
+import java.util.stream.Stream;
 
 public class TestMain {
+
+    public static final Marker MARKER = MarkerManager.getMarker("Test");
 
     public static void main(String[] args) {
         Parser parser = Parser.builder().build();
         Document document = parser.parse("Advanced Page\r\n---\r\nMy **One** Line\r\n> My Two");
         iterateNode(document, 0);
-
+        RuleBasedNumberFormat numberFormat = new RuleBasedNumberFormat(Locale.SIMPLIFIED_CHINESE, RuleBasedNumberFormat.SPELLOUT);
+        String formatted = numberFormat.format(18500);
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < formatted.length(); i++) {
+            builder.append("\\u");
+            builder.append(Integer.toString(((int) formatted.charAt(i)) | 0x10000, 16).substring(1));
+        }
+        ModernUI.LOGGER.info(MARKER, builder.toString());
     }
 
     /*

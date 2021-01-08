@@ -38,7 +38,7 @@ final class ServerHandler {
 
     static final ServerHandler INSTANCE = new ServerHandler();
 
-    boolean serverStarted = false;
+    boolean started = false;
 
     // time in millis that server will auto-shutdown
     private long shutdownTime = 0;
@@ -49,17 +49,17 @@ final class ServerHandler {
 
     @SubscribeEvent
     void onStart(@Nonnull FMLServerStartedEvent event) {
-        serverStarted = true;
+        started = true;
         determineShutdownTime();
     }
 
     @SubscribeEvent
     void onStop(@Nonnull FMLServerStoppingEvent event) {
-        serverStarted = false;
+        started = false;
     }
 
     void determineShutdownTime() {
-        if (!serverStarted) {
+        if (!started) {
             return;
         }
         if (Config.COMMON.autoShutdown.get()) {
@@ -78,7 +78,7 @@ final class ServerHandler {
                         }
                         target = Math.min(t, target);
                     } else {
-                        ModernUI.LOGGER.error(ModernUI.MARKER, "Wrong time format while setting auto-shutdown time, input: {}", s);
+                        ModernUI.LOGGER.warn(ModernUI.MARKER, "Wrong time format while setting auto-shutdown time, input: {}", s);
                     }
                 } catch (NumberFormatException | IndexOutOfBoundsException e) {
                     ModernUI.LOGGER.error(ModernUI.MARKER, "Wrong time format while setting auto-shutdown time, input: {}", s, e);
@@ -87,7 +87,7 @@ final class ServerHandler {
             if (target < Integer.MAX_VALUE && target > current) {
                 shutdownTime = System.currentTimeMillis() + (target - current) * 1000L;
                 ModernUI.LOGGER.debug(ModernUI.MARKER, "Server will shutdown at {}",
-                        new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(shutdownTime)));
+                        SimpleDateFormat.getDateTimeInstance().format(new Date(shutdownTime)));
                 nextShutdownNotify = shutdownNotifyTimes[shutdownNotifyTimes.length - 1];
             } else {
                 shutdownTime = 0;
@@ -110,19 +110,17 @@ final class ServerHandler {
 
     private void sendShutdownNotification(long countdown) {
         if (countdown < nextShutdownNotify) {
-            while (countdown < nextShutdownNotify) {
+            do {
                 int index = Arrays.binarySearch(shutdownNotifyTimes, nextShutdownNotify);
                 if (index > 0) {
                     nextShutdownNotify = shutdownNotifyTimes[index - 1];
-                } else if (index == 0) {
+                } else {
                     nextShutdownNotify = 0;
                     break;
-                } else {
-                    nextShutdownNotify = shutdownNotifyTimes[0];
                 }
-            }
+            } while (countdown < nextShutdownNotify);
             long l = Math.round(countdown / 1000D);
-            String text;
+            final String text;
             if (l > 60) {
                 l = Math.round(l / 60D);
                 text = "Server will shutdown in " + l + " minutes";
@@ -130,7 +128,7 @@ final class ServerHandler {
                 text = "Server will shutdown in " + l + " seconds";
             }
             ModernUI.LOGGER.info(ModernUI.MARKER, text);
-            ITextComponent component = new StringTextComponent(text).mergeStyle(TextFormatting.LIGHT_PURPLE);
+            final ITextComponent component = new StringTextComponent(text).mergeStyle(TextFormatting.LIGHT_PURPLE);
             ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers().forEach(p -> p.sendStatusMessage(component, true));
         }
     }
