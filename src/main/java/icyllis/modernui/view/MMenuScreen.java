@@ -86,7 +86,9 @@ final class MMenuScreen<T extends Container> extends ContainerScreen<T> implemen
     }
 
     private void logWidget(Widget widget) {
-        ModernUI.LOGGER.warn(UIManager.MARKER, "Vanilla Widget is deprecated in Modern UI, target: {}", widget);
+        if (widget != null) {
+            ModernUI.LOGGER.warn(UIManager.MARKER, "Usage of {} is deprecated in Modern UI", widget);
+        }
     }
 
     @Override

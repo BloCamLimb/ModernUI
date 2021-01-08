@@ -430,7 +430,7 @@ public final class UIManager {
      * From screen
      *
      * @see org.lwjgl.glfw.GLFWCursorPosCallbackI
-     * @see net.minecraft.client.MouseHelper
+     * @see net.minecraft.client.MouseHelper MouseHandler
      * @see MMainScreen
      * @see MMenuScreen
      */

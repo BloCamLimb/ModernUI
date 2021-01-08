@@ -14,7 +14,7 @@
 ![b](https://i.loli.net/2020/04/10/LDBFc1qo5wtnS8u.png)
 ### Adding Modern UI to your project
 #### Development environment
-- Java 8u271
+- Liberica OpenJDK 8u271
 - Forge 1.16.4-35.1.0
 #### Gradle configuration
 Add followings to `build.gradle`
@@ -25,9 +25,8 @@ repositories {
         url 'https://www.cursemaven.com/'
     }
 }
-```
-```
 dependencies {
     compile fg.deobf("curse.maven:ModernUI:[-version]")
 }
 ```
+There's currently no stable builds for development
