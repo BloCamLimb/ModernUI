@@ -47,6 +47,5 @@
 
   "gui.modernui.tooltip.thanksOptifine": "此功能由OptiFine提供技术支持",
 
-  "warning.modernui.noticeable_mod": "{2} 模组很有可能产生意外错误, 请仔细考虑这一点",
   "warning.modernui.old_opengl": "OpenGL版本过旧, 需要 OpenGL {2} 或更高的版本, 当前为 OpenGL {3}, 请更新你的显卡驱动"
 }
