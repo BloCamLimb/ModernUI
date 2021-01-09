@@ -22,7 +22,7 @@ import icyllis.modernui.graphics.RenderCore;
 import icyllis.modernui.view.LayoutIO;
 import net.minecraftforge.eventbus.api.BusBuilder;
 import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.*;
+import net.minecraftforge.fml.DatagenModLoader;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.apache.logging.log4j.LogManager;
@@ -88,10 +88,6 @@ public final class ModernUI {
 
         } catch (IllegalAccessException | InvocationTargetException e) {
             e.printStackTrace();
-        }
-        if (ModList.get().isLoaded("performant")) {
-            ModLoader.get().addWarning(new ModLoadingWarning(null, ModLoadingStage.CONSTRUCT,
-                    "warning.modernui.noticeable_mod", "\u00a76Performant\u00a7r"));
         }
     }
 

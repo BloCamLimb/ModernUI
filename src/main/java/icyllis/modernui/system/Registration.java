@@ -128,6 +128,10 @@ public final class Registration {
         plugins.clear();
 
         MinecraftForge.EVENT_BUS.register(ServerHandler.INSTANCE);
+
+        if (ModList.get().isLoaded("performant")) {
+            ModernUI.LOGGER.fatal("Performant mod is very likely to produce unexpected errors");
+        }
     }
 
     @OnlyIn(Dist.CLIENT)
