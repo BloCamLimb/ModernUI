@@ -45,5 +45,8 @@
   "gui.modernui.popup.exit": "Are you sure you want to exit to main menu?",
   "gui.modernui.popup.lockDifficulty": "Are you sure you want to lock world difficulty?",
 
-  "gui.modernui.tooltip.thanksOptifine": "This functionality is powered by OptiFine"
+  "gui.modernui.tooltip.thanksOptifine": "This functionality is powered by OptiFine",
+
+  "warning.modernui.noticeable_mod": "{2} mod is very likely to produce unexpected errors, please consider this closely",
+  "warning.modernui.old_opengl": "OpenGL version is too old, OpenGL {2} or higher is required, your version is OpenGL {3}, please upgrade the driver of your video card"
 }

@@ -91,7 +91,7 @@ public final class ModernUI {
         }
         if (ModList.get().isLoaded("performant")) {
             ModLoader.get().addWarning(new ModLoadingWarning(null, ModLoadingStage.CONSTRUCT,
-                    "\u00a76Performant\u00a7r mod is very likely to produce fatal errors, please consider this closely"));
+                    "warning.modernui.noticeable_mod", "\u00a76Performant\u00a7r"));
         }
     }
 

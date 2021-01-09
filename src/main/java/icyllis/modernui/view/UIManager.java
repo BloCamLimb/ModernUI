@@ -783,8 +783,14 @@ public final class UIManager {
 
     @SubscribeEvent
     void onRenderTooltip(@Nonnull RenderTooltipEvent.Pre event) {
-        event.setCanceled(TestHUD.drawTooltip(mCanvas, event.getLines(), (ModernFontRenderer) minecraft.fontRenderer,
-                event.getMatrixStack(), event.getX(), event.getY(), event.getScreenWidth(), event.getScreenHeight()));
+        if (TestHUD.sTooltip) {
+            final MainWindow window = minecraft.getMainWindow();
+            double cursorX = minecraft.mouseHelper.getMouseX() * (double) window.getScaledWidth() / (double) window.getWidth();
+            double cursorY = minecraft.mouseHelper.getMouseY() * (double) window.getScaledHeight() / (double) window.getHeight();
+            TestHUD.drawTooltip(mCanvas, event.getLines(), (ModernFontRenderer) minecraft.fontRenderer, event.getStack(),
+                    event.getMatrixStack(), (float) cursorX, (float) cursorY, event.getScreenWidth(), event.getScreenHeight());
+            event.setCanceled(true);
+        }
     }
 
     /**

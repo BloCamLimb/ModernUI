@@ -195,7 +195,7 @@ public final class Config {
                     }, s -> true);
 
             tooltip = builder.comment(
-                    "Use Modern UI's tooltip style. (Test Function)")
+                    "Use Modern UI's tooltip style.")
                     .define("tooltip", true);
 
 
