@@ -30,12 +30,15 @@ import net.minecraft.client.gui.AbstractGui;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.FoodStats;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.text.ITextProperties;
 import net.minecraft.util.text.Style;
+import net.minecraftforge.client.event.RenderTooltipEvent;
 import net.minecraftforge.client.model.animation.Animation;
+import net.minecraftforge.common.MinecraftForge;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
@@ -123,11 +126,9 @@ public class TestHUD {
     // config value
     public static boolean sTooltip;
 
-    public static boolean drawTooltip(Canvas canvas, List<? extends ITextProperties> texts, ModernFontRenderer font,
-                                      MatrixStack matrix, float mouseX, float mouseY, float width, float height) {
-        if (!sTooltip)
-            return false;
-
+    public static void drawTooltip(Canvas canvas, List<? extends ITextProperties> texts, ModernFontRenderer font,
+                                   ItemStack stack, MatrixStack matrix, float mouseX, float mouseY, float width,
+                                   float height) {
         // space between mouse and tooltip: 12
         // horizontal border thickness: 5
         // vertical border thickness: 4
@@ -151,17 +152,17 @@ public class TestHUD {
         int titleLinesCount = 1;
         if (needWrap) {
             int w = 0;
-            final List<ITextProperties> l = sTempTexts;
+            final List<ITextProperties> temp = sTempTexts;
             for (int i = 0; i < texts.size(); i++) {
                 List<ITextProperties> wrapped = font.getCharacterManager().func_238362_b_(texts.get(i), tooltipWidth, Style.EMPTY);
                 if (i == 0) titleLinesCount = wrapped.size();
                 for (ITextProperties text : wrapped) {
                     w = Math.max(w, font.getStringPropertyWidth(text));
-                    l.add(text);
+                    temp.add(text);
                 }
             }
             tooltipWidth = w;
-            texts = l;
+            texts = temp;
             tooltipX = (mouseX > width / 2) ? mouseX - 12 - 5 - tooltipWidth : mouseX + 12;
         }
 
@@ -178,13 +179,23 @@ public class TestHUD {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         GL11.glPushMatrix();
-        GL11.glTranslatef(0, 0, 400);
+        GL11.glTranslatef(0, 0, 400); // because of the order of draw calls, we actually don't need z-shifting
 
         canvas.setColor(0, 0, 0, 208);
         canvas.drawRoundedRect(tooltipX - 5, tooltipY - 4, tooltipX + tooltipWidth + 5, tooltipY + tooltipHeight + 4, 3);
         canvas.setColor(170, 220, 240, 240);
         canvas.drawRoundedFrame(tooltipX - 5, tooltipY - 4, tooltipX + tooltipWidth + 5, tooltipY + tooltipHeight + 4, 3);
 
+        GL11.glPopMatrix();
+
+        // smoothing because of gui scale
+        final int tooltipLeft = (int) tooltipX;
+        final int tooltipTop = (int) tooltipY;
+        final float partialX = tooltipX - tooltipLeft;
+        final float partialY = tooltipY - tooltipTop;
+
+        matrix.push();
+        matrix.translate(0, 0, 400); // because of the order of draw calls, we actually don't need z-shifting
         final Matrix4f mat = matrix.getLast().getMatrix();
         final IRenderTypeBuffer.Impl buf = IRenderTypeBuffer.getImpl(Tessellator.getInstance().getBuffer());
         for (int i = 0; i < texts.size(); i++) {
@@ -195,11 +206,14 @@ public class TestHUD {
             tooltipY += 10; // line height
         }
         buf.finish();
+        matrix.pop();
 
+        GL11.glPushMatrix();
+        GL11.glTranslatef(partialX, partialY, 0); // because of the order of draw calls, we actually don't need z-shifting
+        MinecraftForge.EVENT_BUS.post(new RenderTooltipEvent.PostText(stack, texts, matrix, tooltipLeft, tooltipTop, font, tooltipWidth, tooltipHeight));
         GL11.glPopMatrix();
-        RenderSystem.disableTexture();
+
         RenderSystem.enableDepthTest();
         sTempTexts.clear();
-        return true;
     }
 }

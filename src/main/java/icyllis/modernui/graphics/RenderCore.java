@@ -29,6 +29,9 @@ import net.minecraft.resources.IReloadableResourceManager;
 import net.minecraft.resources.IResourceManager;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.ModLoader;
+import net.minecraftforge.fml.ModLoadingStage;
+import net.minecraftforge.fml.ModLoadingWarning;
 import net.minecraftforge.resource.IResourceType;
 import net.minecraftforge.resource.ISelectiveResourceReloadListener;
 import net.minecraftforge.resource.VanillaResourceType;
@@ -120,6 +123,14 @@ public final class RenderCore {
                 (GlyphManager.TEXTURE_SIZE <= 1024 && (v = GL11.glGetInteger(GL11.GL_MAX_TEXTURE_SIZE)) < GlyphManager.TEXTURE_SIZE)) {
             ModernUI.LOGGER.fatal(MARKER, "Max texture size is too small, supplies {} but requires {}", v, GlyphManager.TEXTURE_SIZE);
             i++;
+        }
+
+        if (!capabilities.OpenGL43) {
+            String glVersion = GL11.glGetString(GL11.GL_VERSION);
+            if (glVersion == null) glVersion = "UNKNOWN";
+            else glVersion = glVersion.split(" ")[0];
+            ModLoader.get().addWarning(new ModLoadingWarning(null, ModLoadingStage.SIDED_SETUP,
+                    "warning.modernui.old_opengl", "4.3", glVersion));
         }
 
         if (i != 0) {

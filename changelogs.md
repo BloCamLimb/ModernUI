@@ -1,5 +1,9 @@
 Changelogs
 ===
+### 1.16.4-2.3.4.73 (2021-01-09)
+* Fix tooltip compatibilities
+* Smooth tooltip rendering
+
 ### 1.16.4-2.3.3.72 (2021-01-08)
 * Add new tooltip style
 * Fix crash with some java versions
