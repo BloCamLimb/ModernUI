@@ -130,10 +130,12 @@ public class TestHUD {
     private static final int TOOLTIP_SPACE = 12;
     private static final int H_BORDER = 5;
     private static final int V_BORDER = 4;
+    private static final int LINE_HEIGHT = 10;
+    private static final int TITLE_GAP = 2;
 
     public static void drawTooltip(Canvas canvas, @Nonnull List<? extends ITextProperties> texts,
                                    ModernFontRenderer font, ItemStack stack, MatrixStack matrix,
-                                   float mouseX, float mouseY, float width, float height) {
+                                   int eventX, int eventY, float mouseX, float mouseY, float width, float height) {
         float tooltipX = mouseX + TOOLTIP_SPACE;
         float tooltipY = mouseY - TOOLTIP_SPACE;
         int tooltipWidth = 0;
@@ -169,8 +171,8 @@ public class TestHUD {
         }
 
         if (texts.size() > 1) {
-            tooltipHeight += (texts.size() - 1) * 10; // line height
-            if (texts.size() > titleLinesCount) tooltipHeight += 2; // gap
+            tooltipHeight += (texts.size() - 1) * LINE_HEIGHT;
+            if (texts.size() > titleLinesCount) tooltipHeight += TITLE_GAP;
         }
 
         if (tooltipY < V_BORDER) tooltipY = V_BORDER;
@@ -180,8 +182,26 @@ public class TestHUD {
         RenderSystem.disableDepthTest();
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
+
+        matrix.push();
+        matrix.translate(0, 0, 400); // because of the order of draw calls, we actually don't need z-shifting
+        final Matrix4f mat = matrix.getLast().getMatrix();
+
+        // matrix transformation for x and y params, capability to MineColonies
+        if (eventX != (int) mouseX || eventY != (int) mouseY) {
+            // ignore partial pixels
+            tooltipX += eventX - (int) mouseX;
+            tooltipY += eventY - (int) mouseY;
+        }
+
+        // smoothing scaled pixels, keep the same partial value as mouse position since tooltipWidth and height are int
+        final int tooltipLeft = (int) tooltipX;
+        final int tooltipTop = (int) tooltipY;
+        final float partialX = tooltipX - tooltipLeft;
+        final float partialY = tooltipY - tooltipTop;
+
         GL11.glPushMatrix();
-        GL11.glTranslatef(0, 0, 400); // because of the order of draw calls, we actually don't need z-shifting
+        RenderSystem.multMatrix(mat);
 
         canvas.setColor(0, 0, 0, 208);
         canvas.drawRoundedRect(tooltipX - H_BORDER, tooltipY - V_BORDER,
@@ -192,26 +212,18 @@ public class TestHUD {
 
         GL11.glPopMatrix();
 
-        // smoothing because of gui scale
-        final int tooltipLeft = (int) tooltipX;
-        final int tooltipTop = (int) tooltipY;
-        final float partialX = tooltipX - tooltipLeft;
-        final float partialY = tooltipY - tooltipTop;
-
-        matrix.push();
-        matrix.translate(0, 0, 400); // because of the order of draw calls, we actually don't need z-shifting
-        final Matrix4f mat = matrix.getLast().getMatrix();
         final IRenderTypeBuffer.Impl buf = IRenderTypeBuffer.getImpl(Tessellator.getInstance().getBuffer());
         for (int i = 0; i < texts.size(); i++) {
             ITextProperties text = texts.get(i);
             if (text != null)
                 font.drawText(text, tooltipX, tooltipY, 0xffffffff, true, mat, buf, false, 0, 0xf000f0);
-            if (i + 1 == titleLinesCount) tooltipY += 2; // gap
-            tooltipY += 10; // line height
+            if (i + 1 == titleLinesCount) tooltipY += TITLE_GAP;
+            tooltipY += LINE_HEIGHT;
         }
         buf.finish();
         matrix.pop();
 
+        // compatibility with Forge mods, like Quark
         GL11.glPushMatrix();
         GL11.glTranslatef(partialX, partialY, 0); // because of the order of draw calls, we actually don't need z-shifting
         MinecraftForge.EVENT_BUS.post(new RenderTooltipEvent.PostText(stack, texts, matrix, tooltipLeft, tooltipTop, font, tooltipWidth, tooltipHeight));

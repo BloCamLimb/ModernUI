@@ -231,7 +231,7 @@ public final class UIManager {
             final Container menu = type.create(containerId, player.inventory, buffer);
             //noinspection ConstantConditions
             if (menu == null) {
-                ModernUI.LOGGER.error(MARKER, "Menu type {} didn't create anything", Registry.MENU.getKey(type));
+                ModernUI.LOGGER.error(MARKER, "No container menu created from menu type: {}", Registry.MENU.getKey(type));
             } else {
                 OpenMenuEvent event = new OpenMenuEvent(menu);
                 ModernUI.EVENT_BUS.post(event);
@@ -788,7 +788,7 @@ public final class UIManager {
             double cursorX = minecraft.mouseHelper.getMouseX() * (double) window.getScaledWidth() / (double) window.getWidth();
             double cursorY = minecraft.mouseHelper.getMouseY() * (double) window.getScaledHeight() / (double) window.getHeight();
             TestHUD.drawTooltip(mCanvas, event.getLines(), (ModernFontRenderer) minecraft.fontRenderer, event.getStack(),
-                    event.getMatrixStack(), (float) cursorX, (float) cursorY, event.getScreenWidth(), event.getScreenHeight());
+                    event.getMatrixStack(), event.getX(), event.getY(), (float) cursorX, (float) cursorY, event.getScreenWidth(), event.getScreenHeight());
             event.setCanceled(true);
         }
     }
