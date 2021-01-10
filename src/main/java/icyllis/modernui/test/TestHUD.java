@@ -126,25 +126,27 @@ public class TestHUD {
     // config value
     public static boolean sTooltip;
 
-    public static void drawTooltip(Canvas canvas, List<? extends ITextProperties> texts, ModernFontRenderer font,
-                                   ItemStack stack, MatrixStack matrix, float mouseX, float mouseY, float width,
-                                   float height) {
-        // space between mouse and tooltip: 12
-        // horizontal border thickness: 5
-        // vertical border thickness: 4
-        float tooltipX = mouseX + 12;
-        float tooltipY = mouseY - 12;
+    // space between mouse and tooltip
+    private static final int TOOLTIP_SPACE = 12;
+    private static final int H_BORDER = 5;
+    private static final int V_BORDER = 4;
+
+    public static void drawTooltip(Canvas canvas, @Nonnull List<? extends ITextProperties> texts,
+                                   ModernFontRenderer font, ItemStack stack, MatrixStack matrix,
+                                   float mouseX, float mouseY, float width, float height) {
+        float tooltipX = mouseX + TOOLTIP_SPACE;
+        float tooltipY = mouseY - TOOLTIP_SPACE;
         int tooltipWidth = 0;
-        int tooltipHeight = 4 * 2;
+        int tooltipHeight = V_BORDER * 2;
 
         for (ITextProperties text : texts)
             tooltipWidth = Math.max(tooltipWidth, font.getStringPropertyWidth(text));
 
         boolean needWrap = false;
-        if (tooltipX + tooltipWidth + 5 > width) {
-            tooltipX = mouseX - 12 - 5 - tooltipWidth;
-            if (tooltipX < 5) {
-                tooltipWidth = (int) ((mouseX > width / 2) ? mouseX - 12 - 5 * 2 : width - 12 - 5 - mouseX);
+        if (tooltipX + tooltipWidth + H_BORDER > width) {
+            tooltipX = mouseX - TOOLTIP_SPACE - H_BORDER - tooltipWidth;
+            if (tooltipX < H_BORDER) {
+                tooltipWidth = (int) ((mouseX > width / 2) ? mouseX - TOOLTIP_SPACE - H_BORDER * 2 : width - TOOLTIP_SPACE - H_BORDER - mouseX);
                 needWrap = true;
             }
         }
@@ -163,7 +165,7 @@ public class TestHUD {
             }
             tooltipWidth = w;
             texts = temp;
-            tooltipX = (mouseX > width / 2) ? mouseX - 12 - 5 - tooltipWidth : mouseX + 12;
+            tooltipX = (mouseX > width / 2) ? mouseX - TOOLTIP_SPACE - H_BORDER - tooltipWidth : mouseX + TOOLTIP_SPACE;
         }
 
         if (texts.size() > 1) {
@@ -171,9 +173,9 @@ public class TestHUD {
             if (texts.size() > titleLinesCount) tooltipHeight += 2; // gap
         }
 
-        if (tooltipY < 4) tooltipY = 4;
-        else if (tooltipY + tooltipHeight + 4 > height)
-            tooltipY = height - tooltipHeight - 4;
+        if (tooltipY < V_BORDER) tooltipY = V_BORDER;
+        else if (tooltipY + tooltipHeight + V_BORDER > height)
+            tooltipY = height - tooltipHeight - V_BORDER;
 
         RenderSystem.disableDepthTest();
         RenderSystem.enableBlend();
@@ -182,9 +184,11 @@ public class TestHUD {
         GL11.glTranslatef(0, 0, 400); // because of the order of draw calls, we actually don't need z-shifting
 
         canvas.setColor(0, 0, 0, 208);
-        canvas.drawRoundedRect(tooltipX - 5, tooltipY - 4, tooltipX + tooltipWidth + 5, tooltipY + tooltipHeight + 4, 3);
+        canvas.drawRoundedRect(tooltipX - H_BORDER, tooltipY - V_BORDER,
+                tooltipX + tooltipWidth + H_BORDER, tooltipY + tooltipHeight + V_BORDER, 3);
         canvas.setColor(170, 220, 240, 240);
-        canvas.drawRoundedFrame(tooltipX - 5, tooltipY - 4, tooltipX + tooltipWidth + 5, tooltipY + tooltipHeight + 4, 3);
+        canvas.drawRoundedFrame(tooltipX - H_BORDER, tooltipY - V_BORDER,
+                tooltipX + tooltipWidth + H_BORDER, tooltipY + tooltipHeight + V_BORDER, 3);
 
         GL11.glPopMatrix();
 
