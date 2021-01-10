@@ -45,5 +45,7 @@
   "gui.modernui.popup.exit": "Выйти в главное меню?",
   "gui.modernui.popup.lockDifficulty": "Зафиксировать сложность мира?",
 
-  "gui.modernui.tooltip.thanksOptifine": "Эта функциональность работает на базе OptiFine"
+  "gui.modernui.tooltip.thanksOptifine": "Эта функциональность работает на базе OptiFine",
+
+  "warning.modernui.old_opengl": "OpenGL version is too old. OpenGL {2} or higher is required (your version is OpenGL {3}). Please upgrade the driver of your video card."
 }
