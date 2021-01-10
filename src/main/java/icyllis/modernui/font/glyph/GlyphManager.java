@@ -263,34 +263,36 @@ public class GlyphManager {
 
     private void loadPreferredFonts() {
         if (!sPreferredFont.isEmpty()) {
-            if (sPreferredFont.endsWith(".ttf") || sPreferredFont.endsWith(".otf")) {
-                if (sPreferredFont.contains(":/")) {
+            String type = sPreferredFont;
+            if (type.endsWith(".ttf") || type.endsWith(".otf")) {
+                if (type.contains(":/") || type.contains(":\\")) {
                     try {
-                        Font f = Font.createFont(Font.TRUETYPE_FONT, new File(sPreferredFont));
+                        Font f = Font.createFont(Font.TRUETYPE_FONT, new File(
+                                type.replaceAll("\\\\", "/")));
                         selectedFonts.add(f);
                         ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", f.getName());
                     } catch (FontFormatException | IOException e) {
-                        ModernUI.LOGGER.warn(MARKER, "Preferred font failed to load", e);
+                        ModernUI.LOGGER.warn(MARKER, "Preferred font {} failed to load", type, e);
                     }
-                } else if (sPreferredFont.contains(":")) {
+                } else if (type.contains(":")) {
                     try (IResource resource = Minecraft.getInstance().getResourceManager()
-                            .getResource(new ResourceLocation(sPreferredFont))) {
+                            .getResource(new ResourceLocation(type))) {
                         Font f = Font.createFont(Font.TRUETYPE_FONT, resource.getInputStream());
                         selectedFonts.add(f);
                         ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", f.getName());
                     } catch (FontFormatException | IOException e) {
-                        ModernUI.LOGGER.warn(MARKER, "Preferred font failed to load", e);
+                        ModernUI.LOGGER.warn(MARKER, "Preferred font {} failed to load", type, e);
                     }
                 } else {
-                    ModernUI.LOGGER.warn(MARKER, "Preferred font is invalid");
+                    ModernUI.LOGGER.warn(MARKER, "Preferred font {} is invalid", type);
                 }
             } else {
-                Optional<Font> font = allFonts.stream().filter(f -> f.getName().equals(sPreferredFont)).findFirst();
+                Optional<Font> font = allFonts.stream().filter(f -> f.getFamily().equals(type)).findFirst();
                 if (font.isPresent()) {
                     selectedFonts.add(font.get());
-                    ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", sPreferredFont);
+                    ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", type);
                 } else {
-                    ModernUI.LOGGER.warn(MARKER, "Preferred font cannot found or invalid");
+                    ModernUI.LOGGER.warn(MARKER, "Preferred font {} cannot found or invalid", type);
                 }
             }
         }
@@ -355,13 +357,13 @@ public class GlyphManager {
 
     public TexturedGlyph lookupEmoji(int codePoint) {
         return emojiMap.computeIfAbsent(codePoint, l -> {
-           if (emojiTexture == 0) {
-               ResourceLocation resourceLocation = new ResourceLocation(ModernUI.MODID, "textures/gui/emoji.png");
-               Texture texture = new SimpleTexture(resourceLocation);
-               Minecraft.getInstance().textureManager.loadTexture(resourceLocation, texture);
-               emojiTexture = texture.getGlTextureId();
-           }
-           return new TexturedGlyph(emojiTexture, 12, 0, -8, 12, 12, 0, 0, 0.046875f, 0.046875f);
+            if (emojiTexture == 0) {
+                ResourceLocation resourceLocation = new ResourceLocation(ModernUI.MODID, "textures/gui/emoji.png");
+                Texture texture = new SimpleTexture(resourceLocation);
+                Minecraft.getInstance().textureManager.loadTexture(resourceLocation, texture);
+                emojiTexture = texture.getGlTextureId();
+            }
+            return new TexturedGlyph(emojiTexture, 12, 0, -8, 12, 12, 0, 0, 0.046875f, 0.046875f);
         });
     }
 
