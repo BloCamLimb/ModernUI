@@ -90,13 +90,13 @@ public final class Config {
     static void reload(@Nonnull Cfg.ModConfigEvent event) {
         final ForgeConfigSpec spec = event.getConfig().getSpec();
         if (spec == CLIENT_SPEC) {
-            CLIENT.load();
+            CLIENT.reload();
             ModernUI.LOGGER.debug(ModernUI.MARKER, "Client config reloaded");
         } else if (spec == COMMON_SPEC) {
-            COMMON.load();
+            COMMON.reload();
             ModernUI.LOGGER.debug(ModernUI.MARKER, "Common config reloaded");
         } else if (spec == SERVER_SPEC) {
-            SERVER.load();
+            SERVER.reload();
             ModernUI.LOGGER.debug(ModernUI.MARKER, "Server config reloaded");
         }
     }
@@ -157,7 +157,7 @@ public final class Config {
         private final ForgeConfigSpec.ConfigValue<String> preferredFont;
 
         final ForgeConfigSpec.BooleanValue globalRenderer;
-        private final ForgeConfigSpec.BooleanValue allowShadow;
+        final ForgeConfigSpec.BooleanValue allowShadow;
         private final ForgeConfigSpec.BooleanValue antiAliasing;
         private final ForgeConfigSpec.BooleanValue highPrecision;
         private final ForgeConfigSpec.BooleanValue enableMipmap;
@@ -196,7 +196,7 @@ public final class Config {
                     .define("tooltip", true);
 
             tooltipColor = builder.comment(
-                    "The tooltip frame color. Format: 0xRRGGBB. Also recommend: 0xBE8CDC")
+                    "The tooltip frame color. Format: 0xRRGGBB. Default value: 0xAADCF0")
                     .define("tooltipColor", "0xAADCF0");
 
             builder.pop();
@@ -251,7 +251,7 @@ public final class Config {
 
         }
 
-        private void load() {
+        private void reload() {
             BlurHandler.sBlurEffect = blurEffect.get();
             BlurHandler.sAnimationDuration = animationDuration.get();
             BlurHandler.sBlurRadius = blurRadius.get();
@@ -261,7 +261,7 @@ public final class Config {
             TestHUD.sTooltip = tooltip.get();
             String hex = tooltipColor.get();
             try {
-                int i = Integer.valueOf(hex, 16);
+                int i = Integer.valueOf(hex.substring(2), 16);
                 TestHUD.sTooltipR = i >> 16 & 0xff;
                 TestHUD.sTooltipG = i >> 8 & 0xff;
                 TestHUD.sTooltipB = i & 0xff;
@@ -270,7 +270,7 @@ public final class Config {
             }
             TestHUD.sDing = ding.get();
 
-            Minecraft.getInstance().runAsync(() -> ModernFontRenderer.change(globalRenderer.get()));
+            Minecraft.getInstance().runAsync(() -> ModernFontRenderer.change(globalRenderer.get(), allowShadow.get()));
             GlyphManager.sPreferredFont = preferredFont.get();
             GlyphManager.sAntiAliasing = antiAliasing.get();
             GlyphManager.sHighPrecision = highPrecision.get();
@@ -278,7 +278,6 @@ public final class Config {
             GlyphManager.sMipmapLevel = mipmapLevel.get();
             GlyphManager.sResolutionLevel = resolutionLevel.get();
             TextLayoutProcessor.sDefaultFontSize = defaultFontSize.get();
-            ModernFontRenderer.setAllowShadow(allowShadow.get());
         }
     }
 
@@ -319,7 +318,7 @@ public final class Config {
             builder.pop();
         }
 
-        private void load() {
+        private void reload() {
             ModernUI.developerMode = developerMode.get();
             ServerHandler.INSTANCE.determineShutdownTime();
         }
@@ -333,7 +332,7 @@ public final class Config {
 
         }
 
-        private void load() {
+        private void reload() {
 
         }
     }

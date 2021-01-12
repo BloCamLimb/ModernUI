@@ -119,13 +119,16 @@ final class ServerHandler {
             } while (countdown < nextShutdownNotify);
             long l = Math.round(countdown / 1000D);
             final String key;
+            final String str;
             if (l > 60) {
                 l = Math.round(l / 60D);
                 key = "message.modernui.server_shutdown_min";
+                str = "Server will shutdown in %d minutes";
             } else {
                 key = "message.modernui.server_shutdown_sec";
+                str = "Server will shutdown in %d seconds";
             }
-            ModernUI.LOGGER.info(ModernUI.MARKER, String.format(LanguageMap.getInstance().func_230503_a_(key), l));
+            ModernUI.LOGGER.info(ModernUI.MARKER, String.format(str, l));
             final ITextComponent component = new TranslationTextComponent(key, l).mergeStyle(TextFormatting.LIGHT_PURPLE);
             ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers().forEach(p -> p.sendStatusMessage(component, true));
         }

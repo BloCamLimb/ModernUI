@@ -93,7 +93,7 @@ public class ModernFontRenderer extends FontRenderer {
         }
     }
 
-    public static void change(boolean global) {
+    public static void change(boolean global, boolean shadow) {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
         if (RenderCore.isRenderEngineStarted()) {
             if (instance.globalRenderer != global) {
@@ -104,17 +104,14 @@ public class ModernFontRenderer extends FontRenderer {
                     ObfuscationReflectionHelper.setPrivateValue(FontRenderer.class,
                             instance, instance.stringSplitter, "field_238402_e_");
                 }
+                instance.globalRenderer = global;
             }
-            instance.globalRenderer = global;
+            instance.allowShadow = shadow;
         }
     }
 
     public static boolean isGlobalRenderer() {
         return instance.globalRenderer;
-    }
-
-    public static void setAllowShadow(boolean allow) {
-        instance.allowShadow = allow;
     }
 
     /*static void hook(boolean doHook) {
