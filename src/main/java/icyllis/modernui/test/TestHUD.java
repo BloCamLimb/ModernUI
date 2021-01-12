@@ -48,6 +48,9 @@ import java.util.Objects;
 
 public class TestHUD {
 
+    public static boolean sDing;
+    public static boolean sFirstScreenOpened;
+
     //private static DecimalFormat decimalFormat = new DecimalFormat("#.00");
 
     public static void drawBars(@Nonnull Canvas canvas) {
@@ -125,6 +128,9 @@ public class TestHUD {
 
     // config value
     public static boolean sTooltip;
+    public static int sTooltipR;
+    public static int sTooltipG;
+    public static int sTooltipB;
 
     // space between mouse and tooltip
     private static final int TOOLTIP_SPACE = 12;
@@ -187,7 +193,7 @@ public class TestHUD {
         matrix.translate(0, 0, 400); // because of the order of draw calls, we actually don't need z-shifting
         final Matrix4f mat = matrix.getLast().getMatrix();
 
-        // matrix transformation for x and y params, capability to MineColonies
+        // matrix transformation for x and y params, compatibility to MineColonies
         if (eventX != (int) mouseX || eventY != (int) mouseY) {
             // ignore partial pixels
             tooltipX += eventX - (int) mouseX;
@@ -206,7 +212,7 @@ public class TestHUD {
         canvas.setColor(0, 0, 0, 208);
         canvas.drawRoundedRect(tooltipX - H_BORDER, tooltipY - V_BORDER,
                 tooltipX + tooltipWidth + H_BORDER, tooltipY + tooltipHeight + V_BORDER, 3);
-        canvas.setColor(170, 220, 240, 240);
+        canvas.setColor(sTooltipR, sTooltipG, sTooltipB, 240);
         canvas.drawRoundedFrame(tooltipX - H_BORDER, tooltipY - V_BORDER,
                 tooltipX + tooltipWidth + H_BORDER, tooltipY + tooltipHeight + V_BORDER, 3);
 
@@ -223,9 +229,9 @@ public class TestHUD {
         buf.finish();
         matrix.pop();
 
-        // compatibility with Forge mods, like Quark
         GL11.glPushMatrix();
         GL11.glTranslatef(partialX, partialY, 0); // because of the order of draw calls, we actually don't need z-shifting
+        // compatibility with Forge mods, like Quark
         MinecraftForge.EVENT_BUS.post(new RenderTooltipEvent.PostText(stack, texts, matrix, tooltipLeft, tooltipTop, font, tooltipWidth, tooltipHeight));
         GL11.glPopMatrix();
 

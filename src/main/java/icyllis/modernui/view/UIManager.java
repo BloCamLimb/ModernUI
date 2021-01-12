@@ -21,6 +21,7 @@ package icyllis.modernui.view;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.font.ModernFontRenderer;
+import icyllis.modernui.font.process.TextLayoutProcessor;
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.math.Point;
@@ -28,15 +29,18 @@ import icyllis.modernui.plugin.event.OpenMenuEvent;
 import icyllis.modernui.system.ModernUI;
 import icyllis.modernui.system.mixin.MixinMouseHandler;
 import icyllis.modernui.test.TestHUD;
+import icyllis.modernui.test.TestPauseUI;
 import icyllis.modernui.test.discard.IModule;
 import icyllis.modernui.widget.FrameLayout;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.audio.SimpleSound;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.inventory.container.ContainerType;
 import net.minecraft.network.PacketBuffer;
+import net.minecraft.util.SoundEvents;
 import net.minecraft.util.Util;
 import net.minecraft.util.registry.Registry;
 import net.minecraftforge.api.distmarker.Dist;
@@ -51,6 +55,7 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
@@ -166,7 +171,6 @@ public final class UIManager {
     {
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(BlurHandler.INSTANCE);
-        MinecraftForge.EVENT_BUS.register(UIEditor.INSTANCE);
     }
 
     private UIManager() {
@@ -335,9 +339,9 @@ public final class UIManager {
         final Screen nextScreen = event.getGui();
         mCloseScreen = nextScreen == null;
 
-        // create canvas, init render engine, also font engine
-        if (mCanvas == null) {
-            mCanvas = Canvas.getInstance();
+        if (TestHUD.sDing && !TestHUD.sFirstScreenOpened) {
+            minecraft.getSoundHandler().play(SimpleSound.master(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f));
+            TestHUD.sFirstScreenOpened = true;
         }
 
         if (mCloseScreen) {
@@ -677,6 +681,53 @@ public final class UIManager {
         }*//*
     }*/
 
+    @SubscribeEvent
+    void onPostKeyInput(InputEvent.KeyInputEvent event) {
+        if (!ModernUI.isDeveloperMode() || event.getAction() != GLFW.GLFW_PRESS) {
+            return;
+        }
+        if (!Screen.hasControlDown()) {
+            return;
+        }
+        switch (event.getKey()) {
+            case GLFW.GLFW_KEY_R:
+                TextLayoutProcessor.getInstance().reload();
+                break;
+            case GLFW.GLFW_KEY_G:
+                if (minecraft.currentScreen == null && minecraft.isIntegratedServerRunning() &&
+                        minecraft.getIntegratedServer() != null && !minecraft.getIntegratedServer().getPublic())
+                    openGUI(new TestPauseUI());
+                break;
+            case GLFW.GLFW_KEY_P:
+                if (minecraft.currentScreen == null) {
+                    break;
+                }
+                // My name is van, I'm an artist, a performance artist
+                StringBuilder builder = new StringBuilder();
+                builder.append("Modern UI Debug Info:\n");
+
+                builder.append("[0] Is Modern Screen: ");
+                builder.append(mMuiScreen != null);
+                builder.append("\n");
+
+                builder.append("[1] Has Container: ");
+                builder.append(minecraft.player != null && minecraft.player.openContainer != null);
+                builder.append("\n");
+
+                builder.append("[2] Open Gui: ");
+                if (mApplicationUI == null) {
+                    builder.append(minecraft.currentScreen);
+                } else {
+                    builder.append(mApplicationUI);
+                }
+                builder.append("\n");
+
+                ModernUI.LOGGER.debug(MARKER, builder.toString());
+
+                break;
+        }
+    }
+
     boolean screenKeyDown(int keyCode, int scanCode, int modifiers) {
         /*if (popup != null) {
             return popup.keyPressed(keyCode, scanCode, modifiers);
@@ -838,7 +889,6 @@ public final class UIManager {
             }
             mLastLayoutTime = 0;
             mLayoutRequested = false;
-            UIEditor.INSTANCE.setHoveredWidget(null);
             mDecorView.removeAllViews();
             UITools.useDefaultCursor();
             // Hotfix 1.5.8

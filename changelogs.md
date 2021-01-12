@@ -1,5 +1,9 @@
 Changelogs
 ===
+### 1.16.4-2.3.5.74 (2021-01-11)
+* Fix backslash path
+* Fix tooltip matrix transformation
+
 ### 1.16.4-2.3.4.73 (2021-01-09)
 * Fix tooltip compatibilities
 * Smooth tooltip rendering

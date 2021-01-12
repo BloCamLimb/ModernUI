@@ -19,6 +19,7 @@
 package icyllis.modernui.system;
 
 import icyllis.modernui.font.ModernFontRenderer;
+import icyllis.modernui.graphics.item.ProjectBuilderRenderer;
 import icyllis.modernui.network.NetworkHandler;
 import icyllis.modernui.plugin.IMuiPlugin;
 import icyllis.modernui.plugin.MuiPlugin;
@@ -26,6 +27,7 @@ import icyllis.modernui.test.TestMenu;
 import icyllis.modernui.view.UIManager;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.inventory.container.ContainerType;
+import net.minecraft.item.Item;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundEvent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -69,6 +71,8 @@ public final class Registration {
      */
     public static ContainerType<TestMenu> TEST_MENU;
 
+    public static Item PROJECT_BUILDER_ITEM;
+
     @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
     static void registerSounds(@Nonnull RegistryEvent.Register<SoundEvent> event) {
@@ -82,6 +86,14 @@ public final class Registration {
     static void registerMenus(@Nonnull RegistryEvent.Register<ContainerType<?>> event) {
         final IForgeRegistry<ContainerType<?>> registry = event.getRegistry();
         TEST_MENU = registerMenu(registry, TestMenu::new, "test");
+    }
+
+    @SubscribeEvent
+    static void registerItems(@Nonnull RegistryEvent.Register<Item> event) {
+        if (ModernUI.development) {
+            Item.Properties properties = new Item.Properties().maxStackSize(1).setISTER(() -> ProjectBuilderRenderer::new);
+            event.getRegistry().register(PROJECT_BUILDER_ITEM = new Item(properties).setRegistryName("project_builder"));
+        }
     }
 
     @OnlyIn(Dist.CLIENT)

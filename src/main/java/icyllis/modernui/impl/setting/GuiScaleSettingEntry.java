@@ -19,7 +19,7 @@
 package icyllis.modernui.impl.setting;
 
 import com.google.common.collect.Lists;
-import icyllis.modernui.system.MixinHooks;
+import icyllis.modernui.system.MuiHooks;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.I18n;
 
@@ -35,7 +35,7 @@ public class GuiScaleSettingEntry extends DropdownSettingEntry {
     }
 
     public void onResized() {
-        int r = MixinHooks.C.calcGuiScales();
+        int r = MuiHooks.C.calcGuiScales();
         int min = r >> 8 & 0xf;
         int optimal = r >> 4 & 0xf;
         int max = r & 0xf;

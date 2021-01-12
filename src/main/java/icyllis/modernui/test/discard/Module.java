@@ -299,7 +299,7 @@ public abstract class Module implements IModule, IHost {
                 //listener.setMouseHoverExit();
             }
             if (!result) {
-                UIEditor.INSTANCE.setHoveredWidget(null);
+                //UIEditor.INSTANCE.setHoveredWidget(null);
             }
         }
         return result;
