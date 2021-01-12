@@ -39,7 +39,6 @@ import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLPaths;
 
 import javax.annotation.Nonnull;
-import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -121,9 +120,10 @@ public final class Config {
         private Toml() {
         }
 
-        private static Path getPath(Path configBasePath) {
-            // reroute it to the global config directory
-            // see ServerLifecycleHooks, ModConfig.Type.SERVER
+        // reroute it to the global config directory
+        // see ServerLifecycleHooks, ModConfig.Type.SERVER
+        private static Path reroute(@Nonnull Path configBasePath) {
+            //noinspection SpellCheckingInspection
             if (configBasePath.endsWith("serverconfig")) {
                 return FMLPaths.CONFIGDIR.get();
             }
@@ -132,26 +132,25 @@ public final class Config {
 
         @Override
         public Function<ModConfig, CommentedFileConfig> reader(Path configBasePath) {
-            return super.reader(getPath(configBasePath));
+            return super.reader(reroute(configBasePath));
         }
 
         @Override
         public void unload(Path configBasePath, ModConfig config) {
-            super.unload(getPath(configBasePath), config);
+            super.unload(reroute(configBasePath), config);
         }
     }
 
     @OnlyIn(Dist.CLIENT)
     public static class Client {
 
-        //public boolean keepRunningInScreen;
-
-        //private final ForgeConfigSpec.BooleanValue keepRunningInScreenV;
         private final ForgeConfigSpec.BooleanValue blurEffect;
         private final ForgeConfigSpec.IntValue animationDuration;
         private final ForgeConfigSpec.IntValue blurRadius;
         private final ForgeConfigSpec.DoubleValue backgroundAlpha;
         private final ForgeConfigSpec.BooleanValue tooltip;
+        private final ForgeConfigSpec.ConfigValue<String> tooltipColor;
+        private final ForgeConfigSpec.BooleanValue ding;
 
         private final ForgeConfigSpec.ConfigValue<List<? extends String>> blurBlacklist;
 
@@ -170,8 +169,6 @@ public final class Config {
             builder.comment("Screen Config")
                     .push("screen");
 
-            /*keepRunningInScreenV = builder.comment("Keep game running no matter what screen is open. Modern UI's GUIs will never pause game.")
-                    .define("keepGameRunning", true);*/
             animationDuration = builder.comment(
                     "The duration of screen background and blur radius animation in milliseconds. (0 = OFF)")
                     .defineInRange("animationDuration", 200, 0, 800);
@@ -198,11 +195,18 @@ public final class Config {
                     "Use Modern UI's tooltip style.")
                     .define("tooltip", true);
 
+            tooltipColor = builder.comment(
+                    "The tooltip frame color. Format: 0xRRGGBB. Also recommend: 0xBE8CDC")
+                    .define("tooltipColor", "0xAADCF0");
 
             builder.pop();
 
             builder.comment("General Config")
                     .push("general");
+
+            ding = builder.comment(
+                    "Play a sound effect when the game is loaded.")
+                    .define("ding", true);
 
             builder.pop();
 
@@ -248,8 +252,6 @@ public final class Config {
         }
 
         private void load() {
-            //keepRunningInScreen = keepRunningInScreenV.get();
-
             BlurHandler.sBlurEffect = blurEffect.get();
             BlurHandler.sAnimationDuration = animationDuration.get();
             BlurHandler.sBlurRadius = blurRadius.get();
@@ -257,9 +259,18 @@ public final class Config {
             BlurHandler.INSTANCE.loadBlacklist(blurBlacklist.get());
 
             TestHUD.sTooltip = tooltip.get();
+            String hex = tooltipColor.get();
+            try {
+                int i = Integer.valueOf(hex, 16);
+                TestHUD.sTooltipR = i >> 16 & 0xff;
+                TestHUD.sTooltipG = i >> 8 & 0xff;
+                TestHUD.sTooltipB = i & 0xff;
+            } catch (NumberFormatException e) {
+                ModernUI.LOGGER.error(ModernUI.MARKER, "Wrong color format for setting tooltip color: {}", hex, e);
+            }
+            TestHUD.sDing = ding.get();
 
-            final boolean global = globalRenderer.get();
-            Minecraft.getInstance().runAsync(() -> ModernFontRenderer.change(global));
+            Minecraft.getInstance().runAsync(() -> ModernFontRenderer.change(globalRenderer.get()));
             GlyphManager.sPreferredFont = preferredFont.get();
             GlyphManager.sAntiAliasing = antiAliasing.get();
             GlyphManager.sHighPrecision = highPrecision.get();
@@ -276,7 +287,6 @@ public final class Config {
     public static class Common {
 
         private final ForgeConfigSpec.BooleanValue developerMode;
-        //private final ForgeConfigSpec.IntValue workingDirLevelV;
 
         final ForgeConfigSpec.BooleanValue autoShutdown;
 
@@ -288,8 +298,6 @@ public final class Config {
 
             developerMode = builder.comment("Whether to enable developer mode.")
                     .define("enableDeveloperMode", false);
-            /*workingDirLevelV = builder.comment("The level of your working directory, determines the root directory of your project.")
-                    .defineInRange("workingDirLevel", 1, 0, Integer.MAX_VALUE);*/
 
             builder.pop();
 
@@ -312,16 +320,7 @@ public final class Config {
         }
 
         private void load() {
-            if (developerMode.get()) {
-                ModernUI.developerMode = true;
-            } else {
-                // get '/run' parent
-                Path path = FMLPaths.GAMEDIR.get().getParent();
-                // the root directory of your project
-                File dir = path.toFile();
-                String[] r = dir.list((file, name) -> name.equals("build.gradle"));
-                ModernUI.developerMode = r != null && r.length > 0;
-            }
+            ModernUI.developerMode = developerMode.get();
             ServerHandler.INSTANCE.determineShutdownTime();
         }
     }

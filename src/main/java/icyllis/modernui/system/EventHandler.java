@@ -20,21 +20,31 @@ package icyllis.modernui.system;
 
 import icyllis.modernui.graphics.RenderCore;
 import icyllis.modernui.plugin.event.OpenMenuEvent;
+import icyllis.modernui.resources.model.ProjectBuilderModel;
 import icyllis.modernui.test.TestMenu;
 import icyllis.modernui.test.TestUI;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
+import net.minecraft.client.renderer.model.IBakedModel;
+import net.minecraft.client.renderer.model.ModelResourceLocation;
 import net.minecraft.item.Items;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Util;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
+import net.minecraftforge.client.event.ModelBakeEvent;
+import net.minecraftforge.client.event.ModelRegistryEvent;
+import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import javax.annotation.Nonnull;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * Handles game server or client events from Forge event bus
@@ -46,7 +56,7 @@ final class EventHandler {
     static void onRightClickItem(@Nonnull PlayerInteractEvent.RightClickItem event) {
         if (ModernUI.isDeveloperMode()) {
             if (event.getSide().isServer() && event.getItemStack().getItem() == Items.DIAMOND) {
-                MServerContext.openMenu(event.getPlayer(), TestMenu::new);
+                MuiHooks.openMenu(event.getPlayer(), TestMenu::new);
             }
         }
     }
@@ -67,6 +77,29 @@ final class EventHandler {
             if (event.getMenu().getType() == Registration.TEST_MENU) {
                 event.setApplicationUI(new TestUI());
             }
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    static class ModClient {
+
+        @SubscribeEvent
+        static void onRegistryModel(@Nonnull ModelRegistryEvent event) {
+            ModelLoader.addSpecialModel(new ResourceLocation(ModernUI.MODID, "item/project_builder_main"));
+            ModelLoader.addSpecialModel(new ResourceLocation(ModernUI.MODID, "item/project_builder_cube"));
+        }
+
+        @SubscribeEvent
+        static void onBakeModel(@Nonnull ModelBakeEvent event) {
+            Map<ResourceLocation, IBakedModel> registry = event.getModelRegistry();
+            replaceModel(registry, new ModelResourceLocation(
+                            Objects.requireNonNull(Registration.PROJECT_BUILDER_ITEM.getRegistryName()), "inventory"),
+                    m -> new ProjectBuilderModel(m, event.getModelLoader()));
+        }
+
+        private static void replaceModel(@Nonnull Map<ResourceLocation, IBakedModel> modelRegistry,
+                                         ModelResourceLocation location, @Nonnull Function<IBakedModel, IBakedModel> factory) {
+            modelRegistry.put(location, factory.apply(modelRegistry.get(location)));
         }
     }
 

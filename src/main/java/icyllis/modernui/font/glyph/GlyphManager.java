@@ -20,6 +20,7 @@ package icyllis.modernui.font.glyph;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import icyllis.modernui.font.pipeline.TextRenderNode;
+import icyllis.modernui.font.pipeline.TextRenderType;
 import icyllis.modernui.font.process.VanillaTextKey;
 import icyllis.modernui.system.ModernUI;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
@@ -213,6 +214,9 @@ public class GlyphManager {
 
     private final Int2ObjectMap<TexturedGlyph> emojiMap = new Int2ObjectArrayMap<>(32);
 
+    /**
+     * Emoji texture atlas
+     */
     private int emojiTexture;
 
 
@@ -261,6 +265,27 @@ public class GlyphManager {
         setRenderingHints();
     }
 
+    /**
+     * Reload fonts, clear all cached data
+     */
+    public void reload() {
+        currPosX = GLYPH_SPACING;
+        currPosY = GLYPH_SPACING;
+        currLineHeight = 0;
+        fontKeyMap.clear();
+        glyphCache.clear();
+        digitsMap.clear();
+        emojiMap.clear();
+        textureName = 0;
+        emojiTexture = 0;
+        selectedFonts.clear();
+        allocateGlyphTexture();
+        loadPreferredFonts();
+        setRenderingHints();
+        TextRenderType.clearTextures();
+        ModernUI.LOGGER.debug(MARKER, "Font engine reloaded");
+    }
+
     private void loadPreferredFonts() {
         if (!sPreferredFont.isEmpty()) {
             String type = sPreferredFont;
@@ -287,7 +312,7 @@ public class GlyphManager {
                     ModernUI.LOGGER.warn(MARKER, "Preferred font {} is invalid", type);
                 }
             } else {
-                Optional<Font> font = allFonts.stream().filter(f -> f.getFamily().equals(type)).findFirst();
+                Optional<Font> font = allFonts.stream().filter(f -> f.getName().equals(type)).findFirst();
                 if (font.isPresent()) {
                     selectedFonts.add(font.get());
                     ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", type);
@@ -303,7 +328,7 @@ public class GlyphManager {
         } catch (FontFormatException | IOException e) {
             ModernUI.LOGGER.warn(MARKER, "Built-in font failed to load", e);
         } catch (NullPointerException e) {
-            ModernUI.LOGGER.warn(MARKER, "Built-in font was missing");
+            ModernUI.LOGGER.warn(MARKER, "Built-in font was missing", e);
         }
         // Generally is Arial
         selectedFonts.add(new Font(Font.SANS_SERIF, Font.PLAIN, 72)); // size 1 > 72

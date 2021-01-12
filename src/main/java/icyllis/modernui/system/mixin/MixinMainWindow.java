@@ -18,7 +18,7 @@
 
 package icyllis.modernui.system.mixin;
 
-import icyllis.modernui.system.MixinHooks;
+import icyllis.modernui.system.MuiHooks;
 import net.minecraft.client.MainWindow;
 import net.minecraft.util.math.MathHelper;
 import org.spongepowered.asm.mixin.Mixin;
@@ -33,7 +33,7 @@ public class MixinMainWindow {
      */
     @Overwrite
     public int calcGuiScale(int guiScaleIn, boolean forceUnicode) {
-        int r = MixinHooks.C.calcGuiScales((MainWindow) (Object) this);
+        int r = MuiHooks.C.calcGuiScales((MainWindow) (Object) this);
         return guiScaleIn > 0 ? MathHelper.clamp(guiScaleIn, r >> 8 & 0xf, r & 0xf) : r >> 4 & 0xf;
     }
 }

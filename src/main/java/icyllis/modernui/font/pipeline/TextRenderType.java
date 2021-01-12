@@ -19,6 +19,7 @@
 package icyllis.modernui.font.pipeline;
 
 import com.google.common.collect.ImmutableList;
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -119,6 +120,14 @@ public class TextRenderType extends RenderType {
             return SEE_THROUGH_TYPES.computeIfAbsent(textureName, n -> new TextRenderType(n, "modern_text_see_through"));
         }
         return TYPES.computeIfAbsent(textureName, TextRenderType::new);
+    }
+
+    public static void clearTextures() {
+        for (Int2ObjectMap.Entry<TextRenderType> entry : TYPES.int2ObjectEntrySet()) {
+            GlStateManager.deleteTexture(entry.getIntKey());
+        }
+        TYPES.clear();
+        SEE_THROUGH_TYPES.clear();
     }
 
     @Override

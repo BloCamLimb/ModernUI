@@ -25,10 +25,13 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
 import icyllis.modernui.animation.ITimeInterpolator;
+import icyllis.modernui.system.Registration;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.widget.LinearLayout;
 import icyllis.modernui.widget.Orientation;
 import icyllis.modernui.view.View;
+import net.minecraft.client.Minecraft;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.text.TextFormatting;
 
 import javax.annotation.Nonnull;
@@ -110,7 +113,8 @@ public class TestLinearLayout extends LinearLayout {
         canvas.resetColor();
         canvas.setTextAlign(TextAlign.LEFT);
         canvas.drawText("A Text", 10, 0);
-        canvas.drawText("\u0054\u0068\u0069\u0073\u0020\u0069\u0073\u0020\u0627\u0644\u0644\u063a\u0629\u0020\u0627\u0644\u0639\u0631\u0628\u064a\u0629\u002c\u0020\u0061\u006e\u0064\u0020\u0073\u0068\u0065\u0020\u0069\u0073\u0020\u6d77\u87ba", 10, 10);
+        canvas.drawText(TextFormatting.BOLD + "A Text", 10, 10);
+        canvas.drawText("\u0054\u0068\u0069\u0073\u0020\u0069\u0073\u0020\u0627\u0644\u0644\u063a\u0629\u0020\u0627\u0644\u0639\u0631\u0628\u064a\u0629\u002c\u0020\u0061\u006e\u0064\u0020\u0073\u0068\u0065\u0020\u0069\u0073\u0020\u6d77\u87ba", 10, 20);
         canvas.drawRoundedRect(6, 90, 46, 104, 7);
         canvas.drawRoundedFrame(6, 108, 46, 122, 7);
 

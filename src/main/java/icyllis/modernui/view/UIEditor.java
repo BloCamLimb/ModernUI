@@ -190,44 +190,10 @@ public enum UIEditor {
         if (!Screen.hasControlDown()) {
             return;
         }
-        Minecraft minecraft = Minecraft.getInstance();
-        switch (event.getKey()) {
-            case GLFW.GLFW_KEY_T:
-                if (UIManager.getInstance().hasOpenGUI()) {
-                    iterateWorking();
-                }
-                break;
-            case GLFW.GLFW_KEY_G:
-                if (minecraft.currentScreen == null)
-                    if (minecraft.isSingleplayer() && !minecraft.getIntegratedServer().getPublic())
-                        UIManager.getInstance().openGUI(new TestPauseUI());
-                break;
-            case GLFW.GLFW_KEY_P:
-                if (minecraft.currentScreen == null) {
-                    break;
-                }
-                StringBuilder builder = new StringBuilder();
-                builder.append("Modern UI Debug Info:\n");
-
-                builder.append("[0] Is Modern Screen: ");
-                builder.append(UIManager.getInstance().hasOpenGUI());
-                builder.append("\n");
-
-                builder.append("[1] Has Container: ");
-                builder.append(minecraft.player != null && minecraft.player.openContainer != null);
-                builder.append("\n");
-
-                builder.append("[2] Open Gui: ");
-                if (!UIManager.getInstance().hasOpenGUI()) {
-                    builder.append(minecraft.currentScreen);
-                } else {
-                    builder.append(UIManager.getInstance().getOpenGUI());
-                }
-                builder.append("\n");
-
-                ModernUI.LOGGER.debug(UIManager.MARKER, builder.toString());
-
-                break;
+        if (event.getKey() == GLFW.GLFW_KEY_T) {
+            if (UIManager.getInstance().hasOpenGUI()) {
+                iterateWorking();
+            }
         }
     }
 }

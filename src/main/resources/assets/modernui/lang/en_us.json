@@ -47,5 +47,8 @@
 
   "gui.modernui.tooltip.thanksOptifine": "This functionality is powered by OptiFine",
 
+  "message.modernui.server_shutdown_sec": "Server will shutdown in %s seconds",
+  "message.modernui.server_shutdown_min": "Server will shutdown in %s minutes",
+
   "warning.modernui.old_opengl": "OpenGL version is too old. OpenGL {2} or higher is required (your version is OpenGL {3}). Please upgrade the driver of your video card."
 }

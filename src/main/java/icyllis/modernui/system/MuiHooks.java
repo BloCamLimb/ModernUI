@@ -18,13 +18,18 @@
 
 package icyllis.modernui.system;
 
+import net.minecraft.client.MainWindow;
+import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.inventory.container.IContainerProvider;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.registry.Registry;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.PlayerContainerEvent;
 import net.minecraftforge.fml.network.IContainerFactory;
@@ -34,9 +39,12 @@ import javax.annotation.Nullable;
 import java.util.function.Consumer;
 
 /**
- * Modern UI server service, both for dedicated server or integrated server
+ * Exposed for external calls
  */
-public final class MServerContext {
+public final class MuiHooks {
+
+    private MuiHooks() {
+    }
 
     /**
      * Get the lifecycle of current server.
@@ -116,5 +124,79 @@ public final class MServerContext {
         menu.addListener(player);
         player.openContainer = menu;
         MinecraftForge.EVENT_BUS.post(new PlayerContainerEvent.Open(player, menu));
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public static final class C {
+
+        private C() {
+        }
+
+        public static int calcGuiScales() {
+            MainWindow mainWindow = Minecraft.getInstance().getMainWindow();
+            return calcGuiScales(mainWindow);
+        }
+
+        public static int calcGuiScales(@Nonnull MainWindow mainWindow) {
+
+            double w = Math.floor(mainWindow.getFramebufferWidth() / 16.0d);
+            double h = Math.floor(mainWindow.getFramebufferHeight() / 9.0d);
+
+            if (w % 2 != 0) {
+                w++;
+            }
+            if (h % 2 != 0) {
+                h++;
+            }
+
+            double base = Math.min(w, h);
+            double top = Math.max(w, h);
+
+            int min;
+            int max = MathHelper.clamp((int) (base / 27), 1, 10);
+            if (max > 1) {
+                int i = (int) (base / 64);
+                int j = (int) (top / 64);
+                min = MathHelper.clamp(j > i ? i + 1 : i, 2, 10);
+            } else {
+                min = 1;
+            }
+
+            int best;
+            if (min > 1) {
+                int i = (int) (base / 32);
+                int j = (int) (top / 32);
+                double v1 = base / (i * 32);
+                if (v1 > 1.25 || j > i) {
+                    best = Math.min(max, i + 1);
+                } else {
+                    best = i;
+                }
+            } else {
+                best = 1;
+            }
+
+            return min << 8 | best << 4 | max;
+        }
+
+        /* Screen */
+        /*public static int getScreenBackgroundColor() {
+            return (int) (BlurHandler.INSTANCE.getBackgroundAlpha() * 255.0f) << 24;
+        }*/
+
+        /* Minecraft */
+        /*public static void displayInGameMenu(boolean usePauseScreen) {
+            Minecraft minecraft = Minecraft.getInstance();
+            if (minecraft.currentScreen == null) {
+                // If press F3 + Esc and is single player and not open LAN world
+                if (usePauseScreen && minecraft.isIntegratedServerRunning() && minecraft.getIntegratedServer() != null && !minecraft.getIntegratedServer().getPublic()) {
+                    minecraft.displayGuiScreen(new IngameMenuScreen(false));
+                    minecraft.getSoundHandler().pause();
+                } else {
+                    //UIManager.INSTANCE.openGuiScreen(new TranslationTextComponent("menu.game"), IngameMenuHome::new);
+                    minecraft.displayGuiScreen(new IngameMenuScreen(true));
+                }
+            }
+        }*/
     }
 }

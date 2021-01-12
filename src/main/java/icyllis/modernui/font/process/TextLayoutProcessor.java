@@ -184,6 +184,14 @@ public class TextLayoutProcessor {
     }
 
     /**
+     * Reload glyph manager, delete all generated textures, clear all cached layout data
+     */
+    public void reload() {
+        glyphManager.reload();
+        stringCache.invalidateAll();
+    }
+
+    /**
      * Minecraft gives us a deeply processed IReorderingProcessor, so we have to make the
      * IReorderingProcessor not a reordered text, see {@link icyllis.modernui.system.mixin.MixinClientLanguage}.
      * So actually it's a copy of original text, then we can use our layout engine later

@@ -18,9 +18,7 @@
 
 package icyllis.modernui.system;
 
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.util.text.*;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -120,15 +118,15 @@ final class ServerHandler {
                 }
             } while (countdown < nextShutdownNotify);
             long l = Math.round(countdown / 1000D);
-            final String text;
+            final String key;
             if (l > 60) {
                 l = Math.round(l / 60D);
-                text = "Server will shutdown in " + l + " minutes";
+                key = "message.modernui.server_shutdown_min";
             } else {
-                text = "Server will shutdown in " + l + " seconds";
+                key = "message.modernui.server_shutdown_sec";
             }
-            ModernUI.LOGGER.info(ModernUI.MARKER, text);
-            final ITextComponent component = new StringTextComponent(text).mergeStyle(TextFormatting.LIGHT_PURPLE);
+            ModernUI.LOGGER.info(ModernUI.MARKER, String.format(LanguageMap.getInstance().func_230503_a_(key), l));
+            final ITextComponent component = new TranslationTextComponent(key, l).mergeStyle(TextFormatting.LIGHT_PURPLE);
             ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers().forEach(p -> p.sendStatusMessage(component, true));
         }
     }

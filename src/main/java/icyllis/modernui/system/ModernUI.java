@@ -24,13 +24,17 @@ import net.minecraftforge.eventbus.api.BusBuilder;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.DatagenModLoader;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
+import net.minecraftforge.fml.loading.FMLPaths;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
+import java.io.File;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Path;
 
 /**
  * The Modern UI mod class for INTERNAL USE ONLY
@@ -48,6 +52,7 @@ public final class ModernUI {
 
     private static boolean optiFineLoaded;
 
+    static boolean development;
     static boolean developerMode;
 
     // mod-loading thread
@@ -55,30 +60,35 @@ public final class ModernUI {
         checkJava();
 
         final boolean isDataGen = DatagenModLoader.isRunningDataGen();
-        /*try {
-            Environment environment = Launcher.INSTANCE.environment();
-            isDataGen = environment.findLaunchHandler(
-                    environment.getProperty(IEnvironment.Keys.LAUNCHTARGET.get())
-                            .orElse("missing"))
-                    .map(l -> ((FMLCommonLaunchHandler) l).isData())
-                    .orElse(Boolean.FALSE);
-        } catch (Exception ignored) {
-            // Non-FML environment
-        }*/
 
         init();
         Config.init();
         LayoutIO.init();
         LocalStorage.init();
 
-        if (!isDataGen && FMLEnvironment.dist.isClient()) {
-            RenderCore.init();
+        if (FMLEnvironment.dist.isClient()) {
+            if (!isDataGen) {
+                RenderCore.init();
+            }
+            if (development) {
+                FMLJavaModLoadingContext.get().getModEventBus().register(EventHandler.ModClient.class);
+            }
         }
 
         LOGGER.debug(MARKER, "Modern UI initialized, signed: {}", ModernUI.class.getSigners() != null);
     }
 
     private static void init() {
+        // get '/run' parent
+        Path path = FMLPaths.GAMEDIR.get().getParent();
+        // the root directory of your project
+        File dir = path.toFile();
+        String[] r = dir.list((file, name) -> name.equals("build.gradle"));
+        development = r != null && r.length > 0;
+        if (development) {
+            LOGGER.debug(MARKER, "Working in development environment");
+        }
+
         try {
             Class<?> clazz = Class.forName("optifine.Installer");
             String version = (String) clazz.getMethod("getOptiFineVersion").invoke(null);
@@ -111,7 +121,7 @@ public final class ModernUI {
     }
 
     public static boolean isDeveloperMode() {
-        return developerMode;
+        return developerMode || development;
     }
 
     public static boolean isOptiFineLoaded() {
