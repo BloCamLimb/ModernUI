@@ -63,7 +63,7 @@ public class ShaderProgram implements IShaderManager {
             program = ShaderLinkHelper.createProgram();
             ShaderLinkHelper.linkProgram(this);
         } catch (IOException e) {
-            ModernUI.LOGGER.fatal(RenderCore.MARKER, "An error occurred while compiling shaders", e);
+            ModernUI.LOGGER.fatal(RenderCore.MARKER, "An error occurred while compiling shader: {}", this, e);
         }
     }
 

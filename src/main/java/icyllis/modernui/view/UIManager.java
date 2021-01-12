@@ -702,7 +702,6 @@ public final class UIManager {
                 if (minecraft.currentScreen == null) {
                     break;
                 }
-                // My name is van, I'm an artist, a performance artist
                 StringBuilder builder = new StringBuilder();
                 builder.append("Modern UI Debug Info:\n");
 
@@ -723,7 +722,6 @@ public final class UIManager {
                 builder.append("\n");
 
                 ModernUI.LOGGER.debug(MARKER, builder.toString());
-
                 break;
         }
     }

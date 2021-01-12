@@ -150,7 +150,7 @@ public final class Registration {
         ModernUI.EVENT_BUS.register(EventHandler.Internal.class);
         event.getMinecraftSupplier().get().runAsync(() -> {
             UIManager.initialize();
-            ModernFontRenderer.change(Config.CLIENT.globalRenderer.get());
+            ModernFontRenderer.change(Config.CLIENT.globalRenderer.get(), Config.CLIENT.allowShadow.get());
         });
     }
 
