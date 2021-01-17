@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2020 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,25 +16,15 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.shader.program;
+package icyllis.modernui.graphics.shader;
 
-import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.shader.ShaderProgram;
-import org.lwjgl.opengl.GL20;
+public abstract class ShaderUniform<T> {
 
-public class RingShader extends ShaderProgram {
+    protected final int location;
 
-    public static RingShader INSTANCE = new RingShader("rect", "ring");
-
-    private RingShader(String vert, String frag) {
-        super(ModernUI.ID, vert, frag);
+    public ShaderUniform(int location) {
+        this.location = location;
     }
 
-    public void setRadius(float inner, float radius) {
-        GL20.glUniform2f(0, inner, radius);
-    }
-
-    public void setCenter(float x, float y) {
-        GL20.glUniform2f(1, x, y);
-    }
+    public abstract void load(T data);
 }

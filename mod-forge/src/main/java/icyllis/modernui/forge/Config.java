@@ -189,13 +189,18 @@ public final class Config {
                         return list;
                     }, s -> true);
 
+            builder.pop();
+
+            builder.comment("Tooltip Config")
+                    .push("tooltip");
+
             tooltip = builder.comment(
-                    "Use Modern UI's tooltip style.")
-                    .define("tooltip", true);
+                    "Enable Modern UI's tooltip style.")
+                    .define("enable", true);
 
             tooltipColor = builder.comment(
                     "The tooltip frame color. Format: 0xRRGGBB. Default value: 0xAADCF0")
-                    .define("tooltipColor", "0xAADCF0");
+                    .define("frameColor", "0xAADCF0");
 
             builder.pop();
 

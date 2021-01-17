@@ -22,6 +22,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.font.pipeline.TextRenderNode;
 import icyllis.modernui.font.process.TextLayoutProcessor;
+import icyllis.modernui.graphics.RenderCore;
 import icyllis.modernui.mcimpl.mixin.AccessFont;
 import icyllis.modernui.mcimpl.mixin.AccessStringSplitter;
 import net.fabricmc.api.EnvType;
@@ -90,14 +91,13 @@ public class ModernFontRenderer extends Font {
 
     public static void change(boolean global, boolean shadow) {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
-        //FIXME
-        //if (RenderCore.isRenderEngineStarted()) {
+        if (RenderCore.isRenderEngineStarted()) {
             if (instance.globalRenderer != global) {
                 ((AccessFont) instance).setSplitter(global ? instance.textHandler : instance.stringSplitter);
                 instance.globalRenderer = global;
             }
             instance.allowShadow = shadow;
-        //}
+        }
     }
 
     public static boolean isGlobalRenderer() {
@@ -159,7 +159,7 @@ public class ModernFontRenderer extends Font {
 
     @Override
     public int drawInBatch(@Nonnull Component text, float x, float y, int color, boolean dropShadow, @Nonnull Matrix4f matrix,
-                             @Nonnull MultiBufferSource buffer, boolean seeThrough, int colorBackground, int packedLight) {
+                           @Nonnull MultiBufferSource buffer, boolean seeThrough, int colorBackground, int packedLight) {
         if (globalRenderer) {
             v.setValue(x);
             // iterate all siblings
@@ -174,8 +174,9 @@ public class ModernFontRenderer extends Font {
         return super.drawInBatch(text, x, y, color, dropShadow, matrix, buffer, seeThrough, colorBackground, packedLight);
     }
 
+    // compatibility layer
     public void drawText(@Nonnull FormattedText text, float x, float y, int color, boolean dropShadow, @Nonnull Matrix4f matrix,
-                        @Nonnull MultiBufferSource buffer, boolean seeThrough, int colorBackground, int packedLight) {
+                         @Nonnull MultiBufferSource buffer, boolean seeThrough, int colorBackground, int packedLight) {
         v.setValue(x);
         text.visit((style, t) -> {
             v.add(drawLayer0(t, v.floatValue(), y, color, dropShadow, matrix,
@@ -186,7 +187,7 @@ public class ModernFontRenderer extends Font {
 
     @Override
     public int drawInBatch(@Nonnull FormattedCharSequence text, float x, float y, int color, boolean dropShadow, @Nonnull Matrix4f matrix,
-                              @Nonnull MultiBufferSource buffer, boolean seeThrough, int colorBackground, int packedLight) {
+                           @Nonnull MultiBufferSource buffer, boolean seeThrough, int colorBackground, int packedLight) {
         if (globalRenderer) {
             v.setValue(x);
             fontEngine.handleSequence(text,

@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2020 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,24 +16,25 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.shader.uniform;
+package icyllis.modernui.graphics.shader.program;
 
-import icyllis.modernui.graphics.shader.ShaderUniform;
-import icyllis.modernui.graphics.math.Matrix4f;
+import icyllis.modernui.ModernUI;
+import icyllis.modernui.graphics.shader.ShaderProgram;
 import org.lwjgl.opengl.GL20;
 
-import javax.annotation.Nonnull;
+public class RoundedFrameShader extends ShaderProgram {
 
-public class UniformMatrix4f extends ShaderUniform<Matrix4f> {
+    public static RoundedFrameShader INSTANCE = new RoundedFrameShader();
 
-    public UniformMatrix4f(int location) {
-        super(location);
+    private RoundedFrameShader() {
+        super(ModernUI.ID, "rect", "rounded_rect_frame");
     }
 
-    @Override
-    public void load(@Nonnull Matrix4f data) {
-        if (location != -1) {
-            GL20.glUniform4fv(location, data.getData());
-        }
+    public void setRadius(float radius) {
+        GL20.glUniform1f(0, radius);
+    }
+
+    public void setInnerRect(float left, float top, float right, float bottom) {
+        GL20.glUniform4f(1, left, top, right, bottom);
     }
 }

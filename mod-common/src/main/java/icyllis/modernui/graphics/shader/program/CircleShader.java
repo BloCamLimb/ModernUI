@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2020 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,19 +22,19 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.shader.ShaderProgram;
 import org.lwjgl.opengl.GL20;
 
-public class RoundedRectShader extends ShaderProgram {
+public class CircleShader extends ShaderProgram {
 
-    public static final RoundedRectShader INSTANCE = new RoundedRectShader();
+    public static CircleShader INSTANCE = new CircleShader("rect", "circle");
 
-    private RoundedRectShader() {
-        super(ModernUI.ID, "rect", "rounded_rect");
+    private CircleShader(String vert, String frag) {
+        super(ModernUI.ID, vert, frag);
     }
 
     public void setRadius(float radius) {
         GL20.glUniform1f(0, radius);
     }
 
-    public void setInnerRect(float left, float top, float right, float bottom) {
-        GL20.glUniform4f(1, left, top, right, bottom);
+    public void setCenter(float x, float y) {
+        GL20.glUniform2f(1, x, y);
     }
 }
