@@ -1,0 +1,17 @@
+{
+  "minVersion": "0.8",
+  "required": true,
+  "compatibilityLevel": "JAVA_8",
+  "plugin": "icyllis.modernui.forgelayer.MixinConfigPlugin",
+  "package": "icyllis.modernui.forgelayer.mixin",
+  "mixins": [
+    "MixinFoodData"
+  ],
+  "client": [
+    "MixinFontManager",
+    "MixinMainWindow",
+    "MixinMatrix4f",
+    "MixinMouseHandler",
+    "MixinScreen"
+  ]
+}

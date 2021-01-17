@@ -1,5 +1,6 @@
 # Modern UI
-### Homepage [CurseForge](https://www.curseforge.com/minecraft/mc-mods/modern-ui)
+### Homepage
+Releases for Minecraft Mod are available on [CurseForge](https://www.curseforge.com/minecraft/mc-mods/modern-ui)
 ### License
 * Modern UI
   - Copyright (C) 2019-2021 BloCamLimb. All rights reserved. 
@@ -13,20 +14,28 @@
 ![a](https://i.loli.net/2020/05/15/fYAow29d4JtqaGu.png)
 ![b](https://i.loli.net/2020/04/10/LDBFc1qo5wtnS8u.png)
 ### Adding Modern UI to your project
-#### Development environment
+#### Environment requirements
 - Liberica OpenJDK 8u275
 - Forge 1.16.4-35.1.0
+#### Version information
+There's currently no stable builds for development
 #### Gradle configuration
 Add followings to `build.gradle`
 ```
 repositories {
     maven {
-        name 'CurseForge Maven'
-        url 'https://www.cursemaven.com/'
+        name 'IzzelAliz Repo'
+        url 'https://maven.izzel.io/releases'
     }
 }
+```
+ForgeGradle:
+```
 dependencies {
-    compile fg.deobf("curse.maven:ModernUI:[-version]")
+    compile fg.deobf("icyllis.modernui:ModernUI-Forge:{version}")
 }
 ```
-There's currently no stable builds for development
+Fabric Loom:
+```
+
+```
