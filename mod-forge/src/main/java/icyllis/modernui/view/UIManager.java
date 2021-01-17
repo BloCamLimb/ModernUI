@@ -920,7 +920,6 @@ public final class UIManager {
             for (Animation animation : animations) {
                 animation.update(mDrawingTimeMillis);
             }
-            BlurHandler.INSTANCE.update();
         } else {
             // remove animations from loop on end
             if (!animations.isEmpty()) {

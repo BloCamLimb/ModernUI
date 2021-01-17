@@ -59,7 +59,7 @@ import java.util.Map;
  * This class handles mod loading events
  */
 @Mod.EventBusSubscriber(modid = ModernUI.ID, bus = Mod.EventBusSubscriber.Bus.MOD)
-public final class Registration {
+final class Registration {
 
     @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
