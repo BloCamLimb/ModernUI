@@ -1,5 +1,11 @@
 Changelogs
 ===
+### 1.16.4-2.4.0.75 (2021-01-17)
+* Change project structure
+* Add SFX when game loaded
+* Configurable tooltip frame color
+* Make font renderer reloadable at runtime
+
 ### 1.16.4-2.3.5.74 (2021-01-11)
 * Fix backslash path
 * Fix tooltip matrix transformation

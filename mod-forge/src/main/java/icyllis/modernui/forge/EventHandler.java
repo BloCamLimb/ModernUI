@@ -39,6 +39,7 @@ import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.client.event.ModelBakeEvent;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.model.ModelLoader;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -110,7 +111,7 @@ final class EventHandler {
      * Handles game client events from Forge event bus
      */
     @OnlyIn(Dist.CLIENT)
-    @Mod.EventBusSubscriber(Dist.CLIENT)
+    @Mod.EventBusSubscriber(modid = ModernUI.ID, value = Dist.CLIENT)
     static class Client {
 
         @SubscribeEvent
@@ -128,6 +129,13 @@ final class EventHandler {
         @SubscribeEvent(priority = EventPriority.LOW)
         static void onGuiOpen(@Nonnull GuiOpenEvent event) {
             BlurHandler.INSTANCE.count(event.getGui());
+        }
+
+        @SubscribeEvent
+        static void onRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
+            if (event.phase == TickEvent.Phase.START) {
+                BlurHandler.INSTANCE.update();
+            }
         }
 
         /*@SubscribeEvent(receiveCanceled = true)
