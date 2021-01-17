@@ -1,0 +1,30 @@
+modLoader="javafml"
+loaderVersion="[34,)"
+issueTrackerURL="https://github.com/BloCamLimb/ModernUI/issues"
+logoFile= "../../../../mod-common/src/main/resources/logo.png"
+license="All Rights Reserved"
+
+[[mods]]
+    modId="modernui"
+    version="${version}"
+    displayName="Modern UI"
+    displayURL="https://curseforge.com/minecraft/mc-mods/modern-ui"
+    authors="BloCamLimb"
+    credits="mosquitozzi, et al., The Android Open Source Project"
+    description='''
+    Modern UI is a UI Engine for desktop application development, which provides a wealth of functionality.
+    It has a stand-alone high performance render engine to draw graphs and a font engine with better language compatibility.
+    '''
+
+[[dependencies.modernui]]
+    modId="forge"
+    mandatory=true
+    versionRange="[34.0.7,)"
+    ordering="NONE"
+    side="BOTH"
+[[dependencies.modernui]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.16.3, 1.17)"
+    ordering="NONE"
+    side="BOTH"
