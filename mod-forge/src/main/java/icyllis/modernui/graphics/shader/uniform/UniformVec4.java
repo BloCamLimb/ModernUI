@@ -18,8 +18,8 @@
 
 package icyllis.modernui.graphics.shader.uniform;
 
+import com.mojang.math.Vector4f;
 import icyllis.modernui.graphics.shader.ShaderUniform;
-import net.minecraft.util.math.vector.Vector4f;
 import org.lwjgl.opengl.GL20;
 
 public class UniformVec4 extends ShaderUniform<Vector4f> {
@@ -31,7 +31,7 @@ public class UniformVec4 extends ShaderUniform<Vector4f> {
     @Override
     public void load(Vector4f data) {
         if (location != -1) {
-            GL20.glUniform4f(location, data.getX(), data.getY(), data.getZ(), data.getW());
+            GL20.glUniform4f(location, data.x(), data.y(), data.z(), data.w());
         }
     }
 }

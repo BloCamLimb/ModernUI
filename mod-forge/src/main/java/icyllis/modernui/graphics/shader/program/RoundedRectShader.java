@@ -18,8 +18,8 @@
 
 package icyllis.modernui.graphics.shader.program;
 
+import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.shader.ShaderProgram;
-import icyllis.modernui.system.ModernUI;
 import org.lwjgl.opengl.GL20;
 
 public class RoundedRectShader extends ShaderProgram {
@@ -27,7 +27,7 @@ public class RoundedRectShader extends ShaderProgram {
     public static final RoundedRectShader INSTANCE = new RoundedRectShader();
 
     private RoundedRectShader() {
-        super(ModernUI.MODID, "rect", "rounded_rect");
+        super(ModernUI.ID, "rect", "rounded_rect");
     }
 
     public void setRadius(float radius) {

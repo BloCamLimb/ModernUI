@@ -20,7 +20,7 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.animation.ITimeInterpolator;
 import icyllis.modernui.view.UIManager;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.Mth;
 
 import javax.annotation.Nonnull;
 
@@ -58,7 +58,7 @@ public class ScrollController {
         if (currValue != targetValue) {
             float p = Math.min((float) (time - startTime) / duration, 1);
             p = ITimeInterpolator.SINE.getInterpolation(p);
-            currValue = MathHelper.lerp(p, startValue, targetValue);
+            currValue = Mth.lerp(p, startValue, targetValue);
             listener.onScrollAmountUpdated(this, currValue);
             UIManager.getInstance().repostCursorEvent();
         }
@@ -129,7 +129,7 @@ public class ScrollController {
         startTime = UIManager.getInstance().getDrawingTime();
         startValue = currValue;
         float scale = (float) UIManager.getInstance().getGuiScale();
-        float endX = MathHelper.clamp(target, 0, maxValue) * scale;
+        float endX = Mth.clamp(target, 0, maxValue) * scale;
         targetValue = (int) endX / scale;
         this.duration = duration;
     }
@@ -144,7 +144,7 @@ public class ScrollController {
         startTime = UIManager.getInstance().getDrawingTime();
         startValue = currValue;
         float scale = (float) UIManager.getInstance().getGuiScale();
-        float end = MathHelper.clamp(target, 0, maxValue) * scale;
+        float end = Mth.clamp(target, 0, maxValue) * scale;
         targetValue = (int) end / scale;
         if (startValue == targetValue) {
             return false;

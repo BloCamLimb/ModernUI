@@ -1,7 +1,7 @@
 modLoader="javafml"
 loaderVersion="[34,)"
 issueTrackerURL="https://github.com/BloCamLimb/ModernUI/issues"
-logoFile= "../../../../mod-common/src/main/resources/logo.png"
+logoFile= "logo.png"
 license="All Rights Reserved"
 
 [[mods]]

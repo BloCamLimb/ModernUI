@@ -16,9 +16,13 @@ dependencies {
     minecraft "com.mojang:minecraft:${rootProject.architect.minecraft}"
     mappings minecraft.officialMojangMappings()
     forge "net.minecraftforge:forge:${rootProject.architect.minecraft}-${rootProject.forge_version}"
-    modCompile "me.shedaniel:architectury:${rootProject.architectury_version}:forge"
 
+    compile "com.github.ben-manes.caffeine:caffeine:${rootProject.caffeine_version}"
     compile "com.vladsch.flexmark:flexmark:${rootProject.flexmark_version}"
+
+    shadow "com.github.ben-manes.caffeine:caffeine:${rootProject.caffeine_version}"
+    shadow "com.vladsch.flexmark:flexmark:${rootProject.flexmark_version}"
+
     compile('org.apache.maven:maven-artifact') {
         version {
             strictly '3.6.3'
@@ -40,6 +44,22 @@ dependencies {
     shadow(project(path: ":mod-common", configuration: "transformForge")) {
         transitive = false
     }
+    shadow(project(":core")) {
+        transitive = false
+    }
+}
+
+shadowJar {
+    exclude "fabric.mod.json"
+
+    configurations = [project.configurations.shadow]
+    classifier "shadow"
+}
+
+remapJar {
+    dependsOn(shadowJar)
+    input.set(shadowJar.archiveFile)
+    archiveClassifier = "forge"
 }
 
 jar {
@@ -50,10 +70,10 @@ jar {
                 "Specification-Vendor"    : "BloCamLimb",
                 "Specification-Version"   : "1",
                 "Implementation-Title"    : rootProject.name,
-                "Implementation-Version"  : "${archiveVersion}",
+                "Implementation-Version"  : archiveVersion,
                 "Implementation-Vendor"   : "BloCamLimb",
                 "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
-                "MixinConnector"          : "icyllis.modernui.system.MixinConnector"
+                "MixinConnector"          : "icyllis.modernui.forge.MixinConnector"
         ])
     }
 }

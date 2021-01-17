@@ -19,20 +19,17 @@
 package icyllis.modernui.test;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.graphics.math.TextAlign;
-import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
 import icyllis.modernui.animation.ITimeInterpolator;
-import icyllis.modernui.system.Registration;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.view.Gravity;
+import icyllis.modernui.view.View;
 import icyllis.modernui.widget.LinearLayout;
 import icyllis.modernui.widget.Orientation;
-import icyllis.modernui.view.View;
-import net.minecraft.client.Minecraft;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.ChatFormatting;
 
 import javax.annotation.Nonnull;
 
@@ -113,7 +110,7 @@ public class TestLinearLayout extends LinearLayout {
         canvas.resetColor();
         canvas.setTextAlign(TextAlign.LEFT);
         canvas.drawText("A Text", 10, 0);
-        canvas.drawText(TextFormatting.BOLD + "A Text", 10, 10);
+        canvas.drawText(ChatFormatting.BOLD + "A Text", 10, 10);
         canvas.drawText("\u0054\u0068\u0069\u0073\u0020\u0069\u0073\u0020\u0627\u0644\u0644\u063a\u0629\u0020\u0627\u0644\u0639\u0631\u0628\u064a\u0629\u002c\u0020\u0061\u006e\u0064\u0020\u0073\u0068\u0065\u0020\u0069\u0073\u0020\u6d77\u87ba", 10, 20);
         canvas.drawRoundedRect(6, 90, 46, 104, 7);
         canvas.drawRoundedFrame(6, 108, 46, 122, 7);
@@ -138,7 +135,6 @@ public class TestLinearLayout extends LinearLayout {
 
         canvas.restore();
         RenderSystem.depthMask(false);
-
 
 
         // 4
@@ -238,8 +234,7 @@ public class TestLinearLayout extends LinearLayout {
 
         @Override
         protected void onDraw(@Nonnull Canvas canvas) {
-            canvas.moveTo(this);
-            String str = TextFormatting.UNDERLINE + "Modern" + TextFormatting.AQUA + " UI"/* + TextFormatting.OBFUSCATED + "\u0629\u064a\u0628\u0631\u0639\u0644\u0627" + TextFormatting.STRIKETHROUGH + "\u2642"*/;
+            String str = ChatFormatting.UNDERLINE + "Modern" + ChatFormatting.AQUA + " UI"/* + TextFormatting.OBFUSCATED + "\u0629\u064a\u0628\u0631\u0639\u0644\u0627" + TextFormatting.STRIKETHROUGH + "\u2642"*/;
             if (isHovered()) {
                 canvas.setColor(140, 200, 240, 128);
                 canvas.drawRoundedRect(0, 1, getWidth(), getHeight() - 2, 4);
@@ -267,9 +262,8 @@ public class TestLinearLayout extends LinearLayout {
 
         @Override
         protected void onDraw(@Nonnull Canvas canvas) {
-            canvas.moveTo(this);
             canvas.setTextAlign(TextAlign.LEFT);
-            canvas.drawText("" + TextFormatting.RED + TextFormatting.BLUE + "G", offset, offsetY + 4);
+            canvas.drawText("" + ChatFormatting.RED + ChatFormatting.BLUE + "G", offset, offsetY + 4);
         }
 
         @Override

@@ -26,7 +26,6 @@ import icyllis.modernui.font.glyph.GlyphManager;
 import icyllis.modernui.font.glyph.TexturedGlyph;
 import icyllis.modernui.font.pipeline.*;
 import icyllis.modernui.graphics.math.Color3i;
-import icyllis.modernui.graphics.Canvas;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Style;
@@ -170,9 +169,6 @@ public class TextLayoutProcessor {
         //digitGlyphsReady = true;
     }
 
-    /**
-     * @see Canvas#getInstance()
-     */
     public void initRenderer() {
         if (glyphManager == null) {
             glyphManager = new GlyphManager();

@@ -26,14 +26,14 @@ import icyllis.modernui.mcimpl.mixin.AccessPostChain;
 import icyllis.modernui.view.IMuiScreen;
 import icyllis.modernui.view.UIManager;
 import it.unimi.dsi.fastutil.objects.ObjectArraySet;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.PostChain;
 import net.minecraft.client.renderer.PostPass;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
@@ -41,7 +41,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Set;
 
-@Environment(EnvType.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public enum BlurHandler {
     INSTANCE;
 
@@ -109,7 +109,7 @@ public enum BlurHandler {
         GameRenderer gr = minecraft.gameRenderer;
         if (hasGui && !blurring && !screenOpened) {
             if (!blurDisabled && gr.currentEffect() == null) {
-                ((AccessGameRenderer) gr).loadEffect(bilinearBlur);
+                ((AccessGameRenderer) gr).callLoadEffect(bilinearBlur);
                 blurring = true;
                 if (sAnimationDuration <= 0) {
                     updateRadius(sBlurRadius);
@@ -141,7 +141,7 @@ public enum BlurHandler {
         if (minecraft.level != null) {
             GameRenderer gr = minecraft.gameRenderer;
             if (gr.currentEffect() == null) {
-                ((AccessGameRenderer) gr).loadEffect(bilinearBlur);
+                ((AccessGameRenderer) gr).callLoadEffect(bilinearBlur);
                 fadingIn = true;
                 blurring = true;
             }
