@@ -24,15 +24,10 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.font.glyph.GlyphManager;
 import icyllis.modernui.graphics.shader.ShaderProgram;
 import icyllis.modernui.graphics.shader.program.*;
-import net.minecraft.client.Minecraft;
-import net.minecraft.server.packs.resources.ReloadableResourceManager;
+import icyllis.modernui.mcimpl.ModernUIMod;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraftforge.fml.ModLoader;
-import net.minecraftforge.fml.ModLoadingStage;
-import net.minecraftforge.fml.ModLoadingWarning;
-import net.minecraftforge.resource.IResourceType;
-import net.minecraftforge.resource.ISelectiveResourceReloadListener;
-import net.minecraftforge.resource.VanillaResourceType;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.opengl.GL;
@@ -40,8 +35,8 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GLCapabilities;
 
 import javax.annotation.Nonnull;
-import java.util.function.Predicate;
 
+@Environment(EnvType.CLIENT)
 public final class RenderCore {
 
     public static final Marker MARKER = MarkerManager.getMarker("Render");
@@ -50,15 +45,7 @@ public final class RenderCore {
 
     static boolean renderEngineStarted = false;
 
-    public static void init() {
-        ((ReloadableResourceManager) Minecraft.getInstance().getResourceManager()).registerReloadListener(
-                (ISelectiveResourceReloadListener) RenderCore::onResourcesReload);
-    }
-
-    private static void onResourcesReload(ResourceManager manager, @Nonnull Predicate<IResourceType> t) {
-        if (!t.test(VanillaResourceType.SHADERS)) {
-            return;
-        }
+    public static void compileShaders(ResourceManager manager) {
         RingShader.INSTANCE.compile(manager);
         RoundedRectShader.INSTANCE.compile(manager);
         RoundedFrameShader.INSTANCE.compile(manager);
@@ -126,8 +113,7 @@ public final class RenderCore {
             String glVersion = GL11.glGetString(GL11.GL_VERSION);
             if (glVersion == null) glVersion = "UNKNOWN";
             else glVersion = glVersion.split(" ")[0];
-            ModLoader.get().addWarning(new ModLoadingWarning(null, ModLoadingStage.SIDED_SETUP,
-                    "warning.modernui.old_opengl", "4.3", glVersion));
+            ModernUIMod.getMod().warnSetup("warning.modernui.old_opengl", "4.3", glVersion);
         }
 
         if (i != 0) {

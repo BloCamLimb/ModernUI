@@ -22,13 +22,20 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.RenderCore;
 import icyllis.modernui.mcimpl.ModernUIMod;
 import icyllis.modernui.view.LayoutIO;
+import net.minecraft.client.Minecraft;
+import net.minecraft.server.packs.resources.ReloadableResourceManager;
 import net.minecraftforge.eventbus.api.BusBuilder;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.DatagenModLoader;
+import net.minecraftforge.fml.ModLoader;
+import net.minecraftforge.fml.ModLoadingStage;
+import net.minecraftforge.fml.ModLoadingWarning;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLPaths;
+import net.minecraftforge.resource.ISelectiveResourceReloadListener;
+import net.minecraftforge.resource.VanillaResourceType;
 
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
@@ -57,7 +64,13 @@ public final class ModernUIForge extends ModernUIMod {
 
         if (FMLEnvironment.dist.isClient()) {
             if (!isDataGen) {
-                RenderCore.init();
+                ((ReloadableResourceManager) Minecraft.getInstance().getResourceManager())
+                        .registerReloadListener(
+                                (ISelectiveResourceReloadListener) (r, t) -> {
+                                    if (t.test(VanillaResourceType.SHADERS))
+                                        RenderCore.compileShaders(r);
+                                }
+                        );
             }
             if (alphaTest) {
                 FMLJavaModLoadingContext.get().getModEventBus().register(EventHandler.ModClient.class);
@@ -65,6 +78,12 @@ public final class ModernUIForge extends ModernUIMod {
         }
 
         ModernUI.LOGGER.debug(ModernUI.MARKER, "Modern UI initialized, signed: {}", ModernUIForge.class.getSigners() != null);
+    }
+
+    @Override
+    public void warnSetup(String key, Object... args) {
+        ModLoader.get().addWarning(new ModLoadingWarning(null, ModLoadingStage.SIDED_SETUP,
+                key, args));
     }
 
     private static void init() {

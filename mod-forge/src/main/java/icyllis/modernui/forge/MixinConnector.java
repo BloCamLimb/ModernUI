@@ -26,7 +26,7 @@ public class MixinConnector implements IMixinConnector {
 
     @Override
     public void connect() {
-        Mixins.addConfiguration("mixins.modernui.json");
+        Mixins.addConfiguration("mixins.modernui-forge.json");
         Mixins.addConfiguration("mixins.modernui-common.json");
         ModernUI.LOGGER.debug(ModernUI.MARKER, "Mixin system connected");
     }

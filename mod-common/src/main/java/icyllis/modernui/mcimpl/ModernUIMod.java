@@ -27,5 +27,15 @@ import icyllis.modernui.ModernUI;
  */
 public abstract class ModernUIMod extends ModernUI {
 
-    public static final int DFF = 4;
+    protected static ModernUIMod instance;
+
+    public ModernUIMod() {
+        instance = this;
+    }
+
+    public static ModernUIMod getMod() {
+        return instance;
+    }
+
+    public abstract void warnSetup(String key, Object... args);
 }

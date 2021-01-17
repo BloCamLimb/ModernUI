@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2020 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,15 +16,21 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.shader;
+package icyllis.modernui.graphics.shader.uniform;
 
-public abstract class ShaderUniform<T> {
+import icyllis.modernui.graphics.shader.ShaderUniform;
+import org.lwjgl.opengl.GL20;
 
-    protected final int location;
+public class UniformFloat extends ShaderUniform<Float> {
 
-    public ShaderUniform(int location) {
-        this.location = location;
+    public UniformFloat(int location) {
+        super(location);
     }
 
-    public abstract void load(T data);
+    @Override
+    public void load(Float data) {
+        if (location != -1) {
+            GL20.glUniform1f(location, data);
+        }
+    }
 }

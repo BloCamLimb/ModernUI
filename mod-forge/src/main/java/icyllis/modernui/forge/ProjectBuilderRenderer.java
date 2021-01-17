@@ -26,7 +26,6 @@ import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.renderer.entity.ItemRenderer;
-import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.world.item.ItemStack;
 
 import javax.annotation.Nonnull;
@@ -39,13 +38,11 @@ public class ProjectBuilderRenderer extends BlockEntityWithoutLevelRenderer {
         ItemRenderer itemRenderer = Minecraft.getInstance().getItemRenderer();
         ProjectBuilderModel model = (ProjectBuilderModel) itemRenderer
                 .getModel(stack, null, null);
-        BakedModel main = model.main;
-        BakedModel cube = model.cube;
 
         matrixStack.pushPose();
         matrixStack.translate(0.5, 0.5, 0.5);
 
-        itemRenderer.render(stack, transformType, true, matrixStack, buffer, combinedLight, combinedOverlay, main);
+        itemRenderer.render(stack, transformType, true, matrixStack, buffer, combinedLight, combinedOverlay, model.main);
 
         long time = Util.getMillis();
         float angel = time * -0.08f;
@@ -56,7 +53,7 @@ public class ProjectBuilderRenderer extends BlockEntityWithoutLevelRenderer {
         int glow = (int) (Math.sin(time / 200D) * 120 + 120);
         int glowX = Math.min(glow + combinedLight >> 16, 240);
         int glowY = Math.min(glow + combinedLight & 0xffff, 240);
-        itemRenderer.render(stack, transformType, true, matrixStack, buffer, glowX << 16 | glowY, combinedOverlay, cube);
+        itemRenderer.render(stack, transformType, true, matrixStack, buffer, glowX << 16 | glowY, combinedOverlay, model.cube);
 
         matrixStack.popPose();
     }
