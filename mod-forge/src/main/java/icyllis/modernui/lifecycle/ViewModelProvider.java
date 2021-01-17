@@ -18,7 +18,7 @@
 
 package icyllis.modernui.lifecycle;
 
-import icyllis.modernui.system.ModernUI;
+import icyllis.modernui.ModernUI;
 
 import javax.annotation.Nonnull;
 
@@ -35,8 +35,8 @@ public class ViewModelProvider {
      * and retain them in a store of the given {@code ViewModelStoreOwner}.
      * A {@link NewInstanceFactory} will be used as the factory.
      *
-     * @param owner   a {@code ViewModelStoreOwner} whose {@link ViewModelStore} will be used to
-     *                retain {@code ViewModels}
+     * @param owner a {@code ViewModelStoreOwner} whose {@link ViewModelStore} will be used to
+     *              retain {@code ViewModels}
      */
     public ViewModelProvider(@Nonnull IViewModelStoreOwner owner) {
         this(owner.getViewModelStore(), NewInstanceFactory.getInstance());

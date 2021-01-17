@@ -26,6 +26,6 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 @Mixin(GameRenderer.class)
 public interface AccessGameRenderer {
 
-    @Invoker("loadEffect")
-    void loadEffect(ResourceLocation location);
+    @Invoker
+    void callLoadEffect(ResourceLocation location);
 }

@@ -27,12 +27,12 @@ public class TestMenu extends AbstractContainerMenu {
 
     // client
     public TestMenu(int windowId, Inventory inventory, FriendlyByteBuf buffer) {
-        super(MuiModRegistries.TEST_MENU, windowId);
+        super(MuiRegistries.TEST_MENU, windowId);
     }
 
     // server
     public TestMenu(int windowId, Inventory inventory, Player player) {
-        super(MuiModRegistries.TEST_MENU, windowId);
+        super(MuiRegistries.TEST_MENU, windowId);
     }
 
     @Override

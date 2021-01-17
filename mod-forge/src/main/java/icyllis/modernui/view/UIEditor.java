@@ -18,7 +18,7 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.forgelayer.ModernUI_Forge;
+import icyllis.modernui.forge.ModernUIForge;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.graphics.math.TextAlign;
@@ -182,7 +182,7 @@ public enum UIEditor {
 
     @SubscribeEvent
     void gKeyInput(@Nonnull InputEvent.KeyInputEvent event) {
-        if (!ModernUI_Forge.isDeveloperMode() || event.getAction() != GLFW.GLFW_PRESS) {
+        if (!ModernUIForge.isDeveloperMode() || event.getAction() != GLFW.GLFW_PRESS) {
             return;
         }
         if (!Screen.hasControlDown()) {

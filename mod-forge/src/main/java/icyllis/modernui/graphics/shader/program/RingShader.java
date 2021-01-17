@@ -18,8 +18,8 @@
 
 package icyllis.modernui.graphics.shader.program;
 
+import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.shader.ShaderProgram;
-import icyllis.modernui.system.ModernUI;
 import org.lwjgl.opengl.GL20;
 
 public class RingShader extends ShaderProgram {
@@ -27,7 +27,7 @@ public class RingShader extends ShaderProgram {
     public static RingShader INSTANCE = new RingShader("rect", "ring");
 
     private RingShader(String vert, String frag) {
-        super(ModernUI.MODID, vert, frag);
+        super(ModernUI.ID, vert, frag);
     }
 
     public void setRadius(float inner, float radius) {

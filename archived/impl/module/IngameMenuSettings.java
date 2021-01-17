@@ -23,7 +23,7 @@ import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
 import icyllis.modernui.animation.ITimeInterpolator;
 import icyllis.modernui.system.ModernUI;
-import icyllis.modernui.forgelayer.integration.OptiFineIntegration;
+import icyllis.modernui.forge.integration.OptiFineIntegration;
 import icyllis.modernui.test.discard.WidgetLayout;
 import icyllis.modernui.view.UIManager;
 import icyllis.modernui.test.discard.ModuleGroup;

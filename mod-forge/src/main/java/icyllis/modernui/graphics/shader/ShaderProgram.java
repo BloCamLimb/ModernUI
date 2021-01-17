@@ -18,25 +18,25 @@
 
 package icyllis.modernui.graphics.shader;
 
+import com.mojang.blaze3d.shaders.Effect;
+import com.mojang.blaze3d.shaders.Program;
+import com.mojang.blaze3d.shaders.ProgramManager;
+import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.RenderCore;
-import icyllis.modernui.system.ModernUI;
-import net.minecraft.client.shader.IShaderManager;
-import net.minecraft.client.shader.ShaderLinkHelper;
-import net.minecraft.client.shader.ShaderLoader;
-import net.minecraft.resources.IResourceManager;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.ResourceManager;
 
 import javax.annotation.Nonnull;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class ShaderProgram implements IShaderManager {
+public class ShaderProgram implements Effect {
 
     private int program;
 
-    private ShaderLoader vertex;
-    private ShaderLoader fragment;
+    private Program vertex;
+    private Program fragment;
 
     @Nonnull
     private final ResourceLocation vert;
@@ -53,29 +53,29 @@ public class ShaderProgram implements IShaderManager {
                 new ResourceLocation(namespace, String.format("shaders/%s.frag", frag)));
     }
 
-    public void compile(IResourceManager manager) {
+    public void compile(ResourceManager manager) {
         if (vertex != null || fragment != null) {
-            ShaderLinkHelper.deleteShader(this);
+            ProgramManager.releaseProgram(this);
         }
         try {
-            vertex = createShader(manager, vert, ShaderLoader.ShaderType.VERTEX);
-            fragment = createShader(manager, frag, ShaderLoader.ShaderType.FRAGMENT);
-            program = ShaderLinkHelper.createProgram();
-            ShaderLinkHelper.linkProgram(this);
+            vertex = createShader(manager, vert, Program.Type.VERTEX);
+            fragment = createShader(manager, frag, Program.Type.FRAGMENT);
+            program = ProgramManager.createProgram();
+            ProgramManager.linkProgram(this);
         } catch (IOException e) {
             ModernUI.LOGGER.fatal(RenderCore.MARKER, "An error occurred while compiling shader: {}", this, e);
         }
     }
 
     @Nonnull
-    private ShaderLoader createShader(IResourceManager manager, @Nonnull ResourceLocation location, ShaderLoader.ShaderType type) throws IOException {
+    private Program createShader(ResourceManager manager, @Nonnull ResourceLocation location, Program.Type type) throws IOException {
         try (InputStream stream = new BufferedInputStream(manager.getResource(location).getInputStream())) {
-            return ShaderLoader.func_216534_a(type, location.toString(), stream, getClass().getSimpleName());
+            return Program.compileShader(type, location.toString(), stream, getClass().getSimpleName());
         }
     }
 
     @Override
-    public int getProgram() {
+    public int getId() {
         return program;
     }
 
@@ -86,13 +86,13 @@ public class ShaderProgram implements IShaderManager {
 
     @Nonnull
     @Override
-    public ShaderLoader getVertexShaderLoader() {
+    public Program getVertexProgram() {
         return vertex;
     }
 
     @Nonnull
     @Override
-    public ShaderLoader getFragmentShaderLoader() {
+    public Program getFragmentProgram() {
         return fragment;
     }
 

@@ -22,7 +22,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.font.pipeline.TextRenderNode;
 import icyllis.modernui.font.process.TextLayoutProcessor;
-import icyllis.modernui.graphics.RenderCore;
 import icyllis.modernui.mcimpl.mixin.AccessFont;
 import icyllis.modernui.mcimpl.mixin.AccessStringSplitter;
 import net.fabricmc.api.EnvType;
@@ -91,13 +90,14 @@ public class ModernFontRenderer extends Font {
 
     public static void change(boolean global, boolean shadow) {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
-        if (RenderCore.isRenderEngineStarted()) {
+        //FIXME
+        //if (RenderCore.isRenderEngineStarted()) {
             if (instance.globalRenderer != global) {
                 ((AccessFont) instance).setSplitter(global ? instance.textHandler : instance.stringSplitter);
                 instance.globalRenderer = global;
             }
             instance.allowShadow = shadow;
-        }
+        //}
     }
 
     public static boolean isGlobalRenderer() {

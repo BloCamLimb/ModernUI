@@ -24,15 +24,14 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.font.ModernFontRenderer;
 import icyllis.modernui.font.process.TextLayoutProcessor;
-import icyllis.modernui.forgelayer.ModernUI_Forge;
-import icyllis.modernui.forgelayer.TestHUD;
-import icyllis.modernui.forgelayer.event.OpenMenuEvent;
-import icyllis.modernui.forgelayer.mixin.MixinMouseHandler;
+import icyllis.modernui.forge.ModernUIForge;
+import icyllis.modernui.forge.TestHUD;
+import icyllis.modernui.forge.event.OpenMenuEvent;
+import icyllis.modernui.forge.mixin.MixinMouseHandler;
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.math.Point;
 import icyllis.modernui.test.TestPauseUI;
-import icyllis.modernui.test.discard.IModule;
 import icyllis.modernui.widget.FrameLayout;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
@@ -238,7 +237,7 @@ public final class UIManager {
                 ModernUI.LOGGER.error(MARKER, "No container menu created from menu type: {}", Registry.MENU.getKey(type));
             } else {
                 OpenMenuEvent event = new OpenMenuEvent(menu);
-                ModernUI_Forge.EVENT_BUS.post(event);
+                ModernUIForge.EVENT_BUS.post(event);
                 ApplicationUI applicationUI = event.getApplicationUI();
                 if (applicationUI != null) {
                     mApplicationUI = applicationUI;
@@ -260,41 +259,30 @@ public final class UIManager {
         };
     }*/
 
-    /**
-     * Open a popup module, a special module
-     *
-     * @param popup   popup module
-     * @param refresh true will post mouseMoved(-1, -1) to root module
-     *                confirm window should reset mouse
-     *                context menu should not reset mouse
-     */
-    @Deprecated
+    /*@Deprecated
     public void openPopup(IModule popup, boolean refresh) {
         throw new UnsupportedOperationException();
-        /*if (root == null) {
+        *//*if (root == null) {
             ModernUI.LOGGER.fatal(MARKER, "#openPopup() shouldn't be called when there's NO gui open");
             return;
-        }*/
-        /*if (this.popup != null) {
+        }*//*
+     *//*if (this.popup != null) {
             ModernUI.LOGGER.warn(MARKER, "#openPopup() shouldn't be called when there's already a popup, the previous one has been overwritten");
         }
         if (refresh) {
             this.screenMouseMove(-1, -1);
         }
         this.popup = popup;
-        this.popup.resize(width, height);*/
-    }
+        this.popup.resize(width, height);*//*
+    }*/
 
-    /**
-     * Close current popup
-     */
-    @Deprecated
+    /*@Deprecated
     public void closePopup() {
         throw new UnsupportedOperationException();
-        /*if (popup != null) {
+        *//*if (popup != null) {
             popup = null;
-        }*/
-    }
+        }*//*
+    }*/
 
     void setContentView(View view, FrameLayout.LayoutParams params) {
         mDecorView.removeAllViews();
@@ -683,7 +671,7 @@ public final class UIManager {
 
     @SubscribeEvent
     void onPostKeyInput(InputEvent.KeyInputEvent event) {
-        if (!ModernUI_Forge.isDeveloperMode() || event.getAction() != GLFW.GLFW_PRESS) {
+        if (!ModernUIForge.isDeveloperMode() || event.getAction() != GLFW.GLFW_PRESS) {
             return;
         }
         if (!Screen.hasControlDown()) {
@@ -824,7 +812,7 @@ public final class UIManager {
                 RenderSystem.enableTexture();
                 break;
             case HEALTH:
-                if (ModernUI_Forge.isDeveloperMode())
+                if (ModernUIForge.isDeveloperMode())
                     TestHUD.drawBars(mCanvas);
                 break;
         }
@@ -873,7 +861,7 @@ public final class UIManager {
 
         mAppWindow.performLayout(widthSpec, heightSpec);
 
-        if (ModernUI_Forge.isDeveloperMode()) {
+        if (ModernUIForge.isDeveloperMode()) {
             ModernUI.LOGGER.debug(MARKER, "Layout performed in {} \u03bcs", (System.nanoTime() - startTime) / 1000.0f);
         }
         onCursorEvent(mCursorX, mCursorY);
@@ -932,6 +920,7 @@ public final class UIManager {
             for (Animation animation : animations) {
                 animation.update(mDrawingTimeMillis);
             }
+            BlurHandler.INSTANCE.update();
         } else {
             // remove animations from loop on end
             if (!animations.isEmpty()) {
