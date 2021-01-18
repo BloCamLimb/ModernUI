@@ -94,6 +94,19 @@ remapJar {
     archiveClassifier = "universal"
 }
 
+if (project.hasProperty("jks")) {
+    remapJar.doLast {
+        ant.signjar(
+                keypass: project.getProperty("jks_keypass"),
+                storepass: project.getProperty("jks_pass"),
+                jar: remapJar.archiveFile.get(),
+                storetype: 'jks',
+                keystore: project.getProperty("jks"),
+                alias: project.getProperty("jks_alias")
+        )
+    }
+}
+
 processResources {
 
     inputs.property 'version', mod_version
@@ -110,7 +123,6 @@ processResources {
 }
 
 jar {
-    classifier("slim")
     manifest {
         attributes([
                 "Specification-Title"     : "ModernUI",

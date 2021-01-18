@@ -36,7 +36,7 @@ public class MuiRegistries {
     public static MenuType<TestMenu> TEST_MENU;
 
     /**
-     * Items (AlphaTest Only)
+     * Items (Production Only)
      */
     public static Item PROJECT_BUILDER_ITEM;
 }

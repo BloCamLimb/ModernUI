@@ -48,13 +48,11 @@ public final class ModernUIForge extends ModernUIMod {
 
     private static boolean optiFineLoaded;
 
-    static boolean alphaTest;
+    static boolean production;
     static boolean developerMode;
 
     // mod-loading thread
     public ModernUIForge() {
-        checkJava();
-
         final boolean isDataGen = DatagenModLoader.isRunningDataGen();
 
         init();
@@ -72,7 +70,7 @@ public final class ModernUIForge extends ModernUIMod {
                                 }
                         );
             }
-            if (alphaTest) {
+            if (production) {
                 FMLJavaModLoadingContext.get().getModEventBus().register(EventHandler.ModClient.class);
             }
         }
@@ -82,8 +80,7 @@ public final class ModernUIForge extends ModernUIMod {
 
     @Override
     public void warnSetup(String key, Object... args) {
-        ModLoader.get().addWarning(new ModLoadingWarning(null, ModLoadingStage.SIDED_SETUP,
-                key, args));
+        ModLoader.get().addWarning(new ModLoadingWarning(null, ModLoadingStage.SIDED_SETUP, key, args));
     }
 
     private static void init() {
@@ -93,8 +90,8 @@ public final class ModernUIForge extends ModernUIMod {
         File dir = path.toFile();
         String[] r = dir.list((file, name) -> name.equals("build.gradle"));
         if (r != null && r.length > 0) {
-            ModernUI.LOGGER.debug(ModernUI.MARKER, "Working in development environment");
-            alphaTest = true;
+            ModernUI.LOGGER.debug(ModernUI.MARKER, "Working in production environment");
+            production = true;
         }
 
         try {
@@ -109,27 +106,8 @@ public final class ModernUIForge extends ModernUIMod {
         }
     }
 
-    // Java 1.8.0_51 which is officially used by Mojang will produce bugs with Modern UI
-    private static void checkJava() {
-        String javaVersion = System.getProperty("java.version");
-        if (javaVersion == null) {
-            ModernUI.LOGGER.fatal(ModernUI.MARKER, "Java version is missing");
-        } else if (javaVersion.startsWith("1.8")) {
-            try {
-                int update = Integer.parseInt(javaVersion.split("_")[1].split("-")[0]);
-                if (update < 201) {
-                    throw new RuntimeException(
-                            "Java " + javaVersion + " is not compatible with Modern UI, " +
-                                    "a minimum of java 1.8.0_271 or above is required");
-                }
-            } catch (NumberFormatException | IndexOutOfBoundsException e) {
-                ModernUI.LOGGER.warn(ModernUI.MARKER, "Failed to check java version: {}", javaVersion, e);
-            }
-        }
-    }
-
     public static boolean isDeveloperMode() {
-        return developerMode || alphaTest;
+        return developerMode || production;
     }
 
     public static boolean isOptiFineLoaded() {

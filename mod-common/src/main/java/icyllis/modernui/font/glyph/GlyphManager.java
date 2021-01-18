@@ -308,7 +308,7 @@ public class GlyphManager {
                     ModernUI.LOGGER.warn(MARKER, "Preferred font {} is invalid", type);
                 }
             } else {
-                Optional<Font> font = allFonts.stream().filter(f -> f.getName().equals(type)).findFirst();
+                Optional<Font> font = allFonts.stream().filter(f -> f.getFamily().equals(type)).findFirst();
                 if (font.isPresent()) {
                     selectedFonts.add(font.get());
                     ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", type);

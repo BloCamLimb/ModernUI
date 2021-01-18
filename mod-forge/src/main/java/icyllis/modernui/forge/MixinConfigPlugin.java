@@ -26,6 +26,7 @@ import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 import java.util.List;
 import java.util.Set;
 
+@Deprecated
 public class MixinConfigPlugin implements IMixinConfigPlugin {
 
     @Override

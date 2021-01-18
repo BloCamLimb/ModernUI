@@ -32,10 +32,12 @@ import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Style;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.client.event.RenderTooltipEvent;
+import net.minecraftforge.client.model.animation.Animation;
 import net.minecraftforge.common.MinecraftForge;
 import org.lwjgl.opengl.GL11;
 
@@ -76,15 +78,15 @@ public class TestHUD {
         Player player = (Player) minecraft.getCameraEntity();
         Objects.requireNonNull(player);
 
-        /*float partialTicks = Animation.getPartialTickTime();
+        float partialTicks = Animation.getPartialTickTime();
 
-        float f = player.distanceWalkedModified - player.prevDistanceWalkedModified;
-        float f1 = -(player.distanceWalkedModified + f * partialTicks);
-        float f2 = MathHelper.lerp(partialTicks, player.prevCameraYaw, player.cameraYaw);
-        GL11.glTranslatef(MathHelper.sin(f1 * (float) Math.PI) * f2 * 0.5f,
-                Math.abs(MathHelper.cos(f1 * (float) Math.PI) * f2), 0.0f);
-        GL11.glRotatef(MathHelper.sin(f1 * (float) Math.PI) * f2 * 3.0f, 0, 0, 1);
-        GL11.glRotatef(Math.abs(MathHelper.cos(f1 * (float) Math.PI - 0.2f) * f2) * 5.0f, 1, 0, 0);*/
+        float f = player.walkDist - player.walkDistO;
+        float f1 = -(player.walkDist + f * partialTicks);
+        float f2 = Mth.lerp(partialTicks, player.oBob, player.bob);
+        GL11.glTranslatef(Mth.sin(f1 * (float) Math.PI) * f2 * 0.5f,
+                Math.abs(Mth.cos(f1 * (float) Math.PI) * f2), 0.0f);
+        GL11.glRotatef(Mth.sin(f1 * (float) Math.PI) * f2 * 3.0f, 0, 0, 1);
+        GL11.glRotatef(Math.abs(Mth.cos(f1 * (float) Math.PI - 0.2f) * f2) * 5.0f, 1, 0, 0);
 
         canvas.setColor(255, 19, 19, 128);
         float r = Math.min(player.getHealth() * 140 / player.getMaxHealth(), 140);
