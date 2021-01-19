@@ -56,6 +56,7 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -308,9 +309,9 @@ public class GlyphManager {
                     ModernUI.LOGGER.warn(MARKER, "Preferred font {} is invalid", type);
                 }
             } else {
-                Optional<Font> font = allFonts.stream().filter(f -> f.getFamily().equals(type)).findFirst();
+                Optional<Font> font = allFonts.stream().filter(f -> f.getFamily(Locale.ROOT).equals(type)).findFirst();
                 if (font.isPresent()) {
-                    selectedFonts.add(font.get());
+                    selectedFonts.add(new Font(type, Font.PLAIN, 12));
                     ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", type);
                 } else {
                     ModernUI.LOGGER.warn(MARKER, "Preferred font {} cannot found or invalid", type);

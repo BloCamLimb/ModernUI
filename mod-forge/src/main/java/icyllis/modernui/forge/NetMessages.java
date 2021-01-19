@@ -43,7 +43,7 @@ public final class NetMessages {
     }
 
     // handle c2s messages
-    static void handle(short index, @Nonnull FriendlyByteBuf payload, @Nullable ServerPlayer player) {
+    static void handle(short index, @Nonnull FriendlyByteBuf payload, @Nonnull ServerPlayer player) {
 
     }
 
@@ -84,16 +84,14 @@ public final class NetMessages {
         private C() {
         }
 
-        private static void handle(short index, @Nonnull FriendlyByteBuf payload, @Nullable LocalPlayer player) {
-            if (player != null) {
-                switch (index) {
-                    case 0:
-                        food(payload, player);
-                        break;
-                    case 1:
-                        menu(payload, player);
-                        break;
-                }
+        private static void handle(short index, @Nonnull FriendlyByteBuf payload, @Nonnull LocalPlayer player) {
+            switch (index) {
+                case 0:
+                    food(payload, player);
+                    break;
+                case 1:
+                    menu(payload, player);
+                    break;
             }
         }
 

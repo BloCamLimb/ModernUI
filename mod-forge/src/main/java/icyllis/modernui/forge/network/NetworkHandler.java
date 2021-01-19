@@ -144,11 +144,13 @@ public class NetworkHandler {
     private void onS2CMessageReceived(NetworkEvent.ServerCustomPayloadEvent event) {
         // received on main thread of effective side
         if (clientHandler != null) {
-            try {
-                clientHandler.handle(event.getPayload().readShort(), event.getPayload(), Minecraft.getInstance().player);
-            } catch (Exception e) {
-                ModernUI.LOGGER.error(ModernUI.MARKER, "An error occurred while handling server-to-client message", e);
-            }
+            LocalPlayer player = Minecraft.getInstance().player;
+            if (player != null)
+                try {
+                    clientHandler.handle(event.getPayload().readShort(), event.getPayload(), player);
+                } catch (Exception e) {
+                    ModernUI.LOGGER.error(ModernUI.MARKER, "An error occurred while handling server-to-client message", e);
+                }
         }
         event.getPayload().release(); // forge disabled this on client
         event.getSource().get().setPacketHandled(true);
@@ -157,11 +159,13 @@ public class NetworkHandler {
     private void onC2SMessageReceived(NetworkEvent.ClientCustomPayloadEvent event) {
         // received on main thread of effective side
         if (serverHandler != null) {
-            try {
-                serverHandler.handle(event.getPayload().readShort(), event.getPayload(), event.getSource().get().getSender());
-            } catch (Exception e) {
-                ModernUI.LOGGER.error(ModernUI.MARKER, "An error occurred while handling client-to-server message", e);
-            }
+            ServerPlayer player = event.getSource().get().getSender();
+            if (player != null)
+                try {
+                    serverHandler.handle(event.getPayload().readShort(), event.getPayload(), player);
+                } catch (Exception e) {
+                    ModernUI.LOGGER.error(ModernUI.MARKER, "An error occurred while handling client-to-server message", e);
+                }
         }
         event.getSource().get().setPacketHandled(true);
     }
@@ -320,7 +324,7 @@ public class NetworkHandler {
          * @param player  the client player, when you receive the packet, it should
          *                not be null, so you have to check if it's non-null
          */
-        void handle(short index, @Nonnull FriendlyByteBuf payload, @Nullable LocalPlayer player);
+        void handle(short index, @Nonnull FriendlyByteBuf payload, @Nonnull LocalPlayer player);
     }
 
     @FunctionalInterface
@@ -334,6 +338,6 @@ public class NetworkHandler {
          * @param player  the server player, when you receive the packet, it should
          *                not be null, so you have to check if it's non-null
          */
-        void handle(short index, @Nonnull FriendlyByteBuf payload, @Nullable ServerPlayer player);
+        void handle(short index, @Nonnull FriendlyByteBuf payload, @Nonnull ServerPlayer player);
     }
 }

@@ -21,13 +21,26 @@ package icyllis.modernui.test;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
 import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.view.ApplicationUI;
+import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
 import icyllis.modernui.widget.FrameLayout;
+import icyllis.modernui.widget.LinearLayout;
+import icyllis.modernui.widget.Orientation;
+import icyllis.modernui.widget.ScrollView;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.language.LanguageInfo;
 
 import javax.annotation.Nonnull;
 
+import java.awt.*;
+import java.util.Arrays;
+import java.util.List;
+
 import static icyllis.modernui.view.ViewGroup.LayoutParams.MATCH_PARENT;
+import static icyllis.modernui.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 
 public class TestPauseUI extends ApplicationUI {
 
@@ -37,7 +50,51 @@ public class TestPauseUI extends ApplicationUI {
         View child = new NavigationBar();
         FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(32, MATCH_PARENT);
         frameLayout.addView(child, params);
+        params = new FrameLayout.LayoutParams(160, MATCH_PARENT, Gravity.CENTER);
+        params.setMargins(0, 20, 0, 20);
+        ScrollView scrollView = new ScrollView();
+        LinearLayout linearLayout = new LinearLayout();
+        linearLayout.setOrientation(Orientation.VERTICAL);
+        linearLayout.setGravity(Gravity.CENTER);
+        linearLayout.setDivider(new Drawable() {
+            @Override
+            public void draw(@Nonnull Canvas canvas) {
+                canvas.setColor(192, 192, 192, 128);
+                canvas.drawLine(0, 0, getWidth(), 0);
+            }
+
+            @Override
+            public int getIntrinsicHeight() {
+                return 1;
+            }
+        });
+        linearLayout.setShowDividers(LinearLayout.SHOW_DIVIDER_MIDDLE | LinearLayout.SHOW_DIVIDER_END);
+        linearLayout.setDividerPadding(8);
+        LanguageInfo lang = Minecraft.getInstance().getLanguageManager().getSelected();
+        String[] list = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames(lang.getJavaLocale());
+        for (String typeface : list) {
+            linearLayout.addView(new Ent(typeface), new LinearLayout.LayoutParams(MATCH_PARENT, 10));
+        }
+        scrollView.addView(linearLayout, new FrameLayout.LayoutParams(MATCH_PARENT, 3000));
+        frameLayout.addView(scrollView, params);
         setContentView(frameLayout, new FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT));
+    }
+
+    private static class Ent extends View {
+
+        private final String k;
+
+        public Ent(String k) {
+            this.k = k;
+        }
+
+        @Override
+        protected void onDraw(@Nonnull Canvas canvas) {
+            super.onDraw(canvas);
+            canvas.resetColor();
+            canvas.setTextAlign(TextAlign.CENTER);
+            canvas.drawText(k, getWidth() >> 1, 0);
+        }
     }
 
     private static class NavigationBar extends View {

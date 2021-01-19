@@ -47,6 +47,7 @@ final class MMainScreen extends Screen implements IMuiScreen {
 
     @Override
     public void init(@Nonnull Minecraft minecraft, int width, int height) {
+        this.minecraft = minecraft;
         master.start(this, width, height);
         BlurHandler.INSTANCE.forceBlur();
     }

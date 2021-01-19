@@ -23,7 +23,7 @@ import com.mojang.math.Matrix4f;
 import icyllis.modernui.font.pipeline.TextRenderNode;
 import icyllis.modernui.font.process.TextLayoutProcessor;
 import icyllis.modernui.graphics.RenderCore;
-import icyllis.modernui.mcimpl.mixin.AccessFont;
+import icyllis.modernui.mcimpl.mixin.AccessFontRenderer;
 import icyllis.modernui.mcimpl.mixin.AccessStringSplitter;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -93,7 +93,7 @@ public class ModernFontRenderer extends Font {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
         if (RenderCore.isRenderEngineStarted()) {
             if (instance.globalRenderer != global) {
-                ((AccessFont) instance).setSplitter(global ? instance.textHandler : instance.stringSplitter);
+                ((AccessFontRenderer) instance).setSplitter(global ? instance.textHandler : instance.stringSplitter);
                 instance.globalRenderer = global;
             }
             instance.allowShadow = shadow;
@@ -223,7 +223,7 @@ public class ModernFontRenderer extends Font {
             node.drawText(matrix, buffer, text, x + 0.8f, y + 0.8f, r >> 2, g >> 2, b >> 2, a, true,
                     seeThrough, colorBackground, packedLight);
             matrix = matrix.copy(); // if not drop shadow, we don't need to copy the matrix
-            matrix.translate(AccessFont.shadowLifting());
+            matrix.translate(AccessFontRenderer.shadowLifting());
         }
 
         return node.drawText(matrix, buffer, text, x, y, r, g, b, a, false, seeThrough, colorBackground, packedLight);

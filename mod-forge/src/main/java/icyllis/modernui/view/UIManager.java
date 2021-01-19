@@ -25,7 +25,7 @@ import icyllis.modernui.animation.Animation;
 import icyllis.modernui.font.ModernFontRenderer;
 import icyllis.modernui.font.process.TextLayoutProcessor;
 import icyllis.modernui.forge.ModernUIForge;
-import icyllis.modernui.forge.TestHUD;
+import icyllis.modernui.test.TestHUD;
 import icyllis.modernui.forge.event.OpenMenuEvent;
 import icyllis.modernui.forge.mixin.MixinMouseHandler;
 import icyllis.modernui.graphics.BlurHandler;

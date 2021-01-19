@@ -24,6 +24,7 @@ import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.RenderCore;
 import icyllis.modernui.mcimpl.MuiRegistries;
 import icyllis.modernui.mcimpl.TestMenu;
+import icyllis.modernui.test.TestUI;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.client.player.LocalPlayer;

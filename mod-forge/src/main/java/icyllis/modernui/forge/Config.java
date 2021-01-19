@@ -19,11 +19,13 @@
 package icyllis.modernui.forge;
 
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
+import com.google.common.collect.Lists;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.font.ModernFontRenderer;
 import icyllis.modernui.font.glyph.GlyphManager;
 import icyllis.modernui.font.process.TextLayoutProcessor;
 import icyllis.modernui.graphics.BlurHandler;
+import icyllis.modernui.test.TestHUD;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraftforge.api.distmarker.Dist;
@@ -31,6 +33,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import net.minecraftforge.fml.config.ConfigFileTypeHandler;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -89,6 +92,12 @@ public final class Config {
     static void reload(@Nonnull Cfg.ModConfigEvent event) {
         final ForgeConfigSpec spec = event.getConfig().getSpec();
         if (spec == CLIENT_SPEC) {
+            /*try {
+                ((com.electronwill.nightconfig.core.Config) ObfuscationReflectionHelper.findField(ForgeConfigSpec.class, "childConfig").get(CLIENT_SPEC)).set(Lists.newArrayList("tooltip", "frameColor"), "0xE8B4DF");
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+            CLIENT_SPEC.save();*/
             CLIENT.reload();
             ModernUI.LOGGER.debug(ModernUI.MARKER, "Client config reloaded");
         } else if (spec == COMMON_SPEC) {

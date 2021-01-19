@@ -16,23 +16,22 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.forge;
+package icyllis.modernui.mcimpl.mixin;
 
-import icyllis.modernui.test.TestLinearLayout;
-import icyllis.modernui.view.*;
-import icyllis.modernui.widget.FrameLayout;
-import icyllis.modernui.widget.ScrollView;
+import com.mojang.math.Vector3f;
+import net.minecraft.client.StringSplitter;
+import net.minecraft.client.gui.Font;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
 
-public class TestUI extends ApplicationUI {
+@Mixin(Font.class)
+public interface AccessFontRenderer {
 
-    @Override
-    public void onCreate() {
-        ViewGroup parent = new ScrollView();
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(140, 140);
-        params.gravity = Gravity.CENTER;
-        View content = new TestLinearLayout();
-        content.setLayoutParams(new FrameLayout.LayoutParams(140, 240));
-        parent.addView(content);
-        setContentView(parent, params);
+    @Accessor("SHADOW_OFFSET")
+    static Vector3f shadowLifting() {
+        throw new IllegalStateException();
     }
+
+    @Accessor("splitter")
+    void setSplitter(StringSplitter splitter);
 }
