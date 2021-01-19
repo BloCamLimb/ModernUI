@@ -4,11 +4,12 @@
   "compatibilityLevel": "JAVA_8",
   "package": "icyllis.modernui.mcimpl.mixin",
   "client": [
-    "AccessFont",
+    "AccessFontRenderer",
     "AccessFoodData",
     "AccessGameRenderer",
     "AccessPostChain",
     "AccessStringSplitter",
-    "MixinClientLanguage"
+    "MixinClientLanguage",
+    "MixinIngameGui"
   ]
 }

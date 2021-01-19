@@ -25,6 +25,7 @@ import icyllis.modernui.graphics.math.Point;
 import icyllis.modernui.widget.ScrollController;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.intellij.lang.annotations.MagicConstant;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -663,7 +664,6 @@ public class View {
         mViewFlags = (mViewFlags & ~mask) | (flag & mask);
 
         final int change = mViewFlags ^ old;
-
     }
 
     /**
@@ -672,7 +672,7 @@ public class View {
      *
      * @param visibility visibility to set
      */
-    public void setVisibility(int visibility) {
+    public void setVisibility(@MagicConstant(intValues = {VISIBLE, INVISIBLE, GONE}) int visibility) {
         setStateFlag(visibility, VISIBILITY_MASK);
     }
 
@@ -711,7 +711,7 @@ public class View {
          * The View most likely has to change its appearance, so refresh
          * the drawable state.
          */
-        //refreshDrawableState();
+        refreshDrawableState();
 
         // Invalidate too, since the default behavior for views is to be
         // be drawn at 50% alpha rather than to change the drawable.
