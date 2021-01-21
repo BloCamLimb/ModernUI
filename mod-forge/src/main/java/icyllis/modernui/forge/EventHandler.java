@@ -27,6 +27,8 @@ import icyllis.modernui.mcimpl.TestMenu;
 import icyllis.modernui.test.TestUI;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
+import net.minecraft.client.ProgressOption;
+import net.minecraft.client.gui.screens.VideoSettingsScreen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
@@ -35,10 +37,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Items;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
-import net.minecraftforge.client.event.GuiOpenEvent;
-import net.minecraftforge.client.event.ModelBakeEvent;
-import net.minecraftforge.client.event.ModelRegistryEvent;
+import net.minecraftforge.client.event.*;
 import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -115,6 +114,8 @@ final class EventHandler {
     @Mod.EventBusSubscriber(modid = ModernUI.ID, value = Dist.CLIENT)
     static class Client {
 
+        static ProgressOption NEW_GUI_SCALE;
+
         @SubscribeEvent
         static void onPlayerLogin(@Nonnull ClientPlayerNetworkEvent.LoggedInEvent event) {
             if (ModernUIForge.isDeveloperMode()) {
@@ -127,9 +128,26 @@ final class EventHandler {
             }
         }
 
+        @SubscribeEvent(priority = EventPriority.HIGH)
+        static void onGuiOpenH(@Nonnull GuiOpenEvent event) {
+            // TipTheScales is not good, and it also not compatible with OptiFine
+            if (ModernUIForge.interceptTipTheScales) {
+                if (event.getGui() instanceof VideoSettingsScreen) {
+                    event.setCanceled(true);
+                }
+            }
+        }
+
         @SubscribeEvent(priority = EventPriority.LOW)
-        static void onGuiOpen(@Nonnull GuiOpenEvent event) {
+        static void onGuiOpenL(@Nonnull GuiOpenEvent event) {
             BlurHandler.INSTANCE.count(event.getGui());
+        }
+
+        @SubscribeEvent
+        static void onGuiInit(@Nonnull GuiScreenEvent.InitGuiEvent event) {
+            if (event.getGui() instanceof VideoSettingsScreen) {
+                NEW_GUI_SCALE.setMaxValue(MuiHooks.C.calcGuiScales() & 0xf);
+            }
         }
 
         @SubscribeEvent

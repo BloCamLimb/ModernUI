@@ -226,7 +226,7 @@ public final class Config {
                     .push("font");
 
             globalRenderer = builder.comment(
-                    "Apply Modern UI font renderer to the entire game rather than only Modern UI itself.")
+                    "Apply Modern UI font renderer (including text layouts) to the entire game rather than only Modern UI itself.")
                     .define("globalRenderer", true);
             preferredFont = builder.comment(
                     "The font with the highest priority to use, the built-in font is always the second choice.",

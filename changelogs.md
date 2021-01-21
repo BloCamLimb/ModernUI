@@ -1,5 +1,15 @@
 Changelogs
 ===
+### 1.16.5-2.4.1.76 (2021-01-17)
+* Improve experience bar rendering
+* Improve gui scale setting
+  - Slider widget
+  - More appropriate values
+  - Not limited to even numbers
+  - Compatible with OptiFine
+  - Override TipTheScales
+* Fix compatibility layer with vanilla
+
 ### 1.16.4-2.4.0.75 (2021-01-17)
 * Change project structure
 * Add SFX when game loaded
