@@ -20,12 +20,20 @@ package icyllis.modernui.forge;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.font.ModernFontRenderer;
+import icyllis.modernui.forge.mixin.AccessOption;
+import icyllis.modernui.forge.mixin.AccessVideoSettingsScreen;
 import icyllis.modernui.forge.network.NetworkHandler;
 import icyllis.modernui.mcimpl.MuiRegistries;
 import icyllis.modernui.mcimpl.TestMenu;
 import icyllis.modernui.plugin.IMuiPlugin;
 import icyllis.modernui.plugin.MuiPlugin;
 import icyllis.modernui.view.UIManager;
+import net.minecraft.client.CycleOption;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.Option;
+import net.minecraft.client.ProgressOption;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -135,11 +143,41 @@ final class Registration {
     static void setupClient(@Nonnull FMLClientSetupEvent event) {
         //SettingsManager.INSTANCE.buildAllSettings();
         //UIManager.getInstance().registerMenuScreen(Registration.TEST_MENU, menu -> new TestUI());
+
         ModernUIForge.EVENT_BUS.register(EventHandler.Internal.class);
         event.getMinecraftSupplier().get().submitAsync(() -> {
             UIManager.initialize();
             ModernFontRenderer.change(Config.CLIENT.globalRenderer.get(), Config.CLIENT.allowShadow.get());
         });
+
+        AccessOption.setGuiScale(new CycleOption("options.guiScale",
+                (options, integer) -> options.guiScale = Integer.remainderUnsigned(
+                        options.guiScale + integer, (MuiHooks.C.calcGuiScales() & 0xf) + 1),
+                (options, cycleOption) -> options.guiScale == 0 ?
+                        ((AccessOption) cycleOption).callGenericValueLabel(new TranslatableComponent("options.guiScale.auto")) :
+                        ((AccessOption) cycleOption).callGenericValueLabel(new TextComponent(Integer.toString(options.guiScale))))
+        );
+
+        Option[] settings = AccessVideoSettingsScreen.getOptions();
+        for (int i = 0; i < settings.length; i++) {
+            if (settings[i] == Option.GUI_SCALE) {
+                settings[i] = EventHandler.Client.NEW_GUI_SCALE =
+                        new ProgressOption("options.guiScale", 0, MuiHooks.C.calcGuiScales() & 0xf, 1,
+                                options -> (double) options.guiScale,
+                                (options, aDouble) -> {
+                                    if (options.guiScale != aDouble.intValue()) {
+                                        options.guiScale = aDouble.intValue();
+                                        Minecraft.getInstance().resizeDisplay();
+                                    }
+                                },
+                                (options, progressOption) -> options.guiScale == 0 ?
+                                        ((AccessOption) progressOption)
+                                                .callGenericValueLabel(new TranslatableComponent("options.guiScale.auto")) :
+                                        ((AccessOption) progressOption)
+                                                .callGenericValueLabel(new TextComponent(Integer.toString(options.guiScale)))
+                        );
+            }
+        }
     }
 
     @Nonnull

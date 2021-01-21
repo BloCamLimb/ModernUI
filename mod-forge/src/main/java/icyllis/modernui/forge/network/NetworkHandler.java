@@ -75,7 +75,7 @@ public class NetworkHandler {
      * you may consider the following example:
      *
      * <pre>
-     * network = new NetworkHandler(ModernUI.MODID, "main_network", DistExecutor.safeRunForDist(() -> NetMessages::handle, () -> NetMessages::ignore), NetMessages::handle);
+     * network = new NetworkHandler(MODID, "main_network", DistExecutor.safeRunForDist(() -> NetMessages::handle, () -> NetMessages::ignore), NetMessages::handle);
      * </pre>
      *
      * @param modid         the mod id
@@ -152,7 +152,7 @@ public class NetworkHandler {
                     ModernUI.LOGGER.error(ModernUI.MARKER, "An error occurred while handling server-to-client message", e);
                 }
         }
-        event.getPayload().release(); // forge disabled this on client
+        event.getPayload().release(); // forge disabled this on client, see ClientPacketListener.handleCustomPayload() finally {}
         event.getSource().get().setPacketHandled(true);
     }
 
@@ -321,8 +321,7 @@ public class NetworkHandler {
          *
          * @param index   message index
          * @param payload packet payload
-         * @param player  the client player, when you receive the packet, it should
-         *                not be null, so you have to check if it's non-null
+         * @param player  the local player
          */
         void handle(short index, @Nonnull FriendlyByteBuf payload, @Nonnull LocalPlayer player);
     }
@@ -335,8 +334,7 @@ public class NetworkHandler {
          *
          * @param index   message index
          * @param payload packet payload
-         * @param player  the server player, when you receive the packet, it should
-         *                not be null, so you have to check if it's non-null
+         * @param player  the server player
          */
         void handle(short index, @Nonnull FriendlyByteBuf payload, @Nonnull ServerPlayer player);
     }

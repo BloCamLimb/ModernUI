@@ -31,6 +31,7 @@ import net.minecraft.client.StringSplitter;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.font.FontSet;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Style;
@@ -177,12 +178,16 @@ public class ModernFontRenderer extends Font {
     // compatibility layer
     public void drawText(@Nonnull FormattedText text, float x, float y, int color, boolean dropShadow, @Nonnull Matrix4f matrix,
                          @Nonnull MultiBufferSource buffer, boolean seeThrough, int colorBackground, int packedLight) {
-        v.setValue(x);
-        text.visit((style, t) -> {
-            v.add(drawLayer0(t, v.floatValue(), y, color, dropShadow, matrix,
-                    buffer, seeThrough, colorBackground, packedLight, style));
-            return Optional.empty();
-        }, Style.EMPTY);
+        if (globalRenderer) {
+            v.setValue(x);
+            text.visit((style, t) -> {
+                v.add(drawLayer0(t, v.floatValue(), y, color, dropShadow, matrix,
+                        buffer, seeThrough, colorBackground, packedLight, style));
+                return Optional.empty();
+            }, Style.EMPTY);
+        } else {
+            super.drawInBatch(Language.getInstance().getVisualOrder(text), x, y, color, dropShadow, matrix, buffer, seeThrough, colorBackground, packedLight);
+        }
     }
 
     @Override

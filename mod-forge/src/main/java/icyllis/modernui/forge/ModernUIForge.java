@@ -26,10 +26,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.server.packs.resources.ReloadableResourceManager;
 import net.minecraftforge.eventbus.api.BusBuilder;
 import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.DatagenModLoader;
-import net.minecraftforge.fml.ModLoader;
-import net.minecraftforge.fml.ModLoadingStage;
-import net.minecraftforge.fml.ModLoadingWarning;
+import net.minecraftforge.fml.*;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
@@ -47,6 +44,8 @@ public final class ModernUIForge extends ModernUIMod {
     public static final IEventBus EVENT_BUS = BusBuilder.builder().build();
 
     private static boolean optiFineLoaded;
+
+    static boolean interceptTipTheScales;
 
     static boolean production;
     static boolean developerMode;
@@ -104,6 +103,8 @@ public final class ModernUIForge extends ModernUIMod {
         } catch (IllegalAccessException | InvocationTargetException e) {
             e.printStackTrace();
         }
+
+        interceptTipTheScales = ModList.get().isLoaded("tipthescales") && !optiFineLoaded;
     }
 
     public static boolean isDeveloperMode() {

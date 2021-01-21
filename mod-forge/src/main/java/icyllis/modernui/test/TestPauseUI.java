@@ -34,13 +34,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.LanguageInfo;
 
 import javax.annotation.Nonnull;
-
 import java.awt.*;
-import java.util.Arrays;
-import java.util.List;
 
 import static icyllis.modernui.view.ViewGroup.LayoutParams.MATCH_PARENT;
-import static icyllis.modernui.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 
 public class TestPauseUI extends ApplicationUI {
 
@@ -75,7 +71,7 @@ public class TestPauseUI extends ApplicationUI {
         for (String typeface : list) {
             linearLayout.addView(new Ent(typeface), new LinearLayout.LayoutParams(MATCH_PARENT, 10));
         }
-        scrollView.addView(linearLayout, new FrameLayout.LayoutParams(MATCH_PARENT, 3000));
+        scrollView.addView(linearLayout, new FrameLayout.LayoutParams(MATCH_PARENT, 2800));
         frameLayout.addView(scrollView, params);
         setContentView(frameLayout, new FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT));
     }
