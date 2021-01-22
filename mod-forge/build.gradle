@@ -24,9 +24,9 @@ repositories {
 }
 
 dependencies {
-    minecraft "com.mojang:minecraft:${rootProject.architect.minecraft}"
+    minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
     mappings minecraft.officialMojangMappings()
-    forge "net.minecraftforge:forge:${rootProject.architect.minecraft}-${rootProject.forge_version}"
+    forge "net.minecraftforge:forge:${rootProject.minecraft_version}-${rootProject.forge_version}"
 
     modCompile "mezz.jei:jei-${rootProject.minecraft_version}:${rootProject.jei_version}"
 
@@ -51,10 +51,10 @@ dependencies {
     compileOnly(project(path: ":mod-common")) {
         transitive = false
     }
-    runtimeOnly(project(path: ":mod-common", configuration: "transformForgeFakeMod")) {
+    runtimeOnly(project(path: ":mod-common", configuration: "transformDevelopmentForge")) {
         transitive = false
     }
-    shadow(project(path: ":mod-common", configuration: "transformForge")) {
+    shadow(project(path: ":mod-common", configuration: "transformProductionForge")) {
         transitive = false
     }
     shadow(project(":core")) {

@@ -32,6 +32,7 @@ import net.minecraft.client.CycleOption;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Option;
 import net.minecraft.client.ProgressOption;
+import net.minecraft.client.gui.screens.VideoSettingsScreen;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -154,30 +155,46 @@ final class Registration {
                 (options, integer) -> options.guiScale = Integer.remainderUnsigned(
                         options.guiScale + integer, (MuiHooks.C.calcGuiScales() & 0xf) + 1),
                 (options, cycleOption) -> options.guiScale == 0 ?
-                        ((AccessOption) cycleOption).callGenericValueLabel(new TranslatableComponent("options.guiScale.auto")) :
+                        ((AccessOption) cycleOption).callGenericValueLabel(new TranslatableComponent("options.guiScale.auto")
+                                .append(new TextComponent(" (" + (MuiHooks.C.calcGuiScales() >> 4 & 0xf) + ")"))) :
                         ((AccessOption) cycleOption).callGenericValueLabel(new TextComponent(Integer.toString(options.guiScale))))
         );
 
-        Option[] settings = AccessVideoSettingsScreen.getOptions();
-        for (int i = 0; i < settings.length; i++) {
-            if (settings[i] == Option.GUI_SCALE) {
-                settings[i] = EventHandler.Client.NEW_GUI_SCALE =
-                        new ProgressOption("options.guiScale", 0, MuiHooks.C.calcGuiScales() & 0xf, 1,
-                                options -> (double) options.guiScale,
-                                (options, aDouble) -> {
-                                    if (options.guiScale != aDouble.intValue()) {
-                                        options.guiScale = aDouble.intValue();
-                                        Minecraft.getInstance().resizeDisplay();
-                                    }
-                                },
-                                (options, progressOption) -> options.guiScale == 0 ?
-                                        ((AccessOption) progressOption)
-                                                .callGenericValueLabel(new TranslatableComponent("options.guiScale.auto")) :
-                                        ((AccessOption) progressOption)
-                                                .callGenericValueLabel(new TextComponent(Integer.toString(options.guiScale)))
-                        );
+        Option[] settings = null;
+        if (ModernUIForge.isOptiFineLoaded()) {
+            try {
+                ModernUI.LOGGER.debug(ModernUI.MARKER, "Finding target class: {}", VideoSettingsScreen.class.getName());
+                Field field = VideoSettingsScreen.class.getDeclaredField("videoOptions");
+                field.setAccessible(true);
+                settings = (Option[]) field.get(null);
+            } catch (Exception e) {
+                ModernUI.LOGGER.error(ModernUI.MARKER, "Failed to be compatible with OptiFine video settings", e);
             }
+        } else {
+            settings = AccessVideoSettingsScreen.getOptions();
         }
+        if (settings != null)
+            for (int i = 0; i < settings.length; i++) {
+                if (settings[i] == Option.GUI_SCALE) {
+                    ProgressOption option = new ProgressOption("options.guiScale", 0, 2, 1,
+                            options -> (double) options.guiScale,
+                            (options, aDouble) -> {
+                                if (options.guiScale != aDouble.intValue()) {
+                                    options.guiScale = aDouble.intValue();
+                                    Minecraft.getInstance().resizeDisplay();
+                                }
+                            },
+                            (options, progressOption) -> options.guiScale == 0 ?
+                                    ((AccessOption) progressOption)
+                                            .callGenericValueLabel(new TranslatableComponent("options.guiScale.auto")
+                                                    .append(new TextComponent(" (" + (MuiHooks.C.calcGuiScales() >> 4 & 0xf) + ")"))) :
+                                    ((AccessOption) progressOption)
+                                            .callGenericValueLabel(new TextComponent(Integer.toString(options.guiScale)))
+                    );
+                    settings[i] = EventHandler.Client.NEW_GUI_SCALE = option;
+                    break;
+                }
+            }
     }
 
     @Nonnull

@@ -2,6 +2,7 @@
   "minVersion": "0.8",
   "required": true,
   "compatibilityLevel": "JAVA_8",
+  "plugin": "icyllis.modernui.forge.MixinConfigPlugin",
   "package": "icyllis.modernui.forge.mixin",
   "mixins": [
     "MixinFoodData"

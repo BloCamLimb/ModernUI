@@ -822,7 +822,7 @@ public final class UIManager {
     void onRenderTooltip(@Nonnull RenderTooltipEvent.Pre event) {
         if (TestHUD.sTooltip) {
             if (!(minecraft.font instanceof ModernFontRenderer)) {
-                ModernUI.LOGGER.warn(MARKER, "Failed to hook FontRenderer, tooltip disabled");
+                ModernUI.LOGGER.fatal(MARKER, "Failed to hook FontRenderer, tooltip disabled");
                 TestHUD.sTooltip = false;
                 return;
             }

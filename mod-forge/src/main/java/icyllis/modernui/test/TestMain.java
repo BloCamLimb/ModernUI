@@ -63,7 +63,7 @@ public class TestMain {
             sb.append("  ");
         }
         depth++;
-        ModernUI.LOGGER.info("{}{}", sb, node);
+        ModernUI.LOGGER.info(MARKER, "{}{}", sb, node);
         Node child = Node.AST_ADAPTER.getFirstChild(node);
         while (child != null) {
             iterateNode(child, depth);
