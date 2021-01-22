@@ -71,7 +71,7 @@ public class TestPauseUI extends ApplicationUI {
         for (String typeface : list) {
             linearLayout.addView(new Ent(typeface), new LinearLayout.LayoutParams(MATCH_PARENT, 10));
         }
-        scrollView.addView(linearLayout, new FrameLayout.LayoutParams(MATCH_PARENT, 2800));
+        scrollView.addView(linearLayout, new FrameLayout.LayoutParams(MATCH_PARENT, 3000));
         frameLayout.addView(scrollView, params);
         setContentView(frameLayout, new FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT));
     }

@@ -8,7 +8,7 @@ configurations {
 }
 
 dependencies {
-    minecraft "com.mojang:minecraft:${rootProject.architect.minecraft}"
+    minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
     mappings minecraft.officialMojangMappings()
     modCompile "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
     compile "com.github.ben-manes.caffeine:caffeine:${rootProject.caffeine_version}"
@@ -21,6 +21,6 @@ dependencies {
     }
 }
 
-architect {
+architectury {
     common()
 }

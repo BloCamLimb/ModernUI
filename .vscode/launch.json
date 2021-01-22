@@ -1,0 +1,35 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Minecraft Client (:mod-forge)",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/run",
+      "console": "internalConsole",
+      "stopOnEntry": false,
+      "mainClass": "net.fabricmc.devlaunchinjector.Main",
+      "vmArgs": "-Dfabric.dli.config\u003dF:\\Minecraft@@0020Modding\\ModernUI\\mod-forge\\.gradle\\loom-cache\\launch.cfg -Dfabric.dli.env\u003dclient -Dfabric.dli.main\u003dnet.minecraftforge.userdev.LaunchTesting",
+      "args": "",
+      "env": {
+        "MOD_CLASSES": "main_0234dbf%%F:\\Minecraft Modding\\ModernUI\\mod-forge\\build\\resources\\main;main_0234dbf%%F:\\Minecraft Modding\\ModernUI\\mod-forge\\build\\classes\\java\\main"
+      },
+      "preLaunchTask": "generated_Minecraft Client (:mod-forge)"
+    },
+    {
+      "type": "java",
+      "name": "Minecraft Server (:mod-forge)",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/run",
+      "console": "internalConsole",
+      "stopOnEntry": false,
+      "mainClass": "net.fabricmc.devlaunchinjector.Main",
+      "vmArgs": "-Dfabric.dli.config\u003dF:\\Minecraft@@0020Modding\\ModernUI\\mod-forge\\.gradle\\loom-cache\\launch.cfg -Dfabric.dli.env\u003dserver -Dfabric.dli.main\u003dnet.minecraftforge.userdev.LaunchTesting",
+      "args": "nogui ",
+      "env": {
+        "MOD_CLASSES": "main_e9a2595%%F:\\Minecraft Modding\\ModernUI\\mod-forge\\build\\resources\\main;main_e9a2595%%F:\\Minecraft Modding\\ModernUI\\mod-forge\\build\\classes\\java\\main"
+      },
+      "preLaunchTask": "generated_Minecraft Server (:mod-forge)"
+    }
+  ]
+}

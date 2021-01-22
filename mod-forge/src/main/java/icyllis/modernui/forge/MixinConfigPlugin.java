@@ -18,7 +18,6 @@
 
 package icyllis.modernui.forge;
 
-import cpw.mods.modlauncher.Launcher;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
@@ -26,7 +25,6 @@ import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 import java.util.List;
 import java.util.Set;
 
-@Deprecated
 public class MixinConfigPlugin implements IMixinConfigPlugin {
 
     @Override
@@ -37,12 +35,12 @@ public class MixinConfigPlugin implements IMixinConfigPlugin {
     @Override
     public String getRefMapperConfig() {
         // We don't need refmap if it's in a development environment
-        return Launcher.INSTANCE.environment().findNameMapping("srg").isPresent() ? null : "mixins.modernui.refmap.json";
+        return null;/*Launcher.INSTANCE.environment().findNameMapping("srg").isPresent() ? null : "mixins.modernui.refmap.json";*/
     }
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        return true;
+        return !ModernUIForge.isOptiFineLoaded() || !mixinClassName.equals("icyllis.modernui.forge.mixin.AccessVideoSettingsScreen");
     }
 
     @Override

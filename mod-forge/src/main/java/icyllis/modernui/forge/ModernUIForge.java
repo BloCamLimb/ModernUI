@@ -50,6 +50,19 @@ public final class ModernUIForge extends ModernUIMod {
     static boolean production;
     static boolean developerMode;
 
+    static {
+        try {
+            Class<?> clazz = Class.forName("optifine.Installer");
+            String version = (String) clazz.getMethod("getOptiFineVersion").invoke(null);
+            optiFineLoaded = true;
+            ModernUI.LOGGER.debug(ModernUI.MARKER, "OptiFine found: {}", version);
+        } catch (ClassNotFoundException | NoSuchMethodException ignored) {
+
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            e.printStackTrace();
+        }
+    }
+
     // mod-loading thread
     public ModernUIForge() {
         final boolean isDataGen = DatagenModLoader.isRunningDataGen();
@@ -91,17 +104,6 @@ public final class ModernUIForge extends ModernUIMod {
         if (r != null && r.length > 0) {
             ModernUI.LOGGER.debug(ModernUI.MARKER, "Working in production environment");
             production = true;
-        }
-
-        try {
-            Class<?> clazz = Class.forName("optifine.Installer");
-            String version = (String) clazz.getMethod("getOptiFineVersion").invoke(null);
-            optiFineLoaded = true;
-            ModernUI.LOGGER.debug(ModernUI.MARKER, "OptiFine installed: {}", version);
-        } catch (ClassNotFoundException | NoSuchMethodException ignored) {
-
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            e.printStackTrace();
         }
 
         interceptTipTheScales = ModList.get().isLoaded("tipthescales") && !optiFineLoaded;
