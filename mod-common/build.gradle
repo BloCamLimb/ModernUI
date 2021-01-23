@@ -2,9 +2,8 @@ plugins {
     id 'forgified-fabric-loom'
 }
 
-configurations {
-    shade
-    api.extendsFrom(shade)
+loom {
+    silentMojangMappingsLicense()
 }
 
 dependencies {
@@ -13,9 +12,6 @@ dependencies {
     modCompile "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
     compile "com.github.ben-manes.caffeine:caffeine:${rootProject.caffeine_version}"
     compile "com.vladsch.flexmark:flexmark:${rootProject.flexmark_version}"
-    compile(project(":")) {
-        transitive = false
-    }
     compile(project(":core")) {
         transitive = false
     }

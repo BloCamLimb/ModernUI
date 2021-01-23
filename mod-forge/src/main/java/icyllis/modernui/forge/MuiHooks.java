@@ -133,14 +133,14 @@ public final class MuiHooks {
         }
 
         public static int calcGuiScales() {
-            Window mainWindow = Minecraft.getInstance().getWindow();
-            return calcGuiScales(mainWindow);
+            Window window = Minecraft.getInstance().getWindow();
+            return calcGuiScales(window);
         }
 
-        public static int calcGuiScales(@Nonnull Window mainWindow) {
+        public static int calcGuiScales(@Nonnull Window window) {
 
-            double w = Math.floor(mainWindow.getWidth() / 16.0d);
-            double h = Math.floor(mainWindow.getHeight() / 9.0d);
+            double w = Math.floor(window.getWidth() / 16.0d);
+            double h = Math.floor(window.getHeight() / 9.0d);
 
             if (w % 2 != 0) {
                 w++;

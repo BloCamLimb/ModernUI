@@ -106,7 +106,11 @@ public final class ModernUIForge extends ModernUIMod {
             production = true;
         }
 
-        interceptTipTheScales = ModList.get().isLoaded("tipthescales") && !optiFineLoaded;
+        // TipTheScales doesn't work with OptiFine
+        if (ModList.get().isLoaded("tipthescales") && !optiFineLoaded) {
+            ModernUI.LOGGER.debug(ModernUI.MARKER, "Intercepting TipTheScales");
+            interceptTipTheScales = true;
+        }
     }
 
     public static boolean isDeveloperMode() {

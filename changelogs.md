@@ -1,6 +1,6 @@
 Changelogs
 ===
-### 1.16.5-2.4.1.76 (2021-01-17)
+### 1.16.5-2.4.1.76 (2021-01-22)
 * Improve experience bar rendering
 * Improve gui scale setting
   - Slider widget
