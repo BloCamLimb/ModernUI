@@ -10,7 +10,6 @@
   "client": [
     "AccessOption",
     "AccessVideoSettingsScreen",
-    "MixinFontManager",
     "MixinWindow",
     "MixinMatrix4f",
     "MixinMouseHandler",

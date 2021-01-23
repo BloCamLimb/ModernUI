@@ -28,7 +28,7 @@ import org.apache.logging.log4j.MarkerManager;
  */
 public class ModernUI {
 
-    public static final String ID = "modernui";
+    public static final String ID = "modernui"; // as well as the namespace
     public static final String NAME_CPT = "ModernUI";
 
     public static final Logger LOGGER = LogManager.getLogger(NAME_CPT);

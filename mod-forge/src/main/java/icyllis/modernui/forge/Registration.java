@@ -163,7 +163,6 @@ final class Registration {
         Option[] settings = null;
         if (ModernUIForge.isOptiFineLoaded()) {
             try {
-                ModernUI.LOGGER.debug(ModernUI.MARKER, "Finding target class: {}", VideoSettingsScreen.class.getName());
                 Field field = VideoSettingsScreen.class.getDeclaredField("videoOptions");
                 field.setAccessible(true);
                 settings = (Option[]) field.get(null);
@@ -195,6 +194,7 @@ final class Registration {
                     break;
                 }
             }
+        else ModernUI.LOGGER.error(ModernUI.MARKER, "Failed to capture video settings");
     }
 
     @Nonnull

@@ -13,6 +13,10 @@ architectury {
     platformSetupLoomIde()
 }
 
+loom {
+    silentMojangMappingsLicense()
+}
+
 repositories {
     maven {
         name "Progwml6 maven"
@@ -42,9 +46,6 @@ dependencies {
         }
     }
 
-    compile(project(":")) {
-        transitive = false
-    }
     compile(project(":core")) {
         transitive = false
     }
