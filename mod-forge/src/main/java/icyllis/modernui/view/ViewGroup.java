@@ -1280,8 +1280,8 @@ public abstract class ViewGroup extends View implements IViewParent {
          *               {@link #MATCH_PARENT}, or a fixed value
          */
         public LayoutParams(int width, int height) {
-            this.width = width;
-            this.height = height;
+            this.width = width >= 0 ? ViewConfig.spToPx(width) : width;
+            this.height = height >= 0 ? ViewConfig.spToPx(height) : height;
         }
 
         /**

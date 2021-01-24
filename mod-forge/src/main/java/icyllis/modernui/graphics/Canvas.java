@@ -751,10 +751,9 @@ public class Canvas {
     }
 
     public void clipVertical(@Nonnull View view) {
-        int scale = (int) mainWindow.getGuiScale();
         GL11.glEnable(GL11.GL_SCISSOR_TEST);
-        GL11.glScissor(0, mainWindow.getHeight() - (view.getBottom() * scale),
-                mainWindow.getWidth(), view.getHeight() * scale);
+        GL11.glScissor(0, mainWindow.getHeight() - view.getBottom(),
+                mainWindow.getWidth(), view.getHeight());
     }
 
     public void clipStart(float x, float y, float width, float height) {

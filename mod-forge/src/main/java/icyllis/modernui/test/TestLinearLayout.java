@@ -70,14 +70,16 @@ public class TestLinearLayout extends LinearLayout {
         });
         setShowDividers(SHOW_DIVIDER_MIDDLE | SHOW_DIVIDER_END);
         setDividerPadding(8);
-        LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(100, 18);
+
         for (int i = 0; i < 8; i++) {
             View v = new CView();
+            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(200, 36);
             v.setEnabled(true);
             v.setClickable(true);
             addView(v, p);
         }
-        addView(new DView(ITimeInterpolator.DECELERATE, 0), new LinearLayout.LayoutParams(60, 20));
+        addView(new DView(ITimeInterpolator.DECELERATE, 0), new LinearLayout.LayoutParams(120, 40));
+
         //addView(new DView(ITimeInterpolator.VISCOUS_FLUID, 30), new LinearLayout.LayoutParams(60, 20));
         cAnim = new Animation(200).applyTo(new Applier(10, 0, () -> c, v -> c = v).setInterpolator(ITimeInterpolator.DECELERATE));
 

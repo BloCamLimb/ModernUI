@@ -92,7 +92,7 @@ shadowJar {
 remapJar {
     dependsOn(shadowJar)
     input.set(shadowJar.archiveFile)
-    archiveClassifier = "universal"
+    archiveClassifier.set("universal")
 }
 
 if (project.hasProperty("jks")) {

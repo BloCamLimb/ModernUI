@@ -25,6 +25,7 @@ import icyllis.modernui.animation.Animation;
 import icyllis.modernui.font.ModernFontRenderer;
 import icyllis.modernui.font.process.TextLayoutProcessor;
 import icyllis.modernui.forge.ModernUIForge;
+import icyllis.modernui.graphics.RenderCore;
 import icyllis.modernui.test.TestHUD;
 import icyllis.modernui.forge.event.OpenMenuEvent;
 import icyllis.modernui.forge.mixin.MixinMouseHandler;
@@ -141,7 +142,7 @@ public final class UIManager {
     @Nullable
     private View mKeyboard;
 
-    // current scaled cursor position on the gui screen
+    // current cursor position in the window
     private double mCursorX;
     private double mCursorY;
 
@@ -429,11 +430,11 @@ public final class UIManager {
      * @see MMenuScreen
      */
     void onCursorEvent(double cursorX, double cursorY) {
-        mCursorX = cursorX;
-        mCursorY = cursorY;
+        mCursorX = minecraft.mouseHandler.xpos();
+        mCursorY = minecraft.mouseHandler.ypos();
         final long now = Util.getNanos();
         MotionEvent event = MotionEvent.obtain(now, now, MotionEvent.ACTION_HOVER_MOVE,
-                (float) cursorX, (float) cursorY, 0);
+                (float) mCursorX, (float) mCursorY, 0);
         mAppWindow.onInputEvent(event);
         mPendingRepostCursorEvent = false;
     }
@@ -772,11 +773,16 @@ public final class UIManager {
      * Runtime rendering
      */
     void render() {
+        final Window window = minecraft.getWindow();
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableAlphaTest();
         RenderSystem.enableDepthTest();
         RenderSystem.depthMask(false);
+        RenderSystem.matrixMode(GL11.GL_PROJECTION);
+        RenderSystem.loadIdentity();
+        RenderSystem.ortho(0.0D, window.getWidth(), window.getHeight(), 0.0D, 1000.0D, 3000.0D);
+        RenderSystem.matrixMode(GL11.GL_MODELVIEW);
 
         /*canvas.moveToZero();
         canvas.setColor(0, 0, 0, 51);
@@ -798,6 +804,11 @@ public final class UIManager {
         GL11.glLineWidth(1.0f);
         RenderSystem.enableTexture();
         RenderSystem.disableBlend();
+
+        RenderSystem.matrixMode(GL11.GL_PROJECTION);
+        RenderSystem.loadIdentity();
+        RenderSystem.ortho(0.0D, (double) window.getWidth() / window.getGuiScale(), (double) window.getHeight() / window.getGuiScale(), 0.0D, 1000.0D, 3000.0D);
+        RenderSystem.matrixMode(GL11.GL_MODELVIEW);
     }
 
     @SubscribeEvent
@@ -842,11 +853,11 @@ public final class UIManager {
      * @param height scaled game window height
      */
     void resize(int width, int height) {
-        mWidth = width;
-        mHeight = height;
         final Window window = minecraft.getWindow();
-        mCursorX = minecraft.mouseHandler.xpos() * (double) window.getGuiScaledWidth() / (double) window.getScreenWidth();
-        mCursorY = minecraft.mouseHandler.ypos() * (double) window.getGuiScaledHeight() / (double) window.getScreenHeight();
+        mWidth = window.getWidth();
+        mHeight = window.getHeight();
+        mCursorX = minecraft.mouseHandler.xpos();
+        mCursorY = minecraft.mouseHandler.ypos();
         doLayout();
     }
 
@@ -862,7 +873,9 @@ public final class UIManager {
         mAppWindow.performLayout(widthSpec, heightSpec);
 
         if (ModernUIForge.isDeveloperMode()) {
-            ModernUI.LOGGER.debug(MARKER, "Layout performed in {} \u03bcs", (System.nanoTime() - startTime) / 1000.0f);
+            ModernUI.LOGGER.info(MARKER, "Layout done in {} \u03bcs, framebuffer size: {}x{}, cursor pos: ({}, {})",
+                    (System.nanoTime() - startTime) / 1000.0f, mWidth, mHeight, mCursorX, mCursorY);
+            UITools.runViewTraversal(mDecorView, v -> ModernUI.LOGGER.info(MARKER, "{}: {}x{}", v, v.getWidth(), v.getHeight()));
         }
         onCursorEvent(mCursorX, mCursorY);
         mLayoutRequested = false;

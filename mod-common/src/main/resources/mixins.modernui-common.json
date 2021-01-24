@@ -10,7 +10,6 @@
     "AccessPostChain",
     "AccessStringSplitter",
     "MixinClientLanguage",
-    "MixinFontManager",
     "MixinIngameGui"
   ]
 }

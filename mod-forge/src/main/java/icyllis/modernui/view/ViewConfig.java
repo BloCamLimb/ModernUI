@@ -23,5 +23,12 @@ package icyllis.modernui.view;
  */
 public class ViewConfig {
 
-    public static float sViewScale = 2;
+    /**
+     * View scale, determined by user preference or depends on your device
+     */
+    public static float sViewScale = 1;
+
+    public static int spToPx(float sp) {
+        return (int) (sp * sViewScale + 0.5f);
+    }
 }

@@ -186,8 +186,8 @@ public class TextLayoutProcessor {
     }
 
     /**
-     * Minecraft gives us a deeply processed IReorderingProcessor, so we have to make the
-     * IReorderingProcessor not a reordered text, see {@link icyllis.modernui.mcimpl.mixin.MixinClientLanguage}.
+     * Minecraft gives us a deeply processed sequence, so we have to make the
+     * it not a reordered text, see {@link icyllis.modernui.mcimpl.mixin.MixinClientLanguage}.
      * So actually it's a copy of original text, then we can use our layout engine later
      *
      * @param sequence a char sequence copied from the original string
