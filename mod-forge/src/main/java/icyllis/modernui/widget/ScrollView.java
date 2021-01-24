@@ -23,6 +23,7 @@ import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.test.drawable.ScrollThumbDrawable;
 import icyllis.modernui.view.MotionEvent;
 import icyllis.modernui.view.View;
+import icyllis.modernui.view.ViewConfig;
 
 import javax.annotation.Nonnull;
 
@@ -43,7 +44,6 @@ public class ScrollView extends FrameLayout implements ScrollController.IListene
         bar.setTrackDrawable(new Drawable() {
             @Override
             public void draw(@Nonnull Canvas canvas) {
-                canvas.moveTo(this);
                 canvas.setColor(16, 16, 16, 40);
                 canvas.drawRect(0, 0, getWidth(), getHeight());
             }
@@ -95,7 +95,7 @@ public class ScrollView extends FrameLayout implements ScrollController.IListene
     public boolean onGenericMotionEvent(MotionEvent event) {
         if (event.getAction() == MotionEvent.ACTION_SCROLL) {
             float delta = event.getAxisValue(MotionEvent.AXIS_VSCROLL);
-            return scrollController.scrollBy(Math.round(delta * -20.0f));
+            return scrollController.scrollBy(Math.round(delta * -40.0f * ViewConfig.sViewScale));
         }
         return super.onGenericMotionEvent(event);
     }

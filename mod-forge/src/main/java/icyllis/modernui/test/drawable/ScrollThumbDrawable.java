@@ -34,11 +34,11 @@ public class ScrollThumbDrawable extends Drawable {
 
     @Override
     public int getIntrinsicWidth() {
-        return 5;
+        return 10;
     }
 
     @Override
     public int getIntrinsicHeight() {
-        return 5;
+        return 10;
     }
 }

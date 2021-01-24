@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.mcimpl.mixin;
+package icyllis.modernui.forge.mixin;
 
 import icyllis.modernui.font.ModernFontRenderer;
 import net.minecraft.client.gui.Font;

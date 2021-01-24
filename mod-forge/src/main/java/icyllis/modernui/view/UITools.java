@@ -22,6 +22,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lwjgl.glfw.GLFW;
+import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
 import java.util.function.Consumer;
@@ -91,7 +92,7 @@ public class UITools {
      * The default arrow cursor.
      */
     public static void useDefaultCursor() {
-        GLFW.glfwSetCursor(Minecraft.getInstance().getWindow().getWindow(), 0);
+        GLFW.glfwSetCursor(Minecraft.getInstance().getWindow().getWindow(), MemoryUtil.NULL);
     }
 
     /**

@@ -20,6 +20,7 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.animation.ITimeInterpolator;
 import icyllis.modernui.view.UIManager;
+import icyllis.modernui.view.ViewConfig;
 import net.minecraft.util.Mth;
 
 import javax.annotation.Nonnull;
@@ -58,7 +59,7 @@ public class ScrollController {
         if (currValue != targetValue) {
             float p = Math.min((float) (time - startTime) / duration, 1);
             p = ITimeInterpolator.SINE.getInterpolation(p);
-            currValue = Mth.lerp(p, startValue, targetValue);
+            currValue = (int) (Mth.lerp(p, startValue, targetValue) * ViewConfig.sViewScale) / ViewConfig.sViewScale;
             listener.onScrollAmountUpdated(this, currValue);
             UIManager.getInstance().repostCursorEvent();
         }

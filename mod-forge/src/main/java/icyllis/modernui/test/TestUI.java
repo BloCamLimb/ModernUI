@@ -18,8 +18,10 @@
 
 package icyllis.modernui.test;
 
-import icyllis.modernui.test.TestLinearLayout;
-import icyllis.modernui.view.*;
+import icyllis.modernui.view.ApplicationUI;
+import icyllis.modernui.view.Gravity;
+import icyllis.modernui.view.View;
+import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.widget.FrameLayout;
 import icyllis.modernui.widget.ScrollView;
 
@@ -27,12 +29,14 @@ public class TestUI extends ApplicationUI {
 
     @Override
     public void onCreate() {
-        ViewGroup parent = new ScrollView();
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(140, 140);
-        params.gravity = Gravity.CENTER;
-        View content = new TestLinearLayout();
-        content.setLayoutParams(new FrameLayout.LayoutParams(140, 240));
-        parent.addView(content);
-        setContentView(parent, params);
+        ViewGroup contentView = new ScrollView();
+        FrameLayout.LayoutParams contentViewParams = new FrameLayout.LayoutParams(280, 280);
+        contentViewParams.gravity = Gravity.CENTER;
+
+        View ll = new TestLinearLayout();
+        ll.setLayoutParams(new FrameLayout.LayoutParams(280, 480));
+        contentView.addView(ll);
+
+        setContentView(contentView, contentViewParams);
     }
 }

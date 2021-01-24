@@ -139,24 +139,24 @@ public final class MuiHooks {
 
         public static int calcGuiScales(@Nonnull Window window) {
 
-            double w = Math.floor(window.getWidth() / 16.0d);
-            double h = Math.floor(window.getHeight() / 9.0d);
+            int w = window.getWidth() / 16;
+            int h = window.getHeight() / 9;
 
-            if (w % 2 != 0) {
+            if ((w & 1) == 1) {
                 w++;
             }
-            if (h % 2 != 0) {
+            if ((h & 1) == 1) {
                 h++;
             }
 
             double base = Math.min(w, h);
-            double top = Math.max(w, h);
+            double high = Math.max(w, h);
 
             int min;
             int max = Mth.clamp((int) (base / 27), 1, 10);
             if (max > 1) {
                 int i = (int) (base / 64);
-                int j = (int) (top / 64);
+                int j = (int) (high / 64);
                 min = Mth.clamp(j > i ? i + 1 : i, 2, 10);
             } else {
                 min = 1;
@@ -165,7 +165,7 @@ public final class MuiHooks {
             int best;
             if (min > 1) {
                 int i = (int) (base / 32);
-                int j = (int) (top / 32);
+                int j = (int) (high / 32);
                 double v1 = base / (i * 32);
                 if (v1 > 1.25 || j > i) {
                     best = Math.min(max, i + 1);

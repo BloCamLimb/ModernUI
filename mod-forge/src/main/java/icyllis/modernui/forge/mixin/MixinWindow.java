@@ -19,10 +19,15 @@
 package icyllis.modernui.forge.mixin;
 
 import com.mojang.blaze3d.platform.Window;
+import icyllis.modernui.ModernUI;
 import icyllis.modernui.forge.MuiHooks;
+import icyllis.modernui.view.ViewConfig;
 import net.minecraft.util.Mth;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Window.class)
 public class MixinWindow {
@@ -35,5 +40,15 @@ public class MixinWindow {
     public int calculateScale(int guiScaleIn, boolean forceUnicode) {
         int r = MuiHooks.C.calcGuiScales((Window) (Object) this);
         return guiScaleIn > 0 ? Mth.clamp(guiScaleIn, r >> 8 & 0xf, r & 0xf) : r >> 4 & 0xf;
+    }
+
+    @Inject(method = "setGuiScale", at = @At("TAIL"))
+    private void onSetGuiScale(double scaleFactor, CallbackInfo ci) {
+        int i = (int) scaleFactor;
+        if (i != scaleFactor) {
+            ModernUI.LOGGER.error(ModernUI.MARKER, "Gui scale should be an integer: {}", scaleFactor);
+        }
+        // See standards
+        ViewConfig.sViewScale = i * 0.5f;
     }
 }
