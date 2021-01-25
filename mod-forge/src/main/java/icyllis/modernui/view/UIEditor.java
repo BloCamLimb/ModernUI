@@ -71,7 +71,7 @@ public enum UIEditor {
 
             treeInfo.clear();
             List<String> temp = new ArrayList<>();
-            IViewParent parent = hoveredView.getParent();
+            ViewParent parent = hoveredView.getParent();
             if (parent != null) {
                 temp.add(hoveredView.getClass().getSimpleName());
                 do {

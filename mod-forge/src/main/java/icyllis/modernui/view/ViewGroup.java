@@ -30,7 +30,7 @@ import java.util.ArrayList;
 
 @SuppressWarnings("unused")
 @OnlyIn(Dist.CLIENT)
-public abstract class ViewGroup extends View implements IViewParent {
+public abstract class ViewGroup extends View implements ViewParent {
 
     private static final int ARRAY_CAPACITY_INCREMENT = 12;
 
@@ -1350,10 +1350,10 @@ public abstract class ViewGroup extends View implements IViewParent {
          * @param bottom the bottom margin size
          */
         public void setMargins(int left, int top, int right, int bottom) {
-            leftMargin = left;
-            topMargin = top;
-            rightMargin = right;
-            bottomMargin = bottom;
+            leftMargin = ViewConfig.spToPx(left);
+            topMargin = ViewConfig.spToPx(top);
+            rightMargin = ViewConfig.spToPx(right);
+            bottomMargin = ViewConfig.spToPx(bottom);
         }
 
         /**

@@ -32,8 +32,8 @@ import javax.annotation.Nonnull;
  */
 public class ScrollView extends FrameLayout implements ScrollController.IListener {
 
-    private int   scrollRange;
-    private float scrollAmount;
+    private int scrollRange;
+    private int scrollAmount;
 
     private final ScrollController scrollController = new ScrollController(this);
 
@@ -113,7 +113,7 @@ public class ScrollView extends FrameLayout implements ScrollController.IListene
 
     @Override
     public void onScrollAmountUpdated(ScrollController controller, float amount) {
-        scrollAmount = amount;
+        scrollAmount = (int) amount;
         if (getVerticalScrollBar() != null) {
             getVerticalScrollBar().setParameters(scrollRange, scrollAmount, getHeight());
         }

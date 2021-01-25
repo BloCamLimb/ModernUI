@@ -28,7 +28,7 @@ import javax.annotation.Nullable;
  * A button with two states, checked and unchecked. When the button is pressed
  * or clicked, the state changes automatically.
  */
-public abstract class CompoundButton extends Button implements ICheckable {
+public abstract class CompoundButton extends Button implements Checkable {
 
     private boolean mChecked;
     // broadcast check state changes to listeners, prevent dead loop
