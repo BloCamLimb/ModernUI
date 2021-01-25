@@ -21,7 +21,7 @@ package icyllis.modernui.widget;
 /**
  * Defines an extension for views that make them checkable.
  */
-public interface ICheckable {
+public interface Checkable {
 
     /**
      * Change the checked state of the view

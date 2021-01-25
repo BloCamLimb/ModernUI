@@ -29,7 +29,7 @@ import javax.annotation.Nullable;
  * The top of a view hierarchy, implementing the needed protocol between View
  * and the WindowManager
  */
-public final class ViewRootImpl implements IViewParent {
+public final class ViewRootImpl implements ViewParent {
 
     private final UIManager master;
 
@@ -167,7 +167,7 @@ public final class ViewRootImpl implements IViewParent {
 
     @Nullable
     @Override
-    public IViewParent getParent() {
+    public ViewParent getParent() {
         return null;
     }
 

@@ -23,7 +23,7 @@ import javax.annotation.Nullable;
 /**
  * Defines an object that can act as a parent of a view
  */
-public interface IViewParent {
+public interface ViewParent {
 
     /**
      * Returns the parent of this ViewParent
@@ -31,7 +31,7 @@ public interface IViewParent {
      * @return the parent or {@code null} if parent is ViewRoot
      */
     @Nullable
-    IViewParent getParent();
+    ViewParent getParent();
 
     /**
      * Called when something has changed which has invalidated the layout of a

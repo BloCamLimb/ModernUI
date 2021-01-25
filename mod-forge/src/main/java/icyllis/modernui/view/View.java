@@ -183,9 +183,9 @@ public class View {
 
     /**
      * Parent view of this view
-     * {@link #assignParent(IViewParent)}
+     * {@link #assignParent(ViewParent)}
      */
-    private IViewParent mParent;
+    private ViewParent mParent;
 
     /**
      * Internal use
@@ -597,7 +597,7 @@ public class View {
      * @return parent of this view
      */
     @Nullable
-    public final IViewParent getParent() {
+    public final ViewParent getParent() {
         return mParent;
     }
 
@@ -609,7 +609,7 @@ public class View {
      * @param parent parent view
      * @throws RuntimeException parent is already assigned
      */
-    final void assignParent(@Nonnull IViewParent parent) {
+    final void assignParent(@Nonnull ViewParent parent) {
         if (this.mParent == null) {
             this.mParent = parent;
         } else {
@@ -968,7 +968,7 @@ public class View {
         mPrivateFlags |= PFLAG_DRAWABLE_STATE_DIRTY;
         drawableStateChanged();
 
-        IViewParent parent = mParent;
+        ViewParent parent = mParent;
         if (parent != null) {
             parent.childDrawableStateChanged(this);
         }
@@ -1038,7 +1038,7 @@ public class View {
         float x = mLeft;
         float y = mTop;
 
-        IViewParent parent = this.mParent;
+        ViewParent parent = this.mParent;
         while (parent != null) {
             x -= parent.getScrollX();
             y -= parent.getScrollY();

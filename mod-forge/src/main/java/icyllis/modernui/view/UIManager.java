@@ -25,7 +25,6 @@ import icyllis.modernui.animation.Animation;
 import icyllis.modernui.font.ModernFontRenderer;
 import icyllis.modernui.font.process.TextLayoutProcessor;
 import icyllis.modernui.forge.ModernUIForge;
-import icyllis.modernui.graphics.RenderCore;
 import icyllis.modernui.test.TestHUD;
 import icyllis.modernui.forge.event.OpenMenuEvent;
 import icyllis.modernui.forge.mixin.MixinMouseHandler;
@@ -865,7 +864,7 @@ public final class UIManager {
      * Directly layout UI window
      */
     private void doLayout() {
-        long startTime = System.nanoTime();
+        long startTime = Util.getNanos();
 
         int widthSpec = MeasureSpec.makeMeasureSpec(mWidth, MeasureSpec.Mode.EXACTLY);
         int heightSpec = MeasureSpec.makeMeasureSpec(mHeight, MeasureSpec.Mode.EXACTLY);
@@ -874,8 +873,8 @@ public final class UIManager {
 
         if (ModernUIForge.isDeveloperMode()) {
             ModernUI.LOGGER.info(MARKER, "Layout done in {} \u03bcs, framebuffer size: {}x{}, cursor pos: ({}, {})",
-                    (System.nanoTime() - startTime) / 1000.0f, mWidth, mHeight, mCursorX, mCursorY);
-            UITools.runViewTraversal(mDecorView, v -> ModernUI.LOGGER.info(MARKER, "{}: {}x{}", v, v.getWidth(), v.getHeight()));
+                    (Util.getNanos() - startTime) / 1000.0f, mWidth, mHeight, mCursorX, mCursorY);
+            //UITools.runViewTraversal(mDecorView, v -> ModernUI.LOGGER.debug(MARKER, "{}: {}x{}", v, v.getWidth(), v.getHeight()));
         }
         onCursorEvent(mCursorX, mCursorY);
         mLayoutRequested = false;
@@ -1011,7 +1010,7 @@ public final class UIManager {
      * @return relative mouse x
      */
     public double getViewMouseX(@Nonnull View view) {
-        IViewParent parent = view.getParent();
+        ViewParent parent = view.getParent();
         double mouseX = mCursorX;
 
         while (parent != null) {
@@ -1029,7 +1028,7 @@ public final class UIManager {
      * @return relative mouse y
      */
     public double getViewMouseY(@Nonnull View view) {
-        IViewParent parent = view.getParent();
+        ViewParent parent = view.getParent();
         double mouseY = mCursorY;
 
         while (parent != null) {
