@@ -18,6 +18,7 @@
 
 package icyllis.modernui.text;
 
+import it.unimi.dsi.fastutil.Arrays;
 import it.unimi.dsi.fastutil.ints.IntArrays;
 import it.unimi.dsi.fastutil.objects.ObjectArrays;
 
@@ -73,7 +74,7 @@ abstract class SpannableStringInternal {
         }
     }
 
-    private void copySpansFromInternal(SpannableStringInternal src, int start, int end, boolean ignoreNoCopySpan) {
+    private void copySpansFromInternal(@Nonnull SpannableStringInternal src, int start, int end, boolean ignoreNoCopySpan) {
         int count = 0;
         final int[] srcData = src.mSpanData;
         final Object[] srcSpans = src.mSpans;
@@ -145,22 +146,7 @@ abstract class SpannableStringInternal {
     }
 
     private void setSpan(Object span, final int start, final int end, int flags, boolean enforceParagraph) {
-        if (end < start) {
-            throw new IllegalArgumentException("setSpan " +
-                    region(start, end) + " has end before start");
-        }
-
-        int len = length();
-
-        if (start > len || end > len) {
-            throw new IndexOutOfBoundsException("setSpan " +
-                    region(start, end) + " ends beyond length " + len);
-        }
-
-        if (start < 0 || end < 0) {
-            throw new IndexOutOfBoundsException("setSpan " +
-                    region(start, end) + " starts before 0");
-        }
+        Arrays.ensureFromTo(length(), start, end);
 
         if ((flags & Spannable.SPAN_PARAGRAPH) == Spannable.SPAN_PARAGRAPH) {
             if (isIndexFollowsNextLine(start)) {
@@ -342,9 +328,9 @@ abstract class SpannableStringInternal {
             int st = data[i * COLUMNS + START];
             int en = data[i * COLUMNS + END];
 
-            if (st > start && st < limit && type.isInstance(spans[i]))
+            if (st > start && st < limit && (type == Object.class || type.isInstance(spans[i])))
                 limit = st;
-            if (en > start && en < limit && type.isInstance(spans[i]))
+            if (en > start && en < limit && (type == Object.class || type.isInstance(spans[i])))
                 limit = en;
         }
 
@@ -368,11 +354,6 @@ abstract class SpannableStringInternal {
                 SpanWatcher.class);
         for (SpanWatcher spanWatcher : watchers)
             spanWatcher.onSpanChanged((Spannable) this, span, s, e, st, en);
-    }
-
-    @Nonnull
-    private static String region(int start, int end) {
-        return "(" + start + " ... " + end + ")";
     }
 
     @Nonnull
