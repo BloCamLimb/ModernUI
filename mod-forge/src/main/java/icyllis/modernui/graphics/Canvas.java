@@ -589,6 +589,24 @@ public class Canvas {
         RenderCore.releaseShader();
     }
 
+    // Alpha test
+    public void drawRoundedFrameT1(float left, float top, float right, float bottom, float radius) {
+        RenderCore.useShader(roundedFrame);
+        roundedFrame.setRadius(radius);
+        roundedFrame.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
+        RenderSystem.disableTexture();
+        RenderSystem.shadeModel(GL11.GL_SMOOTH);
+        bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
+        bufferBuilder.vertex(left, bottom, z).color(170, 220, 240, a).endVertex();
+        bufferBuilder.vertex(right, bottom, z).color(201, 200, 232, a).endVertex();
+        bufferBuilder.vertex(right, top, z).color(232, 180, 223, a).endVertex();
+        bufferBuilder.vertex(left, top, z).color(201, 200, 232, a).endVertex();
+        bufferBuilder.end();
+        BufferUploader.end(bufferBuilder);
+        RenderSystem.shadeModel(GL11.GL_FLAT);
+        RenderCore.releaseShader();
+    }
+
     /**
      * Draw feathered rectangle frame in a rounded rect on screen
      * with given rect area and feather thickness (not radius)

@@ -828,7 +828,7 @@ public final class UIManager {
         }
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.LOW)
     void onRenderTooltip(@Nonnull RenderTooltipEvent.Pre event) {
         if (TestHUD.sTooltip) {
             if (!(minecraft.font instanceof ModernFontRenderer)) {

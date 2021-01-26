@@ -47,7 +47,7 @@ public class ModernUI {
                 int update = Integer.parseInt(javaVersion.split("_")[1].split("-")[0]);
                 if (update < 201) {
                     throw new RuntimeException(
-                            "Modern UI requires Java 1.8.0_271 or above to run, your version is Java " + javaVersion);
+                            "Modern UI requires Java 11.0.9 or above to run, your version is Java " + javaVersion);
                 }
             } catch (NumberFormatException | IndexOutOfBoundsException e) {
                 ModernUI.LOGGER.warn(ModernUI.MARKER, "Failed to check java version: {}", javaVersion, e);
