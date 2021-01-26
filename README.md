@@ -15,8 +15,10 @@ Releases for Minecraft Mod are available on [CurseForge](https://www.curseforge.
 ![b](https://i.loli.net/2020/04/10/LDBFc1qo5wtnS8u.png)
 ### Adding Modern UI to your project
 #### Environment requirements
-- Liberica OpenJDK 8u275
-- Forge 1.16.4-35.1.0
+- Windows, Linux or Solaris
+- JDK 11.0.9 or above
+- OpenGL 4.3 or above
+- Forge 1.16.5-36.0.0
 #### Version information
 There's currently no stable builds for development
 #### Gradle configuration
@@ -28,14 +30,12 @@ repositories {
         url 'https://maven.izzel.io/releases'
     }
 }
-```
-ForgeGradle:
-```
-dependencies {
-    compile fg.deobf("icyllis.modernui:ModernUI-Forge:{version}")
-}
-```
-Fabric Loom:
-```
 
+dependencies {
+    // ForgeGradle 3
+    compile fg.deobf("icyllis.modernui:ModernUI-Forge:{version}")
+
+    // Fabric Loom 0.6
+    modCompile "icyllis.modernui:ModernUI-Forge:{version}"
+}
 ```
