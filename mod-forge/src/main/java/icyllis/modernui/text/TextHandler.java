@@ -16,7 +16,17 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.resources;
+package icyllis.modernui.text;
 
-public class MuiAssetManager {
+import com.ibm.icu.text.BreakIterator;
+import icyllis.modernui.resources.LocaleChangeListener;
+
+import java.util.Locale;
+
+public final class TextHandler implements LocaleChangeListener {
+
+    @Override
+    public void onLocaleChanged(Locale locale) {
+        GraphemeBreak.setBreaker(BreakIterator.getCharacterInstance(locale));
+    }
 }

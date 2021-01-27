@@ -18,11 +18,13 @@
 
 package icyllis.modernui.test;
 
+import com.ibm.icu.text.BreakIterator;
 import com.ibm.icu.text.RuleBasedNumberFormat;
 import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.ast.Node;
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.text.GraphemeBreak;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
@@ -37,7 +39,7 @@ public class TestMain {
         Parser parser = Parser.builder().build();
         Document document = parser.parse("Advanced Page\r\n---\r\nMy **One** Line\r\n> My Two");
         iterateNode(document, 0);
-        RuleBasedNumberFormat numberFormat = new RuleBasedNumberFormat(Locale.SIMPLIFIED_CHINESE, RuleBasedNumberFormat.SPELLOUT);
+        RuleBasedNumberFormat numberFormat = new RuleBasedNumberFormat(new Locale("bn", "BD"), RuleBasedNumberFormat.SPELLOUT);
         String formatted = numberFormat.format(18500);
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < formatted.length(); i++) {
@@ -45,6 +47,14 @@ public class TestMain {
             builder.append(Integer.toString(((int) formatted.charAt(i)) | 0x10000, 16).substring(1));
         }
         ModernUI.LOGGER.info(MARKER, builder.toString());
+        ModernUI.LOGGER.info(MARKER, formatted);
+        String bengaliHello = "\u09b9\u09cd\u09af\u09be\u09b2\u09cb"; // two graphemes, first four chars and last two chars
+        ModernUI.LOGGER.info(MARKER, GraphemeBreak.getTextRunCursor(bengaliHello.toCharArray(),
+                0, bengaliHello.length(), 0, GraphemeBreak.AFTER)); // output 4, correct
+        BreakIterator iterator = BreakIterator.getCharacterInstance();
+        iterator.setText("\u0627\u0644\u0644\u063a\u0629\u0020\u0627\u0644\u0639\u0631\u0628\u064a\u0629");
+        iterator.next(2);
+        ModernUI.LOGGER.info(MARKER, iterator.previous());
     }
 
     /*

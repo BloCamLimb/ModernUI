@@ -19,7 +19,6 @@
 package icyllis.modernui.forge;
 
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
-import com.google.common.collect.Lists;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.font.ModernFontRenderer;
 import icyllis.modernui.font.glyph.GlyphManager;
@@ -33,7 +32,6 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import net.minecraftforge.fml.config.ConfigFileTypeHandler;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -170,7 +168,7 @@ public final class Config {
         private final ForgeConfigSpec.BooleanValue highPrecision;
         private final ForgeConfigSpec.BooleanValue enableMipmap;
         private final ForgeConfigSpec.IntValue mipmapLevel;
-        private final ForgeConfigSpec.IntValue resolutionLevel;
+        //private final ForgeConfigSpec.IntValue resolutionLevel;
         private final ForgeConfigSpec.IntValue defaultFontSize;
 
         private Client(@Nonnull ForgeConfigSpec.Builder builder) {
@@ -249,13 +247,13 @@ public final class Config {
             mipmapLevel = builder.comment(
                     "The mipmap level for font textures.")
                     .defineInRange("mipmapLevel", 4, 0, 4);
-            resolutionLevel = builder.comment(
+            /*resolutionLevel = builder.comment(
                     "The resolution level of font, higher levels would better work with high resolution monitors.",
                     "Reference: 1 (Standard, 1.5K Fullscreen), 2 (High, 2K~3K Fullscreen), 3 (Ultra, 4K Fullscreen)",
                     "This should match your GUI scale. Scale -> Level: [1,2] -> 1; [3,4] -> 2; [5,) -> 3")
-                    .defineInRange("resolutionLevel", 2, 1, 3);
+                    .defineInRange("resolutionLevel", 2, 1, 3);*/
             defaultFontSize = builder.comment(
-                    "The default font size for texts with no size specified.",
+                    "The default font size for texts with no size specified. (Deprecated, to be removed)",
                     "The font size feature is provided by Modern UI, and other mod's are achieved by matrix transformation.")
                     .defineInRange("defaultFontSize", 16, 12, 20);
 
@@ -271,14 +269,14 @@ public final class Config {
             BlurHandler.INSTANCE.loadBlacklist(blurBlacklist.get());
 
             TestHUD.sTooltip = tooltip.get();
-            String hex = tooltipColor.get();
+            String tooltipColor = this.tooltipColor.get();
             try {
-                int i = Integer.valueOf(hex.substring(2), 16);
+                int i = Integer.valueOf(tooltipColor.substring(2), 16);
                 TestHUD.sTooltipR = i >> 16 & 0xff;
                 TestHUD.sTooltipG = i >> 8 & 0xff;
                 TestHUD.sTooltipB = i & 0xff;
             } catch (NumberFormatException e) {
-                ModernUI.LOGGER.error(ModernUI.MARKER, "Wrong color format for setting tooltip color: {}", hex, e);
+                ModernUI.LOGGER.error(ModernUI.MARKER, "Wrong color format for setting tooltip color: {}", tooltipColor, e);
             }
             TestHUD.sDing = ding.get();
 
@@ -288,7 +286,7 @@ public final class Config {
             GlyphManager.sHighPrecision = highPrecision.get();
             GlyphManager.sEnableMipmap = enableMipmap.get();
             GlyphManager.sMipmapLevel = mipmapLevel.get();
-            GlyphManager.sResolutionLevel = resolutionLevel.get();
+            //GlyphManager.sResolutionLevel = resolutionLevel.get();
             TextLayoutProcessor.sDefaultFontSize = defaultFontSize.get();
         }
     }

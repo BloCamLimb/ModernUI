@@ -21,9 +21,12 @@ package icyllis.modernui.text;
 import com.ibm.icu.lang.UCharacter;
 import com.ibm.icu.lang.UCharacterCategory;
 import com.ibm.icu.lang.UProperty;
+import com.ibm.icu.text.BreakIterator;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.text.CharacterIterator;
+import java.text.StringCharacterIterator;
 
 import static com.ibm.icu.lang.UCharacter.GraphemeClusterBreak.*;
 
@@ -68,11 +71,133 @@ public final class GraphemeBreak {
      */
     public static final int AT = 4;
 
+    /**
+     * Config value, true to use ICU GCB, otherwise this
+     */
+    public static boolean sUseICU;
+
+    private static BreakIterator sBreaker;
+
     private GraphemeBreak() {
     }
 
-    public static int getTextRunCursor(@Nullable float[] advances, @Nonnull char[] buf, int start, int count,
-                                       int offset, int op) {
+    static void setBreaker(BreakIterator breakIterator) {
+        sBreaker = breakIterator;
+    }
+
+    /**
+     * Returns the next cursor position in the run.
+     * <p>
+     * This avoids placing the cursor between surrogates, between characters that form conjuncts,
+     * between base characters and combining marks, or within a reordering cluster.
+     *
+     * <p>
+     * ContextStart and offset are relative to the start of text.
+     * The context is the shaping context for cursor movement, generally the bounds of the metric
+     * span enclosing the cursor in the direction of movement.
+     *
+     * <p>
+     * If op is {@link #AT} and the offset is not a valid cursor position, this
+     * returns -1.  Otherwise this will never return a value before contextStart or after
+     * contextStart + contextLength.
+     *
+     * @param text          the text
+     * @param contextStart  the start of the context
+     * @param contextLength the length of the context
+     * @param offset        the cursor position to move from
+     * @param op            how to move the cursor
+     * @return the offset of the next position or -1
+     */
+    public static int getTextRunCursor(@Nonnull char[] text, int contextStart, int contextLength, int offset, int op) {
+        int contextEnd = contextStart + contextLength;
+        if (((contextStart | contextEnd | offset | (contextEnd - contextStart)
+                | (offset - contextStart) | (contextEnd - offset)
+                | (text.length - contextEnd) | op) < 0)
+                || op > AT) {
+            throw new IndexOutOfBoundsException();
+        }
+        return sUseICU ? getTextRunCursorICU(new CharArrayIterator(text, contextStart, contextEnd), offset, op) :
+                getTextRunCursorImpl(null, text, contextStart, contextLength, offset, op);
+    }
+
+    /**
+     * Returns the next cursor position in the run.
+     * <p>
+     * This avoids placing the cursor between surrogates, between characters that form conjuncts,
+     * between base characters and combining marks, or within a reordering cluster.
+     *
+     * <p>
+     * ContextStart, contextEnd, and offset are relative to the start of
+     * text.  The context is the shaping context for cursor movement, generally
+     * the bounds of the metric span enclosing the cursor in the direction of
+     * movement.
+     *
+     * <p>
+     * If op is {@link #AT} and the offset is not a valid cursor position, this
+     * returns -1.  Otherwise this will never return a value before contextStart or after
+     * contextEnd.
+     *
+     * @param text         the text
+     * @param contextStart the start of the context
+     * @param contextEnd   the end of the context
+     * @param offset       the cursor position to move from
+     * @param op           how to move the cursor
+     * @return the offset of the next position, or -1
+     */
+    public static int getTextRunCursor(@Nonnull CharSequence text, int contextStart, int contextEnd, int offset, int op) {
+        if (text instanceof String || text instanceof SpannedString ||
+                text instanceof SpannableString) {
+            return getTextRunCursor(text.toString(), contextStart, contextEnd,
+                    offset, op);
+        }
+        final int contextLen = contextEnd - contextStart;
+        final char[] buf = new char[contextLen];
+        int off = 0;
+        for (int i = contextStart; i < contextEnd; i++)
+            buf[off++] = text.charAt(i);
+        off = getTextRunCursor(buf, contextStart, contextLen, offset, op);
+        return off == -1 ? -1 : off + contextStart;
+    }
+
+    public static int getTextRunCursor(@Nonnull String text, int contextStart, int contextEnd, int offset, int op) {
+        if (((contextStart | contextEnd | offset | (contextEnd - contextStart)
+                | (offset - contextStart) | (contextEnd - offset)
+                | (text.length() - contextEnd) | op) < 0)
+                || op > AT) {
+            throw new IndexOutOfBoundsException();
+        }
+        return sUseICU ? getTextRunCursorICU(new StringCharacterIterator(text, contextStart, contextEnd, contextStart), offset, op) :
+                getTextRunCursorImpl(null, text.toCharArray(), contextStart, contextEnd - contextStart, offset, op);
+    }
+
+    public static int getTextRunCursorICU(CharacterIterator text, int offset, int op) {
+        final int offset1 = offset;
+        sBreaker.setText(text);
+        switch (op) {
+            case AFTER:
+                offset = sBreaker.following(offset);
+                break;
+            case AT_OR_AFTER:
+                if (!sBreaker.isBoundary(offset))
+                    offset = sBreaker.following(offset);
+                break;
+            case BEFORE:
+                offset = sBreaker.preceding(offset);
+                break;
+            case AT_OR_BEFORE:
+                if (!sBreaker.isBoundary(offset))
+                    offset = sBreaker.preceding(offset);
+                break;
+            case AT:
+                if (!sBreaker.isBoundary(offset))
+                    return -1;
+                break;
+        }
+        return offset == BreakIterator.DONE ? offset1 : offset;
+    }
+
+    public static int getTextRunCursorImpl(@Nullable float[] advances, @Nonnull char[] buf, int start, int count,
+                                           int offset, int op) {
         switch (op) {
             case AFTER:
                 if (offset < start + count) {

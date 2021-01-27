@@ -182,6 +182,10 @@ public class TextLayoutProcessor {
      */
     public void reload() {
         glyphManager.reload();
+        clearLayoutCache();
+    }
+
+    public void clearLayoutCache() {
         stringCache.invalidateAll();
     }
 
