@@ -68,7 +68,7 @@ import java.util.Optional;
 @SuppressWarnings("unused")
 public class GlyphManager {
 
-    private static final Marker MARKER = MarkerManager.getMarker("Font");
+    public static final Marker MARKER = MarkerManager.getMarker("Font");
 
     /**
      * Config values.
@@ -78,6 +78,11 @@ public class GlyphManager {
     public static boolean sHighPrecision;
     public static boolean sEnableMipmap;
     public static int sMipmapLevel;
+    /**
+     * The resolution level of font, higher levels would better work with high resolution monitors.
+     * Reference: 1 (Standard, 1.5K Fullscreen), 2 (High, 2K~3K Fullscreen), 3 (Ultra, 4K Fullscreen)
+     * This should match your GUI scale. Scale -> Level: [1,2] -> 1; [3,4] -> 2; [5,) -> 3
+     */
     public static int sResolutionLevel;
 
     /**

@@ -16,7 +16,13 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.resources;
+package icyllis.modernui.text.style;
 
-public class MuiAssetManager {
+/**
+ * The classes that affect character-level text formatting in a way that
+ * triggers a text layout update when one is added or removed must implement
+ * this interface.  This interface also includes {@link UpdateAppearance}
+ * since such a change implicitly also impacts the appearance.
+ */
+public interface UpdateLayout extends UpdateAppearance {
 }

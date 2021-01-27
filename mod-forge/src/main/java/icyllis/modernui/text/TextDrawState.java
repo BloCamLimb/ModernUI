@@ -16,7 +16,16 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.resources;
+package icyllis.modernui.text;
 
-public class MuiAssetManager {
+public class TextDrawState {
+
+    private static final TextDrawState sInstance = new TextDrawState();
+
+    protected TextDrawState() {
+    }
+
+    public static TextDrawState get() {
+        return sInstance;
+    }
 }

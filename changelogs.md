@@ -1,7 +1,10 @@
 Changelogs
 ===
-### 1.16.5-2.4.1.76 (2021-01-00)
+### 1.16.5-2.4.2.77 (2021-01-27)
 * Fix compatibility with ItemZoom
+* Auto switch font resolution level
+* Add grapheme cluster breaker
+* Change to absolute coordinate system
 
 ### 1.16.5-2.4.1.76 (2021-01-22)
 * Improve experience bar rendering

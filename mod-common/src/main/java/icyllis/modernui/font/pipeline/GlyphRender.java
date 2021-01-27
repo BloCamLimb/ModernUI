@@ -72,17 +72,18 @@ public abstract class GlyphRender {
 
     /**
      * Draw the glyph of this info.
-     *  @param matrix      matrix
-     * @param buffer      buffer source
-     * @param raw         needed by {@link DigitGlyphRender}
-     * @param x           start x of the whole text
-     * @param y           start y of the whole text
-     * @param r           final red
-     * @param g           final green
-     * @param b           final blue
-     * @param a           final alpha
+     *
+     * @param matrix     matrix
+     * @param buffer     buffer source
+     * @param raw        needed by {@link DigitGlyphRender}
+     * @param x          start x of the whole text
+     * @param y          start y of the whole text
+     * @param r          final red
+     * @param g          final green
+     * @param b          final blue
+     * @param a          final alpha
      * @param seeThrough is see through type
-     * @param light       packed light
+     * @param light      packed light
      */
     public abstract void drawGlyph(Matrix4f matrix, @Nonnull MultiBufferSource buffer, @Nonnull CharSequence raw, float x, float y, int r, int g, int b, int a, boolean seeThrough, int light);
 

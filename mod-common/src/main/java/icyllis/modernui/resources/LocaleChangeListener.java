@@ -16,7 +16,12 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.text.style;
+package icyllis.modernui.resources;
 
-public class TextStyle {
+import java.util.Locale;
+
+@FunctionalInterface
+public interface LocaleChangeListener {
+
+    void onLocaleChanged(Locale locale);
 }
