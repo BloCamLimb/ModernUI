@@ -20,7 +20,7 @@ package icyllis.modernui.text;
 
 import javax.annotation.Nonnull;
 
-public class SpannableString extends SpannableStringInternal implements Spannable {
+public class SpannableString extends SpannableStringInternal implements Spannable, GetChars {
 
     public SpannableString(CharSequence source, boolean ignoreNoCopySpan) {
         super(source, 0, source.length(), ignoreNoCopySpan);

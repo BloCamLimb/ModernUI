@@ -27,6 +27,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
+import java.util.Locale;
 
 import static com.ibm.icu.lang.UCharacter.GraphemeClusterBreak.*;
 
@@ -76,13 +77,13 @@ public final class GraphemeBreak {
      */
     public static boolean sUseICU;
 
-    private static BreakIterator sBreaker;
+    private static BreakIterator sBreaker = BreakIterator.getCharacterInstance();
 
     private GraphemeBreak() {
     }
 
-    static void setBreaker(BreakIterator breakIterator) {
-        sBreaker = breakIterator;
+    static void setLocale(Locale locale) {
+        sBreaker = BreakIterator.getCharacterInstance(locale);
     }
 
     /**
@@ -152,11 +153,9 @@ public final class GraphemeBreak {
         }
         final int contextLen = contextEnd - contextStart;
         final char[] buf = new char[contextLen];
-        int off = 0;
-        for (int i = contextStart; i < contextEnd; i++)
-            buf[off++] = text.charAt(i);
-        off = getTextRunCursor(buf, contextStart, contextLen, offset, op);
-        return off == -1 ? -1 : off + contextStart;
+        TextUtils.getChars(text, contextStart, contextEnd, buf, 0);
+        offset = getTextRunCursor(buf, 0, contextLen, offset - contextStart, op);
+        return offset == -1 ? -1 : offset + contextStart;
     }
 
     public static int getTextRunCursor(@Nonnull String text, int contextStart, int contextEnd, int offset, int op) {
@@ -171,7 +170,7 @@ public final class GraphemeBreak {
     }
 
     public static int getTextRunCursorICU(CharacterIterator text, int offset, int op) {
-        final int offset1 = offset;
+        final int oof = offset;
         sBreaker.setText(text);
         switch (op) {
             case AFTER:
@@ -193,7 +192,7 @@ public final class GraphemeBreak {
                     return -1;
                 break;
         }
-        return offset == BreakIterator.DONE ? offset1 : offset;
+        return offset == BreakIterator.DONE ? oof : offset;
     }
 
     public static int getTextRunCursorImpl(@Nullable float[] advances, @Nonnull char[] buf, int start, int count,

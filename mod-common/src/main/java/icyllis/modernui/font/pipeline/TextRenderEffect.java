@@ -26,25 +26,20 @@ import javax.annotation.Nonnull;
 /**
  * Draw underline or strikethrough
  */
-public abstract class TextRenderEffect {
+public class TextRenderEffect {
 
-    /*
-     * Underline style type
-     */
-    //private static final byte UNDERLINE_MASK     = 1;
-    /*
-     * Strikethrough style type
-     */
-    //private static final byte STRIKETHROUGH_MASK = 2;
+    public static final byte NO_EFFECT = 0;
 
-    public static final TextRenderEffect UNDERLINE               = new Underline();
-    public static final TextRenderEffect STRIKETHROUGH           = new Strikethrough();
-    public static final TextRenderEffect UNDERLINE_STRIKETHROUGH = new UnderlineStrikethrough();
+    public static final byte UNDERLINE = 1;
+
+    public static final byte STRIKETHROUGH = 2;
+
+    public static final byte UNDERLINE_STRIKETHROUGH = 3;
 
     /**
      * Offset from the string's baseline as which to draw the underline
      */
-    private static final float UNDERLINE_OFFSET     = 1.5f;
+    private static final float UNDERLINE_OFFSET = 1.5f;
     /**
      * Offset from the string's baseline as which to draw the strikethrough line
      */
@@ -55,7 +50,7 @@ public abstract class TextRenderEffect {
     /**
      * Thickness of the underline
      */
-    private static final float UNDERLINE_THICKNESS     = 1.0f;
+    private static final float UNDERLINE_THICKNESS = 1.0f;
     /**
      * Thickness of the strikethrough line
      */
@@ -65,7 +60,6 @@ public abstract class TextRenderEffect {
      * Offset Z to ensure that effects render over characters in 3D world
      */
     public static final float EFFECT_DEPTH = 0.01f;
-
 
     /*
      * Start X offset of this effect to the start x of the whole text
@@ -91,10 +85,6 @@ public abstract class TextRenderEffect {
 
     }
 
-    public abstract void drawEffect(@Nonnull VertexConsumer builder, float start, float end, float y, int r, int g, int b, int a);
-
-    public abstract void drawEffect(Matrix4f matrix, @Nonnull VertexConsumer builder, float start, float end, float y, int r, int g, int b, int a, int light);
-
     /*@Nonnull
     public static EffectRenderInfo underline(float start, float end, int color) {
         return new EffectRenderInfo(start, end, color, UNDERLINE);
@@ -109,10 +99,9 @@ public abstract class TextRenderEffect {
         return seeThrough ? seeThroughType : normalType;
     }*/
 
-    private static class Underline extends TextRenderEffect {
+    public static class Underline {
 
-        @Override
-        public void drawEffect(@Nonnull VertexConsumer builder, float start, float end, float y, int r, int g, int b, int a) {
+        public static void drawEffect(@Nonnull VertexConsumer builder, float start, float end, float y, int r, int g, int b, int a) {
             y += UNDERLINE_OFFSET;
             builder.vertex(start, y + UNDERLINE_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).endVertex();
             builder.vertex(end, y + UNDERLINE_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).endVertex();
@@ -120,8 +109,7 @@ public abstract class TextRenderEffect {
             builder.vertex(start, y, EFFECT_DEPTH).color(r, g, b, a).endVertex();
         }
 
-        @Override
-        public void drawEffect(Matrix4f matrix, @Nonnull VertexConsumer builder, float start, float end, float y, int r, int g, int b, int a, int light) {
+        public static void drawEffect(Matrix4f matrix, @Nonnull VertexConsumer builder, float start, float end, float y, int r, int g, int b, int a, int light) {
             y += UNDERLINE_OFFSET;
             builder.vertex(matrix, start, y + UNDERLINE_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).uv2(light).endVertex();
             builder.vertex(matrix, end, y + UNDERLINE_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).uv2(light).endVertex();
@@ -130,10 +118,9 @@ public abstract class TextRenderEffect {
         }
     }
 
-    private static class Strikethrough extends TextRenderEffect {
+    public static class Strikethrough {
 
-        @Override
-        public void drawEffect(@Nonnull VertexConsumer builder, float start, float end, float y, int r, int g, int b, int a) {
+        public static void drawEffect(@Nonnull VertexConsumer builder, float start, float end, float y, int r, int g, int b, int a) {
             y += STRIKETHROUGH_OFFSET;
             builder.vertex(start, y + STRIKETHROUGH_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).endVertex();
             builder.vertex(end, y + STRIKETHROUGH_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).endVertex();
@@ -141,8 +128,7 @@ public abstract class TextRenderEffect {
             builder.vertex(start, y, EFFECT_DEPTH).color(r, g, b, a).endVertex();
         }
 
-        @Override
-        public void drawEffect(Matrix4f matrix, @Nonnull VertexConsumer builder, float start, float end, float y, int r, int g, int b, int a, int light) {
+        public static void drawEffect(Matrix4f matrix, @Nonnull VertexConsumer builder, float start, float end, float y, int r, int g, int b, int a, int light) {
             y += STRIKETHROUGH_OFFSET;
             builder.vertex(matrix, start, y + STRIKETHROUGH_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).uv2(light).endVertex();
             builder.vertex(matrix, end, y + STRIKETHROUGH_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).uv2(light).endVertex();
@@ -151,10 +137,9 @@ public abstract class TextRenderEffect {
         }
     }
 
-    private static class UnderlineStrikethrough extends TextRenderEffect {
+    public static class UnderlineStrikethrough {
 
-        @Override
-        public void drawEffect(@Nonnull VertexConsumer builder, float start, float end, float y, int r, int g, int b, int a) {
+        public static void drawEffect(@Nonnull VertexConsumer builder, float start, float end, float y, int r, int g, int b, int a) {
             y += UNDERLINE_OFFSET;
             builder.vertex(start, y + UNDERLINE_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).endVertex();
             builder.vertex(end, y + UNDERLINE_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).endVertex();
@@ -167,8 +152,7 @@ public abstract class TextRenderEffect {
             builder.vertex(start, y, EFFECT_DEPTH).color(r, g, b, a).endVertex();
         }
 
-        @Override
-        public void drawEffect(Matrix4f matrix, @Nonnull VertexConsumer builder, float start, float end, float y, int r, int g, int b, int a, int light) {
+        public static void drawEffect(Matrix4f matrix, @Nonnull VertexConsumer builder, float start, float end, float y, int r, int g, int b, int a, int light) {
             y += UNDERLINE_OFFSET;
             builder.vertex(matrix, start, y + UNDERLINE_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).uv2(light).endVertex();
             builder.vertex(matrix, end, y + UNDERLINE_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).uv2(light).endVertex();

@@ -824,7 +824,7 @@ public class TextLayoutProcessor {
 
         int last = start;
 
-        final TextRenderEffect effect;
+        final byte effect;
         if (style.isUnderline()) {
             if (style.isStrikethrough()) {
                 effect = TextRenderEffect.UNDERLINE_STRIKETHROUGH;
@@ -836,7 +836,7 @@ public class TextLayoutProcessor {
             effect = TextRenderEffect.STRIKETHROUGH;
             data.hasEffect = true;
         } else {
-            effect = null;
+            effect = TextRenderEffect.NO_EFFECT;
         }
 
         /* Scan code point one by one, to use best matched font into segments */
@@ -893,7 +893,7 @@ public class TextLayoutProcessor {
      * @param effect text render effect
      */
     private void layoutFont(TextProcessData data, char[] text, int start, int limit, int flag, Font font, boolean random,
-                            TextRenderEffect effect) {
+                            byte effect) {
         if (random) {
             /* Random is not worthy to layout */
             layoutRandom(data, text, start, limit, flag, font, effect);
@@ -959,7 +959,7 @@ public class TextLayoutProcessor {
             offset = data.advance;
         }
 
-        data.minimalList.add(new StandardGlyphRender(glyphManager.lookupEmoji(codePoint), null, start, offset));
+        data.minimalList.add(new StandardGlyphRender(glyphManager.lookupEmoji(codePoint), TextRenderEffect.NO_EFFECT, start, offset));
 
         offset += 12;
 
@@ -985,7 +985,7 @@ public class TextLayoutProcessor {
      * @param effect text render effect
      */
     private void layoutRandom(TextProcessData data, char[] text, int start, int limit, int flag, Font font,
-                              TextRenderEffect effect) {
+                              byte effect) {
         final TexturedGlyph[] digits = glyphManager.lookupDigits(font);
         final float stdAdv = digits[0].advance;
 

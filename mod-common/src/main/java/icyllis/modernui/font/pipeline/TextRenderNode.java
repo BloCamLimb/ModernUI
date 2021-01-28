@@ -25,7 +25,6 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.font.glyph.GlyphManager;
-import icyllis.modernui.font.process.FormattingStyle;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.Sheets;
 import org.lwjgl.opengl.GL11;
@@ -99,9 +98,9 @@ public class TextRenderNode {
         RenderSystem.enableTexture();
 
         for (GlyphRender glyph : glyphs) {
-            if (glyph.color != null) {
+            if (glyph.color != GlyphRender.COLOR_NO_CHANGE) {
                 int color = glyph.color;
-                if (color == FormattingStyle.NO_COLOR) {
+                if (color == GlyphRender.USE_INPUT_COLOR) {
                     r = startR;
                     g = startG;
                     b = startB;
@@ -122,9 +121,9 @@ public class TextRenderNode {
             RenderSystem.disableTexture();
             builder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
             for (GlyphRender glyph : glyphs) {
-                if (glyph.color != null) {
+                if (glyph.color != GlyphRender.COLOR_NO_CHANGE) {
                     int color = glyph.color;
-                    if (color == FormattingStyle.NO_COLOR) {
+                    if (color == GlyphRender.USE_INPUT_COLOR) {
                         r = startR;
                         g = startG;
                         b = startB;
@@ -148,17 +147,16 @@ public class TextRenderNode {
         final int startG = g;
         final int startB = b;
         //TODO mixin GameRenderer to disable depth test
-        if (buffer instanceof MultiBufferSource.BufferSource) {
+        if (buffer instanceof MultiBufferSource.BufferSource)
             ((MultiBufferSource.BufferSource) buffer).endBatch(Sheets.signSheet());
-        }
 
         y += VANILLA_BASELINE_OFFSET;
         x -= GlyphManager.GLYPH_OFFSET;
 
         for (GlyphRender glyph : glyphs) {
-            if (glyph.color != null) {
+            if (glyph.color != GlyphRender.COLOR_NO_CHANGE) {
                 int color = glyph.color;
-                if (color == FormattingStyle.NO_COLOR) {
+                if (color == GlyphRender.USE_INPUT_COLOR) {
                     r = startR;
                     g = startG;
                     b = startB;
@@ -185,9 +183,9 @@ public class TextRenderNode {
             b = startB;
             builder = buffer.getBuffer(EffectRenderType.getRenderType(seeThrough));
             for (GlyphRender glyph : glyphs) {
-                if (glyph.color != null) {
+                if (glyph.color != GlyphRender.COLOR_NO_CHANGE) {
                     int color = glyph.color;
-                    if (color == FormattingStyle.NO_COLOR) {
+                    if (color == GlyphRender.USE_INPUT_COLOR) {
                         r = startR;
                         g = startG;
                         b = startB;
@@ -212,9 +210,8 @@ public class TextRenderNode {
             r = colorBackground >> 16 & 0xff;
             g = colorBackground >> 8 & 0xff;
             b = colorBackground & 0xff;
-            if (builder == null) {
+            if (builder == null)
                 builder = buffer.getBuffer(EffectRenderType.getRenderType(seeThrough));
-            }
             builder.vertex(matrix, x - 1, y + 9, TextRenderEffect.EFFECT_DEPTH).color(r, g, b, a).uv2(packedLight).endVertex();
             builder.vertex(matrix, x + advance + 1, y + 9, TextRenderEffect.EFFECT_DEPTH).color(r, g, b, a).uv2(packedLight).endVertex();
             builder.vertex(matrix, x + advance + 1, y, TextRenderEffect.EFFECT_DEPTH).color(r, g, b, a).uv2(packedLight).endVertex();
