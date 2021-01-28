@@ -21,24 +21,32 @@ package icyllis.modernui.font.pipeline;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Matrix4f;
+import icyllis.modernui.font.process.FormattingStyle;
 import net.minecraft.client.renderer.MultiBufferSource;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 public abstract class GlyphRender {
 
     /**
-     * Glyph effect
+     * Change to params color
      */
-    @Nullable
-    public TextRenderEffect effect;
+    public static final int USE_INPUT_COLOR = FormattingStyle.NO_COLOR;
 
     /**
-     * RGB color
+     * Keep the color state not to change
      */
-    @Nullable
-    public Integer color;
+    public static final int COLOR_NO_CHANGE = -2;
+
+    /**
+     * Glyph effect
+     */
+    public final byte effect;
+
+    /**
+     * RGB color, will be inserted later
+     */
+    public int color = COLOR_NO_CHANGE;
 
     /**
      * First assignment is stripIndex, and it will be adjusted to stringIndex later.
@@ -50,7 +58,7 @@ public abstract class GlyphRender {
      */
     public float offsetX;
 
-    public GlyphRender(@Nullable TextRenderEffect effect, int stringIndex, float offsetX) {
+    public GlyphRender(byte effect, int stringIndex, float offsetX) {
         this.effect = effect;
         this.stringIndex = stringIndex;
         this.offsetX = offsetX;
@@ -98,10 +106,15 @@ public abstract class GlyphRender {
      * @param b       final blue
      * @param a       final alpha
      */
-    public void drawEffect(@Nonnull VertexConsumer builder, float x, float y, int r, int g, int b, int a) {
-        if (effect != null) {
+    public final void drawEffect(@Nonnull VertexConsumer builder, float x, float y, int r, int g, int b, int a) {
+        if (effect != TextRenderEffect.NO_EFFECT) {
             x += offsetX;
-            effect.drawEffect(builder, x, x + getAdvance(), y, r, g, b, a);
+            if (effect == TextRenderEffect.UNDERLINE)
+                TextRenderEffect.Underline.drawEffect(builder, x, x + getAdvance(), y, r, g, b, a);
+            else if (effect == TextRenderEffect.STRIKETHROUGH)
+                TextRenderEffect.Strikethrough.drawEffect(builder, x, x + getAdvance(), y, r, g, b, a);
+            else if (effect == TextRenderEffect.UNDERLINE_STRIKETHROUGH)
+                TextRenderEffect.UnderlineStrikethrough.drawEffect(builder, x, x + getAdvance(), y, r, g, b, a);
         }
     }
 
@@ -118,10 +131,15 @@ public abstract class GlyphRender {
      * @param a       final alpha
      * @param light   packed light
      */
-    public void drawEffect(Matrix4f matrix, @Nonnull VertexConsumer builder, float x, float y, int r, int g, int b, int a, int light) {
-        if (effect != null) {
+    public final void drawEffect(Matrix4f matrix, @Nonnull VertexConsumer builder, float x, float y, int r, int g, int b, int a, int light) {
+        if (effect != TextRenderEffect.NO_EFFECT) {
             x += offsetX;
-            effect.drawEffect(matrix, builder, x, x + getAdvance(), y, r, g, b, a, light);
+            if (effect == TextRenderEffect.UNDERLINE)
+                TextRenderEffect.Underline.drawEffect(matrix, builder, x, x + getAdvance(), y, r, g, b, a, light);
+            else if (effect == TextRenderEffect.STRIKETHROUGH)
+                TextRenderEffect.Strikethrough.drawEffect(matrix, builder, x, x + getAdvance(), y, r, g, b, a, light);
+            else if (effect == TextRenderEffect.UNDERLINE_STRIKETHROUGH)
+                TextRenderEffect.UnderlineStrikethrough.drawEffect(matrix, builder, x, x + getAdvance(), y, r, g, b, a, light);
         }
     }
 

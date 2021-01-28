@@ -38,7 +38,7 @@ public class RandomGlyphRender extends GlyphRender {
      */
     private final TexturedGlyph[] glyphs;
 
-    public RandomGlyphRender(TexturedGlyph[] glyphs, TextRenderEffect effect, int stringIndex, float offsetX) {
+    public RandomGlyphRender(TexturedGlyph[] glyphs, byte effect, int stringIndex, float offsetX) {
         super(effect, stringIndex, offsetX);
         this.glyphs = glyphs;
     }

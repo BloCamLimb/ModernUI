@@ -35,7 +35,7 @@ public class StandardGlyphRender extends GlyphRender {
      */
     private final TexturedGlyph glyph;
 
-    public StandardGlyphRender(TexturedGlyph glyph, TextRenderEffect effect, int stringIndex, float offsetX) {
+    public StandardGlyphRender(TexturedGlyph glyph, byte effect, int stringIndex, float offsetX) {
         super(effect, stringIndex, offsetX);
         this.glyph = glyph;
     }

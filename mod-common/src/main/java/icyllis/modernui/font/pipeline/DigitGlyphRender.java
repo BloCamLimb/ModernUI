@@ -38,7 +38,7 @@ public class DigitGlyphRender extends GlyphRender {
      */
     private final TexturedGlyph[] glyphs;
 
-    public DigitGlyphRender(TexturedGlyph[] glyphs, TextRenderEffect effect, int stringIndex, float offsetX) {
+    public DigitGlyphRender(TexturedGlyph[] glyphs, byte effect, int stringIndex, float offsetX) {
         super(effect, stringIndex, offsetX);
         this.glyphs = glyphs;
     }

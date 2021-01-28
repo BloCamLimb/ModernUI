@@ -39,7 +39,7 @@ public class TestMain {
         Parser parser = Parser.builder().build();
         Document document = parser.parse("Advanced Page\r\n---\r\nMy **One** Line\r\n> My Two");
         iterateNode(document, 0);
-        RuleBasedNumberFormat numberFormat = new RuleBasedNumberFormat(new Locale("bn", "BD"), RuleBasedNumberFormat.SPELLOUT);
+        RuleBasedNumberFormat numberFormat = new RuleBasedNumberFormat(Locale.JAPAN, RuleBasedNumberFormat.SPELLOUT);
         String formatted = numberFormat.format(18500);
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < formatted.length(); i++) {
@@ -48,13 +48,10 @@ public class TestMain {
         }
         ModernUI.LOGGER.info(MARKER, builder.toString());
         ModernUI.LOGGER.info(MARKER, formatted);
+        GraphemeBreak.sUseICU = true;
         String bengaliHello = "\u09b9\u09cd\u09af\u09be\u09b2\u09cb"; // two graphemes, first four chars and last two chars
-        ModernUI.LOGGER.info(MARKER, GraphemeBreak.getTextRunCursor(bengaliHello.toCharArray(),
-                0, bengaliHello.length(), 0, GraphemeBreak.AFTER)); // output 4, correct
-        BreakIterator iterator = BreakIterator.getCharacterInstance();
-        iterator.setText("\u0627\u0644\u0644\u063a\u0629\u0020\u0627\u0644\u0639\u0631\u0628\u064a\u0629");
-        iterator.next(2);
-        ModernUI.LOGGER.info(MARKER, iterator.previous());
+        ModernUI.LOGGER.info(MARKER, GraphemeBreak.getTextRunCursor(bengaliHello,
+                3, bengaliHello.length(), bengaliHello.length(), GraphemeBreak.BEFORE)); // output 4, correct
     }
 
     /*

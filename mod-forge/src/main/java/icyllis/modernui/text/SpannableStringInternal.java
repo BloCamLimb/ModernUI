@@ -370,6 +370,10 @@ abstract class SpannableStringInternal {
         return mText.charAt(index);
     }
 
+    public final void getChars(int start, int end, char[] dest, int off) {
+        mText.getChars(start, end, dest, off);
+    }
+
     // Same as SpannableStringBuilder
     @Override
     public boolean equals(Object o) {
