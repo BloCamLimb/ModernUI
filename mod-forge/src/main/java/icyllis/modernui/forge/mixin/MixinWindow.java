@@ -53,9 +53,8 @@ public class MixinWindow {
         }
         int oldLevel = Math.min((int) (ViewConfig.sViewScale + 0.5f), 3);
         int newLevel = Math.min((int) (i * 0.5f + 0.5f), 3);
-        if (RenderCore.isRenderEngineStarted()) {
-            if (oldLevel != newLevel)
-                TextLayoutProcessor.getInstance().reload();
+        if (RenderCore.isRenderEngineStarted() && oldLevel != newLevel) {
+            TextLayoutProcessor.getInstance().reload();
         }
         // See standards
         GlyphManager.sResolutionLevel = newLevel;

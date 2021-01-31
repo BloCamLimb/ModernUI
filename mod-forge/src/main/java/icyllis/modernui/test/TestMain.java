@@ -20,6 +20,7 @@ package icyllis.modernui.test;
 
 import com.ibm.icu.text.BreakIterator;
 import com.ibm.icu.text.RuleBasedNumberFormat;
+import com.ibm.icu.util.ULocale;
 import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.ast.Node;
@@ -52,6 +53,14 @@ public class TestMain {
         String bengaliHello = "\u09b9\u09cd\u09af\u09be\u09b2\u09cb"; // two graphemes, first four chars and last two chars
         ModernUI.LOGGER.info(MARKER, GraphemeBreak.getTextRunCursor(bengaliHello,
                 3, bengaliHello.length(), bengaliHello.length(), GraphemeBreak.BEFORE)); // output 4, correct
+        BreakIterator iterator = BreakIterator.getLineInstance();
+        String s = "Hello everyone, this is direwolf20";
+        iterator.setText(s);
+        int start = iterator.first();
+        for (int end = iterator.next(); end != BreakIterator.DONE; start = end, end = iterator.next()) {
+            ModernUI.LOGGER.info(MARKER, s.substring(start, end));
+        }
+        ModernUI.LOGGER.info(MARKER, ULocale.forLocale(new Locale("fa", "ir")).isRightToLeft());
     }
 
     /*

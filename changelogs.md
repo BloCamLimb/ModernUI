@@ -1,7 +1,8 @@
 Changelogs
 ===
 ### 1.16.5-2.4.3.78 (2021-01-32)
-* Optimize RAM usage
+* Optimize RAM usage for text layout cache
+* Fix font mipmap texture not reset after reusing
 
 ### 1.16.5-2.4.2.77 (2021-01-27)
 * Fix compatibility with ItemZoom
