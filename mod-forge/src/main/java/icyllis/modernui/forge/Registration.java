@@ -47,7 +47,6 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.extensions.IForgeContainerType;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
@@ -57,10 +56,16 @@ import net.minecraftforge.fml.network.IContainerFactory;
 import net.minecraftforge.fml.unsafe.UnsafeHacks;
 import net.minecraftforge.forgespi.language.ModFileScanData;
 import net.minecraftforge.registries.IForgeRegistry;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.objectweb.asm.Type;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -117,20 +122,27 @@ final class Registration {
             }
         }
 
-        NetworkHandler network = new NetworkHandler(ModernUI.ID, "main_network",
-                DistExecutor.safeRunForDist(() -> NetMessages::handle, () -> NetMessages::ignore), NetMessages::handle);
-        if (plugins.isEmpty()) {
-            try {
-                Field field = NetworkHandler.class.getDeclaredField("optional");
-                field.setAccessible(true);
-                field.setBoolean(network, true);
-            } catch (IllegalAccessException | NoSuchFieldException e) {
-                e.printStackTrace();
+        byte[] protocol = null;
+        try (InputStream stream = ModernUI.class.getClassLoader().getResourceAsStream(
+                NetMessages.class.getName().replace('.', '/') + ".class")) {
+            if (stream != null) {
+                protocol = IOUtils.toByteArray(stream);
             }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        protocol = ArrayUtils.addAll(protocol, ModList.get().getModFileById(ModernUI.ID).getTrustData()
+                .map(s -> s.getBytes(StandardCharsets.UTF_8)).orElse(null));
+        final boolean optional;
+        if (plugins.isEmpty()) {
+            optional = true;
         } else {
+            optional = false;
             ModernUI.LOGGER.debug(ModernUI.MARKER, "Found Modern UI plugins: {}", plugins.keySet());
         }
-        NetMessages.network = network;
+
+        NetMessages.network = new NetworkHandler(ModernUI.ID, "main_network", () -> NetMessages::handle,
+                NetMessages::handle, protocol == null ? null : DigestUtils.md5Hex(protocol), optional);
 
         //
 

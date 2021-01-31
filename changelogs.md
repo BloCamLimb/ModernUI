@@ -1,7 +1,7 @@
 Changelogs
 ===
-### 1.16.5-2.4.3.78 (2021-01-32)
-* Optimize RAM usage for text layout cache
+### 1.16.5-2.4.3.78 (2021-01-31)
+* Optimize memory usage for text layout cache
 * Fix font mipmap texture not reset after reusing
 
 ### 1.16.5-2.4.2.77 (2021-01-27)
@@ -13,11 +13,6 @@ Changelogs
 ### 1.16.5-2.4.1.76 (2021-01-22)
 * Improve experience bar rendering
 * Improve gui scale setting
-  - Slider widget
-  - More appropriate values
-  - Not limited to even numbers
-  - Compatible with OptiFine
-  - Override TipTheScales
 * Fix compatibility layer with vanilla
 
 ### 1.16.4-2.4.0.75 (2021-01-17)
