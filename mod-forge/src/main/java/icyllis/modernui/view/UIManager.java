@@ -18,6 +18,7 @@
 
 package icyllis.modernui.view;
 
+import com.ibm.icu.util.ULocale;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.ModernUI;
@@ -685,6 +686,8 @@ public final class UIManager {
                 if (minecraft.screen == null && minecraft.hasSingleplayerServer() &&
                         minecraft.getSingleplayerServer() != null && !minecraft.getSingleplayerServer().isPublished())
                     openGUI(new TestPauseUI());
+                minecraft.getLanguageManager().getLanguages().forEach(l ->
+                        ModernUI.LOGGER.info(MARKER, "Locale {} RTL {}", l.getCode(), ULocale.forLocale(l.getJavaLocale()).isRightToLeft()));
                 break;
             case GLFW.GLFW_KEY_P:
                 if (minecraft.screen == null) {
@@ -693,12 +696,12 @@ public final class UIManager {
                 StringBuilder builder = new StringBuilder();
                 builder.append("Modern UI Debug Info:\n");
 
-                builder.append("[0] Is Modern Screen: ");
+                builder.append("[0] Mui Screen: ");
                 builder.append(mMuiScreen != null);
                 builder.append("\n");
 
-                builder.append("[1] Has Container: ");
-                builder.append(minecraft.player != null && minecraft.player.containerMenu != null);
+                builder.append("[1] Container Menu: ");
+                builder.append(minecraft.player != null && minecraft.player.containerMenu != null ? minecraft.player.containerMenu : Boolean.FALSE);
                 builder.append("\n");
 
                 builder.append("[2] Open Gui: ");
@@ -709,7 +712,7 @@ public final class UIManager {
                 }
                 builder.append("\n");
 
-                ModernUI.LOGGER.debug(MARKER, builder.toString());
+                ModernUI.LOGGER.info(MARKER, builder.toString());
                 break;
         }
     }

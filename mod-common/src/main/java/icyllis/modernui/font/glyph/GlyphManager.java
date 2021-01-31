@@ -163,7 +163,7 @@ public class GlyphManager {
     /**
      * Intermediate data array for use with textureImage.getRgb().
      */
-    private final int[] imageData = new int[8192];
+    private final int[] imageData = new int[((1 << 6) * (1 << 6)) << 1];
 
     /**
      * A direct buffer used with glTexSubImage2D(). Used for loading the pre-rendered glyph
@@ -280,11 +280,11 @@ public class GlyphManager {
         emojiMap.clear();
         textureName = 0;
         emojiTexture = 0;
+        TextRenderType.clearTextures();
         selectedFonts.clear();
         allocateGlyphTexture();
         loadPreferredFonts();
         setRenderingHints();
-        TextRenderType.clearTextures();
         ModernUI.LOGGER.debug(MARKER, "Font engine reloaded");
     }
 
@@ -914,11 +914,12 @@ public class GlyphManager {
         uploadBuffer.clear();
 
         /* Swizzle each color integer from Java's ARGB format to OpenGL's grayscale */
-        for (int i = 0; i < width * height; i++) {
+        final int size = width * height;
+        for (int i = 0; i < size; i++) {
             //int color = imageData[i];
             //uploadData[i] = (color << 8) | (color >>> 24);
 
-            /* alpha channel for grayscale texture, because minecraft default blend mode is alpha */
+            /* alpha channel for grayscale texture */
             uploadBuffer.put((byte) (imageData[i] >>> 24));
         }
 
@@ -1010,6 +1011,14 @@ public class GlyphManager {
             GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
         }
 
+        /* Clear mipmap data, current grayscale value is zero, this is a little inefficient */
+        // 64 here is the max size of a glyph, the max res level is 3, the max config font size is 20
+        final int size = (TEXTURE_SIZE >> 6) * (TEXTURE_SIZE >> 6);
+        for (int i = 0; i < size; i++) {
+            int x = (i & ((TEXTURE_SIZE >> 6) - 1)) << 6;
+            int y = (i / (TEXTURE_SIZE >> 6)) << 6;
+            uploadTexture(x, y, 1 << 6, 1 << 6);
+        }
     }
 
     /**

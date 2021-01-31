@@ -95,7 +95,7 @@ public class ScrollView extends FrameLayout implements ScrollController.IListene
     public boolean onGenericMotionEvent(MotionEvent event) {
         if (event.getAction() == MotionEvent.ACTION_SCROLL) {
             float delta = event.getAxisValue(MotionEvent.AXIS_VSCROLL);
-            return scrollController.scrollBy(Math.round(delta * -40.0f * ViewConfig.sViewScale));
+            return scrollController.scrollBy(Math.round(delta * -60.0f * ViewConfig.sViewScale));
         }
         return super.onGenericMotionEvent(event);
     }
