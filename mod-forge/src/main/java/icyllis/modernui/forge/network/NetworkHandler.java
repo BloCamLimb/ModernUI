@@ -48,6 +48,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -59,8 +60,7 @@ public class NetworkHandler {
     private final ResourceLocation channel;
     private final String protocol;
 
-    // internal value
-    private boolean optional;
+    private final boolean optional;
 
     @Nullable
     private final IClientMsgHandler clientHandler;
@@ -71,26 +71,31 @@ public class NetworkHandler {
     private FriendlyByteBuf buffer;
 
     /**
-     * Create a network handler of a mod. This is a dist-sensitive operation,
+     * Create a network handler of a mod. Note that this is a dist-sensitive operation,
      * you may consider the following example:
      *
      * <pre>
-     * network = new NetworkHandler(MODID, "main_network", DistExecutor.safeRunForDist(() -> NetMessages::handle, () -> NetMessages::ignore), NetMessages::handle);
+     * network = new NetworkHandler(MODID, "main_network", () -> NetMessages::handle, NetMessages::handle, null, false);
      * </pre>
      *
      * @param modid         the mod id
-     * @param name          the network channel name
-     * @param clientHandler a handler to handle server-to-client messages
+     * @param name          the network channel name, should be short
+     * @param clientHandler a handler to handle server-to-client messages, the inner supplier must be in another class
      * @param serverHandler a handler to handle client-to-server messages
-     * @see net.minecraftforge.fml.DistExecutor
+     * @param protocol      network protocol version, when null or empty it will request the same version of the mod
+     * @param optional      when true it will pass if the mod missing on one side, or request same protocol
      * @see icyllis.modernui.forge.NetMessages
      */
     public NetworkHandler(@Nonnull String modid, @Nonnull String name,
-                          @Nullable IClientMsgHandler clientHandler, @Nullable IServerMsgHandler serverHandler) {
-        protocol = DigestUtils.md5Hex(ModList.get().getModFileById(modid).getMods().stream()
-                .map(iModInfo -> iModInfo.getVersion().getQualifier())
-                .collect(Collectors.joining(",")).getBytes(StandardCharsets.UTF_8));
-        this.clientHandler = clientHandler;
+                          @Nonnull Supplier<Supplier<IClientMsgHandler>> clientHandler,
+                          @Nullable IServerMsgHandler serverHandler, @Nullable String protocol, boolean optional) {
+        if (protocol == null || protocol.isEmpty())
+            protocol = DigestUtils.md5Hex(ModList.get().getModFileById(modid).getMods().stream()
+                    .map(iModInfo -> iModInfo.getVersion().getQualifier())
+                    .collect(Collectors.joining(",")).getBytes(StandardCharsets.UTF_8));
+        this.protocol = protocol;
+        this.optional = optional;
+        this.clientHandler = FMLEnvironment.dist.isClient() ? clientHandler.get().get() : null;
         this.serverHandler = serverHandler;
         EventNetworkChannel network = NetworkRegistry.ChannelBuilder
                 .named(channel = new ResourceLocation(modid, name))
@@ -146,11 +151,7 @@ public class NetworkHandler {
         if (clientHandler != null) {
             LocalPlayer player = Minecraft.getInstance().player;
             if (player != null)
-                try {
-                    clientHandler.handle(event.getPayload().readShort(), event.getPayload(), player);
-                } catch (Exception e) {
-                    ModernUI.LOGGER.error(ModernUI.MARKER, "An error occurred while handling server-to-client message", e);
-                }
+                clientHandler.handle(event.getPayload().readShort(), event.getPayload(), player);
         }
         event.getPayload().release(); // forge disabled this on client, see ClientPacketListener.handleCustomPayload() finally {}
         event.getSource().get().setPacketHandled(true);
@@ -161,11 +162,7 @@ public class NetworkHandler {
         if (serverHandler != null) {
             ServerPlayer player = event.getSource().get().getSender();
             if (player != null)
-                try {
-                    serverHandler.handle(event.getPayload().readShort(), event.getPayload(), player);
-                } catch (Exception e) {
-                    ModernUI.LOGGER.error(ModernUI.MARKER, "An error occurred while handling client-to-server message", e);
-                }
+                serverHandler.handle(event.getPayload().readShort(), event.getPayload(), player);
         }
         event.getSource().get().setPacketHandled(true);
     }

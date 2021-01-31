@@ -18,8 +18,8 @@
 
 package icyllis.modernui.forge;
 
-import icyllis.modernui.mcimpl.mixin.AccessFoodData;
 import icyllis.modernui.forge.network.NetworkHandler;
+import icyllis.modernui.mcimpl.mixin.AccessFoodData;
 import icyllis.modernui.view.UIManager;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;
@@ -29,7 +29,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.function.Consumer;
 
 /**
@@ -47,16 +46,10 @@ public final class NetMessages {
 
     }
 
-    // return a safe supplier of a s2c handler on client
+    // returns a safe supplier of a s2c handler on client
     @Nonnull
     static NetworkHandler.IClientMsgHandler handle() {
-        return C::handle;
-    }
-
-    // return a safe supplier of a s2c handler on dedicated server
-    @Nullable
-    static NetworkHandler.IClientMsgHandler ignore() {
-        return null;
+        return C::handle; // this supplier won't be called on dedicated server, so it's in the C class
     }
 
     @Nonnull
@@ -77,7 +70,7 @@ public final class NetMessages {
         return network;
     }
 
-    // this class doesn't exist on dedicated server
+    // this class doesn't allow to load on dedicated server
     @OnlyIn(Dist.CLIENT)
     public static final class C {
 
