@@ -227,28 +227,17 @@ public final class UIManager {
     }
 
     // Internal method
-    public void openGUI(@Nonnull LocalPlayer player, int containerId, int menuId, @Nonnull FriendlyByteBuf buffer) {
-        final MenuType<?> type = Registry.MENU.byId(menuId);
-        boolean success = false;
-        if (type == null) {
-            ModernUI.LOGGER.warn(MARKER, "Trying to open invalid screen for menu id: {}", menuId);
-        } else {
-            final AbstractContainerMenu menu = type.create(containerId, player.inventory, buffer);
-            if (menu == null) {
-                ModernUI.LOGGER.error(MARKER, "No container menu created from menu type: {}", Registry.MENU.getKey(type));
-            } else {
-                OpenMenuEvent event = new OpenMenuEvent(menu);
-                ModernUIForge.EVENT_BUS.post(event);
-                ApplicationUI applicationUI = event.getApplicationUI();
-                if (applicationUI != null) {
-                    mApplicationUI = applicationUI;
-                    player.containerMenu = menu;
-                    minecraft.setScreen(new MMenuScreen<>(menu, player.inventory, this));
-                    success = true;
-                }
-            }
+    public boolean openGUI(@Nonnull LocalPlayer player, @Nonnull AbstractContainerMenu menu) {
+        OpenMenuEvent event = new OpenMenuEvent(menu);
+        ModernUIForge.EVENT_BUS.post(event);
+        ApplicationUI applicationUI = event.getApplicationUI();
+        if (applicationUI != null) {
+            mApplicationUI = applicationUI;
+            player.containerMenu = menu;
+            minecraft.setScreen(new MMenuScreen<>(menu, player.inventory, this));
+            return true;
         }
-        if (!success) player.closeContainer(); // close server container
+        return false;
     }
 
     /*@Nonnull
