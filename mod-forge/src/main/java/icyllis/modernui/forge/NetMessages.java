@@ -18,13 +18,17 @@
 
 package icyllis.modernui.forge;
 
+import icyllis.modernui.ModernUI;
 import icyllis.modernui.forge.network.NetworkHandler;
 import icyllis.modernui.mcimpl.mixin.AccessFoodData;
 import icyllis.modernui.view.UIManager;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.Registry;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.food.FoodData;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.MenuType;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -95,7 +99,21 @@ public final class NetMessages {
         }
 
         private static void menu(@Nonnull FriendlyByteBuf buffer, @Nonnull LocalPlayer player) {
-            UIManager.getInstance().openGUI(player, buffer.readVarInt(), buffer.readVarInt(), buffer);
+            final int containerId = buffer.readVarInt();
+            final int menuId = buffer.readVarInt();
+            final MenuType<?> type = Registry.MENU.byId(menuId);
+            boolean success = false;
+            if (type == null) {
+                ModernUI.LOGGER.warn(UIManager.MARKER, "Trying to open invalid screen for menu id: {}", menuId);
+            } else {
+                final AbstractContainerMenu menu = type.create(containerId, player.inventory, buffer);
+                if (menu == null) {
+                    ModernUI.LOGGER.error(UIManager.MARKER, "No container menu created from menu type: {}", Registry.MENU.getKey(type));
+                } else {
+                    success = UIManager.getInstance().openGUI(player, menu);
+                }
+            }
+            if (!success) player.closeContainer(); // close server container
         }
     }
 }

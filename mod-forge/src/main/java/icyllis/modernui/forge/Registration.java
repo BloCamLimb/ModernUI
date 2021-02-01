@@ -68,6 +68,7 @@ import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * This class handles mod loading events
@@ -125,9 +126,15 @@ final class Registration {
         byte[] protocol = null;
         try (InputStream stream = ModernUI.class.getClassLoader().getResourceAsStream(
                 NetMessages.class.getName().replace('.', '/') + ".class")) {
-            if (stream != null) {
-                protocol = IOUtils.toByteArray(stream);
-            }
+            Objects.requireNonNull(stream);
+            protocol = IOUtils.toByteArray(stream);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try (InputStream stream = ModernUI.class.getClassLoader().getResourceAsStream(
+                NetMessages.class.getName().replace('.', '/') + "$C.class")) {
+            Objects.requireNonNull(stream);
+            protocol = ArrayUtils.addAll(protocol, IOUtils.toByteArray(stream));
         } catch (IOException e) {
             e.printStackTrace();
         }
