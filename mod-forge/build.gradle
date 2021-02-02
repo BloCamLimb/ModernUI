@@ -1,5 +1,6 @@
 plugins {
     id 'forgified-fabric-loom'
+    id 'maven-publish'
     id 'com.matthewprenger.cursegradle'
     id 'com.github.johnrengelman.shadow'
 }
@@ -34,7 +35,8 @@ dependencies {
     mappings minecraft.officialMojangMappings()
     forge "net.minecraftforge:forge:${rootProject.minecraft_version}-${rootProject.forge_version}"
 
-    modCompile "mezz.jei:jei-${rootProject.minecraft_version}:${rootProject.jei_version}"
+    modCompileOnly "mezz.jei:jei-${rootProject.minecraft_version}:${rootProject.jei_version}:api"
+    modRuntime "mezz.jei:jei-${rootProject.minecraft_version}:${rootProject.jei_version}"
 
     compile "com.github.ben-manes.caffeine:caffeine:${rootProject.caffeine_version}"
     compile "com.vladsch.flexmark:flexmark:${rootProject.flexmark_version}"
@@ -51,13 +53,13 @@ dependencies {
     compile(project(":core")) {
         transitive = false
     }
-    compileOnly(project(path: ":mod-common")) {
+    compileOnly(project(path: ":ModernUI-Common")) {
         transitive = false
     }
-    runtimeOnly(project(path: ":mod-common", configuration: "transformDevelopmentForge")) {
+    runtimeOnly(project(path: ":ModernUI-Common", configuration: "transformDevelopmentForge")) {
         transitive = false
     }
-    shadow(project(path: ":mod-common", configuration: "transformProductionForge")) {
+    shadow(project(path: ":ModernUI-Common", configuration: "transformProductionForge")) {
         transitive = false
     }
     shadow(project(":core")) {
@@ -111,17 +113,10 @@ if (project.hasProperty("jks")) {
 }
 
 processResources {
-
     inputs.property 'version', mod_version
 
-    from(sourceSets.main.resources.srcDirs) {
-        include 'META-INF/mods.toml'
-
+    filesMatching("META-INF/mods.toml") {
         expand 'version': mod_version
-    }
-
-    from(sourceSets.main.resources.srcDirs) {
-        exclude 'META-INF/mods.toml'
     }
 }
 
@@ -140,3 +135,46 @@ jar {
     }
 }
 
+publishing {
+    repositories {
+        maven {
+            name 'IzzelAliz'
+            url 'https://maven.izzel.io/releases'
+            credentials {
+                username = project.getProperty("maven_user")
+                password = project.getProperty("izzel_maven_token")
+            }
+        }
+    }
+    publications {
+        mavenForge(MavenPublication) {
+            artifact(sourcesJar.archivePath) {
+                builtBy build
+            }
+            /*from components.java
+            artifactId = project.name
+            groupId = project.group
+            version = project.version
+            pom {
+                artifactId = project.name
+                groupId = project.group
+                version = project.version
+                name = rootProject.name
+                packaging = 'jar'
+                scm {
+                    url = 'https://github.com/BloCamLimb/ModernUI.git'
+                }
+                issueManagement {
+                    system = 'github'
+                    url = 'https://github.com/BloCamLimb/ModernUI/issues'
+                }
+                licenses {
+                    license {
+                        name = 'LGPL-3.0-or-later'
+                        distribution = 'repo'
+                    }
+                }
+            }*/
+        }
+    }
+}

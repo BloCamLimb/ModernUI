@@ -23,6 +23,7 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.font.pipeline.TextRenderNode;
 import icyllis.modernui.font.pipeline.TextRenderType;
 import icyllis.modernui.font.process.VanillaTextKey;
+import icyllis.modernui.mcimpl.ModernUIMod;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectArrayMap;
@@ -84,6 +85,11 @@ public class GlyphManager {
      * This should match your GUI scale. Scale -> Level: [1,2] -> 1; [3,4] -> 2; [5,) -> 3
      */
     public static int sResolutionLevel;
+
+    /**
+     * Determined in mod loading stage
+     */
+    private static boolean sOldJava;
 
     /**
      * The width in pixels of every texture used for caching pre-rendered glyph images. Used by GlyphCache when calculating
@@ -247,6 +253,7 @@ public class GlyphManager {
      * A single instance of GlyphManager is allocated for internal use.
      */
     public GlyphManager() {
+        checkJava();
         /* Set background color for use with clearRect() */
         glyphTextureGraphics.setBackground(BG_COLOR);
 
@@ -265,6 +272,23 @@ public class GlyphManager {
         loadPreferredFonts();
 
         setRenderingHints();
+    }
+
+    private void checkJava() {
+        String javaVersion = System.getProperty("java.version");
+        if (javaVersion == null) {
+            ModernUI.LOGGER.fatal(ModernUI.MARKER, "Java version is missing");
+        } else if (javaVersion.startsWith("1.8")) {
+            try {
+                int update = Integer.parseInt(javaVersion.split("_")[1].split("-")[0]);
+                if (update < 201) {
+                    sOldJava = true;
+                    ModernUIMod.getMod().warnSetup("warning.modernui.old_java", "11.0.9", javaVersion);
+                }
+            } catch (NumberFormatException | IndexOutOfBoundsException e) {
+                ModernUI.LOGGER.warn(ModernUI.MARKER, "Failed to check java version: {}", javaVersion, e);
+            }
+        }
     }
 
     /**
@@ -290,49 +314,59 @@ public class GlyphManager {
 
     private void loadPreferredFonts() {
         if (!sPreferredFont.isEmpty()) {
-            String type = sPreferredFont;
-            if (type.endsWith(".ttf") || type.endsWith(".otf")) {
-                if (type.contains(":/") || type.contains(":\\")) {
-                    try {
-                        Font f = Font.createFont(Font.TRUETYPE_FONT, new File(
-                                type.replaceAll("\\\\", "/")));
-                        selectedFonts.add(f);
-                        ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", f.getName());
-                    } catch (FontFormatException | IOException e) {
-                        ModernUI.LOGGER.warn(MARKER, "Preferred font {} failed to load", type, e);
+            String typeface = sPreferredFont;
+            if (typeface.endsWith(".ttf") || typeface.endsWith(".otf")) {
+                if (typeface.contains(":/") || typeface.contains(":\\")) {
+                    if (!sOldJava) {
+                        try {
+                            Font f = Font.createFont(Font.TRUETYPE_FONT, new File(
+                                    typeface.replaceAll("\\\\", "/")));
+                            selectedFonts.add(f);
+                            ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", f.getName());
+                        } catch (FontFormatException | IOException e) {
+                            ModernUI.LOGGER.warn(MARKER, "Preferred font {} failed to load", typeface, e);
+                        }
+                    } else {
+                        ModernUI.LOGGER.warn(MARKER, "Cannot load external font {} since Java is too old", typeface);
                     }
-                } else if (type.contains(":")) {
-                    try (Resource resource = Minecraft.getInstance().getResourceManager()
-                            .getResource(new ResourceLocation(type))) {
-                        Font f = Font.createFont(Font.TRUETYPE_FONT, resource.getInputStream());
-                        selectedFonts.add(f);
-                        ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", f.getName());
-                    } catch (FontFormatException | IOException e) {
-                        ModernUI.LOGGER.warn(MARKER, "Preferred font {} failed to load", type, e);
+                } else if (typeface.contains(":")) {
+                    if (!sOldJava) {
+                        try (Resource resource = Minecraft.getInstance().getResourceManager()
+                                .getResource(new ResourceLocation(typeface))) {
+                            Font f = Font.createFont(Font.TRUETYPE_FONT, resource.getInputStream());
+                            selectedFonts.add(f);
+                            ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", f.getName());
+                        } catch (FontFormatException | IOException e) {
+                            ModernUI.LOGGER.warn(MARKER, "Preferred font {} failed to load", typeface, e);
+                        }
+                    } else {
+                        ModernUI.LOGGER.warn(MARKER, "Cannot load resource pack font {} since Java is too old", typeface);
                     }
                 } else {
-                    ModernUI.LOGGER.warn(MARKER, "Preferred font {} is invalid", type);
+                    ModernUI.LOGGER.warn(MARKER, "Preferred font {} is invalid", typeface);
                 }
             } else {
-                Optional<Font> font = allFonts.stream().filter(f -> f.getFamily(Locale.ROOT).equals(type)).findFirst();
+                Optional<Font> font = allFonts.stream().filter(f -> f.getFamily(Locale.ROOT).equals(typeface)).findFirst();
                 if (font.isPresent()) {
-                    selectedFonts.add(new Font(type, Font.PLAIN, 12));
-                    ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", type);
+                    selectedFonts.add(new Font(typeface, Font.PLAIN, 12));
+                    ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", typeface);
                 } else {
-                    ModernUI.LOGGER.warn(MARKER, "Preferred font {} cannot found or invalid", type);
+                    ModernUI.LOGGER.warn(MARKER, "Preferred font {} cannot found or invalid", typeface);
                 }
             }
         }
 
-        try (InputStream stream = getClass().getResourceAsStream("/assets/modernui/font/biliw.otf")) {
-            Font f = Font.createFont(Font.TRUETYPE_FONT, stream);
-            selectedFonts.add(f);
-        } catch (FontFormatException | IOException e) {
-            ModernUI.LOGGER.warn(MARKER, "Built-in font failed to load", e);
-        } catch (NullPointerException e) {
-            ModernUI.LOGGER.warn(MARKER, "Built-in font was missing", e);
+        if (!sOldJava) {
+            try (InputStream stream = getClass().getResourceAsStream("/assets/modernui/font/biliw.otf")) {
+                Font f = Font.createFont(Font.TRUETYPE_FONT, stream);
+                selectedFonts.add(f);
+            } catch (FontFormatException | IOException e) {
+                ModernUI.LOGGER.warn(MARKER, "Built-in font failed to load", e);
+            } catch (NullPointerException e) {
+                ModernUI.LOGGER.warn(MARKER, "Built-in font was missing", e);
+            }
         }
-        // Generally is Arial
+        // May be Arial, depends on the OS
         selectedFonts.add(new Font(Font.SANS_SERIF, Font.PLAIN, 72)); // size 1 > 72
     }
 
@@ -590,6 +624,7 @@ public class GlyphManager {
         int standardRenderWidth = 0;
         final float f = getResolutionFactor();
 
+        // cache '0-9'
         for (int i = 0; i < 10; i++) {
             chars[0] = (char) (48 + i);
             GlyphVector vector = font.createGlyphVector(glyphTextureGraphics.getFontRenderContext(), chars);
