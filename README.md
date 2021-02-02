@@ -16,9 +16,9 @@ Releases for Minecraft Mod are available on [CurseForge](https://www.curseforge.
 ### Adding Modern UI to your project
 #### Environment requirements
 - Windows, Linux or Solaris
-- JDK 11.0.9 or above
+- JDK 11.0.8 or above (Compile against Java 8)
 - OpenGL 4.3 or above
-- Forge 1.16.5-36.0.0
+- Forge 1.16.5-36.0.1
 #### Version information
 There's currently no stable builds for development
 #### Gradle configuration

@@ -55,7 +55,7 @@ public final class ModernUIForge extends ModernUIMod {
             Class<?> clazz = Class.forName("optifine.Installer");
             String version = (String) clazz.getMethod("getOptiFineVersion").invoke(null);
             optiFineLoaded = true;
-            ModernUI.LOGGER.debug(ModernUI.MARKER, "OptiFine found: {}", version);
+            ModernUI.LOGGER.debug(ModernUI.MARKER, "OptiFine installed: {}", version);
         } catch (ClassNotFoundException | NoSuchMethodException ignored) {
 
         } catch (IllegalAccessException | InvocationTargetException e) {
@@ -76,9 +76,9 @@ public final class ModernUIForge extends ModernUIMod {
             if (!isDataGen) {
                 ((ReloadableResourceManager) Minecraft.getInstance().getResourceManager())
                         .registerReloadListener(
-                                (ISelectiveResourceReloadListener) (r, t) -> {
-                                    if (t.test(VanillaResourceType.SHADERS))
-                                        RenderCore.compileShaders(r);
+                                (ISelectiveResourceReloadListener) (resourceManager, typePredicate) -> {
+                                    if (typePredicate.test(VanillaResourceType.SHADERS))
+                                        RenderCore.compileShaders(resourceManager);
                                 }
                         );
             }

@@ -35,23 +35,6 @@ public class ModernUI {
     public static final Marker MARKER = MarkerManager.getMarker("Core");
 
     public ModernUI() {
-        checkJava();
-    }
 
-    private static void checkJava() {
-        String javaVersion = System.getProperty("java.version");
-        if (javaVersion == null) {
-            ModernUI.LOGGER.fatal(ModernUI.MARKER, "Java version is missing");
-        } else if (javaVersion.startsWith("1.8")) {
-            try {
-                int update = Integer.parseInt(javaVersion.split("_")[1].split("-")[0]);
-                if (update < 201) {
-                    throw new RuntimeException(
-                            "Modern UI requires Java 11.0.9 or above to run, your version is Java " + javaVersion);
-                }
-            } catch (NumberFormatException | IndexOutOfBoundsException e) {
-                ModernUI.LOGGER.warn(ModernUI.MARKER, "Failed to check java version: {}", javaVersion, e);
-            }
-        }
     }
 }
