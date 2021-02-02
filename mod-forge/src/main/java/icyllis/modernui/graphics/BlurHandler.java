@@ -24,7 +24,6 @@ import com.mojang.math.Matrix4f;
 import icyllis.modernui.mcimpl.mixin.AccessGameRenderer;
 import icyllis.modernui.mcimpl.mixin.AccessPostChain;
 import icyllis.modernui.view.IMuiScreen;
-import icyllis.modernui.view.UIManager;
 import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -163,9 +162,9 @@ public enum BlurHandler {
     /**
      * Render tick, should called before rendering things
      */
-    public void update() {
+    public void update(long time) {
         if (fadingIn) {
-            float p = Math.min(UIManager.getInstance().getDrawingTime() / sAnimationDuration, 1.0f);
+            float p = Math.min(time / sAnimationDuration, 1.0f);
             if (blurring) {
                 updateRadius(p * sBlurRadius);
             }

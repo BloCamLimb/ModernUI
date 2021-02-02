@@ -51,5 +51,5 @@
   "message.modernui.server_shutdown_min": "Server will shutdown in %s minutes",
 
   "warning.modernui.old_java": "Modern UI: Java {2} or above is recommended, your version is Java {3}. It is better to upgrade to newer Java and choose it to launch the game, otherwise you cannot use external fonts or will not always get correct text layout results.",
-  "warning.modernui.old_opengl": "Modern UI: OpenGL version is too old. OpenGL {2} or higher is required (your version is OpenGL {3}). Please upgrade the driver of your video card."
+  "warning.modernui.old_opengl": "Modern UI: OpenGL version is too old. OpenGL {2} or higher is required (your version is OpenGL {3}). Please upgrade the driver of your video card. The newer version of macOS may be not supported."
 }

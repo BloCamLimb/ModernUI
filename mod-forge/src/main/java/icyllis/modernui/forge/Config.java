@@ -21,7 +21,7 @@ package icyllis.modernui.forge;
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.font.ModernFontRenderer;
-import icyllis.modernui.font.glyph.GlyphManager;
+import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.font.process.TextLayoutProcessor;
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.test.TestHUD;

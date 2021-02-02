@@ -39,7 +39,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.*;
 import net.minecraftforge.client.model.ModelLoader;
-import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -147,13 +146,6 @@ final class EventHandler {
         static void onGuiInit(@Nonnull GuiScreenEvent.InitGuiEvent event) {
             if (event.getGui() instanceof VideoSettingsScreen) {
                 NEW_GUI_SCALE.setMaxValue(MuiHooks.C.calcGuiScales() & 0xf);
-            }
-        }
-
-        @SubscribeEvent
-        static void onRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
-            if (event.phase == TickEvent.Phase.START) {
-                BlurHandler.INSTANCE.update();
             }
         }
 

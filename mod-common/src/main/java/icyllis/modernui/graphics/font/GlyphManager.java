@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.font.glyph;
+package icyllis.modernui.graphics.font;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import icyllis.modernui.ModernUI;
@@ -61,7 +61,8 @@ import java.util.Locale;
 import java.util.Optional;
 
 /**
- * Draw using glyphs of different sizes and fonts, and store them in auto generated OpenGL textures
+ * Find matching fonts and glyphs, measure glyph metrics and draw them of
+ * different sizes and styles, and upload them to generated OpenGL textures.
  * <p>
  * RAM usage: &lt; 10MB
  * GPU memory usage: &lt; 22MB
@@ -94,12 +95,16 @@ public class GlyphManager {
     /**
      * The width in pixels of every texture used for caching pre-rendered glyph images. Used by GlyphCache when calculating
      * floating point 0.0-1.0 texture coordinates. Must be a power of two for mip-mapping to work.
+     *
+     * @deprecated Use {@link #TEXTURE_SIZE}
      */
     @Deprecated
     private static final int TEXTURE_WIDTH = 256;
     /**
      * The height in pixels of every texture used for caching pre-rendered glyph images. Used by GlyphCache when calculating
      * floating point 0.0-1.0 texture coordinates. Must be a power of two for mip-mapping to work.
+     *
+     * @deprecated Use {@link #TEXTURE_SIZE}
      */
     @Deprecated
     private static final int TEXTURE_HEIGHT = 256;
@@ -674,7 +679,7 @@ public class GlyphManager {
                 glyphTextureGraphics.drawString(String.valueOf(chars), currPosX - baselineX, currPosY - baselineY);
             } else {
                 // align to center
-                int offset = Math.round((standardRenderWidth - renderWidth) / 2.0f);
+                int offset = Math.round((standardAdvance - vector.getGlyphMetrics(0).getAdvanceX()) / 2.0f);
                 glyphTextureGraphics.drawString(String.valueOf(chars), currPosX + offset - baselineX, currPosY - baselineY);
             }
 
