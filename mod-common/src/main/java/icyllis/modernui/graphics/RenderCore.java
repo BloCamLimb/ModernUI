@@ -21,7 +21,7 @@ package icyllis.modernui.graphics;
 import com.mojang.blaze3d.shaders.ProgramManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.font.glyph.GlyphManager;
+import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.graphics.shader.ShaderProgram;
 import icyllis.modernui.graphics.shader.program.*;
 import icyllis.modernui.mcimpl.ModernUIMod;

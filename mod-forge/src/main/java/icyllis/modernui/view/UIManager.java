@@ -39,11 +39,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
-import net.minecraft.core.Registry;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.MenuType;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.GuiOpenEvent;
@@ -690,7 +687,7 @@ public final class UIManager {
                 builder.append("\n");
 
                 builder.append("[1] Container Menu: ");
-                builder.append(minecraft.player != null && minecraft.player.containerMenu != null ? minecraft.player.containerMenu : Boolean.FALSE);
+                builder.append(minecraft.player != null ? minecraft.player.containerMenu : null);
                 builder.append("\n");
 
                 builder.append("[2] Open Gui: ");
@@ -918,12 +915,13 @@ public final class UIManager {
     @SubscribeEvent(priority = EventPriority.HIGH)
     void onRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
-            // ticks to millis, the Timer in Minecraft is different from that in Event when game paused
-            mDrawingTimeMillis = (long) ((mTicks + minecraft.getFrameTime()) * 50.0f);
+            // to millis, the Timer is different from that in Event when game paused
+            mDrawingTimeMillis += (long) (minecraft.getDeltaFrameTime() * 50.0);
 
             for (Animation animation : animations) {
                 animation.update(mDrawingTimeMillis);
             }
+            BlurHandler.INSTANCE.update(mDrawingTimeMillis);
         } else {
             // remove animations from loop on end
             if (!animations.isEmpty()) {

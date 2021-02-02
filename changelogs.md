@@ -1,7 +1,8 @@
 Changelogs
 ===
-### 1.16.5-2.4.4.79 (2021-01-31)
-* Support and warn Java 8u51
+### 1.16.5-2.4.4.79 (2021-02-03)
+* Support down to Java 8u51
+* Improve digits alignment
 
 ### 1.16.5-2.4.3.78 (2021-01-31)
 * Optimize memory usage for text layout cache

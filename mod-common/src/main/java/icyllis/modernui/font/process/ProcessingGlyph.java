@@ -18,7 +18,7 @@
 
 package icyllis.modernui.font.process;
 
-import icyllis.modernui.font.glyph.TexturedGlyph;
+import icyllis.modernui.graphics.font.TexturedGlyph;
 import icyllis.modernui.font.pipeline.*;
 
 import javax.annotation.Nullable;
