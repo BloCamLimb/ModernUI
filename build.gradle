@@ -1,4 +1,5 @@
 plugins {
+    id 'maven-publish'
     id 'architectury-plugin' version '2.0.66'
     id 'forgified-fabric-loom' version '0.6.62' apply false
     id 'com.matthewprenger.cursegradle' version '1.4.0' apply false

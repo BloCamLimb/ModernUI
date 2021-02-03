@@ -1,6 +1,5 @@
 plugins {
     id 'forgified-fabric-loom'
-    id 'maven-publish'
     id 'com.matthewprenger.cursegradle'
     id 'com.github.johnrengelman.shadow'
 }
@@ -50,19 +49,19 @@ dependencies {
         }
     }
 
-    compile(project(":core")) {
+    /*compile(project(":ModernUI-Core")) {
         transitive = false
-    }
+    }*/
     compileOnly(project(path: ":ModernUI-Common")) {
         transitive = false
     }
     runtimeOnly(project(path: ":ModernUI-Common", configuration: "transformDevelopmentForge")) {
         transitive = false
     }
-    shadow(project(path: ":ModernUI-Common", configuration: "transformProductionForge")) {
+    /*shadow(project(":ModernUI-Core")) {
         transitive = false
-    }
-    shadow(project(":core")) {
+    }*/
+    shadow(project(path: ":ModernUI-Common", configuration: "transformProductionForge")) {
         transitive = false
     }
 }
@@ -136,7 +135,7 @@ jar {
 }
 
 publishing {
-    repositories {
+    /*repositories {
         maven {
             name 'IzzelAliz'
             url 'https://maven.izzel.io/releases'
@@ -145,22 +144,26 @@ publishing {
                 password = project.getProperty("izzel_maven_token")
             }
         }
-    }
+    }*/
     publications {
         mavenForge(MavenPublication) {
-            artifact(sourcesJar.archivePath) {
+            artifact(jar.archiveFile) {
                 builtBy build
             }
-            /*from components.java
+            artifact(sourcesJar.archiveFile) {
+                builtBy build
+                classifier 'sources'
+            }
             artifactId = project.name
             groupId = project.group
             version = project.version
+
             pom {
                 artifactId = project.name
                 groupId = project.group
                 version = project.version
                 name = rootProject.name
-                packaging = 'jar'
+                packaging = 'pom'
                 scm {
                     url = 'https://github.com/BloCamLimb/ModernUI.git'
                 }
@@ -171,10 +174,20 @@ publishing {
                 licenses {
                     license {
                         name = 'LGPL-3.0-or-later'
+                        url = 'https://www.gnu.org/licenses/lgpl-3.0.en.html'
                         distribution = 'repo'
                     }
                 }
-            }*/
+                withXml {
+                    def dependenciesNode = asNode().appendNode('dependencies')
+                    configurations.compile.allDependencies.each {
+                        def dependencyNode = dependenciesNode.appendNode('dependency')
+                        dependencyNode.appendNode('groupId', it.group)
+                        dependencyNode.appendNode('artifactId', it.name)
+                        dependencyNode.appendNode('version', it.version)
+                    }
+                }
+            }
         }
     }
 }

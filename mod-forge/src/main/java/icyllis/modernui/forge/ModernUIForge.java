@@ -101,7 +101,7 @@ public final class ModernUIForge extends ModernUIMod {
         // the root directory of your project
         File dir = path.toFile();
         String[] r = dir.list((file, name) -> name.equals("build.gradle"));
-        if (r != null && r.length > 0) {
+        if (r != null && r.length > 0 && dir.getName().equals(ModernUI.NAME_CPT)) {
             ModernUI.LOGGER.debug(ModernUI.MARKER, "Working in production environment");
             production = true;
         }
