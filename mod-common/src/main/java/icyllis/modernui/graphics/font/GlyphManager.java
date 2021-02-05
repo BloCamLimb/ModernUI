@@ -23,7 +23,6 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.font.pipeline.TextRenderNode;
 import icyllis.modernui.font.pipeline.TextRenderType;
 import icyllis.modernui.font.process.VanillaTextKey;
-import icyllis.modernui.mcimpl.ModernUIMod;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectArrayMap;
@@ -43,6 +42,7 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL30;
+import sun.awt.windows.WToolkit;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -59,6 +59,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 
 /**
  * Find matching fonts and glyphs, measure glyph metrics and draw them of
@@ -288,7 +290,7 @@ public class GlyphManager {
                 int update = Integer.parseInt(javaVersion.split("_")[1].split("-")[0]);
                 if (update < 201) {
                     sOldJava = true;
-                    ModernUIMod.getMod().warnSetup("warning.modernui.old_java", "11.0.9", javaVersion);
+                    ModernUI.get().warnSetup("warning.modernui.old_java", "11.0.9", javaVersion);
                 }
             } catch (NumberFormatException | IndexOutOfBoundsException e) {
                 ModernUI.LOGGER.warn(ModernUI.MARKER, "Failed to check java version: {}", javaVersion, e);

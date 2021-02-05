@@ -18,7 +18,7 @@
 
 package icyllis.modernui.text.style;
 
-import icyllis.modernui.text.TextDrawState;
+import icyllis.modernui.text.TextPaint;
 
 import javax.annotation.Nonnull;
 
@@ -28,7 +28,7 @@ import javax.annotation.Nonnull;
  */
 public abstract class MetricAffectingSpan extends CharacterStyle {
 
-    public abstract void updateMeasureState(@Nonnull TextDrawState state);
+    public abstract void updateMeasureState(@Nonnull TextPaint state);
 
     /**
      * Returns "this" for most MetricAffectingSpans, but for
@@ -63,7 +63,7 @@ public abstract class MetricAffectingSpan extends CharacterStyle {
          * Passes updateDrawState through to the underlying MetricAffectingSpan.
          */
         @Override
-        public void updateDrawState(@Nonnull TextDrawState state) {
+        public void updateDrawState(@Nonnull TextPaint state) {
             mStyle.updateDrawState(state);
         }
 
@@ -71,7 +71,7 @@ public abstract class MetricAffectingSpan extends CharacterStyle {
          * Passes updateMeasureState through to the underlying MetricAffectingSpan.
          */
         @Override
-        public void updateMeasureState(@Nonnull TextDrawState state) {
+        public void updateMeasureState(@Nonnull TextPaint state) {
             mStyle.updateMeasureState(state);
         }
 

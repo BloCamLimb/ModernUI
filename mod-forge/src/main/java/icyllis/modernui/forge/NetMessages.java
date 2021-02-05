@@ -57,21 +57,22 @@ public final class NetMessages {
     }
 
     @Nonnull
-    public static NetworkHandler food(float foodSaturationLevel, float foodExhaustionLevel) {
-        FriendlyByteBuf buffer = network.allocBuf(0);
-        buffer.writeFloat(foodSaturationLevel);
-        buffer.writeFloat(foodExhaustionLevel);
-        return network;
+    public static NetworkHandler.Broadcaster food(float foodSaturationLevel, float foodExhaustionLevel) {
+        FriendlyByteBuf buf = network.targetAt(0);
+        buf.writeFloat(foodSaturationLevel);
+        buf.writeFloat(foodExhaustionLevel);
+        return network.prepare(buf);
     }
 
-    static NetworkHandler menu(int containerId, int menuId, Consumer<FriendlyByteBuf> writer) {
-        FriendlyByteBuf buffer = network.allocBuf(1);
-        buffer.writeVarInt(containerId);
-        buffer.writeVarInt(menuId);
+    @Nonnull
+    static NetworkHandler.Broadcaster menu(int containerId, int menuId, Consumer<FriendlyByteBuf> writer) {
+        FriendlyByteBuf buf = network.targetAt(1);
+        buf.writeVarInt(containerId);
+        buf.writeVarInt(menuId);
         if (writer != null) {
-            writer.accept(buffer);
+            writer.accept(buf);
         }
-        return network;
+        return network.prepare(buf);
     }
 
     // this class doesn't allow to load on dedicated server

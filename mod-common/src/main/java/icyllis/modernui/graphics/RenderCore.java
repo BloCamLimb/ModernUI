@@ -24,7 +24,6 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.graphics.shader.ShaderProgram;
 import icyllis.modernui.graphics.shader.program.*;
-import icyllis.modernui.mcimpl.ModernUIMod;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -113,7 +112,7 @@ public final class RenderCore {
             String glVersion = GL11.glGetString(GL11.GL_VERSION);
             if (glVersion == null) glVersion = "UNKNOWN";
             else glVersion = glVersion.split(" ")[0];
-            ModernUIMod.getMod().warnSetup("warning.modernui.old_opengl", "4.3", glVersion);
+            ModernUI.get().warnSetup("warning.modernui.old_opengl", "4.3", glVersion);
         }
 
         if (i != 0) {

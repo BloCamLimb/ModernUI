@@ -16,26 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.mcimpl;
+package icyllis.modernui.text.style;
 
-import icyllis.modernui.ModernUI;
-
-/**
- * An abstract class represents the core class of Modern UI as a Minecraft mod.
- * Injecting all needed things by implemented platform makes Modern UI work
- * in Minecraft. We provide many unique features and APIs for Minecraft.
- */
-public abstract class ModernUIMod extends ModernUI {
-
-    protected static ModernUIMod instance;
-
-    public ModernUIMod() {
-        instance = this;
-    }
-
-    public static ModernUIMod getMod() {
-        return instance;
-    }
-
-    public abstract void warnSetup(String key, Object... args);
+public abstract class ReplacementSpan extends MetricAffectingSpan {
 }

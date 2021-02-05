@@ -18,14 +18,14 @@
 
 package icyllis.modernui.text;
 
-public class TextDrawState {
+public class TextPaint {
 
-    private static final TextDrawState sInstance = new TextDrawState();
+    private static final TextPaint sInstance = new TextPaint();
 
-    protected TextDrawState() {
+    protected TextPaint() {
     }
 
-    public static TextDrawState get() {
+    public static TextPaint get() {
         return sInstance;
     }
 }

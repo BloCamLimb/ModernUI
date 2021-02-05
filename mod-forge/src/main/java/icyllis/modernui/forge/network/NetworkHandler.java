@@ -19,6 +19,8 @@
 package icyllis.modernui.forge.network;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.util.Pool;
+import icyllis.modernui.util.Pools;
 import io.netty.buffer.Unpooled;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
@@ -58,8 +60,8 @@ import java.util.stream.Collectors;
 public class NetworkHandler {
 
     private final ResourceLocation channel;
-    private final String protocol;
 
+    private final String protocol;
     private final boolean optional;
 
     @Nullable
@@ -67,8 +69,7 @@ public class NetworkHandler {
     @Nullable
     private final IServerMsgHandler serverHandler;
 
-    // a ByteBuf wrapper for write data more friendly
-    private FriendlyByteBuf buffer;
+    protected final Pool<Broadcaster> pool = Pools.concurrent(1);
 
     /**
      * Create a network handler of a mod. Note that this is a dist-sensitive operation,
@@ -168,146 +169,168 @@ public class NetworkHandler {
     }
 
     /**
-     * Allocate a buffer to write packet data with index.  The packet must
-     * be dispatched later, for example {@link #sendToPlayer(Player)}
+     * Allocate a buffer to write packet data with index. Once you done that,
+     * pass the value returned here to {@link #prepare(FriendlyByteBuf)}
      *
      * @param index The message index used on the opposite side, range from 0 to 32767
-     * @return A byte buf to write the packet data (message)
+     * @return a byte buf to write the packet data (message)
      * @see IClientMsgHandler
      * @see IServerMsgHandler
      */
     @Nonnull
-    public FriendlyByteBuf allocBuf(int index) {
-        if (buffer != null) {
-            throw new IllegalStateException("Previous payload was not dispatched");
-        }
-        buffer = new FriendlyByteBuf(Unpooled.buffer());
+    public FriendlyByteBuf targetAt(int index) {
+        FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
         buffer.writeShort(index);
         return buffer;
     }
 
     /**
-     * Send a message to server
-     * <p>
-     * This is the only method to be called on the client, the rest needs
-     * to be called on the server side
+     * Prepare to send a packet, you must dispatch this packet later,
+     * for example {@link Broadcaster#sendToPlayer(Player)}
+     *
+     * @param buf message
+     * @return a broadcaster to dispatch/send/broadcast packet
+     * @see #targetAt(int)
      */
-    @OnlyIn(Dist.CLIENT)
-    public void sendToServer() {
-        ClientPacketListener connection = Minecraft.getInstance().getConnection();
-        if (connection != null) {
-            connection.send(new ServerboundCustomPayloadPacket(channel, buffer));
+    @Nonnull
+    public Broadcaster prepare(@Nonnull FriendlyByteBuf buf) {
+        Broadcaster b = pool.acquire();
+        if (b == null) b = new Broadcaster();
+        b.buf = buf;
+        return b;
+    }
+
+    public class Broadcaster {
+
+        // a ByteBuf wrapper for write data more friendly
+        private FriendlyByteBuf buf;
+
+        protected void recycle() {
+            buf = null;
+            pool.release(this);
         }
-        buffer = null;
-    }
 
-    /**
-     * Send a message to a player
-     *
-     * @param player the server player
-     */
-    public void sendToPlayer(@Nonnull Player player) {
-        ((ServerPlayer) player).connection.send(new ClientboundCustomPayloadPacket(channel, buffer));
-        buffer = null;
-    }
-
-    /**
-     * Send a message to a player
-     *
-     * @param player the server player
-     */
-    public void sendToPlayer(@Nonnull ServerPlayer player) {
-        player.connection.send(new ClientboundCustomPayloadPacket(channel, buffer));
-        buffer = null;
-    }
-
-    /**
-     * Send a message to all specific players
-     *
-     * @param players players on server
-     */
-    public void sendToPlayers(@Nonnull Iterable<? extends Player> players) {
-        final Packet<?> packet = new ClientboundCustomPayloadPacket(channel, buffer);
-        for (Player player : players) {
-            ((ServerPlayer) player).connection.send(packet);
+        /**
+         * Send a message to server
+         * <p>
+         * This is the only method to be called on the client, the rest needs
+         * to be called on the server side
+         */
+        @OnlyIn(Dist.CLIENT)
+        public void sendToServer() {
+            ClientPacketListener connection = Minecraft.getInstance().getConnection();
+            if (connection != null)
+                connection.send(new ServerboundCustomPayloadPacket(channel, buf));
+            recycle();
         }
-        buffer = null;
-    }
 
-    /**
-     * Send a message to all players on the server
-     */
-    public void sendToAll() {
-        ServerLifecycleHooks.getCurrentServer().getPlayerList()
-                .broadcastAll(new ClientboundCustomPayloadPacket(channel, buffer));
-        buffer = null;
-    }
+        /**
+         * Send a message to a player
+         *
+         * @param player the server player
+         */
+        public void sendToPlayer(@Nonnull Player player) {
+            ((ServerPlayer) player).connection.send(new ClientboundCustomPayloadPacket(channel, buf));
+            recycle();
+        }
 
-    /**
-     * Send a message to all players in specified dimension
-     *
-     * @param dimension dimension that players in
-     */
-    public void sendToDimension(@Nonnull ResourceKey<Level> dimension) {
-        ServerLifecycleHooks.getCurrentServer().getPlayerList()
-                .broadcastAll(new ClientboundCustomPayloadPacket(channel, buffer), dimension);
-        buffer = null;
-    }
+        /**
+         * Send a message to a player
+         *
+         * @param player the server player
+         */
+        public void sendToPlayer(@Nonnull ServerPlayer player) {
+            player.connection.send(new ClientboundCustomPayloadPacket(channel, buf));
+            recycle();
+        }
 
-    /**
-     * Send a message to all players nearby a point with specified radius in specified dimension
-     *
-     * @param excluded  the player that will not be sent the packet
-     * @param x         target point x
-     * @param y         target point y
-     * @param z         target point z
-     * @param radius    radius to target point
-     * @param dimension dimension that players in
-     */
-    public void sendToAllNear(@Nullable ServerPlayer excluded,
-                              double x, double y, double z, double radius,
-                              @Nonnull ResourceKey<Level> dimension) {
-        ServerLifecycleHooks.getCurrentServer().getPlayerList().broadcast(excluded,
-                x, y, z, radius, dimension, new ClientboundCustomPayloadPacket(channel, buffer));
-        buffer = null;
-    }
+        /**
+         * Send a message to all specific players
+         *
+         * @param players players on server
+         */
+        public void sendToPlayers(@Nonnull Iterable<? extends Player> players) {
+            final Packet<?> packet = new ClientboundCustomPayloadPacket(channel, buf);
+            for (Player player : players)
+                ((ServerPlayer) player).connection.send(packet);
+            recycle();
+        }
 
-    /**
-     * Send a message to all players tracking the specified entity. If a chunk that player loaded
-     * on the client contains the chunk where the entity is located, and then the player is
-     * tracking the entity changes.
-     *
-     * @param entity entity is tracking
-     */
-    public void sendToTrackingEntity(@Nonnull Entity entity) {
-        ((ServerLevel) entity.level).getChunkSource().broadcast(
-                entity, new ClientboundCustomPayloadPacket(channel, buffer));
-        buffer = null;
-    }
+        /**
+         * Send a message to all players on the server
+         */
+        public void sendToAll() {
+            ServerLifecycleHooks.getCurrentServer().getPlayerList()
+                    .broadcastAll(new ClientboundCustomPayloadPacket(channel, buf));
+            recycle();
+        }
 
-    /**
-     * Send a message to all players tracking the specified entity, and also send the message to
-     * the entity if it is a player. If a chunk that player loaded on the client contains the
-     * chunk where the entity is located, and then the player is tracking the entity changes.
-     *
-     * @param entity the entity is tracking
-     */
-    public void sendToTrackingAndSelf(@Nonnull Entity entity) {
-        ((ServerLevel) entity.level).getChunkSource().broadcastAndSend(
-                entity, new ClientboundCustomPayloadPacket(channel, buffer));
-        buffer = null;
-    }
+        /**
+         * Send a message to all players in specified dimension
+         *
+         * @param dimension dimension that players in
+         */
+        public void sendToDimension(@Nonnull ResourceKey<Level> dimension) {
+            ServerLifecycleHooks.getCurrentServer().getPlayerList()
+                    .broadcastAll(new ClientboundCustomPayloadPacket(channel, buf), dimension);
+            recycle();
+        }
 
-    /**
-     * Send a message to all players who loaded the specified chunk
-     *
-     * @param chunk the chunk that players in
-     */
-    public void sendToTrackingChunk(@Nonnull LevelChunk chunk) {
-        final Packet<?> packet = new ClientboundCustomPayloadPacket(channel, buffer);
-        ((ServerLevel) chunk.getLevel()).getChunkSource().chunkMap.getPlayers(
-                chunk.getPos(), false).forEach(player -> player.connection.send(packet));
-        buffer = null;
+        /**
+         * Send a message to all players nearby a point with specified radius in specified dimension
+         *
+         * @param excluded  the player that will not be sent the packet
+         * @param x         target point x
+         * @param y         target point y
+         * @param z         target point z
+         * @param radius    radius to target point
+         * @param dimension dimension that players in
+         */
+        public void sendToAllNear(@Nullable ServerPlayer excluded,
+                                  double x, double y, double z, double radius,
+                                  @Nonnull ResourceKey<Level> dimension) {
+            ServerLifecycleHooks.getCurrentServer().getPlayerList().broadcast(excluded,
+                    x, y, z, radius, dimension, new ClientboundCustomPayloadPacket(channel, buf));
+            recycle();
+        }
+
+        /**
+         * Send a message to all players tracking the specified entity. If a chunk that player loaded
+         * on the client contains the chunk where the entity is located, and then the player is
+         * tracking the entity changes.
+         *
+         * @param entity entity is tracking
+         */
+        public void sendToTrackingEntity(@Nonnull Entity entity) {
+            ((ServerLevel) entity.level).getChunkSource().broadcast(
+                    entity, new ClientboundCustomPayloadPacket(channel, buf));
+            recycle();
+        }
+
+        /**
+         * Send a message to all players tracking the specified entity, and also send the message to
+         * the entity if it is a player. If a chunk that player loaded on the client contains the
+         * chunk where the entity is located, and then the player is tracking the entity changes.
+         *
+         * @param entity the entity is tracking
+         */
+        public void sendToTrackingAndSelf(@Nonnull Entity entity) {
+            ((ServerLevel) entity.level).getChunkSource().broadcastAndSend(
+                    entity, new ClientboundCustomPayloadPacket(channel, buf));
+            recycle();
+        }
+
+        /**
+         * Send a message to all players who loaded the specified chunk
+         *
+         * @param chunk the chunk that players in
+         */
+        public void sendToTrackingChunk(@Nonnull LevelChunk chunk) {
+            final Packet<?> packet = new ClientboundCustomPayloadPacket(channel, buf);
+            ((ServerLevel) chunk.getLevel()).getChunkSource().chunkMap.getPlayers(
+                    chunk.getPos(), false).forEach(player -> player.connection.send(packet));
+            recycle();
+        }
     }
 
     @FunctionalInterface

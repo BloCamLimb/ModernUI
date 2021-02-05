@@ -20,10 +20,13 @@ package icyllis.modernui.text;
 
 import icyllis.modernui.resources.LocaleChangeListener;
 
+import javax.annotation.Nonnull;
+import java.lang.reflect.Array;
 import java.util.Locale;
 
 public final class TextUtils implements LocaleChangeListener {
 
+    @Deprecated
     @Override
     public void onLocaleChanged(Locale locale) {
         GraphemeBreak.setLocale(locale);
@@ -42,5 +45,53 @@ public final class TextUtils implements LocaleChangeListener {
         else
             for (int i = start; i < end; i++)
                 dest[destoff++] = s.charAt(i);
+    }
+
+    /**
+     * Removes empty spans from the <code>spans</code> array.
+     * <p>
+     * When parsing a Spanned using {@link Spanned#nextSpanTransition(int, int, Class)}, empty spans
+     * will (correctly) create span transitions, and calling getSpans on a slice of text bounded by
+     * one of these transitions will (correctly) include the empty overlapping span.
+     * <p>
+     * However, these empty spans should not be taken into account when layouting or rendering the
+     * string and this method provides a way to filter getSpans' results accordingly.
+     *
+     * @param spans   A list of spans retrieved using {@link Spanned#getSpans(int, int, Class)} from
+     *                the <code>spanned</code>
+     * @param spanned The Spanned from which spans were extracted
+     * @return A subset of spans where empty spans ({@link Spanned#getSpanStart(Object)}  ==
+     * {@link Spanned#getSpanEnd(Object)} have been removed. The initial order is preserved
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T[] removeEmptySpans(@Nonnull T[] spans, Spanned spanned, Class<T> klass) {
+        T[] copy = null;
+        int count = 0;
+
+        for (int i = 0; i < spans.length; i++) {
+            final T span = spans[i];
+            final int start = spanned.getSpanStart(span);
+            final int end = spanned.getSpanEnd(span);
+
+            if (start == end) {
+                if (copy == null) {
+                    copy = (T[]) Array.newInstance(klass, spans.length - 1);
+                    System.arraycopy(spans, 0, copy, 0, i);
+                    count = i;
+                }
+            } else {
+                if (copy != null) {
+                    copy[count] = span;
+                    count++;
+                }
+            }
+        }
+
+        if (copy != null) {
+            T[] result = (T[]) Array.newInstance(klass, count);
+            System.arraycopy(copy, 0, result, 0, count);
+            return result;
+        }
+        return spans;
     }
 }

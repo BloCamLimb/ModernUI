@@ -19,11 +19,10 @@
 package icyllis.modernui.util;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Helper class for creating pools of objects.
- *
- * @author The Android Open Source Project
  */
 public final class Pools {
 
@@ -59,49 +58,44 @@ public final class Pools {
      */
     private static class SimplePool<T> implements Pool<T> {
 
-        private final Object[] mPool;
+        private final T[] mPool;
 
         private int mPoolSize;
 
+        @SuppressWarnings("unchecked")
         private SimplePool(int maxPoolSize) {
-            if (maxPoolSize <= 0) {
+            if (maxPoolSize <= 0)
                 throw new IllegalArgumentException("The max pool size must be > 0");
-            }
-            mPool = new Object[maxPoolSize];
+            mPool = (T[]) new Object[maxPoolSize];
         }
 
+        @Nullable
         @Override
-        @SuppressWarnings("unchecked")
         public T acquire() {
-            if (mPoolSize > 0) {
-                final int lastPooledIndex = mPoolSize - 1;
-                T instance = (T) mPool[lastPooledIndex];
-                mPool[lastPooledIndex] = null;
-                mPoolSize--;
-                return instance;
-            }
-            return null;
+            if (mPoolSize <= 0)
+                return null;
+            final int lastPooledIndex = mPoolSize - 1;
+            T instance = mPool[lastPooledIndex];
+            mPool[lastPooledIndex] = null;
+            mPoolSize--;
+            return instance;
         }
 
         @Override
         public boolean release(@Nonnull T instance) {
-            if (isInPool(instance)) {
+            if (isInPool(instance))
                 throw new IllegalStateException("Already in the pool!");
-            }
-            if (mPoolSize < mPool.length) {
-                mPool[mPoolSize] = instance;
-                mPoolSize++;
-                return true;
-            }
-            return false;
+            if (mPoolSize >= mPool.length)
+                return false;
+            mPool[mPoolSize] = instance;
+            mPoolSize++;
+            return true;
         }
 
         private boolean isInPool(@Nonnull T instance) {
-            for (int i = 0; i < mPoolSize; i++) {
-                if (mPool[i] == instance) {
+            for (int i = 0; i < mPoolSize; i++)
+                if (mPool[i] == instance)
                     return true;
-                }
-            }
             return false;
         }
     }
@@ -119,6 +113,7 @@ public final class Pools {
             super(maxPoolSize);
         }
 
+        @Nullable
         @Override
         public T acquire() {
             synchronized (mLock) {

@@ -20,7 +20,6 @@ package icyllis.modernui.forge;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.RenderCore;
-import icyllis.modernui.mcimpl.ModernUIMod;
 import icyllis.modernui.view.LayoutIO;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.packs.resources.ReloadableResourceManager;
@@ -34,12 +33,14 @@ import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.resource.ISelectiveResourceReloadListener;
 import net.minecraftforge.resource.VanillaResourceType;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
+import java.util.Locale;
 
 @Mod(ModernUI.ID)
-public final class ModernUIForge extends ModernUIMod {
+public final class ModernUIForge extends ModernUI {
 
     public static final IEventBus EVENT_BUS = BusBuilder.builder().build();
 
@@ -87,12 +88,7 @@ public final class ModernUIForge extends ModernUIMod {
             }
         }
 
-        ModernUI.LOGGER.debug(ModernUI.MARKER, "Modern UI initialized, signed: {}", ModernUIForge.class.getSigners() != null);
-    }
-
-    @Override
-    public void warnSetup(String key, Object... args) {
-        ModLoader.get().addWarning(new ModLoadingWarning(null, ModLoadingStage.SIDED_SETUP, key, args));
+        ModernUI.LOGGER.debug(ModernUI.MARKER, "Modern UI initialized");
     }
 
     private static void init() {
@@ -104,6 +100,8 @@ public final class ModernUIForge extends ModernUIMod {
         if (r != null && r.length > 0 && dir.getName().equals(ModernUI.NAME_CPT)) {
             ModernUI.LOGGER.debug(ModernUI.MARKER, "Working in production environment");
             production = true;
+        } else if (ModernUI.class.getSigners() == null) {
+            ModernUI.LOGGER.debug(MARKER, "Signature is missing");
         }
 
         // TipTheScales doesn't work with OptiFine
@@ -111,6 +109,17 @@ public final class ModernUIForge extends ModernUIMod {
             ModernUI.LOGGER.debug(ModernUI.MARKER, "Intercepting TipTheScales");
             interceptTipTheScales = true;
         }
+    }
+
+    @Override
+    public void warnSetup(String key, Object... args) {
+        ModLoader.get().addWarning(new ModLoadingWarning(null, ModLoadingStage.SIDED_SETUP, key, args));
+    }
+
+    @Nonnull
+    @Override
+    public Locale getSelectedLocale() {
+        return Minecraft.getInstance().getLanguageManager().getSelected().getJavaLocale();
     }
 
     public static boolean isDeveloperMode() {

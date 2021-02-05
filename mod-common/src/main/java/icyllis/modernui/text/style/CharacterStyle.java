@@ -18,7 +18,7 @@
 
 package icyllis.modernui.text.style;
 
-import icyllis.modernui.text.TextDrawState;
+import icyllis.modernui.text.TextPaint;
 
 import javax.annotation.Nonnull;
 
@@ -29,7 +29,7 @@ import javax.annotation.Nonnull;
  */
 public abstract class CharacterStyle {
 
-    public abstract void updateDrawState(@Nonnull TextDrawState state);
+    public abstract void updateDrawState(@Nonnull TextPaint state);
 
     /**
      * A given CharacterStyle can only applied to a single region of a given
@@ -78,7 +78,7 @@ public abstract class CharacterStyle {
          * Passes updateDrawState through to the underlying CharacterStyle.
          */
         @Override
-        public void updateDrawState(@Nonnull TextDrawState state) {
+        public void updateDrawState(@Nonnull TextPaint state) {
             mStyle.updateDrawState(state);
         }
 
