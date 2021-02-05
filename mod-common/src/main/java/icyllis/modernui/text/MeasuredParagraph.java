@@ -19,10 +19,13 @@
 package icyllis.modernui.text;
 
 import com.ibm.icu.text.Bidi;
+import icyllis.modernui.text.style.MetricAffectingSpan;
 import icyllis.modernui.text.style.ReplacementSpan;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
+import it.unimi.dsi.fastutil.floats.FloatArrayList;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -50,7 +53,7 @@ public class MeasuredParagraph {
     private @Nullable
     char[] mCopiedBuffer;
 
-    // The whole/first paragraph direction.
+    // The first paragraph direction.
     private int mParaDir;
 
     // True if the text is LTR direction and doesn't contain any bidi characters.
@@ -61,6 +64,19 @@ public class MeasuredParagraph {
     // This is empty if mLtrWithoutBidi is true.
     @Nonnull
     private final ByteArrayList mLevels = new ByteArrayList();
+
+    // Individual characters' advances.
+    // See getWidths comments.
+    @Nonnull
+    private final FloatArrayList mAdvances = new FloatArrayList();
+
+    // The span end positions.
+    // See getSpanEndCache comments.
+    @Nonnull
+    private final IntArrayList mSpanEndCache = new IntArrayList();
+
+    @Nonnull
+    private TextPaint mCachedPaint = new TextPaint();
 
     private MeasuredParagraph() {
     }
@@ -73,9 +89,12 @@ public class MeasuredParagraph {
         mCopiedBuffer = null;
         //mWholeWidth = 0;
         mLevels.clear();
-        /*mWidths.clear();
-        mFontMetrics.clear();
+        mLevels.trim();
+        mAdvances.clear();
+        mAdvances.trim();
         mSpanEndCache.clear();
+        mSpanEndCache.trim();
+        /*mFontMetrics.clear();
         mMeasuredText = null;*/
     }
 
@@ -86,16 +105,63 @@ public class MeasuredParagraph {
     }
 
     @Nonnull
-    public static MeasuredParagraph buildForMeasurement(@Nonnull CharSequence text, int start, int end,
-                                                        @Nonnull TextDirectionHeuristic dir,
+    public static MeasuredParagraph buildForMeasurement(@Nonnull TextPaint paint, @Nonnull CharSequence text,
+                                                        int start, int end, @Nonnull TextDirectionHeuristic dir,
                                                         @Nullable MeasuredParagraph recycle) {
         final MeasuredParagraph c = recycle == null ? obtain() : recycle;
         c.startBidiAnalysis(text, start, end, dir);
+        c.mAdvances.size(c.mTextLength);
         if (c.mTextLength == 0) {
             return c;
         }
         if (c.mSpanned == null) {
+            // No style change by MetricsAffectingSpan. Just measure all text.
+            c.applyMetricsAffectingSpan(
+                    paint, null, start, end, null);
+        } else {
+            // There may be a MetricsAffectingSpan. Split into span transitions and apply styles.
+            int spanEnd;
+            for (int spanStart = start; spanStart < end; spanStart = spanEnd) {
+                spanEnd = c.mSpanned.nextSpanTransition(spanStart, end, MetricAffectingSpan.class);
+                MetricAffectingSpan[] spans = c.mSpanned.getSpans(spanStart, spanEnd,
+                        MetricAffectingSpan.class);
+                spans = TextUtils.removeEmptySpans(spans, c.mSpanned, MetricAffectingSpan.class);
+                c.applyMetricsAffectingSpan(
+                        paint, spans, spanStart, spanEnd, null);
+            }
+        }
+        return c;
+    }
 
+    @Nonnull
+    public static MeasuredParagraph buildForStaticLayout(@Nonnull TextPaint paint, @Nonnull CharSequence text,
+                                                         int start, int end, @Nonnull TextDirectionHeuristic dir,
+                                                         @Nullable MeasuredParagraph recycle) {
+        final MeasuredParagraph c = recycle == null ? obtain() : recycle;
+        c.startBidiAnalysis(text, start, end, dir);
+        MeasuredText.Builder builder = new MeasuredText.Builder();
+        if (c.mTextLength == 0) {
+
+        } else {
+            if (c.mSpanned == null) {
+                // No style change by MetricsAffectingSpan. Just measure all text.
+                c.applyMetricsAffectingSpan(paint, null /* spans */, start, end, builder);
+                c.mSpanEndCache.add(end);
+            } else {
+                // There may be a MetricsAffectingSpan. Split into span transitions and apply
+                // styles.
+                int spanEnd;
+                for (int spanStart = start; spanStart < end; spanStart = spanEnd) {
+                    spanEnd = c.mSpanned.nextSpanTransition(spanStart, end,
+                            MetricAffectingSpan.class);
+                    MetricAffectingSpan[] spans = c.mSpanned.getSpans(spanStart, spanEnd,
+                            MetricAffectingSpan.class);
+                    spans = TextUtils.removeEmptySpans(spans, c.mSpanned,
+                            MetricAffectingSpan.class);
+                    c.applyMetricsAffectingSpan(paint, spans, spanStart, spanEnd, builder);
+                    c.mSpanEndCache.add(spanEnd);
+                }
+            }
         }
         return c;
     }
@@ -129,7 +195,6 @@ public class MeasuredParagraph {
                 || dir == TextDirectionHeuristics.ANYRTL_LTR)
                 && !Bidi.requiresBidi(mCopiedBuffer, 0, mTextLength)) {
             mLevels.clear();
-            mLevels.trim();
             mParaDir = Bidi.DIRECTION_LEFT_TO_RIGHT;
             mLtrWithoutBidi = true;
         } else {
@@ -147,7 +212,6 @@ public class MeasuredParagraph {
                 paraLevel = isRtl ? Bidi.RTL : Bidi.LTR;
             }
             mLevels.size(mTextLength);
-            mLevels.trim(mTextLength);
             final Bidi icuBidi = new Bidi(mTextLength, 0);
             icuBidi.setPara(mCopiedBuffer, paraLevel, null);
             for (int i = 0; i < mTextLength; i++) {
@@ -157,5 +221,40 @@ public class MeasuredParagraph {
             mParaDir = (icuBidi.getParaLevel() & 0x1) == 0 ? Bidi.DIRECTION_LEFT_TO_RIGHT : Bidi.DIRECTION_RIGHT_TO_LEFT;
             mLtrWithoutBidi = false;
         }
+    }
+
+    private void applyMetricsAffectingSpan(@Nonnull TextPaint paint, @Nullable MetricAffectingSpan[] spans,
+                                           int start, int end, @Nullable MeasuredText.Builder builder) {
+        mCachedPaint.set(paint);
+
+        ReplacementSpan replacement = null;
+        if (spans != null) {
+            for (MetricAffectingSpan span : spans) {
+                if (span instanceof ReplacementSpan) {
+                    // The last ReplacementSpan is effective for backward compatibility reasons.
+                    replacement = (ReplacementSpan) span;
+                } else {
+                    span.updateMeasureState(mCachedPaint);
+                }
+            }
+        }
+
+        final int startInCopiedBuffer = start - mTextStart;
+        final int endInCopiedBuffer = end - mTextStart;
+
+        if (replacement != null) {
+            applyReplacementRun(replacement, startInCopiedBuffer, endInCopiedBuffer, builder);
+        } else {
+            applyStyleRun(startInCopiedBuffer, endInCopiedBuffer, builder);
+        }
+    }
+
+    private void applyReplacementRun(@Nonnull ReplacementSpan replacement, int start, int end,
+                                     @Nullable MeasuredText.Builder builder) {
+        //TODO
+    }
+
+    private void applyStyleRun(int start, int end, @Nullable MeasuredText.Builder builder) {
+
     }
 }

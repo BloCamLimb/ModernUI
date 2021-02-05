@@ -19,6 +19,7 @@
 package icyllis.modernui.graphics.font;
 
 import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.font.pipeline.TextRenderNode;
 import icyllis.modernui.font.pipeline.TextRenderType;
@@ -42,7 +43,6 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL30;
-import sun.awt.windows.WToolkit;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -59,8 +59,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 
 /**
  * Find matching fonts and glyphs, measure glyph metrics and draw them of
@@ -73,6 +71,8 @@ import java.util.concurrent.ExecutorService;
 public class GlyphManager {
 
     public static final Marker MARKER = MarkerManager.getMarker("Font");
+
+    private static GlyphManager instance;
 
     /**
      * Config values.
@@ -260,6 +260,7 @@ public class GlyphManager {
      * A single instance of GlyphManager is allocated for internal use.
      */
     public GlyphManager() {
+        instance = this;
         checkJava();
         /* Set background color for use with clearRect() */
         glyphTextureGraphics.setBackground(BG_COLOR);
@@ -279,6 +280,12 @@ public class GlyphManager {
         loadPreferredFonts();
 
         setRenderingHints();
+    }
+
+    // internal use
+    public static GlyphManager getInstance() {
+        RenderSystem.assertThread(RenderSystem::isOnRenderThread);
+        return instance;
     }
 
     private void checkJava() {
@@ -322,7 +329,8 @@ public class GlyphManager {
     private void loadPreferredFonts() {
         if (!sPreferredFont.isEmpty()) {
             String typeface = sPreferredFont;
-            if (typeface.endsWith(".ttf") || typeface.endsWith(".otf")) {
+            if (typeface.endsWith(".ttf") || typeface.endsWith(".otf")
+                    || typeface.endsWith(".TTF") || typeface.endsWith(".OTF")) {
                 if (typeface.contains(":/") || typeface.contains(":\\")) {
                     if (!sOldJava) {
                         try {
@@ -423,6 +431,7 @@ public class GlyphManager {
         return selectedFonts.get(0);
     }
 
+    // test only
     public TexturedGlyph lookupEmoji(int codePoint) {
         return emojiMap.computeIfAbsent(codePoint, l -> {
             if (emojiTexture == 0) {
@@ -436,7 +445,7 @@ public class GlyphManager {
     }
 
     /**
-     * Derive a font with given style and size
+     * Derive a font with given style and size (vanilla mode)
      *
      * @param font      font without fontStyle and fontSize
      * @param fontStyle font style
@@ -452,6 +461,7 @@ public class GlyphManager {
         return font;
     }
 
+    // (vanilla mode)
     public float getResolutionFactor() {
         // based on a gui scale of 2
         return sResolutionLevel * 2.0f;

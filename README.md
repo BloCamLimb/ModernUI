@@ -3,8 +3,10 @@
 Releases for Minecraft Mod are available on [CurseForge](https://www.curseforge.com/minecraft/mc-mods/modern-ui)
 ### License
 * Modern UI
-  - Copyright (C) 2019-2021 BloCamLimb. All rights reserved. 
-  - [![License](https://img.shields.io/badge/License-LGPL--3.0-blue.svg?style=flat-square)](https://www.gnu.org/licenses/lgpl-3.0.en.html)
+  - Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+  - [![License](https://img.shields.io/badge/License-LGPL--3.0--or--later-blue.svg?style=flat-square)](https://www.gnu.org/licenses/lgpl-3.0.en.html)
+  - Copyright (C) 2006 The Android Open Source Project
+  - [![License](https://img.shields.io/badge/License-Apache%202.0-orange.svg?style=flat-square)](https://opensource.org/licenses/Apache-2.0)
 * Textures, Shaders, Models, Documents, Translations
   - Copyright (C) 2019-2021 BloCamLimb et al.
   - [![License](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-yellow.svg?style=flat-square)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
