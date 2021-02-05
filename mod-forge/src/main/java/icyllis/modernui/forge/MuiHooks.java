@@ -61,7 +61,7 @@ public final class MuiHooks {
      *
      * @param player      the server player to open the screen for
      * @param constructor a constructor to create a menu on server side
-     * @throws ClassCastException this method is not called on server thread
+     * @throws ClassCastException this method is not called on logic server
      * @see #openMenu(Player, MenuConstructor, Consumer)
      */
     public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor constructor) {
@@ -74,9 +74,9 @@ public final class MuiHooks {
      *
      * @param player      the server player to open the screen for
      * @param constructor a constructor to create a menu on server side
-     * @param pos         a data writer to send a block pos to client, this will be passed to
+     * @param pos         a block pos to send to client, this will be passed to
      *                    the menu supplier (IContainerFactory) that registered on client
-     * @throws ClassCastException this method is not called on server thread
+     * @throws ClassCastException this method is not called on logic server
      * @see #openMenu(Player, MenuConstructor, Consumer)
      * @see net.minecraftforge.common.extensions.IForgeContainerType#create(IContainerFactory)
      */
@@ -92,7 +92,7 @@ public final class MuiHooks {
      * @param constructor a constructor to create a menu on server side
      * @param writer      a data writer to send additional data to client, this will be passed
      *                    to the menu supplier (IContainerFactory) that registered on client
-     * @throws ClassCastException this method is not called on server thread
+     * @throws ClassCastException this method is not called on logic server
      * @see net.minecraftforge.common.extensions.IForgeContainerType#create(IContainerFactory)
      */
     public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor constructor, @Nullable Consumer<FriendlyByteBuf> writer) {

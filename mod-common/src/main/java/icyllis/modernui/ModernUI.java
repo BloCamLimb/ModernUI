@@ -23,6 +23,9 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
+import javax.annotation.Nonnull;
+import java.util.Locale;
+
 /**
  * The core class of the client side of Modern UI
  */
@@ -34,7 +37,22 @@ public class ModernUI {
     public static final Logger LOGGER = LogManager.getLogger(NAME_CPT);
     public static final Marker MARKER = MarkerManager.getMarker("Core");
 
-    public ModernUI() {
+    protected static ModernUI instance;
 
+    public ModernUI() {
+        instance = this;
+    }
+
+    public static ModernUI get() {
+        return instance;
+    }
+
+    public void warnSetup(String key, Object... args) {
+        // pass
+    }
+
+    @Nonnull
+    public Locale getSelectedLocale() {
+        return Locale.getDefault();
     }
 }

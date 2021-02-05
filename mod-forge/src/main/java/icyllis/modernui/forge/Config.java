@@ -81,9 +81,12 @@ public final class Config {
         ModContainer mod = ModLoadingContext.get().getActiveContainer();
         if (FMLEnvironment.dist.isClient()) {
             mod.addConfig(new Cfg(Cfg.Type.CLIENT, CLIENT_SPEC, mod, "client"));
+            mod.addConfig(new Cfg(Cfg.Type.COMMON, COMMON_SPEC, mod, "common"));
+            mod.addConfig(new Cfg(Cfg.Type.SERVER, SERVER_SPEC, mod, "server"));
+        } else {
+            mod.addConfig(new Cfg(Cfg.Type.COMMON, COMMON_SPEC, mod, "server")); // include dedicated server only
+            mod.addConfig(new Cfg(Cfg.Type.SERVER, SERVER_SPEC, mod, "shared"));
         }
-        mod.addConfig(new Cfg(Cfg.Type.COMMON, COMMON_SPEC, mod, "common"));
-        mod.addConfig(new Cfg(Cfg.Type.SERVER, SERVER_SPEC, mod, "server"));
         FMLJavaModLoadingContext.get().getModEventBus().addListener(Config::reload);
     }
 
