@@ -139,6 +139,7 @@ public class TestHUD {
     private static final int LINE_HEIGHT = 10;
     private static final int TITLE_GAP = 2;
 
+    // test only, this can't handle complex paragraph layout
     public static void drawTooltip(Canvas canvas, @Nonnull List<? extends FormattedText> texts,
                                    ModernFontRenderer font, ItemStack stack, PoseStack matrix,
                                    int eventX, int eventY, float mouseX, float mouseY, float width, float height) {

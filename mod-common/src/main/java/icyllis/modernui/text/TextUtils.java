@@ -26,19 +26,47 @@ import java.util.Locale;
 
 public final class TextUtils implements LocaleChangeListener {
 
+    private static final Object sLock = new Object();
+    private static char[] sTemp = null;
+
     @Deprecated
     @Override
     public void onLocaleChanged(Locale locale) {
         GraphemeBreak.setLocale(locale);
     }
 
-    public static void getChars(CharSequence s, int start, int end,
+    @Nonnull
+    static char[] obtain(int len) {
+        char[] buf;
+
+        synchronized (sLock) {
+            buf = sTemp;
+            sTemp = null;
+        }
+
+        if (buf == null || buf.length < len)
+            buf = new char[len];
+
+        return buf;
+    }
+
+    static void recycle(@Nonnull char[] temp) {
+        if (temp.length > 1000)
+            return;
+
+        synchronized (sLock) {
+            sTemp = temp;
+        }
+    }
+
+    public static void getChars(@Nonnull CharSequence s, int start, int end,
                                 char[] dest, int destoff) {
-        if (s instanceof String)
+        final Class<? extends CharSequence> c = s.getClass();
+        if (c == String.class)
             ((String) s).getChars(start, end, dest, destoff);
-        else if (s instanceof StringBuffer)
+        else if (c == StringBuffer.class)
             ((StringBuffer) s).getChars(start, end, dest, destoff);
-        else if (s instanceof StringBuilder)
+        else if (c == StringBuilder.class)
             ((StringBuilder) s).getChars(start, end, dest, destoff);
         else if (s instanceof GetChars)
             ((GetChars) s).getChars(start, end, dest, destoff);
@@ -64,7 +92,7 @@ public final class TextUtils implements LocaleChangeListener {
      * {@link Spanned#getSpanEnd(Object)} have been removed. The initial order is preserved
      */
     @SuppressWarnings("unchecked")
-    public static <T> T[] removeEmptySpans(@Nonnull T[] spans, Spanned spanned, Class<T> klass) {
+    public static <T> T[] removeEmptySpans(@Nonnull T[] spans, Spanned spanned, Class<T> clazz) {
         T[] copy = null;
         int count = 0;
 
@@ -75,7 +103,7 @@ public final class TextUtils implements LocaleChangeListener {
 
             if (start == end) {
                 if (copy == null) {
-                    copy = (T[]) Array.newInstance(klass, spans.length - 1);
+                    copy = (T[]) Array.newInstance(clazz, spans.length - 1);
                     System.arraycopy(spans, 0, copy, 0, i);
                     count = i;
                 }
@@ -87,11 +115,55 @@ public final class TextUtils implements LocaleChangeListener {
             }
         }
 
-        if (copy != null) {
-            T[] result = (T[]) Array.newInstance(klass, count);
-            System.arraycopy(copy, 0, result, 0, count);
-            return result;
+        if (copy == null)
+            return spans;
+        T[] result = (T[]) Array.newInstance(clazz, count);
+        System.arraycopy(copy, 0, result, 0, count);
+        return result;
+    }
+
+    public static int indexOf(CharSequence s, char ch) {
+        return indexOf(s, ch, 0);
+    }
+
+    public static int indexOf(CharSequence s, char ch, int start) {
+        if (s instanceof String)
+            return ((String) s).indexOf(ch, start);
+        return indexOf(s, ch, start, s.length());
+    }
+
+    public static int indexOf(@Nonnull CharSequence s, char ch, int start, int end) {
+        final Class<? extends CharSequence> c = s.getClass();
+
+        if (s instanceof GetChars || c == StringBuffer.class ||
+                c == StringBuilder.class || c == String.class) {
+            char[] temp = obtain(500);
+
+            while (start < end) {
+                int segend = start + 500;
+                if (segend > end)
+                    segend = end;
+
+                getChars(s, start, segend, temp, 0);
+
+                int count = segend - start;
+                for (int i = 0; i < count; i++)
+                    if (temp[i] == ch) {
+                        recycle(temp);
+                        return i + start;
+                    }
+
+                start = segend;
+            }
+
+            recycle(temp);
+            return -1;
         }
-        return spans;
+
+        for (int i = start; i < end; i++)
+            if (s.charAt(i) == ch)
+                return i;
+
+        return -1;
     }
 }

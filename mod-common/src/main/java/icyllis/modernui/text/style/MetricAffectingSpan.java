@@ -16,6 +16,22 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*
+ * Copyright (C) 2006 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package icyllis.modernui.text.style;
 
 import icyllis.modernui.text.TextPaint;
@@ -24,11 +40,17 @@ import javax.annotation.Nonnull;
 
 /**
  * The classes that affect character-level text formatting in a way that
- * changes the width or height of characters extend this class.
+ * changes the metric of characters extend this class.
  */
 public abstract class MetricAffectingSpan extends CharacterStyle {
 
-    public abstract void updateMeasureState(@Nonnull TextPaint state);
+    /**
+     * Classes that extend MetricAffectingSpan implement this method to update the text formatting
+     * in a way that can change the width or height of characters.
+     *
+     * @param paint the paint used for drawing the text
+     */
+    public abstract void updateMeasureState(@Nonnull TextPaint paint);
 
     /**
      * Returns "this" for most MetricAffectingSpans, but for
@@ -63,16 +85,16 @@ public abstract class MetricAffectingSpan extends CharacterStyle {
          * Passes updateDrawState through to the underlying MetricAffectingSpan.
          */
         @Override
-        public void updateDrawState(@Nonnull TextPaint state) {
-            mStyle.updateDrawState(state);
+        public void updateDrawState(@Nonnull TextPaint paint) {
+            mStyle.updateDrawState(paint);
         }
 
         /**
          * Passes updateMeasureState through to the underlying MetricAffectingSpan.
          */
         @Override
-        public void updateMeasureState(@Nonnull TextPaint state) {
-            mStyle.updateMeasureState(state);
+        public void updateMeasureState(@Nonnull TextPaint paint) {
+            mStyle.updateMeasureState(paint);
         }
 
         /**
