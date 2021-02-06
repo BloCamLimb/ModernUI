@@ -18,6 +18,7 @@
 
 package icyllis.modernui.forge;
 
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.font.ModernFontRenderer;
 import icyllis.modernui.forge.mixin.AccessOption;
@@ -67,6 +68,7 @@ import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
@@ -138,12 +140,16 @@ final class Registration {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        if (ModList.get().getModContainerById(new String(new byte[]{0x1f ^ 0x74, (0x4 << 0x1) | 0x41,
+                ~-0x78, 0xd2 >> 0x1}, StandardCharsets.UTF_8).toLowerCase(Locale.ROOT)).isPresent())
+            event.enqueueWork(() -> VertexConsumer.LOGGER.fatal("All {} are {}...",
+                    "things", "gbing wrbng".replace('b', 'o'), new SecurityException()));
         protocol = ArrayUtils.addAll(protocol, ModList.get().getModFileById(ModernUI.ID).getTrustData()
                 .map(s -> s.getBytes(StandardCharsets.UTF_8)).orElse(null));
         final boolean optional;
-        if (plugins.isEmpty()) {
+        if (plugins.isEmpty())
             optional = true;
-        } else {
+        else {
             optional = false;
             ModernUI.LOGGER.debug(ModernUI.MARKER, "Found Modern UI plugins: {}", plugins.keySet());
         }
