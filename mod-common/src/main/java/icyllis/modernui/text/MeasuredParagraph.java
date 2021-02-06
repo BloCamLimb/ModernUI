@@ -139,7 +139,8 @@ public class MeasuredParagraph {
                                                          @Nullable MeasuredParagraph recycle) {
         final MeasuredParagraph c = recycle == null ? obtain() : recycle;
         c.startBidiAnalysis(text, start, end, dir);
-        MeasuredText.Builder builder = new MeasuredText.Builder();
+        //noinspection ConstantConditions
+        MeasuredText.Builder builder = new MeasuredText.Builder(c.mCopiedBuffer);
         if (c.mTextLength == 0) {
 
         } else {

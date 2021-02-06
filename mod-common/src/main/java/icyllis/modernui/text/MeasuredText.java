@@ -18,9 +18,57 @@
 
 package icyllis.modernui.text;
 
+import com.google.common.base.Preconditions;
+
+import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.List;
+
 public class MeasuredText {
 
     public static class Builder {
 
+        private final List<Run> mRuns = new ArrayList<>();
+
+        @Nonnull
+        private final char[] mText;
+        private int mCurrentOffset = 0;
+
+        public Builder(@Nonnull char[] text) {
+            mText = text;
+        }
+
+        public Builder appendStyleRun(@Nonnull TextPaint paint, int length, boolean isRtl) {
+            Preconditions.checkArgument(length > 0, "length can not be negative");
+            final int end = mCurrentOffset + length;
+            Preconditions.checkArgument(end <= mText.length, "Style exceeds the text length");
+            mRuns.add(new StyleRun(mCurrentOffset, end, paint, isRtl));
+            mCurrentOffset = end;
+            return this;
+        }
+    }
+
+    // logical run, sub-run of bidi run
+    public static class Run {
+
+        protected int mStart;
+        protected int mEnd;
+
+        public Run(int start, int end) {
+            mStart = start;
+            mEnd = end;
+        }
+    }
+
+    public static class StyleRun extends Run {
+
+        public final TextPaint mPaint;
+        public final boolean mIsRtl;
+
+        public StyleRun(int start, int end, TextPaint paint, boolean isRtl) {
+            super(start, end);
+            mPaint = paint;
+            mIsRtl = isRtl;
+        }
     }
 }
