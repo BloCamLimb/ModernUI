@@ -16,13 +16,12 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.font;
+package icyllis.modernui.graphics.text;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.math.Matrix4f;
-import icyllis.modernui.font.pipeline.TextRenderNode;
-import icyllis.modernui.font.process.TextLayoutProcessor;
 import icyllis.modernui.graphics.RenderCore;
+import icyllis.modernui.graphics.font.pipeline.TextRenderNode;
 import icyllis.modernui.mcimpl.mixin.AccessFontRenderer;
 import icyllis.modernui.mcimpl.mixin.AccessStringSplitter;
 import net.fabricmc.api.EnvType;
@@ -68,8 +67,8 @@ public class ModernFontRenderer extends Font {
     // temporary float value used in lambdas
     private final MutableFloat v = new MutableFloat();
 
-    private ModernTextHandler textHandler;
-    private StringSplitter stringSplitter; // vanilla one
+    private ModernStringSplitter modernStringSplitter;
+    private StringSplitter vanillaStringSplitter;
 
     private ModernFontRenderer(Function<ResourceLocation, FontSet> fonts) {
         super(fonts);
@@ -82,8 +81,8 @@ public class ModernFontRenderer extends Font {
             StringSplitter o = i.getSplitter();
             @Deprecated
             StringSplitter.WidthProvider c = ((AccessStringSplitter) o).getWidthProvider();
-            i.textHandler = new ModernTextHandler(c);
-            i.stringSplitter = o;
+            i.modernStringSplitter = new ModernStringSplitter(c);
+            i.vanillaStringSplitter = o;
             return instance = i;
         } else {
             throw new IllegalStateException("Already created");
@@ -94,7 +93,7 @@ public class ModernFontRenderer extends Font {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
         if (RenderCore.isRenderEngineStarted()) {
             if (instance.globalRenderer != global) {
-                ((AccessFontRenderer) instance).setSplitter(global ? instance.textHandler : instance.stringSplitter);
+                ((AccessFontRenderer) instance).setSplitter(global ? instance.modernStringSplitter : instance.vanillaStringSplitter);
                 instance.globalRenderer = global;
             }
             instance.allowShadow = shadow;
@@ -180,9 +179,11 @@ public class ModernFontRenderer extends Font {
                          @Nonnull MultiBufferSource buffer, boolean seeThrough, int colorBackground, int packedLight) {
         if (globalRenderer) {
             v.setValue(x);
+            // iterate all siblings
             text.visit((style, t) -> {
                 v.add(drawLayer0(t, v.floatValue(), y, color, dropShadow, matrix,
                         buffer, seeThrough, colorBackground, packedLight, style));
+                // continue
                 return Optional.empty();
             }, Style.EMPTY);
         } else {
@@ -299,29 +300,20 @@ public class ModernFontRenderer extends Font {
 
     }*/
 
-    @Deprecated
-    @Override
-    public boolean isBidirectional() {
-        if (globalRenderer) {
-            return false;
-        }
-        return super.isBidirectional();
-    }
-
     /**
-     * Bidi always works no matter what language is in.
+     * Bidi and shaping always works no matter what language is in.
      * So we should analyze the original string without reordering.
      *
      * @param text text
      * @return text
+     * @see icyllis.modernui.mcimpl.mixin.MixinClientLanguage#getVisualOrder(FormattedText)
      */
     @Deprecated
     @Nonnull
     @Override
     public String bidirectionalShaping(@Nonnull String text) {
-        if (globalRenderer) {
+        if (globalRenderer)
             return text;
-        }
         return super.bidirectionalShaping(text);
     }
 }

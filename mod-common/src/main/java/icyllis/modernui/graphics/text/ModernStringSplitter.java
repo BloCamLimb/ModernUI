@@ -16,10 +16,9 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.font;
+package icyllis.modernui.graphics.text;
 
-import icyllis.modernui.font.pipeline.GlyphRender;
-import icyllis.modernui.font.process.TextLayoutProcessor;
+import icyllis.modernui.graphics.font.pipeline.GlyphRender;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.ComponentCollector;
@@ -39,7 +38,7 @@ import java.util.Optional;
  * Handle line breaks, get text width, etc.
  */
 @Environment(EnvType.CLIENT)
-public class ModernTextHandler extends StringSplitter {
+public class ModernStringSplitter extends StringSplitter {
 
     private final TextLayoutProcessor fontEngine = TextLayoutProcessor.getInstance();
 
@@ -51,7 +50,7 @@ public class ModernTextHandler extends StringSplitter {
      * @param widthProvider retrieve char width with given codePoint and Style(BOLD)
      */
     //TODO remove width provider as long as complex line wrapping finished
-    ModernTextHandler(WidthProvider widthProvider) {
+    public ModernStringSplitter(WidthProvider widthProvider) {
         super(widthProvider);
     }
 

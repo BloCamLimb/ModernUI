@@ -18,5 +18,44 @@
 
 package icyllis.modernui.text;
 
+import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.List;
+
 public class PrecomputedText {
+
+    public static class ParagraphInfo {
+
+        public final int paragraphEnd;
+        @Nonnull
+        public final MeasuredParagraph measured;
+
+        /**
+         * @param paraEnd  the end offset of this paragraph
+         * @param measured a measured paragraph
+         */
+        public ParagraphInfo(int paraEnd, @Nonnull MeasuredParagraph measured) {
+            this.paragraphEnd = paraEnd;
+            this.measured = measured;
+        }
+    }
+
+    // create new paras
+    public static ParagraphInfo[] createMeasuredParagraphs(@Nonnull TextPaint paint, @Nonnull CharSequence text,
+                                                           int start, int end, @Nonnull TextDirectionHeuristic dir) {
+        List<ParagraphInfo> list = new ArrayList<>();
+        for (int paraStart = start, paraEnd; paraStart < end; paraStart = paraEnd) {
+            paraEnd = TextUtils.indexOf(text, '\n', paraStart, end);
+            if (paraEnd < 0) {
+                // No LINE_FEED(U+000A) character found. Use end of the text as the paragraph
+                // end.
+                paraEnd = end;
+            } else {
+                paraEnd++;  // Includes LINE_FEED(U+000A) to the prev paragraph.
+            }
+            list.add(new ParagraphInfo(paraEnd, MeasuredParagraph.buildForStaticLayout(
+                    paint, text, paraStart, paraEnd, dir, null)));
+        }
+        return list.toArray(new ParagraphInfo[0]);
+    }
 }

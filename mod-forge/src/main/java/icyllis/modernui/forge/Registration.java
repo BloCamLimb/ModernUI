@@ -20,7 +20,7 @@ package icyllis.modernui.forge;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.font.ModernFontRenderer;
+import icyllis.modernui.graphics.text.ModernFontRenderer;
 import icyllis.modernui.forge.mixin.AccessOption;
 import icyllis.modernui.forge.mixin.AccessVideoSettingsScreen;
 import icyllis.modernui.forge.network.NetworkHandler;

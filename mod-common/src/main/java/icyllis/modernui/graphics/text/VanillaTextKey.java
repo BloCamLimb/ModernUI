@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.font.process;
+package icyllis.modernui.graphics.text;
 
 import net.minecraft.network.chat.Style;
 

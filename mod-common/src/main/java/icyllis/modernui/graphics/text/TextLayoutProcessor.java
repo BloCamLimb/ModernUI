@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.font.process;
+package icyllis.modernui.graphics.text;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -24,7 +24,7 @@ import com.ibm.icu.text.Bidi;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.graphics.font.TexturedGlyph;
-import icyllis.modernui.font.pipeline.*;
+import icyllis.modernui.graphics.font.pipeline.*;
 import icyllis.modernui.graphics.math.Color3i;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -46,8 +46,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 /**
- * The Font Engine, layout text component and extract key info and generate
- * or cache render node.
+ * Layout text component and extract key info and generate
+ * or cache render node for Minecraft vanilla only.
  *
  * @since 2.0
  */
