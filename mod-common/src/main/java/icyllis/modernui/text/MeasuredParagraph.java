@@ -50,10 +50,11 @@ public class MeasuredParagraph {
     // The copied character buffer for measuring text.
     //
     // The length of this array is mTextLength.
-    private @Nullable
-    char[] mCopiedBuffer;
+    @Nullable
+    private char[] mCopiedBuffer;
 
-    // The first paragraph direction.
+    // The first paragraph direction. Either Bidi.DIRECTION_LEFT_TO_RIGHT
+    // or Bidi.DIRECTION_RIGHT_TO_LEFT
     private int mParaDir;
 
     // True if the text is LTR direction and doesn't contain any bidi characters.
@@ -76,7 +77,7 @@ public class MeasuredParagraph {
     private final IntArrayList mSpanEndCache = new IntArrayList();
 
     @Nonnull
-    private TextPaint mCachedPaint = new TextPaint();
+    private final TextPaint mCachedPaint = new TextPaint();
 
     private MeasuredParagraph() {
     }
@@ -109,7 +110,7 @@ public class MeasuredParagraph {
                                                         int start, int end, @Nonnull TextDirectionHeuristic dir,
                                                         @Nullable MeasuredParagraph recycle) {
         final MeasuredParagraph c = recycle == null ? obtain() : recycle;
-        c.startBidiAnalysis(text, start, end, dir);
+        c.resetAndAnalyzeBidi(text, start, end, dir);
         c.mAdvances.size(c.mTextLength);
         if (c.mTextLength == 0) {
             return c;
@@ -138,8 +139,8 @@ public class MeasuredParagraph {
                                                          int start, int end, @Nonnull TextDirectionHeuristic dir,
                                                          @Nullable MeasuredParagraph recycle) {
         final MeasuredParagraph c = recycle == null ? obtain() : recycle;
-        c.startBidiAnalysis(text, start, end, dir);
-        //noinspection ConstantConditions
+        c.resetAndAnalyzeBidi(text, start, end, dir);
+        assert c.mCopiedBuffer != null;
         MeasuredText.Builder builder = new MeasuredText.Builder(c.mCopiedBuffer);
         if (c.mTextLength == 0) {
 
@@ -167,7 +168,7 @@ public class MeasuredParagraph {
         return c;
     }
 
-    private void startBidiAnalysis(@Nonnull CharSequence text, int start, int end, @Nonnull TextDirectionHeuristic dir) {
+    private void resetAndAnalyzeBidi(@Nonnull CharSequence text, int start, int end, @Nonnull TextDirectionHeuristic dir) {
         reset();
         mSpanned = text instanceof Spanned ? (Spanned) text : null;
         mTextStart = start;
@@ -218,7 +219,7 @@ public class MeasuredParagraph {
             for (int i = 0; i < mTextLength; i++) {
                 mLevels.set(i, icuBidi.getLevelAt(i));
             }
-            // an odd numbers indicates RTL
+            // odd numbers indicate RTL
             mParaDir = (icuBidi.getParaLevel() & 0x1) == 0 ? Bidi.DIRECTION_LEFT_TO_RIGHT : Bidi.DIRECTION_RIGHT_TO_LEFT;
             mLtrWithoutBidi = false;
         }

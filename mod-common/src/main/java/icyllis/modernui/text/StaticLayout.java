@@ -16,7 +16,36 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.font.text;
+package icyllis.modernui.text;
 
-public class TextComponent {
+import icyllis.modernui.util.Pool;
+import icyllis.modernui.util.Pools;
+
+import javax.annotation.Nonnull;
+
+public class StaticLayout {
+
+    public final static class Builder {
+
+        private static final Pool<Builder> sPool = Pools.concurrent(3);
+
+        private Builder() {
+        }
+
+        public static Builder obtain(@Nonnull CharSequence text, int start, int end) {
+
+        }
+    }
+
+    void generate() {
+        PrecomputedText.ParagraphInfo[] paragraphInfo = null;
+
+        if (paragraphInfo == null) {
+            paragraphInfo = PrecomputedText.createMeasuredParagraphs();
+        }
+
+        for (int paraIndex = 0; paraIndex < paragraphInfo.length; paraIndex++) {
+
+        }
+    }
 }

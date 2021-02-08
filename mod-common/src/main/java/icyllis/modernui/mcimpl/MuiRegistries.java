@@ -33,7 +33,7 @@ public class MuiRegistries {
     /**
      * Container Menus (Debug Only)
      */
-    public static MenuType<TestMenu> TEST_MENU;
+    public static MenuType<?> TEST_MENU;
 
     /**
      * Items (Production Only)

@@ -18,7 +18,7 @@
 
 package icyllis.modernui.forge.mixin;
 
-import icyllis.modernui.font.ModernFontRenderer;
+import icyllis.modernui.graphics.text.ModernFontRenderer;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.font.FontManager;
 import net.minecraft.client.gui.font.FontSet;

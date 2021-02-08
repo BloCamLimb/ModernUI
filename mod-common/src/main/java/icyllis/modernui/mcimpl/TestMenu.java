@@ -26,7 +26,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 public class TestMenu extends AbstractContainerMenu {
 
     // client
-    public TestMenu(int windowId, Inventory inventory, FriendlyByteBuf buffer) {
+    public TestMenu(int windowId, Inventory inventory, FriendlyByteBuf buf) {
         super(MuiRegistries.TEST_MENU, windowId);
     }
 

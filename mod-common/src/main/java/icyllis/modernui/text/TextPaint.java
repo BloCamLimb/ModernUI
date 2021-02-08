@@ -19,8 +19,7 @@
 package icyllis.modernui.text;
 
 /**
- * TextPaint is an extension of Paint that leaves room for some extra
- * data used during text measuring and drawing.
+ * This class holds data used during text measuring and drawing.
  */
 public class TextPaint {
 
@@ -28,8 +27,7 @@ public class TextPaint {
     }
 
     /**
-     * Copy the fields from tp into this TextPaint, including the
-     * fields inherited from Paint.
+     * Copy the data from paint into this TextPaint
      */
     public void set(TextPaint paint) {
 
