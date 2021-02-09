@@ -33,7 +33,7 @@ public class StaticLayout {
         }
 
         public static Builder obtain(@Nonnull CharSequence text, int start, int end) {
-
+            return sPool.acquire();
         }
     }
 
@@ -41,7 +41,7 @@ public class StaticLayout {
         PrecomputedText.ParagraphInfo[] paragraphInfo = null;
 
         if (paragraphInfo == null) {
-            paragraphInfo = PrecomputedText.createMeasuredParagraphs();
+            //paragraphInfo = PrecomputedText.createMeasuredParagraphs();
         }
 
         for (int paraIndex = 0; paraIndex < paragraphInfo.length; paraIndex++) {

@@ -27,7 +27,7 @@ public class CharArrayIterator implements CharacterIterator {
 
     private final char[] text;
     private final int start;
-    private final int limit;
+    private final int end;
 
     private int pos;
 
@@ -39,11 +39,11 @@ public class CharArrayIterator implements CharacterIterator {
         this(text, start, text.length);
     }
 
-    public CharArrayIterator(@Nonnull char[] text, int start, int limit) {
-        Arrays.ensureFromTo(text.length, start, limit);
+    public CharArrayIterator(@Nonnull char[] text, int start, int end) {
+        Arrays.ensureFromTo(text.length, start, end);
         this.text = text;
         this.start = start;
-        this.limit = limit;
+        this.end = end;
         pos = start;
     }
 
@@ -55,18 +55,18 @@ public class CharArrayIterator implements CharacterIterator {
 
     @Override
     public char last() {
-        pos = limit != start ? limit - 1 : limit;
+        pos = end != start ? end - 1 : end;
         return current();
     }
 
     @Override
     public char current() {
-        return pos >= start && pos < limit ? text[pos] : DONE;
+        return pos >= start && pos < end ? text[pos] : DONE;
     }
 
     @Override
     public char next() {
-        return pos < limit ? text[pos++] : DONE;
+        return pos < end ? text[pos++] : DONE;
     }
 
     @Override
@@ -76,7 +76,7 @@ public class CharArrayIterator implements CharacterIterator {
 
     @Override
     public char setIndex(int position) {
-        if (position < start || position > limit)
+        if (position < start || position > end)
             throw new IllegalArgumentException();
         pos = position;
         return current();
@@ -89,7 +89,7 @@ public class CharArrayIterator implements CharacterIterator {
 
     @Override
     public int getEndIndex() {
-        return limit;
+        return end;
     }
 
     @Override
