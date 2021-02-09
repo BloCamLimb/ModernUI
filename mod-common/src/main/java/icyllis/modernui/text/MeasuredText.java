@@ -26,6 +26,23 @@ import java.util.List;
 
 public class MeasuredText {
 
+    @Nonnull
+    private final char[] mTextBuf;
+    @Nonnull
+    protected final List<Run> mRuns;
+    protected float[] mAdvances;
+
+    public MeasuredText(@Nonnull char[] textBuf, @Nonnull List<Run> runs) {
+        mTextBuf = textBuf;
+        mRuns = runs;
+    }
+
+    // the text buf
+    @Nonnull
+    public char[] getTextBuf() {
+        return mTextBuf;
+    }
+
     public static class Builder {
 
         private final List<Run> mRuns = new ArrayList<>();
@@ -58,6 +75,10 @@ public class MeasuredText {
             mStart = start;
             mEnd = end;
         }
+
+        public boolean canBreak() {
+            return false;
+        }
     }
 
     public static class StyleRun extends Run {
@@ -69,6 +90,11 @@ public class MeasuredText {
             super(start, end);
             mPaint = paint;
             mIsRtl = isRtl;
+        }
+
+        @Override
+        public boolean canBreak() {
+            return true;
         }
     }
 }
