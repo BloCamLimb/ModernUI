@@ -31,7 +31,7 @@ public abstract class GlyphRender {
     /**
      * Change to params color
      */
-    public static final int USE_INPUT_COLOR = FormattingStyle.NO_COLOR;
+    public static final int USE_INPUT_COLOR = FormattingStyle.NO_SPECIFIED_COLOR;
 
     /**
      * Keep the color state not to change

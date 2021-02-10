@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Handle line breaks, get text width, etc.
+ * Handle line breaks, get text width, etc. For Vanilla Only.
  */
 @Environment(EnvType.CLIENT)
 public class ModernStringSplitter extends StringSplitter {

@@ -23,16 +23,15 @@ import it.unimi.dsi.fastutil.chars.CharArrayList;
 import javax.annotation.Nonnull;
 
 /**
- * Used for lookup
+ * Used for fast lookup
  */
 public class MutableString implements CharSequence {
 
     public final CharArrayList chars = new CharArrayList();
 
     public void addString(@Nonnull String str) {
-        for (int i = 0; i < str.length(); i++) {
-            chars.add(str.charAt(i));
-        }
+        chars.size(chars.size() + str.length());
+        str.getChars(0, str.length(), chars.elements(), chars.size());
     }
 
     public void addChar(char c) {
@@ -68,7 +67,7 @@ public class MutableString implements CharSequence {
 
     @Override
     public CharSequence subSequence(int start, int end) {
-        throw new UnsupportedOperationException();
+        return new String(chars.elements(), start, end - start);
     }
 
     /**

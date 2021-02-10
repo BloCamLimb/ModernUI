@@ -59,7 +59,7 @@ public class FormattingStyle {
     /**
      * Represent to use default color
      */
-    public static final int NO_COLOR = -1;
+    public static final int NO_SPECIFIED_COLOR = -1;
 
 
     /**
@@ -73,7 +73,7 @@ public class FormattingStyle {
     public final int stripIndex;
 
     /**
-     * The color in 0xRRGGBB format; {@link #NO_COLOR} to reset default (original parameter) color
+     * The color in 0xRRGGBB format; {@link #NO_SPECIFIED_COLOR} to reset default (original parameter) color
      */
     private final int color;
 
@@ -101,11 +101,11 @@ public class FormattingStyle {
     }
 
     public static int getColor(@Nonnull Style style) {
-        return style.getColor() == null ? NO_COLOR : style.getColor().getValue();
+        return style.getColor() == null ? NO_SPECIFIED_COLOR : style.getColor().getValue();
     }
 
     /**
-     * The color in 0xRRGGBB format; {@link #NO_COLOR} to reset default (original parameter) color
+     * The color in 0xRRGGBB format; {@link #NO_SPECIFIED_COLOR} to reset default (original parameter) color
      *
      * @return color
      */
