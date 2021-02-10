@@ -30,7 +30,7 @@ import javax.annotation.Nullable;
  */
 public class ReorderTextHandler {
 
-    private final MutableString dynamic = new MutableString();
+    private final MutableString buffer = new MutableString();
 
     @Nullable
     private Style last;
@@ -43,18 +43,18 @@ public class ReorderTextHandler {
         @Override
         public boolean accept(int index, @Nonnull Style style, int codePoint) {
             if (style != last) {
-                if (!dynamic.isEmpty() && last != null) {
-                    if (action.handle(dynamic, last)) {
-                        dynamic.clear();
+                if (!buffer.isEmpty() && last != null) {
+                    if (action.handle(buffer, last)) {
+                        buffer.clear();
                         last = style;
                         // stop
                         return false;
                     }
                 }
-                dynamic.clear();
+                buffer.clear();
                 last = style;
             }
-            dynamic.addCodePoint(codePoint);
+            buffer.addCodePoint(codePoint);
             // continue
             return true;
         }
@@ -74,14 +74,14 @@ public class ReorderTextHandler {
     }
 
     private boolean finish() {
-        if (!dynamic.isEmpty() && last != null) {
-            if (action.handle(dynamic, last)) {
-                dynamic.clear();
+        if (!buffer.isEmpty() && last != null) {
+            if (action.handle(buffer, last)) {
+                buffer.clear();
                 last = null;
                 return false;
             }
         }
-        dynamic.clear();
+        buffer.clear();
         last = null;
         return true;
     }

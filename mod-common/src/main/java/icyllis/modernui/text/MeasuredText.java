@@ -24,6 +24,9 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Holds the result of text shaping and layout of the single paragraph.
+ */
 public class MeasuredText {
 
     @Nonnull
@@ -32,7 +35,7 @@ public class MeasuredText {
     protected final List<Run> mRuns;
     protected float[] mAdvances;
 
-    public MeasuredText(@Nonnull char[] textBuf, @Nonnull List<Run> runs) {
+    private MeasuredText(@Nonnull char[] textBuf, @Nonnull List<Run> runs) {
         mTextBuf = textBuf;
         mRuns = runs;
     }
@@ -63,9 +66,21 @@ public class MeasuredText {
             mCurrentOffset = end;
             return this;
         }
+
+        /**
+         * Starts text laying-out and creates a MeasuredText.
+         * <p>
+         * Once you called this method, you can't touch this Builder again.
+         *
+         * @return text measurement result
+         */
+        public MeasuredText build() {
+            Preconditions.checkState(mCurrentOffset == mText.length, "Style info has not been provided for all text.");
+            return new MeasuredText(mText, mRuns);
+        }
     }
 
-    // logical run, sub-run of bidi run
+    // logical run, child of bidi run
     public static class Run {
 
         protected int mStart;

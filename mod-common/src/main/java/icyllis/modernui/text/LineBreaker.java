@@ -239,7 +239,8 @@ public class LineBreaker {
     }
 
     private int getPrevLineBreakOffset() {
-        return mBreakPoints.isEmpty() ? 0 : mBreakPoints.get(mBreakPoints.size() - 1).mOffset;
+        return mBreakPoints.isEmpty() ? 0 :
+                mBreakPoints.get(mBreakPoints.size() - 1).mCpxOffset & BreakPoint.OFFSET_MASK;
     }
 
     @Nonnull
@@ -252,12 +253,13 @@ public class LineBreaker {
         private static final int OFFSET_MASK = 0x7fffffff;
         private static final int HAS_TAB_MASK = 0x80000000;
 
-        private final int mOffset;
+        private final int mCpxOffset;
         private final float mLineWidth;
 
         public BreakPoint(int offset, float lineWidth, boolean hasTabChar) {
-            if (hasTabChar) offset |= HAS_TAB_MASK;
-            mOffset = offset;
+            if (hasTabChar)
+                offset |= HAS_TAB_MASK;
+            mCpxOffset = offset;
             mLineWidth = lineWidth;
         }
     }

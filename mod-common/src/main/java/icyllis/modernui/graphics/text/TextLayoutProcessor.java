@@ -1064,7 +1064,7 @@ public class TextLayoutProcessor {
 
         int color = codes.get(codeIndex).getColor();
         /* The default is no color */
-        if (color != FormattingStyle.NO_COLOR) {
+        if (color != FormattingStyle.NO_SPECIFIED_COLOR) {
             glyphs.get(0).color = color;
         }
 

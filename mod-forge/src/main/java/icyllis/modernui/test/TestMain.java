@@ -40,27 +40,27 @@ public class TestMain {
         Parser parser = Parser.builder().build();
         Document document = parser.parse("Advanced Page\r\n---\r\nMy **One** Line\r\n> My Two");
         iterateNode(document, 0);
-        RuleBasedNumberFormat numberFormat = new RuleBasedNumberFormat(Locale.JAPAN, RuleBasedNumberFormat.SPELLOUT);
-        String formatted = numberFormat.format(18500);
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < formatted.length(); i++) {
-            builder.append("\\u");
-            builder.append(Integer.toString(((int) formatted.charAt(i)) | 0x10000, 16).substring(1));
-        }
-        ModernUI.LOGGER.info(MARKER, builder.toString());
-        ModernUI.LOGGER.info(MARKER, formatted);
         GraphemeBreak.sUseICU = true;
         String bengaliHello = "\u09b9\u09cd\u09af\u09be\u09b2\u09cb"; // two graphemes, first four chars and last two chars
         ModernUI.LOGGER.info(MARKER, GraphemeBreak.getTextRunCursor(bengaliHello,
                 3, bengaliHello.length(), bengaliHello.length(), GraphemeBreak.BEFORE)); // output 4, correct
-        BreakIterator iterator = BreakIterator.getLineInstance();
-        String s = "Hello everyone, this is direwolf20";
+        BreakIterator iterator = BreakIterator.getWordInstance();
+        String s = "اسمي فان";
         iterator.setText(s);
         int start = iterator.first();
         for (int end = iterator.next(); end != BreakIterator.DONE; start = end, end = iterator.next()) {
-            ModernUI.LOGGER.info(MARKER, s.substring(start, end));
+            toU(s.substring(start, end));
         }
         ModernUI.LOGGER.info(MARKER, ULocale.forLocale(new Locale("fa", "ir")).isRightToLeft());
+    }
+
+    public static void toU(String t) {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < t.length(); i++) {
+            builder.append("\\u");
+            builder.append(Integer.toString(((int) t.charAt(i)) | 0x10000, 16).substring(1));
+        }
+        ModernUI.LOGGER.info(MARKER, builder.toString());
     }
 
     /*

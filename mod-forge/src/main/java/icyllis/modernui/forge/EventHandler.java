@@ -28,6 +28,7 @@ import icyllis.modernui.test.TestUI;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.client.ProgressOption;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.VideoSettingsScreen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.model.BakedModel;
@@ -45,6 +46,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -114,6 +116,8 @@ final class EventHandler {
     static class Client {
 
         static ProgressOption NEW_GUI_SCALE;
+        @Nullable
+        private static Screen sCapturedVideoSettingsScreen;
 
         @SubscribeEvent
         static void onPlayerLogin(@Nonnull ClientPlayerNetworkEvent.LoggedInEvent event) {
@@ -132,7 +136,7 @@ final class EventHandler {
             // TipTheScales is not good, and it also not compatible with OptiFine
             if (ModernUIForge.interceptTipTheScales) {
                 if (event.getGui() instanceof VideoSettingsScreen) {
-                    event.setCanceled(true);
+                    sCapturedVideoSettingsScreen = event.getGui();
                 }
             }
         }
@@ -140,6 +144,11 @@ final class EventHandler {
         @SubscribeEvent(priority = EventPriority.LOW)
         static void onGuiOpenL(@Nonnull GuiOpenEvent event) {
             BlurHandler.INSTANCE.count(event.getGui());
+            // This event should not be cancelled
+            if (sCapturedVideoSettingsScreen != null) {
+                event.setGui(sCapturedVideoSettingsScreen);
+                sCapturedVideoSettingsScreen = null;
+            }
         }
 
         @SubscribeEvent
