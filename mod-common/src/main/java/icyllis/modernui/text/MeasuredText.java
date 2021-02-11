@@ -68,36 +68,38 @@ public class MeasuredText {
         }
 
         /**
-         * Starts text laying-out and creates a MeasuredText.
+         * Starts laying-out the text and creates a MeasuredText for the result.
          * <p>
          * Once you called this method, you can't touch this Builder again.
          *
          * @return text measurement result
          */
         public MeasuredText build() {
+            Preconditions.checkState(mCurrentOffset >= 0, "Builder can not be reused.");
             Preconditions.checkState(mCurrentOffset == mText.length, "Style info has not been provided for all text.");
+            mCurrentOffset = -1;
             return new MeasuredText(mText, mRuns);
         }
     }
 
     // logical run, child of bidi run
-    public static class Run {
+    public static abstract class Run {
 
-        protected int mStart;
-        protected int mEnd;
+        // piece range in context
+        public final int mStart;
+        public final int mEnd;
 
         public Run(int start, int end) {
             mStart = start;
             mEnd = end;
         }
 
-        public boolean canBreak() {
-            return false;
-        }
+        public abstract boolean canBreak();
     }
 
     public static class StyleRun extends Run {
 
+        //TODO a copy of paint
         public final TextPaint mPaint;
         public final boolean mIsRtl;
 

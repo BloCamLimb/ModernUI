@@ -44,8 +44,8 @@ public class TestMain {
         String bengaliHello = "\u09b9\u09cd\u09af\u09be\u09b2\u09cb"; // two graphemes, first four chars and last two chars
         ModernUI.LOGGER.info(MARKER, GraphemeBreak.getTextRunCursor(bengaliHello,
                 3, bengaliHello.length(), bengaliHello.length(), GraphemeBreak.BEFORE)); // output 4, correct
-        BreakIterator iterator = BreakIterator.getWordInstance();
-        String s = "اسمي فان";
+        BreakIterator iterator = BreakIterator.getLineInstance();
+        String s = "My na\u0009me is van";
         iterator.setText(s);
         int start = iterator.first();
         for (int end = iterator.next(); end != BreakIterator.DONE; start = end, end = iterator.next()) {

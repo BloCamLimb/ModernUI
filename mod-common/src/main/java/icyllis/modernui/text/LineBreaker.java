@@ -39,6 +39,7 @@ import com.ibm.icu.text.BreakIterator;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
@@ -115,7 +116,6 @@ public class LineBreaker {
     private float mLineWidth = 0;
     private float mCharsAdvance = 0;
     private float mLineWidthLimit;
-    private boolean mHasTabChar = false;
 
     private int mPrevBoundaryOffset = NOWHERE;
     private float mLineWidthAtPrevBoundary = 0;
@@ -213,7 +213,7 @@ public class LineBreaker {
 
     // Add a break point
     private void breakLineAt(int offset, float lineWidth, float remainingNextLineWidth, float remainingNextCharsAdvance) {
-        mBreakPoints.add(new BreakPoint(offset, lineWidth, mHasTabChar));
+        mBreakPoints.add(new BreakPoint(offset, lineWidth));
 
         mLineWidthLimit = mLineWidthLimits.getAt(++mLineNum);
         mLineWidth = remainingNextLineWidth;
@@ -221,7 +221,6 @@ public class LineBreaker {
         mPrevBoundaryOffset = NOWHERE;
         mLineWidthAtPrevBoundary = 0;
         mCharsAdvanceAtPrevBoundary = 0;
-        mHasTabChar = false;
     }
 
     private void updateLineWidth(char c, float adv) {
@@ -229,7 +228,6 @@ public class LineBreaker {
         if (c == '\u0009') {
             mCharsAdvance = mTabStops.nextTab(mCharsAdvance);
             mLineWidth = mCharsAdvance;
-            mHasTabChar = true;
         } else {
             mCharsAdvance += adv;
             if (!isLineEndSpace(c)) {
@@ -239,27 +237,32 @@ public class LineBreaker {
     }
 
     private int getPrevLineBreakOffset() {
-        return mBreakPoints.isEmpty() ? 0 :
-                mBreakPoints.get(mBreakPoints.size() - 1).mCpxOffset & BreakPoint.OFFSET_MASK;
+        return mBreakPoints.isEmpty() ? 0 : mBreakPoints.get(mBreakPoints.size() - 1).mOffset;
     }
 
     @Nonnull
     private Result getResult() {
-        return new Result();
+        int prevBreakOffset = 0;
+        for (BreakPoint breakPoint : mBreakPoints) {
+            for (int i = prevBreakOffset; i < breakPoint.mOffset; i++)
+                if (mTextBuf[i] == '\u0009') {
+                    breakPoint.mHasTabChar = true;
+                    break;
+                }
+            prevBreakOffset = breakPoint.mOffset;
+        }
+        return new Result(mBreakPoints);
     }
 
-    private static class BreakPoint {
+    // 24 bytes (with compressed oops)
+    private static final class BreakPoint {
 
-        private static final int OFFSET_MASK = 0x7fffffff;
-        private static final int HAS_TAB_MASK = 0x80000000;
-
-        private final int mCpxOffset;
+        private final int mOffset;
         private final float mLineWidth;
+        private boolean mHasTabChar = false;
 
-        public BreakPoint(int offset, float lineWidth, boolean hasTabChar) {
-            if (hasTabChar)
-                offset |= HAS_TAB_MASK;
-            mCpxOffset = offset;
+        public BreakPoint(int offset, float lineWidth) {
+            mOffset = offset;
             mLineWidth = lineWidth;
         }
     }
@@ -374,7 +377,7 @@ public class LineBreaker {
         }
     }
 
-    public static class DefaultLineWidth implements LineWidth {
+    private static class DefaultLineWidth implements LineWidth {
 
         // for the first line
         private final float mFirstWidth;
@@ -420,7 +423,7 @@ public class LineBreaker {
         }
     }
 
-    public static class TabStops {
+    private static class TabStops {
 
         @Nullable
         private final float[] mStops;
@@ -443,5 +446,14 @@ public class LineBreaker {
 
     public static class Result {
 
+        private final List<BreakPoint> mBreakPoints;
+
+        private Result() {
+            mBreakPoints = Collections.emptyList();
+        }
+
+        private Result(List<BreakPoint> breakPoints) {
+            mBreakPoints = breakPoints;
+        }
     }
 }
