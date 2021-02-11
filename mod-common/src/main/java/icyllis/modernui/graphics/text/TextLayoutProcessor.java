@@ -906,10 +906,9 @@ public class TextLayoutProcessor {
             final float factor = glyphManager.getResolutionFactor();
 
             for (int i = 0; i < num; i++) {
-                /*if (vector.getGlyphMetrics(i).getAdvanceX() == 0) {
-                    continue;
-                }*/
-                /* Exclude some auxiliary characters (e.g in Hindi), but include space or Thai */
+                /* back compatibility for Java 8, since LayoutGlyphVector should not have non-standard glyphs
+                 * HarfBuzz is introduced in Java 11 or higher
+                 */
                 if (vector.getGlyphMetrics(i).getAdvanceX() == 0 &&
                         vector.getGlyphMetrics(i).getBounds2D().getWidth() == 0) {
                     continue;

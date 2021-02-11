@@ -23,7 +23,6 @@ import com.mojang.math.Matrix4f;
 import icyllis.modernui.graphics.RenderCore;
 import icyllis.modernui.graphics.font.pipeline.TextRenderNode;
 import icyllis.modernui.mcimpl.mixin.AccessFontRenderer;
-import icyllis.modernui.mcimpl.mixin.AccessStringSplitter;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.StringSplitter;
@@ -80,7 +79,8 @@ public class ModernFontRenderer extends Font {
             ModernFontRenderer i = new ModernFontRenderer(fonts);
             StringSplitter o = i.getSplitter();
             @Deprecated
-            StringSplitter.WidthProvider c = ((AccessStringSplitter) o).getWidthProvider();
+            StringSplitter.WidthProvider c = (codePoint, style) ->
+                    i.fontEngine.lookupVanillaNode(new String(new int[]{codePoint}, 0, 1), style).advance;
             i.modernStringSplitter = new ModernStringSplitter(c);
             i.vanillaStringSplitter = o;
             return instance = i;

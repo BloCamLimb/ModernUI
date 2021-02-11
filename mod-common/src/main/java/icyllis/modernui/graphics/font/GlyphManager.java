@@ -288,19 +288,28 @@ public class GlyphManager {
         return instance;
     }
 
-    private void checkJava() {
+    private static void checkJava() {
         String javaVersion = System.getProperty("java.version");
         if (javaVersion == null) {
             ModernUI.LOGGER.fatal(ModernUI.MARKER, "Java version is missing");
-        } else if (javaVersion.startsWith("1.8")) {
+        } else {
             try {
-                int update = Integer.parseInt(javaVersion.split("_")[1].split("-")[0]);
-                if (update < 201) {
-                    sOldJava = true;
+                int majorNumber = Integer.parseInt(javaVersion.split("\\.")[0]);
+                if (majorNumber < 11) {
                     ModernUI.get().warnSetup("warning.modernui.old_java", "11.0.9", javaVersion);
                 }
             } catch (NumberFormatException | IndexOutOfBoundsException e) {
                 ModernUI.LOGGER.warn(ModernUI.MARKER, "Failed to check java version: {}", javaVersion, e);
+            }
+            if (javaVersion.startsWith("1.8")) {
+                try {
+                    int update = Integer.parseInt(javaVersion.split("_")[1].split("-")[0]);
+                    if (update < 201) {
+                        sOldJava = true;
+                    }
+                } catch (NumberFormatException | IndexOutOfBoundsException e) {
+                    ModernUI.LOGGER.warn(ModernUI.MARKER, "Failed to check java version: {}", javaVersion, e);
+                }
             }
         }
     }

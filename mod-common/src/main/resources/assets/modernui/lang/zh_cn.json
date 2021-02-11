@@ -50,6 +50,6 @@
   "message.modernui.server_shutdown_sec": "服务器将在 %s 秒内关闭",
   "message.modernui.server_shutdown_min": "服务器将在 %s 分钟内关闭",
 
-  "warning.modernui.old_java": "Modern UI: 推荐 Java {2} 或更高的版本, 当前为 Java {3}, 最好升级到较新版本的Java并选择它启动游戏, 否则你不能使用外置字体, 也不一定会得到正确的文字布局",
+  "warning.modernui.old_java": "Modern UI: 推荐 Java {2} 或更高的版本, 当前为 Java {3}, 请升级到较新版本的Java并选择它启动游戏, 否则你不能使用外置字体, 也不一定会得到正确的文字布局",
   "warning.modernui.old_opengl": "Modern UI: OpenGL版本过旧, 需要 OpenGL {2} 或更高的版本, 当前为 OpenGL {3}, 请升级你的显卡驱动, 较新的macOS系统可能不支持"
 }
