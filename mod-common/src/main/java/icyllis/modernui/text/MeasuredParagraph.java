@@ -188,7 +188,7 @@ public class MeasuredParagraph {
                 // The span interval may be larger and must be restricted to [start, end)
                 if (startInPara < 0) startInPara = 0;
                 if (endInPara > mTextLength) endInPara = mTextLength;
-                Arrays.fill(mCopiedBuffer, startInPara, endInPara, '\ufffc');
+                Arrays.fill(mCopiedBuffer, startInPara, endInPara, '\uFFFC');
             }
         }
 

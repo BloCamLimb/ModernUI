@@ -16,17 +16,20 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.text;
+package icyllis.modernui.graphics.font;
 
 import com.ibm.icu.impl.UCharacterProperty;
 import com.ibm.icu.lang.UCharacter;
 import com.ibm.icu.lang.UCharacterCategory;
+
+import java.awt.*;
 
 /**
  * Find the best matching fonts for a text, split it to font runs
  */
 public class FontCollection {
 
+    // 0b0000 0000 0000 0000 0000 0001 1100 0000
     public static final int GC_M_MASK =
             UCharacterProperty.getMask(UCharacterCategory.COMBINING_SPACING_MARK) |
             UCharacterProperty.getMask(UCharacterCategory.ENCLOSING_MARK) |
@@ -53,5 +56,11 @@ public class FontCollection {
 
     public static boolean isVariationSelector(int c) {
         return (c >= 0xE0100 && c <= 0xE01FF) || (c >= 0xFE00 && c <= 0xFE0F);
+    }
+
+    private final Font[] mFonts;
+
+    FontCollection(Font[] fonts) {
+        mFonts = fonts;
     }
 }

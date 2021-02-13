@@ -18,22 +18,13 @@
 
 package icyllis.modernui.text;
 
-import icyllis.modernui.resources.LocaleChangeListener;
-
 import javax.annotation.Nonnull;
 import java.lang.reflect.Array;
-import java.util.Locale;
 
-public final class TextUtils implements LocaleChangeListener {
+public final class TextUtils {
 
     private static final Object sLock = new Object();
     private static char[] sTemp = null;
-
-    @Deprecated
-    @Override
-    public void onLocaleChanged(Locale locale) {
-        GraphemeBreak.setLocale(locale);
-    }
 
     @Nonnull
     static char[] obtain(int len) {

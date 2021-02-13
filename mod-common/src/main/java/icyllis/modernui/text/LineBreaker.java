@@ -88,7 +88,7 @@ public class LineBreaker {
     // It is the Unicode set: [[:General_Category=Space_Separator:]-[:Line_Break=Glue:]], plus '\n'.
     // Note: all such characters are in the BMP, so it's ok to use code units for this.
     public static boolean isLineEndSpace(char c) {
-        return c == '\n' || c == ' '                           // SPACE
+        return c == '\n' || c == ' '                            // SPACE
                 || c == 0x1680                                  // OGHAM SPACE MARK
                 || (0x2000 <= c && c <= 0x200A && c != 0x2007)  // EN QUAD, EM QUAD, EN SPACE, EM SPACE,
                 // THREE-PER-EM SPACE, FOUR-PER-EM SPACE,
