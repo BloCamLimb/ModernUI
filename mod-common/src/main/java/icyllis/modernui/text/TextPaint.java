@@ -18,10 +18,17 @@
 
 package icyllis.modernui.text;
 
+import icyllis.modernui.ModernUI;
+
+import javax.annotation.Nonnull;
+import java.util.Locale;
+
 /**
  * This class holds data used during text measuring and drawing.
  */
 public class TextPaint {
+
+    private Locale mLocale;
 
     public TextPaint() {
     }
@@ -31,5 +38,30 @@ public class TextPaint {
      */
     public void set(TextPaint paint) {
 
+    }
+
+    /**
+     * Set the text locale.
+     * <p>
+     * A Locale may affect word break, line break, grapheme cluster break, etc.
+     * The locale should match the language of the text to be drawn or user preference,
+     * by default, the selected locale should be used {@link ModernUI#getSelectedLocale()}.
+     *
+     * @param locale the paint's locale value for drawing text, must not be null.
+     */
+    public void setTextLocale(@Nonnull Locale locale) {
+        if (!locale.equals(mLocale)) {
+            mLocale = locale;
+        }
+    }
+
+    /**
+     * Get the text's Locale.
+     *
+     * @return the paint's Locale used for measuring and drawing text, never null.
+     */
+    @Nonnull
+    public Locale getTextLocale() {
+        return mLocale;
     }
 }

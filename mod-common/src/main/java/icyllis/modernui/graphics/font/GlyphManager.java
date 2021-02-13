@@ -52,10 +52,8 @@ import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -88,11 +86,6 @@ public class GlyphManager {
      * This should match your GUI scale. Scale -> Level: [1,2] -> 1; [3,4] -> 2; [5,) -> 3
      */
     public static int sResolutionLevel;
-
-    /**
-     * Determined in mod loading stage
-     */
-    private static boolean sOldJava;
 
     /**
      * The width in pixels of every texture used for caching pre-rendered glyph images. Used by GlyphCache when calculating
@@ -190,11 +183,6 @@ public class GlyphManager {
     private final IntBuffer textureGenBuffer = BufferUtils.createIntBuffer(1);
 
     /**
-     * List of all available physical fonts on the system. Used by lookupFont() to find alternate fonts.
-     */
-    private final List<Font> allFonts;
-
-    /**
      * A list of all fonts that have been returned so far by lookupFont(), and that will always be searched first for a usable font before
      * searching through allFonts[]. This list will only have plain variation of a font at a dummy point size, unlike fontCache which could
      * have multiple entries for the various styles (i.e. bold, italic, etc.) of a font.
@@ -261,7 +249,6 @@ public class GlyphManager {
      */
     public GlyphManager() {
         instance = this;
-        checkJava();
         /* Set background color for use with clearRect() */
         glyphTextureGraphics.setBackground(BG_COLOR);
 
@@ -270,12 +257,6 @@ public class GlyphManager {
 
         allocateGlyphTexture();
         //allocateStringImage(STRING_WIDTH, STRING_HEIGHT);
-
-        GraphicsEnvironment environment = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        /* Use Java's logical font as the default initial font if user does not override it in some configuration file */
-        environment.preferLocaleFonts();
-
-        allFonts = Arrays.asList(environment.getAllFonts());
 
         loadPreferredFonts();
 
@@ -286,32 +267,6 @@ public class GlyphManager {
     public static GlyphManager getInstance() {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
         return instance;
-    }
-
-    private static void checkJava() {
-        String javaVersion = System.getProperty("java.version");
-        if (javaVersion == null) {
-            ModernUI.LOGGER.fatal(ModernUI.MARKER, "Java version is missing");
-        } else {
-            try {
-                int majorNumber = Integer.parseInt(javaVersion.split("\\.")[0]);
-                if (majorNumber < 11) {
-                    ModernUI.get().warnSetup("warning.modernui.old_java", "11.0.9", javaVersion);
-                }
-            } catch (NumberFormatException | IndexOutOfBoundsException e) {
-                ModernUI.LOGGER.warn(ModernUI.MARKER, "Failed to check java version: {}", javaVersion, e);
-            }
-            if (javaVersion.startsWith("1.8")) {
-                try {
-                    int update = Integer.parseInt(javaVersion.split("_")[1].split("-")[0]);
-                    if (update < 201) {
-                        sOldJava = true;
-                    }
-                } catch (NumberFormatException | IndexOutOfBoundsException e) {
-                    ModernUI.LOGGER.warn(ModernUI.MARKER, "Failed to check java version: {}", javaVersion, e);
-                }
-            }
-        }
     }
 
     /**
@@ -337,61 +292,53 @@ public class GlyphManager {
 
     private void loadPreferredFonts() {
         if (!sPreferredFont.isEmpty()) {
-            String typeface = sPreferredFont;
-            if (typeface.endsWith(".ttf") || typeface.endsWith(".otf")
-                    || typeface.endsWith(".TTF") || typeface.endsWith(".OTF")) {
-                if (typeface.contains(":/") || typeface.contains(":\\")) {
-                    if (!sOldJava) {
+            String cfgFont = sPreferredFont;
+            if (cfgFont.endsWith(".ttf") || cfgFont.endsWith(".otf")
+                    || cfgFont.endsWith(".TTF") || cfgFont.endsWith(".OTF")) {
+                if (cfgFont.contains(":/") || cfgFont.contains(":\\")) {
+                    if (!Typeface.sJavaTooOld) {
                         try {
                             Font f = Font.createFont(Font.TRUETYPE_FONT, new File(
-                                    typeface.replaceAll("\\\\", "/")));
+                                    cfgFont.replaceAll("\\\\", "/")));
                             selectedFonts.add(f);
                             ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", f.getName());
                         } catch (FontFormatException | IOException e) {
-                            ModernUI.LOGGER.warn(MARKER, "Preferred font {} failed to load", typeface, e);
+                            ModernUI.LOGGER.warn(MARKER, "Preferred font {} failed to load", cfgFont, e);
                         }
                     } else {
-                        ModernUI.LOGGER.warn(MARKER, "Cannot load external font {} since Java is too old", typeface);
+                        ModernUI.LOGGER.warn(MARKER, "Cannot load external font {} since Java is too old", cfgFont);
                     }
-                } else if (typeface.contains(":")) {
-                    if (!sOldJava) {
+                } else if (cfgFont.contains(":")) {
+                    if (!Typeface.sJavaTooOld) {
                         try (Resource resource = Minecraft.getInstance().getResourceManager()
-                                .getResource(new ResourceLocation(typeface))) {
+                                .getResource(new ResourceLocation(cfgFont))) {
                             Font f = Font.createFont(Font.TRUETYPE_FONT, resource.getInputStream());
                             selectedFonts.add(f);
                             ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", f.getName());
                         } catch (FontFormatException | IOException e) {
-                            ModernUI.LOGGER.warn(MARKER, "Preferred font {} failed to load", typeface, e);
+                            ModernUI.LOGGER.warn(MARKER, "Preferred font {} failed to load", cfgFont, e);
                         }
                     } else {
-                        ModernUI.LOGGER.warn(MARKER, "Cannot load resource pack font {} since Java is too old", typeface);
+                        ModernUI.LOGGER.warn(MARKER, "Cannot load resource pack font {} since Java is too old", cfgFont);
                     }
                 } else {
-                    ModernUI.LOGGER.warn(MARKER, "Preferred font {} is invalid", typeface);
+                    ModernUI.LOGGER.warn(MARKER, "Preferred font {} is invalid", cfgFont);
                 }
             } else {
-                Optional<Font> font = allFonts.stream().filter(f -> f.getFamily(Locale.ROOT).equals(typeface)).findFirst();
+                Optional<Font> font = Typeface.sAllFontFamilies.stream().filter(f -> f.getFamily(Locale.ROOT).equals(cfgFont)).findFirst();
                 if (font.isPresent()) {
-                    selectedFonts.add(new Font(typeface, Font.PLAIN, 12));
-                    ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", typeface);
+                    selectedFonts.add(new Font(cfgFont, Font.PLAIN, 12));
+                    ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", cfgFont);
                 } else {
-                    ModernUI.LOGGER.warn(MARKER, "Preferred font {} cannot found or invalid", typeface);
+                    ModernUI.LOGGER.warn(MARKER, "Preferred font {} cannot found or invalid", cfgFont);
                 }
             }
         }
 
-        if (!sOldJava) {
-            try (InputStream stream = getClass().getResourceAsStream("/assets/modernui/font/biliw.otf")) {
-                Font f = Font.createFont(Font.TRUETYPE_FONT, stream);
-                selectedFonts.add(f);
-            } catch (FontFormatException | IOException e) {
-                ModernUI.LOGGER.warn(MARKER, "Built-in font failed to load", e);
-            } catch (NullPointerException e) {
-                ModernUI.LOGGER.warn(MARKER, "Built-in font was missing", e);
-            }
+        if (Typeface.sBuiltInFont != null) {
+            selectedFonts.add(Typeface.sBuiltInFont);
         }
-        // May be Arial, depends on the OS
-        selectedFonts.add(new Font(Font.SANS_SERIF, Font.PLAIN, 72)); // size 1 > 72
+        selectedFonts.add(Typeface.sSansSerifFont);
     }
 
     /**
@@ -426,7 +373,7 @@ public class GlyphManager {
         }
 
         /* If still not found, try searching through all fonts installed on the system for the first that can layout this string */
-        for (Font font : allFonts) {
+        for (Font font : Typeface.sAllFontFamilies) {
             /* Only use the font if it can layout at least the first character of the requested string range */
             if (font.canDisplay(codePoint)) {
                 /* If found, add this font to the selectedFonts list so it can be looked up faster next time */
@@ -500,7 +447,7 @@ public class GlyphManager {
         }
 
         /* If still not found, try searching through all fonts installed on the system for the first that can layout this string */
-        for (Font font : allFonts) {
+        for (Font font : Typeface.sAllFontFamilies) {
             /* Only use the font if it can layout at least the first character of the requested string range */
             if (font.canDisplay(codePoint)) {
                 /* If found, add this font to the selectedFonts list so it can be looked up faster next time */

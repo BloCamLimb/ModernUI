@@ -19,8 +19,6 @@
 package icyllis.modernui.test;
 
 import com.ibm.icu.text.BreakIterator;
-import com.ibm.icu.text.RuleBasedNumberFormat;
-import com.ibm.icu.util.ULocale;
 import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.ast.Node;
@@ -28,40 +26,26 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.text.GraphemeBreak;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import sun.font.FontAccess;
 
 import javax.annotation.Nonnull;
+import java.awt.*;
+import java.awt.font.GlyphVector;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 
 public class TestMain {
 
     public static final Marker MARKER = MarkerManager.getMarker("Test");
 
-    public static void main(String[] args) {
-        Parser parser = Parser.builder().build();
-        Document document = parser.parse("Advanced Page\r\n---\r\nMy **One** Line\r\n> My Two");
-        iterateNode(document, 0);
-        GraphemeBreak.sUseICU = true;
-        String bengaliHello = "\u09b9\u09cd\u09af\u09be\u09b2\u09cb"; // two graphemes, first four chars and last two chars
-        ModernUI.LOGGER.info(MARKER, GraphemeBreak.getTextRunCursor(bengaliHello,
-                3, bengaliHello.length(), bengaliHello.length(), GraphemeBreak.BEFORE)); // output 4, correct
-        BreakIterator iterator = BreakIterator.getLineInstance();
-        String s = "My na\u0009me is van";
-        iterator.setText(s);
-        int start = iterator.first();
-        for (int end = iterator.next(); end != BreakIterator.DONE; start = end, end = iterator.next()) {
-            toU(s.substring(start, end));
-        }
-        ModernUI.LOGGER.info(MARKER, ULocale.forLocale(new Locale("fa", "ir")).isRightToLeft());
-    }
+    private static final List<Font> ALL_FONTS;
 
-    public static void toU(String t) {
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < t.length(); i++) {
-            builder.append("\\u");
-            builder.append(Integer.toString(((int) t.charAt(i)) | 0x10000, 16).substring(1));
-        }
-        ModernUI.LOGGER.info(MARKER, builder.toString());
-    }
+    private static final BufferedImage IMAGE = new BufferedImage(1024, 1024, BufferedImage.TYPE_INT_ARGB);
+    private static final Graphics2D GRAPHICS = IMAGE.createGraphics();
 
     /*
         Heading font size
@@ -72,6 +56,80 @@ public class TestMain {
         level 5: 14 (default size for paragraph)
         level 6: 14 (lighter color)
      */
+
+    static {
+        GraphicsEnvironment.getLocalGraphicsEnvironment().preferLocaleFonts();
+        ALL_FONTS = Arrays.asList(GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts());
+        GRAPHICS.setColor(Color.BLACK);
+        GRAPHICS.fillRect(0, 0, 1024, 1024);
+        GRAPHICS.setColor(Color.WHITE);
+        GRAPHICS.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        GRAPHICS.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+        GRAPHICS.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+    }
+
+    public static void main(String[] args) {
+        String s = "\u0641\u0647\u0648\u064a\u062a\u062d\u062f\u0651\u062b\u0020\u0628\u0644\u063a\u0629\u0020";
+        Font font = ALL_FONTS.stream().filter(f -> f.canDisplayUpTo("\u0641\u0647\u0648") == -1).findFirst().get();
+        GlyphVector vector = font.layoutGlyphVector(GRAPHICS.getFontRenderContext(),
+                s.toCharArray(), 0, s.length(), Font.LAYOUT_RIGHT_TO_LEFT);
+        ModernUI.LOGGER.info(MARKER, "GlyphNum: {}", vector.getNumGlyphs());
+        for (int i = 0; i < vector.getNumGlyphs(); i++) {
+            ModernUI.LOGGER.info(MARKER, "GlyphCode: {}", vector.getGlyphCode(i));
+        }
+        breakWords(s);
+        breakGraphemes(s);
+    }
+
+    public static void breakGraphemes(String s) {
+        GraphemeBreak.sUseICU = true;
+        int offset = 0;
+        int prevOffset = 0;
+        Font font = ALL_FONTS.stream().filter(f -> f.canDisplayUpTo("\u0641\u0647\u0648") == -1).findFirst().get();
+        while ((offset = GraphemeBreak.getTextRunCursor(s, Locale.getDefault(), 0, s.length(), offset, GraphemeBreak.AFTER)) != prevOffset) {
+            toEscapeChars(s.substring(prevOffset, offset));
+            GlyphVector vector = font.layoutGlyphVector(GRAPHICS.getFontRenderContext(),
+                    s.toCharArray(), prevOffset, offset, Font.LAYOUT_RIGHT_TO_LEFT);
+            for (int i = 0; i < vector.getNumGlyphs(); i++) {
+                ModernUI.LOGGER.info(MARKER, "GlyphCode: {}", vector.getGlyphCode(i));
+            }
+            prevOffset = offset;
+        }
+    }
+
+    public static void breakWords(String s) {
+        int count = 0;
+        BreakIterator iterator = BreakIterator.getWordInstance(Locale.ROOT);
+        iterator.setText(s);
+        int start = iterator.first();
+        for (int end = iterator.next(); end != BreakIterator.DONE; start = end, end = iterator.next()) {
+            toEscapeChars(s.substring(start, end));
+            count++;
+        }
+        ModernUI.LOGGER.info(MARKER, "Word break count: {}", count);
+    }
+
+    public static void toEscapeChars(String t) {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < t.length(); i++) {
+            builder.append("\\u");
+            builder.append(Integer.toString(((int) t.charAt(i)) | 0x10000, 16).substring(1));
+        }
+        ModernUI.LOGGER.info(MARKER, builder.toString());
+    }
+
+    public static void testGraphemeBreak() {
+        GraphemeBreak.sUseICU = true;
+        String bengaliHello = "\u09b9\u09cd\u09af\u09be\u09b2\u09cb"; // two graphemes, first four chars and last two chars
+        ModernUI.LOGGER.info(MARKER, GraphemeBreak.getTextRunCursor(bengaliHello, Locale.getDefault(),
+                3, bengaliHello.length(), bengaliHello.length(), GraphemeBreak.BEFORE)); // output 4, correct
+    }
+
+    public static void testMarkdownParsing() {
+        Parser parser = Parser.builder().build();
+        Document document = parser.parse("Advanced Page\r\n---\r\nMy **One** Line\r\n> My Two");
+        iterateNode(document, 0);
+    }
 
     private static void iterateNode(@Nonnull Node node, int depth) {
         StringBuilder sb = new StringBuilder();

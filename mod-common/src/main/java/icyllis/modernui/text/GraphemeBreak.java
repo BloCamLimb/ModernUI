@@ -91,15 +91,9 @@ public final class GraphemeBreak {
     /**
      * Config value, true to use ICU GCB, otherwise this
      */
-    public static boolean sUseICU;
-
-    private static BreakIterator sBreaker = BreakIterator.getCharacterInstance();
+    public static boolean sUseICU = true;
 
     private GraphemeBreak() {
-    }
-
-    static void setLocale(Locale locale) {
-        sBreaker = BreakIterator.getCharacterInstance(locale);
     }
 
     /**
@@ -119,13 +113,14 @@ public final class GraphemeBreak {
      * contextStart + contextLength.
      *
      * @param text          the text
+     * @param locale        the text's locale
      * @param contextStart  the start of the context
      * @param contextLength the length of the context
      * @param offset        the cursor position to move from
      * @param op            how to move the cursor
      * @return the offset of the next position or -1
      */
-    public static int getTextRunCursor(@Nonnull char[] text, int contextStart, int contextLength, int offset, int op) {
+    public static int getTextRunCursor(@Nonnull char[] text, @Nonnull Locale locale, int contextStart, int contextLength, int offset, int op) {
         int contextEnd = contextStart + contextLength;
         if (((contextStart | contextEnd | offset | (contextEnd - contextStart)
                 | (offset - contextStart) | (contextEnd - offset)
@@ -133,7 +128,7 @@ public final class GraphemeBreak {
                 || op > AT) {
             throw new IndexOutOfBoundsException();
         }
-        return sUseICU ? getTextRunCursorICU(new CharArrayIterator(text, contextStart, contextEnd), offset, op) :
+        return sUseICU ? getTextRunCursorICU(new CharArrayIterator(text, contextStart, contextEnd), locale, offset, op) :
                 getTextRunCursorImpl(null, text, contextStart, contextLength, offset, op);
     }
 
@@ -155,56 +150,58 @@ public final class GraphemeBreak {
      * contextEnd.
      *
      * @param text         the text
+     * @param locale       the text's locale
      * @param contextStart the start of the context
      * @param contextEnd   the end of the context
      * @param offset       the cursor position to move from
      * @param op           how to move the cursor
      * @return the offset of the next position, or -1
      */
-    public static int getTextRunCursor(@Nonnull CharSequence text, int contextStart, int contextEnd, int offset, int op) {
+    public static int getTextRunCursor(@Nonnull CharSequence text, @Nonnull Locale locale, int contextStart, int contextEnd, int offset, int op) {
         if (text instanceof String || text instanceof SpannedString ||
                 text instanceof SpannableString) {
-            return getTextRunCursor(text.toString(), contextStart, contextEnd,
+            return getTextRunCursor(text.toString(), locale, contextStart, contextEnd,
                     offset, op);
         }
         final int contextLen = contextEnd - contextStart;
         final char[] buf = new char[contextLen];
         TextUtils.getChars(text, contextStart, contextEnd, buf, 0);
-        offset = getTextRunCursor(buf, 0, contextLen, offset - contextStart, op);
+        offset = getTextRunCursor(buf, locale, 0, contextLen, offset - contextStart, op);
         return offset == -1 ? -1 : offset + contextStart;
     }
 
-    public static int getTextRunCursor(@Nonnull String text, int contextStart, int contextEnd, int offset, int op) {
+    public static int getTextRunCursor(@Nonnull String text, @Nonnull Locale locale, int contextStart, int contextEnd, int offset, int op) {
         if (((contextStart | contextEnd | offset | (contextEnd - contextStart)
                 | (offset - contextStart) | (contextEnd - offset)
                 | (text.length() - contextEnd) | op) < 0)
                 || op > AT) {
             throw new IndexOutOfBoundsException();
         }
-        return sUseICU ? getTextRunCursorICU(new StringCharacterIterator(text, contextStart, contextEnd, contextStart), offset, op) :
+        return sUseICU ? getTextRunCursorICU(new StringCharacterIterator(text, contextStart, contextEnd, contextStart), locale, offset, op) :
                 getTextRunCursorImpl(null, text.toCharArray(), contextStart, contextEnd - contextStart, offset, op);
     }
 
-    public static int getTextRunCursorICU(CharacterIterator text, int offset, int op) {
+    public static int getTextRunCursorICU(CharacterIterator text, Locale locale, int offset, int op) {
         final int oof = offset;
-        sBreaker.setText(text);
+        BreakIterator breaker = BreakIterator.getCharacterInstance(locale);
+        breaker.setText(text);
         switch (op) {
             case AFTER:
-                offset = sBreaker.following(offset);
+                offset = breaker.following(offset);
                 break;
             case AT_OR_AFTER:
-                if (!sBreaker.isBoundary(offset))
-                    offset = sBreaker.following(offset);
+                if (!breaker.isBoundary(offset))
+                    offset = breaker.following(offset);
                 break;
             case BEFORE:
-                offset = sBreaker.preceding(offset);
+                offset = breaker.preceding(offset);
                 break;
             case AT_OR_BEFORE:
-                if (!sBreaker.isBoundary(offset))
-                    offset = sBreaker.preceding(offset);
+                if (!breaker.isBoundary(offset))
+                    offset = breaker.preceding(offset);
                 break;
             case AT:
-                if (!sBreaker.isBoundary(offset))
+                if (!breaker.isBoundary(offset))
                     return -1;
                 break;
         }
