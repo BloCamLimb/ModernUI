@@ -19,8 +19,11 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.graphics.font.FontCollection;
+import org.intellij.lang.annotations.MagicConstant;
 
 import javax.annotation.Nonnull;
+import java.awt.*;
 import java.util.Locale;
 
 /**
@@ -28,16 +31,65 @@ import java.util.Locale;
  */
 public class TextPaint {
 
+    /**
+     * Bit flag used with textStyle to request the plain/regular/normal style
+     */
+    public static final int REGULAR = Font.PLAIN;
+
+    /**
+     * Bit flag used with textStyle to request the bold style
+     */
+    public static final byte BOLD = Font.BOLD;
+
+    /**
+     * Bit flag used with textStyle to request the italic style
+     */
+    public static final byte ITALIC = Font.ITALIC;
+
+    private static final byte TEXT_STYLE_MASK = REGULAR | BOLD | ITALIC;
+
+    private FontCollection mFontCollection;
     private Locale mLocale;
+    private int mTextStyle;
 
     public TextPaint() {
+        //TODO replace with current user preference
+        mFontCollection = FontCollection.SANS_SERIF;
+        mLocale = ModernUI.get().getSelectedLocale();
+    }
+
+    private TextPaint(TextPaint t) {
+        set(t);
     }
 
     /**
      * Copy the data from paint into this TextPaint
      */
-    public void set(TextPaint paint) {
+    public void set(@Nonnull TextPaint paint) {
+        mFontCollection = paint.mFontCollection;
+        mLocale = paint.mLocale;
+        mTextStyle = paint.mTextStyle;
+    }
 
+    /**
+     * Creates a copy of current instance. (A shallow clone)
+     */
+    public TextPaint copy() {
+        return new TextPaint(this);
+    }
+
+    /**
+     * Set the font collection object to draw the text.
+     *
+     * @param fontCollection the font collection
+     */
+    public void setFontCollection(@Nonnull FontCollection fontCollection) {
+        mFontCollection = fontCollection;
+    }
+
+    @Nonnull
+    public FontCollection getFontCollection() {
+        return mFontCollection;
     }
 
     /**
@@ -63,5 +115,23 @@ public class TextPaint {
     @Nonnull
     public Locale getTextLocale() {
         return mLocale;
+    }
+
+    /**
+     * Set text's style. Combination of REGULAR, BOLD and ITALIC.
+     *
+     * @param textStyle the style of the font
+     */
+    public void setTextStyle(@MagicConstant(flags = {REGULAR, BOLD, ITALIC}) int textStyle) {
+        mTextStyle = (textStyle & ~TEXT_STYLE_MASK) == 0 ? textStyle : 0;
+    }
+
+    /**
+     * Get the text's style.
+     *
+     * @return the style of the font
+     */
+    public int getTextStyle() {
+        return mTextStyle;
     }
 }

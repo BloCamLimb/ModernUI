@@ -39,7 +39,6 @@ import com.ibm.icu.text.BreakIterator;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
@@ -50,7 +49,7 @@ public class LineBreaker {
 
     private static final int NOWHERE = 0xFFFFFFFF;
 
-    private static BreakIterator sBreaker = BreakIterator.getLineInstance();
+    private static BreakIterator sBreaker = BreakIterator.getLineInstance(Locale.ROOT);
 
     /**
      * Break paragraph into lines.
@@ -63,7 +62,7 @@ public class LineBreaker {
      *                     line, in pixel. This amount is the sum of both left and right
      *                     indentations. For lines past the last element in the array, the
      *                     indentation amount of the last element is used.
-     * @param lineNumber   a line number (offset) of this paragraph
+     * @param lineNumber   a line number (index offset) of this paragraph
      * @return the result of line break
      */
     @Nonnull
@@ -137,10 +136,16 @@ public class LineBreaker {
         BreakIterator breaker = sBreaker;
         breaker.setText(new CharArrayIterator(mTextBuf));
 
-        int nextBoundary = NOWHERE;
+        Locale locale = null;
+        int nextBoundary = 0;
         for (MeasuredText.Run run : mMeasuredText.mRuns) {
-            if (nextBoundary == NOWHERE)
+
+            Locale newLocale = run.getLocale();
+            if (locale != newLocale) {
+                breaker = BreakIterator.getLineInstance(locale);
                 nextBoundary = breaker.following(run.mStart);
+                locale = newLocale;
+            }
 
             for (int i = run.mStart; i < run.mEnd; i++) {
                 updateLineWidth(mTextBuf[i], mMeasuredText.mAdvances[i]);
@@ -150,8 +155,9 @@ public class LineBreaker {
                         processLineBreak(i + 1);
                     }
                     nextBoundary = breaker.next();
-                    if (nextBoundary == BreakIterator.DONE)
-                        nextBoundary = run.mEnd;
+                    if (nextBoundary == BreakIterator.DONE) {
+                        nextBoundary = mTextBuf.length;
+                    }
                 }
             }
         }
@@ -251,7 +257,7 @@ public class LineBreaker {
                 }
             prevBreakOffset = breakPoint.mOffset;
         }
-        return new Result(mBreakPoints);
+        return new Result(mBreakPoints.toArray(new BreakPoint[0]));
     }
 
     // 24 bytes (with compressed oops)
@@ -360,7 +366,7 @@ public class LineBreaker {
         /**
          * Find out the width for the line. This must not return negative values.
          *
-         * @param line the line number
+         * @param line the line index
          * @return the line width in pixels
          */
         default float getAt(int line) {
@@ -444,16 +450,63 @@ public class LineBreaker {
         }
     }
 
+    /**
+     * Holds the result of the line breaking algorithm.
+     *
+     * @see LineBreaker#computeLineBreaks
+     */
     public static class Result {
 
-        private final List<BreakPoint> mBreakPoints;
+        private static final BreakPoint[] EMPTY_ARRAY = {};
+
+        @Nonnull
+        private final BreakPoint[] mBreakPoints;
 
         private Result() {
-            mBreakPoints = Collections.emptyList();
+            mBreakPoints = EMPTY_ARRAY;
         }
 
-        private Result(List<BreakPoint> breakPoints) {
+        private Result(@Nonnull BreakPoint[] breakPoints) {
             mBreakPoints = breakPoints;
+        }
+
+        /**
+         * Returns the number of lines in the paragraph.
+         *
+         * @return number of lines
+         */
+        public int getLineCount() {
+            return mBreakPoints.length;
+        }
+
+        /**
+         * Returns character offset of the break for a given line.
+         *
+         * @param lineIndex an index of the line.
+         * @return the break offset.
+         */
+        public int getLineBreakOffset(int lineIndex) {
+            return mBreakPoints[lineIndex].mOffset;
+        }
+
+        /**
+         * Returns width of a given line in pixels.
+         *
+         * @param lineIndex an index of the line.
+         * @return width of the line in pixels
+         */
+        public float getLineWidth(int lineIndex) {
+            return mBreakPoints[lineIndex].mLineWidth;
+        }
+
+        /**
+         * Returns true if the line has a TAB character.
+         *
+         * @param lineIndex an index of the line.
+         * @return true if the line has a TAB character
+         */
+        public boolean hasLineTab(int lineIndex) {
+            return mBreakPoints[lineIndex].mHasTabChar;
         }
     }
 }

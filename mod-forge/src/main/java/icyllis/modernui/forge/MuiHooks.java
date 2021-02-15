@@ -133,14 +133,16 @@ public final class MuiHooks {
         }
 
         public static int calcGuiScales() {
-            Window window = Minecraft.getInstance().getWindow();
-            return calcGuiScales(window);
+            return calcGuiScales(Minecraft.getInstance().getWindow());
         }
 
         public static int calcGuiScales(@Nonnull Window window) {
+            return calcGuiScales(window.getWidth(), window.getHeight());
+        }
 
-            int w = window.getWidth() / 16;
-            int h = window.getHeight() / 9;
+        public static int calcGuiScales(int framebufferWidth, int framebufferHeight) {
+            int w = framebufferWidth / 16;
+            int h = framebufferHeight / 9;
 
             if ((w & 1) == 1) {
                 w++;
@@ -153,24 +155,25 @@ public final class MuiHooks {
             double high = Math.max(w, h);
 
             int min;
-            int max = Mth.clamp((int) (base / 27), 1, 10);
+            int max = Mth.clamp((int) (base / 26), 1, 6);
             if (max > 1) {
                 int i = (int) (base / 64);
                 int j = (int) (high / 64);
-                min = Mth.clamp(j > i ? i + 1 : i, 2, 10);
+                min = Mth.clamp(j != i ? Math.min(i, j) + 1 : i, 2, 6);
             } else {
                 min = 1;
             }
 
             int best;
             if (min > 1) {
-                int i = (int) (base / 32);
-                int j = (int) (high / 32);
+                double b = base > 150 ? 40 : base > 100 ? 36 : 32;
+                int i = (int) (base / b);
+                int j = (int) (high / b);
                 double v1 = base / (i * 32);
                 if (v1 > 1.25 || j > i) {
                     best = Math.min(max, i + 1);
                 } else {
-                    best = i;
+                    best = Math.min(max, i);
                 }
             } else {
                 best = 1;
