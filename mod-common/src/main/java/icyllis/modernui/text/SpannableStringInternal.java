@@ -250,6 +250,7 @@ abstract class SpannableStringInternal {
         }
     }
 
+    @Nonnull
     @SuppressWarnings({"unchecked", "ConstantConditions"})
     public <T> T[] getSpans(int start, int end, @Nonnull Class<T> type) {
         final int count = mSpanCount;
@@ -257,7 +258,7 @@ abstract class SpannableStringInternal {
         final int[] data = mSpanData;
 
         int found = 0;
-        Object[] tem = null;
+        Object[] temp = null;
         Object first = null;
 
         for (int i = 0; i < count; i++) {
@@ -279,36 +280,36 @@ abstract class SpannableStringInternal {
                 found++;
             } else {
                 if (found == 1) {
-                    tem = (Object[]) Array.newInstance(type, count - i + 1);
-                    tem[0] = first;
+                    temp = (Object[]) Array.newInstance(type, count - i + 1);
+                    temp[0] = first;
                 }
                 final int priority = data[i * COLUMNS + FLAGS] & Spanned.SPAN_PRIORITY;
                 if (priority != 0) {
                     int j = 0;
                     for (; j < found; j++)
-                        if (priority > (getSpanFlags(tem[j]) & Spanned.SPAN_PRIORITY))
+                        if (priority > (getSpanFlags(temp[j]) & Spanned.SPAN_PRIORITY))
                             break;
 
-                    System.arraycopy(tem, j, tem, j + 1, found - j);
-                    tem[j] = spans[i];
+                    System.arraycopy(temp, j, temp, j + 1, found - j);
+                    temp[j] = spans[i];
                     found++;
                 } else
-                    tem[found++] = spans[i];
+                    temp[found++] = spans[i];
             }
         }
 
         if (found == 0)
             return (T[]) (type == Object.class ? ObjectArrays.EMPTY_ARRAY : Array.newInstance(type, 0));
         if (found == 1) {
-            tem = (Object[]) Array.newInstance(type, 1);
-            tem[0] = first;
-            return (T[]) tem;
+            temp = (Object[]) Array.newInstance(type, 1);
+            temp[0] = first;
+            return (T[]) temp;
         }
-        if (found == tem.length)
-            return (T[]) tem;
+        if (found == temp.length)
+            return (T[]) temp;
 
         Object[] r = (Object[]) Array.newInstance(type, found);
-        System.arraycopy(tem, 0, r, 0, found);
+        System.arraycopy(temp, 0, r, 0, found);
         return (T[]) r;
     }
 

@@ -23,17 +23,15 @@ import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.ast.Node;
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.forge.MuiHooks;
 import icyllis.modernui.text.GraphemeBreak;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
-import sun.font.FontAccess;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -79,6 +77,7 @@ public class TestMain {
         }
         breakWords(s);
         breakGraphemes(s);
+        ModernUI.LOGGER.info(Integer.toHexString(MuiHooks.C.calcGuiScales(3840,2160)));
     }
 
     public static void breakGraphemes(String s) {

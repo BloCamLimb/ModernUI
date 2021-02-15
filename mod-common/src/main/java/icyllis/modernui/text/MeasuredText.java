@@ -23,6 +23,7 @@ import com.google.common.base.Preconditions;
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Holds the result of text shaping and layout of the single paragraph.
@@ -58,13 +59,12 @@ public class MeasuredText {
             mText = text;
         }
 
-        public Builder appendStyleRun(@Nonnull TextPaint paint, int length, boolean isRtl) {
+        public void addStyleRun(@Nonnull TextPaint paint, int length, boolean isRtl) {
             Preconditions.checkArgument(length > 0, "length can not be negative");
             final int end = mCurrentOffset + length;
             Preconditions.checkArgument(end <= mText.length, "Style exceeds the text length");
-            mRuns.add(new StyleRun(mCurrentOffset, end, paint, isRtl));
+            mRuns.add(new StyleRun(mCurrentOffset, end, paint.copy(), isRtl));
             mCurrentOffset = end;
-            return this;
         }
 
         /**
@@ -85,7 +85,7 @@ public class MeasuredText {
     // logical run, child of bidi run
     public static abstract class Run {
 
-        // piece range in context
+        // range in context
         public final int mStart;
         public final int mEnd;
 
@@ -94,12 +94,18 @@ public class MeasuredText {
             mEnd = end;
         }
 
+        // Returns true if this run can be broken into multiple pieces for line breaking.
         public abstract boolean canBreak();
+
+        // Returns the locale for this run.
+        @Nonnull
+        public Locale getLocale() {
+            return Locale.ROOT;
+        }
     }
 
     public static class StyleRun extends Run {
 
-        //TODO a copy of paint
         public final TextPaint mPaint;
         public final boolean mIsRtl;
 
@@ -112,6 +118,12 @@ public class MeasuredText {
         @Override
         public boolean canBreak() {
             return true;
+        }
+
+        @Nonnull
+        @Override
+        public Locale getLocale() {
+            return mPaint.getTextLocale();
         }
     }
 }

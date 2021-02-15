@@ -97,6 +97,7 @@ public interface Spanned extends CharSequence {
      * @param <T>   markup type
      * @return an array of the markup objects
      */
+    @Nonnull
     <T> T[] getSpans(int start, int end, @Nonnull Class<T> type);
 
     /**

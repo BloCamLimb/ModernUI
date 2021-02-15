@@ -1,6 +1,5 @@
 pluginManagement {
     repositories {
-        jcenter()
         maven {
             url 'https://files.minecraftforge.net/maven/'
         }
@@ -9,6 +8,9 @@ pluginManagement {
         }
         maven {
             url 'https://dl.bintray.com/shedaniel/cloth'
+        }
+        maven {
+            url 'https://maven.shedaniel.me/'
         }
         gradlePluginPortal()
     }

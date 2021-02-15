@@ -50,7 +50,6 @@ public class MeasuredParagraph {
     // The copied character buffer for measuring text.
     //
     // The length of this array is mTextLength.
-    @Nullable
     private char[] mCopiedBuffer;
 
     // The first paragraph direction. Either Bidi.DIRECTION_LEFT_TO_RIGHT
@@ -66,8 +65,7 @@ public class MeasuredParagraph {
     @Nonnull
     private final ByteArrayList mLevels = new ByteArrayList();
 
-    // Individual characters' advances.
-    // See getWidths comments.
+    @Deprecated
     @Nonnull
     private final FloatArrayList mAdvances = new FloatArrayList();
 
@@ -76,10 +74,23 @@ public class MeasuredParagraph {
     @Nonnull
     private final IntArrayList mSpanEndCache = new IntArrayList();
 
+    //@Nullable
+    private MeasuredText mMeasuredText;
+
     @Nonnull
     private final TextPaint mCachedPaint = new TextPaint();
 
     private MeasuredParagraph() {
+    }
+
+    /**
+     * Release internal arrays.
+     */
+    public void release() {
+        reset();
+        mLevels.trim();
+        mAdvances.trim();
+        mSpanEndCache.trim();
     }
 
     /**
@@ -90,13 +101,20 @@ public class MeasuredParagraph {
         mCopiedBuffer = null;
         //mWholeWidth = 0;
         mLevels.clear();
-        mLevels.trim();
         mAdvances.clear();
-        mAdvances.trim();
         mSpanEndCache.clear();
-        mSpanEndCache.trim();
-        /*mFontMetrics.clear();
-        mMeasuredText = null;*/
+        /*mFontMetrics.clear();*/
+        mMeasuredText = null;
+    }
+
+    /**
+     * Returns the result of the MeasuredParagraph.
+     *
+     * This is available only if the MeasuredParagraph is computed with buildForStaticLayout.
+     * Returns null in other cases.
+     */
+    public MeasuredText getMeasuredText() {
+        return mMeasuredText;
     }
 
     @Nonnull
@@ -105,8 +123,9 @@ public class MeasuredParagraph {
         return c == null ? new MeasuredParagraph() : c;
     }
 
+    @Deprecated
     @Nonnull
-    public static MeasuredParagraph buildForMeasurement(@Nonnull TextPaint paint, @Nonnull CharSequence text,
+    private static MeasuredParagraph buildForMeasurement(@Nonnull TextPaint paint, @Nonnull CharSequence text,
                                                         int start, int end, @Nonnull TextDirectionHeuristic dir,
                                                         @Nullable MeasuredParagraph recycle) {
         final MeasuredParagraph c = recycle == null ? obtain() : recycle;
@@ -140,10 +159,10 @@ public class MeasuredParagraph {
                                                          @Nullable MeasuredParagraph recycle) {
         final MeasuredParagraph c = recycle == null ? obtain() : recycle;
         c.resetAndAnalyzeBidi(text, start, end, dir);
-        //noinspection ConstantConditions
         MeasuredText.Builder builder = new MeasuredText.Builder(c.mCopiedBuffer);
         if (c.mTextLength == 0) {
-
+            //TODO review
+            return c;
         } else {
             if (c.mSpanned == null) {
                 // No style change by MetricsAffectingSpan. Just measure all text.
@@ -164,6 +183,7 @@ public class MeasuredParagraph {
                     c.mSpanEndCache.add(spanEnd);
                 }
             }
+            c.mMeasuredText = builder.build();
         }
         return c;
     }
@@ -241,13 +261,13 @@ public class MeasuredParagraph {
             }
         }
 
-        final int startInCopiedBuffer = start - mTextStart;
-        final int endInCopiedBuffer = end - mTextStart;
+        final int runStart = start - mTextStart;
+        final int runEnd = end - mTextStart;
 
         if (replacement != null) {
-            applyReplacementRun(replacement, startInCopiedBuffer, endInCopiedBuffer, builder);
+            applyReplacementRun(replacement, runStart, runEnd, builder);
         } else {
-            applyStyleRun(startInCopiedBuffer, endInCopiedBuffer, builder);
+            applyStyleRun(runStart, runEnd, builder);
         }
     }
 
@@ -257,6 +277,41 @@ public class MeasuredParagraph {
     }
 
     private void applyStyleRun(int start, int end, @Nullable MeasuredText.Builder builder) {
+        if (mLtrWithoutBidi) {
+            // If the whole text is LTR direction, just apply whole region.
+            if (builder == null) {
 
+            } else {
+                builder.addStyleRun(mCachedPaint, end - start, false);
+            }
+        } else {
+            // If there is multiple bidi levels, split into individual bidi level and apply style.
+            byte level = mLevels.getByte(start);
+            // Note that the empty text or empty range won't reach this method.
+            // Safe to search from start + 1.
+            for (int levelStart = start, levelEnd = start + 1;; ++levelEnd) {
+                if (levelEnd == end || mLevels.getByte(levelEnd) != level) { // bidi run
+                    final boolean isRtl = (level & 0x1) != 0;
+                    if (builder == null) {
+                        final int levelLength = levelEnd - levelStart;
+                    } else {
+                        builder.addStyleRun(mCachedPaint, levelEnd - levelStart, isRtl);
+                    }
+                    if (levelEnd == end) {
+                        break;
+                    }
+                    levelStart = levelEnd;
+                    level = mLevels.getByte(levelEnd);
+                }
+            }
+        }
+    }
+
+    /**
+     * Recycle the MeasuredParagraph.
+     */
+    public void recycle() {
+        release();
+        sPool.release(this);
     }
 }
