@@ -26,7 +26,7 @@ import com.mojang.math.Matrix4f;
 import icyllis.modernui.graphics.text.ModernFontRenderer;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.math.TextAlign;
-import icyllis.modernui.mcimpl.mixin.AccessFoodData;
+import icyllis.modernui.forge.mixin.AccessFoodData;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.renderer.MultiBufferSource;

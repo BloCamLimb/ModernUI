@@ -7,9 +7,6 @@ pluginManagement {
             url 'https://maven.fabricmc.net/'
         }
         maven {
-            url 'https://dl.bintray.com/shedaniel/cloth'
-        }
-        maven {
             url 'https://maven.shedaniel.me/'
         }
         gradlePluginPortal()
@@ -18,7 +15,6 @@ pluginManagement {
 
 rootProject.name = 'ModernUI'
 
-include 'core', 'mod-common', 'mod-forge'
+include 'core', 'mod-forge'
 project(':core').name = "ModernUI-Core"
-project(':mod-common').name = "ModernUI-Common"
 project(':mod-forge').name = "ModernUI-Forge"

@@ -1,21 +1,24 @@
+buildscript {
+    dependencies {
+        classpath 'org.ow2.asm:asm:9.0'
+        classpath 'org.ow2.asm:asm-commons:9.0'
+        classpath 'org.ow2.asm:asm-tree:9.0'
+        classpath 'org.ow2.asm:asm-util:9.0'
+    }
+}
+
 plugins {
     id 'maven-publish'
-    id 'architectury-plugin' version '2.0.66'
-    id 'forgified-fabric-loom' version '0.6.62' apply false
+    id 'forgified-fabric-loom' version '0.6.66' apply false
     id 'com.matthewprenger.cursegradle' version '1.4.0' apply false
     id 'com.github.johnrengelman.shadow' version '5.2.0' apply false
 }
 
-architectury {
-    minecraft = rootProject.minecraft_version
-}
-
-subprojects {
-    apply plugin: 'architectury-plugin'
-}
-
 allprojects {
     apply plugin: 'java'
+    repositories {
+        mavenCentral()
+    }
     dependencies {
         compileOnly "com.google.code.findbugs:jsr305:3.+"
     }

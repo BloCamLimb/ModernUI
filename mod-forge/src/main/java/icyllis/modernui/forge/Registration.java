@@ -25,6 +25,7 @@ import icyllis.modernui.forge.mixin.AccessOption;
 import icyllis.modernui.forge.mixin.AccessVideoSettingsScreen;
 import icyllis.modernui.forge.network.NetworkHandler;
 import icyllis.modernui.mcimpl.MuiRegistries;
+import icyllis.modernui.mcimpl.ProjectBuilderRenderer;
 import icyllis.modernui.mcimpl.TestMenu;
 import icyllis.modernui.plugin.IMuiPlugin;
 import icyllis.modernui.plugin.MuiPlugin;
