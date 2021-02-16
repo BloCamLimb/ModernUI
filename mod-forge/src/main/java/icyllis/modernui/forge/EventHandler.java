@@ -23,6 +23,7 @@ import icyllis.modernui.forge.event.OpenMenuEvent;
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.RenderCore;
 import icyllis.modernui.mcimpl.MuiRegistries;
+import icyllis.modernui.mcimpl.ProjectBuilderModel;
 import icyllis.modernui.mcimpl.TestMenu;
 import icyllis.modernui.test.TestUI;
 import net.minecraft.ChatFormatting;

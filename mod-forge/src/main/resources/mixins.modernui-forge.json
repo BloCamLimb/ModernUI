@@ -8,12 +8,19 @@
     "MixinFoodData"
   ],
   "client": [
+    "AccessFontRenderer",
+    "AccessFoodData",
+    "AccessGameRenderer",
     "AccessOption",
+    "AccessPostChain",
+    "AccessStringSplitter",
     "AccessVideoSettingsScreen",
+    "MixinClientLanguage",
     "MixinFontManager",
-    "MixinWindow",
+    "MixinIngameGui",
     "MixinMatrix4f",
     "MixinMouseHandler",
-    "MixinScreen"
+    "MixinScreen",
+    "MixinWindow"
   ]
 }

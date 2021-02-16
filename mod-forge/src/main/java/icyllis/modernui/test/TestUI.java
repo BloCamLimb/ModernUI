@@ -18,14 +18,14 @@
 
 package icyllis.modernui.test;
 
-import icyllis.modernui.view.ApplicationUI;
+import icyllis.modernui.view.AppUIHost;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.widget.FrameLayout;
 import icyllis.modernui.widget.ScrollView;
 
-public class TestUI extends ApplicationUI {
+public class TestUI extends AppUIHost {
 
     @Override
     public void onCreate() {

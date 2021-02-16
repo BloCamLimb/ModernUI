@@ -1,0 +1,55 @@
+{
+  "options.chat.visibility": "Visibility",
+
+  "gui.modernui.button.exit": "Exit",
+  "gui.modernui.button.leave": "Leave",
+  "gui.modernui.button.save": "Save",
+  "gui.modernui.button.apply": "Apply",
+  "gui.modernui.button.Lock": "Lock",
+  "gui.modernui.button.applyAndReload": "Apply & Reload",
+  "gui.modernui.button.discard": "Discard",
+  "gui.modernui.button.confirm": "Confirm %s",
+  "gui.modernui.button.filterConflicts": "Filter Conflicts",
+
+  "gui.modernui.menu.back": "Back to Game",
+  "gui.modernui.menu.mods": "Forge Mods",
+  "gui.modernui.menu.settings": "Settings",
+  "gui.modernui.menu.exit": "Exit to Main Menu",
+
+  "gui.modernui.text.oneOfAll": "%1$d of %2$d",
+
+  "gui.modernui.settings.tab.general": "General",
+  "gui.modernui.settings.tab.video": "Video",
+  "gui.modernui.settings.tab.audio": "Audio",
+  "gui.modernui.settings.tab.controls": "Controls",
+  "gui.modernui.settings.tab.assets": "Assets",
+  "gui.modernui.settings.tab.language": "Language",
+  "gui.modernui.settings.tab.resourcePacks": "Resource Packs",
+
+  "gui.modernui.settings.entry.name": "Name",
+  "gui.modernui.settings.entry.key": "Key",
+
+  "gui.modernui.settings.category.game": "Game",
+  "gui.modernui.settings.category.chat": "Chat",
+  "gui.modernui.settings.category.accessibility": "Accessibility",
+  "gui.modernui.settings.category.skin": "Skin",
+  "gui.modernui.settings.category.video": "Video",
+  "gui.modernui.settings.category.quality": "Quality",
+  "gui.modernui.settings.category.details": "Details",
+  "gui.modernui.settings.category.animations": "Animations",
+  "gui.modernui.settings.category.performance": "Performance",
+  "gui.modernui.settings.category.other": "Other",
+  "gui.modernui.settings.category.sounds": "Sounds",
+  "gui.modernui.settings.category.mouse": "Mouse",
+
+  "gui.modernui.popup.exit": "Are you sure you want to exit to main menu?",
+  "gui.modernui.popup.lockDifficulty": "Are you sure you want to lock world difficulty?",
+
+  "gui.modernui.tooltip.thanksOptifine": "This functionality is powered by OptiFine",
+
+  "message.modernui.server_shutdown_sec": "Server will shutdown in %s seconds",
+  "message.modernui.server_shutdown_min": "Server will shutdown in %s minutes",
+
+  "warning.modernui.old_java": "Modern UI: Java {2} or above is recommended, your version is Java {3}. Upgrade to newer Java and choose it to launch game, otherwise you cannot use external fonts or will not always get correct text layouts.",
+  "warning.modernui.old_opengl": "Modern UI: OpenGL version is too old. OpenGL {2} or higher is required (your version is OpenGL {3}). Please upgrade the driver of your video card. The newer version of macOS may be not supported."
+}

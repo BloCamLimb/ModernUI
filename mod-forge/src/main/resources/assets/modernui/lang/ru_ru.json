@@ -1,0 +1,55 @@
+{
+  "options.chat.visibility": "Видимость",
+
+  "gui.modernui.button.exit": "Выход",
+  "gui.modernui.button.leave": "Покинуть",
+  "gui.modernui.button.save": "Сохранить",
+  "gui.modernui.button.apply": "Применить",
+  "gui.modernui.button.Lock": "Зафиксировать",
+  "gui.modernui.button.applyAndReload": "Применить и перезагрузить",
+  "gui.modernui.button.discard": "Отклонить",
+  "gui.modernui.button.confirm": "Подтвердить %s",
+  "gui.modernui.button.filterConflicts": "Фильтр конфликтов",
+
+  "gui.modernui.menu.back": "Вернуться в игру",
+  "gui.modernui.menu.mods": "Моды",
+  "gui.modernui.menu.settings": "Настройки",
+  "gui.modernui.menu.exit": "Выйти в главное меню",
+
+  "gui.modernui.text.oneOfAll": "%1$d из %2$d",
+
+  "gui.modernui.settings.tab.general": "Общие",
+  "gui.modernui.settings.tab.video": "Видео",
+  "gui.modernui.settings.tab.audio": "Аудио",
+  "gui.modernui.settings.tab.controls": "Управление",
+  "gui.modernui.settings.tab.assets": "Активы",
+  "gui.modernui.settings.tab.language": "Язык",
+  "gui.modernui.settings.tab.resourcePacks": "Пакеты текстур",
+
+  "gui.modernui.settings.entry.name": "Имя",
+  "gui.modernui.settings.entry.key": "Клавиша",
+
+  "gui.modernui.settings.category.game": "Игра",
+  "gui.modernui.settings.category.chat": "Чат",
+  "gui.modernui.settings.category.accessibility": "Доступность",
+  "gui.modernui.settings.category.skin": "Скин",
+  "gui.modernui.settings.category.video": "Видео",
+  "gui.modernui.settings.category.quality": "Качество",
+  "gui.modernui.settings.category.details": "Подробности",
+  "gui.modernui.settings.category.animations": "Анимации",
+  "gui.modernui.settings.category.performance": "Производительность",
+  "gui.modernui.settings.category.other": "Другое",
+  "gui.modernui.settings.category.sounds": "Звуки",
+  "gui.modernui.settings.category.mouse": "Мышь",
+
+  "gui.modernui.popup.exit": "Выйти в главное меню?",
+  "gui.modernui.popup.lockDifficulty": "Зафиксировать сложность мира?",
+
+  "gui.modernui.tooltip.thanksOptifine": "Эта функциональность работает на базе OptiFine",
+
+  "message.modernui.server_shutdown_sec": "Server will shutdown in %s seconds",
+  "message.modernui.server_shutdown_min": "Server will shutdown in %s minutes",
+
+  "warning.modernui.old_java": "Modern UI: Java {2} or above is recommended, your version is Java {3}. Upgrade to newer Java and choose it to launch game, otherwise you cannot use external fonts or will not always get correct text layouts.",
+  "warning.modernui.old_opengl": "Modern UI: OpenGL version is too old. OpenGL {2} or higher is required (your version is OpenGL {3}). Please upgrade the driver of your video card. The newer version of macOS may be not supported."
+}

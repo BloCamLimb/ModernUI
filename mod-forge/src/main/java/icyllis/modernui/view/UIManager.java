@@ -96,7 +96,7 @@ public final class UIManager {
     private IMuiScreen mMuiScreen;
 
     // application UI used to send lifecycle events
-    private ApplicationUI mApplicationUI;
+    private AppUIHost mAppUIHost;
 
     // main fragment of a UI
     //private Fragment fragment;
@@ -206,11 +206,11 @@ public final class UIManager {
     /**
      * Open an application UI and create views
      *
-     * @param applicationUI the application user interface
+     * @param appUIHost the application user interface
      * @see #start(IMuiScreen, int, int)
      */
-    public void openGUI(@Nonnull ApplicationUI applicationUI) {
-        mApplicationUI = applicationUI;
+    public void openGUI(@Nonnull AppUIHost appUIHost) {
+        mAppUIHost = appUIHost;
         minecraft.setScreen(new MMainScreen(this));
     }
 
@@ -227,9 +227,9 @@ public final class UIManager {
     public boolean openGUI(@Nonnull LocalPlayer player, @Nonnull AbstractContainerMenu menu) {
         OpenMenuEvent event = new OpenMenuEvent(menu);
         ModernUIForge.EVENT_BUS.post(event);
-        ApplicationUI applicationUI = event.getApplicationUI();
-        if (applicationUI != null) {
-            mApplicationUI = applicationUI;
+        AppUIHost appUIHost = event.getApplicationUI();
+        if (appUIHost != null) {
+            mAppUIHost = appUIHost;
             player.containerMenu = menu;
             minecraft.setScreen(new MMenuScreen<>(menu, player.inventory, this));
             return true;
@@ -285,8 +285,8 @@ public final class UIManager {
      */
     void start(@Nonnull IMuiScreen screen, int width, int height) {
         if (mMuiScreen == null) {
-            mApplicationUI.window = this;
-            mApplicationUI.onCreate();
+            mAppUIHost.window = this;
+            mAppUIHost.onCreate();
         }
         mMuiScreen = screen;
 
@@ -355,8 +355,8 @@ public final class UIManager {
     }
 
     @Nullable
-    public ApplicationUI getOpenGUI() {
-        return mApplicationUI;
+    public AppUIHost getOpenGUI() {
+        return mAppUIHost;
     }
 
     /**
@@ -691,10 +691,10 @@ public final class UIManager {
                 builder.append("\n");
 
                 builder.append("[2] Open Gui: ");
-                if (mApplicationUI == null) {
+                if (mAppUIHost == null) {
                     builder.append(minecraft.screen);
                 } else {
-                    builder.append(mApplicationUI);
+                    builder.append(mAppUIHost);
                 }
                 builder.append("\n");
 
@@ -875,9 +875,9 @@ public final class UIManager {
             animations.clear();
             tasks.clear();
             mMuiScreen = null;
-            if (mApplicationUI != null) {
-                mApplicationUI.window = null;
-                mApplicationUI = null;
+            if (mAppUIHost != null) {
+                mAppUIHost.window = null;
+                mAppUIHost = null;
             }
             mLastLayoutTime = 0;
             mLayoutRequested = false;

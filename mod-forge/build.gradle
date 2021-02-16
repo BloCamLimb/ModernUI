@@ -8,15 +8,12 @@ configurations {
     shadow
 }
 
-architectury {
-    platformSetupLoomIde()
-}
-
 loom {
     silentMojangMappingsLicense()
     dataGen {
         mod 'modernui'
     }
+    addTaskBeforeRun(":${name}:classes")
 }
 
 repositories {
@@ -27,21 +24,26 @@ repositories {
             includeGroup 'mezz.jei'
         }
     }
+    flatDir {
+        dir "${rootProject.projectDir}/libs"
+    }
 }
 
 dependencies {
-    minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
+    minecraft "com.mojang:minecraft:${minecraft_version}"
     mappings minecraft.officialMojangMappings()
-    forge "net.minecraftforge:forge:${rootProject.minecraft_version}-${rootProject.forge_version}"
+    forge "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
-    modCompileOnly "mezz.jei:jei-${rootProject.minecraft_version}:${rootProject.jei_version}:api"
-    modRuntime "mezz.jei:jei-${rootProject.minecraft_version}:${rootProject.jei_version}"
+    modCompileOnly "mezz.jei:jei-${minecraft_version}:${jei_version}:api"
+    modRuntime "mezz.jei:jei-${minecraft_version}:${jei_version}"
 
-    compile "com.github.ben-manes.caffeine:caffeine:${rootProject.caffeine_version}"
-    compile "com.vladsch.flexmark:flexmark:${rootProject.flexmark_version}"
+    compile "com.github.ben-manes.caffeine:caffeine:${caffeine_version}"
+    compile "com.vladsch.flexmark:flexmark:${flexmark_version}"
 
-    shadow "com.github.ben-manes.caffeine:caffeine:${rootProject.caffeine_version}"
-    shadow "com.vladsch.flexmark:flexmark:${rootProject.flexmark_version}"
+    shadow "com.github.ben-manes.caffeine:caffeine:${caffeine_version}"
+    shadow "com.vladsch.flexmark:flexmark:${flexmark_version}"
+
+    shadow ':ModernUI-Fonts-1.0'
 
     compile('org.apache.maven:maven-artifact') {
         version {
@@ -52,25 +54,14 @@ dependencies {
     /*compile(project(":ModernUI-Core")) {
         transitive = false
     }*/
-    compileOnly(project(path: ":ModernUI-Common")) {
-        transitive = false
-    }
-    runtimeOnly(project(path: ":ModernUI-Common", configuration: "transformDevelopmentForge")) {
-        transitive = false
-    }
     /*shadow(project(":ModernUI-Core")) {
         transitive = false
     }*/
-    shadow(project(path: ":ModernUI-Common", configuration: "transformProductionForge")) {
-        transitive = false
-    }
 }
 
 shadowJar {
-    exclude "fabric.mod.json"
-
+    archiveClassifier.set("shadow")
     configurations = [project.configurations.shadow]
-    classifier "shadow"
 
     dependencies {
         exclude 'icu4j-59.1.jar'
