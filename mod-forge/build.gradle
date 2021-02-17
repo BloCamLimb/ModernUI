@@ -1,3 +1,5 @@
+import net.fabricmc.loom.task.RemapJarTask
+
 plugins {
     id 'forgified-fabric-loom'
     id 'com.matthewprenger.cursegradle'
@@ -13,7 +15,7 @@ loom {
     dataGen {
         mod 'modernui'
     }
-    addTaskBeforeRun(":${name}:classes")
+    addTaskBeforeRun(":${project.name}:classes")
 }
 
 repositories {
@@ -45,11 +47,11 @@ dependencies {
 
     shadow ':ModernUI-Fonts-1.0'
 
-    compile('org.apache.maven:maven-artifact') {
+    /*compile('org.apache.maven:maven-artifact') {
         version {
             strictly '3.6.3'
         }
-    }
+    }*/
 
     /*compile(project(":ModernUI-Core")) {
         transitive = false
@@ -89,6 +91,15 @@ remapJar {
     archiveClassifier.set("universal")
 }
 
+task remapMavenJar(type: RemapJarTask) {
+    dependsOn(jar)
+    input.set(jar.archiveFile)
+    toM.set("srg") // to srg names
+    addNestedDependencies.set(true)
+    remapAccessWidener.set(true)
+    archiveClassifier.set("maven")
+}
+
 if (project.hasProperty("jks")) {
     remapJar.doLast {
         ant.signjar(
@@ -126,7 +137,7 @@ jar {
 }
 
 publishing {
-    /*repositories {
+    repositories {
         maven {
             name 'IzzelAliz'
             url 'https://maven.izzel.io/releases'
@@ -135,10 +146,10 @@ publishing {
                 password = project.getProperty("izzel_maven_token")
             }
         }
-    }*/
+    }
     publications {
         mavenForge(MavenPublication) {
-            artifact(jar.archiveFile) {
+            artifact(remapMavenJar.archiveFile) {
                 builtBy build
             }
             artifact(sourcesJar.archiveFile) {
@@ -176,6 +187,7 @@ publishing {
                         dependencyNode.appendNode('groupId', it.group)
                         dependencyNode.appendNode('artifactId', it.name)
                         dependencyNode.appendNode('version', it.version)
+                        dependencyNode.appendNode('scope', 'compile')
                     }
                 }
             }

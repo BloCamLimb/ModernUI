@@ -34,8 +34,7 @@ public class MixinConfigPlugin implements IMixinConfigPlugin {
 
     @Override
     public String getRefMapperConfig() {
-        // We don't need refmap if it's in a development environment
-        return null;/*Launcher.INSTANCE.environment().findNameMapping("srg").isPresent() ? null : "mixins.modernui.refmap.json";*/
+        return null;
     }
 
     @Override
