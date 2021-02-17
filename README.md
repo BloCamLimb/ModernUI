@@ -1,6 +1,7 @@
 # Modern UI
 [![CurseForge](http://cf.way2muchnoise.eu/full_352491_downloads.svg)](https://www.curseforge.com/minecraft/mc-mods/modern-ui)
 [![CurseForge](http://cf.way2muchnoise.eu/versions/For%20Minecraft_352491_all.svg)](https://www.curseforge.com/minecraft/mc-mods/modern-ui)
+[![Discord](https://img.shields.io/discord/696234198767501363?color=green&label=Discord&style=flat)](https://discord.gg/kmyGKt2)
 ### Homepage
 Description and releases for Minecraft Mod are available on [CurseForge](https://www.curseforge.com/minecraft/mc-mods/modern-ui)
 ### License
@@ -21,9 +22,8 @@ Description and releases for Minecraft Mod are available on [CurseForge](https:/
 - OpenGL 4.3 or above
 - Forge 1.16.5-36.0.1
 #### Version information
-There's currently no stable builds for development
+[![Maven](https://img.shields.io/badge/dynamic/xml?color=green&label=maven%20beta&query=%2Fmetadata%2Fversioning%2Flatest&url=https%3A%2F%2Fmaven.izzel.io%2Freleases%2Ficyllis%2Fmodernui%2FModernUI-Forge%2Fmaven-metadata.xml)]()
 #### Gradle configuration
-Add followings to `build.gradle`
 ```
 repositories {
     maven {
@@ -31,13 +31,15 @@ repositories {
         url 'https://maven.izzel.io/releases'
     }
 }
-
 dependencies {
-    // ForgeGradle 3
-    compile fg.deobf("icyllis.modernui:ModernUI-Forge:{version}")
+    // Note that ForgeGradle 3, mixin 0.8.2 can't remap refmap
+    // in forge dev environment, you may use only forge loom now
+    // see https://github.com/SpongePowered/Mixin/issues/462
+    // ForgeGradle 3 will ignore sources jar and dependecies as well
+    // see https://github.com/MinecraftForge/ForgeGradle/issues/736
 
     // Forge Loom 0.6
-    modCompile "icyllis.modernui:ModernUI-Forge:{version}"
+    modCompile "icyllis.modernui:ModernUI-Forge:${modernui_version}"
 }
 ```
 ### Screenshots
