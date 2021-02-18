@@ -59,64 +59,64 @@ public final class MuiHooks {
      * Open a container menu on server, generate an id represents the next screen.
      * Then send a packet to player to request to open an application screen on client.
      *
-     * @param player      the server player to open the screen for
-     * @param constructor a constructor to create a menu on server side
+     * @param player   the server player to open the screen for
+     * @param provider a provider to create a menu on server side
      * @throws ClassCastException this method is not called on logic server
      * @see #openMenu(Player, MenuConstructor, Consumer)
      */
-    public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor constructor) {
-        openMenu((ServerPlayer) player, constructor, (Consumer<FriendlyByteBuf>) null);
+    public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor provider) {
+        openMenu((ServerPlayer) player, provider, (Consumer<FriendlyByteBuf>) null);
     }
 
     /**
      * Open a container menu on server, generate an id represents the next screen.
      * Then send a packet to player to request to open an application screen on client.
      *
-     * @param player      the server player to open the screen for
-     * @param constructor a constructor to create a menu on server side
-     * @param pos         a block pos to send to client, this will be passed to
-     *                    the menu supplier (IContainerFactory) that registered on client
+     * @param player   the server player to open the screen for
+     * @param provider a provider to create a menu on server side
+     * @param pos      a block pos to send to client, this will be passed to
+     *                 the menu supplier (IContainerFactory) that registered on client
      * @throws ClassCastException this method is not called on logic server
      * @see #openMenu(Player, MenuConstructor, Consumer)
      * @see net.minecraftforge.common.extensions.IForgeContainerType#create(IContainerFactory)
      */
-    public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor constructor, @Nonnull BlockPos pos) {
-        openMenu((ServerPlayer) player, constructor, buf -> buf.writeBlockPos(pos));
+    public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor provider, @Nonnull BlockPos pos) {
+        openMenu((ServerPlayer) player, provider, buf -> buf.writeBlockPos(pos));
     }
 
     /**
      * Open a container menu on server, generate an id represents the next screen.
      * Then send a packet to player to request to open an application screen on client.
      *
-     * @param player      the server player to open the screen for
-     * @param constructor a constructor to create a menu on server side
-     * @param writer      a data writer to send additional data to client, this will be passed
-     *                    to the menu supplier (IContainerFactory) that registered on client
+     * @param player   the server player to open the screen for
+     * @param provider a provider to create a menu on server side
+     * @param writer   a data writer to send additional data to client, this will be passed
+     *                 to the menu supplier (IContainerFactory) that registered on client
      * @throws ClassCastException this method is not called on logic server
      * @see net.minecraftforge.common.extensions.IForgeContainerType#create(IContainerFactory)
      */
-    public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor constructor, @Nullable Consumer<FriendlyByteBuf> writer) {
-        openMenu((ServerPlayer) player, constructor, writer);
+    public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor provider, @Nullable Consumer<FriendlyByteBuf> writer) {
+        openMenu((ServerPlayer) player, provider, writer);
     }
 
     /**
      * Open a container menu on server, generate an id represents the next screen.
      * Then send a packet to player to request to open an application screen on client.
      *
-     * @param player      the server player to open the screen for
-     * @param constructor a constructor to create a menu on server side
-     * @param writer      a data writer to send additional data to client, this will be passed
-     *                    to the menu supplier (IContainerFactory) that registered on client
+     * @param player   the server player to open the screen for
+     * @param provider a provider to create a menu on server side
+     * @param writer   a data writer to send additional data to client, this will be passed
+     *                 to the menu supplier (IContainerFactory) that registered on client
      * @see net.minecraftforge.common.extensions.IForgeContainerType#create(IContainerFactory)
      */
-    public static void openMenu(@Nonnull ServerPlayer player, @Nonnull MenuConstructor constructor, @Nullable Consumer<FriendlyByteBuf> writer) {
+    public static void openMenu(@Nonnull ServerPlayer player, @Nonnull MenuConstructor provider, @Nullable Consumer<FriendlyByteBuf> writer) {
         // do the same thing as ServerPlayer.openMenu()
         if (player.containerMenu != player.inventoryMenu) {
             player.closeContainer();
         }
         player.nextContainerCounter();
         int containerId = player.containerCounter;
-        AbstractContainerMenu menu = constructor.createMenu(containerId, player.inventory, player);
+        AbstractContainerMenu menu = provider.createMenu(containerId, player.inventory, player);
         if (menu == null) {
             return;
         }

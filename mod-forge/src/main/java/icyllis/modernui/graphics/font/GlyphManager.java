@@ -26,9 +26,9 @@ import icyllis.modernui.graphics.font.pipeline.TextRenderType;
 import icyllis.modernui.graphics.text.VanillaTextKey;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectArrayMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.objects.Object2IntArrayMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectRBTreeMap;
+import it.unimi.dsi.fastutil.objects.Object2IntAVLTreeMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.Minecraft;
@@ -199,14 +199,14 @@ public class GlyphManager {
      * increasing) which forms the upper 32 bits of the key into the glyphCache map. This font cache can include different styles
      * of the same font family like bold or italic and different size.
      */
-    private final Object2IntMap<Font> fontKeyMap = new Object2IntArrayMap<>(8);
+    private final Object2IntMap<Font> fontKeyMap = new Object2IntAVLTreeMap<>();
 
     /**
      * A cache of pre-rendered glyphs mapping each glyph by its glyphcode to the position of its pre-rendered image within
      * the cache texture. The key is a 64 bit number such that the lower 32 bits are the glyphcode and the upper 32 are the
      * index of the font in the fontCache. This makes for a single globally unique number to identify any glyph from any font.
      */
-    private final Long2ObjectMap<TexturedGlyph> glyphCache = new Long2ObjectArrayMap<>(4096);
+    private final Long2ObjectMap<TexturedGlyph> glyphCache = new Long2ObjectRBTreeMap<>();
 
     /**
      * Font ID {@link #fontKeyMap} to an array of length 10 represent 0-9 digits (in that order)
@@ -400,17 +400,16 @@ public class GlyphManager {
     }
 
     /**
-     * Derive a font with given style and size (vanilla mode)
+     * Derive a font family with given style and size
      *
-     * @param font      font without fontStyle and fontSize
-     * @param fontStyle font style
-     * @param fontSize  font size
+     * @param font  font family (with plain style and size 1)
+     * @param style font style
+     * @param size  font size in pixel
      * @return derived font with style and size
      */
     @Nonnull
-    public Font deriveFont(@Nonnull Font font, int fontStyle, int fontSize) {
-        fontSize *= sResolutionLevel;
-        font = font.deriveFont(fontStyle, fontSize);
+    public Font deriveFont(@Nonnull Font font, int style, int size) {
+        font = font.deriveFont(style, size);
         /* Ensure this font is already in fontKeyMap so it can be referenced by lookupGlyph() later on */
         fontKeyMap.putIfAbsent(font, fontKeyMap.size());
         return font;

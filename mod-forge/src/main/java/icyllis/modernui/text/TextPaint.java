@@ -32,17 +32,17 @@ import java.util.Locale;
 public class TextPaint {
 
     /**
-     * Bit flag used with textStyle to request the plain/regular/normal style
+     * Bit flag used with fontStyle to request the plain/regular/normal style
      */
     public static final int REGULAR = Font.PLAIN;
 
     /**
-     * Bit flag used with textStyle to request the bold style
+     * Bit flag used with fontStyle to request the bold style
      */
     public static final byte BOLD = Font.BOLD;
 
     /**
-     * Bit flag used with textStyle to request the italic style
+     * Bit flag used with fontStyle to request the italic style
      */
     public static final byte ITALIC = Font.ITALIC;
 
@@ -50,7 +50,7 @@ public class TextPaint {
 
     private FontCollection mFontCollection;
     private Locale mLocale;
-    private int mTextStyle;
+    private int mFontStyle;
 
     public TextPaint() {
         //TODO replace with current user preference
@@ -68,7 +68,7 @@ public class TextPaint {
     public void set(@Nonnull TextPaint paint) {
         mFontCollection = paint.mFontCollection;
         mLocale = paint.mLocale;
-        mTextStyle = paint.mTextStyle;
+        mFontStyle = paint.mFontStyle;
     }
 
     /**
@@ -118,20 +118,20 @@ public class TextPaint {
     }
 
     /**
-     * Set text's style. Combination of REGULAR, BOLD and ITALIC.
+     * Set font's style. Combination of REGULAR, BOLD and ITALIC.
      *
-     * @param textStyle the style of the font
+     * @param fontStyle the style of the font
      */
-    public void setTextStyle(@MagicConstant(flags = {REGULAR, BOLD, ITALIC}) int textStyle) {
-        mTextStyle = (textStyle & ~TEXT_STYLE_MASK) == 0 ? textStyle : 0;
+    public void setFontStyle(@MagicConstant(flags = {REGULAR, BOLD, ITALIC}) int fontStyle) {
+        mFontStyle = (fontStyle & ~TEXT_STYLE_MASK) == 0 ? fontStyle : 0;
     }
 
     /**
-     * Get the text's style.
+     * Get the font's style.
      *
      * @return the style of the font
      */
-    public int getTextStyle() {
-        return mTextStyle;
+    public int getFontStyle() {
+        return mFontStyle;
     }
 }
