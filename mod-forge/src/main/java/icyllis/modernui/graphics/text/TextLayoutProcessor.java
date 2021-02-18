@@ -805,6 +805,7 @@ public class TextLayoutProcessor {
      * @param limit end index (exclusive) of the text
      * @param flag  layout direction, either {@link Font#LAYOUT_LEFT_TO_RIGHT} or {@link Font#LAYOUT_RIGHT_TO_LEFT}
      * @param style the style to layout the text
+     * @see icyllis.modernui.graphics.font.FontCollection#itemize(char[])
      */
     private void layoutText(TextProcessData data, char[] text, int start, int limit, int flag, @Nonnull FormattingStyle style) {
         /*
@@ -865,7 +866,7 @@ public class TextLayoutProcessor {
                 boolean layout = font != f && codePoint != 32;
                 if (layout) {
                     layoutFont(data, text, last, next, flag, glyphManager.deriveFont(
-                            font, style.getFontStyle(), sDefaultFontSize), style.isObfuscated(),
+                            font, style.getFontStyle(), sDefaultFontSize * GlyphManager.sResolutionLevel), style.isObfuscated(),
                             effect);
                     font = f;
                     last = next;
@@ -876,7 +877,7 @@ public class TextLayoutProcessor {
         /* layout the rest text if not empty */
         if (font != null) {
             layoutFont(data, text, last, limit, flag, glyphManager.deriveFont(
-                    font, style.getFontStyle(), sDefaultFontSize), style.isObfuscated(),
+                    font, style.getFontStyle(), sDefaultFontSize * GlyphManager.sResolutionLevel), style.isObfuscated(),
                     effect);
         }
     }

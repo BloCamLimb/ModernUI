@@ -256,8 +256,7 @@ public final class Config {
                     "This should match your GUI scale. Scale -> Level: [1,2] -> 1; [3,4] -> 2; [5,) -> 3")
                     .defineInRange("resolutionLevel", 2, 1, 3);*/
             defaultFontSize = builder.comment(
-                    "The default font size for texts with no size specified. (Deprecated, to be removed)",
-                    "The font size feature is provided by Modern UI, and other mod's are achieved by matrix transformation.")
+                    "The default font size for texts with no size specified. (deprecated, to be removed)")
                     .defineInRange("defaultFontSize", 16, 12, 20);
 
             builder.pop();
@@ -299,6 +298,7 @@ public final class Config {
     public static class Common {
 
         private final ForgeConfigSpec.BooleanValue developerMode;
+        final ForgeConfigSpec.IntValue oneTimeEvents;
 
         final ForgeConfigSpec.BooleanValue autoShutdown;
 
@@ -310,6 +310,8 @@ public final class Config {
 
             developerMode = builder.comment("Whether to enable developer mode.")
                     .define("enableDeveloperMode", false);
+            oneTimeEvents = builder
+                    .defineInRange("oneTimeEvents", 0, Integer.MIN_VALUE, Integer.MAX_VALUE);
 
             builder.pop();
 

@@ -47,11 +47,11 @@ dependencies {
 
     shadow ':ModernUI-Fonts-1.0'
 
-    /*compile('org.apache.maven:maven-artifact') {
+    compile('org.apache.maven:maven-artifact') {
         version {
             strictly '3.6.3'
         }
-    }*/
+    }
 
     /*compile(project(":ModernUI-Core")) {
         transitive = false
@@ -191,6 +191,32 @@ publishing {
                     }
                 }
             }
+        }
+    }
+}
+
+if (project.hasProperty('curseforge_api')) {
+    curseforge {
+        apiKey = project.getProperty('curseforge_api')
+        project {
+            id = '352491'
+            changelogType = 'markdown'
+            changelog = rootProject.file('changelogs.md')
+            releaseType = "${release_type}"
+            relations {
+                incompatible 'emojiful'
+            }
+            mainArtifact(remapJar) {
+                displayName = "${rootProject.name}-${rootProject.version}"
+            }
+            addGameVersion '1.16.3'
+            addGameVersion '1.16.4'
+            addGameVersion '1.16.5'
+        }
+        options {
+            debug = true
+            detectNewerJava = true
+            forgeGradleIntegration = false
         }
     }
 }

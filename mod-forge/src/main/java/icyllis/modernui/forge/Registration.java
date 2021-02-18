@@ -79,6 +79,9 @@ import java.util.Objects;
 @Mod.EventBusSubscriber(modid = ModernUI.ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 final class Registration {
 
+    private Registration() {
+    }
+
     @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
     static void registerSounds(@Nonnull RegistryEvent.Register<SoundEvent> event) {

@@ -23,6 +23,9 @@ import com.ibm.icu.impl.UCharacterProperty;
 import com.ibm.icu.lang.UCharacter;
 import com.ibm.icu.lang.UCharacterCategory;
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.forge.LocalStorage;
+import icyllis.modernui.text.Emoji;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -70,7 +73,10 @@ public class FontCollection {
                 sansSerif = font;
             }
         }
-        Preconditions.checkState(sansSerif != null, "Sans Serif font is missing");
+        if (sansSerif == null) {
+            sansSerif = new Font(Font.SANS_SERIF, Font.PLAIN, 1);
+            ModernUI.LOGGER.warn(GlyphManager.MARKER, "Sans Serif is missing");
+        }
         sSansSerifFont = sansSerif;
 
         sFontFamilyNames = Arrays.asList(families);
@@ -78,12 +84,14 @@ public class FontCollection {
         Font builtIn = null;
         if (!sJavaTooOld) {
             try (InputStream stream = FontCollection.class.getResourceAsStream("/assets/modernui/font/biliw.otf")) {
-                builtIn = Font.createFont(Font.TRUETYPE_FONT, stream);
+                if (stream != null) {
+                    builtIn = Font.createFont(Font.TRUETYPE_FONT, stream);
+                } else {
+                    ModernUI.LOGGER.info(GlyphManager.MARKER, "Built-in font was missing");
+                }
                 sAllFontFamilies.add(builtIn);
             } catch (FontFormatException | IOException e) {
-                ModernUI.LOGGER.warn(GlyphManager.MARKER, "Built-in font failed to load", e);
-            } catch (NullPointerException e) {
-                ModernUI.LOGGER.warn(GlyphManager.MARKER, "Built-in font was missing", e);
+                ModernUI.LOGGER.error(GlyphManager.MARKER, "Built-in font failed to load", e);
             }
         }
         sBuiltInFont = builtIn;
@@ -93,7 +101,7 @@ public class FontCollection {
             String family = fontFamily.getFamily(Locale.ROOT);
             fontCollection = sSystemFontMap.putIfAbsent(family, fontCollection);
             if (fontCollection != null) {
-                ModernUI.LOGGER.error(GlyphManager.MARKER, "Duplicated font family: {}", family);
+                ModernUI.LOGGER.warn(GlyphManager.MARKER, "Duplicated font family: {}", family);
             }
         }
 
@@ -112,7 +120,7 @@ public class FontCollection {
         } else {
             try {
                 int majorNumber = Integer.parseInt(javaVersion.split("\\.")[0]);
-                if (majorNumber < 11) {
+                if (majorNumber < 11 && LocalStorage.checkOneTimeEvent(1)) {
                     ModernUI.get().warnSetup("warning.modernui.old_java", "11.0.9", javaVersion);
                 }
             } catch (NumberFormatException | IndexOutOfBoundsException e) {
@@ -190,21 +198,152 @@ public class FontCollection {
         return (c >= 0xE0100 && c <= 0xE01FF) || (c >= 0xFE00 && c <= 0xFE0F);
     }
 
+    @Nonnull
     private final Font[] mFonts;
 
-    FontCollection(Font[] fonts) {
+    FontCollection(@Nonnull Font[] fonts) {
+        Preconditions.checkArgument(fonts.length > 0, "Font set cannot be empty");
         mFonts = fonts;
     }
 
-    @Nonnull
-    List<Run> itemize(@Nonnull char[] text, @Nonnull Locale locale) {
+    // calculate font runs
+    public List<Run> itemize(@Nonnull final char[] text) {
         if (text.length == 0)
             return Collections.emptyList();
-        return null;
+
+        final ObjectArrayList<Run> result = new ObjectArrayList<>();
+        final int limit = text.length;
+
+        Run lastRun = null;
+        Font lastFamily = null;
+
+        int nextCh;
+        int prevCh = 0;
+        int next = 0;
+        int index = 0;
+
+        char _c1 = text[index];
+        char _c2;
+        if (Character.isHighSurrogate(_c1) && index + 1 < limit) {
+            _c2 = text[index + 1];
+            if (Character.isLowSurrogate(_c2)) {
+                nextCh = Character.toCodePoint(_c1, _c2);
+                ++index;
+            } else if (Character.isSurrogate(_c1))
+                nextCh = 0xFFFD;
+            else
+                nextCh = _c1;
+        } else if (Character.isSurrogate(_c1))
+            nextCh = 0xFFFD;
+        else
+            nextCh = _c1;
+        ++index;
+
+        boolean running = true;
+        do {
+            int ch = nextCh;
+            int pos = next;
+            next = index;
+
+            if (index < limit) {
+                _c1 = text[index];
+                if (Character.isHighSurrogate(_c1) && index + 1 < limit) {
+                    _c2 = text[index + 1];
+                    if (Character.isLowSurrogate(_c2)) {
+                        nextCh = Character.toCodePoint(_c1, _c2);
+                        ++index;
+                    } else if (Character.isSurrogate(_c1))
+                        nextCh = 0xFFFD;
+                    else
+                        nextCh = _c1;
+                } else if (Character.isSurrogate(_c1))
+                    nextCh = 0xFFFD;
+                else
+                    nextCh = _c1;
+                ++index;
+            } else running = false;
+
+            boolean shouldContinueRun = false;
+            if (doesNotNeedFontSupport(ch)) {
+                // Always continue if the character is a format character not needed to be in the font.
+                shouldContinueRun = true;
+            } else if (lastFamily != null && (isStickyWhitelisted(ch) || isCombining(ch))) {
+                // Continue using existing font as long as it has coverage and is whitelisted.
+                shouldContinueRun = lastFamily.canDisplay(ch);
+            }
+
+            if (!shouldContinueRun) {
+                Font family = getFamilyForChar(ch);
+                if (pos == 0 || family != lastFamily) {
+                    int start = pos;
+                    // Workaround for combining marks and emoji modifiers until we implement
+                    // per-cluster font selection: if a combining mark or an emoji modifier is found in
+                    // a different font that also supports the previous character, attach previous
+                    // character to the new run. U+20E3 COMBINING ENCLOSING KEYCAP, used in emoji, is
+                    // handled properly by this since it's a combining mark too.
+                    if (pos != 0 &&
+                            (isCombining(ch) || (Emoji.isEmojiModifier(ch) && Emoji.isEmojiBase(prevCh)))) {
+                        int prevLength = Character.charCount(prevCh);
+                        if (lastRun != null) {
+                            lastRun.mEnd -= prevLength;
+                            if (lastRun.mStart == lastRun.mEnd) {
+                                result.remove(lastRun);
+                            }
+                        }
+                        start -= prevLength;
+                    }
+                    if (lastFamily == null) {
+                        // This is the first family ever assigned. We are either seeing the very first
+                        // character (which means start would already be zero), or we have only seen
+                        // characters that don't need any font support (which means we need to adjust
+                        // start to be 0 to include those characters).
+                        start = 0;
+                    }
+                    Run run = new Run(family, start, 0);
+                    result.add(run);
+                    lastRun = run;
+                    lastFamily = family;
+                }
+            }
+            prevCh = ch;
+            if (lastRun != null) {
+                lastRun.mEnd = next;
+            }
+
+        } while (running);
+
+        if (lastFamily == null) {
+            // No character needed any font support, so it doesn't really matter which font they end up
+            // getting displayed in. We put the whole string in one run, using the first font.
+            result.add(new Run(mFonts[0], 0, limit));
+        }
+        return result;
+    }
+
+    // no scores
+    private Font getFamilyForChar(int ch) {
+        for (Font font : mFonts)
+            if (font.canDisplay(ch))
+                return font;
+        for (Font font : FontCollection.sAllFontFamilies)
+            if (font.canDisplay(ch))
+                return font;
+        return mFonts[0];
     }
 
     // font run, child of style run
     public static class Run {
 
+        // font family but without style and size
+        public final Font mFont;
+        // start (inclusive), end (exclusive)
+        public final int mStart;
+        public int mEnd;
+
+        public Run(Font font, int start, int end) {
+            mFont = font;
+            mStart = start;
+            mEnd = end;
+        }
     }
 }

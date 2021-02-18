@@ -40,6 +40,17 @@ public final class LocalStorage {
 
     }
 
+    // Unstable
+    public static boolean checkOneTimeEvent(int mask) {
+        int v = Config.COMMON.oneTimeEvents.get();
+        if ((v & mask) != 0) {
+            return false;
+        }
+        Config.COMMON.oneTimeEvents.set(v | mask);
+        Config.COMMON.oneTimeEvents.save();
+        return true;
+    }
+
     /**
      * Find emoji code by given keyword
      *
