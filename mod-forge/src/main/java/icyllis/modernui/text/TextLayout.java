@@ -23,6 +23,12 @@ import it.unimi.dsi.fastutil.objects.ObjectArrays;
 import javax.annotation.Nonnull;
 import java.lang.reflect.Array;
 
+/**
+ * A base class that manages text layout in visual elements on the screen.
+ * <p>
+ * Note that this will handle multiple paragraphs, multiple lines etc.
+ * It's usually a page or a text box, not a single line of text or words.
+ */
 public abstract class TextLayout {
 
     /**
@@ -56,10 +62,11 @@ public abstract class TextLayout {
             return (T[]) (type == Object.class ? ObjectArrays.EMPTY_ARRAY : Array.newInstance(type, 0));
         }
 
+        //TODO
         /*if (text instanceof SpannableStringBuilder) {
             return ((SpannableStringBuilder) text).getSpans(start, end, type, false);
         } else {*/
-            return text.getSpans(start, end, type);
+        return text.getSpans(start, end, type);
         //}
     }
 

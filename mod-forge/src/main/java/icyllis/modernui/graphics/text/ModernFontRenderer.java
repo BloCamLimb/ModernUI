@@ -22,7 +22,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.forge.mixin.MixinClientLanguage;
 import icyllis.modernui.graphics.RenderCore;
-import icyllis.modernui.graphics.font.pipeline.TextRenderNode;
+import icyllis.modernui.graphics.text.pipeline.TextRenderNode;
 import icyllis.modernui.forge.mixin.AccessFontRenderer;
 import net.minecraft.client.StringSplitter;
 import net.minecraft.client.gui.Font;

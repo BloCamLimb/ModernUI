@@ -107,8 +107,6 @@ public final class Pools {
      */
     private static class SynchronizedPool<T> extends SimplePool<T> {
 
-        private final Object mLock = new Object();
-
         private SynchronizedPool(int maxPoolSize) {
             super(maxPoolSize);
         }
@@ -116,14 +114,14 @@ public final class Pools {
         @Nullable
         @Override
         public T acquire() {
-            synchronized (mLock) {
+            synchronized (this) {
                 return super.acquire();
             }
         }
 
         @Override
         public boolean release(@Nonnull T element) {
-            synchronized (mLock) {
+            synchronized (this) {
                 return super.release(element);
             }
         }
