@@ -21,16 +21,15 @@ package icyllis.modernui.graphics.font;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.font.pipeline.TextRenderNode;
-import icyllis.modernui.graphics.font.pipeline.TextRenderType;
 import icyllis.modernui.graphics.text.VanillaTextKey;
+import icyllis.modernui.graphics.text.pipeline.TextRenderNode;
+import icyllis.modernui.graphics.text.pipeline.TextRenderType;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
 import it.unimi.dsi.fastutil.longs.Long2ObjectRBTreeMap;
-import it.unimi.dsi.fastutil.objects.Object2IntAVLTreeMap;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.SimpleTexture;
@@ -168,6 +167,7 @@ public class GlyphManager {
     /**
      * Intermediate data array for use with textureImage.getRgb().
      */
+    //TODO May Out of bounds
     private final int[] imageData = new int[((1 << 6) * (1 << 6)) << 1];
 
     /**
@@ -190,23 +190,28 @@ public class GlyphManager {
 
 
     /**
-     * ID of current OpenGL cache texture being used by cacheGlyphs() to store pre-rendered glyph images.
+     * ID of current OpenGL cache texture being used by cacheGlyphs() to store
+     * pre-rendered glyph images. Render thread only.
      */
-    private int textureName;
+    private int mTextureId;
 
     /**
-     * A cache of all fonts that have at least one glyph pre-rendered in a texture. Each font maps to an integer (monotonically
-     * increasing) which forms the upper 32 bits of the key into the glyphCache map. This font cache can include different styles
-     * of the same font family like bold or italic and different size.
+     * A cache of all fonts that have at least one glyph pre-rendered in a texture.
+     * Each font maps to an integer (monotonically increasing) which forms the
+     * upper 32 bits of the key into the glyphCache map. This font cache can include
+     * different styles of the same font family like bold or italic and different size.
      */
-    private final Object2IntMap<Font> fontKeyMap = new Object2IntAVLTreeMap<>();
+    private final Object2IntMap<Font> fontKeyMap = new Object2IntOpenHashMap<>();
 
     /**
-     * A cache of pre-rendered glyphs mapping each glyph by its glyphcode to the position of its pre-rendered image within
-     * the cache texture. The key is a 64 bit number such that the lower 32 bits are the glyphcode and the upper 32 are the
-     * index of the font in the fontCache. This makes for a single globally unique number to identify any glyph from any font.
+     * A cache of pre-rendered glyphs mapping each glyph by its glyphCode to
+     * the position of its pre-rendered image within the cache texture. The key
+     * is a 64 bit number such that the lower 32 bits are the glyphCode and the
+     * upper 32 are the id of the font in the {@link #fontKeyMap}. This makes
+     * for a single globally unique number to identify any glyph from any font.
      */
-    private final Long2ObjectMap<TexturedGlyph> glyphCache = new Long2ObjectRBTreeMap<>();
+    private final Long2ObjectMap<TexturedGlyph> glyphCache =
+            Long2ObjectMaps.synchronize(new Long2ObjectRBTreeMap<>());
 
     /**
      * Font ID {@link #fontKeyMap} to an array of length 10 represent 0-9 digits (in that order)
@@ -219,6 +224,7 @@ public class GlyphManager {
     /**
      * Emoji texture atlas
      */
+    @Deprecated
     private int emojiTexture;
 
 
@@ -279,7 +285,7 @@ public class GlyphManager {
         glyphCache.clear();
         digitsMap.clear();
         emojiMap.clear();
-        textureName = 0;
+        mTextureId = 0;
         emojiTexture = 0;
         TextRenderType.clearTextures();
         selectedFonts.clear();
@@ -402,17 +408,17 @@ public class GlyphManager {
     /**
      * Derive a font family with given style and size
      *
-     * @param font  font family (with plain style and size 1)
-     * @param style font style
-     * @param size  font size in pixel
+     * @param family font family (with plain style and size 1)
+     * @param style  font style
+     * @param size   font size in pixel
      * @return derived font with style and size
      */
     @Nonnull
-    public Font deriveFont(@Nonnull Font font, int style, int size) {
-        font = font.deriveFont(style, size);
+    public Font deriveFont(@Nonnull Font family, int style, int size) {
+        family = family.deriveFont(style, size); // a new Font object, but they are equal)
         /* Ensure this font is already in fontKeyMap so it can be referenced by lookupGlyph() later on */
-        fontKeyMap.putIfAbsent(font, fontKeyMap.size());
-        return font;
+        fontKeyMap.putIfAbsent(family, fontKeyMap.size());
+        return family;
     }
 
     // (vanilla mode)
@@ -471,16 +477,16 @@ public class GlyphManager {
      * to cacheGlyphs().
      *
      * @param font      the font to which this glyphCode belongs and which was used to pre-render the glyph image in cacheGlyphs(),
-     *                  this font param also includes style and font size
+     *                  this font should be a derived font with font style and font size
      * @param glyphCode the font specific glyph code to lookup in the cache, for digits {@link #lookupDigits(Font)}
      * @return the cache textured glyph
      */
     @Nonnull
     public TexturedGlyph lookupGlyph(Font font, int glyphCode) {
-        // the key should be cached in layout step
+        // the key should be cached in layout step, see deriveFont()
         long fontKey = (long) fontKeyMap.getInt(font) << 32;
         return glyphCache.computeIfAbsent(fontKey | glyphCode,
-                l -> cacheGlyph(font, glyphCode));
+                iLoveSukazyo -> cacheGlyph(font, glyphCode));
     }
 
     /**
@@ -545,7 +551,7 @@ public class GlyphManager {
         currPosX += renderWidth + GLYPH_SPACING * 2;
         final float f = getResolutionFactor();
 
-        return new TexturedGlyph(textureName, advance / f, baselineX / f, baselineY / f,
+        return new TexturedGlyph(mTextureId, advance / f, baselineX / f, baselineY / f,
                 width / f, height / f,
                 (float) x / TEXTURE_SIZE, (float) y / TEXTURE_SIZE,
                 (float) (x + width) / TEXTURE_SIZE, (float) (y + height) / TEXTURE_SIZE);
@@ -654,7 +660,7 @@ public class GlyphManager {
             currLineHeight = Math.max(currLineHeight, renderHeight);
             currPosX += standardRenderWidth + GLYPH_SPACING * 2;
 
-            digits[i] = new TexturedGlyph(textureName,
+            digits[i] = new TexturedGlyph(mTextureId,
                     standardAdvance / f, baselineX / f, baselineY / f,
                     width / f, height / f,
                     (float) x / TEXTURE_SIZE, (float) y / TEXTURE_SIZE,
@@ -850,7 +856,7 @@ public class GlyphManager {
             /* Load imageBuffer with pixel data ready for transfer to OpenGL texture */
             updateImageBuffer(dirty.x, dirty.y, dirty.width, dirty.height);
 
-            GlStateManager._bindTexture(textureName);
+            GlStateManager._bindTexture(mTextureId);
 
             /* Due to changes in 1.14+, so this ensure pixels are correctly stored from CPU to GPU */
             GlStateManager._pixelStore(GL11.GL_UNPACK_ROW_LENGTH, dirty.width);
@@ -878,7 +884,7 @@ public class GlyphManager {
         /* Load imageBuffer with pixel data ready for transfer to OpenGL texture */
         updateImageBuffer(x, y, width, height);
 
-        GlStateManager._bindTexture(textureName);
+        GlStateManager._bindTexture(mTextureId);
 
         /* Due to changes in 1.14+, so this ensures pixels are correctly stored from CPU to GPU */
         GL11.glPixelStorei(GL11.GL_UNPACK_ROW_LENGTH, width); // not full texture
@@ -964,7 +970,7 @@ public class GlyphManager {
         /* Allocate new OpenGL texture */
         textureGenBuffer.position(0);
         GL11.glGenTextures(textureGenBuffer);
-        textureName = textureGenBuffer.get(0);
+        mTextureId = textureGenBuffer.get(0);
 
         /* Load imageBuffer with pixel data ready for transfer to OpenGL texture */
         //updateImageBuffer(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
@@ -973,7 +979,7 @@ public class GlyphManager {
          * Initialize texture with the now cleared BufferedImage. Using a texture with GL_ALPHA8 internal format may result in
          * faster rendering since the GPU has to only fetch 1 byte per texel instead of 4 with a regular RGBA texture.
          */
-        GlStateManager._bindTexture(textureName);
+        GlStateManager._bindTexture(mTextureId);
 
         /* Due to changes in 1.14+, so this ensure pixels are correctly stored from CPU to GPU */
         /*GlStateManager.pixelStore(GL11.GL_UNPACK_ROW_LENGTH, 0); // 0 is unspecific
@@ -1018,7 +1024,7 @@ public class GlyphManager {
         }
 
         /* Clear mipmap data, current grayscale value is zero, this is a little inefficient */
-        // 64 here is the max size of a glyph, the max res level is 3, the max config font size is 20
+        /* Keep the (2^shift)^2 less than imageData.length() */
         final int size = (TEXTURE_SIZE >> 6) * (TEXTURE_SIZE >> 6);
         for (int i = 0; i < size; i++) {
             int x = (i & ((TEXTURE_SIZE >> 6) - 1)) << 6;

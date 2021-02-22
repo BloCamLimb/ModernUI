@@ -20,10 +20,10 @@ package icyllis.modernui.forge;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.text.ModernFontRenderer;
 import icyllis.modernui.forge.mixin.AccessOption;
 import icyllis.modernui.forge.mixin.AccessVideoSettingsScreen;
 import icyllis.modernui.forge.network.NetworkHandler;
+import icyllis.modernui.graphics.text.ModernFontRenderer;
 import icyllis.modernui.mcimpl.MuiRegistries;
 import icyllis.modernui.mcimpl.ProjectBuilderRenderer;
 import icyllis.modernui.mcimpl.TestMenu;
@@ -175,7 +175,7 @@ final class Registration {
         //UIManager.getInstance().registerMenuScreen(Registration.TEST_MENU, menu -> new TestUI());
 
         ModernUIForge.EVENT_BUS.register(EventHandler.Internal.class);
-        event.getMinecraftSupplier().get().submit(() -> {
+        event.getMinecraftSupplier().get().submitAsync(() -> {
             UIManager.initialize();
             ModernFontRenderer.change(Config.CLIENT.globalRenderer.get(), Config.CLIENT.allowShadow.get());
         });
