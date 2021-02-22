@@ -18,7 +18,7 @@
 
 package icyllis.modernui.graphics.text;
 
-import icyllis.modernui.graphics.font.pipeline.GlyphRender;
+import icyllis.modernui.graphics.text.pipeline.GlyphRender;
 import net.minecraft.client.ComponentCollector;
 import net.minecraft.client.StringSplitter;
 import net.minecraft.network.chat.FormattedText;

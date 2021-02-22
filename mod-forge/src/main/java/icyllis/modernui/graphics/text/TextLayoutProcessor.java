@@ -25,8 +25,8 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.forge.mixin.MixinClientLanguage;
 import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.graphics.font.TexturedGlyph;
-import icyllis.modernui.graphics.font.pipeline.*;
 import icyllis.modernui.graphics.math.Color3i;
+import icyllis.modernui.graphics.text.pipeline.*;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Style;
@@ -988,7 +988,7 @@ public class TextLayoutProcessor {
     private void layoutRandom(TextProcessData data, char[] text, int start, int limit, int flag, Font font,
                               byte effect) {
         final TexturedGlyph[] digits = glyphManager.lookupDigits(font);
-        final float stdAdv = digits[0].advance;
+        final float stdAdv = digits[0].getAdvance();
 
         float offset;
         if (flag == Font.LAYOUT_RIGHT_TO_LEFT) {

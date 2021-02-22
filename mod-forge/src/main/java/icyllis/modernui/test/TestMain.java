@@ -46,13 +46,30 @@ public class TestMain {
     private static final Graphics2D GRAPHICS = IMAGE.createGraphics();
 
     /*
-        Heading font size
+        Heading font size (In Minecraft: GUI scale 2)
         level 1: 32
         level 2: 24
         level 3: 19
         level 4: 16 (default size for vanilla)
-        level 5: 14 (default size for paragraph)
-        level 6: 14 (lighter color)
+        level 5: 13 (default size for paragraph)
+        level 6: 11
+
+        8 9
+        10 11
+        12 13
+        14 15 1024x
+        16 17 18 19
+        20 21 22 23
+        24 25 26 27
+        28 29 30 31 2048x
+        32 33 34 35 36 37 38 39
+        40 41 42 43 44 45 46 47
+        48 49 50 51 52 53 54 55
+        56 57 58 59 60 61 62 63
+        64 65 66 67 68 69 70 71
+        72 73 74 75 76 77 78 79
+        80 81 82 83 84 85 86 87
+        88 89 90 91 92 93 94 95 96 4096x
      */
 
     static {
@@ -77,7 +94,7 @@ public class TestMain {
         }
         breakWords(s);
         breakGraphemes(s);
-        ModernUI.LOGGER.info(Integer.toHexString(MuiHooks.C.calcGuiScales(3840,2160)));
+        ModernUI.LOGGER.info(Integer.toHexString(MuiHooks.C.calcGuiScales(3840, 2160)));
     }
 
     public static void breakGraphemes(String s) {

@@ -84,11 +84,12 @@ public class StaticLayout extends TextLayout {
          * This method should be called after the layout is finished getting constructed and the
          * builder needs to be cleaned up and returned to the pool.
          */
-        private static void recycle(@Nonnull Builder b) {
-            b.release();
-            sPool.release(b);
+        private void recycle() {
+            release();
+            sPool.release(this);
         }
 
+        // release heavy buffers
         void release() {
             mText = null;
             mPaint = null;
@@ -196,7 +197,7 @@ public class StaticLayout extends TextLayout {
         @Nonnull
         public StaticLayout build() {
             StaticLayout result = new StaticLayout(this);
-            Builder.recycle(this);
+            recycle();
             return result;
         }
     }
