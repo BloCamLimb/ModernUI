@@ -38,6 +38,8 @@ import java.util.*;
 /**
  * The FontCollection specifies a set of font families that can be used
  * in Paint. This determines how text appears when drawn and measured.
+ * <p>
+ * The static part of this class is managing all fonts used in Modern UI.
  */
 public class FontCollection {
 
@@ -85,11 +87,10 @@ public class FontCollection {
         if (!sJavaTooOld) {
             try (InputStream stream = FontCollection.class.getResourceAsStream("/assets/modernui/font/biliw.otf")) {
                 if (stream != null) {
-                    builtIn = Font.createFont(Font.TRUETYPE_FONT, stream);
+                    sAllFontFamilies.add(builtIn = Font.createFont(Font.TRUETYPE_FONT, stream));
                 } else {
                     ModernUI.LOGGER.info(GlyphManager.MARKER, "Built-in font was missing");
                 }
-                sAllFontFamilies.add(builtIn);
             } catch (FontFormatException | IOException e) {
                 ModernUI.LOGGER.error(GlyphManager.MARKER, "Built-in font failed to load", e);
             }
