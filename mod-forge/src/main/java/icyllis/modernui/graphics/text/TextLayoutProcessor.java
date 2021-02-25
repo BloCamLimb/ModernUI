@@ -22,7 +22,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.ibm.icu.text.Bidi;
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.forge.mixin.MixinClientLanguage;
+import icyllis.modernui.loader.mixin.MixinClientLanguage;
 import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.graphics.font.TexturedGlyph;
 import icyllis.modernui.graphics.math.Color3i;
@@ -172,7 +172,7 @@ public class TextLayoutProcessor {
 
     public void initRenderer() {
         if (glyphManager == null) {
-            glyphManager = new GlyphManager();
+            glyphManager = GlyphManager.getInstance();
         } else {
             throw new IllegalStateException("Already initialized");
         }

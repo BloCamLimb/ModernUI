@@ -29,7 +29,9 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
 import it.unimi.dsi.fastutil.longs.Long2ObjectRBTreeMap;
-import it.unimi.dsi.fastutil.objects.*;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.SimpleTexture;
@@ -252,7 +254,7 @@ public class GlyphManager {
     /**
      * A single instance of GlyphManager is allocated for internal use.
      */
-    public GlyphManager() {
+    private GlyphManager() {
         instance = this;
         /* Set background color for use with clearRect() */
         glyphTextureGraphics.setBackground(BG_COLOR);
@@ -269,8 +271,10 @@ public class GlyphManager {
     }
 
     // internal use
+    @Nonnull
     public static GlyphManager getInstance() {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
+        if (instance == null) new GlyphManager();
         return instance;
     }
 
