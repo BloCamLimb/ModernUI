@@ -18,7 +18,7 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.forge.ModernUIForge;
+import icyllis.modernui.loader.forge.ModernUIForge;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.graphics.math.TextAlign;

@@ -23,7 +23,7 @@ import com.ibm.icu.impl.UCharacterProperty;
 import com.ibm.icu.lang.UCharacter;
 import com.ibm.icu.lang.UCharacterCategory;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.forge.LocalStorage;
+import icyllis.modernui.loader.forge.LocalStorage;
 import icyllis.modernui.text.Emoji;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
@@ -81,7 +81,7 @@ public class FontCollection {
         }
         sSansSerifFont = sansSerif;
 
-        sFontFamilyNames = Arrays.asList(families);
+        sFontFamilyNames = new ObjectArrayList<>(families);
 
         Font builtIn = null;
         if (!sJavaTooOld) {
@@ -98,7 +98,7 @@ public class FontCollection {
         sBuiltInFont = builtIn;
 
         for (Font fontFamily : sAllFontFamilies) {
-            FontCollection fontCollection = new FontCollection(new Font[]{fontFamily});
+            FontCollection fontCollection = new FontCollection(new Font[]{fontFamily, sansSerif});
             String family = fontFamily.getFamily(Locale.ROOT);
             fontCollection = sSystemFontMap.putIfAbsent(family, fontCollection);
             if (fontCollection != null) {
@@ -141,10 +141,12 @@ public class FontCollection {
         }
     }
 
+    // unmodifiable
     public static List<String> getFontFamilyNames() {
         return sFontFamilyNames;
     }
 
+    @Nonnull
     public static FontCollection getSystemFont(@Nonnull String familyName) {
         FontCollection t = sSystemFontMap.get(familyName);
         return t == null ? SANS_SERIF : t;
@@ -202,7 +204,7 @@ public class FontCollection {
     @Nonnull
     private final Font[] mFonts;
 
-    FontCollection(@Nonnull Font[] fonts) {
+    private FontCollection(@Nonnull Font[] fonts) {
         Preconditions.checkArgument(fonts.length > 0, "Font set cannot be empty");
         mFonts = fonts;
     }
@@ -335,16 +337,29 @@ public class FontCollection {
     // font run, child of style run
     public static class Run {
 
-        // font family but without style and size
-        public final Font mFont;
-        // start (inclusive), end (exclusive)
-        public final int mStart;
-        public int mEnd;
+        private final Font mFont;
+        private final int mStart;
+        private int mEnd;
 
         public Run(Font font, int start, int end) {
             mFont = font;
             mStart = start;
             mEnd = end;
+        }
+
+        // font family without style and size
+        public Font getFont() {
+            return mFont;
+        }
+
+        // start index (inclusive)
+        public int getStart() {
+            return mStart;
+        }
+
+        // end index (exclusive)
+        public int getEnd() {
+            return mEnd;
         }
     }
 }
