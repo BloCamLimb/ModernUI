@@ -26,8 +26,15 @@ public final class TextUtils {
     private static final Object sLock = new Object();
     private static char[] sTemp = null;
 
+    /**
+     * Obtain a temporary char buffer.
+     *
+     * @param len the length of the buffer
+     * @return a char buffer
+     * @see #recycle(char[]) recycle the buffer
+     */
     @Nonnull
-    static char[] obtain(int len) {
+    public static char[] obtain(int len) {
         char[] buf;
 
         synchronized (sLock) {
@@ -41,7 +48,7 @@ public final class TextUtils {
         return buf;
     }
 
-    static void recycle(@Nonnull char[] temp) {
+    public static void recycle(@Nonnull char[] temp) {
         if (temp.length > 1000)
             return;
 

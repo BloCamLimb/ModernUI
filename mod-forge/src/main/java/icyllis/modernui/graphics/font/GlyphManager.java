@@ -396,6 +396,24 @@ public class GlyphManager {
         return selectedFonts.get(0);
     }
 
+    /**
+     * Calculate font metrics in pixels, the higher 32 bits are ascent and
+     * lower 32 bits are descent.
+     *
+     * @return the font metrics
+     */
+    public long getFontMetrics(@Nonnull FontCollection fontSet, int style, int size) {
+        int ascent = 1;
+        int descent = 1;
+        for (Font family : fontSet.getFonts()) {
+            final FontMetrics metrics = glyphTextureGraphics.getFontMetrics(
+                    family.deriveFont(style, size));
+            ascent = Math.max(ascent, metrics.getAscent());
+            descent = Math.max(descent, metrics.getDescent());
+        }
+        return (long) ascent << 32 | descent;
+    }
+
     // test only
     public TexturedGlyph lookupEmoji(int codePoint) {
         return emojiMap.computeIfAbsent(codePoint, l -> {
