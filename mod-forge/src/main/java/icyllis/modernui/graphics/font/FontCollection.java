@@ -323,6 +323,12 @@ public class FontCollection {
         return result;
     }
 
+    // raw array
+    @Nonnull
+    public Font[] getFonts() {
+        return mFonts;
+    }
+
     // no scores
     private Font getFamilyForChar(int ch) {
         for (Font font : mFonts)

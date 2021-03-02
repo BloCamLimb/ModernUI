@@ -74,6 +74,11 @@ public class MeasuredParagraph {
     @Nonnull
     private final IntArrayList mSpanEndCache = new IntArrayList();
 
+    // The font metrics.
+    // See getFontMetrics comments.
+    @Nonnull
+    private final IntArrayList mFontMetrics = new IntArrayList();
+
     //@Nullable
     private MeasuredText mMeasuredText;
 
@@ -91,6 +96,7 @@ public class MeasuredParagraph {
         mLevels.trim();
         mAdvances.trim();
         mSpanEndCache.trim();
+        mFontMetrics.trim();
     }
 
     /**
@@ -103,13 +109,39 @@ public class MeasuredParagraph {
         mLevels.clear();
         mAdvances.clear();
         mSpanEndCache.clear();
-        /*mFontMetrics.clear();*/
+        mFontMetrics.clear();
         mMeasuredText = null;
     }
 
     /**
+     * Returns the MetricsAffectingSpan end indices.
+     * <p>
+     * If the input text is not a spanned string, this has one value that is the length of the text.
+     * <p>
+     * This is available only if the MeasuredParagraph is computed with buildForStaticLayout.
+     * Returns empty array in other cases.
+     */
+    @Nonnull
+    public IntArrayList getSpanEndCache() {
+        return mSpanEndCache;
+    }
+
+    /**
+     * Returns the int array which holds FontMetrics.
+     * <p>
+     * This array holds the repeat of ascent, descent of font metrics value.
+     * <p>
+     * This is available only if the MeasuredParagraph is computed with buildForStaticLayout.
+     * Returns empty array in other cases.
+     */
+    @Nonnull
+    public IntArrayList getFontMetrics() {
+        return mFontMetrics;
+    }
+
+    /**
      * Returns the result of the MeasuredParagraph.
-     *
+     * <p>
      * This is available only if the MeasuredParagraph is computed with buildForStaticLayout.
      * Returns null in other cases.
      */
@@ -126,8 +158,8 @@ public class MeasuredParagraph {
     @Deprecated
     @Nonnull
     private static MeasuredParagraph buildForMeasurement(@Nonnull TextPaint paint, @Nonnull CharSequence text,
-                                                        int start, int end, @Nonnull TextDirectionHeuristic dir,
-                                                        @Nullable MeasuredParagraph recycle) {
+                                                         int start, int end, @Nonnull TextDirectionHeuristic dir,
+                                                         @Nullable MeasuredParagraph recycle) {
         final MeasuredParagraph c = recycle == null ? obtain() : recycle;
         c.resetAndAnalyzeBidi(text, start, end, dir);
         c.mAdvances.size(c.mTextLength);
@@ -289,7 +321,7 @@ public class MeasuredParagraph {
             byte level = mLevels.getByte(start);
             // Note that the empty text or empty range won't reach this method.
             // Safe to search from start + 1.
-            for (int levelStart = start, levelEnd = start + 1;; ++levelEnd) {
+            for (int levelStart = start, levelEnd = start + 1; ; ++levelEnd) {
                 if (levelEnd == end || mLevels.getByte(levelEnd) != level) { // bidi run
                     final boolean isRtl = (level & 0x1) != 0;
                     if (builder == null) {

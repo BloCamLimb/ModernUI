@@ -19,6 +19,7 @@
 package icyllis.modernui.text;
 
 import com.google.common.base.Preconditions;
+import icyllis.modernui.graphics.font.MinikinPaint;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -63,7 +64,7 @@ public class MeasuredText {
             Preconditions.checkArgument(length > 0, "length can not be negative");
             final int end = mCurrentOffset + length;
             Preconditions.checkArgument(end <= mText.length, "Style exceeds the text length");
-            mRuns.add(new StyleRun(mCurrentOffset, end, paint.copy(), isRtl));
+            mRuns.add(new StyleRun(mCurrentOffset, end, paint.toMinikin(), isRtl));
             mCurrentOffset = end;
         }
 
@@ -106,10 +107,10 @@ public class MeasuredText {
 
     public static class StyleRun extends Run {
 
-        public final TextPaint mPaint;
+        public final MinikinPaint mPaint;
         public final boolean mIsRtl;
 
-        public StyleRun(int start, int end, TextPaint paint, boolean isRtl) {
+        public StyleRun(int start, int end, MinikinPaint paint, boolean isRtl) {
             super(start, end);
             mPaint = paint;
             mIsRtl = isRtl;
