@@ -19,6 +19,7 @@
 package icyllis.modernui.text;
 
 import com.ibm.icu.text.Bidi;
+import icyllis.modernui.graphics.font.FontMetricsInt;
 import icyllis.modernui.text.style.MetricAffectingSpan;
 import icyllis.modernui.text.style.ReplacementSpan;
 import icyllis.modernui.util.Pool;
@@ -85,6 +86,8 @@ public class MeasuredParagraph {
 
     @Nonnull
     private final TextPaint mCachedPaint = new TextPaint();
+    @Nullable
+    private FontMetricsInt mCachedFm;
 
     private MeasuredParagraph() {
     }
@@ -312,6 +315,10 @@ public class MeasuredParagraph {
                                            int start, int end, @Nonnull MeasuredText.Builder builder) {
         mCachedPaint.set(paint);
 
+        if (mCachedFm == null) {
+            mCachedFm = new FontMetricsInt();
+        }
+
         ReplacementSpan replacement = null;
         if (spans != null) {
             for (MetricAffectingSpan span : spans) {
@@ -327,7 +334,7 @@ public class MeasuredParagraph {
         final int runStart = start - mTextStart;
         final int runEnd = end - mTextStart;
 
-        final long fontMetrics = mCachedPaint.getFontMetrics();
+        mCachedPaint.getFontMetrics(mCachedFm);
 
         if (replacement != null) {
             applyReplacementRun(replacement, runStart, runEnd, builder);
@@ -335,8 +342,8 @@ public class MeasuredParagraph {
             applyStyleRun(runStart, runEnd, builder);
         }
 
-        mFontMetrics.add((int) (fontMetrics >> 32));
-        mFontMetrics.add((int) fontMetrics);
+        mFontMetrics.add(mCachedFm.mAscent);
+        mFontMetrics.add(mCachedFm.mDescent);
     }
 
     private void applyReplacementRun(@Nonnull ReplacementSpan replacement, int start, int end,

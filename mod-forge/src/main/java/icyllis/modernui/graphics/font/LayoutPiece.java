@@ -19,9 +19,9 @@
 package icyllis.modernui.graphics.font;
 
 /**
- * The layout of a grapheme cluster.
+ * The layout of a grapheme cluster, which may contain multiple glyphs.
  *
  * @see icyllis.modernui.text.GraphemeBreak
  */
-public class GraphemeLayout {
+public class LayoutPiece {
 }

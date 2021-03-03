@@ -340,6 +340,19 @@ public class FontCollection {
         return mFonts[0];
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        FontCollection that = (FontCollection) o;
+        return Arrays.equals(mFonts, that.mFonts);
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(mFonts);
+    }
+
     // font run, child of style run
     public static class Run {
 
