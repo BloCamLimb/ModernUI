@@ -24,6 +24,7 @@ import org.intellij.lang.annotations.MagicConstant;
 import javax.annotation.Nonnull;
 import java.awt.*;
 import java.util.Locale;
+import java.util.Objects;
 
 public class MinikinPaint {
 
@@ -143,5 +144,28 @@ public class MinikinPaint {
      */
     public void setFontSize(int fontSize) {
         mFontSize = fontSize;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        MinikinPaint that = (MinikinPaint) o;
+
+        if (mFontStyle != that.mFontStyle) return false;
+        if (mFontSize != that.mFontSize) return false;
+        if (!Objects.equals(mFontCollection, that.mFontCollection))
+            return false;
+        return Objects.equals(mLocale, that.mLocale);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = mFontCollection != null ? mFontCollection.hashCode() : 0;
+        result = 31 * result + (mLocale != null ? mLocale.hashCode() : 0);
+        result = 31 * result + mFontStyle;
+        result = 31 * result + mFontSize;
+        return result;
     }
 }

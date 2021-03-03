@@ -18,6 +18,7 @@
 
 package icyllis.modernui.text;
 
+import icyllis.modernui.graphics.font.FontMetricsInt;
 import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.graphics.font.MinikinPaint;
 
@@ -48,12 +49,11 @@ public class TextPaint extends MinikinPaint {
     }
 
     /**
-     * Calculate font metrics in pixels, the higher 32 bits are ascent and
-     * lower 32 bits are descent.
+     * Calculate font metrics in pixels
      *
-     * @return the font metrics
+     * @param fm a FontMetrics to store the result
      */
-    public long getFontMetrics() {
-        return GlyphManager.getInstance().getFontMetrics(mFontCollection, mFontStyle, mFontSize);
+    public void getFontMetrics(FontMetricsInt fm) {
+        GlyphManager.getInstance().getFontMetrics(mFontCollection, mFontStyle, mFontSize, fm);
     }
 }
