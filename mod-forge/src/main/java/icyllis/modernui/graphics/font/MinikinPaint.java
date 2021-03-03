@@ -67,6 +67,7 @@ public class MinikinPaint {
         mFontCollection = paint.mFontCollection;
         mLocale = paint.mLocale;
         mFontStyle = paint.mFontStyle;
+        mFontSize = paint.mFontSize;
     }
 
     /**
