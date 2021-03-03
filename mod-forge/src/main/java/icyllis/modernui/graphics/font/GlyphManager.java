@@ -408,7 +408,7 @@ public class GlyphManager {
         for (Font family : fontSet.getFonts()) {
             final FontMetrics metrics = glyphTextureGraphics.getFontMetrics(
                     family.deriveFont(style, size));
-            ascent = Math.max(ascent, metrics.getAscent());
+            ascent = Math.min(ascent, metrics.getAscent());
             descent = Math.max(descent, metrics.getDescent());
         }
         return (long) ascent << 32 | descent;

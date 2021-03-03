@@ -24,13 +24,14 @@ import icyllis.modernui.text.style.ReplacementSpan;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
-import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.annotation.concurrent.NotThreadSafe;
 import java.util.Arrays;
 
+@NotThreadSafe
 public class MeasuredParagraph {
 
     private static final Pool<MeasuredParagraph> sPool = Pools.concurrent(1);
@@ -65,9 +66,9 @@ public class MeasuredParagraph {
     @Nonnull
     private final ByteArrayList mLevels = new ByteArrayList();
 
-    @Deprecated
+    /*@Deprecated
     @Nonnull
-    private final FloatArrayList mAdvances = new FloatArrayList();
+    private final FloatArrayList mAdvances = new FloatArrayList();*/
 
     // The span end positions.
     // See getSpanEndCache comments.
@@ -94,7 +95,7 @@ public class MeasuredParagraph {
     public void release() {
         reset();
         mLevels.trim();
-        mAdvances.trim();
+        //mAdvances.trim();
         mSpanEndCache.trim();
         mFontMetrics.trim();
     }
@@ -107,10 +108,40 @@ public class MeasuredParagraph {
         mCopiedBuffer = null;
         //mWholeWidth = 0;
         mLevels.clear();
-        mAdvances.clear();
+        //mAdvances.clear();
         mSpanEndCache.clear();
         mFontMetrics.clear();
         mMeasuredText = null;
+    }
+
+    /**
+     * Returns the length of the paragraph.
+     * <p>
+     * This is always available.
+     */
+    public int getTextLength() {
+        return mTextLength;
+    }
+
+    /**
+     * Returns the characters to be measured. This will be the same value
+     * as {@link MeasuredText#getTextBuf()} if {@link #getMeasuredText()} available.
+     * <p>
+     * This is always available.
+     */
+    @Nonnull
+    public char[] getChars() {
+        return mCopiedBuffer;
+    }
+
+    /**
+     * Returns the first paragraph direction. Either {@link Bidi#DIRECTION_LEFT_TO_RIGHT}
+     * or {@link Bidi#DIRECTION_RIGHT_TO_LEFT)
+     * <p>
+     * This is always available.
+     */
+    public int getParagraphDir() {
+        return mParaDir;
     }
 
     /**
@@ -155,7 +186,7 @@ public class MeasuredParagraph {
         return c == null ? new MeasuredParagraph() : c;
     }
 
-    @Deprecated
+    /*@Deprecated
     @Nonnull
     private static MeasuredParagraph buildForMeasurement(@Nonnull TextPaint paint, @Nonnull CharSequence text,
                                                          int start, int end, @Nonnull TextDirectionHeuristic dir,
@@ -183,7 +214,7 @@ public class MeasuredParagraph {
             }
         }
         return c;
-    }
+    }*/
 
     @Nonnull
     public static MeasuredParagraph buildForStaticLayout(@Nonnull TextPaint paint, @Nonnull CharSequence text,
@@ -191,7 +222,7 @@ public class MeasuredParagraph {
                                                          @Nullable MeasuredParagraph recycle) {
         final MeasuredParagraph c = recycle == null ? obtain() : recycle;
         c.resetAndAnalyzeBidi(text, start, end, dir);
-        MeasuredText.Builder builder = new MeasuredText.Builder(c.mCopiedBuffer);
+        final MeasuredText.Builder builder = new MeasuredText.Builder(c.mCopiedBuffer);
         if (c.mTextLength == 0) {
             //TODO review
             return c;
@@ -278,7 +309,7 @@ public class MeasuredParagraph {
     }
 
     private void applyMetricsAffectingSpan(@Nonnull TextPaint paint, @Nullable MetricAffectingSpan[] spans,
-                                           int start, int end, @Nullable MeasuredText.Builder builder) {
+                                           int start, int end, @Nonnull MeasuredText.Builder builder) {
         mCachedPaint.set(paint);
 
         ReplacementSpan replacement = null;
@@ -296,26 +327,28 @@ public class MeasuredParagraph {
         final int runStart = start - mTextStart;
         final int runEnd = end - mTextStart;
 
+        final long fontMetrics = mCachedPaint.getFontMetrics();
+
         if (replacement != null) {
             applyReplacementRun(replacement, runStart, runEnd, builder);
         } else {
             applyStyleRun(runStart, runEnd, builder);
         }
+
+        mFontMetrics.add((int) (fontMetrics >> 32));
+        mFontMetrics.add((int) fontMetrics);
     }
 
     private void applyReplacementRun(@Nonnull ReplacementSpan replacement, int start, int end,
-                                     @Nullable MeasuredText.Builder builder) {
-        //TODO
+                                     @Nonnull MeasuredText.Builder builder) {
+        //TODO get replacement width
+        builder.addReplacementRun(mCachedPaint, end - start, 0);
     }
 
-    private void applyStyleRun(int start, int end, @Nullable MeasuredText.Builder builder) {
+    private void applyStyleRun(int start, int end, @Nonnull MeasuredText.Builder builder) {
         if (mLtrWithoutBidi) {
             // If the whole text is LTR direction, just apply whole region.
-            if (builder == null) {
-
-            } else {
-                builder.addStyleRun(mCachedPaint, end - start, false);
-            }
+            builder.addStyleRun(mCachedPaint, end - start, false);
         } else {
             // If there is multiple bidi levels, split into individual bidi level and apply style.
             byte level = mLevels.getByte(start);
@@ -324,11 +357,7 @@ public class MeasuredParagraph {
             for (int levelStart = start, levelEnd = start + 1; ; ++levelEnd) {
                 if (levelEnd == end || mLevels.getByte(levelEnd) != level) { // bidi run
                     final boolean isRtl = (level & 0x1) != 0;
-                    if (builder == null) {
-                        final int levelLength = levelEnd - levelStart;
-                    } else {
-                        builder.addStyleRun(mCachedPaint, levelEnd - levelStart, isRtl);
-                    }
+                    builder.addStyleRun(mCachedPaint, levelEnd - levelStart, isRtl);
                     if (levelEnd == end) {
                         break;
                     }
