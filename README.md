@@ -31,17 +31,34 @@ repositories {
         url 'https://maven.izzel.io/releases'
     }
 }
+```
+##### Forge Loom 0.6
+```
 dependencies {
-    // Note that ForgeGradle 3, mixin 0.8.2 can't remap refmap
-    // in forge dev environment, you may use only forge loom now
-    // see https://github.com/SpongePowered/Mixin/issues/462
-    // ForgeGradle 3 will ignore sources jar and dependecies as well
-    // see https://github.com/MinecraftForge/ForgeGradle/issues/736
-
-    // Forge Loom 0.6
     modCompile "icyllis.modernui:ModernUI-Forge:${modernui_version}"
 }
 ```
-### Screenshots
+##### ForgeGradle 3  
+Note that ForgeGradle 3, Mixin 0.8.2 can't automatically remap refmap
+in forge dev environment, you may manually add mixin system properties and
+re-run `genIntellijRuns`, see https://github.com/SpongePowered/Mixin/issues/462  
+ForgeGradle 3 will ignore sources jar and dependencies as well, you may manually
+add one that with `@pom` for dependencies, see https://github.com/MinecraftForge/ForgeGradle/issues/736  
+These should be fixed in ForgeGradle 4 and Mixin 0.8.3.
+```
+minecraft {
+    runs {
+        client {
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+        }
+    }
+}
+dependencies {
+    compile fg.deobf("icyllis.modernui:ModernUI-Forge:${modernui_version}")
+    compile fg.deobf("icyllis.modernui:ModernUI-Forge:${modernui_version}@pom")
+}
+```
+### Screenshots (out-of-date)
 ![a](https://i.loli.net/2020/05/15/fYAow29d4JtqaGu.png)
 ![b](https://i.loli.net/2020/04/10/LDBFc1qo5wtnS8u.png)
