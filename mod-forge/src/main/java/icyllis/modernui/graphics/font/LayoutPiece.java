@@ -18,10 +18,22 @@
 
 package icyllis.modernui.graphics.font;
 
+import javax.annotation.Nonnull;
+
 /**
  * The layout of a grapheme cluster, which may contain multiple glyphs.
  *
  * @see icyllis.modernui.text.GraphemeBreak
  */
 public class LayoutPiece {
+
+    public final float mAdvance;
+    public final int mAscent;
+    public final int mDescent;
+
+    public LayoutPiece(float advance, @Nonnull FontMetricsInt extent) {
+        mAdvance = advance;
+        mAscent = extent.mAscent;
+        mDescent = extent.mDescent;
+    }
 }

@@ -40,8 +40,16 @@ public class FontMetricsInt {
     }
 
     public void extendBy(@Nonnull FontMetrics fm) {
-        mAscent = Math.max(mAscent, fm.getAscent()); // positive
-        mDescent = Math.max(mDescent, fm.getDescent()); // positive
+        extendBy(fm.getAscent(), fm.getDescent());
+    }
+
+    public void extendBy(@Nonnull FontMetricsInt fm) {
+        extendBy(fm.mAscent, fm.mDescent);
+    }
+
+    public void extendBy(int ascent, int descent) {
+        mAscent = Math.max(mAscent, ascent); // positive
+        mDescent = Math.max(mDescent, descent); // positive
     }
 
     @Override

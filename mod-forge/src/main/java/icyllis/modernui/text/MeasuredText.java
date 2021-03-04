@@ -19,6 +19,9 @@
 package icyllis.modernui.text;
 
 import com.google.common.base.Preconditions;
+import icyllis.modernui.graphics.font.FontMetricsInt;
+import icyllis.modernui.graphics.font.LayoutEngine;
+import icyllis.modernui.graphics.font.LayoutPieces;
 import icyllis.modernui.graphics.font.MinikinPaint;
 
 import javax.annotation.Nonnull;
@@ -34,7 +37,7 @@ public class MeasuredText {
     @Nonnull
     private final char[] mTextBuf;
     @Nonnull
-    protected final Run[] mRuns;
+    public final Run[] mRuns;
 
     /**
      * Follows grapheme cluster break, for example: there are 6 chars,
@@ -42,18 +45,37 @@ public class MeasuredText {
      * Then mAdvances[0] = first grapheme, mAdvances[2] = second grapheme,
      * others are zero. This is in logical order of textBuf.
      */
-    protected float[] mAdvances;
+    public final float[] mAdvances;
 
-    //TODO call layout engine in graphics package
+    public final LayoutPieces mLayoutPieces = new LayoutPieces();
+
     private MeasuredText(@Nonnull char[] textBuf, @Nonnull Run[] runs) {
         mTextBuf = textBuf;
         mRuns = runs;
+        mAdvances = new float[textBuf.length];
+        measure(textBuf);
+    }
+
+    private void measure(@Nonnull char[] textBuf) {
+        if (textBuf.length == 0)
+            return;
+        for (Run run : mRuns) {
+            run.getMetrics(textBuf, mAdvances, mLayoutPieces);
+        }
     }
 
     // the raw text buf array
     @Nonnull
     public char[] getTextBuf() {
         return mTextBuf;
+    }
+
+    public void getExtent(int start, int end, FontMetricsInt extent) {
+        for (Run run : mRuns) {
+            if (start < run.mEnd && end > run.mStart) {
+                run.getExtent(mTextBuf, Math.max(start, run.mStart), Math.min(end, run.mEnd), mLayoutPieces, extent);
+            }
+        }
     }
 
     /**
@@ -150,6 +172,14 @@ public class MeasuredText {
             mEnd = end;
         }
 
+        // Compute metrics
+        public abstract void getMetrics(@Nonnull char[] text, @Nonnull float[] advances,
+                                        @Nonnull LayoutPieces outPieces);
+
+        // Extend extent
+        public abstract void getExtent(@Nonnull char[] text, int start, int end, @Nonnull LayoutPieces pieces,
+                                       @Nonnull FontMetricsInt extent);
+
         // Returns true if this run is RTL. Otherwise returns false.
         public abstract boolean isRtl();
 
@@ -173,6 +203,25 @@ public class MeasuredText {
         }
 
         @Override
+        public void getMetrics(@Nonnull char[] text, @Nonnull float[] advances, @Nonnull LayoutPieces outPieces) {
+            GraphemeBreak.getTextRuns(text, getLocale(), mStart, mEnd,
+                    (st, en) -> LayoutEngine.getInstance().measure(text, st, en, mPaint, mIsRtl,
+                            (lp, pt) -> {
+                                advances[st] = lp.mAdvance;
+                                outPieces.insert(st, en, lp, mIsRtl, pt);
+                            }));
+        }
+
+        @Override
+        public void getExtent(@Nonnull char[] text, int start, int end, @Nonnull LayoutPieces pieces,
+                              @Nonnull FontMetricsInt extent) {
+            final int paintId = pieces.findPaintId(mPaint);
+            GraphemeBreak.getTextRuns(text, getLocale(), start, end,
+                    (st, en) -> pieces.getOrCreate(text, st, en, mPaint, mIsRtl, paintId,
+                            (lp, pt) -> extent.extendBy(lp.mAscent, lp.mDescent)));
+        }
+
+        @Override
         public boolean isRtl() {
             return mIsRtl;
         }
@@ -191,13 +240,24 @@ public class MeasuredText {
 
     public static class ReplacementRun extends Run {
 
-        public final float mWidth;
+        private final float mWidth;
         private final Locale mLocale;
 
         public ReplacementRun(int start, int end, float width, Locale locale) {
             super(start, end);
             mWidth = width;
             mLocale = locale;
+        }
+
+        @Override
+        public void getMetrics(@Nonnull char[] text, @Nonnull float[] advances, @Nonnull LayoutPieces outPieces) {
+            advances[mStart] = mWidth;
+            //TODO: Get the extents information from the caller.
+        }
+
+        @Override
+        public void getExtent(@Nonnull char[] text, int start, int end, @Nonnull LayoutPieces pieces, @Nonnull FontMetricsInt extent) {
+
         }
 
         @Override

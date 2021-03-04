@@ -99,17 +99,6 @@ public class TestMain {
         breakWords(s);
         breakGraphemes(s);
         ModernUI.LOGGER.info(Integer.toHexString(MuiHooks.C.calcGuiScales(3840, 2160)));
-
-        FontCollection typeface = FontCollection.getSystemFont("Comic Sans MS");
-        typeface.itemize("It's now 23\u2103www nice!".toCharArray()).forEach(
-                r -> ModernUI.LOGGER.info("{}: [{},{})", r.getFont().getFamily(Locale.ROOT), r.getStart(), r.getEnd()));
-
-        String v2 = "e889bee7a78be69c88";
-        byte[] v = new byte[v2.length() >> 1];
-        for (int i = 0; i < v2.length(); i = i + 2) {
-            v[i >> 1] = Integer.valueOf(v2.substring(i, i + 2), 16).byteValue();
-        }
-        ModernUI.LOGGER.info(new String(v));
     }
 
     public static void breakGraphemes(String s) {

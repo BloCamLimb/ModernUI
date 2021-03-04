@@ -120,7 +120,8 @@ public final class GraphemeBreak {
      * @param op            how to move the cursor
      * @return the offset of the next position or -1
      */
-    public static int getTextRunCursor(@Nonnull char[] text, @Nonnull Locale locale, int contextStart, int contextLength, int offset, int op) {
+    public static int getTextRunCursor(@Nonnull char[] text, @Nonnull Locale locale, int contextStart,
+                                       int contextLength, int offset, int op) {
         int contextEnd = contextStart + contextLength;
         if (((contextStart | contextEnd | offset | (contextEnd - contextStart)
                 | (offset - contextStart) | (contextEnd - offset)
@@ -128,8 +129,8 @@ public final class GraphemeBreak {
                 || op > AT) {
             throw new IndexOutOfBoundsException();
         }
-        return sUseICU ? getTextRunCursorICU(new CharArrayIterator(text, contextStart, contextEnd), locale, offset, op) :
-                getTextRunCursorImpl(null, text, contextStart, contextLength, offset, op);
+        return sUseICU ? getTextRunCursorICU(new CharArrayIterator(text, contextStart, contextEnd), locale, offset, op)
+                : getTextRunCursorImpl(null, text, contextStart, contextLength, offset, op);
     }
 
     /**
@@ -157,7 +158,8 @@ public final class GraphemeBreak {
      * @param op           how to move the cursor
      * @return the offset of the next position, or -1
      */
-    public static int getTextRunCursor(@Nonnull CharSequence text, @Nonnull Locale locale, int contextStart, int contextEnd, int offset, int op) {
+    public static int getTextRunCursor(@Nonnull CharSequence text, @Nonnull Locale locale, int contextStart,
+                                       int contextEnd, int offset, int op) {
         if (text instanceof String || text instanceof SpannedString ||
                 text instanceof SpannableString) {
             return getTextRunCursor(text.toString(), locale, contextStart, contextEnd,
@@ -170,15 +172,47 @@ public final class GraphemeBreak {
         return offset == -1 ? -1 : offset + contextStart;
     }
 
-    public static int getTextRunCursor(@Nonnull String text, @Nonnull Locale locale, int contextStart, int contextEnd, int offset, int op) {
+    public static int getTextRunCursor(@Nonnull String text, @Nonnull Locale locale, int contextStart, int contextEnd,
+                                       int offset, int op) {
         if (((contextStart | contextEnd | offset | (contextEnd - contextStart)
                 | (offset - contextStart) | (contextEnd - offset)
                 | (text.length() - contextEnd) | op) < 0)
                 || op > AT) {
             throw new IndexOutOfBoundsException();
         }
-        return sUseICU ? getTextRunCursorICU(new StringCharacterIterator(text, contextStart, contextEnd, contextStart), locale, offset, op) :
-                getTextRunCursorImpl(null, text.toCharArray(), contextStart, contextEnd - contextStart, offset, op);
+        return sUseICU ? getTextRunCursorICU(new StringCharacterIterator(text, contextStart, contextEnd, contextStart),
+                locale, offset, op) :
+                getTextRunCursorImpl(null, text.toCharArray(), contextStart, contextEnd - contextStart,
+                        offset, op);
+    }
+
+    public static void getTextRuns(@Nonnull char[] text, @Nonnull Locale locale, int contextStart, int contextEnd,
+                                   @Nonnull RunConsumer consumer) {
+        if (sUseICU) {
+            final BreakIterator breaker = BreakIterator.getCharacterInstance(locale);
+            breaker.setText(new CharArrayIterator(text, contextStart, contextEnd));
+            int prevOffset = contextStart;
+            int offset;
+            while ((offset = breaker.following(prevOffset)) != BreakIterator.DONE) {
+                consumer.onRun(prevOffset, offset);
+                prevOffset = offset;
+            }
+        } else {
+            final int count = contextEnd - contextStart;
+            int prevOffset = contextStart;
+            int offset;
+            while ((offset = getTextRunCursorImpl(null, text, contextStart, count, prevOffset, AFTER))
+                    != prevOffset) {
+                consumer.onRun(prevOffset, offset);
+                prevOffset = offset;
+            }
+        }
+    }
+
+    @FunctionalInterface
+    public interface RunConsumer {
+
+        void onRun(int start, int end);
     }
 
     public static int getTextRunCursorICU(CharacterIterator text, Locale locale, int offset, int op) {
