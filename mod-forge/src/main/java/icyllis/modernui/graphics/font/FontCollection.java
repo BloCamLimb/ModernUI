@@ -210,20 +210,20 @@ public class FontCollection {
     }
 
     // calculate font runs
-    public List<Run> itemize(@Nonnull final char[] text) {
-        if (text.length == 0)
+    public List<Run> itemize(@Nonnull final char[] text, final int offset, final int limit) {
+        it.unimi.dsi.fastutil.Arrays.ensureFromTo(text.length, offset, limit);
+        if (offset == limit)
             return Collections.emptyList();
 
         final ObjectArrayList<Run> result = new ObjectArrayList<>();
-        final int limit = text.length;
 
         Run lastRun = null;
         Font lastFamily = null;
 
         int nextCh;
         int prevCh = 0;
-        int next = 0;
-        int index = 0;
+        int next = offset;
+        int index = offset;
 
         char _c1 = text[index];
         char _c2;
@@ -367,7 +367,7 @@ public class FontCollection {
         }
 
         // font family without style and size
-        public Font getFont() {
+        public Font getFamily() {
             return mFont;
         }
 

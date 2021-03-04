@@ -300,8 +300,8 @@ public class StaticLayout extends TextLayout {
             for (int i = 0; i < breakCount; ++i) {
                 breaks[i] = res.getLineBreakOffset(i);
                 lineWidths[i] = res.getLineWidth(i);
-                /*ascents[i] = res.getLineAscent(i);
-                descents[i] = res.getLineDescent(i);*/
+                ascents[i] = res.getLineAscent(i);
+                descents[i] = res.getLineDescent(i);
                 hasTabs[i] = res.hasLineTab(i);
             }
 

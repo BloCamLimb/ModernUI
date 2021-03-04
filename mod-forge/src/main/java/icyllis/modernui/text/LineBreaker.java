@@ -35,6 +35,8 @@
 package icyllis.modernui.text;
 
 import com.ibm.icu.text.BreakIterator;
+import icyllis.modernui.graphics.font.FontMetricsInt;
+import it.unimi.dsi.fastutil.ints.IntArrays;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -249,15 +251,23 @@ public class LineBreaker {
     @Nonnull
     private Result getResult() {
         int prevBreakOffset = 0;
-        for (BreakPoint breakPoint : mBreakPoints) {
-            for (int i = prevBreakOffset; i < breakPoint.mOffset; i++)
-                if (mTextBuf[i] == '\u0009') {
+        int[] ascents = new int[mBreakPoints.size()];
+        int[] descents = new int[mBreakPoints.size()];
+        FontMetricsInt fm = new FontMetricsInt();
+        for (int i = 0; i < mBreakPoints.size(); i++) {
+            BreakPoint breakPoint = mBreakPoints.get(i);
+            for (int j = prevBreakOffset; j < breakPoint.mOffset; j++)
+                if (mTextBuf[j] == '\u0009') {
                     breakPoint.mHasTabChar = true;
                     break;
                 }
+            fm.reset();
+            mMeasuredText.getExtent(prevBreakOffset, breakPoint.mOffset, fm);
+            ascents[i] = fm.mAscent;
+            descents[i] = fm.mDescent;
             prevBreakOffset = breakPoint.mOffset;
         }
-        return new Result(mBreakPoints.toArray(new BreakPoint[0]));
+        return new Result(mBreakPoints.toArray(new BreakPoint[0]), ascents, descents);
     }
 
     // 24 bytes (with compressed oops)
@@ -461,13 +471,19 @@ public class LineBreaker {
 
         @Nonnull
         private final BreakPoint[] mBreakPoints;
+        private final int[] mAscents;
+        private final int[] mDescents;
 
         private Result() {
             mBreakPoints = EMPTY_ARRAY;
+            mAscents = IntArrays.EMPTY_ARRAY;
+            mDescents = IntArrays.EMPTY_ARRAY;
         }
 
-        private Result(@Nonnull BreakPoint[] breakPoints) {
+        private Result(@Nonnull BreakPoint[] breakPoints, int[] ascents, int[] descents) {
             mBreakPoints = breakPoints;
+            mAscents = ascents;
+            mDescents = descents;
         }
 
         /**
@@ -497,6 +513,26 @@ public class LineBreaker {
          */
         public float getLineWidth(int lineIndex) {
             return mBreakPoints[lineIndex].mLineWidth;
+        }
+
+        /**
+         * Returns font ascent of the line in pixels.
+         *
+         * @param lineIndex an index of the line.
+         * @return font ascent of the line in pixels.
+         */
+        public float getLineAscent(int lineIndex) {
+            return mAscents[lineIndex];
+        }
+
+        /**
+         * Returns font descent of the line in pixels.
+         *
+         * @param lineIndex an index of the line.
+         * @return font descent of the line in pixels.
+         */
+        public float getLineDescent(int lineIndex) {
+            return mDescents[lineIndex];
         }
 
         /**

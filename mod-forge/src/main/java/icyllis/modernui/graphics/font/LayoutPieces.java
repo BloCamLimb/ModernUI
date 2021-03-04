@@ -30,6 +30,8 @@ import java.util.function.BiConsumer;
 @ThreadSafe
 public class LayoutPieces {
 
+    public static final int NO_PAINT_ID = -1;
+
     private final Key mLookupKey = new Key();
 
     private final Object2IntMap<MinikinPaint> mPaintMap = new Object2IntOpenHashMap<>();
@@ -49,10 +51,14 @@ public class LayoutPieces {
             piece = mPieceMap.get(mLookupKey.update(start, end, dir, paintId));
         }
         if (piece == null) {
-            //TODO call layout engine
+            LayoutEngine.getInstance().measure(textBuf, start, end, paint, dir, consumer);
         } else {
             consumer.accept(piece, paint);
         }
+    }
+
+    public int findPaintId(@Nonnull MinikinPaint paint) {
+        return mPaintMap.getOrDefault(paint, NO_PAINT_ID);
     }
 
     private static class Key {

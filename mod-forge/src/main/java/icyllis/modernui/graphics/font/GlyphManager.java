@@ -408,6 +408,10 @@ public class GlyphManager {
         }
     }
 
+    public void extendFontMetrics(@Nonnull Font derivedFont, @Nonnull FontMetricsInt fm) {
+        fm.extendBy(glyphTextureGraphics.getFontMetrics(derivedFont));
+    }
+
     // test only
     @Deprecated
     public TexturedGlyph lookupEmoji(int codePoint) {
