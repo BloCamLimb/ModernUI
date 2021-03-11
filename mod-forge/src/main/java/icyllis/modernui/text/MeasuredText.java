@@ -205,7 +205,7 @@ public class MeasuredText {
         @Override
         public void getMetrics(@Nonnull char[] text, @Nonnull float[] advances, @Nonnull LayoutPieces outPieces) {
             GraphemeBreak.getTextRuns(text, getLocale(), mStart, mEnd,
-                    (st, en) -> LayoutEngine.getInstance().measure(text, st, en, mPaint, mIsRtl,
+                    (st, en) -> LayoutEngine.getInstance().create(text, st, en, mPaint, mIsRtl,
                             (lp, pt) -> {
                                 advances[st] = lp.mAdvance;
                                 outPieces.insert(st, en, lp, mIsRtl, pt);

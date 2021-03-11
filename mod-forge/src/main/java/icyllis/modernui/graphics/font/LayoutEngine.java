@@ -39,24 +39,22 @@ public class LayoutEngine {
         return sInstance;
     }
 
-    public void measure(@Nonnull char[] text, int contextStart, int contextEnd, @Nonnull MinikinPaint paint, boolean isRtl,
-                        @Nonnull BiConsumer<LayoutPiece, MinikinPaint> consumer) {
+    public void create(@Nonnull char[] text, int contextStart, int contextEnd, @Nonnull MinikinPaint paint, boolean isRtl,
+                       @Nonnull BiConsumer<LayoutPiece, MinikinPaint> consumer) {
         final List<FontCollection.Run> runs = paint.mFontCollection.itemize(text, contextStart, contextEnd);
         final int flag = isRtl ? Font.LAYOUT_RIGHT_TO_LEFT : Font.LAYOUT_LEFT_TO_RIGHT;
         final GlyphManager manager = mGlyphManager;
         float advance = 0;
-        FontMetricsInt fm = new FontMetricsInt();
+        final FontMetricsInt fm = new FontMetricsInt();
         for (FontCollection.Run run : runs) {
             final Font derivedFont;
             synchronized (this) {
                 derivedFont = manager.deriveFont(run.getFamily(), paint.mFontStyle, paint.mFontSize);
             }
             final GlyphVector vector = manager.layoutGlyphVector(derivedFont, text, run.getStart(), run.getEnd(), flag);
-            int num = vector.getNumGlyphs();
-            for (int i = 0; i < num; i++) {
-                advance += vector.getGlyphMetrics(i).getAdvanceX();
-            }
-            manager.extendFontMetrics(derivedFont, fm);
+            final int num = vector.getNumGlyphs();
+            advance += vector.getGlyphPosition(num).getX();
+            manager.getFontMetrics(derivedFont, fm);
         }
         consumer.accept(new LayoutPiece(advance, fm), paint);
     }
