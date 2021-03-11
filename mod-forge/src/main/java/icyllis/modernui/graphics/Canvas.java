@@ -300,6 +300,7 @@ public class Canvas {
      * @param align the align to set
      * @see #drawText(String, float, float)
      */
+    @Deprecated
     public void setTextAlign(@Nonnull TextAlign align) {
         alignFactor = align.offsetFactor;
     }
@@ -328,6 +329,7 @@ public class Canvas {
      * @return the total advance of the text (text line width)
      * @see #setTextAlign(TextAlign)
      */
+    @Deprecated
     public float drawText(String text, float x, float y) {
         if (text == null || text.isEmpty())
             return 0;

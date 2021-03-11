@@ -17,9 +17,9 @@ Description and releases for Minecraft Mod are available on [CurseForge](https:/
   - [![License](https://img.shields.io/badge/License-No%20Restriction-green.svg?style=flat-square)](https://creativecommons.org/publicdomain/zero/1.0/)
 ### Adding Modern UI to your project
 #### Environment requirements
-- Windows, Linux or Solaris
+- Windows, Linux, Classic macOS or Solaris
 - JDK 11.0.8 or above (Compile against Java 8 for backward compatibility)
-- OpenGL 4.3 or above
+- OpenGL 4.3 core or above
 - Forge 1.16.5-36.0.1
 #### Version information
 [![Maven](https://img.shields.io/badge/dynamic/xml?color=green&label=maven%20beta&query=%2Fmetadata%2Fversioning%2Flatest&url=https%3A%2F%2Fmaven.izzel.io%2Freleases%2Ficyllis%2Fmodernui%2FModernUI-Forge%2Fmaven-metadata.xml)]()

@@ -23,7 +23,7 @@ import com.ibm.icu.impl.UCharacterProperty;
 import com.ibm.icu.lang.UCharacter;
 import com.ibm.icu.lang.UCharacterCategory;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.loader.forge.LocalStorage;
+import icyllis.modernui.core.forge.LocalStorage;
 import icyllis.modernui.text.Emoji;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 

@@ -158,12 +158,12 @@ public class GlyphManager {
     /**
      * All font glyphs are packed inside this image and are then loaded from here into an OpenGL texture.
      */
-    private final BufferedImage glyphTextureImage = new BufferedImage(TEXTURE_SIZE, TEXTURE_SIZE, BufferedImage.TYPE_INT_ARGB);
+    private final BufferedImage mGlyphImage = new BufferedImage(TEXTURE_SIZE, TEXTURE_SIZE, BufferedImage.TYPE_INT_ARGB);
 
     /**
      * The Graphics2D associated with glyphTextureImage and used for bit blit between stringImage.
      */
-    private final Graphics2D glyphTextureGraphics = glyphTextureImage.createGraphics();
+    private final Graphics2D mGlyphGraphics = mGlyphImage.createGraphics();
 
 
     /**
@@ -257,10 +257,10 @@ public class GlyphManager {
     private GlyphManager() {
         instance = this;
         /* Set background color for use with clearRect() */
-        glyphTextureGraphics.setBackground(BG_COLOR);
+        mGlyphGraphics.setBackground(BG_COLOR);
 
         /* The drawImage() to this buffer will copy all source pixels instead of alpha blending them into the current image */
-        glyphTextureGraphics.setComposite(AlphaComposite.Src);
+        mGlyphGraphics.setComposite(AlphaComposite.Src);
 
         allocateGlyphTexture();
         //allocateStringImage(STRING_WIDTH, STRING_HEIGHT);
@@ -361,7 +361,7 @@ public class GlyphManager {
      * @return the newly laid-out GlyphVector
      */
     public GlyphVector layoutGlyphVector(@Nonnull Font font, char[] text, int start, int limit, int layoutFlags) {
-        return font.layoutGlyphVector(glyphTextureGraphics.getFontRenderContext(), text, start, limit, layoutFlags);
+        return font.layoutGlyphVector(mGlyphGraphics.getFontRenderContext(), text, start, limit, layoutFlags);
     }
 
     /**
@@ -397,19 +397,20 @@ public class GlyphManager {
     }
 
     /**
-     * Calculate font metrics in pixels, the higher 32 bits are ascent and
+     * Re-calculate font metrics in pixels, the higher 32 bits are ascent and
      * lower 32 bits are descent.
      */
     public void getFontMetrics(@Nonnull FontCollection font, int style, int size, @Nonnull FontMetricsInt fm) {
         fm.reset();
         for (Font family : font.getFonts()) {
-            fm.extendBy(glyphTextureGraphics.getFontMetrics(
+            fm.extendBy(mGlyphGraphics.getFontMetrics(
                     family.deriveFont(style, size)));
         }
     }
 
-    public void extendFontMetrics(@Nonnull Font derivedFont, @Nonnull FontMetricsInt fm) {
-        fm.extendBy(glyphTextureGraphics.getFontMetrics(derivedFont));
+    // extend font metrics
+    public void getFontMetrics(@Nonnull Font derivedFont, @Nonnull FontMetricsInt fm) {
+        fm.extendBy(mGlyphGraphics.getFontMetrics(derivedFont));
     }
 
     // test only
@@ -536,9 +537,9 @@ public class GlyphManager {
 
         /* There's no need to layout glyph vector, we only draw the specific glyphCode
          * which is already laid-out in TextProcessor */
-        GlyphVector vector = font.createGlyphVector(glyphTextureGraphics.getFontRenderContext(), new int[]{glyphCode});
+        GlyphVector vector = font.createGlyphVector(mGlyphGraphics.getFontRenderContext(), new int[]{glyphCode});
 
-        Rectangle renderBounds = vector.getGlyphPixelBounds(0, glyphTextureGraphics.getFontRenderContext(), 0, 0);
+        Rectangle renderBounds = vector.getGlyphPixelBounds(0, mGlyphGraphics.getFontRenderContext(), 0, 0);
         int renderWidth = (int) renderBounds.getWidth();
         int renderHeight = (int) renderBounds.getHeight();
 
@@ -557,14 +558,14 @@ public class GlyphManager {
         int baselineY = (int) renderBounds.getY();
         float advance = vector.getGlyphMetrics(0).getAdvanceX();
 
-        glyphTextureGraphics.setFont(font);
+        mGlyphGraphics.setFont(font);
 
         int x = currPosX - GLYPH_BORDER;
         int y = currPosY - GLYPH_BORDER;
         int width = renderWidth + GLYPH_BORDER * 2;
         int height = renderHeight + GLYPH_BORDER * 2;
 
-        glyphTextureGraphics.drawGlyphVector(vector, currPosX - baselineX, currPosY - baselineY);
+        mGlyphGraphics.drawGlyphVector(vector, currPosX - baselineX, currPosY - baselineY);
 
         uploadTexture(x, y, width, height);
 
@@ -616,7 +617,7 @@ public class GlyphManager {
 
         char[] chars = new char[1];
 
-        glyphTextureGraphics.setFont(font);
+        mGlyphGraphics.setFont(font);
 
         float standardAdvance = 0.0f;
         int standardRenderWidth = 0;
@@ -625,9 +626,9 @@ public class GlyphManager {
         // cache '0-9'
         for (int i = 0; i < 10; i++) {
             chars[0] = (char) (48 + i);
-            GlyphVector vector = font.createGlyphVector(glyphTextureGraphics.getFontRenderContext(), chars);
+            GlyphVector vector = font.createGlyphVector(mGlyphGraphics.getFontRenderContext(), chars);
 
-            Rectangle renderBounds = vector.getGlyphPixelBounds(0, glyphTextureGraphics.getFontRenderContext(), 0, 0);
+            Rectangle renderBounds = vector.getGlyphPixelBounds(0, mGlyphGraphics.getFontRenderContext(), 0, 0);
             int renderWidth = (int) renderBounds.getWidth();
             int renderHeight = (int) renderBounds.getHeight();
 
@@ -669,11 +670,11 @@ public class GlyphManager {
 
             // ASCII digits are not allowed to be laid-out into other code points
             if (i == 0) {
-                glyphTextureGraphics.drawString(String.valueOf(chars), currPosX - baselineX, currPosY - baselineY);
+                mGlyphGraphics.drawString(String.valueOf(chars), currPosX - baselineX, currPosY - baselineY);
             } else {
                 // align to center
                 int offset = Math.round((standardAdvance - vector.getGlyphMetrics(0).getAdvanceX()) / 2.0f);
-                glyphTextureGraphics.drawString(String.valueOf(chars), currPosX + offset - baselineX, currPosY - baselineY);
+                mGlyphGraphics.drawString(String.valueOf(chars), currPosX + offset - baselineX, currPosY - baselineY);
             }
 
             uploadTexture(x, y, width, height);
@@ -753,7 +754,7 @@ public class GlyphManager {
                  * for the ascent above the baseline and to correct for a few glyphs that appear to have negative
                  * horizontal bearing (e.g. U+0423 Cyrillic uppercase letter U on Windows 7).
                  */
-                vectorBounds = vector.getPixelBounds(glyphTextureGraphics.getFontRenderContext(), 0, 0);
+                vectorBounds = vector.getPixelBounds(mGlyphGraphics.getFontRenderContext(), 0, 0);
 
                 /* Enlarge the stringImage if it is too small to store the entire rendered string */
                 if (vectorBounds.width > tempStringImage.getWidth() || vectorBounds.height > tempStringImage.getHeight()) {
@@ -814,7 +815,7 @@ public class GlyphManager {
              * cachePosY) position in the texture. NOTE: We don't have to erase the area in the texture image
              * first because the composite method in the Graphics object is always set to AlphaComposite.Src.
              */
-            glyphTextureGraphics.drawImage(tempStringImage,
+            mGlyphGraphics.drawImage(tempStringImage,
                     currPosX, currPosY, currPosX + rect.width, currPosY + rect.height,
                     rect.x, rect.y, rect.x + rect.width, rect.y + rect.height, null);
 
@@ -941,7 +942,7 @@ public class GlyphManager {
      */
     private void updateImageBuffer(int x, int y, int width, int height) {
         /* Copy raw pixel data from BufferedImage to imageData array with one integer per pixel in 0xAARRGGBB form */
-        glyphTextureImage.getRGB(x, y, width, height, imageData, 0, width);
+        mGlyphImage.getRGB(x, y, width, height, imageData, 0, width);
 
         /* Copy int array to direct buffer */
         uploadBuffer.clear();
@@ -965,16 +966,16 @@ public class GlyphManager {
      */
     private void setRenderingHints() {
         // this only for shape rendering, so we turn it off
-        glyphTextureGraphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
+        mGlyphGraphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
         if (sAntiAliasing) {
-            glyphTextureGraphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            mGlyphGraphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         } else {
-            glyphTextureGraphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
+            mGlyphGraphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
         }
         if (sHighPrecision) {
-            glyphTextureGraphics.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+            mGlyphGraphics.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
         } else {
-            glyphTextureGraphics.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_OFF);
+            mGlyphGraphics.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_OFF);
         }
     }
 
@@ -986,7 +987,7 @@ public class GlyphManager {
      */
     private void allocateGlyphTexture() {
         /* Initialize the background to all black but fully transparent. */
-        glyphTextureGraphics.clearRect(0, 0, TEXTURE_SIZE, TEXTURE_SIZE);
+        mGlyphGraphics.clearRect(0, 0, TEXTURE_SIZE, TEXTURE_SIZE);
 
         /* Allocate new OpenGL texture */
         textureGenBuffer.position(0);

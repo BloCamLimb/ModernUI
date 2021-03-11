@@ -53,8 +53,11 @@ public class PrecomputedText {
             } else {
                 paraEnd++;  // Includes LINE_FEED(U+000A) to the prev paragraph.
             }
-            list.add(new ParagraphInfo(paraEnd, MeasuredParagraph.buildForStaticLayout(
-                    paint, text, paraStart, paraEnd, dir, null)));
+            final ParagraphInfo info = new ParagraphInfo(paraEnd, MeasuredParagraph.buildForStaticLayout(
+                    paint, text, paraStart, paraEnd, dir, null));
+            if (info.measured.getTextLength() > 0) {
+                list.add(info);
+            }
         }
         return list.toArray(new ParagraphInfo[0]);
     }

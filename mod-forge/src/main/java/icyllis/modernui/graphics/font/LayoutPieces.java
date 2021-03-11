@@ -51,7 +51,7 @@ public class LayoutPieces {
             piece = mPieceMap.get(mLookupKey.update(start, end, dir, paintId));
         }
         if (piece == null) {
-            LayoutEngine.getInstance().measure(textBuf, start, end, paint, dir, consumer);
+            LayoutEngine.getInstance().create(textBuf, start, end, paint, dir, consumer);
         } else {
             consumer.accept(piece, paint);
         }

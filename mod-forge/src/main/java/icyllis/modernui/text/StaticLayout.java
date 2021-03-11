@@ -18,8 +18,11 @@
 
 package icyllis.modernui.text;
 
+import icyllis.modernui.graphics.font.FontMetricsInt;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
+import it.unimi.dsi.fastutil.ints.IntArrays;
+import it.unimi.dsi.fastutil.objects.ObjectArrays;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -202,10 +205,30 @@ public class StaticLayout extends TextLayout {
         }
     }
 
+    private static final int COLUMNS_NORMAL = 5;
+    private static final int COLUMNS_ELLIPSIZE = 7;
+
+    private static final int START = 0;
+    private static final int DIR = START;
+    private static final int TAB = START;
+    private static final int TOP = 1;
+    private static final int DESCENT = 2;
+    private static final int EXTRA = 3;
+    private static final int HYPHEN = 4;
+    private static final int ELLIPSIS_START = 5;
+    private static final int ELLIPSIS_COUNT = 6;
+
+    // 29 bits
+    private static final int START_MASK = 0x1FFFFFFF;
+    // 31 bit
+    private static final int DIR_SHIFT  = 30;
+    // 30 bit
+    private static final int TAB_MASK   = 0x20000000;
+
 
     private int mLineCount;
     private int mTopPadding, mBottomPadding;
-    private int mColumns;
+    private final int mColumns;
     private int mEllipsizedWidth;
 
     /**
@@ -223,6 +246,7 @@ public class StaticLayout extends TextLayout {
      */
     private int mMaxLineHeight = DEFAULT_MAX_LINE_HEIGHT;
 
+    // line data, see mColumns
     private int[] mLines;
     private Directions[] mLineDirections;
     private int mMaximumVisibleLineCount = Integer.MAX_VALUE;
@@ -232,7 +256,13 @@ public class StaticLayout extends TextLayout {
     @Nullable
     private int[] mRightIndents;
 
+    // Used by DynamicLayout
+    StaticLayout(@Nullable CharSequence text) {
+        mColumns = COLUMNS_ELLIPSIZE;
+    }
+
     private StaticLayout(Builder b) {
+        mColumns = COLUMNS_NORMAL;
         generate(b);
     }
 
@@ -254,7 +284,10 @@ public class StaticLayout extends TextLayout {
 
         mLineCount = 0;
 
+        // current height in pixels
         int v = 0;
+
+        FontMetricsInt fm = new FontMetricsInt();
 
         LineBreaker.ParagraphConstraints constraints =
                 new LineBreaker.ParagraphConstraints();
@@ -277,6 +310,8 @@ public class StaticLayout extends TextLayout {
             }
 
             final MeasuredParagraph measuredPara = paragraphInfo[paraIndex].measured;
+            final int[] spanEndCache = measuredPara.getSpanEndCache().elements();
+            final int[] fmCache = measuredPara.getFontMetrics().elements();
 
             constraints.setWidth(restWidth);
             constraints.setIndent(firstWidth);
@@ -305,9 +340,110 @@ public class StaticLayout extends TextLayout {
                 hasTabs[i] = res.hasLineTab(i);
             }
 
+            //TODO
+            boolean ellipsisMayBeApplied = false;
+
+            //noinspection ConstantConditions
+            if (0 < remainingLineCount && remainingLineCount < breakCount
+                    && ellipsisMayBeApplied) {
+                // Calculate width
+                float width = 0;
+                boolean hasTab = false;  // XXX May need to also have starting hyphen edit
+                for (int i = remainingLineCount - 1; i < breakCount; i++) {
+                    if (i == breakCount - 1) {
+                        width += lineWidths[i];
+                    } else {
+                        for (int j = (i == 0 ? 0 : breaks[i - 1]); j < breaks[i]; j++) {
+                            width += measuredPara.getMeasuredText().mAdvances[j];
+                        }
+                    }
+                    hasTab |= hasTabs[i];
+                }
+                // Treat the last line and overflowed lines as a single line.
+                breaks[remainingLineCount - 1] = breaks[breakCount - 1];
+                lineWidths[remainingLineCount - 1] = width;
+                hasTabs[remainingLineCount - 1] = hasTab;
+
+                breakCount = remainingLineCount;
+            }
+
             // here is the offset of the starting character of the line we are currently
             // measuring
             int here = paraStart;
+
+            int fmAscent = 0, fmDescent = 0;
+            int breakIndex = 0;
+            for (int spanStart = paraStart, spanEnd, spanIndex = 0;
+                 spanStart < paraEnd;
+                 spanStart = spanEnd, spanIndex++) {
+
+                spanEnd = spanEndCache[spanIndex];
+
+                fm.mAscent = fmCache[spanIndex * 2];
+                fm.mDescent = fmCache[spanIndex * 2 + 1];
+
+                fmAscent = Math.max(fmAscent, fm.mAscent);
+                fmDescent = Math.max(fmDescent, fm.mDescent);
+
+                // skip breaks ending before current span range
+                while (breakIndex < breakCount && paraStart + breaks[breakIndex] < spanStart) {
+                    breakIndex++;
+                }
+
+                while (breakIndex < breakCount && paraStart + breaks[breakIndex] <= spanEnd) {
+                    int endPos = paraStart + breaks[breakIndex];
+
+                    boolean moreChars = (endPos < bufEnd);
+
+                    final int ascent = fallbackLineSpacing
+                            ? Math.max(fmAscent, Math.round(ascents[breakIndex]))
+                            : fmAscent;
+                    final int descent = fallbackLineSpacing
+                            ? Math.max(fmDescent, Math.round(descents[breakIndex]))
+                            : fmDescent;
+
+                    v = out(v);
+
+                    if (endPos < spanEnd) {
+                        // preserve metrics for current span
+                        fmAscent = fm.mAscent;
+                        fmDescent = fm.mDescent;
+                    } else {
+                        fmAscent = fmDescent = 0;
+                    }
+
+                    here = endPos;
+                    breakIndex++;
+
+                    if (mLineCount >= mMaximumVisibleLineCount && mEllipsized) {
+                        return;
+                    }
+                }
+            }
+
+            if (paraEnd == bufEnd) {
+                break;
+            }
         }
+
+
+    }
+
+    private int out(int v) {
+        final int j = mLineCount;
+        final int off = j * mColumns;
+        final int want = off + mColumns + TOP;
+
+        if (want >= mLines.length) {
+            mLines = IntArrays.forceCapacity(mLines, want, mLines.length);
+        }
+
+        if (j >= mLineDirections.length) {
+            mLineDirections = ObjectArrays.forceCapacity(mLineDirections, j, mLineDirections.length);
+        }
+
+        int[] lines = mLines;
+
+        return v;
     }
 }

@@ -25,6 +25,8 @@ import org.apache.logging.log4j.MarkerManager;
 
 import javax.annotation.Nonnull;
 import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * The core class of the client side of Modern UI
@@ -37,14 +39,17 @@ public class ModernUI {
     public static final Logger LOGGER = LogManager.getLogger(NAME_CPT);
     public static final Marker MARKER = MarkerManager.getMarker("Core");
 
-    protected static ModernUI instance;
+    protected static ModernUI sInstance;
+
+    private final ExecutorService mLoaderPool;
 
     public ModernUI() {
-        instance = this;
+        sInstance = this;
+        mLoaderPool = Executors.newSingleThreadExecutor(target -> new Thread(target, "mui-loader-thread"));
     }
 
     public static ModernUI get() {
-        return instance;
+        return sInstance;
     }
 
     public void warnSetup(String key, Object... args) {

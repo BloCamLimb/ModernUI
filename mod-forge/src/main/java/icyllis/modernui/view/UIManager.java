@@ -23,14 +23,14 @@ import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.Animation;
-import icyllis.modernui.graphics.text.ModernFontRenderer;
-import icyllis.modernui.graphics.text.TextLayoutProcessor;
-import icyllis.modernui.loader.forge.ModernUIForge;
-import icyllis.modernui.loader.event.OpenMenuEvent;
-import icyllis.modernui.loader.mixin.MixinMouseHandler;
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.math.Point;
+import icyllis.modernui.graphics.text.ModernFontRenderer;
+import icyllis.modernui.graphics.text.TextLayoutProcessor;
+import icyllis.modernui.core.event.OpenMenuEvent;
+import icyllis.modernui.core.forge.ModernUIForge;
+import icyllis.modernui.core.mixin.MixinMouseHandler;
 import icyllis.modernui.test.TestHUD;
 import icyllis.modernui.test.TestPauseUI;
 import icyllis.modernui.widget.FrameLayout;
@@ -226,7 +226,7 @@ public final class UIManager {
     // Internal method
     public boolean openGUI(@Nonnull LocalPlayer player, @Nonnull AbstractContainerMenu menu) {
         OpenMenuEvent event = new OpenMenuEvent(menu);
-        ModernUIForge.EVENT_BUS.post(event);
+        MinecraftForge.EVENT_BUS.post(event);
         AppUIHost appUIHost = event.getApplicationUI();
         if (appUIHost != null) {
             mAppUIHost = appUIHost;

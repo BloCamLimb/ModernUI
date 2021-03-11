@@ -176,8 +176,8 @@ public class MeasuredParagraph {
     /**
      * Returns the result of the MeasuredParagraph.
      * <p>
-     * This is available only if the MeasuredParagraph is computed with buildForStaticLayout.
-     * Returns null in other cases.
+     * This is available only if the MeasuredParagraph is computed with buildForStaticLayout
+     * and the text length is greater than zero. Returns null in other cases.
      */
     public MeasuredText getMeasuredText() {
         return mMeasuredText;
@@ -226,10 +226,7 @@ public class MeasuredParagraph {
         final MeasuredParagraph c = recycle == null ? obtain() : recycle;
         c.resetAndAnalyzeBidi(text, start, end, dir);
         final MeasuredText.Builder builder = new MeasuredText.Builder(c.mCopiedBuffer);
-        if (c.mTextLength == 0) {
-            //TODO review
-            return c;
-        } else {
+        if (c.mTextLength > 0) {
             if (c.mSpanned == null) {
                 // No style change by MetricsAffectingSpan. Just measure all text.
                 c.applyMetricsAffectingSpan(paint, null /* spans */, start, end, builder);
