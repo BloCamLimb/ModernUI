@@ -16,16 +16,22 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.core.forge;
+package icyllis.modernui.annotation;
 
-import icyllis.modernui.core.Extension;
-import net.minecraftforge.fml.ModContainer;
+import java.lang.annotation.*;
 
 /**
- * An extension application to Modern UI in Minecraft Forge environment,
- * which also represents a Forge mod.
+ * Denotes that any overriding methods should invoke this method as well.
+ * <p>
+ * Example:
+ * <pre><code>
+ *  &#64;CallSuper
+ *  public void onCreate() {
+ *      // something here
+ *  }</code></pre>
  */
-public class FMLExtension extends Extension {
-
-    private ModContainer mModContainer;
+@Documented
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.CLASS)
+public @interface CallSuper {
 }

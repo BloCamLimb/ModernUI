@@ -20,8 +20,7 @@ package icyllis.modernui.core.forge;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.core.extension.IMuiPlugin;
-import icyllis.modernui.core.extension.MuiPlugin;
+import icyllis.modernui.core.ExtensionList;
 import icyllis.modernui.core.mixin.AccessOption;
 import icyllis.modernui.core.mixin.AccessVideoSettingsScreen;
 import icyllis.modernui.graphics.text.ModernFontRenderer;
@@ -52,22 +51,17 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.network.IContainerFactory;
-import net.minecraftforge.fml.unsafe.UnsafeHacks;
-import net.minecraftforge.forgespi.language.ModFileScanData;
 import net.minecraftforge.registries.IForgeRegistry;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
-import org.objectweb.asm.Type;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -111,7 +105,7 @@ final class Registration {
 
     @SubscribeEvent
     static void setupCommon(@Nonnull FMLCommonSetupEvent event) {
-        Map<String, IMuiPlugin> plugins = new HashMap<>();
+        /*Map<String, IMuiPlugin> plugins = new HashMap<>();
         Type target = Type.getType(MuiPlugin.class);
         for (ModFileScanData scanData : ModList.get().getAllScanData()) {
             for (ModFileScanData.AnnotationData data : scanData.getAnnotations()) {
@@ -124,7 +118,7 @@ final class Registration {
                     }
                 }
             }
-        }
+        }*/
 
         byte[] protocol = null;
         try (InputStream stream = ModernUI.class.getClassLoader().getResourceAsStream(
@@ -147,20 +141,10 @@ final class Registration {
                     "things", "gbing wrbng".replace('b', 'o'), new SecurityException()));
         protocol = ArrayUtils.addAll(protocol, ModList.get().getModFileById(ModernUI.ID).getTrustData()
                 .map(s -> s.getBytes(StandardCharsets.UTF_8)).orElse(null));
-        final boolean optional;
-        if (plugins.isEmpty())
-            optional = true;
-        else {
-            optional = false;
-            ModernUI.LOGGER.debug(ModernUI.MARKER, "Found Modern UI plugins: {}", plugins.keySet());
-        }
 
         NetMessages.network = new NetworkHandler(ModernUI.ID, "main_network", () -> NetMessages::handle,
-                NetMessages::handle, protocol == null ? null : DigestUtils.md5Hex(protocol), optional);
-
-        //
-
-        plugins.clear();
+                NetMessages::handle, protocol == null ? null : DigestUtils.md5Hex(protocol),
+                ExtensionList.get().size() == 0);
 
         MinecraftForge.EVENT_BUS.register(ServerHandler.INSTANCE);
     }
@@ -219,7 +203,8 @@ final class Registration {
                     break;
                 }
             }
-        else ModernUI.LOGGER.error(ModernUI.MARKER, "Failed to capture video settings");
+        else
+            ModernUI.LOGGER.error(ModernUI.MARKER, "Failed to capture video settings");
     }
 
     @Nonnull
