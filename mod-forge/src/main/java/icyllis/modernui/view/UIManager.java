@@ -36,7 +36,6 @@ import icyllis.modernui.test.TestPauseUI;
 import icyllis.modernui.widget.FrameLayout;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.sounds.SoundEvents;
@@ -55,6 +54,7 @@ import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL43;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -96,7 +96,7 @@ public final class UIManager {
     private IMuiScreen mMuiScreen;
 
     // application UI used to send lifecycle events
-    private AppUIHost mAppUIHost;
+    private Screen mScreen;
 
     // main fragment of a UI
     //private Fragment fragment;
@@ -206,11 +206,11 @@ public final class UIManager {
     /**
      * Open an application UI and create views
      *
-     * @param appUIHost the application user interface
+     * @param screen the application user interface
      * @see #start(IMuiScreen, int, int)
      */
-    public void openGUI(@Nonnull AppUIHost appUIHost) {
-        mAppUIHost = appUIHost;
+    public void openGUI(@Nonnull Screen screen) {
+        mScreen = screen;
         minecraft.setScreen(new MMainScreen(this));
     }
 
@@ -227,9 +227,9 @@ public final class UIManager {
     public boolean openGUI(@Nonnull LocalPlayer player, @Nonnull AbstractContainerMenu menu) {
         OpenMenuEvent event = new OpenMenuEvent(menu);
         MinecraftForge.EVENT_BUS.post(event);
-        AppUIHost appUIHost = event.getApplicationUI();
-        if (appUIHost != null) {
-            mAppUIHost = appUIHost;
+        Screen screen = event.getApplicationUI();
+        if (screen != null) {
+            mScreen = screen;
             player.containerMenu = menu;
             minecraft.setScreen(new MMenuScreen<>(menu, player.inventory, this));
             return true;
@@ -285,8 +285,8 @@ public final class UIManager {
      */
     void start(@Nonnull IMuiScreen screen, int width, int height) {
         if (mMuiScreen == null) {
-            mAppUIHost.window = this;
-            mAppUIHost.onCreate();
+            mScreen.window = this;
+            mScreen.onCreate();
         }
         mMuiScreen = screen;
 
@@ -311,7 +311,7 @@ public final class UIManager {
 
     @SubscribeEvent
     void onGuiOpen(@Nonnull GuiOpenEvent event) {
-        final Screen nextScreen = event.getGui();
+        final net.minecraft.client.gui.screens.Screen nextScreen = event.getGui();
         mCloseScreen = nextScreen == null;
 
         if (TestHUD.sDing && !TestHUD.sFirstScreenOpened) {
@@ -355,8 +355,8 @@ public final class UIManager {
     }
 
     @Nullable
-    public AppUIHost getOpenGUI() {
-        return mAppUIHost;
+    public Screen getOpenGUI() {
+        return mScreen;
     }
 
     /**
@@ -661,7 +661,7 @@ public final class UIManager {
         if (!ModernUIForge.isDeveloperMode() || event.getAction() != GLFW.GLFW_PRESS) {
             return;
         }
-        if (!Screen.hasControlDown()) {
+        if (!net.minecraft.client.gui.screens.Screen.hasControlDown()) {
             return;
         }
         switch (event.getKey()) {
@@ -691,10 +691,10 @@ public final class UIManager {
                 builder.append("\n");
 
                 builder.append("[2] Open Gui: ");
-                if (mAppUIHost == null) {
+                if (mScreen == null) {
                     builder.append(minecraft.screen);
                 } else {
-                    builder.append(mAppUIHost);
+                    builder.append(mScreen);
                 }
                 builder.append("\n");
 
@@ -782,6 +782,7 @@ public final class UIManager {
 
         mCanvas.setDrawingTime(mDrawingTimeMillis);
 
+        GL43.glMultiDrawElements();
         mAppWindow.onDraw(mCanvas);
         /*if (popup != null) {
             popup.draw(drawTime);
@@ -875,9 +876,9 @@ public final class UIManager {
             animations.clear();
             tasks.clear();
             mMuiScreen = null;
-            if (mAppUIHost != null) {
-                mAppUIHost.window = null;
-                mAppUIHost = null;
+            if (mScreen != null) {
+                mScreen.window = null;
+                mScreen = null;
             }
             mLastLayoutTime = 0;
             mLayoutRequested = false;

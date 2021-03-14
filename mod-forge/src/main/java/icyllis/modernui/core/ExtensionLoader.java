@@ -18,15 +18,48 @@
 
 package icyllis.modernui.core;
 
-import javax.annotation.Nonnull;
-import java.util.concurrent.ExecutorService;
+import org.jetbrains.annotations.ApiStatus;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinWorkerThread;
+
+@ApiStatus.Internal
 public final class ExtensionLoader {
 
-    private static ExecutorService sParallelThreadPool;
+    private static ExtensionLoader sInstance;
 
     @Nonnull
-    public static ExecutorService parallel() {
-        return null;
+    private final ExecutorService mParallelThreadPool;
+
+    private ExtensionLoader(@Nullable ExecutorService parallelThreadPool) {
+        if (parallelThreadPool == null) {
+            mParallelThreadPool = new ForkJoinPool(Runtime.getRuntime().availableProcessors(),
+                    pool -> {
+                        ForkJoinWorkerThread thread = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool);
+                        thread.setName("mui-loading-worker-" + thread.getPoolIndex());
+                        thread.setContextClassLoader(Thread.currentThread().getContextClassLoader());
+                        return thread;
+                    }, null, true);
+        } else
+            mParallelThreadPool = parallelThreadPool;
+    }
+
+    @Nonnull
+    public static ExtensionLoader create(@Nullable ExecutorService parallel) {
+        if (sInstance == null)
+            synchronized (ExtensionLoader.class) {
+                if (sInstance == null)
+                    sInstance = new ExtensionLoader(parallel);
+            }
+        else throw new IllegalStateException();
+        return sInstance;
+    }
+
+    @Nonnull
+    public static ExtensionLoader get() {
+        return sInstance;
     }
 }

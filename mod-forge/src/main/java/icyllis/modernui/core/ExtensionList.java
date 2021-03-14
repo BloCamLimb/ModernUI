@@ -16,23 +16,33 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.view;
+package icyllis.modernui.core;
 
-import icyllis.modernui.widget.FrameLayout;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.List;
 
-/**
- * Represents the current application screen, for handling lifecycle event.
- */
-@OnlyIn(Dist.CLIENT)
-public abstract class AppUIHost {
+public class ExtensionList {
 
-    UIManager window;
+    private static ExtensionList sInstance;
 
-    public abstract void onCreate();
+    private final List<Extension> mExtensions = new ArrayList<>();
 
-    public void setContentView(View view, FrameLayout.LayoutParams params) {
-        window.setContentView(view, params);
+    private ExtensionList() {
+
+    }
+
+    @Nonnull
+    public static ExtensionList get() {
+        if (sInstance == null)
+            synchronized (ExtensionList.class) {
+                if (sInstance == null)
+                    sInstance = new ExtensionList();
+            }
+        return sInstance;
+    }
+
+    public int size() {
+        return mExtensions.size();
     }
 }

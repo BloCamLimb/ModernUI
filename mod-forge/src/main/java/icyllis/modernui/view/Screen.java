@@ -16,27 +16,28 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.test;
+package icyllis.modernui.view;
 
-import icyllis.modernui.view.Screen;
-import icyllis.modernui.view.Gravity;
-import icyllis.modernui.view.View;
-import icyllis.modernui.view.ViewGroup;
+import icyllis.modernui.core.ContextWrapper;
 import icyllis.modernui.widget.FrameLayout;
-import icyllis.modernui.widget.ScrollView;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
-public class TestUI extends Screen {
+/**
+ * Represents an application screen context, for handling lifecycle events.
+ */
+@OnlyIn(Dist.CLIENT)
+public abstract class Screen extends ContextWrapper {
 
-    @Override
-    public void onCreate() {
-        ViewGroup contentView = new ScrollView();
-        FrameLayout.LayoutParams contentViewParams = new FrameLayout.LayoutParams(280, 280);
-        contentViewParams.gravity = Gravity.CENTER;
+    UIManager window;
 
-        View ll = new TestLinearLayout();
-        ll.setLayoutParams(new FrameLayout.LayoutParams(280, 480));
-        contentView.addView(ll);
+    public Screen() {
+        super(null);
+    }
 
-        setContentView(contentView, contentViewParams);
+    public abstract void onCreate();
+
+    public void setContentView(View view, FrameLayout.LayoutParams params) {
+        window.setContentView(view, params);
     }
 }

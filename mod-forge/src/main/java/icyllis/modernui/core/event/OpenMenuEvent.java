@@ -18,7 +18,7 @@
 
 package icyllis.modernui.core.event;
 
-import icyllis.modernui.view.AppUIHost;
+import icyllis.modernui.view.Screen;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -56,7 +56,7 @@ public class OpenMenuEvent extends Event {
     private final AbstractContainerMenu menu;
 
     @Nullable
-    private AppUIHost mAppUIHost;
+    private Screen mScreen;
 
     public OpenMenuEvent(@Nonnull AbstractContainerMenu menu) {
         this.menu = menu;
@@ -76,15 +76,15 @@ public class OpenMenuEvent extends Event {
      * Set the application UI for the menu. After calling this method,
      * the event will be canceled.
      *
-     * @param appUIHost the application user interface
+     * @param screen the application user interface
      */
-    public void setApplicationUI(@Nonnull AppUIHost appUIHost) {
-        this.mAppUIHost = appUIHost;
+    public void setApplicationUI(@Nonnull Screen screen) {
+        this.mScreen = screen;
         setCanceled(true);
     }
 
     @Nullable
-    public AppUIHost getApplicationUI() {
-        return mAppUIHost;
+    public Screen getApplicationUI() {
+        return mScreen;
     }
 }

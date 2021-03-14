@@ -45,7 +45,7 @@ public class ModernUI {
 
     public ModernUI() {
         sInstance = this;
-        mLoaderPool = Executors.newSingleThreadExecutor(target -> new Thread(target, "mui-loader-thread"));
+        mLoaderPool = Executors.newSingleThreadExecutor(target -> new Thread(target, "mui-loading-core"));
     }
 
     public static ModernUI get() {
