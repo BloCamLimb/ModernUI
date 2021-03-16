@@ -25,13 +25,13 @@ import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.text.pipeline.TextRenderNode;
-import icyllis.modernui.graphics.text.TextLayoutProcessor;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.graphics.math.Icon;
 import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.graphics.shader.program.*;
+import icyllis.modernui.graphics.textmc.TextLayoutProcessor;
+import icyllis.modernui.graphics.textmc.pipeline.TextRenderNode;
 import icyllis.modernui.view.UIManager;
 import icyllis.modernui.view.View;
 import net.minecraft.ChatFormatting;
@@ -80,11 +80,11 @@ public class Canvas {
     /**
      * Shaders instance
      */
-    private final RingShader ring = RingShader.INSTANCE;
-    private final RoundedRectShader roundedRect = RoundedRectShader.INSTANCE;
-    private final RoundedFrameShader roundedFrame = RoundedFrameShader.INSTANCE;
-    private final CircleShader circle = CircleShader.INSTANCE;
-    private final FeatheredRectShader featheredRect = FeatheredRectShader.INSTANCE;
+    private final RingProgram mRing = RingProgram.INSTANCE;
+    private final RoundedRectProgram mRoundedRect = RoundedRectProgram.INSTANCE;
+    private final RoundedFrameProgram mRoundedFrame = RoundedFrameProgram.INSTANCE;
+    private final CircleProgram mCircle = CircleProgram.INSTANCE;
+    private final FeatheredRectProgram mFeatheredRect = FeatheredRectProgram.INSTANCE;
 
 
     /**
@@ -126,7 +126,7 @@ public class Canvas {
 
 
     private Canvas(@Nonnull Minecraft minecraft) {
-        RenderCore.startRenderEngine();
+        RenderCore.startEngine();
         mainWindow = minecraft.getWindow();
         itemRenderer = minecraft.getItemRenderer();
         fontEngine.initRenderer();
@@ -506,11 +506,11 @@ public class Canvas {
      * @param outerRadius outer circle radius
      */
     public void drawRing(float centerX, float centerY, float innerRadius, float outerRadius) {
-        RenderCore.useShader(ring);
-        ring.setRadius(innerRadius, outerRadius);
-        ring.setCenter(centerX, centerY);
+        mRing.use();
+        mRing.setRadius(innerRadius, outerRadius);
+        mRing.setCenter(centerX, centerY);
         drawRect(centerX - outerRadius, centerY - outerRadius, centerX + outerRadius, centerY + outerRadius);
-        RenderCore.releaseShader();
+        RenderCore.stopProgram();
     }
 
     /**
@@ -523,11 +523,11 @@ public class Canvas {
      * @param radius  circle radius
      */
     public void drawCircle(float centerX, float centerY, float radius) {
-        RenderCore.useShader(circle);
-        circle.setRadius(radius);
-        circle.setCenter(centerX, centerY);
+        mCircle.use();
+        mCircle.setRadius(radius);
+        mCircle.setCenter(centerX, centerY);
         drawRect(centerX - radius, centerY - radius, centerX + radius, centerY + radius);
-        RenderCore.releaseShader();
+        RenderCore.stopProgram();
     }
 
     /**
@@ -563,11 +563,11 @@ public class Canvas {
      * @param radius the rounded corner radius
      */
     public void drawRoundedRect(float left, float top, float right, float bottom, float radius) {
-        RenderCore.useShader(roundedRect);
-        roundedRect.setRadius(radius);
-        roundedRect.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
+        mRoundedRect.use();
+        mRoundedRect.setRadius(radius);
+        mRoundedRect.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
         drawRect(left, top, right, bottom);
-        RenderCore.releaseShader();
+        RenderCore.stopProgram();
     }
 
     /**
@@ -584,18 +584,18 @@ public class Canvas {
      * @param radius the rounded corner radius
      */
     public void drawRoundedFrame(float left, float top, float right, float bottom, float radius) {
-        RenderCore.useShader(roundedFrame);
-        roundedFrame.setRadius(radius);
-        roundedFrame.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
+        mRoundedFrame.use();
+        mRoundedFrame.setRadius(radius);
+        mRoundedFrame.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
         drawRect(left, top, right, bottom);
-        RenderCore.releaseShader();
+        RenderCore.stopProgram();
     }
 
-    // Alpha test
+    @Deprecated
     public void drawRoundedFrameT1(float left, float top, float right, float bottom, float radius) {
-        RenderCore.useShader(roundedFrame);
-        roundedFrame.setRadius(radius);
-        roundedFrame.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
+        mRoundedFrame.use();
+        mRoundedFrame.setRadius(radius);
+        mRoundedFrame.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
         RenderSystem.disableTexture();
         RenderSystem.shadeModel(GL11.GL_SMOOTH);
         bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
@@ -606,7 +606,7 @@ public class Canvas {
         bufferBuilder.end();
         BufferUploader.end(bufferBuilder);
         RenderSystem.shadeModel(GL11.GL_FLAT);
-        RenderCore.releaseShader();
+        RenderCore.stopProgram();
     }
 
     /**
@@ -621,11 +621,11 @@ public class Canvas {
      * @param thickness feather thickness (&lt;= 0.5 is better)
      */
     public void drawFeatheredRect(float left, float top, float right, float bottom, float thickness) {
-        RenderCore.useShader(featheredRect);
-        featheredRect.setThickness(thickness);
-        featheredRect.setInnerRect(left + thickness, top + thickness, right - thickness, bottom - thickness);
+        mFeatheredRect.use();
+        mFeatheredRect.setThickness(thickness);
+        mFeatheredRect.setInnerRect(left + thickness, top + thickness, right - thickness, bottom - thickness);
         drawRect(left, top, right, bottom);
-        RenderCore.releaseShader();
+        RenderCore.stopProgram();
     }
 
     /**

@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.text;
+package icyllis.modernui.graphics.textmc;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -26,7 +26,7 @@ import icyllis.modernui.core.mixin.MixinClientLanguage;
 import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.graphics.font.TexturedGlyph;
 import icyllis.modernui.graphics.math.Color3i;
-import icyllis.modernui.graphics.text.pipeline.*;
+import icyllis.modernui.graphics.textmc.pipeline.*;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Style;

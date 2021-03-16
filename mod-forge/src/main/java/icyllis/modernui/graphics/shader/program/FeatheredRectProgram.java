@@ -22,19 +22,20 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.shader.ShaderProgram;
 import org.lwjgl.opengl.GL20;
 
-public class CircleShader extends ShaderProgram {
+@Deprecated
+public class FeatheredRectProgram extends ShaderProgram {
 
-    public static CircleShader INSTANCE = new CircleShader("rect", "circle");
+    public static FeatheredRectProgram INSTANCE = new FeatheredRectProgram("rect", "feathered_rect");
 
-    private CircleShader(String vert, String frag) {
+    private FeatheredRectProgram(String vert, String frag) {
         super(ModernUI.ID, vert, frag);
     }
 
-    public void setRadius(float radius) {
-        GL20.glUniform1f(0, radius);
+    public void setThickness(float thickness) {
+        GL20.glUniform1f(0, thickness);
     }
 
-    public void setCenter(float x, float y) {
-        GL20.glUniform2f(1, x, y);
+    public void setInnerRect(float left, float top, float right, float bottom) {
+        GL20.glUniform4f(1, left, top, right, bottom);
     }
 }

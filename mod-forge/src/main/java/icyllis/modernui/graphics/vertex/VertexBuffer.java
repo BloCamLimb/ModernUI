@@ -16,25 +16,13 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.shader.program;
+package icyllis.modernui.graphics.vertex;
 
-import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.shader.ShaderProgram;
-import org.lwjgl.opengl.GL20;
+import static org.lwjgl.opengl.GL43.*;
 
-public class FeatheredRectShader extends ShaderProgram {
+public class VertexBuffer {
 
-    public static FeatheredRectShader INSTANCE = new FeatheredRectShader("rect", "feathered_rect");
+    static {
 
-    private FeatheredRectShader(String vert, String frag) {
-        super(ModernUI.ID, vert, frag);
-    }
-
-    public void setThickness(float thickness) {
-        GL20.glUniform1f(0, thickness);
-    }
-
-    public void setInnerRect(float left, float top, float right, float bottom) {
-        GL20.glUniform4f(1, left, top, right, bottom);
     }
 }

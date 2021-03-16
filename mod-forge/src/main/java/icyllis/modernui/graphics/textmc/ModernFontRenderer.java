@@ -16,13 +16,13 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.text;
+package icyllis.modernui.graphics.textmc;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.core.mixin.MixinClientLanguage;
 import icyllis.modernui.graphics.RenderCore;
-import icyllis.modernui.graphics.text.pipeline.TextRenderNode;
+import icyllis.modernui.graphics.textmc.pipeline.TextRenderNode;
 import icyllis.modernui.core.mixin.AccessFontRenderer;
 import net.minecraft.client.StringSplitter;
 import net.minecraft.client.gui.Font;
@@ -92,7 +92,7 @@ public class ModernFontRenderer extends Font {
 
     public static void change(boolean global, boolean shadow) {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
-        if (RenderCore.isRenderEngineStarted()) {
+        if (RenderCore.isEngineStarted()) {
             if (instance.globalRenderer != global) {
                 ((AccessFontRenderer) instance).setSplitter(global ? instance.modernStringSplitter : instance.vanillaStringSplitter);
                 instance.globalRenderer = global;

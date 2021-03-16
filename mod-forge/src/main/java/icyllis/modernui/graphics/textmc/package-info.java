@@ -20,4 +20,4 @@
  * Simplified font engine for Minecraft vanilla only, do not
  * use these in Modern UI.
  */
-package icyllis.modernui.graphics.text;
+package icyllis.modernui.graphics.textmc;

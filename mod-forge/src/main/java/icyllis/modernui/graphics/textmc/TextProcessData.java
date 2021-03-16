@@ -16,9 +16,9 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.text;
+package icyllis.modernui.graphics.textmc;
 
-import icyllis.modernui.graphics.text.pipeline.GlyphRender;
+import icyllis.modernui.graphics.textmc.pipeline.GlyphRender;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
