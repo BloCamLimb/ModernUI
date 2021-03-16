@@ -22,11 +22,12 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.shader.ShaderProgram;
 import org.lwjgl.opengl.GL20;
 
-public class RoundedFrameShader extends ShaderProgram {
+@Deprecated
+public class RoundedFrameProgram extends ShaderProgram {
 
-    public static RoundedFrameShader INSTANCE = new RoundedFrameShader();
+    public static RoundedFrameProgram INSTANCE = new RoundedFrameProgram();
 
-    private RoundedFrameShader() {
+    private RoundedFrameProgram() {
         super(ModernUI.ID, "rect", "rounded_rect_frame");
     }
 

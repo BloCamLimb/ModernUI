@@ -23,7 +23,7 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.ExtensionList;
 import icyllis.modernui.core.mixin.AccessOption;
 import icyllis.modernui.core.mixin.AccessVideoSettingsScreen;
-import icyllis.modernui.graphics.text.ModernFontRenderer;
+import icyllis.modernui.graphics.textmc.ModernFontRenderer;
 import icyllis.modernui.test.TestMenu;
 import icyllis.modernui.view.UIManager;
 import net.minecraft.client.CycleOption;

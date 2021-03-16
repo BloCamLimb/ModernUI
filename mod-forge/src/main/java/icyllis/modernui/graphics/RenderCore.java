@@ -18,24 +18,29 @@
 
 package icyllis.modernui.graphics;
 
-import com.mojang.blaze3d.shaders.ProgramManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.font.GlyphManager;
+import icyllis.modernui.graphics.shader.Shader;
 import icyllis.modernui.graphics.shader.ShaderProgram;
-import icyllis.modernui.graphics.shader.program.*;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.GLCapabilities;
+import org.lwjgl.system.MemoryUtil;
 
-import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
 
-@OnlyIn(Dist.CLIENT)
 public final class RenderCore {
 
     public static final Marker MARKER = MarkerManager.getMarker("Render");
@@ -45,20 +50,13 @@ public final class RenderCore {
     static boolean renderEngineStarted = false;
 
     public static void compileShaders(ResourceManager manager) {
-        RingShader.INSTANCE.compile(manager);
-        RoundedRectShader.INSTANCE.compile(manager);
-        RoundedFrameShader.INSTANCE.compile(manager);
-        CircleShader.INSTANCE.compile(manager);
-        FeatheredRectShader.INSTANCE.compile(manager);
+        ShaderProgram.detachAll();
+        Shader.deleteAll();
+        ShaderProgram.linkAll(manager);
     }
 
-    public static <T extends ShaderProgram> void useShader(@Nonnull T shader) {
-        int program = shader.getId();
-        ProgramManager.glUseProgram(program);
-    }
-
-    public static void releaseShader() {
-        ProgramManager.glUseProgram(0);
+    public static void stopProgram() {
+        GL43.glUseProgram(0);
     }
 
     /**
@@ -66,7 +64,7 @@ public final class RenderCore {
      *
      * @since 2.0.5
      */
-    static void startRenderEngine() {
+    static void startEngine() {
         if (renderEngineStarted) {
             return;
         }
@@ -122,8 +120,42 @@ public final class RenderCore {
         renderEngineStarted = true;
     }
 
-    public static boolean isRenderEngineStarted() {
+    public static boolean isEngineStarted() {
         return renderEngineStarted;
+    }
+
+    public static ByteBuffer readRawBuffer(InputStream inputStream) throws IOException {
+        ByteBuffer buffer;
+        if (inputStream instanceof FileInputStream) {
+            final FileChannel channel = ((FileInputStream) inputStream).getChannel();
+            buffer = MemoryUtil.memAlloc((int) channel.size() + 1);
+            for (; ; )
+                if (channel.read(buffer) == -1)
+                    break;
+        } else {
+            final ReadableByteChannel channel = Channels.newChannel(inputStream);
+            buffer = MemoryUtil.memAlloc(8192);
+            while (channel.read(buffer) != -1)
+                if (buffer.remaining() == 0)
+                    buffer = MemoryUtil.memRealloc(buffer, buffer.capacity() << 1);
+        }
+        return buffer;
+    }
+
+    @Nullable
+    public static String readStringASCII(InputStream inputStream) {
+        ByteBuffer buffer = null;
+        try {
+            buffer = readRawBuffer(inputStream);
+            int i = buffer.position();
+            buffer.rewind();
+            return MemoryUtil.memASCII(buffer, i);
+        } catch (IOException ignored) {
+        } finally {
+            if (buffer != null)
+                MemoryUtil.memFree(buffer);
+        }
+        return null;
     }
 
     /*@Nonnull

@@ -18,7 +18,7 @@
 
 package icyllis.modernui.core.mixin;
 
-import icyllis.modernui.graphics.text.ModernFontRenderer;
+import icyllis.modernui.graphics.textmc.ModernFontRenderer;
 import net.minecraft.client.resources.language.ClientLanguage;
 import net.minecraft.client.resources.language.FormattedBidiReorder;
 import net.minecraft.network.chat.FormattedText;

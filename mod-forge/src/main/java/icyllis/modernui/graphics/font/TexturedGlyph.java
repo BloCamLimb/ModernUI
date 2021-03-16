@@ -21,7 +21,7 @@ package icyllis.modernui.graphics.font;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Matrix4f;
-import icyllis.modernui.graphics.text.pipeline.TextRenderType;
+import icyllis.modernui.graphics.textmc.pipeline.TextRenderType;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.Sheets;

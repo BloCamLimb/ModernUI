@@ -16,25 +16,23 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.shader.program;
+package icyllis.modernui.annotation;
 
-import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.shader.ShaderProgram;
-import org.lwjgl.opengl.GL20;
+import java.lang.annotation.*;
 
-public class RingShader extends ShaderProgram {
-
-    public static RingShader INSTANCE = new RingShader("rect", "ring");
-
-    private RingShader(String vert, String frag) {
-        super(ModernUI.ID, vert, frag);
-    }
-
-    public void setRadius(float inner, float radius) {
-        GL20.glUniform2f(0, inner, radius);
-    }
-
-    public void setCenter(float x, float y) {
-        GL20.glUniform2f(1, x, y);
-    }
+/**
+ * Denotes that the annotated method should only be called on the render thread,
+ * namely JVM main thread, GLFW main thread, OpenGL context thread.
+ * <p>
+ * Example:
+ * <pre><code>
+ *  &#64;RenderThread
+ *  public void createTexture() {
+ *      // something here
+ *  }</code></pre>
+ */
+@Documented
+@Target({ElementType.METHOD, ElementType.CONSTRUCTOR})
+@Retention(RetentionPolicy.CLASS)
+public @interface RenderThread {
 }

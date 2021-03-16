@@ -22,11 +22,11 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.shader.ShaderProgram;
 import org.lwjgl.opengl.GL20;
 
-public class RoundedRectShader extends ShaderProgram {
+public class RoundedRectProgram extends ShaderProgram {
 
-    public static final RoundedRectShader INSTANCE = new RoundedRectShader();
+    public static final RoundedRectProgram INSTANCE = new RoundedRectProgram();
 
-    private RoundedRectShader() {
+    private RoundedRectProgram() {
         super(ModernUI.ID, "rect", "rounded_rect");
     }
 

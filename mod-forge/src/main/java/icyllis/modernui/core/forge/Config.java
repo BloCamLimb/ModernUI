@@ -20,9 +20,9 @@ package icyllis.modernui.core.forge;
 
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.text.ModernFontRenderer;
+import icyllis.modernui.graphics.textmc.ModernFontRenderer;
 import icyllis.modernui.graphics.font.GlyphManager;
-import icyllis.modernui.graphics.text.TextLayoutProcessor;
+import icyllis.modernui.graphics.textmc.TextLayoutProcessor;
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.test.TestHUD;
 import net.minecraft.client.Minecraft;

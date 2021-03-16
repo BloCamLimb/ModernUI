@@ -16,12 +16,12 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.text.pipeline;
+package icyllis.modernui.graphics.textmc.pipeline;
 
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Matrix4f;
-import icyllis.modernui.graphics.text.FormattingStyle;
+import icyllis.modernui.graphics.textmc.FormattingStyle;
 import net.minecraft.client.renderer.MultiBufferSource;
 
 import javax.annotation.Nonnull;

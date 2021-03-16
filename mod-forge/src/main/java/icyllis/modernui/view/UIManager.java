@@ -26,8 +26,8 @@ import icyllis.modernui.animation.Animation;
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.math.Point;
-import icyllis.modernui.graphics.text.ModernFontRenderer;
-import icyllis.modernui.graphics.text.TextLayoutProcessor;
+import icyllis.modernui.graphics.textmc.ModernFontRenderer;
+import icyllis.modernui.graphics.textmc.TextLayoutProcessor;
 import icyllis.modernui.core.event.OpenMenuEvent;
 import icyllis.modernui.core.forge.ModernUIForge;
 import icyllis.modernui.core.mixin.MixinMouseHandler;
@@ -782,7 +782,6 @@ public final class UIManager {
 
         mCanvas.setDrawingTime(mDrawingTimeMillis);
 
-        GL43.glMultiDrawElements();
         mAppWindow.onDraw(mCanvas);
         /*if (popup != null) {
             popup.draw(drawTime);

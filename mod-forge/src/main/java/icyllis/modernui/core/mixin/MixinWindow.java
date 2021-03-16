@@ -21,7 +21,7 @@ package icyllis.modernui.core.mixin;
 import com.mojang.blaze3d.platform.Window;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.font.GlyphManager;
-import icyllis.modernui.graphics.text.TextLayoutProcessor;
+import icyllis.modernui.graphics.textmc.TextLayoutProcessor;
 import icyllis.modernui.core.forge.MuiHooks;
 import icyllis.modernui.graphics.RenderCore;
 import icyllis.modernui.view.ViewConfig;
@@ -53,7 +53,7 @@ public class MixinWindow {
         }
         int oldLevel = Math.min((int) (ViewConfig.sViewScale + 0.5f), 3);
         int newLevel = Math.min((int) (i * 0.5f + 0.5f), 3);
-        if (RenderCore.isRenderEngineStarted() && oldLevel != newLevel) {
+        if (RenderCore.isEngineStarted() && oldLevel != newLevel) {
             TextLayoutProcessor.getInstance().reload();
         }
         // See standards
