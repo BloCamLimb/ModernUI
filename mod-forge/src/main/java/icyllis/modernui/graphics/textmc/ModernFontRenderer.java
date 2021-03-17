@@ -20,10 +20,11 @@ package icyllis.modernui.graphics.textmc;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.math.Matrix4f;
+import icyllis.modernui.core.mixin.AccessFontRenderer;
 import icyllis.modernui.core.mixin.MixinClientLanguage;
 import icyllis.modernui.graphics.RenderCore;
 import icyllis.modernui.graphics.textmc.pipeline.TextRenderNode;
-import icyllis.modernui.core.mixin.AccessFontRenderer;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.StringSplitter;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.font.FontSet;
@@ -195,7 +196,7 @@ public class ModernFontRenderer extends Font {
     @Override
     public int drawInBatch(@Nonnull FormattedCharSequence text, float x, float y, int color, boolean dropShadow, @Nonnull Matrix4f matrix,
                            @Nonnull MultiBufferSource buffer, boolean seeThrough, int colorBackground, int packedLight) {
-        if (mGlobalRenderer && text.accept((index, style, codePoint) -> style.getFont() == Style.DEFAULT_FONT)) {
+        if (mGlobalRenderer && text.accept((index, style, codePoint) -> style.getFont() != Minecraft.ALT_FONT)) {
             v.setValue(x);
             mFontEngine.handleSequence(text,
                     (t, style) -> {

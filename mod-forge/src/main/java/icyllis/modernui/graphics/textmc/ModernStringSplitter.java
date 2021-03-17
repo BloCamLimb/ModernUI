@@ -20,6 +20,7 @@ package icyllis.modernui.graphics.textmc;
 
 import icyllis.modernui.graphics.textmc.pipeline.GlyphRender;
 import net.minecraft.client.ComponentCollector;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.StringSplitter;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Style;
@@ -79,7 +80,7 @@ public class ModernStringSplitter extends StringSplitter {
         // iterate all siblings
         text.visit((s, t) -> {
             if (!t.isEmpty()) {
-                if (s.getFont() == Style.DEFAULT_FONT)
+                if (s.getFont() != Minecraft.ALT_FONT)
                     v.add(mFontEngine.lookupVanillaNode(t, s).advance);
                 else {
                     v.setValue(-1);
