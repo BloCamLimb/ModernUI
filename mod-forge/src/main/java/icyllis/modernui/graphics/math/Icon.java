@@ -25,6 +25,8 @@ import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.SimpleTexture;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.resources.ResourceLocation;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL30;
 
 import javax.annotation.Nullable;
 
@@ -90,6 +92,7 @@ public class Icon {
             texture.bind();
             if (aa) {
                 texture.setFilter(true, true);
+                GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
             } else {
                 texture.setFilter(false, false);
             }

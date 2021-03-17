@@ -5,7 +5,8 @@ precision highp float;
 layout(location = 0) uniform vec2 u_Radius;
 layout(location = 1) uniform vec2 u_CenterPos;
 
-in vec2 f_Position;
+smooth in vec2 f_Position;
+smooth in vec4 f_Color;
 
 out vec4 fragColor;
 
@@ -20,5 +21,5 @@ void main() {
     // Method 2
     //float a = smoothstep(u_Radius.x - 1.0, u_Radius.x, v) * smoothstep(u_Radius.y, u_Radius.y - 1.0, v);
 
-    fragColor = gl_Color * vec4(1.0, 1.0, 1.0, a);
+    fragColor = f_Color * vec4(1.0, 1.0, 1.0, a);
 }

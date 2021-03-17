@@ -1,11 +1,12 @@
-#version 430 compatibility
+#version 430 core
 
 precision highp float;
 
 layout(location = 0) uniform float u_Radius;
 layout(location = 1) uniform vec2 u_CenterPos;
 
-in vec2 f_Position;
+smooth in vec2 f_Position;
+smooth in vec4 f_Color;
 
 out vec4 fragColor;
 
@@ -14,5 +15,5 @@ void main() {
 
     float a = 1.0 - smoothstep(u_Radius.x - 1.0, u_Radius.x, v);
 
-    fragColor = gl_Color * vec4(1.0, 1.0, 1.0, a);
+    fragColor = f_Color * vec4(1.0, 1.0, 1.0, a);
 }

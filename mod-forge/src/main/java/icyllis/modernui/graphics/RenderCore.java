@@ -55,10 +55,6 @@ public final class RenderCore {
         ShaderProgram.linkAll(manager);
     }
 
-    public static void stopProgram() {
-        GL43.glUseProgram(0);
-    }
-
     /**
      * Check GL capabilities and log incompatibilities
      *

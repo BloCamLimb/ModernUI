@@ -19,21 +19,26 @@
 package icyllis.modernui.test;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
 import icyllis.modernui.animation.ITimeInterpolator;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.graphics.math.Icon;
 import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
 import icyllis.modernui.widget.LinearLayout;
 import icyllis.modernui.widget.Orientation;
 import net.minecraft.ChatFormatting;
+import net.minecraft.resources.ResourceLocation;
 
 import javax.annotation.Nonnull;
 
 public class TestLinearLayout extends LinearLayout {
+
+    private static final Icon ICON = new Icon(new ResourceLocation(ModernUI.ID, "textures/gui/suk.png"), 0, 0, 1, 1, true);
 
     private float c = 10;
     private float f = 0;
@@ -44,11 +49,13 @@ public class TestLinearLayout extends LinearLayout {
     private final Animation circleAnimation2;
     private final Animation circleAnimation3;
     private final Animation circleAnimation4;
+    private final Animation iconRadiusAni;
 
     private float circleAcc1;
     private float circleAcc2;
     private float circleAcc3;
     private float circleAcc4;
+    private float iconRadius = 40;
 
     private boolean b;
 
@@ -103,6 +110,8 @@ public class TestLinearLayout extends LinearLayout {
                         new Applier((float) Math.PI, (float) -Math.PI, () -> circleAcc4, v -> circleAcc4 = v)
                                 .setInterpolator(ITimeInterpolator.ACC_DEC)
                 );
+        iconRadiusAni = new Animation(300)
+                .applyTo(new Applier(40, 80, () -> iconRadius, v -> iconRadius = v).setInterpolator(ITimeInterpolator.DECELERATE));
     }
 
     @Override
@@ -119,6 +128,10 @@ public class TestLinearLayout extends LinearLayout {
         canvas.restore();
         canvas.drawRoundedRect(6, 90, 46, 104, 7);
         canvas.drawRoundedFrame(6, 108, 46, 122, 7);
+
+        canvas.drawFeatheredRect(6, 126, 86, 156, 6);
+
+        canvas.drawIcon(ICON, 6, 160, 166, 320, iconRadius);
 
         // 1
 
@@ -217,9 +230,11 @@ public class TestLinearLayout extends LinearLayout {
         if ((ticks & 15) == 0) {
             if (!b) {
                 cAnim.start();
+                iconRadiusAni.start();
                 b = true;
             } else {
                 cAnim.invert();
+                iconRadiusAni.invert();
                 b = false;
             }
         }

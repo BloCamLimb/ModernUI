@@ -28,7 +28,7 @@ public class RoundedFrameProgram extends ShaderProgram {
     public static RoundedFrameProgram INSTANCE = new RoundedFrameProgram();
 
     private RoundedFrameProgram() {
-        super(ModernUI.ID, "rect", "rounded_rect_frame");
+        super(ModernUI.ID, "rect", "rounded_rect_stroke");
     }
 
     public void setRadius(float radius) {

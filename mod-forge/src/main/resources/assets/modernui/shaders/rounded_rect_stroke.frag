@@ -1,15 +1,15 @@
-#version 430 compatibility
+#version 430 core
 
 precision highp float;
 
 layout(location = 0) uniform float u_Radius;
 layout(location = 1) uniform vec4 u_InnerRect;
 
-in vec2 f_Position;
+smooth in vec2 f_Position;
+smooth in vec4 f_Color;
 
 out vec4 fragColor;
 
-// Created by BloCamLimb
 void main() {
 
     vec2 tl = u_InnerRect.xy - f_Position;
@@ -19,7 +19,8 @@ void main() {
 
     float v = length(max(vec2(0.0), dis)) - u_Radius;
 
-    float a = 1.0 - smoothstep(-1.0, 0.0, v);
+    float ar = 0.5 - smoothstep(-2.0, 0.0, v);
+    float a = 1.0 - 2.0 * abs(ar);
 
-    fragColor = gl_Color * vec4(1.0, 1.0, 1.0, a);
+    fragColor = f_Color * vec4(1.0, 1.0, 1.0, a);
 }
