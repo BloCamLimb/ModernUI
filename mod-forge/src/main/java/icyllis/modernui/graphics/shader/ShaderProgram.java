@@ -85,8 +85,18 @@ public class ShaderProgram {
         }
     }
 
+    /**
+     * Use this shader program
+     */
     public void use() {
         GL43.glUseProgram(mId);
+    }
+
+    /**
+     * Use undefined shader program.
+     */
+    public static void stop() {
+        GL43.glUseProgram(0);
     }
 
     public static void linkAll(ResourceManager manager) {

@@ -23,6 +23,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.math.Matrix4f;
+import icyllis.modernui.core.forge.ModernUIForge;
 import icyllis.modernui.graphics.textmc.ModernFontRenderer;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.math.TextAlign;
@@ -72,7 +73,7 @@ public class TestHUD {
         GL11.glLoadIdentity();
         GL11.glTranslatef(-1.58f * aspectRatio, -1.0f, -1.8f);
         GL11.glScalef(1 / 90f, -1 / 90f, 1 / 90f);
-        GL11.glRotatef(12, 0, 1, 0);
+        GL11.glRotatef(18, 0, 1, 0);
 
         // see ForgeIngameGUI
         Player player = (Player) minecraft.getCameraEntity();
@@ -216,6 +217,8 @@ public class TestHUD {
         canvas.setColor(sTooltipR, sTooltipG, sTooltipB, 240);
         canvas.drawRoundedFrame(tooltipX - H_BORDER, tooltipY - V_BORDER,
                 tooltipX + tooltipWidth + H_BORDER, tooltipY + tooltipHeight + V_BORDER, 3);
+        /*canvas.drawRoundedFrameT1(tooltipX - H_BORDER, tooltipY - V_BORDER,
+                tooltipX + tooltipWidth + H_BORDER, tooltipY + tooltipHeight + V_BORDER, 3);*/
 
         GL11.glPopMatrix();
 

@@ -89,7 +89,7 @@ public class FontCollection {
                 if (stream != null) {
                     sAllFontFamilies.add(builtIn = Font.createFont(Font.TRUETYPE_FONT, stream));
                 } else {
-                    ModernUI.LOGGER.info(GlyphManager.MARKER, "Built-in font was missing");
+                    ModernUI.LOGGER.debug(GlyphManager.MARKER, "Built-in font was missing");
                 }
             } catch (FontFormatException | IOException e) {
                 ModernUI.LOGGER.error(GlyphManager.MARKER, "Built-in font failed to load", e);

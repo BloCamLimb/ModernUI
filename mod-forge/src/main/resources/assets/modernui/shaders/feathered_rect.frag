@@ -5,7 +5,8 @@ precision highp float;
 layout(location = 0) uniform float u_Thickness;
 layout(location = 1) uniform vec4 u_InnerRect;
 
-in vec2 f_Position;
+smooth in vec2 f_Position;
+smooth in vec4 f_Color;
 
 out vec4 fragColor;
 
@@ -20,5 +21,5 @@ void main() {
 
     float a = 1.0 - smoothstep(0.0, u_Thickness, v);
 
-    fragColor = gl_Color * vec4(1.0, 1.0, 1.0, a);
+    fragColor = f_Color * vec4(1.0, 1.0, 1.0, a);
 }

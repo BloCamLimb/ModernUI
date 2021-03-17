@@ -29,6 +29,7 @@ import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.graphics.math.Icon;
 import icyllis.modernui.graphics.math.TextAlign;
+import icyllis.modernui.graphics.shader.ShaderProgram;
 import icyllis.modernui.graphics.shader.program.*;
 import icyllis.modernui.graphics.textmc.TextLayoutProcessor;
 import icyllis.modernui.graphics.textmc.pipeline.TextRenderNode;
@@ -41,6 +42,9 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL43;
 
 import javax.annotation.Nonnull;
 
@@ -74,7 +78,7 @@ public class Canvas {
 
     private final TextLayoutProcessor fontEngine = TextLayoutProcessor.getInstance();
 
-    private final BufferBuilder bufferBuilder = Tesselator.getInstance().getBuilder();
+    private final BufferBuilder mBufferBuilder = Tesselator.getInstance().getBuilder();
 
 
     /**
@@ -85,6 +89,7 @@ public class Canvas {
     private final RoundedFrameProgram mRoundedFrame = RoundedFrameProgram.INSTANCE;
     private final CircleProgram mCircle = CircleProgram.INSTANCE;
     private final FeatheredRectProgram mFeatheredRect = FeatheredRectProgram.INSTANCE;
+    private final RoundedRectTexProgram mRoundedRectTexProgram = RoundedRectTexProgram.INSTANCE;
 
 
     /**
@@ -336,7 +341,7 @@ public class Canvas {
         final TextRenderNode node = fontEngine.lookupVanillaNode(text, Style.EMPTY);
         if (alignFactor > 0)
             x -= node.advance * alignFactor;
-        return node.drawText(bufferBuilder, text, x, y, r, g, b, a);
+        return node.drawText(mBufferBuilder, text, x, y, r, g, b, a);
     }
 
     /**
@@ -355,13 +360,13 @@ public class Canvas {
         right += drawingX;
         bottom += drawingY;*/
 
-        bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
-        bufferBuilder.vertex(left, bottom, z).color(r, g, b, a).endVertex();
-        bufferBuilder.vertex(right, bottom, z).color(r, g, b, a).endVertex();
-        bufferBuilder.vertex(right, top, z).color(r, g, b, a).endVertex();
-        bufferBuilder.vertex(left, top, z).color(r, g, b, a).endVertex();
-        bufferBuilder.end();
-        BufferUploader.end(bufferBuilder);
+        mBufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
+        mBufferBuilder.vertex(left, bottom, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.vertex(right, bottom, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.vertex(right, top, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.vertex(left, top, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.end();
+        BufferUploader.end(mBufferBuilder);
     }
 
     /**
@@ -392,43 +397,43 @@ public class Canvas {
         final int a = this.a;
         final double z = this.z;
 
-        bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
-        bufferBuilder.vertex(left - thickness, top, z).color(r, g, b, a).endVertex();
-        bufferBuilder.vertex(right, top, z).color(r, g, b, a).endVertex();
-        bufferBuilder.vertex(right, top - thickness, z).color(r, g, b, a).endVertex();
-        bufferBuilder.vertex(left - thickness, top - thickness, z).color(r, g, b, a).endVertex();
-        bufferBuilder.end();
-        BufferUploader.end(bufferBuilder);
+        mBufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
+        mBufferBuilder.vertex(left - thickness, top, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.vertex(right, top, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.vertex(right, top - thickness, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.vertex(left - thickness, top - thickness, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.end();
+        BufferUploader.end(mBufferBuilder);
 
         //featheredRect.setInnerRect(right + 0.25f, top - thickness + 0.25f, right + thickness - 0.25f, bottom - 0.25f);
 
-        bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
-        bufferBuilder.vertex(right, bottom, z).color(r, g, b, a).endVertex();
-        bufferBuilder.vertex(right + thickness, bottom, z).color(r, g, b, a).endVertex();
-        bufferBuilder.vertex(right + thickness, top - thickness, z).color(r, g, b, a).endVertex();
-        bufferBuilder.vertex(right, top - thickness, z).color(r, g, b, a).endVertex();
-        bufferBuilder.end();
-        BufferUploader.end(bufferBuilder);
+        mBufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
+        mBufferBuilder.vertex(right, bottom, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.vertex(right + thickness, bottom, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.vertex(right + thickness, top - thickness, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.vertex(right, top - thickness, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.end();
+        BufferUploader.end(mBufferBuilder);
 
         //featheredRect.setInnerRect(left + 0.25f, bottom + 0.25f, right + thickness - 0.25f, bottom + thickness - 0.25f);
 
-        bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
-        bufferBuilder.vertex(left, bottom + thickness, z).color(r, g, b, a).endVertex();
-        bufferBuilder.vertex(right + thickness, bottom + thickness, z).color(r, g, b, a).endVertex();
-        bufferBuilder.vertex(right + thickness, bottom, z).color(r, g, b, a).endVertex();
-        bufferBuilder.vertex(left, bottom, z).color(r, g, b, a).endVertex();
-        bufferBuilder.end();
-        BufferUploader.end(bufferBuilder);
+        mBufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
+        mBufferBuilder.vertex(left, bottom + thickness, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.vertex(right + thickness, bottom + thickness, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.vertex(right + thickness, bottom, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.vertex(left, bottom, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.end();
+        BufferUploader.end(mBufferBuilder);
 
         //featheredRect.setInnerRect(left - thickness + 0.25f, top + 0.25f, left - 0.25f, bottom + thickness - 0.25f);
 
-        bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
-        bufferBuilder.vertex(left - thickness, bottom + thickness, z).color(r, g, b, a).endVertex();
-        bufferBuilder.vertex(left, bottom + thickness, z).color(r, g, b, a).endVertex();
-        bufferBuilder.vertex(left, top, z).color(r, g, b, a).endVertex();
-        bufferBuilder.vertex(left - thickness, top, z).color(r, g, b, a).endVertex();
-        bufferBuilder.end();
-        BufferUploader.end(bufferBuilder);
+        mBufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
+        mBufferBuilder.vertex(left - thickness, bottom + thickness, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.vertex(left, bottom + thickness, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.vertex(left, top, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.vertex(left - thickness, top, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.end();
+        BufferUploader.end(mBufferBuilder);
 
         //ShaderTools.releaseShader();
     }
@@ -456,17 +461,17 @@ public class Canvas {
         final int a = this.a;
         final double z = this.z;
 
-        bufferBuilder.begin(GL11.GL_LINE_LOOP, DefaultVertexFormat.POSITION_COLOR);
-        bufferBuilder.vertex(left, bottom - bevel, z).color(r, g, b, a).endVertex();
-        bufferBuilder.vertex(left + bevel, bottom, z).color(r, g, b, a).endVertex();
-        bufferBuilder.vertex(right - bevel, bottom, z).color(r, g, b, a).endVertex();
-        bufferBuilder.vertex(right, bottom - bevel, z).color(r, g, b, a).endVertex();
-        bufferBuilder.vertex(right, top + bevel, z).color(r, g, b, a).endVertex();
-        bufferBuilder.vertex(right - bevel, top, z).color(r, g, b, a).endVertex();
-        bufferBuilder.vertex(left + bevel, top, z).color(r, g, b, a).endVertex();
-        bufferBuilder.vertex(left, top + bevel, z).color(r, g, b, a).endVertex();
-        bufferBuilder.end();
-        BufferUploader.end(bufferBuilder);
+        mBufferBuilder.begin(GL11.GL_LINE_LOOP, DefaultVertexFormat.POSITION_COLOR);
+        mBufferBuilder.vertex(left, bottom - bevel, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.vertex(left + bevel, bottom, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.vertex(right - bevel, bottom, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.vertex(right, bottom - bevel, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.vertex(right, top + bevel, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.vertex(right - bevel, top, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.vertex(left + bevel, top, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.vertex(left, top + bevel, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.end();
+        BufferUploader.end(mBufferBuilder);
     }
 
     /**
@@ -486,13 +491,13 @@ public class Canvas {
         right += drawingX;
         bottom += drawingY;*/
 
-        bufferBuilder.begin(GL11.GL_LINE_LOOP, DefaultVertexFormat.POSITION_COLOR);
-        bufferBuilder.vertex(left, bottom, z).color(r, g, b, a).endVertex();
-        bufferBuilder.vertex(right, bottom, z).color(r, g, b, a).endVertex();
-        bufferBuilder.vertex(right, top, z).color(r, g, b, a).endVertex();
-        bufferBuilder.vertex(left, top, z).color(r, g, b, a).endVertex();
-        bufferBuilder.end();
-        BufferUploader.end(bufferBuilder);
+        mBufferBuilder.begin(GL11.GL_LINE_LOOP, DefaultVertexFormat.POSITION_COLOR);
+        mBufferBuilder.vertex(left, bottom, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.vertex(right, bottom, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.vertex(right, top, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.vertex(left, top, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.end();
+        BufferUploader.end(mBufferBuilder);
     }
 
     /**
@@ -510,7 +515,7 @@ public class Canvas {
         mRing.setRadius(innerRadius, outerRadius);
         mRing.setCenter(centerX, centerY);
         drawRect(centerX - outerRadius, centerY - outerRadius, centerX + outerRadius, centerY + outerRadius);
-        RenderCore.stopProgram();
+        ShaderProgram.stop();
     }
 
     /**
@@ -527,7 +532,7 @@ public class Canvas {
         mCircle.setRadius(radius);
         mCircle.setCenter(centerX, centerY);
         drawRect(centerX - radius, centerY - radius, centerX + radius, centerY + radius);
-        RenderCore.stopProgram();
+        ShaderProgram.stop();
     }
 
     /**
@@ -546,11 +551,11 @@ public class Canvas {
         startY += drawingY;
         stopY += drawingY;*/
 
-        bufferBuilder.begin(GL11.GL_LINES, DefaultVertexFormat.POSITION_COLOR);
-        bufferBuilder.vertex(startX, startY, z).color(r, g, b, a).endVertex();
-        bufferBuilder.vertex(stopX, stopY, z).color(r, g, b, a).endVertex();
-        bufferBuilder.end();
-        BufferUploader.end(bufferBuilder);
+        mBufferBuilder.begin(GL11.GL_LINES, DefaultVertexFormat.POSITION_COLOR);
+        mBufferBuilder.vertex(startX, startY, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.vertex(stopX, stopY, z).color(r, g, b, a).endVertex();
+        mBufferBuilder.end();
+        BufferUploader.end(mBufferBuilder);
     }
 
     /**
@@ -567,7 +572,7 @@ public class Canvas {
         mRoundedRect.setRadius(radius);
         mRoundedRect.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
         drawRect(left, top, right, bottom);
-        RenderCore.stopProgram();
+        ShaderProgram.stop();
     }
 
     /**
@@ -588,7 +593,7 @@ public class Canvas {
         mRoundedFrame.setRadius(radius);
         mRoundedFrame.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
         drawRect(left, top, right, bottom);
-        RenderCore.stopProgram();
+        ShaderProgram.stop();
     }
 
     @Deprecated
@@ -597,16 +602,14 @@ public class Canvas {
         mRoundedFrame.setRadius(radius);
         mRoundedFrame.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
         RenderSystem.disableTexture();
-        RenderSystem.shadeModel(GL11.GL_SMOOTH);
-        bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
-        bufferBuilder.vertex(left, bottom, z).color(170, 220, 240, a).endVertex();
-        bufferBuilder.vertex(right, bottom, z).color(201, 200, 232, a).endVertex();
-        bufferBuilder.vertex(right, top, z).color(232, 180, 223, a).endVertex();
-        bufferBuilder.vertex(left, top, z).color(201, 200, 232, a).endVertex();
-        bufferBuilder.end();
-        BufferUploader.end(bufferBuilder);
-        RenderSystem.shadeModel(GL11.GL_FLAT);
-        RenderCore.stopProgram();
+        mBufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
+        mBufferBuilder.vertex(left, bottom, z).color(170, 220, 240, a).endVertex();
+        mBufferBuilder.vertex(right, bottom, z).color(201, 200, 232, a).endVertex();
+        mBufferBuilder.vertex(right, top, z).color(232, 180, 223, a).endVertex();
+        mBufferBuilder.vertex(left, top, z).color(201, 200, 232, a).endVertex();
+        mBufferBuilder.end();
+        BufferUploader.end(mBufferBuilder);
+        ShaderProgram.stop();
     }
 
     /**
@@ -625,7 +628,7 @@ public class Canvas {
         mFeatheredRect.setThickness(thickness);
         mFeatheredRect.setInnerRect(left + thickness, top + thickness, right - thickness, bottom - thickness);
         drawRect(left, top, right, bottom);
-        RenderCore.stopProgram();
+        ShaderProgram.stop();
     }
 
     /**
@@ -637,10 +640,16 @@ public class Canvas {
      * @param right  rect right
      * @param bottom rect bottom
      */
-    public void drawIcon(@Nonnull Icon icon, float left, float top, float right, float bottom) {
+    public void drawIcon(@Nonnull Icon icon, float left, float top, float right, float bottom, float radius) {
+        RoundedRectTexProgram program = mRoundedRectTexProgram;
+        program.use();
+        program.setRadius(radius);
+        program.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
+        RenderSystem.activeTexture(GL13.GL_TEXTURE0);
         RenderSystem.enableTexture();
         icon.bindTexture();
-        BufferBuilder bufferBuilder = this.bufferBuilder;
+        GL43.glUniform1i(2, 0);
+        BufferBuilder bufferBuilder = this.mBufferBuilder;
 
         /*left += drawingX;
         top += drawingY;
@@ -654,6 +663,7 @@ public class Canvas {
         bufferBuilder.vertex(left, top, z).color(r, g, b, a).uv(icon.getLeft(), icon.getTop()).endVertex();
         bufferBuilder.end();
         BufferUploader.end(bufferBuilder);
+        ShaderProgram.stop();
     }
 
     /**

@@ -22,12 +22,12 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.shader.ShaderProgram;
 import org.lwjgl.opengl.GL20;
 
-public class RoundedRectProgram extends ShaderProgram {
+public class RoundedRectTexProgram extends ShaderProgram {
 
-    public static final RoundedRectProgram INSTANCE = new RoundedRectProgram();
+    public static final RoundedRectTexProgram INSTANCE = new RoundedRectTexProgram();
 
-    private RoundedRectProgram() {
-        super(ModernUI.ID, "rect", "rounded_rect_fill");
+    private RoundedRectTexProgram() {
+        super(ModernUI.ID, "rect_tex", "rounded_rect_fill_tex");
     }
 
     public void setRadius(float radius) {
