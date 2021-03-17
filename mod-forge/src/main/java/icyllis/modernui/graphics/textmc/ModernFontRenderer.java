@@ -60,9 +60,9 @@ public class ModernFontRenderer extends Font {
      * Config values
      */
     private boolean allowShadow = true;
-    private boolean globalRenderer = false;
+    private boolean mGlobalRenderer = false;
 
-    private final TextLayoutProcessor fontEngine = TextLayoutProcessor.getInstance();
+    private final TextLayoutProcessor mFontEngine = TextLayoutProcessor.getInstance();
 
     // temporary float value used in lambdas
     private final MutableFloat v = new MutableFloat();
@@ -81,7 +81,7 @@ public class ModernFontRenderer extends Font {
             StringSplitter o = i.getSplitter();
             @Deprecated
             StringSplitter.WidthProvider c = (codePoint, style) ->
-                    i.fontEngine.lookupVanillaNode(new String(new int[]{codePoint}, 0, 1), style).advance;
+                    i.mFontEngine.lookupVanillaNode(new String(new int[]{codePoint}, 0, 1), style).advance;
             i.modernStringSplitter = new ModernStringSplitter(c);
             i.vanillaStringSplitter = o;
             return instance = i;
@@ -93,16 +93,16 @@ public class ModernFontRenderer extends Font {
     public static void change(boolean global, boolean shadow) {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
         if (RenderCore.isEngineStarted()) {
-            if (instance.globalRenderer != global) {
+            if (instance.mGlobalRenderer != global) {
                 ((AccessFontRenderer) instance).setSplitter(global ? instance.modernStringSplitter : instance.vanillaStringSplitter);
-                instance.globalRenderer = global;
+                instance.mGlobalRenderer = global;
             }
             instance.allowShadow = shadow;
         }
     }
 
     public static boolean isGlobalRenderer() {
-        return instance.globalRenderer;
+        return instance.mGlobalRenderer;
     }
 
     /*static void hook(boolean doHook) {
@@ -150,7 +150,7 @@ public class ModernFontRenderer extends Font {
     @Override
     public int drawInBatch(@Nonnull String text, float x, float y, int color, boolean dropShadow, @NotNull Matrix4f matrix,
                            @Nonnull MultiBufferSource buffer, boolean seeThrough, int colorBackground, int packedLight, boolean bidiFlag) {
-        if (globalRenderer) {
+        if (mGlobalRenderer) {
             // bidiFlag is useless, we have our layout system
             x += drawLayer0(text, x, y, color, dropShadow, matrix, buffer, seeThrough, colorBackground, packedLight, Style.EMPTY);
             return (int) x + (dropShadow ? 1 : 0);
@@ -161,7 +161,7 @@ public class ModernFontRenderer extends Font {
     @Override
     public int drawInBatch(@Nonnull Component text, float x, float y, int color, boolean dropShadow, @Nonnull Matrix4f matrix,
                            @Nonnull MultiBufferSource buffer, boolean seeThrough, int colorBackground, int packedLight) {
-        if (globalRenderer) {
+        if (mGlobalRenderer) {
             v.setValue(x);
             // iterate all siblings
             text.visit((style, t) -> {
@@ -178,7 +178,7 @@ public class ModernFontRenderer extends Font {
     // compatibility layer
     public void drawText(@Nonnull FormattedText text, float x, float y, int color, boolean dropShadow, @Nonnull Matrix4f matrix,
                          @Nonnull MultiBufferSource buffer, boolean seeThrough, int colorBackground, int packedLight) {
-        if (globalRenderer) {
+        if (mGlobalRenderer) {
             v.setValue(x);
             // iterate all siblings
             text.visit((style, t) -> {
@@ -195,9 +195,9 @@ public class ModernFontRenderer extends Font {
     @Override
     public int drawInBatch(@Nonnull FormattedCharSequence text, float x, float y, int color, boolean dropShadow, @Nonnull Matrix4f matrix,
                            @Nonnull MultiBufferSource buffer, boolean seeThrough, int colorBackground, int packedLight) {
-        if (globalRenderer) {
+        if (mGlobalRenderer && text.accept((index, style, codePoint) -> style.getFont() == Style.DEFAULT_FONT)) {
             v.setValue(x);
-            fontEngine.handleSequence(text,
+            mFontEngine.handleSequence(text,
                     (t, style) -> {
                         v.add(drawLayer0(t, v.floatValue(), y, color, dropShadow, matrix,
                                 buffer, seeThrough, colorBackground, packedLight, style));
@@ -225,7 +225,7 @@ public class ModernFontRenderer extends Font {
         int g = color >> 8 & 0xff;
         int b = color & 0xff;
 
-        TextRenderNode node = fontEngine.lookupVanillaNode(text, style);
+        TextRenderNode node = mFontEngine.lookupVanillaNode(text, style);
         if (dropShadow && allowShadow) {
             node.drawText(matrix, buffer, text, x + 0.8f, y + 0.8f, r >> 2, g >> 2, b >> 2, a, true,
                     seeThrough, colorBackground, packedLight);
@@ -313,7 +313,7 @@ public class ModernFontRenderer extends Font {
     @Nonnull
     @Override
     public String bidirectionalShaping(@Nonnull String text) {
-        if (globalRenderer)
+        if (mGlobalRenderer)
             return text;
         return super.bidirectionalShaping(text);
     }

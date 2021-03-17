@@ -1,9 +1,10 @@
 Changelogs
 ===
-### 1.16.5-2.4.6.81 (2021-)
+### 1.16.5-2.4.6.81 (2021-03-17)
 * Several optimizations
 * Fix lifecycle crash
-* Suppress old java warning everytime
+* Warn old Java only once
+* Fix enchantment characters
 
 ### 1.16.5-2.4.5.80 (2021-02-17)
 * Add text layouts, line breaker

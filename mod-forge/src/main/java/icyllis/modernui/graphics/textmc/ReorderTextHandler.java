@@ -30,31 +30,31 @@ import javax.annotation.Nullable;
  */
 public class ReorderTextHandler {
 
-    private final MutableString buffer = new MutableString();
+    private final MutableString mBuffer = new MutableString();
 
     @Nullable
-    private Style last;
+    private Style mLast;
 
-    private IAction action;
+    private IConsumer mConsumer;
 
     // composite
-    private final FormattedCharSink sink = new FormattedCharSink() {
+    private final FormattedCharSink mSink = new FormattedCharSink() {
 
         @Override
         public boolean accept(int index, @Nonnull Style style, int codePoint) {
-            if (style != last) {
-                if (!buffer.isEmpty() && last != null) {
-                    if (action.handle(buffer, last)) {
-                        buffer.clear();
-                        last = style;
+            if (style != mLast) {
+                if (!mBuffer.isEmpty() && mLast != null) {
+                    if (mConsumer.handle(mBuffer, mLast)) {
+                        mBuffer.clear();
+                        mLast = style;
                         // stop
                         return false;
                     }
                 }
-                buffer.clear();
-                last = style;
+                mBuffer.clear();
+                mLast = style;
             }
-            buffer.addCodePoint(codePoint);
+            mBuffer.addCodePoint(codePoint);
             // continue
             return true;
         }
@@ -63,9 +63,9 @@ public class ReorderTextHandler {
     /**
      * @return {@code false} if action stopped on the way
      */
-    public boolean handle(@Nonnull FormattedCharSequence sequence, IAction action) {
-        this.action = action;
-        if (sequence.accept(sink)) {
+    public boolean handle(@Nonnull FormattedCharSequence sequence, IConsumer consumer) {
+        this.mConsumer = consumer;
+        if (sequence.accept(mSink)) {
             // iteration completed
             return finish();
         }
@@ -74,20 +74,20 @@ public class ReorderTextHandler {
     }
 
     private boolean finish() {
-        if (!buffer.isEmpty() && last != null) {
-            if (action.handle(buffer, last)) {
-                buffer.clear();
-                last = null;
+        if (!mBuffer.isEmpty() && mLast != null) {
+            if (mConsumer.handle(mBuffer, mLast)) {
+                mBuffer.clear();
+                mLast = null;
                 return false;
             }
         }
-        buffer.clear();
-        last = null;
+        mBuffer.clear();
+        mLast = null;
         return true;
     }
 
     @FunctionalInterface
-    public interface IAction {
+    public interface IConsumer {
 
         /**
          * @return {@code true} to stop action, {@code false} to continue
