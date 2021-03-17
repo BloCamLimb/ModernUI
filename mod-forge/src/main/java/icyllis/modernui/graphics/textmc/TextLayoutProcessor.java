@@ -196,11 +196,11 @@ public class TextLayoutProcessor {
      * So actually it's a copy of original text, then we can use our layout engine later
      *
      * @param sequence a char sequence copied from the original string
-     * @param action   what to do with a part of styled char sequence
+     * @param consumer   what to do with a part of styled char sequence
      * @return {@code false} if action stopped on the way, {@code true} if the whole text was handled
      */
-    public boolean handleSequence(FormattedCharSequence sequence, ReorderTextHandler.IAction action) {
-        return reorder.handle(sequence, action);
+    public boolean handleSequence(FormattedCharSequence sequence, ReorderTextHandler.IConsumer consumer) {
+        return reorder.handle(sequence, consumer);
     }
 
     /**

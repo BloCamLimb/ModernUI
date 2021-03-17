@@ -40,18 +40,17 @@ import java.util.Optional;
 @OnlyIn(Dist.CLIENT)
 public class ModernStringSplitter extends StringSplitter {
 
-    private final TextLayoutProcessor fontEngine = TextLayoutProcessor.getInstance();
+    private final TextLayoutProcessor mFontEngine = TextLayoutProcessor.getInstance();
 
     private final MutableFloat v = new MutableFloat();
 
     /**
      * Constructor
      *
-     * @param widthProvider retrieve char width with given codePoint and Style(BOLD)
+     * @param vanillaWidths retrieve char width with given codePoint and Style(BOLD)
      */
-    //TODO remove width provider as long as complex line wrapping finished
-    public ModernStringSplitter(WidthProvider widthProvider) {
-        super(widthProvider);
+    public ModernStringSplitter(WidthProvider vanillaWidths) {
+        super(vanillaWidths);
     }
 
     /**
@@ -65,7 +64,7 @@ public class ModernStringSplitter extends StringSplitter {
         if (text == null || text.isEmpty()) {
             return 0;
         }
-        return fontEngine.lookupVanillaNode(text, Style.EMPTY).advance;
+        return mFontEngine.lookupVanillaNode(text, Style.EMPTY).advance;
     }
 
     /**
@@ -80,12 +79,17 @@ public class ModernStringSplitter extends StringSplitter {
         // iterate all siblings
         text.visit((s, t) -> {
             if (!t.isEmpty()) {
-                v.add(fontEngine.lookupVanillaNode(t, s).advance);
+                if (s.getFont() == Style.DEFAULT_FONT)
+                    v.add(mFontEngine.lookupVanillaNode(t, s).advance);
+                else {
+                    v.setValue(-1);
+                    return FormattedText.STOP_ITERATION;
+                }
             }
             // continue
             return Optional.empty();
         }, Style.EMPTY);
-        return v.floatValue();
+        return v.floatValue() >= 0 ? v.floatValue() : super.stringWidth(text);
     }
 
     /**
@@ -97,9 +101,9 @@ public class ModernStringSplitter extends StringSplitter {
     @Override
     public float stringWidth(@Nonnull FormattedCharSequence text) {
         v.setValue(0);
-        fontEngine.handleSequence(text, (t, s) -> {
+        mFontEngine.handleSequence(text, (t, s) -> {
             if (t.length() != 0) {
-                v.add(fontEngine.lookupVanillaNode(t, s).advance);
+                v.add(mFontEngine.lookupVanillaNode(t, s).advance);
             }
             return false;
         });
@@ -128,7 +132,7 @@ public class ModernStringSplitter extends StringSplitter {
             return 0;
         }
         /* The glyph array for a string is sorted by the string's logical character position */
-        GlyphRender[] glyphs = fontEngine.lookupVanillaNode(text, style).glyphs;
+        GlyphRender[] glyphs = mFontEngine.lookupVanillaNode(text, style).glyphs;
 
         /* Add up the individual advance of each glyph until it exceeds the specified width */
         float advance = 0;
@@ -176,7 +180,7 @@ public class ModernStringSplitter extends StringSplitter {
             return text;
         }
         /* The glyph array for a string is sorted by the string's logical character position */
-        GlyphRender[] glyphs = fontEngine.lookupVanillaNode(text, style).glyphs;
+        GlyphRender[] glyphs = mFontEngine.lookupVanillaNode(text, style).glyphs;
 
         /* Add up the individual advance of each glyph until it exceeds the specified width */
         float advance = 0;
@@ -212,7 +216,7 @@ public class ModernStringSplitter extends StringSplitter {
             if (sizeToWidth0(t, v.floatValue(), s) < t.length()) {
                 return Optional.of(s);
             }
-            v.subtract(fontEngine.lookupVanillaNode(t, s).advance);
+            v.subtract(mFontEngine.lookupVanillaNode(t, s).advance);
             // continue
             return Optional.empty();
         }, Style.EMPTY).orElse(null);
@@ -231,13 +235,13 @@ public class ModernStringSplitter extends StringSplitter {
         v.setValue(width);
         MutableObject<Style> sr = new MutableObject<>();
         // iterate all siblings
-        if (!fontEngine.handleSequence(text, (t, s) -> {
+        if (!mFontEngine.handleSequence(text, (t, s) -> {
             if (sizeToWidth0(t, v.floatValue(), s) < t.length()) {
                 sr.setValue(s);
                 // break with result
                 return true;
             }
-            v.subtract(fontEngine.lookupVanillaNode(t, s).advance);
+            v.subtract(mFontEngine.lookupVanillaNode(t, s).advance);
             // continue
             return false;
         })) {
@@ -276,7 +280,7 @@ public class ModernStringSplitter extends StringSplitter {
                 // add
                 collector.append(FormattedText.of(text, style));
             }
-            v.subtract(fontEngine.lookupVanillaNode(text, style).advance);
+            v.subtract(mFontEngine.lookupVanillaNode(text, style).advance);
             // continue
             return Optional.empty();
         }, styleIn).orElse(textIn); // full text

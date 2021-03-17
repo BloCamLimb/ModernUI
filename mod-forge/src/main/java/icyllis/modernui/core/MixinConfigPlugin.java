@@ -42,7 +42,7 @@ public class MixinConfigPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        return !ModernUIForge.isOptiFineLoaded() || !mixinClassName.equals("AccessVideoSettingsScreen");
+        return !ModernUIForge.isOptiFineLoaded() || !mixinClassName.equals("icyllis.modernui.core.mixin.AccessVideoSettingsScreen");
     }
 
     @Override
