@@ -25,7 +25,7 @@ import org.lwjgl.opengl.GL20;
 @Deprecated
 public class FeatheredRectProgram extends ShaderProgram {
 
-    public static FeatheredRectProgram INSTANCE = new FeatheredRectProgram("rect", "feathered_rect");
+    public static FeatheredRectProgram INSTANCE = new FeatheredRectProgram("rect", "rect_fill_v");
 
     private FeatheredRectProgram(String vert, String frag) {
         super(ModernUI.ID, vert, frag);

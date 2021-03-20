@@ -24,7 +24,7 @@ import org.lwjgl.opengl.GL20;
 
 public class RingProgram extends ShaderProgram {
 
-    public static RingProgram INSTANCE = new RingProgram("rect", "ring");
+    public static RingProgram INSTANCE = new RingProgram("rect", "circle_stroke");
 
     private RingProgram(String vert, String frag) {
         super(ModernUI.ID, vert, frag);

@@ -41,31 +41,31 @@ public class ShaderProgram {
     private Shader mFragment;
 
     @Nonnull
-    private final ResourceLocation mVertLoc;
+    private final ResourceLocation mVert;
     @Nonnull
-    private final ResourceLocation mFragLoc;
+    private final ResourceLocation mFrag;
 
     final int mId;
 
     @RenderThread
-    public ShaderProgram(@Nonnull ResourceLocation vertLoc, @Nonnull ResourceLocation fragLoc) {
-        mVertLoc = vertLoc;
-        mFragLoc = fragLoc;
+    public ShaderProgram(@Nonnull ResourceLocation vert, @Nonnull ResourceLocation frag) {
+        mVert = vert;
+        mFrag = frag;
         mId = GL43.glCreateProgram();
         PROGRAMS.add(this);
     }
 
     @RenderThread
-    public ShaderProgram(@Nonnull String namespace, @Nonnull String vertLoc, @Nonnull String fragLoc) {
-        this(new ResourceLocation(namespace, String.format("shaders/%s.vert", vertLoc)),
-                new ResourceLocation(namespace, String.format("shaders/%s.frag", fragLoc)));
+    public ShaderProgram(@Nonnull String namespace, @Nonnull String vert, @Nonnull String fsRl) {
+        this(new ResourceLocation(namespace, String.format("shaders/%s.vert", vert)),
+                new ResourceLocation(namespace, String.format("shaders/%s.frag", fsRl)));
     }
 
     public void link(ResourceManager manager) {
         detach();
         try {
-            mVertex = Shader.getOrCreate(manager, mVertLoc, Shader.Type.VERTEX);
-            mFragment = Shader.getOrCreate(manager, mFragLoc, Shader.Type.FRAGMENT);
+            mVertex = Shader.getOrCreate(manager, mVert, Shader.Type.VERTEX);
+            mFragment = Shader.getOrCreate(manager, mFrag, Shader.Type.FRAGMENT);
             mVertex.attach(this);
             mFragment.attach(this);
             GL43.glLinkProgram(mId);

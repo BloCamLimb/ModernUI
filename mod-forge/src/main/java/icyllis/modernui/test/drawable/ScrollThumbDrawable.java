@@ -28,7 +28,7 @@ public class ScrollThumbDrawable extends Drawable {
     @Override
     public void draw(@Nonnull Canvas canvas) {
         canvas.moveTo(this);
-        canvas.setColor(128, 128, 128, 128);
+        canvas.setRGBA(128, 128, 128, 128);
         canvas.drawRect(0, 0, getWidth(), getHeight());
     }
 

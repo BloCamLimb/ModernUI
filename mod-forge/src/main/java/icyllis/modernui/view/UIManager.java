@@ -26,6 +26,7 @@ import icyllis.modernui.animation.Animation;
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.math.Point;
+import icyllis.modernui.graphics.shader.ShaderProgram;
 import icyllis.modernui.graphics.textmc.ModernFontRenderer;
 import icyllis.modernui.graphics.textmc.TextLayoutProcessor;
 import icyllis.modernui.core.event.OpenMenuEvent;

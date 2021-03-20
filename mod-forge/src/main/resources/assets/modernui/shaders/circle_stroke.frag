@@ -1,4 +1,4 @@
-#version 430 compatibility
+#version 430 core
 
 precision highp float;
 
@@ -13,13 +13,11 @@ out vec4 fragColor;
 void main() {
     float v = length(f_Position - u_CenterPos);
 
-    // Method 1
-    float a = min(
+    /*float a = min(
     smoothstep(u_Radius.x - 1.0, u_Radius.x, v),
-    smoothstep(u_Radius.y, u_Radius.y - 1.0, v));
+    smoothstep(u_Radius.y, u_Radius.y - 1.0, v));*/
 
-    // Method 2
-    //float a = smoothstep(u_Radius.x - 1.0, u_Radius.x, v) * smoothstep(u_Radius.y, u_Radius.y - 1.0, v);
+    float a = smoothstep(u_Radius.x - 1.0, u_Radius.x, v) * smoothstep(u_Radius.y, u_Radius.y - 1.0, v);
 
     fragColor = f_Color * vec4(1.0, 1.0, 1.0, a);
 }

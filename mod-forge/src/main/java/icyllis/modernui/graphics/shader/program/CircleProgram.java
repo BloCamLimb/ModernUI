@@ -24,7 +24,7 @@ import org.lwjgl.opengl.GL20;
 
 public class CircleProgram extends ShaderProgram {
 
-    public static CircleProgram INSTANCE = new CircleProgram("rect", "circle");
+    public static CircleProgram INSTANCE = new CircleProgram("rect", "circle_fill");
 
     private CircleProgram(String vert, String frag) {
         super(ModernUI.ID, vert, frag);

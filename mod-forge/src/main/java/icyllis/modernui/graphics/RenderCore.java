@@ -23,11 +23,12 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.graphics.shader.Shader;
 import icyllis.modernui.graphics.shader.ShaderProgram;
+import icyllis.modernui.graphics.shader.program.RoundRectProgram;
+import icyllis.modernui.graphics.textmc.TextLayoutProcessor;
 import net.minecraft.server.packs.resources.ResourceManager;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.MemoryUtil;
@@ -56,11 +57,9 @@ public final class RenderCore {
     }
 
     /**
-     * Check GL capabilities and log incompatibilities
-     *
-     * @since 2.0.5
+     * Starts render engine.
      */
-    static void startEngine() {
+    public static void startEngine() {
         if (renderEngineStarted) {
             return;
         }
@@ -97,13 +96,13 @@ public final class RenderCore {
 
         int v;
         if ((v = RenderSystem.maxSupportedTextureSize()) < GlyphManager.TEXTURE_SIZE ||
-                (GlyphManager.TEXTURE_SIZE <= 1024 && (v = GL11.glGetInteger(GL11.GL_MAX_TEXTURE_SIZE)) < GlyphManager.TEXTURE_SIZE)) {
+                (GlyphManager.TEXTURE_SIZE <= 1024 && (v = GL43.glGetInteger(GL43.GL_MAX_TEXTURE_SIZE)) < GlyphManager.TEXTURE_SIZE)) {
             ModernUI.LOGGER.fatal(MARKER, "Max texture size is too small, supplies {} but requires {}", v, GlyphManager.TEXTURE_SIZE);
             i++;
         }
 
         if (!capabilities.OpenGL43) {
-            String glVersion = GL11.glGetString(GL11.GL_VERSION);
+            String glVersion = GL43.glGetString(GL43.GL_VERSION);
             if (glVersion == null) glVersion = "UNKNOWN";
             else glVersion = glVersion.split(" ")[0];
             ModernUI.get().warnSetup("warning.modernui.old_opengl", "4.3", glVersion);
@@ -113,7 +112,12 @@ public final class RenderCore {
             glCapabilitiesErrors = i;
         }
 
+        RoundRectProgram.createPrograms();
+
+        TextLayoutProcessor.getInstance().initRenderer();
+
         renderEngineStarted = true;
+        ModernUI.LOGGER.debug(MARKER, "Render engine started");
     }
 
     public static boolean isEngineStarted() {

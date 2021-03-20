@@ -19,22 +19,10 @@
 package icyllis.modernui.graphics.shader.program;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.shader.ShaderProgram;
-import org.lwjgl.opengl.GL20;
+import net.minecraft.resources.ResourceLocation;
 
-public class RoundedRectProgram extends ShaderProgram {
+public class RectProgram {
 
-    public static final RoundedRectProgram INSTANCE = new RoundedRectProgram();
-
-    private RoundedRectProgram() {
-        super(ModernUI.ID, "rect", "rounded_rect_fill");
-    }
-
-    public void setRadius(float radius) {
-        GL20.glUniform1f(0, radius);
-    }
-
-    public void setInnerRect(float left, float top, float right, float bottom) {
-        GL20.glUniform4f(1, left, top, right, bottom);
-    }
+    public static final ResourceLocation VERT = new ResourceLocation(ModernUI.ID, "shaders/rect.vert");
+    public static final ResourceLocation VERT_TEX = new ResourceLocation(ModernUI.ID, "shaders/rect_tex.vert");
 }

@@ -23,7 +23,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.math.Matrix4f;
-import icyllis.modernui.core.forge.ModernUIForge;
+import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.textmc.ModernFontRenderer;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.math.TextAlign;
@@ -89,21 +89,39 @@ public class TestHUD {
         GL11.glRotatef(Mth.sin(f1 * (float) Math.PI) * f2 * 3.0f, 0, 0, 1);
         GL11.glRotatef(Math.abs(Mth.cos(f1 * (float) Math.PI - 0.2f) * f2) * 5.0f, 1, 0, 0);
 
-        canvas.setColor(255, 19, 19, 128);
-        float r = Math.min(player.getHealth() * 140 / player.getMaxHealth(), 140);
-        canvas.drawRoundedRect(0, 25, r, 37, 6);
-        canvas.setColor(255, 255, 255, 128);
-        canvas.drawRoundedFrame(-1, 24, 141, 38, 7);
-        canvas.setColor(86, 184, 255, 128);
-        r = player.getAirSupply() * 140f / player.getMaxAirSupply();
-        canvas.drawRoundedRect(0, 11, r, 23, 6);
-        canvas.setColor(255, 255, 255, 128);
-        canvas.drawRoundedFrame(-1, 10, 141, 24, 7);
-        canvas.setColor(184, 132, 88, 128);
         FoodData foodData = player.getFoodData();
-        canvas.drawRoundedRect(0, -3, foodData.getFoodLevel() * 7, 9, 6);
-        canvas.setColor(255, 255, 255, 128);
-        canvas.drawRoundedFrame(-1, -4, 141, 10, 7);
+
+        float right = Math.min(player.getHealth() * 140 / player.getMaxHealth(), 140);
+
+        Paint paint = Paint.take();
+        paint.reset();
+        paint.setStrokeWidth(1.5f);
+
+        paint.setRGBA(255, 19, 19, 128);
+        paint.setStyle(Paint.Style.FILL);
+        canvas.drawRoundRect(0, 25, right, 37, 6, paint);
+
+        paint.setRGBA(255, 255, 255, 128);
+        paint.setStyle(Paint.Style.STROKE);
+        canvas.drawRoundRect(0, 25, 140, 37, 6, paint);
+
+        right = player.getAirSupply() * 140f / player.getMaxAirSupply();
+        paint.setRGBA(86, 184, 255, 128);
+        paint.setStyle(Paint.Style.FILL);
+        canvas.drawRoundRect(0, 11, right, 23, 6, paint);
+
+        paint.setRGBA(255, 255, 255, 128);
+        paint.setStyle(Paint.Style.STROKE);
+        canvas.drawRoundRect(0, 11, 140, 23, 6, paint);
+
+        right = foodData.getFoodLevel() * 7;
+        paint.setRGBA(184, 132, 88, 128);
+        paint.setStyle(Paint.Style.FILL);
+        canvas.drawRoundRect(0, -3, right, 9, 6, paint);
+
+        paint.setRGBA(255, 255, 255, 128);
+        paint.setStyle(Paint.Style.STROKE);
+        canvas.drawRoundRect(0, -3, 140, 9, 6, paint);
 
         canvas.resetColor();
         canvas.setTextAlign(TextAlign.CENTER);
@@ -211,12 +229,20 @@ public class TestHUD {
         GL11.glPushMatrix();
         RenderSystem.multMatrix(mat);
 
-        canvas.setColor(0, 0, 0, 208);
-        canvas.drawRoundedRect(tooltipX - H_BORDER, tooltipY - V_BORDER,
-                tooltipX + tooltipWidth + H_BORDER, tooltipY + tooltipHeight + V_BORDER, 3);
-        canvas.setColor(sTooltipR, sTooltipG, sTooltipB, 240);
-        canvas.drawRoundedFrame(tooltipX - H_BORDER, tooltipY - V_BORDER,
-                tooltipX + tooltipWidth + H_BORDER, tooltipY + tooltipHeight + V_BORDER, 3);
+
+        Paint paint = Paint.take();
+        paint.reset();
+
+        paint.setRGBA(0, 0, 0, 208);
+        paint.setStyle(Paint.Style.FILL);
+        canvas.drawRoundRect(tooltipX - H_BORDER, tooltipY - V_BORDER,
+                tooltipX + tooltipWidth + H_BORDER, tooltipY + tooltipHeight + V_BORDER, 3, paint);
+
+        paint.setRGBA(sTooltipR, sTooltipG, sTooltipB, 240);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(1.5f);
+        canvas.drawRoundRect(tooltipX - H_BORDER, tooltipY - V_BORDER,
+                tooltipX + tooltipWidth + H_BORDER, tooltipY + tooltipHeight + V_BORDER, 3, paint);
         /*canvas.drawRoundedFrameT1(tooltipX - H_BORDER, tooltipY - V_BORDER,
                 tooltipX + tooltipWidth + H_BORDER, tooltipY + tooltipHeight + V_BORDER, 3);*/
 
