@@ -22,16 +22,15 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.graphics.shader.ShaderProgram;
 import net.minecraft.resources.ResourceLocation;
-import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL43;
 
 import javax.annotation.Nonnull;
 
 public class RoundRectProgram extends ShaderProgram {
 
-    private static RoundRectProgram.Fill sFill;
-    private static RoundRectProgram.FillTex sFillTex;
-    private static RoundRectProgram.Stroke sStroke;
+    private static Fill sFill;
+    private static FillTex sFillTex;
+    private static Stroke sStroke;
 
     private RoundRectProgram(@Nonnull ResourceLocation vert, @Nonnull ResourceLocation frag) {
         super(vert, frag);
@@ -59,7 +58,7 @@ public class RoundRectProgram extends ShaderProgram {
     }
 
     public void setInnerRect(float left, float top, float right, float bottom) {
-        GL20.glUniform4f(1, left, top, right, bottom);
+        GL43.glUniform4f(1, left, top, right, bottom);
     }
 
     public static class Fill extends RoundRectProgram {

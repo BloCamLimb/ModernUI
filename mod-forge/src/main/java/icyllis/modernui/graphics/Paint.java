@@ -143,7 +143,7 @@ public class Paint {
     }
 
     public void setStrokeWidth(float strokeWidth) {
-        mStrokeWidth = strokeWidth;
+        mStrokeWidth = Math.max(0, strokeWidth);
     }
 
     public float getFeatherRadius() {
@@ -151,6 +151,6 @@ public class Paint {
     }
 
     public void setFeatherRadius(float featherRadius) {
-        mFeatherRadius = featherRadius;
+        mFeatherRadius = Math.max(0, featherRadius);
     }
 }

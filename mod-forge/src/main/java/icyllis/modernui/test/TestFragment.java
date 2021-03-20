@@ -37,7 +37,7 @@ public class TestFragment extends Fragment {
 
         @Override
         protected void onDraw(@Nonnull Canvas canvas) {
-            canvas.drawRing(100, 20, 5, 8);
+            //canvas.drawRing(100, 20, 5, 8);
             // 3
 
 

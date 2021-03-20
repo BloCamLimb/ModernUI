@@ -20,21 +20,60 @@ package icyllis.modernui.graphics.shader.program;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.shader.ShaderProgram;
-import org.lwjgl.opengl.GL20;
+import net.minecraft.resources.ResourceLocation;
+import org.lwjgl.opengl.GL43;
+
+import javax.annotation.Nonnull;
 
 public class CircleProgram extends ShaderProgram {
 
-    public static CircleProgram INSTANCE = new CircleProgram("rect", "circle_fill");
+    private static Fill sFill;
+    private static Stroke sStroke;
 
-    private CircleProgram(String vert, String frag) {
-        super(ModernUI.ID, vert, frag);
+    private CircleProgram(@Nonnull ResourceLocation vert, @Nonnull ResourceLocation frag) {
+        super(vert, frag);
     }
 
-    public void setRadius(float radius) {
-        GL20.glUniform1f(0, radius);
+    public static void createPrograms() {
+        if (sFill == null) {
+            sFill = new Fill();
+            sStroke = new Stroke();
+        }
+    }
+
+    public static Fill fill() {
+        return sFill;
+    }
+
+    public static Stroke stroke() {
+        return sStroke;
     }
 
     public void setCenter(float x, float y) {
-        GL20.glUniform2f(1, x, y);
+        GL43.glUniform2f(1, x, y);
+    }
+
+    public static class Fill extends CircleProgram {
+
+        private Fill() {
+            super(RectProgram.VERT, new ResourceLocation(ModernUI.ID, "shaders/circle_fill.frag"));
+        }
+
+        public void setRadius(float radius, float feather) {
+            // feather <= radius
+            GL43.glUniform2f(0, radius, feather);
+        }
+    }
+
+    public static class Stroke extends CircleProgram {
+
+        private Stroke() {
+            super(RectProgram.VERT, new ResourceLocation(ModernUI.ID, "shaders/circle_stroke.frag"));
+        }
+
+        public void setRadius(float inner, float radius, float feather) {
+            // feather <= (radius - inner) / 2
+            GL43.glUniform3f(0, inner, radius, feather);
+        }
     }
 }

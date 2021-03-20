@@ -35,23 +35,23 @@ public class LayoutPieces {
     private final Key mLookupKey = new Key();
 
     private final Object2IntMap<MinikinPaint> mPaintMap = new Object2IntOpenHashMap<>();
-    private final Object2ObjectMap<Key, LayoutPiece> mPieceMap = new Object2ObjectOpenHashMap<>();
+    private final Object2ObjectMap<Key, GraphemeMetrics> mMetricsMap = new Object2ObjectOpenHashMap<>();
 
-    public synchronized void insert(int start, int end, LayoutPiece piece, boolean dir, MinikinPaint paint) {
+    public synchronized void insert(int start, int end, GraphemeMetrics piece, boolean dir, MinikinPaint paint) {
         int paintId = mPaintMap.computeIntIfAbsent(paint, p -> mPaintMap.size());
-        if (!mPieceMap.containsKey(mLookupKey.update(start, end, dir, paintId))) {
-            mPieceMap.put(mLookupKey.copy(), piece);
+        if (!mMetricsMap.containsKey(mLookupKey.update(start, end, dir, paintId))) {
+            mMetricsMap.put(mLookupKey.copy(), piece);
         }
     }
 
     public void getOrCreate(@Nonnull char[] textBuf, int start, int end, @Nonnull MinikinPaint paint,
-                            boolean dir, int paintId, @Nonnull BiConsumer<LayoutPiece, MinikinPaint> consumer) {
-        final LayoutPiece piece;
+                            boolean dir, int paintId, @Nonnull BiConsumer<GraphemeMetrics, MinikinPaint> consumer) {
+        final GraphemeMetrics piece;
         synchronized (this) {
-            piece = mPieceMap.get(mLookupKey.update(start, end, dir, paintId));
+            piece = mMetricsMap.get(mLookupKey.update(start, end, dir, paintId));
         }
         if (piece == null) {
-            LayoutEngine.getInstance().create(textBuf, start, end, paint, dir, consumer);
+            MeasureEngine.getInstance().create(textBuf, start, end, paint, dir, consumer);
         } else {
             consumer.accept(piece, paint);
         }

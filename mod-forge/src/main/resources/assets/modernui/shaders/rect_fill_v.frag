@@ -1,4 +1,4 @@
-#version 430 compatibility
+#version 430 core
 
 precision highp float;
 

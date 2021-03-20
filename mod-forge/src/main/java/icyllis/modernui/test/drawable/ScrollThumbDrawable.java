@@ -18,6 +18,7 @@
 
 package icyllis.modernui.test.drawable;
 
+import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.Canvas;
 
@@ -27,9 +28,12 @@ public class ScrollThumbDrawable extends Drawable {
 
     @Override
     public void draw(@Nonnull Canvas canvas) {
-        canvas.moveTo(this);
-        canvas.setRGBA(128, 128, 128, 128);
-        canvas.drawRect(0, 0, getWidth(), getHeight());
+        Paint paint = Paint.take();
+        paint.reset();
+        paint.setFeatherRadius(0);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setRGBA(128, 128, 128, 128);
+        canvas.drawRect(0, 0, getWidth(), getHeight(), paint);
     }
 
     @Override
