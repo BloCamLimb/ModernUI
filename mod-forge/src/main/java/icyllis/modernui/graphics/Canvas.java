@@ -26,11 +26,13 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.graphics.math.Icon;
 import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.graphics.shader.ShaderProgram;
-import icyllis.modernui.graphics.shader.program.*;
+import icyllis.modernui.graphics.shader.program.CircleProgram;
+import icyllis.modernui.graphics.shader.program.FeatheredRectProgram;
+import icyllis.modernui.graphics.shader.program.RingProgram;
+import icyllis.modernui.graphics.shader.program.RoundRectProgram;
 import icyllis.modernui.graphics.textmc.TextLayoutProcessor;
 import icyllis.modernui.graphics.textmc.pipeline.TextRenderNode;
 import icyllis.modernui.view.UIManager;
@@ -42,15 +44,13 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL43;
 
 import javax.annotation.Nonnull;
 
 /**
- * The main renderer of Modern UI, draw things for View:
- * likes rect, rounded rect, circle, ring, text, line, point, image etc.
+ * A canvas is used to draw things for View, likes rectangles,
+ * rounded rectangles, circles, arcs, lines, points, images etc.
  * <p>
  * The canvas actually uses shaders (hardware-accelerated)
  * to render in real-time, so there's no need to control redrawing.
@@ -73,8 +73,8 @@ public class Canvas {
     /**
      * Instances
      */
-    private final Window mainWindow;
-    private final ItemRenderer itemRenderer;
+    private final Window mWindow;
+    private final ItemRenderer mItemRenderer;
 
     private final TextLayoutProcessor fontEngine = TextLayoutProcessor.getInstance();
 
@@ -85,15 +85,12 @@ public class Canvas {
      * Shaders instance
      */
     private final RingProgram mRing = RingProgram.INSTANCE;
-    private final RoundedRectProgram mRoundedRect = RoundedRectProgram.INSTANCE;
-    private final RoundedFrameProgram mRoundedFrame = RoundedFrameProgram.INSTANCE;
     private final CircleProgram mCircle = CircleProgram.INSTANCE;
     private final FeatheredRectProgram mFeatheredRect = FeatheredRectProgram.INSTANCE;
-    private final RoundedRectTexProgram mRoundedRectTexProgram = RoundedRectTexProgram.INSTANCE;
 
 
     /**
-     * Paint colors
+     * Paint colors, unsigned int
      */
     private int r = 255;
     private int g = 255;
@@ -104,6 +101,7 @@ public class Canvas {
     /**
      * Depth
      */
+    @Deprecated
     private double z = 0.0D;
 
     /*
@@ -115,12 +113,14 @@ public class Canvas {
     /**
      * Elapsed time from a gui open
      */
+    @Deprecated
     private long drawingTime = 0;
 
 
     /**
      * Text align
      */
+    @Deprecated
     private float alignFactor = TextAlign.LEFT.offsetFactor;
 
 
@@ -131,10 +131,8 @@ public class Canvas {
 
 
     private Canvas(@Nonnull Minecraft minecraft) {
-        RenderCore.startEngine();
-        mainWindow = minecraft.getWindow();
-        itemRenderer = minecraft.getItemRenderer();
-        fontEngine.initRenderer();
+        mWindow = minecraft.getWindow();
+        mItemRenderer = minecraft.getItemRenderer();
     }
 
     /**
@@ -148,20 +146,20 @@ public class Canvas {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
         if (instance == null) {
             instance = new Canvas(Minecraft.getInstance());
-            ModernUI.LOGGER.debug(RenderCore.MARKER, "Render engine started");
+            ModernUI.LOGGER.debug(RenderCore.MARKER, "Canvas prepared");
         }
         return instance;
     }
 
     /**
-     * Set current paint color with alpha
+     * Set current paint color with alpha.
      *
-     * @param r red [0,255]
-     * @param g green [0,255]
-     * @param b blue [0,255]
-     * @param a alpha [0,255]
+     * @param r red component [0, 255]
+     * @param g green component [0, 255]
+     * @param b blue component [0, 255]
+     * @param a alpha component [0, 255]
      */
-    public void setColor(int r, int g, int b, int a) {
+    public void setRGBA(int r, int g, int b, int a) {
         this.r = r;
         this.g = g;
         this.b = b;
@@ -169,48 +167,28 @@ public class Canvas {
     }
 
     /**
-     * Set current paint color, keep previous alpha
+     * Set current paint color, keep previous alpha.
      *
-     * @param r red [0,1]
-     * @param g green [0,1]
-     * @param b blue [0,1]
+     * @param r red component [0, 255]
+     * @param g green component [0, 255]
+     * @param b blue component [0, 255]
      */
-    public void setColor(int r, int g, int b) {
+    public void setRGB(int r, int g, int b) {
         this.r = r;
         this.g = g;
         this.b = b;
     }
 
     /**
-     * Set current paint color with alpha
+     * Set current paint color in 0xAARRGGBB format.
      *
-     * @param argb like 0x80404040 (=R64,G64,B64,A128)
+     * @param color the color to set
      */
-    public void setARGB(int argb) {
-        a = argb >> 24 & 0xff;
-        r = argb >> 16 & 0xff;
-        g = argb >> 8 & 0xff;
-        b = argb & 0xff;
-    }
-
-    /**
-     * Set current paint color, keep previous alpha
-     *
-     * @param rgb like 0x404040 (=R64,G64,B64)
-     */
-    public void setRGB(int rgb) {
-        r = rgb >> 16 & 0xff;
-        g = rgb >> 8 & 0xff;
-        b = rgb & 0xff;
-    }
-
-    /**
-     * Set current paint alpha in float form
-     *
-     * @param a alpha [0,1]
-     */
-    public void setAlpha(float a) {
-        this.a = (int) (a * 255.0f);
+    public void setColor(int color) {
+        a = color >> 24 & 0xff;
+        r = color >> 16 & 0xff;
+        g = color >> 8 & 0xff;
+        b = color & 0xff;
     }
 
     /**
@@ -219,21 +197,6 @@ public class Canvas {
      * @param a alpha [0,255]
      */
     public void setAlpha(int a) {
-        this.a = a;
-    }
-
-    @Deprecated
-    public void setColor(@Nonnull Color3i color) {
-        r = color.getRed();
-        g = color.getGreen();
-        b = color.getBlue();
-    }
-
-    @Deprecated
-    public void setColor(@Nonnull Color3i color, int a) {
-        r = color.getRed();
-        g = color.getGreen();
-        b = color.getBlue();
         this.a = a;
     }
 
@@ -252,11 +215,13 @@ public class Canvas {
      *
      * @return drawing time in milliseconds
      */
+    @Deprecated
     public long getDrawingTime() {
         return drawingTime;
     }
 
     // inner use
+    @Deprecated
     public void setDrawingTime(long drawingTime) {
         this.drawingTime = drawingTime;
     }
@@ -559,48 +524,77 @@ public class Canvas {
     }
 
     /**
-     * Draw rounded rectangle on screen with given rect area and rounded radius
+     * Draw a round rectangle with given rectangular bounds and round radius.
      *
-     * @param left   the left of the rectangle
-     * @param top    the top of the rectangle
-     * @param right  the right of the rectangle
-     * @param bottom the bottom of the rectangle
-     * @param radius the rounded corner radius
+     * @param left   the left of the rectangular bounds
+     * @param top    the top of the rectangular bounds
+     * @param right  the right of the rectangular bounds
+     * @param bottom the bottom of the rectangular bounds
+     * @param radius the round corner radius
+     * @param paint  the paint used to draw the round rectangle
      */
-    public void drawRoundedRect(float left, float top, float right, float bottom, float radius) {
-        mRoundedRect.use();
-        mRoundedRect.setRadius(radius);
-        mRoundedRect.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
-        drawRect(left, top, right, bottom);
+    public void drawRoundRect(float left, float top, float right, float bottom,
+                              float radius, @Nonnull Paint paint) {
+        switch (paint.getStyle()) {
+            case FILL:
+                fillRoundRect(left, top, right, bottom, radius, paint);
+                return;
+            case STROKE:
+                strokeRoundRect(left, top, right, bottom, radius, paint);
+                return;
+        }
+        fillRoundRect(left, top, right, bottom, radius, paint);
+        strokeRoundRect(left, top, right, bottom, radius, paint);
+    }
+
+    protected void fillRoundRect(float left, float top, float right, float bottom,
+                                 float r, @Nonnull Paint paint) {
+        final RoundRectProgram.Fill program = RoundRectProgram.fill();
+        program.use();
+        r = Math.max(0, r);
+        program.setRadius(r, Math.min(r, paint.getFeatherRadius()));
+        program.setInnerRect(left + r, top + r, right - r, bottom - r);
+        upload(program, left, top, right, bottom, paint.getColor());
         ShaderProgram.stop();
     }
 
-    /**
-     * Draw rounded rectangle frame in a rounded rect on screen
-     * with given rect area and rounded radius
-     * <p>
-     * Default feather radius: 1 px
-     * Default frame thickness: 1.5 px
-     *
-     * @param left   the left of the rectangle
-     * @param top    the top of the rectangle
-     * @param right  the right of the rectangle
-     * @param bottom the bottom of the rectangle
-     * @param radius the rounded corner radius
-     */
-    public void drawRoundedFrame(float left, float top, float right, float bottom, float radius) {
-        mRoundedFrame.use();
-        mRoundedFrame.setRadius(radius);
-        mRoundedFrame.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
-        drawRect(left, top, right, bottom);
+    protected void strokeRoundRect(float left, float top, float right, float bottom,
+                                   float r, @Nonnull Paint paint) {
+        final RoundRectProgram.Stroke program = RoundRectProgram.stroke();
+        program.use();
+        r = Math.max(0, r);
+        float thickness = Math.min(paint.getStrokeWidth() * 0.5f, r);
+        program.setRadius(r, Math.min(thickness, paint.getFeatherRadius()), thickness);
+        program.setInnerRect(left + r, top + r, right - r, bottom - r);
+        upload(program, left - r, top - r, right + r, bottom + r, paint.getColor());
         ShaderProgram.stop();
     }
 
     @Deprecated
+    protected void upload(@Nonnull RoundRectProgram program, float left, float top,
+                          float right, float bottom, int color) {
+        final BufferBuilder builder = Tesselator.getInstance().getBuilder();
+
+        final int a = color >>> 24;
+        final int r = (color >> 16) & 0xff;
+        final int g = (color >> 8) & 0xff;
+        final int b = color & 0xff;
+
+        builder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
+        builder.vertex(left, bottom, 0).color(r, g, b, a).endVertex();
+        builder.vertex(right, bottom, 0).color(r, g, b, a).endVertex();
+        builder.vertex(right, top, 0).color(r, g, b, a).endVertex();
+        builder.vertex(left, top, 0).color(r, g, b, a).endVertex();
+        builder.end();
+        BufferUploader.end(builder);
+    }
+
+    @Deprecated
     public void drawRoundedFrameT1(float left, float top, float right, float bottom, float radius) {
-        mRoundedFrame.use();
-        mRoundedFrame.setRadius(radius);
-        mRoundedFrame.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
+        RoundRectProgram.Stroke program = RoundRectProgram.stroke();
+        program.use();
+        program.setRadius(radius, 1.0f, 1.0f);
+        program.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
         RenderSystem.disableTexture();
         mBufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
         mBufferBuilder.vertex(left, bottom, z).color(170, 220, 240, a).endVertex();
@@ -641,28 +635,24 @@ public class Canvas {
      * @param bottom rect bottom
      */
     public void drawIcon(@Nonnull Icon icon, float left, float top, float right, float bottom, float radius) {
-        RoundedRectTexProgram program = mRoundedRectTexProgram;
+        RoundRectProgram.FillTex program = RoundRectProgram.fillTex();
         program.use();
-        program.setRadius(radius);
+        program.setRadius(radius, 1.0f);
         program.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
-        RenderSystem.activeTexture(GL13.GL_TEXTURE0);
-        RenderSystem.enableTexture();
+        RenderSystem.activeTexture(GL43.GL_TEXTURE0);
         icon.bindTexture();
         GL43.glUniform1i(2, 0);
-        BufferBuilder bufferBuilder = this.mBufferBuilder;
 
-        /*left += drawingX;
-        top += drawingY;
-        right += drawingX;
-        bottom += drawingY;*/
+        final BufferBuilder builder = Tesselator.getInstance().getBuilder();
 
-        bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
-        bufferBuilder.vertex(left, bottom, z).color(r, g, b, a).uv(icon.getLeft(), icon.getBottom()).endVertex();
-        bufferBuilder.vertex(right, bottom, z).color(r, g, b, a).uv(icon.getRight(), icon.getBottom()).endVertex();
-        bufferBuilder.vertex(right, top, z).color(r, g, b, a).uv(icon.getRight(), icon.getTop()).endVertex();
-        bufferBuilder.vertex(left, top, z).color(r, g, b, a).uv(icon.getLeft(), icon.getTop()).endVertex();
-        bufferBuilder.end();
-        BufferUploader.end(bufferBuilder);
+        builder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
+        builder.vertex(left, bottom, z).color(r, g, b, a).uv(icon.getLeft(), icon.getBottom()).endVertex();
+        builder.vertex(right, bottom, z).color(r, g, b, a).uv(icon.getRight(), icon.getBottom()).endVertex();
+        builder.vertex(right, top, z).color(r, g, b, a).uv(icon.getRight(), icon.getTop()).endVertex();
+        builder.vertex(left, top, z).color(r, g, b, a).uv(icon.getLeft(), icon.getTop()).endVertex();
+        builder.end();
+        BufferUploader.end(builder);
+
         ShaderProgram.stop();
     }
 
@@ -675,7 +665,7 @@ public class Canvas {
      * @param y    y pos
      */
     public void drawItem(@Nonnull Item item, float x, float y) {
-        itemRenderer.renderGuiItem(item.getDefaultInstance(), (int) (x), (int) (y));
+        mItemRenderer.renderGuiItem(item.getDefaultInstance(), (int) (x), (int) (y));
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
     }
@@ -688,7 +678,7 @@ public class Canvas {
      * @param y     y pos
      */
     public void drawItemStack(@Nonnull ItemStack stack, float x, float y) {
-        itemRenderer.renderGuiItem(stack, (int) (x), (int) (y));
+        mItemRenderer.renderGuiItem(stack, (int) (x), (int) (y));
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
     }
@@ -701,8 +691,8 @@ public class Canvas {
      * @param y     y pos
      */
     public void drawItemStackWithOverlays(@Nonnull ItemStack stack, float x, float y) {
-        itemRenderer.renderGuiItem(stack, (int) (x), (int) (y));
-        itemRenderer.renderGuiItemDecorations(Minecraft.getInstance().font, stack, (int) (x), (int) (y));
+        mItemRenderer.renderGuiItem(stack, (int) (x), (int) (y));
+        mItemRenderer.renderGuiItemDecorations(Minecraft.getInstance().font, stack, (int) (x), (int) (y));
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
     }
@@ -782,14 +772,14 @@ public class Canvas {
 
     public void clipVertical(@Nonnull View view) {
         GL11.glEnable(GL11.GL_SCISSOR_TEST);
-        GL11.glScissor(0, mainWindow.getHeight() - view.getBottom(),
-                mainWindow.getWidth(), view.getHeight());
+        GL11.glScissor(0, mWindow.getHeight() - view.getBottom(),
+                mWindow.getWidth(), view.getHeight());
     }
 
     public void clipStart(float x, float y, float width, float height) {
-        double scale = mainWindow.getGuiScale();
+        double scale = mWindow.getGuiScale();
         GL11.glEnable(GL11.GL_SCISSOR_TEST);
-        GL11.glScissor((int) (x * scale), (int) (mainWindow.getHeight() - ((y + height) * scale)),
+        GL11.glScissor((int) (x * scale), (int) (mWindow.getHeight() - ((y + height) * scale)),
                 (int) (width * scale), (int) (height * scale));
     }
 

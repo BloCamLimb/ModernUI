@@ -16,25 +16,26 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.shader.program;
+package icyllis.modernui.annotation;
 
-import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.shader.ShaderProgram;
-import org.lwjgl.opengl.GL20;
+import java.lang.annotation.*;
 
-public class RoundedRectTexProgram extends ShaderProgram {
-
-    public static final RoundedRectTexProgram INSTANCE = new RoundedRectTexProgram();
-
-    private RoundedRectTexProgram() {
-        super(ModernUI.ID, "rect_tex", "rounded_rect_fill_tex");
-    }
-
-    public void setRadius(float radius) {
-        GL20.glUniform1f(0, radius);
-    }
-
-    public void setInnerRect(float left, float top, float right, float bottom) {
-        GL20.glUniform4f(1, left, top, right, bottom);
-    }
+/**
+ * Denotes that the annotated method should only be called on the UI thread,
+ * which is used for handling UI events and recording drawing contents
+ * on software-level, no OpenGL context and GLFW context on this thread.
+ * For Modern UI itself, there's only one UI thread that represents an
+ * application on OS.
+ * <p>
+ * Example:
+ * <pre><code>
+ *  &#64;UiThread
+ *  public void onMouseClick(MotionEvent ev) {
+ *      // something here
+ *  }</code></pre>
+ */
+@Documented
+@Target({ElementType.METHOD, ElementType.CONSTRUCTOR})
+@Retention(RetentionPolicy.CLASS)
+public @interface UiThread {
 }

@@ -44,7 +44,7 @@ public class ScrollView extends FrameLayout implements ScrollController.IListene
         bar.setTrackDrawable(new Drawable() {
             @Override
             public void draw(@Nonnull Canvas canvas) {
-                canvas.setColor(16, 16, 16, 40);
+                canvas.setRGBA(16, 16, 16, 40);
                 canvas.drawRect(0, 0, getWidth(), getHeight());
             }
         });

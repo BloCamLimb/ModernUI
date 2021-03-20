@@ -20,7 +20,6 @@ package icyllis.modernui.view;
 
 import icyllis.modernui.core.forge.ModernUIForge;
 import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.graphics.math.TextAlign;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.screens.Screen;
@@ -104,11 +103,10 @@ public enum UIEditor {
         if (!working) {
             return;
         }
-        canvas.setColor(128, 128, 128, 64);
-        canvas.drawRoundedRect(1, 1, 120, bottom, 4);
+        canvas.setRGBA(128, 128, 128, 64);
+        //canvas.drawRoundRect(1, 1, 120, bottom, 4);
         canvas.setTextAlign(TextAlign.LEFT);
 
-        canvas.setColor(Color3i.BLUE_C, 1);
         canvas.drawText(ChatFormatting.GOLD + "Gui Editing Mode: ON", 4, 3);
         if (hoveredView != null) {
             /*Locator l = hoveredView.getLocator();
@@ -134,13 +132,13 @@ public enum UIEditor {
             }
 
             hoveredView.getLocationInWindow(hoveredLocation);
-            canvas.drawRoundedFrame(
+            /*canvas.drawRoundedFrame(
                     hoveredLocation[0] - 1,
                     hoveredLocation[1] - 1,
                     hoveredLocation[0] + hoveredView.getWidth() + 1,
                     hoveredLocation[1] + hoveredView.getHeight() + 1,
                     2
-            );
+            );*/
         }
     }
 

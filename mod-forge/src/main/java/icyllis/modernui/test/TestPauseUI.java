@@ -55,7 +55,7 @@ public class TestPauseUI extends Screen {
         linearLayout.setDivider(new Drawable() {
             @Override
             public void draw(@Nonnull Canvas canvas) {
-                canvas.setColor(192, 192, 192, 128);
+                canvas.setRGBA(192, 192, 192, 128);
                 canvas.drawLine(0, 0, getWidth(), 0);
             }
 
@@ -103,7 +103,7 @@ public class TestPauseUI extends Screen {
 
         @Override
         protected void onDraw(@Nonnull Canvas canvas) {
-            canvas.setColor(96, 96, 96, (int) (a * 255));
+            canvas.setRGBA(96, 96, 96, (int) (a * 255));
             canvas.drawRect(0, 0, getRight(), getBottom());
         }
     }
