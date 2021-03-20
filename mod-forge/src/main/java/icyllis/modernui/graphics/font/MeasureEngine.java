@@ -24,23 +24,23 @@ import java.awt.font.GlyphVector;
 import java.util.List;
 import java.util.function.BiConsumer;
 
-public class LayoutEngine {
+public class MeasureEngine {
 
-    private static LayoutEngine sInstance;
+    private static MeasureEngine sInstance;
 
     private final GlyphManager mGlyphManager = GlyphManager.getInstance();
 
-    public static LayoutEngine getInstance() {
+    public static MeasureEngine getInstance() {
         if (sInstance == null)
-            synchronized (LayoutEngine.class) {
+            synchronized (MeasureEngine.class) {
                 if (sInstance == null)
-                    sInstance = new LayoutEngine();
+                    sInstance = new MeasureEngine();
             }
         return sInstance;
     }
 
     public void create(@Nonnull char[] text, int contextStart, int contextEnd, @Nonnull MinikinPaint paint, boolean isRtl,
-                       @Nonnull BiConsumer<LayoutPiece, MinikinPaint> consumer) {
+                       @Nonnull BiConsumer<GraphemeMetrics, MinikinPaint> consumer) {
         final List<FontCollection.Run> runs = paint.mFontCollection.itemize(text, contextStart, contextEnd);
         final int flag = isRtl ? Font.LAYOUT_RIGHT_TO_LEFT : Font.LAYOUT_LEFT_TO_RIGHT;
         final GlyphManager manager = mGlyphManager;
@@ -56,6 +56,6 @@ public class LayoutEngine {
             advance += vector.getGlyphPosition(num).getX();
             manager.getFontMetrics(derivedFont, fm);
         }
-        consumer.accept(new LayoutPiece(advance, fm), paint);
+        consumer.accept(new GraphemeMetrics(advance, fm), paint);
     }
 }

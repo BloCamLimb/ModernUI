@@ -30,8 +30,7 @@ import icyllis.modernui.graphics.math.Icon;
 import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.graphics.shader.ShaderProgram;
 import icyllis.modernui.graphics.shader.program.CircleProgram;
-import icyllis.modernui.graphics.shader.program.FeatheredRectProgram;
-import icyllis.modernui.graphics.shader.program.RingProgram;
+import icyllis.modernui.graphics.shader.program.RectProgram;
 import icyllis.modernui.graphics.shader.program.RoundRectProgram;
 import icyllis.modernui.graphics.textmc.TextLayoutProcessor;
 import icyllis.modernui.graphics.textmc.pipeline.TextRenderNode;
@@ -43,19 +42,17 @@ import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.network.chat.Style;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.GL43;
 
 import javax.annotation.Nonnull;
 
 /**
- * A canvas is used to draw things for View, likes rectangles,
- * rounded rectangles, circles, arcs, lines, points, images etc.
+ * A canvas is used to draw contents for View, likes rectangles,
+ * round rectangles, circles, arcs, lines, points, images etc.
  * <p>
- * The canvas actually uses shaders (hardware-accelerated)
+ * The canvas is actually using shader programs (hardware-accelerated)
  * to render in real-time, so there's no need to control redrawing.
- * Also avoided RenderType being used in GUI, for better performance
- * (reduces GL callings, because render states changed little)
  * <p>
  * The font renderer uses another system, which has two parts, one for Modern UI, and
  * the global one is using RenderType, make Modern UI font renderer work everywhere,
@@ -73,20 +70,13 @@ public class Canvas {
     /**
      * Instances
      */
-    private final Window mWindow;
+    private final Window mMainWindow;
     private final ItemRenderer mItemRenderer;
 
-    private final TextLayoutProcessor fontEngine = TextLayoutProcessor.getInstance();
+    private final TextLayoutProcessor mFontEngine = TextLayoutProcessor.getInstance();
 
+    @Deprecated
     private final BufferBuilder mBufferBuilder = Tesselator.getInstance().getBuilder();
-
-
-    /**
-     * Shaders instance
-     */
-    private final RingProgram mRing = RingProgram.INSTANCE;
-    private final CircleProgram mCircle = CircleProgram.INSTANCE;
-    private final FeatheredRectProgram mFeatheredRect = FeatheredRectProgram.INSTANCE;
 
 
     /**
@@ -131,7 +121,7 @@ public class Canvas {
 
 
     private Canvas(@Nonnull Minecraft minecraft) {
-        mWindow = minecraft.getWindow();
+        mMainWindow = minecraft.getWindow();
         mItemRenderer = minecraft.getItemRenderer();
     }
 
@@ -173,6 +163,7 @@ public class Canvas {
      * @param g green component [0, 255]
      * @param b blue component [0, 255]
      */
+    @Deprecated
     public void setRGB(int r, int g, int b) {
         this.r = r;
         this.g = g;
@@ -184,6 +175,7 @@ public class Canvas {
      *
      * @param color the color to set
      */
+    @Deprecated
     public void setColor(int color) {
         a = color >> 24 & 0xff;
         r = color >> 16 & 0xff;
@@ -234,12 +226,12 @@ public class Canvas {
     public void setLineAntiAliasing(boolean aa) {
         if (aa) {
             if (!lineAA) {
-                GL11.glEnable(GL11.GL_LINE_SMOOTH);
-                GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
+                GL43.glEnable(GL43.GL_LINE_SMOOTH);
+                GL43.glHint(GL43.GL_LINE_SMOOTH_HINT, GL43.GL_NICEST);
                 lineAA = true;
             }
         } else if (lineAA) {
-            GL11.glDisable(GL11.GL_LINE_SMOOTH);
+            GL43.glDisable(GL43.GL_LINE_SMOOTH);
             lineAA = false;
         }
     }
@@ -303,35 +295,43 @@ public class Canvas {
     public float drawText(String text, float x, float y) {
         if (text == null || text.isEmpty())
             return 0;
-        final TextRenderNode node = fontEngine.lookupVanillaNode(text, Style.EMPTY);
+        final TextRenderNode node = mFontEngine.lookupVanillaNode(text, Style.EMPTY);
         if (alignFactor > 0)
             x -= node.advance * alignFactor;
         return node.drawText(mBufferBuilder, text, x, y, r, g, b, a);
     }
 
     /**
-     * Draw a rectangle on screen with given rect area
+     * Draw the specified Rect using the specified paint. The rectangle will be filled or framed
+     * based on the Style in the paint.
      *
-     * @param left   rect left
-     * @param top    rect top
-     * @param right  rect right
-     * @param bottom rect bottom
+     * @param left   The left side of the rectangle to be drawn
+     * @param top    The top side of the rectangle to be drawn
+     * @param right  The right side of the rectangle to be drawn
+     * @param bottom The bottom side of the rectangle to be drawn
+     * @param paint  The paint used to draw the rect
      */
-    public void drawRect(float left, float top, float right, float bottom) {
-        RenderSystem.disableTexture();
+    public void drawRect(float left, float top, float right, float bottom, @Nonnull Paint paint) {
+        switch (paint.getStyle()) {
+            case FILL:
+                fillRect(left, top, right, bottom, paint);
+                return;
+            case STROKE:
+        }
+    }
 
-        /*left += drawingX;
-        top += drawingY;
-        right += drawingX;
-        bottom += drawingY;*/
-
-        mBufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
-        mBufferBuilder.vertex(left, bottom, z).color(r, g, b, a).endVertex();
-        mBufferBuilder.vertex(right, bottom, z).color(r, g, b, a).endVertex();
-        mBufferBuilder.vertex(right, top, z).color(r, g, b, a).endVertex();
-        mBufferBuilder.vertex(left, top, z).color(r, g, b, a).endVertex();
-        mBufferBuilder.end();
-        BufferUploader.end(mBufferBuilder);
+    protected void fillRect(float left, float top, float right, float bottom, @Nonnull Paint paint) {
+        if (paint.getFeatherRadius() > 0) {
+            final RectProgram.Feathered program = RectProgram.feathered();
+            program.use();
+            float t = Math.min(Math.min(right - left, right - bottom), paint.getFeatherRadius());
+            program.setThickness(t);
+            program.setInnerRect(left + t, top + t, right - t, bottom - t);
+        } else {
+            RectProgram.fill().use();
+        }
+        upload(left, top, right, bottom, paint.getColor());
+        ShaderProgram.stop();
     }
 
     /**
@@ -362,7 +362,7 @@ public class Canvas {
         final int a = this.a;
         final double z = this.z;
 
-        mBufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
+        mBufferBuilder.begin(GL43.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
         mBufferBuilder.vertex(left - thickness, top, z).color(r, g, b, a).endVertex();
         mBufferBuilder.vertex(right, top, z).color(r, g, b, a).endVertex();
         mBufferBuilder.vertex(right, top - thickness, z).color(r, g, b, a).endVertex();
@@ -372,7 +372,7 @@ public class Canvas {
 
         //featheredRect.setInnerRect(right + 0.25f, top - thickness + 0.25f, right + thickness - 0.25f, bottom - 0.25f);
 
-        mBufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
+        mBufferBuilder.begin(GL43.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
         mBufferBuilder.vertex(right, bottom, z).color(r, g, b, a).endVertex();
         mBufferBuilder.vertex(right + thickness, bottom, z).color(r, g, b, a).endVertex();
         mBufferBuilder.vertex(right + thickness, top - thickness, z).color(r, g, b, a).endVertex();
@@ -382,7 +382,7 @@ public class Canvas {
 
         //featheredRect.setInnerRect(left + 0.25f, bottom + 0.25f, right + thickness - 0.25f, bottom + thickness - 0.25f);
 
-        mBufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
+        mBufferBuilder.begin(GL43.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
         mBufferBuilder.vertex(left, bottom + thickness, z).color(r, g, b, a).endVertex();
         mBufferBuilder.vertex(right + thickness, bottom + thickness, z).color(r, g, b, a).endVertex();
         mBufferBuilder.vertex(right + thickness, bottom, z).color(r, g, b, a).endVertex();
@@ -392,7 +392,7 @@ public class Canvas {
 
         //featheredRect.setInnerRect(left - thickness + 0.25f, top + 0.25f, left - 0.25f, bottom + thickness - 0.25f);
 
-        mBufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
+        mBufferBuilder.begin(GL43.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
         mBufferBuilder.vertex(left - thickness, bottom + thickness, z).color(r, g, b, a).endVertex();
         mBufferBuilder.vertex(left, bottom + thickness, z).color(r, g, b, a).endVertex();
         mBufferBuilder.vertex(left, top, z).color(r, g, b, a).endVertex();
@@ -426,7 +426,7 @@ public class Canvas {
         final int a = this.a;
         final double z = this.z;
 
-        mBufferBuilder.begin(GL11.GL_LINE_LOOP, DefaultVertexFormat.POSITION_COLOR);
+        mBufferBuilder.begin(GL43.GL_LINE_LOOP, DefaultVertexFormat.POSITION_COLOR);
         mBufferBuilder.vertex(left, bottom - bevel, z).color(r, g, b, a).endVertex();
         mBufferBuilder.vertex(left + bevel, bottom, z).color(r, g, b, a).endVertex();
         mBufferBuilder.vertex(right - bevel, bottom, z).color(r, g, b, a).endVertex();
@@ -456,7 +456,7 @@ public class Canvas {
         right += drawingX;
         bottom += drawingY;*/
 
-        mBufferBuilder.begin(GL11.GL_LINE_LOOP, DefaultVertexFormat.POSITION_COLOR);
+        mBufferBuilder.begin(GL43.GL_LINE_LOOP, DefaultVertexFormat.POSITION_COLOR);
         mBufferBuilder.vertex(left, bottom, z).color(r, g, b, a).endVertex();
         mBufferBuilder.vertex(right, bottom, z).color(r, g, b, a).endVertex();
         mBufferBuilder.vertex(right, top, z).color(r, g, b, a).endVertex();
@@ -466,37 +466,46 @@ public class Canvas {
     }
 
     /**
-     * Draw ring / annulus on screen with given center pos and radius
-     * <p>
-     * Default feather radius: 1 px
+     * Draw the specified circle using the specified paint. If radius is <= 0, then nothing will be
+     * drawn. The circle will be filled or framed based on the Style in the paint.
      *
-     * @param centerX     center x pos
-     * @param centerY     center y pos
-     * @param innerRadius inner circle radius
-     * @param outerRadius outer circle radius
+     * @param centerX The x-coordinate of the center of the circle to be drawn
+     * @param centerY The y-coordinate of the center of the circle to be drawn
+     * @param radius  The radius of the circle to be drawn
+     * @param paint   The paint used to draw the circle
      */
-    public void drawRing(float centerX, float centerY, float innerRadius, float outerRadius) {
-        mRing.use();
-        mRing.setRadius(innerRadius, outerRadius);
-        mRing.setCenter(centerX, centerY);
-        drawRect(centerX - outerRadius, centerY - outerRadius, centerX + outerRadius, centerY + outerRadius);
+    public void drawCircle(float centerX, float centerY, float radius, @Nonnull Paint paint) {
+        if (radius <= 0)
+            return;
+        switch (paint.getStyle()) {
+            case FILL:
+                fillCircle(centerX, centerY, radius, paint);
+                return;
+            case STROKE:
+                strokeCircle(centerX, centerY, radius, paint);
+                return;
+        }
+        fillCircle(centerX, centerY, radius, paint);
+        strokeCircle(centerX, centerY, radius, paint);
+    }
+
+    protected void fillCircle(float cx, float cy, float r, @Nonnull Paint paint) {
+        final CircleProgram.Fill program = CircleProgram.fill();
+        program.use();
+        program.setRadius(r, Math.min(r, paint.getFeatherRadius()));
+        program.setCenter(cx, cy);
+        upload(cx - r, cy - r, cx + r, cy + r, paint.getColor());
         ShaderProgram.stop();
     }
 
-    /**
-     * Draw circle on screen with given center pos and radius
-     * <p>
-     * Default feather radius: 1 px
-     *
-     * @param centerX center x pos
-     * @param centerY center y pos
-     * @param radius  circle radius
-     */
-    public void drawCircle(float centerX, float centerY, float radius) {
-        mCircle.use();
-        mCircle.setRadius(radius);
-        mCircle.setCenter(centerX, centerY);
-        drawRect(centerX - radius, centerY - radius, centerX + radius, centerY + radius);
+    protected void strokeCircle(float cx, float cy, float r, @Nonnull Paint paint) {
+        final CircleProgram.Stroke program = CircleProgram.stroke();
+        program.use();
+        float thickness = Math.min(paint.getStrokeWidth() * 0.5f, r);
+        float outer = r + thickness;
+        program.setRadius(r - thickness, outer, Math.min(thickness, paint.getFeatherRadius()));
+        program.setCenter(cx, cy);
+        upload(cx - outer, cy - outer, cx + outer, cy + outer, paint.getColor());
         ShaderProgram.stop();
     }
 
@@ -516,7 +525,7 @@ public class Canvas {
         startY += drawingY;
         stopY += drawingY;*/
 
-        mBufferBuilder.begin(GL11.GL_LINES, DefaultVertexFormat.POSITION_COLOR);
+        mBufferBuilder.begin(GL43.GL_LINES, DefaultVertexFormat.POSITION_COLOR);
         mBufferBuilder.vertex(startX, startY, z).color(r, g, b, a).endVertex();
         mBufferBuilder.vertex(stopX, stopY, z).color(r, g, b, a).endVertex();
         mBufferBuilder.end();
@@ -524,7 +533,7 @@ public class Canvas {
     }
 
     /**
-     * Draw a round rectangle with given rectangular bounds and round radius.
+     * Draw a rectangle with round corners within a rectangular bounds.
      *
      * @param left   the left of the rectangular bounds
      * @param top    the top of the rectangular bounds
@@ -535,6 +544,7 @@ public class Canvas {
      */
     public void drawRoundRect(float left, float top, float right, float bottom,
                               float radius, @Nonnull Paint paint) {
+        radius = Math.max(0, radius);
         switch (paint.getStyle()) {
             case FILL:
                 fillRoundRect(left, top, right, bottom, radius, paint);
@@ -551,10 +561,9 @@ public class Canvas {
                                  float r, @Nonnull Paint paint) {
         final RoundRectProgram.Fill program = RoundRectProgram.fill();
         program.use();
-        r = Math.max(0, r);
         program.setRadius(r, Math.min(r, paint.getFeatherRadius()));
         program.setInnerRect(left + r, top + r, right - r, bottom - r);
-        upload(program, left, top, right, bottom, paint.getColor());
+        upload(left, top, right, bottom, paint.getColor());
         ShaderProgram.stop();
     }
 
@@ -562,17 +571,15 @@ public class Canvas {
                                    float r, @Nonnull Paint paint) {
         final RoundRectProgram.Stroke program = RoundRectProgram.stroke();
         program.use();
-        r = Math.max(0, r);
         float thickness = Math.min(paint.getStrokeWidth() * 0.5f, r);
         program.setRadius(r, Math.min(thickness, paint.getFeatherRadius()), thickness);
         program.setInnerRect(left + r, top + r, right - r, bottom - r);
-        upload(program, left - r, top - r, right + r, bottom + r, paint.getColor());
+        upload(left - r, top - r, right + r, bottom + r, paint.getColor());
         ShaderProgram.stop();
     }
 
     @Deprecated
-    protected void upload(@Nonnull RoundRectProgram program, float left, float top,
-                          float right, float bottom, int color) {
+    protected void upload(float left, float top, float right, float bottom, int color) {
         final BufferBuilder builder = Tesselator.getInstance().getBuilder();
 
         final int a = color >>> 24;
@@ -580,7 +587,7 @@ public class Canvas {
         final int g = (color >> 8) & 0xff;
         final int b = color & 0xff;
 
-        builder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
+        builder.begin(GL43.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
         builder.vertex(left, bottom, 0).color(r, g, b, a).endVertex();
         builder.vertex(right, bottom, 0).color(r, g, b, a).endVertex();
         builder.vertex(right, top, 0).color(r, g, b, a).endVertex();
@@ -595,33 +602,13 @@ public class Canvas {
         program.use();
         program.setRadius(radius, 1.0f, 1.0f);
         program.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
-        RenderSystem.disableTexture();
-        mBufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
+        mBufferBuilder.begin(GL43.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
         mBufferBuilder.vertex(left, bottom, z).color(170, 220, 240, a).endVertex();
         mBufferBuilder.vertex(right, bottom, z).color(201, 200, 232, a).endVertex();
         mBufferBuilder.vertex(right, top, z).color(232, 180, 223, a).endVertex();
         mBufferBuilder.vertex(left, top, z).color(201, 200, 232, a).endVertex();
         mBufferBuilder.end();
         BufferUploader.end(mBufferBuilder);
-        ShaderProgram.stop();
-    }
-
-    /**
-     * Draw feathered rectangle frame in a rounded rect on screen
-     * with given rect area and feather thickness (not radius)
-     * A replacement for rounded rect when radius is too small.
-     *
-     * @param left      rect left
-     * @param top       rect top
-     * @param right     rect right
-     * @param bottom    rect bottom
-     * @param thickness feather thickness (&lt;= 0.5 is better)
-     */
-    public void drawFeatheredRect(float left, float top, float right, float bottom, float thickness) {
-        mFeatheredRect.use();
-        mFeatheredRect.setThickness(thickness);
-        mFeatheredRect.setInnerRect(left + thickness, top + thickness, right - thickness, bottom - thickness);
-        drawRect(left, top, right, bottom);
         ShaderProgram.stop();
     }
 
@@ -634,10 +621,11 @@ public class Canvas {
      * @param right  rect right
      * @param bottom rect bottom
      */
-    public void drawIcon(@Nonnull Icon icon, float left, float top, float right, float bottom, float radius) {
+    public void drawRoundImage(@Nonnull Icon icon, float left, float top, float right, float bottom,
+                               float radius, @Nonnull Paint paint) {
         RoundRectProgram.FillTex program = RoundRectProgram.fillTex();
         program.use();
-        program.setRadius(radius, 1.0f);
+        program.setRadius(radius, Math.min(radius, paint.getFeatherRadius()));
         program.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
         RenderSystem.activeTexture(GL43.GL_TEXTURE0);
         icon.bindTexture();
@@ -645,11 +633,17 @@ public class Canvas {
 
         final BufferBuilder builder = Tesselator.getInstance().getBuilder();
 
-        builder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
-        builder.vertex(left, bottom, z).color(r, g, b, a).uv(icon.getLeft(), icon.getBottom()).endVertex();
-        builder.vertex(right, bottom, z).color(r, g, b, a).uv(icon.getRight(), icon.getBottom()).endVertex();
-        builder.vertex(right, top, z).color(r, g, b, a).uv(icon.getRight(), icon.getTop()).endVertex();
-        builder.vertex(left, top, z).color(r, g, b, a).uv(icon.getLeft(), icon.getTop()).endVertex();
+        final int color = paint.getColor();
+        final int a = color >>> 24;
+        final int r = (color >> 16) & 0xff;
+        final int g = (color >> 8) & 0xff;
+        final int b = color & 0xff;
+
+        builder.begin(GL43.GL_QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
+        builder.vertex(left, bottom, 0).color(r, g, b, a).uv(icon.getLeft(), icon.getBottom()).endVertex();
+        builder.vertex(right, bottom, 0).color(r, g, b, a).uv(icon.getRight(), icon.getBottom()).endVertex();
+        builder.vertex(right, top, 0).color(r, g, b, a).uv(icon.getRight(), icon.getTop()).endVertex();
+        builder.vertex(left, top, 0).color(r, g, b, a).uv(icon.getLeft(), icon.getTop()).endVertex();
         builder.end();
         BufferUploader.end(builder);
 
@@ -771,19 +765,19 @@ public class Canvas {
     }
 
     public void clipVertical(@Nonnull View view) {
-        GL11.glEnable(GL11.GL_SCISSOR_TEST);
-        GL11.glScissor(0, mWindow.getHeight() - view.getBottom(),
-                mWindow.getWidth(), view.getHeight());
+        GL43.glEnable(GL43.GL_SCISSOR_TEST);
+        GL43.glScissor(0, mMainWindow.getHeight() - view.getBottom(),
+                mMainWindow.getWidth(), view.getHeight());
     }
 
     public void clipStart(float x, float y, float width, float height) {
-        double scale = mWindow.getGuiScale();
-        GL11.glEnable(GL11.GL_SCISSOR_TEST);
-        GL11.glScissor((int) (x * scale), (int) (mWindow.getHeight() - ((y + height) * scale)),
+        double scale = mMainWindow.getGuiScale();
+        GL43.glEnable(GL43.GL_SCISSOR_TEST);
+        GL43.glScissor((int) (x * scale), (int) (mMainWindow.getHeight() - ((y + height) * scale)),
                 (int) (width * scale), (int) (height * scale));
     }
 
     public void clipEnd() {
-        GL11.glDisable(GL11.GL_SCISSOR_TEST);
+        GL43.glDisable(GL43.GL_SCISSOR_TEST);
     }
 }

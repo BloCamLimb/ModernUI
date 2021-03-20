@@ -16,25 +16,24 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.shader.program;
+package icyllis.modernui.graphics.font;
 
-import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.shader.ShaderProgram;
-import org.lwjgl.opengl.GL20;
+import javax.annotation.Nonnull;
 
-public class RingProgram extends ShaderProgram {
+/**
+ * The layout of a grapheme cluster, which may contain multiple glyphs.
+ *
+ * @see icyllis.modernui.text.GraphemeBreak
+ */
+public class GraphemeMetrics {
 
-    public static RingProgram INSTANCE = new RingProgram("rect", "circle_stroke");
+    public final float mAdvance;
+    public final int mAscent;
+    public final int mDescent;
 
-    private RingProgram(String vert, String frag) {
-        super(ModernUI.ID, vert, frag);
-    }
-
-    public void setRadius(float inner, float radius) {
-        GL20.glUniform2f(0, inner, radius);
-    }
-
-    public void setCenter(float x, float y) {
-        GL20.glUniform2f(1, x, y);
+    public GraphemeMetrics(float advance, @Nonnull FontMetricsInt extent) {
+        mAdvance = advance;
+        mAscent = extent.mAscent;
+        mDescent = extent.mDescent;
     }
 }

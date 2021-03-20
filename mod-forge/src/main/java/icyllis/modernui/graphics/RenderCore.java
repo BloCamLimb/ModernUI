@@ -23,6 +23,8 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.graphics.shader.Shader;
 import icyllis.modernui.graphics.shader.ShaderProgram;
+import icyllis.modernui.graphics.shader.program.CircleProgram;
+import icyllis.modernui.graphics.shader.program.RectProgram;
 import icyllis.modernui.graphics.shader.program.RoundRectProgram;
 import icyllis.modernui.graphics.textmc.TextLayoutProcessor;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -112,6 +114,8 @@ public final class RenderCore {
             glCapabilitiesErrors = i;
         }
 
+        CircleProgram.createPrograms();
+        RectProgram.createPrograms();
         RoundRectProgram.createPrograms();
 
         TextLayoutProcessor.getInstance().initRenderer();

@@ -35,7 +35,6 @@ import icyllis.modernui.widget.Orientation;
 import net.minecraft.ChatFormatting;
 import net.minecraft.resources.ResourceLocation;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.system.CallbackI;
 
 import javax.annotation.Nonnull;
 
@@ -127,23 +126,26 @@ public class TestLinearLayout extends LinearLayout {
         canvas.scale(3, 3);
         canvas.drawText("A Text", 10, 0);
         canvas.drawText(ChatFormatting.BOLD + "A Text", 10, 10);
-        canvas.drawText("\u0054\u0068\u0069\u0073\u0020\u0069\u0073\u0020\u0627\u0644\u0644\u063a\u0629\u0020\u0627\u0644\u0639\u0631\u0628\u064a\u0629\u002c\u0020\u0061\u006e\u0064\u0020\u0073\u0068\u0065\u0020\u0069\u0073\u0020\u6d77\u87ba", 10, 20);
+        canvas.drawText("\u0054\u0068\u0069\u0073\u0020\u0069\u0073\u0020\u0627\u0644\u0644\u063a\u0629\u0020" +
+                "\u0627\u0644\u0639\u0631\u0628\u064a\u0629\u002c\u0020\u0061\u006e\u0064\u0020" +
+                "\u0073\u0068\u0065\u0020\u0069\u0073\u0020\u6d77\u87ba", 10, 20);
         canvas.restore();
 
         Paint paint = Paint.take();
         paint.reset();
         paint.setStyle(Paint.Style.FILL);
         canvas.drawRoundRect(6, 90, 46, 104, 7, paint);
+
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(4.0f);
         canvas.save();
-        GL11.glRotatef(45, 0, 0, 1);
+        GL11.glRotatef(30, 0, 0, 1);
         canvas.drawRoundRect(6, 110, 86, 124, 6, paint);
         canvas.restore();
 
-        canvas.drawFeatheredRect(6, 126, 86, 156, 1);
+        canvas.drawRect(6, 126, 86, 156, paint);
 
-        canvas.drawIcon(ICON, 6, 160, 166, 320, iconRadius);
+        canvas.drawRoundImage(ICON, 6, 160, 166, 320, iconRadius, paint);
 
         // 1
 
@@ -155,13 +157,15 @@ public class TestLinearLayout extends LinearLayout {
         RenderSystem.colorMask(false, false, false, false);
         //canvas.setColor(0, 0, 0, 128);
 
-        canvas.drawRect(c, c, 20 - c, 20 - c);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setFeatherRadius(0);
+        canvas.drawRect(c, c, 20 - c, 20 - c, paint);
+
         RenderSystem.translatef(0, 0, -0.001f);
         RenderSystem.colorMask(true, true, true, true);
 
-
+        paint.setFeatherRadius(1);
         paint.setRGBA(80, 210, 240, 128);
-        paint.setStyle(Paint.Style.FILL);
         canvas.drawRoundRect(0, 0, 20, 20, 3, paint);
 
         canvas.restore();
@@ -170,22 +174,26 @@ public class TestLinearLayout extends LinearLayout {
 
         // 4
 
-        canvas.setAlpha(255);
+        paint.reset();
+
         canvas.save();
         canvas.translate((float) Math.sin(circleAcc1) * 8, (float) Math.cos(circleAcc1) * 8);
-        canvas.drawCircle(40, 18, 3);
+        canvas.drawCircle(40, 18, 3, paint);
         canvas.restore();
+
         canvas.save();
         canvas.translate((float) Math.sin(circleAcc2) * 8, (float) Math.cos(circleAcc2) * 8);
-        canvas.drawCircle(40, 18, 2.5f);
+        canvas.drawCircle(40, 18, 2.5f, paint);
         canvas.restore();
+
         canvas.save();
         canvas.translate((float) Math.sin(circleAcc3) * 8, (float) Math.cos(circleAcc3) * 8);
-        canvas.drawCircle(40, 18, 2);
+        canvas.drawCircle(40, 18, 2, paint);
         canvas.restore();
+
         canvas.save();
         canvas.translate((float) Math.sin(circleAcc4) * 8, (float) Math.cos(circleAcc4) * 8);
-        canvas.drawCircle(40, 18, 1.5f);
+        canvas.drawCircle(40, 18, 1.5f, paint);
         canvas.restore();
 
 
@@ -269,9 +277,8 @@ public class TestLinearLayout extends LinearLayout {
         protected void onDraw(@Nonnull Canvas canvas) {
             String str = ChatFormatting.UNDERLINE + "Modern" + ChatFormatting.AQUA + " UI"/* + TextFormatting.OBFUSCATED + "\u0629\u064a\u0628\u0631\u0639\u0644\u0627" + TextFormatting.STRIKETHROUGH + "\u2642"*/;
             if (isHovered()) {
-                canvas.setRGBA(140, 200, 240, 128);
                 Paint paint = Paint.take();
-                paint.reset();
+                paint.setRGBA(140, 200, 240, 128);
                 canvas.drawRoundRect(0, 1, getWidth(), getHeight() - 2, 4, paint);
             }
             canvas.resetColor();

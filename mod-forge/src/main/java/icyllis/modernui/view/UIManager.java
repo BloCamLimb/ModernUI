@@ -25,6 +25,7 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.math.Point;
 import icyllis.modernui.graphics.shader.ShaderProgram;
 import icyllis.modernui.graphics.textmc.ModernFontRenderer;
@@ -759,7 +760,7 @@ public final class UIManager {
     }*/
 
     /**
-     * Runtime rendering
+     * Real-time rendering
      */
     void render() {
         final Window window = minecraft.getWindow();
@@ -772,6 +773,7 @@ public final class UIManager {
         RenderSystem.loadIdentity();
         RenderSystem.ortho(0.0D, window.getWidth(), window.getHeight(), 0.0D, 1000.0D, 3000.0D);
         RenderSystem.matrixMode(GL11.GL_MODELVIEW);
+        Paint.take().reset();
 
         /*canvas.moveToZero();
         canvas.setColor(0, 0, 0, 51);
@@ -796,7 +798,8 @@ public final class UIManager {
 
         RenderSystem.matrixMode(GL11.GL_PROJECTION);
         RenderSystem.loadIdentity();
-        RenderSystem.ortho(0.0D, (double) window.getWidth() / window.getGuiScale(), (double) window.getHeight() / window.getGuiScale(), 0.0D, 1000.0D, 3000.0D);
+        RenderSystem.ortho(0.0D, (double) window.getWidth() / window.getGuiScale(),
+                (double) window.getHeight() / window.getGuiScale(), 0.0D, 1000.0D, 3000.0D);
         RenderSystem.matrixMode(GL11.GL_MODELVIEW);
     }
 

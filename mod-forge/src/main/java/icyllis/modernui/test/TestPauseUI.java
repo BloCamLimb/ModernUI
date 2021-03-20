@@ -21,6 +21,7 @@ package icyllis.modernui.test;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
 import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.view.Screen;
@@ -103,8 +104,11 @@ public class TestPauseUI extends Screen {
 
         @Override
         protected void onDraw(@Nonnull Canvas canvas) {
-            canvas.setRGBA(96, 96, 96, (int) (a * 255));
-            canvas.drawRect(0, 0, getRight(), getBottom());
+            Paint paint = Paint.take();
+            paint.setFeatherRadius(0);
+            paint.setStyle(Paint.Style.FILL);
+            paint.setRGBA(96, 96, 96, (int) (a * 255));
+            canvas.drawRect(0, 0, getRight(), getBottom(), paint);
         }
     }
 }

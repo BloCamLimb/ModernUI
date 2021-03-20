@@ -19,6 +19,7 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.test.drawable.ScrollThumbDrawable;
 import icyllis.modernui.view.MotionEvent;
@@ -44,8 +45,11 @@ public class ScrollView extends FrameLayout implements ScrollController.IListene
         bar.setTrackDrawable(new Drawable() {
             @Override
             public void draw(@Nonnull Canvas canvas) {
-                canvas.setRGBA(16, 16, 16, 40);
-                canvas.drawRect(0, 0, getWidth(), getHeight());
+                Paint paint = Paint.take();
+                paint.reset();
+                paint.setFeatherRadius(0);
+                paint.setRGBA(16, 16, 16, 40);
+                canvas.drawRect(0, 0, getWidth(), getHeight(), paint);
             }
         });
         setVerticalScrollBar(bar);

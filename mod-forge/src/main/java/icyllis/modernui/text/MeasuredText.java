@@ -20,7 +20,7 @@ package icyllis.modernui.text;
 
 import com.google.common.base.Preconditions;
 import icyllis.modernui.graphics.font.FontMetricsInt;
-import icyllis.modernui.graphics.font.LayoutEngine;
+import icyllis.modernui.graphics.font.MeasureEngine;
 import icyllis.modernui.graphics.font.LayoutPieces;
 import icyllis.modernui.graphics.font.MinikinPaint;
 
@@ -205,7 +205,7 @@ public class MeasuredText {
         @Override
         public void getMetrics(@Nonnull char[] text, @Nonnull float[] advances, @Nonnull LayoutPieces outPieces) {
             GraphemeBreak.getTextRuns(text, getLocale(), mStart, mEnd,
-                    (st, en) -> LayoutEngine.getInstance().create(text, st, en, mPaint, mIsRtl,
+                    (st, en) -> MeasureEngine.getInstance().create(text, st, en, mPaint, mIsRtl,
                             (lp, pt) -> {
                                 advances[st] = lp.mAdvance;
                                 outPieces.insert(st, en, lp, mIsRtl, pt);
