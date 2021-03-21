@@ -29,6 +29,7 @@ import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.math.Icon;
 import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.graphics.shader.ShaderProgram;
+import icyllis.modernui.graphics.shader.program.ArcProgram;
 import icyllis.modernui.graphics.shader.program.CircleProgram;
 import icyllis.modernui.graphics.shader.program.RectProgram;
 import icyllis.modernui.graphics.shader.program.RoundRectProgram;
@@ -42,7 +43,6 @@ import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.network.chat.Style;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.GL43;
 
 import javax.annotation.Nonnull;
@@ -299,6 +299,89 @@ public class Canvas {
         if (alignFactor > 0)
             x -= node.advance * alignFactor;
         return node.drawText(mBufferBuilder, text, x, y, r, g, b, a);
+    }
+
+    /**
+     * <p>
+     * Draw a circular arc.
+     * </p>
+     * <p>
+     * If the start angle is negative or >= 360, the start angle is treated as start angle modulo
+     * 360. If the sweep angle is >= 360, then the circle is drawn completely. If the sweep angle is
+     * negative, the sweep angle is treated as sweep angle modulo 360 (e.g -30 to 330)
+     * </p>
+     * <p>
+     * The arc is drawn clockwise. An angle of 0 degrees correspond to the geometric angle of 0
+     * degrees (3 o'clock on a watch.)
+     * </p>
+     *
+     * @param centerX    The x-coordinate of the center of the arc to be drawn
+     * @param centerY    The y-coordinate of the center of the arc to be drawn
+     * @param radius     The radius of the circular arc to be drawn
+     * @param startAngle Starting angle (in degrees) where the arc begins
+     * @param sweepAngle Sweep angle (in degrees) measured clockwise
+     * @param paint      The paint used to draw the arc
+     */
+    public void drawArc(float centerX, float centerY, float radius, float startAngle,
+                        float sweepAngle, @Nonnull Paint paint) {
+        if (sweepAngle == 0)
+            return;
+        if (sweepAngle < 0)
+            sweepAngle = (sweepAngle % 360) + 360;
+        switch (paint.getStyle()) {
+            case FILL:
+                fillArc(centerX, centerY, radius, startAngle, sweepAngle, paint);
+                return;
+            case STROKE:
+                strokeArc(centerX, centerY, radius, startAngle, sweepAngle, paint);
+                return;
+        }
+        fillArc(centerX, centerY, radius, startAngle, sweepAngle, paint);
+        strokeArc(centerX, centerY, radius, startAngle, sweepAngle, paint);
+    }
+
+    protected void fillArc(float cx, float cy, float radius, float startAngle,
+                           float sweepAngle, @Nonnull Paint paint) {
+        if (sweepAngle >= 360)
+            fillCircle(cx, cy, radius, paint);
+        else {
+            final ArcProgram.Fill program = ArcProgram.fill();
+            program.use();
+            if (startAngle < 0 || startAngle >= 360) {
+                startAngle %= 360;
+                if (startAngle < 0)
+                    startAngle += 360;
+            }
+            float middle = startAngle + sweepAngle * 0.5f;
+            program.setCenter(cx, cy);
+            program.setAngle(middle, sweepAngle);
+            program.setRadius(radius, Math.min(radius, paint.getFeatherRadius()));
+            upload(cx - radius, cy - radius, cx + radius, cy + radius, paint.getColor());
+            ShaderProgram.stop();
+        }
+    }
+
+    protected void strokeArc(float cx, float cy, float radius, float startAngle,
+                             float sweepAngle, @Nonnull Paint paint) {
+        if (sweepAngle >= 360)
+            strokeCircle(cx, cy, radius, paint);
+        else {
+            final ArcProgram.Stroke program = ArcProgram.stroke();
+            program.use();
+            if (startAngle < 0 || startAngle >= 360) {
+                startAngle %= 360;
+                if (startAngle < 0)
+                    startAngle += 360;
+            }
+            float middle = startAngle + sweepAngle * 0.5f;
+            program.setCenter(cx, cy);
+            program.setAngle(middle, sweepAngle);
+            float thickness = Math.min(paint.getStrokeWidth() * 0.5f, radius);
+            program.setRadius(radius, Math.min(thickness, paint.getFeatherRadius()), thickness);
+            float outer = radius + thickness;
+            upload(cx - outer, cy - outer, cx + outer, cy + outer, paint.getColor());
+            ShaderProgram.stop();
+        }
     }
 
     /**

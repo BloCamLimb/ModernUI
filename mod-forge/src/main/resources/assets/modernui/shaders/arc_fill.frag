@@ -2,7 +2,7 @@
 
 precision highp float;
 
-layout(location = 0) uniform vec3 u_Radius;
+layout(location = 0) uniform vec2 u_Radius;
 layout(location = 1) uniform vec2 u_CenterPos;
 layout(location = 2) uniform vec2 u_Angle;
 
@@ -15,7 +15,7 @@ void main() {
     vec2 dir = f_Position - u_CenterPos;
 
     // smoothing normal direction
-    float d1 = abs(length(dir) - u_Radius.x) - u_Radius.z;
+    float d1 = length(dir) - u_Radius.x;
     float a1 = smoothstep(-u_Radius.y, 0.0, d1);
 
     // angle (0,360) in degrees

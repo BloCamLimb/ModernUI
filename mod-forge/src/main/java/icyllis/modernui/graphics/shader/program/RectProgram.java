@@ -34,7 +34,7 @@ public class RectProgram extends ShaderProgram {
     private static RectProgram sFillTex;
     private static Feathered sFeathered;
 
-    public RectProgram(@Nonnull ResourceLocation vert, @Nonnull ResourceLocation frag) {
+    private RectProgram(@Nonnull ResourceLocation vert, @Nonnull ResourceLocation frag) {
         super(vert, frag);
     }
 
