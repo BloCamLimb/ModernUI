@@ -23,6 +23,7 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.graphics.shader.Shader;
 import icyllis.modernui.graphics.shader.ShaderProgram;
+import icyllis.modernui.graphics.shader.program.ArcProgram;
 import icyllis.modernui.graphics.shader.program.CircleProgram;
 import icyllis.modernui.graphics.shader.program.RectProgram;
 import icyllis.modernui.graphics.shader.program.RoundRectProgram;
@@ -114,6 +115,7 @@ public final class RenderCore {
             glCapabilitiesErrors = i;
         }
 
+        ArcProgram.createPrograms();
         CircleProgram.createPrograms();
         RectProgram.createPrograms();
         RoundRectProgram.createPrograms();

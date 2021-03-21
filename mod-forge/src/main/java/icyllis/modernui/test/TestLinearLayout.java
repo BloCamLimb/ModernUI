@@ -52,12 +52,16 @@ public class TestLinearLayout extends LinearLayout {
     private final Animation circleAnimation3;
     private final Animation circleAnimation4;
     private final Animation iconRadiusAni;
+    private final Animation arcStartAni;
+    private final Animation arcEndAni;
 
     private float circleAcc1;
     private float circleAcc2;
     private float circleAcc3;
     private float circleAcc4;
     private float iconRadius = 40;
+    private float arcStart = 0;
+    private float arcEnd = 0;
 
     private boolean b;
 
@@ -114,6 +118,11 @@ public class TestLinearLayout extends LinearLayout {
                 );
         iconRadiusAni = new Animation(300)
                 .applyTo(new Applier(40, 80, () -> iconRadius, v -> iconRadius = v).setInterpolator(ITimeInterpolator.DECELERATE));
+
+        arcStartAni = new Animation(800)
+                .applyTo(new Applier(-90, 270, () -> arcStart, v -> arcStart = v).setInterpolator(ITimeInterpolator.DECELERATE));
+        arcEndAni = new Animation(800)
+                .applyTo(new Applier(-90, 270, () -> arcEnd, v -> arcEnd = v).setInterpolator(ITimeInterpolator.ACCELERATE));
     }
 
     @Override
@@ -143,9 +152,15 @@ public class TestLinearLayout extends LinearLayout {
         canvas.drawRoundRect(6, 110, 86, 124, 6, paint);
         canvas.restore();
 
+        paint.setStyle(Paint.Style.FILL);
         canvas.drawRect(6, 126, 86, 156, paint);
 
         canvas.drawRoundImage(ICON, 6, 160, 166, 320, iconRadius, paint);
+
+        paint.setStyle(Paint.Style.FILL);
+        paint.setFeatherRadius(2.0f);
+        paint.setStrokeWidth(10.0f);
+        canvas.drawArc(80, 400, 60, arcStart, arcStart - arcEnd, paint);
 
         // 1
 
@@ -262,6 +277,8 @@ public class TestLinearLayout extends LinearLayout {
         int a = ticks % 20;
         if (a == 1) {
             circleAnimation1.startFull();
+            arcStartAni.startFull();
+            arcEndAni.startFull();
         } else if (a == 3) {
             circleAnimation2.startFull();
         } else if (a == 5) {
