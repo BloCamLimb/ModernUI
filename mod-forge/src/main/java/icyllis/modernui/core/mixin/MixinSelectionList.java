@@ -23,7 +23,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import icyllis.modernui.view.UIManager;
 import icyllis.modernui.widget.ScrollController;
 import net.minecraft.client.gui.components.AbstractSelectionList;
-import org.spongepowered.asm.mixin.Final;
+import net.minecraft.util.Mth;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
@@ -35,17 +35,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class MixinSelectionList implements ScrollController.IListener {
 
     @Shadow
-    @Final
-    protected int itemHeight;
-
-    @Shadow
-    public abstract void setScrollAmount(double p_230932_1_);
-
-    @Shadow
     public abstract int getMaxScroll();
 
     @Shadow
     public abstract double getScrollAmount();
+
+    @Shadow
+    private double scrollAmount;
 
     private final ScrollController mScrollController = new ScrollController(this);
 
@@ -90,8 +86,18 @@ public abstract class MixinSelectionList implements ScrollController.IListener {
         RenderSystem.popMatrix();
     }
 
+    /**
+     * @author BloCamLimb
+     * @reason Smooth scrolling
+     */
+    @Overwrite
+    public void setScrollAmount(double target) {
+        mScrollController.scrollTo((float) target);
+        mScrollController.abortAnimation();
+    }
+
     @Override
     public void onScrollAmountUpdated(ScrollController controller, float amount) {
-        setScrollAmount(amount);
+        scrollAmount = Mth.clamp(amount, 0.0D, getMaxScroll());
     }
 }
