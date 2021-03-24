@@ -23,7 +23,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import icyllis.modernui.view.UIManager;
 import icyllis.modernui.widget.ScrollController;
 import net.minecraftforge.client.gui.ScrollPanel;
-import org.checkerframework.checker.units.qual.A;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
@@ -45,6 +45,16 @@ public abstract class MixinScrollPanel implements ScrollController.IListener {
 
     @Shadow(remap = false)
     protected abstract int getMaxScroll();
+
+    @Shadow(remap = false)
+    private boolean scrolling;
+
+    @Shadow(remap = false)
+    @Final
+    protected int height;
+
+    @Shadow(remap = false)
+    protected abstract int getBarHeight();
 
     private final ScrollController mScrollController = new ScrollController(this);
 
@@ -82,5 +92,21 @@ public abstract class MixinScrollPanel implements ScrollController.IListener {
     public void onScrollAmountUpdated(ScrollController controller, float amount) {
         scrollDistance = amount;
         applyScrollLimits();
+    }
+
+    /**
+     * @author BloCamLimb
+     * @reason Smooth scrolling
+     */
+    @Overwrite
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
+        if (scrolling) {
+            int maxScroll = height - getBarHeight();
+            float moved = (float) (deltaY / maxScroll);
+            mScrollController.scrollBy(getMaxScroll() * moved);
+            mScrollController.abortAnimation();
+            return true;
+        }
+        return false;
     }
 }
