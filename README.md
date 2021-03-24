@@ -59,6 +59,8 @@ dependencies {
     compile fg.deobf("icyllis.modernui:ModernUI-Forge:${modernui_version}@pom")
 }
 ```
-### Screenshots (out-of-date)
+### Screenshots
+![new](https://i.loli.net/2021/03/24/nMZhJaiz7qDp2xF.png)
+#### out-of-date
 ![a](https://i.loli.net/2020/05/15/fYAow29d4JtqaGu.png)
 ![b](https://i.loli.net/2020/04/10/LDBFc1qo5wtnS8u.png)
