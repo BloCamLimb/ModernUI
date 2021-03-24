@@ -17,7 +17,7 @@ void main() {
     smoothstep(u_Radius.x - 1.0, u_Radius.x, v),
     smoothstep(u_Radius.y, u_Radius.y - 1.0, v));*/
 
-    float a = smoothstep(u_Radius.x - u_Radius.z, u_Radius.x, v) * smoothstep(u_Radius.y, u_Radius.y - u_Radius.z, v);
+    float a = smoothstep(u_Radius.x, u_Radius.x + u_Radius.z, v) * (1.0 - smoothstep(u_Radius.y - u_Radius.z, u_Radius.y, v));
 
     fragColor = f_Color * vec4(1.0, 1.0, 1.0, a);
 }

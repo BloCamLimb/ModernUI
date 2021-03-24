@@ -1,5 +1,12 @@
 Changelogs
 ===
+### 1.16.5-2.4.8.83 (2021-03-24)
+* Update shaders to GLSL 430 core
+* Improve filling and stroking of round rect shader
+* Add filling and stroking of arc and circle shader
+* Add circular progress bar for world loading screen
+* Smooth scrolling for vanilla and forge scroll panels
+
 ### 1.16.5-2.4.7.82 (2021-03-17)
 * Several optimizations
 * Fix lifecycle crash

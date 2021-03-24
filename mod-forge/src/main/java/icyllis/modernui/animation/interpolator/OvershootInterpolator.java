@@ -18,9 +18,9 @@
 
 package icyllis.modernui.animation.interpolator;
 
-import icyllis.modernui.animation.ITimeInterpolator;
+import icyllis.modernui.animation.Interpolator;
 
-public class OvershootInterpolator implements ITimeInterpolator {
+public class OvershootInterpolator implements Interpolator {
 
     private final float tension;
 
