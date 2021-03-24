@@ -21,37 +21,37 @@ package icyllis.modernui.animation;
 import icyllis.modernui.animation.interpolator.ViscousFluidInterpolator;
 
 @FunctionalInterface
-public interface ITimeInterpolator {
+public interface Interpolator {
 
     /**
      * Default interpolator, you don't need to call this if you want to keep default
      */
-    ITimeInterpolator LINEAR = in -> in;
+    Interpolator LINEAR = in -> in;
 
     /**
      * From slow to fast, seldom used
      */
-    ITimeInterpolator ACCELERATE = in -> in * in;
+    Interpolator ACCELERATE = in -> in * in;
 
     /**
      * From fast to slow, commonly used
      */
-    ITimeInterpolator DECELERATE = in -> 1.0f - (1.0f - in) * (1.0f - in);
+    Interpolator DECELERATE = in -> 1.0f - (1.0f - in) * (1.0f - in);
 
     /**
      * Slow to fast to slow
      */
-    ITimeInterpolator ACC_DEC = in -> (float) (Math.cos((in + 1) * Math.PI) / 2.0) + 0.5f;
+    Interpolator ACC_DEC = in -> (float) (Math.cos((in + 1) * Math.PI) / 2.0) + 0.5f;
 
     /**
      * From fast to slow, it's better to use {@link #DECELERATE}, they are similar
      */
-    ITimeInterpolator SINE = in -> (float) Math.sin(Math.PI / 2.0 * in);
+    Interpolator SINE = in -> (float) Math.sin(Math.PI / 2.0 * in);
 
     /**
      * Default used in scroller
      */
-    ITimeInterpolator VISCOUS_FLUID = new ViscousFluidInterpolator();
+    Interpolator VISCOUS_FLUID = new ViscousFluidInterpolator();
 
     /**
      * Get interpolation value

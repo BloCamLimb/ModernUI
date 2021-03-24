@@ -400,7 +400,9 @@ public class Canvas {
                 fillRect(left, top, right, bottom, paint);
                 return;
             case STROKE:
+                return;
         }
+        fillRect(left, top, right, bottom, paint);
     }
 
     protected void fillRect(float left, float top, float right, float bottom, @Nonnull Paint paint) {

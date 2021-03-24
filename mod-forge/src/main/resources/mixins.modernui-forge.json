@@ -18,8 +18,11 @@
     "MixinClientLanguage",
     "MixinFontManager",
     "MixinIngameGui",
+    "MixinLevelLoadingScreen",
     "MixinMouseHandler",
     "MixinScreen",
+    "MixinScrollPanel",
+    "MixinSelectionList",
     "MixinWindow"
   ]
 }

@@ -18,9 +18,9 @@
 
 package icyllis.modernui.animation.interpolator;
 
-import icyllis.modernui.animation.ITimeInterpolator;
+import icyllis.modernui.animation.Interpolator;
 
-public class DecelerateInterpolator implements ITimeInterpolator {
+public class DecelerateInterpolator implements Interpolator {
 
     private final float factor;
 
