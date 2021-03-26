@@ -18,12 +18,11 @@
 
 package icyllis.modernui.fragment;
 
-import icyllis.modernui.lifecycle.ILifecycleOwner;
-import icyllis.modernui.lifecycle.IViewModelStoreOwner;
+import icyllis.modernui.lifecycle.LifecycleOwner;
+import icyllis.modernui.lifecycle.ViewModelStoreOwner;
 import icyllis.modernui.lifecycle.Lifecycle;
 import icyllis.modernui.lifecycle.ViewModelStore;
 import icyllis.modernui.view.View;
-import icyllis.modernui.view.ViewRootImpl;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -36,7 +35,7 @@ import java.util.UUID;
  * Different fragments can communicate with each other,
  * and there can be transition animation when switching etc.
  */
-public class Fragment implements ILifecycleOwner, IViewModelStoreOwner {
+public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
 
     // Internal unique identifier
     @Nonnull
@@ -149,17 +148,17 @@ public class Fragment implements ILifecycleOwner, IViewModelStoreOwner {
     }
 
     /**
-     * Get a {@link ILifecycleOwner} that represents the {@link #getView() Fragment's View}
+     * Get a {@link LifecycleOwner} that represents the {@link #getView() Fragment's View}
      * lifecycle. In most cases, this mirrors the lifecycle of the Fragment itself, but in cases
      * of {@link FragmentTransaction#detach(Fragment) detached} Fragments, the lifecycle of the
      * Fragment can be considerably longer than the lifecycle of the View itself.
      *
-     * @return A {@link ILifecycleOwner} that represents the {@link #getView() Fragment's View}
+     * @return A {@link LifecycleOwner} that represents the {@link #getView() Fragment's View}
      * lifecycle.
      * @throws IllegalStateException if the {@link #getView() Fragment's View is null}.
      */
     @Nonnull
-    public final ILifecycleOwner getViewLifecycleOwner() {
+    public final LifecycleOwner getViewLifecycleOwner() {
         if (mViewLifecycleOwner == null) {
             throw new IllegalStateException("Can't access the Fragment View's LifecycleOwner when "
                     + "the View of this Fragment is currently unavailable");

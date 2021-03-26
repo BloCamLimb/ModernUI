@@ -22,9 +22,11 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.graphics.shader.ShaderProgram;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.ResourceManager;
 import org.lwjgl.opengl.GL43;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
 
 public class RoundRectProgram extends ShaderProgram {
 
@@ -81,6 +83,12 @@ public class RoundRectProgram extends ShaderProgram {
 
         private FillTex() {
             super(RectProgram.VERT_TEX, new ResourceLocation(ModernUI.ID, "shaders/round_rect_fill_tex.frag"));
+        }
+
+        @Override
+        public void link(ResourceManager manager) throws IOException {
+            super.link(manager);
+            GL43.glProgramUniform1i(mId, 2, 0); // always use GL_TEXTURE0
         }
     }
 

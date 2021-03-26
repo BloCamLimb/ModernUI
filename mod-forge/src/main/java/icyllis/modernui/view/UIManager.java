@@ -23,16 +23,15 @@ import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.Animation;
+import icyllis.modernui.core.event.OpenMenuEvent;
+import icyllis.modernui.core.forge.ModernUIForge;
+import icyllis.modernui.core.mixin.MixinMouseHandler;
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.math.Point;
-import icyllis.modernui.graphics.shader.ShaderProgram;
 import icyllis.modernui.graphics.textmc.ModernFontRenderer;
 import icyllis.modernui.graphics.textmc.TextLayoutProcessor;
-import icyllis.modernui.core.event.OpenMenuEvent;
-import icyllis.modernui.core.forge.ModernUIForge;
-import icyllis.modernui.core.mixin.MixinMouseHandler;
 import icyllis.modernui.test.TestHUD;
 import icyllis.modernui.test.TestPauseUI;
 import icyllis.modernui.widget.FrameLayout;
@@ -56,7 +55,6 @@ import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL43;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -226,10 +224,10 @@ public final class UIManager {
     }
 
     // Internal method
-    public boolean openGUI(@Nonnull LocalPlayer player, @Nonnull AbstractContainerMenu menu) {
+    public boolean openGUI(@Nonnull LocalPlayer player, @Nonnull AbstractContainerMenu menu, @Nonnull String namespace) {
         OpenMenuEvent event = new OpenMenuEvent(menu);
-        MinecraftForge.EVENT_BUS.post(event);
-        Screen screen = event.getApplicationUI();
+        ModernUIForge.get().post(namespace, event);
+        Screen screen = event.getScreen();
         if (screen != null) {
             mScreen = screen;
             player.containerMenu = menu;

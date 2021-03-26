@@ -18,12 +18,12 @@
 
 package icyllis.modernui.fragment;
 
-import icyllis.modernui.lifecycle.ILifecycleOwner;
+import icyllis.modernui.lifecycle.LifecycleOwner;
 import icyllis.modernui.lifecycle.Lifecycle;
 
 import javax.annotation.Nonnull;
 
-class FragmentViewLifecycleOwner implements ILifecycleOwner {
+class FragmentViewLifecycleOwner implements LifecycleOwner {
 
     private Lifecycle mLifecycle;
 

@@ -36,7 +36,7 @@ public class Lifecycle {
      * because it keeps strong references on all other listeners, so you'll leak all of them as
      * well.
      */
-    private final WeakReference<ILifecycleOwner> mLifecycleOwner;
+    private final WeakReference<LifecycleOwner> mLifecycleOwner;
 
     private final List<IObserver> mObservers = new ObjectArrayList<>();
 
@@ -53,7 +53,7 @@ public class Lifecycle {
      *
      * @param provider The owner LifecycleOwner
      */
-    public Lifecycle(@Nonnull ILifecycleOwner provider) {
+    public Lifecycle(@Nonnull LifecycleOwner provider) {
         mLifecycleOwner = new WeakReference<>(provider);
     }
 
@@ -101,7 +101,7 @@ public class Lifecycle {
         if (mState == state) {
             return;
         }
-        ILifecycleOwner lifecycleOwner = mLifecycleOwner.get();
+        LifecycleOwner lifecycleOwner = mLifecycleOwner.get();
         if (lifecycleOwner == null) {
             throw new IllegalStateException("LifecycleOwner of this Lifecycle is already garbage collected. " +
                     "It is too late to change lifecycle state.");
@@ -183,7 +183,7 @@ public class Lifecycle {
     @FunctionalInterface
     public interface IObserver {
 
-        void onLifecycleEvent(@Nonnull ILifecycleOwner source, Event event);
+        void onLifecycleEvent(@Nonnull LifecycleOwner source, Event event);
     }
 
     public enum State {

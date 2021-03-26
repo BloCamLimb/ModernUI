@@ -27,7 +27,7 @@ import javax.annotation.Nonnull;
  * during the configuration changes and call {@link ViewModelStore#clear()}, when this scope is
  * going to be destroyed.
  */
-public interface IViewModelStoreOwner {
+public interface ViewModelStoreOwner {
 
     /**
      * Returns the {@link ViewModelStore} of the provider.

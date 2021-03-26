@@ -111,7 +111,7 @@ public class RelativeLayout extends ViewGroup {
     private final int[] outBounds = new int[4];
 
     // inner
-    private final DependencyGraph graph = new DependencyGraph();
+    private final DependencyGraph mGraph = new DependencyGraph();
 
     public RelativeLayout() {
 
@@ -128,14 +128,14 @@ public class RelativeLayout extends ViewGroup {
             sortedHorizontalChildren = new View[count];
         }
 
-        graph.clear();
+        mGraph.clear();
 
         for (int i = 0; i < count; i++) {
-            graph.add(getChildAt(i));
+            mGraph.add(getChildAt(i));
         }
 
-        graph.getSortedViews(sortedVerticalChildren, RULES_VERTICAL);
-        graph.getSortedViews(sortedHorizontalChildren, RULES_HORIZONTAL);
+        mGraph.getSortedViews(sortedVerticalChildren, RULES_VERTICAL);
+        mGraph.getSortedViews(sortedHorizontalChildren, RULES_HORIZONTAL);
     }
 
     @Override
@@ -669,7 +669,7 @@ public class RelativeLayout extends ViewGroup {
     private View getRelatedView(@Nonnull int[] rules, int relation) {
         int anchor = rules[relation];
         if (anchor != 0) {
-            DependencyGraph.Node node = graph.keyNodes.get(anchor);
+            DependencyGraph.Node node = mGraph.keyNodes.get(anchor);
             if (node == null) {
                 return null;
             }
@@ -678,7 +678,7 @@ public class RelativeLayout extends ViewGroup {
             // Find the first non-GONE view up the chain
             while (v.getVisibility() == View.GONE) {
                 rules = ((LayoutParams) v.getLayoutParams()).rules;
-                node = graph.keyNodes.get((rules[relation]));
+                node = mGraph.keyNodes.get((rules[relation]));
                 // ignore self dependency. for more info look in git commit: da3003
                 if (node == null || v == node.view) {
                     return null;

@@ -21,17 +21,24 @@ package icyllis.modernui.core.forge;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.RenderCore;
 import icyllis.modernui.view.LayoutIO;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.packs.resources.ReloadableResourceManager;
+import net.minecraftforge.eventbus.api.Event;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.*;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.IModBusEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.javafmlmod.FMLModContainer;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.resource.ISelectiveResourceReloadListener;
 import net.minecraftforge.resource.VanillaResourceType;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
@@ -60,6 +67,8 @@ public final class ModernUIForge extends ModernUI {
         }
     }
 
+    private final Object2ObjectMap<String, IEventBus> mModEventBuses = new Object2ObjectOpenHashMap<>();
+
     // mod-loading thread
     public ModernUIForge() {
         final boolean isDataGen = DatagenModLoader.isRunningDataGen();
@@ -80,14 +89,14 @@ public final class ModernUIForge extends ModernUI {
                         );
             }
             if (production) {
-                FMLJavaModLoadingContext.get().getModEventBus().register(EventHandler.ModClient.class);
+                FMLJavaModLoadingContext.get().getModEventBus().register(EventHandler.ModClientExp.class);
             }
         }
 
         ModernUI.LOGGER.debug(ModernUI.MARKER, "Modern UI initialized");
     }
 
-    private static void init() {
+    private void init() {
         // get '/run' parent
         Path path = FMLPaths.GAMEDIR.get().getParent();
         // the root directory of your project
@@ -105,6 +114,11 @@ public final class ModernUIForge extends ModernUI {
             ModernUI.LOGGER.debug(ModernUI.MARKER, "Intercepting TipTheScales");
             interceptTipTheScales = true;
         }
+
+        ModList.get().forEachModContainer((modid, container) -> {
+            if (container instanceof FMLModContainer)
+                mModEventBuses.put(modid, ((FMLModContainer) container).getEventBus());
+        });
     }
 
     @Override
@@ -124,5 +138,24 @@ public final class ModernUIForge extends ModernUI {
 
     public static boolean isOptiFineLoaded() {
         return optiFineLoaded;
+    }
+
+    public static ModernUIForge get() {
+        return (ModernUIForge) sInstance;
+    }
+
+    public boolean post(@Nullable String modid, @Nonnull Event event) {
+        if (event instanceof IModBusEvent)
+            if (modid == null) {
+                for (IEventBus bus : mModEventBuses.values())
+                    if (bus.post(event))
+                        return true;
+            } else {
+                IEventBus bus = mModEventBuses.get(modid);
+                return bus != null && bus.post(event);
+            }
+        else
+            LOGGER.warn(MARKER, "Posting a event that not implements IModBusEvent, {}", event);
+        return false;
     }
 }
