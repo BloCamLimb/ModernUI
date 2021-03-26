@@ -21,9 +21,11 @@ package icyllis.modernui.graphics.shader.program;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.shader.ShaderProgram;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.ResourceManager;
 import org.lwjgl.opengl.GL43;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
 
 public class RectProgram extends ShaderProgram {
 
@@ -31,7 +33,7 @@ public class RectProgram extends ShaderProgram {
     public static final ResourceLocation VERT_TEX = new ResourceLocation(ModernUI.ID, "shaders/rect_tex.vert");
 
     private static RectProgram sFill;
-    private static RectProgram sFillTex;
+    private static FillTex sFillTex;
     private static Feathered sFeathered;
 
     private RectProgram(@Nonnull ResourceLocation vert, @Nonnull ResourceLocation frag) {
@@ -41,7 +43,7 @@ public class RectProgram extends ShaderProgram {
     public static void createPrograms() {
         if (sFill == null) {
             sFill = new RectProgram(VERT, new ResourceLocation(ModernUI.ID, "shaders/rect_fill.frag"));
-            sFillTex = new RectProgram(VERT_TEX, new ResourceLocation(ModernUI.ID, "shaders/rect_fill_tex.frag"));
+            sFillTex = new FillTex();
             sFeathered = new Feathered();
         }
     }
@@ -56,6 +58,19 @@ public class RectProgram extends ShaderProgram {
 
     public static Feathered feathered() {
         return sFeathered;
+    }
+
+    private static class FillTex extends RectProgram {
+
+        private FillTex() {
+            super(VERT_TEX, new ResourceLocation(ModernUI.ID, "shaders/rect_fill_tex.frag"));
+        }
+
+        @Override
+        public void link(ResourceManager manager) throws IOException {
+            super.link(manager);
+            GL43.glProgramUniform1i(mId, 0, 0); // always use GL_TEXTURE0
+        }
     }
 
     public static class Feathered extends RectProgram {

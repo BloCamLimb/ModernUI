@@ -82,9 +82,13 @@ public class Canvas {
     /**
      * Paint colors, unsigned int
      */
+    @Deprecated
     private int r = 255;
+    @Deprecated
     private int g = 255;
+    @Deprecated
     private int b = 255;
+    @Deprecated
     private int a = 255;
 
 
@@ -324,7 +328,7 @@ public class Canvas {
      */
     public void drawArc(float centerX, float centerY, float radius, float startAngle,
                         float sweepAngle, @Nonnull Paint paint) {
-        if (sweepAngle == 0)
+        if (sweepAngle == 0 || radius <= 0)
             return;
         if (sweepAngle < 0)
             sweepAngle = (sweepAngle % 360) + 360;
@@ -332,12 +336,11 @@ public class Canvas {
             case FILL:
                 fillArc(centerX, centerY, radius, startAngle, sweepAngle, paint);
                 return;
+            case FILL_AND_STROKE:
+                fillArc(centerX, centerY, radius, startAngle, sweepAngle, paint);
             case STROKE:
                 strokeArc(centerX, centerY, radius, startAngle, sweepAngle, paint);
-                return;
         }
-        fillArc(centerX, centerY, radius, startAngle, sweepAngle, paint);
-        strokeArc(centerX, centerY, radius, startAngle, sweepAngle, paint);
     }
 
     protected void fillArc(float cx, float cy, float radius, float startAngle,
@@ -395,6 +398,8 @@ public class Canvas {
      * @param paint  The paint used to draw the rect
      */
     public void drawRect(float left, float top, float right, float bottom, @Nonnull Paint paint) {
+        if (left >= right || bottom <= top)
+            return;
         switch (paint.getStyle()) {
             case FILL:
                 fillRect(left, top, right, bottom, paint);
@@ -428,6 +433,7 @@ public class Canvas {
      * @param bottom    rect bottom
      * @param thickness thickness, must be integral multiple of 1.0
      */
+    @Deprecated
     public void drawRectOutline(float left, float top, float right, float bottom, float thickness) {
         RenderSystem.disableTexture();
 
@@ -497,6 +503,7 @@ public class Canvas {
      * @param bottom rect bottom
      * @param bevel  bevel length
      */
+    @Deprecated
     public void drawOctagonRectFrame(float left, float top, float right, float bottom, float bevel) {
         RenderSystem.disableTexture();
 
@@ -533,6 +540,7 @@ public class Canvas {
      * @param right  rect right
      * @param bottom rect bottom
      */
+    @Deprecated
     public void drawRectLines(float left, float top, float right, float bottom) {
         RenderSystem.disableTexture();
 
@@ -566,12 +574,11 @@ public class Canvas {
             case FILL:
                 fillCircle(centerX, centerY, radius, paint);
                 return;
+            case FILL_AND_STROKE:
+                fillCircle(centerX, centerY, radius, paint);
             case STROKE:
                 strokeCircle(centerX, centerY, radius, paint);
-                return;
         }
-        fillCircle(centerX, centerY, radius, paint);
-        strokeCircle(centerX, centerY, radius, paint);
     }
 
     protected void fillCircle(float cx, float cy, float r, @Nonnull Paint paint) {
@@ -634,12 +641,11 @@ public class Canvas {
             case FILL:
                 fillRoundRect(left, top, right, bottom, radius, paint);
                 return;
+            case FILL_AND_STROKE:
+                fillRoundRect(left, top, right, bottom, radius, paint);
             case STROKE:
                 strokeRoundRect(left, top, right, bottom, radius, paint);
-                return;
         }
-        fillRoundRect(left, top, right, bottom, radius, paint);
-        strokeRoundRect(left, top, right, bottom, radius, paint);
     }
 
     protected void fillRoundRect(float left, float top, float right, float bottom,
@@ -714,7 +720,6 @@ public class Canvas {
         program.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
         RenderSystem.activeTexture(GL43.GL_TEXTURE0);
         icon.bindTexture();
-        GL43.glUniform1i(2, 0);
 
         final BufferBuilder builder = Tesselator.getInstance().getBuilder();
 

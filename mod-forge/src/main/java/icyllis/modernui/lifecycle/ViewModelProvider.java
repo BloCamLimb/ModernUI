@@ -38,7 +38,7 @@ public class ViewModelProvider {
      * @param owner a {@code ViewModelStoreOwner} whose {@link ViewModelStore} will be used to
      *              retain {@code ViewModels}
      */
-    public ViewModelProvider(@Nonnull IViewModelStoreOwner owner) {
+    public ViewModelProvider(@Nonnull ViewModelStoreOwner owner) {
         this(owner.getViewModelStore(), NewInstanceFactory.getInstance());
     }
 
@@ -51,7 +51,7 @@ public class ViewModelProvider {
      * @param factory a {@code Factory} which will be used to instantiate
      *                new {@code ViewModels}
      */
-    public ViewModelProvider(@Nonnull IViewModelStoreOwner owner, @Nonnull IFactory factory) {
+    public ViewModelProvider(@Nonnull ViewModelStoreOwner owner, @Nonnull IFactory factory) {
         this(owner.getViewModelStore(), factory);
     }
 

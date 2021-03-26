@@ -24,6 +24,7 @@ import icyllis.modernui.view.UIManager;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.Registry;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.food.FoodData;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -106,10 +107,11 @@ public final class NetMessages {
                 ModernUI.LOGGER.warn(UIManager.MARKER, "Trying to open invalid screen for menu id: {}", menuId);
             } else {
                 final AbstractContainerMenu menu = type.create(containerId, player.inventory, buffer);
+                ResourceLocation key = Registry.MENU.getKey(type);
                 if (menu == null) {
-                    ModernUI.LOGGER.error(UIManager.MARKER, "No container menu created from menu type: {}", Registry.MENU.getKey(type));
-                } else {
-                    success = UIManager.getInstance().openGUI(player, menu);
+                    ModernUI.LOGGER.error(UIManager.MARKER, "No container menu created from menu type: {}", key);
+                } else if (key != null) {
+                    success = UIManager.getInstance().openGUI(player, menu, key.getNamespace());
                 }
             }
             if (!success) player.closeContainer(); // close server container

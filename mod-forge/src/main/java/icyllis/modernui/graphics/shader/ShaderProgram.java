@@ -45,7 +45,7 @@ public class ShaderProgram {
     @Nonnull
     private final ResourceLocation mFrag;
 
-    final int mId;
+    protected final int mId;
 
     @RenderThread
     public ShaderProgram(@Nonnull ResourceLocation vert, @Nonnull ResourceLocation frag) {
@@ -55,23 +55,13 @@ public class ShaderProgram {
         PROGRAMS.add(this);
     }
 
-    @RenderThread
-    public ShaderProgram(@Nonnull String namespace, @Nonnull String vert, @Nonnull String fsRl) {
-        this(new ResourceLocation(namespace, String.format("shaders/%s.vert", vert)),
-                new ResourceLocation(namespace, String.format("shaders/%s.frag", fsRl)));
-    }
-
-    public void link(ResourceManager manager) {
+    public void link(ResourceManager manager) throws IOException {
         detach();
-        try {
-            mVertex = Shader.getOrCreate(manager, mVert, Shader.Type.VERTEX);
-            mFragment = Shader.getOrCreate(manager, mFrag, Shader.Type.FRAGMENT);
-            mVertex.attach(this);
-            mFragment.attach(this);
-            GL43.glLinkProgram(mId);
-        } catch (IOException e) {
-            ModernUI.LOGGER.error(RenderCore.MARKER, "An error occurred while compiling shader: {}", this, e);
-        }
+        mVertex = Shader.getOrCreate(manager, mVert, Shader.Type.VERTEX);
+        mFragment = Shader.getOrCreate(manager, mFrag, Shader.Type.FRAGMENT);
+        mVertex.attach(this);
+        mFragment.attach(this);
+        GL43.glLinkProgram(mId);
     }
 
     public void detach() {
@@ -100,7 +90,13 @@ public class ShaderProgram {
     }
 
     public static void linkAll(ResourceManager manager) {
-        PROGRAMS.forEach(program -> program.link(manager));
+        PROGRAMS.forEach(program -> {
+            try {
+                program.link(manager);
+            } catch (IOException e) {
+                ModernUI.LOGGER.error(RenderCore.MARKER, "An error occurred while linking program: {}", program, e);
+            }
+        });
     }
 
     public static void detachAll() {

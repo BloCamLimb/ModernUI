@@ -24,6 +24,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.eventbus.api.Cancelable;
 import net.minecraftforge.eventbus.api.Event;
+import net.minecraftforge.fml.event.lifecycle.IModBusEvent;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -31,26 +32,26 @@ import javax.annotation.Nullable;
 /**
  * This event occurred when the server requires the client to open a user
  * interface to display a container menu in a world, this event is cancelled
- * after setting the application UI. The menu is created on the client by registered
- * {@link net.minecraftforge.fml.network.IContainerFactory factory}, which
- * contains custom network data from server, you can set the application UI
- * through the data and the menu type.  For example:
+ * after setting the application screen. The menu is created on the client by
+ * registering {@link net.minecraftforge.fml.network.IContainerFactory factory},
+ * which contains custom network data from server, you can set the application
+ * screen through the data and the menu type.  For example:
  *
  * <pre>
  * &#64;SubscribeEvent
- * static void onMenuOpen(OpenMenuEvent event) {
+ * static void onOpenMenu(OpenMenuEvent event) {
  *     if (event.getMenu().getType() == Registration.TEST_MENU) {
- *         event.setApplicationUI(new TestUI());
+ *         event.setScreen(new TestUI());
  *     }
  * }
  * </pre>
- *
- * If no application UI set along with this event, the server container menu
- * will be closed.
+ * <p>
+ * This event will be only posted to your own mod event bus. If no application
+ * screen set along with this event, the server container menu will be closed.
  */
 @Cancelable
 @OnlyIn(Dist.CLIENT)
-public class OpenMenuEvent extends Event {
+public class OpenMenuEvent extends Event implements IModBusEvent {
 
     @Nonnull
     private final AbstractContainerMenu menu;
@@ -78,13 +79,13 @@ public class OpenMenuEvent extends Event {
      *
      * @param screen the application user interface
      */
-    public void setApplicationUI(@Nonnull Screen screen) {
+    public void setScreen(@Nonnull Screen screen) {
         this.mScreen = screen;
         setCanceled(true);
     }
 
     @Nullable
-    public Screen getApplicationUI() {
+    public Screen getScreen() {
         return mScreen;
     }
 }

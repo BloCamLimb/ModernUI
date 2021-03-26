@@ -71,7 +71,19 @@ final class EventHandler {
     }*/
 
     @OnlyIn(Dist.CLIENT)
+    @Mod.EventBusSubscriber(modid = ModernUI.ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
     static class ModClient {
+
+        @SubscribeEvent
+        static void onOpenMenu(@Nonnull OpenMenuEvent event) {
+            if (event.getMenu().getType() == MuiRegistries.TEST_MENU) {
+                event.setScreen(new TestUI());
+            }
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    static class ModClientExp {
 
         @SubscribeEvent
         static void onRegistryModel(@Nonnull ModelRegistryEvent event) {
@@ -140,13 +152,6 @@ final class EventHandler {
         static void onGuiInit(@Nonnull GuiScreenEvent.InitGuiEvent event) {
             if (event.getGui() instanceof VideoSettingsScreen) {
                 NEW_GUI_SCALE.setMaxValue(MuiHooks.C.calcGuiScales() & 0xf);
-            }
-        }
-
-        @SubscribeEvent
-        static void onMenuOpen(@Nonnull OpenMenuEvent event) {
-            if (event.getMenu().getType() == MuiRegistries.TEST_MENU) {
-                event.setApplicationUI(new TestUI());
             }
         }
 

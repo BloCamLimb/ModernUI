@@ -23,7 +23,7 @@ import javax.annotation.Nonnull;
 /**
  * Defines an object that holds a lifecycle
  */
-public interface ILifecycleOwner {
+public interface LifecycleOwner {
 
     /**
      * Returns the {@link Lifecycle} of the provider.
