@@ -18,6 +18,7 @@
 
 package icyllis.modernui.test;
 
+import com.google.common.base.Strings;
 import com.ibm.icu.text.BreakIterator;
 import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
@@ -27,11 +28,18 @@ import icyllis.modernui.core.forge.MuiHooks;
 import icyllis.modernui.text.GraphemeBreak;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.lwjgl.glfw.GLFW;
+import org.lwjgl.glfw.GLFWVidMode;
+import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GL43;
+import org.lwjgl.system.MemoryStack;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.nio.IntBuffer;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -44,6 +52,11 @@ public class TestMain {
 
     private static final BufferedImage IMAGE = new BufferedImage(1024, 1024, BufferedImage.TYPE_INT_ARGB);
     private static final Graphics2D GRAPHICS = IMAGE.createGraphics();
+
+    public static final boolean CREATE_WINDOW = true;
+
+    private static double nextTime = 0;
+    private static boolean needRedraw = true;
 
     /*
         Heading font size (In Minecraft: GUI scale 2)
@@ -84,7 +97,7 @@ public class TestMain {
     }
 
     public static void main(String[] args) {
-        String s = "\u0641\u0647\u0648\u064a\u062a\u062d\u062f\u0651\u062b\u0020\u0628\u0644\u063a\u0629\u0020";
+        /*String s = "\u0641\u0647\u0648\u064a\u062a\u062d\u062f\u0651\u062b\u0020\u0628\u0644\u063a\u0629\u0020";
         Font font = ALL_FONTS.stream().filter(f -> f.canDisplayUpTo("\u0641\u0647\u0648") == -1).findFirst().get();
         GlyphVector vector = font.layoutGlyphVector(GRAPHICS.getFontRenderContext(),
                 s.toCharArray(), 0, s.length(), Font.LAYOUT_RIGHT_TO_LEFT);
@@ -94,7 +107,47 @@ public class TestMain {
         }
         breakWords(s);
         breakGraphemes(s);
-        ModernUI.LOGGER.info(Integer.toHexString(MuiHooks.C.calcGuiScales(3840, 2160)));
+        ModernUI.LOGGER.info(Integer.toHexString(MuiHooks.C.calcGuiScales(3840, 2160)));*/
+
+        /*System.setProperty("org.lwjgl.librarypath", nativesDir);*/
+
+        if (!CREATE_WINDOW)
+            return;
+
+        GLFW.glfwInit();
+
+        GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 2);
+        GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 0);
+
+        long window = GLFW.glfwCreateWindow(1280, 720, "Modern UI Layout Editor", 0, 0);
+
+        GLFW.glfwMakeContextCurrent(window);
+        GLFW.glfwSwapInterval(1);
+        GL.createCapabilities();
+
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            IntBuffer pWidth = stack.mallocInt(1);
+            IntBuffer pHeight = stack.mallocInt(1);
+            IntBuffer monPosLeft = stack.mallocInt(1);
+            IntBuffer monPosTop = stack.mallocInt(1);
+            GLFW.glfwGetWindowSize(window, pWidth, pHeight);
+            GLFWVidMode vidMode = GLFW.glfwGetVideoMode(GLFW.glfwGetPrimaryMonitor());
+            GLFW.glfwGetMonitorPos(GLFW.glfwGetPrimaryMonitor(), monPosLeft, monPosTop);
+            GLFW.glfwSetWindowPos(window, (vidMode.width() - pWidth.get(0)) / 2 + monPosLeft.get(0),
+                    (vidMode.height() - pHeight.get(0)) / 2 + monPosTop.get(0));
+        }
+        nextTime = GLFW.glfwGetTime();
+
+        while (!GLFW.glfwWindowShouldClose(window)) {
+            if (needRedraw) {
+                GLFW.glfwSwapBuffers(window);
+                needRedraw = false;
+            }
+            GLFW.glfwWaitEventsTimeout(1.0);
+        }
+
+        GLFW.glfwDestroyWindow(window);
+        GLFW.glfwTerminate();
     }
 
     public static void breakGraphemes(String s) {

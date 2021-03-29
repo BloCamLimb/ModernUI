@@ -94,7 +94,7 @@ public class TestLinearLayout extends LinearLayout {
         addView(new DView(Interpolator.DECELERATE, 0), new LinearLayout.LayoutParams(120, 40));
 
         //addView(new DView(ITimeInterpolator.VISCOUS_FLUID, 30), new LinearLayout.LayoutParams(60, 20));
-        cAnim = new Animation(200).applyTo(new Applier(10, 0, () -> c, v -> c = v).setInterpolator(Interpolator.DECELERATE));
+        cAnim = new Animation(200).applyTo(new Applier(20, 0, () -> c, v -> c = v).setInterpolator(Interpolator.DECELERATE));
 
         circleAnimation1 = new Animation(600)
                 .applyTo(
@@ -169,19 +169,19 @@ public class TestLinearLayout extends LinearLayout {
 
         //canvas.scale(f, f, getLeft() + 10, getTop() + 10);
         RenderSystem.translatef(0, 0, 0.001f);
-        RenderSystem.colorMask(false, false, false, false);
+        RenderSystem.colorMask(false, false, false, true);
         //canvas.setColor(0, 0, 0, 128);
 
         paint.setStyle(Paint.Style.FILL);
         paint.setFeatherRadius(0);
-        canvas.drawRect(c, c, 20 - c, 20 - c, paint);
+        canvas.drawRoundRect(c, c, 40 - c, 40 - c, 3, paint);
 
         RenderSystem.translatef(0, 0, -0.001f);
         RenderSystem.colorMask(true, true, true, true);
 
         paint.setFeatherRadius(1);
         paint.setRGBA(80, 210, 240, 128);
-        canvas.drawRoundRect(0, 0, 20, 20, 3, paint);
+        canvas.drawRoundRect(0, 0, 40, 40, 6, paint);
 
         canvas.restore();
         RenderSystem.depthMask(false);

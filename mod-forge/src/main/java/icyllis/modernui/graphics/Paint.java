@@ -117,40 +117,89 @@ public class Paint {
     }
 
     /**
-     * Set current paint alpha in integer form
+     * Set current paint alpha value in integer form.
      *
-     * @param a alpha [0,255]
+     * @param a the new alpha value ranged from 0 to 255
      */
     public void setAlpha(int a) {
         mColor = (mColor & 0xFFFFFF) | (a << 24);
     }
 
+    /**
+     * Return the paint's color in ARGB. Note that the color is a 32bit value
+     * containing alpha as well as r,g,b. This 32bit value is not premultiplied,
+     * meaning that its alpha can be any value, regardless of the values of
+     * r,g,b.
+     *
+     * @return the paint's color (and alpha).
+     */
     public int getColor() {
         return mColor;
     }
 
+    /**
+     * Return the paint's style, used for controlling how primitives' geometries
+     * are interpreted (except images, which always assumes Fill).
+     *
+     * @return the paint's style setting (Fill, Stroke, StrokeAndFill)
+     */
     @Nonnull
     public Style getStyle() {
         return Style.values()[mFlags & STYLE_MASK];
     }
 
+    /**
+     * Set the paint's style, used for controlling how primitives' geometries
+     * are interpreted (except images, which always assumes Fill).
+     *
+     * @param style the new style to set in the paint
+     */
     public void setStyle(@Nonnull Style style) {
         mFlags = (mFlags & ~STYLE_MASK) | style.ordinal();
     }
 
+    /**
+     * Return the width for stroking.
+     *
+     * @return the paint's stroke width, used whenever the paint's style is
+     * Stroke or StrokeAndFill.
+     */
     public float getStrokeWidth() {
         return mStrokeWidth;
     }
 
-    public void setStrokeWidth(float strokeWidth) {
-        mStrokeWidth = Math.max(0, strokeWidth);
+    /**
+     * Set the width for stroking.
+     *
+     * @param width set the paint's stroke width, used whenever the paint's
+     *              style is Stroke or StrokeAndFill.
+     */
+    public void setStrokeWidth(float width) {
+        mStrokeWidth = Math.max(0, width);
     }
 
+    /**
+     * Get current feather radius.
+     * <p>
+     * Feather radius is used to smooth the edges of geometry, and the actual
+     * effect varies in draw methods. The default value is 1.0 px.
+     *
+     * @return feather radius
+     * @see #setFeatherRadius(float)
+     */
     public float getFeatherRadius() {
         return mFeatherRadius;
     }
 
-    public void setFeatherRadius(float featherRadius) {
-        mFeatherRadius = Math.max(0, featherRadius);
+    /**
+     * Set the feather radius in pixels for this paint.
+     * <p>
+     * Feather radius is used to smooth the edges of geometry, and the actual
+     * effect varies in draw methods. The default value is 1.0 px.
+     *
+     * @param radius the new feather radius to set
+     */
+    public void setFeatherRadius(float radius) {
+        mFeatherRadius = Math.max(0, radius);
     }
 }
