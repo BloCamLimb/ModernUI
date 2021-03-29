@@ -39,6 +39,10 @@ dependencies {
     modCompileOnly "mezz.jei:jei-${minecraft_version}:${jei_version}:api"
     modRuntime "mezz.jei:jei-${minecraft_version}:${jei_version}"
 
+    runtimeOnly ':lwjgl-3.2.2-natives-windows'
+    runtimeOnly ':lwjgl-glfw-3.2.2-natives-windows'
+    runtimeOnly ':lwjgl-opengl-3.2.2-natives-windows'
+
     compile "com.github.ben-manes.caffeine:caffeine:${caffeine_version}"
     compile "com.vladsch.flexmark:flexmark:${flexmark_version}"
 

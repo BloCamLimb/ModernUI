@@ -19,10 +19,10 @@ Description and releases for Minecraft Mod are available on [CurseForge](https:/
 #### Environment requirements
 - Windows, Linux, Classic macOS or Solaris
 - JDK 11.0.8 or above (Compile against Java 8 for backward compatibility)
-- OpenGL 4.3 core or above
-- Forge 1.16.5-36.0.1
+- OpenGL 4.3 (Modern UI is fully GPU-accelerated rendering)
+- (Optionally in Minecraft) Forge 1.16.5-36.1.0
 #### Version information
-[![Maven](https://img.shields.io/badge/dynamic/xml?color=green&label=maven%20beta&query=%2Fmetadata%2Fversioning%2Flatest&url=https%3A%2F%2Fmaven.izzel.io%2Freleases%2Ficyllis%2Fmodernui%2FModernUI-Forge%2Fmaven-metadata.xml)]()
+[![Maven](https://img.shields.io/badge/dynamic/xml?color=green&label=Maven%20for%20Minecraft&query=%2Fmetadata%2Fversioning%2Flatest&url=https%3A%2F%2Fmaven.izzel.io%2Freleases%2Ficyllis%2Fmodernui%2FModernUI-Forge%2Fmaven-metadata.xml)]()
 #### Gradle configuration
 ```
 repositories {
