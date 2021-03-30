@@ -22,6 +22,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import icyllis.modernui.view.UIManager;
 import icyllis.modernui.widget.ScrollController;
+import net.minecraft.client.Minecraft;
 import net.minecraftforge.client.gui.ScrollPanel;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -56,6 +57,9 @@ public abstract class MixinScrollPanel implements ScrollController.IListener {
     @Shadow(remap = false)
     protected abstract int getBarHeight();
 
+    @Shadow
+    @Final
+    private Minecraft client;
     private final ScrollController mScrollController = new ScrollController(this);
 
     /**
@@ -80,7 +84,7 @@ public abstract class MixinScrollPanel implements ScrollController.IListener {
     @Inject(method = "render", at = @At(value = "INVOKE", shift = At.Shift.BEFORE, target = "Lnet/minecraftforge/client/gui/ScrollPanel;drawPanel(Lcom/mojang/blaze3d/vertex/PoseStack;IILcom/mojang/blaze3d/vertex/Tesselator;II)V"), remap = false)
     private void preDrawPanel(PoseStack matrix, int mouseX, int mouseY, float partialTicks, CallbackInfo ci) {
         RenderSystem.pushMatrix();
-        RenderSystem.translatef(0, (int) scrollDistance - scrollDistance, 0);
+        RenderSystem.translated(0, ((int) (((int) scrollDistance - scrollDistance) * client.getWindow().getGuiScale())) / client.getWindow().getGuiScale(), 0);
     }
 
     @Inject(method = "render", at = @At(value = "INVOKE", shift = At.Shift.AFTER, target = "Lnet/minecraftforge/client/gui/ScrollPanel;drawPanel(Lcom/mojang/blaze3d/vertex/PoseStack;IILcom/mojang/blaze3d/vertex/Tesselator;II)V"), remap = false)
