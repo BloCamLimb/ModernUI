@@ -22,14 +22,18 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import icyllis.modernui.view.UIManager;
 import icyllis.modernui.widget.ScrollController;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.AbstractSelectionList;
 import net.minecraft.util.Mth;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import javax.annotation.Nullable;
 
 @Mixin(AbstractSelectionList.class)
 public abstract class MixinSelectionList implements ScrollController.IListener {
@@ -43,7 +47,16 @@ public abstract class MixinSelectionList implements ScrollController.IListener {
     @Shadow
     private double scrollAmount;
 
-    private final ScrollController mScrollController = new ScrollController(this);
+    @Shadow
+    @Final
+    protected int itemHeight;
+
+    @Shadow
+    @Final
+    public Minecraft minecraft;
+
+    @Nullable
+    private ScrollController mScrollController;
 
     /**
      * @author BloCamLimb
@@ -52,8 +65,12 @@ public abstract class MixinSelectionList implements ScrollController.IListener {
     @Overwrite
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollY) {
         if (scrollY != 0) {
-            mScrollController.setMaxScroll(getMaxScroll());
-            mScrollController.scrollBy(Math.round(-scrollY * 40));
+            if (mScrollController != null) {
+                mScrollController.setMaxScroll(getMaxScroll());
+                mScrollController.scrollBy(Math.round(-scrollY * 40));
+            } else {
+                setScrollAmount(getScrollAmount() - scrollY * itemHeight / 2.0D);
+            }
             return true;
         }
         return false;
@@ -61,13 +78,15 @@ public abstract class MixinSelectionList implements ScrollController.IListener {
 
     @Inject(method = "render", at = @At("HEAD"))
     private void preRender(PoseStack matrix, int mouseX, int mouseY, float partialTicks, CallbackInfo ci) {
+        if (mScrollController == null)
+            mScrollController = new ScrollController(this);
         mScrollController.update(UIManager.getInstance().getDrawingTime());
     }
 
     @Inject(method = "render", at = @At(value = "INVOKE", shift = At.Shift.BEFORE, target = "Lnet/minecraft/client/gui/components/AbstractSelectionList;renderHeader(Lcom/mojang/blaze3d/vertex/PoseStack;IILcom/mojang/blaze3d/vertex/Tesselator;)V"))
     private void preRenderHeader(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks, CallbackInfo ci) {
         RenderSystem.pushMatrix();
-        RenderSystem.translated(0, (int) getScrollAmount() - getScrollAmount(), 0);
+        RenderSystem.translated(0, ((int) (((int) getScrollAmount() - getScrollAmount()) * minecraft.getWindow().getGuiScale())) / minecraft.getWindow().getGuiScale(), 0);
     }
 
     @Inject(method = "render", at = @At(value = "INVOKE", shift = At.Shift.AFTER, target = "Lnet/minecraft/client/gui/components/AbstractSelectionList;renderHeader(Lcom/mojang/blaze3d/vertex/PoseStack;IILcom/mojang/blaze3d/vertex/Tesselator;)V"))
@@ -78,7 +97,7 @@ public abstract class MixinSelectionList implements ScrollController.IListener {
     @Inject(method = "render", at = @At(value = "INVOKE", shift = At.Shift.BEFORE, target = "Lnet/minecraft/client/gui/components/AbstractSelectionList;renderList(Lcom/mojang/blaze3d/vertex/PoseStack;IIIIF)V"))
     private void preRenderList(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks, CallbackInfo ci) {
         RenderSystem.pushMatrix();
-        RenderSystem.translated(0, (int) getScrollAmount() - getScrollAmount(), 0);
+        RenderSystem.translated(0, ((int) (((int) getScrollAmount() - getScrollAmount()) * minecraft.getWindow().getGuiScale())) / minecraft.getWindow().getGuiScale(), 0);
     }
 
     @Inject(method = "render", at = @At(value = "INVOKE", shift = At.Shift.AFTER, target = "Lnet/minecraft/client/gui/components/AbstractSelectionList;renderList(Lcom/mojang/blaze3d/vertex/PoseStack;IIIIF)V"))
@@ -92,8 +111,11 @@ public abstract class MixinSelectionList implements ScrollController.IListener {
      */
     @Overwrite
     public void setScrollAmount(double target) {
-        mScrollController.scrollTo((float) target);
-        mScrollController.abortAnimation();
+        if (mScrollController != null) {
+            mScrollController.scrollTo((float) target);
+            mScrollController.abortAnimation();
+        } else
+            scrollAmount = Mth.clamp(target, 0.0D, getMaxScroll());
     }
 
     @Override
