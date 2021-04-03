@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.font;
+package icyllis.modernui.text;
 
 import com.google.common.base.Preconditions;
 import com.ibm.icu.impl.UCharacterProperty;
@@ -24,8 +24,9 @@ import com.ibm.icu.lang.UCharacter;
 import com.ibm.icu.lang.UCharacterCategory;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.forge.LocalStorage;
-import icyllis.modernui.text.Emoji;
+import icyllis.modernui.graphics.font.GlyphManager;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -50,15 +51,19 @@ public class FontCollection {
     @Nonnull
     public static final FontCollection MONOSPACED;
 
+    @Deprecated
     @Nullable
-    static final Font sBuiltInFont;
+    public static final Font sBuiltInFont;
+    @ApiStatus.Internal
     @Nonnull
-    static final Font sSansSerifFont;
+    public static final Font sSansSerifFont;
 
-    static boolean sJavaTooOld;
+    @Deprecated
+    public static boolean sJavaTooOld;
 
     private static final List<String> sFontFamilyNames;
-    static final List<Font> sAllFontFamilies = new ArrayList<>();
+    @ApiStatus.Internal
+    public static final List<Font> sAllFontFamilies = new ArrayList<>();
     static final Map<String, FontCollection> sSystemFontMap = new HashMap<>();
 
     static {
@@ -173,6 +178,8 @@ public class FontCollection {
                 || isVariationSelector(c);
     }
 
+    public static final int REPLACEMENT_CHARACTER = 0xFFFD;
+
     // Characters where we want to continue using existing font run instead of
     // recomputing the best match in the fallback list.
     private static final int[] sStickyWhitelist = {
@@ -201,6 +208,7 @@ public class FontCollection {
         return (c >= 0xE0100 && c <= 0xE01FF) || (c >= 0xFE00 && c <= 0xFE0F);
     }
 
+    // an array of font families
     @Nonnull
     private final Font[] mFonts;
 
@@ -233,11 +241,11 @@ public class FontCollection {
                 nextCh = Character.toCodePoint(_c1, _c2);
                 ++index;
             } else if (Character.isSurrogate(_c1))
-                nextCh = 0xFFFD;
+                nextCh = REPLACEMENT_CHARACTER;
             else
                 nextCh = _c1;
         } else if (Character.isSurrogate(_c1))
-            nextCh = 0xFFFD;
+            nextCh = REPLACEMENT_CHARACTER;
         else
             nextCh = _c1;
         ++index;
@@ -256,11 +264,11 @@ public class FontCollection {
                         nextCh = Character.toCodePoint(_c1, _c2);
                         ++index;
                     } else if (Character.isSurrogate(_c1))
-                        nextCh = 0xFFFD;
+                        nextCh = REPLACEMENT_CHARACTER;
                     else
                         nextCh = _c1;
                 } else if (Character.isSurrogate(_c1))
-                    nextCh = 0xFFFD;
+                    nextCh = REPLACEMENT_CHARACTER;
                 else
                     nextCh = _c1;
                 ++index;

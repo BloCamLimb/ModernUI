@@ -41,6 +41,8 @@ dependencies {
 
     runtimeOnly ':lwjgl-3.2.2-natives-windows'
     runtimeOnly ':lwjgl-glfw-3.2.2-natives-windows'
+    runtimeOnly ':lwjgl-jemalloc-3.2.2-natives-windows'
+    runtimeOnly ':lwjgl-openal-3.2.2-natives-windows'
     runtimeOnly ':lwjgl-opengl-3.2.2-natives-windows'
 
     compile "com.github.ben-manes.caffeine:caffeine:${caffeine_version}"

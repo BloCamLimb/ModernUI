@@ -19,6 +19,7 @@
 package icyllis.modernui.graphics.font;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.text.FontCollection;
 import org.intellij.lang.annotations.MagicConstant;
 
 import javax.annotation.Nonnull;

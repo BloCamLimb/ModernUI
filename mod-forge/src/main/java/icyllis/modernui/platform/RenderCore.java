@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics;
+package icyllis.modernui.platform;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.ModernUI;
@@ -31,6 +31,7 @@ import icyllis.modernui.graphics.textmc.TextLayoutProcessor;
 import net.minecraft.server.packs.resources.ResourceManager;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.lwjgl.Version;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.GLCapabilities;
@@ -45,9 +46,14 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 
+import static icyllis.modernui.ModernUI.LOGGER;
+import static org.lwjgl.glfw.GLFW.glfwInit;
+import static org.lwjgl.glfw.GLFW.glfwSetErrorCallback;
+import static org.lwjgl.system.MemoryUtil.NULL;
+
 public final class RenderCore {
 
-    public static final Marker MARKER = MarkerManager.getMarker("Render");
+    public static final Marker MARKER = MarkerManager.getMarker("Graphics");
 
     public static int glCapabilitiesErrors;
 
@@ -57,6 +63,19 @@ public final class RenderCore {
         ShaderProgram.detachAll();
         Shader.deleteAll();
         ShaderProgram.linkAll(manager);
+    }
+
+    public static void initBackend() {
+        LOGGER.info(MARKER, "Backend Library: LWJGL {}", Version.getVersion());
+        glfwSetErrorCallback(RenderCore::callbackError);
+        if (!glfwInit()) {
+            throw new IllegalStateException("Failed to initialize GLFW");
+        }
+    }
+
+    private static void callbackError(int errorCode, long descPtr) {
+        String desc = descPtr == NULL ? "" : MemoryUtil.memUTF8(descPtr);
+        LOGGER.error(MARKER, "GLFW Error: 0x{}, {}", Integer.toHexString(errorCode), desc);
     }
 
     /**
@@ -69,38 +88,38 @@ public final class RenderCore {
         GLCapabilities capabilities = GL.getCapabilities();
         int i = 0;
         if (!capabilities.GL_ARB_vertex_buffer_object) {
-            ModernUI.LOGGER.fatal(MARKER, "Vertex buffer object is not supported");
+            LOGGER.fatal(MARKER, "Vertex buffer object is not supported");
             i++;
         }
         if (!capabilities.GL_ARB_explicit_attrib_location) {
-            ModernUI.LOGGER.fatal(MARKER, "Explicit attrib location is not supported");
+            LOGGER.fatal(MARKER, "Explicit attrib location is not supported");
             i++;
         }
         if (!capabilities.GL_ARB_vertex_array_object) {
-            ModernUI.LOGGER.fatal(MARKER, "Vertex array object is not supported");
+            LOGGER.fatal(MARKER, "Vertex array object is not supported");
             i++;
         }
         if (!capabilities.GL_ARB_framebuffer_object) {
-            ModernUI.LOGGER.fatal(MARKER, "Framebuffer object is not supported");
+            LOGGER.fatal(MARKER, "Framebuffer object is not supported");
             i++;
         }
         if (!capabilities.GL_ARB_uniform_buffer_object) {
-            ModernUI.LOGGER.fatal(MARKER, "Uniform buffer object is not supported");
+            LOGGER.fatal(MARKER, "Uniform buffer object is not supported");
             i++;
         }
         if (!capabilities.GL_ARB_separate_shader_objects) {
-            ModernUI.LOGGER.fatal(MARKER, "Separate shader objects is not supported");
+            LOGGER.fatal(MARKER, "Separate shader objects is not supported");
             i++;
         }
         if (!capabilities.GL_ARB_explicit_uniform_location) {
-            ModernUI.LOGGER.fatal(MARKER, "Explicit uniform location is not supported");
+            LOGGER.fatal(MARKER, "Explicit uniform location is not supported");
             i++;
         }
 
         int v;
         if ((v = RenderSystem.maxSupportedTextureSize()) < GlyphManager.TEXTURE_SIZE ||
                 (GlyphManager.TEXTURE_SIZE <= 1024 && (v = GL43.glGetInteger(GL43.GL_MAX_TEXTURE_SIZE)) < GlyphManager.TEXTURE_SIZE)) {
-            ModernUI.LOGGER.fatal(MARKER, "Max texture size is too small, supplies {} but requires {}", v, GlyphManager.TEXTURE_SIZE);
+            LOGGER.fatal(MARKER, "Max texture size is too small, supplies {} but requires {}", v, GlyphManager.TEXTURE_SIZE);
             i++;
         }
 
@@ -123,7 +142,7 @@ public final class RenderCore {
         TextLayoutProcessor.getInstance().initRenderer();
 
         renderEngineStarted = true;
-        ModernUI.LOGGER.debug(MARKER, "Render engine started");
+        LOGGER.debug(MARKER, "Render engine started");
     }
 
     public static boolean isEngineStarted() {
