@@ -25,6 +25,8 @@ import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.ast.Node;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.forge.MuiHooks;
+import icyllis.modernui.platform.RenderCore;
+import icyllis.modernui.platform.Window;
 import icyllis.modernui.text.GraphemeBreak;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -114,28 +116,9 @@ public class TestMain {
         if (!CREATE_WINDOW)
             return;
 
-        GLFW.glfwInit();
+        RenderCore.initBackend();
 
-        GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 2);
-        GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 0);
-
-        long window = GLFW.glfwCreateWindow(1280, 720, "Modern UI Layout Editor", 0, 0);
-
-        GLFW.glfwMakeContextCurrent(window);
-        GLFW.glfwSwapInterval(1);
-        GL.createCapabilities();
-
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            IntBuffer pWidth = stack.mallocInt(1);
-            IntBuffer pHeight = stack.mallocInt(1);
-            IntBuffer monPosLeft = stack.mallocInt(1);
-            IntBuffer monPosTop = stack.mallocInt(1);
-            GLFW.glfwGetWindowSize(window, pWidth, pHeight);
-            GLFWVidMode vidMode = GLFW.glfwGetVideoMode(GLFW.glfwGetPrimaryMonitor());
-            GLFW.glfwGetMonitorPos(GLFW.glfwGetPrimaryMonitor(), monPosLeft, monPosTop);
-            GLFW.glfwSetWindowPos(window, (vidMode.width() - pWidth.get(0)) / 2 + monPosLeft.get(0),
-                    (vidMode.height() - pHeight.get(0)) / 2 + monPosTop.get(0));
-        }
+        long window = new Window("Modern UI Layout Editor").getHandle();
         nextTime = GLFW.glfwGetTime();
 
         while (!GLFW.glfwWindowShouldClose(window)) {

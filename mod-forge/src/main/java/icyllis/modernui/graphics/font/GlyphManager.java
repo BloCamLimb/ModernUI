@@ -24,6 +24,7 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.textmc.VanillaTextKey;
 import icyllis.modernui.graphics.textmc.pipeline.TextRenderNode;
 import icyllis.modernui.graphics.textmc.pipeline.TextRenderType;
+import icyllis.modernui.text.FontCollection;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;

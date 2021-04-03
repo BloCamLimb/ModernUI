@@ -18,6 +18,8 @@
 
 package icyllis.modernui.graphics.font;
 
+import icyllis.modernui.text.FontCollection;
+
 import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.font.GlyphVector;

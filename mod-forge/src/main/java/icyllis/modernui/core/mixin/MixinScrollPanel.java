@@ -57,9 +57,10 @@ public abstract class MixinScrollPanel implements ScrollController.IListener {
     @Shadow(remap = false)
     protected abstract int getBarHeight();
 
-    @Shadow
+    @Shadow(remap = false)
     @Final
     private Minecraft client;
+
     private final ScrollController mScrollController = new ScrollController(this);
 
     /**

@@ -23,7 +23,7 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.ExtensionList;
 import icyllis.modernui.core.mixin.AccessOption;
 import icyllis.modernui.core.mixin.AccessVideoSettingsScreen;
-import icyllis.modernui.graphics.RenderCore;
+import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.graphics.textmc.ModernFontRenderer;
 import icyllis.modernui.test.TestMenu;
 import icyllis.modernui.view.UIManager;

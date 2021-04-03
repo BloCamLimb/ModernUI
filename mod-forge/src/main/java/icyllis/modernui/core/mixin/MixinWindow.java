@@ -23,7 +23,7 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.graphics.textmc.TextLayoutProcessor;
 import icyllis.modernui.core.forge.MuiHooks;
-import icyllis.modernui.graphics.RenderCore;
+import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.view.ViewConfig;
 import net.minecraft.util.Mth;
 import org.spongepowered.asm.mixin.Mixin;

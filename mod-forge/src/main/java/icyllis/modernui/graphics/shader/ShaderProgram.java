@@ -20,7 +20,7 @@ package icyllis.modernui.graphics.shader;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.graphics.RenderCore;
+import icyllis.modernui.platform.RenderCore;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import org.lwjgl.opengl.GL43;

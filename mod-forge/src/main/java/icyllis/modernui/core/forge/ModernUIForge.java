@@ -19,7 +19,7 @@
 package icyllis.modernui.core.forge;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.RenderCore;
+import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.view.LayoutIO;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
