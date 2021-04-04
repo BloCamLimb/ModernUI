@@ -18,30 +18,23 @@
 
 package icyllis.modernui.test;
 
-import com.google.common.base.Strings;
 import com.ibm.icu.text.BreakIterator;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.ast.Node;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.core.forge.MuiHooks;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.platform.Window;
 import icyllis.modernui.text.GraphemeBreak;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.glfw.GLFWVidMode;
-import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GL43;
-import org.lwjgl.system.MemoryStack;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.nio.IntBuffer;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -117,19 +110,20 @@ public class TestMain {
             return;
 
         RenderCore.initBackend();
-
-        long window = new Window("Modern UI Layout Editor").getHandle();
+        Window window = new Window("Modern UI Layout Editor", Window.Mode.WINDOWED, 1280, 720);
+        RenderSystem.initRenderThread();
+        RenderCore.initEngine();
         nextTime = GLFW.glfwGetTime();
 
-        while (!GLFW.glfwWindowShouldClose(window)) {
+        while (!window.shouldClose()) {
             if (needRedraw) {
-                GLFW.glfwSwapBuffers(window);
+                window.swapBuffers();
                 needRedraw = false;
             }
             GLFW.glfwWaitEventsTimeout(1.0);
         }
 
-        GLFW.glfwDestroyWindow(window);
+        window.destroy();
         GLFW.glfwTerminate();
     }
 

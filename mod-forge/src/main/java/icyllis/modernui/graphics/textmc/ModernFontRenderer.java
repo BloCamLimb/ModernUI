@@ -93,7 +93,7 @@ public class ModernFontRenderer extends Font {
 
     public static void change(boolean global, boolean shadow) {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
-        if (RenderCore.isEngineStarted()) {
+        if (RenderCore.isInitialized()) {
             if (instance.mGlobalRenderer != global) {
                 ((AccessFontRenderer) instance).setSplitter(global ? instance.modernStringSplitter : instance.vanillaStringSplitter);
                 instance.mGlobalRenderer = global;

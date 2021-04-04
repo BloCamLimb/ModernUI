@@ -53,7 +53,7 @@ public class MixinWindow {
         }
         int oldLevel = Math.min((int) (ViewConfig.sViewScale + 0.5f), 3);
         int newLevel = Math.min((int) (i * 0.5f + 0.5f), 3);
-        if (RenderCore.isEngineStarted() && oldLevel != newLevel) {
+        if (RenderCore.isInitialized() && oldLevel != newLevel) {
             TextLayoutProcessor.getInstance().reload();
         }
         // See standards

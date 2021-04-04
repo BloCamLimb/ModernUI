@@ -38,6 +38,7 @@ import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.SimpleTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.BufferUtils;
@@ -301,7 +302,7 @@ public class GlyphManager {
     }
 
     private void loadPreferredFonts() {
-        if (!sPreferredFont.isEmpty()) {
+        if (StringUtils.isNotEmpty(sPreferredFont)) {
             String cfgFont = sPreferredFont;
             if (cfgFont.endsWith(".ttf") || cfgFont.endsWith(".otf")
                     || cfgFont.endsWith(".TTF") || cfgFont.endsWith(".OTF")) {

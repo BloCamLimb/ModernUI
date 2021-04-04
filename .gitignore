@@ -24,4 +24,5 @@ resource
 run
 classes
 *.psd
+*.log
 logs
