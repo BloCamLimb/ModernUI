@@ -20,6 +20,7 @@ package icyllis.modernui.platform;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.graphics.shader.Shader;
 import icyllis.modernui.graphics.shader.ShaderProgram;
@@ -57,20 +58,19 @@ public final class RenderCore {
 
     public static int glCapabilitiesErrors;
 
-    static boolean renderEngineStarted = false;
+    static boolean initialized = false;
 
-    public static void compileShaders(ResourceManager manager) {
-        ShaderProgram.detachAll();
-        Shader.deleteAll();
-        ShaderProgram.linkAll(manager);
-    }
-
+    /**
+     * First initialize GLFW, and then create a Window.
+     * Call on JVM main thread.
+     */
     public static void initBackend() {
         LOGGER.info(MARKER, "Backend Library: LWJGL {}", Version.getVersion());
         glfwSetErrorCallback(RenderCore::callbackError);
         if (!glfwInit()) {
             throw new IllegalStateException("Failed to initialize GLFW");
         }
+        Monitor.init();
     }
 
     private static void callbackError(int errorCode, long descPtr) {
@@ -79,10 +79,11 @@ public final class RenderCore {
     }
 
     /**
-     * Starts render engine.
+     * Call after creating a Window.
      */
-    public static void startEngine() {
-        if (renderEngineStarted) {
+    @RenderThread
+    public static void initEngine() {
+        if (initialized) {
             return;
         }
         GLCapabilities capabilities = GL.getCapabilities();
@@ -141,12 +142,19 @@ public final class RenderCore {
 
         TextLayoutProcessor.getInstance().initRenderer();
 
-        renderEngineStarted = true;
-        LOGGER.debug(MARKER, "Render engine started");
+        initialized = true;
+        LOGGER.info(MARKER, "Backend API: OpenGL {}", GL43.glGetString(GL43.GL_VERSION));
+        LOGGER.info(MARKER, "OpenGL Renderer: {} {}", GL43.glGetString(GL43.GL_VENDOR), GL43.glGetString(GL43.GL_RENDERER));
     }
 
-    public static boolean isEngineStarted() {
-        return renderEngineStarted;
+    public static boolean isInitialized() {
+        return initialized;
+    }
+
+    public static void compileShaders(ResourceManager manager) {
+        ShaderProgram.detachAll();
+        Shader.deleteAll();
+        ShaderProgram.linkAll(manager);
     }
 
     public static ByteBuffer readRawBuffer(InputStream inputStream) throws IOException {

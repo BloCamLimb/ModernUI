@@ -18,50 +18,215 @@
 
 package icyllis.modernui.platform;
 
-import org.lwjgl.glfw.GLFWVidMode;
+import icyllis.modernui.ModernUI;
+import org.lwjgl.glfw.Callbacks;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.system.MemoryStack;
-import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
 import java.nio.IntBuffer;
 
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.system.MemoryUtil.NULL;
 
 public final class Window {
 
     private final long mHandle;
 
-    public Window(@Nonnull String title) {
+    private int mXPos;
+    private int mYPos;
+    private int mWidth;
+    private int mHeight;
+
+    private int mFramebufferWidth;
+    private int mFramebufferHeight;
+
+    private int mWindowedX;
+    private int mWindowedY;
+
+    @Nonnull
+    private Mode mMode;
+    private boolean mMaximized;
+    private boolean mBorderless;
+    private boolean mFullscreen;
+
+    public Window(@Nonnull String title, @Nonnull Mode mode, int width, int height) {
+        // set hints
         glfwDefaultWindowHints();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
         glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_NATIVE_CONTEXT_API);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ANY_PROFILE);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
         glfwWindowHintString(GLFW_X11_CLASS_NAME, title);
         glfwWindowHintString(GLFW_X11_INSTANCE_NAME, title);
-        mHandle = glfwCreateWindow(1280, 720, title, 0, 0);
-        if (mHandle == MemoryUtil.NULL) {
-            throw new IllegalStateException();
+
+        // create window
+        Monitor monitor = Monitor.getPrimary();
+        long handle;
+        switch (mode) {
+            case FULLSCREEN_BORDERLESS:
+                glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+                if (monitor != null) {
+                    VideoMode m = monitor.getCurrentMode();
+                    handle = glfwCreateWindow(m.getWidth(), m.getHeight(), title, NULL, NULL);
+                } else {
+                    handle = glfwCreateWindow(width, height, title, NULL, NULL);
+                }
+                mBorderless = true;
+                break;
+            case FULLSCREEN:
+                if (monitor != null) {
+                    if (width <= 0 || height <= 0) {
+                        VideoMode m = monitor.getCurrentMode();
+                        handle = glfwCreateWindow(m.getWidth(), m.getHeight(), title, monitor.getHandle(), NULL);
+                    } else {
+                        handle = glfwCreateWindow(width, height, title, monitor.getHandle(), NULL);
+                    }
+                    mFullscreen = true;
+                    break;
+                }
+                // FALLTHROUGH
+            default:
+                handle = glfwCreateWindow(width, height, title, NULL, NULL);
+                break;
         }
-        glfwMakeContextCurrent(mHandle);
+
+        if (handle == NULL) {
+            throw new IllegalStateException("Failed to create window");
+        }
+
+        // create OpenGL context on current thread
+        glfwMakeContextCurrent(handle);
         GL.createCapabilities();
+
+        // set callbacks
+        glfwSetWindowPosCallback(handle, this::callbackPos);
+        glfwSetWindowSizeCallback(handle, this::callbackSize);
+        glfwSetWindowFocusCallback(handle, this::callbackFocus);
+        glfwSetWindowIconifyCallback(handle, this::callbackIconify);
+        glfwSetWindowMaximizeCallback(handle, this::callbackMaximize);
+        glfwSetFramebufferSizeCallback(handle, this::callbackFramebufferSize);
+        glfwSetWindowContentScaleCallback(handle, this::callbackContentScale);
+
+        // initialize values
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            IntBuffer pWidth = stack.mallocInt(1);
-            IntBuffer pHeight = stack.mallocInt(1);
-            IntBuffer monPosLeft = stack.mallocInt(1);
-            IntBuffer monPosTop = stack.mallocInt(1);
-            glfwGetWindowSize(mHandle, pWidth, pHeight);
-            GLFWVidMode vidMode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-            glfwGetMonitorPos(glfwGetPrimaryMonitor(), monPosLeft, monPosTop);
-            glfwSetWindowPos(mHandle, (vidMode.width() - pWidth.get(0)) / 2 + monPosLeft.get(0),
-                    (vidMode.height() - pHeight.get(0)) / 2 + monPosTop.get(0));
+            IntBuffer w = stack.mallocInt(1);
+            IntBuffer h = stack.mallocInt(1);
+            glfwGetWindowSize(handle, w, h);
+            mWidth = w.get(0);
+            mHeight = h.get(0);
+
+            w.position(0);
+            h.position(0);
+            glfwGetFramebufferSize(handle, w, h);
+            mFramebufferWidth = w.get(0);
+            mFramebufferHeight = h.get(0);
+
+            if (!mFullscreen && monitor != null) {
+                VideoMode m = monitor.getCurrentMode();
+                glfwSetWindowPos(handle, (m.getWidth() - mWidth) / 2 + monitor.getXPos(),
+                        (m.getHeight() - mHeight) / 2 + monitor.getYPos());
+            }
         }
+
+        mHandle = handle;
+        mMode = mode;
+    }
+
+    private void callbackPos(long window, int xPos, int yPos) {
+        mXPos = xPos;
+        mYPos = yPos;
+    }
+
+    private void callbackSize(long window, int width, int height) {
+        mWidth = width;
+        mHeight = height;
+    }
+
+    private void callbackFocus(long window, boolean focused) {
+
+    }
+
+    private void callbackIconify(long window, boolean iconified) {
+        if (iconified) {
+            mMode = Mode.MINIMIZED;
+        } else if (mMaximized) {
+            mMode = Mode.MAXIMIZED;
+        } else {
+            mMode = Mode.WINDOWED;
+        }
+    }
+
+    private void callbackMaximize(long window, boolean maximized) {
+        if (maximized) {
+            mMode = Mode.MAXIMIZED;
+        } else {
+            mMode = Mode.WINDOWED;
+        }
+        mMaximized = maximized;
+    }
+
+    private void callbackFramebufferSize(long window, int width, int height) {
+        mFramebufferWidth = width;
+        mFramebufferHeight = height;
+    }
+
+    private void callbackContentScale(long window, float scaleX, float scaleY) {
+
+    }
+
+    private void applyMode() {
+        glfwSetWindowMonitor(mHandle, glfwGetPrimaryMonitor(), 0, 0, 1920, 1080, 144);
     }
 
     public long getHandle() {
         return mHandle;
+    }
+
+    public boolean shouldClose() {
+        return glfwWindowShouldClose(mHandle);
+    }
+
+    public void swapBuffers() {
+        glfwSwapBuffers(mHandle);
+    }
+
+    public void destroy() {
+        Callbacks.glfwFreeCallbacks(mHandle);
+        glfwDestroyWindow(mHandle);
+    }
+
+    /**
+     * Enumerates the available window modes.
+     */
+    public enum Mode {
+        /**
+         * The window is movable and takes up a subsection of the screen.
+         * This is the default mode.
+         */
+        WINDOWED,
+
+        /**
+         * The window is running in exclusive fullscreen and is potentially using a
+         * different resolution to the desktop.
+         */
+        FULLSCREEN,
+
+        /**
+         * The window is running in non-exclusive fullscreen, where it expands to
+         * fill the screen at the native desktop resolution.
+         */
+        FULLSCREEN_BORDERLESS,
+
+        /**
+         * The window is running in maximised mode, usually triggered by clicking
+         * the operating system's maximise button.
+         */
+        MAXIMIZED,
+
+        /**
+         * The window is running in minimised mode, usually triggered by clicking
+         * the operating system's minimise button.
+         */
+        MINIMIZED
     }
 }
