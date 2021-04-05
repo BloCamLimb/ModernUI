@@ -18,7 +18,6 @@
 
 package icyllis.modernui.platform;
 
-import icyllis.modernui.ModernUI;
 import org.lwjgl.glfw.Callbacks;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.system.MemoryStack;
@@ -29,7 +28,7 @@ import java.nio.IntBuffer;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
-public final class Window {
+public final class Window implements AutoCloseable {
 
     private final long mHandle;
 
@@ -45,12 +44,13 @@ public final class Window {
     private int mWindowedY;
 
     @Nonnull
-    private Mode mMode;
+    private WindowMode mMode;
+    // previously maximized
     private boolean mMaximized;
     private boolean mBorderless;
     private boolean mFullscreen;
 
-    public Window(@Nonnull String title, @Nonnull Mode mode, int width, int height) {
+    public Window(@Nonnull String title, @Nonnull WindowMode mode, int width, int height) {
         // set hints
         glfwDefaultWindowHints();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
@@ -121,6 +121,7 @@ public final class Window {
             mFramebufferWidth = w.get(0);
             mFramebufferHeight = h.get(0);
 
+            // center window
             if (!mFullscreen && monitor != null) {
                 VideoMode m = monitor.getCurrentMode();
                 glfwSetWindowPos(handle, (m.getWidth() - mWidth) / 2 + monitor.getXPos(),
@@ -148,19 +149,19 @@ public final class Window {
 
     private void callbackIconify(long window, boolean iconified) {
         if (iconified) {
-            mMode = Mode.MINIMIZED;
+            mMode = WindowMode.MINIMIZED;
         } else if (mMaximized) {
-            mMode = Mode.MAXIMIZED;
+            mMode = WindowMode.MAXIMIZED;
         } else {
-            mMode = Mode.WINDOWED;
+            mMode = WindowMode.WINDOWED;
         }
     }
 
     private void callbackMaximize(long window, boolean maximized) {
         if (maximized) {
-            mMode = Mode.MAXIMIZED;
+            mMode = WindowMode.MAXIMIZED;
         } else {
-            mMode = Mode.WINDOWED;
+            mMode = WindowMode.WINDOWED;
         }
         mMaximized = maximized;
     }
@@ -190,43 +191,9 @@ public final class Window {
         glfwSwapBuffers(mHandle);
     }
 
-    public void destroy() {
+    @Override
+    public void close() {
         Callbacks.glfwFreeCallbacks(mHandle);
         glfwDestroyWindow(mHandle);
-    }
-
-    /**
-     * Enumerates the available window modes.
-     */
-    public enum Mode {
-        /**
-         * The window is movable and takes up a subsection of the screen.
-         * This is the default mode.
-         */
-        WINDOWED,
-
-        /**
-         * The window is running in exclusive fullscreen and is potentially using a
-         * different resolution to the desktop.
-         */
-        FULLSCREEN,
-
-        /**
-         * The window is running in non-exclusive fullscreen, where it expands to
-         * fill the screen at the native desktop resolution.
-         */
-        FULLSCREEN_BORDERLESS,
-
-        /**
-         * The window is running in maximised mode, usually triggered by clicking
-         * the operating system's maximise button.
-         */
-        MAXIMIZED,
-
-        /**
-         * The window is running in minimised mode, usually triggered by clicking
-         * the operating system's minimise button.
-         */
-        MINIMIZED
     }
 }
