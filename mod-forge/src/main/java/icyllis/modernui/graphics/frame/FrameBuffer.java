@@ -16,52 +16,24 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.texture;
+package icyllis.modernui.graphics.frame;
 
 import org.lwjgl.opengl.GL43;
 
-/**
- * For selecting active texture unit.
- */
-public enum TextureUnit {
-    TEXTURE0,
-    TEXTURE1,
-    TEXTURE2,
-    TEXTURE3,
-    TEXTURE4,
-    TEXTURE5,
-    TEXTURE6,
-    TEXTURE7,
-    TEXTURE8,
-    TEXTURE9,
-    TEXTURE10,
-    TEXTURE11,
-    TEXTURE12,
-    TEXTURE13,
-    TEXTURE14,
-    TEXTURE15,
-    TEXTURE16,
-    TEXTURE17,
-    TEXTURE18,
-    TEXTURE19,
-    TEXTURE20,
-    TEXTURE21,
-    TEXTURE22,
-    TEXTURE23,
-    TEXTURE24,
-    TEXTURE25,
-    TEXTURE26,
-    TEXTURE27,
-    TEXTURE28,
-    TEXTURE29,
-    TEXTURE30,
-    TEXTURE31;
+import javax.annotation.Nullable;
 
-    public final int getUnit() {
-        return GL43.GL_TEXTURE0 + ordinal();
+public class FrameBuffer implements AutoCloseable {
+
+    {
+
     }
 
-    public final int getSampler() {
-        return ordinal();
+    public int getDepthTexture() {
+        return 0;
+    }
+
+    @Override
+    public void close() throws Exception {
+
     }
 }

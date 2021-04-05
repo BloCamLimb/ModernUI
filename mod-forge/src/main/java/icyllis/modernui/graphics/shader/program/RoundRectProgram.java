@@ -21,6 +21,7 @@ package icyllis.modernui.graphics.shader.program;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.graphics.shader.ShaderProgram;
+import icyllis.modernui.graphics.texture.TextureUnit;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import org.lwjgl.opengl.GL43;
@@ -88,7 +89,7 @@ public class RoundRectProgram extends ShaderProgram {
         @Override
         public void link(ResourceManager manager) throws IOException {
             super.link(manager);
-            GL43.glProgramUniform1i(mId, 2, 0); // always use GL_TEXTURE0
+            GL43.glProgramUniform1i(mId, 2, TextureUnit.TEXTURE0.getSampler()); // always use GL_TEXTURE0
         }
     }
 

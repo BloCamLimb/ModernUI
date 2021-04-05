@@ -16,12 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.texture;
+package icyllis.modernui.graphics.frame;
 
-public class Texture implements AutoCloseable {
-
-    @Override
-    public void close() throws Exception {
-
-    }
+public class RenderBuffer {
 }

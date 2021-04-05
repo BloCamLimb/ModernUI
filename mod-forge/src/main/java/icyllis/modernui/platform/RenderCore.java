@@ -70,7 +70,6 @@ public final class RenderCore {
         if (!glfwInit()) {
             throw new IllegalStateException("Failed to initialize GLFW");
         }
-        Monitor.init();
     }
 
     private static void callbackError(int errorCode, long descPtr) {

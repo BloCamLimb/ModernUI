@@ -57,10 +57,6 @@ public final class Monitor {
         }
     }
 
-    public static void init() {
-        // Call the static initializer
-    }
-
     @Nullable
     public static Monitor get(long monPtr) {
         return sMonitors.get(monPtr);
