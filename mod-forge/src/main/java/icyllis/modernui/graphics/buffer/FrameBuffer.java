@@ -16,20 +16,32 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.frame;
+package icyllis.modernui.graphics.buffer;
 
+import icyllis.modernui.graphics.GLWrapper;
+import icyllis.modernui.platform.RenderCore;
 import org.lwjgl.opengl.GL43;
 
-import javax.annotation.Nullable;
+import static org.lwjgl.opengl.GL43.glFramebufferRenderbuffer;
 
+/**
+ * This class represents a framebuffer object. It is used for creation of
+ * user-defined framebuffers compared to the default framebuffer, whose object
+ * is a collection of attachments, for off-screen rendering or post-processing.
+ * <p>
+ * For post-processing, attach this to a set of textures otherwise to render
+ * buffers. To output this framebuffer to screen, blit the attached textures
+ * or copy the renderbuffer pixels to the default framebuffer that preserved
+ * by window graphics context.
+ */
 public class FrameBuffer implements AutoCloseable {
 
-    {
+    private int mId = GLWrapper.UNASSIGNED_ID;
 
-    }
-
-    public int getDepthTexture() {
-        return 0;
+    public void bind() {
+        if (mId == GLWrapper.UNASSIGNED_ID) {
+            mId = GL43.glGenFramebuffers();
+        }
     }
 
     @Override

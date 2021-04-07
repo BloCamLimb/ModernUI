@@ -19,7 +19,6 @@
 package icyllis.modernui.platform;
 
 import org.lwjgl.glfw.Callbacks;
-import org.lwjgl.opengl.GL;
 import org.lwjgl.system.MemoryStack;
 
 import javax.annotation.Nonnull;
@@ -93,10 +92,6 @@ public final class Window implements AutoCloseable {
         if (handle == NULL) {
             throw new IllegalStateException("Failed to create window");
         }
-
-        // create OpenGL context on current thread
-        glfwMakeContextCurrent(handle);
-        GL.createCapabilities();
 
         // set callbacks
         glfwSetWindowPosCallback(handle, this::callbackPos);
@@ -183,17 +178,25 @@ public final class Window implements AutoCloseable {
         return mHandle;
     }
 
-    public boolean shouldClose() {
-        return glfwWindowShouldClose(mHandle);
+    public void makeCurrent() {
+        glfwMakeContextCurrent(mHandle);
+    }
+
+    public boolean exists() {
+        return !glfwWindowShouldClose(mHandle);
     }
 
     public void swapBuffers() {
         glfwSwapBuffers(mHandle);
     }
 
-    @Override
-    public void close() {
+    public void destroy() {
         Callbacks.glfwFreeCallbacks(mHandle);
         glfwDestroyWindow(mHandle);
+    }
+
+    @Override
+    public void close() {
+        destroy();
     }
 }

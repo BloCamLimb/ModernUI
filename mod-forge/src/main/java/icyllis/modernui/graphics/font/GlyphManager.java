@@ -19,11 +19,11 @@
 package icyllis.modernui.graphics.font;
 
 import com.mojang.blaze3d.platform.GlStateManager;
-import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.textmc.VanillaTextKey;
 import icyllis.modernui.graphics.textmc.pipeline.TextRenderNode;
 import icyllis.modernui.graphics.textmc.pipeline.TextRenderType;
+import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.text.FontCollection;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -275,8 +275,9 @@ public class GlyphManager {
     // internal use
     @Nonnull
     public static GlyphManager getInstance() {
-        RenderSystem.assertThread(RenderSystem::isOnRenderThread);
-        if (instance == null) new GlyphManager();
+        RenderCore.ensureRenderThread();
+        if (instance == null)
+            new GlyphManager();
         return instance;
     }
 

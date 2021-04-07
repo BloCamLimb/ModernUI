@@ -157,6 +157,7 @@ final class Registration {
         //UIManager.getInstance().registerMenuScreen(Registration.TEST_MENU, menu -> new TestUI());
 
         event.getMinecraftSupplier().get().submitAsync(() -> {
+            RenderCore.initRenderThread();
             RenderCore.initEngine();
             UIManager.initialize();
             ModernFontRenderer.change(Config.CLIENT.globalRenderer.get(), Config.CLIENT.allowShadow.get());

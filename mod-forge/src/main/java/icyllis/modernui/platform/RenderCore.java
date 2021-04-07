@@ -18,10 +18,8 @@
 
 package icyllis.modernui.platform;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.graphics.font.GlyphManager;
+import icyllis.modernui.graphics.GLWrapper;
 import icyllis.modernui.graphics.shader.Shader;
 import icyllis.modernui.graphics.shader.ShaderProgram;
 import icyllis.modernui.graphics.shader.program.ArcProgram;
@@ -60,9 +58,10 @@ public final class RenderCore {
 
     static boolean initialized = false;
 
+    private static Thread sRenderThread;
+
     /**
-     * First initialize GLFW, and then create a Window.
-     * Call on JVM main thread.
+     * Initialize GLFW, call on JVM main thread.
      */
     public static void initBackend() {
         LOGGER.info(MARKER, "Backend Library: LWJGL {}", Version.getVersion());
@@ -77,62 +76,33 @@ public final class RenderCore {
         LOGGER.error(MARKER, "GLFW Error: 0x{}, {}", Integer.toHexString(errorCode), desc);
     }
 
+    public static void initRenderThread() {
+        if (sRenderThread == null) {
+            sRenderThread = Thread.currentThread();
+        }
+    }
+
+    public static void ensureRenderThread() {
+        if (Thread.currentThread() != sRenderThread)
+            throw new IllegalStateException("Not called from render thread");
+    }
+
     /**
      * Call after creating a Window.
      */
     @RenderThread
     public static void initEngine() {
+        ensureRenderThread();
         if (initialized) {
             return;
         }
-        GLCapabilities capabilities = GL.getCapabilities();
-        int i = 0;
-        if (!capabilities.GL_ARB_vertex_buffer_object) {
-            LOGGER.fatal(MARKER, "Vertex buffer object is not supported");
-            i++;
+        GLCapabilities caps;
+        try {
+            caps = GL.getCapabilities();
+        } catch (IllegalStateException e) {
+            caps = GL.createCapabilities();
         }
-        if (!capabilities.GL_ARB_explicit_attrib_location) {
-            LOGGER.fatal(MARKER, "Explicit attrib location is not supported");
-            i++;
-        }
-        if (!capabilities.GL_ARB_vertex_array_object) {
-            LOGGER.fatal(MARKER, "Vertex array object is not supported");
-            i++;
-        }
-        if (!capabilities.GL_ARB_framebuffer_object) {
-            LOGGER.fatal(MARKER, "Framebuffer object is not supported");
-            i++;
-        }
-        if (!capabilities.GL_ARB_uniform_buffer_object) {
-            LOGGER.fatal(MARKER, "Uniform buffer object is not supported");
-            i++;
-        }
-        if (!capabilities.GL_ARB_separate_shader_objects) {
-            LOGGER.fatal(MARKER, "Separate shader objects is not supported");
-            i++;
-        }
-        if (!capabilities.GL_ARB_explicit_uniform_location) {
-            LOGGER.fatal(MARKER, "Explicit uniform location is not supported");
-            i++;
-        }
-
-        int v;
-        if ((v = RenderSystem.maxSupportedTextureSize()) < GlyphManager.TEXTURE_SIZE ||
-                (GlyphManager.TEXTURE_SIZE <= 1024 && (v = GL43.glGetInteger(GL43.GL_MAX_TEXTURE_SIZE)) < GlyphManager.TEXTURE_SIZE)) {
-            LOGGER.fatal(MARKER, "Max texture size is too small, supplies {} but requires {}", v, GlyphManager.TEXTURE_SIZE);
-            i++;
-        }
-
-        if (!capabilities.OpenGL43) {
-            String glVersion = GL43.glGetString(GL43.GL_VERSION);
-            if (glVersion == null) glVersion = "UNKNOWN";
-            else glVersion = glVersion.split(" ")[0];
-            ModernUI.get().warnSetup("warning.modernui.old_opengl", "4.3", glVersion);
-        }
-
-        if (i != 0) {
-            glCapabilitiesErrors = i;
-        }
+        GLWrapper.initialize(caps);
 
         ArcProgram.createPrograms();
         CircleProgram.createPrograms();

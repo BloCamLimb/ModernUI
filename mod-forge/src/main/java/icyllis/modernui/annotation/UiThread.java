@@ -22,10 +22,9 @@ import java.lang.annotation.*;
 
 /**
  * Denotes that the annotated method should only be called on the UI thread,
- * which is used for handling UI events and recording drawing contents
- * on software-level, no OpenGL context and GLFW context on this thread.
- * For Modern UI itself, there's only one UI thread that represents an
- * application on OS.
+ * which is used for handling UI events and recording drawing contents for
+ * the GUI on application-level, there will no OpenGL context on this thread.
+ * Input events from the window for UI part should be posted to this thread.
  * <p>
  * Example:
  * <pre><code>
