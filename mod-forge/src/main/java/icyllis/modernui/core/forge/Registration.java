@@ -23,8 +23,9 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.ExtensionList;
 import icyllis.modernui.core.mixin.AccessOption;
 import icyllis.modernui.core.mixin.AccessVideoSettingsScreen;
-import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.graphics.textmc.ModernFontRenderer;
+import icyllis.modernui.graphics.textmc.TextLayoutProcessor;
+import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.test.TestMenu;
 import icyllis.modernui.view.UIManager;
 import net.minecraft.client.CycleOption;
@@ -157,9 +158,9 @@ final class Registration {
         //UIManager.getInstance().registerMenuScreen(Registration.TEST_MENU, menu -> new TestUI());
 
         event.getMinecraftSupplier().get().submitAsync(() -> {
-            RenderCore.initRenderThread();
             RenderCore.initEngine();
             UIManager.initialize();
+            TextLayoutProcessor.getInstance().initRenderer();
             ModernFontRenderer.change(Config.CLIENT.globalRenderer.get(), Config.CLIENT.allowShadow.get());
         });
 

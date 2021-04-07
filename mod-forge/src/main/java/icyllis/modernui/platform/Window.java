@@ -18,6 +18,8 @@
 
 package icyllis.modernui.platform;
 
+import icyllis.modernui.ModernUI;
+import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.glfw.Callbacks;
 import org.lwjgl.system.MemoryStack;
 
@@ -102,6 +104,9 @@ public final class Window implements AutoCloseable {
         glfwSetFramebufferSizeCallback(handle, this::callbackFramebufferSize);
         glfwSetWindowContentScaleCallback(handle, this::callbackContentScale);
 
+        glfwSetKeyCallback(handle, (window, keycode, scancode, action, mods) -> ModernUI.LOGGER.info(
+                MarkerManager.getMarker("Input"), "OnKeyEvent{action: {}, key: {}}", action, keycode));
+
         // initialize values
         try (MemoryStack stack = MemoryStack.stackPush()) {
             IntBuffer w = stack.mallocInt(1);
@@ -182,6 +187,22 @@ public final class Window implements AutoCloseable {
         glfwMakeContextCurrent(mHandle);
     }
 
+    /**
+     * Gets whether this window should be closed. For example, by clicking
+     * the close button in the title bar.
+     *
+     * @return {@code true} if this window should be closed
+     */
+    public boolean shouldClose() {
+        return glfwWindowShouldClose(mHandle);
+    }
+
+    /**
+     * A helper method that reverses should close result.
+     *
+     * @return {@code true} if this window still exists
+     * @see #shouldClose()
+     */
     public boolean exists() {
         return !glfwWindowShouldClose(mHandle);
     }
@@ -198,5 +219,43 @@ public final class Window implements AutoCloseable {
     @Override
     public void close() {
         destroy();
+    }
+
+    /**
+     * Returns the x-coordinate of the top-left corner of this window
+     * in virtual screen coordinate system.
+     *
+     * @return the x-coordinate of this window
+     */
+    public int getXPos() {
+        return mXPos;
+    }
+
+    /**
+     * Returns the y-coordinate of the top-left corner of this window
+     * in virtual screen coordinate system.
+     *
+     * @return the y-coordinate of this window
+     */
+    public int getYPos() {
+        return mYPos;
+    }
+
+    /**
+     * Returns the framebuffer width for this window in pixels.
+     *
+     * @return framebuffer width
+     */
+    public int getFramebufferWidth() {
+        return mFramebufferWidth;
+    }
+
+    /**
+     * Returns the framebuffer height for this window in pixels.
+     *
+     * @return framebuffer height
+     */
+    public int getFramebufferHeight() {
+        return mFramebufferHeight;
     }
 }

@@ -18,7 +18,6 @@
 
 package icyllis.modernui.platform;
 
-import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.graphics.GLWrapper;
 import icyllis.modernui.graphics.shader.Shader;
 import icyllis.modernui.graphics.shader.ShaderProgram;
@@ -26,13 +25,11 @@ import icyllis.modernui.graphics.shader.program.ArcProgram;
 import icyllis.modernui.graphics.shader.program.CircleProgram;
 import icyllis.modernui.graphics.shader.program.RectProgram;
 import icyllis.modernui.graphics.shader.program.RoundRectProgram;
-import icyllis.modernui.graphics.textmc.TextLayoutProcessor;
 import net.minecraft.server.packs.resources.ResourceManager;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.Version;
 import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.MemoryUtil;
 
@@ -48,6 +45,7 @@ import java.nio.channels.ReadableByteChannel;
 import static icyllis.modernui.ModernUI.LOGGER;
 import static org.lwjgl.glfw.GLFW.glfwInit;
 import static org.lwjgl.glfw.GLFW.glfwSetErrorCallback;
+import static org.lwjgl.opengl.GL43.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public final class RenderCore {
@@ -56,7 +54,7 @@ public final class RenderCore {
 
     public static int glCapabilitiesErrors;
 
-    static boolean initialized = false;
+    static boolean sInitialized = false;
 
     private static Thread sRenderThread;
 
@@ -65,8 +63,7 @@ public final class RenderCore {
      */
     public static void initBackend() {
         LOGGER.info(MARKER, "Backend Library: LWJGL {}", Version.getVersion());
-        glfwSetErrorCallback(RenderCore::callbackError);
-        if (!glfwInit()) {
+        if (glfwSetErrorCallback(RenderCore::callbackError) != null || !glfwInit()) {
             throw new IllegalStateException("Failed to initialize GLFW");
         }
     }
@@ -76,26 +73,20 @@ public final class RenderCore {
         LOGGER.error(MARKER, "GLFW Error: 0x{}, {}", Integer.toHexString(errorCode), desc);
     }
 
-    public static void initRenderThread() {
-        if (sRenderThread == null) {
-            sRenderThread = Thread.currentThread();
-        }
-    }
-
     public static void ensureRenderThread() {
         if (Thread.currentThread() != sRenderThread)
             throw new IllegalStateException("Not called from render thread");
     }
 
     /**
-     * Call after creating a Window.
+     * Call after creating a Window on render thread.
      */
-    @RenderThread
-    public static void initEngine() {
-        ensureRenderThread();
-        if (initialized) {
+    public static synchronized void initEngine() {
+        if (sInitialized) {
             return;
         }
+        sRenderThread = Thread.currentThread();
+
         GLCapabilities caps;
         try {
             caps = GL.getCapabilities();
@@ -109,15 +100,13 @@ public final class RenderCore {
         RectProgram.createPrograms();
         RoundRectProgram.createPrograms();
 
-        TextLayoutProcessor.getInstance().initRenderer();
-
-        initialized = true;
-        LOGGER.info(MARKER, "Backend API: OpenGL {}", GL43.glGetString(GL43.GL_VERSION));
-        LOGGER.info(MARKER, "OpenGL Renderer: {} {}", GL43.glGetString(GL43.GL_VENDOR), GL43.glGetString(GL43.GL_RENDERER));
+        sInitialized = true;
+        LOGGER.info(MARKER, "Backend API: OpenGL {}", glGetString(GL_VERSION));
+        LOGGER.info(MARKER, "OpenGL Renderer: {} {}", glGetString(GL_VENDOR), glGetString(GL_RENDERER));
     }
 
     public static boolean isInitialized() {
-        return initialized;
+        return sInitialized;
     }
 
     public static void compileShaders(ResourceManager manager) {

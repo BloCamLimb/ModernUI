@@ -19,7 +19,6 @@
 package icyllis.modernui.test;
 
 import com.ibm.icu.text.BreakIterator;
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.ast.Node;
@@ -30,7 +29,6 @@ import icyllis.modernui.platform.WindowMode;
 import icyllis.modernui.text.GraphemeBreak;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
-import org.lwjgl.opengl.GL;
 import org.lwjgl.system.Callback;
 
 import javax.annotation.Nonnull;
@@ -116,40 +114,43 @@ public class TestMain {
 
         if (!CREATE_WINDOW)
             return;
-        Thread.currentThread().setName("Main-Thread");
-        RenderCore.initBackend();
-        sWindow = new Window("Modern UI Layout Editor", WindowMode.WINDOWED, 1280, 720);
-        Thread t = new Thread(() -> {
-            Window window = sWindow;
-            window.makeCurrent();
-            RenderSystem.initRenderThread();
-            RenderCore.initRenderThread();
-            RenderCore.initEngine();
-            while (window.exists()) {
-                if (needRedraw) {
-                    window.swapBuffers();
-                    needRedraw = false;
-                }
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ignored) {
+        try {
+            Thread.currentThread().setName("Main-Thread");
+            RenderCore.initBackend();
+            sWindow = new Window("Modern UI Layout Editor", WindowMode.WINDOWED, 1280, 720);
+            Thread t = new Thread(() -> {
+                Window window = sWindow;
+                window.makeCurrent();
+                RenderCore.initEngine();
+                while (window.exists()) {
+                    if (needRedraw) {
+                        window.swapBuffers();
+                        needRedraw = false;
+                    }
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException ignored) {
 
+                    }
                 }
+            }, "Render-Thread");
+            t.start();
+
+            while (sWindow == null || sWindow.exists()) {
+                glfwWaitEventsTimeout(1.0);
             }
-        }, "Render-Thread");
-        t.start();
-
-        while (sWindow == null || sWindow.exists()) {
-            glfwWaitEventsTimeout(1.0);
+            t.interrupt();
+        } finally {
+            if (sWindow != null) {
+                sWindow.destroy();
+            }
+            Stream.of(glfwSetMonitorCallback(null),
+                    glfwSetErrorCallback(null))
+                    .filter(Objects::nonNull)
+                    .forEach(Callback::free);
+            glfwTerminate();
+            ModernUI.LOGGER.info(MARKER, "Stopped");
         }
-        t.interrupt();
-        sWindow.destroy();
-
-        Stream.of(glfwSetMonitorCallback(null),
-                glfwSetErrorCallback(null))
-                .filter(Objects::nonNull)
-                .forEach(Callback::free);
-        glfwTerminate();
     }
 
     public static void breakGraphemes(String s) {
