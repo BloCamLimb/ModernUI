@@ -39,6 +39,9 @@ public class GLWrapper {
      */
     public static final int UNASSIGNED_ID = -1;
 
+    /**
+     * The default framebuffer that used for swapping buffers with window.
+     */
     public static final int DEFAULT_FRAMEBUFFER = 0;
 
     private static boolean sInitialized = false;
@@ -49,10 +52,14 @@ public class GLWrapper {
     private static int sMaxTextureSize = 1024;
     private static int sMaxRenderBufferSize = 2048;
 
+    private static boolean sCullState = false;
+    private static int sCullMode = GL_BACK;
+
     public static void initialize(@Nonnull GLCapabilities caps) {
         RenderCore.ensureRenderThread();
-        if (sInitialized)
+        if (sInitialized) {
             return;
+        }
 
         sMaxTextureSize = glGetInteger(GL_MAX_TEXTURE_SIZE);
         sMaxRenderBufferSize = glGetInteger(GL_MAX_RENDERBUFFER_SIZE);
@@ -94,7 +101,7 @@ public class GLWrapper {
         }
 
         if (!caps.OpenGL43) {
-            String glVersion = GL43.glGetString(GL43.GL_VERSION);
+            String glVersion = glGetString(GL_VERSION);
             if (glVersion == null) glVersion = "UNKNOWN";
             else glVersion = glVersion.split(" ")[0];
             ModernUI.get().warnSetup("warning.modernui.old_opengl", "4.3", glVersion);
@@ -115,5 +122,34 @@ public class GLWrapper {
 
     public static int getMaxRenderBufferSize() {
         return sMaxRenderBufferSize;
+    }
+
+    public static void enableCull() {
+        if (!sCullState) {
+            sCullState = true;
+            glEnable(GL_CULL_FACE);
+        }
+    }
+
+    public static void disableCull() {
+        if (sCullState) {
+            sCullState = false;
+            glDisable(GL_CULL_FACE);
+        }
+    }
+
+    /**
+     * Specifies whether front- or back-facing facets are candidates for culling.
+     * Symbolic constants {@link GL43#GL_FRONT}, {@link GL43#GL_BACK}, and
+     * {@link GL43#GL_FRONT_AND_BACK} are accepted. The initial value is {@link GL43#GL_BACK}.
+     *
+     * @param mode One of {@link GL43#GL_FRONT}, {@link GL43#GL_BACK} and
+     *             {@link GL43#GL_FRONT_AND_BACK}
+     */
+    public static void cullFace(int mode) {
+        if (mode != sCullMode) {
+            sCullMode = mode;
+            glCullFace(mode);
+        }
     }
 }
