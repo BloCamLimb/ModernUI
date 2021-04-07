@@ -18,7 +18,6 @@
 
 package icyllis.modernui.test;
 
-import com.google.common.base.Predicates;
 import com.ibm.icu.text.BreakIterator;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.vladsch.flexmark.parser.Parser;
@@ -31,17 +30,20 @@ import icyllis.modernui.platform.WindowMode;
 import icyllis.modernui.text.GraphemeBreak;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
-import org.lwjgl.glfw.GLFW;
-import org.lwjgl.opengl.GL43;
+import org.lwjgl.opengl.GL;
 import org.lwjgl.system.Callback;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
-import java.util.*;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.stream.Stream;
+
+import static org.lwjgl.glfw.GLFW.*;
 
 public class TestMain {
 
@@ -56,6 +58,8 @@ public class TestMain {
 
     private static double nextTime = 0;
     private static boolean needRedraw = true;
+
+    private static Window sWindow;
 
     /*
         Heading font size (In Minecraft: GUI scale 2)
@@ -112,28 +116,40 @@ public class TestMain {
 
         if (!CREATE_WINDOW)
             return;
-        Thread.currentThread().setName("Render Thread");
-
+        Thread.currentThread().setName("Main-Thread");
         RenderCore.initBackend();
-        Window window = new Window("Modern UI Layout Editor", WindowMode.WINDOWED, 1280, 720);
-        RenderSystem.initRenderThread();
-        RenderCore.initEngine();
-        nextTime = GLFW.glfwGetTime();
+        sWindow = new Window("Modern UI Layout Editor", WindowMode.WINDOWED, 1280, 720);
+        Thread t = new Thread(() -> {
+            Window window = sWindow;
+            window.makeCurrent();
+            RenderSystem.initRenderThread();
+            RenderCore.initRenderThread();
+            RenderCore.initEngine();
+            while (window.exists()) {
+                if (needRedraw) {
+                    window.swapBuffers();
+                    needRedraw = false;
+                }
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ignored) {
 
-        while (!window.shouldClose()) {
-            if (needRedraw) {
-                window.swapBuffers();
-                needRedraw = false;
+                }
             }
-            GLFW.glfwWaitEventsTimeout(1.0);
-        }
+        }, "Render-Thread");
+        t.start();
 
-        window.close();
-        Stream.of(GLFW.glfwSetMonitorCallback(null),
-                GLFW.glfwSetErrorCallback(null))
+        while (sWindow == null || sWindow.exists()) {
+            glfwWaitEventsTimeout(1.0);
+        }
+        t.interrupt();
+        sWindow.destroy();
+
+        Stream.of(glfwSetMonitorCallback(null),
+                glfwSetErrorCallback(null))
                 .filter(Objects::nonNull)
                 .forEach(Callback::free);
-        GLFW.glfwTerminate();
+        glfwTerminate();
     }
 
     public static void breakGraphemes(String s) {

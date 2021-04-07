@@ -22,7 +22,7 @@ import java.lang.annotation.*;
 
 /**
  * Denotes that the annotated method should only be called on the render thread,
- * namely JVM main thread, GLFW main thread, OpenGL context thread.
+ * namely the OpenGL context thread of the Window.
  * <p>
  * Example:
  * <pre><code>
@@ -32,7 +32,7 @@ import java.lang.annotation.*;
  *  }</code></pre>
  */
 @Documented
-@Target({ElementType.METHOD, ElementType.CONSTRUCTOR})
+@Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.TYPE})
 @Retention(RetentionPolicy.CLASS)
 public @interface RenderThread {
 }

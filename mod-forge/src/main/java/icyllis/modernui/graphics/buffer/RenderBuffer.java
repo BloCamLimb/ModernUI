@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.frame;
+package icyllis.modernui.graphics.buffer;
 
 public class RenderBuffer {
 }
