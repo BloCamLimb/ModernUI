@@ -21,17 +21,19 @@ package icyllis.modernui.graphics;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.graphics.font.GlyphManager;
-import icyllis.modernui.platform.RenderCore;
+import icyllis.modernui.graphics.math.Rect;
+import icyllis.modernui.platform.Window;
 import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.GLCapabilities;
 
 import javax.annotation.Nonnull;
+import java.util.Stack;
 
 import static icyllis.modernui.ModernUI.LOGGER;
 import static icyllis.modernui.platform.RenderCore.MARKER;
+import static icyllis.modernui.platform.RenderCore.ensureRenderThread;
 import static org.lwjgl.opengl.GL43.*;
 
-@RenderThread
 public class GLWrapper {
 
     /**
@@ -52,11 +54,15 @@ public class GLWrapper {
     private static int sMaxTextureSize = 1024;
     private static int sMaxRenderBufferSize = 2048;
 
+    // enabled or disabled
     private static boolean sCullState = false;
     private static int sCullMode = GL_BACK;
 
+    private static final Stack<Rect> sViewportStack = new Stack<>();
+
+    @RenderThread
     public static void initialize(@Nonnull GLCapabilities caps) {
-        RenderCore.ensureRenderThread();
+        ensureRenderThread();
         if (sInitialized) {
             return;
         }
@@ -124,14 +130,35 @@ public class GLWrapper {
         return sMaxRenderBufferSize;
     }
 
+    /**
+     * Resets states before rendering a new frame.
+     *
+     * @param window the window for rendering.
+     */
+    @RenderThread
+    public static void reset(@Nonnull Window window) {
+        ensureRenderThread();
+        sViewportStack.clear();
+
+        final Rect viewport = new Rect(0, 0, window.getWidth(), window.getHeight());
+        sViewportStack.push(viewport);
+        glViewport(0, 0, window.getWidth(), window.getHeight());
+
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    }
+
+    @RenderThread
     public static void enableCull() {
+        ensureRenderThread();
         if (!sCullState) {
             sCullState = true;
             glEnable(GL_CULL_FACE);
         }
     }
 
+    @RenderThread
     public static void disableCull() {
+        ensureRenderThread();
         if (sCullState) {
             sCullState = false;
             glDisable(GL_CULL_FACE);
@@ -146,10 +173,46 @@ public class GLWrapper {
      * @param mode One of {@link GL43#GL_FRONT}, {@link GL43#GL_BACK} and
      *             {@link GL43#GL_FRONT_AND_BACK}
      */
+    @RenderThread
     public static void cullFace(int mode) {
-        if (mode != sCullMode) {
-            sCullMode = mode;
-            glCullFace(mode);
-        }
+        ensureRenderThread();
+        if (mode == GL_FRONT || mode == GL_BACK || mode == GL_FRONT_AND_BACK) {
+            if (mode != sCullMode) {
+                sCullMode = mode;
+                glCullFace(mode);
+            }
+        } else
+            throw new IllegalArgumentException("Invalid mode for glCullFace");
+    }
+
+    /**
+     * Applies a new viewport rect and pushes it into the stack.
+     *
+     * @param viewport the viewport rect.
+     * @throws java.util.EmptyStackException not called reset()
+     */
+    @RenderThread
+    public static void pushViewport(@Nonnull Rect viewport) {
+        ensureRenderThread();
+        if (viewport.isEmpty())
+            return;
+        final Rect top = sViewportStack.peek();
+        sViewportStack.push(viewport);
+        if (top.equals(viewport))
+            return;
+        glViewport(viewport.left, viewport.top, viewport.width(), viewport.height());
+    }
+
+    /**
+     * Applies the last viewport rect.
+     */
+    @RenderThread
+    public static void popViewport() {
+        ensureRenderThread();
+        final Rect last;
+        if (!sViewportStack.peek().equals(last = sViewportStack.pop()))
+            glViewport(last.left, last.top, last.width(), last.height());
+        if (sViewportStack.isEmpty())
+            throw new IllegalStateException("Popping the main viewport");
     }
 }

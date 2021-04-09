@@ -78,6 +78,10 @@ public final class RenderCore {
             throw new IllegalStateException("Not called from render thread");
     }
 
+    public static Thread getRenderThread() {
+        return sRenderThread;
+    }
+
     /**
      * Call after creating a Window on render thread.
      */

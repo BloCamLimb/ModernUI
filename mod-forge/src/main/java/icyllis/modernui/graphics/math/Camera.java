@@ -18,6 +18,8 @@
 
 package icyllis.modernui.graphics.math;
 
+import icyllis.modernui.math.Matrix4;
+
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,24 +27,24 @@ import java.util.List;
 @Deprecated
 public class Camera {
 
-    private List<Matrix4f> matrix4fs = new ArrayList<>();
+    private List<Matrix4> mMatrix4s = new ArrayList<>();
 
-    public Camera(Matrix4f matrix4f) {
-        this.matrix4fs.add(matrix4f);
+    public Camera(Matrix4 matrix4) {
+        this.mMatrix4s.add(matrix4);
     }
 
-    public Matrix4f getMatrix() {
-        int i = matrix4fs.size() - 1;
-        return matrix4fs.get(i);
+    public Matrix4 getMatrix() {
+        int i = mMatrix4s.size() - 1;
+        return mMatrix4s.get(i);
     }
 
     public void push() {
-        matrix4fs.add(getMatrix());
+        mMatrix4s.add(getMatrix());
     }
 
     public void pop() {
-        int i = matrix4fs.size() - 1;
-        matrix4fs.remove(i);
+        int i = mMatrix4s.size() - 1;
+        mMatrix4s.remove(i);
     }
 
     public void translate(float x, float y, float z) {
@@ -52,6 +54,6 @@ public class Camera {
 
     @Nonnull
     public static Camera getCameraFromGL() {
-        return new Camera(Matrix4f.getMVPMatrixFromGL());
+        return new Camera(Matrix4.getMVPMatrixFromGL());
     }
 }
