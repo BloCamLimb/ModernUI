@@ -51,6 +51,8 @@ public final class Window implements AutoCloseable {
     private boolean mBorderless;
     private boolean mFullscreen;
 
+    private boolean mNeedRefresh;
+
     public Window(@Nonnull String title, @Nonnull WindowMode mode, int width, int height) {
         // set hints
         glfwDefaultWindowHints();
@@ -98,6 +100,7 @@ public final class Window implements AutoCloseable {
         // set callbacks
         glfwSetWindowPosCallback(handle, this::callbackPos);
         glfwSetWindowSizeCallback(handle, this::callbackSize);
+        glfwSetWindowRefreshCallback(handle, this::callbackRefresh);
         glfwSetWindowFocusCallback(handle, this::callbackFocus);
         glfwSetWindowIconifyCallback(handle, this::callbackIconify);
         glfwSetWindowMaximizeCallback(handle, this::callbackMaximize);
@@ -131,6 +134,8 @@ public final class Window implements AutoCloseable {
 
         mHandle = handle;
         mMode = mode;
+
+        mNeedRefresh = true;
     }
 
     private void callbackPos(long window, int xPos, int yPos) {
@@ -141,6 +146,13 @@ public final class Window implements AutoCloseable {
     private void callbackSize(long window, int width, int height) {
         mWidth = width;
         mHeight = height;
+    }
+
+    private void callbackRefresh(long window) {
+        if (!mNeedRefresh) {
+            mNeedRefresh = true;
+            RenderCore.getRenderThread().interrupt();
+        }
     }
 
     private void callbackFocus(long window, boolean focused) {
@@ -209,6 +221,7 @@ public final class Window implements AutoCloseable {
 
     public void swapBuffers() {
         glfwSwapBuffers(mHandle);
+        mNeedRefresh = false;
     }
 
     public void destroy() {
@@ -246,7 +259,7 @@ public final class Window implements AutoCloseable {
      *
      * @return framebuffer width
      */
-    public int getFramebufferWidth() {
+    public int getWidth() {
         return mFramebufferWidth;
     }
 
@@ -255,7 +268,11 @@ public final class Window implements AutoCloseable {
      *
      * @return framebuffer height
      */
-    public int getFramebufferHeight() {
+    public int getHeight() {
         return mFramebufferHeight;
+    }
+
+    public boolean needsRefresh() {
+        return mNeedRefresh;
     }
 }

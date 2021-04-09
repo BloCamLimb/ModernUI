@@ -47,6 +47,9 @@ import net.minecraft.world.item.ItemStack;
 import org.lwjgl.opengl.GL43;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import static icyllis.modernui.platform.RenderCore.ensureRenderThread;
 
 /**
  * A canvas is used to draw contents for View, likes rectangles,
@@ -125,9 +128,14 @@ public class Canvas {
     private static boolean lineAA = false;
 
 
-    private Canvas(@Nonnull Minecraft minecraft) {
-        mMainWindow = minecraft.getWindow();
-        mItemRenderer = minecraft.getItemRenderer();
+    private Canvas(@Nullable Minecraft minecraft) {
+        if (minecraft != null) {
+            mMainWindow = minecraft.getWindow();
+            mItemRenderer = minecraft.getItemRenderer();
+        } else {
+            mMainWindow = null;
+            mItemRenderer = null;
+        }
     }
 
     /**
@@ -138,7 +146,7 @@ public class Canvas {
      * @see UIManager#initialize()
      */
     public static Canvas getInstance() {
-        RenderSystem.assertThread(RenderSystem::isOnRenderThread);
+        ensureRenderThread();
         if (instance == null) {
             instance = new Canvas(Minecraft.getInstance());
             ModernUI.LOGGER.debug(RenderCore.MARKER, "Canvas prepared");

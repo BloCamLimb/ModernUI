@@ -30,6 +30,7 @@ import org.lwjgl.system.NativeType;
 
 import javax.annotation.Nonnull;
 import java.io.BufferedInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Locale;
@@ -112,7 +113,10 @@ public final class Shader {
         if (shader != null) {
             return shader;
         }
-        try (InputStream stream = new BufferedInputStream(manager.getResource(location).getInputStream())) {
+        String path = manager == null ? System.getenv().getOrDefault("MOD_ASSETS", "")
+                .replace('\\', '/') + location.getNamespace() + '/' + location.getPath() : "";
+        try (InputStream stream = new BufferedInputStream(manager == null ?
+                new FileInputStream(path) : manager.getResource(location).getInputStream())) {
             String src = RenderCore.readStringASCII(stream);
             if (src != null) {
                 int id = glCreateShader(type.mGlType);

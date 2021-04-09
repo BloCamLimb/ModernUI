@@ -19,16 +19,28 @@
 package icyllis.modernui.test;
 
 import com.ibm.icu.text.BreakIterator;
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.math.Matrix4f;
+import com.mojang.math.Quaternion;
+import com.mojang.math.Vector3f;
 import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.ast.Node;
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.GLWrapper;
+import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.graphics.shader.ShaderProgram;
+import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.platform.Window;
 import icyllis.modernui.platform.WindowMode;
 import icyllis.modernui.text.GraphemeBreak;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL43;
 import org.lwjgl.system.Callback;
 
 import javax.annotation.Nonnull;
@@ -97,7 +109,7 @@ public class TestMain {
         GRAPHICS.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         /*String s = "\u0641\u0647\u0648\u064a\u062a\u062d\u062f\u0651\u062b\u0020\u0628\u0644\u063a\u0629\u0020";
         Font font = ALL_FONTS.stream().filter(f -> f.canDisplayUpTo("\u0641\u0647\u0648") == -1).findFirst().get();
         GlyphVector vector = font.layoutGlyphVector(GRAPHICS.getFontRenderContext(),
@@ -112,6 +124,27 @@ public class TestMain {
 
         /*System.setProperty("org.lwjgl.librarypath", nativesDir);*/
 
+        float[] av = new float[]{1, 3, 2, 4.1f, 6, 0, 6, 0.5f, 5, 7, 11.3f, 9, 9.1f, 15, 8, 10};
+        float[] bv = new float[]{9.1f, 2, 7, 5, 3.3f, 6.1f, 5.5f, 4, 0, 8, 3, 1, 2.7f, 3, 9, 2};
+        /*float[] o = new float[16];
+        Matrix4f a = new Matrix4f(av);
+        Matrix4f b = new Matrix4f(bv);
+        Thread.sleep(1000);
+        long c = System.nanoTime();
+        Thread.sleep(1000);
+        c = System.nanoTime();
+        for (int i = 0; i < 100000; i++)
+            a.multiply(b);
+        c = System.nanoTime() - c;
+        ModernUI.LOGGER.info("Finish in {}ms", (c) / 1000000f);*/
+        /*Matrix4f mat = new Matrix4f();
+        mat.setIdentity();
+        mat.multiply(new Quaternion(Vector3f.ZN, 60, true));
+        ModernUI.LOGGER.info(mat);*/
+        Matrix4 matrix = new Matrix4(av);
+        matrix.inverse();
+        ModernUI.LOGGER.info(matrix);
+
         if (!CREATE_WINDOW)
             return;
         try {
@@ -119,16 +152,52 @@ public class TestMain {
             RenderCore.initBackend();
             sWindow = new Window("Modern UI Layout Editor", WindowMode.WINDOWED, 1280, 720);
             Thread t = new Thread(() -> {
-                Window window = sWindow;
+                final Window window = sWindow;
                 window.makeCurrent();
                 RenderCore.initEngine();
+                RenderSystem.initRenderThread();
+                ShaderProgram.linkAll(null);
+                Matrix4f projection = Matrix4f.perspective(90, 16f / 9, 1, 100);
                 while (window.exists()) {
-                    if (needRedraw) {
+                    if (window.needsRefresh()) {
+                        GLWrapper.reset(window);
+                        GLWrapper.enableCull();
+                        RenderSystem.enableBlend();
+                        RenderSystem.defaultBlendFunc();
+                        RenderSystem.disableDepthTest();
+                        GlStateManager._colorMask(true, true, true, true);
+                        GlStateManager._depthMask(false);
+                        RenderSystem.matrixMode(GL11.GL_PROJECTION);
+                        GL43.glPushMatrix();
+                        RenderSystem.loadIdentity();
+                        //RenderSystem.ortho(0.0D, window.getWidth(), window.getHeight(), 0.0D, 1000.0D, 3000.0D);
+                        double c = glfwGetTime();
+                        //a.multiply(b);
+                        RenderSystem.multMatrix(projection);
+                        c = glfwGetTime() - c;
+                        ModernUI.LOGGER.info("Mul Matrix: {} microseconds", c * 1000000);
+                        RenderSystem.matrixMode(GL11.GL_MODELVIEW);
+                        GL43.glPushMatrix();
+                        RenderSystem.loadIdentity();
+                        //GlStateManager._translatef(0.0F, 0.0F, -2000.0F);
+                        GL11.glTranslatef(-1.58f * 1.777f, -1.0f, -3.8f);
+                        GL11.glScalef(1 / 90f, -1 / 90f, 1 / 90f);
+                        GL11.glRotatef(90, 0, 1, 0);
+                        Paint paint = Paint.take();
+                        paint.reset();
+                        paint.setFeatherRadius(4);
+                        paint.setStyle(Paint.Style.STROKE);
+                        paint.setStrokeWidth(16);
+                        Canvas.getInstance().drawArc(50, 50, 35, -30, 210, Paint.take());
+                        GL11.glPopMatrix();
+                        GL11.glMatrixMode(GL11.GL_PROJECTION);
+                        GL11.glPopMatrix();
+                        GL11.glMatrixMode(GL11.GL_MODELVIEW);
+
                         window.swapBuffers();
-                        needRedraw = false;
                     }
                     try {
-                        Thread.sleep(1000);
+                        Thread.currentThread().join();
                     } catch (InterruptedException ignored) {
 
                     }
