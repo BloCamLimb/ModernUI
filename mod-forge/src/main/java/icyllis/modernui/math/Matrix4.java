@@ -18,15 +18,13 @@
 
 package icyllis.modernui.math;
 
-import net.minecraft.util.Mth;
-import org.lwjgl.opengl.GL11;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
  * Represents a 4x4 matrix.
  */
+@SuppressWarnings("unused")
 public class Matrix4 implements Cloneable {
 
     private static final float[] sMultiMat = new float[28];
@@ -51,10 +49,9 @@ public class Matrix4 implements Cloneable {
     protected float m44;
 
     /**
-     * Create a new identity matrix.
+     * Create a zero matrix.
      */
     public Matrix4() {
-        setIdentity();
     }
 
     /**
@@ -94,18 +91,83 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Create a matrix from some other matrix.
+     * Create a copy of {@code mat} if it's not null, or a zero matrix otherwise.
      *
-     * @param mat other matrix to copy from
+     * @param mat the matrix to copy from
+     * @return a copy of the matrix
      */
-    public Matrix4(@Nonnull Matrix4 mat) {
-        set(mat);
+    @Nonnull
+    public static Matrix4 copy(@Nullable Matrix4 mat) {
+        return mat == null ? new Matrix4() : mat.clone();
+    }
+
+    /**
+     * Create a new identity matrix.
+     *
+     * @return an identity matrix
+     */
+    @Nonnull
+    public static Matrix4 identity() {
+        Matrix4 mat = new Matrix4();
+        mat.m11 = mat.m22 = mat.m33 = mat.m44 = 1.0f;
+        return mat;
+    }
+
+    /**
+     * Create an orthographic projection matrix.
+     *
+     * @param left   the left frustum plane
+     * @param right  the right frustum plane
+     * @param bottom the bottom frustum plane
+     * @param top    the top frustum plane
+     * @param near   the near frustum plane
+     * @param far    the far frustum plane
+     * @return the resulting matrix
+     */
+    @Nonnull
+    public static Matrix4 orthographic(float left, float right, float bottom, float top, float near, float far) {
+        Matrix4 mat = new Matrix4();
+        float invRL = 1.0f / (right - left);
+        float invTB = 1.0f / (top - bottom);
+        float invNF = 1.0f / (near - far);
+        mat.m11 = 2.0f * invRL;
+        mat.m22 = 2.0f * invTB;
+        mat.m33 = 2.0f * invNF;
+        mat.m14 = -(right + left) * invRL;
+        mat.m24 = -(top + bottom) * invTB;
+        mat.m34 = (near + far) * invNF;
+        mat.m44 = 1.0f;
+        return mat;
+    }
+
+    /**
+     * Create an orthographic projection matrix. The left plane and top plane
+     * of it is considered to be 0.
+     *
+     * @param width  the distance from right frustum plane to left frustum plane
+     * @param height the distance from bottom frustum plane to top frustum plane
+     * @param near   the near frustum plane
+     * @param far    the far frustum plane
+     * @return the resulting matrix
+     */
+    @Nonnull
+    public static Matrix4 orthographic(float width, float height, float near, float far) {
+        Matrix4 mat = new Matrix4();
+        float invNF = 1.0f / (near - far);
+        mat.m11 = 2.0f / width;
+        mat.m22 = 2.0f / height;
+        mat.m33 = 2.0f * invNF;
+        mat.m14 = -1.0f;
+        mat.m24 = -1.0f;
+        mat.m34 = (near + far) * invNF;
+        mat.m44 = 1.0f;
+        return mat;
     }
 
     /**
      * Add each element of the given matrix to the corresponding element of this matrix.
      *
-     * @param other the matrix to add.
+     * @param other the matrix to add to
      */
     public void add(@Nonnull Matrix4 other) {
         m11 += other.m11;
@@ -127,11 +189,37 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
+     * Subtract each element of the given matrix from the corresponding element of this matrix.
+     *
+     * @param other the matrix to subtract from
+     */
+    public void subtract(@Nonnull Matrix4 other) {
+        m11 -= other.m11;
+        m12 -= other.m12;
+        m13 -= other.m13;
+        m14 -= other.m14;
+        m21 -= other.m21;
+        m22 -= other.m22;
+        m23 -= other.m23;
+        m24 -= other.m24;
+        m31 -= other.m31;
+        m32 -= other.m32;
+        m33 -= other.m33;
+        m34 -= other.m34;
+        m41 -= other.m41;
+        m42 -= other.m42;
+        m43 -= other.m43;
+        m44 -= other.m44;
+    }
+
+    /**
      * Multiply each element of this matrix by a factor.
      *
      * @param s the factor to multiply.
      */
     public void multiply(float s) {
+        if (s == 1.0f)
+            return;
         m11 *= s;
         m12 *= s;
         m13 *= s;
@@ -156,8 +244,14 @@ public class Matrix4 implements Cloneable {
      *
      * @param a left hand side matrix
      * @param b right hand side matrix
+     * @return this quaternion for chaining.
      */
-    public void setMultiply(@Nonnull Matrix4 a, @Nonnull Matrix4 b) {
+    @Nonnull
+    public Matrix4 setMultiply(@Nonnull Matrix4 a, @Nonnull Matrix4 b) {
+        if (b.isIdentity()) {
+            if (this != a) set(a);
+            return this;
+        }
         float f11 = a.m11 * b.m11 + a.m12 * b.m21 + a.m13 * b.m31 + a.m14 * b.m41;
         float f12 = a.m11 * b.m12 + a.m12 * b.m22 + a.m13 * b.m32 + a.m14 * b.m42;
         float f13 = a.m11 * b.m13 + a.m12 * b.m23 + a.m13 * b.m33 + a.m14 * b.m43;
@@ -190,30 +284,49 @@ public class Matrix4 implements Cloneable {
         m42 = f42;
         m43 = f43;
         m44 = f44;
+        return this;
+    }
+
+    /**
+     * Pre-multiply this matrix by given quaternion.
+     *
+     * @param quat the quaternion to multiply with.
+     * @return this quaternion for chaining.
+     */
+    @Nonnull
+    public Matrix4 multiply(@Nonnull Quaternion quat) {
+        return setMultiply(this, quat.toMatrix());
     }
 
     /**
      * Pre-multiply this matrix by some other matrix.
      *
      * @param other the matrix to multiply.
+     * @return this quaternion for chaining.
      */
-    public void multiply(@Nonnull Matrix4 other) {
-        setMultiply(this, other);
+    @Nonnull
+    public Matrix4 multiply(@Nonnull Matrix4 other) {
+        return setMultiply(this, other);
     }
 
     /**
      * Post-multiply this matrix by some other matrix.
      *
      * @param other the matrix to post-multiply.
+     * @return this quaternion for chaining.
      */
-    public void postMultiply(@Nonnull Matrix4 other) {
-        setMultiply(other, this);
+    @Nonnull
+    public Matrix4 postMultiply(@Nonnull Matrix4 other) {
+        return setMultiply(other, this);
     }
 
     /**
      * Set this matrix to the zero matrix.
+     *
+     * @return this quaternion for chaining.
      */
-    public void setZero() {
+    @Nonnull
+    public Matrix4 setZero() {
         m11 = 0.0f;
         m12 = 0.0f;
         m13 = 0.0f;
@@ -230,12 +343,16 @@ public class Matrix4 implements Cloneable {
         m42 = 0.0f;
         m43 = 0.0f;
         m44 = 0.0f;
+        return this;
     }
 
     /**
      * Set this matrix to the identity matrix.
+     *
+     * @return this quaternion for chaining.
      */
-    public void setIdentity() {
+    @Nonnull
+    public Matrix4 setIdentity() {
         m11 = 1.0f;
         m12 = 0.0f;
         m13 = 0.0f;
@@ -252,12 +369,14 @@ public class Matrix4 implements Cloneable {
         m42 = 0.0f;
         m43 = 0.0f;
         m44 = 1.0f;
+        return this;
     }
 
     /**
      * Set this matrix elements from an array.
      *
      * @param arr the array to copy from
+     * @see #Matrix4(float...)
      */
     public void set(@Nonnull float[] arr) {
         if (arr.length < 16)
@@ -320,37 +439,138 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
+     * Calculate the trace of this matrix.
+     *
+     * @return the trace of this matrix
+     */
+    public float trace() {
+        return m11 + m22 + m33 + m44;
+    }
+
+    /**
      * Calculate the transpose of this matrix.
      */
     public void transpose() {
+        transpose(this);
+    }
+
+    /**
+     * Calculate the transpose of this matrix and store the result to out matrix.
+     *
+     * @param out the matrix for storing the result.
+     */
+    public void transpose(@Nonnull Matrix4 out) {
         float t = m21;
-        m21 = m12;
-        m12 = t;
+        out.m21 = m12;
+        out.m12 = t;
         t = m31;
-        m31 = m13;
-        m13 = t;
+        out.m31 = m13;
+        out.m13 = t;
         t = m32;
-        m32 = m23;
-        m23 = t;
+        out.m32 = m23;
+        out.m23 = t;
         t = m41;
-        m41 = m14;
-        m14 = t;
+        out.m41 = m14;
+        out.m14 = t;
         t = m42;
-        m42 = m24;
-        m24 = t;
+        out.m42 = m24;
+        out.m24 = t;
         t = m43;
-        m43 = m34;
-        m34 = t;
+        out.m43 = m34;
+        out.m34 = t;
     }
 
     /**
      * Calculate the adjugate matrix of this matrix, namely the transpose of
-     * the algebraic cofactor matrix of this matrix. The determinant of this
-     * matrix will be returned.
+     * the algebraic cofactor matrix of this matrix.
+     */
+    public void adjugate() {
+        adjugate(this);
+    }
+
+    /**
+     * Calculate the adjugate matrix of this matrix, namely the transpose of
+     * the algebraic cofactor matrix of this matrix, and store the result to
+     * out matrix.
+     *
+     * @param out the matrix for storing the result.
+     */
+    public void adjugate(@Nonnull Matrix4 out) {
+        // det of [row1,row2,column1,column2]
+        float det1_12 = m11 * m22 - m12 * m21;
+        float det1_13 = m11 * m23 - m13 * m21;
+        float det1_14 = m11 * m24 - m14 * m21;
+        float det1_23 = m12 * m23 - m13 * m22;
+        float det1_24 = m12 * m24 - m14 * m22;
+        float det1_34 = m13 * m24 - m14 * m23;
+
+        // calc algebraic cofactor
+        float f31 = m42 * det1_34 - m43 * det1_24 + m44 * det1_23;
+        float f32 = -m41 * det1_34 + m43 * det1_14 - m44 * det1_13;
+        float f33 = m41 * det1_24 - m42 * det1_14 + m44 * det1_12;
+        float f34 = -m41 * det1_23 + m42 * det1_13 - m43 * det1_12;
+        float f41 = -m32 * det1_34 + m33 * det1_24 - m34 * det1_23;
+        float f42 = m31 * det1_34 - m33 * det1_14 + m34 * det1_13;
+        float f43 = -m31 * det1_24 + m32 * det1_14 - m34 * det1_12;
+        float f44 = m31 * det1_23 - m32 * det1_13 + m33 * det1_12;
+
+        // det of [row3,row4,column1,column2]
+        det1_12 = m31 * m42 - m32 * m41;
+        det1_13 = m31 * m43 - m33 * m41;
+        det1_14 = m31 * m44 - m34 * m41;
+        det1_23 = m32 * m43 - m33 * m42;
+        det1_24 = m32 * m44 - m34 * m42;
+        det1_34 = m33 * m44 - m34 * m43;
+
+        // calc algebraic cofactor
+        float f11 = m22 * det1_34 - m23 * det1_24 + m24 * det1_23;
+        float f12 = -m21 * det1_34 + m23 * det1_14 - m24 * det1_13;
+        float f13 = m21 * det1_24 - m22 * det1_14 + m24 * det1_12;
+        float f14 = -m21 * det1_23 + m22 * det1_13 - m23 * det1_12;
+        float f21 = -m12 * det1_34 + m13 * det1_24 - m14 * det1_23;
+        float f22 = m11 * det1_34 - m13 * det1_14 + m14 * det1_13;
+        float f23 = -m11 * det1_24 + m12 * det1_14 - m14 * det1_12;
+        float f24 = m11 * det1_23 - m12 * det1_13 + m13 * det1_12;
+
+        // transpose cofactor matrix
+        out.m11 = f11;
+        out.m21 = f12;
+        out.m31 = f13;
+        out.m41 = f14;
+        out.m12 = f21;
+        out.m22 = f22;
+        out.m32 = f23;
+        out.m42 = f24;
+        out.m13 = f31;
+        out.m23 = f32;
+        out.m33 = f33;
+        out.m43 = f34;
+        out.m14 = f41;
+        out.m24 = f42;
+        out.m34 = f43;
+        out.m44 = f44;
+    }
+
+    /**
+     * Calculate the adjugate matrix of this matrix, namely the transpose of
+     * the algebraic cofactor matrix of this matrix, and store the result to
+     * out matrix. The determinant of this matrix will be returned as well.
      *
      * @return the determinant of this matrix.
      */
-    public float adjugate() {
+    public float adjugateAndDet() {
+        return adjugateAndDet(this);
+    }
+
+    /**
+     * Calculate the adjugate matrix of this matrix, namely the transpose of
+     * the algebraic cofactor matrix of this matrix, and store the result to
+     * out matrix. The determinant of this matrix will be returned as well.
+     *
+     * @param out the matrix for storing the result.
+     * @return the determinant of this matrix.
+     */
+    public float adjugateAndDet(@Nonnull Matrix4 out) {
         // det of [row1,row2,column1,column2]
         float det1_12 = m11 * m22 - m12 * m21;
         float det1_13 = m11 * m23 - m13 * m21;
@@ -388,22 +608,22 @@ public class Matrix4 implements Cloneable {
         float f24 = m11 * det3_23 - m12 * det3_13 + m13 * det3_12;
 
         // transpose cofactor matrix
-        m11 = f11;
-        m21 = f12;
-        m31 = f13;
-        m41 = f14;
-        m12 = f21;
-        m22 = f22;
-        m32 = f23;
-        m42 = f24;
-        m13 = f31;
-        m23 = f32;
-        m33 = f33;
-        m43 = f34;
-        m14 = f41;
-        m24 = f42;
-        m34 = f43;
-        m44 = f44;
+        out.m11 = f11;
+        out.m21 = f12;
+        out.m31 = f13;
+        out.m41 = f14;
+        out.m12 = f21;
+        out.m22 = f22;
+        out.m32 = f23;
+        out.m42 = f24;
+        out.m13 = f31;
+        out.m23 = f32;
+        out.m33 = f33;
+        out.m43 = f34;
+        out.m14 = f41;
+        out.m24 = f42;
+        out.m34 = f43;
+        out.m44 = f44;
 
         return det1_12 * det3_34 - det1_13 * det3_24 + det1_14 * det3_23 +
                 det1_23 * det3_14 - det1_24 * det3_13 + det1_34 * det3_12;
@@ -416,23 +636,42 @@ public class Matrix4 implements Cloneable {
      * @return {@code true} if this matrix is invertible.
      */
     public boolean inverse() {
+        return inverse(this);
+    }
+
+    /**
+     * Calculate the inverse of this matrix. The out matrix will be the inverse
+     * matrix if it is invertible, otherwise it will be the adjugate matrix.
+     *
+     * @return {@code true} if this matrix is invertible.
+     */
+    public boolean inverse(@Nonnull Matrix4 out) {
         // the reciprocal of determinant
-        float f = 1.0f / adjugate();
-        if (MathUtil.equal(f, 0.0f, 1.0e-6f))
+        float f = 1.0f / adjugateAndDet(out);
+        if (MathUtil.isZero(f))
             return false;
-        multiply(f);
+        out.multiply(f);
         return true;
+    }
+
+    /**
+     * Calculate whether this matrix is invertible.
+     *
+     * @return {@code true} if this matrix is invertible
+     */
+    public boolean invertible() {
+        return !MathUtil.isZero(determinant());
     }
 
     /**
      * Pre-multiply by a rotation clockwise about the positive X-axis
      * into this matrix.
      *
-     * @param radian the clockwise rotation radian.
+     * @param rad the clockwise rotation radian.
      */
-    public void rotateX(float radian) {
-        float s = Mth.sin(radian);
-        float c = Mth.cos(radian);
+    public void rotateX(float rad) {
+        float s = MathUtil.sin(rad);
+        float c = MathUtil.cos(rad);
         float f21 = c * m21 - s * m31;
         float f22 = c * m22 - s * m32;
         float f23 = c * m23 - s * m33;
@@ -451,11 +690,11 @@ public class Matrix4 implements Cloneable {
      * Pre-multiply by a rotation clockwise about the positive Y-axis
      * into this matrix.
      *
-     * @param radian the clockwise rotation radian.
+     * @param rad the clockwise rotation radian.
      */
-    public void rotateY(float radian) {
-        float s = Mth.sin(radian);
-        float c = Mth.cos(radian);
+    public void rotateY(float rad) {
+        float s = MathUtil.sin(rad);
+        float c = MathUtil.cos(rad);
         float f11 = c * m11 + s * m31;
         float f12 = c * m12 + s * m32;
         float f13 = c * m13 + s * m33;
@@ -474,11 +713,11 @@ public class Matrix4 implements Cloneable {
      * Pre-multiply by a rotation clockwise about the positive Z-axis
      * into this matrix.
      *
-     * @param radian the clockwise rotation radian.
+     * @param rad the clockwise rotation radian.
      */
-    public void rotateZ(float radian) {
-        float s = Mth.sin(radian);
-        float c = Mth.cos(radian);
+    public void rotateZ(float rad) {
+        float s = MathUtil.sin(rad);
+        float c = MathUtil.cos(rad);
         float f11 = c * m11 - s * m21;
         float f12 = c * m12 - s * m22;
         float f13 = c * m13 - s * m23;
@@ -531,24 +770,24 @@ public class Matrix4 implements Cloneable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Matrix4 matrix4 = (Matrix4) o;
+        Matrix4 mat = (Matrix4) o;
 
-        if (Float.compare(matrix4.m11, m11) != 0) return false;
-        if (Float.compare(matrix4.m12, m12) != 0) return false;
-        if (Float.compare(matrix4.m13, m13) != 0) return false;
-        if (Float.compare(matrix4.m14, m14) != 0) return false;
-        if (Float.compare(matrix4.m21, m21) != 0) return false;
-        if (Float.compare(matrix4.m22, m22) != 0) return false;
-        if (Float.compare(matrix4.m23, m23) != 0) return false;
-        if (Float.compare(matrix4.m24, m24) != 0) return false;
-        if (Float.compare(matrix4.m31, m31) != 0) return false;
-        if (Float.compare(matrix4.m32, m32) != 0) return false;
-        if (Float.compare(matrix4.m33, m33) != 0) return false;
-        if (Float.compare(matrix4.m34, m34) != 0) return false;
-        if (Float.compare(matrix4.m41, m41) != 0) return false;
-        if (Float.compare(matrix4.m42, m42) != 0) return false;
-        if (Float.compare(matrix4.m43, m43) != 0) return false;
-        return Float.compare(matrix4.m44, m44) == 0;
+        if (!MathUtil.exactEqual(mat.m11, m11)) return false;
+        if (!MathUtil.exactEqual(mat.m12, m12)) return false;
+        if (!MathUtil.exactEqual(mat.m13, m13)) return false;
+        if (!MathUtil.exactEqual(mat.m14, m14)) return false;
+        if (!MathUtil.exactEqual(mat.m21, m21)) return false;
+        if (!MathUtil.exactEqual(mat.m22, m22)) return false;
+        if (!MathUtil.exactEqual(mat.m23, m23)) return false;
+        if (!MathUtil.exactEqual(mat.m24, m24)) return false;
+        if (!MathUtil.exactEqual(mat.m31, m31)) return false;
+        if (!MathUtil.exactEqual(mat.m32, m32)) return false;
+        if (!MathUtil.exactEqual(mat.m33, m33)) return false;
+        if (!MathUtil.exactEqual(mat.m34, m34)) return false;
+        if (!MathUtil.exactEqual(mat.m41, m41)) return false;
+        if (!MathUtil.exactEqual(mat.m42, m42)) return false;
+        if (!MathUtil.exactEqual(mat.m43, m43)) return false;
+        return MathUtil.exactEqual(mat.m44, m44);
     }
 
     @Override
@@ -595,9 +834,9 @@ public class Matrix4 implements Cloneable {
     }
 
     @Override
-    public Object clone() {
+    public Matrix4 clone() {
         try {
-            return super.clone();
+            return (Matrix4) super.clone();
         } catch (CloneNotSupportedException e) {
             throw new InternalError(e);
         }
@@ -842,17 +1081,5 @@ public class Matrix4 implements Cloneable {
         out[11] = temp[1] - temp[5] + temp[9] + temp[21];
         out[14] = temp[2] - temp[6] + temp[10] + temp[22];
         out[15] = temp[3] - temp[7] + temp[11] + temp[23];
-    }
-
-    @Deprecated
-    @Nonnull
-    public static Matrix4 getMVPMatrixFromGL() {
-        float[] mv = new float[16];
-        float[] pj = new float[16];
-        GL11.glGetFloatv(GL11.GL_MODELVIEW_MATRIX, mv);
-        GL11.glGetFloatv(GL11.GL_PROJECTION_MATRIX, pj);
-        Matrix4 matrix4 = new Matrix4(mv);
-        matrix4.multiply(new Matrix4(pj));
-        return matrix4;
     }
 }

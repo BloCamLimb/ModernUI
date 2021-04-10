@@ -21,7 +21,6 @@ package icyllis.modernui.graphics;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.graphics.font.GlyphManager;
-import icyllis.modernui.graphics.math.Rect;
 import icyllis.modernui.platform.Window;
 import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.GLCapabilities;

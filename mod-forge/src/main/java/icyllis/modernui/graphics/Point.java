@@ -16,17 +16,17 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.math;
+package icyllis.modernui.graphics;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
-public class Point {
+public class Point implements Cloneable {
 
     public int x;
     public int y;
 
     public Point() {
-
     }
 
     public Point(int x, int y) {
@@ -34,9 +34,9 @@ public class Point {
         this.y = y;
     }
 
-    public Point(@Nonnull Point point) {
-        x = point.x;
-        y = point.y;
+    @Nonnull
+    public static Point copy(@Nullable Point p) {
+        return p == null ? new Point() : p.clone();
     }
 
     public void set(int x, int y) {
@@ -44,12 +44,12 @@ public class Point {
         this.y = y;
     }
 
-    public void opposite() {
+    public void negate() {
         x = -x;
         y = -y;
     }
 
-    public void translate(int dx, int dy) {
+    public void offset(int dx, int dy) {
         x += dx;
         y += dy;
     }
@@ -74,9 +74,17 @@ public class Point {
 
     @Override
     public String toString() {
-        return "Point{" +
-                "x=" + x +
-                ", y=" + y +
-                '}';
+        return "Point(" +
+                x + ", " + y +
+                ')';
+    }
+
+    @Override
+    public Point clone() {
+        try {
+            return (Point) super.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new InternalError(e);
+        }
     }
 }
