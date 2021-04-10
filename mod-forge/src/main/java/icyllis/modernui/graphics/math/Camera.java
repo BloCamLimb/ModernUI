@@ -51,9 +51,4 @@ public class Camera {
 
     }
 
-
-    @Nonnull
-    public static Camera getCameraFromGL() {
-        return new Camera(Matrix4.getMVPMatrixFromGL());
-    }
 }

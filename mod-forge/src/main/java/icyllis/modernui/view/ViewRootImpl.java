@@ -20,7 +20,7 @@ package icyllis.modernui.view;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.math.Point;
+import icyllis.modernui.graphics.Point;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

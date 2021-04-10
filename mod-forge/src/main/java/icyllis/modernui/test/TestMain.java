@@ -32,11 +32,13 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.GLWrapper;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.shader.ShaderProgram;
+import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.platform.Window;
 import icyllis.modernui.platform.WindowMode;
 import icyllis.modernui.text.GraphemeBreak;
+import net.minecraft.util.Mth;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.opengl.GL11;
@@ -47,10 +49,8 @@ import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
-import java.util.Arrays;
+import java.util.*;
 import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
 import java.util.stream.Stream;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -126,24 +126,8 @@ public class TestMain {
 
         float[] av = new float[]{1, 3, 2, 4.1f, 6, 0, 6, 0.5f, 5, 7, 11.3f, 9, 9.1f, 15, 8, 10};
         float[] bv = new float[]{9.1f, 2, 7, 5, 3.3f, 6.1f, 5.5f, 4, 0, 8, 3, 1, 2.7f, 3, 9, 2};
-        /*float[] o = new float[16];
-        Matrix4f a = new Matrix4f(av);
-        Matrix4f b = new Matrix4f(bv);
-        Thread.sleep(1000);
-        long c = System.nanoTime();
-        Thread.sleep(1000);
-        c = System.nanoTime();
-        for (int i = 0; i < 100000; i++)
-            a.multiply(b);
-        c = System.nanoTime() - c;
-        ModernUI.LOGGER.info("Finish in {}ms", (c) / 1000000f);*/
-        /*Matrix4f mat = new Matrix4f();
-        mat.setIdentity();
-        mat.multiply(new Quaternion(Vector3f.ZN, 60, true));
-        ModernUI.LOGGER.info(mat);*/
-        Matrix4 matrix = new Matrix4(av);
-        matrix.inverse();
-        ModernUI.LOGGER.info(matrix);
+
+        ModernUI.LOGGER.info("{}", MathUtil.approxEqual(1.0f - 1/3f - 1/3f - 1/3f, +0.0f));
 
         if (!CREATE_WINDOW)
             return;
@@ -171,11 +155,8 @@ public class TestMain {
                         GL43.glPushMatrix();
                         RenderSystem.loadIdentity();
                         //RenderSystem.ortho(0.0D, window.getWidth(), window.getHeight(), 0.0D, 1000.0D, 3000.0D);
-                        double c = glfwGetTime();
                         //a.multiply(b);
                         RenderSystem.multMatrix(projection);
-                        c = glfwGetTime() - c;
-                        ModernUI.LOGGER.info("Mul Matrix: {} microseconds", c * 1000000);
                         RenderSystem.matrixMode(GL11.GL_MODELVIEW);
                         GL43.glPushMatrix();
                         RenderSystem.loadIdentity();

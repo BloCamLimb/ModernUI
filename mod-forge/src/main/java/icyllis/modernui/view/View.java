@@ -21,7 +21,7 @@ package icyllis.modernui.view;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.graphics.math.Point;
+import icyllis.modernui.graphics.Point;
 import icyllis.modernui.widget.ScrollController;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;

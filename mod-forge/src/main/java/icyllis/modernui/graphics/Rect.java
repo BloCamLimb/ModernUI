@@ -16,12 +16,24 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.math;
+package icyllis.modernui.graphics;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class Rect {
+/**
+ * Rect holds four integer coordinates for a rectangle. The rectangle is
+ * represented by the coordinates of its 4 edges (left, top, right bottom).
+ * These fields can be accessed directly. Use width() and height() to retrieve
+ * the rectangle's width and height. Note: most methods do not check to see that
+ * the coordinates are sorted correctly (i.e. left <= right and top <= bottom).
+ * <p>
+ * Note that the right and bottom coordinates are exclusive. This means a Rect
+ * being drawn untransformed onto a {@link icyllis.modernui.graphics.Canvas}
+ * will draw into the column and row described by its left and top coordinates,
+ * but not those of its bottom and right.
+ */
+public class Rect implements Cloneable {
 
     public int left;
     public int top;
@@ -52,21 +64,25 @@ public class Rect {
     }
 
     /**
-     * Create a new rectangle, initialized with the values in the specified
-     * rectangle (which is left unmodified).
+     * Returns a copy of {@code r} if {@code r} is not {@code null}, or
+     * an empty Rect otherwise.
      *
-     * @param r The rectangle whose coordinates are copied into the new
-     *          rectangle.
+     * @param r the rect to copy from
      */
-    public Rect(@Nullable Rect r) {
-        if (r == null) {
-            left = top = right = bottom = 0;
-        } else {
-            left = r.left;
-            top = r.top;
-            right = r.right;
-            bottom = r.bottom;
-        }
+    @Nonnull
+    public static Rect copy(@Nullable Rect r) {
+        return r == null ? new Rect() : r.clone();
+    }
+
+    /**
+     * Returns a copy of {@code r} if {@code r} is not {@code null}, or
+     * {@code null} otherwise.
+     *
+     * @param r the rect to copy from
+     */
+    @Nullable
+    public static Rect copyOrNull(@Nullable Rect r) {
+        return r == null ? null : r.clone();
     }
 
     /**
@@ -488,5 +504,21 @@ public class Rect {
         result = 31 * result + right;
         result = 31 * result + bottom;
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "Rect(" + left + ", " +
+                top + " - " + right +
+                ", " + bottom + ")";
+    }
+
+    @Override
+    public Rect clone() {
+        try {
+            return (Rect) super.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new InternalError(e);
+        }
     }
 }
