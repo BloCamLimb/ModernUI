@@ -24,6 +24,7 @@ import javax.annotation.Nullable;
 /**
  * Represents a Quaternion.
  */
+@SuppressWarnings("unused")
 public class Quaternion implements Cloneable {
 
     private float x;
@@ -70,14 +71,14 @@ public class Quaternion implements Cloneable {
     public static Quaternion fromEuler(float bankX, float headingY, float attitudeZ) {
         Quaternion quat = new Quaternion();
         float angle = bankX * 0.5f;
-        final float sinBankX = (float) Math.sin(angle);
-        final float cosBankX = (float) Math.cos(angle);
+        final float sinBankX = MathUtil.sin(angle);
+        final float cosBankX = MathUtil.cos(angle);
         angle = headingY * 0.5f;
-        final float sinHeadingY = (float) Math.sin(angle);
-        final float cosHeadingY = (float) Math.cos(angle);
+        final float sinHeadingY = MathUtil.sin(angle);
+        final float cosHeadingY = MathUtil.cos(angle);
         angle = attitudeZ * 0.5f;
-        final float sinAttitudeZ = (float) Math.sin(angle);
-        final float cosAttitudeZ = (float) Math.cos(angle);
+        final float sinAttitudeZ = MathUtil.sin(angle);
+        final float cosAttitudeZ = MathUtil.cos(angle);
 
         // variables used to reduce multiplication calls.
         final float cosHeading_cosAttitude = cosHeadingY * cosAttitudeZ;
@@ -106,11 +107,11 @@ public class Quaternion implements Cloneable {
     public static Quaternion fromAxisAngle(float axisX, float axisY, float axisZ, float angle) {
         Quaternion quat = new Quaternion();
         final float halfAngle = 0.5f * angle;
-        final float sin = (float) Math.sin(halfAngle);
+        final float sin = MathUtil.sin(halfAngle);
         quat.x = axisX * sin;
         quat.y = axisY * sin;
         quat.z = axisZ * sin;
-        quat.w = (float) Math.cos(halfAngle);
+        quat.w = MathUtil.cos(halfAngle);
         return quat;
     }
 
@@ -159,25 +160,25 @@ public class Quaternion implements Cloneable {
     }
 
     /**
-     * Calculate the magnitude of this quaternion.
+     * Calculate the magnitude of this quaternion, namely the 2-norm
+     * (euclidean norm) or the length.
      *
      * @return the magnitude of this quaternion
      */
-    public float magnitude() {
-        final float sq = w * w + x * x + y * y + z * z;
-        return MathUtil.sqrt(sq);
+    public float length() {
+        return MathUtil.sqrt(w * w + x * x + y * y + z * z);
     }
 
-    public float magnitudeSquared() {
+    public float lengthSquared() {
         return w * w + x * x + y * y + z * z;
     }
 
     /**
-     * Calculate the inverse of this quaternion, if rotational, it will produce
+     * Calculate the inverse of this quaternion. If rotational, it will produce
      * a the inverse rotation.
      */
     public void inverse() {
-        final float sq = w * w + x * x + y * y + z * z;
+        final float sq = lengthSquared();
         if (MathUtil.approxEqual(sq, 1.0f))
             conjugate();
         else {
@@ -193,7 +194,7 @@ public class Quaternion implements Cloneable {
      * Normalize this quaternion to unit length.
      */
     public void normalize() {
-        final float sq = w * w + x * x + y * y + z * z;
+        final float sq = lengthSquared();
         if (sq < 1.0e-6f) {
             setIdentity();
         } else {
@@ -233,6 +234,12 @@ public class Quaternion implements Cloneable {
         z = -z;
     }
 
+    //TODO
+    @Nonnull
+    public Matrix3 toMatrix3() {
+        return null;
+    }
+
     /**
      * Transform this quaternion to a normalized 4x4 column matrix representing
      * the rotation.
@@ -241,20 +248,20 @@ public class Quaternion implements Cloneable {
      */
     @Nonnull
     public Matrix4 toMatrix() {
-        final float sq = w * w + x * x + y * y + z * z;
+        final float sq = lengthSquared();
         if (sq < 1.0e-6f) {
             return Matrix4.identity();
         }
-        final float inv;
+        final float is;
         if (MathUtil.approxEqual(sq, 1.0f)) {
-            inv = 2.0f;
+            is = 2.0f;
         } else {
-            inv = 2.0f / sq;
+            is = 2.0f / sq;
         }
         Matrix4 mat = new Matrix4();
-        final float xs = inv * x;
-        final float ys = inv * y;
-        final float zs = inv * z;
+        final float xs = is * x;
+        final float ys = is * y;
+        final float zs = is * z;
 
         final float xx = x * xs;
         final float xy = x * ys;
@@ -292,7 +299,7 @@ public class Quaternion implements Cloneable {
     public Matrix4 toMatrix(@Nullable Matrix4 recycle) {
         if (recycle == null)
             return toMatrix();
-        final float sq = w * w + x * x + y * y + z * z;
+        final float sq = lengthSquared();
         if (sq < 1.0e-6f) {
             return recycle.setIdentity();
         }

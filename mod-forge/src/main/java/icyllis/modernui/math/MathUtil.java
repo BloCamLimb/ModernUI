@@ -29,14 +29,24 @@ public class MathUtil {
         SINE_TABLE = v;
     }
 
-    // error +- 0.000152, in radians
-    public static float sin(float a) {
+    // fast sin, error +- 0.000152, in radians
+    public static float fsin(float a) {
         return SINE_TABLE[Math.round(a * 10430.378f) & 0xffff];
     }
 
-    // error +- 0.000152, in radians
-    public static float cos(float a) {
+    // fast cos, error +- 0.000152, in radians
+    public static float fcos(float a) {
         return SINE_TABLE[(Math.round(a * 10430.378f) + 16384) & 0xffff];
+    }
+
+    // exact sin
+    public static float sin(float a) {
+        return (float) Math.sin(a);
+    }
+
+    // exact cos
+    public static float cos(float a) {
+        return (float) Math.cos(a);
     }
 
     // exactly equal
@@ -45,22 +55,26 @@ public class MathUtil {
     }
 
     // approximately equal
-    public static boolean approxEqual(float a, float b, float epsilon) {
-        return a == b || Math.abs(b - a) < epsilon;
-    }
-
     public static boolean approxEqual(float a, float b) {
         return a == b || Math.abs(b - a) < 1.0e-6f;
     }
 
-    public static boolean isZero(float a, float epsilon) {
-        return a == 0.0f || Math.abs(a) < epsilon;
+    // approximately equal
+    public static boolean approxEqual(float a, float b, float epsilon) {
+        return a == b || Math.abs(b - a) < epsilon;
     }
 
+    // approximately equal
     public static boolean isZero(float a) {
         return a == 0.0f || Math.abs(a) < 1.0e-6f;
     }
 
+    // approximately equal
+    public static boolean isZero(float a, float epsilon) {
+        return a == 0.0f || Math.abs(a) < epsilon;
+    }
+
+    // square root
     public static float sqrt(float f) {
         return (float) Math.sqrt(f);
     }
@@ -76,10 +90,12 @@ public class MathUtil {
         return a;
     }
 
+    // fast inverse square root
+    // see https://en.wikipedia.org/wiki/Fast_inverse_square_root
     public static double fastInvSqrt(double a) {
         double x2 = 0.5 * a;
-        long i = Double.doubleToRawLongBits(a);
-        i = 0x5fe6eb50c7b537a9L - (i >> 1);
+        long i = Double.doubleToLongBits(a);
+        i = 0x5fe6eb50_c7b537a9L - (i >> 1);
         a = Double.longBitsToDouble(i);
         a *= 1.5 - x2 * a * a;
         return a;

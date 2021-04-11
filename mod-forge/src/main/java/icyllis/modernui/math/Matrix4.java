@@ -244,7 +244,7 @@ public class Matrix4 implements Cloneable {
      *
      * @param a left hand side matrix
      * @param b right hand side matrix
-     * @return this quaternion for chaining.
+     * @return this matrix for chaining.
      */
     @Nonnull
     public Matrix4 setMultiply(@Nonnull Matrix4 a, @Nonnull Matrix4 b) {
@@ -291,7 +291,7 @@ public class Matrix4 implements Cloneable {
      * Pre-multiply this matrix by given quaternion.
      *
      * @param quat the quaternion to multiply with.
-     * @return this quaternion for chaining.
+     * @return this matrix for chaining.
      */
     @Nonnull
     public Matrix4 multiply(@Nonnull Quaternion quat) {
@@ -302,7 +302,7 @@ public class Matrix4 implements Cloneable {
      * Pre-multiply this matrix by some other matrix.
      *
      * @param other the matrix to multiply.
-     * @return this quaternion for chaining.
+     * @return this matrix for chaining.
      */
     @Nonnull
     public Matrix4 multiply(@Nonnull Matrix4 other) {
@@ -313,7 +313,7 @@ public class Matrix4 implements Cloneable {
      * Post-multiply this matrix by some other matrix.
      *
      * @param other the matrix to post-multiply.
-     * @return this quaternion for chaining.
+     * @return this matrix for chaining.
      */
     @Nonnull
     public Matrix4 postMultiply(@Nonnull Matrix4 other) {
@@ -323,7 +323,7 @@ public class Matrix4 implements Cloneable {
     /**
      * Set this matrix to the zero matrix.
      *
-     * @return this quaternion for chaining.
+     * @return this matrix for chaining.
      */
     @Nonnull
     public Matrix4 setZero() {
@@ -349,7 +349,7 @@ public class Matrix4 implements Cloneable {
     /**
      * Set this matrix to the identity matrix.
      *
-     * @return this quaternion for chaining.
+     * @return this matrix for chaining.
      */
     @Nonnull
     public Matrix4 setIdentity() {
@@ -670,8 +670,8 @@ public class Matrix4 implements Cloneable {
      * @param rad the clockwise rotation radian.
      */
     public void rotateX(float rad) {
-        float s = MathUtil.sin(rad);
-        float c = MathUtil.cos(rad);
+        float s = MathUtil.fsin(rad);
+        float c = MathUtil.fcos(rad);
         float f21 = c * m21 - s * m31;
         float f22 = c * m22 - s * m32;
         float f23 = c * m23 - s * m33;
@@ -693,8 +693,8 @@ public class Matrix4 implements Cloneable {
      * @param rad the clockwise rotation radian.
      */
     public void rotateY(float rad) {
-        float s = MathUtil.sin(rad);
-        float c = MathUtil.cos(rad);
+        float s = MathUtil.fsin(rad);
+        float c = MathUtil.fcos(rad);
         float f11 = c * m11 + s * m31;
         float f12 = c * m12 + s * m32;
         float f13 = c * m13 + s * m33;
@@ -716,8 +716,8 @@ public class Matrix4 implements Cloneable {
      * @param rad the clockwise rotation radian.
      */
     public void rotateZ(float rad) {
-        float s = MathUtil.sin(rad);
-        float c = MathUtil.cos(rad);
+        float s = MathUtil.fsin(rad);
+        float c = MathUtil.fcos(rad);
         float f11 = c * m11 - s * m21;
         float f12 = c * m12 - s * m22;
         float f13 = c * m13 - s * m23;
