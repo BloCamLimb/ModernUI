@@ -234,10 +234,50 @@ public class Quaternion implements Cloneable {
         z = -z;
     }
 
-    //TODO
+    /**
+     * Transform this quaternion to a normalized 3x3 column matrix representing
+     * the rotation.
+     *
+     * @return the resulting matrix
+     */
     @Nonnull
     public Matrix3 toMatrix3() {
-        return null;
+        final float sq = lengthSquared();
+        if (sq < 1.0e-6f) {
+            return Matrix3.identity();
+        }
+        final float is;
+        if (MathUtil.approxEqual(sq, 1.0f)) {
+            is = 2.0f;
+        } else {
+            is = 2.0f / sq;
+        }
+        Matrix3 mat = new Matrix3();
+        final float xs = is * x;
+        final float ys = is * y;
+        final float zs = is * z;
+
+        final float xx = x * xs;
+        final float xy = x * ys;
+        final float xz = x * zs;
+        final float xw = xs * w;
+        final float yy = y * ys;
+        final float yz = y * zs;
+        final float yw = ys * w;
+        final float zz = z * zs;
+        final float zw = zs * w;
+
+        mat.m11 = 1.0f - (yy + zz);
+        mat.m22 = 1.0f - (xx + zz);
+        mat.m33 = 1.0f - (xx + yy);
+
+        mat.m21 = xy - zw;
+        mat.m31 = xz + yw;
+        mat.m12 = xy + zw;
+        mat.m32 = yz - xw;
+        mat.m13 = xz - yw;
+        mat.m23 = yz + xw;
+        return mat;
     }
 
     /**
@@ -247,7 +287,7 @@ public class Quaternion implements Cloneable {
      * @return the resulting matrix
      */
     @Nonnull
-    public Matrix4 toMatrix() {
+    public Matrix4 toMatrix4() {
         final float sq = lengthSquared();
         if (sq < 1.0e-6f) {
             return Matrix4.identity();
@@ -289,6 +329,56 @@ public class Quaternion implements Cloneable {
     }
 
     /**
+     * Transform this quaternion to a normalized 3x3 column matrix representing
+     * the rotation. If recycle matrix is null, a new matrix will be returned.
+     *
+     * @param recycle a matrix for storing result if you want to recycle it
+     * @return the resulting matrix
+     */
+    @Nonnull
+    public Matrix3 toMatrix(@Nullable Matrix3 recycle) {
+        if (recycle == null)
+            return toMatrix3();
+        final float sq = lengthSquared();
+        if (sq < 1.0e-6f) {
+            recycle.setIdentity();
+            return recycle;
+        }
+        final float inv;
+        if (MathUtil.approxEqual(sq, 1.0f)) {
+            inv = 2.0f;
+        } else {
+            inv = 2.0f / sq;
+        }
+        final float xs = inv * x;
+        final float ys = inv * y;
+        final float zs = inv * z;
+
+        final float xx = x * xs;
+        final float xy = x * ys;
+        final float xz = x * zs;
+        final float xw = xs * w;
+        final float yy = y * ys;
+        final float yz = y * zs;
+        final float yw = ys * w;
+        final float zz = z * zs;
+        final float zw = zs * w;
+
+        recycle.m11 = 1.0f - (yy + zz);
+        recycle.m21 = xy - zw;
+        recycle.m31 = xz + yw;
+
+        recycle.m12 = xy + zw;
+        recycle.m22 = 1.0f - (xx + zz);
+        recycle.m32 = yz - xw;
+
+        recycle.m13 = xz - yw;
+        recycle.m23 = yz + xw;
+        recycle.m33 = 1.0f - (xx + yy);
+        return recycle;
+    }
+
+    /**
      * Transform this quaternion to a normalized 4x4 column matrix representing
      * the rotation. If recycle matrix is null, a new matrix will be returned.
      *
@@ -298,10 +388,11 @@ public class Quaternion implements Cloneable {
     @Nonnull
     public Matrix4 toMatrix(@Nullable Matrix4 recycle) {
         if (recycle == null)
-            return toMatrix();
+            return toMatrix4();
         final float sq = lengthSquared();
         if (sq < 1.0e-6f) {
-            return recycle.setIdentity();
+            recycle.setIdentity();
+            return recycle;
         }
         final float inv;
         if (MathUtil.approxEqual(sq, 1.0f)) {
