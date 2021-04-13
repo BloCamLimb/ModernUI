@@ -244,13 +244,11 @@ public class Matrix4 implements Cloneable {
      *
      * @param a left hand side matrix
      * @param b right hand side matrix
-     * @return this matrix for chaining.
      */
-    @Nonnull
-    public Matrix4 setMultiply(@Nonnull Matrix4 a, @Nonnull Matrix4 b) {
+    public void setMultiply(@Nonnull Matrix4 a, @Nonnull Matrix4 b) {
         if (b.isIdentity()) {
             if (this != a) set(a);
-            return this;
+            return;
         }
         float f11 = a.m11 * b.m11 + a.m12 * b.m21 + a.m13 * b.m31 + a.m14 * b.m41;
         float f12 = a.m11 * b.m12 + a.m12 * b.m22 + a.m13 * b.m32 + a.m14 * b.m42;
@@ -284,49 +282,76 @@ public class Matrix4 implements Cloneable {
         m42 = f42;
         m43 = f43;
         m44 = f44;
-        return this;
+    }
+
+    /**
+     * Pre-multiply this matrix by a 4x4 matrix, whose top left 3x3 is the given
+     * 3x3 matrix, and forth row and column are identity.
+     *
+     * @param mat the matrix to multiply.
+     */
+    public void multiply(@Nonnull Matrix3 mat) {
+        if (mat.isIdentity())
+            return;
+        float f11 = m11 * mat.m11 + m12 * mat.m21 + m13 * mat.m31;
+        float f12 = m11 * mat.m12 + m12 * mat.m22 + m13 * mat.m32;
+        float f13 = m11 * mat.m13 + m12 * mat.m23 + m13 * mat.m33;
+        float f21 = m21 * mat.m11 + m22 * mat.m21 + m23 * mat.m31;
+        float f22 = m21 * mat.m12 + m22 * mat.m22 + m23 * mat.m32;
+        float f23 = m21 * mat.m13 + m22 * mat.m23 + m23 * mat.m33;
+        float f31 = m31 * mat.m11 + m32 * mat.m21 + m33 * mat.m31;
+        float f32 = m31 * mat.m12 + m32 * mat.m22 + m33 * mat.m32;
+        float f33 = m31 * mat.m13 + m32 * mat.m23 + m33 * mat.m33;
+        float f41 = m41 * mat.m11 + m42 * mat.m21 + m43 * mat.m31;
+        float f42 = m41 * mat.m12 + m42 * mat.m22 + m43 * mat.m32;
+        float f43 = m41 * mat.m13 + m42 * mat.m23 + m43 * mat.m33;
+        m11 = f11;
+        m12 = f12;
+        m13 = f13;
+        m21 = f21;
+        m22 = f22;
+        m23 = f23;
+        m31 = f31;
+        m32 = f32;
+        m33 = f33;
+        m41 = f41;
+        m42 = f42;
+        m43 = f43;
     }
 
     /**
      * Pre-multiply this matrix by given quaternion.
      *
      * @param quat the quaternion to multiply with.
-     * @return this matrix for chaining.
      */
-    @Nonnull
-    public Matrix4 multiply(@Nonnull Quaternion quat) {
-        return setMultiply(this, quat.toMatrix());
+    public void multiply(@Nonnull Quaternion quat) {
+        if (quat.lengthSquared() < 1.0e-6f)
+            return;
+        multiply(quat.toMatrix3());
     }
 
     /**
      * Pre-multiply this matrix by some other matrix.
      *
-     * @param other the matrix to multiply.
-     * @return this matrix for chaining.
+     * @param mat the matrix to multiply.
      */
-    @Nonnull
-    public Matrix4 multiply(@Nonnull Matrix4 other) {
-        return setMultiply(this, other);
+    public void multiply(@Nonnull Matrix4 mat) {
+        setMultiply(this, mat);
     }
 
     /**
      * Post-multiply this matrix by some other matrix.
      *
-     * @param other the matrix to post-multiply.
-     * @return this matrix for chaining.
+     * @param mat the matrix to post-multiply.
      */
-    @Nonnull
-    public Matrix4 postMultiply(@Nonnull Matrix4 other) {
-        return setMultiply(other, this);
+    public void postMultiply(@Nonnull Matrix4 mat) {
+        setMultiply(mat, this);
     }
 
     /**
      * Set this matrix to the zero matrix.
-     *
-     * @return this matrix for chaining.
      */
-    @Nonnull
-    public Matrix4 setZero() {
+    public void setZero() {
         m11 = 0.0f;
         m12 = 0.0f;
         m13 = 0.0f;
@@ -343,16 +368,12 @@ public class Matrix4 implements Cloneable {
         m42 = 0.0f;
         m43 = 0.0f;
         m44 = 0.0f;
-        return this;
     }
 
     /**
      * Set this matrix to the identity matrix.
-     *
-     * @return this matrix for chaining.
      */
-    @Nonnull
-    public Matrix4 setIdentity() {
+    public void setIdentity() {
         m11 = 1.0f;
         m12 = 0.0f;
         m13 = 0.0f;
@@ -369,7 +390,6 @@ public class Matrix4 implements Cloneable {
         m42 = 0.0f;
         m43 = 0.0f;
         m44 = 1.0f;
-        return this;
     }
 
     /**
@@ -646,11 +666,11 @@ public class Matrix4 implements Cloneable {
      * @return {@code true} if this matrix is invertible.
      */
     public boolean inverse(@Nonnull Matrix4 out) {
-        // the reciprocal of determinant
-        float f = 1.0f / adjugateAndDet(out);
-        if (MathUtil.isZero(f))
+        float det = adjugateAndDet(out);
+        if (MathUtil.isZero(det))
             return false;
-        out.multiply(f);
+        if (!MathUtil.approxEqual(det, 1.0f))
+            out.multiply(1.0f / det);
         return true;
     }
 

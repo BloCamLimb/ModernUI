@@ -18,6 +18,8 @@
 
 package icyllis.modernui.math;
 
+import javax.annotation.Nonnull;
+
 /**
  * Represents a 3x3 matrix.
  */
@@ -34,4 +36,48 @@ public class Matrix3 implements Cloneable {
     protected float m31;
     protected float m32;
     protected float m33;
+
+    /**
+     * Create a zero matrix.
+     */
+    public Matrix3() {
+    }
+
+    /**
+     * Create a new identity matrix.
+     *
+     * @return an identity matrix
+     */
+    @Nonnull
+    public static Matrix3 identity() {
+        Matrix3 mat = new Matrix3();
+        mat.m11 = mat.m22 = mat.m33 = 1.0f;
+        return mat;
+    }
+
+    /**
+     * Set this matrix to the identity matrix.
+     */
+    public void setIdentity() {
+        m11 = 1.0f;
+        m12 = 0.0f;
+        m13 = 0.0f;
+        m21 = 0.0f;
+        m22 = 1.0f;
+        m23 = 0.0f;
+        m31 = 0.0f;
+        m32 = 0.0f;
+        m33 = 1.0f;
+    }
+
+    /**
+     * Calculate whether this matrix is approximately equivalent to a identity matrix.
+     *
+     * @return {@code true} if this matrix is identity.
+     */
+    public boolean isIdentity() {
+        return m11 == 1.0f && m12 == 0.0f && m13 == 0.0f &&
+                m21 == 0.0f && m22 == 1.0f && m23 == 0.0f &&
+                m31 == 0.0f && m32 == 0.0f && m33 == 1.0f;
+    }
 }
