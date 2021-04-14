@@ -22,6 +22,8 @@ public class MathUtil {
 
     private static final float[] SINE_TABLE;
 
+    public static final float HALF_PI_F = (float) (Math.PI * 0.5);
+
     static {
         float[] v = new float[0x10000];
         for (int i = 0; i < 0x10000; i++)
@@ -39,18 +41,18 @@ public class MathUtil {
         return SINE_TABLE[(Math.round(a * 10430.378f) + 16384) & 0xffff];
     }
 
-    // exact sin
+    // sin
     public static float sin(float a) {
         return (float) Math.sin(a);
     }
 
-    // exact cos
+    // cos
     public static float cos(float a) {
         return (float) Math.cos(a);
     }
 
     // exactly equal
-    public static boolean exactEqual(float a, float b) {
+    public static boolean exactlyEqual(float a, float b) {
         return Float.floatToIntBits(a) == Float.floatToIntBits(b);
     }
 
@@ -60,18 +62,33 @@ public class MathUtil {
     }
 
     // approximately equal
-    public static boolean approxEqual(float a, float b, float epsilon) {
-        return a == b || Math.abs(b - a) < epsilon;
+    public static boolean approxEqual(float a, float b, float c, float d) {
+        return approxEqual(a, d) && approxEqual(b, d) && approxEqual(c, d);
     }
 
     // approximately equal
-    public static boolean isZero(float a) {
+    public static boolean approxEqual(float a, float b, float c, float d, float e) {
+        return approxEqual(a, e) && approxEqual(b, e) && approxEqual(c, e) && approxEqual(d, e);
+    }
+
+    // approximately equal
+    public static boolean isEqual(float a, float b, float eps) {
+        return Math.abs(b - a) < eps;
+    }
+
+    // approximately equal
+    public static boolean approxZero(float a) {
         return a == 0.0f || Math.abs(a) < 1.0e-6f;
     }
 
     // approximately equal
-    public static boolean isZero(float a, float epsilon) {
-        return a == 0.0f || Math.abs(a) < epsilon;
+    public static boolean approxZero(float a, float b, float c) {
+        return approxZero(a) && approxZero(b) && approxZero(c);
+    }
+
+    // approximately equal
+    public static boolean isZero(float a, float eps) {
+        return Math.abs(a) < eps;
     }
 
     // square root
@@ -99,5 +116,20 @@ public class MathUtil {
         a = Double.longBitsToDouble(i);
         a *= 1.5 - x2 * a * a;
         return a;
+    }
+
+    // asin
+    public static float asin(float a) {
+        return (float) Math.asin(a);
+    }
+
+    // acos
+    public static float acos(float a) {
+        return (float) Math.acos(a);
+    }
+
+    // atan2 (b, a)
+    public static float atan2(float a, float b) {
+        return (float) Math.atan2(a, b);
     }
 }

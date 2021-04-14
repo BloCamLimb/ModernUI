@@ -76,8 +76,8 @@ public class Matrix3 implements Cloneable {
      * @return {@code true} if this matrix is identity.
      */
     public boolean isIdentity() {
-        return m11 == 1.0f && m12 == 0.0f && m13 == 0.0f &&
-                m21 == 0.0f && m22 == 1.0f && m23 == 0.0f &&
-                m31 == 0.0f && m32 == 0.0f && m33 == 1.0f;
+        return MathUtil.approxZero(m12, m13, m21) &&
+                MathUtil.approxZero(m23, m31, m32) &&
+                MathUtil.approxEqual(m11, m22, m33, 1.0f);
     }
 }

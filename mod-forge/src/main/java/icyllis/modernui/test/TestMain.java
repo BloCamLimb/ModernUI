@@ -22,8 +22,6 @@ import com.ibm.icu.text.BreakIterator;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.math.Matrix4f;
-import com.mojang.math.Quaternion;
-import com.mojang.math.Vector3f;
 import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.ast.Node;
@@ -32,13 +30,11 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.GLWrapper;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.shader.ShaderProgram;
-import icyllis.modernui.math.MathUtil;
-import icyllis.modernui.math.Matrix4;
+import icyllis.modernui.math.Quaternion;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.platform.Window;
 import icyllis.modernui.platform.WindowMode;
 import icyllis.modernui.text.GraphemeBreak;
-import net.minecraft.util.Mth;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.opengl.GL11;
@@ -127,7 +123,9 @@ public class TestMain {
         float[] av = new float[]{1, 3, 2, 4.1f, 6, 0, 6, 0.5f, 5, 7, 11.3f, 9, 9.1f, 15, 8, 10};
         float[] bv = new float[]{9.1f, 2, 7, 5, 3.3f, 6.1f, 5.5f, 4, 0, 8, 3, 1, 2.7f, 3, 9, 2};
 
-        ModernUI.LOGGER.info("{}", MathUtil.approxEqual(1.0f - 1/3f - 1/3f - 1/3f, +0.0f));
+        Quaternion q = Quaternion.fromAxisAngle(1.0f, 0, 0, 180);
+        Quaternion q2 = Quaternion.fromEulerAngles(30, 0, 0);
+        ModernUI.LOGGER.info("{}", q.dot(q2));
 
         if (!CREATE_WINDOW)
             return;
@@ -201,6 +199,14 @@ public class TestMain {
             glfwTerminate();
             ModernUI.LOGGER.info(MARKER, "Stopped");
         }
+    }
+
+    public static float calcMachineEpsilon() {
+        float machEps = 1.0f;
+        do {
+            machEps /= 2.0f;
+        } while (1.0f + (machEps / 2.0f) != 1.0f);
+        return machEps;
     }
 
     public static void breakGraphemes(String s) {

@@ -250,22 +250,22 @@ public class Matrix4 implements Cloneable {
             if (this != a) set(a);
             return;
         }
-        float f11 = a.m11 * b.m11 + a.m12 * b.m21 + a.m13 * b.m31 + a.m14 * b.m41;
-        float f12 = a.m11 * b.m12 + a.m12 * b.m22 + a.m13 * b.m32 + a.m14 * b.m42;
-        float f13 = a.m11 * b.m13 + a.m12 * b.m23 + a.m13 * b.m33 + a.m14 * b.m43;
-        float f14 = a.m11 * b.m14 + a.m12 * b.m24 + a.m13 * b.m34 + a.m14 * b.m44;
-        float f21 = a.m21 * b.m11 + a.m22 * b.m21 + a.m23 * b.m31 + a.m24 * b.m41;
-        float f22 = a.m21 * b.m12 + a.m22 * b.m22 + a.m23 * b.m32 + a.m24 * b.m42;
-        float f23 = a.m21 * b.m13 + a.m22 * b.m23 + a.m23 * b.m33 + a.m24 * b.m43;
-        float f24 = a.m21 * b.m14 + a.m22 * b.m24 + a.m23 * b.m34 + a.m24 * b.m44;
-        float f31 = a.m31 * b.m11 + a.m32 * b.m21 + a.m33 * b.m31 + a.m34 * b.m41;
-        float f32 = a.m31 * b.m12 + a.m32 * b.m22 + a.m33 * b.m32 + a.m34 * b.m42;
-        float f33 = a.m31 * b.m13 + a.m32 * b.m23 + a.m33 * b.m33 + a.m34 * b.m43;
-        float f34 = a.m31 * b.m14 + a.m32 * b.m24 + a.m33 * b.m34 + a.m34 * b.m44;
-        float f41 = a.m41 * b.m11 + a.m42 * b.m21 + a.m43 * b.m31 + a.m44 * b.m41;
-        float f42 = a.m41 * b.m12 + a.m42 * b.m22 + a.m43 * b.m32 + a.m44 * b.m42;
-        float f43 = a.m41 * b.m13 + a.m42 * b.m23 + a.m43 * b.m33 + a.m44 * b.m43;
-        float f44 = a.m41 * b.m14 + a.m42 * b.m24 + a.m43 * b.m34 + a.m44 * b.m44;
+        final float f11 = a.m11 * b.m11 + a.m12 * b.m21 + a.m13 * b.m31 + a.m14 * b.m41;
+        final float f12 = a.m11 * b.m12 + a.m12 * b.m22 + a.m13 * b.m32 + a.m14 * b.m42;
+        final float f13 = a.m11 * b.m13 + a.m12 * b.m23 + a.m13 * b.m33 + a.m14 * b.m43;
+        final float f14 = a.m11 * b.m14 + a.m12 * b.m24 + a.m13 * b.m34 + a.m14 * b.m44;
+        final float f21 = a.m21 * b.m11 + a.m22 * b.m21 + a.m23 * b.m31 + a.m24 * b.m41;
+        final float f22 = a.m21 * b.m12 + a.m22 * b.m22 + a.m23 * b.m32 + a.m24 * b.m42;
+        final float f23 = a.m21 * b.m13 + a.m22 * b.m23 + a.m23 * b.m33 + a.m24 * b.m43;
+        final float f24 = a.m21 * b.m14 + a.m22 * b.m24 + a.m23 * b.m34 + a.m24 * b.m44;
+        final float f31 = a.m31 * b.m11 + a.m32 * b.m21 + a.m33 * b.m31 + a.m34 * b.m41;
+        final float f32 = a.m31 * b.m12 + a.m32 * b.m22 + a.m33 * b.m32 + a.m34 * b.m42;
+        final float f33 = a.m31 * b.m13 + a.m32 * b.m23 + a.m33 * b.m33 + a.m34 * b.m43;
+        final float f34 = a.m31 * b.m14 + a.m32 * b.m24 + a.m33 * b.m34 + a.m34 * b.m44;
+        final float f41 = a.m41 * b.m11 + a.m42 * b.m21 + a.m43 * b.m31 + a.m44 * b.m41;
+        final float f42 = a.m41 * b.m12 + a.m42 * b.m22 + a.m43 * b.m32 + a.m44 * b.m42;
+        final float f43 = a.m41 * b.m13 + a.m42 * b.m23 + a.m43 * b.m33 + a.m44 * b.m43;
+        final float f44 = a.m41 * b.m14 + a.m42 * b.m24 + a.m43 * b.m34 + a.m44 * b.m44;
         m11 = f11;
         m12 = f12;
         m13 = f13;
@@ -293,18 +293,18 @@ public class Matrix4 implements Cloneable {
     public void multiply(@Nonnull Matrix3 mat) {
         if (mat.isIdentity())
             return;
-        float f11 = m11 * mat.m11 + m12 * mat.m21 + m13 * mat.m31;
-        float f12 = m11 * mat.m12 + m12 * mat.m22 + m13 * mat.m32;
-        float f13 = m11 * mat.m13 + m12 * mat.m23 + m13 * mat.m33;
-        float f21 = m21 * mat.m11 + m22 * mat.m21 + m23 * mat.m31;
-        float f22 = m21 * mat.m12 + m22 * mat.m22 + m23 * mat.m32;
-        float f23 = m21 * mat.m13 + m22 * mat.m23 + m23 * mat.m33;
-        float f31 = m31 * mat.m11 + m32 * mat.m21 + m33 * mat.m31;
-        float f32 = m31 * mat.m12 + m32 * mat.m22 + m33 * mat.m32;
-        float f33 = m31 * mat.m13 + m32 * mat.m23 + m33 * mat.m33;
-        float f41 = m41 * mat.m11 + m42 * mat.m21 + m43 * mat.m31;
-        float f42 = m41 * mat.m12 + m42 * mat.m22 + m43 * mat.m32;
-        float f43 = m41 * mat.m13 + m42 * mat.m23 + m43 * mat.m33;
+        final float f11 = m11 * mat.m11 + m12 * mat.m21 + m13 * mat.m31;
+        final float f12 = m11 * mat.m12 + m12 * mat.m22 + m13 * mat.m32;
+        final float f13 = m11 * mat.m13 + m12 * mat.m23 + m13 * mat.m33;
+        final float f21 = m21 * mat.m11 + m22 * mat.m21 + m23 * mat.m31;
+        final float f22 = m21 * mat.m12 + m22 * mat.m22 + m23 * mat.m32;
+        final float f23 = m21 * mat.m13 + m22 * mat.m23 + m23 * mat.m33;
+        final float f31 = m31 * mat.m11 + m32 * mat.m21 + m33 * mat.m31;
+        final float f32 = m31 * mat.m12 + m32 * mat.m22 + m33 * mat.m32;
+        final float f33 = m31 * mat.m13 + m32 * mat.m23 + m33 * mat.m33;
+        final float f41 = m41 * mat.m11 + m42 * mat.m21 + m43 * mat.m31;
+        final float f42 = m41 * mat.m12 + m42 * mat.m22 + m43 * mat.m32;
+        final float f43 = m41 * mat.m13 + m42 * mat.m23 + m43 * mat.m33;
         m11 = f11;
         m12 = f12;
         m13 = f13;
@@ -326,6 +326,7 @@ public class Matrix4 implements Cloneable {
      */
     public void multiply(@Nonnull Quaternion quat) {
         if (quat.lengthSquared() < 1.0e-6f)
+            // mul an identity
             return;
         multiply(quat.toMatrix3());
     }
@@ -475,29 +476,29 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Calculate the transpose of this matrix and store the result to out matrix.
+     * Calculate the transpose of this matrix and store the result to result matrix.
      *
-     * @param out the matrix for storing the result.
+     * @param result the matrix for storing the result.
      */
-    public void transpose(@Nonnull Matrix4 out) {
+    public void transpose(@Nonnull Matrix4 result) {
         float t = m21;
-        out.m21 = m12;
-        out.m12 = t;
+        result.m21 = m12;
+        result.m12 = t;
         t = m31;
-        out.m31 = m13;
-        out.m13 = t;
+        result.m31 = m13;
+        result.m13 = t;
         t = m32;
-        out.m32 = m23;
-        out.m23 = t;
+        result.m32 = m23;
+        result.m23 = t;
         t = m41;
-        out.m41 = m14;
-        out.m14 = t;
+        result.m41 = m14;
+        result.m14 = t;
         t = m42;
-        out.m42 = m24;
-        out.m24 = t;
+        result.m42 = m24;
+        result.m24 = t;
         t = m43;
-        out.m43 = m34;
-        out.m34 = t;
+        result.m43 = m34;
+        result.m34 = t;
     }
 
     /**
@@ -511,70 +512,69 @@ public class Matrix4 implements Cloneable {
     /**
      * Calculate the adjugate matrix of this matrix, namely the transpose of
      * the algebraic cofactor matrix of this matrix, and store the result to
-     * out matrix.
+     * result matrix.
      *
-     * @param out the matrix for storing the result.
+     * @param result the matrix for storing the result.
      */
-    public void adjugate(@Nonnull Matrix4 out) {
+    public void adjugate(@Nonnull Matrix4 result) {
         // det of [row1,row2,column1,column2]
-        float det1_12 = m11 * m22 - m12 * m21;
-        float det1_13 = m11 * m23 - m13 * m21;
-        float det1_14 = m11 * m24 - m14 * m21;
-        float det1_23 = m12 * m23 - m13 * m22;
-        float det1_24 = m12 * m24 - m14 * m22;
-        float det1_34 = m13 * m24 - m14 * m23;
+        float det12 = m11 * m22 - m12 * m21;
+        float det13 = m11 * m23 - m13 * m21;
+        float det14 = m11 * m24 - m14 * m21;
+        float det23 = m12 * m23 - m13 * m22;
+        float det24 = m12 * m24 - m14 * m22;
+        float det34 = m13 * m24 - m14 * m23;
 
         // calc algebraic cofactor
-        float f31 = m42 * det1_34 - m43 * det1_24 + m44 * det1_23;
-        float f32 = -m41 * det1_34 + m43 * det1_14 - m44 * det1_13;
-        float f33 = m41 * det1_24 - m42 * det1_14 + m44 * det1_12;
-        float f34 = -m41 * det1_23 + m42 * det1_13 - m43 * det1_12;
-        float f41 = -m32 * det1_34 + m33 * det1_24 - m34 * det1_23;
-        float f42 = m31 * det1_34 - m33 * det1_14 + m34 * det1_13;
-        float f43 = -m31 * det1_24 + m32 * det1_14 - m34 * det1_12;
-        float f44 = m31 * det1_23 - m32 * det1_13 + m33 * det1_12;
+        final float f31 = m42 * det34 - m43 * det24 + m44 * det23;
+        final float f32 = -m41 * det34 + m43 * det14 - m44 * det13;
+        final float f33 = m41 * det24 - m42 * det14 + m44 * det12;
+        final float f34 = -m41 * det23 + m42 * det13 - m43 * det12;
+        final float f41 = -m32 * det34 + m33 * det24 - m34 * det23;
+        final float f42 = m31 * det34 - m33 * det14 + m34 * det13;
+        final float f43 = -m31 * det24 + m32 * det14 - m34 * det12;
+        final float f44 = m31 * det23 - m32 * det13 + m33 * det12;
 
         // det of [row3,row4,column1,column2]
-        det1_12 = m31 * m42 - m32 * m41;
-        det1_13 = m31 * m43 - m33 * m41;
-        det1_14 = m31 * m44 - m34 * m41;
-        det1_23 = m32 * m43 - m33 * m42;
-        det1_24 = m32 * m44 - m34 * m42;
-        det1_34 = m33 * m44 - m34 * m43;
+        det12 = m31 * m42 - m32 * m41;
+        det13 = m31 * m43 - m33 * m41;
+        det14 = m31 * m44 - m34 * m41;
+        det23 = m32 * m43 - m33 * m42;
+        det24 = m32 * m44 - m34 * m42;
+        det34 = m33 * m44 - m34 * m43;
 
         // calc algebraic cofactor
-        float f11 = m22 * det1_34 - m23 * det1_24 + m24 * det1_23;
-        float f12 = -m21 * det1_34 + m23 * det1_14 - m24 * det1_13;
-        float f13 = m21 * det1_24 - m22 * det1_14 + m24 * det1_12;
-        float f14 = -m21 * det1_23 + m22 * det1_13 - m23 * det1_12;
-        float f21 = -m12 * det1_34 + m13 * det1_24 - m14 * det1_23;
-        float f22 = m11 * det1_34 - m13 * det1_14 + m14 * det1_13;
-        float f23 = -m11 * det1_24 + m12 * det1_14 - m14 * det1_12;
-        float f24 = m11 * det1_23 - m12 * det1_13 + m13 * det1_12;
+        final float f11 = m22 * det34 - m23 * det24 + m24 * det23;
+        final float f12 = -m21 * det34 + m23 * det14 - m24 * det13;
+        final float f13 = m21 * det24 - m22 * det14 + m24 * det12;
+        final float f14 = -m21 * det23 + m22 * det13 - m23 * det12;
+        final float f21 = -m12 * det34 + m13 * det24 - m14 * det23;
+        final float f22 = m11 * det34 - m13 * det14 + m14 * det13;
+        final float f23 = -m11 * det24 + m12 * det14 - m14 * det12;
+        final float f24 = m11 * det23 - m12 * det13 + m13 * det12;
 
         // transpose cofactor matrix
-        out.m11 = f11;
-        out.m21 = f12;
-        out.m31 = f13;
-        out.m41 = f14;
-        out.m12 = f21;
-        out.m22 = f22;
-        out.m32 = f23;
-        out.m42 = f24;
-        out.m13 = f31;
-        out.m23 = f32;
-        out.m33 = f33;
-        out.m43 = f34;
-        out.m14 = f41;
-        out.m24 = f42;
-        out.m34 = f43;
-        out.m44 = f44;
+        result.m11 = f11;
+        result.m21 = f12;
+        result.m31 = f13;
+        result.m41 = f14;
+        result.m12 = f21;
+        result.m22 = f22;
+        result.m32 = f23;
+        result.m42 = f24;
+        result.m13 = f31;
+        result.m23 = f32;
+        result.m33 = f33;
+        result.m43 = f34;
+        result.m14 = f41;
+        result.m24 = f42;
+        result.m34 = f43;
+        result.m44 = f44;
     }
 
     /**
-     * Calculate the adjugate matrix of this matrix, namely the transpose of
-     * the algebraic cofactor matrix of this matrix, and store the result to
-     * out matrix. The determinant of this matrix will be returned as well.
+     * Calculate the adjugate matrix of this matrix, the determinant of this
+     * matrix will be returned as well.
      *
      * @return the determinant of this matrix.
      */
@@ -585,65 +585,65 @@ public class Matrix4 implements Cloneable {
     /**
      * Calculate the adjugate matrix of this matrix, namely the transpose of
      * the algebraic cofactor matrix of this matrix, and store the result to
-     * out matrix. The determinant of this matrix will be returned as well.
+     * result matrix. The determinant of this matrix will be returned as well.
      *
-     * @param out the matrix for storing the result.
+     * @param result the matrix for storing the result.
      * @return the determinant of this matrix.
      */
-    public float adjugateAndDet(@Nonnull Matrix4 out) {
+    public float adjugateAndDet(@Nonnull Matrix4 result) {
         // det of [row1,row2,column1,column2]
-        float det1_12 = m11 * m22 - m12 * m21;
-        float det1_13 = m11 * m23 - m13 * m21;
-        float det1_14 = m11 * m24 - m14 * m21;
-        float det1_23 = m12 * m23 - m13 * m22;
-        float det1_24 = m12 * m24 - m14 * m22;
-        float det1_34 = m13 * m24 - m14 * m23;
+        final float det1_12 = m11 * m22 - m12 * m21;
+        final float det1_13 = m11 * m23 - m13 * m21;
+        final float det1_14 = m11 * m24 - m14 * m21;
+        final float det1_23 = m12 * m23 - m13 * m22;
+        final float det1_24 = m12 * m24 - m14 * m22;
+        final float det1_34 = m13 * m24 - m14 * m23;
 
         // calc algebraic cofactor
-        float f31 = m42 * det1_34 - m43 * det1_24 + m44 * det1_23;
-        float f32 = -m41 * det1_34 + m43 * det1_14 - m44 * det1_13;
-        float f33 = m41 * det1_24 - m42 * det1_14 + m44 * det1_12;
-        float f34 = -m41 * det1_23 + m42 * det1_13 - m43 * det1_12;
-        float f41 = -m32 * det1_34 + m33 * det1_24 - m34 * det1_23;
-        float f42 = m31 * det1_34 - m33 * det1_14 + m34 * det1_13;
-        float f43 = -m31 * det1_24 + m32 * det1_14 - m34 * det1_12;
-        float f44 = m31 * det1_23 - m32 * det1_13 + m33 * det1_12;
+        final float f31 = m42 * det1_34 - m43 * det1_24 + m44 * det1_23;
+        final float f32 = -m41 * det1_34 + m43 * det1_14 - m44 * det1_13;
+        final float f33 = m41 * det1_24 - m42 * det1_14 + m44 * det1_12;
+        final float f34 = -m41 * det1_23 + m42 * det1_13 - m43 * det1_12;
+        final float f41 = -m32 * det1_34 + m33 * det1_24 - m34 * det1_23;
+        final float f42 = m31 * det1_34 - m33 * det1_14 + m34 * det1_13;
+        final float f43 = -m31 * det1_24 + m32 * det1_14 - m34 * det1_12;
+        final float f44 = m31 * det1_23 - m32 * det1_13 + m33 * det1_12;
 
         // det of [row3,row4,column1,column2]
-        float det3_12 = m31 * m42 - m32 * m41;
-        float det3_13 = m31 * m43 - m33 * m41;
-        float det3_14 = m31 * m44 - m34 * m41;
-        float det3_23 = m32 * m43 - m33 * m42;
-        float det3_24 = m32 * m44 - m34 * m42;
-        float det3_34 = m33 * m44 - m34 * m43;
+        final float det3_12 = m31 * m42 - m32 * m41;
+        final float det3_13 = m31 * m43 - m33 * m41;
+        final float det3_14 = m31 * m44 - m34 * m41;
+        final float det3_23 = m32 * m43 - m33 * m42;
+        final float det3_24 = m32 * m44 - m34 * m42;
+        final float det3_34 = m33 * m44 - m34 * m43;
 
         // calc algebraic cofactor
-        float f11 = m22 * det3_34 - m23 * det3_24 + m24 * det3_23;
-        float f12 = -m21 * det3_34 + m23 * det3_14 - m24 * det3_13;
-        float f13 = m21 * det3_24 - m22 * det3_14 + m24 * det3_12;
-        float f14 = -m21 * det3_23 + m22 * det3_13 - m23 * det3_12;
-        float f21 = -m12 * det3_34 + m13 * det3_24 - m14 * det3_23;
-        float f22 = m11 * det3_34 - m13 * det3_14 + m14 * det3_13;
-        float f23 = -m11 * det3_24 + m12 * det3_14 - m14 * det3_12;
-        float f24 = m11 * det3_23 - m12 * det3_13 + m13 * det3_12;
+        final float f11 = m22 * det3_34 - m23 * det3_24 + m24 * det3_23;
+        final float f12 = -m21 * det3_34 + m23 * det3_14 - m24 * det3_13;
+        final float f13 = m21 * det3_24 - m22 * det3_14 + m24 * det3_12;
+        final float f14 = -m21 * det3_23 + m22 * det3_13 - m23 * det3_12;
+        final float f21 = -m12 * det3_34 + m13 * det3_24 - m14 * det3_23;
+        final float f22 = m11 * det3_34 - m13 * det3_14 + m14 * det3_13;
+        final float f23 = -m11 * det3_24 + m12 * det3_14 - m14 * det3_12;
+        final float f24 = m11 * det3_23 - m12 * det3_13 + m13 * det3_12;
 
         // transpose cofactor matrix
-        out.m11 = f11;
-        out.m21 = f12;
-        out.m31 = f13;
-        out.m41 = f14;
-        out.m12 = f21;
-        out.m22 = f22;
-        out.m32 = f23;
-        out.m42 = f24;
-        out.m13 = f31;
-        out.m23 = f32;
-        out.m33 = f33;
-        out.m43 = f34;
-        out.m14 = f41;
-        out.m24 = f42;
-        out.m34 = f43;
-        out.m44 = f44;
+        result.m11 = f11;
+        result.m21 = f12;
+        result.m31 = f13;
+        result.m41 = f14;
+        result.m12 = f21;
+        result.m22 = f22;
+        result.m32 = f23;
+        result.m42 = f24;
+        result.m13 = f31;
+        result.m23 = f32;
+        result.m33 = f33;
+        result.m43 = f34;
+        result.m14 = f41;
+        result.m24 = f42;
+        result.m34 = f43;
+        result.m44 = f44;
 
         return det1_12 * det3_34 - det1_13 * det3_24 + det1_14 * det3_23 +
                 det1_23 * det3_14 - det1_24 * det3_13 + det1_34 * det3_12;
@@ -660,17 +660,17 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Calculate the inverse of this matrix. The out matrix will be the inverse
+     * Calculate the inverse of this matrix. The result matrix will be the inverse
      * matrix if it is invertible, otherwise it will be the adjugate matrix.
      *
      * @return {@code true} if this matrix is invertible.
      */
-    public boolean inverse(@Nonnull Matrix4 out) {
-        float det = adjugateAndDet(out);
-        if (MathUtil.isZero(det))
+    public boolean inverse(@Nonnull Matrix4 result) {
+        float det = adjugateAndDet(result);
+        if (MathUtil.approxZero(det))
             return false;
         if (!MathUtil.approxEqual(det, 1.0f))
-            out.multiply(1.0f / det);
+            result.multiply(1.0f / det);
         return true;
     }
 
@@ -680,7 +680,7 @@ public class Matrix4 implements Cloneable {
      * @return {@code true} if this matrix is invertible
      */
     public boolean invertible() {
-        return !MathUtil.isZero(determinant());
+        return !MathUtil.approxZero(determinant());
     }
 
     /**
@@ -690,12 +690,12 @@ public class Matrix4 implements Cloneable {
      * @param rad the clockwise rotation radian.
      */
     public void rotateX(float rad) {
-        float s = MathUtil.fsin(rad);
-        float c = MathUtil.fcos(rad);
-        float f21 = c * m21 - s * m31;
-        float f22 = c * m22 - s * m32;
-        float f23 = c * m23 - s * m33;
-        float f24 = c * m24 - s * m34;
+        final float s = MathUtil.fsin(rad);
+        final float c = MathUtil.fcos(rad);
+        final float f21 = c * m21 - s * m31;
+        final float f22 = c * m22 - s * m32;
+        final float f23 = c * m23 - s * m33;
+        final float f24 = c * m24 - s * m34;
         m31 = s * m21 + c * m31;
         m32 = s * m22 + c * m32;
         m33 = s * m23 + c * m33;
@@ -713,12 +713,12 @@ public class Matrix4 implements Cloneable {
      * @param rad the clockwise rotation radian.
      */
     public void rotateY(float rad) {
-        float s = MathUtil.fsin(rad);
-        float c = MathUtil.fcos(rad);
-        float f11 = c * m11 + s * m31;
-        float f12 = c * m12 + s * m32;
-        float f13 = c * m13 + s * m33;
-        float f14 = c * m14 + s * m34;
+        final float s = MathUtil.fsin(rad);
+        final float c = MathUtil.fcos(rad);
+        final float f11 = c * m11 + s * m31;
+        final float f12 = c * m12 + s * m32;
+        final float f13 = c * m13 + s * m33;
+        final float f14 = c * m14 + s * m34;
         m31 = -s * m11 + c * m31;
         m32 = -s * m12 + c * m32;
         m33 = -s * m13 + c * m33;
@@ -736,12 +736,12 @@ public class Matrix4 implements Cloneable {
      * @param rad the clockwise rotation radian.
      */
     public void rotateZ(float rad) {
-        float s = MathUtil.fsin(rad);
-        float c = MathUtil.fcos(rad);
-        float f11 = c * m11 - s * m21;
-        float f12 = c * m12 - s * m22;
-        float f13 = c * m13 - s * m23;
-        float f14 = c * m14 - s * m24;
+        final float s = MathUtil.fsin(rad);
+        final float c = MathUtil.fcos(rad);
+        final float f11 = c * m11 - s * m21;
+        final float f12 = c * m12 - s * m22;
+        final float f13 = c * m13 - s * m23;
+        final float f14 = c * m14 - s * m24;
         m21 = s * m11 + c * m21;
         m22 = s * m12 + c * m22;
         m23 = s * m13 + c * m23;
@@ -758,10 +758,11 @@ public class Matrix4 implements Cloneable {
      * @return {@code true} if this matrix is identity.
      */
     public boolean isIdentity() {
-        return m11 == 1.0f && m12 == 0.0f && m13 == 0.0f && m14 == 0.0f &&
-                m21 == 0.0f && m22 == 1.0f && m23 == 0.0f && m24 == 0.0f &&
-                m31 == 0.0f && m32 == 0.0f && m33 == 1.0f && m34 == 0.0f &&
-                m41 == 0.0f && m42 == 0.0f && m43 == 0.0f && m44 == 1.0f;
+        return MathUtil.approxZero(m12, m13, m14) &&
+                MathUtil.approxZero(m21, m23, m24) &&
+                MathUtil.approxZero(m31, m32, m34) &&
+                MathUtil.approxZero(m41, m42, m43) &&
+                MathUtil.approxEqual(m11, m22, m33, m44, 1.0f);
     }
 
     /**
@@ -792,22 +793,22 @@ public class Matrix4 implements Cloneable {
 
         Matrix4 mat = (Matrix4) o;
 
-        if (!MathUtil.exactEqual(mat.m11, m11)) return false;
-        if (!MathUtil.exactEqual(mat.m12, m12)) return false;
-        if (!MathUtil.exactEqual(mat.m13, m13)) return false;
-        if (!MathUtil.exactEqual(mat.m14, m14)) return false;
-        if (!MathUtil.exactEqual(mat.m21, m21)) return false;
-        if (!MathUtil.exactEqual(mat.m22, m22)) return false;
-        if (!MathUtil.exactEqual(mat.m23, m23)) return false;
-        if (!MathUtil.exactEqual(mat.m24, m24)) return false;
-        if (!MathUtil.exactEqual(mat.m31, m31)) return false;
-        if (!MathUtil.exactEqual(mat.m32, m32)) return false;
-        if (!MathUtil.exactEqual(mat.m33, m33)) return false;
-        if (!MathUtil.exactEqual(mat.m34, m34)) return false;
-        if (!MathUtil.exactEqual(mat.m41, m41)) return false;
-        if (!MathUtil.exactEqual(mat.m42, m42)) return false;
-        if (!MathUtil.exactEqual(mat.m43, m43)) return false;
-        return MathUtil.exactEqual(mat.m44, m44);
+        if (!MathUtil.exactlyEqual(mat.m11, m11)) return false;
+        if (!MathUtil.exactlyEqual(mat.m12, m12)) return false;
+        if (!MathUtil.exactlyEqual(mat.m13, m13)) return false;
+        if (!MathUtil.exactlyEqual(mat.m14, m14)) return false;
+        if (!MathUtil.exactlyEqual(mat.m21, m21)) return false;
+        if (!MathUtil.exactlyEqual(mat.m22, m22)) return false;
+        if (!MathUtil.exactlyEqual(mat.m23, m23)) return false;
+        if (!MathUtil.exactlyEqual(mat.m24, m24)) return false;
+        if (!MathUtil.exactlyEqual(mat.m31, m31)) return false;
+        if (!MathUtil.exactlyEqual(mat.m32, m32)) return false;
+        if (!MathUtil.exactlyEqual(mat.m33, m33)) return false;
+        if (!MathUtil.exactlyEqual(mat.m34, m34)) return false;
+        if (!MathUtil.exactlyEqual(mat.m41, m41)) return false;
+        if (!MathUtil.exactlyEqual(mat.m42, m42)) return false;
+        if (!MathUtil.exactlyEqual(mat.m43, m43)) return false;
+        return MathUtil.exactlyEqual(mat.m44, m44);
     }
 
     @Override
