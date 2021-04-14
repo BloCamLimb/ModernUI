@@ -120,12 +120,12 @@ public class Matrix4 implements Cloneable {
      * @param right  the right frustum plane
      * @param bottom the bottom frustum plane
      * @param top    the top frustum plane
-     * @param near   the near frustum plane
-     * @param far    the far frustum plane
+     * @param near   the near frustum plane, must be positive
+     * @param far    the far frustum plane, must be positive
      * @return the resulting matrix
      */
     @Nonnull
-    public static Matrix4 orthographic(float left, float right, float bottom, float top, float near, float far) {
+    public static Matrix4 makeOrthographic(float left, float right, float bottom, float top, float near, float far) {
         Matrix4 mat = new Matrix4();
         float invRL = 1.0f / (right - left);
         float invTB = 1.0f / (top - bottom);
@@ -133,9 +133,9 @@ public class Matrix4 implements Cloneable {
         mat.m11 = 2.0f * invRL;
         mat.m22 = 2.0f * invTB;
         mat.m33 = 2.0f * invNF;
-        mat.m14 = -(right + left) * invRL;
-        mat.m24 = -(top + bottom) * invTB;
-        mat.m34 = (near + far) * invNF;
+        mat.m41 = -(right + left) * invRL;
+        mat.m42 = -(top + bottom) * invTB;
+        mat.m43 = (near + far) * invNF;
         mat.m44 = 1.0f;
         return mat;
     }
@@ -146,21 +146,71 @@ public class Matrix4 implements Cloneable {
      *
      * @param width  the distance from right frustum plane to left frustum plane
      * @param height the distance from bottom frustum plane to top frustum plane
-     * @param near   the near frustum plane
-     * @param far    the far frustum plane
+     * @param near   the near frustum plane, must be positive
+     * @param far    the far frustum plane, must be positive
      * @return the resulting matrix
      */
     @Nonnull
-    public static Matrix4 orthographic(float width, float height, float near, float far) {
+    public static Matrix4 makeOrthographic(float width, float height, float near, float far) {
         Matrix4 mat = new Matrix4();
         float invNF = 1.0f / (near - far);
         mat.m11 = 2.0f / width;
         mat.m22 = 2.0f / height;
         mat.m33 = 2.0f * invNF;
-        mat.m14 = -1.0f;
-        mat.m24 = -1.0f;
-        mat.m34 = (near + far) * invNF;
+        mat.m41 = -1.0f;
+        mat.m42 = -1.0f;
+        mat.m43 = (near + far) * invNF;
         mat.m44 = 1.0f;
+        return mat;
+    }
+
+    /**
+     * Create a perspective projection matrix.
+     *
+     * @param left   the left frustum plane
+     * @param right  the right frustum plane
+     * @param bottom the bottom frustum plane
+     * @param top    the top frustum plane
+     * @param near   the near frustum plane, must be positive
+     * @param far    the far frustum plane, must be positive
+     * @return the resulting matrix
+     */
+    @Nonnull
+    public static Matrix4 makePerspective(float left, float right, float bottom, float top, float near, float far) {
+        Matrix4 mat = new Matrix4();
+        float invRL = 1.0f / (right - left);
+        float invTB = 1.0f / (top - bottom);
+        float invNF = 1.0f / (near - far);
+        float tNear = 2.0f * near;
+        mat.m11 = tNear * invRL;
+        mat.m22 = tNear * invTB;
+        mat.m31 = (right + left) * invRL;
+        mat.m32 = (top + bottom) * invTB;
+        mat.m33 = (near + far) * invNF;
+        mat.m34 = -1.0f;
+        mat.m43 = tNear * far * invNF;
+        return mat;
+    }
+
+    /**
+     * Create a perspective projection matrix.
+     *
+     * @param fov    the angle of field of view in radians (0,PI)
+     * @param aspect aspect ratio of the view (width / height)
+     * @param near   the near frustum plane, must be positive
+     * @param far    the far frustum plane, must be positive
+     * @return the resulting matrix
+     */
+    @Nonnull
+    public static Matrix4 makePerspective(float fov, float aspect, float near, float far) {
+        Matrix4 mat = new Matrix4();
+        float y = 1.0f / MathUtil.tan(fov * 0.5f);
+        float invNF = 1.0f / (near - far);
+        mat.m11 = y / aspect;
+        mat.m22 = y;
+        mat.m33 = (near + far) * invNF;
+        mat.m34 = -1.0f;
+        mat.m43 = 2.0f * far * near * invNF;
         return mat;
     }
 
@@ -286,7 +336,8 @@ public class Matrix4 implements Cloneable {
 
     /**
      * Pre-multiply this matrix by a 4x4 matrix, whose top left 3x3 is the given
-     * 3x3 matrix, and forth row and column are identity.
+     * 3x3 matrix, and forth row and column are identity. This is useful when
+     * multiplying a quaternion, see {@link #rotate(Quaternion)}
      *
      * @param mat the matrix to multiply.
      */
@@ -317,18 +368,6 @@ public class Matrix4 implements Cloneable {
         m41 = f41;
         m42 = f42;
         m43 = f43;
-    }
-
-    /**
-     * Pre-multiply this matrix by given quaternion.
-     *
-     * @param quat the quaternion to multiply with.
-     */
-    public void multiply(@Nonnull Quaternion quat) {
-        if (quat.lengthSquared() < 1.0e-6f)
-            // mul an identity
-            return;
-        multiply(quat.toMatrix3());
     }
 
     /**
@@ -442,6 +481,32 @@ public class Matrix4 implements Cloneable {
         m42 = mat.m42;
         m43 = mat.m43;
         m44 = mat.m44;
+    }
+
+    /**
+     * Put this matrix data into an array.
+     *
+     * @param arr the array to store
+     */
+    public void put(@Nonnull float[] arr) {
+        if (arr.length < 16)
+            throw new IllegalArgumentException("The array length must be at least 16");
+        arr[0] = m11;
+        arr[1] = m12;
+        arr[2] = m13;
+        arr[3] = m14;
+        arr[4] = m21;
+        arr[5] = m22;
+        arr[6] = m23;
+        arr[7] = m24;
+        arr[8] = m31;
+        arr[9] = m32;
+        arr[10] = m33;
+        arr[11] = m34;
+        arr[12] = m41;
+        arr[13] = m42;
+        arr[14] = m43;
+        arr[15] = m44;
     }
 
     /**
@@ -684,14 +749,25 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Pre-multiply by a rotation clockwise about the positive X-axis
-     * into this matrix.
+     * Rotate this matrix by the given quaternion's rotation matrix.
      *
-     * @param rad the clockwise rotation radian.
+     * @param q the quaternion to multiply with.
      */
-    public void rotateX(float rad) {
-        final float s = MathUtil.fsin(rad);
-        final float c = MathUtil.fcos(rad);
+    public void rotate(@Nonnull Quaternion q) {
+        if (q.lengthSquared() < 1.0e-6f)
+            // mul an identity matrix, no change
+            return;
+        multiply(q.toMatrix3());
+    }
+
+    /**
+     * Rotate this matrix by a rotation clockwise about the X-axis into this matrix.
+     *
+     * @param angle the clockwise rotation angle in radians.
+     */
+    public void rotateX(float angle) {
+        final float s = MathUtil.fsin(angle);
+        final float c = MathUtil.fcos(angle);
         final float f21 = c * m21 - s * m31;
         final float f22 = c * m22 - s * m32;
         final float f23 = c * m23 - s * m33;
@@ -707,14 +783,13 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Pre-multiply by a rotation clockwise about the positive Y-axis
-     * into this matrix.
+     * Rotate this matrix by a rotation clockwise about the Y-axis into this matrix.
      *
-     * @param rad the clockwise rotation radian.
+     * @param angle the clockwise rotation angle in radians.
      */
-    public void rotateY(float rad) {
-        final float s = MathUtil.fsin(rad);
-        final float c = MathUtil.fcos(rad);
+    public void rotateY(float angle) {
+        final float s = MathUtil.fsin(angle);
+        final float c = MathUtil.fcos(angle);
         final float f11 = c * m11 + s * m31;
         final float f12 = c * m12 + s * m32;
         final float f13 = c * m13 + s * m33;
@@ -730,14 +805,13 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Pre-multiply by a rotation clockwise about the positive Z-axis
-     * into this matrix.
+     * Rotate this matrix by a rotation clockwise about the Z-axis into this matrix.
      *
-     * @param rad the clockwise rotation radian.
+     * @param angle the clockwise rotation angle in radians.
      */
-    public void rotateZ(float rad) {
-        final float s = MathUtil.fsin(rad);
-        final float c = MathUtil.fcos(rad);
+    public void rotateZ(float angle) {
+        final float s = MathUtil.fsin(angle);
+        final float c = MathUtil.fcos(angle);
         final float f11 = c * m11 - s * m21;
         final float f12 = c * m12 - s * m22;
         final float f13 = c * m13 - s * m23;

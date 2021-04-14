@@ -51,6 +51,11 @@ public class MathUtil {
         return (float) Math.cos(a);
     }
 
+    // tan
+    public static float tan(float a) {
+        return (float) Math.tan(a);
+    }
+
     // exactly equal
     public static boolean exactlyEqual(float a, float b) {
         return Float.floatToIntBits(a) == Float.floatToIntBits(b);
