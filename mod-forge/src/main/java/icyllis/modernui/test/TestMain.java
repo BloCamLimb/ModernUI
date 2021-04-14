@@ -30,6 +30,8 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.GLWrapper;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.shader.ShaderProgram;
+import icyllis.modernui.math.MathUtil;
+import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Quaternion;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.platform.Window;
@@ -37,6 +39,7 @@ import icyllis.modernui.platform.WindowMode;
 import icyllis.modernui.text.GraphemeBreak;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL43;
 import org.lwjgl.system.Callback;
@@ -45,6 +48,7 @@ import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
+import java.nio.FloatBuffer;
 import java.util.*;
 import java.util.List;
 import java.util.stream.Stream;
@@ -123,10 +127,6 @@ public class TestMain {
         float[] av = new float[]{1, 3, 2, 4.1f, 6, 0, 6, 0.5f, 5, 7, 11.3f, 9, 9.1f, 15, 8, 10};
         float[] bv = new float[]{9.1f, 2, 7, 5, 3.3f, 6.1f, 5.5f, 4, 0, 8, 3, 1, 2.7f, 3, 9, 2};
 
-        Quaternion q = Quaternion.fromAxisAngle(1.0f, 0, 0, 180);
-        Quaternion q2 = Quaternion.fromEulerAngles(30, 0, 0);
-        ModernUI.LOGGER.info("{}", q.dot(q2));
-
         if (!CREATE_WINDOW)
             return;
         try {
@@ -139,7 +139,9 @@ public class TestMain {
                 RenderCore.initEngine();
                 RenderSystem.initRenderThread();
                 ShaderProgram.linkAll(null);
-                Matrix4f projection = Matrix4f.perspective(90, 16f / 9, 1, 100);
+                float[] projection;
+                Matrix4.makePerspective(MathUtil.HALF_PI_F, 16f / 9, 1, 100)
+                        .put(projection = new float[16]);
                 while (window.exists()) {
                     if (window.needsRefresh()) {
                         GLWrapper.reset(window);
@@ -154,7 +156,7 @@ public class TestMain {
                         RenderSystem.loadIdentity();
                         //RenderSystem.ortho(0.0D, window.getWidth(), window.getHeight(), 0.0D, 1000.0D, 3000.0D);
                         //a.multiply(b);
-                        RenderSystem.multMatrix(projection);
+                        GL11.glMultMatrixf(projection);
                         RenderSystem.matrixMode(GL11.GL_MODELVIEW);
                         GL43.glPushMatrix();
                         RenderSystem.loadIdentity();
