@@ -22,7 +22,14 @@ public class MathUtil {
 
     private static final float[] SINE_TABLE;
 
-    public static final float HALF_PI_F = (float) (Math.PI * 0.5);
+    public static final float PI = (float) Math.PI;
+
+    public static final float PI_OVER_2 = PI / 2;
+    public static final float PI_OVER_3 = PI / 3;
+    public static final float PI_OVER_4 = PI / 4;
+    public static final float PI_OVER_6 = PI / 6;
+    public static final float TWO_PI = PI * 2;
+    public static final float THREE_PI_OVER_2 = PI * 3 / 2;
 
     static {
         float[] v = new float[0x10000];
@@ -38,7 +45,7 @@ public class MathUtil {
 
     // fast cos, error +- 0.000152, in radians
     public static float fcos(float a) {
-        return SINE_TABLE[(Math.round(a * 10430.378f) + 16384) & 0xffff];
+        return SINE_TABLE[(Math.round(a * 10430.378f) + 0x4000) & 0xffff];
     }
 
     // sin
@@ -67,13 +74,13 @@ public class MathUtil {
     }
 
     // approximately equal
-    public static boolean approxEqual(float a, float b, float c, float d) {
-        return approxEqual(a, d) && approxEqual(b, d) && approxEqual(c, d);
+    public static boolean approxEqual(float a, float b, float c, float z) {
+        return approxEqual(a, z) && approxEqual(b, z) && approxEqual(c, z);
     }
 
     // approximately equal
-    public static boolean approxEqual(float a, float b, float c, float d, float e) {
-        return approxEqual(a, e) && approxEqual(b, e) && approxEqual(c, e) && approxEqual(d, e);
+    public static boolean approxEqual(float a, float b, float c, float d, float z) {
+        return approxEqual(a, z) && approxEqual(b, z) && approxEqual(c, z) && approxEqual(d, z);
     }
 
     // approximately equal
@@ -117,7 +124,7 @@ public class MathUtil {
     public static double fastInvSqrt(double a) {
         double x2 = 0.5 * a;
         long i = Double.doubleToLongBits(a);
-        i = 0x5fe6eb50_c7b537a9L - (i >> 1);
+        i = 0x5fe6eb50c7b537a9L - (i >> 1);
         a = Double.longBitsToDouble(i);
         a *= 1.5 - x2 * a * a;
         return a;
