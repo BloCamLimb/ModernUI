@@ -21,7 +21,6 @@ package icyllis.modernui.test;
 import com.ibm.icu.text.BreakIterator;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.math.Matrix4f;
 import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.ast.Node;
@@ -39,7 +38,6 @@ import icyllis.modernui.platform.WindowMode;
 import icyllis.modernui.text.GraphemeBreak;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
-import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL43;
 import org.lwjgl.system.Callback;
@@ -48,7 +46,6 @@ import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
-import java.nio.FloatBuffer;
 import java.util.*;
 import java.util.List;
 import java.util.stream.Stream;
@@ -126,6 +123,12 @@ public class TestMain {
 
         float[] av = new float[]{1, 3, 2, 4.1f, 6, 0, 6, 0.5f, 5, 7, 11.3f, 9, 9.1f, 15, 8, 10};
         float[] bv = new float[]{9.1f, 2, 7, 5, 3.3f, 6.1f, 5.5f, 4, 0, 8, 3, 1, 2.7f, 3, 9, 2};
+        Matrix4 mat = new Matrix4(av);
+        Matrix4 mat2 = mat.clone();
+        Quaternion q = Quaternion.fromAxisAngle(0.40824829f, 0.81649658f, 0.40824829f, MathUtil.PI_OVER_3);
+        mat.multiply(q);
+        mat2.rotateByAxis(0.40824829f, 0.81649658f, 0.40824829f, MathUtil.PI_OVER_3);
+        ModernUI.LOGGER.info("Two Equal: {}", mat.isEqual(mat2));
 
         if (!CREATE_WINDOW)
             return;
@@ -140,7 +143,7 @@ public class TestMain {
                 RenderSystem.initRenderThread();
                 ShaderProgram.linkAll(null);
                 float[] projection;
-                Matrix4.makePerspective(MathUtil.HALF_PI_F, 16f / 9, 1, 100)
+                Matrix4.makePerspective(MathUtil.PI_OVER_2, 16f / 9, 1, 100)
                         .put(projection = new float[16]);
                 while (window.exists()) {
                     if (window.needsRefresh()) {

@@ -32,9 +32,20 @@ public class Quaternion implements Cloneable {
     private float z;
     private float w;
 
+    /**
+     * Create a zero quaternion.
+     */
     public Quaternion() {
     }
 
+    /**
+     * Create a quaternion with given components.
+     *
+     * @param x the x-component of the quaternion
+     * @param y the y-component of the quaternion
+     * @param z the z-component of the quaternion
+     * @param w the w-component of the quaternion
+     */
     public Quaternion(float x, float y, float z, float w) {
         this.x = x;
         this.y = y;
@@ -68,7 +79,7 @@ public class Quaternion implements Cloneable {
 
     /**
      * Create a quaternion from the given Euler rotation angles in radians.
-     * The returned quaternion will be a normalized rotation quaternion.
+     * The returned quaternion will be a normalized rotational quaternion.
      *
      * @param rotationX the Euler pitch angle in radians. (rotation about the X axis)
      * @param rotationY the Euler yaw angle in radians. (rotation about the Y axis)
@@ -210,10 +221,10 @@ public class Quaternion implements Cloneable {
      */
     public void inverse() {
         final float sq = lengthSquared();
-        if (MathUtil.approxEqual(sq, 1.0f))
+        if (MathUtil.approxEqual(sq, 1.0f)) {
             // equal to invert w component
             conjugate();
-        else {
+        } else {
             final float invSq = 1.0f / sq;
             w *= invSq;
             x = -x * invSq;
@@ -239,12 +250,38 @@ public class Quaternion implements Cloneable {
         if (sq < 1.0e-6f) {
             setIdentity();
         } else {
+            final float invNorm = 1.0f / MathUtil.sqrt(sq);
+            x *= invNorm;
+            y *= invNorm;
+            z *= invNorm;
+            w *= invNorm;
+        }
+    }
+
+    /**
+     * Normalize this quaternion to approximately unit length.
+     */
+    public void normalizeFast() {
+        final float sq = lengthSquared();
+        if (sq < 1.0e-6f) {
+            setIdentity();
+        } else {
             final float invNorm = MathUtil.fastInvSqrt(sq);
             x *= invNorm;
             y *= invNorm;
             z *= invNorm;
             w *= invNorm;
         }
+    }
+
+    /**
+     * Set this quaternion to the zero quaternion.
+     */
+    public void setZero() {
+        x = 0.0f;
+        y = 0.0f;
+        z = 0.0f;
+        w = 0.0f;
     }
 
     /**
@@ -256,7 +293,7 @@ public class Quaternion implements Cloneable {
         return MathUtil.approxZero(x, y, z) && MathUtil.approxEqual(w, 1.0f);
     }
 
-    /***
+    /**
      * Set this quaternion to the identity quaternion.
      */
     public void setIdentity() {
@@ -326,6 +363,7 @@ public class Quaternion implements Cloneable {
                         t = -t;
                 }
             }
+
             x = a.x * s + b.x * t;
             y = a.y * s + b.y * t;
             z = a.z * s + b.z * t;
@@ -342,15 +380,15 @@ public class Quaternion implements Cloneable {
      * @param axisZ z-coordinate of rotation axis
      * @param angle rotation angle in radians
      */
-    public void rotateByAxisAngle(float axisX, float axisY, float axisZ, float angle) {
+    public void rotateByAxis(float axisX, float axisY, float axisZ, float angle) {
         if (angle == 0.0f)
             return;
         angle *= 0.5f;
-        final float sin = MathUtil.fsin(angle);
+        final float sin = MathUtil.sin(angle);
         final float qx = axisX * sin;
         final float qy = axisY * sin;
         final float qz = axisZ * sin;
-        final float qw = MathUtil.fcos(angle);
+        final float qw = MathUtil.cos(angle);
         set(x * qw + y * qz - z * qy + w * qx,
                 -x * qz + y * qw + z * qx + w * qy,
                 x * qy - y * qx + z * qw + w * qz,
@@ -362,12 +400,12 @@ public class Quaternion implements Cloneable {
      *
      * @param angle rotation angle in radians
      */
-    public void rotateByAxisX(float angle) {
+    public void rotateX(float angle) {
         if (angle == 0.0f)
             return;
         angle *= 0.5f;
-        final float sin = MathUtil.fsin(angle);
-        final float cos = MathUtil.fcos(angle);
+        final float sin = MathUtil.sin(angle);
+        final float cos = MathUtil.cos(angle);
         set(x * cos + w * sin,
                 y * cos + z * sin,
                 -y * sin + z * cos,
@@ -379,12 +417,12 @@ public class Quaternion implements Cloneable {
      *
      * @param angle rotation angle in radians
      */
-    public void rotateByAxisY(float angle) {
+    public void rotateY(float angle) {
         if (angle == 0.0f)
             return;
         angle *= 0.5f;
-        final float sin = MathUtil.fsin(angle);
-        final float cos = MathUtil.fcos(angle);
+        final float sin = MathUtil.sin(angle);
+        final float cos = MathUtil.cos(angle);
         set(x * cos - z * sin,
                 y * cos + w * sin,
                 x * sin + z * cos,
@@ -396,12 +434,12 @@ public class Quaternion implements Cloneable {
      *
      * @param angle rotation angle in radians
      */
-    public void rotateByAxisZ(float angle) {
+    public void rotateZ(float angle) {
         if (angle == 0.0f)
             return;
         angle *= 0.5f;
-        final float sin = MathUtil.fsin(angle);
-        final float cos = MathUtil.fcos(angle);
+        final float sin = MathUtil.sin(angle);
+        final float cos = MathUtil.cos(angle);
         set(x * cos + y * sin,
                 -x * sin + y * cos,
                 z * cos + w * sin,
@@ -413,23 +451,45 @@ public class Quaternion implements Cloneable {
      * <p>
      * The rotations are applied in the given order and using chained rotation per axis:
      * <ul>
-     *  <li>x - pitch - {@link #rotateByAxisX(float)}</li>
-     *  <li>y - yaw   - {@link #rotateByAxisY(float)}</li>
-     *  <li>z - roll  - {@link #rotateByAxisZ(float)}</li>
+     *  <li>x - pitch - {@link #rotateX(float)}</li>
+     *  <li>y - yaw   - {@link #rotateY(float)}</li>
+     *  <li>z - roll  - {@link #rotateZ(float)}</li>
      * </ul>
      * </p>
      *
      * @param rotationX the Euler pitch angle in radians. (rotation about the X axis)
      * @param rotationY the Euler yaw angle in radians. (rotation about the Y axis)
      * @param rotationZ the Euler roll angle in radians. (rotation about the Z axis)
-     * @see #rotateByAxisY(float)
-     * @see #rotateByAxisZ(float)
-     * @see #rotateByAxisX(float)
+     * @see #rotateY(float)
+     * @see #rotateZ(float)
+     * @see #rotateX(float)
      */
-    public void rotateByEulerAngles(float rotationX, float rotationY, float rotationZ) {
-        rotateByAxisX(rotationX);
-        rotateByAxisY(rotationY);
-        rotateByAxisZ(rotationZ);
+    public void rotateByEuler(float rotationX, float rotationY, float rotationZ) {
+        rotateX(rotationX);
+        rotateY(rotationY);
+        rotateZ(rotationZ);
+    }
+
+    /**
+     * Set this quaternion components from the given axis and angle. The axis must be
+     * a normalized (unit) vector.
+     *
+     * @param axisX x-coordinate of rotation axis
+     * @param axisY y-coordinate of rotation axis
+     * @param axisZ z-coordinate of rotation axis
+     * @param angle rotation angle in radians
+     */
+    public void setFromAxisAngle(float axisX, float axisY, float axisZ, float angle) {
+        if (MathUtil.approxZero(axisX, axisY, axisZ))
+            setIdentity();
+        else {
+            angle *= 0.5f;
+            final float sin = MathUtil.sin(angle);
+            x = axisX * sin;
+            y = axisY * sin;
+            z = axisZ * sin;
+            w = MathUtil.cos(angle);
+        }
     }
 
     /**
@@ -467,28 +527,6 @@ public class Quaternion implements Cloneable {
     }
 
     /**
-     * Set this quaternion components from the given axis and angle. The axis must be
-     * a normalized (unit) vector.
-     *
-     * @param axisX x-coordinate of rotation axis
-     * @param axisY y-coordinate of rotation axis
-     * @param axisZ z-coordinate of rotation axis
-     * @param angle rotation angle in radians
-     */
-    public void setFromAxisAngle(float axisX, float axisY, float axisZ, float angle) {
-        if (MathUtil.approxZero(axisX, axisY, axisZ))
-            setIdentity();
-        else {
-            angle *= 0.5f;
-            final float sin = MathUtil.sin(angle);
-            x = axisX * sin;
-            y = axisY * sin;
-            z = axisZ * sin;
-            w = MathUtil.cos(angle);
-        }
-    }
-
-    /**
      * Transform the rotational quaternion to axis based rotation angles.
      *
      * @param axis the array for storing the axis coordinates.
@@ -504,7 +542,7 @@ public class Quaternion implements Cloneable {
             axis[2] = 0.0f;
             return 0.0f;
         }
-        l = MathUtil.fastInvSqrt(l);
+        l = 1.0f / MathUtil.sqrt(l);
         axis[0] = x * l;
         axis[1] = y * l;
         axis[2] = z * l;
@@ -530,11 +568,11 @@ public class Quaternion implements Cloneable {
         if (f > 0.499f * sq) {
             result[0] = 0.0f;
             result[1] = 2.0f * MathUtil.atan2(x, w);
-            result[2] = MathUtil.HALF_PI_F;
+            result[2] = MathUtil.PI_OVER_2;
         } else if (f < -0.499f * sq) {
             result[0] = 0.0f;
             result[1] = -2.0f * MathUtil.atan2(x, w);
-            result[2] = -MathUtil.HALF_PI_F;
+            result[2] = -MathUtil.PI_OVER_2;
         } else {
             result[0] = MathUtil.atan2(2.0f * (x * w - y * z), -sqx + sqy - sqz + sqw);
             result[1] = MathUtil.atan2(2.0f * (y * w - x * z), sqx - sqy - sqz + sqw);
@@ -742,6 +780,20 @@ public class Quaternion implements Cloneable {
         recycle.m34 = 0.0f;
         recycle.m44 = 1.0f;
         return recycle;
+    }
+
+    /**
+     * Returns whether this quaternion is approximately equivalent to given quaternion.
+     *
+     * @param q the quaternion to compare.
+     * @return {@code true} if this matrix is equivalent to other.
+     */
+    public boolean isEqual(@Nonnull Quaternion q) {
+        if (this == q) return true;
+        return MathUtil.approxEqual(x, q.x) &&
+                MathUtil.approxEqual(y, q.y) &&
+                MathUtil.approxEqual(z, q.z) &&
+                MathUtil.approxEqual(w, q.w);
     }
 
     @Override
