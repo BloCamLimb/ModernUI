@@ -23,6 +23,10 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.ExtensionList;
 import icyllis.modernui.core.mixin.AccessOption;
 import icyllis.modernui.core.mixin.AccessVideoSettingsScreen;
+import icyllis.modernui.graphics.shader.program.ArcProgram;
+import icyllis.modernui.graphics.shader.program.CircleProgram;
+import icyllis.modernui.graphics.shader.program.RectProgram;
+import icyllis.modernui.graphics.shader.program.RoundRectProgram;
 import icyllis.modernui.graphics.textmc.ModernFontRenderer;
 import icyllis.modernui.graphics.textmc.TextLayoutProcessor;
 import icyllis.modernui.platform.RenderCore;
@@ -159,6 +163,10 @@ final class Registration {
 
         event.getMinecraftSupplier().get().submitAsync(() -> {
             RenderCore.initEngine();
+            ArcProgram.createPrograms();
+            CircleProgram.createPrograms();
+            RectProgram.createPrograms();
+            RoundRectProgram.createPrograms();
             UIManager.initialize();
             TextLayoutProcessor.getInstance().initRenderer();
             ModernFontRenderer.change(Config.CLIENT.globalRenderer.get(), Config.CLIENT.allowShadow.get());

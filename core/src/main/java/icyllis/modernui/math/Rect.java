@@ -16,23 +16,15 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics;
+package icyllis.modernui.math;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * Rect holds four integer coordinates for a rectangle. The rectangle is
- * represented by the coordinates of its 4 edges (left, top, right bottom).
- * These fields can be accessed directly. Use width() and height() to retrieve
- * the rectangle's width and height. Note: most methods do not check to see that
- * the coordinates are sorted correctly (i.e. left <= right and top <= bottom).
- * <p>
- * Note that the right and bottom coordinates are exclusive. This means a Rect
- * being drawn untransformed onto a {@link icyllis.modernui.graphics.Canvas}
- * will draw into the column and row described by its left and top coordinates,
- * but not those of its bottom and right.
+ * Represents a rectangle.
  */
+@SuppressWarnings("unused")
 public class Rect implements Cloneable {
 
     public int left;
@@ -41,7 +33,7 @@ public class Rect implements Cloneable {
     public int bottom;
 
     /**
-     * Create a new empty Rect. All coordinates are initialized to 0.
+     * Create a new Rect with all coordinates initialized to 0.
      */
     public Rect() {
     }
@@ -64,7 +56,7 @@ public class Rect implements Cloneable {
     }
 
     /**
-     * Returns a copy of {@code r} if {@code r} is not {@code null}, or
+     * Returns a copy of {@code r} if it is not {@code null}, or
      * an empty Rect otherwise.
      *
      * @param r the rect to copy from
@@ -72,17 +64,6 @@ public class Rect implements Cloneable {
     @Nonnull
     public static Rect copy(@Nullable Rect r) {
         return r == null ? new Rect() : r.clone();
-    }
-
-    /**
-     * Returns a copy of {@code r} if {@code r} is not {@code null}, or
-     * {@code null} otherwise.
-     *
-     * @param r the rect to copy from
-     */
-    @Nullable
-    public static Rect copyOrNull(@Nullable Rect r) {
-        return r == null ? null : r.clone();
     }
 
     /**

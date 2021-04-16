@@ -19,13 +19,6 @@
 package icyllis.modernui.platform;
 
 import icyllis.modernui.graphics.GLWrapper;
-import icyllis.modernui.graphics.shader.Shader;
-import icyllis.modernui.graphics.shader.ShaderProgram;
-import icyllis.modernui.graphics.shader.program.ArcProgram;
-import icyllis.modernui.graphics.shader.program.CircleProgram;
-import icyllis.modernui.graphics.shader.program.RectProgram;
-import icyllis.modernui.graphics.shader.program.RoundRectProgram;
-import net.minecraft.server.packs.resources.ResourceManager;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.Version;
@@ -99,11 +92,6 @@ public final class RenderCore {
         }
         GLWrapper.initialize(caps);
 
-        ArcProgram.createPrograms();
-        CircleProgram.createPrograms();
-        RectProgram.createPrograms();
-        RoundRectProgram.createPrograms();
-
         sInitialized = true;
         LOGGER.info(MARKER, "Backend API: OpenGL {}", glGetString(GL_VERSION));
         LOGGER.info(MARKER, "OpenGL Renderer: {} {}", glGetString(GL_VENDOR), glGetString(GL_RENDERER));
@@ -111,12 +99,6 @@ public final class RenderCore {
 
     public static boolean isInitialized() {
         return sInitialized;
-    }
-
-    public static void compileShaders(ResourceManager manager) {
-        ShaderProgram.detachAll();
-        Shader.deleteAll();
-        ShaderProgram.linkAll(manager);
     }
 
     public static ByteBuffer readRawBuffer(InputStream inputStream) throws IOException {

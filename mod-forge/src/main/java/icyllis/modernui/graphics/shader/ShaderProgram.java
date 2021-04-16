@@ -102,4 +102,10 @@ public class ShaderProgram {
     public static void detachAll() {
         PROGRAMS.forEach(ShaderProgram::detach);
     }
+
+    public static void recompile(ResourceManager manager) {
+        detachAll();
+        Shader.deleteAll();
+        linkAll(manager);
+    }
 }

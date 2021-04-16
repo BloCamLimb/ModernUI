@@ -19,7 +19,7 @@
 package icyllis.modernui.core.forge;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.platform.RenderCore;
+import icyllis.modernui.graphics.shader.ShaderProgram;
 import icyllis.modernui.view.LayoutIO;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -82,9 +82,10 @@ public final class ModernUIForge extends ModernUI {
             if (!isDataGen) {
                 ((ReloadableResourceManager) Minecraft.getInstance().getResourceManager())
                         .registerReloadListener(
-                                (ISelectiveResourceReloadListener) (resourceManager, typePredicate) -> {
-                                    if (typePredicate.test(VanillaResourceType.SHADERS))
-                                        RenderCore.compileShaders(resourceManager);
+                                (ISelectiveResourceReloadListener) (manager, predicate) -> {
+                                    if (predicate.test(VanillaResourceType.SHADERS)) {
+                                        ShaderProgram.recompile(manager);
+                                    }
                                 }
                         );
             }

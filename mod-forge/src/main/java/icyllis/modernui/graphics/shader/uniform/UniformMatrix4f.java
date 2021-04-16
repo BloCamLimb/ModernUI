@@ -20,7 +20,6 @@ package icyllis.modernui.graphics.shader.uniform;
 
 import icyllis.modernui.graphics.shader.ShaderUniform;
 import icyllis.modernui.math.Matrix4;
-import org.lwjgl.opengl.GL20;
 
 import javax.annotation.Nonnull;
 

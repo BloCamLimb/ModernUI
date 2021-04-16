@@ -1,4 +1,125 @@
+import org.gradle.internal.os.OperatingSystem
+
+version = "${core_version}"
+
 dependencies {
-    runtimeOnly('org.apache.logging.log4j:log4j-core:2.11.2')
-    compileOnly('org.apache.logging.log4j:log4j-api:2.11.2')
+    runtimeOnly "org.apache.logging.log4j:log4j-core:${log4j_version}"
+    compileOnly "org.apache.logging.log4j:log4j-api:${log4j_version}"
+    implementation "it.unimi.dsi:fastutil:${fastutil_version}"
+    implementation "com.ibm.icu:icu4j:${icu4j_version}"
+
+    def lwjglNatives = "natives-linux"
+    switch (OperatingSystem.current()) {
+        case OperatingSystem.LINUX:
+            lwjglNatives = "natives-linux"
+            break
+        case OperatingSystem.MAC_OS:
+            lwjglNatives = "natives-macos"
+            break
+        case OperatingSystem.WINDOWS:
+            lwjglNatives = "natives-windows"
+            break
+    }
+
+    implementation "org.lwjgl:lwjgl:${lwjgl_version}"
+    implementation "org.lwjgl:lwjgl-glfw:${lwjgl_version}"
+    implementation "org.lwjgl:lwjgl-jemalloc:${lwjgl_version}"
+    implementation "org.lwjgl:lwjgl-openal:${lwjgl_version}"
+    implementation "org.lwjgl:lwjgl-opengl:${lwjgl_version}"
+    implementation "org.lwjgl:lwjgl-stb:${lwjgl_version}"
+    implementation "org.lwjgl:lwjgl-tinyfd:${lwjgl_version}"
+    runtimeOnly "org.lwjgl:lwjgl:${lwjgl_version}:$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-glfw:${lwjgl_version}:$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-jemalloc:${lwjgl_version}:$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-openal:${lwjgl_version}:$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-opengl:${lwjgl_version}:$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-stb:${lwjgl_version}:$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-tinyfd:${lwjgl_version}:$lwjglNatives"
+}
+
+jar {
+    manifest {
+        attributes([
+                "Specification-Title"     : "ModernUI-Core",
+                "Specification-Vendor"    : "BloCamLimb",
+                "Specification-Version"   : "1",
+                "Implementation-Title"    : project.name,
+                "Implementation-Version"  : project.version,
+                "Implementation-Vendor"   : "BloCamLimb",
+                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
+        ])
+    }
+}
+
+publishing {
+    repositories {
+        maven {
+            name 'IzzelAliz'
+            url 'https://maven.izzel.io/releases'
+            credentials {
+                username = project.getProperty("maven_user")
+                password = project.getProperty("izzel_maven_token")
+            }
+        }
+    }
+    publications {
+        mavenCore(MavenPublication) {
+            artifact(jar.archiveFile) {
+                builtBy build
+            }
+            artifact(sourcesJar.archiveFile) {
+                builtBy build
+                classifier 'sources'
+            }
+            artifactId = project.name
+            groupId = project.group
+            version = project.version
+
+            pom {
+                artifactId = project.name
+                groupId = project.group
+                version = project.version
+                name = rootProject.name
+                packaging = 'pom'
+                scm {
+                    url = 'https://github.com/BloCamLimb/ModernUI.git'
+                }
+                issueManagement {
+                    system = 'github'
+                    url = 'https://github.com/BloCamLimb/ModernUI/issues'
+                }
+                licenses {
+                    license {
+                        name = 'LGPL-3.0-or-later'
+                        url = 'https://www.gnu.org/licenses/lgpl-3.0.en.html'
+                        distribution = 'repo'
+                    }
+                }
+                withXml {
+                    def dependenciesNode = asNode().appendNode('dependencies')
+                    configurations.implementation.allDependencies.each {
+                        def dependencyNode = dependenciesNode.appendNode('dependency')
+                        dependencyNode.appendNode('groupId', it.group)
+                        dependencyNode.appendNode('artifactId', it.name)
+                        dependencyNode.appendNode('version', it.version)
+                        dependencyNode.appendNode('scope', 'compile')
+                    }
+                    configurations.compileOnly.allDependencies.each {
+                        def dependencyNode = dependenciesNode.appendNode('dependency')
+                        dependencyNode.appendNode('groupId', it.group)
+                        dependencyNode.appendNode('artifactId', it.name)
+                        dependencyNode.appendNode('version', it.version)
+                        dependencyNode.appendNode('scope', 'compile')
+                    }
+                    configurations.runtimeOnly.allDependencies.each {
+                        def dependencyNode = dependenciesNode.appendNode('dependency')
+                        dependencyNode.appendNode('groupId', it.group)
+                        dependencyNode.appendNode('artifactId', it.name)
+                        dependencyNode.appendNode('version', it.version)
+                        dependencyNode.appendNode('scope', 'runtime')
+                    }
+                }
+            }
+        }
+    }
 }

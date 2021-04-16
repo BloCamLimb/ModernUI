@@ -18,7 +18,7 @@
 
 package icyllis.modernui.math;
 
-public class MathUtil {
+public final class MathUtil {
 
     private static final float[] SINE_TABLE;
 

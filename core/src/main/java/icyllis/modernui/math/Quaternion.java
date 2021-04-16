@@ -234,9 +234,10 @@ public class Quaternion implements Cloneable {
     }
 
     /**
-     * Returns whether this quaternion is normalized.
+     * Returns whether this quaternion is normalized. Normalizing by
+     * {@link #normalizeFast()} is not seen as being normalized here.
      *
-     * @return {@code true} if normalized
+     * @return {@code true} if is normalized, {@code false} otherwise
      */
     public boolean isNormalized() {
         return MathUtil.approxEqual(lengthSquared(), 1.0f);
@@ -259,7 +260,7 @@ public class Quaternion implements Cloneable {
     }
 
     /**
-     * Normalize this quaternion to approximately unit length.
+     * Normalize this quaternion to approximate unit length.
      */
     public void normalizeFast() {
         final float sq = lengthSquared();

@@ -272,6 +272,10 @@ public final class Window implements AutoCloseable {
         return mFramebufferHeight;
     }
 
+    public float getAspectRatio() {
+        return (float) mFramebufferWidth / mFramebufferHeight;
+    }
+
     public boolean needsRefresh() {
         return mNeedRefresh;
     }

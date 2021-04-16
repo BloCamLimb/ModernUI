@@ -16,16 +16,21 @@ plugins {
 
 allprojects {
     apply plugin: 'java'
+
+    group = 'icyllis.modernui'
+    archivesBaseName = 'ModernUI'
+
     repositories {
         mavenCentral()
     }
+
     dependencies {
         compileOnly "com.google.code.findbugs:jsr305:3.+"
     }
 
-    version = "1.16.5-${mod_version}"
-    group = 'icyllis.modernui'
-    archivesBaseName = 'ModernUI'
+    java {
+        withSourcesJar()
+    }
 
     tasks.withType(JavaCompile) {
         options.encoding = "UTF-8"
@@ -37,9 +42,5 @@ allprojects {
         if (JavaVersion.current().isJava9Compatible()) {
             options.release.set(targetVersion)
         }
-    }
-
-    java {
-        withSourcesJar()
     }
 }

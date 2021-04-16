@@ -162,6 +162,7 @@ public final class Config {
         private final ForgeConfigSpec.BooleanValue tooltip;
         private final ForgeConfigSpec.ConfigValue<String> tooltipColor;
         private final ForgeConfigSpec.BooleanValue ding;
+        private final ForgeConfigSpec.BooleanValue hudBars;
 
         private final ForgeConfigSpec.ConfigValue<List<? extends String>> blurBlacklist;
 
@@ -223,6 +224,10 @@ public final class Config {
                     "Play a sound effect when the game is loaded.")
                     .define("ding", true);
 
+            hudBars = builder.comment(
+                    "Show additional HUD bars added by ModernUI on the bottom-left of the screen.")
+                    .define("hudBars", true);
+
             builder.pop();
 
             builder.comment("Font Engine Config")
@@ -283,6 +288,7 @@ public final class Config {
                 ModernUI.LOGGER.error(ModernUI.MARKER, "Wrong color format for setting tooltip color: {}", tooltipColor, e);
             }
             TestHUD.sDing = ding.get();
+            TestHUD.sBars = hudBars.get();
 
             Minecraft.getInstance().submit(() -> ModernFontRenderer.change(globalRenderer.get(), allowShadow.get()));
             GlyphManager.sPreferredFont = preferredFont.get();
