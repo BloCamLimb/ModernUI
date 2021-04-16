@@ -29,7 +29,7 @@ import icyllis.modernui.core.mixin.MixinMouseHandler;
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.graphics.Point;
+import icyllis.modernui.math.Point;
 import icyllis.modernui.graphics.textmc.ModernFontRenderer;
 import icyllis.modernui.graphics.textmc.TextLayoutProcessor;
 import icyllis.modernui.test.TestHUD;
@@ -813,7 +813,7 @@ public final class UIManager {
                 RenderSystem.enableTexture();
                 break;
             case HEALTH:
-                if (ModernUIForge.isDeveloperMode())
+                if (TestHUD.sBars)
                     TestHUD.drawBars(mCanvas);
                 break;
         }

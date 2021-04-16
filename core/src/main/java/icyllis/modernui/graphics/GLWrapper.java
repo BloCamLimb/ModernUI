@@ -20,20 +20,20 @@ package icyllis.modernui.graphics;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.graphics.font.GlyphManager;
+import icyllis.modernui.math.Rect;
+import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.platform.Window;
 import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.GLCapabilities;
+import org.lwjgl.system.NativeType;
 
 import javax.annotation.Nonnull;
 import java.util.Stack;
 
 import static icyllis.modernui.ModernUI.LOGGER;
-import static icyllis.modernui.platform.RenderCore.MARKER;
-import static icyllis.modernui.platform.RenderCore.ensureRenderThread;
 import static org.lwjgl.opengl.GL43.*;
 
-public class GLWrapper {
+public final class GLWrapper {
 
     /**
      * The id that represents an null OpenGL object.
@@ -61,7 +61,7 @@ public class GLWrapper {
 
     @RenderThread
     public static void initialize(@Nonnull GLCapabilities caps) {
-        ensureRenderThread();
+        RenderCore.ensureRenderThread();
         if (sInitialized) {
             return;
         }
@@ -71,37 +71,31 @@ public class GLWrapper {
 
         int count = 0;
         if (!caps.GL_ARB_vertex_buffer_object) {
-            LOGGER.fatal(MARKER, "ARB vertex buffer object is not supported");
+            LOGGER.fatal(RenderCore.MARKER, "ARB vertex buffer object is not supported");
             count++;
         }
         if (!caps.GL_ARB_explicit_attrib_location) {
-            LOGGER.fatal(MARKER, "ARB explicit attrib location is not supported");
+            LOGGER.fatal(RenderCore.MARKER, "ARB explicit attrib location is not supported");
             count++;
         }
         if (!caps.GL_ARB_vertex_array_object) {
-            LOGGER.fatal(MARKER, "ARB vertex array object is not supported");
+            LOGGER.fatal(RenderCore.MARKER, "ARB vertex array object is not supported");
             count++;
         }
         if (!caps.GL_ARB_framebuffer_object) {
-            LOGGER.fatal(MARKER, "ARB framebuffer object is not supported");
+            LOGGER.fatal(RenderCore.MARKER, "ARB framebuffer object is not supported");
             count++;
         }
         if (!caps.GL_ARB_uniform_buffer_object) {
-            LOGGER.fatal(MARKER, "ARB uniform buffer object is not supported");
+            LOGGER.fatal(RenderCore.MARKER, "ARB uniform buffer object is not supported");
             count++;
         }
         if (!caps.GL_ARB_separate_shader_objects) {
-            LOGGER.fatal(MARKER, "ARB separate shader objects is not supported");
+            LOGGER.fatal(RenderCore.MARKER, "ARB separate shader objects is not supported");
             count++;
         }
         if (!caps.GL_ARB_explicit_uniform_location) {
-            LOGGER.fatal(MARKER, "ARB explicit uniform location is not supported");
-            count++;
-        }
-
-        int v;
-        if ((v = GLWrapper.getMaxTextureSize()) < GlyphManager.TEXTURE_SIZE) {
-            LOGGER.fatal(MARKER, "Max texture size is too small, {} available but requires {}", v, GlyphManager.TEXTURE_SIZE);
+            LOGGER.fatal(RenderCore.MARKER, "ARB explicit uniform location is not supported");
             count++;
         }
 
@@ -110,13 +104,19 @@ public class GLWrapper {
             if (glVersion == null) glVersion = "UNKNOWN";
             else glVersion = glVersion.split(" ")[0];
             ModernUI.get().warnSetup("warning.modernui.old_opengl", "4.3", glVersion);
-            LOGGER.fatal(MARKER, "OpenGL is too old, your version is {} but requires OpenGL 4.3", glVersion);
+            LOGGER.fatal(RenderCore.MARKER, "OpenGL is too old, your version is {} but requires OpenGL 4.3", glVersion);
         }
 
         if (count > 0) {
-            LOGGER.fatal(MARKER, "There are {} GL capabilities that are not supported by your graphics environment", count);
-            LOGGER.fatal(MARKER, "Try to use dedicated GPU for Java applications or upgrade your graphics card driver");
+            LOGGER.fatal(RenderCore.MARKER, "There are {} GL capabilities that are not supported by your graphics environment", count);
+            LOGGER.fatal(RenderCore.MARKER, "Try to use dedicated GPU for Java applications or upgrade your graphics card driver");
         }
+
+        //FIXME remove ResourceLocation
+        /*ArcProgram.createPrograms();
+        CircleProgram.createPrograms();
+        RectProgram.createPrograms();
+        RoundRectProgram.createPrograms();*/
 
         sInitialized = true;
     }
@@ -136,7 +136,7 @@ public class GLWrapper {
      */
     @RenderThread
     public static void reset(@Nonnull Window window) {
-        ensureRenderThread();
+        RenderCore.ensureRenderThread();
         sViewportStack.clear();
 
         final Rect viewport = new Rect(0, 0, window.getWidth(), window.getHeight());
@@ -148,7 +148,6 @@ public class GLWrapper {
 
     @RenderThread
     public static void enableCull() {
-        ensureRenderThread();
         if (!sCullState) {
             sCullState = true;
             glEnable(GL_CULL_FACE);
@@ -157,7 +156,6 @@ public class GLWrapper {
 
     @RenderThread
     public static void disableCull() {
-        ensureRenderThread();
         if (sCullState) {
             sCullState = false;
             glDisable(GL_CULL_FACE);
@@ -173,15 +171,11 @@ public class GLWrapper {
      *             {@link GL43#GL_FRONT_AND_BACK}
      */
     @RenderThread
-    public static void cullFace(int mode) {
-        ensureRenderThread();
-        if (mode == GL_FRONT || mode == GL_BACK || mode == GL_FRONT_AND_BACK) {
-            if (mode != sCullMode) {
-                sCullMode = mode;
-                glCullFace(mode);
-            }
-        } else
-            throw new IllegalArgumentException("Invalid mode for glCullFace");
+    public static void cullFace(@NativeType("GLenum") int mode) {
+        if (mode != sCullMode) {
+            sCullMode = mode;
+            glCullFace(mode);
+        }
     }
 
     /**
@@ -192,7 +186,6 @@ public class GLWrapper {
      */
     @RenderThread
     public static void pushViewport(@Nonnull Rect viewport) {
-        ensureRenderThread();
         if (viewport.isEmpty())
             return;
         final Rect top = sViewportStack.peek();
@@ -207,7 +200,6 @@ public class GLWrapper {
      */
     @RenderThread
     public static void popViewport() {
-        ensureRenderThread();
         final Rect last;
         if (!sViewportStack.peek().equals(last = sViewportStack.pop()))
             glViewport(last.left, last.top, last.width(), last.height());

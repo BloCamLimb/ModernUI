@@ -1,5 +1,12 @@
 Changelogs
 ===
+### 1.16.5-2.5.0.85 (2021-04-16)
+* Broaden scrolling compatibility with other mods
+* Tweak circular progress bar animation
+* Expose additional HUD bars option
+* Add platform window
+* Add fast matrix calculation
+
 ### 1.16.5-2.4.9.84 (2021-03-24)
 * Update shaders to GLSL 430 core
 * Improve filling and stroking of round rect shader

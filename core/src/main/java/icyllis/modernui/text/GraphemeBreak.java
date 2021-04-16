@@ -16,22 +16,6 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-/*
- * Copyright (C) 2014 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package icyllis.modernui.text;
 
 import com.ibm.icu.lang.UCharacter;
@@ -45,7 +29,7 @@ import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 import java.util.Locale;
 
-import static com.ibm.icu.lang.UCharacter.GraphemeClusterBreak.*;
+import static com.ibm.icu.lang.UCharacter.*;
 
 /**
  * This class handles grapheme cluster break.
@@ -320,27 +304,27 @@ public final class GraphemeBreak {
         int p2 = tailoredGraphemeClusterBreak(c2);
 
         // Rule GB3, CR x LF
-        if (p1 == CR && p2 == LF) {
+        if (p1 == GraphemeClusterBreak.CR && p2 == GraphemeClusterBreak.LF) {
             return false;
         }
         // Rule GB4, (Control | CR | LF) ÷
-        if (p1 == CONTROL || p1 == CR || p1 == LF) {
+        if (p1 == GraphemeClusterBreak.CONTROL || p1 == GraphemeClusterBreak.CR || p1 == GraphemeClusterBreak.LF) {
             return true;
         }
         // Rule GB5, ÷ (Control | CR | LF)
-        if (p2 == CONTROL || p2 == CR || p2 == LF) {
+        if (p2 == GraphemeClusterBreak.CONTROL || p2 == GraphemeClusterBreak.CR || p2 == GraphemeClusterBreak.LF) {
             return true;
         }
         // Rule GB6, L x ( L | V | LV | LVT )
-        if (p1 == L && (p2 == L || p2 == V || p2 == LV || p2 == LVT)) {
+        if (p1 == GraphemeClusterBreak.L && (p2 == GraphemeClusterBreak.L || p2 == GraphemeClusterBreak.V || p2 == GraphemeClusterBreak.LV || p2 == GraphemeClusterBreak.LVT)) {
             return false;
         }
         // Rule GB7, ( LV | V ) x ( V | T )
-        if ((p1 == LV || p1 == V) && (p2 == V || p2 == T)) {
+        if ((p1 == GraphemeClusterBreak.LV || p1 == GraphemeClusterBreak.V) && (p2 == GraphemeClusterBreak.V || p2 == GraphemeClusterBreak.T)) {
             return false;
         }
         // Rule GB8, ( LVT | T ) x T
-        if ((p1 == LVT || p1 == T) && p2 == T) {
+        if ((p1 == GraphemeClusterBreak.LVT || p1 == GraphemeClusterBreak.T) && p2 == GraphemeClusterBreak.T) {
             return false;
         }
 
@@ -356,13 +340,13 @@ public final class GraphemeBreak {
         }
 
         // Rule GB9, x (Extend | ZWJ); Rule GB9a, x SpacingMark; Rule GB9b, Prepend x
-        if (p2 == EXTEND || p2 == ZWJ || p2 == SPACING_MARK || p1 == PREPEND) {
+        if (p2 == GraphemeClusterBreak.EXTEND || p2 == GraphemeClusterBreak.ZWJ || p2 == GraphemeClusterBreak.SPACING_MARK || p1 == GraphemeClusterBreak.PREPEND) {
             return false;
         }
 
         // Tailored version of Rule GB11
         // \p{Extended_Pictographic} Extend* ZWJ x \p{Extended_Pictographic}
-        if (offsetBack > start && p1 == ZWJ &&
+        if (offsetBack > start && p1 == GraphemeClusterBreak.ZWJ &&
                 UCharacter.hasBinaryProperty(c2, UProperty.EXTENDED_PICTOGRAPHIC)) {
             int offsetBack1 = offsetBack;
             int p0;
@@ -376,7 +360,7 @@ public final class GraphemeBreak {
                 }
 
             p0 = tailoredGraphemeClusterBreak(c0);
-            while (p0 == EXTEND && offsetBack1 > start) {
+            while (p0 == GraphemeClusterBreak.EXTEND && offsetBack1 > start) {
                 c0 = _c1 = buf[--offsetBack1];
                 if (Character.isLowSurrogate(_c1))
                     if (offsetBack1 > start &&
@@ -398,7 +382,7 @@ public final class GraphemeBreak {
         // If we have font information, we have already broken the cluster if and only if the second
         // character had no advance, which means a ligature was formed. If we don't, we look back like
         // UAX #29 recommends, but only up to 1000 code units.
-        if (p1 == REGIONAL_INDICATOR && p2 == REGIONAL_INDICATOR) {
+        if (p1 == GraphemeClusterBreak.REGIONAL_INDICATOR && p2 == GraphemeClusterBreak.REGIONAL_INDICATOR) {
             if (advances != null) {
                 // We have advances information. But if we are here, we already know c2 has no advance.
                 // So we should definitely disallow a break.
@@ -415,7 +399,7 @@ public final class GraphemeBreak {
                             --offsetBack1;
                             c0 = Character.toCodePoint(_c2, _c1);
                         }
-                    if (tailoredGraphemeClusterBreak(c0) != REGIONAL_INDICATOR) {
+                    if (tailoredGraphemeClusterBreak(c0) != GraphemeClusterBreak.REGIONAL_INDICATOR) {
                         offsetBack1 += Character.charCount(c0);
                         break;
                     }
@@ -456,11 +440,11 @@ public final class GraphemeBreak {
                 // and the deprecated invisible format controls
                 || c == 0xFEFF                   // BOM
                 || ((c | 0x7F) == 0xE007F))      // recently undeprecated tag characters in Plane 14
-            return EXTEND;
+            return GraphemeClusterBreak.EXTEND;
             // THAI CHARACTER SARA AM is treated as a normal letter by most other implementations: they
             // allow a grapheme break before it.
         else if (c == 0x0E33)
-            return OTHER;
+            return GraphemeClusterBreak.OTHER;
         else
             return UCharacter.getIntPropertyValue(c, UProperty.GRAPHEME_CLUSTER_BREAK);
     }

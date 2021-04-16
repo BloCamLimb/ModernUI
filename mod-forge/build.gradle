@@ -6,6 +6,8 @@ plugins {
     id 'com.github.johnrengelman.shadow'
 }
 
+version = "1.16.5-${mod_version}"
+
 configurations {
     shadow
 }
@@ -39,21 +41,20 @@ dependencies {
     modCompileOnly "mezz.jei:jei-${minecraft_version}:${jei_version}:api"
     modRuntime "mezz.jei:jei-${minecraft_version}:${jei_version}"
 
-    runtimeOnly ':lwjgl-3.2.2-natives-windows'
-    runtimeOnly ':lwjgl-glfw-3.2.2-natives-windows'
-    runtimeOnly ':lwjgl-jemalloc-3.2.2-natives-windows'
-    runtimeOnly ':lwjgl-openal-3.2.2-natives-windows'
-    runtimeOnly ':lwjgl-opengl-3.2.2-natives-windows'
+    implementation project(':ModernUI-Core')
+    shadow(project(':ModernUI-Core')) {
+        transitive = false
+    }
 
-    compile "com.github.ben-manes.caffeine:caffeine:${caffeine_version}"
-    compile "com.vladsch.flexmark:flexmark:${flexmark_version}"
+    implementation "com.github.ben-manes.caffeine:caffeine:${caffeine_version}"
+    implementation "com.vladsch.flexmark:flexmark:${flexmark_version}"
 
     shadow "com.github.ben-manes.caffeine:caffeine:${caffeine_version}"
     shadow "com.vladsch.flexmark:flexmark:${flexmark_version}"
 
     shadow ':ModernUI-Fonts-1.0'
 
-    compile('org.apache.maven:maven-artifact') {
+    implementation('org.apache.maven:maven-artifact') {
         version {
             strictly '3.6.3'
         }
@@ -130,11 +131,11 @@ processResources {
 jar {
     manifest {
         attributes([
-                "Specification-Title"     : "ModernUI",
+                "Specification-Title"     : "ModernUI-Forge",
                 "Specification-Vendor"    : "BloCamLimb",
                 "Specification-Version"   : "2",
-                "Implementation-Title"    : rootProject.name,
-                "Implementation-Version"  : rootProject.version,
+                "Implementation-Title"    : project.name,
+                "Implementation-Version"  : project.version,
                 "Implementation-Vendor"   : "BloCamLimb",
                 "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
                 "MixinConnector"          : "icyllis.modernui.core.MixinConnector"
@@ -143,16 +144,6 @@ jar {
 }
 
 publishing {
-    repositories {
-        maven {
-            name 'IzzelAliz'
-            url 'https://maven.izzel.io/releases'
-            credentials {
-                username = project.getProperty("maven_user")
-                password = project.getProperty("izzel_maven_token")
-            }
-        }
-    }
     publications {
         mavenForge(MavenPublication) {
             artifact(remapMavenJar.archiveFile) {
@@ -188,13 +179,14 @@ publishing {
                 }
                 withXml {
                     def dependenciesNode = asNode().appendNode('dependencies')
-                    configurations.compile.allDependencies.each {
+                    configurations.implementation.allDependencies.each {
                         def dependencyNode = dependenciesNode.appendNode('dependency')
                         dependencyNode.appendNode('groupId', it.group)
                         dependencyNode.appendNode('artifactId', it.name)
                         dependencyNode.appendNode('version', it.version)
                         dependencyNode.appendNode('scope', 'compile')
                     }
+                    // others are provided by minecraft and forge environment
                 }
             }
         }

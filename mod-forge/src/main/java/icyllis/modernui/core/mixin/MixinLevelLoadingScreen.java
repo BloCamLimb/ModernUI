@@ -44,6 +44,7 @@ public class MixinLevelLoadingScreen extends Screen {
     private StoringChunkProgressListener progressListener;
 
     private float mSweep;
+    private float mTime;
 
     protected MixinLevelLoadingScreen(Component titleIn) {
         super(titleIn);
@@ -57,12 +58,16 @@ public class MixinLevelLoadingScreen extends Screen {
         Paint paint = Paint.take();
         paint.reset();
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(4.0f);
+        paint.setFeatherRadius(2.0f);
+        mTime += deltaTick;
+        float amp = Math.abs((mTime % 32) - 16) * 0.125f;
+        paint.setStrokeWidth(4.0f + amp);
         mSweep = Math.min(progressListener.getProgress() * 3.6f, mSweep + deltaTick * 12.0f);
+        amp *= 0.5f;
         paint.setRGBA(64, 64, 64, 128);
-        Canvas.getInstance().drawCircle(width / 2.0f, height / 2.0f - 36.0f, 15, paint);
+        Canvas.getInstance().drawCircle(width / 2.0f, height / 2.0f - 36.0f, 15 + amp, paint);
         paint.setRGBA(255, 255, 255, 255);
-        Canvas.getInstance().drawArc(width / 2.0f, height / 2.0f - 36.0f, 15, -90, mSweep, paint);
+        Canvas.getInstance().drawArc(width / 2.0f, height / 2.0f - 36.0f, 15 + amp, -90, mSweep, paint);
     }
 
     @Redirect(method = "render",

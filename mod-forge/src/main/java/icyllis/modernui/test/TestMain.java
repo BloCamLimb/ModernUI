@@ -29,6 +29,10 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.GLWrapper;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.shader.ShaderProgram;
+import icyllis.modernui.graphics.shader.program.ArcProgram;
+import icyllis.modernui.graphics.shader.program.CircleProgram;
+import icyllis.modernui.graphics.shader.program.RectProgram;
+import icyllis.modernui.graphics.shader.program.RoundRectProgram;
 import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Quaternion;
@@ -46,8 +50,10 @@ import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
-import java.util.*;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -141,9 +147,13 @@ public class TestMain {
                 window.makeCurrent();
                 RenderCore.initEngine();
                 RenderSystem.initRenderThread();
+                ArcProgram.createPrograms();
+                CircleProgram.createPrograms();
+                RectProgram.createPrograms();
+                RoundRectProgram.createPrograms();
                 ShaderProgram.linkAll(null);
                 float[] projection;
-                Matrix4.makePerspective(MathUtil.PI_OVER_2, 16f / 9, 1, 100)
+                Matrix4.makePerspective(MathUtil.PI_OVER_2, window.getAspectRatio(), 0.001f, 1000)
                         .put(projection = new float[16]);
                 while (window.exists()) {
                     if (window.needsRefresh()) {
@@ -154,25 +164,37 @@ public class TestMain {
                         RenderSystem.disableDepthTest();
                         GlStateManager._colorMask(true, true, true, true);
                         GlStateManager._depthMask(false);
-                        RenderSystem.matrixMode(GL11.GL_PROJECTION);
+                        GL11.glMatrixMode(GL11.GL_PROJECTION);
                         GL43.glPushMatrix();
-                        RenderSystem.loadIdentity();
+                        GL11.glLoadIdentity();
                         //RenderSystem.ortho(0.0D, window.getWidth(), window.getHeight(), 0.0D, 1000.0D, 3000.0D);
                         //a.multiply(b);
                         GL11.glMultMatrixf(projection);
-                        RenderSystem.matrixMode(GL11.GL_MODELVIEW);
+                        GL11.glMatrixMode(GL11.GL_MODELVIEW);
                         GL43.glPushMatrix();
-                        RenderSystem.loadIdentity();
+                        GL11.glLoadIdentity();
                         //GlStateManager._translatef(0.0F, 0.0F, -2000.0F);
-                        GL11.glTranslatef(-1.58f * 1.777f, -1.0f, -3.8f);
+                        Paint paint = Paint.take();
+                        GL11.glPushMatrix();
+                        GL11.glTranslatef(-1.58f * window.getAspectRatio(), -1.0f, -3.8f);
                         GL11.glScalef(1 / 90f, -1 / 90f, 1 / 90f);
                         GL11.glRotatef(90, 0, 1, 0);
-                        Paint paint = Paint.take();
+
                         paint.reset();
-                        paint.setFeatherRadius(4);
+                        paint.setFeatherRadius(6);
                         paint.setStyle(Paint.Style.STROKE);
                         paint.setStrokeWidth(16);
-                        Canvas.getInstance().drawArc(50, 50, 35, -30, 210, Paint.take());
+                        Canvas.getInstance().drawRoundRect(0, 20, 100, 70, 14, paint);
+                        paint.setColor(0xFFAADCF0);
+                        Canvas.getInstance().drawRoundRect(0, -110, 100, -60, 14, paint);
+                        GL11.glPopMatrix();
+
+                        GL11.glTranslatef(1.58f * window.getAspectRatio(), 1.0f, -4.8f);
+                        GL11.glScalef(1 / 90f, -1 / 90f, 1 / 90f);
+                        GL11.glRotatef(-90, 0, 1, 0);
+                        Canvas.getInstance().drawRoundRect(0, 20, 100, 70, 14, paint);
+                        Canvas.getInstance().drawRoundRect(-20, 190, 80, 240, 14, paint);
+
                         GL11.glPopMatrix();
                         GL11.glMatrixMode(GL11.GL_PROJECTION);
                         GL11.glPopMatrix();

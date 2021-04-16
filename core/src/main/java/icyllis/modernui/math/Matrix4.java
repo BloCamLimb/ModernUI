@@ -140,7 +140,7 @@ public class Matrix4 implements Cloneable {
 
     /**
      * Create an orthographic projection matrix. The left plane and top plane
-     * of it is considered to be 0.
+     * are considered to be 0.
      *
      * @param width  the distance from right frustum plane to left frustum plane
      * @param height the distance from bottom frustum plane to top frustum plane
@@ -905,9 +905,9 @@ public class Matrix4 implements Cloneable {
         final float f11 = 1.0f - (f5 + f6);
         final float f22 = 1.0f - (f4 + f6);
         final float f33 = 1.0f - (f4 + f5);
-        f2 = x * f2;
-        x = x * f3;
-        f3 = y * f3;
+        f2 *= x;
+        x *= f3;
+        f3 *= y;
 
         f4 = f2 - f7;
         f5 = x + f8;

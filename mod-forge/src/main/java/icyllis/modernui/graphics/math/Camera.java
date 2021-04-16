@@ -20,7 +20,6 @@ package icyllis.modernui.graphics.math;
 
 import icyllis.modernui.math.Matrix4;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 

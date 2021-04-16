@@ -51,6 +51,7 @@ public class TestHUD {
 
     public static boolean sDing;
     public static boolean sFirstScreenOpened;
+    public static boolean sBars;
 
     //private static DecimalFormat decimalFormat = new DecimalFormat("#.00");
 
@@ -147,9 +148,9 @@ public class TestHUD {
 
     // config value
     public static boolean sTooltip;
-    public static int sTooltipR;
-    public static int sTooltipG;
-    public static int sTooltipB;
+    public static int sTooltipR = 170;
+    public static int sTooltipG = 220;
+    public static int sTooltipB = 240;
 
     // space between mouse and tooltip
     private static final int TOOLTIP_SPACE = 12;
