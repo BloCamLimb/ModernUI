@@ -71,6 +71,10 @@ public final class RenderCore {
             throw new IllegalStateException("Not called from render thread");
     }
 
+    public static boolean isOnRenderThread() {
+        return Thread.currentThread() == sRenderThread;
+    }
+
     public static Thread getRenderThread() {
         return sRenderThread;
     }

@@ -22,7 +22,7 @@ import com.google.common.base.Preconditions;
 import icyllis.modernui.graphics.font.FontMetricsInt;
 import icyllis.modernui.graphics.font.MeasureEngine;
 import icyllis.modernui.graphics.font.LayoutPieces;
-import icyllis.modernui.graphics.font.MinikinPaint;
+import icyllis.modernui.graphics.font.FontPaint;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -193,10 +193,10 @@ public class MeasuredText {
 
     public static class StyleRun extends Run {
 
-        public final MinikinPaint mPaint;
+        public final FontPaint mPaint;
         private final boolean mIsRtl;
 
-        public StyleRun(int start, int end, MinikinPaint paint, boolean isRtl) {
+        public StyleRun(int start, int end, FontPaint paint, boolean isRtl) {
             super(start, end);
             mPaint = paint;
             mIsRtl = isRtl;

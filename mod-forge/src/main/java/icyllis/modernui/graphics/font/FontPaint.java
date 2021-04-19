@@ -27,7 +27,7 @@ import java.awt.*;
 import java.util.Locale;
 import java.util.Objects;
 
-public class MinikinPaint {
+public class FontPaint {
 
     /**
      * Bit flag used with fontStyle to request the plain/regular/normal style
@@ -52,20 +52,20 @@ public class MinikinPaint {
     protected int mFontStyle;
     protected int mFontSize;
 
-    public MinikinPaint() {
+    public FontPaint() {
         //TODO replace with current user preference
         mFontCollection = FontCollection.SANS_SERIF;
         mLocale = ModernUI.get().getSelectedLocale();
     }
 
-    public MinikinPaint(@Nonnull MinikinPaint paint) {
+    public FontPaint(@Nonnull FontPaint paint) {
         set(paint);
     }
 
     /**
      * Copy the data from paint into this TextPaint
      */
-    public void set(@Nonnull MinikinPaint paint) {
+    public void set(@Nonnull FontPaint paint) {
         mFontCollection = paint.mFontCollection;
         mLocale = paint.mLocale;
         mFontStyle = paint.mFontStyle;
@@ -152,7 +152,7 @@ public class MinikinPaint {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        MinikinPaint that = (MinikinPaint) o;
+        FontPaint that = (FontPaint) o;
 
         if (mFontStyle != that.mFontStyle) return false;
         if (mFontSize != that.mFontSize) return false;

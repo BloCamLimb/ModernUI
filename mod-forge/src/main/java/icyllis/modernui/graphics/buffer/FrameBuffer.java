@@ -44,6 +44,9 @@ public class FrameBuffer implements AutoCloseable {
         }
     }
 
+    public void attach() {
+    }
+
     @Override
     public void close() throws Exception {
 

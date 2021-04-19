@@ -22,7 +22,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * Represents a 4x4 matrix.
+ * Represents a 4x4 row-major matrix, whereas OpenGL is column-major.
  */
 @SuppressWarnings("unused")
 public class Matrix4 implements Cloneable {
@@ -287,38 +287,26 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Set this matrix to be the result of pre-multiplying matrix A
-     * by matrix B.
+     * Pre-multiply this matrix by a 4x4 matrix, whose top left 3x3 is the given
+     * 3x3 matrix, and forth row and column are identity. (mat3 * this)
      *
-     * @param a left hand side matrix
-     * @param b right hand side matrix
+     * @param mat the matrix to multiply
      */
-    public void setMultiply(@Nonnull Matrix4 a, @Nonnull Matrix4 b) {
-        if (b.isIdentity()) {
-            if (this != a)
-                set(a);
+    public void multiply(@Nonnull Matrix3 mat) {
+        if (mat.isIdentity())
             return;
-        } else if (a.isIdentity()) {
-            if (this != b)
-                set(b);
-            return;
-        }
-        final float f11 = a.m11 * b.m11 + a.m12 * b.m21 + a.m13 * b.m31 + a.m14 * b.m41;
-        final float f12 = a.m11 * b.m12 + a.m12 * b.m22 + a.m13 * b.m32 + a.m14 * b.m42;
-        final float f13 = a.m11 * b.m13 + a.m12 * b.m23 + a.m13 * b.m33 + a.m14 * b.m43;
-        final float f14 = a.m11 * b.m14 + a.m12 * b.m24 + a.m13 * b.m34 + a.m14 * b.m44;
-        final float f21 = a.m21 * b.m11 + a.m22 * b.m21 + a.m23 * b.m31 + a.m24 * b.m41;
-        final float f22 = a.m21 * b.m12 + a.m22 * b.m22 + a.m23 * b.m32 + a.m24 * b.m42;
-        final float f23 = a.m21 * b.m13 + a.m22 * b.m23 + a.m23 * b.m33 + a.m24 * b.m43;
-        final float f24 = a.m21 * b.m14 + a.m22 * b.m24 + a.m23 * b.m34 + a.m24 * b.m44;
-        final float f31 = a.m31 * b.m11 + a.m32 * b.m21 + a.m33 * b.m31 + a.m34 * b.m41;
-        final float f32 = a.m31 * b.m12 + a.m32 * b.m22 + a.m33 * b.m32 + a.m34 * b.m42;
-        final float f33 = a.m31 * b.m13 + a.m32 * b.m23 + a.m33 * b.m33 + a.m34 * b.m43;
-        final float f34 = a.m31 * b.m14 + a.m32 * b.m24 + a.m33 * b.m34 + a.m34 * b.m44;
-        final float f41 = a.m41 * b.m11 + a.m42 * b.m21 + a.m43 * b.m31 + a.m44 * b.m41;
-        final float f42 = a.m41 * b.m12 + a.m42 * b.m22 + a.m43 * b.m32 + a.m44 * b.m42;
-        final float f43 = a.m41 * b.m13 + a.m42 * b.m23 + a.m43 * b.m33 + a.m44 * b.m43;
-        final float f44 = a.m41 * b.m14 + a.m42 * b.m24 + a.m43 * b.m34 + a.m44 * b.m44;
+        final float f11 = mat.m11 * m11 + mat.m12 * m21 + mat.m13 * m31;
+        final float f12 = mat.m11 * m12 + mat.m12 * m22 + mat.m13 * m32;
+        final float f13 = mat.m11 * m13 + mat.m12 * m23 + mat.m13 * m33;
+        final float f14 = mat.m11 * m14 + mat.m12 * m24 + mat.m13 * m34;
+        final float f21 = mat.m21 * m11 + mat.m22 * m21 + mat.m23 * m31;
+        final float f22 = mat.m21 * m12 + mat.m22 * m22 + mat.m23 * m32;
+        final float f23 = mat.m21 * m13 + mat.m22 * m23 + mat.m23 * m33;
+        final float f24 = mat.m21 * m14 + mat.m22 * m24 + mat.m23 * m34;
+        final float f31 = mat.m31 * m11 + mat.m32 * m21 + mat.m33 * m31;
+        final float f32 = mat.m31 * m12 + mat.m32 * m22 + mat.m33 * m32;
+        final float f33 = mat.m31 * m13 + mat.m32 * m23 + mat.m33 * m33;
+        final float f34 = mat.m31 * m14 + mat.m32 * m24 + mat.m33 * m34;
         m11 = f11;
         m12 = f12;
         m13 = f13;
@@ -331,20 +319,15 @@ public class Matrix4 implements Cloneable {
         m32 = f32;
         m33 = f33;
         m34 = f34;
-        m41 = f41;
-        m42 = f42;
-        m43 = f43;
-        m44 = f44;
     }
 
     /**
-     * Pre-multiply this matrix by a 4x4 matrix, whose top left 3x3 is the given
-     * 3x3 matrix, and forth row and column are identity. This is useful when
-     * multiplying a rotation matrix, such as {@link #multiply(Quaternion)}
+     * Post-multiply this matrix by a 4x4 matrix, whose top left 3x3 is the given
+     * 3x3 matrix, and forth row and column are identity. (this * mat3)
      *
-     * @param mat the matrix to multiply.
+     * @param mat the matrix to multiply with
      */
-    public void multiply(@Nonnull Matrix3 mat) {
+    public void postMultiply(@Nonnull Matrix3 mat) {
         if (mat.isIdentity())
             return;
         float f1 = m11 * mat.m11 + m12 * mat.m21 + m13 * mat.m31;
@@ -374,27 +357,60 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Rotate this matrix by the given quaternion's rotation matrix.
+     * Pre-multiply this matrix by the given matrix.
+     * (mat4 * this)
      *
-     * @param q the quaternion to multiply with.
-     */
-    public void multiply(@Nonnull Quaternion q) {
-        if (q.lengthSquared() >= 1.0e-6f)
-            // not mul an identity matrix
-            multiply(q.toMatrix3());
-    }
-
-    /**
-     * Pre-multiply this matrix by given matrix.
-     *
-     * @param mat the matrix to multiply.
+     * @param mat the matrix to multiply
      */
     public void multiply(@Nonnull Matrix4 mat) {
         if (mat.isIdentity())
             return;
+        final float f11 = mat.m11 * m11 + mat.m12 * m21 + mat.m13 * m31 + mat.m14 * m41;
+        final float f12 = mat.m11 * m12 + mat.m12 * m22 + mat.m13 * m32 + mat.m14 * m42;
+        final float f13 = mat.m11 * m13 + mat.m12 * m23 + mat.m13 * m33 + mat.m14 * m43;
+        final float f14 = mat.m11 * m14 + mat.m12 * m24 + mat.m13 * m34 + mat.m14 * m44;
+        final float f21 = mat.m21 * m11 + mat.m22 * m21 + mat.m23 * m31 + mat.m24 * m41;
+        final float f22 = mat.m21 * m12 + mat.m22 * m22 + mat.m23 * m32 + mat.m24 * m42;
+        final float f23 = mat.m21 * m13 + mat.m22 * m23 + mat.m23 * m33 + mat.m24 * m43;
+        final float f24 = mat.m21 * m14 + mat.m22 * m24 + mat.m23 * m34 + mat.m24 * m44;
+        final float f31 = mat.m31 * m11 + mat.m32 * m21 + mat.m33 * m31 + mat.m34 * m41;
+        final float f32 = mat.m31 * m12 + mat.m32 * m22 + mat.m33 * m32 + mat.m34 * m42;
+        final float f33 = mat.m31 * m13 + mat.m32 * m23 + mat.m33 * m33 + mat.m34 * m43;
+        final float f34 = mat.m31 * m14 + mat.m32 * m24 + mat.m33 * m34 + mat.m34 * m44;
+        final float f41 = mat.m41 * m11 + mat.m42 * m21 + mat.m43 * m31 + mat.m44 * m41;
+        final float f42 = mat.m41 * m12 + mat.m42 * m22 + mat.m43 * m32 + mat.m44 * m42;
+        final float f43 = mat.m41 * m13 + mat.m42 * m23 + mat.m43 * m33 + mat.m44 * m43;
+        final float f44 = mat.m41 * m14 + mat.m42 * m24 + mat.m43 * m34 + mat.m44 * m44;
+        m11 = f11;
+        m12 = f12;
+        m13 = f13;
+        m14 = f14;
+        m21 = f21;
+        m22 = f22;
+        m23 = f23;
+        m24 = f24;
+        m31 = f31;
+        m32 = f32;
+        m33 = f33;
+        m34 = f34;
+        m41 = f41;
+        m42 = f42;
+        m43 = f43;
+        m44 = f44;
+    }
+
+    /**
+     * Post-multiply this matrix by the given matrix.
+     * (this * mat4)
+     *
+     * @param mat the matrix to multiply
+     */
+    public void postMultiply(@Nonnull Matrix4 mat) {
+        if (mat.isIdentity())
+            return;
         if (this == mat) {
             // need more stack size
-            setMultiply(this, this);
+            multiply(this);
             return;
         }
         float f1 = m11 * mat.m11 + m12 * mat.m21 + m13 * mat.m31 + m14 * mat.m41;
@@ -429,15 +445,6 @@ public class Matrix4 implements Cloneable {
         m42 = f2;
         m43 = f3;
         m44 = f4;
-    }
-
-    /**
-     * Post-multiply this matrix by given matrix.
-     *
-     * @param mat the matrix to post-multiply.
-     */
-    public void postMultiply(@Nonnull Matrix4 mat) {
-        setMultiply(mat, this);
     }
 
     /**
@@ -565,7 +572,7 @@ public class Matrix4 implements Cloneable {
      * Returns the determinant of this matrix. A matrix is invertible
      * if its determinant is not equal to zero.
      *
-     * @return the determinant of this matrix.
+     * @return the determinant of this matrix
      */
     public float determinant() {
         return (m11 * m22 - m12 * m21) * (m33 * m44 - m34 * m43) -
@@ -798,14 +805,118 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
+     * Translates this matrix by given changes. This is equivalent to
+     * pre-multiplying by a translation matrix. (Tr * this)
+     *
+     * @param t the translation vector
+     */
+    public void translate(@Nonnull Vector3 t) {
+        translate(t.x, t.y, t.z);
+    }
+
+    /**
+     * Translates this matrix by given changes. This is equivalent to
+     * pre-multiplying by a translation matrix.
+     *
+     * @param tx the x-component of the translation
+     * @param ty the y-component of the translation
+     * @param tz the z-component of the translation
+     */
+    public void translate(float tx, float ty, float tz) {
+        m41 += tx;
+        m42 += ty;
+        m43 += tz;
+    }
+
+    /**
+     * Sets this matrix to a translation matrix by given components.
+     *
+     * @param t the translation vector
+     */
+    public void setToTranslation(@Nonnull Vector3 t) {
+        setToTranslation(t.x, t.y, t.z);
+    }
+
+    /**
+     * Sets this matrix to a translation matrix by given components.
+     *
+     * @param x the x-component of the translation
+     * @param y the y-component of the translation
+     * @param z the z-component of the translation
+     */
+    public void setToTranslation(float x, float y, float z) {
+        setIdentity();
+        m41 = x;
+        m42 = y;
+        m43 = z;
+    }
+
+    /**
+     * Scales this matrix by given vector. This is equivalent to
+     * pre-multiplying by a scale matrix.
+     *
+     * @param s the scale vector
+     */
+    public void scale(@Nonnull Vector3 s) {
+        scale(s.x, s.y, s.z);
+    }
+
+    /**
+     * Scales this matrix by given vector. This is equivalent to
+     * pre-multiplying by a scale matrix.
+     *
+     * @param sx the x-component of the scale
+     * @param sy the y-component of the scale
+     * @param sz the z-component of the scale
+     */
+    public void scale(float sx, float sy, float sz) {
+        m11 *= sx;
+        m12 *= sx;
+        m13 *= sx;
+        m14 *= sx;
+        m21 *= sy;
+        m22 *= sy;
+        m23 *= sy;
+        m24 *= sy;
+        m31 *= sz;
+        m32 *= sz;
+        m33 *= sz;
+        m34 *= sz;
+    }
+
+    /**
+     * Sets this matrix to a scale matrix by given components.
+     *
+     * @param s the scale vector
+     */
+    public void setToScale(@Nonnull Vector3 s) {
+        setToScale(s.x, s.y, s.z);
+    }
+
+    /**
+     * Sets this matrix to a scale matrix by given components.
+     *
+     * @param x the x-component of the scale
+     * @param y the y-component of the scale
+     * @param z the z-component of the scale
+     */
+    public void setToScale(float x, float y, float z) {
+        setIdentity();
+        m11 = x;
+        m22 = y;
+        m33 = z;
+    }
+
+    /**
      * Rotates this matrix clockwise about the X-axis.
+     * This is equivalent to pre-multiplying by a rotation matrix.
      *
      * @param angle the clockwise rotation angle in radians.
      */
     public void rotateX(float angle) {
         if (angle == 0.0f)
             return;
-        final float s = MathUtil.sin(angle);
+        final float s = -MathUtil.sin(angle);
         final float c = MathUtil.cos(angle);
         final float f21 = c * m21 - s * m31;
         final float f22 = c * m22 - s * m32;
@@ -823,13 +934,14 @@ public class Matrix4 implements Cloneable {
 
     /**
      * Rotates this matrix clockwise about the Y-axis.
+     * This is equivalent to pre-multiplying by a rotation matrix.
      *
      * @param angle the clockwise rotation angle in radians.
      */
     public void rotateY(float angle) {
         if (angle == 0.0f)
             return;
-        final float s = MathUtil.sin(angle);
+        final float s = -MathUtil.sin(angle);
         final float c = MathUtil.cos(angle);
         final float f11 = c * m11 + s * m31;
         final float f12 = c * m12 + s * m32;
@@ -847,13 +959,14 @@ public class Matrix4 implements Cloneable {
 
     /**
      * Rotates this matrix clockwise about the Z-axis.
+     * This is equivalent to pre-multiplying by a rotation matrix.
      *
      * @param angle the clockwise rotation angle in radians.
      */
     public void rotateZ(float angle) {
         if (angle == 0.0f)
             return;
-        final float s = MathUtil.sin(angle);
+        final float s = -MathUtil.sin(angle);
         final float c = MathUtil.cos(angle);
         final float f11 = c * m11 - s * m21;
         final float f12 = c * m12 - s * m22;
@@ -871,19 +984,35 @@ public class Matrix4 implements Cloneable {
 
     /**
      * Rotates this matrix clockwise about an arbitrary axis. The axis must be a
-     * normalized (unit) vector.
+     * normalized (unit) vector. If the axis is X, Y or Z, use axis-specified
+     * methods to rotate this matrix which are faster.
+     *
+     * @param axis  the rotation axis
+     * @param angle rotation angle in radians
+     * @see #rotateY(float)
+     * @see #rotateZ(float)
+     * @see #rotateX(float)
+     */
+    public void rotateByAxis(@Nonnull Vector3 axis, float angle) {
+        rotateByAxis(axis.x, axis.y, axis.z, angle);
+    }
+
+    /**
+     * Rotates this matrix clockwise about an arbitrary axis. The axis must be a
+     * normalized (unit) vector. If the axis is X, Y or Z, use axis-specified
+     * methods to rotate this matrix which are faster.
      *
      * @param x     x-coordinate of rotation axis
      * @param y     y-coordinate of rotation axis
      * @param z     z-coordinate of rotation axis
      * @param angle rotation angle in radians
+     * @see #rotateY(float)
+     * @see #rotateZ(float)
+     * @see #rotateX(float)
      */
     public void rotateByAxis(float x, float y, float z, float angle) {
         if (angle == 0.0f || MathUtil.approxZero(x, y, z))
             return;
-        // following is equivalent to creating a quaternion from axis angle and
-        // pre-multiply this matrix by the matrix transformed from the quaternion
-        // looks bad but faster >w<
         angle *= 0.5f;
         float f1 = MathUtil.sin(angle);
         angle = MathUtil.cos(angle);
@@ -902,8 +1031,8 @@ public class Matrix4 implements Cloneable {
         float f8 = f2 * angle;
         float f9 = f1 * angle;
 
-        final float f11 = 1.0f - (f5 + f6);
-        final float f22 = 1.0f - (f4 + f6);
+        float f11 = 1.0f - (f5 + f6);
+        float f22 = 1.0f - (f4 + f6);
         final float f33 = 1.0f - (f4 + f5);
         f2 *= x;
         x *= f3;
@@ -916,30 +1045,45 @@ public class Matrix4 implements Cloneable {
         f8 = x - f8;
         f9 = f3 + f9;
 
-        f1 = m11 * f11 + m12 * f4 + m13 * f5;
-        f2 = m11 * f6 + m12 * f22 + m13 * f7;
-        f3 = m11 * f8 + m12 * f9 + m13 * f33;
+        f1 = f11 * m11 + f6 * m21 + f8 * m31;
+        f2 = f11 * m12 + f6 * m22 + f8 * m32;
+        f3 = f11 * m13 + f6 * m23 + f8 * m33;
+        x = f11 * m14 + f6 * m24 + f8 * m34;
+
+        f11 = f4 * m11 + f22 * m21 + f9 * m31;
+        f6 = f4 * m12 + f22 * m22 + f9 * m32;
+        f8 = f4 * m13 + f22 * m23 + f9 * m33;
+        y = f4 * m14 + f22 * m24 + f9 * m34;
+
+        f4 = f5 * m11 + f7 * m21 + f33 * m31;
+        f22 = f5 * m12 + f7 * m22 + f33 * m32;
+        f9 = f5 * m13 + f7 * m23 + f33 * m33;
+        z = f5 * m14 + f7 * m24 + f33 * m34;
+
         m11 = f1;
         m12 = f2;
         m13 = f3;
-        f1 = m21 * f11 + m22 * f4 + m23 * f5;
-        f2 = m21 * f6 + m22 * f22 + m23 * f7;
-        f3 = m21 * f8 + m22 * f9 + m23 * f33;
-        m21 = f1;
-        m22 = f2;
-        m23 = f3;
-        f1 = m31 * f11 + m32 * f4 + m33 * f5;
-        f2 = m31 * f6 + m32 * f22 + m33 * f7;
-        f3 = m31 * f8 + m32 * f9 + m33 * f33;
-        m31 = f1;
-        m32 = f2;
-        m33 = f3;
-        f1 = m41 * f11 + m42 * f4 + m43 * f5;
-        f2 = m41 * f6 + m42 * f22 + m43 * f7;
-        f3 = m41 * f8 + m42 * f9 + m43 * f33;
-        m41 = f1;
-        m42 = f2;
-        m43 = f3;
+        m14 = x;
+        m21 = f11;
+        m22 = f6;
+        m23 = f8;
+        m24 = y;
+        m31 = f4;
+        m32 = f22;
+        m33 = f9;
+        m34 = z;
+    }
+
+    /**
+     * Rotate this matrix by the given quaternion's rotation matrix.
+     * (quat * this)
+     *
+     * @param q the quaternion to rotate by.
+     */
+    public void rotate(@Nonnull Quaternion q) {
+        if (q.lengthSquared() >= 1.0e-6f)
+            // not mul an identity matrix
+            multiply(q.toMatrix3());
     }
 
     /**
@@ -964,6 +1108,50 @@ public class Matrix4 implements Cloneable {
         rotateX(rotationX);
         rotateY(rotationY);
         rotateZ(rotationZ);
+    }
+
+    /**
+     * Transform a four-dimensional row vector by post-multiplication.
+     * (vec4 * this)
+     *
+     * @param vec to vector to transform.
+     */
+    public void transform(@Nonnull Vector4 vec) {
+        final float x = m11 * vec.x + m21 * vec.y + m31 * vec.z + m41 * vec.w;
+        final float y = m12 * vec.x + m22 * vec.y + m32 * vec.z + m42 * vec.w;
+        final float z = m13 * vec.x + m23 * vec.y + m33 * vec.z + m43 * vec.w;
+        final float w = m14 * vec.x + m24 * vec.y + m34 * vec.z + m44 * vec.w;
+        vec.x = x;
+        vec.y = y;
+        vec.z = z;
+        vec.w = w;
+    }
+
+    /**
+     * Transform a three-dimensional row vector by post-multiplication.
+     * (vec3 * this, w-component is considered as 1)
+     *
+     * @param vec to vector to transform.
+     */
+    public void transform(@Nonnull Vector3 vec) {
+        final float x = m11 * vec.x + m21 * vec.y + m31 * vec.z + m41;
+        final float y = m12 * vec.x + m22 * vec.y + m32 * vec.z + m42;
+        final float z = m13 * vec.x + m23 * vec.y + m33 * vec.z + m43;
+        vec.x = x;
+        vec.y = y;
+        vec.z = z;
+    }
+
+    public boolean isAffine() {
+        return m14 == 0.0f && m24 == 0.0f && m34 == 0.0f && m44 == 1.0f;
+    }
+
+    public boolean hasPerspective() {
+        return !isAffine();
+    }
+
+    public boolean hasTranslation() {
+        return !(m41 == 0.0f && m42 == 0.0f && m43 == 0.0f && m44 == 1.0f);
     }
 
     /**
