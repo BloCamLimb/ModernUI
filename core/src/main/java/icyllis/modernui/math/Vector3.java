@@ -16,38 +16,26 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.math;
+package icyllis.modernui.math;
 
-import icyllis.modernui.math.Matrix4;
+import javax.annotation.Nonnull;
 
-import java.util.ArrayList;
-import java.util.List;
+/**
+ * Represents a three-dimensional row vector.
+ */
+public class Vector3 {
 
-@Deprecated
-public class Camera {
+    // coordinate components
+    public float x;
+    public float y;
+    public float z;
 
-    private List<Matrix4> mMatrix4s = new ArrayList<>();
-
-    public Camera(Matrix4 matrix4) {
-        this.mMatrix4s.add(matrix4);
+    /**
+     * Transform this vector by a 4x4 transformation matrix.
+     *
+     * @param mat the matrix to transform from
+     */
+    public void transformBy(@Nonnull Matrix4 mat) {
+        mat.transform(this);
     }
-
-    public Matrix4 getMatrix() {
-        int i = mMatrix4s.size() - 1;
-        return mMatrix4s.get(i);
-    }
-
-    public void push() {
-        mMatrix4s.add(getMatrix());
-    }
-
-    public void pop() {
-        int i = mMatrix4s.size() - 1;
-        mMatrix4s.remove(i);
-    }
-
-    public void translate(float x, float y, float z) {
-
-    }
-
 }

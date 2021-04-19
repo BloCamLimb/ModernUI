@@ -20,14 +20,14 @@ package icyllis.modernui.text;
 
 import icyllis.modernui.graphics.font.FontMetricsInt;
 import icyllis.modernui.graphics.font.GlyphManager;
-import icyllis.modernui.graphics.font.MinikinPaint;
+import icyllis.modernui.graphics.font.FontPaint;
 
 import javax.annotation.Nonnull;
 
 /**
  * This class holds data used during text measuring and drawing.
  */
-public class TextPaint extends MinikinPaint {
+public class TextPaint extends FontPaint {
 
     public TextPaint() {
     }
@@ -44,8 +44,8 @@ public class TextPaint extends MinikinPaint {
      *
      * @return a internal paint
      */
-    public MinikinPaint toMinikin() {
-        return new MinikinPaint(this);
+    public FontPaint toMinikin() {
+        return new FontPaint(this);
     }
 
     /**

@@ -34,18 +34,18 @@ public class LayoutPieces {
 
     private final Key mLookupKey = new Key();
 
-    private final Object2IntMap<MinikinPaint> mPaintMap = new Object2IntOpenHashMap<>();
+    private final Object2IntMap<FontPaint> mPaintMap = new Object2IntOpenHashMap<>();
     private final Object2ObjectMap<Key, GraphemeMetrics> mMetricsMap = new Object2ObjectOpenHashMap<>();
 
-    public synchronized void insert(int start, int end, GraphemeMetrics piece, boolean dir, MinikinPaint paint) {
+    public synchronized void insert(int start, int end, GraphemeMetrics piece, boolean dir, FontPaint paint) {
         int paintId = mPaintMap.computeIntIfAbsent(paint, p -> mPaintMap.size());
         if (!mMetricsMap.containsKey(mLookupKey.update(start, end, dir, paintId))) {
             mMetricsMap.put(mLookupKey.copy(), piece);
         }
     }
 
-    public void getOrCreate(@Nonnull char[] textBuf, int start, int end, @Nonnull MinikinPaint paint,
-                            boolean dir, int paintId, @Nonnull BiConsumer<GraphemeMetrics, MinikinPaint> consumer) {
+    public void getOrCreate(@Nonnull char[] textBuf, int start, int end, @Nonnull FontPaint paint,
+                            boolean dir, int paintId, @Nonnull BiConsumer<GraphemeMetrics, FontPaint> consumer) {
         final GraphemeMetrics piece;
         synchronized (this) {
             piece = mMetricsMap.get(mLookupKey.update(start, end, dir, paintId));
@@ -57,7 +57,7 @@ public class LayoutPieces {
         }
     }
 
-    public int findPaintId(@Nonnull MinikinPaint paint) {
+    public int findPaintId(@Nonnull FontPaint paint) {
         return mPaintMap.getOrDefault(paint, NO_PAINT_ID);
     }
 

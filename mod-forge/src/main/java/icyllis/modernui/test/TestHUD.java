@@ -23,11 +23,15 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.math.Matrix4f;
+import icyllis.modernui.animation.Animation;
+import icyllis.modernui.animation.Applier;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.textmc.ModernFontRenderer;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.core.mixin.AccessFoodData;
+import icyllis.modernui.math.MathUtil;
+import icyllis.modernui.math.Matrix4;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -38,7 +42,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.client.event.RenderTooltipEvent;
-import net.minecraftforge.client.model.animation.Animation;
 import net.minecraftforge.common.MinecraftForge;
 import org.lwjgl.opengl.GL11;
 
@@ -55,20 +58,40 @@ public class TestHUD {
 
     //private static DecimalFormat decimalFormat = new DecimalFormat("#.00");
 
-    public static void drawBars(@Nonnull Canvas canvas) {
+    public static final TestHUD sInstance = new TestHUD();
+
+    private final float[] mProj = new float[16];
+
+    private final Animation mBarAlphaAnim;
+    private float mBarAlpha = 0.25f;
+
+    private float mLastHealth;
+    private int mLastHunger;
+    private int mLastAir;
+
+    {
+        mBarAlphaAnim = new Animation(5000)
+                .applyTo(new Applier(0.5f, 0.25f, () -> mBarAlpha, f -> mBarAlpha = f)
+                .setInterpolator(p -> Math.max((p - 0.8f) * 5.0f, 0)));
+    }
+
+    public void drawBars(@Nonnull Canvas canvas) {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableAlphaTest();
+        RenderSystem.disableDepthTest();
 
         GL11.glMatrixMode(GL11.GL_PROJECTION);
         GL11.glPushMatrix();
         GL11.glLoadIdentity();
-        RenderSystem.disableDepthTest();
 
         Minecraft minecraft = Minecraft.getInstance();
-        Window mainWindow = minecraft.getWindow();
-        float aspectRatio = (float) mainWindow.getWidth() / mainWindow.getHeight();
-        RenderSystem.multMatrix(Matrix4f.perspective(90.0, aspectRatio, 1.0f, 100.0f));
+        Window windowB3D = minecraft.getWindow();
+        float aspectRatio = (float) windowB3D.getWidth() / windowB3D.getHeight();
+        Matrix4.makePerspective(MathUtil.PI_OVER_2, aspectRatio, 1.0f, 100.0f)
+                .put(mProj);
+        GL11.glMultMatrixf(mProj);
+
         GL11.glMatrixMode(GL11.GL_MODELVIEW);
         GL11.glPushMatrix();
         GL11.glLoadIdentity();
@@ -80,7 +103,7 @@ public class TestHUD {
         Player player = (Player) minecraft.getCameraEntity();
         Objects.requireNonNull(player);
 
-        float partialTicks = Animation.getPartialTickTime();
+        float partialTicks = net.minecraftforge.client.model.animation.Animation.getPartialTickTime();
 
         float f = player.walkDist - player.walkDistO;
         float f1 = -(player.walkDist + f * partialTicks);
@@ -92,39 +115,56 @@ public class TestHUD {
 
         FoodData foodData = player.getFoodData();
 
-        float right = Math.min(player.getHealth() * 140 / player.getMaxHealth(), 140);
+        float health = player.getHealth();
+        if (health != mLastHealth) {
+            mLastHealth = health;
+            mBarAlphaAnim.startFull();
+        }
+        float right = Math.min(health * 140 / player.getMaxHealth(), 140.0f);
 
         Paint paint = Paint.take();
         paint.reset();
         paint.setStrokeWidth(1.5f);
+        paint.setAlpha((int) (mBarAlpha * 0xff));
 
-        paint.setRGBA(255, 19, 19, 128);
+        paint.setRGB(255, 19, 19);
         paint.setStyle(Paint.Style.FILL);
         canvas.drawRoundRect(0, 25, right, 37, 6, paint);
 
-        paint.setRGBA(255, 255, 255, 128);
+        paint.setRGB(255, 255, 255);
         paint.setStyle(Paint.Style.STROKE);
         canvas.drawRoundRect(0, 25, 140, 37, 6, paint);
 
-        right = player.getAirSupply() * 140f / player.getMaxAirSupply();
-        paint.setRGBA(86, 184, 255, 128);
+        int air = player.getAirSupply();
+        if (air != mLastAir) {
+            mLastAir = air;
+            mBarAlphaAnim.startFull();
+        }
+        right = air * 140f / player.getMaxAirSupply();
+        paint.setRGB(86, 184, 255);
         paint.setStyle(Paint.Style.FILL);
         canvas.drawRoundRect(0, 11, right, 23, 6, paint);
 
-        paint.setRGBA(255, 255, 255, 128);
+        paint.setRGB(255, 255, 255);
         paint.setStyle(Paint.Style.STROKE);
         canvas.drawRoundRect(0, 11, 140, 23, 6, paint);
 
-        right = foodData.getFoodLevel() * 7;
-        paint.setRGBA(184, 132, 88, 128);
+        int foodLevel = foodData.getFoodLevel();
+        if (foodLevel != mLastHunger) {
+            mLastHunger = foodLevel;
+            mBarAlphaAnim.startFull();
+        }
+        right = foodLevel * 7;
+        paint.setRGB(184, 132, 88);
         paint.setStyle(Paint.Style.FILL);
         canvas.drawRoundRect(0, -3, right, 9, 6, paint);
 
-        paint.setRGBA(255, 255, 255, 128);
+        paint.setRGB(255, 255, 255);
         paint.setStyle(Paint.Style.STROKE);
         canvas.drawRoundRect(0, -3, 140, 9, 6, paint);
 
         canvas.resetColor();
+        canvas.setAlpha((int) (mBarAlpha * 0xff * 2));
         canvas.setTextAlign(TextAlign.CENTER);
         canvas.drawText(String.format("%.2f / %.2f", player.getHealth(), player.getMaxHealth()), 70, 27);
         canvas.drawText(String.format("%d / %d", player.getAirSupply(), player.getMaxAirSupply()), 70, 13);
@@ -144,7 +184,7 @@ public class TestHUD {
         minecraft.getTextureManager().bind(GuiComponent.GUI_ICONS_LOCATION);
     }
 
-    private static final List<FormattedText> sTempTexts = new ArrayList<>();
+    private final List<FormattedText> mTempTexts = new ArrayList<>();
 
     // config value
     public static boolean sTooltip;
@@ -160,7 +200,7 @@ public class TestHUD {
     private static final int TITLE_GAP = 2;
 
     // test only, this can't handle complex paragraph layout
-    public static void drawTooltip(Canvas canvas, @Nonnull List<? extends FormattedText> texts,
+    public void drawTooltip(Canvas canvas, @Nonnull List<? extends FormattedText> texts,
                                    ModernFontRenderer font, ItemStack stack, PoseStack matrix,
                                    int eventX, int eventY, float mouseX, float mouseY, float width, float height) {
         float tooltipX = mouseX + TOOLTIP_SPACE;
@@ -183,7 +223,7 @@ public class TestHUD {
         int titleLinesCount = 1;
         if (needWrap) {
             int w = 0;
-            final List<FormattedText> temp = sTempTexts;
+            final List<FormattedText> temp = mTempTexts;
             for (int i = 0; i < texts.size(); i++) {
                 List<FormattedText> wrapped = font.getSplitter().splitLines(texts.get(i), tooltipWidth, Style.EMPTY);
                 if (i == 0) titleLinesCount = wrapped.size();
@@ -267,6 +307,6 @@ public class TestHUD {
         GL11.glPopMatrix();
 
         RenderSystem.enableDepthTest();
-        sTempTexts.clear();
+        mTempTexts.clear();
     }
 }

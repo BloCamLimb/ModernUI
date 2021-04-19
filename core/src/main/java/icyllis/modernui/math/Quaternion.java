@@ -97,6 +97,21 @@ public class Quaternion implements Cloneable {
      * Create a quaternion from the given axis and angle. The axis must be
      * a normalized (unit) vector.
      *
+     * @param axis  the rotation axis
+     * @param angle rotation angle in radians
+     * @return the resulting quaternion
+     */
+    @Nonnull
+    public static Quaternion fromAxisAngle(@Nonnull Vector3 axis, float angle) {
+        Quaternion q = new Quaternion();
+        q.setFromAxisAngle(axis, angle);
+        return q;
+    }
+
+    /**
+     * Create a quaternion from the given axis and angle. The axis must be
+     * a normalized (unit) vector.
+     *
      * @param axisX x-coordinate of rotation axis
      * @param axisY y-coordinate of rotation axis
      * @param axisZ z-coordinate of rotation axis
@@ -314,6 +329,18 @@ public class Quaternion implements Cloneable {
     }
 
     /**
+     * Set this quaternion to a spherical linear interpolation between this and
+     * given quaternion by the a factor. The two quaternions should be rotational
+     * so they should be normalized. This method does not normalize this quaternion.
+     *
+     * @param a the end quaternion
+     * @param t a value between 0.0 and 1.0 representing interpolation
+     */
+    public void slerp(@Nonnull Quaternion a, float t) {
+        slerp(this, a, t);
+    }
+
+    /**
      * Set this quaternion to a spherical linear interpolation between two quaternions
      * by the given factor. The two quaternions should be rotational so they should
      * be normalized. This method does not normalize this quaternion.
@@ -370,6 +397,17 @@ public class Quaternion implements Cloneable {
             z = a.z * s + b.z * t;
             w = a.w * s + b.w * t;
         }
+    }
+
+    /**
+     * Rotate this quaternion by the given axis and angle. The axis must be
+     * a normalized (unit) vector.
+     *
+     * @param axis  the rotation axis
+     * @param angle rotation angle in radians
+     */
+    public void rotateByAxis(@Nonnull Vector3 axis, float angle) {
+        rotateByAxis(axis.x, axis.y, axis.z, angle);
     }
 
     /**
@@ -475,6 +513,17 @@ public class Quaternion implements Cloneable {
      * Set this quaternion components from the given axis and angle. The axis must be
      * a normalized (unit) vector.
      *
+     * @param axis  the rotation axis
+     * @param angle rotation angle in radians
+     */
+    public void setFromAxisAngle(@Nonnull Vector3 axis, float angle) {
+        setFromAxisAngle(axis.x, axis.y, axis.z, angle);
+    }
+
+    /**
+     * Set this quaternion components from the given axis and angle. The axis must be
+     * a normalized (unit) vector.
+     *
      * @param axisX x-coordinate of rotation axis
      * @param axisY y-coordinate of rotation axis
      * @param axisZ z-coordinate of rotation axis
@@ -525,6 +574,27 @@ public class Quaternion implements Cloneable {
             y = sc * cx + cs * sx;
             z = cs * cx - sc * sx;
         }
+    }
+
+    /**
+     * Transform the rotational quaternion to axis based rotation angles.
+     *
+     * @param axis the vector for storing the axis coordinates.
+     * @return the rotation angle in radians.
+     */
+    public float toAxisAngle(@Nonnull Vector3 axis) {
+        float l = x * x + y * y + z * z;
+        if (MathUtil.approxZero(l)) {
+            axis.x = 1.0f;
+            axis.y = 0.0f;
+            axis.z = 0.0f;
+            return 0.0f;
+        }
+        l = 1.0f / MathUtil.sqrt(l);
+        axis.x = x * l;
+        axis.y = y * l;
+        axis.z = z * l;
+        return MathUtil.acos(w) * 2.0f;
     }
 
     /**
@@ -582,7 +652,7 @@ public class Quaternion implements Cloneable {
     }
 
     /**
-     * Transform this quaternion to a normalized 3x3 column matrix representing
+     * Transform this quaternion to a normalized 3x3 row matrix representing
      * the rotation.
      *
      * @return the resulting matrix
@@ -618,17 +688,17 @@ public class Quaternion implements Cloneable {
         mat.m22 = 1.0f - (xx + zz);
         mat.m33 = 1.0f - (xx + yy);
 
-        mat.m21 = xy - zw;
-        mat.m31 = xz + yw;
-        mat.m12 = xy + zw;
-        mat.m32 = yz - xw;
-        mat.m13 = xz - yw;
-        mat.m23 = yz + xw;
+        mat.m12 = xy - zw;
+        mat.m13 = xz + yw;
+        mat.m21 = xy + zw;
+        mat.m23 = yz - xw;
+        mat.m31 = xz - yw;
+        mat.m32 = yz + xw;
         return mat;
     }
 
     /**
-     * Transform this quaternion to a normalized 4x4 column matrix representing
+     * Transform this quaternion to a normalized 4x4 row matrix representing
      * the rotation.
      *
      * @return the resulting matrix
@@ -664,19 +734,19 @@ public class Quaternion implements Cloneable {
         mat.m22 = 1.0f - (xx + zz);
         mat.m33 = 1.0f - (xx + yy);
 
-        mat.m21 = xy - zw;
-        mat.m31 = xz + yw;
-        mat.m12 = xy + zw;
-        mat.m32 = yz - xw;
-        mat.m13 = xz - yw;
-        mat.m23 = yz + xw;
+        mat.m12 = xy - zw;
+        mat.m13 = xz + yw;
+        mat.m21 = xy + zw;
+        mat.m23 = yz - xw;
+        mat.m31 = xz - yw;
+        mat.m32 = yz + xw;
 
         mat.m44 = 1.0f;
         return mat;
     }
 
     /**
-     * Transform this quaternion to a normalized 3x3 column matrix representing
+     * Transform this quaternion to a normalized 3x3 row matrix representing
      * the rotation. If recycle matrix is null, a new matrix will be returned.
      *
      * @param recycle a matrix for storing result if you want to recycle it
@@ -712,21 +782,21 @@ public class Quaternion implements Cloneable {
         final float zw = zs * w;
 
         recycle.m11 = 1.0f - (yy + zz);
-        recycle.m21 = xy - zw;
-        recycle.m31 = xz + yw;
+        recycle.m12 = xy - zw;
+        recycle.m13 = xz + yw;
 
-        recycle.m12 = xy + zw;
+        recycle.m21 = xy + zw;
         recycle.m22 = 1.0f - (xx + zz);
-        recycle.m32 = yz - xw;
+        recycle.m23 = yz - xw;
 
-        recycle.m13 = xz - yw;
-        recycle.m23 = yz + xw;
+        recycle.m31 = xz - yw;
+        recycle.m32 = yz + xw;
         recycle.m33 = 1.0f - (xx + yy);
         return recycle;
     }
 
     /**
-     * Transform this quaternion to a normalized 4x4 column matrix representing
+     * Transform this quaternion to a normalized 4x4 row matrix representing
      * the rotation. If recycle matrix is null, a new matrix will be returned.
      *
      * @param recycle a matrix for storing result if you want to recycle it
@@ -762,23 +832,23 @@ public class Quaternion implements Cloneable {
         final float zw = zs * w;
 
         recycle.m11 = 1.0f - (yy + zz);
-        recycle.m21 = xy - zw;
-        recycle.m31 = xz + yw;
-        recycle.m41 = 0.0f;
-
-        recycle.m12 = xy + zw;
-        recycle.m22 = 1.0f - (xx + zz);
-        recycle.m32 = yz - xw;
-        recycle.m42 = 0.0f;
-
-        recycle.m13 = xz - yw;
-        recycle.m23 = yz + xw;
-        recycle.m33 = 1.0f - (xx + yy);
-        recycle.m43 = 0.0f;
-
+        recycle.m12 = xy - zw;
+        recycle.m13 = xz + yw;
         recycle.m14 = 0.0f;
+
+        recycle.m21 = xy + zw;
+        recycle.m22 = 1.0f - (xx + zz);
+        recycle.m23 = yz - xw;
         recycle.m24 = 0.0f;
+
+        recycle.m31 = xz - yw;
+        recycle.m32 = yz + xw;
+        recycle.m33 = 1.0f - (xx + yy);
         recycle.m34 = 0.0f;
+
+        recycle.m41 = 0.0f;
+        recycle.m42 = 0.0f;
+        recycle.m43 = 0.0f;
         recycle.m44 = 1.0f;
         return recycle;
     }

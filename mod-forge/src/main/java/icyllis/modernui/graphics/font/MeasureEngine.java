@@ -41,8 +41,8 @@ public class MeasureEngine {
         return sInstance;
     }
 
-    public void create(@Nonnull char[] text, int contextStart, int contextEnd, @Nonnull MinikinPaint paint, boolean isRtl,
-                       @Nonnull BiConsumer<GraphemeMetrics, MinikinPaint> consumer) {
+    public void create(@Nonnull char[] text, int contextStart, int contextEnd, @Nonnull FontPaint paint, boolean isRtl,
+                       @Nonnull BiConsumer<GraphemeMetrics, FontPaint> consumer) {
         final List<FontCollection.Run> runs = paint.mFontCollection.itemize(text, contextStart, contextEnd);
         final int flag = isRtl ? Font.LAYOUT_RIGHT_TO_LEFT : Font.LAYOUT_LEFT_TO_RIGHT;
         final GlyphManager manager = mGlyphManager;

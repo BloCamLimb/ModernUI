@@ -814,7 +814,7 @@ public final class UIManager {
                 break;
             case HEALTH:
                 if (TestHUD.sBars)
-                    TestHUD.drawBars(mCanvas);
+                    TestHUD.sInstance.drawBars(mCanvas);
                 break;
         }
     }
@@ -830,7 +830,7 @@ public final class UIManager {
             final Window window = minecraft.getWindow();
             double cursorX = minecraft.mouseHandler.xpos() * (double) window.getGuiScaledWidth() / (double) window.getScreenWidth();
             double cursorY = minecraft.mouseHandler.ypos() * (double) window.getGuiScaledHeight() / (double) window.getScreenHeight();
-            TestHUD.drawTooltip(mCanvas, event.getLines(), (ModernFontRenderer) minecraft.font, event.getStack(),
+            TestHUD.sInstance.drawTooltip(mCanvas, event.getLines(), (ModernFontRenderer) minecraft.font, event.getStack(),
                     event.getMatrixStack(), event.getX(), event.getY(), (float) cursorX, (float) cursorY, event.getScreenWidth(), event.getScreenHeight());
             event.setCanceled(true);
         }

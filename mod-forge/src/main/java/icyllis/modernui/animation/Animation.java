@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+// unstable API
 public class Animation {
 
     private final int duration;
