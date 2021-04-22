@@ -19,23 +19,24 @@
 package icyllis.modernui.platform;
 
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+
+import static org.lwjgl.system.MemoryUtil.NULL;
 
 public final class Clipboard {
 
     @Nullable
     public static String getText() {
-        String text = GLFW.glfwGetClipboardString(MemoryUtil.NULL);
+        String text = GLFW.glfwGetClipboardString(NULL);
         if (text == null)
             return null;
         StringBuilder builder = new StringBuilder();
         final int l = text.length();
         for (int i = 0; i < l; i++) {
-            char _c1 = text.charAt(i);
-            char _c2;
+            final char _c1 = text.charAt(i);
+            final char _c2;
             if (Character.isHighSurrogate(_c1) && i + 1 < l) {
                 _c2 = text.charAt(i + 1);
                 if (Character.isLowSurrogate(_c2)) {
@@ -54,6 +55,6 @@ public final class Clipboard {
     }
 
     public static void setText(@Nonnull CharSequence text) {
-        GLFW.glfwSetClipboardString(MemoryUtil.NULL, text);
+        GLFW.glfwSetClipboardString(NULL, text);
     }
 }

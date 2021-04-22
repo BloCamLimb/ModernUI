@@ -62,7 +62,7 @@ public class Quaternion implements Cloneable {
      */
     @Nonnull
     public static Quaternion copy(@Nullable Quaternion q) {
-        return q == null ? identity() : q.clone();
+        return q == null ? identity() : q.copy();
     }
 
     /**
@@ -639,11 +639,11 @@ public class Quaternion implements Cloneable {
         if (f > 0.499f * sq) {
             result[0] = 0.0f;
             result[1] = 2.0f * MathUtil.atan2(x, w);
-            result[2] = MathUtil.PI_OVER_2;
+            result[2] = MathUtil.PI_DIV_2;
         } else if (f < -0.499f * sq) {
             result[0] = 0.0f;
             result[1] = -2.0f * MathUtil.atan2(x, w);
-            result[2] = -MathUtil.PI_OVER_2;
+            result[2] = -MathUtil.PI_DIV_2;
         } else {
             result[0] = MathUtil.atan2(2.0f * (x * w - y * z), -sqx + sqy - sqz + sqw);
             result[1] = MathUtil.atan2(2.0f * (y * w - x * z), sqx - sqy - sqz + sqw);
@@ -652,7 +652,7 @@ public class Quaternion implements Cloneable {
     }
 
     /**
-     * Transform this quaternion to a normalized 3x3 row matrix representing
+     * Transform this quaternion to a normalized 3x3 row-major matrix representing
      * the rotation.
      *
      * @return the resulting matrix
@@ -698,7 +698,7 @@ public class Quaternion implements Cloneable {
     }
 
     /**
-     * Transform this quaternion to a normalized 4x4 row matrix representing
+     * Transform this quaternion to a normalized 4x4 row-major matrix representing
      * the rotation.
      *
      * @return the resulting matrix
@@ -746,14 +746,14 @@ public class Quaternion implements Cloneable {
     }
 
     /**
-     * Transform this quaternion to a normalized 3x3 row matrix representing
+     * Transform this quaternion to a normalized 3x3 row-major matrix representing
      * the rotation. If recycle matrix is null, a new matrix will be returned.
      *
      * @param recycle a matrix for storing result if you want to recycle it
      * @return the resulting matrix
      */
     @Nonnull
-    public Matrix3 toMatrix(@Nullable Matrix3 recycle) {
+    public Matrix3 toMatrix3(@Nullable Matrix3 recycle) {
         if (recycle == null)
             return toMatrix3();
         final float sq = lengthSquared();
@@ -796,14 +796,14 @@ public class Quaternion implements Cloneable {
     }
 
     /**
-     * Transform this quaternion to a normalized 4x4 row matrix representing
+     * Transform this quaternion to a normalized 4x4 row-major matrix representing
      * the rotation. If recycle matrix is null, a new matrix will be returned.
      *
      * @param recycle a matrix for storing result if you want to recycle it
      * @return the resulting matrix
      */
     @Nonnull
-    public Matrix4 toMatrix(@Nullable Matrix4 recycle) {
+    public Matrix4 toMatrix4(@Nullable Matrix4 recycle) {
         if (recycle == null)
             return toMatrix4();
         final float sq = lengthSquared();
@@ -898,8 +898,8 @@ public class Quaternion implements Cloneable {
                 '}';
     }
 
-    @Override
-    public Quaternion clone() {
+    @Nonnull
+    public Quaternion copy() {
         try {
             return (Quaternion) super.clone();
         } catch (CloneNotSupportedException e) {

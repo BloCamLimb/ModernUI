@@ -61,7 +61,7 @@ public final class GLWrapper {
 
     @RenderThread
     public static void initialize(@Nonnull GLCapabilities caps) {
-        RenderCore.ensureRenderThread();
+        RenderCore.ensureThread();
         if (sInitialized) {
             return;
         }
@@ -136,7 +136,7 @@ public final class GLWrapper {
      */
     @RenderThread
     public static void reset(@Nonnull Window window) {
-        RenderCore.ensureRenderThread();
+        RenderCore.ensureThread();
         sViewportStack.clear();
 
         final Rect viewport = new Rect(0, 0, window.getWidth(), window.getHeight());

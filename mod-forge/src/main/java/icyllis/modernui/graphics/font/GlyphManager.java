@@ -275,7 +275,7 @@ public class GlyphManager {
     // internal use
     @Nonnull
     public static GlyphManager getInstance() {
-        RenderCore.ensureRenderThread();
+        RenderCore.ensureThread();
         if (instance == null)
             new GlyphManager();
         return instance;

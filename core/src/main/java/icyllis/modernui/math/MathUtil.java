@@ -24,12 +24,12 @@ public final class MathUtil {
 
     public static final float PI = (float) Math.PI;
 
-    public static final float PI_OVER_2 = PI / 2;
-    public static final float PI_OVER_3 = PI / 3;
-    public static final float PI_OVER_4 = PI / 4;
-    public static final float PI_OVER_6 = PI / 6;
-    public static final float TWO_PI = PI * 2;
-    public static final float THREE_PI_OVER_2 = PI * 3 / 2;
+    public static final float PI_DIV_2 = (float) (Math.PI / 2);
+    public static final float PI_DIV_3 = (float) (Math.PI / 3);
+    public static final float PI_DIV_4 = (float) (Math.PI / 4);
+    public static final float PI_DIV_6 = (float) (Math.PI / 6);
+    public static final float TWO_PI = (float) (Math.PI * 2);
+    public static final float THREE_PI_DIV_2 = (float) (Math.PI * 3 / 2);
 
     static {
         float[] v = new float[0x10000];

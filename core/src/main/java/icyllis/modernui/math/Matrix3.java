@@ -21,7 +21,7 @@ package icyllis.modernui.math;
 import javax.annotation.Nonnull;
 
 /**
- * Represents a 3x3 matrix.
+ * Represents a 3x3 row-major matrix.
  */
 public class Matrix3 implements Cloneable {
 
