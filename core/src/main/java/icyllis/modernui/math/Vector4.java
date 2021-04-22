@@ -21,8 +21,9 @@ package icyllis.modernui.math;
 import javax.annotation.Nonnull;
 
 /**
- * Represents a four-dimensional row vector.
+ * Represents a four-dimensional vector.
  */
+@SuppressWarnings("unused")
 public class Vector4 {
 
     // coordinate components
@@ -36,7 +37,7 @@ public class Vector4 {
      *
      * @param mat the matrix used as the transformation
      */
-    public void transformBy(@Nonnull Matrix4 mat) {
+    public void transform(@Nonnull Matrix4 mat) {
         mat.transform(this);
     }
 }

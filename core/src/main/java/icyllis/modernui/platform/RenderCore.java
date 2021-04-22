@@ -66,17 +66,17 @@ public final class RenderCore {
         LOGGER.error(MARKER, "GLFW Error: 0x{}, {}", Integer.toHexString(errorCode), desc);
     }
 
-    public static void ensureRenderThread() {
+    public static void ensureThread() {
         if (Thread.currentThread() != sRenderThread)
             throw new IllegalStateException("Not called from render thread");
     }
 
-    public static boolean isOnRenderThread() {
+    public static boolean isOnThread() {
         return Thread.currentThread() == sRenderThread;
     }
 
-    public static Thread getRenderThread() {
-        return sRenderThread;
+    public static void interruptThread() {
+        sRenderThread.interrupt();;
     }
 
     /**

@@ -60,7 +60,7 @@ public final class NetMessages {
         FriendlyByteBuf buf = network.targetAt(0);
         buf.writeFloat(foodSaturationLevel);
         buf.writeFloat(foodExhaustionLevel);
-        return network.prepare(buf);
+        return network.getBroadcaster(buf);
     }
 
     @Nonnull
@@ -71,7 +71,7 @@ public final class NetMessages {
         if (writer != null) {
             writer.accept(buf);
         }
-        return network.prepare(buf);
+        return network.getBroadcaster(buf);
     }
 
     // this class doesn't allow to load on dedicated server

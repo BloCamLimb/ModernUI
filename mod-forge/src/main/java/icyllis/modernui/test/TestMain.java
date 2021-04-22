@@ -35,7 +35,6 @@ import icyllis.modernui.graphics.shader.program.RectProgram;
 import icyllis.modernui.graphics.shader.program.RoundRectProgram;
 import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Matrix4;
-import icyllis.modernui.math.Quaternion;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.platform.Window;
 import icyllis.modernui.platform.WindowMode;
@@ -130,12 +129,13 @@ public class TestMain {
         float[] av = new float[]{1, 3, 2, 4.1f, 6, 0, 6, 0.5f, 5, 7, 11.3f, 9, 9.1f, 15, 8, 10};
         float[] bv = new float[]{9.1f, 2, 7, 5, 3.3f, 6.1f, 5.5f, 4, 0, 8, 3, 1, 2.7f, 3, 9, 2};
         Matrix4 mat = Matrix4.identity();
-        Matrix4 mat2 = mat.clone();
+        Matrix4 mat2 = mat.copy();
         //Quaternion q = Quaternion.fromAxisAngle(0.40824829f, 0.81649658f, 0.40824829f, MathUtil.PI_OVER_3);
         //mat.rotate(q);
-        mat.rotateX(MathUtil.PI_OVER_3);
-        mat2.rotateByAxis(1, 0, 0, MathUtil.PI_OVER_3);
+        mat.rotateX(MathUtil.PI_DIV_3);
+        mat2.rotateByAxis(1, 0, 0, MathUtil.PI_DIV_3);
         ModernUI.LOGGER.info("Two Equal: {}", mat.isEqual(mat2));
+
 
         if (!CREATE_WINDOW)
             return;
@@ -153,10 +153,9 @@ public class TestMain {
                 RectProgram.createPrograms();
                 RoundRectProgram.createPrograms();
                 ShaderProgram.linkAll(null);
-                float[] projection;
-                Matrix4.makePerspective(MathUtil.PI_OVER_2, window.getAspectRatio(), 0.001f, 1000)
+                final float[] projection;
+                Matrix4.makePerspective(MathUtil.PI_DIV_2, window.getAspectRatio(), 0.001f, 1000)
                         .put(projection = new float[16]);
-                ModernUI.LOGGER.info(Arrays.toString(projection));
                 while (window.exists()) {
                     if (window.needsRefresh()) {
                         GLWrapper.reset(window);

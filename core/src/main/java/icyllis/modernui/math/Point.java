@@ -19,7 +19,6 @@
 package icyllis.modernui.math;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 public class Point implements Cloneable {
 
@@ -32,11 +31,6 @@ public class Point implements Cloneable {
     public Point(int x, int y) {
         this.x = x;
         this.y = y;
-    }
-
-    @Nonnull
-    public static Point copy(@Nullable Point p) {
-        return p == null ? new Point() : p.clone();
     }
 
     public void set(int x, int y) {
@@ -79,8 +73,8 @@ public class Point implements Cloneable {
                 ')';
     }
 
-    @Override
-    public Point clone() {
+    @Nonnull
+    public Point copy() {
         try {
             return (Point) super.clone();
         } catch (CloneNotSupportedException e) {

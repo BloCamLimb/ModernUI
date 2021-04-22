@@ -88,7 +88,7 @@ public class TestHUD {
         Minecraft minecraft = Minecraft.getInstance();
         Window windowB3D = minecraft.getWindow();
         float aspectRatio = (float) windowB3D.getWidth() / windowB3D.getHeight();
-        Matrix4.makePerspective(MathUtil.PI_OVER_2, aspectRatio, 1.0f, 100.0f)
+        Matrix4.makePerspective(MathUtil.PI_DIV_2, aspectRatio, 1.0f, 100.0f)
                 .put(mProj);
         GL11.glMultMatrixf(mProj);
 

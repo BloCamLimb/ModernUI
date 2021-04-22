@@ -97,10 +97,10 @@ public class NetworkHandler {
             protocol = DigestUtils.md5Hex(ModList.get().getModFileById(modid).getMods().stream()
                     .map(iModInfo -> iModInfo.getVersion().getQualifier())
                     .collect(Collectors.joining(",")).getBytes(StandardCharsets.UTF_8));
-        this.mProtocol = protocol;
-        this.mOptional = optional;
-        this.mClientHandler = FMLEnvironment.dist.isClient() ? clientHandler.get().get() : null;
-        this.mServerHandler = serverHandler;
+        mProtocol = protocol;
+        mOptional = optional;
+        mClientHandler = FMLEnvironment.dist.isClient() ? clientHandler.get().get() : null;
+        mServerHandler = serverHandler;
         EventNetworkChannel network = NetworkRegistry.ChannelBuilder
                 .named(mChannel = new ResourceLocation(modid, name))
                 .networkProtocolVersion(this::getProtocolVersion)
@@ -173,7 +173,7 @@ public class NetworkHandler {
 
     /**
      * Allocate a buffer to write packet data with index. Once you done that,
-     * pass the value returned here to {@link #prepare(FriendlyByteBuf)}
+     * pass the value returned here to {@link #getBroadcaster(FriendlyByteBuf)}
      *
      * @param index The message index used on the opposite side, range from 0 to 32767
      * @return a byte buf to write the packet data (message)
@@ -196,11 +196,24 @@ public class NetworkHandler {
      * @see #targetAt(int)
      */
     @Nonnull
-    public Broadcaster prepare(@Nonnull FriendlyByteBuf buf) {
+    public Broadcaster getBroadcaster(@Nonnull FriendlyByteBuf buf) {
         Broadcaster b = mPool.acquire();
         if (b == null) b = new Broadcaster();
         b.buf = buf;
         return b;
+    }
+
+    /**
+     * Send a message to server
+     * <p>
+     * This is the only method to be called on the client, the rest needs
+     * to be called on the server side
+     */
+    @OnlyIn(Dist.CLIENT)
+    public void sendToServer(@Nonnull FriendlyByteBuf buf) {
+        ClientPacketListener connection = Minecraft.getInstance().getConnection();
+        if (connection != null)
+            connection.send(new ServerboundCustomPayloadPacket(mChannel, buf));
     }
 
     public class Broadcaster {
@@ -211,20 +224,6 @@ public class NetworkHandler {
         protected void recycle() {
             buf = null;
             mPool.release(this);
-        }
-
-        /**
-         * Send a message to server
-         * <p>
-         * This is the only method to be called on the client, the rest needs
-         * to be called on the server side
-         */
-        @OnlyIn(Dist.CLIENT)
-        public void sendToServer() {
-            ClientPacketListener connection = Minecraft.getInstance().getConnection();
-            if (connection != null)
-                connection.send(new ServerboundCustomPayloadPacket(mChannel, buf));
-            recycle();
         }
 
         /**

@@ -63,7 +63,7 @@ public class Rect implements Cloneable {
      */
     @Nonnull
     public static Rect copy(@Nullable Rect r) {
-        return r == null ? new Rect() : r.clone();
+        return r == null ? new Rect() : r.copy();
     }
 
     /**
@@ -494,8 +494,8 @@ public class Rect implements Cloneable {
                 ", " + bottom + ")";
     }
 
-    @Override
-    public Rect clone() {
+    @Nonnull
+    public Rect copy() {
         try {
             return (Rect) super.clone();
         } catch (CloneNotSupportedException e) {
