@@ -20,7 +20,7 @@ package icyllis.modernui.math;
 
 import javax.annotation.Nonnull;
 
-public class Point implements Cloneable {
+public class Point {
 
     public int x;
     public int y;
@@ -75,10 +75,6 @@ public class Point implements Cloneable {
 
     @Nonnull
     public Point copy() {
-        try {
-            return (Point) super.clone();
-        } catch (CloneNotSupportedException e) {
-            throw new InternalError(e);
-        }
+        return new Point(x, y);
     }
 }

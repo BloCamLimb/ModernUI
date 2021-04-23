@@ -226,7 +226,7 @@ public final class Config {
 
             hudBars = builder.comment(
                     "Show additional HUD bars added by ModernUI on the bottom-left of the screen.")
-                    .define("hudBars", true);
+                    .define("hudBars", false);
 
             builder.pop();
 

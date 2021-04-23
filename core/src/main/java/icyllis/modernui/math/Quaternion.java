@@ -25,12 +25,12 @@ import javax.annotation.Nullable;
  * Represents a Quaternion, mostly used for rotations.
  */
 @SuppressWarnings("unused")
-public class Quaternion implements Cloneable {
+public class Quaternion {
 
-    private float x;
-    private float y;
-    private float z;
-    private float w;
+    protected float x;
+    protected float y;
+    protected float z;
+    protected float w;
 
     /**
      * Create a zero quaternion.
@@ -87,7 +87,7 @@ public class Quaternion implements Cloneable {
      * @return the resulting quaternion
      */
     @Nonnull
-    public static Quaternion fromEulerAngles(float rotationX, float rotationY, float rotationZ) {
+    public static Quaternion makeEulerAngles(float rotationX, float rotationY, float rotationZ) {
         Quaternion q = new Quaternion();
         q.setFromEulerAngles(rotationX, rotationY, rotationZ);
         return q;
@@ -102,7 +102,7 @@ public class Quaternion implements Cloneable {
      * @return the resulting quaternion
      */
     @Nonnull
-    public static Quaternion fromAxisAngle(@Nonnull Vector3 axis, float angle) {
+    public static Quaternion makeAxisAngle(@Nonnull Vector3 axis, float angle) {
         Quaternion q = new Quaternion();
         q.setFromAxisAngle(axis, angle);
         return q;
@@ -119,7 +119,7 @@ public class Quaternion implements Cloneable {
      * @return the resulting quaternion
      */
     @Nonnull
-    public static Quaternion fromAxisAngle(float axisX, float axisY, float axisZ, float angle) {
+    public static Quaternion makeAxisAngle(float axisX, float axisY, float axisZ, float angle) {
         Quaternion q = new Quaternion();
         q.setFromAxisAngle(axisX, axisY, axisZ, angle);
         return q;
@@ -194,6 +194,7 @@ public class Quaternion implements Cloneable {
      * @param q the quaternion to multiply with
      */
     public void multiply(@Nonnull Quaternion q) {
+        // 16 multiplications
         set(w * q.x + x * q.w + y * q.z - z * q.y,
                 w * q.y - x * q.z + y * q.w + z * q.x,
                 w * q.z + x * q.y - y * q.x + z * q.w,
@@ -201,7 +202,7 @@ public class Quaternion implements Cloneable {
     }
 
     /**
-     * Calculate the magnitude of this quaternion, namely the 2-norm
+     * Returns the magnitude of this quaternion, namely the 2-norm
      * (euclidean norm) or the length.
      *
      * @return the magnitude of this quaternion
@@ -215,14 +216,14 @@ public class Quaternion implements Cloneable {
     }
 
     /**
-     * Calculate the dot product of this quaternion with the given x, y, z and w components.
+     * Returns the dot product of this quaternion with the given x, y, z and w components.
      */
     public float dot(float x, float y, float z, float w) {
         return this.x * x + this.y * y + this.z * z + this.w * w;
     }
 
     /**
-     * Calculate the dot product of this quaternion with the given quaternion.
+     * Returns the dot product of this quaternion with the given quaternion.
      *
      * @param q the quaternion to dot product with.
      */
@@ -301,7 +302,7 @@ public class Quaternion implements Cloneable {
     }
 
     /**
-     * Calculate whether this quaternion is approximately equivalent to a identity quaternion.
+     * Calculate whether this quaternion is equivalent to a identity quaternion.
      *
      * @return {@code true} if this quaternion is identity.
      */
@@ -310,7 +311,7 @@ public class Quaternion implements Cloneable {
     }
 
     /**
-     * Set this quaternion to the identity quaternion.
+     * Set this quaternion to the identity quaternion <code>[0, 0, 0, 1]</code>.
      */
     public void setIdentity() {
         x = 0.0f;
@@ -326,6 +327,16 @@ public class Quaternion implements Cloneable {
         x = -x;
         y = -y;
         z = -z;
+    }
+
+    /**
+     * Negate this quaternion <code>[-x, -y, -z, -w]</code>.
+     */
+    public void negate() {
+        x = -x;
+        y = -y;
+        z = -z;
+        w = -w;
     }
 
     /**
@@ -623,11 +634,9 @@ public class Quaternion implements Cloneable {
     /**
      * Transform this quaternion to Euler rotation angles in radians (pitchX, yawY and rollZ).
      *
-     * @param result the array for storing the result.
+     * @param result the vector for storing the result.
      */
-    public void toEulerAngles(@Nonnull float[] result) {
-        if (result.length < 3)
-            throw new IllegalArgumentException("The array length must be at least 3");
+    public void toEulerAngles(@Nonnull Vector3 result) {
         final float sqx = x * x;
         final float sqy = y * y;
         final float sqz = z * z;
@@ -637,17 +646,47 @@ public class Quaternion implements Cloneable {
         final float f = x * y + z * w;
 
         if (f > 0.499f * sq) {
-            result[0] = 0.0f;
-            result[1] = 2.0f * MathUtil.atan2(x, w);
-            result[2] = MathUtil.PI_DIV_2;
+            result.x = 0.0f;
+            result.y = 2.0f * MathUtil.atan2(x, w);
+            result.z = MathUtil.PI_DIV_2;
         } else if (f < -0.499f * sq) {
-            result[0] = 0.0f;
-            result[1] = -2.0f * MathUtil.atan2(x, w);
-            result[2] = -MathUtil.PI_DIV_2;
+            result.x = 0.0f;
+            result.y = -2.0f * MathUtil.atan2(x, w);
+            result.z = -MathUtil.PI_DIV_2;
         } else {
-            result[0] = MathUtil.atan2(2.0f * (x * w - y * z), -sqx + sqy - sqz + sqw);
-            result[1] = MathUtil.atan2(2.0f * (y * w - x * z), sqx - sqy - sqz + sqw);
-            result[2] = MathUtil.asin(2.0f * f / sq);
+            result.x = MathUtil.atan2(2.0f * (x * w - y * z), -sqx + sqy - sqz + sqw);
+            result.y = MathUtil.atan2(2.0f * (y * w - x * z), sqx - sqy - sqz + sqw);
+            result.z = MathUtil.asin(2.0f * f / sq);
+        }
+    }
+
+    /**
+     * Transform this quaternion to Euler rotation angles in radians (pitchX, yawY and rollZ).
+     *
+     * @param angles the array for storing the result.
+     */
+    public void toEulerAngles(@Nonnull float[] angles) {
+        if (angles.length < 3)
+            throw new IllegalArgumentException("The array length must be at least 3");
+        final float sqx = x * x;
+        final float sqy = y * y;
+        final float sqz = z * z;
+        final float sqw = w * w;
+        final float sq = sqx + sqy + sqz + sqw;
+        final float f = x * y + z * w;
+
+        if (f > 0.499f * sq) {
+            angles[0] = 0.0f;
+            angles[1] = 2.0f * MathUtil.atan2(x, w);
+            angles[2] = MathUtil.PI_DIV_2;
+        } else if (f < -0.499f * sq) {
+            angles[0] = 0.0f;
+            angles[1] = -2.0f * MathUtil.atan2(x, w);
+            angles[2] = -MathUtil.PI_DIV_2;
+        } else {
+            angles[0] = MathUtil.atan2(2.0f * (x * w - y * z), -sqx + sqy - sqz + sqw);
+            angles[1] = MathUtil.atan2(2.0f * (y * w - x * z), sqx - sqy - sqz + sqw);
+            angles[2] = MathUtil.asin(2.0f * f / sq);
         }
     }
 
@@ -688,12 +727,12 @@ public class Quaternion implements Cloneable {
         mat.m22 = 1.0f - (xx + zz);
         mat.m33 = 1.0f - (xx + yy);
 
-        mat.m12 = xy - zw;
-        mat.m13 = xz + yw;
-        mat.m21 = xy + zw;
-        mat.m23 = yz - xw;
-        mat.m31 = xz - yw;
-        mat.m32 = yz + xw;
+        mat.m21 = xy - zw;
+        mat.m31 = xz + yw;
+        mat.m12 = xy + zw;
+        mat.m32 = yz - xw;
+        mat.m13 = xz - yw;
+        mat.m23 = yz + xw;
         return mat;
     }
 
@@ -734,12 +773,12 @@ public class Quaternion implements Cloneable {
         mat.m22 = 1.0f - (xx + zz);
         mat.m33 = 1.0f - (xx + yy);
 
-        mat.m12 = xy - zw;
-        mat.m13 = xz + yw;
-        mat.m21 = xy + zw;
-        mat.m23 = yz - xw;
-        mat.m31 = xz - yw;
-        mat.m32 = yz + xw;
+        mat.m21 = xy - zw;
+        mat.m31 = xz + yw;
+        mat.m12 = xy + zw;
+        mat.m32 = yz - xw;
+        mat.m13 = xz - yw;
+        mat.m23 = yz + xw;
 
         mat.m44 = 1.0f;
         return mat;
@@ -782,15 +821,15 @@ public class Quaternion implements Cloneable {
         final float zw = zs * w;
 
         recycle.m11 = 1.0f - (yy + zz);
-        recycle.m12 = xy - zw;
-        recycle.m13 = xz + yw;
+        recycle.m21 = xy - zw;
+        recycle.m31 = xz + yw;
 
-        recycle.m21 = xy + zw;
+        recycle.m12 = xy + zw;
         recycle.m22 = 1.0f - (xx + zz);
-        recycle.m23 = yz - xw;
+        recycle.m32 = yz - xw;
 
-        recycle.m31 = xz - yw;
-        recycle.m32 = yz + xw;
+        recycle.m13 = xz - yw;
+        recycle.m23 = yz + xw;
         recycle.m33 = 1.0f - (xx + yy);
         return recycle;
     }
@@ -832,34 +871,34 @@ public class Quaternion implements Cloneable {
         final float zw = zs * w;
 
         recycle.m11 = 1.0f - (yy + zz);
-        recycle.m12 = xy - zw;
-        recycle.m13 = xz + yw;
-        recycle.m14 = 0.0f;
-
-        recycle.m21 = xy + zw;
-        recycle.m22 = 1.0f - (xx + zz);
-        recycle.m23 = yz - xw;
-        recycle.m24 = 0.0f;
-
-        recycle.m31 = xz - yw;
-        recycle.m32 = yz + xw;
-        recycle.m33 = 1.0f - (xx + yy);
-        recycle.m34 = 0.0f;
-
+        recycle.m21 = xy - zw;
+        recycle.m31 = xz + yw;
         recycle.m41 = 0.0f;
+
+        recycle.m12 = xy + zw;
+        recycle.m22 = 1.0f - (xx + zz);
+        recycle.m32 = yz - xw;
         recycle.m42 = 0.0f;
+
+        recycle.m13 = xz - yw;
+        recycle.m23 = yz + xw;
+        recycle.m33 = 1.0f - (xx + yy);
         recycle.m43 = 0.0f;
+
+        recycle.m14 = 0.0f;
+        recycle.m24 = 0.0f;
+        recycle.m34 = 0.0f;
         recycle.m44 = 1.0f;
         return recycle;
     }
 
     /**
-     * Returns whether this quaternion is approximately equivalent to given quaternion.
+     * Returns whether this quaternion is equivalent to given quaternion.
      *
      * @param q the quaternion to compare.
-     * @return {@code true} if this matrix is equivalent to other.
+     * @return {@code true} if this quaternion is equivalent to other.
      */
-    public boolean isEqual(@Nonnull Quaternion q) {
+    public boolean equivalent(@Nonnull Quaternion q) {
         if (this == q) return true;
         return MathUtil.approxEqual(x, q.x) &&
                 MathUtil.approxEqual(y, q.y) &&
@@ -891,19 +930,15 @@ public class Quaternion implements Cloneable {
 
     @Override
     public String toString() {
-        return "Quaternion{" + "x=" + x +
-                ", y=" + y +
-                ", z=" + z +
-                ", w=" + w +
-                '}';
+        return "Quaternion[" + "w: " + w +
+                ", x: " + x +
+                ", y: " + y +
+                ", z: " + z +
+                ']';
     }
 
     @Nonnull
     public Quaternion copy() {
-        try {
-            return (Quaternion) super.clone();
-        } catch (CloneNotSupportedException e) {
-            throw new InternalError(e);
-        }
+        return new Quaternion(x, y, z, w);
     }
 }

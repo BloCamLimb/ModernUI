@@ -25,7 +25,7 @@ import javax.annotation.Nullable;
  * Represents a rectangle.
  */
 @SuppressWarnings("unused")
-public class Rect implements Cloneable {
+public class Rect {
 
     public int left;
     public int top;
@@ -496,10 +496,6 @@ public class Rect implements Cloneable {
 
     @Nonnull
     public Rect copy() {
-        try {
-            return (Rect) super.clone();
-        } catch (CloneNotSupportedException e) {
-            throw new InternalError(e);
-        }
+        return new Rect(left, top, right, bottom);
     }
 }
