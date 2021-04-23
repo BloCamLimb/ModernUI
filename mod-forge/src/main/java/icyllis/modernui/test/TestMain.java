@@ -33,8 +33,7 @@ import icyllis.modernui.graphics.shader.program.ArcProgram;
 import icyllis.modernui.graphics.shader.program.CircleProgram;
 import icyllis.modernui.graphics.shader.program.RectProgram;
 import icyllis.modernui.graphics.shader.program.RoundRectProgram;
-import icyllis.modernui.math.MathUtil;
-import icyllis.modernui.math.Matrix4;
+import icyllis.modernui.math.*;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.platform.Window;
 import icyllis.modernui.platform.WindowMode;
@@ -128,14 +127,17 @@ public class TestMain {
 
         float[] av = new float[]{1, 3, 2, 4.1f, 6, 0, 6, 0.5f, 5, 7, 11.3f, 9, 9.1f, 15, 8, 10};
         float[] bv = new float[]{9.1f, 2, 7, 5, 3.3f, 6.1f, 5.5f, 4, 0, 8, 3, 1, 2.7f, 3, 9, 2};
+        //Quaternion q = Quaternion.fromAxisAngle(0.40824829f, 0.81649658f, 0.40824829f, MathUtil.PI_DIV_3);
+        Vector3 vec1 = new Vector3(5, 2, 2);
+        Vector3 vec2 = vec1.copy();
+        Vector3 vec3 = vec2.copy();
+        Quaternion q = Quaternion.makeAxisAngle(1.0f, 0, 0, MathUtil.PI_DIV_4);
+        vec1.transform(q.toMatrix4());
+        vec2.transform(q);
         Matrix4 mat = Matrix4.identity();
-        Matrix4 mat2 = mat.copy();
-        //Quaternion q = Quaternion.fromAxisAngle(0.40824829f, 0.81649658f, 0.40824829f, MathUtil.PI_OVER_3);
-        //mat.rotate(q);
-        mat.rotateX(MathUtil.PI_DIV_3);
-        mat2.rotateByAxis(1, 0, 0, MathUtil.PI_DIV_3);
-        ModernUI.LOGGER.info("Two Equal: {}", mat.isEqual(mat2));
-
+        mat.rotateX(MathUtil.PI_DIV_4);
+        vec3.transform(mat);
+        ModernUI.LOGGER.info("\n{}\n{}\n{}\nEq: {}, {}", vec1, vec2, vec3, vec1.equivalent(vec2), vec2.equivalent(vec3));
 
         if (!CREATE_WINDOW)
             return;

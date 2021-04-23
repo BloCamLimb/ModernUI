@@ -596,33 +596,24 @@ public class Matrix4 implements Cloneable {
      * Calculate the transpose of this matrix.
      */
     public void transpose() {
-        transpose(this);
-    }
-
-    /**
-     * Calculate the transpose of this matrix and store the result to the given matrix.
-     *
-     * @param result the matrix storing the result.
-     */
-    public void transpose(@Nonnull Matrix4 result) {
         float t = m21;
-        result.m21 = m12;
-        result.m12 = t;
+        m21 = m12;
+        m12 = t;
         t = m31;
-        result.m31 = m13;
-        result.m13 = t;
+        m31 = m13;
+        m13 = t;
         t = m32;
-        result.m32 = m23;
-        result.m23 = t;
+        m32 = m23;
+        m23 = t;
         t = m41;
-        result.m41 = m14;
-        result.m14 = t;
+        m41 = m14;
+        m14 = t;
         t = m42;
-        result.m42 = m24;
-        result.m24 = t;
+        m42 = m24;
+        m24 = t;
         t = m43;
-        result.m43 = m34;
-        result.m34 = t;
+        m43 = m34;
+        m34 = t;
     }
 
     /**
@@ -808,6 +799,45 @@ public class Matrix4 implements Cloneable {
         m41 = x;
         m42 = y;
         m43 = z;
+    }
+
+    /**
+     * Scales this matrix by given vector. This is equivalent to
+     * pre-multiplying by a scale matrix.
+     *
+     * @param s the x-component of the scale
+     */
+    public void scaleX(float s) {
+        m11 *= s;
+        m12 *= s;
+        m13 *= s;
+        m14 *= s;
+    }
+
+    /**
+     * Scales this matrix by given vector. This is equivalent to
+     * pre-multiplying by a scale matrix.
+     *
+     * @param s the y-component of the scale
+     */
+    public void scaleY(float s) {
+        m21 *= s;
+        m22 *= s;
+        m23 *= s;
+        m24 *= s;
+    }
+
+    /**
+     * Scales this matrix by given vector. This is equivalent to
+     * pre-multiplying by a scale matrix.
+     *
+     * @param s the x-component of the scale
+     */
+    public void scaleZ(float s) {
+        m31 *= s;
+        m32 *= s;
+        m33 *= s;
+        m34 *= s;
     }
 
     /**
@@ -1149,7 +1179,7 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Returns whether this matrix is approximately equivalent to a identity matrix.
+     * Returns whether this matrix is equivalent to a identity matrix.
      *
      * @return {@code true} if this matrix is identity.
      */
@@ -1162,12 +1192,12 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Returns whether this matrix is approximately equivalent to given matrix.
+     * Returns whether this matrix is equivalent to given matrix.
      *
      * @param mat the matrix to compare.
      * @return {@code true} if this matrix is equivalent to other.
      */
-    public boolean isEqual(@Nonnull Matrix4 mat) {
+    public boolean equivalent(@Nonnull Matrix4 mat) {
         if (this == mat) return true;
         return MathUtil.approxEqual(m11, mat.m11) &&
                 MathUtil.approxEqual(m12, mat.m12) &&
