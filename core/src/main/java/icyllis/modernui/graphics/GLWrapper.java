@@ -33,6 +33,9 @@ import java.util.Stack;
 import static icyllis.modernui.ModernUI.LOGGER;
 import static org.lwjgl.opengl.GL43.*;
 
+/**
+ * For managing OpenGL-related things on render thread.
+ */
 public final class GLWrapper {
 
     /**
@@ -117,6 +120,9 @@ public final class GLWrapper {
         CircleProgram.createPrograms();
         RectProgram.createPrograms();
         RoundRectProgram.createPrograms();*/
+
+        LOGGER.info(RenderCore.MARKER, "Backend API: OpenGL {}", glGetString(GL_VERSION));
+        LOGGER.info(RenderCore.MARKER, "OpenGL Renderer: {} {}", glGetString(GL_VENDOR), glGetString(GL_RENDERER));
 
         sInitialized = true;
     }

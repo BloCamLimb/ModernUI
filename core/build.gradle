@@ -28,6 +28,7 @@ dependencies {
     implementation "org.lwjgl:lwjgl-opengl:${lwjgl_version}"
     implementation "org.lwjgl:lwjgl-stb:${lwjgl_version}"
     implementation "org.lwjgl:lwjgl-tinyfd:${lwjgl_version}"
+    implementation "org.lwjgl:lwjgl-vulkan:${lwjgl_version}"
     runtimeOnly "org.lwjgl:lwjgl:${lwjgl_version}:$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-glfw:${lwjgl_version}:$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-jemalloc:${lwjgl_version}:$lwjglNatives"

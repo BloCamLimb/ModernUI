@@ -19,12 +19,11 @@
 package icyllis.modernui.platform;
 
 /**
- * Enumerates available window modes.
+ * Enumerates available window states.
  */
-public enum WindowMode {
+public enum WindowState {
     /**
      * The window is movable and takes up a subsection of the screen.
-     * This is the default mode.
      */
     WINDOWED,
 

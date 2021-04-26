@@ -45,7 +45,7 @@ public final class Window implements AutoCloseable {
     private int mWindowedY;
 
     @Nonnull
-    private WindowMode mMode;
+    private WindowState mState;
     // previously maximized
     private boolean mMaximized;
     private boolean mBorderless;
@@ -53,7 +53,7 @@ public final class Window implements AutoCloseable {
 
     private boolean mNeedRefresh;
 
-    public Window(@Nonnull String title, @Nonnull WindowMode mode, int width, int height) {
+    public Window(@Nonnull String title, @Nonnull WindowState state, int width, int height) {
         // set hints
         glfwDefaultWindowHints();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
@@ -65,7 +65,7 @@ public final class Window implements AutoCloseable {
         // create window
         Monitor monitor = Monitor.getPrimary();
         long handle;
-        switch (mode) {
+        switch (state) {
             case FULLSCREEN_BORDERLESS:
                 glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
                 if (monitor != null) {
@@ -107,8 +107,13 @@ public final class Window implements AutoCloseable {
         glfwSetFramebufferSizeCallback(handle, this::callbackFramebufferSize);
         glfwSetWindowContentScaleCallback(handle, this::callbackContentScale);
 
-        glfwSetKeyCallback(handle, (window, keycode, scancode, action, mods) -> ModernUI.LOGGER.info(
-                MarkerManager.getMarker("Input"), "OnKeyEvent{action: {}, key: {}}", action, keycode));
+        glfwSetKeyCallback(handle, (window, keycode, scancode, action, mods) -> {
+            /*ModernUI.LOGGER.info(
+                    MarkerManager.getMarker("Input"), "OnKeyEvent{action: {}, key: {}}", action, keycode);*/
+            if (action == GLFW_PRESS && (mods & GLFW_MOD_CONTROL) != 0 && keycode == GLFW_KEY_V) {
+                ModernUI.LOGGER.info("Paste: {}", Clipboard.getText());
+            }
+        });
 
         // initialize values
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -133,7 +138,7 @@ public final class Window implements AutoCloseable {
         }
 
         mHandle = handle;
-        mMode = mode;
+        mState = state;
 
         mNeedRefresh = true;
     }
@@ -161,19 +166,19 @@ public final class Window implements AutoCloseable {
 
     private void callbackIconify(long window, boolean iconified) {
         if (iconified) {
-            mMode = WindowMode.MINIMIZED;
+            mState = WindowState.MINIMIZED;
         } else if (mMaximized) {
-            mMode = WindowMode.MAXIMIZED;
+            mState = WindowState.MAXIMIZED;
         } else {
-            mMode = WindowMode.WINDOWED;
+            mState = WindowState.WINDOWED;
         }
     }
 
     private void callbackMaximize(long window, boolean maximized) {
         if (maximized) {
-            mMode = WindowMode.MAXIMIZED;
+            mState = WindowState.MAXIMIZED;
         } else {
-            mMode = WindowMode.WINDOWED;
+            mState = WindowState.WINDOWED;
         }
         mMaximized = maximized;
     }

@@ -16,16 +16,10 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.vertex;
-
-import static org.lwjgl.opengl.GL43.*;
+package icyllis.modernui.graphics;
 
 /**
- * Represents a vertex buffer object.
+ * A render node is associated with various OpenGL buffer objects
  */
-public class VertexBuffer {
-
-    static {
-
-    }
+public final class RenderNode {
 }
