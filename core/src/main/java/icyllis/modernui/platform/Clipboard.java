@@ -18,6 +18,7 @@
 
 package icyllis.modernui.platform;
 
+import icyllis.modernui.ModernUI;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
@@ -25,13 +26,25 @@ import javax.annotation.Nullable;
 
 import static org.lwjgl.system.MemoryUtil.NULL;
 
+/**
+ * A helper class to get/set clipboard text, methods are only expected
+ * to be called on the main thread.
+ */
 public final class Clipboard {
 
+    /**
+     * Get text from clipboard, or {@code null} if it cannot be converted to string.
+     *
+     * @return the clipboard text
+     */
     @Nullable
     public static String getText() {
+        RenderCore.sIgnoreFormatError = true;
         String text = GLFW.glfwGetClipboardString(NULL);
+        RenderCore.sIgnoreFormatError = false;
         if (text == null)
             return null;
+        // filter broken surrogate pairs
         StringBuilder builder = new StringBuilder();
         final int l = text.length();
         for (int i = 0; i < l; i++) {
@@ -54,6 +67,11 @@ public final class Clipboard {
         return builder.toString();
     }
 
+    /**
+     * Set clipboard text.
+     *
+     * @param text the text to set, must be not null
+     */
     public static void setText(@Nonnull CharSequence text) {
         GLFW.glfwSetClipboardString(NULL, text);
     }

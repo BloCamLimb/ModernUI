@@ -16,7 +16,13 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.buffer;
+package icyllis.modernui.graphics;
 
-public class RenderBuffer {
+/**
+ * The main renderer for a {@link icyllis.modernui.platform.Window Window}, which calls
+ * OpenGL commands on render thread. It will always use dedicated GPU to render.
+ */
+public final class MainRenderer {
+
+
 }

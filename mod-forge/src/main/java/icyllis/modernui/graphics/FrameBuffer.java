@@ -16,13 +16,10 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.buffer;
+package icyllis.modernui.graphics;
 
 import icyllis.modernui.graphics.GLWrapper;
-import icyllis.modernui.platform.RenderCore;
 import org.lwjgl.opengl.GL43;
-
-import static org.lwjgl.opengl.GL43.glFramebufferRenderbuffer;
 
 /**
  * This class represents a framebuffer object. It is used for creation of
@@ -34,7 +31,7 @@ import static org.lwjgl.opengl.GL43.glFramebufferRenderbuffer;
  * or copy the renderbuffer pixels to the default framebuffer that preserved
  * by window graphics context.
  */
-public class FrameBuffer implements AutoCloseable {
+public final class FrameBuffer implements AutoCloseable {
 
     private int mId = GLWrapper.UNASSIGNED_ID;
 

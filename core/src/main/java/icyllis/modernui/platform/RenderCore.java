@@ -22,6 +22,7 @@ import icyllis.modernui.graphics.GLWrapper;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.Version;
+import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.MemoryUtil;
@@ -36,9 +37,6 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 
 import static icyllis.modernui.ModernUI.LOGGER;
-import static org.lwjgl.glfw.GLFW.glfwInit;
-import static org.lwjgl.glfw.GLFW.glfwSetErrorCallback;
-import static org.lwjgl.opengl.GL43.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public final class RenderCore {
@@ -48,6 +46,7 @@ public final class RenderCore {
     public static int glCapabilitiesErrors;
 
     static boolean sInitialized = false;
+    static boolean sIgnoreFormatError = false;
 
     private static Thread sRenderThread;
 
@@ -56,12 +55,14 @@ public final class RenderCore {
      */
     public static void initBackend() {
         LOGGER.info(MARKER, "Backend Library: LWJGL {}", Version.getVersion());
-        if (glfwSetErrorCallback(RenderCore::callbackError) != null || !glfwInit()) {
+        if (GLFW.glfwSetErrorCallback(RenderCore::callbackError) != null || !GLFW.glfwInit()) {
             throw new IllegalStateException("Failed to initialize GLFW");
         }
     }
 
     private static void callbackError(int errorCode, long descPtr) {
+        if (errorCode == GLFW.GLFW_FORMAT_UNAVAILABLE && sIgnoreFormatError)
+            return;
         String desc = descPtr == NULL ? "" : MemoryUtil.memUTF8(descPtr);
         LOGGER.error(MARKER, "GLFW Error: 0x{}, {}", Integer.toHexString(errorCode), desc);
     }
@@ -76,13 +77,13 @@ public final class RenderCore {
     }
 
     public static void interruptThread() {
-        sRenderThread.interrupt();;
+        sRenderThread.interrupt();
     }
 
     /**
      * Call after creating a Window on render thread.
      */
-    public static synchronized void initEngine() {
+    public static void initialize() {
         if (sInitialized) {
             return;
         }
@@ -97,8 +98,6 @@ public final class RenderCore {
         GLWrapper.initialize(caps);
 
         sInitialized = true;
-        LOGGER.info(MARKER, "Backend API: OpenGL {}", glGetString(GL_VERSION));
-        LOGGER.info(MARKER, "OpenGL Renderer: {} {}", glGetString(GL_VENDOR), glGetString(GL_RENDERER));
     }
 
     public static boolean isInitialized() {

@@ -33,25 +33,29 @@ import icyllis.modernui.graphics.shader.program.ArcProgram;
 import icyllis.modernui.graphics.shader.program.CircleProgram;
 import icyllis.modernui.graphics.shader.program.RectProgram;
 import icyllis.modernui.graphics.shader.program.RoundRectProgram;
-import icyllis.modernui.math.*;
+import icyllis.modernui.math.MathUtil;
+import icyllis.modernui.math.Matrix4;
+import icyllis.modernui.math.Quaternion;
+import icyllis.modernui.math.Vector3;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.platform.Window;
-import icyllis.modernui.platform.WindowMode;
+import icyllis.modernui.platform.WindowState;
 import icyllis.modernui.text.GraphemeBreak;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.lwjgl.PointerBuffer;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL43;
 import org.lwjgl.system.Callback;
+import org.lwjgl.system.MemoryStack;
+import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -144,11 +148,11 @@ public class TestMain {
         try {
             Thread.currentThread().setName("Main-Thread");
             RenderCore.initBackend();
-            sWindow = new Window("Modern UI Layout Editor", WindowMode.WINDOWED, 1280, 720);
+            sWindow = new Window("Modern UI Layout Editor", WindowState.WINDOWED, 1280, 720);
             Thread t = new Thread(() -> {
                 final Window window = sWindow;
                 window.makeCurrent();
-                RenderCore.initEngine();
+                RenderCore.initialize();
                 RenderSystem.initRenderThread();
                 ArcProgram.createPrograms();
                 CircleProgram.createPrograms();
@@ -214,8 +218,21 @@ public class TestMain {
             }, "Render-Thread");
             t.start();
 
+            new Thread(() -> {
+                try (MemoryStack stack = MemoryStack.stackPush()) {
+                    PointerBuffer filters = stack.mallocPointer(1);
+                    stack.nUTF8Safe("*.png", true);
+                    filters.put(stack.getPointerAddress());
+                    filters.rewind();
+                    Optional.ofNullable(TinyFileDialogs.tinyfd_openFileDialog(null, null,
+                            filters, "PNG files (*.png)", true))
+                            .map(s -> s.split("\\|"))
+                            .ifPresent(files -> ModernUI.LOGGER.info("Selects:\n{}", String.join("\n", files)));
+                }
+            }, "Open-File").start();
+
             while (sWindow == null || sWindow.exists()) {
-                glfwWaitEventsTimeout(1.0);
+                glfwWaitEventsTimeout(1 / 60D);
             }
             t.interrupt();
         } finally {
