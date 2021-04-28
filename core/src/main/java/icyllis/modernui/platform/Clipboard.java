@@ -18,7 +18,6 @@
 
 package icyllis.modernui.platform;
 
-import icyllis.modernui.ModernUI;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
