@@ -1,8 +1,8 @@
 # Modern UI
 [![CurseForge](http://cf.way2muchnoise.eu/full_352491_downloads.svg)](https://www.curseforge.com/minecraft/mc-mods/modern-ui)
 [![CurseForge](http://cf.way2muchnoise.eu/versions/For%20Minecraft_352491_all.svg)](https://www.curseforge.com/minecraft/mc-mods/modern-ui)
-[![MavenCore](https://img.shields.io/badge/dynamic/xml?color=green&label=Core%20Version&query=%2Fmetadata%2Fversioning%2Flatest&url=https%3A%2F%2Fmaven.izzel.io%2Freleases%2Ficyllis%2Fmodernui%2FModernUI-Core%2Fmaven-metadata.xml)]()
-[![MavenForge](https://img.shields.io/badge/dynamic/xml?color=green&label=Version%20for%20Minecraft&query=%2Fmetadata%2Fversioning%2Flatest&url=https%3A%2F%2Fmaven.izzel.io%2Freleases%2Ficyllis%2Fmodernui%2FModernUI-Forge%2Fmaven-metadata.xml)]()
+[![MavenForge](https://img.shields.io/badge/dynamic/xml?color=yellowgreen&label=Latest%20Version&query=%2Fmetadata%2Fversioning%2Flatest&url=https%3A%2F%2Fmaven.izzel.io%2Freleases%2Ficyllis%2Fmodernui%2FModernUI-Forge%2Fmaven-metadata.xml)]()
+[![MavenCore](https://img.shields.io/badge/dynamic/xml?color=orange&label=Core%20Version&query=%2Fmetadata%2Fversioning%2Flatest&url=https%3A%2F%2Fmaven.izzel.io%2Freleases%2Ficyllis%2Fmodernui%2FModernUI-Core%2Fmaven-metadata.xml)]()
 [![Discord](https://img.shields.io/discord/696234198767501363?color=green&label=Discord&style=flat)](https://discord.gg/kmyGKt2)
 ### Homepage
 Description and releases for Minecraft Mod are available on [CurseForge](https://www.curseforge.com/minecraft/mc-mods/modern-ui)
@@ -23,8 +23,6 @@ Description and releases for Minecraft Mod are available on [CurseForge](https:/
 - JDK 11.0.8 or above (Compile against Java 8 for backward compatibility)
 - OpenGL 4.3 (Modern UI is fully GPU-accelerated rendering)
 - (Optionally in Minecraft) Forge 1.16.5-36.1.0
-#### Version information
-See above
 #### Gradle configuration
 ```
 repositories {
