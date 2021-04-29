@@ -24,6 +24,7 @@ import org.lwjgl.glfw.Callbacks;
 import org.lwjgl.system.MemoryStack;
 
 import javax.annotation.Nonnull;
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -43,6 +44,9 @@ public final class Window implements AutoCloseable {
 
     private int mWindowedX;
     private int mWindowedY;
+
+    private float mContentScaleX;
+    private float mContentScaleY;
 
     @Nonnull
     private WindowState mState;

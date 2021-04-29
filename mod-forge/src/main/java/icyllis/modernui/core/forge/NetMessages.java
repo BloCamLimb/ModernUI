@@ -51,7 +51,7 @@ public final class NetMessages {
 
     // returns a safe supplier of a s2c handler on client
     @Nonnull
-    static NetworkHandler.IClientMsgHandler handle() {
+    static NetworkHandler.S2CMsgHandler handle() {
         return C::handle; // this supplier won't be called on dedicated server, so it's in the C class
     }
 

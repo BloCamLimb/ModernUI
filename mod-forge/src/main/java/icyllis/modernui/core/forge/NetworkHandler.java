@@ -68,9 +68,9 @@ public class NetworkHandler {
     private final boolean mOptional;
 
     @Nullable
-    private final IClientMsgHandler mClientHandler;
+    private final S2CMsgHandler mClientHandler;
     @Nullable
-    private final IServerMsgHandler mServerHandler;
+    private final C2SMsgHandler mServerHandler;
 
     protected final Pool<Broadcaster> mPool = Pools.concurrent(1);
 
@@ -91,8 +91,8 @@ public class NetworkHandler {
      * @see NetMessages
      */
     public NetworkHandler(@Nonnull String modid, @Nonnull String name,
-                          @Nonnull Supplier<Supplier<IClientMsgHandler>> clientHandler,
-                          @Nullable IServerMsgHandler serverHandler, @Nullable String protocol, boolean optional) {
+                          @Nonnull Supplier<Supplier<S2CMsgHandler>> clientHandler,
+                          @Nullable C2SMsgHandler serverHandler, @Nullable String protocol, boolean optional) {
         if (protocol == null || protocol.isEmpty())
             protocol = DigestUtils.md5Hex(ModList.get().getModFileById(modid).getMods().stream()
                     .map(iModInfo -> iModInfo.getVersion().getQualifier())
@@ -177,8 +177,8 @@ public class NetworkHandler {
      *
      * @param index The message index used on the opposite side, range from 0 to 32767
      * @return a byte buf to write the packet data (message)
-     * @see IClientMsgHandler
-     * @see IServerMsgHandler
+     * @see S2CMsgHandler
+     * @see C2SMsgHandler
      */
     @Nonnull
     public FriendlyByteBuf targetAt(int index) {
@@ -336,7 +336,7 @@ public class NetworkHandler {
     }
 
     @FunctionalInterface
-    public interface IClientMsgHandler {
+    public interface S2CMsgHandler {
 
         /**
          * Handle a server-to-client network message
@@ -349,7 +349,7 @@ public class NetworkHandler {
     }
 
     @FunctionalInterface
-    public interface IServerMsgHandler {
+    public interface C2SMsgHandler {
 
         /**
          * Handle a client-to-server network message

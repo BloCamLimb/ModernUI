@@ -39,12 +39,12 @@ public final class Clipboard {
     @Nullable
     public static String getText() {
         RenderCore.sIgnoreFormatError = true;
-        String text = GLFW.glfwGetClipboardString(NULL);
+        final String text = GLFW.glfwGetClipboardString(NULL);
         RenderCore.sIgnoreFormatError = false;
         if (text == null)
             return null;
         // filter broken surrogate pairs
-        StringBuilder builder = new StringBuilder();
+        final StringBuilder builder = new StringBuilder();
         final int l = text.length();
         for (int i = 0; i < l; i++) {
             final char _c1 = text.charAt(i);

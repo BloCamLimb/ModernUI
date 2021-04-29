@@ -16,23 +16,16 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.animation.interpolator;
+package icyllis.modernui.core;
 
-import icyllis.modernui.animation.Interpolator;
+/**
+ * Represents a plugin to Modern UI. All instances will be created from Modern UI system.
+ *
+ * @see DefinePlugin
+ */
+public class Plugin extends ContextWrapper {
 
-public class DecelerateInterpolator implements Interpolator {
+    public Plugin() {
 
-    private final float factor;
-
-    public DecelerateInterpolator(float factor) {
-        this.factor = factor;
-    }
-
-    @Override
-    public float getInterpolation(float progress) {
-        if (factor == 1.0f) {
-            return 1.0f - (1.0f - progress) * (1.0f - progress);
-        }
-        return (float) (1.0f - Math.pow((1.0f - progress), factor * 2));
     }
 }
