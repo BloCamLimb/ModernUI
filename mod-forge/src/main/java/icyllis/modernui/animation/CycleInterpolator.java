@@ -16,29 +16,20 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.core.extension;
+package icyllis.modernui.animation;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import icyllis.modernui.math.MathUtil;
 
-/**
- * Defines a plugin to Modern UI.
- * <p>
- * Any class found with this annotation will be loaded as a Modern UI plugin,
- * all these classes must implement {@link IMuiPlugin} to work
- *
- * @see IMuiPlugin
- */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-public @interface MuiPlugin {
+public class CycleInterpolator implements Interpolator {
 
-    /**
-     * The namespace of the plugin, should be the identifier of your mod
-     *
-     * @return the namespace (modid)
-     */
-    String namespace();
+    private final float mCycle;
+
+    public CycleInterpolator(float cycle) {
+        this.mCycle = cycle;
+    }
+
+    @Override
+    public float getInterpolation(float progress) {
+        return MathUtil.sin(MathUtil.TWO_PI * mCycle * progress);
+    }
 }

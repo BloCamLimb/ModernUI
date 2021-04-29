@@ -27,14 +27,14 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinWorkerThread;
 
 @ApiStatus.Internal
-public final class ExtensionLoader {
+public final class PluginLoader {
 
-    private static ExtensionLoader sInstance;
+    private static PluginLoader sInstance;
 
     @Nonnull
     private final ExecutorService mParallelThreadPool;
 
-    private ExtensionLoader(@Nullable ExecutorService parallelThreadPool) {
+    private PluginLoader(@Nullable ExecutorService parallelThreadPool) {
         if (parallelThreadPool == null) {
             mParallelThreadPool = new ForkJoinPool(Runtime.getRuntime().availableProcessors(),
                     pool -> {
@@ -48,18 +48,18 @@ public final class ExtensionLoader {
     }
 
     @Nonnull
-    public static ExtensionLoader create(@Nullable ExecutorService parallel) {
+    public static PluginLoader create(@Nullable ExecutorService parallel) {
         if (sInstance == null)
-            synchronized (ExtensionLoader.class) {
+            synchronized (PluginLoader.class) {
                 if (sInstance == null)
-                    sInstance = new ExtensionLoader(parallel);
+                    sInstance = new PluginLoader(parallel);
             }
         else throw new IllegalStateException();
         return sInstance;
     }
 
     @Nonnull
-    public static ExtensionLoader get() {
+    public static PluginLoader get() {
         return sInstance;
     }
 }

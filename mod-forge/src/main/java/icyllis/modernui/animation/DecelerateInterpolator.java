@@ -16,33 +16,21 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.core;
+package icyllis.modernui.animation;
 
-import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.List;
+public class DecelerateInterpolator implements Interpolator {
 
-public class ExtensionList {
+    private final float mFactor;
 
-    private static ExtensionList sInstance;
-
-    private final List<Extension> mExtensions = new ArrayList<>();
-
-    private ExtensionList() {
-
+    public DecelerateInterpolator(float factor) {
+        this.mFactor = factor;
     }
 
-    @Nonnull
-    public static ExtensionList get() {
-        if (sInstance == null)
-            synchronized (ExtensionList.class) {
-                if (sInstance == null)
-                    sInstance = new ExtensionList();
-            }
-        return sInstance;
-    }
-
-    public int size() {
-        return mExtensions.size();
+    @Override
+    public float getInterpolation(float progress) {
+        if (mFactor == 1.0f) {
+            return 1.0f - (1.0f - progress) * (1.0f - progress);
+        }
+        return (float) (1.0f - Math.pow(1.0f - progress, mFactor * 2.0));
     }
 }

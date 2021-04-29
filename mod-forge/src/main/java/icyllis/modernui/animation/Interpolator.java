@@ -18,39 +18,47 @@
 
 package icyllis.modernui.animation;
 
-import icyllis.modernui.animation.interpolator.ViscousFluidInterpolator;
+import icyllis.modernui.math.MathUtil;
+
+import javax.annotation.Nonnull;
 
 @FunctionalInterface
 public interface Interpolator {
 
     /**
-     * Default interpolator, you don't need to call this if you want to keep default
+     * The linear interpolator.
      */
+    @Nonnull
     Interpolator LINEAR = in -> in;
 
     /**
-     * From slow to fast, seldom used
+     * From slow to fast.
      */
+    @Nonnull
     Interpolator ACCELERATE = in -> in * in;
 
     /**
-     * From fast to slow, commonly used
+     * From fast to slow.
      */
+    @Nonnull
     Interpolator DECELERATE = in -> 1.0f - (1.0f - in) * (1.0f - in);
 
     /**
-     * Slow to fast to slow
+     * Slow to fast to slow.
      */
-    Interpolator ACC_DEC = in -> (float) (Math.cos((in + 1) * Math.PI) / 2.0) + 0.5f;
+    @Nonnull
+    Interpolator ACC_DEC = in -> MathUtil.cos((in + 1.0f) * MathUtil.PI) * 0.5f + 0.5f;
 
     /**
-     * From fast to slow, it's better to use {@link #DECELERATE}, they are similar
+     * From fast to slow, simple harmonic motion.
      */
-    Interpolator SINE = in -> (float) Math.sin(Math.PI / 2.0 * in);
+    @Nonnull
+    Interpolator SINE = in -> MathUtil.sin(MathUtil.PI_DIV_2 * in);
 
     /**
      * Default used in scroller
      */
+    @Nonnull
     Interpolator VISCOUS_FLUID = new ViscousFluidInterpolator();
 
     /**

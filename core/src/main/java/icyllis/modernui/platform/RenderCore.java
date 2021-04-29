@@ -27,6 +27,7 @@ import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.MemoryUtil;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -83,12 +84,13 @@ public final class RenderCore {
     /**
      * Call after creating a Window on render thread.
      */
-    public static void initialize() {
+    public static synchronized void initialize() {
         if (sInitialized) {
             return;
         }
         sRenderThread = Thread.currentThread();
 
+        // get or create
         GLCapabilities caps;
         try {
             caps = GL.getCapabilities();
@@ -104,6 +106,7 @@ public final class RenderCore {
         return sInitialized;
     }
 
+    @Nonnull
     public static ByteBuffer readRawBuffer(InputStream inputStream) throws IOException {
         ByteBuffer buffer;
         if (inputStream instanceof FileInputStream) {
@@ -115,8 +118,10 @@ public final class RenderCore {
         } else {
             final ReadableByteChannel channel = Channels.newChannel(inputStream);
             buffer = MemoryUtil.memAlloc(8192);
-            while (channel.read(buffer) != -1)
-                if (buffer.remaining() == 0)
+            for (; ; )
+                if (channel.read(buffer) == -1)
+                    break;
+                else if (buffer.remaining() == 0)
                     buffer = MemoryUtil.memRealloc(buffer, buffer.capacity() << 1);
         }
         return buffer;
@@ -127,10 +132,11 @@ public final class RenderCore {
         ByteBuffer buffer = null;
         try {
             buffer = readRawBuffer(inputStream);
-            int i = buffer.position();
+            final int len = buffer.position();
             buffer.rewind();
-            return MemoryUtil.memASCII(buffer, i);
+            return MemoryUtil.memASCII(buffer, len);
         } catch (IOException ignored) {
+
         } finally {
             if (buffer != null)
                 MemoryUtil.memFree(buffer);

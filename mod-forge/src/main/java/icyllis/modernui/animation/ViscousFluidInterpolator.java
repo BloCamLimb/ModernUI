@@ -16,9 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.animation.interpolator;
-
-import icyllis.modernui.animation.Interpolator;
+package icyllis.modernui.animation;
 
 public class ViscousFluidInterpolator implements Interpolator {
 
@@ -37,12 +35,9 @@ public class ViscousFluidInterpolator implements Interpolator {
     }
 
     /**
-     * Singleton, do not new one
-     *
      * @see Interpolator#VISCOUS_FLUID
      */
-    public ViscousFluidInterpolator() {
-
+    ViscousFluidInterpolator() {
     }
 
     private static float viscousFluid(float x) {

@@ -20,7 +20,7 @@ package icyllis.modernui.core.forge;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.core.ExtensionList;
+import icyllis.modernui.core.PluginList;
 import icyllis.modernui.core.mixin.AccessOption;
 import icyllis.modernui.core.mixin.AccessVideoSettingsScreen;
 import icyllis.modernui.graphics.shader.program.ArcProgram;
@@ -111,32 +111,17 @@ final class Registration {
 
     @SubscribeEvent
     static void setupCommon(@Nonnull FMLCommonSetupEvent event) {
-        /*Map<String, IMuiPlugin> plugins = new HashMap<>();
-        Type target = Type.getType(MuiPlugin.class);
-        for (ModFileScanData scanData : ModList.get().getAllScanData()) {
-            for (ModFileScanData.AnnotationData data : scanData.getAnnotations()) {
-                if (data.getAnnotationType().equals(target)) {
-                    try {
-                        plugins.putIfAbsent((String) data.getAnnotationData().get("namespace"),
-                                UnsafeHacks.newInstance(Class.forName(data.getMemberName()).asSubclass(IMuiPlugin.class)));
-                    } catch (Throwable throwable) {
-                        ModernUI.LOGGER.error(ModernUI.MARKER, "Failed to load plugin: {}", data.getMemberName(), throwable);
-                    }
-                }
-            }
-        }*/
-
         byte[] protocol = null;
         try (InputStream stream = ModernUI.class.getClassLoader().getResourceAsStream(
                 NetMessages.class.getName().replace('.', '/') + ".class")) {
-            Objects.requireNonNull(stream);
+            Objects.requireNonNull(stream, "Mod file is broken");
             protocol = IOUtils.toByteArray(stream);
         } catch (IOException e) {
             e.printStackTrace();
         }
         try (InputStream stream = ModernUI.class.getClassLoader().getResourceAsStream(
                 NetMessages.class.getName().replace('.', '/') + "$C.class")) {
-            Objects.requireNonNull(stream);
+            Objects.requireNonNull(stream, "Mod file is broken");
             protocol = ArrayUtils.addAll(protocol, IOUtils.toByteArray(stream));
         } catch (IOException e) {
             e.printStackTrace();
@@ -150,7 +135,7 @@ final class Registration {
 
         NetMessages.network = new NetworkHandler(ModernUI.ID, "main_network", () -> NetMessages::handle,
                 NetMessages::handle, protocol == null ? null : DigestUtils.md5Hex(protocol),
-                ExtensionList.get().size() == 0);
+                PluginList.get().size() == 0);
 
         MinecraftForge.EVENT_BUS.register(ServerHandler.INSTANCE);
     }

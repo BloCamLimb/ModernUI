@@ -25,6 +25,10 @@ public abstract class ContextWrapper implements Context {
 
     private Context mBase;
 
+    public ContextWrapper() {
+
+    }
+
     public ContextWrapper(@Nullable Context base) {
         mBase = base;
     }

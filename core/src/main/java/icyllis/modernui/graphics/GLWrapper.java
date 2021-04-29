@@ -28,6 +28,8 @@ import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.NativeType;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Stack;
 
 import static icyllis.modernui.ModernUI.LOGGER;
@@ -60,7 +62,7 @@ public final class GLWrapper {
     private static boolean sCullState = false;
     private static int sCullMode = GL_BACK;
 
-    private static final Stack<Rect> sViewportStack = new Stack<>();
+    private static final Deque<Rect> sViewportStack = new ArrayDeque<>();
 
     @RenderThread
     public static void initialize(@Nonnull GLCapabilities caps) {
@@ -196,7 +198,7 @@ public final class GLWrapper {
             return;
         final Rect top = sViewportStack.peek();
         sViewportStack.push(viewport);
-        if (top.equals(viewport))
+        if (viewport.equals(top))
             return;
         glViewport(viewport.left, viewport.top, viewport.width(), viewport.height());
     }
