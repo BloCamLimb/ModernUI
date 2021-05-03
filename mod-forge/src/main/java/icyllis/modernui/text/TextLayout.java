@@ -26,8 +26,10 @@ import java.lang.reflect.Array;
 /**
  * A base class that manages text layout in visual elements on the screen.
  * <p>
- * Note that this will handle multiple paragraphs, multiple lines etc.
- * It's usually a page or a text box, not a single line of text or words.
+ * This layout is based on Unicode specification to meet a good internationalization
+ * requirement, and also supports a wide variety of styles. Note that it will handle
+ * multiple paragraphs, line breaking etc. So it's usually for a page or a text
+ * area, not a single line of text or words. Naturally, the layout process is heavy.
  */
 public abstract class TextLayout {
 

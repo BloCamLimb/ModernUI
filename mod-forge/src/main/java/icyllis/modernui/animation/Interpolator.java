@@ -33,12 +33,16 @@ public interface Interpolator {
 
     /**
      * From slow to fast.
+     *
+     * @see AccelerateInterpolator
      */
     @Nonnull
     Interpolator ACCELERATE = in -> in * in;
 
     /**
      * From fast to slow.
+     *
+     * @see DecelerateInterpolator
      */
     @Nonnull
     Interpolator DECELERATE = in -> 1.0f - (1.0f - in) * (1.0f - in);
@@ -47,13 +51,19 @@ public interface Interpolator {
      * Slow to fast to slow.
      */
     @Nonnull
-    Interpolator ACC_DEC = in -> MathUtil.cos((in + 1.0f) * MathUtil.PI) * 0.5f + 0.5f;
+    Interpolator ACCELERATE_DECELERATE = in -> MathUtil.cos((in + 1.0f) * MathUtil.PI) * 0.5f + 0.5f;
 
     /**
-     * From fast to slow, simple harmonic motion.
+     * From fast to slow, 1/4 cycle simple harmonic motion.
      */
     @Nonnull
     Interpolator SINE = in -> MathUtil.sin(MathUtil.PI_DIV_2 * in);
+
+    /**
+     * Overshoot.
+     */
+    @Nonnull
+    Interpolator OVERSHOOT = in -> (in - 1.0f) * (in - 1.0f) * (3.0f * (in - 1.0f) + 2.0f) + 1.0f;
 
     /**
      * Default used in scroller

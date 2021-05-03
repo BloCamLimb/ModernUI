@@ -55,6 +55,9 @@ public class TestLinearLayout extends LinearLayout {
     private final Animation arcStartAni;
     private final Animation arcEndAni;
 
+    private final Animation roundRectLenAni;
+    private final Animation roundRectAlphaAni;
+
     private float circleAcc1;
     private float circleAcc2;
     private float circleAcc3;
@@ -62,6 +65,9 @@ public class TestLinearLayout extends LinearLayout {
     private float iconRadius = 40;
     private float arcStart = 0;
     private float arcEnd = 0;
+
+    private float roundRectLen = 0;
+    private float roundRectAlpha = 0;
 
     private boolean b;
 
@@ -99,22 +105,22 @@ public class TestLinearLayout extends LinearLayout {
         circleAnimation1 = new Animation(600)
                 .applyTo(
                         new Applier((float) Math.PI, (float) -Math.PI, () -> circleAcc1, v -> circleAcc1 = v)
-                                .setInterpolator(Interpolator.ACC_DEC)
+                                .setInterpolator(Interpolator.ACCELERATE_DECELERATE)
                 );
         circleAnimation2 = new Animation(600)
                 .applyTo(
                         new Applier((float) Math.PI, (float) -Math.PI, () -> circleAcc2, v -> circleAcc2 = v)
-                                .setInterpolator(Interpolator.ACC_DEC)
+                                .setInterpolator(Interpolator.ACCELERATE_DECELERATE)
                 );
         circleAnimation3 = new Animation(600)
                 .applyTo(
                         new Applier((float) Math.PI, (float) -Math.PI, () -> circleAcc3, v -> circleAcc3 = v)
-                                .setInterpolator(Interpolator.ACC_DEC)
+                                .setInterpolator(Interpolator.ACCELERATE_DECELERATE)
                 );
         circleAnimation4 = new Animation(600)
                 .applyTo(
                         new Applier((float) Math.PI, (float) -Math.PI, () -> circleAcc4, v -> circleAcc4 = v)
-                                .setInterpolator(Interpolator.ACC_DEC)
+                                .setInterpolator(Interpolator.ACCELERATE_DECELERATE)
                 );
         iconRadiusAni = new Animation(300)
                 .applyTo(new Applier(40, 80, () -> iconRadius, v -> iconRadius = v).setInterpolator(Interpolator.DECELERATE));
@@ -123,6 +129,11 @@ public class TestLinearLayout extends LinearLayout {
                 .applyTo(new Applier(-90, 270, () -> arcStart, v -> arcStart = v).setInterpolator(Interpolator.DECELERATE));
         arcEndAni = new Animation(800)
                 .applyTo(new Applier(-90, 270, () -> arcEnd, v -> arcEnd = v).setInterpolator(Interpolator.ACCELERATE));
+
+        roundRectLenAni = new Animation(400)
+                .applyTo(new Applier(0, 80, () -> roundRectLen, v -> roundRectLen = v).setInterpolator(Interpolator.OVERSHOOT));
+        roundRectAlphaAni = new Animation(250)
+                .applyTo(new Applier(0, 1, () -> roundRectAlpha, v -> roundRectAlpha = v));
     }
 
     @Override
@@ -162,6 +173,10 @@ public class TestLinearLayout extends LinearLayout {
         paint.setStrokeWidth(10.0f);
         canvas.drawArc(80, 400, 60, arcStart, arcStart - arcEnd, paint);
 
+        paint.setStyle(Paint.Style.FILL);
+        paint.setAlpha((int) (roundRectAlpha * 255));
+        canvas.drawRoundRect(20, 480, 20 + roundRectLen * 1.6f, 480 + roundRectLen, 10, paint);
+        paint.setAlpha(255);
         // 1
 
         canvas.save();
@@ -279,6 +294,8 @@ public class TestLinearLayout extends LinearLayout {
             circleAnimation1.startFull();
             arcStartAni.startFull();
             arcEndAni.startFull();
+            roundRectLenAni.startFull();
+            roundRectAlphaAni.startFull();
         } else if (a == 3) {
             circleAnimation2.startFull();
         } else if (a == 5) {

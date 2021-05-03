@@ -27,13 +27,7 @@ import java.lang.annotation.Target;
  * Defines a plugin to Modern UI.
  * <p>
  * Any class found with this annotation will be loaded as a Modern UI plugin,
- * all these classes must be subclasses of {@link Plugin} to work.  For example:
- * <pre>
- * &#64;DefinePlugin("example")
- * public class MuiPlugin extends Plugin {
- *
- * }
- * </pre>
+ * all these classes must be subclasses of {@link Plugin} to work.
  *
  * @see Plugin
  */

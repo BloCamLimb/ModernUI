@@ -21,5 +21,5 @@ package icyllis.modernui.core;
 import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Internal
-public final class ContextImpl implements Context {
+public final class ContextImpl extends Context {
 }

@@ -1,8 +1,8 @@
 #version 430 compatibility
 
-out vec2 f_Position;
-out vec4 f_Tint;
-out vec2 f_TexCoord;
+smooth out vec2 f_Position;
+smooth out vec4 f_Tint;
+smooth out vec2 f_TexCoord;
 
 void main() {
     f_Position = gl_Vertex.xy;

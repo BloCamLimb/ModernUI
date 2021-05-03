@@ -30,7 +30,8 @@ import org.lwjgl.system.NativeType;
 import javax.annotation.Nonnull;
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.Stack;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static icyllis.modernui.ModernUI.LOGGER;
 import static org.lwjgl.opengl.GL43.*;
@@ -74,47 +75,56 @@ public final class GLWrapper {
         sMaxTextureSize = glGetInteger(GL_MAX_TEXTURE_SIZE);
         sMaxRenderBufferSize = glGetInteger(GL_MAX_RENDERBUFFER_SIZE);
 
-        int count = 0;
-        if (!caps.GL_ARB_vertex_buffer_object) {
-            LOGGER.fatal(RenderCore.MARKER, "ARB vertex buffer object is not supported");
-            count++;
-        }
-        if (!caps.GL_ARB_explicit_attrib_location) {
-            LOGGER.fatal(RenderCore.MARKER, "ARB explicit attrib location is not supported");
-            count++;
-        }
-        if (!caps.GL_ARB_vertex_array_object) {
-            LOGGER.fatal(RenderCore.MARKER, "ARB vertex array object is not supported");
-            count++;
-        }
-        if (!caps.GL_ARB_framebuffer_object) {
-            LOGGER.fatal(RenderCore.MARKER, "ARB framebuffer object is not supported");
-            count++;
-        }
-        if (!caps.GL_ARB_uniform_buffer_object) {
-            LOGGER.fatal(RenderCore.MARKER, "ARB uniform buffer object is not supported");
-            count++;
-        }
-        if (!caps.GL_ARB_separate_shader_objects) {
-            LOGGER.fatal(RenderCore.MARKER, "ARB separate shader objects is not supported");
-            count++;
-        }
-        if (!caps.GL_ARB_explicit_uniform_location) {
-            LOGGER.fatal(RenderCore.MARKER, "ARB explicit uniform location is not supported");
-            count++;
-        }
-
         if (!caps.OpenGL43) {
             String glVersion = glGetString(GL_VERSION);
-            if (glVersion == null) glVersion = "UNKNOWN";
-            else glVersion = glVersion.split(" ")[0];
-            ModernUI.get().warnSetup("warning.modernui.old_opengl", "4.3", glVersion);
-            LOGGER.fatal(RenderCore.MARKER, "OpenGL is too old, your version is {} but requires OpenGL 4.3", glVersion);
-        }
+            if (glVersion == null)
+                glVersion = "UNKNOWN";
+            else {
+                try {
+                    Matcher matcher = Pattern.compile("([0-9]+)\\\\.([0-9]+)(\\\\.([0-9]+))?(.+)?")
+                            .matcher(glVersion);
+                    glVersion = String.format("%s.%s", matcher.group(1), matcher.group(2));
+                } catch (Exception e) {
+                    glVersion = "UNKNOWN";
+                }
+            }
+            int count = 0;
+            if (!caps.GL_ARB_vertex_buffer_object) {
+                LOGGER.fatal(RenderCore.MARKER, "ARB vertex buffer object is not supported");
+                count++;
+            }
+            if (!caps.GL_ARB_explicit_attrib_location) {
+                LOGGER.fatal(RenderCore.MARKER, "ARB explicit attrib location is not supported");
+                count++;
+            }
+            if (!caps.GL_ARB_vertex_array_object) {
+                LOGGER.fatal(RenderCore.MARKER, "ARB vertex array object is not supported");
+                count++;
+            }
+            if (!caps.GL_ARB_framebuffer_object) {
+                LOGGER.fatal(RenderCore.MARKER, "ARB framebuffer object is not supported");
+                count++;
+            }
+            if (!caps.GL_ARB_uniform_buffer_object) {
+                LOGGER.fatal(RenderCore.MARKER, "ARB uniform buffer object is not supported");
+                count++;
+            }
+            if (!caps.GL_ARB_separate_shader_objects) {
+                LOGGER.fatal(RenderCore.MARKER, "ARB separate shader objects is not supported");
+                count++;
+            }
+            if (!caps.GL_ARB_explicit_uniform_location) {
+                LOGGER.fatal(RenderCore.MARKER, "ARB explicit uniform location is not supported");
+                count++;
+            }
 
-        if (count > 0) {
-            LOGGER.fatal(RenderCore.MARKER, "There are {} GL capabilities that are not supported by your graphics environment", count);
-            LOGGER.fatal(RenderCore.MARKER, "Try to use dedicated GPU for Java applications or upgrade your graphics card driver");
+            if (count > 0) {
+                LOGGER.fatal(RenderCore.MARKER, "There are {} GL capabilities that are not supported by your graphics environment", count);
+                LOGGER.fatal(RenderCore.MARKER, "Try to use dedicated GPU for Java applications or upgrade your graphics card driver");
+            } else {
+                ModernUI.get().warnSetup("warning.modernui.old_opengl", "4.3", glVersion);
+                LOGGER.fatal(RenderCore.MARKER, "OpenGL is too old, your version is {} but requires OpenGL 4.3", glVersion);
+            }
         }
 
         //FIXME remove ResourceLocation

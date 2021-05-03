@@ -129,7 +129,7 @@ final class Registration {
         if (ModList.get().getModContainerById(new String(new byte[]{0x1f ^ 0x74, (0x4 << 0x1) | 0x41,
                 ~-0x78, 0xd2 >> 0x1}, StandardCharsets.UTF_8).toLowerCase(Locale.ROOT)).isPresent())
             event.enqueueWork(() -> VertexConsumer.LOGGER.fatal("All {} are {}...",
-                    "things", "gbing wrbng".replace('b', 'o'), new SecurityException()));
+                    "things", "gbing wrbng".replace('b', 'o')));
         protocol = ArrayUtils.addAll(protocol, ModList.get().getModFileById(ModernUI.ID).getTrustData()
                 .map(s -> s.getBytes(StandardCharsets.UTF_8)).orElse(null));
 

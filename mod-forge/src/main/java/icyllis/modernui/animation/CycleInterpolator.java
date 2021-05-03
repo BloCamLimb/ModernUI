@@ -24,8 +24,19 @@ public class CycleInterpolator implements Interpolator {
 
     private final float mCycle;
 
-    public CycleInterpolator(float cycle) {
+    private CycleInterpolator(float cycle) {
         this.mCycle = cycle;
+    }
+
+    /**
+     * Create a cycle interpolator, if {@code cycle} is 0.25f,
+     * a constant object will be returned.
+     *
+     * @param cycle the cycle
+     * @return a cycle interpolator
+     */
+    public static Interpolator create(float cycle) {
+        return cycle == 0.25f ? Interpolator.SINE : new CycleInterpolator(cycle);
     }
 
     @Override

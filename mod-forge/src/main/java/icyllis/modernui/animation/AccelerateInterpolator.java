@@ -18,19 +18,30 @@
 
 package icyllis.modernui.animation;
 
+import javax.annotation.Nonnull;
+
 public class AccelerateInterpolator implements Interpolator {
 
     private final float mFactor;
 
-    public AccelerateInterpolator(float factor) {
+    private AccelerateInterpolator(float factor) {
         this.mFactor = factor;
+    }
+
+    /**
+     * Create an accelerate interpolator, if {@code factor} is 1.0f,
+     * a constant object will be returned.
+     *
+     * @param factor the accelerate factor
+     * @return an accelerate interpolator
+     */
+    @Nonnull
+    public static Interpolator create(float factor) {
+        return factor == 1.0f ? Interpolator.ACCELERATE : new AccelerateInterpolator(factor);
     }
 
     @Override
     public float getInterpolation(float progress) {
-        if (mFactor == 1.0f) {
-            return progress * progress;
-        }
         return (float) Math.pow(progress, mFactor * 2.0);
     }
 }
