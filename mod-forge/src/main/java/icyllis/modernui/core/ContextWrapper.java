@@ -21,7 +21,7 @@ package icyllis.modernui.core;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public abstract class ContextWrapper implements Context {
+public abstract class ContextWrapper extends Context {
 
     private Context mBase;
 

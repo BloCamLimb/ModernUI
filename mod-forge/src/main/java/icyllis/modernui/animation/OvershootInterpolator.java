@@ -22,13 +22,24 @@ public class OvershootInterpolator implements Interpolator {
 
     private final float mTension;
 
-    public OvershootInterpolator(float tension) {
+    private OvershootInterpolator(float tension) {
         this.mTension = tension;
     }
 
+    /**
+     * Create an overshoot interpolator, if {@code tension} is 2.0f,
+     * a constant object will be returned.
+     *
+     * @param tension the overshoot tension
+     * @return an overshoot interpolator
+     */
+    public static Interpolator create(float tension) {
+        return tension == 2.0f ? Interpolator.OVERSHOOT : new OvershootInterpolator(tension);
+    }
+
     @Override
-    public float getInterpolation(float progress) {
-        progress -= 1.0f;
-        return progress * progress * ((mTension + 1) * progress + mTension) + 1.0f;
+    public float getInterpolation(float t) {
+        t -= 1.0f;
+        return t * t * ((mTension + 1) * t + mTension) + 1.0f;
     }
 }

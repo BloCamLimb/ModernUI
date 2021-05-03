@@ -23,12 +23,13 @@ import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.platform.RenderCore;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
-import org.lwjgl.opengl.GL43;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.lwjgl.opengl.GL43.*;
 
 /**
  * A shader program object with a vertex shader and a fragment shader attached.
@@ -51,7 +52,7 @@ public class ShaderProgram {
     public ShaderProgram(@Nonnull ResourceLocation vert, @Nonnull ResourceLocation frag) {
         mVert = vert;
         mFrag = frag;
-        mId = GL43.glCreateProgram();
+        mId = glCreateProgram();
         PROGRAMS.add(this);
     }
 
@@ -61,7 +62,11 @@ public class ShaderProgram {
         mFragment = Shader.getOrCreate(manager, mFrag, Shader.Type.FRAGMENT);
         mVertex.attach(this);
         mFragment.attach(this);
-        GL43.glLinkProgram(mId);
+        glLinkProgram(mId);
+        if (glGetProgrami(mId, GL_LINK_STATUS) == GL_FALSE) {
+            ModernUI.LOGGER.error(RenderCore.MARKER, "Failed to link shader program {}, detailed info:\n{}", 
+                    this, glGetProgramInfoLog(mId, 8192));
+        }
     }
 
     public void detach() {
@@ -79,14 +84,14 @@ public class ShaderProgram {
      * Use this shader program
      */
     public void use() {
-        GL43.glUseProgram(mId);
+        glUseProgram(mId);
     }
 
     /**
      * Use undefined shader program.
      */
     public static void stop() {
-        GL43.glUseProgram(0);
+        glUseProgram(0);
     }
 
     public static void linkAll(ResourceManager manager) {
@@ -97,6 +102,7 @@ public class ShaderProgram {
                 ModernUI.LOGGER.error(RenderCore.MARKER, "An error occurred while linking program: {}", program, e);
             }
         });
+        ModernUI.LOGGER.debug(RenderCore.MARKER, "Shader programs linked");
     }
 
     public static void detachAll() {

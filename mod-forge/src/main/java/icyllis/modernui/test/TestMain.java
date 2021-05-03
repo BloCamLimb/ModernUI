@@ -49,6 +49,9 @@ import org.lwjgl.opengl.GL43;
 import org.lwjgl.system.Callback;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.tinyfd.TinyFileDialogs;
+import org.openjdk.jmh.runner.Runner;
+import org.openjdk.jmh.runner.RunnerException;
+import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
@@ -142,6 +145,11 @@ public class TestMain {
         mat.rotateX(MathUtil.PI_DIV_4);
         vec3.transform(mat);
         ModernUI.LOGGER.info("\n{}\n{}\n{}\nEq: {}, {}", vec1, vec2, vec3, vec1.equivalent(vec2), vec2.equivalent(vec3));
+        /*try {
+            new Runner(new OptionsBuilder().include(TestCompare.class.getSimpleName()).build()).run();
+        } catch (RunnerException e) {
+            e.printStackTrace();
+        }*/
 
         if (!CREATE_WINDOW)
             return;
@@ -218,7 +226,7 @@ public class TestMain {
             }, "Render-Thread");
             t.start();
 
-            new Thread(() -> {
+            /*new Thread(() -> {
                 try (MemoryStack stack = MemoryStack.stackPush()) {
                     PointerBuffer filters = stack.mallocPointer(1);
                     stack.nUTF8Safe("*.png", true);
@@ -229,7 +237,7 @@ public class TestMain {
                             .map(s -> s.split("\\|"))
                             .ifPresent(files -> ModernUI.LOGGER.info("Selects:\n{}", String.join("\n", files)));
                 }
-            }, "Open-File").start();
+            }, "Open-File").start();*/
 
             while (sWindow == null || sWindow.exists()) {
                 glfwWaitEventsTimeout(1 / 60D);

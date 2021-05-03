@@ -33,6 +33,14 @@ repositories {
     }
 }
 
+sourceSets {
+    /*main {
+        resources {
+            srcDirs += [project(':ModernUI-Core').sourceSets.main.resources]
+        }
+    }*/
+}
+
 dependencies {
     minecraft "com.mojang:minecraft:${minecraft_version}"
     mappings minecraft.officialMojangMappings()
@@ -45,6 +53,9 @@ dependencies {
     shadow(project(':ModernUI-Core')) {
         transitive = false
     }
+
+    implementation "org.openjdk.jmh:jmh-core:1.29"
+    annotationProcessor "org.openjdk.jmh:jmh-generator-annprocess:1.29"
 
     implementation "com.github.ben-manes.caffeine:caffeine:${caffeine_version}"
     implementation "com.vladsch.flexmark:flexmark:${flexmark_version}"
