@@ -16,17 +16,12 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.texture;
+package icyllis.modernui.platform;
 
-import it.unimi.dsi.fastutil.objects.Object2ObjectRBTreeMap;
+public final class NativeImage implements AutoCloseable {
 
-import java.util.Map;
-
-public class TextureStore {
-
-    private final Map<String, Texture> mTextureMap = new Object2ObjectRBTreeMap<>();
-
-    public Texture getOrCreate() {
-        return null;
+    @Override
+    public void close() throws Exception {
+        
     }
 }

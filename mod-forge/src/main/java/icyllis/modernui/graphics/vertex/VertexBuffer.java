@@ -18,7 +18,7 @@
 
 package icyllis.modernui.graphics.vertex;
 
-import static org.lwjgl.opengl.GL43.*;
+import static org.lwjgl.opengl.GL43C.*;
 
 /**
  * Represents a vertex buffer object.

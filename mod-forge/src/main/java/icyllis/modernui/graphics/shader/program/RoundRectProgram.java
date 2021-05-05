@@ -21,10 +21,9 @@ package icyllis.modernui.graphics.shader.program;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.graphics.shader.ShaderProgram;
-import icyllis.modernui.graphics.texture.TextureUnit;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
-import org.lwjgl.opengl.GL43;
+import org.lwjgl.opengl.GL43C;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -61,7 +60,7 @@ public class RoundRectProgram extends ShaderProgram {
     }
 
     public void setInnerRect(float left, float top, float right, float bottom) {
-        GL43.glUniform4f(1, left, top, right, bottom);
+        GL43C.glUniform4f(1, left, top, right, bottom);
     }
 
     public static class Fill extends RoundRectProgram {
@@ -76,7 +75,7 @@ public class RoundRectProgram extends ShaderProgram {
 
         public void setRadius(float radius, float feather) {
             // 0 <= feather <= radius
-            GL43.glUniform2f(0, radius, feather);
+            GL43C.glUniform2f(0, radius, feather);
         }
     }
 
@@ -89,7 +88,7 @@ public class RoundRectProgram extends ShaderProgram {
         @Override
         public void link(ResourceManager manager) throws IOException {
             super.link(manager);
-            GL43.glProgramUniform1i(mId, 2, TextureUnit.TEXTURE0.getSampler()); // always use GL_TEXTURE0
+            GL43C.glProgramUniform1i(mId, 2, 0); // always use GL_TEXTURE0
         }
     }
 
@@ -101,7 +100,7 @@ public class RoundRectProgram extends ShaderProgram {
 
         public void setRadius(float radius, float feather, float thickness) {
             // 0 <= feather <= thickness <= radius
-            GL43.glUniform3f(0, radius, feather, thickness);
+            GL43C.glUniform3f(0, radius, feather, thickness);
         }
     }
 }

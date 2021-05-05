@@ -23,9 +23,10 @@ import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.platform.Window;
-import org.lwjgl.opengl.GL43;
+import it.unimi.dsi.fastutil.ints.Int2IntArrayMap;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import org.lwjgl.opengl.GL43C;
 import org.lwjgl.opengl.GLCapabilities;
-import org.lwjgl.system.NativeType;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayDeque;
@@ -34,20 +35,20 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static icyllis.modernui.ModernUI.LOGGER;
-import static org.lwjgl.opengl.GL43.*;
 
 /**
  * For managing OpenGL-related things on render thread.
+ * All methods are underlying, they do not check if args are legal.
  */
-public final class GLWrapper {
+public final class GLWrapper extends GL43C {
 
     /**
-     * The id that represents an null OpenGL object.
+     * Represents an invalid/unassigned OpenGL object compared to {@link #GL_NONE}.
      */
-    public static final int UNASSIGNED_ID = -1;
+    public static final int INVALID_ID = -1;
 
     /**
-     * The default framebuffer that used for swapping buffers with window.
+     * The reserved framebuffer that used for swapping buffers with window.
      */
     public static final int DEFAULT_FRAMEBUFFER = 0;
 
@@ -63,11 +64,31 @@ public final class GLWrapper {
     private static boolean sCullState = false;
     private static int sCullMode = GL_BACK;
 
+    private static int sDrawFramebuffer = DEFAULT_FRAMEBUFFER;
+    private static int sReadFramebuffer = DEFAULT_FRAMEBUFFER;
+
     private static final Deque<Rect> sViewportStack = new ArrayDeque<>();
+
+    private static int sActiveTexture = 0;
+    private static final Int2IntMap[] sBindTextures;
+
+    static {
+        Int2IntMap[] bindTextures = new Int2IntMap[32];
+        for (int i = 0; i < 32; i++) {
+            Int2IntMap o = new Int2IntArrayMap();
+            o.defaultReturnValue(GL_NONE);
+            bindTextures[i] = o;
+        }
+        sBindTextures = bindTextures;
+    }
+
+    private GLWrapper() {
+        throw new UnsupportedOperationException();
+    }
 
     @RenderThread
     public static void initialize(@Nonnull GLCapabilities caps) {
-        RenderCore.ensureThread();
+        RenderCore.ensureRenderThread();
         if (sInitialized) {
             return;
         }
@@ -84,8 +105,8 @@ public final class GLWrapper {
                     Matcher matcher = Pattern.compile("([0-9]+)\\\\.([0-9]+)(\\\\.([0-9]+))?(.+)?")
                             .matcher(glVersion);
                     glVersion = String.format("%s.%s", matcher.group(1), matcher.group(2));
-                } catch (Exception e) {
-                    glVersion = "UNKNOWN";
+                } catch (Exception ignored) {
+
                 }
             }
             int count = 0;
@@ -119,11 +140,10 @@ public final class GLWrapper {
             }
 
             if (count > 0) {
-                LOGGER.fatal(RenderCore.MARKER, "There are {} GL capabilities that are not supported by your graphics environment", count);
-                LOGGER.fatal(RenderCore.MARKER, "Try to use dedicated GPU for Java applications or upgrade your graphics card driver");
-            } else {
                 ModernUI.get().warnSetup("warning.modernui.old_opengl", "4.3", glVersion);
                 LOGGER.fatal(RenderCore.MARKER, "OpenGL is too old, your version is {} but requires OpenGL 4.3", glVersion);
+                LOGGER.fatal(RenderCore.MARKER, "There are {} GL capabilities that are not supported by your graphics environment", count);
+                LOGGER.fatal(RenderCore.MARKER, "Try to use dedicated GPU for Java applications or upgrade your graphics card driver");
             }
         }
 
@@ -154,7 +174,7 @@ public final class GLWrapper {
      */
     @RenderThread
     public static void reset(@Nonnull Window window) {
-        RenderCore.ensureThread();
+        RenderCore.ensureRenderThread();
         sViewportStack.clear();
 
         final Rect viewport = new Rect(0, 0, window.getWidth(), window.getHeight());
@@ -162,6 +182,55 @@ public final class GLWrapper {
         glViewport(0, 0, window.getWidth(), window.getHeight());
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    }
+
+    @RenderThread
+    public static void bindFramebuffer(int framebuffer) {
+        if (framebuffer != sDrawFramebuffer || framebuffer != sReadFramebuffer)
+            glBindFramebuffer(GL_FRAMEBUFFER, sDrawFramebuffer = sReadFramebuffer = framebuffer);
+    }
+
+    @RenderThread
+    public static void bindDrawFramebuffer(int framebuffer) {
+        if (framebuffer != sDrawFramebuffer)
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, sDrawFramebuffer = framebuffer);
+    }
+
+    @RenderThread
+    public static void bindReadFramebuffer(int framebuffer) {
+        if (framebuffer != sReadFramebuffer)
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, sReadFramebuffer = framebuffer);
+    }
+
+    @RenderThread
+    public static void bindTexture(int target, int texture) {
+        if (sBindTextures[sActiveTexture].put(target, texture) != texture)
+            glBindTexture(target, texture);
+    }
+
+    @RenderThread
+    public static void deleteTexture(int texture) {
+        for (Int2IntMap m : sBindTextures)
+            for (Int2IntMap.Entry e : m.int2IntEntrySet())
+                if (e.getIntValue() == texture)
+                    m.put(e.getIntKey(), GL_NONE);
+        glDeleteTextures(texture);
+    }
+
+    // select active texture unit, min 0-7, max 31, def 0
+    // the unit is passed to sampler
+    @RenderThread
+    public static void activeTexture(int unit) {
+        if (unit != sActiveTexture) {
+            sActiveTexture = unit;
+            glActiveTexture(GL_TEXTURE0 + unit);
+        }
+    }
+
+    // ret 0-7, max 31, not GL_TEXTURE0[1-31]
+    @RenderThread
+    public static int getActiveTexture() {
+        return sActiveTexture;
     }
 
     @RenderThread
@@ -182,14 +251,13 @@ public final class GLWrapper {
 
     /**
      * Specifies whether front- or back-facing facets are candidates for culling.
-     * Symbolic constants {@link GL43#GL_FRONT}, {@link GL43#GL_BACK}, and
-     * {@link GL43#GL_FRONT_AND_BACK} are accepted. The initial value is {@link GL43#GL_BACK}.
+     * Symbolic constants {@link #GL_FRONT}, {@link #GL_BACK}, and
+     * {@link #GL_FRONT_AND_BACK} are accepted. The initial value is {@link #GL_BACK}.
      *
-     * @param mode One of {@link GL43#GL_FRONT}, {@link GL43#GL_BACK} and
-     *             {@link GL43#GL_FRONT_AND_BACK}
+     * @param mode culling mode
      */
     @RenderThread
-    public static void cullFace(@NativeType("GLenum") int mode) {
+    public static void cullFace(int mode) {
         if (mode != sCullMode) {
             sCullMode = mode;
             glCullFace(mode);
@@ -200,7 +268,6 @@ public final class GLWrapper {
      * Applies a new viewport rect and pushes it into the stack.
      *
      * @param viewport the viewport rect.
-     * @throws java.util.EmptyStackException not called reset()
      */
     @RenderThread
     public static void pushViewport(@Nonnull Rect viewport) {

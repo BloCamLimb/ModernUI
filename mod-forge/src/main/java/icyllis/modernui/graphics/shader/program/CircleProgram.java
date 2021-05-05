@@ -21,7 +21,7 @@ package icyllis.modernui.graphics.shader.program;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.shader.ShaderProgram;
 import net.minecraft.resources.ResourceLocation;
-import org.lwjgl.opengl.GL43;
+import org.lwjgl.opengl.GL43C;
 
 import javax.annotation.Nonnull;
 
@@ -50,7 +50,7 @@ public class CircleProgram extends ShaderProgram {
     }
 
     public void setCenter(float x, float y) {
-        GL43.glUniform2f(1, x, y);
+        GL43C.glUniform2f(1, x, y);
     }
 
     public static class Fill extends CircleProgram {
@@ -61,7 +61,7 @@ public class CircleProgram extends ShaderProgram {
 
         public void setRadius(float radius, float feather) {
             // feather <= radius
-            GL43.glUniform2f(0, radius, feather);
+            GL43C.glUniform2f(0, radius, feather);
         }
     }
 
@@ -73,7 +73,7 @@ public class CircleProgram extends ShaderProgram {
 
         public void setRadius(float inner, float radius, float feather) {
             // feather <= (radius - inner) / 2
-            GL43.glUniform3f(0, inner, radius, feather);
+            GL43C.glUniform3f(0, inner, radius, feather);
         }
     }
 }
