@@ -19,8 +19,8 @@
 package icyllis.modernui.graphics;
 
 /**
- * The main renderer for a {@link icyllis.modernui.platform.Window Window}, which calls
- * OpenGL commands on render thread. It will always use dedicated GPU to render.
+ * The main renderer for {@link icyllis.modernui.platform.Window Window}, which does
+ * OpenGL calls on render thread. It will always use dedicated GPU to render.
  */
 public final class MainRenderer {
 

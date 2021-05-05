@@ -20,10 +20,9 @@ package icyllis.modernui.graphics.shader.program;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.shader.ShaderProgram;
-import icyllis.modernui.graphics.texture.TextureUnit;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
-import org.lwjgl.opengl.GL43;
+import org.lwjgl.opengl.GL43C;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -70,7 +69,7 @@ public class RectProgram extends ShaderProgram {
         @Override
         public void link(ResourceManager manager) throws IOException {
             super.link(manager);
-            GL43.glProgramUniform1i(mId, 0, TextureUnit.TEXTURE0.getSampler()); // always use GL_TEXTURE0
+            GL43C.glProgramUniform1i(mId, 0, 0); // always use GL_TEXTURE0
         }
     }
 
@@ -81,11 +80,11 @@ public class RectProgram extends ShaderProgram {
         }
 
         public void setThickness(float thickness) {
-            GL43.glUniform1f(0, thickness);
+            GL43C.glUniform1f(0, thickness);
         }
 
         public void setInnerRect(float left, float top, float right, float bottom) {
-            GL43.glUniform4f(1, left, top, right, bottom);
+            GL43C.glUniform4f(1, left, top, right, bottom);
         }
     }
 }

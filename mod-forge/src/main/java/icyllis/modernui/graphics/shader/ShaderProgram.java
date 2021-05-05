@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.lwjgl.opengl.GL43.*;
+import static org.lwjgl.opengl.GL43C.*;
 
 /**
  * A shader program object with a vertex shader and a fragment shader attached.

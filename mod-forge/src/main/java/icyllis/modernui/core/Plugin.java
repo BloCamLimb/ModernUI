@@ -21,7 +21,7 @@ package icyllis.modernui.core;
 /**
  * Represents a plugin to Modern UI. All instances will be created from Modern UI system.
  * <p>
- * Creating a plugin to Modern UI by {@link DefinePlugin}, for example:
+ * Creating a plugin by {@link DefinePlugin}, for example:
  * <pre>
  * &#64;DefinePlugin("example")
  * public class MuiPlugin extends Plugin {

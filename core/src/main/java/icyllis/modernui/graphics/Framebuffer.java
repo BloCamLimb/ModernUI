@@ -18,8 +18,11 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.graphics.GLWrapper;
-import org.lwjgl.opengl.GL43;
+import icyllis.modernui.graphics.texture.Texture;
+
+import javax.annotation.Nonnull;
+
+import static org.lwjgl.opengl.GL43C.*;
 
 /**
  * This class represents a framebuffer object. It is used for creation of
@@ -30,18 +33,51 @@ import org.lwjgl.opengl.GL43;
  * buffers. To output this framebuffer to screen, blit the attached textures
  * or copy the renderbuffer pixels to the default framebuffer that preserved
  * by window graphics context.
+ *
+ * @see <a href="https://www.khronos.org/opengl/wiki/Framebuffer_Object">Framebuffer Object</a>
  */
-public final class FrameBuffer implements AutoCloseable {
+public final class Framebuffer implements AutoCloseable {
 
-    private int mId = GLWrapper.UNASSIGNED_ID;
+    private int mId = GLWrapper.INVALID_ID;
 
-    public void bind() {
-        if (mId == GLWrapper.UNASSIGNED_ID) {
-            mId = GL43.glGenFramebuffers();
-        }
+    private int mTarget;
+
+    public Framebuffer() {
+
     }
 
-    public void attach() {
+    /**
+     * Binds this framebuffer object to draw and read target.
+     */
+    public void bind() {
+        if (mId == GLWrapper.INVALID_ID)
+            mId = glGenFramebuffers();
+        GLWrapper.bindFramebuffer(mId);
+        mTarget = GL_FRAMEBUFFER;
+    }
+
+    public void bindDraw() {
+        if (mId == GLWrapper.INVALID_ID)
+            mId = glGenFramebuffers();
+        GLWrapper.bindDrawFramebuffer(mId);
+        mTarget = GL_DRAW_FRAMEBUFFER;
+    }
+
+    public void bindRead() {
+        if (mId == GLWrapper.INVALID_ID)
+            mId = glGenFramebuffers();
+        GLWrapper.bindReadFramebuffer(mId);
+        mTarget = GL_READ_FRAMEBUFFER;
+    }
+
+    // min color attachments: 0-7
+    public void attachTexture(int attachment, @Nonnull Texture texture, int level) {
+        glFramebufferTexture(mTarget, attachment, texture.getId(), level);
+    }
+
+    // for cube map or 3D texture, specify a face or a layer
+    public void attachTexturePart() {
+
     }
 
     @Override

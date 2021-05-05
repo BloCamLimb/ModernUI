@@ -35,7 +35,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Locale;
 
-import static org.lwjgl.opengl.GL43.*;
+import static org.lwjgl.opengl.GL43C.*;
 
 /**
  * Represents an OpenGL shader object.

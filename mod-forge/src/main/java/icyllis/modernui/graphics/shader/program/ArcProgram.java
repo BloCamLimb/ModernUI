@@ -21,7 +21,7 @@ package icyllis.modernui.graphics.shader.program;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.shader.ShaderProgram;
 import net.minecraft.resources.ResourceLocation;
-import org.lwjgl.opengl.GL43;
+import org.lwjgl.opengl.GL43C;
 
 import javax.annotation.Nonnull;
 
@@ -50,7 +50,7 @@ public class ArcProgram extends ShaderProgram {
     }
 
     public void setCenter(float x, float y) {
-        GL43.glUniform2f(1, x, y);
+        GL43C.glUniform2f(1, x, y);
     }
 
     public static class Fill extends ArcProgram {
@@ -61,11 +61,11 @@ public class ArcProgram extends ShaderProgram {
 
         public void setRadius(float radius, float feather) {
             // 0 <= feather <= radius
-            GL43.glUniform2f(0, radius, feather);
+            GL43C.glUniform2f(0, radius, feather);
         }
 
         public void setAngle(float middle, float flare) {
-            GL43.glUniform2f(2, middle, flare);
+            GL43C.glUniform2f(2, middle, flare);
         }
     }
 
@@ -77,11 +77,11 @@ public class ArcProgram extends ShaderProgram {
 
         public void setRadius(float radius, float feather, float thickness) {
             // 0 <= feather <= thickness <= radius
-            GL43.glUniform3f(0, radius, feather, thickness);
+            GL43C.glUniform3f(0, radius, feather, thickness);
         }
 
         public void setAngle(float middle, float flare) {
-            GL43.glUniform2f(2, middle, flare);
+            GL43C.glUniform2f(2, middle, flare);
         }
     }
 }
