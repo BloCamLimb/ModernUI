@@ -19,9 +19,9 @@
 package icyllis.modernui.graphics.textmc.pipeline;
 
 import com.google.common.collect.ImmutableList;
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import icyllis.modernui.graphics.GLWrapper;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import net.minecraft.client.renderer.RenderStateShard;
@@ -36,7 +36,7 @@ public class TextRenderType extends RenderType {
      * Texture id to render type map
      */
     //TODO remove some old textures depend on put order
-    private static final Int2ObjectMap<TextRenderType> TYPES             = new Int2ObjectLinkedOpenHashMap<>();
+    private static final Int2ObjectMap<TextRenderType> TYPES = new Int2ObjectLinkedOpenHashMap<>();
     private static final Int2ObjectMap<TextRenderType> SEE_THROUGH_TYPES = new Int2ObjectLinkedOpenHashMap<>();
 
     /**
@@ -122,9 +122,9 @@ public class TextRenderType extends RenderType {
         return TYPES.computeIfAbsent(textureName, TextRenderType::new);
     }
 
-    public static void clearTextures() {
+    public static void deleteTextures() {
         for (Int2ObjectMap.Entry<TextRenderType> entry : TYPES.int2ObjectEntrySet()) {
-            GlStateManager._deleteTexture(entry.getIntKey());
+            GLWrapper.deleteTexture(GLWrapper.GL_TEXTURE_2D, entry.getIntKey());
         }
         TYPES.clear();
         SEE_THROUGH_TYPES.clear();

@@ -106,17 +106,18 @@ public final class RenderCore {
         return sInitialized;
     }
 
+    // this method doesn't close stream, MemoryUtil.memFree(buffer) is required as well
     @Nonnull
-    public static ByteBuffer readRawBuffer(InputStream inputStream) throws IOException {
+    public static ByteBuffer readRawBuffer(InputStream stream) throws IOException {
         ByteBuffer buffer;
-        if (inputStream instanceof FileInputStream) {
-            final FileChannel channel = ((FileInputStream) inputStream).getChannel();
+        if (stream instanceof FileInputStream) {
+            final FileChannel channel = ((FileInputStream) stream).getChannel();
             buffer = MemoryUtil.memAlloc((int) channel.size() + 1);
             for (; ; )
                 if (channel.read(buffer) == -1)
                     break;
         } else {
-            final ReadableByteChannel channel = Channels.newChannel(inputStream);
+            final ReadableByteChannel channel = Channels.newChannel(stream);
             buffer = MemoryUtil.memAlloc(8192);
             for (; ; )
                 if (channel.read(buffer) == -1)
@@ -127,11 +128,12 @@ public final class RenderCore {
         return buffer;
     }
 
+    // this method doesn't close stream,
     @Nullable
-    public static String readStringASCII(InputStream inputStream) {
+    public static String readStringASCII(InputStream stream) {
         ByteBuffer buffer = null;
         try {
-            buffer = readRawBuffer(inputStream);
+            buffer = readRawBuffer(stream);
             final int len = buffer.position();
             buffer.rewind();
             return MemoryUtil.memASCII(buffer, len);

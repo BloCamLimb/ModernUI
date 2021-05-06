@@ -18,11 +18,11 @@
 
 package icyllis.modernui.graphics.font;
 
-import com.mojang.blaze3d.platform.GlStateManager;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.textmc.VanillaTextKey;
 import icyllis.modernui.graphics.textmc.pipeline.TextRenderNode;
 import icyllis.modernui.graphics.textmc.pipeline.TextRenderType;
+import icyllis.modernui.graphics.texture.Texture;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.text.FontCollection;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
@@ -42,10 +42,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL12;
-import org.lwjgl.opengl.GL14;
-import org.lwjgl.opengl.GL30;
+import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -55,10 +52,12 @@ import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+
+import static icyllis.modernui.graphics.GLWrapper.GL_ALPHA;
+import static icyllis.modernui.graphics.GLWrapper.GL_UNSIGNED_BYTE;
 
 /**
  * Find matching fonts and glyphs, measure glyph metrics and draw them of
@@ -67,6 +66,8 @@ import java.util.Optional;
  * RAM usage: &lt; 10MB
  * GPU memory usage: &lt; 22MB
  */
+//TODO use custom shaders to replace MOJANG's in 1.17, use GL_R8 format
+// also fix depth ordering
 @SuppressWarnings("unused")
 public class GlyphManager {
 
@@ -172,32 +173,35 @@ public class GlyphManager {
      * Intermediate data array for use with textureImage.getRgb().
      */
     //TODO May Out of bounds
-    private final int[] imageData = new int[((1 << 6) * (1 << 6)) << 1];
+    private final int[] mImageData = new int[((1 << 6) * (1 << 6)) << 1];
 
     /**
      * A direct buffer used with glTexSubImage2D(). Used for loading the pre-rendered glyph
      * images from the glyphCacheImage BufferedImage into OpenGL textures.
      */
-    private final ByteBuffer uploadBuffer = BufferUtils.createByteBuffer(imageData.length);
+    private final ByteBuffer mUploadBuffer = BufferUtils.createByteBuffer(mImageData.length);
 
-    /**
+    // the head address
+    private final long mDataPtr = MemoryUtil.memAddress(mUploadBuffer);
+
+    /*
      * A single integer direct buffer with native byte ordering used for returning values from glGenTextures().
      */
-    private final IntBuffer textureGenBuffer = BufferUtils.createIntBuffer(1);
+    //private final IntBuffer textureGenBuffer = BufferUtils.createIntBuffer(1);
 
     /**
      * A list of all fonts that have been returned so far by lookupFont(), and that will always be searched first for a usable font before
      * searching through allFonts[]. This list will only have plain variation of a font at a dummy point size, unlike fontCache which could
      * have multiple entries for the various styles (i.e. bold, italic, etc.) of a font.
      */
-    private final List<Font> selectedFonts = new ObjectArrayList<>();
+    private final List<Font> mSelectedFonts = new ObjectArrayList<>();
 
 
     /**
      * ID of current OpenGL cache texture being used by cacheGlyphs() to store
      * pre-rendered glyph images. Render thread only.
      */
-    private int mTextureId;
+    private Texture mTexture;
 
     /**
      * A cache of all fonts that have at least one glyph pre-rendered in a texture.
@@ -205,25 +209,25 @@ public class GlyphManager {
      * upper 32 bits of the key into the glyphCache map. This font cache can include
      * different styles of the same font family like bold or italic and different size.
      */
-    private final Object2IntMap<Font> fontKeyMap = new Object2IntOpenHashMap<>();
+    private final Object2IntMap<Font> mFontKeyMap = new Object2IntOpenHashMap<>();
 
     /**
      * A cache of pre-rendered glyphs mapping each glyph by its glyphCode to
      * the position of its pre-rendered image within the cache texture. The key
      * is a 64 bit number such that the lower 32 bits are the glyphCode and the
-     * upper 32 are the id of the font in the {@link #fontKeyMap}. This makes
+     * upper 32 are the id of the font in the {@link #mFontKeyMap}. This makes
      * for a single globally unique number to identify any glyph from any font.
      */
-    private final Long2ObjectMap<TexturedGlyph> glyphCache =
+    private final Long2ObjectMap<TexturedGlyph> mGlyphCache =
             Long2ObjectMaps.synchronize(new Long2ObjectRBTreeMap<>());
 
     /**
-     * Font ID {@link #fontKeyMap} to an array of length 10 represent 0-9 digits (in that order)
+     * Font ID {@link #mFontKeyMap} to an array of length 10 represent 0-9 digits (in that order)
      * These glyph advance are equal for fast rendering. For example {@link VanillaTextKey#hashCode()} did.
      */
-    private final Int2ObjectMap<TexturedGlyph[]> digitsMap = new Int2ObjectArrayMap<>(4);
+    private final Int2ObjectMap<TexturedGlyph[]> mDigitsMap = new Int2ObjectArrayMap<>(4);
 
-    private final Int2ObjectMap<TexturedGlyph> emojiMap = new Int2ObjectArrayMap<>(32);
+    private final Int2ObjectMap<TexturedGlyph> mEmojiMap = new Int2ObjectArrayMap<>(32);
 
     /**
      * Emoji texture atlas
@@ -237,7 +241,7 @@ public class GlyphManager {
      * always added left-to-right on the current line until it fills up, at which point they continue filling the texture on
      * the next line.
      */
-    private int currPosX = GLYPH_SPACING;
+    private int mCurrPosX = GLYPH_SPACING;
 
     /**
      * The Y coordinate of the upper-left corner in glyphCacheImage where the next glyph image should be stored. Glyphs are
@@ -245,13 +249,13 @@ public class GlyphManager {
      * texture is allocated to keep storing additional glyphs, and the original texture remains allocated for the lifetime of
      * the application.
      */
-    private int currPosY = GLYPH_SPACING;
+    private int mCurrPosY = GLYPH_SPACING;
 
     /**
      * The height in pixels of the current line of glyphs getting written into the texture. This value determines by how much
      * cachePosY will get incremented when the current horizontal line in the texture fills up.
      */
-    private int currLineHeight = 0;
+    private int mCurrLineHeight = 0;
 
     /**
      * A single instance of GlyphManager is allocated for internal use.
@@ -285,17 +289,17 @@ public class GlyphManager {
      * Reload fonts, clear all cached data
      */
     public void reload() {
-        currPosX = GLYPH_SPACING;
-        currPosY = GLYPH_SPACING;
-        currLineHeight = 0;
-        fontKeyMap.clear();
-        glyphCache.clear();
-        digitsMap.clear();
-        emojiMap.clear();
-        mTextureId = 0;
+        mCurrPosX = GLYPH_SPACING;
+        mCurrPosY = GLYPH_SPACING;
+        mCurrLineHeight = 0;
+        mFontKeyMap.clear();
+        mGlyphCache.clear();
+        mDigitsMap.clear();
+        mEmojiMap.clear();
+        mTexture = null;
         emojiTexture = 0;
-        TextRenderType.clearTextures();
-        selectedFonts.clear();
+        TextRenderType.deleteTextures();
+        mSelectedFonts.clear();
         allocateGlyphTexture();
         loadPreferredFonts();
         setRenderingHints();
@@ -312,7 +316,7 @@ public class GlyphManager {
                         try {
                             Font f = Font.createFont(Font.TRUETYPE_FONT, new File(
                                     cfgFont.replaceAll("\\\\", "/")));
-                            selectedFonts.add(f);
+                            mSelectedFonts.add(f);
                             ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", f.getFamily(Locale.ROOT));
                         } catch (Exception e) {
                             ModernUI.LOGGER.warn(MARKER, "Preferred font {} failed to load", cfgFont, e);
@@ -325,7 +329,7 @@ public class GlyphManager {
                         try (Resource resource = Minecraft.getInstance().getResourceManager()
                                 .getResource(new ResourceLocation(cfgFont))) {
                             Font f = Font.createFont(Font.TRUETYPE_FONT, resource.getInputStream());
-                            selectedFonts.add(f);
+                            mSelectedFonts.add(f);
                             ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", f.getFamily(Locale.ROOT));
                         } catch (Exception e) {
                             ModernUI.LOGGER.warn(MARKER, "Preferred font {} failed to load", cfgFont, e);
@@ -339,7 +343,7 @@ public class GlyphManager {
             } else {
                 Optional<Font> font = FontCollection.sAllFontFamilies.stream().filter(f -> f.getFamily(Locale.ROOT).equals(cfgFont)).findFirst();
                 if (font.isPresent()) {
-                    selectedFonts.add(font.get());
+                    mSelectedFonts.add(font.get());
                     ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", cfgFont);
                 } else {
                     ModernUI.LOGGER.warn(MARKER, "Preferred font {} cannot found or invalid", cfgFont);
@@ -348,9 +352,9 @@ public class GlyphManager {
         }
 
         if (FontCollection.sBuiltInFont != null) {
-            selectedFonts.add(FontCollection.sBuiltInFont);
+            mSelectedFonts.add(FontCollection.sBuiltInFont);
         }
-        selectedFonts.add(FontCollection.sSansSerifFont);
+        mSelectedFonts.add(FontCollection.sSansSerifFont);
     }
 
     /**
@@ -377,7 +381,7 @@ public class GlyphManager {
      */
     @Nonnull
     public Font lookupFont(int codePoint) {
-        for (Font font : selectedFonts) {
+        for (Font font : mSelectedFonts) {
             /* Only use the font if it can layout at least the first character of the requested string range */
             if (font.canDisplay(codePoint)) {
                 return font;
@@ -389,14 +393,14 @@ public class GlyphManager {
             /* Only use the font if it can layout at least the first character of the requested string range */
             if (font.canDisplay(codePoint)) {
                 /* If found, add this font to the selectedFonts list so it can be looked up faster next time */
-                selectedFonts.add(font);
+                mSelectedFonts.add(font);
                 ModernUI.LOGGER.debug(MARKER, "Extra font {} was loaded", font.getFamily(Locale.ROOT));
                 return font;
             }
         }
 
         /* If no supported fonts found, use the default one (first in selectedFonts) so it can draw its unknown character glyphs */
-        return selectedFonts.get(0);
+        return mSelectedFonts.get(0);
     }
 
     /**
@@ -419,7 +423,7 @@ public class GlyphManager {
     // test only
     @Deprecated
     public TexturedGlyph lookupEmoji(int codePoint) {
-        return emojiMap.computeIfAbsent(codePoint, l -> {
+        return mEmojiMap.computeIfAbsent(codePoint, l -> {
             if (emojiTexture == 0) {
                 ResourceLocation resourceLocation = new ResourceLocation(ModernUI.ID, "textures/gui/emoji.png");
                 AbstractTexture texture = new SimpleTexture(resourceLocation);
@@ -442,7 +446,7 @@ public class GlyphManager {
     public Font deriveFont(@Nonnull Font family, int style, int size) {
         family = family.deriveFont(style, size); // a new Font object, but they are equal)
         /* Ensure this font is already in fontKeyMap so it can be referenced by lookupGlyph() later on */
-        fontKeyMap.putIfAbsent(family, fontKeyMap.size());
+        mFontKeyMap.putIfAbsent(family, mFontKeyMap.size());
         return family;
     }
 
@@ -467,7 +471,7 @@ public class GlyphManager {
         //int nextOffset;
         // Try using an already known base font;
         // the first font in selectedFonts list is the one set with highest priority
-        for (Font font : selectedFonts) {
+        for (Font font : mSelectedFonts) {
             /* Only use the font if it can layout at least the first character of the requested string range */
             if (font.canDisplay(codePoint)) {
                 /* Return a font instance of the proper point size and style; selectedFonts has only 1pt sized plain style fonts */
@@ -480,7 +484,7 @@ public class GlyphManager {
             /* Only use the font if it can layout at least the first character of the requested string range */
             if (font.canDisplay(codePoint)) {
                 /* If found, add this font to the selectedFonts list so it can be looked up faster next time */
-                selectedFonts.add(font);
+                mSelectedFonts.add(font);
                 ModernUI.LOGGER.debug(MARKER, "Extra font {} was loaded", font.getName());
 
                 /* Return a font instance of the proper point size and style; allFonts has only 1pt sized plain style fonts */
@@ -489,7 +493,7 @@ public class GlyphManager {
         }
 
         /* If no supported fonts found, use the default one (first in selectedFonts) so it can draw its unknown character glyphs */
-        Font font = selectedFonts.get(0);
+        Font font = mSelectedFonts.get(0);
 
         /* Return a font instance of the proper point size and style; selectedFonts only 1pt sized plain style fonts */
         return font.deriveFont(fontStyle, fontSize);
@@ -509,8 +513,8 @@ public class GlyphManager {
     @Nonnull
     public TexturedGlyph lookupGlyph(Font font, int glyphCode) {
         // the key should be cached in layout step, see deriveFont()
-        long fontKey = (long) fontKeyMap.getInt(font) << 32;
-        return glyphCache.computeIfAbsent(fontKey | glyphCode,
+        long fontKey = (long) mFontKeyMap.getInt(font) << 32;
+        return mGlyphCache.computeIfAbsent(fontKey | glyphCode,
                 iLoveSukazyo -> cacheGlyph(font, glyphCode));
     }
 
@@ -546,14 +550,14 @@ public class GlyphManager {
         int renderWidth = (int) renderBounds.getWidth();
         int renderHeight = (int) renderBounds.getHeight();
 
-        if (currPosX + renderWidth + GLYPH_SPACING >= TEXTURE_SIZE) {
-            currPosX = GLYPH_SPACING;
-            currPosY += currLineHeight + GLYPH_SPACING * 2;
-            currLineHeight = 0;
+        if (mCurrPosX + renderWidth + GLYPH_SPACING >= TEXTURE_SIZE) {
+            mCurrPosX = GLYPH_SPACING;
+            mCurrPosY += mCurrLineHeight + GLYPH_SPACING * 2;
+            mCurrLineHeight = 0;
         }
-        if (currPosY + renderHeight + GLYPH_SPACING >= TEXTURE_SIZE) {
-            currPosX = GLYPH_SPACING;
-            currPosY = GLYPH_SPACING;
+        if (mCurrPosY + renderHeight + GLYPH_SPACING >= TEXTURE_SIZE) {
+            mCurrPosX = GLYPH_SPACING;
+            mCurrPosY = GLYPH_SPACING;
             allocateGlyphTexture();
         }
 
@@ -563,20 +567,20 @@ public class GlyphManager {
 
         mGlyphGraphics.setFont(font);
 
-        int x = currPosX - GLYPH_BORDER;
-        int y = currPosY - GLYPH_BORDER;
+        int x = mCurrPosX - GLYPH_BORDER;
+        int y = mCurrPosY - GLYPH_BORDER;
         int width = renderWidth + GLYPH_BORDER * 2;
         int height = renderHeight + GLYPH_BORDER * 2;
 
-        mGlyphGraphics.drawGlyphVector(vector, currPosX - baselineX, currPosY - baselineY);
+        mGlyphGraphics.drawGlyphVector(vector, mCurrPosX - baselineX, mCurrPosY - baselineY);
 
         uploadTexture(x, y, width, height);
 
-        currLineHeight = Math.max(currLineHeight, renderHeight);
-        currPosX += renderWidth + GLYPH_SPACING * 2;
+        mCurrLineHeight = Math.max(mCurrLineHeight, renderHeight);
+        mCurrPosX += renderWidth + GLYPH_SPACING * 2;
         final float f = getResolutionFactor();
 
-        return new TexturedGlyph(mTextureId, advance / f, baselineX / f, baselineY / f,
+        return new TexturedGlyph(mTexture.getId(), advance / f, baselineX / f, baselineY / f,
                 width / f, height / f,
                 (float) x / TEXTURE_SIZE, (float) y / TEXTURE_SIZE,
                 (float) (x + width) / TEXTURE_SIZE, (float) (y + height) / TEXTURE_SIZE);
@@ -590,8 +594,8 @@ public class GlyphManager {
      */
     public TexturedGlyph[] lookupDigits(Font font) {
         // the key should be cached in layout step
-        int fontKey = fontKeyMap.getInt(font);
-        return digitsMap.computeIfAbsent(fontKey,
+        int fontKey = mFontKeyMap.getInt(font);
+        return mDigitsMap.computeIfAbsent(fontKey,
                 l -> cacheDigits(font));
     }
 
@@ -636,21 +640,21 @@ public class GlyphManager {
             int renderHeight = (int) renderBounds.getHeight();
 
             if (i == 0) {
-                if (currPosX + renderWidth + GLYPH_SPACING >= TEXTURE_SIZE) {
-                    currPosX = GLYPH_SPACING;
-                    currPosY += currLineHeight + GLYPH_SPACING * 2;
-                    currLineHeight = 0;
+                if (mCurrPosX + renderWidth + GLYPH_SPACING >= TEXTURE_SIZE) {
+                    mCurrPosX = GLYPH_SPACING;
+                    mCurrPosY += mCurrLineHeight + GLYPH_SPACING * 2;
+                    mCurrLineHeight = 0;
                 }
             } else {
-                if (currPosX + standardRenderWidth + GLYPH_SPACING >= TEXTURE_SIZE) {
-                    currPosX = GLYPH_SPACING;
-                    currPosY += currLineHeight + GLYPH_SPACING * 2;
-                    currLineHeight = 0;
+                if (mCurrPosX + standardRenderWidth + GLYPH_SPACING >= TEXTURE_SIZE) {
+                    mCurrPosX = GLYPH_SPACING;
+                    mCurrPosY += mCurrLineHeight + GLYPH_SPACING * 2;
+                    mCurrLineHeight = 0;
                 }
             }
-            if (currPosY + renderHeight + GLYPH_SPACING >= TEXTURE_SIZE) {
-                currPosX = GLYPH_SPACING;
-                currPosY = GLYPH_SPACING;
+            if (mCurrPosY + renderHeight + GLYPH_SPACING >= TEXTURE_SIZE) {
+                mCurrPosX = GLYPH_SPACING;
+                mCurrPosY = GLYPH_SPACING;
                 allocateGlyphTexture();
             }
 
@@ -661,8 +665,8 @@ public class GlyphManager {
                 standardRenderWidth = renderWidth;
             }
 
-            int x = currPosX - GLYPH_BORDER;
-            int y = currPosY - GLYPH_BORDER;
+            int x = mCurrPosX - GLYPH_BORDER;
+            int y = mCurrPosY - GLYPH_BORDER;
             int width;
             if (i == 0) {
                 width = renderWidth + GLYPH_BORDER * 2;
@@ -673,19 +677,19 @@ public class GlyphManager {
 
             // ASCII digits are not allowed to be laid-out into other code points
             if (i == 0) {
-                mGlyphGraphics.drawString(String.valueOf(chars), currPosX - baselineX, currPosY - baselineY);
+                mGlyphGraphics.drawString(String.valueOf(chars), mCurrPosX - baselineX, mCurrPosY - baselineY);
             } else {
                 // align to center
                 int offset = Math.round((standardAdvance - vector.getGlyphMetrics(0).getAdvanceX()) / 2.0f);
-                mGlyphGraphics.drawString(String.valueOf(chars), currPosX + offset - baselineX, currPosY - baselineY);
+                mGlyphGraphics.drawString(String.valueOf(chars), mCurrPosX + offset - baselineX, mCurrPosY - baselineY);
             }
 
             uploadTexture(x, y, width, height);
 
-            currLineHeight = Math.max(currLineHeight, renderHeight);
-            currPosX += standardRenderWidth + GLYPH_SPACING * 2;
+            mCurrLineHeight = Math.max(mCurrLineHeight, renderHeight);
+            mCurrPosX += standardRenderWidth + GLYPH_SPACING * 2;
 
-            digits[i] = new TexturedGlyph(mTextureId,
+            digits[i] = new TexturedGlyph(mTexture.getId(),
                     standardAdvance / f, baselineX / f, baselineY / f,
                     width / f, height / f,
                     (float) x / TEXTURE_SIZE, (float) y / TEXTURE_SIZE,
@@ -716,7 +720,7 @@ public class GlyphManager {
         Rectangle vectorBounds = null;
 
         /* This forms the upper 32 bits of the fontCache key to make every font/glyph code point unique */
-        long fontKey = (long) fontKeyMap.get(font) << 32;
+        long fontKey = (long) mFontKeyMap.get(font) << 32;
 
         int numGlyphs = vector.getNumGlyphs(); /* Length of the GlyphVector */
         Rectangle dirty = null;                /* Total area within texture that needs to be updated with glTexSubImage2D() */
@@ -725,7 +729,7 @@ public class GlyphManager {
         for (int index = 0; index < numGlyphs; index++) {
             /* If this glyph code is already in glyphCache, then there is no reason to pre-render it again */
             int glyphCode = vector.getGlyphCode(index);
-            if (glyphCache.containsKey(fontKey | glyphCode)) {
+            if (mGlyphCache.containsKey(fontKey | glyphCode)) {
                 continue;
             }
 
@@ -782,10 +786,10 @@ public class GlyphManager {
             Rectangle rect = vector.getGlyphPixelBounds(index, null, -vectorBounds.x, -vectorBounds.y);
 
             /* If the current line in cache image is full, then advance to the next line */
-            if (currPosX + rect.width + GLYPH_SPACING > TEXTURE_WIDTH) {
-                currPosX = GLYPH_SPACING;
-                currPosY += currLineHeight + GLYPH_SPACING;
-                currLineHeight = 0;
+            if (mCurrPosX + rect.width + GLYPH_SPACING > TEXTURE_WIDTH) {
+                mCurrPosX = GLYPH_SPACING;
+                mCurrPosY += mCurrLineHeight + GLYPH_SPACING;
+                mCurrLineHeight = 0;
             }
 
             /*
@@ -793,15 +797,15 @@ public class GlyphManager {
              * (i.e. the dirty rectangle), allocate a new cache texture, and then continue storing glyph images to the
              * upper-left corner of the new texture.
              */
-            if (currPosY + rect.height + GLYPH_SPACING > TEXTURE_HEIGHT) {
+            if (mCurrPosY + rect.height + GLYPH_SPACING > TEXTURE_HEIGHT) {
                 updateTexture(dirty);
 
                 /* Note that allocateAndSetupTexture() will leave the GL texture already bound */
                 allocateGlyphTexture();
                 allocateStringImage(STRING_WIDTH, STRING_HEIGHT);
 
-                currPosY = currPosX = GLYPH_SPACING;
-                currLineHeight = 0;
+                mCurrPosY = mCurrPosX = GLYPH_SPACING;
+                mCurrLineHeight = 0;
 
                 /* re-draw glyph layout to ensure rest chars be rendered correctly on the new texture */
                 cacheGlyphs(font, text, start + index, limit, layoutFlags);
@@ -809,8 +813,8 @@ public class GlyphManager {
             }
 
             /* The tallest glyph on this line determines the total vertical advance in the texture */
-            if (rect.height > currLineHeight) {
-                currLineHeight = rect.height;
+            if (rect.height > mCurrLineHeight) {
+                mCurrLineHeight = rect.height;
             }
 
             /*
@@ -819,14 +823,14 @@ public class GlyphManager {
              * first because the composite method in the Graphics object is always set to AlphaComposite.Src.
              */
             mGlyphGraphics.drawImage(tempStringImage,
-                    currPosX, currPosY, currPosX + rect.width, currPosY + rect.height,
+                    mCurrPosX, mCurrPosY, mCurrPosX + rect.width, mCurrPosY + rect.height,
                     rect.x, rect.y, rect.x + rect.width, rect.y + rect.height, null);
 
             /*
              * Store this glyph's position in texture and its origin offset. Note that "rect" will not be modified after
              * this point, and getGlyphPixelBounds() always returns a new Rectangle.
              */
-            rect.setLocation(currPosX, currPosY);
+            rect.setLocation(mCurrPosX, mCurrPosY);
 
             /*
              * Create new cache entry to record both the texture used by the glyph and its position within that texture.
@@ -855,13 +859,13 @@ public class GlyphManager {
              * dirty rectangle here avoids having to deal with the special rules for empty/non-existent rectangles.
              */
             if (dirty == null) {
-                dirty = new Rectangle(currPosX, currPosY, rect.width, rect.height);
+                dirty = new Rectangle(mCurrPosX, mCurrPosY, rect.width, rect.height);
             } else {
                 dirty.add(rect);
             }
 
             /* Advance cachePosX so the next glyph can be stored immediately to the right of this one */
-            currPosX += rect.width + GLYPH_SPACING;
+            mCurrPosX += rect.width + GLYPH_SPACING;
         }
 
         /* Update OpenGL texture if any part of the glyphCacheImage has changed */
@@ -877,24 +881,23 @@ public class GlyphManager {
     @Deprecated
     private void updateTexture(@Nullable Rectangle dirty) {
         /* Only update OpenGL texture if changes were made to the texture */
-        if (dirty != null) {
-            /* Load imageBuffer with pixel data ready for transfer to OpenGL texture */
+        /*if (dirty != null) {
+         *//* Load imageBuffer with pixel data ready for transfer to OpenGL texture *//*
             updateImageBuffer(dirty.x, dirty.y, dirty.width, dirty.height);
 
             GlStateManager._bindTexture(mTextureId);
 
-            /* Due to changes in 1.14+, so this ensure pixels are correctly stored from CPU to GPU */
             GlStateManager._pixelStore(GL11.GL_UNPACK_ROW_LENGTH, dirty.width);
             GlStateManager._pixelStore(GL11.GL_UNPACK_SKIP_ROWS, 0);
             GlStateManager._pixelStore(GL11.GL_UNPACK_SKIP_PIXELS, 0);
             GlStateManager._pixelStore(GL11.GL_UNPACK_ALIGNMENT, 4); // 4 is RGBA
 
             GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, dirty.x, dirty.y, dirty.width, dirty.height,
-                    GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, uploadBuffer);
+                    GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, mUploadBuffer);
 
-            /* Auto generate mipmap texture */
+            *//* Auto generate mipmap texture *//*
             GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
-        }
+        }*/
     }
 
     /**
@@ -908,17 +911,15 @@ public class GlyphManager {
     private void uploadTexture(int x, int y, int width, int height) {
         /* Load imageBuffer with pixel data ready for transfer to OpenGL texture */
         updateImageBuffer(x, y, width, height);
+        mTexture.upload(0, x, y, width, height, width, 0, 0, 1, GL_ALPHA, GL_UNSIGNED_BYTE, mDataPtr);
 
-        GlStateManager._bindTexture(mTextureId);
-
-        /* Due to changes in 1.14+, so this ensures pixels are correctly stored from CPU to GPU */
-        GL11.glPixelStorei(GL11.GL_UNPACK_ROW_LENGTH, width); // not full texture
+        /*GL11.glPixelStorei(GL11.GL_UNPACK_ROW_LENGTH, width); // not full texture
         GL11.glPixelStorei(GL11.GL_UNPACK_SKIP_ROWS, 0);
         GL11.glPixelStorei(GL11.GL_UNPACK_SKIP_PIXELS, 0);
         GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1); // 1 is alpha, 4 bytes
 
         GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, x, y, width, height,
-                GL11.GL_ALPHA, GL11.GL_UNSIGNED_BYTE, uploadBuffer);
+                GL11.GL_ALPHA, GL11.GL_UNSIGNED_BYTE, mUploadBuffer);*/
 
         // WRONG CODE HERE
         /* int mipmapLevel = sEnableMipmap ? sMipmapLevel : 0;
@@ -929,8 +930,9 @@ public class GlyphManager {
         }*/
 
         /* Auto generate mipmap texture */
-        if (sEnableMipmap) {
-            GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+        if (sEnableMipmap && sMipmapLevel > 0) {
+            /*GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);*/
+            mTexture.generateMipmap();
         }
     }
 
@@ -945,10 +947,10 @@ public class GlyphManager {
      */
     private void updateImageBuffer(int x, int y, int width, int height) {
         /* Copy raw pixel data from BufferedImage to imageData array with one integer per pixel in 0xAARRGGBB form */
-        mGlyphImage.getRGB(x, y, width, height, imageData, 0, width);
+        mGlyphImage.getRGB(x, y, width, height, mImageData, 0, width);
 
         /* Copy int array to direct buffer */
-        uploadBuffer.clear();
+        mUploadBuffer.clear();
 
         /* Swizzle each color integer from Java's ARGB format to OpenGL's grayscale */
         final int size = width * height;
@@ -957,10 +959,10 @@ public class GlyphManager {
             //uploadData[i] = (color << 8) | (color >>> 24);
 
             /* alpha channel for grayscale texture */
-            uploadBuffer.put((byte) (imageData[i] >>> 24));
+            mUploadBuffer.put((byte) (mImageData[i] >>> 24));
         }
 
-        uploadBuffer.flip();
+        mUploadBuffer.flip();
     }
 
     /**
@@ -986,16 +988,13 @@ public class GlyphManager {
      * Allocate a new OpenGL texture for caching pre-rendered glyph images. The new texture is initialized to fully transparent
      * white so the individual glyphs images within can have a transparent border between them. The new texture remains bound
      * after returning from the function.
-     * Do similar to {@link com.mojang.blaze3d.platform.TextureUtil#prepareImage(int, int, int)}
      */
     private void allocateGlyphTexture() {
         /* Initialize the background to all black but fully transparent. */
         mGlyphGraphics.clearRect(0, 0, TEXTURE_SIZE, TEXTURE_SIZE);
 
         /* Allocate new OpenGL texture */
-        textureGenBuffer.position(0);
-        GL11.glGenTextures(textureGenBuffer);
-        mTextureId = textureGenBuffer.get(0);
+        mTexture = new Texture();
 
         /* Load imageBuffer with pixel data ready for transfer to OpenGL texture */
         //updateImageBuffer(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
@@ -1004,7 +1003,6 @@ public class GlyphManager {
          * Initialize texture with the now cleared BufferedImage. Using a texture with GL_ALPHA8 internal format may result in
          * faster rendering since the GPU has to only fetch 1 byte per texel instead of 4 with a regular RGBA texture.
          */
-        GlStateManager._bindTexture(mTextureId);
 
         /* Due to changes in 1.14+, so this ensure pixels are correctly stored from CPU to GPU */
         /*GlStateManager.pixelStore(GL11.GL_UNPACK_ROW_LENGTH, 0); // 0 is unspecific
@@ -1014,7 +1012,7 @@ public class GlyphManager {
 
         int mipmapLevel = sEnableMipmap ? sMipmapLevel : 0;
 
-        if (mipmapLevel >= 0) {
+        /*if (mipmapLevel >= 0) {
             GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, mipmapLevel);
             GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MIN_LOD, 0);
             GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LOD, mipmapLevel);
@@ -1022,12 +1020,13 @@ public class GlyphManager {
         }
 
         for (int level = 0; level <= mipmapLevel; level++) {
-            GL11.glTexImage2D(GL11.GL_TEXTURE_2D, level, GL11.GL_ALPHA4, TEXTURE_SIZE >> level,
+            GL11.glTexImage2D(GL11.GL_TEXTURE_2D, level, GL11.GL_ALPHA, TEXTURE_SIZE >> level,
                     TEXTURE_SIZE >> level, 0, GL11.GL_ALPHA, GL11.GL_UNSIGNED_BYTE, (IntBuffer) null);
-        }
+        }*/
+        mTexture.init(GL_ALPHA, TEXTURE_SIZE, TEXTURE_SIZE, mipmapLevel);
 
         /* We set MinMag params here, just call once for a texture */
-        if (sAntiAliasing) {
+        /*if (sAntiAliasing) {
             if (sEnableMipmap) {
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
             } else {
@@ -1041,12 +1040,14 @@ public class GlyphManager {
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
             }
             GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
-        }
+        }*/
+
+        mTexture.setFilter(sAntiAliasing, sEnableMipmap);
 
         /* Auto generate mipmap */
-        if (sEnableMipmap) {
+        /*if (sEnableMipmap) {
             GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
-        }
+        }*/
 
         /* Clear mipmap data, current grayscale value is zero, this is a little inefficient */
         /* Keep the (2^shift)^2 less than imageData.length() */

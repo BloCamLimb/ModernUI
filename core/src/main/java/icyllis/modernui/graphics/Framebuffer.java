@@ -46,27 +46,27 @@ public final class Framebuffer implements AutoCloseable {
 
     }
 
+    public int getId() {
+        if (mId == GLWrapper.INVALID_ID)
+            mId = glGenFramebuffers();
+        return mId;
+    }
+
     /**
      * Binds this framebuffer object to draw and read target.
      */
     public void bind() {
-        if (mId == GLWrapper.INVALID_ID)
-            mId = glGenFramebuffers();
-        GLWrapper.bindFramebuffer(mId);
+        GLWrapper.bindFramebuffer(getId());
         mTarget = GL_FRAMEBUFFER;
     }
 
     public void bindDraw() {
-        if (mId == GLWrapper.INVALID_ID)
-            mId = glGenFramebuffers();
-        GLWrapper.bindDrawFramebuffer(mId);
+        GLWrapper.bindDrawFramebuffer(getId());
         mTarget = GL_DRAW_FRAMEBUFFER;
     }
 
     public void bindRead() {
-        if (mId == GLWrapper.INVALID_ID)
-            mId = glGenFramebuffers();
-        GLWrapper.bindReadFramebuffer(mId);
+        GLWrapper.bindReadFramebuffer(getId());
         mTarget = GL_READ_FRAMEBUFFER;
     }
 

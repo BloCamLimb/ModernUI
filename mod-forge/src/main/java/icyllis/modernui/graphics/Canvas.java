@@ -147,7 +147,6 @@ public class Canvas {
         RenderCore.ensureRenderThread();
         if (instance == null) {
             instance = new Canvas(Minecraft.getInstance());
-            ModernUI.LOGGER.debug(RenderCore.MARKER, "Canvas prepared");
         }
         return instance;
     }

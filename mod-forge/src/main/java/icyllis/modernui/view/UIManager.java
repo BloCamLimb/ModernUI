@@ -29,9 +29,10 @@ import icyllis.modernui.core.mixin.MixinMouseHandler;
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.math.Point;
 import icyllis.modernui.graphics.textmc.ModernFontRenderer;
 import icyllis.modernui.graphics.textmc.TextLayoutProcessor;
+import icyllis.modernui.math.Point;
+import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.test.TestHUD;
 import icyllis.modernui.test.TestPauseUI;
 import icyllis.modernui.widget.FrameLayout;
@@ -195,7 +196,7 @@ public final class UIManager {
 
     // internal method
     public static void initialize() {
-        RenderSystem.assertThread(RenderSystem::isOnRenderThread);
+        RenderCore.ensureRenderThread();
         if (instance.mCanvas == null) {
             instance.mCanvas = Canvas.getInstance();
         } else {
