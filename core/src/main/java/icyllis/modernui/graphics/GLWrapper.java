@@ -54,6 +54,8 @@ public final class GLWrapper extends GL43C {
 
     private static boolean sInitialized = false;
 
+    private static Interceptor sInterceptor;
+
     /**
      * The value is determined when we have a OpenGL context.
      */
@@ -84,6 +86,12 @@ public final class GLWrapper extends GL43C {
 
     private GLWrapper() {
         throw new UnsupportedOperationException();
+    }
+
+    public static void setInterceptor(@Nonnull Interceptor interceptor) {
+        if (sInterceptor == null) {
+            sInterceptor = interceptor;
+        }
     }
 
     @RenderThread
@@ -153,6 +161,13 @@ public final class GLWrapper extends GL43C {
         RectProgram.createPrograms();
         RoundRectProgram.createPrograms();*/
 
+        if (sInterceptor == null) {
+            sInterceptor = () -> {
+            };
+        } else {
+            sInterceptor.onInit();
+        }
+
         LOGGER.info(RenderCore.MARKER, "Backend API: OpenGL {}", glGetString(GL_VERSION));
         LOGGER.info(RenderCore.MARKER, "OpenGL Renderer: {} {}", glGetString(GL_VENDOR), glGetString(GL_RENDERER));
 
@@ -204,16 +219,18 @@ public final class GLWrapper extends GL43C {
 
     @RenderThread
     public static void bindTexture(int target, int texture) {
+        if (sInterceptor.bindTexture(target, texture))
+            return;
         if (sBindTextures[sActiveTexture].put(target, texture) != texture)
             glBindTexture(target, texture);
     }
 
     @RenderThread
-    public static void deleteTexture(int texture) {
+    public static void deleteTexture(int target, int texture) {
+        if (sInterceptor.deleteTexture(target, texture))
+            return;
         for (Int2IntMap m : sBindTextures)
-            for (Int2IntMap.Entry e : m.int2IntEntrySet())
-                if (e.getIntValue() == texture)
-                    m.put(e.getIntKey(), GL_NONE);
+            m.put(target, GL_NONE);
         glDeleteTextures(texture);
     }
 
@@ -227,7 +244,7 @@ public final class GLWrapper extends GL43C {
         }
     }
 
-    // ret 0-7, max 31, not GL_TEXTURE0[1-31]
+    // ret active texture unit 0-7, max 31, not GL_TEXTURE0[1-31]
     @RenderThread
     public static int getActiveTexture() {
         return sActiveTexture;
@@ -290,5 +307,19 @@ public final class GLWrapper extends GL43C {
             glViewport(last.left, last.top, last.width(), last.height());
         if (sViewportStack.isEmpty())
             throw new IllegalStateException("Popping the main viewport");
+    }
+
+    @FunctionalInterface
+    public interface Interceptor {
+
+        void onInit();
+
+        default boolean bindTexture(int target, int texture) {
+            return false;
+        }
+
+        default boolean deleteTexture(int target, int texture) {
+            return false;
+        }
     }
 }
