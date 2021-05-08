@@ -20,7 +20,7 @@ package icyllis.modernui.math;
 
 public final class MathUtil {
 
-    private static final float[] SINE_TABLE;
+    private static volatile float[] SINE_TABLE;
 
     public static final float PI = (float) Math.PI;
 
@@ -31,11 +31,13 @@ public final class MathUtil {
     public static final float TWO_PI = (float) (Math.PI * 2);
     public static final float THREE_PI_DIV_2 = (float) (Math.PI * 3 / 2);
 
-    static {
-        float[] v = new float[0x10000];
-        for (int i = 0; i < 0x10000; i++)
-            v[i] = (float) Math.sin(i * 9.587379924285257E-5);
-        SINE_TABLE = v;
+    public static synchronized void initSineTable() {
+        if (SINE_TABLE == null) {
+            float[] v = new float[0x10000];
+            for (int i = 0; i < 0x10000; i++)
+                v[i] = (float) Math.sin(i * 9.587379924285257E-5);
+            SINE_TABLE = v;
+        }
     }
 
     // fast sin, error +- 0.000152, in radians

@@ -37,20 +37,29 @@ import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Quaternion;
 import icyllis.modernui.math.Vector3;
+import icyllis.modernui.platform.Bitmap;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.platform.Window;
-import icyllis.modernui.platform.WindowState;
 import icyllis.modernui.text.GraphemeBreak;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.lwjgl.PointerBuffer;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL43;
 import org.lwjgl.system.Callback;
+import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
+import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.*;
 import java.util.stream.Stream;
@@ -150,7 +159,7 @@ public class TestMain {
         try {
             Thread.currentThread().setName("Main-Thread");
             RenderCore.initBackend();
-            sWindow = new Window("Modern UI Layout Editor", WindowState.WINDOWED, 1280, 720);
+            sWindow = new Window("Modern UI Layout Editor", Window.State.WINDOWED, 1280, 720);
             Thread t = new Thread(() -> {
                 final Window window = sWindow;
                 window.makeCurrent();
@@ -203,6 +212,8 @@ public class TestMain {
                         GL11.glRotatef(-90, 0, 1, 0);
                         Canvas.getInstance().drawRoundRect(0, 20, 100, 70, 14, paint);
                         Canvas.getInstance().drawRoundRect(-20, 190, 80, 240, 14, paint);
+                        Canvas.getInstance().setLineAntiAliasing(true);
+                        Canvas.getInstance().drawRect(-20, 0, 120, 90, paint);
 
                         GL11.glPopMatrix();
                         GL11.glMatrixMode(GL11.GL_PROJECTION);
@@ -220,18 +231,26 @@ public class TestMain {
             }, "Render-Thread");
             t.start();
 
-            /*new Thread(() -> {
+            new Thread(() -> {
                 try (MemoryStack stack = MemoryStack.stackPush()) {
                     PointerBuffer filters = stack.mallocPointer(1);
                     stack.nUTF8Safe("*.png", true);
                     filters.put(stack.getPointerAddress());
                     filters.rewind();
-                    Optional.ofNullable(TinyFileDialogs.tinyfd_openFileDialog(null, null,
+                    String[] files = Optional.ofNullable(TinyFileDialogs.tinyfd_openFileDialog(null, null,
                             filters, "PNG files (*.png)", true))
                             .map(s -> s.split("\\|"))
-                            .ifPresent(files -> ModernUI.LOGGER.info("Selects:\n{}", String.join("\n", files)));
+                            .orElse(new String[0]);
+                    if (files.length > 0) {
+                        Bitmap b = Bitmap.read(null, new FileInputStream(files[0]));
+                        ModernUI.LOGGER.info("Read {}, Format {}", files[0], b.getFormat());
+                        b.saveToPath(Paths.get("F:", "s.png"), Bitmap.SaveFormat.PNG);
+                        ModernUI.LOGGER.info("Write");
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-            }, "Open-File").start();*/
+            }, "Open-File").start();
 
             while (sWindow == null || sWindow.exists()) {
                 glfwWaitEventsTimeout(1 / 60D);

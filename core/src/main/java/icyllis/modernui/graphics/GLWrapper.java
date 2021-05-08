@@ -25,21 +25,26 @@ import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.platform.Window;
 import it.unimi.dsi.fastutil.ints.Int2IntArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
-import org.lwjgl.opengl.GL43C;
-import org.lwjgl.opengl.GLCapabilities;
+import org.lwjgl.opengl.*;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static icyllis.modernui.ModernUI.LOGGER;
+import static org.lwjgl.opengl.AMDDebugOutput.*;
+import static org.lwjgl.opengl.ARBDebugOutput.*;
+import static org.lwjgl.system.APIUtil.apiUnknownToken;
+import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
- * For managing OpenGL-related things on render thread.
- * All methods are underlying, they do not check if args are legal.
+ * For managing OpenGL-related things on render thread, based on
+ * OpenGL 4.3 core profile, all methods are at low-level.
  */
+@SuppressWarnings("unused")
 public final class GLWrapper extends GL43C {
 
     /**
@@ -54,7 +59,7 @@ public final class GLWrapper extends GL43C {
 
     private static boolean sInitialized = false;
 
-    private static Interceptor sInterceptor;
+    private static Redirector sRedirector;
 
     /**
      * The value is determined when we have a OpenGL context.
@@ -88,9 +93,10 @@ public final class GLWrapper extends GL43C {
         throw new UnsupportedOperationException();
     }
 
-    public static void setInterceptor(@Nonnull Interceptor interceptor) {
-        if (sInterceptor == null) {
-            sInterceptor = interceptor;
+    // call before initialization
+    public static synchronized void setRedirector(@Nonnull Redirector redirector) {
+        if (sRedirector == null) {
+            sRedirector = redirector;
         }
     }
 
@@ -99,6 +105,38 @@ public final class GLWrapper extends GL43C {
         RenderCore.ensureRenderThread();
         if (sInitialized) {
             return;
+        }
+
+        if (caps.OpenGL43) {
+            LOGGER.debug(RenderCore.MARKER, "Using OpenGL 4.3 for error logging");
+            GLDebugMessageCallback proc = GLDebugMessageCallback.create((source, type, id, severity, length, message, userParam) ->
+                    LOGGER.info("OpenGL debug message: {}\nSource: {}\nType: {}\nSeverity: {}\nMessage: {}",
+                            getDebugId(id), getDebugSource(source), getDebugType(type), getDebugSeverity(severity),
+                            GLDebugMessageCallback.getMessage(length, message)));
+            glDebugMessageCallback(proc, NULL);
+            glEnable(GL_DEBUG_OUTPUT);
+        } else if (caps.GL_KHR_debug) {
+            LOGGER.debug(RenderCore.MARKER, "Using KHR_debug for error logging");
+            GLDebugMessageCallback proc = GLDebugMessageCallback.create((source, type, id, severity, length, message, userParam) ->
+                    LOGGER.info("OpenGL debug message: {}\nSource: {}\nType: {}\nSeverity: {}\nMessage: {}",
+                            getDebugId(id), getDebugSource(source), getDebugType(type), getDebugSeverity(severity),
+                            GLDebugMessageCallback.getMessage(length, message)));
+            KHRDebug.glDebugMessageCallback(proc, NULL);
+            glEnable(GL_DEBUG_OUTPUT);
+        } else if (caps.GL_ARB_debug_output) {
+            LOGGER.debug(RenderCore.MARKER, "Using ARB_debug_output for error logging");
+            GLDebugMessageARBCallback proc = GLDebugMessageARBCallback.create((source, type, id, severity, length, message, userParam) ->
+                    LOGGER.info("OpenGL debug message: {}\nSource: {}\nType: {}\nSeverity: {}\nMessage: {}",
+                            getDebugId(id), getSourceARB(source), getTypeARB(type), getSeverityARB(severity),
+                            GLDebugMessageARBCallback.getMessage(length, message)));
+            glDebugMessageCallbackARB(proc, NULL);
+        } else if (caps.GL_AMD_debug_output) {
+            LOGGER.debug(RenderCore.MARKER, "Using AMD_debug_output for error logging");
+            GLDebugMessageAMDCallback proc = GLDebugMessageAMDCallback.create((id, category, severity, length, message, userParam) ->
+                    LOGGER.info("OpenGL debug message: {}\nSource: {}\nSeverity: {}\nMessage: {}",
+                            getDebugId(id), getCategoryAMD(category), getSeverityAMD(severity),
+                            GLDebugMessageAMDCallback.getMessage(length, message)));
+            glDebugMessageCallbackAMD(proc, NULL);
         }
 
         sMaxTextureSize = glGetInteger(GL_MAX_TEXTURE_SIZE);
@@ -161,14 +199,14 @@ public final class GLWrapper extends GL43C {
         RectProgram.createPrograms();
         RoundRectProgram.createPrograms();*/
 
-        if (sInterceptor == null) {
-            sInterceptor = () -> {
+        if (sRedirector == null) {
+            sRedirector = () -> {
             };
         } else {
-            sInterceptor.onInit();
+            sRedirector.onInit();
         }
 
-        LOGGER.info(RenderCore.MARKER, "Backend API: OpenGL {}", glGetString(GL_VERSION));
+        LOGGER.info(RenderCore.MARKER, "Graphics API: OpenGL {}", glGetString(GL_VERSION));
         LOGGER.info(RenderCore.MARKER, "OpenGL Renderer: {} {}", glGetString(GL_VENDOR), glGetString(GL_RENDERER));
 
         sInitialized = true;
@@ -201,33 +239,40 @@ public final class GLWrapper extends GL43C {
 
     @RenderThread
     public static void bindFramebuffer(int framebuffer) {
-        if (framebuffer != sDrawFramebuffer || framebuffer != sReadFramebuffer)
-            glBindFramebuffer(GL_FRAMEBUFFER, sDrawFramebuffer = sReadFramebuffer = framebuffer);
+        if (framebuffer != sDrawFramebuffer || framebuffer != sReadFramebuffer) {
+            sDrawFramebuffer = sReadFramebuffer = framebuffer;
+            glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+        }
     }
 
     @RenderThread
     public static void bindDrawFramebuffer(int framebuffer) {
-        if (framebuffer != sDrawFramebuffer)
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, sDrawFramebuffer = framebuffer);
+        if (framebuffer != sDrawFramebuffer) {
+            sDrawFramebuffer = framebuffer;
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer);
+        }
     }
 
     @RenderThread
     public static void bindReadFramebuffer(int framebuffer) {
-        if (framebuffer != sReadFramebuffer)
-            glBindFramebuffer(GL_READ_FRAMEBUFFER, sReadFramebuffer = framebuffer);
+        if (framebuffer != sReadFramebuffer) {
+            sReadFramebuffer = framebuffer;
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer);
+        }
     }
 
     @RenderThread
     public static void bindTexture(int target, int texture) {
-        if (sInterceptor.bindTexture(target, texture))
+        if (sRedirector.bindTexture(target, texture))
             return;
         if (sBindTextures[sActiveTexture].put(target, texture) != texture)
             glBindTexture(target, texture);
     }
 
+    // target - test texture type
     @RenderThread
     public static void deleteTexture(int target, int texture) {
-        if (sInterceptor.deleteTexture(target, texture))
+        if (sRedirector.deleteTexture(target, texture))
             return;
         for (Int2IntMap m : sBindTextures)
             m.put(target, GL_NONE);
@@ -245,6 +290,7 @@ public final class GLWrapper extends GL43C {
     }
 
     // ret active texture unit 0-7, max 31, not GL_TEXTURE0[1-31]
+    // used for sampler value
     @RenderThread
     public static int getActiveTexture() {
         return sActiveTexture;
@@ -303,14 +349,179 @@ public final class GLWrapper extends GL43C {
     @RenderThread
     public static void popViewport() {
         final Rect last;
-        if (!sViewportStack.peek().equals(last = sViewportStack.pop()))
+        if (!Objects.equals(sViewportStack.peek(), last = sViewportStack.pop()))
             glViewport(last.left, last.top, last.width(), last.height());
         if (sViewportStack.isEmpty())
             throw new IllegalStateException("Popping the main viewport");
     }
 
+    @Nonnull
+    private static String getDebugId(int id) {
+        switch (id) {
+            case GL_INVALID_ENUM:
+                return "GL_INVALID_ENUM";
+            case GL_INVALID_VALUE:
+                return "GL_INVALID_VALUE";
+            case GL_INVALID_OPERATION:
+                return "GL_INVALID_OPERATION";
+            default:
+                return String.format("0x%X", id);
+        }
+    }
+
+    @Nonnull
+    private static String getDebugSource(int source) {
+        switch (source) {
+            case GL_DEBUG_SOURCE_API:
+                return "API";
+            case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
+                return "Window System";
+            case GL_DEBUG_SOURCE_SHADER_COMPILER:
+                return "Shader Compiler";
+            case GL_DEBUG_SOURCE_THIRD_PARTY:
+                return "Third Party";
+            case GL_DEBUG_SOURCE_APPLICATION:
+                return "Application";
+            case GL_DEBUG_SOURCE_OTHER:
+                return "Other";
+            default:
+                return apiUnknownToken(source);
+        }
+    }
+
+    @Nonnull
+    private static String getDebugType(int type) {
+        switch (type) {
+            case GL_DEBUG_TYPE_ERROR:
+                return "Error";
+            case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+                return "Deprecated Behavior";
+            case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+                return "Undefined Behavior";
+            case GL_DEBUG_TYPE_PORTABILITY:
+                return "Portability";
+            case GL_DEBUG_TYPE_PERFORMANCE:
+                return "Performance";
+            case GL_DEBUG_TYPE_OTHER:
+                return "Other";
+            case GL_DEBUG_TYPE_MARKER:
+                return "Marker";
+            default:
+                return apiUnknownToken(type);
+        }
+    }
+
+    @Nonnull
+    private static String getDebugSeverity(int severity) {
+        switch (severity) {
+            case GL_DEBUG_SEVERITY_HIGH:
+                return "High";
+            case GL_DEBUG_SEVERITY_MEDIUM:
+                return "Medium";
+            case GL_DEBUG_SEVERITY_LOW:
+                return "Low";
+            case GL_DEBUG_SEVERITY_NOTIFICATION:
+                return "Notification";
+            default:
+                return apiUnknownToken(severity);
+        }
+    }
+
+    @Nonnull
+    private static String getSourceARB(int source) {
+        switch (source) {
+            case GL_DEBUG_SOURCE_API_ARB:
+                return "API";
+            case GL_DEBUG_SOURCE_WINDOW_SYSTEM_ARB:
+                return "Window System";
+            case GL_DEBUG_SOURCE_SHADER_COMPILER_ARB:
+                return "Shader Compiler";
+            case GL_DEBUG_SOURCE_THIRD_PARTY_ARB:
+                return "Third Party";
+            case GL_DEBUG_SOURCE_APPLICATION_ARB:
+                return "Application";
+            case GL_DEBUG_SOURCE_OTHER_ARB:
+                return "Other";
+            default:
+                return apiUnknownToken(source);
+        }
+    }
+
+    @Nonnull
+    private static String getTypeARB(int type) {
+        switch (type) {
+            case GL_DEBUG_TYPE_ERROR_ARB:
+                return "Error";
+            case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB:
+                return "Deprecated Behavior";
+            case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB:
+                return "Undefined Behavior";
+            case GL_DEBUG_TYPE_PORTABILITY_ARB:
+                return "Portability";
+            case GL_DEBUG_TYPE_PERFORMANCE_ARB:
+                return "Performance";
+            case GL_DEBUG_TYPE_OTHER_ARB:
+                return "Other";
+            default:
+                return apiUnknownToken(type);
+        }
+    }
+
+    @Nonnull
+    private static String getSeverityARB(int severity) {
+        switch (severity) {
+            case GL_DEBUG_SEVERITY_HIGH_ARB:
+                return "High";
+            case GL_DEBUG_SEVERITY_MEDIUM_ARB:
+                return "Medium";
+            case GL_DEBUG_SEVERITY_LOW_ARB:
+                return "Low";
+            default:
+                return apiUnknownToken(severity);
+        }
+    }
+
+    @Nonnull
+    private static String getCategoryAMD(int category) {
+        switch (category) {
+            case GL_DEBUG_CATEGORY_API_ERROR_AMD:
+                return "API Error";
+            case GL_DEBUG_CATEGORY_WINDOW_SYSTEM_AMD:
+                return "Window System";
+            case GL_DEBUG_CATEGORY_DEPRECATION_AMD:
+                return "Deprecation";
+            case GL_DEBUG_CATEGORY_UNDEFINED_BEHAVIOR_AMD:
+                return "Undefined Behavior";
+            case GL_DEBUG_CATEGORY_PERFORMANCE_AMD:
+                return "Performance";
+            case GL_DEBUG_CATEGORY_SHADER_COMPILER_AMD:
+                return "Shader Compiler";
+            case GL_DEBUG_CATEGORY_APPLICATION_AMD:
+                return "Application";
+            case GL_DEBUG_CATEGORY_OTHER_AMD:
+                return "Other";
+            default:
+                return apiUnknownToken(category);
+        }
+    }
+
+    @Nonnull
+    private static String getSeverityAMD(int severity) {
+        switch (severity) {
+            case GL_DEBUG_SEVERITY_HIGH_AMD:
+                return "High";
+            case GL_DEBUG_SEVERITY_MEDIUM_AMD:
+                return "Medium";
+            case GL_DEBUG_SEVERITY_LOW_AMD:
+                return "Low";
+            default:
+                return apiUnknownToken(severity);
+        }
+    }
+
+    // redirect default methods, return true instead
     @FunctionalInterface
-    public interface Interceptor {
+    public interface Redirector {
 
         void onInit();
 

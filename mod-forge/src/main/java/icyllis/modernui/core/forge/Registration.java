@@ -18,12 +18,12 @@
 
 package icyllis.modernui.core.forge;
 
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.PluginList;
 import icyllis.modernui.core.mixin.AccessOption;
 import icyllis.modernui.core.mixin.AccessVideoSettingsScreen;
+import icyllis.modernui.graphics.B3DRedirector;
 import icyllis.modernui.graphics.GLWrapper;
 import icyllis.modernui.graphics.shader.program.ArcProgram;
 import icyllis.modernui.graphics.shader.program.CircleProgram;
@@ -149,30 +149,7 @@ final class Registration {
         //UIManager.getInstance().registerMenuScreen(Registration.TEST_MENU, menu -> new TestUI());
 
         event.getMinecraftSupplier().get().submitAsync(() -> {
-            GLWrapper.setInterceptor(new GLWrapper.Interceptor() {
-                @Override
-                public void onInit() {
-                    ModernUI.LOGGER.info(RenderCore.MARKER, "Sharing GL states with Blaze3D");
-                }
-
-                @Override
-                public boolean bindTexture(int target, int texture) {
-                    if (target == GLWrapper.GL_TEXTURE_2D) {
-                        GlStateManager._bindTexture(texture);
-                        return true;
-                    }
-                    return false;
-                }
-
-                @Override
-                public boolean deleteTexture(int target, int texture) {
-                    if (target == GLWrapper.GL_TEXTURE_2D) {
-                        GlStateManager._deleteTexture(texture);
-                        return true;
-                    }
-                    return false;
-                }
-            });
+            GLWrapper.setRedirector(new B3DRedirector());
             RenderCore.initialize();
             ArcProgram.createPrograms();
             CircleProgram.createPrograms();

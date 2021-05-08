@@ -16,17 +16,10 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.texture;
+package icyllis.modernui.graphics.vertex;
 
-import it.unimi.dsi.fastutil.objects.Object2ObjectRBTreeMap;
-
-import java.util.Map;
-
-public class TextureManager {
-
-    private final Map<String, Texture2D> mTextureMap = new Object2ObjectRBTreeMap<>();
-
-    public Texture2D getOrCreate() {
-        return null;
-    }
+/**
+ * Represents a vertex array object.
+ */
+public class VertexArray {
 }

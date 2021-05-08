@@ -22,7 +22,7 @@ import javax.annotation.Nonnull;
 
 /**
  * The Paint class holds the style and color information about how to draw
- * geometries and images.
+ * geometries and images. Use with Canvas.
  */
 public class Paint {
 
