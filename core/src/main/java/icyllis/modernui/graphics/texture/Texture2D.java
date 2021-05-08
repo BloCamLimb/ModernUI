@@ -22,7 +22,12 @@ import org.lwjgl.system.MemoryUtil;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
 
-public class Texture implements AutoCloseable {
+/**
+ * Represents OpenGL 2D texture objects at low-level.
+ * The OpenGL texture object associated with this object may be changed
+ * by destroying and reallocating.
+ */
+public class Texture2D implements AutoCloseable {
 
     private int mId = INVALID_ID;
     private int mTarget;
@@ -30,11 +35,11 @@ public class Texture implements AutoCloseable {
     /**
      * Creates a 2D texture object on application side from any thread.
      */
-    public Texture() {
+    public Texture2D() {
         this(GL_TEXTURE_2D);
     }
 
-    public Texture(int target) {
+    public Texture2D(int target) {
         mTarget = target;
     }
 
@@ -66,14 +71,12 @@ public class Texture implements AutoCloseable {
         }
     }
 
+    public int getTarget() {
+        return mTarget;
+    }
+
     /**
-     * Specifies this texture and allocates GPU memory dynamically.
-     * <p>
-     * For automatic mipmap generation, you may need manually clear the mipmap data later,
-     * otherwise the content may not be replaced and keep the previous undefined data,
-     * especially for translucent texture.
-     * <p>
-     * When using mipmap, texture size must be power of two, and at least 2^mipmapLevel
+     * Specifies this texture and allocates GPU memory dynamically. (Compatibility)
      *
      * @param internalFormat how image data stored on GPU side
      * @param mipmapLevel    max mipmap level, min is 0
@@ -95,7 +98,16 @@ public class Texture implements AutoCloseable {
     }
 
     /**
-     * Specifies this texture with an immutable storage unless deleted.
+     * Specifies this texture with an immutable storage unless deleted. (Core-profile)
+     * <p>
+     * For automatic mipmap generation, you may need manually clear the mipmap data later,
+     * otherwise the content may not be replaced and keep the previous undefined data,
+     * especially for translucent texture.
+     * <p>
+     * When using mipmap, texture size must be power of two, and at least 2^mipmapLevel
+     *
+     * @param internalFormat how image data stored on GPU side
+     * @param mipmapLevel    max mipmap level, min is 0
      */
     public void setStorage(int internalFormat, int width, int height, int mipmapLevel) {
         bind();
@@ -107,27 +119,27 @@ public class Texture implements AutoCloseable {
         glTexStorage2D(mTarget, mipmapLevel, internalFormat, width, height);
     }
 
-    public void upload(int level, int x, int y, int width, int height, int rowLen, int skipRows,
+    // alignment: pixel row alignment 1, 2, 4, 8
+    public void upload(int level, int x, int y, int width, int height, int rowLength, int skipRows,
                        int skipPixels, int alignment, int format, int type, long pixels) {
         bind();
-        glPixelStorei(GL_UNPACK_ROW_LENGTH, rowLen);
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, rowLength);
         glPixelStorei(GL_UNPACK_SKIP_ROWS, skipRows);
         glPixelStorei(GL_UNPACK_SKIP_PIXELS, skipPixels);
         glPixelStorei(GL_UNPACK_ALIGNMENT, alignment);
         glTexSubImage2D(mTarget, level, x, y, width, height, format, type, pixels);
     }
 
-    /**
-     * Set wrap mode for s-component. This texture must be bound first.
-     *
-     * @param wrapS wrap mode.
-     */
     public void setWrapMode(int wrapS) {
         glTexParameteri(mTarget, GL_TEXTURE_WRAP_S, wrapS);
     }
 
-    // ERROR: if target is GL_TEXTURE_RECTANGLE and either of wrap mode GL_TEXTURE_WRAP_S or GL_TEXTURE_WRAP_T is set to
-    // either GL_MIRROR_CLAMP_TO_EDGE, GL_MIRRORED_REPEAT or GL_REPEAT.
+    /**
+     * Set wrap mode for s, t component. This texture must be bound first.
+     * <p>
+     * ERROR: if target is GL_TEXTURE_RECTANGLE and either of wrap mode GL_TEXTURE_WRAP_S or GL_TEXTURE_WRAP_T is set to
+     * either GL_MIRROR_CLAMP_TO_EDGE, GL_MIRRORED_REPEAT or GL_REPEAT.
+     */
     public void setWrapMode(int wrapS, int wrapT) {
         glTexParameteri(mTarget, GL_TEXTURE_WRAP_S, wrapS);
         glTexParameteri(mTarget, GL_TEXTURE_WRAP_T, wrapT);

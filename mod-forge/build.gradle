@@ -54,7 +54,7 @@ dependencies {
         transitive = false
     }
 
-    implementation "org.openjdk.jmh:jmh-core:1.29"
+    compile "org.openjdk.jmh:jmh-core:1.29"
     annotationProcessor "org.openjdk.jmh:jmh-generator-annprocess:1.29"
 
     implementation "com.github.ben-manes.caffeine:caffeine:${caffeine_version}"

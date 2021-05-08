@@ -58,8 +58,8 @@ public final class Monitor {
     }
 
     @Nullable
-    public static Monitor get(long monPtr) {
-        return sMonitors.get(monPtr);
+    public static Monitor get(long ptr) {
+        return sMonitors.get(ptr);
     }
 
     @Nullable
@@ -72,26 +72,26 @@ public final class Monitor {
         return sMonitors.values();
     }
 
-    private final long mHandle;
+    private final long mNativePtr;
 
     private final int mXPos;
     private final int mYPos;
 
     private final VideoMode[] mVideoModes;
 
-    private Monitor(long handle) {
-        mHandle = handle;
+    private Monitor(long ptr) {
+        mNativePtr = ptr;
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
             IntBuffer x = stack.mallocInt(1);
             IntBuffer y = stack.mallocInt(1);
-            GLFW.glfwGetMonitorPos(handle, x, y);
+            GLFW.glfwGetMonitorPos(ptr, x, y);
             mXPos = x.get(0);
             mYPos = y.get(0);
         }
 
         List<VideoMode> list = new ArrayList<>();
-        GLFWVidMode.Buffer buffer = GLFW.glfwGetVideoModes(handle);
+        GLFWVidMode.Buffer buffer = GLFW.glfwGetVideoModes(ptr);
         if (buffer == null) {
             throw new IllegalStateException("Failed to get video modes");
         }
@@ -105,8 +105,8 @@ public final class Monitor {
         mVideoModes = list.toArray(new VideoMode[0]);
     }
 
-    public long getHandle() {
-        return mHandle;
+    public long getNativePtr() {
+        return mNativePtr;
     }
 
     /**
@@ -129,7 +129,7 @@ public final class Monitor {
 
     @Nonnull
     public VideoMode getCurrentMode() {
-        GLFWVidMode mode = GLFW.glfwGetVideoMode(mHandle);
+        GLFWVidMode mode = GLFW.glfwGetVideoMode(mNativePtr);
         if (mode == null) {
             throw new IllegalStateException("Failed to get current video mode");
         }
@@ -138,7 +138,7 @@ public final class Monitor {
 
     @Nullable
     public String getName() {
-        return GLFW.glfwGetMonitorName(mHandle);
+        return GLFW.glfwGetMonitorName(mNativePtr);
     }
 
     /**

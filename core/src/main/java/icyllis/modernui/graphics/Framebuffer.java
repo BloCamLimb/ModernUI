@@ -18,11 +18,11 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.graphics.texture.Texture;
+import icyllis.modernui.graphics.texture.Texture2D;
 
 import javax.annotation.Nonnull;
 
-import static org.lwjgl.opengl.GL43C.*;
+import static icyllis.modernui.graphics.GLWrapper.*;
 
 /**
  * This class represents a framebuffer object. It is used for creation of
@@ -43,7 +43,6 @@ public final class Framebuffer implements AutoCloseable {
     private int mTarget;
 
     public Framebuffer() {
-
     }
 
     public int getId() {
@@ -56,22 +55,22 @@ public final class Framebuffer implements AutoCloseable {
      * Binds this framebuffer object to draw and read target.
      */
     public void bind() {
-        GLWrapper.bindFramebuffer(getId());
+        bindFramebuffer(getId());
         mTarget = GL_FRAMEBUFFER;
     }
 
     public void bindDraw() {
-        GLWrapper.bindDrawFramebuffer(getId());
+        bindDrawFramebuffer(getId());
         mTarget = GL_DRAW_FRAMEBUFFER;
     }
 
     public void bindRead() {
-        GLWrapper.bindReadFramebuffer(getId());
+        bindReadFramebuffer(getId());
         mTarget = GL_READ_FRAMEBUFFER;
     }
 
     // min color attachments: 0-7
-    public void attachTexture(int attachment, @Nonnull Texture texture, int level) {
+    public void attachTexture(int attachment, @Nonnull Texture2D texture, int level) {
         glFramebufferTexture(mTarget, attachment, texture.getId(), level);
     }
 

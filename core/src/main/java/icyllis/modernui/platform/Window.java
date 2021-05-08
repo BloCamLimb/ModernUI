@@ -19,12 +19,10 @@
 package icyllis.modernui.platform;
 
 import icyllis.modernui.ModernUI;
-import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.glfw.Callbacks;
 import org.lwjgl.system.MemoryStack;
 
 import javax.annotation.Nonnull;
-import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -49,7 +47,7 @@ public final class Window implements AutoCloseable {
     private float mContentScaleY;
 
     @Nonnull
-    private WindowState mState;
+    private State mState;
     // previously maximized
     private boolean mMaximized;
     private boolean mBorderless;
@@ -57,7 +55,7 @@ public final class Window implements AutoCloseable {
 
     private boolean mNeedRefresh;
 
-    public Window(@Nonnull String title, @Nonnull WindowState state, int width, int height) {
+    public Window(@Nonnull String title, @Nonnull State state, int width, int height) {
         // set hints
         glfwDefaultWindowHints();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
@@ -84,9 +82,9 @@ public final class Window implements AutoCloseable {
                 if (monitor != null) {
                     if (width <= 0 || height <= 0) {
                         VideoMode m = monitor.getCurrentMode();
-                        handle = glfwCreateWindow(m.getWidth(), m.getHeight(), title, monitor.getHandle(), NULL);
+                        handle = glfwCreateWindow(m.getWidth(), m.getHeight(), title, monitor.getNativePtr(), NULL);
                     } else {
-                        handle = glfwCreateWindow(width, height, title, monitor.getHandle(), NULL);
+                        handle = glfwCreateWindow(width, height, title, monitor.getNativePtr(), NULL);
                     }
                     mFullscreen = true;
                     break;
@@ -170,19 +168,19 @@ public final class Window implements AutoCloseable {
 
     private void callbackIconify(long window, boolean iconified) {
         if (iconified) {
-            mState = WindowState.MINIMIZED;
+            mState = State.MINIMIZED;
         } else if (mMaximized) {
-            mState = WindowState.MAXIMIZED;
+            mState = State.MAXIMIZED;
         } else {
-            mState = WindowState.WINDOWED;
+            mState = State.WINDOWED;
         }
     }
 
     private void callbackMaximize(long window, boolean maximized) {
         if (maximized) {
-            mState = WindowState.MAXIMIZED;
+            mState = State.MAXIMIZED;
         } else {
-            mState = WindowState.WINDOWED;
+            mState = State.WINDOWED;
         }
         mMaximized = maximized;
     }
@@ -287,5 +285,39 @@ public final class Window implements AutoCloseable {
 
     public boolean needsRefresh() {
         return mNeedRefresh;
+    }
+
+    /**
+     * Window states.
+     */
+    public enum State {
+        /**
+         * The window is movable and takes up a subsection of the screen.
+         */
+        WINDOWED,
+
+        /**
+         * The window is running in exclusive fullscreen and is potentially using a
+         * different resolution to the desktop.
+         */
+        FULLSCREEN,
+
+        /**
+         * The window is running in non-exclusive fullscreen, where it expands to
+         * fill the screen at the native desktop resolution.
+         */
+        FULLSCREEN_BORDERLESS,
+
+        /**
+         * The window is running in maximized mode, usually triggered by clicking
+         * the operating system's maximize button.
+         */
+        MAXIMIZED,
+
+        /**
+         * The window is running in minimized mode, usually triggered by clicking
+         * the operating system's minimize button.
+         */
+        MINIMIZED
     }
 }

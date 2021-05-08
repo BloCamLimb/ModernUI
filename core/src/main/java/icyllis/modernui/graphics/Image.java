@@ -16,17 +16,20 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.texture;
+package icyllis.modernui.graphics;
 
-import it.unimi.dsi.fastutil.objects.Object2ObjectRBTreeMap;
+import java.io.Closeable;
+import java.io.IOException;
 
-import java.util.Map;
+/**
+ * Images that can be used for drawing and processing. The image data is
+ * stored in GPU memory, and an image object associated with an OpenGL
+ * texture object.
+ */
+public class Image implements Closeable {
 
-public class TextureManager {
+    @Override
+    public void close() throws IOException {
 
-    private final Map<String, Texture2D> mTextureMap = new Object2ObjectRBTreeMap<>();
-
-    public Texture2D getOrCreate() {
-        return null;
     }
 }

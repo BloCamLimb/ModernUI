@@ -22,7 +22,7 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.textmc.VanillaTextKey;
 import icyllis.modernui.graphics.textmc.pipeline.TextRenderNode;
 import icyllis.modernui.graphics.textmc.pipeline.TextRenderType;
-import icyllis.modernui.graphics.texture.Texture;
+import icyllis.modernui.graphics.texture.Texture2D;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.text.FontCollection;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
@@ -201,7 +201,7 @@ public class GlyphManager {
      * ID of current OpenGL cache texture being used by cacheGlyphs() to store
      * pre-rendered glyph images. Render thread only.
      */
-    private Texture mTexture;
+    private Texture2D mTexture;
 
     /**
      * A cache of all fonts that have at least one glyph pre-rendered in a texture.
@@ -994,7 +994,7 @@ public class GlyphManager {
         mGlyphGraphics.clearRect(0, 0, TEXTURE_SIZE, TEXTURE_SIZE);
 
         /* Allocate new OpenGL texture */
-        mTexture = new Texture();
+        mTexture = new Texture2D();
 
         /* Load imageBuffer with pixel data ready for transfer to OpenGL texture */
         //updateImageBuffer(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
