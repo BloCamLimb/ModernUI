@@ -18,14 +18,20 @@
 
 package icyllis.modernui.platform;
 
+import com.ibm.icu.text.DateFormat;
+import com.ibm.icu.text.SimpleDateFormat;
+import org.lwjgl.PointerBuffer;
 import org.lwjgl.stb.STBIWriteCallback;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.stb.STBImageWrite;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
+import org.lwjgl.system.Pointer;
+import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -33,8 +39,12 @@ import java.nio.IntBuffer;
 import java.nio.channels.ByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.EnumSet;
+import java.util.stream.Collectors;
 
 import static org.lwjgl.system.MemoryUtil.NULL;
 
@@ -44,7 +54,10 @@ import static org.lwjgl.system.MemoryUtil.NULL;
  * {@link icyllis.modernui.graphics.Image}, this data is completely stored in
  * RAM rather than in GPU memory.
  */
+@SuppressWarnings("unused")
 public final class Bitmap implements AutoCloseable {
+
+    public static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyyMMddHHmmss");
 
     @Nonnull
     private final Format mFormat;
@@ -61,7 +74,7 @@ public final class Bitmap implements AutoCloseable {
      * @param format channels
      * @param width  width in pixels
      * @param height height in pixels
-     * @param init   {@code true} to initialize pixels data to 0
+     * @param init   {@code true} to initialize pixels data to 0, or just allocate memory
      * @throws IllegalArgumentException width or height is less than or equal to zero
      */
     public Bitmap(@Nonnull Format format, int width, int height, boolean init) {
@@ -80,27 +93,78 @@ public final class Bitmap implements AutoCloseable {
         }
     }
 
-    private Bitmap(@Nonnull Format format, int width, int height, long pixels) {
+    private Bitmap(@Nonnull Format format, int width, int height, @Nonnull ByteBuffer data) throws IOException {
+        if (data.capacity() != format.channels() * width * height) {
+            throw new IOException("Not tightly packed");
+        }
         mFormat = format;
         mWidth = width;
         mHeight = height;
-        mPixels = pixels;
+        mPixels = MemoryUtil.memAddress(data);
         mFromSTB = true;
     }
 
     /**
-     * Read an image from input stream. This method doesn't close input stream.
+     * Display a file open dialog to select an supported image file.
      *
-     * @param format the format to convert to, or {@code null} to use file format
+     * @return the path or {@code null} if selects nothing
+     */
+    @Nullable
+    public static String getOpenDialog() {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            PointerBuffer filters = SaveFormat.getAllFilters(stack);
+            // for multiple selects, s.split("\\|")
+            return TinyFileDialogs.tinyfd_openFileDialog(null, null,
+                    filters, SaveFormat.getAllDescription(), false);
+        }
+    }
+
+    /**
+     * Display a file save dialog to select the path to save this bitmap.
+     *
+     * @param format the format used as a file filter
+     * @return the path or {@code null} if selects nothing
+     */
+    @Nullable
+    public static String getSaveDialog(@Nonnull SaveFormat format) {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            PointerBuffer filters = format.getFilters(stack);
+            return TinyFileDialogs.tinyfd_saveFileDialog(null,
+                    format.getFileName(), filters, format.getDescription());
+        }
+    }
+
+    /**
+     * Opens a file select dialog, then decodes the selected file and creates a bitmap.
+     *
+     * @param format the format to convert to, or {@code null} to use format in file
+     * @return a bitmap or {@code null} if selects nothing
+     */
+    @Nullable
+    public static Bitmap openDialog(@Nullable Format format) throws IOException {
+        String path = getOpenDialog();
+        if (path != null) {
+            try (InputStream stream = new FileInputStream(path)) {
+                // not to close bitmap but the stream
+                return decode(format, stream);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Decodes an image from input stream. This method doesn't close input stream.
+     *
+     * @param format the format to convert to, or {@code null} to use format in file
      * @param stream input stream
      */
     @Nonnull
-    public static Bitmap read(@Nullable Format format, @Nonnull InputStream stream) throws IOException {
+    public static Bitmap decode(@Nullable Format format, @Nonnull InputStream stream) throws IOException {
         ByteBuffer buffer = null;
         try {
             buffer = RenderCore.readRawBuffer(stream);
             buffer.rewind();
-            return read(format, buffer);
+            return decode(format, buffer);
         } finally {
             if (buffer != null)
                 MemoryUtil.memFree(buffer);
@@ -109,7 +173,7 @@ public final class Bitmap implements AutoCloseable {
 
     // this method doesn't close/free the buffer
     @Nonnull
-    public static Bitmap read(@Nullable Format format, @Nonnull ByteBuffer buffer) throws IOException {
+    public static Bitmap decode(@Nullable Format format, @Nonnull ByteBuffer buffer) throws IOException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             IntBuffer width = stack.mallocInt(1);
             IntBuffer height = stack.mallocInt(1);
@@ -119,8 +183,7 @@ public final class Bitmap implements AutoCloseable {
             if (data == null) {
                 throw new IOException("Failed to read image: " + STBImage.stbi_failure_reason());
             }
-            return new Bitmap(format == null ? Format.of(channels.get(0)) : format,
-                    width.get(0), height.get(0), MemoryUtil.memAddress(data));
+            return new Bitmap(format == null ? Format.of(channels.get(0)) : format, width.get(0), height.get(0), data);
         }
     }
 
@@ -147,10 +210,17 @@ public final class Bitmap implements AutoCloseable {
     }
 
     /**
-     * @see #saveToPath(Path, SaveFormat, int)
+     * Save this bitmap image to specified path as specified format. This will
+     * open a save dialog to select the path.
+     *
+     * @param format  the format of the saved image
+     * @param quality the compress quality, 1-100, only work for JPEG format.
      */
-    public void saveToPath(@Nonnull Path path, @Nonnull SaveFormat format) throws IOException {
-        saveToPath(path, format, 100);
+    public void saveDialog(@Nonnull SaveFormat format, int quality) throws IOException {
+        String path = getSaveDialog(format);
+        if (path != null) {
+            saveToPath(Paths.get(path), format, quality);
+        }
     }
 
     /**
@@ -162,45 +232,27 @@ public final class Bitmap implements AutoCloseable {
      */
     public void saveToPath(@Nonnull Path path, @Nonnull SaveFormat format, int quality) throws IOException {
         checkReleased();
-        try (ByteChannel channel = Files.newByteChannel(path, EnumSet.of(
+        try (final ByteChannel channel = Files.newByteChannel(path, EnumSet.of(
                 StandardOpenOption.WRITE,
                 StandardOpenOption.CREATE,
                 StandardOpenOption.TRUNCATE_EXISTING))) {
             final IOException[] exception = new IOException[1];
-            try (STBIWriteCallback callback = STBIWriteCallback.create((context, data, size) -> {
+            try (STBIWriteCallback func = STBIWriteCallback.create((context, data, size) -> {
                 try {
                     channel.write(STBIWriteCallback.getData(data, size));
                 } catch (IOException e) {
                     exception[0] = e;
                 }
             })) {
-                final boolean success;
-                switch (format) {
-                    case PNG:
-                        success = STBImageWrite.nstbi_write_png_to_func(callback.address(),
-                                NULL, mWidth, mHeight, mFormat.channels(), mPixels, 0) != 0;
-                        break;
-                    case TGA:
-                        success = STBImageWrite.nstbi_write_tga_to_func(callback.address(),
-                                NULL, mWidth, mHeight, mFormat.channels(), mPixels) != 0;
-                        break;
-                    case BMP:
-                        success = STBImageWrite.nstbi_write_bmp_to_func(callback.address(),
-                                NULL, mWidth, mHeight, mFormat.channels(), mPixels) != 0;
-                        break;
-                    case JPEG:
-                        success = STBImageWrite.nstbi_write_jpg_to_func(callback.address(),
-                                NULL, mWidth, mHeight, mFormat.channels(), mPixels, quality) != 0;
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Unknown save format " + format);
-                }
+                final boolean success = format.write(func, mWidth, mHeight, mFormat, mPixels, quality);
                 if (success) {
                     if (exception[0] != null) {
-                        throw new IOException("Failed to save image to the path \"" + path.toAbsolutePath() + "\"", exception[0]);
+                        throw new IOException("An error occurred while saving image to the path \"" +
+                                path.toAbsolutePath() + "\"", exception[0]);
                     }
                 } else {
-                    throw new IOException("Failed to save image to the path \"" + path.toAbsolutePath() + "\": " + STBImage.stbi_failure_reason());
+                    throw new IOException("Failed to save image to the path \"" +
+                            path.toAbsolutePath() + "\": " + STBImage.stbi_failure_reason());
                 }
             }
         }
@@ -232,7 +284,7 @@ public final class Bitmap implements AutoCloseable {
     }
 
     /**
-     * Describes the number of channels/components.
+     * Describes the number of channels/components in memory.
      */
     public enum Format {
         R(1),
@@ -270,25 +322,112 @@ public final class Bitmap implements AutoCloseable {
          * Save as the PNG format. PNG is lossless and compressed, and {@code quality}
          * is ignored.
          */
-        PNG,
+        PNG("*.png") {
+            @Override
+            protected boolean write(@Nonnull Pointer func, int width, int height, @Nonnull Format format,
+                                    long data, int quality) {
+                // leave stride as 0, it will use (width * channels)
+                return STBImageWrite.nstbi_write_png_to_func(func.address(),
+                        NULL, width, height, format.channels(), data, 0) != 0;
+            }
+        },
 
         /**
          * Save as the TGA format. TGA is lossless and compressed, and {@code quality}
          * is ignored.
          */
-        TGA,
+        TGA("*.tga", "*.vda", "*.icb", "*.vst") {
+            @Override
+            protected boolean write(@Nonnull Pointer func, int width, int height, @Nonnull Format format,
+                                    long data, int quality) {
+                return STBImageWrite.nstbi_write_tga_to_func(func.address(),
+                        NULL, width, height, format.channels(), data) != 0;
+            }
+        },
 
         /**
          * Save as the BMP format. BMP is lossless but almost uncompressed, so it takes
          * up a lot of space, and {@code quality} is ignored as well.
          */
-        BMP,
+        BMP("*.bmp", "*.dib") {
+            @Override
+            protected boolean write(@Nonnull Pointer func, int width, int height, @Nonnull Format format,
+                                    long data, int quality) {
+                return STBImageWrite.nstbi_write_bmp_to_func(func.address(),
+                        NULL, width, height, format.channels(), data) != 0;
+            }
+        },
 
         /**
          * Save as the JPEG baseline format. {@code quality} of {@code 1} means
          * compress for the smallest size. {@code 100} means compress for max
          * visual quality. The file extension can be {@code .jpg}.
          */
-        JPEG
+        JPEG("*.jpg", "*.jpeg", "*.jpe") {
+            @Override
+            protected boolean write(@Nonnull Pointer func, int width, int height, @Nonnull Format format,
+                                    long data, int quality) {
+                if (quality < 1)
+                    quality = 1;
+                else if (quality > 120)
+                    quality = 120;
+                return STBImageWrite.nstbi_write_jpg_to_func(func.address(),
+                        NULL, width, height, format.channels(), data, quality) != 0;
+            }
+        };
+
+        @Nonnull
+        private final String[] filters;
+
+        SaveFormat(@Nonnull String... filters) {
+            this.filters = filters;
+        }
+
+        protected boolean write(@Nonnull Pointer func, int width, int height, @Nonnull Format format,
+                                long data, int quality) throws IOException {
+            throw new IOException("Unsupported save format");
+        }
+
+        @Nonnull
+        private static PointerBuffer getAllFilters(@Nonnull MemoryStack stack) {
+            int length = 0;
+            for (SaveFormat format : values()) {
+                length += format.filters.length;
+            }
+            PointerBuffer buffer = stack.mallocPointer(length);
+            for (SaveFormat format : values()) {
+                for (String filter : format.filters) {
+                    stack.nUTF8Safe(filter, true);
+                    buffer.put(stack.getPointerAddress());
+                }
+            }
+            return buffer.rewind();
+        }
+
+        @Nonnull
+        private static String getAllDescription() {
+            return "Images (" + Arrays.stream(values()).flatMap(f -> Arrays.stream(f.filters))
+                    .sorted().collect(Collectors.joining(";")) + ")";
+        }
+
+        @Nonnull
+        private PointerBuffer getFilters(@Nonnull MemoryStack stack) {
+            PointerBuffer buffer = stack.mallocPointer(filters.length);
+            for (String filter : filters) {
+                stack.nUTF8Safe(filter, true);
+                buffer.put(stack.getPointerAddress());
+            }
+            return buffer.rewind();
+        }
+
+        @Nonnull
+        private String getFileName() {
+            return DATE_FORMAT.format(new Date()) + filters[0].substring(1);
+        }
+
+        @Nonnull
+        private String getDescription() {
+            return name() + " (" + String.join(", ", filters) + ")";
+        }
     }
 }
