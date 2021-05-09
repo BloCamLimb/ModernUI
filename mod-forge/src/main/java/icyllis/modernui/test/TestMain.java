@@ -19,6 +19,7 @@
 package icyllis.modernui.test;
 
 import com.ibm.icu.text.BreakIterator;
+import com.ibm.icu.text.SimpleDateFormat;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.vladsch.flexmark.parser.Parser;
@@ -48,7 +49,6 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL43;
 import org.lwjgl.system.Callback;
 import org.lwjgl.system.MemoryStack;
-import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import javax.annotation.Nonnull;
@@ -56,9 +56,7 @@ import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.*;
@@ -232,22 +230,12 @@ public class TestMain {
             t.start();
 
             new Thread(() -> {
-                try (MemoryStack stack = MemoryStack.stackPush()) {
-                    PointerBuffer filters = stack.mallocPointer(1);
-                    stack.nUTF8Safe("*.png", true);
-                    filters.put(stack.getPointerAddress());
-                    filters.rewind();
-                    String[] files = Optional.ofNullable(TinyFileDialogs.tinyfd_openFileDialog(null, null,
-                            filters, "PNG files (*.png)", true))
-                            .map(s -> s.split("\\|"))
-                            .orElse(new String[0]);
-                    if (files.length > 0) {
-                        Bitmap b = Bitmap.read(null, new FileInputStream(files[0]));
-                        ModernUI.LOGGER.info("Read {}, Format {}", files[0], b.getFormat());
-                        b.saveToPath(Paths.get("F:", "s.png"), Bitmap.SaveFormat.PNG);
-                        ModernUI.LOGGER.info("Write");
+                // convert to RGBA png format
+                try (Bitmap b = Bitmap.openDialog(Bitmap.Format.RGBA)) {
+                    if (b != null) {
+                        b.saveDialog(Bitmap.SaveFormat.PNG, 0);
                     }
-                } catch (IOException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }, "Open-File").start();
