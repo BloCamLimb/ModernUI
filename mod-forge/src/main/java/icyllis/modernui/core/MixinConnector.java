@@ -19,16 +19,14 @@
 package icyllis.modernui.core;
 
 import icyllis.modernui.ModernUI;
-import org.jetbrains.annotations.ApiStatus;
 import org.spongepowered.asm.mixin.Mixins;
 import org.spongepowered.asm.mixin.connect.IMixinConnector;
 
-@ApiStatus.Internal
 public class MixinConnector implements IMixinConnector {
 
     @Override
     public void connect() {
         Mixins.addConfiguration("mixins.modernui-forge.json");
-        ModernUI.LOGGER.debug(ModernUI.MARKER, "Mixin system connected");
+        ModernUI.LOGGER.debug(ModernUI.MARKER, "Connected to mixin system");
     }
 }

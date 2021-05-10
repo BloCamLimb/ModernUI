@@ -19,7 +19,6 @@
 package icyllis.modernui.core;
 
 import icyllis.modernui.core.forge.ModernUIForge;
-import org.jetbrains.annotations.ApiStatus;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
@@ -27,7 +26,6 @@ import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 import java.util.List;
 import java.util.Set;
 
-@ApiStatus.Internal
 public class MixinConfigPlugin implements IMixinConfigPlugin {
 
     @Override
