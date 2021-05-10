@@ -108,6 +108,7 @@ public abstract class MixinScrollPanel implements ScrollController.IListener {
         if (scrolling) {
             int maxScroll = height - getBarHeight();
             float moved = (float) (deltaY / maxScroll);
+            mScrollController.setMaxScroll(getMaxScroll());
             mScrollController.scrollBy(getMaxScroll() * moved);
             mScrollController.abortAnimation();
             return true;

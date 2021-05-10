@@ -112,6 +112,7 @@ public abstract class MixinSelectionList implements ScrollController.IListener {
     @Overwrite
     public void setScrollAmount(double target) {
         if (mScrollController != null) {
+            mScrollController.setMaxScroll(getMaxScroll());
             mScrollController.scrollTo((float) target);
             mScrollController.abortAnimation();
         } else
