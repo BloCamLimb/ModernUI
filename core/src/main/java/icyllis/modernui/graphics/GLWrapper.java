@@ -25,6 +25,8 @@ import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.platform.Window;
 import it.unimi.dsi.fastutil.ints.Int2IntArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.opengl.*;
 
 import javax.annotation.Nonnull;
@@ -46,6 +48,8 @@ import static org.lwjgl.system.MemoryUtil.NULL;
  */
 @SuppressWarnings("unused")
 public final class GLWrapper extends GL43C {
+
+    public static final Marker MARKER = MarkerManager.getMarker("OpenGL");
 
     /**
      * Represents an invalid/unassigned OpenGL object compared to {@link #GL_NONE}.
@@ -109,32 +113,26 @@ public final class GLWrapper extends GL43C {
 
         if (caps.OpenGL43) {
             LOGGER.debug(RenderCore.MARKER, "Using OpenGL 4.3 for error logging");
-            GLDebugMessageCallback proc = GLDebugMessageCallback.create((source, type, id, severity, length, message, userParam) ->
-                    LOGGER.info("OpenGL debug message: {}\nSource: {}\nType: {}\nSeverity: {}\nMessage: {}",
-                            getDebugId(id), getDebugSource(source), getDebugType(type), getDebugSeverity(severity),
-                            GLDebugMessageCallback.getMessage(length, message)));
+            GLDebugMessageCallback proc = GLDebugMessageCallback.create(GLWrapper::onDebugMessage);
             glDebugMessageCallback(proc, NULL);
             glEnable(GL_DEBUG_OUTPUT);
         } else if (caps.GL_KHR_debug) {
             LOGGER.debug(RenderCore.MARKER, "Using KHR_debug for error logging");
-            GLDebugMessageCallback proc = GLDebugMessageCallback.create((source, type, id, severity, length, message, userParam) ->
-                    LOGGER.info("OpenGL debug message: {}\nSource: {}\nType: {}\nSeverity: {}\nMessage: {}",
-                            getDebugId(id), getDebugSource(source), getDebugType(type), getDebugSeverity(severity),
-                            GLDebugMessageCallback.getMessage(length, message)));
+            GLDebugMessageCallback proc = GLDebugMessageCallback.create(GLWrapper::onDebugMessage);
             KHRDebug.glDebugMessageCallback(proc, NULL);
             glEnable(GL_DEBUG_OUTPUT);
         } else if (caps.GL_ARB_debug_output) {
             LOGGER.debug(RenderCore.MARKER, "Using ARB_debug_output for error logging");
             GLDebugMessageARBCallback proc = GLDebugMessageARBCallback.create((source, type, id, severity, length, message, userParam) ->
-                    LOGGER.info("OpenGL debug message: {}\nSource: {}\nType: {}\nSeverity: {}\nMessage: {}",
-                            getDebugId(id), getSourceARB(source), getTypeARB(type), getSeverityARB(severity),
+                    LOGGER.info(MARKER, "0x{} [{}, {}, {}]: {}",
+                            Integer.toHexString(id), getSourceARB(source), getTypeARB(type), getSeverityARB(severity),
                             GLDebugMessageARBCallback.getMessage(length, message)));
             glDebugMessageCallbackARB(proc, NULL);
         } else if (caps.GL_AMD_debug_output) {
             LOGGER.debug(RenderCore.MARKER, "Using AMD_debug_output for error logging");
             GLDebugMessageAMDCallback proc = GLDebugMessageAMDCallback.create((id, category, severity, length, message, userParam) ->
-                    LOGGER.info("OpenGL debug message: {}\nSource: {}\nSeverity: {}\nMessage: {}",
-                            getDebugId(id), getCategoryAMD(category), getSeverityAMD(severity),
+                    LOGGER.info(MARKER, "0x{} [{}, {}]: {}",
+                            Integer.toHexString(id), getCategoryAMD(category), getSeverityAMD(severity),
                             GLDebugMessageAMDCallback.getMessage(length, message)));
             glDebugMessageCallbackAMD(proc, NULL);
         }
@@ -199,6 +197,9 @@ public final class GLWrapper extends GL43C {
         RectProgram.createPrograms();
         RoundRectProgram.createPrograms();*/
 
+        LOGGER.info(RenderCore.MARKER, "Graphics API: OpenGL {}", glGetString(GL_VERSION));
+        LOGGER.info(RenderCore.MARKER, "OpenGL Renderer: {} {}", glGetString(GL_VENDOR), glGetString(GL_RENDERER));
+
         if (sRedirector == null) {
             sRedirector = () -> {
             };
@@ -206,10 +207,32 @@ public final class GLWrapper extends GL43C {
             sRedirector.onInit();
         }
 
-        LOGGER.info(RenderCore.MARKER, "Graphics API: OpenGL {}", glGetString(GL_VERSION));
-        LOGGER.info(RenderCore.MARKER, "OpenGL Renderer: {} {}", glGetString(GL_VENDOR), glGetString(GL_RENDERER));
-
         sInitialized = true;
+    }
+
+    private static void onDebugMessage(int source, int type, int id, int severity, int length, long message, long userParam) {
+        switch (severity) {
+            case GL_DEBUG_SEVERITY_HIGH:
+                LOGGER.error(MARKER, "({}|{}|0x{}) {}",
+                        getDebugSource(source), getDebugType(type), Integer.toHexString(id),
+                        GLDebugMessageCallback.getMessage(length, message));
+                return;
+            case GL_DEBUG_SEVERITY_MEDIUM:
+                LOGGER.warn(MARKER, "({}|{}|0x{}) {}",
+                        getDebugSource(source), getDebugType(type), Integer.toHexString(id),
+                        GLDebugMessageCallback.getMessage(length, message));
+                return;
+            case GL_DEBUG_SEVERITY_NOTIFICATION:
+                LOGGER.debug(MARKER, "({}|{}|0x{}) {}",
+                        getDebugSource(source), getDebugType(type), Integer.toHexString(id),
+                        GLDebugMessageCallback.getMessage(length, message));
+                return;
+            case GL_DEBUG_SEVERITY_LOW:
+            default:
+                LOGGER.info(MARKER, "({}|{}|0x{}) {}",
+                        getDebugSource(source), getDebugType(type), Integer.toHexString(id),
+                        GLDebugMessageCallback.getMessage(length, message));
+        }
     }
 
     public static int getMaxTextureSize() {
@@ -353,20 +376,6 @@ public final class GLWrapper extends GL43C {
             glViewport(last.left, last.top, last.width(), last.height());
         if (sViewportStack.isEmpty())
             throw new IllegalStateException("Popping the main viewport");
-    }
-
-    @Nonnull
-    private static String getDebugId(int id) {
-        switch (id) {
-            case GL_INVALID_ENUM:
-                return "GL_INVALID_ENUM";
-            case GL_INVALID_VALUE:
-                return "GL_INVALID_VALUE";
-            case GL_INVALID_OPERATION:
-                return "GL_INVALID_OPERATION";
-            default:
-                return String.format("0x%X", id);
-        }
     }
 
     @Nonnull

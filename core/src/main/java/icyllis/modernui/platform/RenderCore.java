@@ -94,6 +94,7 @@ public final class RenderCore {
         GLCapabilities caps;
         try {
             caps = GL.getCapabilities();
+            LOGGER.info(MARKER, "Sharing OpenGL context with an existing one");
         } catch (IllegalStateException e) {
             caps = GL.createCapabilities();
         }

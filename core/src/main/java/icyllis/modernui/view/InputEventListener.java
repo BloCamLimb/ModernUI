@@ -16,33 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.test;
+package icyllis.modernui.view;
 
-import icyllis.modernui.math.Matrix4;
-//import org.openjdk.jmh.annotations.*;
-
-import java.util.concurrent.TimeUnit;
-
-/*@BenchmarkMode(Mode.AverageTime)
-@Warmup(iterations = 2, time = 1)
-@Threads(2)
-@Fork(1)
-@Measurement(iterations = 5, time = 1)
-@OutputTimeUnit(TimeUnit.NANOSECONDS)
-@State(Scope.Thread)*/
-public class TestCompare {
-
-    /*@Benchmark
-    public Matrix4 box() {
-        return null;
-    }
-
-    @Benchmark
-    public Matrix4 prim() {
-        Matrix4 m = new Matrix4();
-        for (int i = 0; i < 5000; i++) {
-            m = m.copy();
-        }
-        return m;
-    }*/
+public class InputEventListener {
 }

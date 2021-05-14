@@ -1,7 +1,7 @@
 pluginManagement {
     repositories {
         maven {
-            url 'https://files.minecraftforge.net/maven/'
+            url 'https://maven.minecraftforge.net/'
         }
         maven {
             url 'https://maven.fabricmc.net/'

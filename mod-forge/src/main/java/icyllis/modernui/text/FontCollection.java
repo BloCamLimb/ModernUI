@@ -119,6 +119,10 @@ public class FontCollection {
         Preconditions.checkState(MONOSPACED != null, "Monospaced font is missing");
     }
 
+    /**
+     * @deprecated after Minecraft 1.17
+     */
+    @Deprecated
     private static void checkJava() {
         String javaVersion = System.getProperty("java.version");
         if (javaVersion == null) {
