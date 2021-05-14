@@ -19,7 +19,6 @@
 package icyllis.modernui.test;
 
 import com.ibm.icu.text.BreakIterator;
-import com.ibm.icu.text.SimpleDateFormat;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.vladsch.flexmark.parser.Parser;
@@ -44,22 +43,18 @@ import icyllis.modernui.platform.Window;
 import icyllis.modernui.text.GraphemeBreak;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
-import org.lwjgl.PointerBuffer;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL43;
 import org.lwjgl.system.Callback;
-import org.lwjgl.system.MemoryStack;
-import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
-import java.util.*;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -151,7 +146,6 @@ public class TestMain {
         } catch (RunnerException e) {
             e.printStackTrace();
         }*/
-
         if (!CREATE_WINDOW)
             return;
         try {
@@ -241,7 +235,7 @@ public class TestMain {
             }, "Open-File").start();
 
             while (sWindow == null || sWindow.exists()) {
-                glfwWaitEventsTimeout(1 / 60D);
+                glfwWaitEventsTimeout(1 / 288D);
             }
             t.interrupt();
         } finally {

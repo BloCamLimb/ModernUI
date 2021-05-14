@@ -22,6 +22,8 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.platform.RenderCore;
 
+import static icyllis.modernui.graphics.GLWrapper.GL_TEXTURE_2D;
+
 /**
  * Integration with Blaze3D
  */
@@ -29,12 +31,12 @@ public class B3DRedirector implements GLWrapper.Redirector {
 
     @Override
     public void onInit() {
-        ModernUI.LOGGER.info(RenderCore.MARKER, "Sharing GL states with Blaze3D");
+        ModernUI.LOGGER.info(RenderCore.MARKER, "Sharing OpenGL states with Blaze3D");
     }
 
     @Override
     public boolean bindTexture(int target, int texture) {
-        if (target == GLWrapper.GL_TEXTURE_2D) {
+        if (target == GL_TEXTURE_2D) {
             GlStateManager._bindTexture(texture);
             return true;
         }
@@ -43,7 +45,7 @@ public class B3DRedirector implements GLWrapper.Redirector {
 
     @Override
     public boolean deleteTexture(int target, int texture) {
-        if (target == GLWrapper.GL_TEXTURE_2D) {
+        if (target == GL_TEXTURE_2D) {
             GlStateManager._deleteTexture(texture);
             return true;
         }

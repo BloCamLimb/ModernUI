@@ -119,7 +119,22 @@ public class Texture2D implements AutoCloseable {
         glTexStorage2D(mTarget, mipmapLevel, internalFormat, width, height);
     }
 
-    // alignment: pixel row alignment 1, 2, 4, 8
+    /**
+     * Upload image data to GPU. Alignment for {@link icyllis.modernui.platform.Bitmap} is 1 (byte-aligned).
+     *
+     * @param level      the level for the texture
+     * @param x          x-coordinate of the texture
+     * @param y          y-coordinate of the texture
+     * @param width      width
+     * @param height     height
+     * @param rowLength  row length if data width is not equal to texture width, or 0
+     * @param skipRows   skip rows of data
+     * @param skipPixels skip pixels of data
+     * @param alignment  pixel row alignment 1, 2, 4, 8
+     * @param format     the format of the data to upload
+     * @param type       the type of the data to upload
+     * @param pixels     the pixels data pointer
+     */
     public void upload(int level, int x, int y, int width, int height, int rowLength, int skipRows,
                        int skipPixels, int alignment, int format, int type, long pixels) {
         bind();

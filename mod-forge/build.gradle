@@ -1,7 +1,7 @@
 import net.fabricmc.loom.task.RemapJarTask
 
 plugins {
-    id 'forgified-fabric-loom'
+    id 'dev.architectury.loom'
     id 'com.matthewprenger.cursegradle'
     id 'com.github.johnrengelman.shadow'
 }
@@ -33,13 +33,13 @@ repositories {
     }
 }
 
-sourceSets {
-    /*main {
+/*sourceSets {
+    main {
         resources {
             srcDirs += [project(':ModernUI-Core').sourceSets.main.resources]
         }
-    }*/
-}
+    }
+}*/
 
 dependencies {
     minecraft "com.mojang:minecraft:${minecraft_version}"
@@ -54,8 +54,8 @@ dependencies {
         transitive = false
     }
 
-    compile "org.openjdk.jmh:jmh-core:1.29"
-    annotationProcessor "org.openjdk.jmh:jmh-generator-annprocess:1.29"
+    /*compile "org.openjdk.jmh:jmh-core:1.29"
+    annotationProcessor "org.openjdk.jmh:jmh-generator-annprocess:1.29"*/
 
     implementation "com.github.ben-manes.caffeine:caffeine:${caffeine_version}"
     implementation "com.vladsch.flexmark:flexmark:${flexmark_version}"
