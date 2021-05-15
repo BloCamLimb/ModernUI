@@ -24,6 +24,7 @@ import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
 import javax.annotation.Nonnull;
+import java.lang.ref.Cleaner;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -41,6 +42,8 @@ public class ModernUI {
 
     protected static ModernUI sInstance;
 
+    private static final Cleaner sCleaner = Cleaner.create();
+
     private final ExecutorService mLoaderPool;
 
     public ModernUI() {
@@ -50,6 +53,14 @@ public class ModernUI {
 
     public static ModernUI get() {
         return sInstance;
+    }
+
+    /**
+     * @return the global cleaner shared within Modern UI
+     */
+    @Nonnull
+    public static Cleaner cleaner() {
+        return sCleaner;
     }
 
     public void warnSetup(String key, Object... args) {

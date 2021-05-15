@@ -148,7 +148,7 @@ final class Registration {
         //SettingsManager.INSTANCE.buildAllSettings();
         //UIManager.getInstance().registerMenuScreen(Registration.TEST_MENU, menu -> new TestUI());
 
-        event.getMinecraftSupplier().get().submitAsync(() -> {
+        event.getMinecraftSupplier().get().execute(() -> {
             GLWrapper.setRedirector(new B3DRedirector());
             RenderCore.initialize();
             ArcProgram.createPrograms();

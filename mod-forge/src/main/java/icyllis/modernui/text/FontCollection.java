@@ -23,7 +23,6 @@ import com.ibm.icu.impl.UCharacterProperty;
 import com.ibm.icu.lang.UCharacter;
 import com.ibm.icu.lang.UCharacterCategory;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.core.forge.LocalStorage;
 import icyllis.modernui.graphics.font.GlyphManager;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.jetbrains.annotations.ApiStatus;
@@ -58,8 +57,8 @@ public class FontCollection {
     @Nonnull
     public static final Font sSansSerifFont;
 
-    @Deprecated
-    public static boolean sJavaTooOld;
+    /*@Deprecated
+    public static boolean sJavaTooOld;*/
 
     private static final List<String> sFontFamilyNames;
     @ApiStatus.Internal
@@ -67,7 +66,7 @@ public class FontCollection {
     static final Map<String, FontCollection> sSystemFontMap = new HashMap<>();
 
     static {
-        checkJava();
+        //checkJava();
         /* Use Java's logical font as the default initial font if user does not override it in some configuration file */
         GraphicsEnvironment.getLocalGraphicsEnvironment().preferLocaleFonts();
 
@@ -89,16 +88,14 @@ public class FontCollection {
         sFontFamilyNames = new ObjectArrayList<>(families);
 
         Font builtIn = null;
-        if (!sJavaTooOld) {
-            try (InputStream stream = FontCollection.class.getResourceAsStream("/assets/modernui/font/biliw.otf")) {
-                if (stream != null) {
-                    sAllFontFamilies.add(builtIn = Font.createFont(Font.TRUETYPE_FONT, stream));
-                } else {
-                    ModernUI.LOGGER.debug(GlyphManager.MARKER, "Built-in font was missing");
-                }
-            } catch (FontFormatException | IOException e) {
-                ModernUI.LOGGER.error(GlyphManager.MARKER, "Built-in font failed to load", e);
+        try (InputStream stream = FontCollection.class.getResourceAsStream("/assets/modernui/font/biliw.otf")) {
+            if (stream != null) {
+                sAllFontFamilies.add(builtIn = Font.createFont(Font.TRUETYPE_FONT, stream));
+            } else {
+                ModernUI.LOGGER.debug(GlyphManager.MARKER, "Built-in font was missing");
             }
+        } catch (FontFormatException | IOException e) {
+            ModernUI.LOGGER.error(GlyphManager.MARKER, "Built-in font failed to load", e);
         }
         sBuiltInFont = builtIn;
 
@@ -119,10 +116,7 @@ public class FontCollection {
         Preconditions.checkState(MONOSPACED != null, "Monospaced font is missing");
     }
 
-    /**
-     * @deprecated after Minecraft 1.17
-     */
-    @Deprecated
+    /*@Deprecated
     private static void checkJava() {
         String javaVersion = System.getProperty("java.version");
         if (javaVersion == null) {
@@ -148,7 +142,7 @@ public class FontCollection {
                 }
             }
         }
-    }
+    }*/
 
     // unmodifiable
     public static List<String> getFontFamilyNames() {

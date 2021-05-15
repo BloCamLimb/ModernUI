@@ -46,7 +46,7 @@ public final class RenderCore {
 
     public static int glCapabilitiesErrors;
 
-    static boolean sInitialized = false;
+    private static boolean sInitialized = false;
     static boolean sIgnoreFormatError = false;
 
     private static Thread sRenderThread;
@@ -56,12 +56,12 @@ public final class RenderCore {
      */
     public static void initBackend() {
         LOGGER.info(MARKER, "Backend Library: LWJGL {}", Version.getVersion());
-        if (GLFW.glfwSetErrorCallback(RenderCore::callbackError) != null || !GLFW.glfwInit()) {
+        if (GLFW.glfwSetErrorCallback(RenderCore::onError) != null || !GLFW.glfwInit()) {
             throw new IllegalStateException("Failed to initialize GLFW");
         }
     }
 
-    private static void callbackError(int errorCode, long descPtr) {
+    private static void onError(int errorCode, long descPtr) {
         if (errorCode == GLFW.GLFW_FORMAT_UNAVAILABLE && sIgnoreFormatError)
             return;
         String desc = descPtr == NULL ? "" : MemoryUtil.memUTF8(descPtr);
@@ -84,7 +84,7 @@ public final class RenderCore {
     /**
      * Call after creating a Window on render thread.
      */
-    public static synchronized void initialize() {
+    public static void initialize() {
         if (sInitialized) {
             return;
         }
@@ -94,7 +94,7 @@ public final class RenderCore {
         GLCapabilities caps;
         try {
             caps = GL.getCapabilities();
-            LOGGER.info(MARKER, "Sharing OpenGL context with an existing one");
+            LOGGER.debug(MARKER, "Sharing OpenGL context with an existing one");
         } catch (IllegalStateException e) {
             caps = GL.createCapabilities();
         }

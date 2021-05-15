@@ -24,11 +24,11 @@ import com.ibm.icu.text.Bidi;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.mixin.MixinClientLanguage;
-import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.graphics.font.TexturedGlyph;
 import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.graphics.textmc.pipeline.*;
+import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.text.FontCollection;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -176,7 +176,7 @@ public class TextLayoutProcessor {
     public void initRenderer() {
         if (glyphManager == null) {
             glyphManager = GlyphManager.getInstance();
-            ModernUI.LOGGER.debug(RenderCore.MARKER, "Text engine initialized");
+            ModernUI.LOGGER.info(RenderCore.MARKER, "Text engine initialized");
         } else {
             throw new IllegalStateException("Already initialized");
         }
@@ -200,7 +200,7 @@ public class TextLayoutProcessor {
      * So actually it's a copy of original text, then we can use our layout engine later
      *
      * @param sequence a char sequence copied from the original string
-     * @param consumer   what to do with a part of styled char sequence
+     * @param consumer what to do with a part of styled char sequence
      * @return {@code false} if action stopped on the way, {@code true} if the whole text was handled
      */
     public boolean handleSequence(FormattedCharSequence sequence, ReorderTextHandler.IConsumer consumer) {
@@ -912,13 +912,13 @@ public class TextLayoutProcessor {
             final float factor = glyphManager.getResolutionFactor();
 
             for (int i = 0; i < num; i++) {
-                /* back compatibility for Java 8, since LayoutGlyphVector should not have non-standard glyphs
+                /* Back compatibility for Java 8, since LayoutGlyphVector should not have non-standard glyphs
                  * HarfBuzz is introduced in Java 11 or higher
                  */
-                if (vector.getGlyphMetrics(i).getAdvanceX() == 0 &&
+                /*if (vector.getGlyphMetrics(i).getAdvanceX() == 0 &&
                         vector.getGlyphMetrics(i).getBounds2D().getWidth() == 0) {
                     continue;
-                }
+                }*/
 
                 int stripIndex = vector.getGlyphCharIndex(i) + start;
                 Point2D point = vector.getGlyphPosition(i);
@@ -956,7 +956,7 @@ public class TextLayoutProcessor {
         }
     }
 
-    private void layoutEmoji(TextProcessData data, int codePoint, int start, int flag) {
+    /*private void layoutEmoji(TextProcessData data, int codePoint, int start, int flag) {
         float offset;
         if (flag == Font.LAYOUT_RIGHT_TO_LEFT) {
             offset = data.layoutRight;
@@ -976,7 +976,7 @@ public class TextLayoutProcessor {
         } else {
             data.finishFontLayout(0);
         }
-    }
+    }*/
 
     /**
      * Simple layout for random digits

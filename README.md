@@ -20,9 +20,9 @@ Description and releases for Minecraft Mod are available on [CurseForge](https:/
 ### Adding Modern UI to your project
 #### Environment requirements
 - Windows, Linux or Classic macOS
-- JDK 11.0.8 or above (Compile against Java 8 for backward compatibility)
-- OpenGL 4.3 (Modern UI is fully GPU-accelerated rendering)
-- (Optionally in Minecraft) Forge 1.16.5-36.1.0
+- JDK 11.0.8 or above
+- OpenGL 4.3 or above
+- (Optional) Forge 1.16.5-36.1.0
 #### Gradle configuration
 ```
 repositories {
@@ -32,17 +32,17 @@ repositories {
     }
 }
 ```
-##### Forge Loom 0.6
+##### Forge Loom 0.7
 ```
 dependencies {
     modCompile "icyllis.modernui:ModernUI-Forge:${modernui_version}"
 }
 ```
-##### ForgeGradle 3  
-Note that ForgeGradle 3, Mixin 0.8.2 can't automatically remap refmap
+##### ForgeGradle 4
+Mixin 0.8.2 can't automatically remap the refmap
 in forge dev environment, you may manually add mixin system properties and
 re-run `genIntellijRuns`, see https://github.com/SpongePowered/Mixin/issues/462  
-ForgeGradle 3 will ignore sources jar and dependencies as well, you may manually
+ForgeGradle 3 will ignore sources jar and dependencies, you may manually
 add one that with `@pom` for dependencies, see https://github.com/MinecraftForge/ForgeGradle/issues/736  
 These should be fixed in ForgeGradle 4 and Mixin 0.8.3.
 ```
@@ -56,6 +56,7 @@ minecraft {
 }
 dependencies {
     compile fg.deobf("icyllis.modernui:ModernUI-Forge:${modernui_version}")
+    // FG3
     compile fg.deobf("icyllis.modernui:ModernUI-Forge:${modernui_version}@pom")
 }
 ```

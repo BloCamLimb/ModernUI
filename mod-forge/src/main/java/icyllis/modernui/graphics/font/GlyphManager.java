@@ -34,8 +34,6 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.AbstractTexture;
-import net.minecraft.client.renderer.texture.SimpleTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import org.apache.commons.lang3.StringUtils;
@@ -227,14 +225,10 @@ public class GlyphManager {
      */
     private final Int2ObjectMap<TexturedGlyph[]> mDigitsMap = new Int2ObjectArrayMap<>(4);
 
-    private final Int2ObjectMap<TexturedGlyph> mEmojiMap = new Int2ObjectArrayMap<>(32);
+    /*private final Int2ObjectMap<TexturedGlyph> mEmojiMap = new Int2ObjectArrayMap<>(32);
 
-    /**
-     * Emoji texture atlas
-     */
     @Deprecated
-    private int emojiTexture;
-
+    private int emojiTexture;*/
 
     /**
      * The X coordinate of the upper=left corner in glyphCacheImage where the next glyph image should be stored. Glyphs are
@@ -295,9 +289,9 @@ public class GlyphManager {
         mFontKeyMap.clear();
         mGlyphCache.clear();
         mDigitsMap.clear();
-        mEmojiMap.clear();
+        //mEmojiMap.clear();
         mTexture = null;
-        emojiTexture = 0;
+        //emojiTexture = 0;
         TextRenderType.deleteTextures();
         mSelectedFonts.clear();
         allocateGlyphTexture();
@@ -312,31 +306,31 @@ public class GlyphManager {
             if (cfgFont.endsWith(".ttf") || cfgFont.endsWith(".otf")
                     || cfgFont.endsWith(".TTF") || cfgFont.endsWith(".OTF")) {
                 if (cfgFont.contains(":/") || cfgFont.contains(":\\")) {
-                    if (!FontCollection.sJavaTooOld) {
-                        try {
-                            Font f = Font.createFont(Font.TRUETYPE_FONT, new File(
-                                    cfgFont.replaceAll("\\\\", "/")));
-                            mSelectedFonts.add(f);
-                            ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", f.getFamily(Locale.ROOT));
-                        } catch (Exception e) {
-                            ModernUI.LOGGER.warn(MARKER, "Preferred font {} failed to load", cfgFont, e);
-                        }
-                    } else {
+                    //if (!FontCollection.sJavaTooOld) {
+                    try {
+                        Font f = Font.createFont(Font.TRUETYPE_FONT, new File(
+                                cfgFont.replaceAll("\\\\", "/")));
+                        mSelectedFonts.add(f);
+                        ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", f.getFamily(Locale.ROOT));
+                    } catch (Exception e) {
+                        ModernUI.LOGGER.warn(MARKER, "Preferred font {} failed to load", cfgFont, e);
+                    }
+                    /*} else {
                         ModernUI.LOGGER.warn(MARKER, "Cannot load external font {} since Java is too old", cfgFont);
-                    }
+                    }*/
                 } else if (cfgFont.contains(":")) {
-                    if (!FontCollection.sJavaTooOld) {
-                        try (Resource resource = Minecraft.getInstance().getResourceManager()
-                                .getResource(new ResourceLocation(cfgFont))) {
-                            Font f = Font.createFont(Font.TRUETYPE_FONT, resource.getInputStream());
-                            mSelectedFonts.add(f);
-                            ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", f.getFamily(Locale.ROOT));
-                        } catch (Exception e) {
-                            ModernUI.LOGGER.warn(MARKER, "Preferred font {} failed to load", cfgFont, e);
-                        }
-                    } else {
-                        ModernUI.LOGGER.warn(MARKER, "Cannot load resource pack font {} since Java is too old", cfgFont);
+                    //if (!FontCollection.sJavaTooOld) {
+                    try (Resource resource = Minecraft.getInstance().getResourceManager()
+                            .getResource(new ResourceLocation(cfgFont))) {
+                        Font f = Font.createFont(Font.TRUETYPE_FONT, resource.getInputStream());
+                        mSelectedFonts.add(f);
+                        ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", f.getFamily(Locale.ROOT));
+                    } catch (Exception e) {
+                        ModernUI.LOGGER.warn(MARKER, "Preferred font {} failed to load", cfgFont, e);
                     }
+                    /*} else {
+                        ModernUI.LOGGER.warn(MARKER, "Cannot load resource pack font {} since Java is too old", cfgFont);
+                    }*/
                 } else {
                     ModernUI.LOGGER.warn(MARKER, "Preferred font {} is invalid", cfgFont);
                 }
@@ -421,7 +415,7 @@ public class GlyphManager {
     }
 
     // test only
-    @Deprecated
+    /*@Deprecated
     public TexturedGlyph lookupEmoji(int codePoint) {
         return mEmojiMap.computeIfAbsent(codePoint, l -> {
             if (emojiTexture == 0) {
@@ -432,7 +426,7 @@ public class GlyphManager {
             }
             return new TexturedGlyph(emojiTexture, 12, 0, -8, 12, 12, 0, 0, 0.046875f, 0.046875f);
         });
-    }
+    }*/
 
     /**
      * Derive a font family with given style and size
@@ -580,7 +574,7 @@ public class GlyphManager {
         mCurrPosX += renderWidth + GLYPH_SPACING * 2;
         final float f = getResolutionFactor();
 
-        return new TexturedGlyph(mTexture.getId(), advance / f, baselineX / f, baselineY / f,
+        return new TexturedGlyph(mTexture, advance / f, baselineX / f, baselineY / f,
                 width / f, height / f,
                 (float) x / TEXTURE_SIZE, (float) y / TEXTURE_SIZE,
                 (float) (x + width) / TEXTURE_SIZE, (float) (y + height) / TEXTURE_SIZE);
@@ -689,7 +683,7 @@ public class GlyphManager {
             mCurrLineHeight = Math.max(mCurrLineHeight, renderHeight);
             mCurrPosX += standardRenderWidth + GLYPH_SPACING * 2;
 
-            digits[i] = new TexturedGlyph(mTexture.getId(),
+            digits[i] = new TexturedGlyph(mTexture,
                     standardAdvance / f, baselineX / f, baselineY / f,
                     width / f, height / f,
                     (float) x / TEXTURE_SIZE, (float) y / TEXTURE_SIZE,
@@ -1023,7 +1017,7 @@ public class GlyphManager {
             GL11.glTexImage2D(GL11.GL_TEXTURE_2D, level, GL11.GL_ALPHA, TEXTURE_SIZE >> level,
                     TEXTURE_SIZE >> level, 0, GL11.GL_ALPHA, GL11.GL_UNSIGNED_BYTE, (IntBuffer) null);
         }*/
-        mTexture.init(GL_ALPHA, TEXTURE_SIZE, TEXTURE_SIZE, mipmapLevel);
+        mTexture.initCompat(GL_ALPHA, TEXTURE_SIZE, TEXTURE_SIZE, mipmapLevel);
 
         /* We set MinMag params here, just call once for a texture */
         /*if (sAntiAliasing) {

@@ -1,7 +1,7 @@
 {
-  "minVersion": "0.8",
+  "minVersion": "0.8.2",
   "required": true,
-  "compatibilityLevel": "JAVA_8",
+  "compatibilityLevel": "JAVA_11",
   "plugin": "icyllis.modernui.core.MixinConfigPlugin",
   "package": "icyllis.modernui.core.mixin",
   "mixins": [
@@ -13,7 +13,6 @@
     "AccessGameRenderer",
     "AccessOption",
     "AccessPostChain",
-    "AccessStringSplitter",
     "AccessVideoSettingsScreen",
     "MixinClientLanguage",
     "MixinFontManager",

@@ -22,8 +22,8 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.core.mixin.AccessFontRenderer;
 import icyllis.modernui.core.mixin.MixinClientLanguage;
-import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.graphics.textmc.pipeline.TextRenderNode;
+import icyllis.modernui.platform.RenderCore;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.StringSplitter;
 import net.minecraft.client.gui.Font;
@@ -35,12 +35,14 @@ import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.mutable.MutableFloat;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -60,7 +62,7 @@ public class ModernFontRenderer extends Font {
     /**
      * Config values
      */
-    private boolean allowShadow = true;
+    private boolean mAllowShadow = true;
     private boolean mGlobalRenderer = false;
 
     private final TextLayoutProcessor mFontEngine = TextLayoutProcessor.getInstance();
@@ -68,8 +70,7 @@ public class ModernFontRenderer extends Font {
     // temporary float value used in lambdas
     private final MutableFloat v = new MutableFloat();
 
-    private ModernStringSplitter modernStringSplitter;
-    private StringSplitter vanillaStringSplitter;
+    private ModernStringSplitter mModernSplitter;
 
     private ModernFontRenderer(Function<ResourceLocation, FontSet> fonts) {
         super(fonts);
@@ -79,12 +80,10 @@ public class ModernFontRenderer extends Font {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
         if (instance == null) {
             ModernFontRenderer i = new ModernFontRenderer(fonts);
-            StringSplitter o = i.getSplitter();
             @Deprecated
             StringSplitter.WidthProvider c = (codePoint, style) ->
                     i.mFontEngine.lookupVanillaNode(new String(new int[]{codePoint}, 0, 1), style).advance;
-            i.modernStringSplitter = new ModernStringSplitter(c);
-            i.vanillaStringSplitter = o;
+            i.mModernSplitter = new ModernStringSplitter(c);
             return instance = i;
         } else {
             throw new IllegalStateException("Already created");
@@ -92,13 +91,10 @@ public class ModernFontRenderer extends Font {
     }
 
     public static void change(boolean global, boolean shadow) {
-        RenderSystem.assertThread(RenderSystem::isOnRenderThread);
+        RenderCore.ensureRenderThread();
         if (RenderCore.isInitialized()) {
-            if (instance.mGlobalRenderer != global) {
-                ((AccessFontRenderer) instance).setSplitter(global ? instance.modernStringSplitter : instance.vanillaStringSplitter);
-                instance.mGlobalRenderer = global;
-            }
-            instance.allowShadow = shadow;
+            instance.mGlobalRenderer = global;
+            instance.mAllowShadow = shadow;
         }
     }
 
@@ -227,7 +223,7 @@ public class ModernFontRenderer extends Font {
         int b = color & 0xff;
 
         TextRenderNode node = mFontEngine.lookupVanillaNode(text, style);
-        if (dropShadow && allowShadow) {
+        if (dropShadow && mAllowShadow) {
             node.drawText(matrix, buffer, text, x + 0.8f, y + 0.8f, r >> 2, g >> 2, b >> 2, a, true,
                     seeThrough, colorBackground, packedLight);
             matrix = matrix.copy(); // if not drop shadow, we don't need to copy the matrix
@@ -235,6 +231,72 @@ public class ModernFontRenderer extends Font {
         }
 
         return node.drawText(matrix, buffer, text, x, y, r, g, b, a, false, seeThrough, colorBackground, packedLight);
+    }
+
+    @Override
+    public int width(String string) {
+        if (mGlobalRenderer) {
+            return Mth.ceil(mModernSplitter.stringWidth(string));
+        }
+        return super.width(string);
+    }
+
+    @Override
+    public int width(FormattedText text) {
+        if (mGlobalRenderer) {
+            return Mth.ceil(mModernSplitter.stringWidth(text));
+        }
+        return super.width(text);
+    }
+
+    @Override
+    public int width(FormattedCharSequence text) {
+        if (mGlobalRenderer) {
+            return Mth.ceil(mModernSplitter.stringWidth(text));
+        }
+        return super.width(text);
+    }
+
+    @Override
+    public String plainSubstrByWidth(String text, int width, boolean reverse) {
+        if (mGlobalRenderer) {
+            return reverse ? mModernSplitter.plainTailByWidth(text, width, Style.EMPTY) : mModernSplitter.plainHeadByWidth(text, width, Style.EMPTY);
+        }
+        return super.plainSubstrByWidth(text, width, reverse);
+    }
+
+    @Override
+    public String plainSubstrByWidth(String text, int width) {
+        if (mGlobalRenderer) {
+            return mModernSplitter.plainHeadByWidth(text, width, Style.EMPTY);
+        }
+        return super.plainSubstrByWidth(text, width);
+    }
+
+    @Override
+    public FormattedText substrByWidth(FormattedText text, int width) {
+        if (mGlobalRenderer)
+            return mModernSplitter.headByWidth(text, width, Style.EMPTY);
+        return super.substrByWidth(text, width);
+    }
+
+    @Override
+    public int wordWrapHeight(String text, int width) {
+        if (mGlobalRenderer)
+            return lineHeight * mModernSplitter.splitLines(text, width, Style.EMPTY).size();
+        return super.wordWrapHeight(text, width);
+    }
+
+    @Override
+    public List<FormattedCharSequence> split(FormattedText text, int width) {
+        if (mGlobalRenderer)
+            return Language.getInstance().getVisualOrder(mModernSplitter.splitLines(text, width, Style.EMPTY));
+        return super.split(text, width);
+    }
+
+    @Override
+    public StringSplitter getSplitter() {
+        return mGlobalRenderer ? mModernSplitter : super.getSplitter();
     }
 
     /*@Override

@@ -19,7 +19,6 @@
 package icyllis.modernui.core.mixin;
 
 import com.mojang.math.Vector3f;
-import net.minecraft.client.StringSplitter;
 import net.minecraft.client.gui.Font;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
@@ -31,7 +30,4 @@ public interface AccessFontRenderer {
     static Vector3f shadowLifting() {
         throw new IllegalStateException();
     }
-
-    @Accessor("splitter")
-    void setSplitter(StringSplitter splitter);
 }

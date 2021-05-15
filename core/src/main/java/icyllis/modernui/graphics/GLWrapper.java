@@ -292,7 +292,7 @@ public final class GLWrapper extends GL43C {
             glBindTexture(target, texture);
     }
 
-    // target - test texture type
+    // target - used for testing texture type
     @RenderThread
     public static void deleteTexture(int target, int texture) {
         if (sRedirector.deleteTexture(target, texture))
