@@ -22,9 +22,9 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.graphics.textmc.pipeline.TextRenderType;
+import icyllis.modernui.graphics.texture.Texture2D;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.Sheets;
+import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.Nonnull;
 
@@ -39,25 +39,25 @@ public class TexturedGlyph {
     /**
      * Render type for render type buffer system.
      */
-    private RenderType renderType;
-    private RenderType seeThroughType;
+    private final TextRenderType renderType;
+    private final TextRenderType seeThroughType;
 
     // see getAdvance()
-    private float advance;
+    private final float advance;
 
     /**
      * The offset to baseline that specified when drawing.
      * The value should be a multiple of (1 / guiScale)
      * This will be used for drawing offset X.
      */
-    private float baselineX;
+    private final float baselineX;
 
     /**
      * The offset to baseline that specified when drawing.
      * The value should be a multiple of (1 / guiScale)
      * This will be used for drawing offset Y.
      */
-    private float baselineY;
+    private final float baselineY;
 
     /**
      * The total width of this glyph image.
@@ -65,7 +65,7 @@ public class TexturedGlyph {
      * The value should be a multiple of (1 / guiScale)
      * This will be used for drawing size.
      */
-    private float width;
+    private final float width;
 
     /**
      * The total height of this glyph image.
@@ -73,44 +73,32 @@ public class TexturedGlyph {
      * The value should be a multiple of (1 / guiScale)
      * This will be used for drawing size.
      */
-    private float height;
+    private final float height;
 
     /**
      * The horizontal texture coordinate of the upper-left corner.
      */
-    private float u1;
+    private final float u1;
 
     /**
      * The vertical texture coordinate of the upper-left corner.
      */
-    private float v1;
+    private final float v1;
 
     /**
      * The horizontal texture coordinate of the lower-right corner.
      */
-    private float u2;
+    private final float u2;
 
     /**
      * The vertical texture coordinate of the lower-right corner.
      */
-    private float v2;
+    private final float v2;
 
-    /**
-     * Allocates but not fills the contents
-     */
-    public TexturedGlyph() {
-        renderType = seeThroughType = Sheets.solidBlockSheet();
-    }
-
-    public TexturedGlyph(int textureName, float advance, float baselineX, float baselineY, float width, float height, float u1, float v1, float u2, float v2) {
-        init(textureName, advance, baselineX, baselineY, width, height, u1, v1, u2, v2);
-    }
-
-    public void init(int textureName, float advance, float baselineX, float baselineY, float width, float height, float u1, float v1, float u2, float v2) {
-        if (renderType instanceof TextRenderType)
-            throw new IllegalStateException("Already initialized");
-        renderType = TextRenderType.getOrCacheType(textureName, false);
-        seeThroughType = TextRenderType.getOrCacheType(textureName, true);
+    public TexturedGlyph(Texture2D texture, float advance, float baselineX, float baselineY, float width, float height, float u1, float v1, float u2, float v2) {
+        Pair<TextRenderType, TextRenderType> typePair = TextRenderType.getOrCacheType(texture);
+        renderType = typePair.getLeft();
+        seeThroughType = typePair.getRight();
         this.advance = advance;
         this.baselineX = baselineX;
         this.baselineY = baselineY;
@@ -123,15 +111,13 @@ public class TexturedGlyph {
     }
 
     public void drawGlyph(@Nonnull VertexConsumer builder, float x, float y, int r, int g, int b, int a) {
-        if (renderType instanceof TextRenderType) {
-            RenderSystem.bindTexture(((TextRenderType) renderType).textureName);
-            x += baselineX;
-            y += baselineY;
-            builder.vertex(x, y, 0).color(r, g, b, a).uv(u1, v1).endVertex();
-            builder.vertex(x, y + height, 0).color(r, g, b, a).uv(u1, v2).endVertex();
-            builder.vertex(x + width, y + height, 0).color(r, g, b, a).uv(u2, v2).endVertex();
-            builder.vertex(x + width, y, 0).color(r, g, b, a).uv(u2, v1).endVertex();
-        }
+        RenderSystem.bindTexture(renderType.textureName);
+        x += baselineX;
+        y += baselineY;
+        builder.vertex(x, y, 0).color(r, g, b, a).uv(u1, v1).endVertex();
+        builder.vertex(x, y + height, 0).color(r, g, b, a).uv(u1, v2).endVertex();
+        builder.vertex(x + width, y + height, 0).color(r, g, b, a).uv(u2, v2).endVertex();
+        builder.vertex(x + width, y, 0).color(r, g, b, a).uv(u2, v1).endVertex();
     }
 
     public void drawGlyph(Matrix4f matrix, @Nonnull MultiBufferSource buffer, float x, float y, int r, int g, int b, int a, boolean seeThrough, int packedLight) {

@@ -21,11 +21,12 @@ package icyllis.modernui.graphics.textmc.pipeline;
 import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import icyllis.modernui.graphics.GLWrapper;
-import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import icyllis.modernui.graphics.texture.Texture2D;
+import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
+import org.apache.commons.lang3.tuple.Pair;
 import org.lwjgl.opengl.GL11;
 
 import java.util.Objects;
@@ -36,8 +37,8 @@ public class TextRenderType extends RenderType {
      * Texture id to render type map
      */
     //TODO remove some old textures depend on put order
-    private static final Int2ObjectMap<TextRenderType> TYPES = new Int2ObjectLinkedOpenHashMap<>();
-    private static final Int2ObjectMap<TextRenderType> SEE_THROUGH_TYPES = new Int2ObjectLinkedOpenHashMap<>();
+    private static final Object2ObjectMap<Texture2D, TextRenderType> TYPES = new Object2ObjectLinkedOpenHashMap<>();
+    private static final Object2ObjectMap<Texture2D, TextRenderType> SEE_THROUGH_TYPES = new Object2ObjectLinkedOpenHashMap<>();
 
     /**
      * Only the texture id is different, the rest state are same
@@ -115,17 +116,13 @@ public class TextRenderType extends RenderType {
         this.hashCode = Objects.hash(super.hashCode(), SEE_THROUGH_STATES, textureName);
     }
 
-    public static TextRenderType getOrCacheType(int textureName, boolean seeThrough) {
-        if (seeThrough) {
-            return SEE_THROUGH_TYPES.computeIfAbsent(textureName, n -> new TextRenderType(n, "modern_text_see_through"));
-        }
-        return TYPES.computeIfAbsent(textureName, TextRenderType::new);
+    public static Pair<TextRenderType, TextRenderType> getOrCacheType(Texture2D texture) {
+        return Pair.of(TYPES.computeIfAbsent(texture, n -> new TextRenderType(n.getId())),
+                SEE_THROUGH_TYPES.computeIfAbsent(texture, n -> new TextRenderType(n.getId(), "modern_text_see_through")));
     }
 
     public static void deleteTextures() {
-        for (Int2ObjectMap.Entry<TextRenderType> entry : TYPES.int2ObjectEntrySet()) {
-            GLWrapper.deleteTexture(GLWrapper.GL_TEXTURE_2D, entry.getIntKey());
-        }
+        TYPES.keySet().forEach(Texture2D::close);
         TYPES.clear();
         SEE_THROUGH_TYPES.clear();
     }

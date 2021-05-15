@@ -24,11 +24,15 @@ package icyllis.modernui.core;
  * Creating a plugin by {@link DefinePlugin}, for example:
  * <pre>
  * &#64;DefinePlugin("example")
- * public class MuiPlugin extends Plugin {
+ * public class MPlugin extends Plugin {
  *      private static Plugin sInstance;
  *
- *      public MuiPlugin() {
+ *      public MPlugin() {
  *          sInstance = this;
+ *      }
+ *
+ *      public static Plugin get() {
+ *          return sInstance;
  *      }
  * }
  * </pre>
