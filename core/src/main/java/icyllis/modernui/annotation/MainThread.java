@@ -16,11 +16,16 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.view;
+package icyllis.modernui.annotation;
 
-public class InputEventListener {
+import java.lang.annotation.*;
 
-    public void onInputEvent(InputEvent event) {
-
-    }
+/**
+ * Denotes that the annotated method should only be called on the JVM main thread,
+ * the thread is used for GLFW operations and callbacks.
+ */
+@Documented
+@Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.TYPE})
+@Retention(RetentionPolicy.CLASS)
+public @interface MainThread {
 }

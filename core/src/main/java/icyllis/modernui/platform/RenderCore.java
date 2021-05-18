@@ -36,6 +36,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static icyllis.modernui.ModernUI.LOGGER;
 import static org.lwjgl.system.MemoryUtil.NULL;
@@ -44,12 +46,12 @@ public final class RenderCore {
 
     public static final Marker MARKER = MarkerManager.getMarker("Graphics");
 
-    public static int glCapabilitiesErrors;
-
     private static boolean sInitialized = false;
     static boolean sIgnoreFormatError = false;
 
     private static Thread sRenderThread;
+
+    private static final Queue<Runnable> sRenderCalls = new ConcurrentLinkedQueue<>();
 
     /**
      * Initialize GLFW, call on JVM main thread.
@@ -81,6 +83,16 @@ public final class RenderCore {
         sRenderThread.interrupt();
     }
 
+    public static void recordRenderCall(@Nonnull Runnable r) {
+        sRenderCalls.offer(r);
+    }
+
+    public static void flushRenderCalls() {
+        Runnable r;
+        while ((r = sRenderCalls.poll()) != null)
+            r.run();
+    }
+
     /**
      * Call after creating a Window on render thread.
      */
@@ -105,6 +117,14 @@ public final class RenderCore {
 
     public static boolean isInitialized() {
         return sInitialized;
+    }
+
+    public static long timeNanos() {
+        return (long) (GLFW.glfwGetTime() * 1.0E9);
+    }
+
+    public static long timeMillis() {
+        return (long) (GLFW.glfwGetTime() * 1.0E3);
     }
 
     // this method doesn't close stream, MemoryUtil.memFree(buffer) is required as well

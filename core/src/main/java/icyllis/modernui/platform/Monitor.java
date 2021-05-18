@@ -39,7 +39,7 @@ public final class Monitor {
     private static final Long2ObjectMap<Monitor> sMonitors = new Long2ObjectArrayMap<>();
 
     static {
-        GLFW.glfwSetMonitorCallback(Monitor::callbackMonitor);
+        GLFW.glfwSetMonitorCallback(Monitor::onMonitorChanged);
         PointerBuffer pointers = GLFW.glfwGetMonitors();
         if (pointers != null) {
             for (int i = 0; i < pointers.limit(); ++i) {
@@ -49,7 +49,7 @@ public final class Monitor {
         }
     }
 
-    private static void callbackMonitor(long monitor, int event) {
+    private static void onMonitorChanged(long monitor, int event) {
         if (event == GLFW.GLFW_CONNECTED) {
             sMonitors.put(monitor, new Monitor(monitor));
         } else if (event == GLFW.GLFW_DISCONNECTED) {
@@ -58,8 +58,8 @@ public final class Monitor {
     }
 
     @Nullable
-    public static Monitor get(long ptr) {
-        return sMonitors.get(ptr);
+    public static Monitor get(long handle) {
+        return sMonitors.get(handle);
     }
 
     @Nullable
@@ -72,26 +72,26 @@ public final class Monitor {
         return sMonitors.values();
     }
 
-    private final long mNativePtr;
+    private final long mHandle;
 
     private final int mXPos;
     private final int mYPos;
 
     private final VideoMode[] mVideoModes;
 
-    private Monitor(long ptr) {
-        mNativePtr = ptr;
+    private Monitor(long handle) {
+        mHandle = handle;
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
             IntBuffer x = stack.mallocInt(1);
             IntBuffer y = stack.mallocInt(1);
-            GLFW.glfwGetMonitorPos(ptr, x, y);
+            GLFW.glfwGetMonitorPos(handle, x, y);
             mXPos = x.get(0);
             mYPos = y.get(0);
         }
 
         List<VideoMode> list = new ArrayList<>();
-        GLFWVidMode.Buffer buffer = GLFW.glfwGetVideoModes(ptr);
+        GLFWVidMode.Buffer buffer = GLFW.glfwGetVideoModes(handle);
         if (buffer == null) {
             throw new IllegalStateException("Failed to get video modes");
         }
@@ -105,8 +105,8 @@ public final class Monitor {
         mVideoModes = list.toArray(new VideoMode[0]);
     }
 
-    public long getNativePtr() {
-        return mNativePtr;
+    public long getHandle() {
+        return mHandle;
     }
 
     /**
@@ -129,7 +129,7 @@ public final class Monitor {
 
     @Nonnull
     public VideoMode getCurrentMode() {
-        GLFWVidMode mode = GLFW.glfwGetVideoMode(mNativePtr);
+        GLFWVidMode mode = GLFW.glfwGetVideoMode(mHandle);
         if (mode == null) {
             throw new IllegalStateException("Failed to get current video mode");
         }
@@ -138,7 +138,7 @@ public final class Monitor {
 
     @Nullable
     public String getName() {
-        return GLFW.glfwGetMonitorName(mNativePtr);
+        return GLFW.glfwGetMonitorName(mHandle);
     }
 
     /**

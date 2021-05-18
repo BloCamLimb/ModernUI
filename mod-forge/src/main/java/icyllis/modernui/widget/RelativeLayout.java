@@ -191,8 +191,8 @@ public class RelativeLayout extends ViewGroup {
             ignore = findViewById(ignoreGravity);
         }
 
-        boolean isWrapContentWidth = widthMode.isVariable();
-        boolean isWrapContentHeight = heightMode.isVariable();
+        boolean isWrapContentWidth = widthMode.notExactly();
+        boolean isWrapContentHeight = heightMode.notExactly();
 
         View[] views = sortedHorizontalChildren;
         int count = views.length;

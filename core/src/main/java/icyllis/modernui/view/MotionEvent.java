@@ -19,19 +19,15 @@
 package icyllis.modernui.view;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.minecraft.client.Minecraft;
-import net.minecraft.Util;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.lwjgl.glfw.GLFW;
+import org.lwjgl.system.Platform;
 
 import javax.annotation.Nonnull;
 
 /**
- * An object that indicates movement events (mouse, touchpad etc)
- *
- * @see GLFW
- * @see net.minecraft.client.MouseHelper
+ * Object that indicates movement events (mouse, touchpad etc)
  */
 @SuppressWarnings("unused")
 public final class MotionEvent extends InputEvent {
@@ -457,9 +453,9 @@ public final class MotionEvent extends InputEvent {
      * define the motion.
      *
      * @param downTime     The time (in ns) when the user originally pressed down to start
-     *                     a stream of position events.  This must be obtained from {@link Util#nanoTime()}.
+     *                     a stream of position events.  This must be obtained from {@link GLFW#glfwGetTime()}.
      * @param eventTime    The the time (in ns) when this specific event was generated.  This
-     *                     must be obtained from {@link Util#nanoTime()}.
+     *                     must be obtained from {@link GLFW#glfwGetTime()}.
      * @param action       The kind of action being performed, such as {@link #ACTION_DOWN}.
      * @param pointerCount The number of pointers that will be in this event.
      * @param properties   An array of <em>pointerCount</em> values providing
@@ -494,9 +490,9 @@ public final class MotionEvent extends InputEvent {
      * values.
      *
      * @param downTime     The time (in ns) when the user originally pressed down to start
-     *                     a stream of position events.  This must be obtained from {@link Util#nanoTime()}.
+     *                     a stream of position events.  This must be obtained from {@link GLFW#glfwGetTime()}.
      * @param eventTime    The the time (in ns) when this specific event was generated.  This
-     *                     must be obtained from {@link Util#nanoTime()}.
+     *                     must be obtained from {@link GLFW#glfwGetTime()}.
      * @param action       The kind of action being performed, such as {@link #ACTION_DOWN}.
      * @param actionButton The button of press or release action, such as {@link #BUTTON_PRIMARY}
      * @param x            The X coordinate of this event.
@@ -1114,7 +1110,7 @@ public final class MotionEvent extends InputEvent {
      * @return true if the CTRL key is pressed, false otherwise
      */
     public final boolean isCtrlPressed() {
-        if (Minecraft.ON_OSX) {
+        if (Platform.get() == Platform.MACOSX) {
             return (mModifiers & GLFW.GLFW_MOD_SUPER) != 0;
         }
         return (mModifiers & GLFW.GLFW_MOD_CONTROL) != 0;

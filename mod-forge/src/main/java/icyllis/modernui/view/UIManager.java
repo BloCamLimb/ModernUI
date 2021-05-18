@@ -94,7 +94,7 @@ public final class UIManager {
 
     // indicates whether the current screen is a Modern UI screen, also a callback to the screen
     @Nullable
-    private IMuiScreen mMuiScreen;
+    private MuiScreen mMuiScreen;
 
     // application UI used to send lifecycle events
     private Screen mScreen;
@@ -208,11 +208,11 @@ public final class UIManager {
      * Open an application UI and create views
      *
      * @param screen the application user interface
-     * @see #start(IMuiScreen, int, int)
+     * @see #start(MuiScreen, int, int)
      */
     public void openGUI(@Nonnull Screen screen) {
         mScreen = screen;
-        minecraft.setScreen(new MMainScreen(this));
+        minecraft.setScreen(new MainScreen(this));
     }
 
     /**
@@ -225,14 +225,14 @@ public final class UIManager {
     }
 
     // Internal method
-    public boolean openGUI(@Nonnull LocalPlayer player, @Nonnull AbstractContainerMenu menu, @Nonnull String namespace) {
+    public boolean openGUI(@Nonnull LocalPlayer player, @Nonnull AbstractContainerMenu menu, @Nonnull String pid) {
         OpenMenuEvent event = new OpenMenuEvent(menu);
-        ModernUIForge.get().post(namespace, event);
+        ModernUIForge.get().post(pid, event);
         Screen screen = event.getScreen();
         if (screen != null) {
             mScreen = screen;
             player.containerMenu = menu;
-            minecraft.setScreen(new MMenuScreen<>(menu, player.inventory, this));
+            minecraft.setScreen(new MenuScreen<>(menu, player.inventory, this));
             return true;
         }
         return false;
@@ -284,7 +284,7 @@ public final class UIManager {
      * @param width  scaled game main window width
      * @param height scaled game main window height
      */
-    void start(@Nonnull IMuiScreen screen, int width, int height) {
+    void start(@Nonnull MuiScreen screen, int width, int height) {
         if (mMuiScreen == null) {
             mScreen.window = this;
             mScreen.onCreate();
@@ -325,7 +325,7 @@ public final class UIManager {
             return;
         }
 
-        if (mMuiScreen != nextScreen && nextScreen instanceof IMuiScreen) {
+        if (mMuiScreen != nextScreen && nextScreen instanceof MuiScreen) {
             mTicks = 0;
             mDrawingTimeMillis = 0;
         }
@@ -413,8 +413,8 @@ public final class UIManager {
      *
      * @see org.lwjgl.glfw.GLFWCursorPosCallbackI
      * @see net.minecraft.client.MouseHandler
-     * @see MMainScreen
-     * @see MMenuScreen
+     * @see MainScreen
+     * @see MenuScreen
      */
     void onCursorEvent(double cursorX, double cursorY) {
         mCursorX = minecraft.mouseHandler.xpos();

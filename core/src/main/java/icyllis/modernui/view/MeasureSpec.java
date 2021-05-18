@@ -18,7 +18,7 @@
 
 package icyllis.modernui.view;
 
-import net.minecraft.util.Mth;
+import icyllis.modernui.math.MathUtil;
 
 import javax.annotation.Nonnull;
 
@@ -31,10 +31,6 @@ public class MeasureSpec {
     private static final int MODE_SHIFT = 30;
     private static final int MODE_MASK  = 0x3 << MODE_SHIFT;
 
-    public static final Mode UNSPECIFIED = Mode.UNSPECIFIED;
-    public static final Mode EXACTLY     = Mode.EXACTLY;
-    public static final Mode AT_MOST     = Mode.AT_MOST;
-
     /**
      * Make measure specification based on the size and mode
      *
@@ -43,7 +39,7 @@ public class MeasureSpec {
      * @return measure specification
      */
     public static int makeMeasureSpec(int size, @Nonnull Mode mode) {
-        size = Mth.clamp(size, 0, 1 << MODE_SHIFT - 1);
+        size = MathUtil.clamp(size, 0, 1 << MODE_SHIFT - 1);
         return (size & ~MODE_MASK) | (mode.ordinal() << MODE_SHIFT & MODE_MASK);
     }
 
@@ -109,7 +105,7 @@ public class MeasureSpec {
             return this == EXACTLY;
         }
 
-        public boolean isVariable() {
+        public boolean notExactly() {
             return this != EXACTLY;
         }
 

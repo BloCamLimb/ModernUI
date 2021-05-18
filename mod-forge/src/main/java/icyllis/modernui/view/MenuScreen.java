@@ -48,15 +48,15 @@ import java.util.Objects;
  * anything in the super class.
  *
  * @param <T> container menu type
- * @see MMainScreen
+ * @see MainScreen
  * @see net.minecraft.client.gui.screens.MenuScreens.ScreenConstructor
  */
 @OnlyIn(Dist.CLIENT)
-final class MMenuScreen<T extends AbstractContainerMenu> extends AbstractContainerScreen<T> implements IMuiScreen {
+final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContainerScreen<T> implements MuiScreen {
 
     private final UIManager master;
 
-    MMenuScreen(@Nonnull T menu, Inventory inventory, UIManager window) {
+    MenuScreen(@Nonnull T menu, Inventory inventory, UIManager window) {
         super(menu, inventory, TextComponent.EMPTY);
         master = window;
     }

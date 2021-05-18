@@ -40,6 +40,7 @@ import icyllis.modernui.math.Vector3;
 import icyllis.modernui.platform.Bitmap;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.platform.Window;
+import icyllis.modernui.platform.WindowImpl;
 import icyllis.modernui.text.GraphemeBreak;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -73,7 +74,7 @@ public class TestMain {
     private static double nextTime = 0;
     private static boolean needRedraw = true;
 
-    private static Window sWindow;
+    private static icyllis.modernui.platform.Window sWindow;
 
     /*
         Heading font size (In Minecraft: GUI scale 2)
@@ -151,7 +152,7 @@ public class TestMain {
         try {
             Thread.currentThread().setName("Main-Thread");
             RenderCore.initBackend();
-            sWindow = new Window("Modern UI Layout Editor", Window.State.WINDOWED, 1280, 720);
+            sWindow = Window.create("Modern UI Layout Editor", WindowImpl.State.WINDOWED, 1280, 720);
             Thread t = new Thread(() -> {
                 final Window window = sWindow;
                 window.makeCurrent();

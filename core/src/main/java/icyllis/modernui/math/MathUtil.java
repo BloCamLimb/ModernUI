@@ -146,4 +146,8 @@ public final class MathUtil {
     public static float atan2(float a, float b) {
         return (float) Math.atan2(a, b);
     }
+
+    public static int clamp(int i, int min, int max) {
+        return Math.max(Math.min(i, max), min);
+    }
 }

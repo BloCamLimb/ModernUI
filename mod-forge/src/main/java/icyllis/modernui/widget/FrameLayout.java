@@ -46,8 +46,8 @@ public class FrameLayout extends ViewGroup {
         int count = getChildCount();
 
         boolean measureMatchParentChildren =
-                MeasureSpec.getMode(widthMeasureSpec).isVariable() ||
-                        MeasureSpec.getMode(heightMeasureSpec).isVariable();
+                MeasureSpec.getMode(widthMeasureSpec).notExactly() ||
+                        MeasureSpec.getMode(heightMeasureSpec).notExactly();
 
         int maxWidth = 0;
         int maxHeight = 0;

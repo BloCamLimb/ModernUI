@@ -24,21 +24,21 @@ import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.test.TestMenu;
 import icyllis.modernui.test.TestUI;
-import net.minecraft.ChatFormatting;
-import net.minecraft.Util;
 import net.minecraft.client.ProgressOption;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.VideoSettingsScreen;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Items;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.*;
+import net.minecraftforge.client.event.GuiOpenEvent;
+import net.minecraftforge.client.event.GuiScreenEvent;
+import net.minecraftforge.client.event.ModelBakeEvent;
+import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.model.ModelLoader;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -116,7 +116,7 @@ final class EventHandler {
         @Nullable
         private static Screen sCapturedVideoSettingsScreen;
 
-        @SubscribeEvent
+        /*@SubscribeEvent
         static void onPlayerLogin(@Nonnull ClientPlayerNetworkEvent.LoggedInEvent event) {
             if (ModernUIForge.isDeveloperMode()) {
                 LocalPlayer player = event.getPlayer();
@@ -126,7 +126,7 @@ final class EventHandler {
                             .withStyle(ChatFormatting.RED), Util.NIL_UUID);
                 }
             }
-        }
+        }*/
 
         @SubscribeEvent(priority = EventPriority.HIGH)
         static void onGuiOpenH(@Nonnull GuiOpenEvent event) {
@@ -152,6 +152,13 @@ final class EventHandler {
         static void onGuiInit(@Nonnull GuiScreenEvent.InitGuiEvent event) {
             if (event.getGui() instanceof VideoSettingsScreen) {
                 NEW_GUI_SCALE.setMaxValue(MuiHooks.C.calcGuiScales() & 0xf);
+            }
+        }
+
+        @SubscribeEvent
+        static void onRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
+            if (event.phase == TickEvent.Phase.END) {
+                RenderCore.flushRenderCalls();
             }
         }
 

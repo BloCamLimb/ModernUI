@@ -20,12 +20,6 @@ package icyllis.modernui.view;
 
 /**
  * The base class of input events.
- *
- * The event is natively from GLFW and polled on Minecraft client
- * thread (i.e Render thread), this object is encapsulated by Modern UI.
- *
- * @see org.lwjgl.glfw.GLFW
- * @see net.minecraft.client.util.InputMappings
  */
 public abstract class InputEvent {
 
@@ -43,7 +37,7 @@ public abstract class InputEvent {
 
     /**
      * Recycles the event.
-     *
+     * <p>
      * This method should only be called by system.
      */
     public void recycle() {
