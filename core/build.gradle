@@ -7,6 +7,7 @@ dependencies {
     compileOnly "org.apache.logging.log4j:log4j-api:${log4j_version}"
     implementation "it.unimi.dsi:fastutil:${fastutil_version}"
     implementation "com.ibm.icu:icu4j:${icu4j_version}"
+    implementation "org.apache.commons:commons-lang3:3.8.1"
 
     def lwjglNatives = "natives-linux"
     switch (OperatingSystem.current()) {

@@ -23,7 +23,7 @@ import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.core.mixin.AccessGameRenderer;
 import icyllis.modernui.core.mixin.AccessPostChain;
-import icyllis.modernui.view.IMuiScreen;
+import icyllis.modernui.view.MuiScreen;
 import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -91,7 +91,7 @@ public enum BlurHandler {
             return;
         }
         final boolean excluded;
-        if (nextScreen == null || nextScreen instanceof IMuiScreen) {
+        if (nextScreen == null || nextScreen instanceof MuiScreen) {
             excluded = false;
         } else {
             Class<?> t = nextScreen.getClass();

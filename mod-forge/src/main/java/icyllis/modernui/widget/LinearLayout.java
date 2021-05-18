@@ -407,7 +407,7 @@ public class LinearLayout extends ViewGroup {
             }
 
             boolean matchWidthLocally = false;
-            if (widthMode.isVariable() && lp.width == LayoutParams.MATCH_PARENT) {
+            if (widthMode.notExactly() && lp.width == LayoutParams.MATCH_PARENT) {
                 // The width of the linear layout will scale, and at least one
                 // child said it wanted to match our width. Set a flag
                 // indicating that we need to remeasure at least that view when
@@ -489,7 +489,7 @@ public class LinearLayout extends ViewGroup {
                 int measuredWidth = child.getMeasuredWidth() + margin;
                 maxWidth = Math.max(maxWidth, measuredWidth);
 
-                boolean matchWidthLocally = widthMode.isVariable() &&
+                boolean matchWidthLocally = widthMode.notExactly() &&
                         lp.width == LayoutParams.MATCH_PARENT;
 
                 alternativeMaxWidth = Math.max(alternativeMaxWidth,
@@ -504,7 +504,7 @@ public class LinearLayout extends ViewGroup {
             alternativeMaxWidth = Math.max(alternativeMaxWidth, weightedMaxWidth);
         }
 
-        if (!allFillParent && widthMode.isVariable()) {
+        if (!allFillParent && widthMode.notExactly()) {
             maxWidth = alternativeMaxWidth;
         }
 
@@ -637,7 +637,7 @@ public class LinearLayout extends ViewGroup {
             }
 
             boolean matchHeightLocally = false;
-            if (heightMode.isVariable() && lp.height == LayoutParams.MATCH_PARENT) {
+            if (heightMode.notExactly() && lp.height == LayoutParams.MATCH_PARENT) {
                 // The height of the linear layout will scale, and at least one
                 // child said it wanted to match our height. Set a flag indicating that
                 // we need to remeasure at least that view when we know our height.
@@ -742,7 +742,7 @@ public class LinearLayout extends ViewGroup {
                             lp.leftMargin + lp.rightMargin);
                 }
 
-                boolean matchHeightLocally = heightMode.isVariable() &&
+                boolean matchHeightLocally = heightMode.notExactly() &&
                         lp.height == LayoutParams.MATCH_PARENT;
 
                 int margin = lp.topMargin + lp.bottomMargin;
@@ -772,7 +772,7 @@ public class LinearLayout extends ViewGroup {
             alternativeMaxHeight = Math.max(alternativeMaxHeight, weightedMaxHeight);
         }
 
-        if (!allFillParent && heightMode.isVariable()) {
+        if (!allFillParent && heightMode.notExactly()) {
             maxHeight = alternativeMaxHeight;
         }
 

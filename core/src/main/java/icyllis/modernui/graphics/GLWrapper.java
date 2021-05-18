@@ -187,7 +187,7 @@ public final class GLWrapper extends GL43C {
                 ModernUI.get().warnSetup("warning.modernui.old_opengl", "4.3", glVersion);
                 LOGGER.fatal(RenderCore.MARKER, "OpenGL is too old, your version is {} but requires OpenGL 4.3", glVersion);
                 LOGGER.fatal(RenderCore.MARKER, "There are {} GL capabilities that are not supported by your graphics environment", count);
-                LOGGER.fatal(RenderCore.MARKER, "Try to use dedicated GPU for Java applications or upgrade your graphics card driver");
+                LOGGER.fatal(RenderCore.MARKER, "Try to use dedicated GPU for Java applications and upgrade your graphics driver");
             }
         }
 
@@ -300,6 +300,14 @@ public final class GLWrapper extends GL43C {
         for (Int2IntMap m : sBindTextures)
             m.put(target, GL_NONE);
         glDeleteTextures(texture);
+    }
+
+    public static void deleteTextureAsync(int target, int texture) {
+        if (RenderCore.isOnRenderThread()) {
+            deleteTexture(target, texture);
+        } else {
+            RenderCore.recordRenderCall(() -> deleteTexture(target, texture));
+        }
     }
 
     // select active texture unit, min 0-7, max 31, def 0

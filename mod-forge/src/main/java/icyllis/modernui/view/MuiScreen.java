@@ -16,13 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics;
+package icyllis.modernui.view;
 
-/**
- * The main renderer for {@link icyllis.modernui.platform.Window Window}, which does
- * OpenGL calls on render thread. It will always use dedicated GPU to render.
- */
-public final class MainRenderer {
-
-
+public interface MuiScreen {
 }

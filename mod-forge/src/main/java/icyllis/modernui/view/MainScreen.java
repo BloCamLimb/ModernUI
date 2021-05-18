@@ -33,14 +33,14 @@ import javax.annotation.Nonnull;
  * Represents the GUI screen that receives events from Minecraft.
  * All vanilla methods are completely taken over by Modern UI.
  *
- * @see MMenuScreen
+ * @see MenuScreen
  */
 @OnlyIn(Dist.CLIENT)
-final class MMainScreen extends Screen implements IMuiScreen {
+final class MainScreen extends Screen implements MuiScreen {
 
     private final UIManager master;
 
-    MMainScreen(UIManager window) {
+    MainScreen(UIManager window) {
         super(TextComponent.EMPTY);
         master = window;
     }

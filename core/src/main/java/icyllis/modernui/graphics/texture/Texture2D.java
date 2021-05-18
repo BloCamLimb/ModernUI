@@ -21,6 +21,7 @@ package icyllis.modernui.graphics.texture;
 import icyllis.modernui.ModernUI;
 import org.lwjgl.system.MemoryUtil;
 
+import javax.annotation.Nullable;
 import java.lang.ref.Cleaner.Cleanable;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
@@ -28,10 +29,13 @@ import static icyllis.modernui.graphics.GLWrapper.*;
 /**
  * Represents OpenGL 2D texture objects at low-level. The OpenGL texture
  * associated with this object may be changed by recycling. Losing the
- * reference of this object will delete the texture.
+ * reference of this object will delete the texture. The more underlying
+ * way is directly using OpenGL texture name.
  */
+@SuppressWarnings("unused")
 public class Texture2D implements AutoCloseable {
 
+    @Nullable
     private Ref mRef;
 
     /**
@@ -43,7 +47,7 @@ public class Texture2D implements AutoCloseable {
     /**
      * Returns the OpenGL texture object name represented by this object.
      * It will be generated if it's unassigned. This operation does not
-     * allocate GPU memory.
+     * allocate GPU memory unless {@code init} method called.
      *
      * @return texture object name
      */
@@ -53,14 +57,20 @@ public class Texture2D implements AutoCloseable {
         return mRef.id;
     }
 
+    /**
+     * Binds this texture to TEXTURE_2D target.
+     */
     public void bind() {
         bindTexture(GL_TEXTURE_2D, getId());
     }
 
     /**
-     * Specifies this texture and allocates GPU memory dynamically. (Compatibility)
+     * Specifies this texture and allocates GPU memory dynamically (compatibility).
+     * The image data will be undefined after calling this method, unless an upload.
+     * <p>
+     * This method can be called multiple times, which represents re-specifying this texture.
      *
-     * @param internalFormat how image data stored on GPU side
+     * @param internalFormat how image data stored in GPU
      * @param mipmapLevel    max mipmap level, min is 0
      * @see #init(int, int, int, int)
      */
@@ -80,7 +90,8 @@ public class Texture2D implements AutoCloseable {
     }
 
     /**
-     * Specifies this texture with an immutable storage unless deleted. (Core-profile)
+     * Specifies this texture with an immutable storage unless deleted (core-profile).
+     * The image data will be undefined after calling this method, unless an upload.
      * <p>
      * For automatic mipmap generation, you may need manually clear the mipmap data later,
      * otherwise the content may not be replaced and keep the previous undefined data,
@@ -88,7 +99,7 @@ public class Texture2D implements AutoCloseable {
      * <p>
      * When using mipmap, texture size must be power of two, and at least 2^mipmapLevel
      *
-     * @param internalFormat how image data stored on GPU side
+     * @param internalFormat how image data stored in GPU
      * @param mipmapLevel    max mipmap level, min is 0
      */
     public void init(int internalFormat, int width, int height, int mipmapLevel) {
@@ -130,7 +141,7 @@ public class Texture2D implements AutoCloseable {
     }
 
     /**
-     * Set filter. When mipmap = true, sampling between mipmaps is always linear.
+     * Set filter mode. When mipmap = true, sampling between mipmaps is always linear.
      * This texture must be bound first.
      *
      * @see #setFilter(int, int)
@@ -153,11 +164,15 @@ public class Texture2D implements AutoCloseable {
         }
     }
 
+    // This texture must be bound first.
     public void setFilter(int minFilter, int magFilter) {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
     }
 
+    /**
+     * Generates mipmaps. This texture must be bound first.
+     */
     public void generateMipmap() {
         glGenerateMipmap(GL_TEXTURE_2D);
     }
@@ -171,10 +186,14 @@ public class Texture2D implements AutoCloseable {
         return glGetTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WIDTH);
     }
 
+    // This texture must be bound first.
+    public int getHeight() {
+        return glGetTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_HEIGHT);
+    }
+
     @Override
     public final void close() {
         if (mRef != null) {
-            // this is synchronized
             mRef.cleanup.clean();
             mRef = null;
         }
@@ -182,7 +201,7 @@ public class Texture2D implements AutoCloseable {
 
     private static final class Ref implements Runnable {
 
-        private int id;
+        private final int id;
         private final Cleanable cleanup;
 
         private Ref(Texture2D owner) {
@@ -192,10 +211,10 @@ public class Texture2D implements AutoCloseable {
 
         @Override
         public void run() {
-            if (id != INVALID_ID) {
-                deleteTexture(GL_TEXTURE_2D, id);
-                id = INVALID_ID;
-            }
+            // if (id == INVALID_ID)
+            // cleanup is synchronized, this method only called once
+            deleteTextureAsync(GL_TEXTURE_2D, id);
+            // id = INVALID_ID;
         }
     }
 }
