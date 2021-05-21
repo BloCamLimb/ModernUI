@@ -145,18 +145,15 @@ public final class ModernUIForge extends ModernUI {
         return (ModernUIForge) sInstance;
     }
 
-    public boolean post(@Nullable String modid, @Nonnull Event event) {
-        if (event instanceof IModBusEvent)
-            if (modid == null) {
-                for (IEventBus bus : mModEventBuses.values())
-                    if (bus.post(event))
-                        return true;
-            } else {
-                IEventBus bus = mModEventBuses.get(modid);
-                return bus != null && bus.post(event);
-            }
-        else
-            LOGGER.warn(MARKER, "Posting a event that not implements IModBusEvent, {}", event);
+    public <T extends Event & IModBusEvent> boolean post(@Nullable String modid, @Nonnull T event) {
+        if (modid == null) {
+            for (IEventBus bus : mModEventBuses.values())
+                if (bus.post(event))
+                    return true;
+        } else {
+            IEventBus bus = mModEventBuses.get(modid);
+            return bus != null && bus.post(event);
+        }
         return false;
     }
 }

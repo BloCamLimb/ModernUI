@@ -16,15 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.core;
+package icyllis.modernui.view;
 
-import java.nio.channels.ReadableByteChannel;
-import java.nio.file.Path;
-
-public final class ContextImpl extends Context {
-
-    @Override
-    public ReadableByteChannel getResource(Path path) {
-        return null;
-    }
+public abstract class ViewLayout {
 }

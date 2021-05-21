@@ -29,7 +29,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.system.NativeType;
 
 import javax.annotation.Nonnull;
-import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -114,12 +113,11 @@ public final class Shader {
             return shader;
         }
         String path = manager == null ? System.getenv().getOrDefault("MOD_ASSETS", "")
-                .replace('\\', '/') + location.getNamespace() + '/' + location.getPath() : "";
-        try (InputStream stream = new BufferedInputStream(manager == null ?
-                new FileInputStream(path) : manager.getResource(location).getInputStream())) {
-            String src = RenderCore.readStringASCII(stream);
+                .replace('\\', '/') + location.getNamespace() + '/' + location.getPath() : null;
+        try (InputStream stream = manager == null ? new FileInputStream(path) : manager.getResource(location).getInputStream()) {
+            String src = RenderCore.readStringUTF8(stream);
             if (src != null) {
-                int id = glCreateShader(type.mGlType);
+                int id = glCreateShader(type.type);
                 glShaderSource(id, src);
                 glCompileShader(id);
                 if (glGetShaderi(id, GL_COMPILE_STATUS) == GL_TRUE) {
@@ -161,10 +159,10 @@ public final class Shader {
         // OpenGL 4.3
         COMPUTE(GL_COMPUTE_SHADER);
 
-        private final int mGlType;
+        private final int type;
 
-        Type(@NativeType("GLenum") int glType) {
-            mGlType = glType;
+        Type(int type) {
+            this.type = type;
         }
 
         @Nonnull

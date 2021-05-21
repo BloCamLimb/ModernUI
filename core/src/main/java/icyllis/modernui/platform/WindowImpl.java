@@ -30,8 +30,6 @@ import static org.lwjgl.glfw.GLFW.*;
 
 public final class WindowImpl extends Window {
 
-    private final long mHandle;
-
     private int mXPos;
     private int mYPos;
     private int mScreenWidth;
@@ -102,7 +100,6 @@ public final class WindowImpl extends Window {
             }
         }
 
-        mHandle = handle;
         mState = state;
         mBorderless = borderless;
         mFullscreen = fullscreen;
@@ -247,37 +244,4 @@ public final class WindowImpl extends Window {
         return mScreenHeight;
     }
 
-    /**
-     * Window states.
-     */
-    public enum State {
-        /**
-         * The window is movable and takes up a subsection of the screen.
-         */
-        WINDOWED,
-
-        /**
-         * The window is running in exclusive fullscreen and is potentially using a
-         * different resolution to the desktop.
-         */
-        FULLSCREEN,
-
-        /**
-         * The window is running in non-exclusive fullscreen, where it expands to
-         * fill the screen at the native desktop resolution.
-         */
-        FULLSCREEN_BORDERLESS,
-
-        /**
-         * The window is running in maximized mode, usually triggered by clicking
-         * the operating system's maximize button.
-         */
-        MAXIMIZED,
-
-        /**
-         * The window is running in minimized mode, usually triggered by clicking
-         * the operating system's minimize button.
-         */
-        MINIMIZED
-    }
 }

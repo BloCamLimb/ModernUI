@@ -16,14 +16,15 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.animation;
+package icyllis.modernui.graphics;
 
-import it.unimi.dsi.fastutil.objects.ObjectArraySet;
+import icyllis.modernui.platform.WindowImpl;
 
-import java.util.Set;
+/**
+ * The main renderer for {@link WindowImpl Window}, which does
+ * OpenGL calls on render thread. It will always use dedicated GPU to render.
+ */
+public final class MainRenderer {
 
-//TODO
-public class AnimationManager {
 
-    private final Set<Animation> animations = new ObjectArraySet<>();
 }

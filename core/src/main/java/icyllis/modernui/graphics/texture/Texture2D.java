@@ -47,7 +47,7 @@ public class Texture2D implements AutoCloseable {
     /**
      * Returns the OpenGL texture object name represented by this object.
      * It will be generated if it's unassigned. This operation does not
-     * allocate GPU memory unless {@code init} method called.
+     * allocate GPU memory unless {@link #init} called.
      *
      * @return texture object name
      */
@@ -84,7 +84,7 @@ public class Texture2D implements AutoCloseable {
 
         // null ptr represents not modifying the image data, but allocating enough memory
         for (int level = 0; level <= mipmapLevel; level++) {
-            glTexImage2D(GL_TEXTURE_2D, level, internalFormat, width >> level,
+            nglTexImage2D(GL_TEXTURE_2D, level, internalFormat, width >> level,
                     height >> level, 0, GL_RED, GL_UNSIGNED_BYTE, MemoryUtil.NULL);
         }
     }
@@ -129,7 +129,7 @@ public class Texture2D implements AutoCloseable {
         glPixelStorei(GL_UNPACK_SKIP_ROWS, skipRows);
         glPixelStorei(GL_UNPACK_SKIP_PIXELS, skipPixels);
         glPixelStorei(GL_UNPACK_ALIGNMENT, alignment);
-        glTexSubImage2D(GL_TEXTURE_2D, level, x, y, width, height, format, type, pixels);
+        nglTexSubImage2D(GL_TEXTURE_2D, level, x, y, width, height, format, type, pixels);
     }
 
     /**

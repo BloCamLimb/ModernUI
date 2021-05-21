@@ -18,28 +18,24 @@
 
 package icyllis.modernui.animation;
 
-public class OvershootInterpolator implements Interpolator {
-
-    private final float mTension;
-
-    private OvershootInterpolator(float tension) {
-        this.mTension = tension;
-    }
+/**
+ * A property is an abstraction that can be used to represent a <emb>mutable</em> value that is held
+ * in a <em>host</em> object. The Property's {@link #set(Object, Object)} or {@link #get(Object)}
+ * methods can be implemented in terms of the private fields of the host object, or via "setter" and
+ * "getter" methods or by some other mechanism, as appropriate.
+ *
+ * @param <T> the class on which the property is declared.
+ * @param <V> the type that this property represents.
+ */
+public interface Property<T, V> {
 
     /**
-     * Create an overshoot interpolator, if {@code tension} is 2.0f,
-     * a constant object will be returned.
-     *
-     * @param tension the overshoot tension
-     * @return an overshoot interpolator
+     * Sets the value on <code>obj</code> which this property represents.
      */
-    public static Interpolator create(float tension) {
-        return tension == 2.0f ? Interpolator.OVERSHOOT : new OvershootInterpolator(tension);
-    }
+    void set(T obj, V val);
 
-    @Override
-    public float getInterpolation(float t) {
-        t -= 1.0f;
-        return t * t * ((mTension + 1) * t + mTension) + 1.0f;
-    }
+    /**
+     * Returns the current value that this property represents on the given <code>obj</code>.
+     */
+    V get(T obj);
 }

@@ -18,30 +18,5 @@
 
 package icyllis.modernui.animation;
 
-import javax.annotation.Nonnull;
-
-public class DecelerateInterpolator implements Interpolator {
-
-    private final float mFactor;
-
-    private DecelerateInterpolator(float factor) {
-        this.mFactor = factor;
-    }
-
-    /**
-     * Create a decelerate interpolator, if {@code factor} is 1.0f,
-     * a constant object will be returned.
-     *
-     * @param factor the decelerate factor
-     * @return a decelerate interpolator
-     */
-    @Nonnull
-    public static Interpolator create(float factor) {
-        return factor == 1.0f ? Interpolator.DECELERATE : new DecelerateInterpolator(factor);
-    }
-
-    @Override
-    public float getInterpolation(float progress) {
-        return (float) (1.0f - Math.pow(1.0f - progress, mFactor * 2.0));
-    }
+public interface Keyframes {
 }

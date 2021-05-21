@@ -16,15 +16,34 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics;
+package icyllis.modernui.view;
 
-import icyllis.modernui.platform.WindowImpl;
+import javax.annotation.Nullable;
 
-/**
- * The main renderer for {@link WindowImpl Window}, which does
- * OpenGL calls on render thread. It will always use dedicated GPU to render.
- */
-public final class MRenderer {
+public class ViewContainer implements ViewParent {
+    @Nullable
+    @Override
+    public ViewParent getParent() {
+        return null;
+    }
 
+    @Override
+    public void requestLayout() {
 
+    }
+
+    @Override
+    public float getScrollX() {
+        return 0;
+    }
+
+    @Override
+    public float getScrollY() {
+        return 0;
+    }
+
+    @Override
+    public void childDrawableStateChanged(View child) {
+
+    }
 }

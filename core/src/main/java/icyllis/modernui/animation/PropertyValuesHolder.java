@@ -18,30 +18,13 @@
 
 package icyllis.modernui.animation;
 
-import javax.annotation.Nonnull;
+/**
+ * This class holds information about a property and the values that that property
+ * should take on during an animation. PropertyValuesHolder objects can be used to create
+ * animations with ValueAnimator or ObjectAnimator that operate on several different properties
+ * in parallel.
+ */
+public class PropertyValuesHolder {
 
-public class AccelerateInterpolator implements Interpolator {
-
-    private final float mFactor;
-
-    private AccelerateInterpolator(float factor) {
-        this.mFactor = factor;
-    }
-
-    /**
-     * Create an accelerate interpolator, if {@code factor} is 1.0f,
-     * a constant object will be returned.
-     *
-     * @param factor the accelerate factor
-     * @return an accelerate interpolator
-     */
-    @Nonnull
-    public static Interpolator create(float factor) {
-        return factor == 1.0f ? Interpolator.ACCELERATE : new AccelerateInterpolator(factor);
-    }
-
-    @Override
-    public float getInterpolation(float progress) {
-        return (float) Math.pow(progress, mFactor * 2.0);
-    }
+    private Property<?, ?> mProperty;
 }

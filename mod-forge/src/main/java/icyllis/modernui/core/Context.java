@@ -18,5 +18,10 @@
 
 package icyllis.modernui.core;
 
+import java.nio.channels.ReadableByteChannel;
+import java.nio.file.Path;
+
 public abstract class Context {
+
+    public abstract ReadableByteChannel getResource(Path path);
 }

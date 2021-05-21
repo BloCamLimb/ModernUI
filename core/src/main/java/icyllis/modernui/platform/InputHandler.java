@@ -20,7 +20,7 @@ package icyllis.modernui.platform;
 
 import icyllis.modernui.annotation.MainThread;
 import icyllis.modernui.view.InputEventListener;
-import icyllis.modernui.view.MotionEvent;
+//import icyllis.modernui.view.MotionEvent;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWCursorPosCallback;
 import org.lwjgl.system.Callback;
@@ -29,6 +29,7 @@ import javax.annotation.Nonnull;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+//TODO
 @MainThread
 public class InputHandler {
 
@@ -50,12 +51,12 @@ public class InputHandler {
 
     public static void onCursorPos(@Nonnull Window window, @Nonnull InputEventListener listener,
                                    double xPos, double yPos) {
-        final long now = RenderCore.timeNanos();
+        /*final long now = RenderCore.timeNanos();
         float eventX = (float) (xPos * window.screenToPixelX());
         float eventY = (float) (yPos * window.screenToPixelY());
         MotionEvent event = MotionEvent.obtain(now, now, MotionEvent.ACTION_HOVER_MOVE,
                 eventX, eventY, 0);
-        listener.onInputEvent(event);
+        listener.onInputEvent(event);*/
     }
 
     private static class CursorPos extends GLFWCursorPosCallback {

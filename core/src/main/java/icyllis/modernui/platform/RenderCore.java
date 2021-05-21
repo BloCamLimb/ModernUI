@@ -29,19 +29,22 @@ import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static icyllis.modernui.ModernUI.LOGGER;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
+/**
+ * Represents the window system and its backend class.
+ */
 public final class RenderCore {
 
     public static final Marker MARKER = MarkerManager.getMarker("Graphics");
@@ -127,44 +130,63 @@ public final class RenderCore {
         return (long) (GLFW.glfwGetTime() * 1.0E3);
     }
 
-    // this method doesn't close stream, MemoryUtil.memFree(buffer) is required as well
+    /**
+     * Allocates memory in native and read buffered resource.
+     * The memory must be manually freed by {@link MemoryUtil#memFree(Buffer)}.
+     *
+     * @param channel where to read input from
+     * @return the native pointer to {@code unsigned char *data}
+     * @throws IOException some errors occurred while reading
+     */
     @Nonnull
-    public static ByteBuffer readRawBuffer(InputStream stream) throws IOException {
-        ByteBuffer buffer;
-        if (stream instanceof FileInputStream) {
-            final FileChannel channel = ((FileInputStream) stream).getChannel();
-            buffer = MemoryUtil.memAlloc((int) channel.size() + 1);
-            for (; ; )
-                if (channel.read(buffer) == -1)
-                    break;
-        } else {
-            final ReadableByteChannel channel = Channels.newChannel(stream);
-            buffer = MemoryUtil.memAlloc(8192);
-            for (; ; )
-                if (channel.read(buffer) == -1)
-                    break;
-                else if (buffer.remaining() == 0)
-                    buffer = MemoryUtil.memRealloc(buffer, buffer.capacity() << 1);
+    public static ByteBuffer readResource(ReadableByteChannel channel) throws IOException {
+        ByteBuffer ptr = null;
+        try {
+            if (channel instanceof SeekableByteChannel) {
+                final SeekableByteChannel ch = (SeekableByteChannel) channel;
+                ptr = MemoryUtil.memAlloc((int) ch.size() + 1); // +1 EOF
+                //noinspection StatementWithEmptyBody
+                while (ch.read(ptr) != -1) ;
+            } else {
+                ptr = MemoryUtil.memAlloc(4096);
+                while (channel.read(ptr) != -1)
+                    if (ptr.remaining() <= 0)
+                        ptr = MemoryUtil.memRealloc(ptr, ptr.capacity() << 1);
+            }
+        } catch (Throwable t) {
+            MemoryUtil.memFree(ptr);
+            throw t;
         }
-        return buffer;
+        return ptr;
+    }
+
+    /**
+     * Allocates memory in native and read resource to buffer.
+     * The memory must be manually freed by {@link MemoryUtil#memFree(Buffer)}.
+     *
+     * @param stream where to read input from
+     * @return the native pointer to {@code unsigned char *data}
+     * @throws IOException some errors occurred while reading
+     */
+    @Nonnull
+    public static ByteBuffer readResource(InputStream stream) throws IOException {
+        return readResource(Channels.newChannel(stream));
     }
 
     // this method doesn't close stream,
     @Nullable
-    public static String readStringASCII(InputStream stream) {
-        ByteBuffer buffer = null;
+    public static String readStringUTF8(InputStream stream) {
+        ByteBuffer ptr = null;
         try {
-            buffer = readRawBuffer(stream);
-            final int len = buffer.position();
-            buffer.rewind();
-            return MemoryUtil.memASCII(buffer, len);
-        } catch (IOException ignored) {
-
+            ptr = readResource(stream);
+            final int len = ptr.position();
+            ptr.rewind();
+            return MemoryUtil.memUTF8(ptr, len);
+        } catch (IOException e) {
+            return null;
         } finally {
-            if (buffer != null)
-                MemoryUtil.memFree(buffer);
+            MemoryUtil.memFree(ptr);
         }
-        return null;
     }
 
     /*@Nonnull

@@ -16,31 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.animation;
+package icyllis.modernui.resources;
 
-import icyllis.modernui.math.MathUtil;
-
-public class CycleInterpolator implements Interpolator {
-
-    private final float mCycle;
-
-    private CycleInterpolator(float cycle) {
-        this.mCycle = cycle;
-    }
-
-    /**
-     * Create a cycle interpolator, if {@code cycle} is 0.25f,
-     * a constant object will be returned.
-     *
-     * @param cycle the cycle
-     * @return a cycle interpolator
-     */
-    public static Interpolator create(float cycle) {
-        return cycle == 0.25f ? Interpolator.SINE : new CycleInterpolator(cycle);
-    }
-
-    @Override
-    public float getInterpolation(float progress) {
-        return MathUtil.sin(MathUtil.TWO_PI * mCycle * progress);
-    }
+public class Resources {
 }

@@ -22,30 +22,30 @@ import com.ibm.icu.text.DateFormat;
 import com.ibm.icu.text.SimpleDateFormat;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.stb.STBIWriteCallback;
+import org.lwjgl.stb.STBIWriteCallbackI;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.stb.STBImageWrite;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
-import org.lwjgl.system.Pointer;
 import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.ByteChannel;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.EnumSet;
 import java.util.stream.Collectors;
 
+import static icyllis.modernui.graphics.GLWrapper.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
@@ -85,7 +85,7 @@ public final class Bitmap implements AutoCloseable {
         mWidth = width;
         mHeight = height;
         mFromSTB = false;
-        final long size = (long) format.channels() * width * height;
+        final long size = (long) format.channels * width * height;
         if (init) {
             mPixels = MemoryUtil.nmemCallocChecked(1L, size);
         } else {
@@ -94,7 +94,7 @@ public final class Bitmap implements AutoCloseable {
     }
 
     private Bitmap(@Nonnull Format format, int width, int height, @Nonnull ByteBuffer data) throws IOException {
-        if (data.capacity() != format.channels() * width * height) {
+        if (data.capacity() != format.channels * width * height) {
             throw new IOException("Not tightly packed");
         }
         mFormat = format;
@@ -144,12 +144,32 @@ public final class Bitmap implements AutoCloseable {
     public static Bitmap openDialog(@Nullable Format format) throws IOException {
         String path = getOpenDialog();
         if (path != null) {
-            try (InputStream stream = new FileInputStream(path)) {
+            try (SeekableByteChannel channel = Files.newByteChannel(Path.of(path),
+                    StandardOpenOption.READ)) {
                 // not to close bitmap but the stream
-                return decode(format, stream);
+                return decode(format, channel);
             }
         }
         return null;
+    }
+
+    /**
+     * Decodes an image from channel. This method doesn't close the channel.
+     *
+     * @param format  the format to convert to, or {@code null} to use format in file
+     * @param channel input channel
+     */
+    @Nonnull
+    public static Bitmap decode(@Nullable Format format, @Nonnull ReadableByteChannel channel) throws IOException {
+        ByteBuffer buffer = null;
+        try {
+            buffer = RenderCore.readResource(channel);
+            buffer.rewind();
+            return decode(format, buffer);
+        } finally {
+            if (buffer != null)
+                MemoryUtil.memFree(buffer);
+        }
     }
 
     /**
@@ -162,7 +182,7 @@ public final class Bitmap implements AutoCloseable {
     public static Bitmap decode(@Nullable Format format, @Nonnull InputStream stream) throws IOException {
         ByteBuffer buffer = null;
         try {
-            buffer = RenderCore.readRawBuffer(stream);
+            buffer = RenderCore.readResource(stream);
             buffer.rewind();
             return decode(format, buffer);
         } finally {
@@ -179,7 +199,7 @@ public final class Bitmap implements AutoCloseable {
             IntBuffer height = stack.mallocInt(1);
             IntBuffer channels = stack.mallocInt(1);
             ByteBuffer data = STBImage.stbi_load_from_memory(buffer, width, height, channels,
-                    format == null ? 0 : format.channels());
+                    format == null ? 0 : format.channels);
             if (data == null) {
                 throw new IOException("Failed to read image: " + STBImage.stbi_failure_reason());
             }
@@ -201,7 +221,7 @@ public final class Bitmap implements AutoCloseable {
     }
 
     /**
-     * The head address of {@code unsigned char *pixels}
+     * The head address of {@code unsigned char *pixels} in native (not in JVM)
      *
      * @return the pointer of pixels data
      */
@@ -219,7 +239,7 @@ public final class Bitmap implements AutoCloseable {
     public void saveDialog(@Nonnull SaveFormat format, int quality) throws IOException {
         String path = getSaveDialog(format);
         if (path != null) {
-            saveToPath(Paths.get(path), format, quality);
+            saveToPath(Path.of(path), format, quality);
         }
     }
 
@@ -232,10 +252,10 @@ public final class Bitmap implements AutoCloseable {
      */
     public void saveToPath(@Nonnull Path path, @Nonnull SaveFormat format, int quality) throws IOException {
         checkReleased();
-        try (final ByteChannel channel = Files.newByteChannel(path, EnumSet.of(
+        try (final ByteChannel channel = Files.newByteChannel(path,
                 StandardOpenOption.WRITE,
                 StandardOpenOption.CREATE,
-                StandardOpenOption.TRUNCATE_EXISTING))) {
+                StandardOpenOption.TRUNCATE_EXISTING)) {
             final IOException[] exception = new IOException[1];
             try (STBIWriteCallback func = STBIWriteCallback.create((context, data, size) -> {
                 try {
@@ -287,22 +307,21 @@ public final class Bitmap implements AutoCloseable {
      * Describes the number of channels/components in memory.
      */
     public enum Format {
-        R(1),
-        RG(2),
-        RGB(3),
-        RGBA(4);
+        RED(1, GL_RED),
+        RG(2, GL_RG),
+        RGB(3, GL_RGB),
+        RGBA(4, GL_RGBA);
 
-        private final int channels;
-
-        Format(int channels) {
-            this.channels = channels;
-        }
+        public final int channels;
 
         /**
-         * @return the number of channels or components
+         * Describes the format for OpenGL uploading
          */
-        public final int channels() {
-            return channels;
+        public final int format;
+
+        Format(int channels, int format) {
+            this.channels = channels;
+            this.format = format;
         }
 
         @Nonnull
@@ -324,11 +343,11 @@ public final class Bitmap implements AutoCloseable {
          */
         PNG("*.png") {
             @Override
-            protected boolean write(@Nonnull Pointer func, int width, int height, @Nonnull Format format,
+            protected boolean write(@Nonnull STBIWriteCallbackI func, int width, int height, @Nonnull Format format,
                                     long data, int quality) {
                 // leave stride as 0, it will use (width * channels)
                 return STBImageWrite.nstbi_write_png_to_func(func.address(),
-                        NULL, width, height, format.channels(), data, 0) != 0;
+                        NULL, width, height, format.channels, data, 0) != 0;
             }
         },
 
@@ -338,10 +357,10 @@ public final class Bitmap implements AutoCloseable {
          */
         TGA("*.tga", "*.vda", "*.icb", "*.vst") {
             @Override
-            protected boolean write(@Nonnull Pointer func, int width, int height, @Nonnull Format format,
+            protected boolean write(@Nonnull STBIWriteCallbackI func, int width, int height, @Nonnull Format format,
                                     long data, int quality) {
                 return STBImageWrite.nstbi_write_tga_to_func(func.address(),
-                        NULL, width, height, format.channels(), data) != 0;
+                        NULL, width, height, format.channels, data) != 0;
             }
         },
 
@@ -351,10 +370,10 @@ public final class Bitmap implements AutoCloseable {
          */
         BMP("*.bmp", "*.dib") {
             @Override
-            protected boolean write(@Nonnull Pointer func, int width, int height, @Nonnull Format format,
+            protected boolean write(@Nonnull STBIWriteCallbackI func, int width, int height, @Nonnull Format format,
                                     long data, int quality) {
                 return STBImageWrite.nstbi_write_bmp_to_func(func.address(),
-                        NULL, width, height, format.channels(), data) != 0;
+                        NULL, width, height, format.channels, data) != 0;
             }
         },
 
@@ -365,14 +384,14 @@ public final class Bitmap implements AutoCloseable {
          */
         JPEG("*.jpg", "*.jpeg", "*.jpe") {
             @Override
-            protected boolean write(@Nonnull Pointer func, int width, int height, @Nonnull Format format,
+            protected boolean write(@Nonnull STBIWriteCallbackI func, int width, int height, @Nonnull Format format,
                                     long data, int quality) {
                 if (quality < 1)
                     quality = 1;
                 else if (quality > 120)
                     quality = 120;
                 return STBImageWrite.nstbi_write_jpg_to_func(func.address(),
-                        NULL, width, height, format.channels(), data, quality) != 0;
+                        NULL, width, height, format.channels, data, quality) != 0;
             }
         };
 
@@ -383,7 +402,7 @@ public final class Bitmap implements AutoCloseable {
             this.filters = filters;
         }
 
-        protected boolean write(@Nonnull Pointer func, int width, int height, @Nonnull Format format,
+        protected boolean write(@Nonnull STBIWriteCallbackI func, int width, int height, @Nonnull Format format,
                                 long data, int quality) throws IOException {
             throw new IOException("Unsupported save format");
         }

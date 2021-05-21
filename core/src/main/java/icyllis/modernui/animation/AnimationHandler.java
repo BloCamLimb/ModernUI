@@ -1,0 +1,100 @@
+/*
+ * Modern UI.
+ * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ *
+ * Modern UI is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * Modern UI is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+package icyllis.modernui.animation;
+
+import icyllis.modernui.platform.RenderCore;
+import it.unimi.dsi.fastutil.objects.Object2LongMap;
+import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
+
+import javax.annotation.Nonnull;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.Consumer;
+import java.util.function.LongConsumer;
+
+public class AnimationHandler {
+
+    private static AnimationHandler sInstance;
+
+    private final Set<FrameCallback> mCallbacks = new CopyOnWriteArraySet<>();
+    private final Object2LongMap<FrameCallback> mDelayedStartTime = new Object2LongOpenHashMap<>();
+
+    public static void init(Consumer<LongConsumer> setCallback) {
+        if (sInstance == null) {
+            sInstance = new AnimationHandler();
+            setCallback.accept(sInstance::doAnimationFrame);
+        }
+    }
+
+    public static AnimationHandler get() {
+        return sInstance;
+    }
+
+    private void doAnimationFrame(long frameTime) {
+        long currentTime = RenderCore.timeMillis();
+        for (FrameCallback callback : mCallbacks) {
+            if (isCallbackDue(callback, currentTime)) {
+                callback.doAnimationFrame(frameTime);
+            }
+        }
+    }
+
+    public void register(@Nonnull FrameCallback callback, long delay) {
+        mCallbacks.add(callback);
+        if (delay > 0) {
+            mDelayedStartTime.put(callback, RenderCore.timeMillis() + delay);
+        }
+    }
+
+    public void unregister(@Nonnull FrameCallback callback) {
+        mCallbacks.remove(callback);
+        mDelayedStartTime.removeLong(callback);
+    }
+
+    /**
+     * Remove the callbacks from mDelayedCallbackStartTime once they have passed the initial delay
+     * so that they can start getting frame callbacks.
+     *
+     * @return true if they have passed the initial delay or have no delay, false otherwise.
+     */
+    private boolean isCallbackDue(FrameCallback callback, long currentTime) {
+        long startTime = mDelayedStartTime.getLong(callback);
+        if (startTime == 0) {
+            return true;
+        }
+        if (startTime < currentTime) {
+            mDelayedStartTime.removeLong(callback);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Callbacks that receives notifications for animation timing and frame commit timing.
+     */
+    public interface FrameCallback {
+
+        /**
+         * Run animation based on the frame time.
+         *
+         * @param frameTime the frame start time, in the {@link RenderCore#timeMillis()} time base
+         */
+        void doAnimationFrame(long frameTime);
+    }
+}
