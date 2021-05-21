@@ -20,7 +20,7 @@ package icyllis.modernui.view;
 
 public class InputEventListener {
 
-    public void onInputEvent(InputEvent event) {
+    /*public void onInputEvent(InputEvent event) {
 
-    }
+    }*/
 }

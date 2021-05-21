@@ -156,7 +156,6 @@ final class Registration {
             RectProgram.createPrograms();
             RoundRectProgram.createPrograms();
             UIManager.initialize();
-            ModernUI.LOGGER.info(ModernUI.MARKER, "UIManager initialized");
             TextLayoutProcessor.getInstance().initRenderer();
             ModernFontRenderer.change(Config.CLIENT.globalRenderer.get(), Config.CLIENT.allowShadow.get());
         });

@@ -47,7 +47,7 @@ public abstract class Window implements AutoCloseable {
     }
 
     @Nonnull
-    public static Window create(@Nonnull String title, @Nonnull WindowImpl.State state, int width, int height) {
+    public static Window create(@Nonnull String title, @Nonnull State state, int width, int height) {
         // set hints
         glfwDefaultWindowHints();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
@@ -182,5 +182,39 @@ public abstract class Window implements AutoCloseable {
     @Override
     public final void close() throws Exception {
         destroy();
+    }
+
+    /**
+     * Window states.
+     */
+    public enum State {
+        /**
+         * The window is movable and takes up a subsection of the screen.
+         */
+        WINDOWED,
+
+        /**
+         * The window is running in exclusive fullscreen and is potentially using a
+         * different resolution to the desktop.
+         */
+        FULLSCREEN,
+
+        /**
+         * The window is running in non-exclusive fullscreen, where it expands to
+         * fill the screen at the native desktop resolution.
+         */
+        FULLSCREEN_BORDERLESS,
+
+        /**
+         * The window is running in maximized mode, usually triggered by clicking
+         * the operating system's maximize button.
+         */
+        MAXIMIZED,
+
+        /**
+         * The window is running in minimized mode, usually triggered by clicking
+         * the operating system's minimize button.
+         */
+        MINIMIZED
     }
 }

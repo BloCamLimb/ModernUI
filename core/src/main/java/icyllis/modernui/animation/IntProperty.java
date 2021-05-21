@@ -16,7 +16,26 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-@ApiStatus.Experimental
 package icyllis.modernui.animation;
 
-import org.jetbrains.annotations.ApiStatus;
+import javax.annotation.Nonnull;
+
+/**
+ * An implementation of {@link Property} to be used specifically with fields of type
+ * <code>int</code>. This type-specific subclass enables performance benefit by allowing
+ * calls to a {@link #set(Object, int) setValue()} function that takes the primitive
+ * <code>int</code> type and avoids autoboxing and other overhead associated with the
+ * <code>Integer</code> class.
+ *
+ * @param <T> The class on which the Property is declared.
+ */
+public interface IntProperty<T> extends Property<T, Integer> {
+
+    void set(T obj, int val);
+
+    @Deprecated
+    @Override
+    default void set(T obj, @Nonnull Integer val) {
+        set(obj, val.intValue());
+    }
+}

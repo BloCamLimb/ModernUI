@@ -22,6 +22,10 @@ import icyllis.modernui.math.MathUtil;
 
 import javax.annotation.Nonnull;
 
+/**
+ * An interpolator defines the rate of change of an animation. This allows animations
+ * to have non-linear motion, such as acceleration and deceleration.
+ */
 @FunctionalInterface
 public interface Interpolator {
 
@@ -32,51 +36,198 @@ public interface Interpolator {
     Interpolator LINEAR = in -> in;
 
     /**
-     * From slow to fast.
+     * The constant accelerate interpolator whose factor is 1.0.
      *
-     * @see AccelerateInterpolator
+     * @see #accelerate(float)
      */
     @Nonnull
     Interpolator ACCELERATE = in -> in * in;
 
     /**
-     * From fast to slow.
+     * The constant decelerate interpolator whose factor is 1.0.
      *
-     * @see DecelerateInterpolator
+     * @see #decelerate(float)
      */
     @Nonnull
     Interpolator DECELERATE = in -> 1.0f - (1.0f - in) * (1.0f - in);
 
     /**
-     * Slow to fast to slow.
+     * The interpolator where the rate of change starts and ends slowly but
+     * accelerates through the middle.
      */
     @Nonnull
     Interpolator ACCELERATE_DECELERATE = in -> MathUtil.cos((in + 1.0f) * MathUtil.PI) * 0.5f + 0.5f;
 
     /**
-     * From fast to slow, 1/4 cycle simple harmonic motion.
+     * The constant cycle interpolator that indicates 1/4 cycle sine wave.
+     *
+     * @see #cycle(float)
      */
     @Nonnull
     Interpolator SINE = in -> MathUtil.sin(MathUtil.PI_DIV_2 * in);
 
     /**
-     * Overshoot.
+     * The constant anticipate interpolator whose tension is 2.0.
+     *
+     * @see #anticipate(float)
+     */
+    @Nonnull
+    Interpolator ANTICIPATE = in -> in * in * (3.0f * in - 2.0f);
+
+    /**
+     * The constant overshoot interpolator whose tension is 2.0.
+     *
+     * @see #overshoot(float)
      */
     @Nonnull
     Interpolator OVERSHOOT = in -> (in - 1.0f) * (in - 1.0f) * (3.0f * (in - 1.0f) + 2.0f) + 1.0f;
 
     /**
-     * Default used in scroller
+     * The constant anticipate/overshoot interpolator whose tension is 3.0.
+     *
+     * @see #anticipateOvershoot(float)
+     */
+    @Nonnull
+    Interpolator ANTICIPATE_OVERSHOOT = in -> {
+        in *= 2.0f;
+        if (in < 0.5f) {
+            return 0.5f * in * in * (4.0f * in - 3.0f);
+        } else {
+            in -= 2.0f;
+            return 0.5f * (in * in * (4.0f * in + 3.0f) + 2.0f);
+        }
+    };
+
+    /**
+     * The bounce interpolator where the change bounces at the end.
+     */
+    @Nonnull
+    Interpolator BOUNCE = in -> {
+        in *= 1.1226f;
+        if (in < 0.3535f)
+            return in * in * 8.0f;
+        else if (in < 0.7408f) {
+            in -= 0.54719f;
+            return in * in * 8.0f + 0.7f;
+        } else if (in < 0.9644f) {
+            in -= 0.8526f;
+            return in * in * 8.0f + 0.9f;
+        } else {
+            in -= 1.0435f;
+            return in * in * 8.0f + 0.95f;
+        }
+    };
+
+    /**
+     * The interpolator default used in scroller.
      */
     @Nonnull
     Interpolator VISCOUS_FLUID = new ViscousFluidInterpolator();
 
     /**
-     * Get interpolation value
+     * Get interpolation value. This interpolated value is then multiplied by the change in
+     * value of an animation to derive the animated value at the current elapsed animation time.
      *
      * @param progress [0.0, 1.0] determined by timeline, 0.0 represents
      *                 the start and 1.0 represents the end
-     * @return interpolated value
+     * @return the interpolated value. this value can be more than 1.0 for those overshoot
+     * their targets, or less than 0 for those undershoot their targets.
      */
     float getInterpolation(float progress);
+
+    /**
+     * Create an accelerate interpolator where the rate of change starts out slowly and
+     * and then accelerates. If {@code factor} is 1.0f, a constant object will be returned.
+     *
+     * @param factor the accelerate factor
+     * @return an accelerate interpolator
+     */
+    @Nonnull
+    static Interpolator accelerate(float factor) {
+        if (factor == 1.0f)
+            return ACCELERATE;
+        return t -> (float) Math.pow(t, factor * 2.0);
+    }
+
+    /**
+     * Create a decelerate interpolator where the rate of change starts out quickly and
+     * and then decelerates. If {@code factor} is 1.0f, a constant object will be returned.
+     *
+     * @param factor the decelerate factor
+     * @return a decelerate interpolator
+     */
+    @Nonnull
+    static Interpolator decelerate(float factor) {
+        if (factor == 1.0f)
+            return DECELERATE;
+        return t -> (float) (1.0f - Math.pow(1.0f - t, factor * 2.0));
+    }
+
+    /**
+     * Create a cycle interpolator which repeats the animation for a specified number of cycles. The
+     * rate of change follows a sinusoidal pattern. If {@code cycle} is 0.25f, a constant object will
+     * be returned.
+     */
+    @Nonnull
+    static Interpolator cycle(float cycle) {
+        if (cycle == 0.25f)
+            return SINE;
+        return t -> MathUtil.sin(MathUtil.TWO_PI * cycle * t);
+    }
+
+    /**
+     * Create an anticipate interpolator where the change starts backward then flings forward.
+     * If {@code tension} is 2.0f, a constant object will be returned.
+     *
+     * @param tension the anticipate tension
+     * @return an anticipate interpolator
+     */
+    @Nonnull
+    static Interpolator anticipate(float tension) {
+        if (tension == 2.0f)
+            return ANTICIPATE;
+        return t -> t * t * ((tension + 1) * t - tension);
+    }
+
+    /**
+     * Create an overshoot interpolator where the change flings forward and overshoots the last value
+     * then comes back. If {@code tension} is 2.0f, a constant object will be returned.
+     *
+     * @param tension the overshoot tension
+     * @return an overshoot interpolator
+     */
+    @Nonnull
+    static Interpolator overshoot(float tension) {
+        if (tension == 2.0f)
+            return OVERSHOOT;
+        return t -> {
+            t -= 1.0f;
+            return t * t * ((tension + 1.0f) * t + tension) + 1.0f;
+        };
+    }
+
+    /**
+     * Create an anticipate/overshoot interpolator where the change starts backward then flings forward
+     * and overshoots the target value and finally goes back to the final value. If {@code tension} is
+     * 3.0f, a constant object will be returned.
+     *
+     * @param tension Amount of anticipation/overshoot. When tension equals 0.0f,
+     *                there is no anticipation/overshoot and the interpolator becomes
+     *                a simple acceleration/deceleration interpolator.
+     * @return an anticipate/overshoot interpolator
+     */
+    @Nonnull
+    static Interpolator anticipateOvershoot(float tension) {
+        if (tension == 3.0f)
+            return ANTICIPATE_OVERSHOOT;
+        return t -> {
+            t *= 2.0f;
+            if (t < 0.5f) {
+                return 0.5f * t * t * ((tension + 1) * t - tension);
+            } else {
+                t -= 2.0f;
+                return 0.5f * (t * t * ((tension + 1) * t + tension) + 2.0f);
+            }
+        };
+    }
 }

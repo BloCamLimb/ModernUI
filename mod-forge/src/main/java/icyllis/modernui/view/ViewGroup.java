@@ -29,7 +29,6 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 
 @SuppressWarnings("unused")
-@OnlyIn(Dist.CLIENT)
 public abstract class ViewGroup extends View implements ViewParent {
 
     private static final int ARRAY_CAPACITY_INCREMENT = 12;

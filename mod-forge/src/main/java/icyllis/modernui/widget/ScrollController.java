@@ -57,7 +57,7 @@ public class ScrollController {
     public void update(long time) {
         if (currValue != targetValue) {
             float p = Math.min((float) (time - startTime) / duration, 1);
-            p = Interpolator.SINE.getInterpolation(p);
+            p = Interpolator.DECELERATE.getInterpolation(p);
             currValue = Mth.lerp(p, startValue, targetValue);
             listener.onScrollAmountUpdated(this, currValue);
             UIManager.getInstance().repostCursorEvent();
@@ -152,15 +152,15 @@ public class ScrollController {
 
         // smooth
         float dis = Math.abs(targetValue - currValue);
-        if (dis > 60.0) {
-            duration = (int) (Math.sqrt(dis / 60.0) * 200.0);
+        if (dis > 120.0) {
+            duration = (int) (Math.sqrt(dis / 120.0) * 200.0);
         } else {
             duration = 200;
         }
         // fast scroll
-        dis = startTime - lastTime;
-        if (dis < 120.0) {
-            duration *= (dis / 300.0f) + 0.6f;
+        float det = startTime - lastTime;
+        if (det < 120.0) {
+            duration *= (det / 600.0f) + 0.8f;
         }
         return true;
     }

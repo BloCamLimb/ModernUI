@@ -199,6 +199,7 @@ public final class UIManager {
         RenderCore.ensureRenderThread();
         if (instance.mCanvas == null) {
             instance.mCanvas = Canvas.getInstance();
+            ModernUI.LOGGER.info(MARKER, "UIManager initialized");
         } else {
             throw new IllegalStateException("Already initialized");
         }

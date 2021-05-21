@@ -16,7 +16,26 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.resources;
+package icyllis.modernui.animation;
 
-public class MuiAssetManager {
+import javax.annotation.Nonnull;
+
+/**
+ * An implementation of {@link Property} to be used specifically with fields of type
+ * <code>float</code>. This type-specific subclass enables performance benefit by allowing
+ * calls to a {@link #set(Object, float) setValue()} function that takes the primitive
+ * <code>float</code> type and avoids autoboxing and other overhead associated with the
+ * <code>Float</code> class.
+ *
+ * @param <T> The class on which the Property is declared.
+ */
+public interface FloatProperty<T> extends Property<T, Float> {
+
+    void set(T obj, float val);
+
+    @Deprecated
+    @Override
+    default void set(T obj, @Nonnull Float val) {
+        set(obj, val.floatValue());
+    }
 }
