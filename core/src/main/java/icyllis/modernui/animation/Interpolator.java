@@ -83,7 +83,7 @@ public interface Interpolator {
     Interpolator OVERSHOOT = in -> (in - 1.0f) * (in - 1.0f) * (3.0f * (in - 1.0f) + 2.0f) + 1.0f;
 
     /**
-     * The constant anticipate/overshoot interpolator whose tension is 3.0.
+     * The constant anticipate/overshoot interpolator whose tension is 2.0.
      *
      * @see #anticipateOvershoot(float)
      */
@@ -102,21 +102,7 @@ public interface Interpolator {
      * The bounce interpolator where the change bounces at the end.
      */
     @Nonnull
-    Interpolator BOUNCE = in -> {
-        in *= 1.1226f;
-        if (in < 0.3535f)
-            return in * in * 8.0f;
-        else if (in < 0.7408f) {
-            in -= 0.54719f;
-            return in * in * 8.0f + 0.7f;
-        } else if (in < 0.9644f) {
-            in -= 0.8526f;
-            return in * in * 8.0f + 0.9f;
-        } else {
-            in -= 1.0435f;
-            return in * in * 8.0f + 0.95f;
-        }
-    };
+    Interpolator BOUNCE = new BounceInterpolator();
 
     /**
      * The interpolator default used in scroller.
@@ -186,7 +172,7 @@ public interface Interpolator {
     static Interpolator anticipate(float tension) {
         if (tension == 2.0f)
             return ANTICIPATE;
-        return t -> t * t * ((tension + 1) * t - tension);
+        return t -> t * t * ((tension + 1.0f) * t - tension);
     }
 
     /**
@@ -209,7 +195,7 @@ public interface Interpolator {
     /**
      * Create an anticipate/overshoot interpolator where the change starts backward then flings forward
      * and overshoots the target value and finally goes back to the final value. If {@code tension} is
-     * 3.0f, a constant object will be returned.
+     * 2.0f, a constant object will be returned.
      *
      * @param tension Amount of anticipation/overshoot. When tension equals 0.0f,
      *                there is no anticipation/overshoot and the interpolator becomes
@@ -218,15 +204,34 @@ public interface Interpolator {
      */
     @Nonnull
     static Interpolator anticipateOvershoot(float tension) {
-        if (tension == 3.0f)
+        return anticipateOvershoot(tension, 1.5f);
+    }
+
+    /**
+     * Create an anticipate/overshoot interpolator where the change starts backward then flings forward
+     * and overshoots the target value and finally goes back to the final value. If {@code tension} is
+     * 2.0f, a constant object will be returned.
+     *
+     * @param tension      Amount of anticipation/overshoot. When tension equals 0.0f,
+     *                     there is no anticipation/overshoot and the interpolator becomes
+     *                     a simple acceleration/deceleration interpolator.
+     * @param extraTension Amount by which to multiply the tension. For instance,
+     *                     to get the same overshoot as an OvershootInterpolator with
+     *                     a tension of 2.0f, you would use an extraTension of 1.5f.
+     * @return an anticipate/overshoot interpolator
+     */
+    @Nonnull
+    static Interpolator anticipateOvershoot(float tension, float extraTension) {
+        final float v = tension * extraTension;
+        if (v == 3.0f)
             return ANTICIPATE_OVERSHOOT;
         return t -> {
             t *= 2.0f;
             if (t < 0.5f) {
-                return 0.5f * t * t * ((tension + 1) * t - tension);
+                return 0.5f * t * t * ((v + 1) * t - v);
             } else {
                 t -= 2.0f;
-                return 0.5f * (t * t * ((tension + 1) * t + tension) + 2.0f);
+                return 0.5f * (t * t * ((v + 1) * t + v) + 2.0f);
             }
         };
     }

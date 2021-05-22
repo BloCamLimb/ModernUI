@@ -16,18 +16,23 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.resources;
+package icyllis.modernui.animation;
 
-import net.minecraftforge.common.util.LazyOptional;
+class IntKeyframe extends Keyframe {
 
-public class Resources {
+    private int mValue;
 
-    {
-        LazyOptional<Object> lazyOptional = LazyOptional.empty();
-        //noinspection ConstantConditions
-        Object o = lazyOptional.orElse(null);
-        if (o != null) {
+    @Override
+    public Object getValue() {
+        return null;
+    }
 
-        }
+    public int getIntValue() {
+        return mValue;
+    }
+
+    @Override
+    public void setValue(Object value) {
+
     }
 }
