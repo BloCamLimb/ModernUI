@@ -27,4 +27,36 @@ package icyllis.modernui.animation;
 public class PropertyValuesHolder {
 
     private Property<?, ?> mProperty;
+
+    /**
+     * The set of keyframes (time/value pairs) that define this animation.
+     */
+    Keyframes mKeyframes = null;
+
+    /**
+     * The value most recently calculated by calculateValue(). This is set during
+     * that function and might be retrieved later either by ValueAnimator.animatedValue() or
+     * by the property-setting logic in ObjectAnimator.animatedValue().
+     */
+    private Object mAnimatedValue;
+
+    /**
+     * The type evaluator used to calculate the animated values. This evaluator is determined
+     * automatically based on the type of the start/end objects passed into the constructor,
+     * but the system only knows about the primitive types int and float. Any other
+     * type will need to set the evaluator to a custom evaluator for that type.
+     */
+    private TypeEvaluator<?> mEvaluator;
+
+    /**
+     * Internal utility constructor, used by the factory methods to set the property.
+     * @param property The property for this holder.
+     */
+    private PropertyValuesHolder(Property<?, ?> property) {
+        mProperty = property;
+    }
+
+    public void setEvaluator(TypeEvaluator<?> value) {
+
+    }
 }
