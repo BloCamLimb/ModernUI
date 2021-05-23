@@ -25,6 +25,7 @@ import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.ast.Node;
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.animation.KeyframeSet;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.GLWrapper;
 import icyllis.modernui.graphics.Paint;
@@ -51,10 +52,9 @@ import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
-import java.util.Arrays;
+import java.util.*;
 import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -141,6 +141,8 @@ public class TestMain {
         mat.rotateX(MathUtil.PI_DIV_4);
         vec3.transform(mat);
         ModernUI.LOGGER.info("\n{}\n{}\n{}\nEq: {}, {}", vec1, vec2, vec3, vec1.equivalent(vec2), vec2.equivalent(vec3));
+        Consumer<Integer> c = i -> {};
+        cccc(c);
         /*try {
             new Runner(new OptionsBuilder().include(TestCompare.class.getSimpleName()).build()).run();
         } catch (RunnerException e) {
@@ -249,6 +251,10 @@ public class TestMain {
             glfwTerminate();
             ModernUI.LOGGER.info(MARKER, "Stopped");
         }
+    }
+
+    public static void cccc(Consumer<?> c) {
+        Consumer<Object> s = (Consumer<Object>) c;
     }
 
     public static float calcMachineEpsilon() {

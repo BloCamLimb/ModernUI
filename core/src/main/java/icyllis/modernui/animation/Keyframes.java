@@ -18,7 +18,7 @@
 
 package icyllis.modernui.animation;
 
-public interface Keyframes {
+public interface Keyframes<T> {
 
     /**
      * Sets the TypeEvaluator to be used when calculating animated values. This object
@@ -28,7 +28,7 @@ public interface Keyframes {
      *
      * @param evaluator The TypeEvaluator to be used to calculate animated values.
      */
-    void setEvaluator(TypeEvaluator<Object> evaluator);
+    void setEvaluator(TypeEvaluator<T> evaluator);
 
     /**
      * Gets the animated value, given the elapsed fraction of the animation (interpolated by the
@@ -42,7 +42,7 @@ public interface Keyframes {
      * @param fraction The elapsed fraction of the animation
      * @return The animated value.
      */
-    Object getValue(float fraction);
+    T getValue(float fraction);
 
     /**
      * @return The backing array of all Keyframes contained by this. This may return null if this is
@@ -50,7 +50,7 @@ public interface Keyframes {
      */
     Keyframe[] getKeyframes();
 
-    interface IntKeyframes extends Keyframes {
+    interface IntKeyframes extends Keyframes<Integer> {
 
         /**
          * Works like {@link #getValue(float)}, but returning a primitive.
@@ -61,12 +61,12 @@ public interface Keyframes {
         int getIntValue(float fraction);
 
         @Override
-        default Object getValue(float fraction) {
+        default Integer getValue(float fraction) {
             return getIntValue(fraction);
         }
     }
 
-    interface FloatKeyframes extends Keyframes {
+    interface FloatKeyframes extends Keyframes<Float> {
 
         /**
          * Works like {@link #getValue(float)}, but returning a primitive.
@@ -77,7 +77,7 @@ public interface Keyframes {
         float getFloatValue(float fraction);
 
         @Override
-        default Object getValue(float fraction) {
+        default Float getValue(float fraction) {
             return getFloatValue(fraction);
         }
     }

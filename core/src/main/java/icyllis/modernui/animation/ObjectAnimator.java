@@ -23,7 +23,6 @@ import icyllis.modernui.platform.RenderCore;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Objects;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 public final class ObjectAnimator extends Animator implements AnimationHandler.FrameCallback {
 
@@ -170,8 +169,13 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
     /**
      * The property/value sets being animated.
      */
-    private PropertyValuesHolder[] mValues;
+    private PropertyValuesHolder<Object>[] mValues;
 
+    /**
+     * Creates a new ObjectAnimator object. This default constructor is primarily for
+     * use internally; the other constructors which take parameters are more generally
+     * useful.
+     */
     public ObjectAnimator() {
     }
 
@@ -287,9 +291,10 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
      *
      * @param value the evaluator to be used this animation
      */
+    @SuppressWarnings("unchecked")
     public void setEvaluator(TypeEvaluator<?> value) {
         if (value != null && mValues != null && mValues.length > 0) {
-            mValues[0].setEvaluator(value);
+            mValues[0].setEvaluator((TypeEvaluator<Object>) value);
         }
     }
 
@@ -301,42 +306,6 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
             }
         }
         mStartListenersCalled = true;
-    }
-
-    /**
-     * Adds a listener to the set of listeners that are sent events through the life of an
-     * animation, such as start, repeat, and end.
-     *
-     * @param listener the listener to be added to the current set of listeners for this animation.
-     */
-    public void addListener(@Nonnull Listener listener) {
-        if (mListeners == null) {
-            mListeners = new CopyOnWriteArraySet<>();
-        }
-        mListeners.add(listener);
-    }
-
-    /**
-     * Removes a listener from the set listening to this animation.
-     *
-     * @param listener the listener to be removed from the current set of listeners for this
-     *                 animation.
-     */
-    public void removeListener(@Nonnull Listener listener) {
-        mListeners.remove(listener);
-        if (mListeners.isEmpty()) {
-            mListeners = null;
-        }
-    }
-
-    /**
-     * Removes all {@link #addListener(Listener)} listeners} from this object.
-     */
-    public void removeAllListeners() {
-        if (mListeners != null) {
-            mListeners.clear();
-            mListeners = null;
-        }
     }
 
     /**
@@ -511,9 +480,8 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
      */
     private void initAnimation() {
         if (!mInitialized) {
-            for (PropertyValuesHolder value : mValues) {
-                //TODO
-                //value.init();
+            for (PropertyValuesHolder<?> value : mValues) {
+                value.init();
             }
             mInitialized = true;
         }
@@ -590,10 +558,8 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
 
     /**
      * Cancels the animation. Unlike {@link #end()}, <code>cancel()</code> causes the animation to
-     * stop in its tracks, sending an
-     * {@link android.animation.Animator.AnimatorListener#onAnimationCancel(ObjectAnimator)} to
-     * its listeners, followed by an
-     * {@link android.animation.Animator.AnimatorListener#onAnimationEnd(ObjectAnimator)} message.
+     * stop in its tracks, sending an {@link Listener#onAnimationCancel(ObjectAnimator)} to
+     * its listeners, followed by an {@link Listener#onAnimationEnd(ObjectAnimator)} message.
      *
      * <p>This method must be called on the thread that is running the animation.</p>
      */
@@ -631,9 +597,8 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
     private void animateValue(float fraction) {
         fraction = mInterpolator.getInterpolation(fraction);
         mCurrentFraction = fraction;
-        for (PropertyValuesHolder value : mValues) {
-            //TODO
-            //value.calculateValue(fraction);
+        for (PropertyValuesHolder<?> value : mValues) {
+            value.calculateValue(fraction);
         }
         /*if (mUpdateListeners != null) {
             int numListeners = mUpdateListeners.size();
