@@ -23,7 +23,7 @@ import javax.annotation.Nonnull;
 /**
  * An implementation of {@link Property} to be used specifically with fields of type
  * <code>float</code>. This type-specific subclass enables performance benefit by allowing
- * calls to a {@link #set(Object, float) setValue()} function that takes the primitive
+ * calls to a {@link #setValue(Object, float) setValue()} function that takes the primitive
  * <code>float</code> type and avoids autoboxing and other overhead associated with the
  * <code>Float</code> class.
  *
@@ -31,11 +31,11 @@ import javax.annotation.Nonnull;
  */
 public interface FloatProperty<T> extends Property<T, Float> {
 
-    void set(T obj, float val);
+    void setValue(@Nonnull T obj, float val);
 
     @Deprecated
     @Override
-    default void set(T obj, @Nonnull Float val) {
-        set(obj, val.floatValue());
+    default void set(@Nonnull T obj, @Nonnull Float val) {
+        setValue(obj, val);
     }
 }

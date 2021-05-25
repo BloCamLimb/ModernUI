@@ -42,7 +42,7 @@ public class KeyframeSet<T> implements Keyframes<T> {
     }
 
     @Nonnull
-    public static KeyframeSet<Integer> ofInt(@Nonnull int[] values) {
+    public static Keyframes.IntKeyframes ofInt(@Nonnull int[] values) {
         if (values.length == 0)
             throw new IllegalArgumentException();
         final int length = values.length;
@@ -59,7 +59,7 @@ public class KeyframeSet<T> implements Keyframes<T> {
     }
 
     @Nonnull
-    public static KeyframeSet<Float> ofFloat(@Nonnull float[] values) {
+    public static Keyframes.FloatKeyframes ofFloat(@Nonnull float[] values) {
         if (values.length == 0)
             throw new IllegalArgumentException();
         boolean badValue = false;
@@ -86,7 +86,7 @@ public class KeyframeSet<T> implements Keyframes<T> {
     }
 
     @Nonnull
-    public static <T> KeyframeSet<T> ofObject(@Nonnull T[] values) {
+    public static <T> Keyframes<T> ofObject(@Nonnull T[] values) {
         if (values.length == 0)
             throw new IllegalArgumentException();
         final int length = values.length;
@@ -111,7 +111,7 @@ public class KeyframeSet<T> implements Keyframes<T> {
     @Override
     public T getValue(float fraction) {
         final Keyframe[] keyframes = mKeyframes;
-        final Interpolator interpolator;
+        final TimeInterpolator interpolator;
         final int length = keyframes.length;
         if (length == 2) {
             final Keyframe nextKeyframe = keyframes[1];

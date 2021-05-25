@@ -25,10 +25,15 @@ import javax.annotation.Nonnull;
  * should take on during an animation. PropertyValuesHolder objects can be used to create
  * animations with ValueAnimator or ObjectAnimator that operate on several different properties
  * in parallel.
+ *
+ * @param <T> target type, which this animation applies to
+ * @param <V> animated value type, used for animation calculation
+ * @param <P> the property value type for output
  */
-public class PropertyValuesHolder<V> {
+public class PropertyValuesHolder<T, V, P> {
 
-    Property<Object, V> mProperty;
+    @Nonnull
+    Property<T, P> mProperty;
 
     /**
      * The set of keyframes (time/value pairs) that define this animation.
@@ -40,7 +45,7 @@ public class PropertyValuesHolder<V> {
      * that function and might be retrieved later either by ValueAnimator.animatedValue() or
      * by the property-setting logic in ObjectAnimator.animatedValue().
      */
-    private V mAnimatedValue;
+    private P mAnimatedValue;
 
     /**
      * The type evaluator used to calculate the animated values. This evaluator is determined
@@ -51,13 +56,17 @@ public class PropertyValuesHolder<V> {
     private TypeEvaluator<V> mEvaluator;
 
     /**
+     * Converts from the source Object type to the setter Object type.
+     */
+    private TypeConverter<V, P> mConverter;
+
+    /**
      * Internal utility constructor, used by the factory methods to set the property.
      *
      * @param property The property for this holder.
      */
-    @SuppressWarnings("unchecked")
-    private PropertyValuesHolder(Property<?, V> property) {
-        mProperty = (Property<Object, V>) property;
+    private PropertyValuesHolder(@Nonnull Property<T, P> property) {
+        mProperty = property;
     }
 
     /**
@@ -69,8 +78,9 @@ public class PropertyValuesHolder<V> {
      * @return PropertyValuesHolder The constructed PropertyValuesHolder object.
      */
     @Nonnull
-    public static PropertyValuesHolder<Integer> ofInt(IntProperty<?> property, @Nonnull int... values) {
-        return new IntPropertyValuesHolder(property, values);
+    public static <T> PropertyValuesHolder<T, Integer, Integer> ofInt(@Nonnull IntProperty<T> property,
+                                                                      @Nonnull int... values) {
+        return new IntPropertyValuesHolder<>(property, values);
     }
 
     /**
@@ -82,8 +92,72 @@ public class PropertyValuesHolder<V> {
      * @return PropertyValuesHolder The constructed PropertyValuesHolder object.
      */
     @Nonnull
-    public static PropertyValuesHolder<Float> ofFloat(FloatProperty<?> property, @Nonnull float... values) {
-        return new FloatPropertyValuesHolder(property, values);
+    public static <T> PropertyValuesHolder<T, Float, Float> ofFloat(@Nonnull FloatProperty<T> property,
+                                                                    @Nonnull float... values) {
+        return new FloatPropertyValuesHolder<>(property, values);
+    }
+
+    /**
+     * Constructs and returns a PropertyValuesHolder with a given property and
+     * set of Object values. This variant also takes a TypeEvaluator because the system
+     * cannot automatically interpolate between objects of unknown type.
+     *
+     * <p><strong>Note:</strong> The Object values are stored as references to the original
+     * objects, which means that changes to those objects after this method is called will
+     * affect the values on the PropertyValuesHolder. If the objects will be mutated externally
+     * after this method is called, callers should pass a copy of those objects instead.
+     *
+     * @param property  The property being animated. Should not be null.
+     * @param evaluator A TypeEvaluator that will be called on each animation frame to
+     *                  provide the necessary interpolation between the Object values to derive the animated
+     *                  value.
+     * @param values    The values that the property will animate between.
+     * @return PropertyValuesHolder The constructed PropertyValuesHolder object.
+     */
+    @Nonnull
+    @SafeVarargs
+    public static <T, V> PropertyValuesHolder<T, V, V> ofObject(
+            @Nonnull Property<T, V> property, @Nonnull TypeEvaluator<V> evaluator, @Nonnull V... values) {
+        PropertyValuesHolder<T, V, V> v = new PropertyValuesHolder<>(property);
+        v.setObjectValues(values);
+        v.setEvaluator(evaluator);
+        return v;
+    }
+
+    /**
+     * Constructs and returns a PropertyValuesHolder with a given property and
+     * set of Object values. This variant also takes a TypeEvaluator because the system
+     * cannot automatically interpolate between objects of unknown type. This variant also
+     * takes a <code>TypeConverter</code> to convert from animated values to the type
+     * of the property. If only one value is supplied, the <code>TypeConverter</code>
+     * must be a {@link BidirectionalTypeConverter} to retrieve the current
+     * value.
+     *
+     * <p><strong>Note:</strong> The Object values are stored as references to the original
+     * objects, which means that changes to those objects after this method is called will
+     * affect the values on the PropertyValuesHolder. If the objects will be mutated externally
+     * after this method is called, callers should pass a copy of those objects instead.
+     *
+     * @param property  The property being animated. Should not be null.
+     * @param converter Converts the animated object to the Property type.
+     * @param evaluator A TypeEvaluator that will be called on each animation frame to
+     *                  provide the necessary interpolation between the Object values to derive the animated
+     *                  value.
+     * @param values    The values that the property will animate between.
+     * @return PropertyValuesHolder The constructed PropertyValuesHolder object.
+     * @see #setConverter(TypeConverter)
+     * @see TypeConverter
+     */
+    @Nonnull
+    @SafeVarargs
+    public static <T, V, P> PropertyValuesHolder<T, V, P> ofObject(
+            @Nonnull Property<T, P> property, @Nonnull TypeConverter<V, P> converter,
+            @Nonnull TypeEvaluator<V> evaluator, @Nonnull V... values) {
+        PropertyValuesHolder<T, V, P> v = new PropertyValuesHolder<>(property);
+        v.setConverter(converter);
+        v.setObjectValues(values);
+        v.setEvaluator(evaluator);
+        return v;
     }
 
     /**
@@ -100,7 +174,7 @@ public class PropertyValuesHolder<V> {
      * @param values One or more values that the animation will animate between.
      */
     public void setIntValues(@Nonnull int... values) {
-        throw new IllegalStateException();
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -117,7 +191,7 @@ public class PropertyValuesHolder<V> {
      * @param values One or more values that the animation will animate between.
      */
     public void setFloatValues(@Nonnull float... values) {
-        throw new IllegalStateException();
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -146,16 +220,55 @@ public class PropertyValuesHolder<V> {
         }
     }
 
-    private Object convertBack(Object value) {
-        /*if (mConverter != null) {
+    /**
+     * Sets the converter to convert from the values type to the setter's parameter type.
+     * If only one value is supplied, <var>converter</var> must be a
+     * {@link BidirectionalTypeConverter}.
+     *
+     * @param converter The converter to use to convert values.
+     */
+    public void setConverter(TypeConverter<V, P> converter) {
+        mConverter = converter;
+    }
+
+    /**
+     * Internal function (called from ObjectAnimator) to set up the setter and getter
+     * prior to running the animation. If the setter has not been manually set for this
+     * object, it will be derived automatically given the property name, target object, and
+     * types of values supplied. If no getter has been set, it will be supplied if any of the
+     * supplied values was null. If there is a null value, then the getter (supplied or derived)
+     * will be called to set those null values to the current value of the property
+     * on the target object.
+     *
+     * @param target The object on which the setter (and possibly getter) exist.
+     */
+    void setupSetterAndGetter(@Nonnull T target) {
+        V testValue = null;
+        Keyframe[] keyframes = mKeyframes.getKeyframes();
+        int count = keyframes == null ? 0 : keyframes.length;
+        for (int i = 0; i < count; i++) {
+            Keyframe kf = keyframes[i];
+            if (!kf.hasValue() || kf.mValueWasSetOnStart) {
+                if (testValue == null) {
+                    testValue = convertBack(mProperty.get(target));
+                }
+                kf.setValue(testValue);
+                kf.mValueWasSetOnStart = true;
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private V convertBack(P value) {
+        if (mConverter != null) {
             if (!(mConverter instanceof BidirectionalTypeConverter)) {
                 throw new IllegalArgumentException("Converter "
                         + mConverter.getClass().getName()
                         + " must be a BidirectionalTypeConverter");
             }
-            value = ((BidirectionalTypeConverter) mConverter).convertBack(value);
-        }*/
-        return value;
+            return ((BidirectionalTypeConverter<V, P>) mConverter).convertBack(value);
+        }
+        return (V) value;
     }
 
     /**
@@ -166,13 +279,11 @@ public class PropertyValuesHolder<V> {
      *
      * @param target The object which holds the start values that should be set.
      */
-    void setupStartValue(Object target) {
-        if (mProperty != null) {
-            Keyframe[] keyframes = mKeyframes.getKeyframes();
-            if (keyframes.length > 0) {
-                Object value = convertBack(mProperty.get(target));
-                keyframes[0].setValue(value);
-            }
+    void setupStartValue(@Nonnull T target) {
+        Keyframe[] keyframes = mKeyframes.getKeyframes();
+        if (keyframes.length > 0) {
+            V value = convertBack(mProperty.get(target));
+            keyframes[0].setValue(value);
         }
     }
 
@@ -184,13 +295,11 @@ public class PropertyValuesHolder<V> {
      *
      * @param target The object which holds the start values that should be set.
      */
-    void setupEndValue(Object target) {
-        if (mProperty != null) {
-            Keyframe[] keyframes = mKeyframes.getKeyframes();
-            if (keyframes.length > 0) {
-                Object value = convertBack(mProperty.get(target));
-                keyframes[keyframes.length - 1].setValue(value);
-            }
+    void setupEndValue(@Nonnull T target) {
+        Keyframe[] keyframes = mKeyframes.getKeyframes();
+        if (keyframes.length > 0) {
+            V value = convertBack(mProperty.get(target));
+            keyframes[keyframes.length - 1].setValue(value);
         }
     }
 
@@ -202,10 +311,8 @@ public class PropertyValuesHolder<V> {
      *
      * @param target The target object on which the value is set
      */
-    void setAnimatedValue(Object target) {
-        if (mProperty != null) {
-            mProperty.set(target, getAnimatedValue());
-        }
+    void setAnimatedValue(@Nonnull T target) {
+        mProperty.set(target, getAnimatedValue());
     }
 
     /**
@@ -213,11 +320,9 @@ public class PropertyValuesHolder<V> {
      * to calculate animated values.
      */
     void init() {
-        if (mEvaluator != null) {
-            // KeyframeSet knows how to evaluate the common types - only give it a custom
-            // evaluator if one has been set on this class
-            mKeyframes.setEvaluator(mEvaluator);
-        }
+        // KeyframeSet knows how to evaluate the common types - only give it a custom
+        // evaluator if one has been set on this class
+        mKeyframes.setEvaluator(mEvaluator);
     }
 
     /**
@@ -229,9 +334,9 @@ public class PropertyValuesHolder<V> {
      * only values of type float and int (and their Object equivalents: Float
      * and Integer) are  correctly interpolated; all other types require setting a TypeEvaluator.
      */
-    public void setEvaluator(TypeEvaluator<V> evaluator) {
+    public void setEvaluator(@Nonnull TypeEvaluator<V> evaluator) {
         mEvaluator = evaluator;
-        mKeyframes.setEvaluator(evaluator);
+        mKeyframes.setEvaluator(mEvaluator);
     }
 
     /**
@@ -240,8 +345,10 @@ public class PropertyValuesHolder<V> {
      *
      * @param fraction The elapsed, interpolated fraction of the animation.
      */
+    @SuppressWarnings("unchecked")
     void calculateValue(float fraction) {
-        mAnimatedValue = mKeyframes.getValue(fraction);
+        V value = mKeyframes.getValue(fraction);
+        mAnimatedValue = mConverter == null ? (P) value : mConverter.convert(value);
     }
 
     /**
@@ -252,7 +359,7 @@ public class PropertyValuesHolder<V> {
      *
      * @param property The property being animated.
      */
-    public void setProperty(Property<Object, V> property) {
+    public void setProperty(@Nonnull Property<T, P> property) {
         mProperty = property;
     }
 
@@ -260,11 +367,11 @@ public class PropertyValuesHolder<V> {
      * Internal function, called by ValueAnimator and ObjectAnimator, to retrieve the value
      * most recently calculated in calculateValue().
      */
-    V getAnimatedValue() {
+    P getAnimatedValue() {
         return mAnimatedValue;
     }
 
-    static class IntPropertyValuesHolder extends PropertyValuesHolder<Integer> {
+    static class IntPropertyValuesHolder<T> extends PropertyValuesHolder<T, Integer, Integer> {
 
         private int mIntAnimatedValue;
 
@@ -273,12 +380,12 @@ public class PropertyValuesHolder<V> {
          *
          * @param property The property for this holder.
          */
-        private IntPropertyValuesHolder(IntProperty<?> property, Keyframes.IntKeyframes keyframes) {
+        private IntPropertyValuesHolder(@Nonnull IntProperty<T> property, Keyframes.IntKeyframes keyframes) {
             super(property);
             mKeyframes = keyframes;
         }
 
-        private IntPropertyValuesHolder(IntProperty<?> property, int... values) {
+        private IntPropertyValuesHolder(@Nonnull IntProperty<T> property, int... values) {
             super(property);
             setIntValues(values);
         }
@@ -289,10 +396,8 @@ public class PropertyValuesHolder<V> {
         }
 
         @Override
-        void setAnimatedValue(Object target) {
-            if (mProperty != null) {
-                ((IntProperty<Object>) mProperty).set(target, mIntAnimatedValue);
-            }
+        void setAnimatedValue(@Nonnull T target) {
+            ((IntProperty<T>) mProperty).setValue(target, mIntAnimatedValue);
         }
 
         @Override
@@ -301,12 +406,17 @@ public class PropertyValuesHolder<V> {
         }
 
         @Override
+        public void setConverter(TypeConverter<Integer, Integer> converter) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         Integer getAnimatedValue() {
             return mIntAnimatedValue;
         }
     }
 
-    static class FloatPropertyValuesHolder extends PropertyValuesHolder<Float> {
+    static class FloatPropertyValuesHolder<T> extends PropertyValuesHolder<T, Float, Float> {
 
         private float mFloatAnimatedValue;
 
@@ -315,12 +425,12 @@ public class PropertyValuesHolder<V> {
          *
          * @param property The property for this holder.
          */
-        private FloatPropertyValuesHolder(FloatProperty<?> property, Keyframes.FloatKeyframes keyframes) {
+        private FloatPropertyValuesHolder(@Nonnull FloatProperty<T> property, Keyframes.FloatKeyframes keyframes) {
             super(property);
             mKeyframes = keyframes;
         }
 
-        private FloatPropertyValuesHolder(FloatProperty<?> property, float... values) {
+        private FloatPropertyValuesHolder(@Nonnull FloatProperty<T> property, float... values) {
             super(property);
             setFloatValues(values);
         }
@@ -331,15 +441,18 @@ public class PropertyValuesHolder<V> {
         }
 
         @Override
-        void setAnimatedValue(Object target) {
-            if (mProperty != null) {
-                ((FloatProperty<Object>) mProperty).set(target, mFloatAnimatedValue);
-            }
+        void setAnimatedValue(@Nonnull T target) {
+            ((FloatProperty<T>) mProperty).setValue(target, mFloatAnimatedValue);
         }
 
         @Override
         void calculateValue(float fraction) {
             mFloatAnimatedValue = ((Keyframes.FloatKeyframes) mKeyframes).getFloatValue(fraction);
+        }
+
+        @Override
+        public void setConverter(TypeConverter<Float, Float> converter) {
+            throw new UnsupportedOperationException();
         }
 
         @Override

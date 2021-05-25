@@ -19,12 +19,39 @@
 package icyllis.modernui.animation;
 
 import icyllis.modernui.platform.RenderCore;
+import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.lang.ref.WeakReference;
 import java.util.Objects;
+import java.util.Set;
 
-public final class ObjectAnimator extends Animator implements AnimationHandler.FrameCallback {
+/**
+ * ObjectAnimator provides support for animating properties on target objects.
+ * <p>
+ * The constructors of this class take parameters to define the target object that will be animated
+ * as well as the name of the property that will be animated. Appropriate set/get functions
+ * are then determined internally and the animation will call these functions as necessary to
+ * animate the property.
+ * <p>
+ * Use {@link PropertyValuesHolder} and {@link Keyframe} can create more complex animations.
+ * Using PropertyValuesHolders allows animators to animate several properties in parallel.
+ * <p>
+ * Using Keyframes allows animations to follow more complex paths from the start
+ * to the end values. Note that you can specify explicit fractional values (from 0 to 1) for
+ * each keyframe to determine when, in the overall duration, the animation should arrive at that
+ * value. Alternatively, you can leave the fractions off and the keyframes will be equally
+ * distributed within the total duration. Also, a keyframe with no value will derive its value
+ * from the target object when the animator starts, just like animators with only one
+ * value specified. In addition, an optional interpolator can be specified. The interpolator will
+ * be applied on the interval between the keyframe that the interpolator is set on and the previous
+ * keyframe. When no interpolator is supplied, the default {@link TimeInterpolator#ACCELERATE_DECELERATE}
+ * will be used.
+ *
+ * @param <T> the type of the target object
+ */
+public final class ObjectAnimator<T> extends Animator implements AnimationHandler.FrameCallback {
 
     private static float sDurationScale = 1.0f;
 
@@ -45,6 +72,12 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
      * the animation indefinitely.
      */
     public static final int INFINITE = -1;
+
+    /**
+     * A weak reference to the target object on which the property exists, set
+     * in the constructor. We'll cancel the animation if this goes away.
+     */
+    private WeakReference<T> mTarget;
 
     /**
      * Additional playing state to indicate whether an animator has been start()'d. There is
@@ -143,6 +176,18 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
     private int mRepeatMode = RESTART;
 
     /**
+     * Whether or not the animator should register for its own animation callback to receive
+     * animation pulse.
+     */
+    private boolean mSelfPulse = true;
+
+    /**
+     * Whether or not the animator has been requested to start without pulsing. This flag gets set
+     * in startWithoutPulsing(), and reset in start().
+     */
+    private boolean mSuppressSelfPulseRequested = false;
+
+    /**
      * Tracks the overall fraction of the animation, ranging from 0 to mRepeatCount + 1
      */
     private float mOverallFraction = 0f;
@@ -159,17 +204,24 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
     private long mLastFrameTime = -1;
 
     /**
+     * The set of listeners to be sent events through the life of an animation.
+     */
+    Set<UpdateListener> mUpdateListeners = null;
+
+    /**
      * The time interpolator to be used. The elapsed fraction of the animation will be passed
      * through this interpolator to calculate the interpolated fraction, which is then used to
      * calculate the animated values.
      */
     @Nonnull
-    private Interpolator mInterpolator = Interpolator.ACCELERATE_DECELERATE;
+    private TimeInterpolator mInterpolator = TimeInterpolator.ACCELERATE_DECELERATE;
 
     /**
      * The property/value sets being animated.
      */
-    private PropertyValuesHolder<Object>[] mValues;
+    private PropertyValuesHolder<T, ?, ?>[] mValues;
+
+    private boolean mAutoCancel = false;
 
     /**
      * Creates a new ObjectAnimator object. This default constructor is primarily for
@@ -180,20 +232,177 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
     }
 
     /**
+     * Constructs and returns an ObjectAnimator that animates between int values. A single
+     * value implies that that value is the one being animated to, in which case the start value
+     * will be derived from the property being animated and the target object when {@link #start()}
+     * is called for the first time. Two values imply starting and ending values. More than two
+     * values imply a starting value, values to animate through along the way, and an ending value
+     * (these values will be distributed evenly across the duration of the animation).
+     *
+     * @param target   The object whose property is to be animated.
+     * @param property The property being animated.
+     * @param values   A set of values (at least 1) that the animation will animate between over time.
+     * @return An ObjectAnimator object that is set up to animate between the given values.
+     */
+    @Nonnull
+    public static <T> ObjectAnimator<T> ofInt(@Nullable T target, @Nonnull IntProperty<T> property,
+                                              @Nonnull int... values) {
+        ObjectAnimator<T> anim = new ObjectAnimator<>();
+        anim.setTarget(target);
+        anim.setValues(PropertyValuesHolder.ofInt(property, values));
+        return anim;
+    }
+
+    /**
+     * Constructs and returns an ObjectAnimator that animates between float values. A single
+     * value implies that that value is the one being animated to, in which case the start value
+     * will be derived from the property being animated and the target object when {@link #start()}
+     * is called for the first time. Two values imply starting and ending values. More than two
+     * values imply a starting value, values to animate through along the way, and an ending value
+     * (these values will be distributed evenly across the duration of the animation).
+     *
+     * @param target   The object whose property is to be animated.
+     * @param property The property being animated.
+     * @param values   A set of values (at least 1) that the animation will animate between over time.
+     * @return An ObjectAnimator object that is set up to animate between the given values.
+     */
+    @Nonnull
+    public static <T> ObjectAnimator<T> ofFloat(@Nullable T target, @Nonnull FloatProperty<T> property,
+                                                @Nonnull float... values) {
+        ObjectAnimator<T> anim = new ObjectAnimator<>();
+        anim.setTarget(target);
+        anim.setValues(PropertyValuesHolder.ofFloat(property, values));
+        return anim;
+    }
+
+    /**
+     * Constructs and returns an ObjectAnimator that animates between Object values. A single
+     * value implies that that value is the one being animated to, in which case the start value
+     * will be derived from the property being animated and the target object when {@link #start()}
+     * is called for the first time. Two values imply starting and ending values. More than two
+     * values imply a starting value, values to animate through along the way, and an ending value
+     * (these values will be distributed evenly across the duration of the animation).
+     *
+     * <p><strong>Note:</strong> The values are stored as references to the original
+     * objects, which means that changes to those objects after this method is called will
+     * affect the values on the animator. If the objects will be mutated externally after
+     * this method is called, callers should pass a copy of those objects instead.
+     *
+     * @param target    The object whose property is to be animated.
+     * @param property  The property being animated.
+     * @param evaluator A TypeEvaluator that will be called on each animation frame to
+     *                  provide the necessary interpolation between the Object values to derive the animated
+     *                  value.
+     * @param values    A set of values (at least 1) that the animation will animate between over time.
+     * @return An ObjectAnimator object that is set up to animate between the given values.
+     */
+    @Nonnull
+    @SafeVarargs
+    public static <T, V> ObjectAnimator<T> ofObject(@Nullable T target, @Nonnull Property<T, V> property,
+                                                    @Nonnull TypeEvaluator<V> evaluator, @Nonnull V... values) {
+        return ofPropertyValuesHolder(target, PropertyValuesHolder.ofObject(property, evaluator, values));
+    }
+
+    /**
+     * Constructs and returns an ObjectAnimator that animates between Object values. A single
+     * value implies that that value is the one being animated to, in which case the start value
+     * will be derived from the property being animated and the target object when {@link #start()}
+     * is called for the first time. Two values imply starting and ending values. More than two
+     * values imply a starting value, values to animate through along the way, and an ending value
+     * (these values will be distributed evenly across the duration of the animation).
+     * This variant supplies a <code>TypeConverter</code> to convert from the animated values to the
+     * type of the property. If only one value is supplied, the <code>TypeConverter</code> must be a
+     * {@link BidirectionalTypeConverter} to retrieve the current value.
+     *
+     * <p><strong>Note:</strong> The values are stored as references to the original
+     * objects, which means that changes to those objects after this method is called will
+     * affect the values on the animator. If the objects will be mutated externally after
+     * this method is called, callers should pass a copy of those objects instead.
+     *
+     * @param target    The object whose property is to be animated.
+     * @param property  The property being animated.
+     * @param converter Converts the animated object to the Property type.
+     * @param evaluator A TypeEvaluator that will be called on each animation frame to
+     *                  provide the necessary interpolation between the Object values to derive the animated
+     *                  value.
+     * @param values    A set of values (at least 1) that the animation will animate between over time.
+     * @return An ObjectAnimator object that is set up to animate between the given values.
+     */
+    @Nonnull
+    @SafeVarargs
+    public static <T, V, P> ObjectAnimator<T> ofObject(@Nullable T target, @Nonnull Property<T, P> property,
+                                                       @Nonnull TypeConverter<V, P> converter,
+                                                       @Nonnull TypeEvaluator<V> evaluator, @Nonnull V... values) {
+        return ofPropertyValuesHolder(target,
+                PropertyValuesHolder.ofObject(property, converter, evaluator, values));
+    }
+
+    /**
+     * Constructs and returns an ObjectAnimator that animates between the sets of values specified
+     * in <code>PropertyValueHolder</code> objects. This variant should be used when animating
+     * several properties at once with the same ObjectAnimator, since PropertyValuesHolder allows
+     * you to associate a set of animation values with a property name.
+     *
+     * @param target The object whose property is to be animated. Depending on how the
+     *               PropertyValuesObjects were constructed, the target object should either have the {@link
+     *               Property} objects used to construct the PropertyValuesHolder objects or (if the
+     *               PropertyValuesHOlder objects were created with property names) the target object should have
+     *               public methods on it called <code>setName()</code>, where <code>name</code> is the name of
+     *               the property passed in as the <code>propertyName</code> parameter for each of the
+     *               PropertyValuesHolder objects.
+     * @param values A set of PropertyValuesHolder objects whose values will be animated between
+     *               over time. Must not null, but can be empty.
+     * @return An ObjectAnimator object that is set up to animate between the given values.
+     */
+    @Nonnull
+    @SafeVarargs
+    public static <T> ObjectAnimator<T> ofPropertyValuesHolder(@Nullable T target,
+                                                               @Nonnull PropertyValuesHolder<T, ?, ?>... values) {
+        ObjectAnimator<T> anim = new ObjectAnimator<>();
+        anim.setTarget(target);
+        anim.setValues(values);
+        return anim;
+    }
+
+    /**
+     * AutoCancel controls whether an ObjectAnimator will be canceled automatically
+     * when any other ObjectAnimator with the same target and properties is started.
+     * Setting this flag may make it easier to run different animators on the same target
+     * object without having to keep track of whether there are conflicting animators that
+     * need to be manually canceled. Canceling animators must have the same exact set of
+     * target properties, in the same order.
+     *
+     * @param cancel Whether future ObjectAnimators with the same target and properties
+     *               as this ObjectAnimator will cause this ObjectAnimator to be canceled.
+     */
+    public void setAutoCancel(boolean cancel) {
+        mAutoCancel = cancel;
+    }
+
+    /**
      * Starts this animation. If the animation has a nonzero startDelay, the animation will start
      * running after that delay elapses. A non-delayed animation will have its initial
      * value(s) set immediately, followed by calls to
-     * {@link Listener#onAnimationStart(ObjectAnimator, boolean)} for any listeners of this animator.
+     * {@link Listener#onAnimationStart(Animator, boolean)} for any listeners of this animator.
      */
     @Override
     public void start() {
+        AnimationHandler.get().autoCancelBasedOn(this);
         start(false);
     }
 
-    private void start(boolean reverse) {
-        mReversing = reverse;
+    /**
+     * Start the animation playing. This version of start() takes a boolean flag that indicates
+     * whether the animation should play in reverse. The flag is usually false, but may be set
+     * to true if called from the reverse() method.
+     *
+     * @param playBackwards Whether the ValueAnimator should start playing in reverse.
+     */
+    private void start(boolean playBackwards) {
+        mReversing = playBackwards;
+        mSelfPulse = !mSuppressSelfPulseRequested;
         // Special case: reversing from seek-to-0 should act as if not seeked at all.
-        if (reverse && mSeekFraction != -1 && mSeekFraction != 0) {
+        if (playBackwards && mSeekFraction != -1 && mSeekFraction != 0) {
             if (mRepeatCount == INFINITE) {
                 // Calculate the fraction of the current iteration.
                 float fraction = (float) (mSeekFraction - Math.floor(mSeekFraction));
@@ -211,7 +420,7 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
         // started-but-not-yet-reached-the-first-frame phase.
         mLastFrameTime = -1;
         mStartTime = -1;
-        AnimationHandler.get().register(this, 0);
+        addAnimationCallback(0);
 
         if (mStartDelay == 0 || mSeekFraction >= 0 || mReversing) {
             // If there's no start delay, init the animation and notify start listeners right away
@@ -251,7 +460,7 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
         if (mAnimationEndRequested) {
             return;
         }
-        AnimationHandler.get().unregister(this);
+        removeAnimationCallback();
 
         mAnimationEndRequested = true;
         mPaused = false;
@@ -292,9 +501,9 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
      * @param value the evaluator to be used this animation
      */
     @SuppressWarnings("unchecked")
-    public void setEvaluator(TypeEvaluator<?> value) {
+    public <V> void setEvaluator(TypeEvaluator<V> value) {
         if (value != null && mValues != null && mValues.length > 0) {
-            mValues[0].setEvaluator((TypeEvaluator<Object>) value);
+            ((PropertyValuesHolder<T, V, ?>) mValues[0]).setEvaluator(value);
         }
     }
 
@@ -331,15 +540,77 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
     }
 
     /**
+     * Defines what this animation should do when it reaches the end.
+     *
+     * @return either one of {@link #REVERSE} or {@link #RESTART}
+     */
+    public int getRepeatMode() {
+        return mRepeatMode;
+    }
+
+    /**
+     * Defines what this animation should do when it reaches the end. This
+     * setting is applied only when the repeat count is either greater than
+     * 0 or {@link #INFINITE}. Defaults to {@link #RESTART}.
+     *
+     * @param value {@link #RESTART} or {@link #REVERSE}
+     */
+    public void setRepeatMode(int value) {
+        mRepeatMode = value;
+    }
+
+    /**
+     * Adds a listener to the set of listeners that are sent update events through the life of
+     * an animation. This method is called on all listeners for every frame of the animation,
+     * after the values for the animation have been calculated.
+     *
+     * @param listener the listener to be added to the current set of listeners for this animation.
+     */
+    public void addUpdateListener(@Nonnull UpdateListener listener) {
+        if (mUpdateListeners == null) {
+            mUpdateListeners = new ObjectArraySet<>();
+        }
+        mUpdateListeners.add(listener);
+    }
+
+    /**
+     * Removes all listeners from the set listening to frame updates for this animation.
+     */
+    public void removeAllUpdateListeners() {
+        if (mUpdateListeners != null) {
+            mUpdateListeners.clear();
+            mUpdateListeners = null;
+        }
+    }
+
+    /**
+     * Removes a listener from the set listening to frame updates for this animation.
+     *
+     * @param listener the listener to be removed from the current set of update listeners
+     *                 for this animation.
+     */
+    public void removeUpdateListener(@Nonnull UpdateListener listener) {
+        if (mUpdateListeners == null) {
+            return;
+        }
+        mUpdateListeners.remove(listener);
+        if (mUpdateListeners.isEmpty()) {
+            mUpdateListeners = null;
+        }
+    }
+
+    /**
      * The time interpolator used in calculating the elapsed fraction of the
      * animation. The interpolator determines whether the animation runs with
      * linear or non-linear motion, such as acceleration and deceleration. The
-     * default value is {@link Interpolator#ACCELERATE_DECELERATE}.
+     * default value is {@link TimeInterpolator#ACCELERATE_DECELERATE}.
      *
-     * @param value the interpolator to be used by this animation
+     * @param value the interpolator to be used by this animation. A value of <code>null</code>
+     *              will result in linear interpolation.
      */
-    public void setInterpolator(@Nullable Interpolator value) {
-        mInterpolator = Objects.requireNonNullElse(value, Interpolator.LINEAR);
+    @Override
+    public void setInterpolator(@Nullable TimeInterpolator value) {
+        mInterpolator = Objects.requireNonNullElse(value, TimeInterpolator.LINEAR);
     }
 
     /**
@@ -348,7 +619,8 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
      * @return The timing interpolator for this animation.
      */
     @Nonnull
-    public Interpolator getInterpolator() {
+    @Override
+    public TimeInterpolator getInterpolator() {
         return mInterpolator;
     }
 
@@ -358,6 +630,7 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
      *
      * @return whether the Animator is running.
      */
+    @Override
     public boolean isRunning() {
         return mRunning;
     }
@@ -373,19 +646,31 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
      *
      * @return whether the Animator has been started and not yet ended.
      */
+    @Override
     public boolean isStarted() {
         return mStarted;
     }
 
     /**
-     * Returns whether this animator is currently in a paused state.
-     *
-     * @return True if the animator is currently paused, false otherwise.
-     * @see #pause()
-     * @see #resume()
+     * Plays the ValueAnimator in reverse. If the animation is already running,
+     * it will stop itself and play backwards from the point reached when reverse was called.
+     * If the animation is not currently running, then it will start from the end and
+     * play backwards. This behavior is only set for the current animation; future playing
+     * of the animation will use the default behavior of playing forward.
      */
-    public boolean isPaused() {
-        return mPaused;
+    public void reverse() {
+        if (isPulsingInternal()) {
+            long currentTime = RenderCore.timeMillis();
+            long currentPlayTime = currentTime - mStartTime;
+            long timeLeft = getScaledDuration() - currentPlayTime;
+            mStartTime = currentTime - timeLeft;
+            mReversing = !mReversing;
+        } else if (mStarted) {
+            mReversing = !mReversing;
+            end();
+        } else {
+            start(true);
+        }
     }
 
     private long getScaledDuration() {
@@ -397,6 +682,7 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
      *
      * @return The length of the animation, in milliseconds.
      */
+    @Override
     public long getDuration() {
         return mDuration;
     }
@@ -409,6 +695,7 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
      * is called. {@link #DURATION_INFINITE} will be returned if the animation or any
      * child animation repeats infinite times.
      */
+    @Override
     public long getTotalDuration() {
         if (mRepeatCount == INFINITE) {
             return DURATION_INFINITE;
@@ -468,6 +755,55 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
         animateValue(currentIterationFraction);
     }
 
+    @Override
+    public void setupStartValues() {
+        initAnimation();
+        final T target = getTarget();
+        if (target != null) {
+            for (PropertyValuesHolder<T, ?, ?> value : mValues) {
+                value.setupStartValue(target);
+            }
+        }
+    }
+
+    @Override
+    public void setupEndValues() {
+        initAnimation();
+        final T target = getTarget();
+        if (target != null) {
+            for (PropertyValuesHolder<T, ?, ?> value : mValues) {
+                value.setupEndValue(target);
+            }
+        }
+    }
+
+    /**
+     * Sets the values, per property, being animated between. This function is called internally
+     * by the constructors of ValueAnimator that take a list of values. But a ValueAnimator can
+     * be constructed without values and this method can be called to set the values manually
+     * instead.
+     *
+     * @param values The set of values, per property, being animated between.
+     */
+    @SafeVarargs
+    public final void setValues(@Nonnull PropertyValuesHolder<T, ?, ?>... values) {
+        mValues = values;
+        // New property/values/target should cause re-initialization prior to starting
+        mInitialized = false;
+    }
+
+    /**
+     * Returns the values that this ValueAnimator animates between. These values are stored in
+     * PropertyValuesHolder objects, even if the ValueAnimator was created with a simple list
+     * of value objects instead.
+     *
+     * @return PropertyValuesHolder[] An array of PropertyValuesHolder objects which hold the
+     * values, per property, that define the animation.
+     */
+    public PropertyValuesHolder<T, ?, ?>[] getValues() {
+        return mValues;
+    }
+
     /**
      * This function is called immediately before processing the first animation
      * frame of an animation. If there is a nonzero <code>startDelay</code>, the
@@ -480,7 +816,13 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
      */
     private void initAnimation() {
         if (!mInitialized) {
-            for (PropertyValuesHolder<?> value : mValues) {
+            final T target = getTarget();
+            for (PropertyValuesHolder<T, ?, ?> value : mValues) {
+                // mValueType may change due to setter/getter setup; do this before calling init(),
+                // which uses mValueType to set up the default type evaluator.
+                if (target != null) {
+                    value.setupSetterAndGetter(target);
+                }
                 value.init();
             }
             mInitialized = true;
@@ -543,26 +885,152 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
             // if we were seeked to some other iteration in a reversing animator,
             // figure out the correct direction to start playing based on the iteration
             if (inReverse) {
-                return (iteration % 2) == 0;
+                return (iteration & 1) == 0;
             } else {
-                return (iteration % 2) != 0;
+                return (iteration & 1) != 0;
             }
         } else {
             return inReverse;
         }
     }
 
+    /**
+     * Gets the current position of the animation in time, which is equal to the current
+     * time minus the time that the animation started. An animation that is not yet started will
+     * return a value of zero, unless the animation has has its play time set via
+     * {@link #setCurrentPlayTime(long)} or {@link #setCurrentFraction(float)}, in which case
+     * it will return the time that was set.
+     *
+     * @return The current position in time of the animation.
+     */
+    public long getCurrentPlayTime() {
+        if (!mInitialized || (!mStarted && mSeekFraction < 0)) {
+            return 0;
+        }
+        if (mSeekFraction >= 0) {
+            return (long) (mDuration * mSeekFraction);
+        }
+        float durationScale = sDurationScale;
+        if (durationScale == 0f) {
+            durationScale = 1f;
+        }
+        return (long) ((RenderCore.timeMillis() - mStartTime) / durationScale);
+    }
+
+    private void removeAnimationCallback() {
+        if (mSelfPulse) {
+            AnimationHandler.get().unregister(this);
+        }
+    }
+
+    private void addAnimationCallback(long delay) {
+        if (mSelfPulse) {
+            AnimationHandler.get().register(this, delay);
+        }
+    }
+
     @Override
-    public void doAnimationFrame(long frameTime) {
+    public final void doAnimationFrame(long frameTime) {
+        if (mStartTime < 0) {
+            // First frame. If there is start delay, start delay count down will happen *after* this
+            // frame.
+            mStartTime = mReversing
+                    ? frameTime
+                    : frameTime + (long) (mStartDelay * sDurationScale);
+        }
+
+        // Handle pause/resume
+        if (mPaused) {
+            mPauseTime = frameTime;
+            removeAnimationCallback();
+            return;
+        } else if (mResumed) {
+            mResumed = false;
+            if (mPauseTime > 0) {
+                // Offset by the duration that the animation was paused
+                mStartTime += (frameTime - mPauseTime);
+            }
+        }
+
+        if (!mRunning) {
+            // If not running, that means the animation is in the start delay phase of a forward
+            // running animation. In the case of reversing, we want to run start delay in the end.
+            if (mStartTime > frameTime && mSeekFraction == -1) {
+                // This is when no seek fraction is set during start delay. If developers change the
+                // seek fraction during the delay, animation will start from the seeked position
+                // right away.
+                return;
+            } else {
+                // If mRunning is not set by now, that means non-zero start delay,
+                // no seeking, not reversing. At this point, start delay has passed.
+                mRunning = true;
+                startAnimation();
+            }
+        }
+
+        if (mLastFrameTime < 0) {
+            if (mSeekFraction >= 0) {
+                long seekTime = (long) (getScaledDuration() * mSeekFraction);
+                mStartTime = frameTime - seekTime;
+                mSeekFraction = -1;
+            }
+        }
+        mLastFrameTime = frameTime;
+        // The frame time might be before the start time during the first frame of
+        // an animation.  The "current time" must always be on or after the start
+        // time to avoid animating frames at negative time intervals.  In practice, this
+        // is very rare and only happens when seeking backwards.
+        final long currentTime = Math.max(frameTime, mStartTime);
+        boolean finished = animateBasedOnTime(currentTime);
+        if (finished) {
+            endAnimation();
+        }
     }
 
     /**
-     * Cancels the animation. Unlike {@link #end()}, <code>cancel()</code> causes the animation to
-     * stop in its tracks, sending an {@link Listener#onAnimationCancel(ObjectAnimator)} to
-     * its listeners, followed by an {@link Listener#onAnimationEnd(ObjectAnimator)} message.
+     * This internal function processes a single animation frame for a given animation. The
+     * currentTime parameter is the timing pulse sent by the handler, used to calculate the
+     * elapsed duration, and therefore
+     * the elapsed fraction, of the animation. The return value indicates whether the animation
+     * should be ended (which happens when the elapsed time of the animation exceeds the
+     * animation's duration, including the repeatCount).
      *
-     * <p>This method must be called on the thread that is running the animation.</p>
+     * @param currentTime The current time, as tracked by the static timing handler
+     * @return true if the animation's duration, including any repetitions due to
+     * <code>repeatCount</code> has been exceeded and the animation should be ended.
      */
+    private boolean animateBasedOnTime(long currentTime) {
+        boolean done = false;
+        if (mRunning) {
+            final long scaledDuration = getScaledDuration();
+            final float fraction = scaledDuration > 0 ?
+                    (float) (currentTime - mStartTime) / scaledDuration : 1f;
+            final float lastFraction = mOverallFraction;
+            final boolean newIteration = (int) fraction > (int) lastFraction;
+            final boolean lastIterationFinished = (fraction >= mRepeatCount + 1) &&
+                    (mRepeatCount != INFINITE);
+            if (scaledDuration == 0) {
+                // 0 duration animator, ignore the repeat count and skip to the end
+                done = true;
+            } else if (newIteration && !lastIterationFinished) {
+                // Time to repeat
+                if (mListeners != null) {
+                    for (Listener l : mListeners) {
+                        l.onAnimationRepeat(this);
+                    }
+                }
+            } else if (lastIterationFinished) {
+                done = true;
+            }
+            mOverallFraction = clampFraction(fraction);
+            float currentIterationFraction = getCurrentIterationFraction(
+                    mOverallFraction, mReversing);
+            animateValue(currentIterationFraction);
+        }
+        return done;
+    }
+
+    @Override
     public void cancel() {
         // If end has already been requested, through a previous end() or cancel() call, no-op
         // until animation starts again.
@@ -585,6 +1053,100 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
         endAnimation();
     }
 
+    @Override
+    public void end() {
+        if (!mRunning) {
+            // Special case if the animation has not yet started; get it ready for ending
+            startAnimation();
+            mStarted = true;
+        } else if (!mInitialized) {
+            initAnimation();
+        }
+        animateValue(shouldPlayBackward(mRepeatCount, mReversing) ? 0f : 1f);
+        endAnimation();
+    }
+
+    @Override
+    public void resume() {
+        if (mPaused && !mResumed) {
+            mResumed = true;
+            if (mPauseTime > 0) {
+                addAnimationCallback(0);
+            }
+        }
+        super.resume();
+    }
+
+    @Override
+    public void pause() {
+        boolean prev = mPaused;
+        super.pause();
+        if (!prev && mPaused) {
+            mPauseTime = -1;
+            mResumed = false;
+        }
+    }
+
+    @Override
+    public void setStartDelay(long startDelay) {
+        if (startDelay < 0) {
+            startDelay = 0;
+        }
+        mStartDelay = startDelay;
+    }
+
+    /**
+     * The amount of time, in milliseconds, to delay starting the animation after
+     * {@link #start()} is called.
+     *
+     * @return the number of milliseconds to delay running the animation
+     */
+    @Override
+    public long getStartDelay() {
+        return mStartDelay;
+    }
+
+    /**
+     * Sets the length of the animation. The default duration is 300 milliseconds.
+     *
+     * @param duration The length of the animation, in milliseconds.
+     */
+    @Override
+    public void setDuration(long duration) {
+        if (duration < 0) {
+            duration = 0;
+        }
+        mDuration = duration;
+    }
+
+    /**
+     * The target object whose property will be animated by this animation
+     *
+     * @return The object being animated
+     */
+    @Nullable
+    public T getTarget() {
+        return mTarget == null ? null : mTarget.get();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public void setTarget(@Nullable Object target) {
+        final T oldTarget = getTarget();
+        if (oldTarget != target) {
+            if (isStarted()) {
+                cancel();
+            }
+            try {
+                mTarget = target == null ? null : new WeakReference<>((T) target);
+            } catch (ClassCastException e) {
+                mTarget = null;
+            }
+            // New target should cause re-initialization prior to starting
+            mInitialized = false;
+        }
+    }
+
     /**
      * Internal only: This tracks whether the animation has gotten on the animation loop. Note
      * this is different than {@link #isRunning()} in that the latter tracks the time after start()
@@ -594,17 +1156,90 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
         return mLastFrameTime >= 0;
     }
 
+    /**
+     * Returns the current animation fraction, which is the elapsed/interpolated fraction used in
+     * the most recent frame update on the animation.
+     *
+     * @return Elapsed/interpolated fraction of the animation.
+     */
+    public float getAnimatedFraction() {
+        return mCurrentFraction;
+    }
+
     private void animateValue(float fraction) {
+        final T target = getTarget();
+        if (mTarget != null && target == null) {
+            // We lost the target reference, cancel and clean up. Note: we allow null target if the
+            // target has never been set, that is, listener mode.
+            cancel();
+            return;
+        }
         fraction = mInterpolator.getInterpolation(fraction);
         mCurrentFraction = fraction;
-        for (PropertyValuesHolder<?> value : mValues) {
+
+        for (PropertyValuesHolder<T, ?, ?> value : mValues) {
             value.calculateValue(fraction);
         }
-        /*if (mUpdateListeners != null) {
-            int numListeners = mUpdateListeners.size();
-            for (int i = 0; i < numListeners; ++i) {
-                mUpdateListeners.get(i).onAnimationUpdate(this);
+        if (mUpdateListeners != null) {
+            for (UpdateListener l : mUpdateListeners) {
+                l.onAnimationUpdate(this);
             }
-        }*/
+        }
+        if (target != null) {
+            for (PropertyValuesHolder<T, ?, ?> value : mValues) {
+                value.setAnimatedValue(target);
+            }
+        }
+    }
+
+    boolean shouldAutoCancel(AnimationHandler.FrameCallback anim) {
+        if (anim instanceof ObjectAnimator) {
+            final ObjectAnimator<?> it = (ObjectAnimator<?>) anim;
+            if (it.mAutoCancel) {
+                PropertyValuesHolder<?, ?, ?>[] itsValues = it.getValues();
+                if (it.getTarget() == getTarget() && mValues.length == itsValues.length) {
+                    for (int i = 0; i < mValues.length; i++) {
+                        if (!Objects.equals(mValues[i], itsValues[i])) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    void startWithoutPulsing(boolean inReverse) {
+        mSuppressSelfPulseRequested = true;
+        if (inReverse) {
+            reverse();
+        } else {
+            start();
+        }
+        mSuppressSelfPulseRequested = false;
+    }
+
+    @Override
+    boolean isInitialized() {
+        return mInitialized;
+    }
+
+    /**
+     * Implementors of this interface can add themselves as update listeners
+     * to an <code>ValueAnimator</code> instance to receive callbacks on every animation
+     * frame, after the current frame's values have been calculated for that
+     * <code>ValueAnimator</code>.
+     */
+    @FunctionalInterface
+    public interface UpdateListener {
+
+        /**
+         * <p>Notifies the occurrence of another frame of the animation.</p>
+         *
+         * @param animation The animation which was repeated.
+         */
+        void onAnimationUpdate(@Nonnull ObjectAnimator<?> animation);
     }
 }
