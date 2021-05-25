@@ -23,7 +23,7 @@ import javax.annotation.Nonnull;
 /**
  * An implementation of {@link Property} to be used specifically with fields of type
  * <code>int</code>. This type-specific subclass enables performance benefit by allowing
- * calls to a {@link #set(Object, int) setValue()} function that takes the primitive
+ * calls to a {@link #setValue(Object, int) setValue()} function that takes the primitive
  * <code>int</code> type and avoids autoboxing and other overhead associated with the
  * <code>Integer</code> class.
  *
@@ -31,11 +31,11 @@ import javax.annotation.Nonnull;
  */
 public interface IntProperty<T> extends Property<T, Integer> {
 
-    void set(T obj, int val);
+    void setValue(@Nonnull T obj, int val);
 
     @Deprecated
     @Override
-    default void set(T obj, @Nonnull Integer val) {
-        set(obj, val.intValue());
+    default void set(@Nonnull T obj, @Nonnull Integer val) {
+        setValue(obj, val);
     }
 }

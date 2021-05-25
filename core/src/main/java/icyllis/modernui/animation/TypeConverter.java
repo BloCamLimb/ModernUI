@@ -18,26 +18,20 @@
 
 package icyllis.modernui.animation;
 
-import javax.annotation.Nonnull;
-
 /**
- * A property is an abstraction that can be used to represent a <emb>mutable</em> value that is held
- * in a <em>host</em> object. The Property's {@link #set(Object, Object)} or {@link #get(Object)}
- * methods can be implemented in terms of the private fields of the host object, or via "setter" and
- * "getter" methods or by some other mechanism, as appropriate.
+ * Base interface used convert type T to another type V. This
+ * is necessary when the value types of in animation are different
+ * from the property type.
  *
- * @param <T> the class on which the property is declared.
- * @param <V> the type that this property represents.
+ * @see PropertyValuesHolder#setConverter(TypeConverter)
  */
-public interface Property<T, V> {
+@FunctionalInterface
+public interface TypeConverter<T, V> {
 
     /**
-     * Sets the value on <code>obj</code> which this property represents.
+     * Converts a value from one type to another.
+     * @param value The Object to convert.
+     * @return A value of type V, converted from <code>value</code>.
      */
-    void set(@Nonnull T obj, V val);
-
-    /**
-     * Returns the current value that this property represents on the given <code>obj</code>.
-     */
-    V get(@Nonnull T obj);
+    V convert(T value);
 }

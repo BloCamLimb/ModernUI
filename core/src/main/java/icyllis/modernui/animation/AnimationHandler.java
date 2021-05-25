@@ -23,8 +23,7 @@ import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 
 import javax.annotation.Nonnull;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 import java.util.function.LongConsumer;
 
@@ -32,7 +31,7 @@ public class AnimationHandler {
 
     private static AnimationHandler sInstance;
 
-    private final Set<FrameCallback> mCallbacks = new CopyOnWriteArraySet<>();
+    private final CopyOnWriteArrayList<FrameCallback> mCallbacks = new CopyOnWriteArrayList<>();
     private final Object2LongMap<FrameCallback> mDelayedStartTime = new Object2LongOpenHashMap<>();
 
     public static void init(Consumer<LongConsumer> setCallback) {
@@ -56,7 +55,7 @@ public class AnimationHandler {
     }
 
     public void register(@Nonnull FrameCallback callback, long delay) {
-        mCallbacks.add(callback);
+        mCallbacks.addIfAbsent(callback);
         if (delay > 0) {
             mDelayedStartTime.put(callback, RenderCore.timeMillis() + delay);
         }
@@ -83,6 +82,15 @@ public class AnimationHandler {
             return true;
         }
         return false;
+    }
+
+    void autoCancelBasedOn(ObjectAnimator<?> animator) {
+        for (int i = mCallbacks.size() - 1; i >= 0; i--) {
+            FrameCallback cb = mCallbacks.get(i);
+            if (animator == cb || animator.shouldAutoCancel(cb)) {
+                ((Animator) cb).cancel();
+            }
+        }
     }
 
     /**

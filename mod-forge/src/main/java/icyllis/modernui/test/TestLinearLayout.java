@@ -20,9 +20,7 @@ package icyllis.modernui.test;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.animation.Animation;
-import icyllis.modernui.animation.Applier;
-import icyllis.modernui.animation.Interpolator;
+import icyllis.modernui.animation.*;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
@@ -55,7 +53,7 @@ public class TestLinearLayout extends LinearLayout {
     private final Animation arcStartAni;
     private final Animation arcEndAni;
 
-    private final Animation roundRectLenAni;
+    private final Animator mRoundRectLenAnim;
     private final Animation roundRectAlphaAni;
 
     private float circleAcc1;
@@ -66,7 +64,7 @@ public class TestLinearLayout extends LinearLayout {
     private float arcStart = 0;
     private float arcEnd = 0;
 
-    private float roundRectLen = 0;
+    private float mRoundRectLen = 0;
     private float roundRectAlpha = 0;
 
     private boolean b;
@@ -97,44 +95,59 @@ public class TestLinearLayout extends LinearLayout {
             v.setClickable(true);
             addView(v, p);
         }
-        addView(new DView(Interpolator.DECELERATE, 0), new LinearLayout.LayoutParams(120, 40));
+        addView(new DView(TimeInterpolator.DECELERATE, 0), new LinearLayout.LayoutParams(120, 40));
 
         //addView(new DView(ITimeInterpolator.VISCOUS_FLUID, 30), new LinearLayout.LayoutParams(60, 20));
-        cAnim = new Animation(200).applyTo(new Applier(20, 0, () -> c, v -> c = v).setInterpolator(Interpolator.DECELERATE));
+        cAnim = new Animation(200).applyTo(new Applier(20, 0, () -> c, v -> c = v).setInterpolator(TimeInterpolator.DECELERATE));
 
         circleAnimation1 = new Animation(600)
                 .applyTo(
                         new Applier((float) Math.PI, (float) -Math.PI, () -> circleAcc1, v -> circleAcc1 = v)
-                                .setInterpolator(Interpolator.ACCELERATE_DECELERATE)
+                                .setInterpolator(TimeInterpolator.ACCELERATE_DECELERATE)
                 );
         circleAnimation2 = new Animation(600)
                 .applyTo(
                         new Applier((float) Math.PI, (float) -Math.PI, () -> circleAcc2, v -> circleAcc2 = v)
-                                .setInterpolator(Interpolator.ACCELERATE_DECELERATE)
+                                .setInterpolator(TimeInterpolator.ACCELERATE_DECELERATE)
                 );
         circleAnimation3 = new Animation(600)
                 .applyTo(
                         new Applier((float) Math.PI, (float) -Math.PI, () -> circleAcc3, v -> circleAcc3 = v)
-                                .setInterpolator(Interpolator.ACCELERATE_DECELERATE)
+                                .setInterpolator(TimeInterpolator.ACCELERATE_DECELERATE)
                 );
         circleAnimation4 = new Animation(600)
                 .applyTo(
                         new Applier((float) Math.PI, (float) -Math.PI, () -> circleAcc4, v -> circleAcc4 = v)
-                                .setInterpolator(Interpolator.ACCELERATE_DECELERATE)
+                                .setInterpolator(TimeInterpolator.ACCELERATE_DECELERATE)
                 );
         iconRadiusAni = new Animation(300)
-                .applyTo(new Applier(40, 80, () -> iconRadius, v -> iconRadius = v).setInterpolator(Interpolator.DECELERATE));
+                .applyTo(new Applier(40, 80, () -> iconRadius, v -> iconRadius = v).setInterpolator(TimeInterpolator.DECELERATE));
 
         arcStartAni = new Animation(800)
-                .applyTo(new Applier(-90, 270, () -> arcStart, v -> arcStart = v).setInterpolator(Interpolator.DECELERATE));
+                .applyTo(new Applier(-90, 270, () -> arcStart, v -> arcStart = v).setInterpolator(TimeInterpolator.DECELERATE));
         arcEndAni = new Animation(800)
-                .applyTo(new Applier(-90, 270, () -> arcEnd, v -> arcEnd = v).setInterpolator(Interpolator.ACCELERATE));
+                .applyTo(new Applier(-90, 270, () -> arcEnd, v -> arcEnd = v).setInterpolator(TimeInterpolator.ACCELERATE));
 
-        roundRectLenAni = new Animation(400)
-                .applyTo(new Applier(0, 80, () -> roundRectLen, v -> roundRectLen = v).setInterpolator(Interpolator.OVERSHOOT));
+        Animator anim = ObjectAnimator.ofFloat(this, sRoundRectLengthProp, 0, 80);
+        anim.setDuration(400);
+        anim.setInterpolator(TimeInterpolator.OVERSHOOT);
+        mRoundRectLenAnim = anim;
+
         roundRectAlphaAni = new Animation(250)
                 .applyTo(new Applier(0, 1, () -> roundRectAlpha, v -> roundRectAlpha = v));
     }
+
+    private static final FloatProperty<TestLinearLayout> sRoundRectLengthProp = new FloatProperty<>() {
+        @Override
+        public void setValue(@Nonnull TestLinearLayout obj, float val) {
+            obj.mRoundRectLen = val;
+        }
+
+        @Override
+        public Float get(@Nonnull TestLinearLayout obj) {
+            return obj.mRoundRectLen;
+        }
+    };
 
     @Override
     protected void onDraw(@Nonnull Canvas canvas) {
@@ -175,7 +188,7 @@ public class TestLinearLayout extends LinearLayout {
 
         paint.setStyle(Paint.Style.FILL);
         paint.setAlpha((int) (roundRectAlpha * 255));
-        canvas.drawRoundRect(20, 480, 20 + roundRectLen * 1.6f, 480 + roundRectLen, 10, paint);
+        canvas.drawRoundRect(20, 480, 20 + mRoundRectLen * 1.6f, 480 + mRoundRectLen, 10, paint);
         paint.setAlpha(255);
         // 1
 
@@ -294,7 +307,7 @@ public class TestLinearLayout extends LinearLayout {
             circleAnimation1.startFull();
             arcStartAni.startFull();
             arcEndAni.startFull();
-            roundRectLenAni.startFull();
+            mRoundRectLenAnim.start();
             roundRectAlphaAni.startFull();
         } else if (a == 3) {
             circleAnimation2.startFull();
@@ -329,7 +342,7 @@ public class TestLinearLayout extends LinearLayout {
 
         private final int offset;
 
-        public DView(Interpolator interpolator, int offset) {
+        public DView(TimeInterpolator interpolator, int offset) {
             this.offset = offset;
             animation = new Animation(200)
                     .applyTo(new Applier(0, 60, () -> offsetY, v -> offsetY = v).setInterpolator(interpolator));

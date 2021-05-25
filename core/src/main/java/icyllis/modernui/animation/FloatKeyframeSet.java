@@ -46,7 +46,7 @@ class FloatKeyframeSet extends KeyframeSet<Float> implements Keyframes.FloatKeyf
     @Override
     public float getFloatValue(float fraction) {
         final Keyframe[] keyframes = mKeyframes;
-        final Interpolator interpolator;
+        final TimeInterpolator interpolator;
         final int length = keyframes.length;
         if (fraction <= 0f) {
             final FloatKeyframe prevKeyframe = (FloatKeyframe) keyframes[0];

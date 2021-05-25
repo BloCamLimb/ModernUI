@@ -23,6 +23,7 @@ import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.Animation;
+import icyllis.modernui.animation.AnimationHandler;
 import icyllis.modernui.core.event.OpenMenuEvent;
 import icyllis.modernui.core.forge.ModernUIForge;
 import icyllis.modernui.core.mixin.MixinMouseHandler;
@@ -63,6 +64,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.LongConsumer;
 
 /**
  * UI system service, manages everything related to UI in Modern UI.
@@ -167,6 +169,8 @@ public final class UIManager {
     // drag shadow center for render offset
     Point dragShadowCenter;
 
+    private LongConsumer mAnimationHandler;
+
     {
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(BlurHandler.INSTANCE);
@@ -174,6 +178,7 @@ public final class UIManager {
 
     private UIManager() {
         mAppWindow.setView(mDecorView);
+        AnimationHandler.init(c -> mAnimationHandler = c);
     }
 
     /**
@@ -184,6 +189,7 @@ public final class UIManager {
     //TODO remove this method
     @Nonnull
     public static UIManager getInstance() {
+        // this is called on mixing Minecraft's MouseHandler
         if (instance == null) {
             synchronized (UIManager.class) {
                 if (instance == null) {
@@ -916,12 +922,18 @@ public final class UIManager {
         }
     }
 
+    /*@SubscribeEvent
+    void onRenderWorldLast(@Nonnull RenderWorldLastEvent event) {
+
+    }*/
+
     @SubscribeEvent(priority = EventPriority.HIGH)
     void onRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
             // to millis, the Timer is different from that in Event when game paused
-            mDrawingTimeMillis += (long) (minecraft.getDeltaFrameTime() * 50.0);
+            mDrawingTimeMillis += (long) (minecraft.getDeltaFrameTime() * 50);
 
+            mAnimationHandler.accept(mDrawingTimeMillis);
             for (Animation animation : animations) {
                 animation.update(mDrawingTimeMillis);
             }
