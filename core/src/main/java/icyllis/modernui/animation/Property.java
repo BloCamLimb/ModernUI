@@ -32,12 +32,12 @@ import javax.annotation.Nonnull;
 public interface Property<T, V> {
 
     /**
-     * Sets the value on <code>obj</code> which this property represents.
+     * Sets the value on <code>target</code> which this property represents.
      */
-    void set(@Nonnull T obj, V val);
+    void set(@Nonnull T target, V value);
 
     /**
      * Returns the current value that this property represents on the given <code>obj</code>.
      */
-    V get(@Nonnull T obj);
+    V get(@Nonnull T target);
 }

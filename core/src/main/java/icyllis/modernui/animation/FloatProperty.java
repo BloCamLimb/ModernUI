@@ -31,11 +31,11 @@ import javax.annotation.Nonnull;
  */
 public interface FloatProperty<T> extends Property<T, Float> {
 
-    void setValue(@Nonnull T obj, float val);
+    void setValue(@Nonnull T target, float value);
 
     @Deprecated
     @Override
-    default void set(@Nonnull T obj, @Nonnull Float val) {
-        setValue(obj, val);
+    default void set(@Nonnull T target, @Nonnull Float value) {
+        setValue(target, value);
     }
 }

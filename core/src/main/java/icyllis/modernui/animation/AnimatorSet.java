@@ -18,24 +18,6 @@
 
 package icyllis.modernui.animation;
 
-import javax.annotation.Nonnull;
-
-/**
- * An implementation of {@link Property} to be used specifically with fields of type
- * <code>int</code>. This type-specific subclass enables performance benefit by allowing
- * calls to a {@link #setValue(Object, int) setValue()} function that takes the primitive
- * <code>int</code> type and avoids autoboxing and other overhead associated with the
- * <code>Integer</code> class.
- *
- * @param <T> The class on which the Property is declared.
- */
-public interface IntProperty<T> extends Property<T, Integer> {
-
-    void setValue(@Nonnull T target, int value);
-
-    @Deprecated
-    @Override
-    default void set(@Nonnull T target, @Nonnull Integer value) {
-        setValue(target, value);
-    }
+//TODO
+public final class AnimatorSet<T> {
 }

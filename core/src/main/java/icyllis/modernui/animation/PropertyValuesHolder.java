@@ -130,7 +130,7 @@ public class PropertyValuesHolder<T, V, P> {
      * cannot automatically interpolate between objects of unknown type. This variant also
      * takes a <code>TypeConverter</code> to convert from animated values to the type
      * of the property. If only one value is supplied, the <code>TypeConverter</code>
-     * must be a {@link BidirectionalTypeConverter} to retrieve the current
+     * must be a {@link BidiTypeConverter} to retrieve the current
      * value.
      *
      * <p><strong>Note:</strong> The Object values are stored as references to the original
@@ -222,8 +222,8 @@ public class PropertyValuesHolder<T, V, P> {
 
     /**
      * Sets the converter to convert from the values type to the setter's parameter type.
-     * If only one value is supplied, <var>converter</var> must be a
-     * {@link BidirectionalTypeConverter}.
+     * If only one value is supplied or target is changeable, <var>converter</var> must
+     * be a {@link BidiTypeConverter}.
      *
      * @param converter The converter to use to convert values.
      */
@@ -261,12 +261,12 @@ public class PropertyValuesHolder<T, V, P> {
     @SuppressWarnings("unchecked")
     private V convertBack(P value) {
         if (mConverter != null) {
-            if (!(mConverter instanceof BidirectionalTypeConverter)) {
+            if (!(mConverter instanceof BidiTypeConverter)) {
                 throw new IllegalArgumentException("Converter "
                         + mConverter.getClass().getName()
                         + " must be a BidirectionalTypeConverter");
             }
-            return ((BidirectionalTypeConverter<V, P>) mConverter).convertBack(value);
+            return ((BidiTypeConverter<V, P>) mConverter).convertBack(value);
         }
         return (V) value;
     }
@@ -337,6 +337,21 @@ public class PropertyValuesHolder<T, V, P> {
     public void setEvaluator(@Nonnull TypeEvaluator<V> evaluator) {
         mEvaluator = evaluator;
         mKeyframes.setEvaluator(mEvaluator);
+    }
+
+    /**
+     * Inverts all keyframes on the track. This will produce an inverted animation
+     * that plays from endValue to startValue. Note that this is different from reversing
+     * that plays in reverse order, this operation keeps the order of interpolation
+     * and timeline still forwards.
+     */
+    public void invert() {
+        Keyframe[] keyframes = mKeyframes.getKeyframes();
+        if (keyframes != null) {
+            for (Keyframe keyframe : keyframes) {
+                keyframe.setFraction(1.0f - keyframe.getFraction());
+            }
+        }
     }
 
     /**

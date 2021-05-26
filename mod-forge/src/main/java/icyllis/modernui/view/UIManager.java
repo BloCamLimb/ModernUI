@@ -22,7 +22,6 @@ import com.ibm.icu.util.ULocale;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.AnimationHandler;
 import icyllis.modernui.core.event.OpenMenuEvent;
 import icyllis.modernui.core.forge.ModernUIForge;
@@ -45,10 +44,8 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.client.event.RenderGameOverlayEvent;
-import net.minecraftforge.client.event.RenderTooltipEvent;
+import net.minecraftforge.client.event.*;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -60,7 +57,6 @@ import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -114,9 +110,6 @@ public final class UIManager {
     private int mWidth;
     private int mHeight;
 
-    // a list of animations in render loop
-    private final List<Animation> animations = new ArrayList<>();
-
     // a list of UI tasks
     private final List<DelayedTask> tasks = new CopyOnWriteArrayList<>();
 
@@ -125,6 +118,9 @@ public final class UIManager {
 
     // elapsed time from a gui open in milliseconds, update every frame
     private long mDrawingTimeMillis;
+
+    // the start time of a frame in milliseconds, before draw the GUI
+    private long mFrameTimeMillis;
 
     // the canvas to draw things shared in all views and drawables
     // lazy loading because this class is loaded before GL initialization
@@ -171,12 +167,8 @@ public final class UIManager {
 
     private LongConsumer mAnimationHandler;
 
-    {
-        MinecraftForge.EVENT_BUS.register(this);
-        MinecraftForge.EVENT_BUS.register(BlurHandler.INSTANCE);
-    }
-
     private UIManager() {
+        MinecraftForge.EVENT_BUS.register(this);
         mAppWindow.setView(mDecorView);
         AnimationHandler.init(c -> mAnimationHandler = c);
     }
@@ -365,17 +357,6 @@ public final class UIManager {
     @Nullable
     public Screen getOpenGUI() {
         return mScreen;
-    }
-
-    /**
-     * Add an active animation, which will be removed from list if finished
-     *
-     * @param animation animation to add
-     */
-    public void addAnimation(@Nonnull Animation animation) {
-        if (!animations.contains(animation)) {
-            animations.add(animation);
-        }
     }
 
     /**
@@ -882,7 +863,6 @@ public final class UIManager {
     void stop() {
         // Hotfix 1.4.7
         if (mCloseScreen) {
-            animations.clear();
             tasks.clear();
             mMuiScreen = null;
             if (mScreen != null) {
@@ -922,28 +902,21 @@ public final class UIManager {
         }
     }
 
-    /*@SubscribeEvent
+    @SubscribeEvent
     void onRenderWorldLast(@Nonnull RenderWorldLastEvent event) {
+        mFrameTimeMillis = event.getFinishTimeNano() / 1000000;
 
-    }*/
+        // to millis, the Timer is different from that in Event when game paused
+        mDrawingTimeMillis += (long) (minecraft.getDeltaFrameTime() * 50);
 
-    @SubscribeEvent(priority = EventPriority.HIGH)
+        mAnimationHandler.accept(mFrameTimeMillis);
+
+        BlurHandler.INSTANCE.update(mDrawingTimeMillis);
+    }
+
+    @SubscribeEvent
     void onRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
-        if (event.phase == TickEvent.Phase.START) {
-            // to millis, the Timer is different from that in Event when game paused
-            mDrawingTimeMillis += (long) (minecraft.getDeltaFrameTime() * 50);
-
-            mAnimationHandler.accept(mDrawingTimeMillis);
-            for (Animation animation : animations) {
-                animation.update(mDrawingTimeMillis);
-            }
-            BlurHandler.INSTANCE.update(mDrawingTimeMillis);
-        } else {
-            // remove animations from loop on end
-            if (!animations.isEmpty()) {
-                animations.removeIf(Animation::shouldRemove);
-            }
-
+        if (event.phase == TickEvent.Phase.END) {
             // layout after updating animations and before drawing
             if (mLayoutRequested) {
                 // fixed at 40Hz

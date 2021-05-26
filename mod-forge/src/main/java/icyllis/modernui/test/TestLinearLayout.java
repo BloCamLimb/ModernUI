@@ -53,7 +53,7 @@ public class TestLinearLayout extends LinearLayout {
     private final Animation arcStartAni;
     private final Animation arcEndAni;
 
-    private final Animator mRoundRectLenAnim;
+    private final Animator<?> mRoundRectLenAnim;
     private final Animation roundRectAlphaAni;
 
     private float circleAcc1;
@@ -121,14 +121,17 @@ public class TestLinearLayout extends LinearLayout {
                                 .setInterpolator(TimeInterpolator.ACCELERATE_DECELERATE)
                 );
         iconRadiusAni = new Animation(300)
-                .applyTo(new Applier(40, 80, () -> iconRadius, v -> iconRadius = v).setInterpolator(TimeInterpolator.DECELERATE));
+                .applyTo(new Applier(40, 80, () -> iconRadius, v -> iconRadius = v)
+                        .setInterpolator(TimeInterpolator.DECELERATE));
 
         arcStartAni = new Animation(800)
-                .applyTo(new Applier(-90, 270, () -> arcStart, v -> arcStart = v).setInterpolator(TimeInterpolator.DECELERATE));
+                .applyTo(new Applier(-90, 270, () -> arcStart, v -> arcStart = v)
+                        .setInterpolator(TimeInterpolator.DECELERATE));
         arcEndAni = new Animation(800)
-                .applyTo(new Applier(-90, 270, () -> arcEnd, v -> arcEnd = v).setInterpolator(TimeInterpolator.ACCELERATE));
+                .applyTo(new Applier(-90, 270, () -> arcEnd, v -> arcEnd = v)
+                        .setInterpolator(TimeInterpolator.ACCELERATE));
 
-        Animator anim = ObjectAnimator.ofFloat(this, sRoundRectLengthProp, 0, 80);
+        Animator<?> anim = ObjectAnimator.ofFloat(this, sRoundRectLengthProp, 0, 80);
         anim.setDuration(400);
         anim.setInterpolator(TimeInterpolator.OVERSHOOT);
         mRoundRectLenAnim = anim;
@@ -139,13 +142,13 @@ public class TestLinearLayout extends LinearLayout {
 
     private static final FloatProperty<TestLinearLayout> sRoundRectLengthProp = new FloatProperty<>() {
         @Override
-        public void setValue(@Nonnull TestLinearLayout obj, float val) {
-            obj.mRoundRectLen = val;
+        public void setValue(@Nonnull TestLinearLayout target, float value) {
+            target.mRoundRectLen = value;
         }
 
         @Override
-        public Float get(@Nonnull TestLinearLayout obj) {
-            return obj.mRoundRectLen;
+        public Float get(@Nonnull TestLinearLayout target) {
+            return target.mRoundRectLen;
         }
     };
 

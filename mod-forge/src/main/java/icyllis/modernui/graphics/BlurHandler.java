@@ -53,41 +53,37 @@ public enum BlurHandler {
     public static float sBackgroundAlpha;
 
     // minecraft namespace
-    private final ResourceLocation bilinearBlur = new ResourceLocation("shaders/post/blur_fast.json");
+    private final ResourceLocation mBlurPostEffect = new ResourceLocation("shaders/post/blur_fast.json");
 
-    private final Minecraft minecraft = Minecraft.getInstance();
+    private final Minecraft mMinecraft = Minecraft.getInstance();
 
-    private final Set<Class<?>> blacklist = new ObjectArraySet<>();
+    private final Set<Class<?>> mBlacklist = new ObjectArraySet<>();
 
     /**
      * If is playing animation
      */
-    private boolean fadingIn;
+    private boolean mFadingIn;
 
     /**
      * If blur post-processing shader is activated
      */
-    private boolean blurring;
+    private boolean mBlurring;
 
     /**
      * If a screen excluded, the other screens that opened after this screen won't be blurred, unless current screen closed
      */
-    private boolean screenOpened;
+    private boolean mScreenOpened;
 
     /**
      * Background alpha
      */
-    private float backgroundAlpha;
-
-    BlurHandler() {
-
-    }
+    private float mBackgroundAlpha;
 
     /**
      * Use blur shader in game renderer post-processing.
      */
     public void count(@Nullable Screen nextScreen) {
-        if (minecraft.level == null) {
+        if (mMinecraft.level == null) {
             return;
         }
         final boolean excluded;
@@ -95,38 +91,38 @@ public enum BlurHandler {
             excluded = false;
         } else {
             Class<?> t = nextScreen.getClass();
-            excluded = blacklist.stream().anyMatch(c -> c.isAssignableFrom(t));
+            excluded = mBlacklist.stream().anyMatch(c -> c.isAssignableFrom(t));
         }
         boolean blurDisabled = excluded || !sBlurEffect;
-        if (blurDisabled && excluded && blurring) {
-            minecraft.gameRenderer.shutdownEffect();
-            fadingIn = false;
-            blurring = false;
+        if (blurDisabled && excluded && mBlurring) {
+            mMinecraft.gameRenderer.shutdownEffect();
+            mFadingIn = false;
+            mBlurring = false;
         }
 
         boolean hasGui = nextScreen != null;
-        GameRenderer gr = minecraft.gameRenderer;
-        if (hasGui && !blurring && !screenOpened) {
+        GameRenderer gr = mMinecraft.gameRenderer;
+        if (hasGui && !mBlurring && !mScreenOpened) {
             if (!blurDisabled && gr.currentEffect() == null) {
-                ((AccessGameRenderer) gr).callLoadEffect(bilinearBlur);
-                blurring = true;
+                ((AccessGameRenderer) gr).callLoadEffect(mBlurPostEffect);
+                mBlurring = true;
                 if (sAnimationDuration <= 0) {
                     updateRadius(sBlurRadius);
                 }
             }
             if (sAnimationDuration > 0) {
-                fadingIn = true;
-                backgroundAlpha = 0;
+                mFadingIn = true;
+                mBackgroundAlpha = 0;
             } else {
-                fadingIn = false;
-                backgroundAlpha = sBackgroundAlpha;
+                mFadingIn = false;
+                mBackgroundAlpha = sBackgroundAlpha;
             }
-        } else if (!hasGui && blurring) {
+        } else if (!hasGui && mBlurring) {
             gr.shutdownEffect();
-            fadingIn = false;
-            blurring = false;
+            mFadingIn = false;
+            mBlurring = false;
         }
-        screenOpened = hasGui;
+        mScreenOpened = hasGui;
     }
 
     /**
@@ -137,22 +133,22 @@ public enum BlurHandler {
         if (!sBlurEffect) {
             return;
         }
-        if (minecraft.level != null) {
-            GameRenderer gr = minecraft.gameRenderer;
+        if (mMinecraft.level != null) {
+            GameRenderer gr = mMinecraft.gameRenderer;
             if (gr.currentEffect() == null) {
-                ((AccessGameRenderer) gr).callLoadEffect(bilinearBlur);
-                fadingIn = true;
-                blurring = true;
+                ((AccessGameRenderer) gr).callLoadEffect(mBlurPostEffect);
+                mFadingIn = true;
+                mBlurring = true;
             }
         }
     }
 
     public void loadBlacklist(@Nonnull List<? extends String> names) {
-        blacklist.clear();
+        mBlacklist.clear();
         for (String s : names) {
             try {
                 Class<?> clazz = Class.forName(s);
-                blacklist.add(clazz);
+                mBlacklist.add(clazz);
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             }
@@ -163,22 +159,22 @@ public enum BlurHandler {
      * Render tick, should called before rendering things
      */
     public void update(long time) {
-        if (fadingIn) {
+        if (mFadingIn) {
             float p = Math.min(time / sAnimationDuration, 1.0f);
-            if (blurring) {
+            if (mBlurring) {
                 updateRadius(p * sBlurRadius);
             }
-            if (backgroundAlpha < sBackgroundAlpha) {
-                backgroundAlpha = p * sBackgroundAlpha;
+            if (mBackgroundAlpha < sBackgroundAlpha) {
+                mBackgroundAlpha = p * sBackgroundAlpha;
             }
             if (p == 1.0f) {
-                fadingIn = false;
+                mFadingIn = false;
             }
         }
     }
 
     private void updateRadius(float radius) {
-        PostChain effect = minecraft.gameRenderer.currentEffect();
+        PostChain effect = mMinecraft.gameRenderer.currentEffect();
         if (effect == null)
             return;
         List<PostPass> passes = ((AccessPostChain) effect).getPasses();
@@ -188,7 +184,7 @@ public enum BlurHandler {
     }
 
     public void drawScreenBackground(@Nonnull Screen screen, @Nonnull PoseStack stack, int x1, int y1, int x2, int y2) {
-        int a = (int) (backgroundAlpha * 0xff);
+        int a = (int) (mBackgroundAlpha * 0xff);
         if (a == 0)
             return;
         RenderSystem.disableTexture();
