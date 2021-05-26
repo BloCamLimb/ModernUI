@@ -25,10 +25,11 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Control animation in two states
- * Any state cannot be cancelled when it is in progress
- * This is not needed in most cases, maybe deprecated
+ * Control animation in two states, any state cannot be cancelled when it is in progress.
+ *
+ * @deprecated use {@link ObjectAnimator} and {@link AnimatorSet}
  */
+@Deprecated
 public class AnimationControl implements Animation.IListener {
 
     @Nullable

@@ -29,8 +29,10 @@ import java.util.concurrent.CopyOnWriteArraySet;
 /**
  * This is the base for classes which provide basic support for animations which can be
  * started, ended, and have listeners added to them.
+ *
+ * @param <T> the type of the target object
  */
-public abstract class Animator {
+public abstract class Animator<T> {
 
     public static final Marker MARKER = MarkerManager.getMarker("Animator");
 
@@ -294,7 +296,7 @@ public abstract class Animator {
      *
      * @param target The object being animated
      */
-    public void setTarget(@Nullable Object target) {
+    public void setTarget(@Nullable T target) {
     }
 
     /**
@@ -333,7 +335,7 @@ public abstract class Animator {
          * @param animation The started animation.
          * @param isReverse Whether the animation is playing in reverse.
          */
-        default void onAnimationStart(@Nonnull Animator animation, boolean isReverse) {
+        default void onAnimationStart(@Nonnull Animator<?> animation, boolean isReverse) {
         }
 
         /**
@@ -343,7 +345,7 @@ public abstract class Animator {
          * @param animation The animation which reached its end.
          * @param isReverse Whether the animation is playing in reverse.
          */
-        default void onAnimationEnd(@Nonnull Animator animation, boolean isReverse) {
+        default void onAnimationEnd(@Nonnull Animator<?> animation, boolean isReverse) {
         }
 
         /**
@@ -352,7 +354,7 @@ public abstract class Animator {
          *
          * @param animation The animation which was canceled.
          */
-        default void onAnimationCancel(@Nonnull Animator animation) {
+        default void onAnimationCancel(@Nonnull Animator<?> animation) {
         }
 
         /**
@@ -360,7 +362,7 @@ public abstract class Animator {
          *
          * @param animation The animation which was repeated.
          */
-        default void onAnimationRepeat(@Nonnull Animator animation) {
+        default void onAnimationRepeat(@Nonnull Animator<?> animation) {
         }
 
         /**
@@ -369,7 +371,7 @@ public abstract class Animator {
          * @param animation The animation being paused.
          * @see #pause()
          */
-        default void onAnimationPause(@Nonnull Animator animation) {
+        default void onAnimationPause(@Nonnull Animator<?> animation) {
         }
 
         /**
@@ -379,7 +381,7 @@ public abstract class Animator {
          * @param animation The animation being resumed.
          * @see #resume()
          */
-        default void onAnimationResume(@Nonnull Animator animation) {
+        default void onAnimationResume(@Nonnull Animator<?> animation) {
         }
     }
 }

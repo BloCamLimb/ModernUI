@@ -18,7 +18,7 @@
 
 package icyllis.modernui.animation;
 
-import icyllis.modernui.view.UIManager;
+import icyllis.modernui.platform.RenderCore;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -26,8 +26,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-// unstable API
-public class Animation {
+// the old animation API and not encouraged
+public class Animation implements AnimationHandler.FrameCallback {
 
     private final int duration;
 
@@ -40,8 +40,6 @@ public class Animation {
 
     @Nullable
     private List<IListener> listeners;
-
-    private boolean waiting = true;
 
     private boolean started = false;
 
@@ -102,14 +100,13 @@ public class Animation {
     }
 
     private void start0(boolean isFull) {
-        startTime = UIManager.getInstance().getDrawingTime() + delayTime;
-        waiting = false;
+        startTime = RenderCore.timeMillis() + delayTime;
         reversed = false;
         started = false;
         if (appliers != null) {
             appliers.forEach(e -> e.record(reversed, isFull));
         }
-        UIManager.getInstance().addAnimation(this);
+        AnimationHandler.getInstance().register(this, 0);
     }
 
     /**
@@ -128,22 +125,21 @@ public class Animation {
     }
 
     private void invert0(boolean isFull) {
-        startTime = UIManager.getInstance().getDrawingTime() + delayTime;
-        waiting = false;
+        startTime = RenderCore.timeMillis() + delayTime;
         reversed = true;
         started = false;
         if (appliers != null) {
             appliers.forEach(e -> e.record(reversed, isFull));
         }
-        UIManager.getInstance().addAnimation(this);
+        AnimationHandler.getInstance().register(this, 0);
     }
 
     /**
      * Cancel the animation
      */
     public void cancel() {
-        waiting = true;
         started = false;
+        AnimationHandler.getInstance().unregister(this);
     }
 
     public void skipToStart() {
@@ -166,8 +162,9 @@ public class Animation {
         }
     }
 
-    public void update(long time) {
-        if (waiting || time <= startTime) {
+    @Override
+    public void doAnimationFrame(long frameTime) {
+        if (frameTime <= startTime) {
             return;
         }
         if (!started) {
@@ -176,25 +173,21 @@ public class Animation {
                 listeners.forEach(e -> e.onAnimationStart(this, reversed));
             }
         }
-        float p = Math.min((float) (time - startTime) / duration, 1);
+        float p = Math.min((float) (frameTime - startTime) / duration, 1);
         if (appliers != null) {
             appliers.forEach(e -> e.update(p));
         }
         if (p == 1) {
-            waiting = true;
             started = false;
             if (listeners != null) {
                 listeners.forEach(e -> e.onAnimationEnd(this, reversed));
             }
+            AnimationHandler.getInstance().unregister(this);
         }
     }
 
     public int getDuration() {
         return duration;
-    }
-
-    public boolean shouldRemove() {
-        return waiting;
     }
 
     public interface IListener {

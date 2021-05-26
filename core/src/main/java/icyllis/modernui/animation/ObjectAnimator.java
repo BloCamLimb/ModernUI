@@ -51,9 +51,13 @@ import java.util.Set;
  *
  * @param <T> the type of the target object
  */
-public final class ObjectAnimator<T> extends Animator implements AnimationHandler.FrameCallback {
+@SuppressWarnings("unused")
+public final class ObjectAnimator<T> extends Animator<T> implements AnimationHandler.FrameCallback {
 
-    private static float sDurationScale = 1.0f;
+    /**
+     * Internal usage, global config value
+     */
+    public static float sDurationScale = 1.0f;
 
     /**
      * When the animation reaches the end and <code>repeatCount</code> is INFINITE
@@ -247,10 +251,28 @@ public final class ObjectAnimator<T> extends Animator implements AnimationHandle
     @Nonnull
     public static <T> ObjectAnimator<T> ofInt(@Nullable T target, @Nonnull IntProperty<T> property,
                                               @Nonnull int... values) {
-        ObjectAnimator<T> anim = new ObjectAnimator<>();
-        anim.setTarget(target);
-        anim.setValues(PropertyValuesHolder.ofInt(property, values));
-        return anim;
+        return ofPropertyValuesHolder(target, PropertyValuesHolder.ofInt(property, values));
+    }
+
+    /**
+     * Constructs and returns an ObjectAnimator that animates between color values. A single
+     * value implies that that value is the one being animated to, in which case the start value
+     * will be derived from the property being animated and the target object when {@link #start()}
+     * is called for the first time. Two values imply starting and ending values. More than two
+     * values imply a starting value, values to animate through along the way, and an ending value
+     * (these values will be distributed evenly across the duration of the animation).
+     *
+     * @param target   The object whose property is to be animated.
+     * @param property The property being animated.
+     * @param values   A set of values (at least 1) that the animation will animate between over time.
+     * @return An ObjectAnimator object that is set up to animate between the given values.
+     */
+    @Nonnull
+    public static <T> ObjectAnimator<T> ofColor(@Nullable T target, @Nonnull IntProperty<T> property,
+                                                @Nonnull int... values) {
+        PropertyValuesHolder<T, Integer, Integer> v = PropertyValuesHolder.ofInt(property, values);
+        v.setEvaluator(ColorEvaluator.getInstance());
+        return ofPropertyValuesHolder(target, v);
     }
 
     /**
@@ -269,10 +291,7 @@ public final class ObjectAnimator<T> extends Animator implements AnimationHandle
     @Nonnull
     public static <T> ObjectAnimator<T> ofFloat(@Nullable T target, @Nonnull FloatProperty<T> property,
                                                 @Nonnull float... values) {
-        ObjectAnimator<T> anim = new ObjectAnimator<>();
-        anim.setTarget(target);
-        anim.setValues(PropertyValuesHolder.ofFloat(property, values));
-        return anim;
+        return ofPropertyValuesHolder(target, PropertyValuesHolder.ofFloat(property, values));
     }
 
     /**
@@ -312,7 +331,7 @@ public final class ObjectAnimator<T> extends Animator implements AnimationHandle
      * (these values will be distributed evenly across the duration of the animation).
      * This variant supplies a <code>TypeConverter</code> to convert from the animated values to the
      * type of the property. If only one value is supplied, the <code>TypeConverter</code> must be a
-     * {@link BidirectionalTypeConverter} to retrieve the current value.
+     * {@link BidiTypeConverter} to retrieve the current value.
      *
      * <p><strong>Note:</strong> The values are stored as references to the original
      * objects, which means that changes to those objects after this method is called will
@@ -387,7 +406,7 @@ public final class ObjectAnimator<T> extends Animator implements AnimationHandle
      */
     @Override
     public void start() {
-        AnimationHandler.get().autoCancelBasedOn(this);
+        AnimationHandler.getInstance().autoCancelBasedOn(this);
         start(false);
     }
 
@@ -420,7 +439,7 @@ public final class ObjectAnimator<T> extends Animator implements AnimationHandle
         // started-but-not-yet-reached-the-first-frame phase.
         mLastFrameTime = -1;
         mStartTime = -1;
-        addAnimationCallback(0);
+        addAnimationCallback();
 
         if (mStartDelay == 0 || mSeekFraction >= 0 || mReversing) {
             // If there's no start delay, init the animation and notify start listeners right away
@@ -482,29 +501,6 @@ public final class ObjectAnimator<T> extends Animator implements AnimationHandle
         }
         // mReversing needs to be reset *after* notifying the listeners for the end callbacks.
         mReversing = false;
-    }
-
-    /**
-     * The type evaluator to be used when calculating the animated values of this animation.
-     * The system will automatically assign a float or int evaluator based on the type
-     * of <code>startValue</code> and <code>endValue</code> in the constructor. But if these values
-     * are not one of these primitive types, or if different evaluation is desired (such as is
-     * necessary with int values that represent colors), a custom evaluator needs to be assigned.
-     * For example, when running an animation on color values, the {@link ArgbEvaluator}
-     * should be used to get correct RGB color interpolation.
-     *
-     * <p>If this ValueAnimator has only one set of values being animated between, this evaluator
-     * will be used for that set. If there are several sets of values being animated, which is
-     * the case if PropertyValuesHolder objects were set on the ValueAnimator, then the evaluator
-     * is assigned just to the first PropertyValuesHolder object.</p>
-     *
-     * @param value the evaluator to be used this animation
-     */
-    @SuppressWarnings("unchecked")
-    public <V> void setEvaluator(TypeEvaluator<V> value) {
-        if (value != null && mValues != null && mValues.length > 0) {
-            ((PropertyValuesHolder<T, V, ?>) mValues[0]).setEvaluator(value);
-        }
     }
 
     private void notifyStartListeners() {
@@ -797,9 +793,10 @@ public final class ObjectAnimator<T> extends Animator implements AnimationHandle
      * PropertyValuesHolder objects, even if the ValueAnimator was created with a simple list
      * of value objects instead.
      *
-     * @return PropertyValuesHolder[] An array of PropertyValuesHolder objects which hold the
-     * values, per property, that define the animation.
+     * @return The array of PropertyValuesHolder objects which hold the values, per property,
+     * that define the animation.
      */
+    @Nonnull
     public PropertyValuesHolder<T, ?, ?>[] getValues() {
         return mValues;
     }
@@ -810,9 +807,6 @@ public final class ObjectAnimator<T> extends Animator implements AnimationHandle
      * function is called after that delay ends.
      * It takes care of the final initialization steps for the
      * animation.
-     *
-     * <p>Overrides of this method should call the superclass method to ensure
-     * that internal mechanisms for the animation are set up correctly.</p>
      */
     private void initAnimation() {
         if (!mInitialized) {
@@ -919,13 +913,13 @@ public final class ObjectAnimator<T> extends Animator implements AnimationHandle
 
     private void removeAnimationCallback() {
         if (mSelfPulse) {
-            AnimationHandler.get().unregister(this);
+            AnimationHandler.getInstance().unregister(this);
         }
     }
 
-    private void addAnimationCallback(long delay) {
+    private void addAnimationCallback() {
         if (mSelfPulse) {
-            AnimationHandler.get().register(this, delay);
+            AnimationHandler.getInstance().register(this, 0);
         }
     }
 
@@ -1071,7 +1065,7 @@ public final class ObjectAnimator<T> extends Animator implements AnimationHandle
         if (mPaused && !mResumed) {
             mResumed = true;
             if (mPauseTime > 0) {
-                addAnimationCallback(0);
+                addAnimationCallback();
             }
         }
         super.resume();
@@ -1129,19 +1123,14 @@ public final class ObjectAnimator<T> extends Animator implements AnimationHandle
         return mTarget == null ? null : mTarget.get();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public void setTarget(@Nullable Object target) {
+    public void setTarget(@Nullable T target) {
         final T oldTarget = getTarget();
         if (oldTarget != target) {
             if (isStarted()) {
                 cancel();
             }
-            try {
-                mTarget = target == null ? null : new WeakReference<>((T) target);
-            } catch (ClassCastException e) {
-                mTarget = null;
-            }
+            mTarget = target == null ? null : new WeakReference<>(target);
             // New target should cause re-initialization prior to starting
             mInitialized = false;
         }
@@ -1193,6 +1182,10 @@ public final class ObjectAnimator<T> extends Animator implements AnimationHandle
     }
 
     boolean shouldAutoCancel(AnimationHandler.FrameCallback anim) {
+        // if this animation started and start() again before ending, cancel self
+        if (anim == this && mAutoCancel) {
+            return true;
+        }
         if (anim instanceof ObjectAnimator) {
             final ObjectAnimator<?> it = (ObjectAnimator<?>) anim;
             if (it.mAutoCancel) {

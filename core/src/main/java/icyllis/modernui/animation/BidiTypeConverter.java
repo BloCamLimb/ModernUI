@@ -21,14 +21,14 @@ package icyllis.modernui.animation;
 /**
  * Abstract base class used convert type T to another type V and back again. This
  * is necessary when the value types of in animation are different from the property
- * type. BidirectionalTypeConverter is needed when only the final value for the
- * animation is supplied to animators.
+ * type. BidiTypeConverter is needed when only the final value for the animation
+ * is supplied to animators.
  *
  * @see PropertyValuesHolder#setConverter(TypeConverter)
  */
-public abstract class BidirectionalTypeConverter<T, V> implements TypeConverter<T, V> {
+public abstract class BidiTypeConverter<T, V> implements TypeConverter<T, V> {
 
-    BidirectionalTypeConverter<V, T> mInvertedConverter;
+    BidiTypeConverter<V, T> mInvertedConverter;
 
     /**
      * Does a conversion from the target type back to the source type. The subclass
@@ -48,16 +48,16 @@ public abstract class BidirectionalTypeConverter<T, V> implements TypeConverter<
      *
      * @return The inverse of this converter, where the from and to classes are reversed.
      */
-    public final BidirectionalTypeConverter<V, T> invert() {
+    public final BidiTypeConverter<V, T> invert() {
         if (mInvertedConverter == null) {
             mInvertedConverter = new InvertedConverter<>(this);
         }
         return mInvertedConverter;
     }
 
-    private static class InvertedConverter<From, To> extends BidirectionalTypeConverter<From, To> {
+    private static class InvertedConverter<From, To> extends BidiTypeConverter<From, To> {
 
-        public InvertedConverter(BidirectionalTypeConverter<To, From> converter) {
+        public InvertedConverter(BidiTypeConverter<To, From> converter) {
             mInvertedConverter = converter;
         }
 

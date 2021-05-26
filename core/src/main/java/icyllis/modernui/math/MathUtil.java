@@ -147,7 +147,12 @@ public final class MathUtil {
         return (float) Math.atan2(a, b);
     }
 
-    public static int clamp(int i, int min, int max) {
-        return Math.max(Math.min(i, max), min);
+    public static int clamp(int value, int min, int max) {
+        return Math.max(Math.min(value, max), min);
+    }
+
+    // linear interpolation
+    public static float lerp(float fraction, float start, float end) {
+        return start + fraction * (end - start);
     }
 }

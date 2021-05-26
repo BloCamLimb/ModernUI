@@ -41,7 +41,7 @@ public class AnimationHandler {
         }
     }
 
-    public static AnimationHandler get() {
+    public static AnimationHandler getInstance() {
         return sInstance;
     }
 
@@ -87,8 +87,8 @@ public class AnimationHandler {
     void autoCancelBasedOn(ObjectAnimator<?> animator) {
         for (int i = mCallbacks.size() - 1; i >= 0; i--) {
             FrameCallback cb = mCallbacks.get(i);
-            if (animator == cb || animator.shouldAutoCancel(cb)) {
-                ((Animator) cb).cancel();
+            if (animator.shouldAutoCancel(cb)) {
+                ((Animator<?>) cb).cancel();
             }
         }
     }
