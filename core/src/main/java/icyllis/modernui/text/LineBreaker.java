@@ -16,22 +16,6 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-/*
- * Copyright (C) 2017 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package icyllis.modernui.text;
 
 import com.ibm.icu.text.BreakIterator;
@@ -436,27 +420,6 @@ public class LineBreaker {
                 return indents[index];
             else
                 return indents[indents.length - 1];
-        }
-    }
-
-    private static class TabStops {
-
-        @Nullable
-        private final float[] mStops;
-        private final float mTabWidth;
-
-        public TabStops(@Nullable float[] stops, float tabWidth) {
-            mStops = stops;
-            mTabWidth = tabWidth;
-        }
-
-        // return next tab width
-        public float nextTab(float currWidth) {
-            if (mStops != null)
-                for (float stop : mStops)
-                    if (stop > currWidth)
-                        return stop;
-            return (int) (currWidth / mTabWidth + 1) * mTabWidth;
         }
     }
 

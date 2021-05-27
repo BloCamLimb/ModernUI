@@ -16,7 +16,19 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.view;
+package icyllis.modernui.text.style;
 
-public abstract class ViewLayout {
+/**
+ * Paragraph affecting span that changes the position of the tab with respect to
+ * the leading margin of the line. <code>TabStopSpan</code> will only affect the first tab
+ * encountered on the first line of the text.
+ */
+public interface TabStopSpan extends ParagraphStyle {
+
+    /**
+     * Returns the offset of the tab stop from the leading margin of the line, in pixels.
+     *
+     * @return the offset, in pixels
+     */
+    int getTabStop();
 }

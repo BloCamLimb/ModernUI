@@ -10,8 +10,8 @@ version = "1.16.5-${mod_version}"
 
 configurations {
     shadow
-    library
-    implementation.extendsFrom(library)
+    /*library
+    implementation.extendsFrom(library)*/
 }
 
 loom {
@@ -51,7 +51,7 @@ dependencies {
     modCompileOnly "mezz.jei:jei-${minecraft_version}:${jei_version}:api"
     modRuntime "mezz.jei:jei-${minecraft_version}:${jei_version}"
 
-    library project(':ModernUI-Core')
+    implementation project(':ModernUI-Core')
     shadow(project(':ModernUI-Core')) {
         transitive = false
     }
@@ -59,8 +59,8 @@ dependencies {
     /*compile "org.openjdk.jmh:jmh-core:1.29"
     annotationProcessor "org.openjdk.jmh:jmh-generator-annprocess:1.29"*/
 
-    library "com.github.ben-manes.caffeine:caffeine:${caffeine_version}"
-    library "com.vladsch.flexmark:flexmark:${flexmark_version}"
+    implementation "com.github.ben-manes.caffeine:caffeine:${caffeine_version}"
+    implementation "com.vladsch.flexmark:flexmark:${flexmark_version}"
 
     shadow "com.github.ben-manes.caffeine:caffeine:${caffeine_version}"
     shadow "com.vladsch.flexmark:flexmark:${flexmark_version}"
@@ -190,7 +190,8 @@ publishing {
                         distribution = 'repo'
                     }
                 }
-                withXml {
+                // do not provide any dependencies here, since this is a minecraft development
+                /*withXml {
                     def dependenciesNode = asNode().appendNode('dependencies')
                     configurations.library.allDependencies.each {
                         def dependencyNode = dependenciesNode.appendNode('dependency')
@@ -199,8 +200,7 @@ publishing {
                         dependencyNode.appendNode('version', it.version)
                         dependencyNode.appendNode('scope', 'compile')
                     }
-                    // others are provided by minecraft and forge environment
-                }
+                }*/
             }
         }
     }

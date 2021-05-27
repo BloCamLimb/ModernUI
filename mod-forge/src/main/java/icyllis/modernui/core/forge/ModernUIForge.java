@@ -19,12 +19,15 @@
 package icyllis.modernui.core.forge;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.graphics.shader.ShaderProgram;
 import icyllis.modernui.view.LayoutIO;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.Minecraft;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ReloadableResourceManager;
+import net.minecraft.server.packs.resources.Resource;
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.*;
@@ -39,10 +42,12 @@ import net.minecraftforge.resource.VanillaResourceType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.awt.*;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.Locale;
+import java.util.function.Consumer;
 
 @Mod(ModernUI.ID)
 public final class ModernUIForge extends ModernUI {
@@ -131,6 +136,18 @@ public final class ModernUIForge extends ModernUI {
     @Override
     public Locale getSelectedLocale() {
         return Minecraft.getInstance().getLanguageManager().getSelected().getJavaLocale();
+    }
+
+    @Override
+    public void loadFont(String cfgFont, Consumer<Font> setter) {
+        try (Resource resource = Minecraft.getInstance().getResourceManager()
+                .getResource(new ResourceLocation(cfgFont))) {
+            Font f = Font.createFont(Font.TRUETYPE_FONT, resource.getInputStream());
+            setter.accept(f);
+            ModernUI.LOGGER.debug(GlyphManager.MARKER, "Preferred font {} was loaded", f.getFamily(Locale.ROOT));
+        } catch (Exception e) {
+            ModernUI.LOGGER.warn(GlyphManager.MARKER, "Preferred font {} failed to load", cfgFont, e);
+        }
     }
 
     public static boolean isDeveloperMode() {

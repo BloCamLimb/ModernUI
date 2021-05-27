@@ -5,7 +5,8 @@
 [![MavenCore](https://img.shields.io/badge/dynamic/xml?color=orange&label=Core%20Version&query=%2Fmetadata%2Fversioning%2Flatest&url=https%3A%2F%2Fmaven.izzel.io%2Freleases%2Ficyllis%2Fmodernui%2FModernUI-Core%2Fmaven-metadata.xml)]()
 [![Discord](https://img.shields.io/discord/696234198767501363?color=green&label=Discord&style=flat)](https://discord.gg/kmyGKt2)
 ### Homepage
-Description and releases for Minecraft Mod are available on [CurseForge](https://www.curseforge.com/minecraft/mc-mods/modern-ui)
+Description and releases for Minecraft Mod are available on [CurseForge](https://www.curseforge.com/minecraft/mc-mods/modern-ui)  
+If you have any questions, feel free to join our [Discord](https://discord.gg/kmyGKt2) server.
 ### License
 * Modern UI
   - Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
@@ -30,6 +31,9 @@ repositories {
         name 'IzzelAliz Maven'
         url 'https://maven.izzel.io/releases'
     }
+}
+dependencies {
+    implementation "icyllis.modernui:ModernUI-Core:${modernui_core_version}"
 }
 ```
 ##### Forge Loom 0.7
@@ -56,7 +60,6 @@ minecraft {
 }
 dependencies {
     compile fg.deobf("icyllis.modernui:ModernUI-Forge:${modernui_version}")
-    // FG3
     compile fg.deobf("icyllis.modernui:ModernUI-Forge:${modernui_version}@pom")
 }
 ```

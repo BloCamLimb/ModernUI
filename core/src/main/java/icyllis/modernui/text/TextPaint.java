@@ -19,7 +19,7 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.graphics.font.FontMetricsInt;
-import icyllis.modernui.graphics.font.GlyphManager;
+import icyllis.modernui.graphics.font.GlyphManagerBase;
 import icyllis.modernui.graphics.font.FontPaint;
 
 import javax.annotation.Nonnull;
@@ -40,11 +40,11 @@ public class TextPaint extends FontPaint {
     }
 
     /**
-     * Create a copy of this paint to minikin paint for internal layout engine.
+     * Create a copy of this paint to a paint for internal layout engine.
      *
      * @return a internal paint
      */
-    public FontPaint toMinikin() {
+    public FontPaint copyToInternal() {
         return new FontPaint(this);
     }
 
@@ -54,6 +54,6 @@ public class TextPaint extends FontPaint {
      * @param fm a FontMetrics to store the result
      */
     public void getFontMetrics(FontMetricsInt fm) {
-        GlyphManager.getInstance().getFontMetrics(mFontCollection, mFontStyle, mFontSize, fm);
+        GlyphManagerBase.getInstance().getFontMetrics(mFontCollection, mFontStyle, mFontSize, fm);
     }
 }

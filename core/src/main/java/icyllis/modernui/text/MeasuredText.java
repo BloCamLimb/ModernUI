@@ -18,11 +18,10 @@
 
 package icyllis.modernui.text;
 
-import com.google.common.base.Preconditions;
 import icyllis.modernui.graphics.font.FontMetricsInt;
-import icyllis.modernui.graphics.font.MeasureEngine;
-import icyllis.modernui.graphics.font.LayoutPieces;
 import icyllis.modernui.graphics.font.FontPaint;
+import icyllis.modernui.graphics.font.LayoutPieces;
+import icyllis.modernui.graphics.font.MeasureEngine;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -113,10 +112,14 @@ public class MeasuredText {
          * @param isRtl  true if the text is in RTL context, otherwise false.
          */
         public void addStyleRun(@Nonnull TextPaint paint, int length, boolean isRtl) {
-            Preconditions.checkArgument(length > 0, "length can not be negative");
+            if (length <= 0) {
+                throw new IllegalArgumentException("length can not be negative");
+            }
             final int end = mCurrentOffset + length;
-            Preconditions.checkArgument(end <= mText.length, "Style exceeds the text length");
-            mRuns.add(new StyleRun(mCurrentOffset, end, paint.toMinikin(), isRtl));
+            if (end > mText.length) {
+                throw new IllegalArgumentException("Style exceeds the text length");
+            }
+            mRuns.add(new StyleRun(mCurrentOffset, end, paint.copyToInternal(), isRtl));
             mCurrentOffset = end;
         }
 
@@ -137,9 +140,13 @@ public class MeasuredText {
          * @param width  a replacement width of the range in pixels
          */
         public void addReplacementRun(@Nonnull TextPaint paint, int length, float width) {
-            Preconditions.checkArgument(length > 0, "length can not be negative");
+            if (length <= 0) {
+                throw new IllegalArgumentException("length can not be negative");
+            }
             final int end = mCurrentOffset + length;
-            Preconditions.checkArgument(end <= mText.length, "Replacement exceeds the text length");
+            if (end > mText.length) {
+                throw new IllegalArgumentException("Replacement exceeds the text length");
+            }
             mRuns.add(new ReplacementRun(mCurrentOffset, end, width, paint.getTextLocale()));
             mCurrentOffset = end;
         }
@@ -153,8 +160,12 @@ public class MeasuredText {
          */
         @Nonnull
         public MeasuredText build() {
-            Preconditions.checkState(mCurrentOffset >= 0, "Builder can not be reused.");
-            Preconditions.checkState(mCurrentOffset == mText.length, "Style info has not been provided for all text.");
+            if (mCurrentOffset < 0) {
+                throw new IllegalStateException("Builder can not be reused.");
+            }
+            if (mCurrentOffset != mText.length) {
+                throw new IllegalStateException("Style info has not been provided for all text.");
+            }
             mCurrentOffset = -1;
             return new MeasuredText(mText, mRuns.toArray(new Run[0]));
         }

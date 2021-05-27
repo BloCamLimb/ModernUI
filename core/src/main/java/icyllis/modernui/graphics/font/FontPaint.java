@@ -20,7 +20,6 @@ package icyllis.modernui.graphics.font;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.text.FontCollection;
-import org.intellij.lang.annotations.MagicConstant;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
@@ -116,7 +115,7 @@ public class FontPaint {
      *
      * @param fontStyle the style of the font
      */
-    public void setFontStyle(@MagicConstant(flags = {REGULAR, BOLD, ITALIC}) int fontStyle) {
+    public void setFontStyle(int fontStyle) {
         mFontStyle = (fontStyle & ~FONT_STYLE_MASK) == 0 ? fontStyle : 0;
     }
 
