@@ -24,10 +24,12 @@ import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
 import javax.annotation.Nonnull;
+import java.awt.*;
 import java.lang.ref.Cleaner;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 
 /**
  * The core class of the client side of Modern UI
@@ -70,5 +72,9 @@ public class ModernUI {
     @Nonnull
     public Locale getSelectedLocale() {
         return Locale.getDefault();
+    }
+
+    public void loadFont(String rl, Consumer<Font> setter) {
+
     }
 }

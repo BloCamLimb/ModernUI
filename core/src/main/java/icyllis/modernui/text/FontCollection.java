@@ -18,14 +18,13 @@
 
 package icyllis.modernui.text;
 
-import com.google.common.base.Preconditions;
 import com.ibm.icu.impl.UCharacterProperty;
 import com.ibm.icu.lang.UCharacter;
 import com.ibm.icu.lang.UCharacterCategory;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.font.GlyphManager;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import org.jetbrains.annotations.ApiStatus;
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.MarkerManager;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -43,6 +42,8 @@ import java.util.*;
  */
 public class FontCollection {
 
+    public static final Marker MARKER = MarkerManager.getMarker("Font");
+
     @Nonnull
     public static final FontCollection SANS_SERIF;
     @Nonnull
@@ -53,7 +54,8 @@ public class FontCollection {
     @Deprecated
     @Nullable
     public static final Font sBuiltInFont;
-    @ApiStatus.Internal
+
+    // internal
     @Nonnull
     public static final Font sSansSerifFont;
 
@@ -61,7 +63,8 @@ public class FontCollection {
     public static boolean sJavaTooOld;*/
 
     private static final List<String> sFontFamilyNames;
-    @ApiStatus.Internal
+
+    // internal
     public static final List<Font> sAllFontFamilies = new ArrayList<>();
     static final Map<String, FontCollection> sSystemFontMap = new HashMap<>();
 
@@ -81,7 +84,7 @@ public class FontCollection {
         }
         if (sansSerif == null) {
             sansSerif = new Font(Font.SANS_SERIF, Font.PLAIN, 1);
-            ModernUI.LOGGER.warn(GlyphManager.MARKER, "Sans Serif is missing");
+            ModernUI.LOGGER.warn(MARKER, "Sans Serif is missing");
         }
         sSansSerifFont = sansSerif;
 
@@ -92,10 +95,10 @@ public class FontCollection {
             if (stream != null) {
                 sAllFontFamilies.add(builtIn = Font.createFont(Font.TRUETYPE_FONT, stream));
             } else {
-                ModernUI.LOGGER.debug(GlyphManager.MARKER, "Built-in font was missing");
+                ModernUI.LOGGER.debug(MARKER, "Built-in font was missing");
             }
         } catch (FontFormatException | IOException e) {
-            ModernUI.LOGGER.error(GlyphManager.MARKER, "Built-in font failed to load", e);
+            ModernUI.LOGGER.error(MARKER, "Built-in font failed to load", e);
         }
         sBuiltInFont = builtIn;
 
@@ -104,16 +107,22 @@ public class FontCollection {
             String family = fontFamily.getFamily(Locale.ROOT);
             fontCollection = sSystemFontMap.putIfAbsent(family, fontCollection);
             if (fontCollection != null) {
-                ModernUI.LOGGER.warn(GlyphManager.MARKER, "Duplicated font family: {}", family);
+                ModernUI.LOGGER.warn(MARKER, "Duplicated font family: {}", family);
             }
         }
 
         SANS_SERIF = sSystemFontMap.get(Font.SANS_SERIF);
         SERIF = sSystemFontMap.get(Font.SERIF);
         MONOSPACED = sSystemFontMap.get(Font.MONOSPACED);
-        Preconditions.checkState(SANS_SERIF != null, "Sans Serif font is missing");
-        Preconditions.checkState(SERIF != null, "Serif font is missing");
-        Preconditions.checkState(MONOSPACED != null, "Monospaced font is missing");
+        if (SANS_SERIF == null) {
+            throw new IllegalStateException("Sans Serif font is missing");
+        }
+        if (SERIF == null) {
+            throw new IllegalStateException("Serif font is missing");
+        }
+        if (MONOSPACED == null) {
+            throw new IllegalStateException("Monospaced font is missing");
+        }
     }
 
     /*@Deprecated
@@ -211,7 +220,9 @@ public class FontCollection {
     private final Font[] mFonts;
 
     private FontCollection(@Nonnull Font[] fonts) {
-        Preconditions.checkArgument(fonts.length > 0, "Font set cannot be empty");
+        if (fonts.length == 0) {
+            throw new IllegalArgumentException("Font set cannot be empty");
+        }
         mFonts = fonts;
     }
 

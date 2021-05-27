@@ -16,34 +16,11 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.view;
+package icyllis.modernui.text.style;
 
-import javax.annotation.Nullable;
-
-public class ViewContainer implements ViewParent {
-    @Nullable
-    @Override
-    public ViewParent getParent() {
-        return null;
-    }
-
-    @Override
-    public void requestLayout() {
-
-    }
-
-    @Override
-    public float getScrollX() {
-        return 0;
-    }
-
-    @Override
-    public float getScrollY() {
-        return 0;
-    }
-
-    @Override
-    public void childDrawableStateChanged(View child) {
-
-    }
+/**
+ * The classes that affect paragraph-level text formatting implement
+ * this interface.
+ */
+public interface ParagraphStyle {
 }

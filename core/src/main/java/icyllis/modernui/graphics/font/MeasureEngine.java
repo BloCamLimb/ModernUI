@@ -30,7 +30,7 @@ public class MeasureEngine {
 
     private static MeasureEngine sInstance;
 
-    private final GlyphManager mGlyphManager = GlyphManager.getInstance();
+    private final GlyphManagerBase mGlyphManager = GlyphManagerBase.getInstance();
 
     public static MeasureEngine getInstance() {
         if (sInstance == null)
@@ -45,7 +45,7 @@ public class MeasureEngine {
                        @Nonnull BiConsumer<GraphemeMetrics, FontPaint> consumer) {
         final List<FontCollection.Run> runs = paint.mFontCollection.itemize(text, contextStart, contextEnd);
         final int flag = isRtl ? Font.LAYOUT_RIGHT_TO_LEFT : Font.LAYOUT_LEFT_TO_RIGHT;
-        final GlyphManager manager = mGlyphManager;
+        final GlyphManagerBase manager = mGlyphManager;
         float advance = 0;
         final FontMetricsInt fm = new FontMetricsInt();
         for (FontCollection.Run run : runs) {
