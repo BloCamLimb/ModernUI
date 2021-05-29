@@ -25,7 +25,7 @@ import icyllis.modernui.math.Point;
 import icyllis.modernui.widget.ScrollController;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
-import org.intellij.lang.annotations.MagicConstant;
+import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -672,7 +672,7 @@ public class View {
      *
      * @param visibility visibility to set
      */
-    public void setVisibility(@MagicConstant(intValues = {VISIBLE, INVISIBLE, GONE}) int visibility) {
+    public void setVisibility(int visibility) {
         setStateFlag(visibility, VISIBILITY_MASK);
     }
 

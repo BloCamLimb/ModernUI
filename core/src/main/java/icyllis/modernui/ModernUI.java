@@ -26,6 +26,7 @@ import org.apache.logging.log4j.MarkerManager;
 import javax.annotation.Nonnull;
 import java.awt.*;
 import java.lang.ref.Cleaner;
+import java.lang.ref.Cleaner.Cleanable;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -58,11 +59,17 @@ public class ModernUI {
     }
 
     /**
-     * @return the global cleaner shared within Modern UI
+     * Registers a target and a cleaning action to run when the target becomes phantom
+     * reachable. It will be registered with the global cleaner shared across Modern UI.
+     * The action object should never hold any reference of the target object.
+     *
+     * @param target the target to monitor
+     * @param action a {@code Runnable} to invoke when the target becomes phantom reachable
+     * @return a {@code Cleanable} instance
      */
     @Nonnull
-    public static Cleaner cleaner() {
-        return sCleaner;
+    public static Cleanable registerCleanup(@Nonnull Object target, @Nonnull Runnable action) {
+        return sCleaner.register(target, action);
     }
 
     public void warnSetup(String key, Object... args) {

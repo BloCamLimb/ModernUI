@@ -21,6 +21,7 @@ package icyllis.modernui.graphics.texture;
 import icyllis.modernui.ModernUI;
 import org.lwjgl.system.MemoryUtil;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.ref.Cleaner.Cleanable;
 
@@ -29,10 +30,8 @@ import static icyllis.modernui.graphics.GLWrapper.*;
 /**
  * Represents OpenGL 2D texture objects at low-level. The OpenGL texture
  * associated with this object may be changed by recycling. Losing the
- * reference of this object will delete the texture. The more underlying
- * way is directly using OpenGL texture name.
+ * reference of this object will delete the texture automatically.
  */
-@SuppressWarnings("unused")
 public class Texture2D implements AutoCloseable {
 
     @Nullable
@@ -191,6 +190,9 @@ public class Texture2D implements AutoCloseable {
         return glGetTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_HEIGHT);
     }
 
+    /**
+     * An explicit way to delete this texture if present.
+     */
     @Override
     public final void close() {
         if (mRef != null) {
@@ -204,16 +206,16 @@ public class Texture2D implements AutoCloseable {
         private final int id;
         private final Cleanable cleanup;
 
-        private Ref(Texture2D owner) {
+        private Ref(@Nonnull Texture2D owner) {
             id = glGenTextures();
-            cleanup = ModernUI.cleaner().register(owner, this);
+            cleanup = ModernUI.registerCleanup(owner, this);
         }
 
         @Override
         public void run() {
             // if (id == INVALID_ID)
-            // cleanup is synchronized, this method only called once
-            deleteTextureAsync(GL_TEXTURE_2D, id);
+            // cleanup is synchronized, this method only called once by cleaner
+            deleteTextureAsync(GL_TEXTURE_2D, id, this);
             // id = INVALID_ID;
         }
     }

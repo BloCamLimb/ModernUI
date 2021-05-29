@@ -18,5 +18,11 @@
 
 package icyllis.modernui.text;
 
+/**
+ * Controls the layout of a single line of styled text, for measuring in visual
+ * order and for rendering. Each TextLine holds an image that stores the
+ * rendered result. The process of layout can be from any thread and the rendering
+ * pipeline is based on Java native so can be from any thread as well.
+ */
 public class TextLine {
 }

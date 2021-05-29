@@ -25,9 +25,9 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
+import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.textmc.ModernFontRenderer;
-import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.core.mixin.AccessFoodData;
 import icyllis.modernui.math.MathUtil;
@@ -201,8 +201,8 @@ public class TestHUD {
 
     // test only, this can't handle complex paragraph layout
     public void drawTooltip(Canvas canvas, @Nonnull List<? extends FormattedText> texts,
-                                   ModernFontRenderer font, ItemStack stack, PoseStack matrix,
-                                   int eventX, int eventY, float mouseX, float mouseY, float width, float height) {
+                            ModernFontRenderer font, ItemStack stack, PoseStack matrix,
+                            int eventX, int eventY, float mouseX, float mouseY, float width, float height) {
         float tooltipX = mouseX + TOOLTIP_SPACE;
         float tooltipY = mouseY - TOOLTIP_SPACE;
         int tooltipWidth = 0;

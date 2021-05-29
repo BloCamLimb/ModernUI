@@ -18,8 +18,8 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.drawable.Drawable;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
