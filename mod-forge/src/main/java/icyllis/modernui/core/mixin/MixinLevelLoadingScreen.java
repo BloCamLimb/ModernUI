@@ -23,7 +23,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.gui.screens.LevelLoadingScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -77,6 +76,6 @@ public class MixinLevelLoadingScreen extends Screen {
             )
     )
     private void drawP(PoseStack matrixStack, Font fontRenderer, String progress, int x, int y, int color) {
-        GuiComponent.drawCenteredString(matrixStack, fontRenderer, progress, x, y - 6, color);
+        drawCenteredString(matrixStack, fontRenderer, progress, x, y - 6, color);
     }
 }

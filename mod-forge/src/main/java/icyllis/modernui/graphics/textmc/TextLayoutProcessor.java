@@ -23,7 +23,6 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.ibm.icu.text.Bidi;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.core.mixin.MixinClientLanguage;
 import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.graphics.font.TexturedGlyph;
 import icyllis.modernui.graphics.math.Color3i;
@@ -196,7 +195,7 @@ public class TextLayoutProcessor {
 
     /**
      * Minecraft gives us a deeply processed sequence, so we have to make the
-     * it not a reordered text, see {@link MixinClientLanguage}.
+     * it not a reordered text, see {@link icyllis.modernui.core.mixin.MixinClientLanguage}.
      * So actually it's a copy of original text, then we can use our layout engine later
      *
      * @param sequence a char sequence copied from the original string

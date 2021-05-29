@@ -6,7 +6,7 @@ plugins {
     id 'com.github.johnrengelman.shadow'
 }
 
-version = "1.16.5-${mod_version}"
+version = "${minecraft_version}-${mod_version}"
 
 configurations {
     shadow
@@ -35,13 +35,13 @@ repositories {
     }
 }
 
-/*sourceSets {
-    main {
+sourceSets {
+    /*main {
         resources {
             srcDirs += [project(':ModernUI-Core').sourceSets.main.resources]
         }
-    }
-}*/
+    }*/
+}
 
 dependencies {
     minecraft "com.mojang:minecraft:${minecraft_version}"
@@ -220,8 +220,6 @@ if (project.hasProperty('curseforge_api')) {
             mainArtifact(remapJar) {
                 displayName = "${rootProject.name}-${rootProject.version}"
             }
-            addGameVersion '1.16.3'
-            addGameVersion '1.16.4'
             addGameVersion '1.16.5'
         }
         options {

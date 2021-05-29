@@ -25,7 +25,6 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.AnimationHandler;
 import icyllis.modernui.core.event.OpenMenuEvent;
 import icyllis.modernui.core.forge.ModernUIForge;
-import icyllis.modernui.core.mixin.MixinMouseHandler;
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
@@ -35,6 +34,7 @@ import icyllis.modernui.math.Point;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.test.TestHUD;
 import icyllis.modernui.test.TestPauseUI;
+import icyllis.modernui.util.TimedTask;
 import icyllis.modernui.widget.FrameLayout;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
@@ -57,7 +57,6 @@ import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.LongConsumer;
@@ -111,7 +110,7 @@ public final class UIManager {
     private int mHeight;
 
     // a list of UI tasks
-    private final List<DelayedTask> tasks = new CopyOnWriteArrayList<>();
+    private final List<TimedTask> tasks = new CopyOnWriteArrayList<>();
 
     // elapsed ticks from a gui open, update every tick, 20 = 1 second
     private int mTicks = 0;
@@ -370,7 +369,7 @@ public final class UIManager {
             runnable.run();
             return;
         }
-        tasks.add(new DelayedTask(runnable, delayedTicks));
+        tasks.add(new TimedTask(runnable, getElapsedTicks() + delayedTicks));
     }
 
     /*private void setMousePos(double mouseX, double mouseY) {
@@ -435,7 +434,6 @@ public final class UIManager {
      *
      * @see org.lwjgl.glfw.GLFWScrollCallbackI
      * @see net.minecraft.client.MouseHandler
-     * @see MixinMouseHandler
      */
     boolean onScrollEvent() {
         final long now = Util.getNanos();
@@ -885,15 +883,7 @@ public final class UIManager {
             mAppWindow.tick(mTicks);
             // view ticking is always performed before tasks
             if (!tasks.isEmpty()) {
-                Iterator<DelayedTask> iterator = tasks.iterator();
-                DelayedTask task;
-                while (iterator.hasNext()) {
-                    task = iterator.next();
-                    task.tick(mTicks);
-                    if (task.shouldRemove()) {
-                        iterator.remove();
-                    }
-                }
+                tasks.removeIf(task -> task.doExecuteTask(mTicks));
             }
         } else {
             if (mPendingRepostCursorEvent) {

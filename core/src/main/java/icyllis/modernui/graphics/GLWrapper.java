@@ -30,6 +30,7 @@ import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.opengl.*;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Objects;
@@ -302,11 +303,12 @@ public final class GLWrapper extends GL43C {
         glDeleteTextures(texture);
     }
 
-    public static void deleteTextureAsync(int target, int texture) {
+    public static void deleteTextureAsync(int target, int texture, @Nullable Runnable self) {
         if (RenderCore.isOnRenderThread()) {
             deleteTexture(target, texture);
         } else {
-            RenderCore.recordRenderCall(() -> deleteTexture(target, texture));
+            RenderCore.recordRenderCall(Objects.requireNonNullElseGet(self,
+                    () -> (Runnable) () -> deleteTexture(target, texture)));
         }
     }
 

@@ -21,8 +21,6 @@ package icyllis.modernui.view;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.Canvas;
 import net.minecraft.Util;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

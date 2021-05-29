@@ -16,37 +16,29 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.view;
+package icyllis.modernui.util;
 
 import javax.annotation.Nonnull;
 
 /**
- * Delayed task used in UI
- *
- * @see UIManager#postTask(Runnable, int)
+ * Scheduled runnable task with an execution time.
  */
-public class DelayedTask {
+public class TimedTask {
 
     @Nonnull
-    private final Runnable runnable;
+    private final Runnable mRunnable;
+    private final long mExecutionTime;
 
-    private final int finishTick;
-
-    private boolean finish = false;
-
-    DelayedTask(@Nonnull Runnable runnable, int delayedTicks) {
-        this.runnable = runnable;
-        finishTick = UIManager.getInstance().getElapsedTicks() + delayedTicks;
+    public TimedTask(@Nonnull Runnable runnable, long executionTime) {
+        mRunnable = runnable;
+        mExecutionTime = executionTime;
     }
 
-    void tick(int ticks) {
-        if (ticks >= finishTick) {
-            runnable.run();
-            finish = true;
+    public boolean doExecuteTask(long currTime) {
+        if (currTime >= mExecutionTime) {
+            mRunnable.run();
+            return true;
         }
-    }
-
-    boolean shouldRemove() {
-        return finish;
+        return false;
     }
 }
