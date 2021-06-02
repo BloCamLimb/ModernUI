@@ -19,7 +19,7 @@
 package icyllis.modernui.graphics;
 
 /**
- * A render node is associated with various OpenGL buffer objects
+ * Provides buffers of multiple {@link RenderLayer layers} and batch them.
  */
-public final class RenderNode {
+public class MultiBufferSource {
 }

@@ -44,7 +44,7 @@ import static org.lwjgl.system.APIUtil.apiUnknownToken;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
- * For managing OpenGL-related things on render thread, based on
+ * For managing OpenGL-related things on the render thread, based on
  * OpenGL 4.3 core profile, all methods are at low-level.
  */
 @SuppressWarnings("unused")
@@ -62,6 +62,11 @@ public final class GLWrapper extends GL43C {
      */
     public static final int DEFAULT_FRAMEBUFFER = 0;
 
+    /**
+     * The global vertex array compared to custom vertex array objects.
+     */
+    public static final int GLOBAL_VERTEX_ARRAY = 0;
+
     private static boolean sInitialized = false;
 
     private static Redirector sRedirector;
@@ -78,6 +83,8 @@ public final class GLWrapper extends GL43C {
 
     private static int sDrawFramebuffer = DEFAULT_FRAMEBUFFER;
     private static int sReadFramebuffer = DEFAULT_FRAMEBUFFER;
+
+    private static int sVertexArray = GLOBAL_VERTEX_ARRAY;
 
     private static final Deque<Rect> sViewportStack = new ArrayDeque<>();
 
@@ -107,7 +114,7 @@ public final class GLWrapper extends GL43C {
 
     @RenderThread
     public static void initialize(@Nonnull GLCapabilities caps) {
-        RenderCore.ensureRenderThread();
+        RenderCore.checkRenderThread();
         if (sInitialized) {
             return;
         }
@@ -251,7 +258,7 @@ public final class GLWrapper extends GL43C {
      */
     @RenderThread
     public static void reset(@Nonnull Window window) {
-        RenderCore.ensureRenderThread();
+        RenderCore.checkRenderThread();
         sViewportStack.clear();
 
         final Rect viewport = new Rect(0, 0, window.getWidth(), window.getHeight());
@@ -327,6 +334,14 @@ public final class GLWrapper extends GL43C {
     @RenderThread
     public static int getActiveTexture() {
         return sActiveTexture;
+    }
+
+    @RenderThread
+    public static void bindVertexArray(int array) {
+        if (array != sVertexArray) {
+            sVertexArray = array;
+            glBindVertexArray(array);
+        }
     }
 
     @RenderThread

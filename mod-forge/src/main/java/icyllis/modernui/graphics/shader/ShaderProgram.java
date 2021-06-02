@@ -99,7 +99,7 @@ public class ShaderProgram {
             try {
                 program.link(manager);
             } catch (IOException e) {
-                ModernUI.LOGGER.error(RenderCore.MARKER, "An error occurred while linking program: {}", program, e);
+                ModernUI.LOGGER.error(RenderCore.MARKER, "An error occurred while linking program {}\n", program, e);
             }
         });
         ModernUI.LOGGER.debug(RenderCore.MARKER, "Shader programs linked");
