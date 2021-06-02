@@ -43,7 +43,7 @@ import static icyllis.modernui.ModernUI.LOGGER;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
- * Represents the window system and its backend class.
+ * Represents the graphics window system and its backend part.
  */
 public final class RenderCore {
 
@@ -73,7 +73,7 @@ public final class RenderCore {
         LOGGER.error(MARKER, "GLFW Error: 0x{}, {}", Integer.toHexString(errorCode), desc);
     }
 
-    public static void ensureRenderThread() {
+    public static void checkRenderThread() {
         if (Thread.currentThread() != sRenderThread)
             throw new IllegalStateException("Not called from render thread");
     }

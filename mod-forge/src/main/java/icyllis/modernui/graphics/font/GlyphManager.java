@@ -247,7 +247,7 @@ public class GlyphManager extends GlyphManagerBase {
     // internal use
     @Nonnull
     public static GlyphManager getInstance() {
-        RenderCore.ensureRenderThread();
+        RenderCore.checkRenderThread();
         if (instance == null)
             new GlyphManager();
         return instance;

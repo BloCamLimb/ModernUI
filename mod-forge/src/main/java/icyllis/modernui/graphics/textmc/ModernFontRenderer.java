@@ -91,7 +91,7 @@ public class ModernFontRenderer extends Font {
     }
 
     public static void change(boolean global, boolean shadow) {
-        RenderCore.ensureRenderThread();
+        RenderCore.checkRenderThread();
         if (RenderCore.isInitialized()) {
             instance.mGlobalRenderer = global;
             instance.mAllowShadow = shadow;

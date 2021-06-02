@@ -193,7 +193,7 @@ public final class UIManager {
 
     // internal method
     public static void initialize() {
-        RenderCore.ensureRenderThread();
+        RenderCore.checkRenderThread();
         if (instance.mCanvas == null) {
             instance.mCanvas = Canvas.getInstance();
             ModernUI.LOGGER.info(MARKER, "UIManager initialized");

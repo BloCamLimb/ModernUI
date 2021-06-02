@@ -26,3 +26,5 @@ classes
 *.psd
 *.log
 logs
+
+mod-forge/src/main/java/icyllis/modernui/test/Main.java

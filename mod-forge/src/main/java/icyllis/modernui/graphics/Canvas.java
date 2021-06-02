@@ -143,7 +143,7 @@ public class Canvas {
      * @see UIManager#initialize()
      */
     public static Canvas getInstance() {
-        RenderCore.ensureRenderThread();
+        RenderCore.checkRenderThread();
         if (instance == null) {
             instance = new Canvas(Minecraft.getInstance());
         }

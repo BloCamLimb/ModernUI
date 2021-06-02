@@ -21,5 +21,7 @@ package icyllis.modernui.graphics.vertex;
 /**
  * Represents a vertex array object.
  */
-public class VertexArray {
+public class VertexFormat {
+
+    public static VertexFormat UI_TEX;
 }
