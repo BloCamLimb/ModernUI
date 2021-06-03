@@ -22,7 +22,7 @@ If you have any questions, feel free to join our [Discord](https://discord.gg/km
 #### Environment requirements
 - Windows, Linux or Classic macOS
 - JDK 11.0.8 or above
-- OpenGL 4.3 or above
+- OpenGL 4.5 or above
 - (Optional) Forge 1.16.5-36.1.0
 #### Gradle configuration
 ```

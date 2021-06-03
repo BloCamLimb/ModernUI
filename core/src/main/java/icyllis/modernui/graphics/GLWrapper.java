@@ -45,10 +45,10 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
  * For managing OpenGL-related things on the render thread, based on
- * OpenGL 4.3 core profile, all methods are at low-level.
+ * OpenGL 4.5 core profile, all methods are at low-level.
  */
 @SuppressWarnings("unused")
-public final class GLWrapper extends GL43C {
+public final class GLWrapper extends GL45C {
 
     public static final Marker MARKER = MarkerManager.getMarker("OpenGL");
 
@@ -148,7 +148,9 @@ public final class GLWrapper extends GL43C {
         sMaxTextureSize = glGetInteger(GL_MAX_TEXTURE_SIZE);
         sMaxRenderBufferSize = glGetInteger(GL_MAX_RENDERBUFFER_SIZE);
 
-        if (!caps.OpenGL43) {
+        boolean test = true;
+
+        if (!caps.OpenGL45) {
             String glVersion = glGetString(GL_VERSION);
             if (glVersion == null)
                 glVersion = "UNKNOWN";
@@ -197,11 +199,17 @@ public final class GLWrapper extends GL43C {
                 count++;
             }
 
+            if (!caps.GL_ARB_direct_state_access) {
+                LOGGER.fatal(MARKER, "ARB DSA (direct state access) is not supported");
+                count++;
+            }
+
             if (count > 0) {
-                ModernUI.get().warnSetup("warning.modernui.old_opengl", "4.3", glVersion);
-                LOGGER.fatal(RenderCore.MARKER, "OpenGL is too old, your version is {} but requires OpenGL 4.3", glVersion);
+                ModernUI.get().warnSetup("warning.modernui.old_opengl", "4.5", glVersion);
+                LOGGER.fatal(RenderCore.MARKER, "OpenGL is too old, your version is {} but requires OpenGL 4.5", glVersion);
                 LOGGER.fatal(RenderCore.MARKER, "There are {} GL capabilities that are not supported by your graphics environment", count);
                 LOGGER.fatal(RenderCore.MARKER, "Try to use dedicated GPU for Java applications and upgrade your graphics driver");
+                test = false;
             }
         }
 
@@ -210,18 +218,21 @@ public final class GLWrapper extends GL43C {
         CircleProgram.createPrograms();
         RectProgram.createPrograms();
         RoundRectProgram.createPrograms();*/
+        if (test) {
+            LOGGER.info(RenderCore.MARKER, "Graphics API: OpenGL {}", glGetString(GL_VERSION));
+            LOGGER.info(RenderCore.MARKER, "OpenGL Renderer: {} {}", glGetString(GL_VENDOR), glGetString(GL_RENDERER));
 
-        LOGGER.info(RenderCore.MARKER, "Graphics API: OpenGL {}", glGetString(GL_VERSION));
-        LOGGER.info(RenderCore.MARKER, "OpenGL Renderer: {} {}", glGetString(GL_VENDOR), glGetString(GL_RENDERER));
+            if (sRedirector == null) {
+                sRedirector = () -> {
+                };
+            } else {
+                sRedirector.onInit();
+            }
 
-        if (sRedirector == null) {
-            sRedirector = () -> {
-            };
+            sInitialized = true;
         } else {
-            sRedirector.onInit();
+            throw new RuntimeException("Graphics environment does not meet the minimum requirement");
         }
-
-        sInitialized = true;
     }
 
     private static void onDebugMessage(int source, int type, int id, int severity, int length, long message, long userParam) {

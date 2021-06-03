@@ -896,13 +896,11 @@ public final class UIManager {
         if (event.phase == TickEvent.Phase.START) {
             // the Timer is different from that in Event when game paused
             long deltaMillis = (long) (minecraft.getDeltaFrameTime() * 50);
-            mFrameTimeMillis += deltaMillis;
+            mFrameTimeMillis = RenderCore.timeMillis();
             mDrawingTimeMillis += deltaMillis;
-
             mAnimationHandler.accept(mFrameTimeMillis);
             BlurHandler.INSTANCE.update(mDrawingTimeMillis);
-        }
-        if (event.phase == TickEvent.Phase.END) {
+        } else {
             // layout after updating animations and before drawing
             if (mLayoutRequested) {
                 // fixed at 40Hz
