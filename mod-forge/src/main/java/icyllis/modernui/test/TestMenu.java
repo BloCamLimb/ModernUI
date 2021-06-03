@@ -18,7 +18,7 @@
 
 package icyllis.modernui.test;
 
-import icyllis.modernui.core.forge.MuiRegistries;
+import icyllis.modernui.forge.MuiRegistries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;

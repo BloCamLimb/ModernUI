@@ -163,31 +163,37 @@ public final class GLWrapper extends GL43C {
             }
             int count = 0;
             if (!caps.GL_ARB_vertex_buffer_object) {
-                LOGGER.fatal(RenderCore.MARKER, "ARB vertex buffer object is not supported");
+                LOGGER.fatal(MARKER, "ARB vertex buffer object is not supported");
                 count++;
             }
             if (!caps.GL_ARB_explicit_attrib_location) {
-                LOGGER.fatal(RenderCore.MARKER, "ARB explicit attrib location is not supported");
+                LOGGER.fatal(MARKER, "ARB explicit attrib location is not supported");
                 count++;
             }
             if (!caps.GL_ARB_vertex_array_object) {
-                LOGGER.fatal(RenderCore.MARKER, "ARB vertex array object is not supported");
+                LOGGER.fatal(MARKER, "ARB vertex array object is not supported");
                 count++;
             }
             if (!caps.GL_ARB_framebuffer_object) {
-                LOGGER.fatal(RenderCore.MARKER, "ARB framebuffer object is not supported");
+                LOGGER.fatal(MARKER, "ARB framebuffer object is not supported");
                 count++;
             }
             if (!caps.GL_ARB_uniform_buffer_object) {
-                LOGGER.fatal(RenderCore.MARKER, "ARB uniform buffer object is not supported");
+                LOGGER.fatal(MARKER, "ARB uniform buffer object is not supported");
                 count++;
             }
             if (!caps.GL_ARB_separate_shader_objects) {
-                LOGGER.fatal(RenderCore.MARKER, "ARB separate shader objects is not supported");
+                LOGGER.fatal(MARKER, "ARB separate shader objects is not supported");
                 count++;
             }
             if (!caps.GL_ARB_explicit_uniform_location) {
-                LOGGER.fatal(RenderCore.MARKER, "ARB explicit uniform location is not supported");
+                LOGGER.fatal(MARKER, "ARB explicit uniform location is not supported");
+                count++;
+            }
+
+            // we use the new API introduced in OpenGL 4.3, rather than glVertexAttrib*
+            if (!caps.GL_ARB_vertex_attrib_binding) {
+                LOGGER.fatal(MARKER, "ARB vertex attrib binding is not supported");
                 count++;
             }
 

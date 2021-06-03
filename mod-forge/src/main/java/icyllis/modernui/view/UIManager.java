@@ -23,8 +23,8 @@ import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.AnimationHandler;
-import icyllis.modernui.core.event.OpenMenuEvent;
-import icyllis.modernui.core.forge.ModernUIForge;
+import icyllis.modernui.forge.ModernUIForge;
+import icyllis.modernui.forge.OpenMenuEvent;
 import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
@@ -42,10 +42,10 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.client.event.*;
+import net.minecraftforge.client.event.RenderGameOverlayEvent;
+import net.minecraftforge.client.event.RenderTooltipEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -62,10 +62,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.LongConsumer;
 
 /**
- * UI system service, manages everything related to UI in Modern UI.
+ * Manages almost everything related to UI at the bottom level.
  */
 @SuppressWarnings("unused")
-@OnlyIn(Dist.CLIENT)
 public final class UIManager {
 
     // the global instance
@@ -893,19 +892,16 @@ public final class UIManager {
     }
 
     @SubscribeEvent
-    void onRenderWorldLast(@Nonnull RenderWorldLastEvent event) {
-        mFrameTimeMillis = event.getFinishTimeNano() / 1000000;
-
-        // to millis, the Timer is different from that in Event when game paused
-        mDrawingTimeMillis += (long) (minecraft.getDeltaFrameTime() * 50);
-
-        mAnimationHandler.accept(mFrameTimeMillis);
-
-        BlurHandler.INSTANCE.update(mDrawingTimeMillis);
-    }
-
-    @SubscribeEvent
     void onRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
+        if (event.phase == TickEvent.Phase.START) {
+            // the Timer is different from that in Event when game paused
+            long deltaMillis = (long) (minecraft.getDeltaFrameTime() * 50);
+            mFrameTimeMillis += deltaMillis;
+            mDrawingTimeMillis += deltaMillis;
+
+            mAnimationHandler.accept(mFrameTimeMillis);
+            BlurHandler.INSTANCE.update(mDrawingTimeMillis);
+        }
         if (event.phase == TickEvent.Phase.END) {
             // layout after updating animations and before drawing
             if (mLayoutRequested) {

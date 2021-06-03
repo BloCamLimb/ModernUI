@@ -77,15 +77,15 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
         master.resize(width, height);
 
         // compatibility with Forge mods, like JEI
-        if (!MinecraftForge.EVENT_BUS.post(new GuiScreenEvent.InitGuiEvent.Pre(this, buttons, this::logWidget, this::logWidget))) {
-            MinecraftForge.EVENT_BUS.post(new GuiScreenEvent.InitGuiEvent.Post(this, buttons, this::logWidget, this::logWidget));
+        if (!MinecraftForge.EVENT_BUS.post(new GuiScreenEvent.InitGuiEvent.Pre(this, buttons, this::widget, this::widget))) {
+            MinecraftForge.EVENT_BUS.post(new GuiScreenEvent.InitGuiEvent.Post(this, buttons, this::widget, this::widget));
         }
 
         /*ModernUI.LOGGER.debug("Scaled: {}x{} Framebuffer: {}x{} Window: {}x{}", width, height, minecraft.getMainWindow().getFramebufferWidth(),
                 minecraft.getMainWindow().getFramebufferHeight(), minecraft.getMainWindow().getWidth(), minecraft.getMainWindow().getHeight());*/
     }
 
-    private void logWidget(Widget widget) {
+    private void widget(Widget widget) {
         if (widget != null) {
             ModernUI.LOGGER.warn(UIManager.MARKER, "Usage of {} is deprecated in Modern UI", widget);
         }

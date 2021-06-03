@@ -20,8 +20,8 @@ package icyllis.modernui.graphics.textmc;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.math.Matrix4f;
-import icyllis.modernui.core.mixin.AccessFontRenderer;
-import icyllis.modernui.core.mixin.MixinClientLanguage;
+import icyllis.modernui.mixin.AccessFontRenderer;
+import icyllis.modernui.mixin.MixinClientLanguage;
 import icyllis.modernui.graphics.textmc.pipeline.TextRenderNode;
 import icyllis.modernui.platform.RenderCore;
 import net.minecraft.client.Minecraft;

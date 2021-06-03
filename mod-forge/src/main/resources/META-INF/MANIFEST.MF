@@ -1,1 +1,1 @@
-MixinConnector: icyllis.modernui.core.MixinConnector
+MixinConnector: icyllis.modernui.forge.MixinConnector
