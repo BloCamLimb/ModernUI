@@ -29,7 +29,7 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.textmc.ModernFontRenderer;
 import icyllis.modernui.graphics.math.TextAlign;
-import icyllis.modernui.core.mixin.AccessFoodData;
+import icyllis.modernui.mixin.AccessFoodData;
 import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Matrix4;
 import net.minecraft.client.Minecraft;

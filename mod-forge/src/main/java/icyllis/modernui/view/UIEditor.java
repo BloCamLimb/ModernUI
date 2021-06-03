@@ -18,7 +18,7 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.core.forge.ModernUIForge;
+import icyllis.modernui.forge.ModernUIForge;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.math.TextAlign;
 import net.minecraft.ChatFormatting;

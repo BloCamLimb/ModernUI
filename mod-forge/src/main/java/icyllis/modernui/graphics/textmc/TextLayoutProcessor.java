@@ -27,6 +27,7 @@ import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.graphics.font.TexturedGlyph;
 import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.graphics.textmc.pipeline.*;
+import icyllis.modernui.mixin.MixinClientLanguage;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.text.FontCollection;
 import net.minecraft.ChatFormatting;
@@ -195,7 +196,7 @@ public class TextLayoutProcessor {
 
     /**
      * Minecraft gives us a deeply processed sequence, so we have to make the
-     * it not a reordered text, see {@link icyllis.modernui.core.mixin.MixinClientLanguage}.
+     * it not a reordered text, see {@link MixinClientLanguage}.
      * So actually it's a copy of original text, then we can use our layout engine later
      *
      * @param sequence a char sequence copied from the original string
