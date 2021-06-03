@@ -1,5 +1,9 @@
 Changelogs
 ===
+###
+* Fix smooth scrolling
+* Introduce new animation API
+
 ### 1.16.5-2.5.1.86 (2021-05-13)
 * Fix rendering on some graphics cards
 * Fix first scroll bar dragging

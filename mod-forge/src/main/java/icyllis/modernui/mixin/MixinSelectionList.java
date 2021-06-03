@@ -78,8 +78,10 @@ public abstract class MixinSelectionList implements ScrollController.IListener {
 
     @Inject(method = "render", at = @At("HEAD"))
     private void preRender(PoseStack matrix, int mouseX, int mouseY, float partialTicks, CallbackInfo ci) {
-        if (mScrollController == null)
+        if (mScrollController == null) {
             mScrollController = new ScrollController(this);
+            skipAnimationTo(scrollAmount);
+        }
         mScrollController.update(UIManager.getInstance().getDrawingTime());
     }
 
@@ -112,9 +114,7 @@ public abstract class MixinSelectionList implements ScrollController.IListener {
     @Overwrite
     public void setScrollAmount(double target) {
         if (mScrollController != null) {
-            mScrollController.setMaxScroll(getMaxScroll());
-            mScrollController.scrollTo((float) target);
-            mScrollController.abortAnimation();
+            skipAnimationTo(target);
         } else
             scrollAmount = Mth.clamp(target, 0.0D, getMaxScroll());
     }
@@ -122,5 +122,11 @@ public abstract class MixinSelectionList implements ScrollController.IListener {
     @Override
     public void onScrollAmountUpdated(ScrollController controller, float amount) {
         scrollAmount = Mth.clamp(amount, 0.0D, getMaxScroll());
+    }
+
+    public void skipAnimationTo(double target) {
+        mScrollController.setMaxScroll(getMaxScroll());
+        mScrollController.scrollTo((float) target);
+        mScrollController.abortAnimation();
     }
 }
