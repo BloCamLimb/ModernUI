@@ -71,7 +71,7 @@ public final class Framebuffer implements AutoCloseable {
 
     // min color attachments: 0-7
     public void attachTexture(int attachment, @Nonnull Texture2D texture, int level) {
-        glFramebufferTexture(mTarget, attachment, texture.getId(), level);
+        glFramebufferTexture(mTarget, attachment, texture.get(), level);
     }
 
     // for cube map or 3D texture, specify a face or a layer

@@ -18,6 +18,9 @@ If you have any questions, feel free to join our [Discord](https://discord.gg/km
   - [![License](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-yellow.svg?style=flat-square)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 * Sounds
   - [![License](https://img.shields.io/badge/License-No%20Restriction-green.svg?style=flat-square)](https://creativecommons.org/publicdomain/zero/1.0/)
+* Third Party Libraries
+  - [caffeine](https://github.com/ben-manes/caffeine) by Ben Manes
+  - [flexmark-java](https://github.com/vsch/flexmark-java) by Atlassian Pty Ltd, Vladimir Schneider
 ### Adding Modern UI to your project
 #### Environment requirements
 - Windows, Linux or Classic macOS

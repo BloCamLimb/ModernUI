@@ -50,17 +50,17 @@ public class Texture2D implements AutoCloseable {
      *
      * @return texture object name
      */
-    public int getId() {
+    public int get() {
         if (mRef == null)
             mRef = new Ref(this);
-        return mRef.id;
+        return mRef.texture;
     }
 
     /**
      * Binds this texture to TEXTURE_2D target.
      */
     public void bind() {
-        bindTexture(GL_TEXTURE_2D, getId());
+        bindTexture(GL_TEXTURE_2D, get());
     }
 
     /**
@@ -73,6 +73,7 @@ public class Texture2D implements AutoCloseable {
      * @param mipmapLevel    max mipmap level, min is 0
      * @see #init(int, int, int, int)
      */
+    @Deprecated
     public void initCompat(int internalFormat, int width, int height, int mipmapLevel) {
         bind();
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
@@ -102,13 +103,13 @@ public class Texture2D implements AutoCloseable {
      * @param mipmapLevel    max mipmap level, min is 0
      */
     public void init(int internalFormat, int width, int height, int mipmapLevel) {
-        bind();
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mipmapLevel);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_LOD, 0);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, mipmapLevel);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f);
-        glTexStorage2D(GL_TEXTURE_2D, mipmapLevel, internalFormat, width, height);
+        final int texture = get();
+        glTextureStorage2D(texture, mipmapLevel, internalFormat, width, height);
+        glTextureParameteri(texture, GL_TEXTURE_BASE_LEVEL, 0);
+        glTextureParameteri(texture, GL_TEXTURE_MAX_LEVEL, mipmapLevel);
+        glTextureParameteri(texture, GL_TEXTURE_MIN_LOD, 0);
+        glTextureParameteri(texture, GL_TEXTURE_MAX_LOD, mipmapLevel);
+        glTextureParameterf(texture, GL_TEXTURE_LOD_BIAS, 0.0f);
     }
 
     /**
@@ -123,71 +124,70 @@ public class Texture2D implements AutoCloseable {
      */
     public void upload(int level, int x, int y, int width, int height, int rowLength, int skipRows,
                        int skipPixels, int alignment, int format, int type, long pixels) {
-        bind();
         glPixelStorei(GL_UNPACK_ROW_LENGTH, rowLength);
         glPixelStorei(GL_UNPACK_SKIP_ROWS, skipRows);
         glPixelStorei(GL_UNPACK_SKIP_PIXELS, skipPixels);
         glPixelStorei(GL_UNPACK_ALIGNMENT, alignment);
-        nglTexSubImage2D(GL_TEXTURE_2D, level, x, y, width, height, format, type, pixels);
+        nglTextureSubImage2D(get(), level, x, y, width, height, format, type, pixels);
     }
 
     /**
-     * Set wrap mode. This texture must be bound first.
+     * Set wrap mode.
      */
     public void setWrap(int wrapS, int wrapT) {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapS);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapT);
+        final int texture = get();
+        glTextureParameteri(texture, GL_TEXTURE_WRAP_S, wrapS);
+        glTextureParameteri(texture, GL_TEXTURE_WRAP_T, wrapT);
     }
 
     /**
      * Set filter mode. When mipmap = true, sampling between mipmaps is always linear.
-     * This texture must be bound first.
      *
      * @see #setFilter(int, int)
      */
     public void setFilter(boolean linear, boolean mipmap) {
+        final int texture = get();
         if (linear) {
             if (mipmap) {
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+                glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
             } else {
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             }
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         } else {
             if (mipmap) {
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+                glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
             } else {
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             }
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         }
     }
 
-    // This texture must be bound first.
     public void setFilter(int minFilter, int magFilter) {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
+        final int texture = get();
+        glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, minFilter);
+        glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, magFilter);
     }
 
     /**
-     * Generates mipmaps. This texture must be bound first.
+     * Generates mipmaps.
      */
     public void generateMipmap() {
-        glGenerateMipmap(GL_TEXTURE_2D);
+        glGenerateTextureMipmap(get());
     }
 
     /**
-     * Query texture width from GPU. This texture must be bound first.
+     * Query texture width from GPU.
      *
      * @return texture width
      */
     public int getWidth() {
-        return glGetTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WIDTH);
+        return glGetTextureParameteri(get(), GL_TEXTURE_WIDTH);
     }
 
-    // This texture must be bound first.
     public int getHeight() {
-        return glGetTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_HEIGHT);
+        return glGetTextureParameteri(get(), GL_TEXTURE_HEIGHT);
     }
 
     /**
@@ -203,11 +203,11 @@ public class Texture2D implements AutoCloseable {
 
     private static final class Ref implements Runnable {
 
-        private final int id;
+        private final int texture;
         private final Cleanable cleanup;
 
         private Ref(@Nonnull Texture2D owner) {
-            id = glGenTextures();
+            texture = glCreateTextures(GL_TEXTURE_2D);
             cleanup = ModernUI.registerCleanup(owner, this);
         }
 
@@ -215,7 +215,7 @@ public class Texture2D implements AutoCloseable {
         public void run() {
             // if (id == INVALID_ID)
             // cleanup is synchronized, this method only called once by cleaner
-            deleteTextureAsync(GL_TEXTURE_2D, id, this);
+            deleteTextureAsync(GL_TEXTURE_2D, texture, this);
             // id = INVALID_ID;
         }
     }

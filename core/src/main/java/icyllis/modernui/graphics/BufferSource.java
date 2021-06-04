@@ -27,5 +27,6 @@ public class BufferSource {
         /*GLWrapper.glVertexAttribFormat();
         GLWrapper.glBindVertexBuffer();
         GLWrapper.glVertexAttribDivisor();*/
+        GLWrapper.glBindTextureUnit();
     }
 }

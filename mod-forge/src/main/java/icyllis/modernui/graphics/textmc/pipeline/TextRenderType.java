@@ -117,8 +117,8 @@ public class TextRenderType extends RenderType {
     }
 
     public static Pair<TextRenderType, TextRenderType> getOrCacheType(Texture2D texture) {
-        return Pair.of(TYPES.computeIfAbsent(texture, n -> new TextRenderType(n.getId())),
-                SEE_THROUGH_TYPES.computeIfAbsent(texture, n -> new TextRenderType(n.getId(), "modern_text_see_through")));
+        return Pair.of(TYPES.computeIfAbsent(texture, n -> new TextRenderType(n.get())),
+                SEE_THROUGH_TYPES.computeIfAbsent(texture, n -> new TextRenderType(n.get(), "modern_text_see_through")));
     }
 
     public static void deleteTextures() {
