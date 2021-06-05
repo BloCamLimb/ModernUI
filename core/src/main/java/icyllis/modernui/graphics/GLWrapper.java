@@ -67,6 +67,8 @@ public final class GLWrapper extends GL45C {
      */
     public static final int GLOBAL_VERTEX_ARRAY = 0;
 
+    public static final int DEFAULT_TEXTURE = 0;
+
     private static boolean sInitialized = false;
 
     private static Redirector sRedirector;
@@ -89,13 +91,15 @@ public final class GLWrapper extends GL45C {
     private static final Deque<Rect> sViewportStack = new ArrayDeque<>();
 
     private static int sActiveTexture = 0;
+    // texture unit (index) to texture target to texture name
     private static final Int2IntMap[] sBindTextures;
 
     static {
         Int2IntMap[] bindTextures = new Int2IntMap[32];
         for (int i = 0; i < 32; i++) {
+            // since texture_2d is most commonly used, an array map would be faster
             Int2IntMap o = new Int2IntArrayMap();
-            o.defaultReturnValue(GL_NONE);
+            o.defaultReturnValue(DEFAULT_TEXTURE);
             bindTextures[i] = o;
         }
         sBindTextures = bindTextures;
@@ -148,8 +152,6 @@ public final class GLWrapper extends GL45C {
         sMaxTextureSize = glGetInteger(GL_MAX_TEXTURE_SIZE);
         sMaxRenderBufferSize = glGetInteger(GL_MAX_RENDERBUFFER_SIZE);
 
-        boolean test = true;
-
         if (!caps.OpenGL45) {
             String glVersion = glGetString(GL_VERSION);
             if (glVersion == null)
@@ -192,6 +194,10 @@ public final class GLWrapper extends GL45C {
                 LOGGER.fatal(MARKER, "ARB explicit uniform location is not supported");
                 count++;
             }
+            if (!caps.GL_ARB_texture_swizzle) {
+                LOGGER.fatal(MARKER, "ARB texture swizzle is not supported");
+                count++;
+            }
 
             // we use the new API introduced in OpenGL 4.3, rather than glVertexAttrib*
             if (!caps.GL_ARB_vertex_attrib_binding) {
@@ -209,7 +215,7 @@ public final class GLWrapper extends GL45C {
                 LOGGER.fatal(RenderCore.MARKER, "OpenGL is too old, your version is {} but requires OpenGL 4.5", glVersion);
                 LOGGER.fatal(RenderCore.MARKER, "There are {} GL capabilities that are not supported by your graphics environment", count);
                 LOGGER.fatal(RenderCore.MARKER, "Try to use dedicated GPU for Java applications and upgrade your graphics driver");
-                test = false;
+                throw new RuntimeException("Graphics card or driver does not meet the minimum requirement");
             }
         }
 
@@ -218,21 +224,17 @@ public final class GLWrapper extends GL45C {
         CircleProgram.createPrograms();
         RectProgram.createPrograms();
         RoundRectProgram.createPrograms();*/
-        if (test) {
-            LOGGER.info(RenderCore.MARKER, "Graphics API: OpenGL {}", glGetString(GL_VERSION));
-            LOGGER.info(RenderCore.MARKER, "OpenGL Renderer: {} {}", glGetString(GL_VENDOR), glGetString(GL_RENDERER));
+        LOGGER.info(RenderCore.MARKER, "Graphics API: OpenGL {}", glGetString(GL_VERSION));
+        LOGGER.info(RenderCore.MARKER, "OpenGL Renderer: {} {}", glGetString(GL_VENDOR), glGetString(GL_RENDERER));
 
-            if (sRedirector == null) {
-                sRedirector = () -> {
-                };
-            } else {
-                sRedirector.onInit();
-            }
-
-            sInitialized = true;
+        if (sRedirector == null) {
+            sRedirector = () -> {
+            };
         } else {
-            throw new RuntimeException("Graphics environment does not meet the minimum requirement");
+            sRedirector.onInit();
         }
+
+        sInitialized = true;
     }
 
     private static void onDebugMessage(int source, int type, int id, int severity, int length, long message, long userParam) {
@@ -274,7 +276,7 @@ public final class GLWrapper extends GL45C {
      * @param window the window for rendering.
      */
     @RenderThread
-    public static void reset(@Nonnull Window window) {
+    public static void resetFrame(@Nonnull Window window) {
         RenderCore.checkRenderThread();
         sViewportStack.clear();
 
@@ -283,6 +285,13 @@ public final class GLWrapper extends GL45C {
         glViewport(0, 0, window.getWidth(), window.getHeight());
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    }
+
+    /**
+     * Resets all OpenGL states managed by GLWrapper for compatibility.
+     */
+    public static void resetStates() {
+
     }
 
     @RenderThread
@@ -317,22 +326,26 @@ public final class GLWrapper extends GL45C {
             glBindTexture(target, texture);
     }
 
-    // target - used for testing texture type
+    public static void bindTextureUnit(int unit, int texture) {
+
+    }
+
     @RenderThread
-    public static void deleteTexture(int target, int texture) {
-        if (sRedirector.deleteTexture(target, texture))
-            return;
-        for (Int2IntMap m : sBindTextures)
-            m.put(target, GL_NONE);
+    public static void deleteTexture(int texture) {
+        int target = glGetTextureParameteri(texture, GL_TEXTURE_TARGET);
+        for (var m : sBindTextures)
+            if (m.get(target) == texture)
+                m.put(target, DEFAULT_TEXTURE);
         glDeleteTextures(texture);
     }
 
-    public static void deleteTextureAsync(int target, int texture, @Nullable Runnable self) {
+    // r - the runnable that calls this method
+    public static void deleteTextureAsync(int texture, @Nullable Runnable r) {
         if (RenderCore.isOnRenderThread()) {
-            deleteTexture(target, texture);
+            deleteTexture(texture);
         } else {
-            RenderCore.recordRenderCall(Objects.requireNonNullElseGet(self,
-                    () -> (Runnable) () -> deleteTexture(target, texture)));
+            RenderCore.recordRenderCall(Objects.requireNonNullElseGet(r,
+                    () -> (Runnable) () -> deleteTexture(texture)));
         }
     }
 
@@ -571,6 +584,7 @@ public final class GLWrapper extends GL45C {
     }
 
     // redirect default methods, return true instead
+    @Deprecated
     @FunctionalInterface
     public interface Redirector {
 

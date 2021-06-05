@@ -19,7 +19,7 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.CanvasForge;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.math.Point;
 import icyllis.modernui.widget.ScrollController;
@@ -261,7 +261,7 @@ public class View {
      *
      * @param canvas the canvas to draw content
      */
-    public void draw(@Nonnull Canvas canvas) {
+    public void draw(@Nonnull CanvasForge canvas) {
         if ((mViewFlags & VISIBILITY_MASK) == 0) {
             canvas.save();
             canvas.translate(mLeft, mTop);
@@ -280,7 +280,7 @@ public class View {
 
     /**
      * Draw this view if visible
-     * Before you draw in the method, you have to call {@link Canvas#moveTo(View)},
+     * Before you draw in the method, you have to call {@link CanvasForge#moveTo(View)},
      * (0, 0) will be the top left of the bounds,
      * (width, height) will be the bottom right of the bounds.
      * See {@link #getWidth()}
@@ -288,7 +288,7 @@ public class View {
      *
      * @param canvas canvas to draw content
      */
-    protected void onDraw(@Nonnull Canvas canvas) {
+    protected void onDraw(@Nonnull CanvasForge canvas) {
 
     }
 
@@ -297,7 +297,7 @@ public class View {
      *
      * @param canvas canvas to draw content
      */
-    protected void dispatchDraw(@Nonnull Canvas canvas) {
+    protected void dispatchDraw(@Nonnull CanvasForge canvas) {
 
     }
 
@@ -1092,7 +1092,7 @@ public class View {
 
     /**
      * Starts a drag and drop operation. This method passes a {@link DragShadow} object to
-     * the window system. The system calls {@link DragShadow#onDrawShadow(Canvas)}
+     * the window system. The system calls {@link DragShadow#onDrawShadow(CanvasForge)}
      * to draw the drag shadow itself at proper level.
      * <p>
      * Once the system has the drag shadow, it begins the drag and drop operation by sending
@@ -1820,7 +1820,7 @@ public class View {
             altSize = 5;
         }
 
-        private void draw(@Nonnull Canvas canvas) {
+        private void draw(@Nonnull CanvasForge canvas) {
             /*if (!barHovered && !isDragging && brightness > 0.5f) {
                 if (canvas.getDrawingTime() > startTime) {
                     float change = (startTime - canvas.getDrawingTime()) / 2000.0f;
@@ -2265,7 +2265,7 @@ public class View {
         /**
          * Construct a shadow builder object with no associated View. This
          * constructor variant is only useful when the {@link #onProvideShadowCenter(Point)}}
-         * and {@link #onDrawShadow(Canvas)} methods are also overridden in order
+         * and {@link #onDrawShadow(CanvasForge)} methods are also overridden in order
          * to supply the drag shadow's dimensions and appearance without
          * reference to any View object.
          */
@@ -2293,7 +2293,7 @@ public class View {
          *
          * @param canvas canvas to draw content
          */
-        public void onDrawShadow(@Nonnull Canvas canvas) {
+        public void onDrawShadow(@Nonnull CanvasForge canvas) {
             View view = viewRef.get();
             if (view != null) {
                 view.onDraw(canvas);

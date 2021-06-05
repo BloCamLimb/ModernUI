@@ -19,7 +19,7 @@
 package icyllis.modernui.graphics.shader.program;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.shader.ShaderProgram;
+import icyllis.modernui.graphics.shader.Shader;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import org.lwjgl.opengl.GL43C;
@@ -27,9 +27,9 @@ import org.lwjgl.opengl.GL43C;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 
-public class RectProgram extends ShaderProgram {
+public class RectProgram extends Shader {
 
-    public static final ResourceLocation VERT = new ResourceLocation(ModernUI.ID, "shaders/rect.vert");
+    public static final ResourceLocation VERT = new ResourceLocation(ModernUI.ID, "shaders/pos_color.vert");
     public static final ResourceLocation VERT_TEX = new ResourceLocation(ModernUI.ID, "shaders/rect_tex.vert");
 
     private static RectProgram sFill;

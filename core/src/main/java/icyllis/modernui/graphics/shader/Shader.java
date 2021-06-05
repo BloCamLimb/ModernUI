@@ -16,19 +16,31 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics;
+package icyllis.modernui.graphics.shader;
 
-import icyllis.modernui.platform.Window;
+import static org.lwjgl.opengl.GL43C.glUseProgram;
 
 /**
- * The main renderer for {@link Window Window}, which does
- * OpenGL calls on render thread. It will always use dedicated GPU to render.
+ * Represents OpenGL program objects.
  */
-public final class MainRenderer {
+public class Shader {
 
-    private int mMatrixUBO;
+    int mProgram;
 
-    public MainRenderer() {
-        mMatrixUBO = GLWrapper.glCreateBuffers();
+    public Shader() {
+    }
+
+    /**
+     * Use this shader program
+     */
+    public void use() {
+        glUseProgram(mProgram);
+    }
+
+    /**
+     * Use undefined shader program.
+     */
+    public static void stop() {
+        glUseProgram(0);
     }
 }

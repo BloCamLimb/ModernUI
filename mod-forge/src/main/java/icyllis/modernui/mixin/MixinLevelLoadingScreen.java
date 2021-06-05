@@ -20,7 +20,7 @@ package icyllis.modernui.mixin;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.CanvasForge;
 import icyllis.modernui.graphics.Paint;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.screens.LevelLoadingScreen;
@@ -64,9 +64,9 @@ public class MixinLevelLoadingScreen extends Screen {
         mSweep = Math.min(progressListener.getProgress() * 3.6f, mSweep + deltaTick * 12.0f);
         amp *= 0.5f;
         paint.setRGBA(64, 64, 64, 128);
-        Canvas.getInstance().drawCircle(width / 2.0f, height / 2.0f - 36.0f, 15 + amp, paint);
+        CanvasForge.getInstance().drawCircle(width / 2.0f, height / 2.0f - 36.0f, 15 + amp, paint);
         paint.setRGBA(255, 255, 255, 255);
-        Canvas.getInstance().drawArc(width / 2.0f, height / 2.0f - 36.0f, 15 + amp, -90, mSweep, paint);
+        CanvasForge.getInstance().drawArc(width / 2.0f, height / 2.0f - 36.0f, 15 + amp, -90, mSweep, paint);
     }
 
     @Redirect(method = "render",

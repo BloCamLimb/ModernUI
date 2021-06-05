@@ -20,7 +20,7 @@ package icyllis.modernui.forge;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.font.GlyphManager;
-import icyllis.modernui.graphics.shader.ShaderProgram;
+import icyllis.modernui.graphics.shader.Shader;
 import icyllis.modernui.view.LayoutIO;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -89,7 +89,7 @@ public final class ModernUIForge extends ModernUI {
                         .registerReloadListener(
                                 (ISelectiveResourceReloadListener) (manager, predicate) -> {
                                     if (predicate.test(VanillaResourceType.SHADERS)) {
-                                        ShaderProgram.recompile(manager);
+                                        Shader.recompile(manager);
                                     }
                                 }
                         );

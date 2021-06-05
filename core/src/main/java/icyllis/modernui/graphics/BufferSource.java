@@ -19,7 +19,7 @@
 package icyllis.modernui.graphics;
 
 /**
- * Provides buffers of multiple {@link RenderType types} and batch them.
+ * Provides buffers for multiple {@link RenderType types} and batch them.
  */
 public class BufferSource {
 
@@ -27,6 +27,5 @@ public class BufferSource {
         /*GLWrapper.glVertexAttribFormat();
         GLWrapper.glBindVertexBuffer();
         GLWrapper.glVertexAttribDivisor();*/
-        GLWrapper.glBindTextureUnit();
     }
 }

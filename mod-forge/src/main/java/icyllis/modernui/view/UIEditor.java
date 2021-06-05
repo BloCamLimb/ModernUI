@@ -19,7 +19,7 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.forge.ModernUIForge;
-import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.CanvasForge;
 import icyllis.modernui.graphics.math.TextAlign;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.screens.Screen;
@@ -99,7 +99,7 @@ public enum UIEditor {
         working = !working;
     }
 
-    void draw(@Nonnull Canvas canvas) {
+    void draw(@Nonnull CanvasForge canvas) {
         if (!working) {
             return;
         }

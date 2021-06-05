@@ -18,7 +18,7 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.CanvasForge;
 import icyllis.modernui.graphics.drawable.Drawable;
 
 import javax.annotation.Nonnull;
@@ -43,7 +43,7 @@ public abstract class CompoundButton extends Button implements Checkable {
     }
 
     @Override
-    protected void onDraw(@Nonnull Canvas canvas) {
+    protected void onDraw(@Nonnull CanvasForge canvas) {
         final Drawable buttonDrawable = mButtonDrawable;
         super.onDraw(canvas);
         if (buttonDrawable != null) {

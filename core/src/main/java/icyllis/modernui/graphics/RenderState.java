@@ -16,19 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.vertex;
+package icyllis.modernui.graphics;
 
-import icyllis.modernui.graphics.GLWrapper;
-
-/**
- * BufferBuilder helps to build OpenGL buffers for a vertex format from any thread.
- * <p>
- * Each BufferBuilder holds a vertex array object, multiple uniform buffer objects
- * and is associated with various vertex buffer objects.
- */
-public class BufferBuilder {
-
-    {
-        //GLWrapper.glGetUniformBlockIndex()
-    }
+public interface RenderState {
 }

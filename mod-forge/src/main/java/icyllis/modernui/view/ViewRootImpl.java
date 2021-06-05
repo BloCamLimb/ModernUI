@@ -19,7 +19,7 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.CanvasForge;
 import icyllis.modernui.math.Point;
 
 import javax.annotation.Nonnull;
@@ -104,7 +104,7 @@ public final class ViewRootImpl implements ViewParent {
         mView.layout(0, 0, mView.getMeasuredWidth(), mView.getMeasuredHeight());
     }
 
-    void onDraw(Canvas canvas) {
+    void onDraw(CanvasForge canvas) {
         if (mView != null) {
             mView.draw(canvas);
         }

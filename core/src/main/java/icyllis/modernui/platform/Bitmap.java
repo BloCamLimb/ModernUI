@@ -50,9 +50,9 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
  * Represents a bitmap whose image data is in native. It is used for operations
- * on the application side, such as read from or write to stream. Compared with
- * {@link icyllis.modernui.graphics.Image}, this data is completely stored in
- * RAM rather than in GPU memory.
+ * on the application side, such as read from/write to stream/channel. Compared
+ * with {@link icyllis.modernui.graphics.Image}, this data is completely stored
+ * in RAM rather than in GPU memory.
  */
 @SuppressWarnings("unused")
 public final class Bitmap implements AutoCloseable {
@@ -95,7 +95,7 @@ public final class Bitmap implements AutoCloseable {
 
     private Bitmap(@Nonnull Format format, int width, int height, @Nonnull ByteBuffer data) throws IOException {
         if (data.capacity() != format.channels * width * height) {
-            throw new IOException("Not tightly packed");
+            throw new IOException("Not tightly packed"); // ensure alignment to 1
         }
         mFormat = format;
         mWidth = width;
@@ -161,14 +161,13 @@ public final class Bitmap implements AutoCloseable {
      */
     @Nonnull
     public static Bitmap decode(@Nullable Format format, @Nonnull ReadableByteChannel channel) throws IOException {
-        ByteBuffer buffer = null;
+        ByteBuffer ptr = null;
         try {
-            buffer = RenderCore.readResource(channel);
-            buffer.rewind();
-            return decode(format, buffer);
+            ptr = RenderCore.readResource(channel);
+            ptr.rewind();
+            return decode(format, ptr);
         } finally {
-            if (buffer != null)
-                MemoryUtil.memFree(buffer);
+            MemoryUtil.memFree(ptr);
         }
     }
 
@@ -180,14 +179,13 @@ public final class Bitmap implements AutoCloseable {
      */
     @Nonnull
     public static Bitmap decode(@Nullable Format format, @Nonnull InputStream stream) throws IOException {
-        ByteBuffer buffer = null;
+        ByteBuffer ptr = null;
         try {
-            buffer = RenderCore.readResource(stream);
-            buffer.rewind();
-            return decode(format, buffer);
+            ptr = RenderCore.readResource(stream);
+            ptr.rewind();
+            return decode(format, ptr);
         } finally {
-            if (buffer != null)
-                MemoryUtil.memFree(buffer);
+            MemoryUtil.memFree(ptr);
         }
     }
 

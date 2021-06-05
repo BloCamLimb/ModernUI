@@ -19,7 +19,7 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.CanvasForge;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.MeasureSpec;
 import icyllis.modernui.view.View;
@@ -217,7 +217,7 @@ public class LinearLayout extends ViewGroup {
     }
 
     @Override
-    protected void onDraw(@Nonnull Canvas canvas) {
+    protected void onDraw(@Nonnull CanvasForge canvas) {
         if (divider != null) {
             if (orientation == Orientation.VERTICAL) {
                 drawDividersVertical(canvas);
@@ -227,7 +227,7 @@ public class LinearLayout extends ViewGroup {
         }
     }
 
-    private void drawDividersVertical(@Nonnull Canvas canvas) {
+    private void drawDividersVertical(@Nonnull CanvasForge canvas) {
         // draw the divider before first non-GONE child
         // faster than Android API, because we draw every frame
         boolean began = false;
@@ -266,12 +266,12 @@ public class LinearLayout extends ViewGroup {
         }
     }
 
-    private void drawHorizontalDivider(@Nonnull Canvas canvas, int top) {
+    private void drawHorizontalDivider(@Nonnull CanvasForge canvas, int top) {
         divider.setBounds(getLeft() + dividerPadding, top, getRight() - dividerPadding, top + dividerHeight);
         divider.draw(canvas);
     }
 
-    private void drawDividersHorizontal(@Nonnull Canvas canvas) {
+    private void drawDividersHorizontal(@Nonnull CanvasForge canvas) {
         boolean began = false;
         View lastDraw = null;
 
@@ -307,7 +307,7 @@ public class LinearLayout extends ViewGroup {
         }
     }
 
-    private void drawVerticalDivider(@Nonnull Canvas canvas, int left) {
+    private void drawVerticalDivider(@Nonnull CanvasForge canvas, int left) {
         divider.setBounds(left, getTop() + dividerPadding, left + dividerWidth, getBottom() - dividerPadding);
         divider.draw(canvas);
     }

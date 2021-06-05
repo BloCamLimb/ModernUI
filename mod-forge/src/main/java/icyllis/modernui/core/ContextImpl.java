@@ -18,13 +18,14 @@
 
 package icyllis.modernui.core;
 
+import javax.annotation.Nonnull;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Path;
 
 public final class ContextImpl extends Context {
 
     @Override
-    public ReadableByteChannel getResource(Path path) {
+    public ReadableByteChannel getResource(@Nonnull Path path) {
         return null;
     }
 }

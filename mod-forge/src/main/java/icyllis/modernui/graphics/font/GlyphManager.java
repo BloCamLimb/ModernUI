@@ -49,8 +49,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
-import static icyllis.modernui.graphics.GLWrapper.GL_ALPHA;
-import static icyllis.modernui.graphics.GLWrapper.GL_UNSIGNED_BYTE;
+import static icyllis.modernui.graphics.GLWrapper.*;
 
 /**
  * Find matching fonts and glyphs, measure glyph metrics and draw them of
@@ -938,6 +937,8 @@ public class GlyphManager extends GlyphManagerBase {
                     TEXTURE_SIZE >> level, 0, GL11.GL_ALPHA, GL11.GL_UNSIGNED_BYTE, (IntBuffer) null);
         }*/
         mTexture.initCompat(GL_ALPHA, TEXTURE_SIZE, TEXTURE_SIZE, mipmapLevel);
+
+        //mTexture.swizzle(GL_ONE, GL_ONE, GL_ONE, GL_RED);
 
         /* We set MinMag params here, just call once for a texture */
         /*if (sAntiAliasing) {

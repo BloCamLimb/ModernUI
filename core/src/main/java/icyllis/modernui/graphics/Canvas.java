@@ -18,17 +18,5 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.platform.Window;
-
-/**
- * The main renderer for {@link Window Window}, which does
- * OpenGL calls on render thread. It will always use dedicated GPU to render.
- */
-public final class MainRenderer {
-
-    private int mMatrixUBO;
-
-    public MainRenderer() {
-        mMatrixUBO = GLWrapper.glCreateBuffers();
-    }
+public class Canvas {
 }

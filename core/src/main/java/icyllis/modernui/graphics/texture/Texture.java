@@ -18,12 +18,40 @@
 
 package icyllis.modernui.graphics.texture;
 
+import icyllis.modernui.ModernUI;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.lang.ref.Cleaner;
+
 import static icyllis.modernui.graphics.GLWrapper.*;
 
 /**
- * Represents OpenGL texture objects at low-level.
+ * Represents OpenGL texture objects at low-level. Losing the
+ * reference of this object will delete the texture automatically.
  */
 public abstract class Texture implements AutoCloseable {
+
+    @Nullable
+    private Ref mRef;
+
+    protected Texture() {
+    }
+
+    /**
+     * Returns the OpenGL texture object name represented by this object.
+     * It will be generated if it's unassigned. This operation does not
+     * allocate GPU memory unless initialization.
+     *
+     * @return texture object name
+     */
+    public final int get() {
+        if (mRef == null)
+            mRef = new Ref(this);
+        return mRef.texture;
+    }
+
+    public abstract int getTarget();
 
     /**
      * ERROR: if target is GL_TEXTURE_RECTANGLE and either of wrap mode GL_TEXTURE_WRAP_S or GL_TEXTURE_WRAP_T is set to
@@ -37,5 +65,37 @@ public abstract class Texture implements AutoCloseable {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapS);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, wrapR);
+    }
+
+    /**
+     * An explicit way to delete this texture if present.
+     */
+    @Override
+    public final void close() {
+        if (mRef != null) {
+            mRef.cleanup.clean();
+            mRef = null;
+        }
+    }
+
+    private static final class Ref implements Runnable {
+
+        private final int texture;
+        private final Cleaner.Cleanable cleanup;
+
+        private Ref(@Nonnull Texture owner) {
+            // the first binding to target defines the texture type,
+            // glCreateTextures does this
+            texture = glCreateTextures(owner.getTarget());
+            cleanup = ModernUI.registerCleanup(owner, this);
+        }
+
+        @Override
+        public void run() {
+            // if (id == INVALID_ID)
+            // cleanup is synchronized, this method only called once by cleaner
+            deleteTextureAsync(texture, this);
+            // id = INVALID_ID;
+        }
     }
 }

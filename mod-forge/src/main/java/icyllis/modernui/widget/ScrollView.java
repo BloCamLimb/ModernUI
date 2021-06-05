@@ -18,7 +18,7 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.CanvasForge;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.test.drawable.ScrollThumbDrawable;
@@ -44,7 +44,7 @@ public class ScrollView extends FrameLayout implements ScrollController.IListene
         bar.setThumbDrawable(new ScrollThumbDrawable());
         bar.setTrackDrawable(new Drawable() {
             @Override
-            public void draw(@Nonnull Canvas canvas) {
+            public void draw(@Nonnull CanvasForge canvas) {
                 Paint paint = Paint.take();
                 paint.reset();
                 paint.setFeatherRadius(0);
@@ -61,7 +61,7 @@ public class ScrollView extends FrameLayout implements ScrollController.IListene
     }
 
     @Override
-    protected void dispatchDraw(@Nonnull Canvas canvas) {
+    protected void dispatchDraw(@Nonnull CanvasForge canvas) {
         scrollController.update(canvas.getDrawingTime());
         canvas.clipVertical(this);
         super.dispatchDraw(canvas);

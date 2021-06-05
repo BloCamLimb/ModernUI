@@ -19,13 +19,13 @@
 package icyllis.modernui.graphics.shader.program;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.shader.ShaderProgram;
+import icyllis.modernui.graphics.shader.Shader;
 import net.minecraft.resources.ResourceLocation;
 import org.lwjgl.opengl.GL43C;
 
 import javax.annotation.Nonnull;
 
-public class CircleProgram extends ShaderProgram {
+public class CircleProgram extends Shader {
 
     private static Fill sFill;
     private static Stroke sStroke;
