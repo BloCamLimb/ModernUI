@@ -173,12 +173,12 @@ public final class RenderCore {
         return readResource(Channels.newChannel(stream));
     }
 
-    // this method doesn't close stream,
+    // this method doesn't close channel
     @Nullable
-    public static String readStringUTF8(InputStream stream) {
+    public static String readStringUTF8(ReadableByteChannel channel) {
         ByteBuffer ptr = null;
         try {
-            ptr = readResource(stream);
+            ptr = readResource(channel);
             final int len = ptr.position();
             ptr.rewind();
             return MemoryUtil.memUTF8(ptr, len);
@@ -187,6 +187,12 @@ public final class RenderCore {
         } finally {
             MemoryUtil.memFree(ptr);
         }
+    }
+
+    // this method doesn't close stream
+    @Nullable
+    public static String readStringUTF8(InputStream stream) {
+        return readStringUTF8(Channels.newChannel(stream));
     }
 
     /*@Nonnull

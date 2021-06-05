@@ -20,7 +20,7 @@ package icyllis.modernui.graphics.shader.program;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.graphics.shader.ShaderProgram;
+import icyllis.modernui.graphics.shader.Shader;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import org.lwjgl.opengl.GL43C;
@@ -28,7 +28,7 @@ import org.lwjgl.opengl.GL43C;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 
-public class RoundRectProgram extends ShaderProgram {
+public class RoundRectProgram extends Shader {
 
     private static Fill sFill;
     private static FillTex sFillTex;

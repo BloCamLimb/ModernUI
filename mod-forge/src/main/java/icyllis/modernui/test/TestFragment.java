@@ -18,7 +18,7 @@
 
 package icyllis.modernui.test;
 
-import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.CanvasForge;
 import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.view.View;
 
@@ -36,7 +36,7 @@ public class TestFragment extends Fragment {
     private static class TestView extends View {
 
         @Override
-        protected void onDraw(@Nonnull Canvas canvas) {
+        protected void onDraw(@Nonnull CanvasForge canvas) {
             //canvas.drawRing(100, 20, 5, 8);
             // 3
 

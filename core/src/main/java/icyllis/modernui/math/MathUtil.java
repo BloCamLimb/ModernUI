@@ -147,8 +147,16 @@ public final class MathUtil {
         return (float) Math.atan2(a, b);
     }
 
-    public static int clamp(int value, int min, int max) {
-        return Math.max(Math.min(value, max), min);
+    public static int clamp(int num, int min, int max) {
+        return Math.max(Math.min(num, max), min);
+    }
+
+    // 'to' must be positive
+    public static int roundUp(int num, int to) {
+        if (num == 0) return to;
+        if (num < 0) to = -to;
+        int m = num % to;
+        return m == 0 ? num : num + to - m;
     }
 
     // linear interpolation

@@ -27,7 +27,7 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.math.Icon;
 import icyllis.modernui.graphics.math.TextAlign;
-import icyllis.modernui.graphics.shader.ShaderProgram;
+import icyllis.modernui.graphics.shader.Shader;
 import icyllis.modernui.graphics.shader.program.ArcProgram;
 import icyllis.modernui.graphics.shader.program.CircleProgram;
 import icyllis.modernui.graphics.shader.program.RectProgram;
@@ -64,9 +64,9 @@ import javax.annotation.Nullable;
  */
 @SuppressWarnings("unused")
 //TODO New render system (LOWEST PRIORITY)
-public class Canvas {
+public class CanvasForge {
 
-    private static Canvas instance;
+    private static CanvasForge instance;
 
     /**
      * Instances
@@ -125,7 +125,7 @@ public class Canvas {
     private static boolean lineAA = false;
 
 
-    private Canvas(@Nullable Minecraft minecraft) {
+    private CanvasForge(@Nullable Minecraft minecraft) {
         if (minecraft != null) {
             mMainWindow = minecraft.getWindow();
             mItemRenderer = minecraft.getItemRenderer();
@@ -142,10 +142,10 @@ public class Canvas {
      * @return the instance
      * @see UIManager#initialize()
      */
-    public static Canvas getInstance() {
+    public static CanvasForge getInstance() {
         RenderCore.checkRenderThread();
         if (instance == null) {
-            instance = new Canvas(Minecraft.getInstance());
+            instance = new CanvasForge(Minecraft.getInstance());
         }
         return instance;
     }
@@ -365,7 +365,7 @@ public class Canvas {
             program.setAngle(middle, sweepAngle);
             program.setRadius(radius, Math.min(radius, paint.getFeatherRadius()));
             upload(cx - radius, cy - radius, cx + radius, cy + radius, paint.getColor());
-            ShaderProgram.stop();
+            Shader.stop();
         }
     }
 
@@ -388,7 +388,7 @@ public class Canvas {
             program.setRadius(radius, Math.min(thickness, paint.getFeatherRadius()), thickness);
             float outer = radius + thickness;
             upload(cx - outer, cy - outer, cx + outer, cy + outer, paint.getColor());
-            ShaderProgram.stop();
+            Shader.stop();
         }
     }
 
@@ -426,7 +426,7 @@ public class Canvas {
             RectProgram.fill().use();
         }
         upload(left, top, right, bottom, paint.getColor());
-        ShaderProgram.stop();
+        Shader.stop();
     }
 
     /**
@@ -592,7 +592,7 @@ public class Canvas {
         program.setRadius(r, Math.min(r, paint.getFeatherRadius()));
         program.setCenter(cx, cy);
         upload(cx - r, cy - r, cx + r, cy + r, paint.getColor());
-        ShaderProgram.stop();
+        Shader.stop();
     }
 
     protected void strokeCircle(float cx, float cy, float r, @Nonnull Paint paint) {
@@ -603,7 +603,7 @@ public class Canvas {
         program.setRadius(r - thickness, outer, Math.min(thickness, paint.getFeatherRadius()));
         program.setCenter(cx, cy);
         upload(cx - outer, cy - outer, cx + outer, cy + outer, paint.getColor());
-        ShaderProgram.stop();
+        Shader.stop();
     }
 
     /**
@@ -660,7 +660,7 @@ public class Canvas {
         program.setRadius(r, Math.min(r, paint.getFeatherRadius()));
         program.setInnerRect(left + r, top + r, right - r, bottom - r);
         upload(left, top, right, bottom, paint.getColor());
-        ShaderProgram.stop();
+        Shader.stop();
     }
 
     protected void strokeRoundRect(float left, float top, float right, float bottom,
@@ -671,7 +671,7 @@ public class Canvas {
         program.setRadius(r, Math.min(thickness, paint.getFeatherRadius()), thickness);
         program.setInnerRect(left + r, top + r, right - r, bottom - r);
         upload(left - r, top - r, right + r, bottom + r, paint.getColor());
-        ShaderProgram.stop();
+        Shader.stop();
     }
 
     @Deprecated
@@ -705,7 +705,7 @@ public class Canvas {
         mBufferBuilder.vertex(left, top, z).color(201, 200, 232, a).endVertex();
         mBufferBuilder.end();
         BufferUploader.end(mBufferBuilder);
-        ShaderProgram.stop();
+        Shader.stop();
     }
 
     /**
@@ -742,7 +742,7 @@ public class Canvas {
         builder.end();
         BufferUploader.end(builder);
 
-        ShaderProgram.stop();
+        Shader.stop();
     }
 
     /**

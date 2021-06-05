@@ -25,7 +25,7 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
-import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.CanvasForge;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.textmc.ModernFontRenderer;
 import icyllis.modernui.graphics.math.TextAlign;
@@ -75,7 +75,7 @@ public class TestHUD {
                 .setInterpolator(p -> Math.max((p - 0.8f) * 5.0f, 0)));
     }
 
-    public void drawBars(@Nonnull Canvas canvas) {
+    public void drawBars(@Nonnull CanvasForge canvas) {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableAlphaTest();
@@ -200,7 +200,7 @@ public class TestHUD {
     private static final int TITLE_GAP = 2;
 
     // test only, this can't handle complex paragraph layout
-    public void drawTooltip(Canvas canvas, @Nonnull List<? extends FormattedText> texts,
+    public void drawTooltip(CanvasForge canvas, @Nonnull List<? extends FormattedText> texts,
                             ModernFontRenderer font, ItemStack stack, PoseStack matrix,
                             int eventX, int eventY, float mouseX, float mouseY, float width, float height) {
         float tooltipX = mouseX + TOOLTIP_SPACE;

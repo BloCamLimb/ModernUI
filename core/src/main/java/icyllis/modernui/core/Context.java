@@ -16,19 +16,21 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics;
+package icyllis.modernui.core;
 
-import icyllis.modernui.platform.Window;
+import javax.annotation.Nonnull;
+import java.io.IOException;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.file.Path;
 
-/**
- * The main renderer for {@link Window Window}, which does
- * OpenGL calls on render thread. It will always use dedicated GPU to render.
- */
-public final class MainRenderer {
+public abstract class Context {
 
-    private int mMatrixUBO;
-
-    public MainRenderer() {
-        mMatrixUBO = GLWrapper.glCreateBuffers();
-    }
+    /**
+     * Gets a resource from file system with the given path.
+     *
+     * @param path the path of the resource
+     * @return a readable channel
+     * @throws IOException cannot to get the resource
+     */
+    public abstract ReadableByteChannel getResource(@Nonnull Path path) throws IOException;
 }

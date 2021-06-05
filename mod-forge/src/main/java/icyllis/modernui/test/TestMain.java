@@ -25,10 +25,10 @@ import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.ast.Node;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.CanvasForge;
 import icyllis.modernui.graphics.GLWrapper;
 import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.graphics.shader.ShaderProgram;
+import icyllis.modernui.graphics.shader.Shader;
 import icyllis.modernui.graphics.shader.program.ArcProgram;
 import icyllis.modernui.graphics.shader.program.CircleProgram;
 import icyllis.modernui.graphics.shader.program.RectProgram;
@@ -162,13 +162,13 @@ public class TestMain {
                 CircleProgram.createPrograms();
                 RectProgram.createPrograms();
                 RoundRectProgram.createPrograms();
-                ShaderProgram.linkAll(null);
+                Shader.linkAll(null);
                 final float[] projection;
                 Matrix4.makePerspective(MathUtil.PI_DIV_2, window.getAspectRatio(), 0.001f, 1000)
                         .put(projection = new float[16]);
                 while (window.exists()) {
                     if (window.needsRefresh()) {
-                        GLWrapper.reset(window);
+                        GLWrapper.resetFrame(window);
                         GLWrapper.enableCull();
                         RenderSystem.enableBlend();
                         RenderSystem.defaultBlendFunc();
@@ -195,18 +195,18 @@ public class TestMain {
                         paint.setFeatherRadius(6);
                         paint.setStyle(Paint.Style.STROKE);
                         paint.setStrokeWidth(16);
-                        Canvas.getInstance().drawRoundRect(0, 20, 100, 70, 14, paint);
+                        CanvasForge.getInstance().drawRoundRect(0, 20, 100, 70, 14, paint);
                         paint.setColor(0xFFAADCF0);
-                        Canvas.getInstance().drawRoundRect(0, -110, 100, -60, 14, paint);
+                        CanvasForge.getInstance().drawRoundRect(0, -110, 100, -60, 14, paint);
                         GL11.glPopMatrix();
 
                         GL11.glTranslatef(1.58f * window.getAspectRatio(), 1.0f, -4.8f);
                         GL11.glScalef(1 / 90f, -1 / 90f, 1 / 90f);
                         GL11.glRotatef(-90, 0, 1, 0);
-                        Canvas.getInstance().drawRoundRect(0, 20, 100, 70, 14, paint);
-                        Canvas.getInstance().drawRoundRect(-20, 190, 80, 240, 14, paint);
-                        Canvas.getInstance().setLineAntiAliasing(true);
-                        Canvas.getInstance().drawRect(-20, 0, 120, 90, paint);
+                        CanvasForge.getInstance().drawRoundRect(0, 20, 100, 70, 14, paint);
+                        CanvasForge.getInstance().drawRoundRect(-20, 190, 80, 240, 14, paint);
+                        CanvasForge.getInstance().setLineAntiAliasing(true);
+                        CanvasForge.getInstance().drawRect(-20, 0, 120, 90, paint);
 
                         GL11.glPopMatrix();
                         GL11.glMatrixMode(GL11.GL_PROJECTION);

@@ -20,6 +20,7 @@ package icyllis.modernui.core;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Path;
 
@@ -57,7 +58,7 @@ public abstract class ContextWrapper extends Context {
     }
 
     @Override
-    public ReadableByteChannel getResource(Path path) {
+    public ReadableByteChannel getResource(@Nonnull Path path) throws IOException {
         return mBase.getResource(path);
     }
 }

@@ -26,7 +26,7 @@ import icyllis.modernui.animation.AnimationHandler;
 import icyllis.modernui.forge.ModernUIForge;
 import icyllis.modernui.forge.OpenMenuEvent;
 import icyllis.modernui.graphics.BlurHandler;
-import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.CanvasForge;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.textmc.ModernFontRenderer;
 import icyllis.modernui.graphics.textmc.TextLayoutProcessor;
@@ -124,7 +124,7 @@ public final class UIManager {
     // lazy loading because this class is loaded before GL initialization
     // will be init when Minecraft finished loading, and open MainMenuScreen
     // also init font renderer when loaded
-    private Canvas mCanvas;
+    private CanvasForge mCanvas;
 
     // the most child hovered view, render at the top of other hovered ancestor views
     @Nullable
@@ -194,7 +194,7 @@ public final class UIManager {
     public static void initialize() {
         RenderCore.checkRenderThread();
         if (instance.mCanvas == null) {
-            instance.mCanvas = Canvas.getInstance();
+            instance.mCanvas = CanvasForge.getInstance();
             ModernUI.LOGGER.info(MARKER, "UIManager initialized");
         } else {
             throw new IllegalStateException("Already initialized");

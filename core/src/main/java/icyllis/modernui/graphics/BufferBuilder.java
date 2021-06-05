@@ -16,12 +16,19 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.core;
+package icyllis.modernui.graphics;
 
-import java.nio.channels.ReadableByteChannel;
-import java.nio.file.Path;
+/**
+ * BufferBuilder helps to build OpenGL buffers for a render type from any thread.
+ * <p>
+ * Each BufferBuilder holds a vertex array object, multiple uniform buffer objects
+ * and is associated with various vertex buffer objects.
+ */
+public class BufferBuilder {
 
-public abstract class Context {
-
-    public abstract ReadableByteChannel getResource(Path path);
+    {
+        //GLWrapper.glGetUniformBlockIndex()
+        //GLWrapper.glUniformMatrix4fv();
+        GLWrapper.glBindBufferBase();
+    }
 }

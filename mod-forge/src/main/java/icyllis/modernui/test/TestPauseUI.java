@@ -20,7 +20,7 @@ package icyllis.modernui.test;
 
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
-import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.CanvasForge;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.math.TextAlign;
@@ -55,7 +55,7 @@ public class TestPauseUI extends Screen {
         linearLayout.setGravity(Gravity.CENTER);
         linearLayout.setDivider(new Drawable() {
             @Override
-            public void draw(@Nonnull Canvas canvas) {
+            public void draw(@Nonnull CanvasForge canvas) {
                 canvas.setRGBA(192, 192, 192, 128);
                 canvas.drawLine(0, 0, getWidth(), 0);
             }
@@ -86,7 +86,7 @@ public class TestPauseUI extends Screen {
         }
 
         @Override
-        protected void onDraw(@Nonnull Canvas canvas) {
+        protected void onDraw(@Nonnull CanvasForge canvas) {
             super.onDraw(canvas);
             canvas.resetColor();
             canvas.setTextAlign(TextAlign.CENTER);
@@ -103,7 +103,7 @@ public class TestPauseUI extends Screen {
         }
 
         @Override
-        protected void onDraw(@Nonnull Canvas canvas) {
+        protected void onDraw(@Nonnull CanvasForge canvas) {
             Paint paint = Paint.take();
             paint.setFeatherRadius(0);
             paint.setStyle(Paint.Style.FILL);

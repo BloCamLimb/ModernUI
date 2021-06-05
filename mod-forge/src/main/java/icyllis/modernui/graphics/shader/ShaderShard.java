@@ -25,11 +25,8 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectAVLTreeMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
-import org.apache.commons.lang3.StringUtils;
-import org.lwjgl.system.NativeType;
 
 import javax.annotation.Nonnull;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Locale;
@@ -37,29 +34,29 @@ import java.util.Locale;
 import static org.lwjgl.opengl.GL43C.*;
 
 /**
- * Represents an OpenGL shader object.
+ * Represents OpenGL shader objects.
  */
-//TODO Independent API without Minecraft
-public final class Shader {
+@Deprecated
+public final class ShaderShard {
 
-    private static final Object2ObjectMap<ResourceLocation, Shader> SHADERS = new Object2ObjectAVLTreeMap<>();
+    private static final Object2ObjectMap<ResourceLocation, ShaderShard> SHADERS = new Object2ObjectAVLTreeMap<>();
 
     private final ResourceLocation mLocation;
     private final int mId;
     private int mAttachCount = 0;
     private boolean mDeleted = false;
 
-    private Shader(ResourceLocation location, int id) {
+    private ShaderShard(ResourceLocation location, int id) {
         mLocation = location;
         mId = id;
     }
 
-    public void attach(@Nonnull ShaderProgram program) {
+    public void attach(@Nonnull Shader program) {
         if (mAttachCount == Integer.MIN_VALUE) {
             throw new IllegalStateException(this + " has been deleted.");
         }
         ++mAttachCount;
-        glAttachShader(program.mId, mId);
+        glAttachShader(program.mProgram, mId);
         if (mDeleted) {
             ModernUI.LOGGER.warn(RenderCore.MARKER,
                     "{} is marked as deleted, but the shader is still trying to attach to program {}",
@@ -67,10 +64,10 @@ public final class Shader {
         }
     }
 
-    public void detach(@Nonnull ShaderProgram program) {
+    public void detach(@Nonnull Shader program) {
         if (mAttachCount > 0) {
             --mAttachCount;
-            glDetachShader(program.mId, mId);
+            glDetachShader(program.mProgram, mId);
             if (mAttachCount == 0 && mDeleted) {
                 SHADERS.remove(mLocation);
                 mAttachCount = Integer.MIN_VALUE;
@@ -107,23 +104,21 @@ public final class Shader {
     }
 
     @RenderThread
-    public static Shader getOrCreate(ResourceManager manager, ResourceLocation location, Type type) throws IOException {
-        Shader shader = SHADERS.get(location);
+    public static ShaderShard getOrCreate(ResourceManager manager, ResourceLocation location, Type type) throws IOException {
+        ShaderShard shader = SHADERS.get(location);
         if (shader != null) {
             return shader;
         }
-        String path = manager == null ? System.getenv().getOrDefault("MOD_ASSETS", "")
-                .replace('\\', '/') + location.getNamespace() + '/' + location.getPath() : null;
-        try (InputStream stream = manager == null ? new FileInputStream(path) : manager.getResource(location).getInputStream()) {
+        try (InputStream stream = manager.getResource(location).getInputStream()) {
             String src = RenderCore.readStringUTF8(stream);
             if (src != null) {
                 int id = glCreateShader(type.type);
                 glShaderSource(id, src);
                 glCompileShader(id);
                 if (glGetShaderi(id, GL_COMPILE_STATUS) == GL_TRUE) {
-                    SHADERS.put(location, shader = new Shader(location, id));
+                    SHADERS.put(location, shader = new ShaderShard(location, id));
                 } else {
-                    String y = StringUtils.trim(glGetShaderInfoLog(id, 32768));
+                    String y = glGetShaderInfoLog(id, 32768).trim();
                     throw new IOException("Failed to compile " + type.getName() + " shader (" + location + ") : " + y);
                 }
             } else {
@@ -134,7 +129,7 @@ public final class Shader {
     }
 
     public static void deleteAll() {
-        SHADERS.values().forEach(Shader::delete);
+        SHADERS.values().forEach(ShaderShard::delete);
         if (!SHADERS.isEmpty()) {
             throw new IllegalStateException("There are still " + SHADERS.size() + " shaders attaching to some programs.");
         }

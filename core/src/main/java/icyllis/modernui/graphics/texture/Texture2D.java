@@ -18,24 +18,18 @@
 
 package icyllis.modernui.graphics.texture;
 
-import icyllis.modernui.ModernUI;
+import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.lang.ref.Cleaner.Cleanable;
+import java.nio.IntBuffer;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
 
 /**
  * Represents OpenGL 2D texture objects at low-level. The OpenGL texture
- * associated with this object may be changed by recycling. Losing the
- * reference of this object will delete the texture automatically.
+ * associated with this object may be changed by recycling.
  */
-public class Texture2D implements AutoCloseable {
-
-    @Nullable
-    private Ref mRef;
+public class Texture2D extends Texture {
 
     /**
      * Creates an instance of Texture2D on application side from any thread.
@@ -43,17 +37,9 @@ public class Texture2D implements AutoCloseable {
     public Texture2D() {
     }
 
-    /**
-     * Returns the OpenGL texture object name represented by this object.
-     * It will be generated if it's unassigned. This operation does not
-     * allocate GPU memory unless {@link #init} called.
-     *
-     * @return texture object name
-     */
-    public int get() {
-        if (mRef == null)
-            mRef = new Ref(this);
-        return mRef.texture;
+    @Override
+    public final int getTarget() {
+        return GL_TEXTURE_2D;
     }
 
     /**
@@ -99,17 +85,17 @@ public class Texture2D implements AutoCloseable {
      * <p>
      * When using mipmap, texture size must be power of two, and at least 2^mipmapLevel
      *
-     * @param internalFormat how image data stored in GPU
+     * @param internalFormat sized internal format used to store the image in GPU
      * @param mipmapLevel    max mipmap level, min is 0
      */
     public void init(int internalFormat, int width, int height, int mipmapLevel) {
         final int texture = get();
-        glTextureStorage2D(texture, mipmapLevel, internalFormat, width, height);
         glTextureParameteri(texture, GL_TEXTURE_BASE_LEVEL, 0);
         glTextureParameteri(texture, GL_TEXTURE_MAX_LEVEL, mipmapLevel);
         glTextureParameteri(texture, GL_TEXTURE_MIN_LOD, 0);
         glTextureParameteri(texture, GL_TEXTURE_MAX_LOD, mipmapLevel);
         glTextureParameterf(texture, GL_TEXTURE_LOD_BIAS, 0.0f);
+        glTextureStorage2D(texture, mipmapLevel, internalFormat, width, height);
     }
 
     /**
@@ -118,9 +104,10 @@ public class Texture2D implements AutoCloseable {
      * @param level     the level for the image
      * @param rowLength row length if data width is not equal to texture width, or 0
      * @param alignment pixel row alignment 1, 2, 4, 8
-     * @param format    the format of the data to upload
-     * @param type      the type of the data to upload
-     * @param pixels    the pixels data pointer
+     * @param format    the format of the data to upload, one of GL_RED, GL_RG, GL_RGB,
+     *                  GL_BGR, GL_RGBA, GL_BGRA, GL_DEPTH_COMPONENT, and GL_STENCIL_INDEX.
+     * @param type      the type of the data to upload, for example, unsigned byte
+     * @param pixels    the native pointer of pixels data
      */
     public void upload(int level, int x, int y, int width, int height, int rowLength, int skipRows,
                        int skipPixels, int alignment, int format, int type, long pixels) {
@@ -170,6 +157,14 @@ public class Texture2D implements AutoCloseable {
         glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, magFilter);
     }
 
+    public void swizzle(int r, int g, int b, int a) {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            IntBuffer mask = stack.mallocInt(4);
+            mask.put(r).put(g).put(b).put(a).rewind();
+            glTextureParameteriv(get(), GL_TEXTURE_SWIZZLE_RGBA, mask);
+        }
+    }
+
     /**
      * Generates mipmaps.
      */
@@ -188,35 +183,5 @@ public class Texture2D implements AutoCloseable {
 
     public int getHeight() {
         return glGetTextureParameteri(get(), GL_TEXTURE_HEIGHT);
-    }
-
-    /**
-     * An explicit way to delete this texture if present.
-     */
-    @Override
-    public final void close() {
-        if (mRef != null) {
-            mRef.cleanup.clean();
-            mRef = null;
-        }
-    }
-
-    private static final class Ref implements Runnable {
-
-        private final int texture;
-        private final Cleanable cleanup;
-
-        private Ref(@Nonnull Texture2D owner) {
-            texture = glCreateTextures(GL_TEXTURE_2D);
-            cleanup = ModernUI.registerCleanup(owner, this);
-        }
-
-        @Override
-        public void run() {
-            // if (id == INVALID_ID)
-            // cleanup is synchronized, this method only called once by cleaner
-            deleteTextureAsync(GL_TEXTURE_2D, texture, this);
-            // id = INVALID_ID;
-        }
     }
 }
