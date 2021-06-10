@@ -185,7 +185,7 @@ public class TestLinearLayout extends LinearLayout {
         canvas.drawRoundImage(ICON, 6, 160, 166, 320, iconRadius, paint);
 
         paint.setStyle(Paint.Style.STROKE);
-        paint.setFeatherRadius(2.0f);
+        paint.setSmoothRadius(2.0f);
         paint.setStrokeWidth(10.0f);
         canvas.drawArc(80, 400, 60, arcStart, arcStart - arcEnd, paint);
 
@@ -204,13 +204,13 @@ public class TestLinearLayout extends LinearLayout {
         //canvas.setColor(0, 0, 0, 128);
 
         paint.setStyle(Paint.Style.FILL);
-        paint.setFeatherRadius(0);
+        paint.setSmoothRadius(0);
         canvas.drawRoundRect(c, c, 40 - c, 40 - c, 3, paint);
 
         RenderSystem.translatef(0, 0, -0.001f);
         RenderSystem.colorMask(true, true, true, true);
 
-        paint.setFeatherRadius(1);
+        paint.setSmoothRadius(1);
         paint.setRGBA(80, 210, 240, 128);
         canvas.drawRoundRect(0, 0, 40, 40, 6, paint);
 

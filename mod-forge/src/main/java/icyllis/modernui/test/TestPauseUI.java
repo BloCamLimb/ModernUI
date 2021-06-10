@@ -105,7 +105,7 @@ public class TestPauseUI extends Screen {
         @Override
         protected void onDraw(@Nonnull CanvasForge canvas) {
             Paint paint = Paint.take();
-            paint.setFeatherRadius(0);
+            paint.setSmoothRadius(0);
             paint.setStyle(Paint.Style.FILL);
             paint.setRGBA(96, 96, 96, (int) (a * 255));
             canvas.drawRect(0, 0, getRight(), getBottom(), paint);

@@ -18,6 +18,8 @@
 
 package icyllis.modernui;
 
+import icyllis.modernui.core.Context;
+import icyllis.modernui.core.ContextWrapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
@@ -25,17 +27,21 @@ import org.apache.logging.log4j.MarkerManager;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
+import java.io.IOException;
 import java.lang.ref.Cleaner;
 import java.lang.ref.Cleaner.Cleanable;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 /**
  * The core class of the client side of Modern UI
  */
-public class ModernUI {
+public class ModernUI extends ContextWrapper {
 
     public static final String ID = "modernui"; // as well as the namespace
     public static final String NAME_CPT = "ModernUI";
@@ -47,13 +53,27 @@ public class ModernUI {
 
     private static final Cleaner sCleaner = Cleaner.create();
 
-    private final ExecutorService mLoaderPool;
+    private ExecutorService mLoaderPool;
 
     public ModernUI() {
         sInstance = this;
-        mLoaderPool = Executors.newSingleThreadExecutor(target -> new Thread(target, "mui-loading-core"));
+        //mLoaderPool = Executors.newSingleThreadExecutor(target -> new Thread(target, "mui-loading-core"));
     }
 
+    public static void initInternal() {
+        get().attachBaseContext(new Context() {
+            @Override
+            public ReadableByteChannel getResource(@Nonnull Path path) throws IOException {
+                return Files.newByteChannel(Path.of(System.getProperty("MOD_ASSETS")).resolve(path), StandardOpenOption.READ);
+            }
+        });
+    }
+
+    /**
+     * Gets Modern UI instance.
+     *
+     * @return the Modern UI
+     */
     public static ModernUI get() {
         return sInstance;
     }

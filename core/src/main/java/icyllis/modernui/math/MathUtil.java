@@ -31,6 +31,8 @@ public final class MathUtil {
     public static final float TWO_PI = (float) (Math.PI * 2);
     public static final float THREE_PI_DIV_2 = (float) (Math.PI * 3 / 2);
 
+    private static final float DEG_TO_RAD = 0.017453292519943295f;
+
     public static synchronized void initSineTable() {
         if (SINE_TABLE == null) {
             float[] v = new float[0x10000];
@@ -150,6 +152,10 @@ public final class MathUtil {
     // clamp 'a' in range [min,max]
     public static int clamp(int a, int min, int max) {
         return Math.max(Math.min(a, max), min);
+    }
+
+    public static float toRadians(float degrees) {
+        return degrees * DEG_TO_RAD;
     }
 
     // 't' must be positive

@@ -19,8 +19,9 @@
 package icyllis.modernui.forge;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.core.ContextImpl;
 import icyllis.modernui.graphics.font.GlyphManager;
-import icyllis.modernui.graphics.shader.Shader;
+import icyllis.modernui.graphics.shader.ShaderManager;
 import icyllis.modernui.view.LayoutIO;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -89,7 +90,7 @@ public final class ModernUIForge extends ModernUI {
                         .registerReloadListener(
                                 (ISelectiveResourceReloadListener) (manager, predicate) -> {
                                     if (predicate.test(VanillaResourceType.SHADERS)) {
-                                        Shader.recompile(manager);
+                                        ShaderManager.getInstance().reload();
                                     }
                                 }
                         );
@@ -98,6 +99,7 @@ public final class ModernUIForge extends ModernUI {
                 FMLJavaModLoadingContext.get().getModEventBus().register(EventHandler.ModClientExp.class);
             }
         }
+        attachBaseContext(new ContextImpl(ID));
 
         ModernUI.LOGGER.debug(ModernUI.MARKER, "Modern UI initialized");
     }

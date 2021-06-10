@@ -30,7 +30,7 @@ public class ScrollThumbDrawable extends Drawable {
     public void draw(@Nonnull CanvasForge canvas) {
         Paint paint = Paint.take();
         paint.reset();
-        paint.setFeatherRadius(0);
+        paint.setSmoothRadius(0);
         paint.setStyle(Paint.Style.FILL);
         paint.setRGBA(128, 128, 128, 128);
         canvas.drawRect(0, 0, getWidth(), getHeight(), paint);

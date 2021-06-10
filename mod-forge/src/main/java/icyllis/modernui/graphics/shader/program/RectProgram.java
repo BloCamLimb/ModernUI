@@ -30,19 +30,19 @@ import java.io.IOException;
 public class RectProgram extends Shader {
 
     public static final ResourceLocation VERT = new ResourceLocation(ModernUI.ID, "shaders/pos_color.vert");
-    public static final ResourceLocation VERT_TEX = new ResourceLocation(ModernUI.ID, "shaders/rect_tex.vert");
+    public static final ResourceLocation VERT_TEX = new ResourceLocation(ModernUI.ID, "shaders/pos_color_tex.vert");
 
     private static RectProgram sFill;
     private static FillTex sFillTex;
     private static Feathered sFeathered;
 
     private RectProgram(@Nonnull ResourceLocation vert, @Nonnull ResourceLocation frag) {
-        super(vert, frag);
+        super();
     }
 
     public static void createPrograms() {
         if (sFill == null) {
-            sFill = new RectProgram(VERT, new ResourceLocation(ModernUI.ID, "shaders/rect_fill.frag"));
+            sFill = new RectProgram(VERT, new ResourceLocation(ModernUI.ID, "shaders/color.frag"));
             sFillTex = new FillTex();
             sFeathered = new Feathered();
         }
@@ -66,11 +66,11 @@ public class RectProgram extends Shader {
             super(VERT_TEX, new ResourceLocation(ModernUI.ID, "shaders/rect_fill_tex.frag"));
         }
 
-        @Override
+        /*@Override
         public void link(ResourceManager manager) throws IOException {
             super.link(manager);
             GL43C.glProgramUniform1i(mId, 0, 0); // always use GL_TEXTURE0
-        }
+        }*/
     }
 
     public static class Feathered extends RectProgram {

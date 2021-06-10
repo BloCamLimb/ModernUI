@@ -35,7 +35,7 @@ public class RoundRectProgram extends Shader {
     private static Stroke sStroke;
 
     private RoundRectProgram(@Nonnull ResourceLocation vert, @Nonnull ResourceLocation frag) {
-        super(vert, frag);
+        super();
     }
 
     @RenderThread
@@ -85,11 +85,11 @@ public class RoundRectProgram extends Shader {
             super(RectProgram.VERT_TEX, new ResourceLocation(ModernUI.ID, "shaders/round_rect_fill_tex.frag"));
         }
 
-        @Override
+        /*@Override
         public void link(ResourceManager manager) throws IOException {
             super.link(manager);
             GL43C.glProgramUniform1i(mId, 2, 0); // always use GL_TEXTURE0
-        }
+        }*/
     }
 
     public static class Stroke extends RoundRectProgram {

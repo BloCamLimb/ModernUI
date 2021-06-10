@@ -47,7 +47,7 @@ public class ScrollView extends FrameLayout implements ScrollController.IListene
             public void draw(@Nonnull CanvasForge canvas) {
                 Paint paint = Paint.take();
                 paint.reset();
-                paint.setFeatherRadius(0);
+                paint.setSmoothRadius(0);
                 paint.setRGBA(16, 16, 16, 40);
                 canvas.drawRect(0, 0, getWidth(), getHeight(), paint);
             }

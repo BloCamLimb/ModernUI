@@ -61,26 +61,42 @@ public class Paint {
     private int mColor;
     private int mFlags;
     private float mStrokeWidth;
-    private float mFeatherRadius;
+    private float mSmoothRadius;
 
+    /**
+     * Creates a new Paint.
+     *
+     * @see #take()
+     */
     public Paint() {
         reset();
     }
 
     public void reset() {
-        mColor = 0xFFFFFFFF;
+        mColor = ~0;
         mStrokeWidth = 1;
-        mFeatherRadius = 1;
+        mSmoothRadius = 1;
     }
 
     /**
-     * Take the paint on UI thread. The paint states will be reset before
-     * drawing the whole GUI, but may be modified by your drawing method.
+     * Take and reset the shared paint on the UI thread.
+     * <p>
+     * An example:
+     * <pre>
+     * void onDraw(Canvas canvas) {
+     *     var paint = Paint.take();
+     *     paint.setColor(mColorA);
+     *     canvas.drawRect(mRectA, paint);
+     *     paint.setColor(mColorB);
+     *     canvas.drawRect(mRectB, paint);
+     * }
+     * </pre>
      *
-     * @return a paint instance
+     * @return a shared paint object
      */
     @Nonnull
     public static Paint take() {
+        sInstance.reset();
         return sInstance;
     }
 
@@ -179,27 +195,25 @@ public class Paint {
     }
 
     /**
-     * Get current feather radius.
+     * Get current smooth radius.
      * <p>
-     * Feather radius is used to smooth the edges of geometry, and the actual
-     * effect varies in draw methods. The default value is 1.0 px.
+     * Smooth radius is used to smooth the edges of geometry. The default value is 1.0 px.
      *
      * @return feather radius
-     * @see #setFeatherRadius(float)
+     * @see #setSmoothRadius(float)
      */
-    public float getFeatherRadius() {
-        return mFeatherRadius;
+    public float getSmoothRadius() {
+        return mSmoothRadius;
     }
 
     /**
-     * Set the feather radius in pixels for this paint.
+     * Set the smooth radius in pixels for this paint.
      * <p>
-     * Feather radius is used to smooth the edges of geometry, and the actual
-     * effect varies in draw methods. The default value is 1.0 px.
+     * Smooth radius is used to smooth the edges of geometry. The default value is 1.0 px.
      *
      * @param radius the new feather radius to set
      */
-    public void setFeatherRadius(float radius) {
-        mFeatherRadius = Math.max(0, radius);
+    public void setSmoothRadius(float radius) {
+        mSmoothRadius = Math.max(0, radius);
     }
 }
