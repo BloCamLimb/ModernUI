@@ -773,9 +773,10 @@ public class Matrix4 implements Cloneable {
      * @param tz the z-component of the translation
      */
     public void translate(float tx, float ty, float tz) {
-        m41 += tx;
-        m42 += ty;
-        m43 += tz;
+        m41 += tx * m11 + ty * m21 + tz * m31;
+        m42 += tx * m12 + ty * m22 + tz * m32;
+        m43 += tx * m13 + ty * m23 + tz * m33;
+        m44 += tx * m14 + ty * m24 + tz * m34;
     }
 
     /**
