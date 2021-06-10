@@ -147,20 +147,61 @@ public final class MathUtil {
         return (float) Math.atan2(a, b);
     }
 
-    public static int clamp(int num, int min, int max) {
-        return Math.max(Math.min(num, max), min);
+    // clamp 'a' in range [min,max]
+    public static int clamp(int a, int min, int max) {
+        return Math.max(Math.min(a, max), min);
     }
 
-    // 'to' must be positive
-    public static int roundUp(int num, int to) {
-        if (num == 0) return to;
-        if (num < 0) to = -to;
-        int m = num % to;
-        return m == 0 ? num : num + to - m;
+    // 't' must be positive
+    // eg, a=74, t=10, return 80
+    public static int roundUp(int a, int t) {
+        if (a == 0) return t;
+        if (a < 0) t = -t;
+        int m = a % t;
+        return m == 0 ? a : a + t - m;
+    }
+
+    public static int gcd(int a, int b) {
+        return b == 0 ? a : gcd(b, a % b);
+    }
+
+    public static int quickPow(int a, int x) {
+        int i = 1;
+        while (x != 0) {
+            if ((x & 1) == 1)
+                i *= a;
+            a *= a;
+            x >>= 1;
+        }
+        return i;
+    }
+
+    // a^x % mod
+    public static int quickModPow(int a, int x, int mod) {
+        int i = 1;
+        while (x != 0) {
+            if ((x & 1) == 1)
+                i = quickModMul(i, a, mod);
+            a = quickModMul(a, a, mod);
+            x >>= 1;
+        }
+        return i;
+    }
+
+    // a * b % mod
+    public static int quickModMul(int a, int b, int mod) {
+        int i = 0;
+        while (b != 0) {
+            if ((b & 1) == 1)
+                i = (i + a) % mod;
+            a = (a << 1) % mod;
+            b >>= 1;
+        }
+        return i;
     }
 
     // linear interpolation
-    public static float lerp(float fraction, float start, float end) {
-        return start + fraction * (end - start);
+    public static float lerp(float f, float st, float en) {
+        return st + f * (en - st);
     }
 }
