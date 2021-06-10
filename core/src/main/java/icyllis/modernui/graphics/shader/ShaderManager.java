@@ -29,10 +29,10 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
 
@@ -43,7 +43,7 @@ public class ShaderManager {
 
     private static final ShaderManager instance = new ShaderManager();
 
-    private final List<Listener> mListeners = new ArrayList<>();
+    private final Set<Listener> mListeners = new HashSet<>();
 
     private final Map<Context, Object2IntMap<Path>> mShaders = new HashMap<>();
 
@@ -56,11 +56,11 @@ public class ShaderManager {
      *
      * @param listener the listener
      */
-    public void register(@Nonnull Listener listener) {
+    public void addListener(@Nonnull Listener listener) {
         mListeners.add(listener);
     }
 
-    public void unregister(@Nonnull Listener listener) {
+    public void removeListener(@Nonnull Listener listener) {
         mListeners.remove(listener);
     }
 
@@ -75,6 +75,18 @@ public class ShaderManager {
             }
         }
         mShaders.clear();
+    }
+
+    /**
+     * Get or create a shader shard, call this on listener callback.
+     *
+     * @param context  the application context
+     * @param subPaths sub paths to the shader source, parent is 'shaders'
+     * @return the shader shard handle or 0 on failure
+     * @see #getShard(Context, Path, int)
+     */
+    public int getShard(@Nonnull Context context, @Nonnull String... subPaths) {
+        return getShard(context, Path.of("shaders", subPaths), 0);
     }
 
     /**
@@ -159,19 +171,20 @@ public class ShaderManager {
     }
 
     /**
-     * Create a shader. If fails, program will be 0.
+     * Create a shader object representing a shader program.
+     * If fails, program will be 0.
      *
-     * @param recycle the existing shader object
-     * @param shards  shader shards for the shader
-     * @param <T>     custom shader subclasses
+     * @param shader the existing shader object
+     * @param shards shader shards for the shader
+     * @param <T>    custom shader subclasses
      * @return shader instance
      */
     @SuppressWarnings("unchecked")
     @Nonnull
-    public <T extends Shader> T create(@Nullable T recycle, int... shards) {
+    public <T extends Shader> T create(@Nullable T shader, int... shards) {
         int program;
-        if (recycle != null && recycle.mProgram != 0) {
-            program = recycle.mProgram;
+        if (shader != null && shader.mProgram != 0) {
+            program = shader.mProgram;
         } else {
             program = glCreateProgram();
         }
@@ -182,6 +195,7 @@ public class ShaderManager {
         if (glGetProgrami(program, GL_LINK_STATUS) == GL_FALSE) {
             String log = glGetProgramInfoLog(program, 8192);
             ModernUI.LOGGER.error(MARKER, "Failed to link shader program:\n{}", log);
+            // deletion detaches all shader shards
             glDeleteProgram(program);
             program = 0;
         } else {
@@ -189,15 +203,15 @@ public class ShaderManager {
                 glDetachShader(program, s);
             }
         }
-        if (recycle == null) {
-            recycle = (T) new Shader();
+        if (shader == null) {
+            shader = (T) new Shader();
         }
-        recycle.mProgram = program;
-        return recycle;
+        shader.mProgram = program;
+        return shader;
     }
 
     /**
-     * Callback function to create shaders.
+     * Callback function to reload shaders.
      */
     @FunctionalInterface
     public interface Listener {

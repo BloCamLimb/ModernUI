@@ -25,17 +25,15 @@ import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.ast.Node;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.CanvasForge;
 import icyllis.modernui.graphics.GLWrapper;
-import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.graphics.shader.Shader;
+import icyllis.modernui.graphics.MainRenderer;
+import icyllis.modernui.graphics.shader.ShaderManager;
 import icyllis.modernui.graphics.shader.program.ArcProgram;
 import icyllis.modernui.graphics.shader.program.CircleProgram;
 import icyllis.modernui.graphics.shader.program.RectProgram;
 import icyllis.modernui.graphics.shader.program.RoundRectProgram;
 import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Matrix4;
-import icyllis.modernui.math.Quaternion;
 import icyllis.modernui.math.Vector3;
 import icyllis.modernui.platform.Bitmap;
 import icyllis.modernui.platform.RenderCore;
@@ -43,8 +41,6 @@ import icyllis.modernui.platform.Window;
 import icyllis.modernui.text.GraphemeBreak;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL43;
 import org.lwjgl.system.Callback;
 
 import javax.annotation.Nonnull;
@@ -69,7 +65,7 @@ public class TestMain {
     private static final BufferedImage IMAGE = new BufferedImage(1024, 1024, BufferedImage.TYPE_INT_ARGB);
     private static final Graphics2D GRAPHICS = IMAGE.createGraphics();
 
-    public static final boolean CREATE_WINDOW = true;
+    public static final boolean CREATE_WINDOW = false;
 
     private static double nextTime = 0;
     private static boolean needRedraw = true;
@@ -129,10 +125,12 @@ public class TestMain {
 
         /*System.setProperty("org.lwjgl.librarypath", nativesDir);*/
 
+        ModernUI.initInternal();
+
         float[] av = new float[]{1, 3, 2, 4.1f, 6, 0, 6, 0.5f, 5, 7, 11.3f, 9, 9.1f, 15, 8, 10};
         float[] bv = new float[]{9.1f, 2, 7, 5, 3.3f, 6.1f, 5.5f, 4, 0, 8, 3, 1, 2.7f, 3, 9, 2};
         //Quaternion q = Quaternion.fromAxisAngle(0.40824829f, 0.81649658f, 0.40824829f, MathUtil.PI_DIV_3);
-        Vector3 vec1 = new Vector3(5, 2, 2);
+        /*Vector3 vec1 = new Vector3(5, 2, 2);
         Vector3 vec2 = vec1.copy();
         Vector3 vec3 = vec2.copy();
         Quaternion q = Quaternion.makeAxisAngle(1.0f, 0, 0, MathUtil.PI_DIV_4);
@@ -141,7 +139,14 @@ public class TestMain {
         Matrix4 mat = Matrix4.identity();
         mat.rotateX(MathUtil.PI_DIV_4);
         vec3.transform(mat);
-        ModernUI.LOGGER.info("\n{}\n{}\n{}\nEq: {}, {}", vec1, vec2, vec3, vec1.equivalent(vec2), vec2.equivalent(vec3));
+        ModernUI.LOGGER.info("\n{}\n{}\n{}\nEq: {}, {}", vec1, vec2, vec3, vec1.equivalent(vec2), vec2.equivalent(vec3));*/
+        Matrix4 mat = Matrix4.identity();
+        Vector3 pos = new Vector3(3, 0, 0);
+        mat.translate(2, 0, 0);
+        mat.rotateZ(MathUtil.PI_DIV_2);
+        mat.translate(-2, 0, 0);
+        pos.transform(mat);
+        ModernUI.LOGGER.info(pos);
         /*try {
             new Runner(new OptionsBuilder().include(TestCompare.class.getSimpleName()).build()).run();
         } catch (RunnerException e) {
@@ -162,10 +167,13 @@ public class TestMain {
                 CircleProgram.createPrograms();
                 RectProgram.createPrograms();
                 RoundRectProgram.createPrograms();
-                Shader.linkAll(null);
+                ShaderManager.getInstance().reload();
                 final float[] projection;
                 Matrix4.makePerspective(MathUtil.PI_DIV_2, window.getAspectRatio(), 0.001f, 1000)
-                        .put(projection = new float[16]);
+                        .get(projection = new float[16]);
+
+
+
                 while (window.exists()) {
                     if (window.needsRefresh()) {
                         GLWrapper.resetFrame(window);
@@ -175,7 +183,10 @@ public class TestMain {
                         RenderSystem.disableDepthTest();
                         GlStateManager._colorMask(true, true, true, true);
                         GlStateManager._depthMask(false);
-                        GL11.glMatrixMode(GL11.GL_PROJECTION);
+
+                        MainRenderer.POS_COLOR.use();
+
+                        /*GL11.glMatrixMode(GL11.GL_PROJECTION);
                         GL43.glPushMatrix();
                         GL11.glLoadIdentity();
                         //RenderSystem.ortho(0.0D, window.getWidth(), window.getHeight(), 0.0D, 1000.0D, 3000.0D);
@@ -192,7 +203,7 @@ public class TestMain {
                         GL11.glRotatef(90, 0, 1, 0);
 
                         paint.reset();
-                        paint.setFeatherRadius(6);
+                        paint.setSmoothRadius(6);
                         paint.setStyle(Paint.Style.STROKE);
                         paint.setStrokeWidth(16);
                         CanvasForge.getInstance().drawRoundRect(0, 20, 100, 70, 14, paint);
@@ -211,7 +222,7 @@ public class TestMain {
                         GL11.glPopMatrix();
                         GL11.glMatrixMode(GL11.GL_PROJECTION);
                         GL11.glPopMatrix();
-                        GL11.glMatrixMode(GL11.GL_MODELVIEW);
+                        GL11.glMatrixMode(GL11.GL_MODELVIEW);*/
 
                         window.swapBuffers();
                     }

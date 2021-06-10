@@ -31,7 +31,7 @@ public class ArcProgram extends Shader {
     private static Stroke sStroke;
 
     private ArcProgram(@Nonnull ResourceLocation vert, @Nonnull ResourceLocation frag) {
-        super(vert, frag);
+        super();
     }
 
     public static void createPrograms() {

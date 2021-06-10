@@ -20,6 +20,7 @@ package icyllis.modernui.graphics;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
+import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.mixin.AccessGameRenderer;
 import icyllis.modernui.mixin.AccessPostChain;

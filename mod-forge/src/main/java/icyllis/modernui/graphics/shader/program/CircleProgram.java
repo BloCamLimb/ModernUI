@@ -31,7 +31,7 @@ public class CircleProgram extends Shader {
     private static Stroke sStroke;
 
     private CircleProgram(@Nonnull ResourceLocation vert, @Nonnull ResourceLocation frag) {
-        super(vert, frag);
+        super();
     }
 
     public static void createPrograms() {

@@ -20,6 +20,7 @@ package icyllis.modernui.math;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.nio.FloatBuffer;
 
 /**
  * Represents a 4x4 row-major matrix, whereas OpenGL is column-major.
@@ -543,29 +544,55 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Put this matrix data into an array.
+     * Get this matrix data, store them into an array.
      *
-     * @param arr the array to store
+     * @param a the array to store
      */
-    public void put(@Nonnull float[] arr) {
-        if (arr.length < 16)
+    public void get(@Nonnull float[] a) {
+        if (a.length < 16)
             throw new IllegalArgumentException("The array length must be at least 16");
-        arr[0] = m11;
-        arr[1] = m12;
-        arr[2] = m13;
-        arr[3] = m14;
-        arr[4] = m21;
-        arr[5] = m22;
-        arr[6] = m23;
-        arr[7] = m24;
-        arr[8] = m31;
-        arr[9] = m32;
-        arr[10] = m33;
-        arr[11] = m34;
-        arr[12] = m41;
-        arr[13] = m42;
-        arr[14] = m43;
-        arr[15] = m44;
+        a[0] = m11;
+        a[1] = m12;
+        a[2] = m13;
+        a[3] = m14;
+        a[4] = m21;
+        a[5] = m22;
+        a[6] = m23;
+        a[7] = m24;
+        a[8] = m31;
+        a[9] = m32;
+        a[10] = m33;
+        a[11] = m34;
+        a[12] = m41;
+        a[13] = m42;
+        a[14] = m43;
+        a[15] = m44;
+    }
+
+    /**
+     * Get this matrix data, store them into an array.
+     *
+     * @param a the pointer of the array to store
+     */
+    public void get(@Nonnull FloatBuffer a) {
+        if (a.remaining() < 16)
+            throw new IllegalArgumentException("The array length must be at least 16");
+        a.put(m11);
+        a.put(m12);
+        a.put(m13);
+        a.put(m14);
+        a.put(m21);
+        a.put(m22);
+        a.put(m23);
+        a.put(m24);
+        a.put(m31);
+        a.put(m32);
+        a.put(m33);
+        a.put(m34);
+        a.put(m41);
+        a.put(m42);
+        a.put(m43);
+        a.put(m44);
     }
 
     /**
@@ -768,15 +795,15 @@ public class Matrix4 implements Cloneable {
      * Translates this matrix by given changes. This is equivalent to
      * pre-multiplying by a translation matrix.
      *
-     * @param tx the x-component of the translation
-     * @param ty the y-component of the translation
-     * @param tz the z-component of the translation
+     * @param dx the x-component of the translation
+     * @param dy the y-component of the translation
+     * @param dz the z-component of the translation
      */
-    public void translate(float tx, float ty, float tz) {
-        m41 += tx * m11 + ty * m21 + tz * m31;
-        m42 += tx * m12 + ty * m22 + tz * m32;
-        m43 += tx * m13 + ty * m23 + tz * m33;
-        m44 += tx * m14 + ty * m24 + tz * m34;
+    public void translate(float dx, float dy, float dz) {
+        m41 += dx * m11 + dy * m21 + dz * m31;
+        m42 += dx * m12 + dy * m22 + dz * m32;
+        m43 += dx * m13 + dy * m23 + dz * m33;
+        m44 += dx * m14 + dy * m24 + dz * m34;
     }
 
     /**

@@ -166,6 +166,7 @@ public final class GLWrapper extends GL45C {
                 }
             }
             int count = 0;
+            // list all features used by Modern UI
             if (!caps.GL_ARB_vertex_buffer_object) {
                 LOGGER.fatal(MARKER, "ARB vertex buffer object is not supported");
                 count++;
@@ -186,6 +187,10 @@ public final class GLWrapper extends GL45C {
                 LOGGER.fatal(MARKER, "ARB uniform buffer object is not supported");
                 count++;
             }
+            if (!caps.GL_ARB_instanced_arrays) {
+                LOGGER.fatal(MARKER, "ARB instanced arrays is not supported");
+                count++;
+            }
             if (!caps.GL_ARB_separate_shader_objects) {
                 LOGGER.fatal(MARKER, "ARB separate shader objects is not supported");
                 count++;
@@ -198,13 +203,16 @@ public final class GLWrapper extends GL45C {
                 LOGGER.fatal(MARKER, "ARB texture swizzle is not supported");
                 count++;
             }
-
+            if (!caps.GL_ARB_base_instance) {
+                LOGGER.fatal(MARKER, "ARB base instance is not supported");
+                count++;
+            }
             // we use the new API introduced in OpenGL 4.3, rather than glVertexAttrib*
             if (!caps.GL_ARB_vertex_attrib_binding) {
                 LOGGER.fatal(MARKER, "ARB vertex attrib binding is not supported");
                 count++;
             }
-
+            // DSA, OpenGL 4.5
             if (!caps.GL_ARB_direct_state_access) {
                 LOGGER.fatal(MARKER, "ARB DSA (direct state access) is not supported");
                 count++;

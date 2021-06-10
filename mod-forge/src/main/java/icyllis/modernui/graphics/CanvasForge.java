@@ -363,7 +363,7 @@ public class CanvasForge {
             float middle = startAngle + sweepAngle * 0.5f;
             program.setCenter(cx, cy);
             program.setAngle(middle, sweepAngle);
-            program.setRadius(radius, Math.min(radius, paint.getFeatherRadius()));
+            program.setRadius(radius, Math.min(radius, paint.getSmoothRadius()));
             upload(cx - radius, cy - radius, cx + radius, cy + radius, paint.getColor());
             Shader.stop();
         }
@@ -385,7 +385,7 @@ public class CanvasForge {
             program.setCenter(cx, cy);
             program.setAngle(middle, sweepAngle);
             float thickness = Math.min(paint.getStrokeWidth() * 0.5f, radius);
-            program.setRadius(radius, Math.min(thickness, paint.getFeatherRadius()), thickness);
+            program.setRadius(radius, Math.min(thickness, paint.getSmoothRadius()), thickness);
             float outer = radius + thickness;
             upload(cx - outer, cy - outer, cx + outer, cy + outer, paint.getColor());
             Shader.stop();
@@ -393,7 +393,7 @@ public class CanvasForge {
     }
 
     /**
-     * Draw the specified Rect using the specified paint. The rectangle will be filled or framed
+     * Draw the specified rectangle using the specified paint. The rectangle will be filled or framed
      * based on the Style in the paint.
      *
      * @param left   The left side of the rectangle to be drawn
@@ -416,10 +416,10 @@ public class CanvasForge {
     }
 
     protected void fillRect(float left, float top, float right, float bottom, @Nonnull Paint paint) {
-        if (paint.getFeatherRadius() > 0) {
+        if (paint.getSmoothRadius() > 0) {
             final RectProgram.Feathered program = RectProgram.feathered();
             program.use();
-            float t = Math.min(Math.min(right - left, right - bottom), paint.getFeatherRadius());
+            float t = Math.min(Math.min(right - left, right - bottom), paint.getSmoothRadius());
             program.setThickness(t);
             program.setInnerRect(left + t, top + t, right - t, bottom - t);
         } else {
@@ -589,7 +589,7 @@ public class CanvasForge {
     protected void fillCircle(float cx, float cy, float r, @Nonnull Paint paint) {
         final CircleProgram.Fill program = CircleProgram.fill();
         program.use();
-        program.setRadius(r, Math.min(r, paint.getFeatherRadius()));
+        program.setRadius(r, Math.min(r, paint.getSmoothRadius()));
         program.setCenter(cx, cy);
         upload(cx - r, cy - r, cx + r, cy + r, paint.getColor());
         Shader.stop();
@@ -600,7 +600,7 @@ public class CanvasForge {
         program.use();
         float thickness = Math.min(paint.getStrokeWidth() * 0.5f, r);
         float outer = r + thickness;
-        program.setRadius(r - thickness, outer, Math.min(thickness, paint.getFeatherRadius()));
+        program.setRadius(r - thickness, outer, Math.min(thickness, paint.getSmoothRadius()));
         program.setCenter(cx, cy);
         upload(cx - outer, cy - outer, cx + outer, cy + outer, paint.getColor());
         Shader.stop();
@@ -657,7 +657,7 @@ public class CanvasForge {
                                  float r, @Nonnull Paint paint) {
         final RoundRectProgram.Fill program = RoundRectProgram.fill();
         program.use();
-        program.setRadius(r, Math.min(r, paint.getFeatherRadius()));
+        program.setRadius(r, Math.min(r, paint.getSmoothRadius()));
         program.setInnerRect(left + r, top + r, right - r, bottom - r);
         upload(left, top, right, bottom, paint.getColor());
         Shader.stop();
@@ -668,7 +668,7 @@ public class CanvasForge {
         final RoundRectProgram.Stroke program = RoundRectProgram.stroke();
         program.use();
         float thickness = Math.min(paint.getStrokeWidth() * 0.5f, r);
-        program.setRadius(r, Math.min(thickness, paint.getFeatherRadius()), thickness);
+        program.setRadius(r, Math.min(thickness, paint.getSmoothRadius()), thickness);
         program.setInnerRect(left + r, top + r, right - r, bottom - r);
         upload(left - r, top - r, right + r, bottom + r, paint.getColor());
         Shader.stop();
@@ -721,7 +721,7 @@ public class CanvasForge {
                                float radius, @Nonnull Paint paint) {
         RoundRectProgram.FillTex program = RoundRectProgram.fillTex();
         program.use();
-        program.setRadius(radius, Math.min(radius, paint.getFeatherRadius()));
+        program.setRadius(radius, Math.min(radius, paint.getSmoothRadius()));
         program.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
         RenderSystem.activeTexture(GL43.GL_TEXTURE0);
         icon.bindTexture();

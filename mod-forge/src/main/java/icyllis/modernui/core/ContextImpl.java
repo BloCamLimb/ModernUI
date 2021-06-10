@@ -18,14 +18,31 @@
 
 package icyllis.modernui.core;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraftforge.fml.loading.FMLEnvironment;
+
 import javax.annotation.Nonnull;
+import java.io.IOException;
+import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Path;
 
 public final class ContextImpl extends Context {
 
+    private final String mNamespace;
+    private ResourceManager mResourceManager;
+
+    public ContextImpl(String namespace) {
+        mNamespace = namespace;
+        if (FMLEnvironment.dist.isClient()) {
+            mResourceManager = Minecraft.getInstance().getResourceManager();
+        }
+    }
+
     @Override
-    public ReadableByteChannel getResource(@Nonnull Path path) {
-        return null;
+    public ReadableByteChannel getResource(@Nonnull Path path) throws IOException {
+        return Channels.newChannel(mResourceManager.getResource(new ResourceLocation(mNamespace, path.toString())).getInputStream());
     }
 }

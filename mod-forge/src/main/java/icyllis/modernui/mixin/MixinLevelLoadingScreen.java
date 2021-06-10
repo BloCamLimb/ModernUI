@@ -57,7 +57,7 @@ public class MixinLevelLoadingScreen extends Screen {
         Paint paint = Paint.take();
         paint.reset();
         paint.setStyle(Paint.Style.STROKE);
-        paint.setFeatherRadius(2.0f);
+        paint.setSmoothRadius(2.0f);
         mTime += deltaTick;
         float amp = Math.abs((mTime % 32) - 16) * 0.125f;
         paint.setStrokeWidth(4.0f + amp);
