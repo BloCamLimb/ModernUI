@@ -20,30 +20,37 @@ package icyllis.modernui.graphics;
 
 import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Matrix4;
-import org.lwjgl.system.MemoryUtil;
+import icyllis.modernui.util.Pool;
+import icyllis.modernui.util.Pools;
 
 import javax.annotation.Nonnull;
-import java.nio.FloatBuffer;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
 /**
  * Modern UI implementation to Canvas.
  */
-public class GLCanvas extends Canvas {
+public class RecordingCanvas extends Canvas {
 
-    private static final GLCanvas instance = new GLCanvas();
+    private static final Pool<RecordingCanvas> sPool = Pools.concurrent(15);
 
     private final Deque<Matrix4> mMatrixStack = new ArrayDeque<>();
 
-    private final FloatBuffer mMatrixData;
+    private RenderNode mNode;
 
-    private GLCanvas() {
-        mMatrixData = MemoryUtil.memAllocFloat(4096); // 16KB
+    private RecordingCanvas() {
     }
 
-    public static GLCanvas getInstance() {
-        return instance;
+    @Nonnull
+    static RecordingCanvas obtain(@Nonnull RenderNode node) {
+        RecordingCanvas canvas = sPool.acquire(RecordingCanvas::new);
+        canvas.mNode = node;
+        return canvas;
+    }
+
+    void recycle() {
+        mNode = null;
+        sPool.release(this);
     }
 
     @Nonnull

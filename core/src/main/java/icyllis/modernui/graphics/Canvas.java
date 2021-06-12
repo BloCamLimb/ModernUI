@@ -117,12 +117,8 @@ public abstract class Canvas {
         translate(-px, -py);
     }
 
-    public void clipBegin() {
-
-    }
-
-    public void clipEnd() {
-
+    // WIP
+    private void clip() {
     }
 
     /**
