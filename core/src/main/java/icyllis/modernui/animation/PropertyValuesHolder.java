@@ -18,6 +18,8 @@
 
 package icyllis.modernui.animation;
 
+import sun.misc.Unsafe;
+
 import javax.annotation.Nonnull;
 
 /**
@@ -31,6 +33,16 @@ import javax.annotation.Nonnull;
  * @param <P> the property value type for output
  */
 public class PropertyValuesHolder<T, V, P> {
+
+    private static final Unsafe UNSAFE;
+
+    static {
+        try {
+            UNSAFE = (Unsafe) Unsafe.class.getDeclaredField("theUnsafe").get(null);
+        } catch (Exception e) {
+            throw new IllegalStateException("No UNSAFE");
+        }
+    }
 
     @Nonnull
     Property<T, P> mProperty;
@@ -67,6 +79,27 @@ public class PropertyValuesHolder<T, V, P> {
      */
     private PropertyValuesHolder(@Nonnull Property<T, P> property) {
         mProperty = property;
+    }
+
+    /**
+     * Constructs and returns a PropertyValuesHolder with a given property name and
+     * set of int values.
+     *
+     * @param clazz        The target class that the property belongs to.
+     * @param propertyName The name of the property being animated.
+     * @param values       The values that the named property will animate between.
+     * @return PropertyValuesHolder The constructed PropertyValuesHolder object.
+     */
+    @Nonnull
+    public static <T> PropertyValuesHolder<T, Integer, Integer> ofInt(@Nonnull Class<T> clazz,
+                                                                      @Nonnull String propertyName,
+                                                                      @Nonnull int... values) {
+        try {
+            long offset = UNSAFE.objectFieldOffset(clazz.getDeclaredField(propertyName));
+            return ofInt(new UnsafeIntProperty<>(offset), values);
+        } catch (NoSuchFieldException e) {
+            throw new IllegalArgumentException("Cannot find the property " + propertyName + " in " + clazz.getName());
+        }
     }
 
     /**
@@ -428,6 +461,25 @@ public class PropertyValuesHolder<T, V, P> {
         @Override
         Integer getAnimatedValue() {
             return mIntAnimatedValue;
+        }
+    }
+
+    static class UnsafeIntProperty<T> implements IntProperty<T> {
+
+        private final long mOffset;
+
+        private UnsafeIntProperty(long offset) {
+            mOffset = offset;
+        }
+
+        @Override
+        public void setValue(@Nonnull T target, int value) {
+            UNSAFE.putInt(target, mOffset, value);
+        }
+
+        @Override
+        public Integer get(@Nonnull T target) {
+            return UNSAFE.getInt(target, mOffset);
         }
     }
 

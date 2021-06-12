@@ -18,10 +18,7 @@
 
 package icyllis.modernui.graphics.texture;
 
-import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
-
-import java.nio.IntBuffer;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
 
@@ -157,12 +154,10 @@ public class Texture2D extends Texture {
         glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, magFilter);
     }
 
-    public void swizzle(int r, int g, int b, int a) {
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            IntBuffer mask = stack.mallocInt(4);
-            mask.put(r).put(g).put(b).put(a).rewind();
-            glTextureParameteriv(get(), GL_TEXTURE_SWIZZLE_RGBA, mask);
-        }
+    // eg: swizzleRGBA(GL_ONE, GL_ONE, GL_ONE, GL_RED)
+    // then red channel will be read as alpha channel by <shader>, RGB is always 1
+    public void swizzleRGBA(int... rgbaMask) {
+        glTextureParameteriv(get(), GL_TEXTURE_SWIZZLE_RGBA, rgbaMask);
     }
 
     /**
