@@ -184,7 +184,7 @@ public class TestMain {
                         GlStateManager._colorMask(true, true, true, true);
                         GlStateManager._depthMask(false);
 
-                        MainRenderer.POS_COLOR.use();
+                        MainRenderer.POS_COLOR_FILL.use();
 
                         /*GL11.glMatrixMode(GL11.GL_PROJECTION);
                         GL43.glPushMatrix();

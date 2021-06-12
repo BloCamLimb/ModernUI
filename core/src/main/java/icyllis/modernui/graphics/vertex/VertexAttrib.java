@@ -25,7 +25,6 @@ import static icyllis.modernui.graphics.GLWrapper.*;
  */
 public class VertexAttrib {
 
-    private final int mLocation;
     private final int mBinding;
     private final Src mSrc;
     private final Dst mDst;
@@ -34,7 +33,6 @@ public class VertexAttrib {
     /**
      * Creates a new VertexAttrib to define an immutable vertex attribute.
      *
-     * @param location   explicit layout location
      * @param binding    vertex buffer binding index
      * @param src        source data type
      * @param dst        destination data type
@@ -42,25 +40,11 @@ public class VertexAttrib {
      *                   range [-1, 1] or [0, 1] if it is signed or unsigned, respectively.
      *                   If not, then integer data is directly converted to floating point.
      */
-    public VertexAttrib(int location, int binding, Src src, Dst dst, boolean normalized) {
-        mLocation = location;
+    public VertexAttrib(int binding, Src src, Dst dst, boolean normalized) {
         mBinding = binding;
         mSrc = src;
         mDst = dst;
         mNormalized = normalized;
-    }
-
-    /**
-     * Returns the base attribute index, (layout = index).
-     * <p>
-     * Actually, this attribute takes up locations from <code>getLocation()</code> (inclusive)
-     * to <code>getLocation()+getRepeat()</code> (exclusive)
-     *
-     * @return attribute index
-     * @see #getRepeat()
-     */
-    public int getLocation() {
-        return mLocation;
     }
 
     /**
@@ -84,18 +68,55 @@ public class VertexAttrib {
     /**
      * Enables this attribute in the array and specify attribute format.
      *
-     * @param array   vertex array object
-     * @param pointer current pointer in the binding point
-     * @return next pointer (relative offset)
+     * @param array  vertex array object
+     * @param offset current offset in the binding point
+     * @return next relative offset
      */
-    public int setFormat(int array, int pointer) {
+    public int setFormat(int array, int location, int offset) {
         for (int i = 0; i < getRepeat(); i++) {
-            int location = mLocation + i;
             glEnableVertexArrayAttrib(array, location);
-            glVertexArrayAttribFormat(array, location, mDst.mSize, mSrc.mType, mNormalized, pointer);
-            pointer += mSrc.mSize * mDst.mSize;
+            glVertexArrayAttribFormat(array, location, mDst.mSize, mSrc.mType, mNormalized, offset);
+            glVertexArrayAttribBinding(array, location, mBinding);
+            location++;
+            offset += getStep();
         }
-        return pointer;
+        return offset;
+    }
+
+    /**
+     * @return the size of the source data in bytes
+     */
+    public int getStep() {
+        return mSrc.mSize * mDst.mSize;
+    }
+
+    /**
+     * @return the total size for this attribute in bytes
+     */
+    public int getTotalSize() {
+        return getStep() * getRepeat();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        VertexAttrib that = (VertexAttrib) o;
+
+        if (mBinding != that.mBinding) return false;
+        if (mNormalized != that.mNormalized) return false;
+        if (mSrc != that.mSrc) return false;
+        return mDst == that.mDst;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = mBinding;
+        result = 31 * result + (mSrc != null ? mSrc.hashCode() : 0);
+        result = 31 * result + (mDst != null ? mDst.hashCode() : 0);
+        result = 31 * result + (mNormalized ? 1 : 0);
+        return result;
     }
 
     /**

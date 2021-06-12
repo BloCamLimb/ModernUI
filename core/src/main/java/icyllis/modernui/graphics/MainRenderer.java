@@ -44,7 +44,7 @@ public final class MainRenderer {
 
     public static final int MATRIX_BLOCK_BINDING = 0;
 
-    public static final Shader POS_COLOR = new Shader();
+    public static final Shader POS_COLOR_FILL = new Shader();
 
     private final int mMatrixUBO;
 
@@ -77,7 +77,7 @@ public final class MainRenderer {
 
         mFormatSetup.put(RenderNode.RECT, () -> {
             glBindVertexArray(mPosColorVAO);
-            POS_COLOR.use();
+            POS_COLOR_FILL.use();
         });
 
         ShaderManager.getInstance().addListener(this::onLoadShaders);
@@ -96,7 +96,7 @@ public final class MainRenderer {
     private void onLoadShaders(@Nonnull ShaderManager manager) {
         int pos_color_vert = manager.getShard(ModernUI.get(), "pos_color.vert");
         int color_frag = manager.getShard(ModernUI.get(), "color.frag");
-        manager.create(POS_COLOR, pos_color_vert, color_frag);
+        manager.create(POS_COLOR_FILL, pos_color_vert, color_frag);
     }
 
     public void uploadMatrix(@Nonnull ByteBuffer data, int size) {

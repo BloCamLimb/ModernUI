@@ -18,10 +18,154 @@
 
 package icyllis.modernui.graphics.vertex;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.IntSet;
+
+import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+
+import static icyllis.modernui.graphics.GLWrapper.*;
+
 /**
- * Represents a vertex array object.
+ * Represents a set of vertex attribute specifications for a vertex shader.
  */
 public class VertexFormat {
 
-    public static VertexFormat UI_TEX;
+    public static final int GENERIC_BINDING = 0;
+    public static final int INSTANCED_BINDING = 1;
+
+    public static final VertexAttrib POS;
+    public static final VertexAttrib COLOR;
+    public static final VertexAttrib MODEL_VIEW;
+
+    public static final VertexFormat POS_COLOR;
+
+    static {
+        POS = new VertexAttrib(GENERIC_BINDING, VertexAttrib.Src.FLOAT, VertexAttrib.Dst.VEC2, false);
+        COLOR = new VertexAttrib(GENERIC_BINDING, VertexAttrib.Src.UBYTE, VertexAttrib.Dst.VEC4, true);
+        MODEL_VIEW = new VertexAttrib(INSTANCED_BINDING, VertexAttrib.Src.FLOAT, VertexAttrib.Dst.MAT4, false);
+        POS_COLOR = new VertexFormat(POS, COLOR, MODEL_VIEW);
+    }
+
+    private final Int2ObjectMap<List<VertexAttrib>> mAttributes = new Int2ObjectArrayMap<>();
+
+    private int mVertexArray = INVALID_ID;
+
+    /**
+     * Creates a vertex format.
+     * <p>
+     * Attribute index depends on the order of <code>attribs</code> and bindings,
+     * you must use explicit attribute layout for the base attribute index,
+     * (layout = index). Each attribute takes up <code>getRepeat()</code> locations
+     * in total. Binding points are given priority to assign.
+     *
+     * @param attribs all attributes
+     */
+    public VertexFormat(@Nonnull VertexAttrib... attribs) {
+        if (attribs.length == 0) {
+            throw new IllegalArgumentException("No attributes");
+        }
+        Arrays.sort(attribs, Comparator.comparingInt(VertexAttrib::getBinding));
+        for (VertexAttrib a : attribs) {
+            mAttributes.computeIfAbsent(a.getBinding(), l -> new ArrayList<>()).add(a);
+        }
+    }
+
+    /**
+     * @return the shared vertex array object.
+     */
+    public int getVertexArray() {
+        if (mVertexArray == INVALID_ID) {
+            int array = glCreateVertexArrays();
+            int location = 0;
+            for (var c : mAttributes.values()) {
+                // relative offset
+                int offset = 0;
+                for (var a : c) {
+                    offset = a.setFormat(array, location, offset);
+                    location += a.getRepeat();
+                }
+            }
+            mVertexArray = array;
+            return array;
+        }
+        return mVertexArray;
+    }
+
+    /**
+     * @return a set of used binding points for this VertexFormat
+     */
+    public IntSet getBindings() {
+        return mAttributes.keySet();
+    }
+
+    /**
+     * Set the buffer that stores the attribute data.
+     * <p>
+     * The stride, the distance to the next vertex/instance data, in bytes, will
+     * be {@link #getBindingSize(int)}
+     *
+     * @param binding the binding index
+     * @param buffer  the vertex buffer
+     * @param offset  first vertex/instance data to the head of the buffer, in bytes
+     */
+    public void setVertexBuffer(int binding, int buffer, int offset) {
+        glVertexArrayVertexBuffer(getVertexArray(), binding, buffer, offset, getBindingSize(binding));
+    }
+
+    /**
+     * Set instanced array.
+     *
+     * @param binding the binding index
+     * @param divisor instance divisor
+     */
+    public void setBindingDivisor(int binding, int divisor) {
+        glVertexArrayBindingDivisor(getVertexArray(), binding, divisor);
+    }
+
+    /**
+     * Set element buffer (index buffer).
+     *
+     * @param buffer the element buffer object
+     */
+    public void setElementBuffer(int buffer) {
+        glVertexArrayElementBuffer(getVertexArray(), buffer);
+    }
+
+    /**
+     * Get the sum of the sizes of all attributes to the given binding point.
+     *
+     * @param binding the binding index
+     * @return total size in bytes
+     */
+    public int getBindingSize(int binding) {
+        var c = mAttributes.get(binding);
+        if (c != null) {
+            int size = 0;
+            for (var a : c) {
+                size += a.getStep();
+            }
+            return size;
+        }
+        return 0;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        VertexFormat that = (VertexFormat) o;
+
+        return mAttributes.equals(that.mAttributes);
+    }
+
+    @Override
+    public int hashCode() {
+        return mAttributes.hashCode();
+    }
 }
