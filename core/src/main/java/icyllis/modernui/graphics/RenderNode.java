@@ -35,7 +35,7 @@ import java.util.function.Consumer;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
 
-// internal use
+@Deprecated
 public final class RenderNode {
 
     private static final AtomicInteger sFormatGen = new AtomicInteger();

@@ -18,6 +18,8 @@
 
 package icyllis.modernui.graphics.vertex;
 
+import icyllis.modernui.ModernUI;
+
 import static icyllis.modernui.graphics.GLWrapper.*;
 
 /**
@@ -77,6 +79,8 @@ public class VertexAttrib {
             glEnableVertexArrayAttrib(array, location);
             glVertexArrayAttribFormat(array, location, mDst.mSize, mSrc.mType, mNormalized, offset);
             glVertexArrayAttribBinding(array, location, mBinding);
+            ModernUI.LOGGER.info("Configure Vertex Attribute: {VAO={}, loc={}, bind={}, SRC={}, DST={}, REL_OFFSET={}}",
+                    array, location, mBinding, mSrc, mDst, offset);
             location++;
             offset += getStep();
         }

@@ -61,10 +61,11 @@ public class ModernUI extends ContextWrapper {
     }
 
     public static void initInternal() {
-        get().attachBaseContext(new Context() {
+        Path resourcesDir = Path.of(System.getenv("MOD_ASSETS"));
+        new ModernUI().attachBaseContext(new Context() {
             @Override
             public ReadableByteChannel getResource(@Nonnull Path path) throws IOException {
-                return Files.newByteChannel(Path.of(System.getProperty("MOD_ASSETS")).resolve(path), StandardOpenOption.READ);
+                return Files.newByteChannel(resourcesDir.resolve(ID).resolve(path), StandardOpenOption.READ);
             }
         });
     }

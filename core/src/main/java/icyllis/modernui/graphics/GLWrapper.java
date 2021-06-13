@@ -374,6 +374,15 @@ public final class GLWrapper extends GL45C {
         return sActiveTexture;
     }
 
+    public static void deleteBufferAsync(int buffer, @Nullable Runnable r) {
+        if (RenderCore.isOnRenderThread()) {
+            glDeleteBuffers(buffer);
+        } else {
+            RenderCore.recordRenderCall(Objects.requireNonNullElseGet(r,
+                    () -> (Runnable) () -> glDeleteBuffers(buffer)));
+        }
+    }
+
     @RenderThread
     public static void bindVertexArray(int array) {
         if (array != sVertexArray) {
