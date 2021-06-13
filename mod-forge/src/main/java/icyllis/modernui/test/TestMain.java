@@ -25,17 +25,13 @@ import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.ast.Node;
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.graphics.GLCanvas;
 import icyllis.modernui.graphics.GLWrapper;
-import icyllis.modernui.graphics.MainRenderer;
+import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.shader.ShaderManager;
-import icyllis.modernui.graphics.shader.program.ArcProgram;
-import icyllis.modernui.graphics.shader.program.CircleProgram;
-import icyllis.modernui.graphics.shader.program.RectProgram;
-import icyllis.modernui.graphics.shader.program.RoundRectProgram;
 import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Vector3;
-import icyllis.modernui.platform.Bitmap;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.platform.Window;
 import icyllis.modernui.text.GraphemeBreak;
@@ -65,7 +61,7 @@ public class TestMain {
     private static final BufferedImage IMAGE = new BufferedImage(1024, 1024, BufferedImage.TYPE_INT_ARGB);
     private static final Graphics2D GRAPHICS = IMAGE.createGraphics();
 
-    public static final boolean CREATE_WINDOW = false;
+    public static final boolean CREATE_WINDOW = true;
 
     private static double nextTime = 0;
     private static boolean needRedraw = true;
@@ -163,28 +159,32 @@ public class TestMain {
                 window.makeCurrent();
                 RenderCore.initialize();
                 RenderSystem.initRenderThread();
-                ArcProgram.createPrograms();
+                /*ArcProgram.createPrograms();
                 CircleProgram.createPrograms();
                 RectProgram.createPrograms();
-                RoundRectProgram.createPrograms();
+                RoundRectProgram.createPrograms();*/
+                GLCanvas.initialize();
                 ShaderManager.getInstance().reload();
-                final float[] projection;
-                Matrix4.makePerspective(MathUtil.PI_DIV_2, window.getAspectRatio(), 0.001f, 1000)
-                        .get(projection = new float[16]);
-
-
+                GLCanvas canvas = GLCanvas.getInstance();
+                //Matrix4.makePerspective(MathUtil.PI_DIV_2, window.getAspectRatio(), 0.001f, 1000);
+                Matrix4 projection = Matrix4.makeOrthographic(window.getWidth(), -window.getHeight(), 0, 2000);
+                canvas.setProjection(projection);
+                Vector3 testV = new Vector3(100, 200, 0);
+                testV.transform(projection);
+                ModernUI.LOGGER.info("Projected Window Position: {}", testV);
 
                 while (window.exists()) {
                     if (window.needsRefresh()) {
                         GLWrapper.resetFrame(window);
-                        GLWrapper.enableCull();
-                        RenderSystem.enableBlend();
-                        RenderSystem.defaultBlendFunc();
-                        RenderSystem.disableDepthTest();
-                        GlStateManager._colorMask(true, true, true, true);
-                        GlStateManager._depthMask(false);
+                        //GLWrapper.enableCull();
+                        //RenderSystem.enableBlend();
+                        //RenderSystem.defaultBlendFunc();
+                        //RenderSystem.disableDepthTest();
+                        //GlStateManager._colorMask(true, true, true, true);
+                        //GlStateManager._depthMask(false);
 
-                        MainRenderer.POS_COLOR_FILL.use();
+                        canvas.drawRect(100, 200, 400, 260, Paint.take());
+                        canvas.render();
 
                         /*GL11.glMatrixMode(GL11.GL_PROJECTION);
                         GL43.glPushMatrix();
@@ -235,7 +235,7 @@ public class TestMain {
             }, "Render-Thread");
             t.start();
 
-            new Thread(() -> {
+            /*new Thread(() -> {
                 // convert to png format with alpha channel
                 try (Bitmap b = Bitmap.openDialog(Bitmap.Format.RGBA)) {
                     if (b != null) {
@@ -244,7 +244,7 @@ public class TestMain {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-            }, "Open-File").start();
+            }, "Open-File").start();*/
 
             while (sWindow == null || sWindow.exists()) {
                 glfwWaitEventsTimeout(1 / 288D);

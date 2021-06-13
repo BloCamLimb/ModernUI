@@ -18,14 +18,13 @@
 
 package icyllis.modernui.graphics.vertex;
 
-import static org.lwjgl.opengl.GL43C.*;
-
 /**
  * Represents a vertex buffer object.
  */
-public class VertexBuffer {
+public class VertexBuffer implements AutoCloseable {
 
-    static {
+    @Override
+    public void close() throws Exception {
 
     }
 }

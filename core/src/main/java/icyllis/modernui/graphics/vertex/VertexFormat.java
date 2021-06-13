@@ -18,6 +18,7 @@
 
 package icyllis.modernui.graphics.vertex;
 
+import icyllis.modernui.ModernUI;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.IntSet;
@@ -34,22 +35,6 @@ import static icyllis.modernui.graphics.GLWrapper.*;
  * Represents a set of vertex attribute specifications for a vertex shader.
  */
 public class VertexFormat {
-
-    public static final int GENERIC_BINDING = 0;
-    public static final int INSTANCED_BINDING = 1;
-
-    public static final VertexAttrib POS;
-    public static final VertexAttrib COLOR;
-    public static final VertexAttrib MODEL_VIEW;
-
-    public static final VertexFormat POS_COLOR;
-
-    static {
-        POS = new VertexAttrib(GENERIC_BINDING, VertexAttrib.Src.FLOAT, VertexAttrib.Dst.VEC2, false);
-        COLOR = new VertexAttrib(GENERIC_BINDING, VertexAttrib.Src.UBYTE, VertexAttrib.Dst.VEC4, true);
-        MODEL_VIEW = new VertexAttrib(INSTANCED_BINDING, VertexAttrib.Src.FLOAT, VertexAttrib.Dst.MAT4, false);
-        POS_COLOR = new VertexFormat(POS, COLOR, MODEL_VIEW);
-    }
 
     private final Int2ObjectMap<List<VertexAttrib>> mAttributes = new Int2ObjectArrayMap<>();
 
@@ -115,6 +100,8 @@ public class VertexFormat {
      */
     public void setVertexBuffer(int binding, int buffer, int offset) {
         glVertexArrayVertexBuffer(getVertexArray(), binding, buffer, offset, getBindingSize(binding));
+        ModernUI.LOGGER.info("Bind Vertex Buffer: {VAO={}, bind={}, buffer={}, offset={}, stride={}}",
+                getVertexArray(), binding, buffer, offset, getBindingSize(binding));
     }
 
     /**
@@ -147,7 +134,7 @@ public class VertexFormat {
         if (c != null) {
             int size = 0;
             for (var a : c) {
-                size += a.getStep();
+                size += a.getTotalSize();
             }
             return size;
         }
