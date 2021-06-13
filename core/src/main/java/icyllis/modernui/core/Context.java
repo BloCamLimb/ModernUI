@@ -18,7 +18,10 @@
 
 package icyllis.modernui.core;
 
+import icyllis.modernui.graphics.Image;
+
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Path;
@@ -33,4 +36,14 @@ public abstract class Context {
      * @throws IOException cannot to get the resource
      */
     public abstract ReadableByteChannel getResource(@Nonnull Path path) throws IOException;
+
+    /**
+     * Gets an image resource with the given path. Each call returns a new object,
+     * but the associated texture is shared.
+     *
+     * @param path the path of the image
+     * @return an image or <code>null</code> if errors occurred
+     */
+    @Nullable
+    public abstract Image getImage(@Nonnull Path path, boolean antiAliasing);
 }

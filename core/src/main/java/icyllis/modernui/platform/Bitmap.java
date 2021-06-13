@@ -20,6 +20,7 @@ package icyllis.modernui.platform;
 
 import com.ibm.icu.text.DateFormat;
 import com.ibm.icu.text.SimpleDateFormat;
+import icyllis.modernui.ModernUI;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.stb.STBIWriteCallback;
 import org.lwjgl.stb.STBIWriteCallbackI;
@@ -33,6 +34,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.Cleaner;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.ByteChannel;
@@ -52,7 +54,8 @@ import static org.lwjgl.system.MemoryUtil.NULL;
  * Represents a bitmap whose image data is in native. It is used for operations
  * on the application side, such as read from/write to stream/channel. Compared
  * with {@link icyllis.modernui.graphics.Image}, this data is completely stored
- * in RAM rather than in GPU memory.
+ * in RAM rather than in GPU memory. Losing the reference of the object will
+ * automatically free the memory.
  */
 @SuppressWarnings("unused")
 public final class Bitmap implements AutoCloseable {
@@ -65,8 +68,7 @@ public final class Bitmap implements AutoCloseable {
     private final int mWidth;
     private final int mHeight;
 
-    private long mPixels;
-    private final boolean mFromSTB;
+    private Ref mRef;
 
     /**
      * Creates a bitmap, the type of all components is unsigned byte.
@@ -84,13 +86,8 @@ public final class Bitmap implements AutoCloseable {
         mFormat = format;
         mWidth = width;
         mHeight = height;
-        mFromSTB = false;
         final long size = (long) format.channels * width * height;
-        if (init) {
-            mPixels = MemoryUtil.nmemCallocChecked(1L, size);
-        } else {
-            mPixels = MemoryUtil.nmemAllocChecked(size);
-        }
+        mRef = new Ref(this, size, init);
     }
 
     private Bitmap(@Nonnull Format format, int width, int height, @Nonnull ByteBuffer data) throws IOException {
@@ -100,8 +97,7 @@ public final class Bitmap implements AutoCloseable {
         mFormat = format;
         mWidth = width;
         mHeight = height;
-        mPixels = MemoryUtil.memAddress(data);
-        mFromSTB = true;
+        mRef = new Ref(this, MemoryUtil.memAddress(data));
     }
 
     /**
@@ -224,7 +220,10 @@ public final class Bitmap implements AutoCloseable {
      * @return the pointer of pixels data
      */
     public long getPixels() {
-        return mPixels;
+        if (mRef != null) {
+            return mRef.mPixels;
+        }
+        return NULL;
     }
 
     /**
@@ -262,7 +261,7 @@ public final class Bitmap implements AutoCloseable {
                     exception[0] = e;
                 }
             })) {
-                final boolean success = format.write(func, mWidth, mHeight, mFormat, mPixels, quality);
+                final boolean success = format.write(func, mWidth, mHeight, mFormat, mRef.mPixels, quality);
                 if (success) {
                     if (exception[0] != null) {
                         throw new IOException("An error occurred while saving image to the path \"" +
@@ -277,7 +276,7 @@ public final class Bitmap implements AutoCloseable {
     }
 
     private void checkReleased() {
-        if (mPixels == NULL) {
+        if (mRef == null) {
             throw new IllegalStateException("Cannot operate released bitmap");
         }
     }
@@ -286,13 +285,9 @@ public final class Bitmap implements AutoCloseable {
      * Frees native image data.
      */
     public void release() {
-        if (mPixels != NULL) {
-            if (mFromSTB) {
-                STBImage.nstbi_image_free(mPixels);
-            } else {
-                MemoryUtil.nmemFree(mPixels);
-            }
-            mPixels = NULL;
+        if (mRef != null) {
+            mRef.mCleanup.clean();
+            mRef = null;
         }
     }
 
@@ -445,6 +440,38 @@ public final class Bitmap implements AutoCloseable {
         @Nonnull
         private String getDescription() {
             return name() + " (" + String.join(", ", filters) + ")";
+        }
+    }
+
+    private static class Ref implements Runnable {
+
+        private final long mPixels;
+        private final boolean mFromSTB;
+        private final Cleaner.Cleanable mCleanup;
+
+        private Ref(Bitmap owner, long size, boolean init) {
+            mFromSTB = false;
+            if (init) {
+                mPixels = MemoryUtil.nmemCallocChecked(1L, size);
+            } else {
+                mPixels = MemoryUtil.nmemAllocChecked(size);
+            }
+            mCleanup = ModernUI.registerCleanup(owner, this);
+        }
+
+        private Ref(Bitmap owner, long pointer) {
+            mFromSTB = true;
+            mPixels = pointer;
+            mCleanup = ModernUI.registerCleanup(owner, this);
+        }
+
+        @Override
+        public void run() {
+            if (mFromSTB) {
+                STBImage.nstbi_image_free(mPixels);
+            } else {
+                MemoryUtil.nmemFree(mPixels);
+            }
         }
     }
 }

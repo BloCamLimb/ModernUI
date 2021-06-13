@@ -18,15 +18,36 @@
 
 package icyllis.modernui.graphics.texture;
 
+import icyllis.modernui.core.Context;
 import it.unimi.dsi.fastutil.objects.Object2ObjectRBTreeMap;
 
+import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.Map;
 
 public class TextureManager {
 
-    private final Map<String, Texture2D> mTextureMap = new Object2ObjectRBTreeMap<>();
+    private static final TextureManager INSTANCE = new TextureManager();
 
-    public Texture2D getOrCreate() {
+    private final Map<Context, Map<Path, Texture2D>> mTextureMap = new HashMap<>();
+
+    private TextureManager() {
+    }
+
+    public static TextureManager getINSTANCE() {
+        return INSTANCE;
+    }
+
+    public void reload() {
+        mTextureMap.clear();
+    }
+
+    public Texture2D getOrCreate(Context context, Path path) {
+        Texture2D texture = mTextureMap.computeIfAbsent(context, l -> new Object2ObjectRBTreeMap<>())
+                .get(path);
+        if (texture != null) {
+            return texture;
+        }
         return null;
     }
 }

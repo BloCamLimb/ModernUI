@@ -82,7 +82,7 @@ public class RoundRectProgram extends Shader {
     public static class FillTex extends Fill {
 
         private FillTex() {
-            super(RectProgram.VERT_TEX, new ResourceLocation(ModernUI.ID, "shaders/round_rect_fill_tex.frag"));
+            super(RectProgram.VERT_TEX, new ResourceLocation(ModernUI.ID, "shaders/round_rect_tex.frag"));
         }
 
         /*@Override

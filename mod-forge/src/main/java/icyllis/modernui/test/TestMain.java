@@ -19,7 +19,6 @@
 package icyllis.modernui.test;
 
 import com.ibm.icu.text.BreakIterator;
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
@@ -27,11 +26,14 @@ import com.vladsch.flexmark.util.ast.Node;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.GLCanvas;
 import icyllis.modernui.graphics.GLWrapper;
+import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.shader.ShaderManager;
+import icyllis.modernui.graphics.texture.Texture2D;
 import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Vector3;
+import icyllis.modernui.platform.Bitmap;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.platform.Window;
 import icyllis.modernui.text.GraphemeBreak;
@@ -43,6 +45,9 @@ import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -50,6 +55,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.opengl.GL11C.*;
 
 @SuppressWarnings("unused")
 public class TestMain {
@@ -159,31 +165,48 @@ public class TestMain {
                 window.makeCurrent();
                 RenderCore.initialize();
                 RenderSystem.initRenderThread();
-                /*ArcProgram.createPrograms();
-                CircleProgram.createPrograms();
-                RectProgram.createPrograms();
-                RoundRectProgram.createPrograms();*/
-                GLCanvas.initialize();
+                GLCanvas canvas = GLCanvas.initialize();
                 ShaderManager.getInstance().reload();
-                GLCanvas canvas = GLCanvas.getInstance();
                 //Matrix4.makePerspective(MathUtil.PI_DIV_2, window.getAspectRatio(), 0.001f, 1000);
+                // OpenGL coordinates origin is "bottom" left, we flip it
                 Matrix4 projection = Matrix4.makeOrthographic(window.getWidth(), -window.getHeight(), 0, 2000);
                 canvas.setProjection(projection);
-                Vector3 testV = new Vector3(100, 200, 0);
-                testV.transform(projection);
-                ModernUI.LOGGER.info("Projected Window Position: {}", testV);
+
+                Image image;
+                try (ReadableByteChannel channel = ModernUI.get().getResource(Path.of("7-160413104Q45C.png"))) {
+                    Bitmap bitmap = Bitmap.decode(Bitmap.Format.RGBA, channel);
+                    Texture2D texture2D = new Texture2D();
+                    int width = bitmap.getWidth();
+                    int height = bitmap.getHeight();
+                    texture2D.init(GL_RGBA8, width, height, 4);
+                    texture2D.upload(0, 0, 0, width, height, 0,
+                            0, 0, 1, GL_RGBA, GL_UNSIGNED_BYTE, bitmap.getPixels());
+                    texture2D.setFilter(true, true);
+                    texture2D.generateMipmap();
+                    image = new Image(new Image.Source(width, height, texture2D));
+                } catch (IOException e) {
+                    throw new IllegalStateException();
+                }
 
                 while (window.exists()) {
                     if (window.needsRefresh()) {
                         GLWrapper.resetFrame(window);
-                        //GLWrapper.enableCull();
-                        //RenderSystem.enableBlend();
-                        //RenderSystem.defaultBlendFunc();
+                        GLWrapper.enableCull();
+                        RenderSystem.enableBlend();
+                        RenderSystem.defaultBlendFunc();
                         //RenderSystem.disableDepthTest();
                         //GlStateManager._colorMask(true, true, true, true);
                         //GlStateManager._depthMask(false);
 
-                        canvas.drawRect(100, 200, 400, 260, Paint.take());
+                        // UI thread
+                        canvas.save();
+                        canvas.rotate(-10, 640, 360);
+                        Paint paint = Paint.take();
+                        paint.setSmoothRadius(2);
+                        canvas.drawRoundImage(image, 100, 20, 50, paint);
+                        canvas.restore();
+
+                        // render thread, wait UI thread
                         canvas.render();
 
                         /*GL11.glMatrixMode(GL11.GL_PROJECTION);

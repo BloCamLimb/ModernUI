@@ -42,7 +42,7 @@ public class RectProgram extends Shader {
 
     public static void createPrograms() {
         if (sFill == null) {
-            sFill = new RectProgram(VERT, new ResourceLocation(ModernUI.ID, "shaders/color.frag"));
+            sFill = new RectProgram(VERT, new ResourceLocation(ModernUI.ID, "shaders/fill.frag"));
             sFillTex = new FillTex();
             sFeathered = new Feathered();
         }
