@@ -20,6 +20,7 @@ package icyllis.modernui.math;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
 /**
@@ -157,7 +158,7 @@ public class Matrix4 implements Cloneable {
         mat.m22 = 2.0f / height;
         mat.m33 = 2.0f * invNF;
         mat.m41 = -1.0f;
-        mat.m42 = -1.0f;
+        mat.m42 = 1.0f;
         mat.m43 = (near + far) * invNF;
         mat.m44 = 1.0f;
         return mat;
@@ -593,6 +594,32 @@ public class Matrix4 implements Cloneable {
         a.put(m42);
         a.put(m43);
         a.put(m44);
+    }
+
+    /**
+     * Get this matrix data, store them into an array.
+     *
+     * @param a the pointer of the array to store
+     */
+    public void get(@Nonnull ByteBuffer a) {
+        if (a.remaining() < 64)
+            throw new IllegalArgumentException("The array length must be at least 16");
+        a.putFloat(m11);
+        a.putFloat(m12);
+        a.putFloat(m13);
+        a.putFloat(m14);
+        a.putFloat(m21);
+        a.putFloat(m22);
+        a.putFloat(m23);
+        a.putFloat(m24);
+        a.putFloat(m31);
+        a.putFloat(m32);
+        a.putFloat(m33);
+        a.putFloat(m34);
+        a.putFloat(m41);
+        a.putFloat(m42);
+        a.putFloat(m43);
+        a.putFloat(m44);
     }
 
     /**
