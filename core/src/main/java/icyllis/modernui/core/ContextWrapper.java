@@ -18,6 +18,8 @@
 
 package icyllis.modernui.core;
 
+import icyllis.modernui.graphics.Image;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -60,5 +62,11 @@ public abstract class ContextWrapper extends Context {
     @Override
     public ReadableByteChannel getResource(@Nonnull Path path) throws IOException {
         return mBase.getResource(path);
+    }
+
+    @Nullable
+    @Override
+    public Image getImage(@Nonnull Path path, boolean antiAliasing) {
+        return mBase.getImage(path, antiAliasing);
     }
 }

@@ -7,8 +7,11 @@ layout(std140, binding = 1) uniform PaintBlock {
     vec2 u_Radius;
 };
 
+layout(location = 0) uniform sampler2D u_Sampler;
+
 smooth in vec2 f_Position;
 smooth in vec4 f_Color;
+smooth in vec2 f_TexCoord;
 
 layout(location = 0) out vec4 fragColor;
 
@@ -22,5 +25,5 @@ void main() {
 
     float a = 1.0 - smoothstep(-u_Radius.y, 0.0, v);
 
-    fragColor = f_Color * vec4(1.0, 1.0, 1.0, a);
+    fragColor = texture(u_Sampler, f_TexCoord) * f_Color * vec4(1.0, 1.0, 1.0, a);
 }

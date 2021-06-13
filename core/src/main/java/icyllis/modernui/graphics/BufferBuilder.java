@@ -26,10 +26,4 @@ package icyllis.modernui.graphics;
  */
 public class BufferBuilder {
 
-    {
-        //GLWrapper.glGetUniformBlockIndex()
-        //GLWrapper.glUniformMatrix4fv();
-        //GLWrapper.glBindBufferBase();
-        //GLWrapper.glCreateFramebuffers()
-    }
 }

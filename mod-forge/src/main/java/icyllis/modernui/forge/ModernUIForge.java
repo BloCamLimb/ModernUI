@@ -19,7 +19,7 @@
 package icyllis.modernui.forge;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.core.ContextImpl;
+import icyllis.modernui.core.ContextClient;
 import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.graphics.shader.ShaderManager;
 import icyllis.modernui.view.LayoutIO;
@@ -94,12 +94,12 @@ public final class ModernUIForge extends ModernUI {
                                     }
                                 }
                         );
+                attachBaseContext(new ContextClient(ID));
             }
             if (production) {
                 FMLJavaModLoadingContext.get().getModEventBus().register(EventHandler.ModClientExp.class);
             }
         }
-        attachBaseContext(new ContextImpl(ID));
 
         ModernUI.LOGGER.debug(ModernUI.MARKER, "Modern UI initialized");
     }

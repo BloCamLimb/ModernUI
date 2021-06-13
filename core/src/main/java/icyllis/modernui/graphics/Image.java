@@ -18,6 +18,8 @@
 
 package icyllis.modernui.graphics;
 
+import icyllis.modernui.graphics.texture.Texture2D;
+
 import java.io.Closeable;
 import java.io.IOException;
 
@@ -28,8 +30,31 @@ import java.io.IOException;
  */
 public class Image implements Closeable {
 
+    private final Source mSource;
+
+    public Image(Source source) {
+        mSource = source;
+    }
+
+    Source getSource() {
+        return mSource;
+    }
+
     @Override
     public void close() throws IOException {
 
+    }
+
+    public static class Source {
+
+        final int mWidth;
+        final int mHeight;
+        final Texture2D mTexture;
+
+        public Source(int width, int height, Texture2D texture) {
+            mWidth = width;
+            mHeight = height;
+            mTexture = texture;
+        }
     }
 }

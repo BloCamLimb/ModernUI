@@ -20,12 +20,14 @@ package icyllis.modernui;
 
 import icyllis.modernui.core.Context;
 import icyllis.modernui.core.ContextWrapper;
+import icyllis.modernui.graphics.Image;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.awt.*;
 import java.io.IOException;
 import java.lang.ref.Cleaner;
@@ -66,6 +68,12 @@ public class ModernUI extends ContextWrapper {
             @Override
             public ReadableByteChannel getResource(@Nonnull Path path) throws IOException {
                 return Files.newByteChannel(resourcesDir.resolve(ID).resolve(path), StandardOpenOption.READ);
+            }
+
+            @Nullable
+            @Override
+            public Image getImage(@Nonnull Path path, boolean antiAliasing) {
+                return null;
             }
         });
     }

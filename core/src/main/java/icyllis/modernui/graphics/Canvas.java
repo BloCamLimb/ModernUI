@@ -132,4 +132,29 @@ public abstract class Canvas {
      * @param paint  The paint used to draw the rect
      */
     public abstract void drawRect(float left, float top, float right, float bottom, @Nonnull Paint paint);
+
+    /**
+     * Draw a rectangle with round corners within a rectangular bounds.
+     *
+     * @param left   the left of the rectangular bounds
+     * @param top    the top of the rectangular bounds
+     * @param right  the right of the rectangular bounds
+     * @param bottom the bottom of the rectangular bounds
+     * @param radius the radius used to round the corners
+     * @param paint  the paint used to draw the round rectangle
+     */
+    public abstract void drawRoundRect(float left, float top, float right, float bottom,
+                                       float radius, @Nonnull Paint paint);
+
+    /**
+     * Draw the specified image with round corners, whose top/left corner at (x,y)
+     * using the specified paint, transformed by the current matrix.
+     *
+     * @param image the image to be drawn
+     * @param left  the position of the left side of the image being drawn
+     * @param top   the position of the top side of the image being drawn
+     * @param paint the paint used to draw the round image
+     */
+    public abstract void drawRoundImage(@Nonnull Image image, float left, float top,
+                                        float radius, @Nonnull Paint paint);
 }
