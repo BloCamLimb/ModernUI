@@ -37,6 +37,10 @@ public class Shader {
         glUseProgram(mProgram);
     }
 
+    public final int get() {
+        return mProgram;
+    }
+
     /**
      * Use undefined shader program.
      */

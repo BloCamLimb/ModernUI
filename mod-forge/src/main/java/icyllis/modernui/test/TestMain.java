@@ -148,7 +148,7 @@ public class TestMain {
         mat.rotateZ(MathUtil.PI_DIV_2);
         mat.translate(-2, 0, 0);
         pos.transform(mat);
-        ModernUI.LOGGER.info(pos);
+        //ModernUI.LOGGER.info(pos);
         /*try {
             new Runner(new OptionsBuilder().include(TestCompare.class.getSimpleName()).build()).run();
         } catch (RunnerException e) {
@@ -174,13 +174,13 @@ public class TestMain {
 
                 Image image;
                 try (ReadableByteChannel channel = ModernUI.get().getResource(Path.of("7-160413104Q45C.png"))) {
-                    Bitmap bitmap = Bitmap.decode(Bitmap.Format.RGBA, channel);
+                    Bitmap bitmap = Bitmap.decode(null, channel);
                     Texture2D texture2D = new Texture2D();
                     int width = bitmap.getWidth();
                     int height = bitmap.getHeight();
-                    texture2D.init(GL_RGBA8, width, height, 4);
+                    texture2D.init(GL_RGB8, width, height, 4);
                     texture2D.upload(0, 0, 0, width, height, 0,
-                            0, 0, 1, GL_RGBA, GL_UNSIGNED_BYTE, bitmap.getPixels());
+                            0, 0, 1, bitmap.getFormat().glFormat, GL_UNSIGNED_BYTE, bitmap.getPixels());
                     texture2D.setFilter(true, true);
                     texture2D.generateMipmap();
                     image = new Image(new Image.Source(width, height, texture2D));
@@ -204,6 +204,7 @@ public class TestMain {
                         Paint paint = Paint.take();
                         paint.setSmoothRadius(2);
                         canvas.drawRoundImage(image, 100, 20, 50, paint);
+                        //canvas.drawCircle(60, 60, 20, paint);
                         canvas.restore();
 
                         // render thread, wait UI thread

@@ -26,8 +26,7 @@ import javax.annotation.Nonnull;
  */
 public class Paint {
 
-    // the instance on UI thread
-    private static final Paint sInstance = new Paint();
+    private static final ThreadLocal<Paint> TLS = ThreadLocal.withInitial(Paint::new);
 
     private static final int STYLE_MASK = 0x3;
 
@@ -79,9 +78,9 @@ public class Paint {
     }
 
     /**
-     * Take and reset the shared paint on the UI thread.
+     * Get and reset the thread-local paint.
      * <p>
-     * An example:
+     * For example:
      * <pre>
      * void onDraw(Canvas canvas) {
      *     var paint = Paint.take();
@@ -96,8 +95,9 @@ public class Paint {
      */
     @Nonnull
     public static Paint take() {
-        sInstance.reset();
-        return sInstance;
+        Paint paint = TLS.get();
+        paint.reset();
+        return paint;
     }
 
     /**
@@ -113,7 +113,7 @@ public class Paint {
     }
 
     /**
-     * Set current paint color, keep previous alpha.
+     * Set current paint color, with unchanged alpha.
      *
      * @param r red component [0, 255]
      * @param g green component [0, 255]
@@ -166,7 +166,7 @@ public class Paint {
 
     /**
      * Set the paint's style, used for controlling how primitives' geometries
-     * are interpreted (except images, which always assumes Fill).
+     * are interpreted (exclude images, they are always filled).
      *
      * @param style the new style to set in the paint
      */

@@ -20,7 +20,7 @@ package icyllis.modernui.mixin;
 
 import com.mojang.blaze3d.platform.Window;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.forge.MForgeCompat;
+import icyllis.modernui.forge.MuiForgeCompat;
 import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.graphics.textmc.TextLayoutProcessor;
 import icyllis.modernui.platform.RenderCore;
@@ -41,7 +41,7 @@ public class MixinWindow {
      */
     @Overwrite
     public int calculateScale(int guiScaleIn, boolean forceUnicode) {
-        int r = MForgeCompat.calcGuiScales((Window) (Object) this);
+        int r = MuiForgeCompat.calcGuiScales((Window) (Object) this);
         return guiScaleIn > 0 ? Mth.clamp(guiScaleIn, r >> 8 & 0xf, r & 0xf) : r >> 4 & 0xf;
     }
 

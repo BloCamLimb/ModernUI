@@ -104,7 +104,8 @@ public abstract class Canvas {
     public abstract void rotate(float degrees);
 
     /**
-     * Premultiply the current matrix with the specified rotation.
+     * Rotate canvas clockwise around the pivot point with specified angle, this is
+     * equivalent to premultiply the current matrix with the specified rotation.
      *
      * @param degrees The amount to rotate, in degrees
      * @param px      The x-coord for the pivot point (unchanged by the rotation)
@@ -117,9 +118,40 @@ public abstract class Canvas {
         translate(-px, -py);
     }
 
-    // WIP
+    // WIP, use stencil test
     private void clip() {
     }
+
+    /**
+     * Draw a circular arc.
+     * <p>
+     * If the start angle is negative or >= 360, the start angle is treated as start angle modulo
+     * 360. If the sweep angle is >= 360, then the circle is drawn completely. If the sweep angle is
+     * negative, the sweep angle is treated as sweep angle modulo 360 (e.g -30 to 330)
+     * <p>
+     * The arc is drawn clockwise. An angle of 0 degrees correspond to the geometric angle of 0
+     * degrees (3 o'clock on a watch.)
+     *
+     * @param cx         The x-coordinate of the center of the arc to be drawn
+     * @param cy         The y-coordinate of the center of the arc to be drawn
+     * @param radius     The radius of the circular arc to be drawn
+     * @param startAngle Starting angle (in degrees) where the arc begins
+     * @param sweepAngle Sweep angle (in degrees) measured clockwise
+     * @param paint      The paint used to draw the arc
+     */
+    public abstract void drawArc(float cx, float cy, float radius, float startAngle,
+                                 float sweepAngle, @Nonnull Paint paint);
+
+    /**
+     * Draw the specified circle using the specified paint. If radius is <= 0, then nothing will be
+     * drawn. The circle will be filled or framed based on the Style in the paint.
+     *
+     * @param cx     The x-coordinate of the center of the circle to be drawn
+     * @param cy     The y-coordinate of the center of the circle to be drawn
+     * @param radius The radius of the circle to be drawn
+     * @param paint  The paint used to draw the circle
+     */
+    public abstract void drawCircle(float cx, float cy, float radius, @Nonnull Paint paint);
 
     /**
      * Draw the specified Rect using the specified paint. The rectangle will be filled or framed
@@ -132,6 +164,17 @@ public abstract class Canvas {
      * @param paint  The paint used to draw the rect
      */
     public abstract void drawRect(float left, float top, float right, float bottom, @Nonnull Paint paint);
+
+    /**
+     * Draw the specified image with its top/left corner at (x,y), using the
+     * specified paint, transformed by the current matrix.
+     *
+     * @param image the image to be drawn
+     * @param left  the position of the left side of the image being drawn
+     * @param top   the position of the top side of the image being drawn
+     * @param paint the paint used to draw the round image
+     */
+    public abstract void drawImage(@Nonnull Image image, float left, float top, @Nonnull Paint paint);
 
     /**
      * Draw a rectangle with round corners within a rectangular bounds.
@@ -150,10 +193,11 @@ public abstract class Canvas {
      * Draw the specified image with round corners, whose top/left corner at (x,y)
      * using the specified paint, transformed by the current matrix.
      *
-     * @param image the image to be drawn
-     * @param left  the position of the left side of the image being drawn
-     * @param top   the position of the top side of the image being drawn
-     * @param paint the paint used to draw the round image
+     * @param image  the image to be drawn
+     * @param left   the position of the left side of the image being drawn
+     * @param top    the position of the top side of the image being drawn
+     * @param radius the radius used to round the corners
+     * @param paint  the paint used to draw the round image
      */
     public abstract void drawRoundImage(@Nonnull Image image, float left, float top,
                                         float radius, @Nonnull Paint paint);

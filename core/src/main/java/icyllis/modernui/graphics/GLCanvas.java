@@ -52,6 +52,7 @@ public final class GLCanvas extends Canvas {
      */
     public static final int MATRIX_BLOCK_BINDING = 0;
     public static final int ROUND_RECT_BINDING = 1;
+    public static final int CIRCLE_BINDING = 2;
 
     /**
      * Vertex buffer binding points
@@ -64,7 +65,7 @@ public final class GLCanvas extends Canvas {
      */
     public static final VertexAttrib POS;
     public static final VertexAttrib COLOR;
-    public static final VertexAttrib TEX;
+    public static final VertexAttrib UV;
     public static final VertexAttrib MODEL_VIEW;
 
     /**
@@ -79,6 +80,7 @@ public final class GLCanvas extends Canvas {
     public static final Shader POS_COLOR_FILL = new Shader();
     public static final Shader ROUND_RECT_FILL = new Shader();
     public static final Shader ROUND_RECT_TEX = new Shader();
+    public static final Shader CIRCLE_FILL = new Shader();
 
     /**
      * Recording commands
@@ -86,20 +88,22 @@ public final class GLCanvas extends Canvas {
     public static final int DRAW_RECT = 1;
     public static final int DRAW_ROUND_RECT = 2;
     public static final int DRAW_ROUND_IMAGE = 3;
+    public static final int DRAW_CIRCLE = 4;
 
     /**
      * Uniform block sizes, use std140 layout
      */
     public static final int PROJECTION_UNIFORM_SIZE = 64;
     public static final int ROUND_RECT_UNIFORM_SIZE = 24;
+    public static final int CIRCLE_UNIFORM_SIZE = 16;
 
     static {
         POS = new VertexAttrib(GENERIC_BINDING, VertexAttrib.Src.FLOAT, VertexAttrib.Dst.VEC2, false);
         COLOR = new VertexAttrib(GENERIC_BINDING, VertexAttrib.Src.UBYTE, VertexAttrib.Dst.VEC4, true);
-        TEX = new VertexAttrib(GENERIC_BINDING, VertexAttrib.Src.FLOAT, VertexAttrib.Dst.VEC2, false);
+        UV = new VertexAttrib(GENERIC_BINDING, VertexAttrib.Src.FLOAT, VertexAttrib.Dst.VEC2, false);
         MODEL_VIEW = new VertexAttrib(INSTANCED_BINDING, VertexAttrib.Src.FLOAT, VertexAttrib.Dst.MAT4, false);
         POS_COLOR = new VertexFormat(POS, COLOR, MODEL_VIEW);
-        POS_COLOR_TEX = new VertexFormat(POS, COLOR, TEX, MODEL_VIEW);
+        POS_COLOR_TEX = new VertexFormat(POS, COLOR, UV, MODEL_VIEW);
     }
 
     private final Deque<Matrix4> mMatrixStack = new ArrayDeque<>();
@@ -119,6 +123,7 @@ public final class GLCanvas extends Canvas {
 
     private ByteBuffer mUniformData = MemoryUtil.memAlloc(1024);
     private final int mRoundRectUBO;
+    private final int mCircleUBO;
 
     private final List<Texture2D> mTextures = new ArrayList<>();
 
@@ -128,6 +133,9 @@ public final class GLCanvas extends Canvas {
 
         mRoundRectUBO = glCreateBuffers();
         glNamedBufferStorage(mRoundRectUBO, ROUND_RECT_UNIFORM_SIZE, GL_DYNAMIC_STORAGE_BIT);
+
+        mCircleUBO = glCreateBuffers();
+        glNamedBufferStorage(mCircleUBO, CIRCLE_UNIFORM_SIZE, GL_DYNAMIC_STORAGE_BIT);
 
         mMatrixStack.push(Matrix4.identity());
 
@@ -152,12 +160,17 @@ public final class GLCanvas extends Canvas {
     private void onLoadShaders(@Nonnull ShaderManager manager) {
         int posColor = manager.getShard(ModernUI.get(), "pos_color.vert");
         int posColorTex = manager.getShard(ModernUI.get(), "pos_color_tex.vert");
-        int fill = manager.getShard(ModernUI.get(), "fill.frag");
+
+        int fill = manager.getShard(ModernUI.get(), "color_fill.frag");
         int roundRectFill = manager.getShard(ModernUI.get(), "round_rect_fill.frag");
         int roundRectTex = manager.getShard(ModernUI.get(), "round_rect_tex.frag");
+        int circleFill = manager.getShard(ModernUI.get(), "circle_fill.frag");
+
         manager.create(POS_COLOR_FILL, posColor, fill);
         manager.create(ROUND_RECT_FILL, posColor, roundRectFill);
         manager.create(ROUND_RECT_TEX, posColorTex, roundRectTex);
+        manager.create(CIRCLE_FILL, posColor, circleFill);
+
         ModernUI.LOGGER.info("Loaded shader programs");
     }
 
@@ -180,44 +193,95 @@ public final class GLCanvas extends Canvas {
         if (getSaveCount() != 1) {
             throw new IllegalStateException("Unbalanced save()/restore() pair");
         }
+        // upload textures
         RenderCore.flushRenderCalls();
         uploadBuffers();
 
         // uniform bindings are shared, we must re-bind before we use them
         glBindBufferBase(GL_UNIFORM_BUFFER, MATRIX_BLOCK_BINDING, mProjectionUBO);
         glBindBufferBase(GL_UNIFORM_BUFFER, ROUND_RECT_BINDING, mRoundRectUBO);
+        glBindBufferBase(GL_UNIFORM_BUFFER, CIRCLE_BINDING, mCircleUBO);
 
         long uniformDataPtr = MemoryUtil.memAddress(mUniformData.flip());
 
+        final int posColorVAO = POS_COLOR.getVertexArray();
+        final int posColorTexVAO = POS_COLOR_TEX.getVertexArray();
+
+        final int posColorShader = POS_COLOR_FILL.get();
+        final int roundRectShader = ROUND_RECT_FILL.get();
+        final int roundImageShader = ROUND_RECT_TEX.get();
+        final int circleShader = CIRCLE_FILL.get();
+
+        // draw states
+        int vao = 0, program = 0;
+        // base instance
         int instance = 0;
+        // generic array index
         int posColorIndex = 0;
         int posColorTexIndex = 0;
+        // textures
         int textureIndex = 0;
+
         for (int draw : mDrawStates) {
             switch (draw) {
                 case DRAW_RECT:
-                    glBindVertexArray(POS_COLOR.getVertexArray());
-                    POS_COLOR_FILL.use();
+                    if (vao != posColorVAO) {
+                        glBindVertexArray(posColorVAO);
+                        vao = posColorVAO;
+                    }
+                    if (program != posColorShader) {
+                        glUseProgram(posColorShader);
+                        program = posColorShader;
+                    }
                     glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, posColorIndex, 4, 1, instance);
                     posColorIndex += 4;
                     break;
+
                 case DRAW_ROUND_RECT:
-                    glBindVertexArray(POS_COLOR.getVertexArray());
-                    ROUND_RECT_FILL.use();
+                    if (vao != posColorVAO) {
+                        glBindVertexArray(posColorVAO);
+                        vao = posColorVAO;
+                    }
+                    if (program != roundRectShader) {
+                        glUseProgram(roundRectShader);
+                        program = roundRectShader;
+                    }
                     nglNamedBufferSubData(mRoundRectUBO, 0, ROUND_RECT_UNIFORM_SIZE, uniformDataPtr);
                     uniformDataPtr += ROUND_RECT_UNIFORM_SIZE;
                     glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, posColorIndex, 4, 1, instance);
                     posColorIndex += 4;
                     break;
+
                 case DRAW_ROUND_IMAGE:
-                    glBindVertexArray(POS_COLOR_TEX.getVertexArray());
-                    ROUND_RECT_TEX.use();
+                    if (vao != posColorTexVAO) {
+                        glBindVertexArray(posColorTexVAO);
+                        vao = posColorTexVAO;
+                    }
+                    if (program != roundImageShader) {
+                        glUseProgram(roundImageShader);
+                        program = roundImageShader;
+                    }
                     nglNamedBufferSubData(mRoundRectUBO, 0, ROUND_RECT_UNIFORM_SIZE, uniformDataPtr);
-                    glBindTextureUnit(0, mTextures.get(textureIndex).get());
                     uniformDataPtr += ROUND_RECT_UNIFORM_SIZE;
+                    glBindTextureUnit(0, mTextures.get(textureIndex).get());
+                    textureIndex++;
                     glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, posColorTexIndex, 4, 1, instance);
                     posColorTexIndex += 4;
-                    textureIndex++;
+                    break;
+
+                case DRAW_CIRCLE:
+                    if (vao != posColorVAO) {
+                        glBindVertexArray(posColorVAO);
+                        vao = posColorVAO;
+                    }
+                    if (program != circleShader) {
+                        glUseProgram(circleShader);
+                        program = circleShader;
+                    }
+                    nglNamedBufferSubData(mCircleUBO, 0, CIRCLE_UNIFORM_SIZE, uniformDataPtr);
+                    uniformDataPtr += CIRCLE_UNIFORM_SIZE;
+                    glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, posColorTexIndex, 4, 1, instance);
+                    posColorIndex += 4;
                     break;
             }
             instance++;
@@ -415,14 +479,42 @@ public final class GLCanvas extends Canvas {
     }
 
     @Override
+    public void drawArc(float cx, float cy, float radius, float startAngle, float sweepAngle, @Nonnull Paint paint) {
+
+    }
+
+    @Override
+    public void drawCircle(float cx, float cy, float radius, @Nonnull Paint paint) {
+        if (radius <= 0)
+            return;
+        putPosColor(cx - radius, cy - radius, cx + radius, cy + radius, paint.getColor());
+        ByteBuffer buffer = checkUniformBuffer();
+        buffer.putFloat(radius)
+                .putFloat(Math.min(radius, paint.getSmoothRadius()));
+        buffer.putFloat(cx)
+                .putFloat(cy);
+        getMatrix().get(checkModelViewBuffer());
+        mDrawStates.add(DRAW_CIRCLE);
+    }
+
+    @Override
     public void drawRect(float left, float top, float right, float bottom, @Nonnull Paint paint) {
+        if (right <= left || bottom <= top)
+            return;
         putPosColor(left, top, right, bottom, paint.getColor());
         getMatrix().get(checkModelViewBuffer());
         mDrawStates.add(DRAW_RECT);
     }
 
     @Override
+    public void drawImage(@Nonnull Image image, float left, float top, @Nonnull Paint paint) {
+
+    }
+
+    @Override
     public void drawRoundRect(float left, float top, float right, float bottom, float radius, @Nonnull Paint paint) {
+        if (right <= left || bottom <= top)
+            return;
         putPosColor(left, top, right, bottom, paint.getColor());
         ByteBuffer buffer = checkUniformBuffer();
         buffer.putFloat(left + radius)

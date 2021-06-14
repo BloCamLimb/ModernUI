@@ -39,8 +39,9 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.lwjgl.opengl.GL11C.*;
+import static icyllis.modernui.graphics.GLWrapper.*;
 
+//WIP
 public final class ContextClient extends Context {
 
     private final String mNamespace;

@@ -51,11 +51,11 @@ import static icyllis.modernui.graphics.GLWrapper.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
- * Represents a bitmap whose image data is in native. It is used for operations
+ * Represents a bitmap, with its image data in native. It is used for operations
  * on the application side, such as read from/write to stream/channel. Compared
  * with {@link icyllis.modernui.graphics.Image}, this data is completely stored
- * in RAM rather than in GPU memory. Losing the reference of the object will
- * automatically free the memory.
+ * in RAM rather than in GPU memory. Losing the reference of a bitmap object will
+ * automatically free the native memory.
  */
 @SuppressWarnings("unused")
 public final class Bitmap implements AutoCloseable {
@@ -73,21 +73,26 @@ public final class Bitmap implements AutoCloseable {
     /**
      * Creates a bitmap, the type of all components is unsigned byte.
      *
-     * @param format channels
-     * @param width  width in pixels
-     * @param height height in pixels
+     * @param format number of channels
+     * @param width  width in pixels, ranged from 1 to 16384
+     * @param height height in pixels, ranged from 1 to 16384
      * @param init   {@code true} to initialize pixels data to 0, or just allocate memory
-     * @throws IllegalArgumentException width or height is less than or equal to zero
+     * @throws IllegalArgumentException width or height out of range
      */
     public Bitmap(@Nonnull Format format, int width, int height, boolean init) {
         if (width <= 0 || height <= 0) {
             throw new IllegalArgumentException("Bitmap size must be positive");
         }
+        if (width > 16384) {
+            throw new IllegalArgumentException("Bitmap width is too large");
+        }
+        if (height > 16384) {
+            throw new IllegalArgumentException("Bitmap height is too large");
+        }
         mFormat = format;
         mWidth = width;
         mHeight = height;
-        final long size = (long) format.channels * width * height;
-        mRef = new Ref(this, size, init);
+        mRef = new Ref(this, format.channels * width * height, init);
     }
 
     private Bitmap(@Nonnull Format format, int width, int height, @Nonnull ByteBuffer data) throws IOException {
@@ -215,7 +220,7 @@ public final class Bitmap implements AutoCloseable {
     }
 
     /**
-     * The head address of {@code unsigned char *pixels} in native (not in JVM)
+     * The head address of {@code unsigned char *pixels} in native.
      *
      * @return the pointer of pixels data
      */
@@ -292,7 +297,7 @@ public final class Bitmap implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         release();
     }
 
@@ -310,11 +315,11 @@ public final class Bitmap implements AutoCloseable {
         /**
          * Describes the format for OpenGL uploading
          */
-        public final int format;
+        public final int glFormat;
 
-        Format(int channels, int format) {
+        Format(int channels, int glFormat) {
             this.channels = channels;
-            this.format = format;
+            this.glFormat = glFormat;
         }
 
         @Nonnull
@@ -449,7 +454,7 @@ public final class Bitmap implements AutoCloseable {
         private final boolean mFromSTB;
         private final Cleaner.Cleanable mCleanup;
 
-        private Ref(Bitmap owner, long size, boolean init) {
+        private Ref(Bitmap owner, int size, boolean init) {
             mFromSTB = false;
             if (init) {
                 mPixels = MemoryUtil.nmemCallocChecked(1L, size);

@@ -18,7 +18,6 @@
 
 package icyllis.modernui.graphics.vertex;
 
-import icyllis.modernui.ModernUI;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.IntSet;
@@ -100,8 +99,8 @@ public class VertexFormat {
      */
     public void setVertexBuffer(int binding, int buffer, int offset) {
         glVertexArrayVertexBuffer(getVertexArray(), binding, buffer, offset, getBindingSize(binding));
-        ModernUI.LOGGER.info("Bind Vertex Buffer: {VAO={}, bind={}, buffer={}, offset={}, stride={}}",
-                getVertexArray(), binding, buffer, offset, getBindingSize(binding));
+        /*ModernUI.LOGGER.info("Bind Vertex Buffer: {VAO={}, bind={}, buffer={}, offset={}, stride={}}",
+                getVertexArray(), binding, buffer, offset, getBindingSize(binding));*/
     }
 
     /**
