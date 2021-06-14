@@ -162,10 +162,10 @@ final class Registration {
 
         AccessOption.setGuiScale(new CycleOption("options.guiScale",
                 (options, integer) -> options.guiScale = Integer.remainderUnsigned(
-                        options.guiScale + integer, (MForgeCompat.calcGuiScales() & 0xf) + 1),
+                        options.guiScale + integer, (MuiForgeCompat.calcGuiScales() & 0xf) + 1),
                 (options, cycleOption) -> options.guiScale == 0 ?
                         ((AccessOption) cycleOption).callGenericValueLabel(new TranslatableComponent("options.guiScale.auto")
-                                .append(new TextComponent(" (" + (MForgeCompat.calcGuiScales() >> 4 & 0xf) + ")"))) :
+                                .append(new TextComponent(" (" + (MuiForgeCompat.calcGuiScales() >> 4 & 0xf) + ")"))) :
                         ((AccessOption) cycleOption).callGenericValueLabel(new TextComponent(Integer.toString(options.guiScale))))
         );
 
@@ -195,7 +195,7 @@ final class Registration {
                             (options, progressOption) -> options.guiScale == 0 ?
                                     ((AccessOption) progressOption)
                                             .callGenericValueLabel(new TranslatableComponent("options.guiScale.auto")
-                                                    .append(new TextComponent(" (" + (MForgeCompat.calcGuiScales() >> 4 & 0xf) + ")"))) :
+                                                    .append(new TextComponent(" (" + (MuiForgeCompat.calcGuiScales() >> 4 & 0xf) + ")"))) :
                                     ((AccessOption) progressOption)
                                             .callGenericValueLabel(new TextComponent(Integer.toString(options.guiScale)))
                     );

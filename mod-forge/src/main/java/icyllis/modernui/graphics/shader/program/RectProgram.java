@@ -42,7 +42,7 @@ public class RectProgram extends Shader {
 
     public static void createPrograms() {
         if (sFill == null) {
-            sFill = new RectProgram(VERT, new ResourceLocation(ModernUI.ID, "shaders/fill.frag"));
+            sFill = new RectProgram(VERT, new ResourceLocation(ModernUI.ID, "shaders/color_fill.frag"));
             sFillTex = new FillTex();
             sFeathered = new Feathered();
         }
@@ -63,7 +63,7 @@ public class RectProgram extends Shader {
     private static class FillTex extends RectProgram {
 
         private FillTex() {
-            super(VERT_TEX, new ResourceLocation(ModernUI.ID, "shaders/rect_fill_tex.frag"));
+            super(VERT_TEX, new ResourceLocation(ModernUI.ID, "shaders/color_tex.frag"));
         }
 
         /*@Override

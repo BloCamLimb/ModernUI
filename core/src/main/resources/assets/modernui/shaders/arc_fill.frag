@@ -1,6 +1,6 @@
-#version 430 core
+#version 450 core
 
-precision highp float;
+precision mediump float;
 
 layout(location = 0) uniform vec2 u_Radius;
 layout(location = 1) uniform vec2 u_CenterPos;
