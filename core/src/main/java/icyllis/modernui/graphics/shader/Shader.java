@@ -18,7 +18,7 @@
 
 package icyllis.modernui.graphics.shader;
 
-import static org.lwjgl.opengl.GL43C.glUseProgram;
+import icyllis.modernui.graphics.GLWrapper;
 
 /**
  * Represents OpenGL program objects.
@@ -34,7 +34,7 @@ public class Shader {
      * Use this shader program
      */
     public void use() {
-        glUseProgram(mProgram);
+        GLWrapper.glUseProgram(mProgram);
     }
 
     public final int get() {
@@ -45,6 +45,6 @@ public class Shader {
      * Use undefined shader program.
      */
     public static void stop() {
-        glUseProgram(0);
+        GLWrapper.glUseProgram(0);
     }
 }

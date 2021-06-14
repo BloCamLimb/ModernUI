@@ -26,6 +26,7 @@ import icyllis.modernui.graphics.vertex.VertexAttrib;
 import icyllis.modernui.graphics.vertex.VertexFormat;
 import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Matrix4;
+import icyllis.modernui.math.Rect;
 import icyllis.modernui.platform.RenderCore;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -53,6 +54,7 @@ public final class GLCanvas extends Canvas {
     public static final int MATRIX_BLOCK_BINDING = 0;
     public static final int ROUND_RECT_BINDING = 1;
     public static final int CIRCLE_BINDING = 2;
+    public static final int ARC_BINDING = 3;
 
     /**
      * Vertex buffer binding points
@@ -77,25 +79,36 @@ public final class GLCanvas extends Canvas {
     /**
      * Shader programs
      */
-    public static final Shader POS_COLOR_FILL = new Shader();
+    public static final Shader COLOR_FILL = new Shader();
+    public static final Shader COLOR_TEX = new Shader();
     public static final Shader ROUND_RECT_FILL = new Shader();
     public static final Shader ROUND_RECT_TEX = new Shader();
+    public static final Shader ROUND_RECT_STROKE = new Shader();
     public static final Shader CIRCLE_FILL = new Shader();
+    public static final Shader CIRCLE_STROKE = new Shader();
+    public static final Shader ARC_FILL = new Shader();
+    public static final Shader ARC_STROKE = new Shader();
 
     /**
      * Recording commands
      */
     public static final int DRAW_RECT = 1;
-    public static final int DRAW_ROUND_RECT = 2;
-    public static final int DRAW_ROUND_IMAGE = 3;
-    public static final int DRAW_CIRCLE = 4;
+    public static final int DRAW_IMAGE = 2;
+    public static final int DRAW_ROUND_RECT = 3;
+    public static final int DRAW_ROUND_IMAGE = 4;
+    public static final int DRAW_ROUND_RECT_OUTLINE = 5;
+    public static final int DRAW_CIRCLE = 6;
+    public static final int DRAW_CIRCLE_OUTLINE = 7;
+    public static final int DRAW_ARC = 8;
+    public static final int DRAW_ARC_OUTLINE = 9;
 
     /**
      * Uniform block sizes, use std140 layout
      */
     public static final int PROJECTION_UNIFORM_SIZE = 64;
-    public static final int ROUND_RECT_UNIFORM_SIZE = 24;
-    public static final int CIRCLE_UNIFORM_SIZE = 16;
+    public static final int ROUND_RECT_UNIFORM_SIZE = 28;
+    public static final int CIRCLE_UNIFORM_SIZE = 24;
+    public static final int ARC_UNIFORM_SIZE = 32;
 
     static {
         POS = new VertexAttrib(GENERIC_BINDING, VertexAttrib.Src.FLOAT, VertexAttrib.Dst.VEC2, false);
@@ -124,6 +137,7 @@ public final class GLCanvas extends Canvas {
     private ByteBuffer mUniformData = MemoryUtil.memAlloc(1024);
     private final int mRoundRectUBO;
     private final int mCircleUBO;
+    private final int mArcUBO;
 
     private final List<Texture2D> mTextures = new ArrayList<>();
 
@@ -136,6 +150,9 @@ public final class GLCanvas extends Canvas {
 
         mCircleUBO = glCreateBuffers();
         glNamedBufferStorage(mCircleUBO, CIRCLE_UNIFORM_SIZE, GL_DYNAMIC_STORAGE_BIT);
+
+        mArcUBO = glCreateBuffers();
+        glNamedBufferStorage(mArcUBO, ARC_UNIFORM_SIZE, GL_DYNAMIC_STORAGE_BIT);
 
         mMatrixStack.push(Matrix4.identity());
 
@@ -162,16 +179,26 @@ public final class GLCanvas extends Canvas {
         int posColorTex = manager.getShard(ModernUI.get(), "pos_color_tex.vert");
 
         int fill = manager.getShard(ModernUI.get(), "color_fill.frag");
+        int tex = manager.getShard(ModernUI.get(), "color_tex.frag");
         int roundRectFill = manager.getShard(ModernUI.get(), "round_rect_fill.frag");
         int roundRectTex = manager.getShard(ModernUI.get(), "round_rect_tex.frag");
+        int roundRectStroke = manager.getShard(ModernUI.get(), "round_rect_stroke.frag");
         int circleFill = manager.getShard(ModernUI.get(), "circle_fill.frag");
+        int circleStroke = manager.getShard(ModernUI.get(), "circle_stroke.frag");
+        int arcFill = manager.getShard(ModernUI.get(), "arc_fill.frag");
+        int arcStroke = manager.getShard(ModernUI.get(), "arc_stroke.frag");
 
-        manager.create(POS_COLOR_FILL, posColor, fill);
+        manager.create(COLOR_FILL, posColor, fill);
+        manager.create(COLOR_TEX, posColorTex, tex);
         manager.create(ROUND_RECT_FILL, posColor, roundRectFill);
         manager.create(ROUND_RECT_TEX, posColorTex, roundRectTex);
+        manager.create(ROUND_RECT_STROKE, posColor, roundRectStroke);
         manager.create(CIRCLE_FILL, posColor, circleFill);
+        manager.create(CIRCLE_STROKE, posColor, circleStroke);
+        manager.create(ARC_FILL, posColor, arcFill);
+        manager.create(ARC_STROKE, posColor, arcStroke);
 
-        ModernUI.LOGGER.info("Loaded shader programs");
+        ModernUI.LOGGER.info(MARKER, "Loaded shader programs");
     }
 
     /**
@@ -180,6 +207,7 @@ public final class GLCanvas extends Canvas {
      * @param projection the project matrix to replace current one
      */
     public void setProjection(Matrix4 projection) {
+        RenderCore.checkRenderThread();
         ByteBuffer buffer = glMapNamedBuffer(mProjectionUBO, GL_WRITE_ONLY);
         if (buffer == null) {
             throw new IllegalStateException();
@@ -201,16 +229,22 @@ public final class GLCanvas extends Canvas {
         glBindBufferBase(GL_UNIFORM_BUFFER, MATRIX_BLOCK_BINDING, mProjectionUBO);
         glBindBufferBase(GL_UNIFORM_BUFFER, ROUND_RECT_BINDING, mRoundRectUBO);
         glBindBufferBase(GL_UNIFORM_BUFFER, CIRCLE_BINDING, mCircleUBO);
+        glBindBufferBase(GL_UNIFORM_BUFFER, ARC_BINDING, mArcUBO);
 
         long uniformDataPtr = MemoryUtil.memAddress(mUniformData.flip());
 
         final int posColorVAO = POS_COLOR.getVertexArray();
         final int posColorTexVAO = POS_COLOR_TEX.getVertexArray();
 
-        final int posColorShader = POS_COLOR_FILL.get();
+        final int colorShader = COLOR_FILL.get();
+        final int colorImageShader = COLOR_TEX.get();
         final int roundRectShader = ROUND_RECT_FILL.get();
         final int roundImageShader = ROUND_RECT_TEX.get();
+        final int roundRectStrokeShader = ROUND_RECT_STROKE.get();
         final int circleShader = CIRCLE_FILL.get();
+        final int circleStrokeShader = CIRCLE_STROKE.get();
+        final int arcShader = ARC_FILL.get();
+        final int arcStrokeShader = ARC_STROKE.get();
 
         // draw states
         int vao = 0, program = 0;
@@ -229,9 +263,9 @@ public final class GLCanvas extends Canvas {
                         glBindVertexArray(posColorVAO);
                         vao = posColorVAO;
                     }
-                    if (program != posColorShader) {
-                        glUseProgram(posColorShader);
-                        program = posColorShader;
+                    if (program != colorShader) {
+                        glUseProgram(colorShader);
+                        program = colorShader;
                     }
                     glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, posColorIndex, 4, 1, instance);
                     posColorIndex += 4;
@@ -245,6 +279,21 @@ public final class GLCanvas extends Canvas {
                     if (program != roundRectShader) {
                         glUseProgram(roundRectShader);
                         program = roundRectShader;
+                    }
+                    nglNamedBufferSubData(mRoundRectUBO, 0, ROUND_RECT_UNIFORM_SIZE, uniformDataPtr);
+                    uniformDataPtr += ROUND_RECT_UNIFORM_SIZE;
+                    glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, posColorIndex, 4, 1, instance);
+                    posColorIndex += 4;
+                    break;
+
+                case DRAW_ROUND_RECT_OUTLINE:
+                    if (vao != posColorVAO) {
+                        glBindVertexArray(posColorVAO);
+                        vao = posColorVAO;
+                    }
+                    if (program != roundRectStrokeShader) {
+                        glUseProgram(roundRectStrokeShader);
+                        program = roundRectStrokeShader;
                     }
                     nglNamedBufferSubData(mRoundRectUBO, 0, ROUND_RECT_UNIFORM_SIZE, uniformDataPtr);
                     uniformDataPtr += ROUND_RECT_UNIFORM_SIZE;
@@ -269,6 +318,21 @@ public final class GLCanvas extends Canvas {
                     posColorTexIndex += 4;
                     break;
 
+                case DRAW_IMAGE:
+                    if (vao != posColorTexVAO) {
+                        glBindVertexArray(posColorTexVAO);
+                        vao = posColorTexVAO;
+                    }
+                    if (program != colorImageShader) {
+                        glUseProgram(colorImageShader);
+                        program = colorImageShader;
+                    }
+                    glBindTextureUnit(0, mTextures.get(textureIndex).get());
+                    textureIndex++;
+                    glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, posColorTexIndex, 4, 1, instance);
+                    posColorTexIndex += 4;
+                    break;
+
                 case DRAW_CIRCLE:
                     if (vao != posColorVAO) {
                         glBindVertexArray(posColorVAO);
@@ -280,7 +344,52 @@ public final class GLCanvas extends Canvas {
                     }
                     nglNamedBufferSubData(mCircleUBO, 0, CIRCLE_UNIFORM_SIZE, uniformDataPtr);
                     uniformDataPtr += CIRCLE_UNIFORM_SIZE;
-                    glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, posColorTexIndex, 4, 1, instance);
+                    glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, posColorIndex, 4, 1, instance);
+                    posColorIndex += 4;
+                    break;
+
+                case DRAW_CIRCLE_OUTLINE:
+                    if (vao != posColorVAO) {
+                        glBindVertexArray(posColorVAO);
+                        vao = posColorVAO;
+                    }
+                    if (program != circleStrokeShader) {
+                        glUseProgram(circleStrokeShader);
+                        program = circleStrokeShader;
+                    }
+                    nglNamedBufferSubData(mCircleUBO, 0, CIRCLE_UNIFORM_SIZE, uniformDataPtr);
+                    uniformDataPtr += CIRCLE_UNIFORM_SIZE;
+                    glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, posColorIndex, 4, 1, instance);
+                    posColorIndex += 4;
+                    break;
+
+                case DRAW_ARC:
+                    if (vao != posColorVAO) {
+                        glBindVertexArray(posColorVAO);
+                        vao = posColorVAO;
+                    }
+                    if (program != arcShader) {
+                        glUseProgram(arcShader);
+                        program = arcShader;
+                    }
+                    nglNamedBufferSubData(mArcUBO, 0, ARC_UNIFORM_SIZE, uniformDataPtr);
+                    uniformDataPtr += ARC_UNIFORM_SIZE;
+                    glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, posColorIndex, 4, 1, instance);
+                    posColorIndex += 4;
+                    break;
+
+                case DRAW_ARC_OUTLINE:
+                    if (vao != posColorVAO) {
+                        glBindVertexArray(posColorVAO);
+                        vao = posColorVAO;
+                    }
+                    if (program != arcStrokeShader) {
+                        glUseProgram(arcStrokeShader);
+                        program = arcStrokeShader;
+                    }
+                    nglNamedBufferSubData(mArcUBO, 0, ARC_UNIFORM_SIZE, uniformDataPtr);
+                    uniformDataPtr += ARC_UNIFORM_SIZE;
+                    glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, posColorIndex, 4, 1, instance);
                     posColorIndex += 4;
                     break;
             }
@@ -479,22 +588,101 @@ public final class GLCanvas extends Canvas {
     }
 
     @Override
-    public void drawArc(float cx, float cy, float radius, float startAngle, float sweepAngle, @Nonnull Paint paint) {
+    public void drawArc(float cx, float cy, float radius, float startAngle,
+                        float sweepAngle, @Nonnull Paint paint) {
+        if (sweepAngle == 0 || radius <= 0)
+            return;
+        if (sweepAngle >= 360) {
+            drawCircle(cx, cy, radius, paint);
+            return;
+        }
+        sweepAngle %= 360;
+        float middle = (startAngle % 360) + sweepAngle * 0.5f;
+        if (paint.getStyle() != Paint.Style.STROKE) {
+            addArcFill(cx, cy, radius, middle, sweepAngle, paint);
+        }
+        if (paint.getStyle() != Paint.Style.FILL) {
+            addArcStroke(cx, cy, radius, middle, sweepAngle, paint);
+        }
+    }
 
+    private void addArcFill(float cx, float cy, float radius, float middle,
+                            float sweepAngle, @Nonnull Paint paint) {
+        putPosColor(cx - radius, cy - radius, cx + radius, cy + radius, paint.getColor());
+        ByteBuffer buffer = checkUniformBuffer();
+        buffer.putFloat(radius)
+                .putFloat(Math.min(radius, paint.getSmoothRadius()));
+        buffer.position(buffer.position() + 8);
+        buffer.putFloat(cx)
+                .putFloat(cy);
+        buffer.putFloat(middle)
+                .putFloat(sweepAngle);
+        getMatrix().get(checkModelViewBuffer());
+        mDrawStates.add(DRAW_ARC);
+    }
+
+    private void addArcStroke(float cx, float cy, float radius, float middle,
+                              float sweepAngle, @Nonnull Paint paint) {
+        float half = Math.min(paint.getStrokeWidth() * 0.5f, radius);
+        float outer = radius + half;
+        putPosColor(cx - outer, cy - outer, cx + outer, cy + outer, paint.getColor());
+        ByteBuffer buffer = checkUniformBuffer();
+        buffer.putFloat(radius)
+                .putFloat(Math.min(half, paint.getSmoothRadius()))
+                .putFloat(half);
+        buffer.position(buffer.position() + 4);
+        buffer.putFloat(cx)
+                .putFloat(cy);
+        buffer.putFloat(middle)
+                .putFloat(sweepAngle);
+        getMatrix().get(checkModelViewBuffer());
+        mDrawStates.add(DRAW_ARC_OUTLINE);
     }
 
     @Override
     public void drawCircle(float cx, float cy, float radius, @Nonnull Paint paint) {
         if (radius <= 0)
             return;
+        if (paint.getStyle() != Paint.Style.STROKE) {
+            addCircleFill(cx, cy, radius, paint);
+        }
+        if (paint.getStyle() != Paint.Style.FILL) {
+            addCircleStroke(cx, cy, radius, paint);
+        }
+    }
+
+    private void addCircleFill(float cx, float cy, float radius, @Nonnull Paint paint) {
         putPosColor(cx - radius, cy - radius, cx + radius, cy + radius, paint.getColor());
         ByteBuffer buffer = checkUniformBuffer();
+        // vec4
         buffer.putFloat(radius)
                 .putFloat(Math.min(radius, paint.getSmoothRadius()));
+        buffer.position(buffer.position() + 8); // padding
+        // vec2
         buffer.putFloat(cx)
                 .putFloat(cy);
         getMatrix().get(checkModelViewBuffer());
         mDrawStates.add(DRAW_CIRCLE);
+    }
+
+    private void addCircleStroke(float cx, float cy, float radius, @Nonnull Paint paint) {
+        float half = Math.min(paint.getStrokeWidth() * 0.5f, radius);
+        float outer = radius + half;
+        putPosColor(cx - outer, cy - outer, cx + outer, cy + outer, paint.getColor());
+        ByteBuffer buffer = checkUniformBuffer();
+        buffer.putFloat(radius - half)
+                .putFloat(outer)
+                .putFloat(Math.min(half, paint.getSmoothRadius()));
+        buffer.position(buffer.position() + 4); // padding
+        buffer.putFloat(cx)
+                .putFloat(cy);
+        getMatrix().get(checkModelViewBuffer());
+        mDrawStates.add(DRAW_CIRCLE_OUTLINE);
+    }
+
+    @Override
+    public void drawRect(@Nonnull Rect r, @Nonnull Paint paint) {
+        drawRect(r.left, r.top, r.right, r.bottom, paint);
     }
 
     @Override
@@ -508,13 +696,30 @@ public final class GLCanvas extends Canvas {
 
     @Override
     public void drawImage(@Nonnull Image image, float left, float top, @Nonnull Paint paint) {
-
+        Image.Source source = image.getSource();
+        putPosColorTex(left, top, left + source.mWidth, top + source.mHeight, paint.getColor(),
+                0, 0, 1, 1);
+        mTextures.add(source.mTexture);
+        getMatrix().get(checkModelViewBuffer());
+        mDrawStates.add(DRAW_IMAGE);
     }
 
     @Override
     public void drawRoundRect(float left, float top, float right, float bottom, float radius, @Nonnull Paint paint) {
         if (right <= left || bottom <= top)
             return;
+        if (radius < 0)
+            radius = 0;
+        if (paint.getStyle() != Paint.Style.STROKE) {
+            addRoundRectFill(left, top, right, bottom, radius, paint);
+        }
+        if (paint.getStyle() != Paint.Style.FILL) {
+            addRoundRectStroke(left, top, right, bottom, radius, paint);
+        }
+    }
+
+    private void addRoundRectFill(float left, float top, float right, float bottom,
+                                  float radius, @Nonnull Paint paint) {
         putPosColor(left, top, right, bottom, paint.getColor());
         ByteBuffer buffer = checkUniformBuffer();
         buffer.putFloat(left + radius)
@@ -523,8 +728,25 @@ public final class GLCanvas extends Canvas {
                 .putFloat(bottom - radius);
         buffer.putFloat(radius)
                 .putFloat(Math.min(radius, paint.getSmoothRadius()));
+        buffer.position(buffer.position() + 4);
         getMatrix().get(checkModelViewBuffer());
         mDrawStates.add(DRAW_ROUND_RECT);
+    }
+
+    private void addRoundRectStroke(float left, float top, float right, float bottom,
+                                    float radius, @Nonnull Paint paint) {
+        float half = Math.min(paint.getStrokeWidth() * 0.5f, radius);
+        putPosColor(left - half, top - half, right + half, bottom + half, paint.getColor());
+        ByteBuffer buffer = checkUniformBuffer();
+        buffer.putFloat(left + radius)
+                .putFloat(top + radius)
+                .putFloat(right - radius)
+                .putFloat(bottom - radius);
+        buffer.putFloat(radius)
+                .putFloat(Math.min(half, paint.getSmoothRadius()))
+                .putFloat(half);
+        getMatrix().get(checkModelViewBuffer());
+        mDrawStates.add(DRAW_ROUND_RECT_OUTLINE);
     }
 
     @Override
@@ -532,6 +754,8 @@ public final class GLCanvas extends Canvas {
         Image.Source source = image.getSource();
         putPosColorTex(left, top, left + source.mWidth, top + source.mHeight, paint.getColor(),
                 0, 0, 1, 1);
+        if (radius < 0)
+            radius = 0;
         ByteBuffer buffer = checkUniformBuffer();
         buffer.putFloat(left + radius)
                 .putFloat(top + radius)
@@ -539,6 +763,7 @@ public final class GLCanvas extends Canvas {
                 .putFloat(top + source.mHeight - radius);
         buffer.putFloat(radius)
                 .putFloat(Math.min(radius, paint.getSmoothRadius()));
+        buffer.position(buffer.position() + 4);
         mTextures.add(source.mTexture);
         getMatrix().get(checkModelViewBuffer());
         mDrawStates.add(DRAW_ROUND_IMAGE);

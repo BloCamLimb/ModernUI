@@ -1,17 +1,18 @@
-#version 430 core
+#version 450 core
 
-precision highp float;
+precision mediump float;
 
-layout(location = 0) uniform vec3 u_Radius;
-layout(location = 1) uniform vec4 u_InnerRect;
+layout(std140, binding = 1) uniform PaintBlock {
+    vec4 u_InnerRect;
+    vec3 u_Radius;
+};
 
 smooth in vec2 f_Position;
 smooth in vec4 f_Color;
 
-out vec4 fragColor;
+layout(location = 0) out vec4 fragColor;
 
 void main() {
-
     vec2 tl = u_InnerRect.xy - f_Position;
     vec2 br = f_Position - u_InnerRect.zw;
 
