@@ -3,7 +3,7 @@
 precision mediump float;
 
 layout(std140, binding = 2) uniform PaintBlock {
-    vec2 u_Radius;
+    vec4 u_Radius;
     vec2 u_CenterPos;
 };
 

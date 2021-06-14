@@ -18,6 +18,8 @@
 
 package icyllis.modernui.graphics;
 
+import icyllis.modernui.math.Rect;
+
 import javax.annotation.Nonnull;
 
 public abstract class Canvas {
@@ -127,7 +129,7 @@ public abstract class Canvas {
      * <p>
      * If the start angle is negative or >= 360, the start angle is treated as start angle modulo
      * 360. If the sweep angle is >= 360, then the circle is drawn completely. If the sweep angle is
-     * negative, the sweep angle is treated as sweep angle modulo 360 (e.g -30 to 330)
+     * negative, the sweep angle is treated as sweep angle modulo 360
      * <p>
      * The arc is drawn clockwise. An angle of 0 degrees correspond to the geometric angle of 0
      * degrees (3 o'clock on a watch.)
@@ -152,6 +154,15 @@ public abstract class Canvas {
      * @param paint  The paint used to draw the circle
      */
     public abstract void drawCircle(float cx, float cy, float radius, @Nonnull Paint paint);
+
+    /**
+     * Draw the specified Rect using the specified Paint. The rectangle will be filled or framed
+     * based on the Style in the paint.
+     *
+     * @param r     The rectangle to be drawn.
+     * @param paint The paint used to draw the rectangle
+     */
+    public abstract void drawRect(@Nonnull Rect r, @Nonnull Paint paint);
 
     /**
      * Draw the specified Rect using the specified paint. The rectangle will be filled or framed

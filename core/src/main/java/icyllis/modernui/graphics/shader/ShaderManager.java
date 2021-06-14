@@ -19,6 +19,7 @@
 package icyllis.modernui.graphics.shader;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.platform.RenderCore;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
@@ -66,6 +67,7 @@ public class ShaderManager {
 
     // internal use
     public void reload() {
+        RenderCore.checkRenderThread();
         for (Listener l : mListeners) {
             l.onReload(this);
         }
@@ -126,6 +128,7 @@ public class ShaderManager {
      * @return the shader shard handle or 0 on failure
      */
     public int getShard(@Nonnull Context context, @Nonnull Path path, int type) {
+        RenderCore.checkRenderThread();
         int shader = mShaders.computeIfAbsent(context, c -> new Object2IntOpenHashMap<>()).getInt(path);
         if (shader != 0) {
             return shader;
@@ -182,6 +185,7 @@ public class ShaderManager {
     @SuppressWarnings("unchecked")
     @Nonnull
     public <T extends Shader> T create(@Nullable T shader, int... shards) {
+        RenderCore.checkRenderThread();
         int program;
         if (shader != null && shader.mProgram != 0) {
             program = shader.mProgram;
@@ -216,6 +220,7 @@ public class ShaderManager {
     @FunctionalInterface
     public interface Listener {
 
+        @RenderThread
         void onReload(@Nonnull ShaderManager manager);
     }
 }

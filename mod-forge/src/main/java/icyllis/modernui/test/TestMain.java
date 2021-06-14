@@ -55,7 +55,8 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.opengl.GL11C.*;
+import static org.lwjgl.opengl.GL11C.GL_RGB8;
+import static org.lwjgl.opengl.GL11C.GL_UNSIGNED_BYTE;
 
 @SuppressWarnings("unused")
 public class TestMain {
@@ -194,17 +195,31 @@ public class TestMain {
                         GLWrapper.enableCull();
                         RenderSystem.enableBlend();
                         RenderSystem.defaultBlendFunc();
-                        //RenderSystem.disableDepthTest();
+                        RenderSystem.disableDepthTest();
                         //GlStateManager._colorMask(true, true, true, true);
-                        //GlStateManager._depthMask(false);
+                        RenderSystem.depthMask(false);
 
                         // UI thread
                         canvas.save();
                         canvas.rotate(-10, 640, 360);
+                        //canvas.scale(5, 5);
                         Paint paint = Paint.take();
-                        paint.setSmoothRadius(2);
-                        canvas.drawRoundImage(image, 100, 20, 50, paint);
+                        paint.setSmoothRadius(3);
+                        //canvas.drawRoundImage(image, 100, 20, 3, paint);
                         //canvas.drawCircle(60, 60, 20, paint);
+                        paint.setStyle(Paint.Style.FILL);
+                        paint.setRGBA(120, 220, 240, 192);
+                        canvas.drawRoundRect(120, 50, 300, 100, 10, paint);
+
+                        paint.setStyle(Paint.Style.STROKE);
+                        paint.setStrokeWidth(6);
+                        paint.setRGBA(255, 255, 255, 255);
+                        //canvas.drawCircle(60, 60, 20, paint);
+                        canvas.drawRoundRect(120, 50, 300, 100, 10, paint);
+
+                        paint.setStrokeWidth(10);
+                        canvas.drawArc(200, 200, 30, 90, -90, paint);
+
                         canvas.restore();
 
                         // render thread, wait UI thread

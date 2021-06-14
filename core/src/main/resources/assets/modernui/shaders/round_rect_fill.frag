@@ -4,7 +4,7 @@ precision mediump float;
 
 layout(std140, binding = 1) uniform PaintBlock {
     vec4 u_InnerRect;
-    vec2 u_Radius;
+    vec3 u_Radius;
 };
 
 smooth in vec2 f_Position;
