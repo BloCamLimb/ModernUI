@@ -22,6 +22,18 @@ import icyllis.modernui.math.Rect;
 
 import javax.annotation.Nonnull;
 
+/**
+ * A canvas is used to draw contents for View, using shaders, such as
+ * rectangles, round rectangles, circular arcs, lines, images etc.
+ * <p>
+ * A canvas contains a model view matrix stack. Builds vertex buffers,
+ * uniform buffers and records draw commands for each primitives. Also
+ * controls multiple color buffer, the depth buffer and the stencil buffer.
+ * However, where to draw is undefined. Normally, all the contents are
+ * eventually drawn to the UI framebuffer.
+ *
+ * @since Core 1.6
+ */
 public abstract class Canvas {
 
     protected Canvas() {
@@ -156,8 +168,58 @@ public abstract class Canvas {
     public abstract void drawCircle(float cx, float cy, float radius, @Nonnull Paint paint);
 
     /**
+     * Draw a line segment with the specified start and stop x,y coordinates, using
+     * the specified paint. The Style is ignored in the paint, lines are always "framed".
+     * Stroke width in the paint represents the line width.
+     * <p>
+     * Actually, a line without smooth radius is drawn as a filled rectangle, otherwise
+     * a filled round rectangle, rotated around the midpoint of the line. So it's a bit
+     * heavy to draw.
+     *
+     * @param startX The x-coordinate of the start point of the line
+     * @param startY The y-coordinate of the start point of the line
+     * @param stopX  The x-coordinate of the stop point of the line
+     * @param stopY  The y-coordinate of the stop point of the line
+     * @param paint  The paint used to draw the line
+     */
+    public abstract void drawLine(float startX, float startY, float stopX, float stopY,
+                                  @Nonnull Paint paint);
+
+    /**
+     * Draw a series of lines. Each line is taken from 4 consecutive values in the pts array. Thus
+     * to draw 1 line, the array must contain at least 4 values. This is logically the same as
+     * drawing the array as follows: drawLine(pts[0], pts[1], pts[2], pts[3]) followed by
+     * drawLine(pts[4], pts[5], pts[6], pts[7]) and so on.
+     *
+     * @param pts    The array of points of the lines to draw [x0 y0 x1 y1 x2 y2 ...]
+     * @param offset Number of values in the array to skip before drawing.
+     * @param count  The number of values in the array to process, after skipping "offset" of them.
+     *               Since each line uses 4 values, the number of "lines" that are drawn is really
+     *               (count >> 2).
+     * @param paint  The paint used to draw the lines
+     */
+    public void drawLines(@Nonnull float[] pts, int offset, int count, @Nonnull Paint paint) {
+        count /= 4;
+        for (int i = 0; i < count; i++) {
+            drawLine(pts[offset++], pts[offset++], pts[offset++], pts[offset++], paint);
+        }
+    }
+
+    /**
+     * A helper version of {@link #drawLines(float[], int, int, Paint)}, with its offset is 0
+     * and count is the length of the pts array.
+     *
+     * @param pts   The array of points of the lines to draw [x0 y0 x1 y1 x2 y2 ...]
+     * @param paint The paint used to draw the lines
+     * @see #drawLines(float[], int, int, Paint)
+     */
+    public final void drawLines(@Nonnull float[] pts, @Nonnull Paint paint) {
+        drawLines(pts, 0, pts.length, paint);
+    }
+
+    /**
      * Draw the specified Rect using the specified Paint. The rectangle will be filled or framed
-     * based on the Style in the paint.
+     * based on the Style in the paint. The smooth radius is ignored in the paint.
      *
      * @param r     The rectangle to be drawn.
      * @param paint The paint used to draw the rectangle
@@ -166,7 +228,7 @@ public abstract class Canvas {
 
     /**
      * Draw the specified Rect using the specified paint. The rectangle will be filled or framed
-     * based on the Style in the paint.
+     * based on the Style in the paint. The smooth radius is ignored in the paint.
      *
      * @param left   The left side of the rectangle to be drawn
      * @param top    The top side of the rectangle to be drawn
@@ -178,7 +240,8 @@ public abstract class Canvas {
 
     /**
      * Draw the specified image with its top/left corner at (x,y), using the
-     * specified paint, transformed by the current matrix.
+     * specified paint, transformed by the current matrix. The Style and smooth
+     * radius is ignored in the paint, images are always filled.
      *
      * @param image the image to be drawn
      * @param left  the position of the left side of the image being drawn
@@ -202,7 +265,8 @@ public abstract class Canvas {
 
     /**
      * Draw the specified image with round corners, whose top/left corner at (x,y)
-     * using the specified paint, transformed by the current matrix.
+     * using the specified paint, transformed by the current matrix. The Style is
+     * ignored in the paint, images are always filled.
      *
      * @param image  the image to be drawn
      * @param left   the position of the left side of the image being drawn

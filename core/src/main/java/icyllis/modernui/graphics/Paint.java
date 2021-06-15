@@ -73,8 +73,8 @@ public class Paint {
 
     public void reset() {
         mColor = ~0;
-        mStrokeWidth = 1;
-        mSmoothRadius = 1;
+        mStrokeWidth = 2;
+        mSmoothRadius = 2;
     }
 
     /**
@@ -175,7 +175,7 @@ public class Paint {
     }
 
     /**
-     * Return the width for stroking.
+     * Return the width for stroking. The default value is 2.0 px.
      *
      * @return the paint's stroke width, used whenever the paint's style is
      * Stroke or StrokeAndFill.
@@ -185,7 +185,7 @@ public class Paint {
     }
 
     /**
-     * Set the width for stroking.
+     * Set the width for stroking. The default value is 2.0 px.
      *
      * @param width set the paint's stroke width, used whenever the paint's
      *              style is Stroke or StrokeAndFill.
@@ -197,7 +197,7 @@ public class Paint {
     /**
      * Get current smooth radius.
      * <p>
-     * Smooth radius is used to smooth the edges of geometry. The default value is 1.0 px.
+     * Smooth radius is used to smooth the edges of geometry. The default value is 2.0 px.
      *
      * @return feather radius
      * @see #setSmoothRadius(float)
@@ -209,7 +209,8 @@ public class Paint {
     /**
      * Set the smooth radius in pixels for this paint.
      * <p>
-     * Smooth radius is used to smooth the edges of geometry. The default value is 1.0 px.
+     * Smooth radius is used to smooth the edges of geometry. The default value is 2.0 px.
+     * Particularly, rectangles doesn't accept this value, use drawRound* for that.
      *
      * @param radius the new feather radius to set
      */

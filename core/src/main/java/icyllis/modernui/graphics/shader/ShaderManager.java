@@ -68,6 +68,12 @@ public class ShaderManager {
     // internal use
     public void reload() {
         RenderCore.checkRenderThread();
+        for (var map : mShaders.values()) {
+            for (int shard : map.values()) {
+                glDeleteShader(shard);
+            }
+        }
+        mShaders.clear();
         for (Listener l : mListeners) {
             l.onReload(this);
         }

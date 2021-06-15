@@ -55,8 +55,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.opengl.GL11C.GL_RGB8;
-import static org.lwjgl.opengl.GL11C.GL_UNSIGNED_BYTE;
+import static org.lwjgl.opengl.GL11C.*;
 
 @SuppressWarnings("unused")
 public class TestMain {
@@ -149,6 +148,7 @@ public class TestMain {
         mat.rotateZ(MathUtil.PI_DIV_2);
         mat.translate(-2, 0, 0);
         pos.transform(mat);
+        //ModernUI.LOGGER.info(MathUtil.atan2(-1, -1));
         //ModernUI.LOGGER.info(pos);
         /*try {
             new Runner(new OptionsBuilder().include(TestCompare.class.getSimpleName()).build()).run();
@@ -221,6 +221,8 @@ public class TestMain {
                         canvas.drawArc(200, 200, 30, 90, -90, paint);
 
                         canvas.restore();
+                        paint.setStrokeWidth(8);
+                        canvas.drawLine(20, 20, 140, 60, paint);
 
                         // render thread, wait UI thread
                         canvas.render();
