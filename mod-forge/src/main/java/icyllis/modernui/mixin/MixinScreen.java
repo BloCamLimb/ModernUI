@@ -32,7 +32,7 @@ import javax.annotation.Nonnull;
 @Mixin(Screen.class)
 public class MixinScreen {
 
-    private static final ResourceLocation BACKGROUND = new ResourceLocation("textures/block/dark_oak_planks.png");
+    private static final ResourceLocation BACKGROUND = new ResourceLocation("textures/gui/options_background.png");
 
     @Redirect(
             method = "renderBackground(Lcom/mojang/blaze3d/vertex/PoseStack;I)V",
