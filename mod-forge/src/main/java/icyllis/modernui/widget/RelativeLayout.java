@@ -157,11 +157,11 @@ public class RelativeLayout extends ViewGroup {
         int heightSize = MeasureSpec.getSize(heightMeasureSpec);
 
         // Record our dimensions if they are known;
-        if (widthMode.isSpecified()) {
+        if (widthMode.notUnspecified()) {
             myWidth = widthSize;
         }
 
-        if (heightMode.isSpecified()) {
+        if (heightMode.notUnspecified()) {
             myHeight = heightSize;
         }
 
@@ -253,7 +253,7 @@ public class RelativeLayout extends ViewGroup {
                 width = Math.max(width, getLayoutParams().width);
             }
 
-            width = Math.max(width, getMinWidth());
+            width = Math.max(width, getMinimumWidth());
             width = resolveSize(width, widthMeasureSpec);
 
             if (offsetHorizontalAxis) {
@@ -281,7 +281,7 @@ public class RelativeLayout extends ViewGroup {
                 height = Math.max(height, getLayoutParams().height);
             }
 
-            height = Math.max(height, getMinHeight());
+            height = Math.max(height, getMinimumHeight());
             height = resolveSize(height, heightMeasureSpec);
 
             if (offsetVerticalAxis) {

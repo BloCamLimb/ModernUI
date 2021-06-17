@@ -22,7 +22,7 @@ import java.lang.annotation.*;
 
 /**
  * Denotes that the annotated method should only be called on the render thread,
- * namely the OpenGL context thread of the Window.
+ * which has the OpenGL context shared between windows.
  * <p>
  * Example:
  * <pre><code>

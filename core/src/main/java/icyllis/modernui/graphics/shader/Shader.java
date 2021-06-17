@@ -40,11 +40,4 @@ public class Shader {
     public final int get() {
         return mProgram;
     }
-
-    /**
-     * Use undefined shader program.
-     */
-    public static void stop() {
-        GLWrapper.glUseProgram(0);
-    }
 }

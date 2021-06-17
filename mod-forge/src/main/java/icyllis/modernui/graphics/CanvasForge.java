@@ -24,10 +24,8 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
-import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.math.Icon;
 import icyllis.modernui.graphics.math.TextAlign;
-import icyllis.modernui.graphics.shader.Shader;
 import icyllis.modernui.graphics.shader.program.ArcProgram;
 import icyllis.modernui.graphics.shader.program.CircleProgram;
 import icyllis.modernui.graphics.shader.program.RectProgram;
@@ -49,11 +47,8 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * A canvas is used to draw contents for View, likes rectangles,
- * round rectangles, circles, arcs, lines, points, images etc.
- * <p>
- * The canvas is actually using shader programs (hardware-accelerated)
- * to render in real-time, so there's no need to control redrawing.
+ * CanvasForge is an extension to Canvas, which provides more drawing
+ * methods used in Minecraft.
  * <p>
  * The font renderer uses another system, which has two parts, one for Modern UI, and
  * the global one is using RenderType, make Modern UI font renderer work everywhere,
@@ -62,8 +57,6 @@ import javax.annotation.Nullable;
  *
  * @author BloCamLimb
  */
-@SuppressWarnings("unused")
-//TODO New render system (LOWEST PRIORITY)
 public class CanvasForge {
 
     private static CanvasForge instance;
@@ -75,6 +68,8 @@ public class CanvasForge {
     private final ItemRenderer mItemRenderer;
 
     private final TextLayoutProcessor mFontEngine = TextLayoutProcessor.getInstance();
+
+    private final GLCanvas mCanvas = GLCanvas.getInstance();
 
     @Deprecated
     private final BufferBuilder mBufferBuilder = Tesselator.getInstance().getBuilder();
@@ -122,6 +117,7 @@ public class CanvasForge {
     /**
      * GL states
      */
+    @Deprecated
     private static boolean lineAA = false;
 
 
@@ -232,6 +228,7 @@ public class CanvasForge {
      *
      * @param aa anti-aliasing
      */
+    @Deprecated
     public void setLineAntiAliasing(boolean aa) {
         if (aa) {
             if (!lineAA) {
@@ -250,6 +247,7 @@ public class CanvasForge {
      *
      * @param width width, default is 1.0f (not affected by gui scale)
      */
+    @Deprecated
     public void setLineWidth(float width) {
         RenderSystem.lineWidth(width);
     }
@@ -310,27 +308,7 @@ public class CanvasForge {
         return node.drawText(mBufferBuilder, text, x, y, r, g, b, a);
     }
 
-    /**
-     * <p>
-     * Draw a circular arc.
-     * </p>
-     * <p>
-     * If the start angle is negative or >= 360, the start angle is treated as start angle modulo
-     * 360. If the sweep angle is >= 360, then the circle is drawn completely. If the sweep angle is
-     * negative, the sweep angle is treated as sweep angle modulo 360 (e.g -30 to 330)
-     * </p>
-     * <p>
-     * The arc is drawn clockwise. An angle of 0 degrees correspond to the geometric angle of 0
-     * degrees (3 o'clock on a watch.)
-     * </p>
-     *
-     * @param centerX    The x-coordinate of the center of the arc to be drawn
-     * @param centerY    The y-coordinate of the center of the arc to be drawn
-     * @param radius     The radius of the circular arc to be drawn
-     * @param startAngle Starting angle (in degrees) where the arc begins
-     * @param sweepAngle Sweep angle (in degrees) measured clockwise
-     * @param paint      The paint used to draw the arc
-     */
+    @Deprecated
     public void drawArc(float centerX, float centerY, float radius, float startAngle,
                         float sweepAngle, @Nonnull Paint paint) {
         if (sweepAngle == 0 || radius <= 0)
@@ -348,6 +326,7 @@ public class CanvasForge {
         }
     }
 
+    @Deprecated
     protected void fillArc(float cx, float cy, float radius, float startAngle,
                            float sweepAngle, @Nonnull Paint paint) {
         if (sweepAngle >= 360)
@@ -365,10 +344,11 @@ public class CanvasForge {
             program.setAngle(middle, sweepAngle);
             program.setRadius(radius, Math.min(radius, paint.getSmoothRadius()));
             upload(cx - radius, cy - radius, cx + radius, cy + radius, paint.getColor());
-            Shader.stop();
+            GLWrapper.stopProgram();
         }
     }
 
+    @Deprecated
     protected void strokeArc(float cx, float cy, float radius, float startAngle,
                              float sweepAngle, @Nonnull Paint paint) {
         if (sweepAngle >= 360)
@@ -388,20 +368,11 @@ public class CanvasForge {
             program.setRadius(radius, Math.min(thickness, paint.getSmoothRadius()), thickness);
             float outer = radius + thickness;
             upload(cx - outer, cy - outer, cx + outer, cy + outer, paint.getColor());
-            Shader.stop();
+            GLWrapper.stopProgram();
         }
     }
 
-    /**
-     * Draw the specified rectangle using the specified paint. The rectangle will be filled or framed
-     * based on the Style in the paint.
-     *
-     * @param left   The left side of the rectangle to be drawn
-     * @param top    The top side of the rectangle to be drawn
-     * @param right  The right side of the rectangle to be drawn
-     * @param bottom The bottom side of the rectangle to be drawn
-     * @param paint  The paint used to draw the rect
-     */
+    @Deprecated
     public void drawRect(float left, float top, float right, float bottom, @Nonnull Paint paint) {
         if (left >= right || bottom <= top)
             return;
@@ -415,6 +386,7 @@ public class CanvasForge {
         fillRect(left, top, right, bottom, paint);
     }
 
+    @Deprecated
     protected void fillRect(float left, float top, float right, float bottom, @Nonnull Paint paint) {
         if (paint.getSmoothRadius() > 0) {
             final RectProgram.Feathered program = RectProgram.feathered();
@@ -426,7 +398,7 @@ public class CanvasForge {
             RectProgram.fill().use();
         }
         upload(left, top, right, bottom, paint.getColor());
-        Shader.stop();
+        GLWrapper.stopProgram();
     }
 
     /**
@@ -563,15 +535,7 @@ public class CanvasForge {
         BufferUploader.end(mBufferBuilder);
     }
 
-    /**
-     * Draw the specified circle using the specified paint. If radius is <= 0, then nothing will be
-     * drawn. The circle will be filled or framed based on the Style in the paint.
-     *
-     * @param centerX The x-coordinate of the center of the circle to be drawn
-     * @param centerY The y-coordinate of the center of the circle to be drawn
-     * @param radius  The radius of the circle to be drawn
-     * @param paint   The paint used to draw the circle
-     */
+    @Deprecated
     public void drawCircle(float centerX, float centerY, float radius, @Nonnull Paint paint) {
         if (radius <= 0)
             return;
@@ -586,15 +550,17 @@ public class CanvasForge {
         }
     }
 
+    @Deprecated
     protected void fillCircle(float cx, float cy, float r, @Nonnull Paint paint) {
         final CircleProgram.Fill program = CircleProgram.fill();
         program.use();
         program.setRadius(r, Math.min(r, paint.getSmoothRadius()));
         program.setCenter(cx, cy);
         upload(cx - r, cy - r, cx + r, cy + r, paint.getColor());
-        Shader.stop();
+        GLWrapper.stopProgram();
     }
 
+    @Deprecated
     protected void strokeCircle(float cx, float cy, float r, @Nonnull Paint paint) {
         final CircleProgram.Stroke program = CircleProgram.stroke();
         program.use();
@@ -603,7 +569,7 @@ public class CanvasForge {
         program.setRadius(r - thickness, outer, Math.min(thickness, paint.getSmoothRadius()));
         program.setCenter(cx, cy);
         upload(cx - outer, cy - outer, cx + outer, cy + outer, paint.getColor());
-        Shader.stop();
+        GLWrapper.stopProgram();
     }
 
     /**
@@ -614,6 +580,7 @@ public class CanvasForge {
      * @param stopX  x2
      * @param stopY  y2
      */
+    @Deprecated
     public void drawLine(float startX, float startY, float stopX, float stopY) {
         RenderSystem.disableTexture();
 
@@ -629,17 +596,7 @@ public class CanvasForge {
         BufferUploader.end(mBufferBuilder);
     }
 
-    /**
-     * Draw a rectangle with round corners within a rectangular bounds.
-     *
-     * @param left   the left of the rectangular bounds
-     * @param top    the top of the rectangular bounds
-     * @param right  the right of the rectangular bounds
-     * @param bottom the bottom of the rectangular bounds
-     * @param radius the round corner radius
-     * @param paint  the paint used to draw the round rectangle
-     */
-    public void drawRoundRect(float left, float top, float right, float bottom,
+    /*public void drawRoundRect(float left, float top, float right, float bottom,
                               float radius, @Nonnull Paint paint) {
         radius = Math.max(0, radius);
         switch (paint.getStyle()) {
@@ -672,7 +629,7 @@ public class CanvasForge {
         program.setInnerRect(left + r, top + r, right - r, bottom - r);
         upload(left - r, top - r, right + r, bottom + r, paint.getColor());
         Shader.stop();
-    }
+    }*/
 
     @Deprecated
     protected void upload(float left, float top, float right, float bottom, int color) {
@@ -705,7 +662,7 @@ public class CanvasForge {
         mBufferBuilder.vertex(left, top, z).color(201, 200, 232, a).endVertex();
         mBufferBuilder.end();
         BufferUploader.end(mBufferBuilder);
-        Shader.stop();
+        GLWrapper.stopProgram();
     }
 
     /**
@@ -717,6 +674,7 @@ public class CanvasForge {
      * @param right  rect right
      * @param bottom rect bottom
      */
+    @Deprecated
     public void drawRoundImage(@Nonnull Icon icon, float left, float top, float right, float bottom,
                                float radius, @Nonnull Paint paint) {
         RoundRectProgram.FillTex program = RoundRectProgram.fillTex();
@@ -742,7 +700,7 @@ public class CanvasForge {
         builder.end();
         BufferUploader.end(builder);
 
-        Shader.stop();
+        GLWrapper.stopProgram();
     }
 
     /**
@@ -786,85 +744,14 @@ public class CanvasForge {
         RenderSystem.defaultBlendFunc();
     }
 
-    /**
-     * At most cases, you've to call this
-     * in view's onDraw() method
-     *
-     * @param view view to move
-     */
     @Deprecated
-    public void moveTo(@Nonnull View view) {
-        /*drawingX = view.getLeft();
-        drawingY = view.getTop();*/
-    }
-
-    /**
-     * At most cases, you've to call this
-     * in drawable's draw() method
-     *
-     * @param drawable drawable to move
-     */
-    @Deprecated
-    public void moveTo(@Nonnull Drawable drawable) {
-        /*drawingX = drawable.getLeft();
-        drawingY = drawable.getTop();*/
-    }
-
-    @Deprecated
-    public void moveToZero() {
-        /*drawingX = 0;
-        drawingY = 0;*/
-    }
-
-    public void save() {
-        RenderSystem.pushMatrix();
-    }
-
-    public void restore() {
-        RenderSystem.popMatrix();
-    }
-
-    public void translate(float dx, float dy) {
-        RenderSystem.translatef(dx, dy, 0.0f);
-    }
-
-    public void scale(float sx, float sy) {
-        RenderSystem.scalef(sx, sy, 1.0f);
-    }
-
-    /**
-     * Scale the canvas and translate to pos
-     *
-     * @param sx x scale
-     * @param sy y scale
-     * @param px pivot x pos
-     * @param py pivot y pos
-     */
-    public void scale(float sx, float sy, float px, float py) {
-        RenderSystem.scalef(sx, sy, 1.0f);
-        float dx;
-        float dy;
-        if (sx < 1) {
-            dx = 1.0f / sx - 1.0f;
-        } else {
-            dx = sx - 1.0f;
-        }
-        dx *= px;
-        if (sy < 1) {
-            dy = 1.0f / sy - 1.0f;
-        } else {
-            dy = sy - 1.0f;
-        }
-        dy *= py;
-        RenderSystem.translatef(dx, dy, 0.0f);
-    }
-
     public void clipVertical(@Nonnull View view) {
         GL43.glEnable(GL43.GL_SCISSOR_TEST);
         GL43.glScissor(0, mMainWindow.getHeight() - view.getBottom(),
                 mMainWindow.getWidth(), view.getHeight());
     }
 
+    @Deprecated
     public void clipStart(float x, float y, float width, float height) {
         double scale = mMainWindow.getGuiScale();
         GL43.glEnable(GL43.GL_SCISSOR_TEST);
@@ -872,6 +759,7 @@ public class CanvasForge {
                 (int) (width * scale), (int) (height * scale));
     }
 
+    @Deprecated
     public void clipEnd() {
         GL43.glDisable(GL43.GL_SCISSOR_TEST);
     }

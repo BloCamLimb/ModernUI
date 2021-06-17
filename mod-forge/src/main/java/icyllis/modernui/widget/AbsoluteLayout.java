@@ -60,8 +60,8 @@ public class AbsoluteLayout extends ViewGroup {
             }
         }
 
-        maxWidth = Math.max(maxWidth, getMinWidth());
-        maxHeight = Math.max(maxHeight, getMinHeight());
+        maxWidth = Math.max(maxWidth, getMinimumWidth());
+        maxHeight = Math.max(maxHeight, getMinimumHeight());
 
         setMeasuredDimension(resolveSize(maxWidth, widthMeasureSpec),
                 resolveSize(maxHeight, heightMeasureSpec));

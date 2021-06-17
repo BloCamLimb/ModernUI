@@ -27,7 +27,7 @@ import javax.annotation.Nullable;
 
 /**
  * The top of a view hierarchy, implementing the needed protocol between View
- * and the WindowManager
+ * and the UIManager
  */
 public final class ViewRootImpl implements ViewParent {
 
@@ -105,9 +105,9 @@ public final class ViewRootImpl implements ViewParent {
     }
 
     void onDraw(CanvasForge canvas) {
-        if (mView != null) {
+        /*if (mView != null) {
             mView.draw(canvas);
-        }
+        }*/
     }
 
     boolean onInputEvent(InputEvent event) {

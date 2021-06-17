@@ -23,7 +23,9 @@ import icyllis.modernui.math.MathUtil;
 import javax.annotation.Nonnull;
 
 /**
- * Measure specification, encapsulates the layout requirements passed from parent to child
+ * Measure specification encapsulates the layout requirements passed from parent to child.
+ * Each MeasureSpec represents a requirement for either the width or the height.
+ * A MeasureSpec is comprised of a size and a mode.
  */
 @SuppressWarnings("unused")
 public class MeasureSpec {
@@ -32,22 +34,22 @@ public class MeasureSpec {
     private static final int MODE_MASK  = 0x3 << MODE_SHIFT;
 
     /**
-     * Make measure specification based on the size and mode
+     * Creates a measure specification based on the given size and mode.
      *
-     * @param size measure size
-     * @param mode measure mode
-     * @return measure specification
+     * @param size the size of the measure specification
+     * @param mode the mode of the measure specification
+     * @return the measure specification based on size and mode
      */
     public static int makeMeasureSpec(int size, @Nonnull Mode mode) {
-        size = MathUtil.clamp(size, 0, 1 << MODE_SHIFT - 1);
-        return (size & ~MODE_MASK) | (mode.ordinal() << MODE_SHIFT & MODE_MASK);
+        size = MathUtil.clamp(size, 0, (1 << MODE_SHIFT) - 1);
+        return (size & ~MODE_MASK) | (mode.ordinal() << MODE_SHIFT);
     }
 
     /**
      * Extracts the size from the supplied measure specification.
      *
-     * @param measureSpec measure specification
-     * @return measure size
+     * @param measureSpec the measure specification to extract from
+     * @return the size in pixels defined in the supplied measure specification
      */
     public static int getSize(int measureSpec) {
         return (measureSpec & ~MODE_MASK);
@@ -56,25 +58,18 @@ public class MeasureSpec {
     /**
      * Extracts the mode from the supplied measure specification.
      *
-     * @param measureSpec measure specification
-     * @return measure mode
+     * @param measureSpec the measure specification to extract from
+     * @return the measure mode, see {@link Mode}
      */
+    @Nonnull
     public static Mode getMode(int measureSpec) {
-        switch (measureSpec & MODE_MASK) {
-            case 1 << MODE_SHIFT:
-                return Mode.EXACTLY;
-            case 2 << MODE_SHIFT:
-                return Mode.AT_MOST;
-            default:
-                return Mode.UNSPECIFIED;
-        }
+        return Mode.values()[measureSpec >>> MODE_SHIFT];
     }
 
     /**
-     * Measure specification mode
+     * Measure specification modes.
      */
     public enum Mode {
-
         /**
          * The parent has not imposed any constraint on the child.
          * It can be whatever size it wants.
@@ -97,7 +92,7 @@ public class MeasureSpec {
             return this == UNSPECIFIED;
         }
 
-        public boolean isSpecified() {
+        public boolean notUnspecified() {
             return this != UNSPECIFIED;
         }
 
@@ -111,6 +106,10 @@ public class MeasureSpec {
 
         public boolean isAtMost() {
             return this == AT_MOST;
+        }
+
+        public boolean notAtMost() {
+            return this != AT_MOST;
         }
     }
 }

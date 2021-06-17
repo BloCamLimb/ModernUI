@@ -19,6 +19,7 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.CanvasForge;
 import net.minecraft.Util;
 
@@ -79,7 +80,7 @@ public abstract class ViewGroup extends View implements ViewParent {
     }
 
     @Override
-    protected void dispatchDraw(@Nonnull CanvasForge canvas) {
+    protected void dispatchDraw(@Nonnull Canvas canvas) {
         final boolean doTranslate = (getScrollX() != 0 || getScrollY() != 0);
         if (doTranslate) {
             canvas.save();
@@ -783,8 +784,8 @@ public abstract class ViewGroup extends View implements ViewParent {
      * ViewGroup.
      *
      * <p><strong>Note:</strong> do not invoke this method from
-     * {@link #draw(CanvasForge)}, {@link #onDraw(CanvasForge)},
-     * {@link #dispatchDraw(CanvasForge)} or any related method.</p>
+     * {@link #draw(CanvasForge)}, {@link View#onDraw(icyllis.modernui.graphics.Canvas)},
+     * {@link View#dispatchDraw(Canvas)} or any related method.</p>
      */
     public void removeAllViews() {
         removeAllViewsInLayout();
@@ -801,8 +802,8 @@ public abstract class ViewGroup extends View implements ViewParent {
      * view measuring and layout pipeline.
      *
      * <p><strong>Note:</strong> do not invoke this method from
-     * {@link #draw(CanvasForge)}, {@link #onDraw(CanvasForge)},
-     * {@link #dispatchDraw(CanvasForge)} or any related method.</p>
+     * {@link #draw(CanvasForge)}, {@link View#onDraw(icyllis.modernui.graphics.Canvas)},
+     * {@link View#dispatchDraw(Canvas)} or any related method.</p>
      */
     public void removeAllViewsInLayout() {
         final int count = mChildrenCount;
@@ -916,7 +917,7 @@ public abstract class ViewGroup extends View implements ViewParent {
      * Tells the ViewGroup whether to draw its children in the order defined by the method
      * {@link #getChildDrawingOrder(int, int)}.
      * <p>
-     * Note that View#getZ() reordering, done by {@link #dispatchDraw(CanvasForge)},
+     * Note that View#getZ() reordering, done by {@link View#dispatchDraw(Canvas)},
      * will override custom child ordering done via this method.
      *
      * @param enabled true if the order of the children when drawing is determined by

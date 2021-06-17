@@ -21,7 +21,7 @@ package icyllis.modernui.test;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.*;
-import icyllis.modernui.graphics.CanvasForge;
+import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.math.Icon;
@@ -74,7 +74,7 @@ public class TestLinearLayout extends LinearLayout {
         setGravity(Gravity.CENTER);
         setDivider(new Drawable() {
             @Override
-            public void draw(@Nonnull CanvasForge canvas) {
+            public void draw(@Nonnull Canvas canvas) {
                 canvas.moveTo(this);
                 canvas.setRGBA(192, 192, 192, 128);
                 canvas.drawLine(0, 0, getWidth(), 0);
@@ -153,7 +153,7 @@ public class TestLinearLayout extends LinearLayout {
     };
 
     @Override
-    protected void onDraw(@Nonnull CanvasForge canvas) {
+    protected void onDraw(@Nonnull Canvas canvas) {
         super.onDraw(canvas);
         canvas.moveTo(this);
         canvas.resetColor();
@@ -324,7 +324,7 @@ public class TestLinearLayout extends LinearLayout {
     private static class CView extends View {
 
         @Override
-        protected void onDraw(@Nonnull CanvasForge canvas) {
+        protected void onDraw(@Nonnull Canvas canvas) {
             String str = ChatFormatting.UNDERLINE + "Modern" + ChatFormatting.AQUA + " UI"/* + TextFormatting.OBFUSCATED + "\u0629\u064a\u0628\u0631\u0639\u0644\u0627" + TextFormatting.STRIKETHROUGH + "\u2642"*/;
             if (isHovered()) {
                 Paint paint = Paint.take();
@@ -353,7 +353,7 @@ public class TestLinearLayout extends LinearLayout {
         }
 
         @Override
-        protected void onDraw(@Nonnull CanvasForge canvas) {
+        protected void onDraw(@Nonnull Canvas canvas) {
             canvas.setTextAlign(TextAlign.LEFT);
             canvas.drawText("" + ChatFormatting.RED + ChatFormatting.BLUE + "G", offset, offsetY + 4);
         }

@@ -19,6 +19,8 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.annotation.UiThread;
+import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.CanvasForge;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.math.Point;
@@ -38,13 +40,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @since 2.0
  */
+@UiThread
 @SuppressWarnings("unused")
 public class View {
-
-    /**
-     * @see #generateViewId()
-     */
-    private static final AtomicInteger GENERATED_ID = new AtomicInteger(1);
 
     /**
      * Log marker.
@@ -55,6 +53,11 @@ public class View {
      * Used to mark a View that has no ID.
      */
     public static final int NO_ID = -1;
+
+    /**
+     * @see #generateViewId()
+     */
+    private static final AtomicInteger sNextGeneratedId = new AtomicInteger(1);
 
     /*
      * Private masks
@@ -200,45 +203,51 @@ public class View {
     int mId = NO_ID;
 
     /**
-     * View left on screen
-     * {@link #getLeft()}
+     * The distance in pixels from the left edge of this view's parent
+     * to the left edge of this view.
      */
     int mLeft;
-
     /**
-     * View top on screen
-     * {@link #getTop()}
-     */
-    int mTop;
-
-    /**
-     * View right on screen
-     * {@link #getRight()}
+     * The distance in pixels from the left edge of this view's parent
+     * to the right edge of this view.
      */
     int mRight;
-
     /**
-     * View bottom on screen
-     * {@link #getBottom()}
+     * The distance in pixels from the top edge of this view's parent
+     * to the top edge of this view.
+     */
+    int mTop;
+    /**
+     * The distance in pixels from the top edge of this view's parent
+     * to the bottom edge of this view.
      */
     int mBottom;
 
-    //private boolean listening = true;
+    /**
+     * The offset, in pixels, by which the content of this view is scrolled
+     * horizontally.
+     */
+    protected int mScrollX;
+    /**
+     * The offset, in pixels, by which the content of this view is scrolled
+     * vertically.
+     */
+    protected int mScrollY;
 
-    private int minWidth;
-    private int minHeight;
+    private int mMinWidth;
+    private int mMinHeight;
 
     /**
      * Cached previous measure spec to avoid unnecessary measurements
      */
-    private int prevWidthMeasureSpec = Integer.MIN_VALUE;
-    private int prevHeightMeasureSpec = Integer.MIN_VALUE;
+    private int mPrevWidthMeasureSpec = Integer.MIN_VALUE;
+    private int mPrevHeightMeasureSpec = Integer.MIN_VALUE;
 
     /**
      * The measurement result in onMeasure(), used to layout
      */
-    private int measuredWidth;
-    private int measuredHeight;
+    private int mMeasuredWidth;
+    private int mMeasuredHeight;
 
     /**
      * Scrollbars
@@ -257,11 +266,18 @@ public class View {
     private ViewGroup.LayoutParams mLayoutParams;
 
     /**
+     * This method is called by ViewGroup.drawChild() to have each child view draw itself.
+     */
+    void draw(@Nonnull Canvas canvas, @Nonnull ViewGroup parent) {
+
+    }
+
+    /**
      * Raw draw method, do not override this
      *
      * @param canvas the canvas to draw content
      */
-    public void draw(@Nonnull CanvasForge canvas) {
+    public void draw(@Nonnull Canvas canvas) {
         if ((mViewFlags & VISIBILITY_MASK) == 0) {
             canvas.save();
             canvas.translate(mLeft, mTop);
@@ -288,7 +304,7 @@ public class View {
      *
      * @param canvas canvas to draw content
      */
-    protected void onDraw(@Nonnull CanvasForge canvas) {
+    protected void onDraw(@Nonnull Canvas canvas) {
 
     }
 
@@ -297,7 +313,7 @@ public class View {
      *
      * @param canvas canvas to draw content
      */
-    protected void dispatchDraw(@Nonnull CanvasForge canvas) {
+    protected void dispatchDraw(@Nonnull Canvas canvas) {
 
     }
 
@@ -418,31 +434,31 @@ public class View {
     }
 
     /**
-     * Called by parent to calculate the size of this view.
-     * This method is used to post the onMeasure event,
-     * and the measurement result is performed in {@link #onMeasure(int, int)}
+     * This is called to find out how big a view should be. The parent
+     * supplies constraint information in the width and height parameters.
+     * <p>
+     * This method is used to post the onMeasure() event, and the actual
+     * measurement work is performed in {@link #onMeasure(int, int)}.
      *
      * @param widthMeasureSpec  width measure specification imposed by the parent
      * @param heightMeasureSpec height measure specification imposed by the parent
-     * @throws IllegalStateException measurement result is not set in
+     * @throws IllegalStateException measured dimension is not set in
      *                               {@link #onMeasure(int, int)}
      * @see #onMeasure(int, int)
      */
     public final void measure(int widthMeasureSpec, int heightMeasureSpec) {
-
         boolean needsLayout = (mPrivateFlags & PFLAG_FORCE_LAYOUT) != 0;
 
         if (!needsLayout) {
-
             boolean specChanged =
-                    widthMeasureSpec != prevWidthMeasureSpec
-                            || heightMeasureSpec != prevHeightMeasureSpec;
+                    widthMeasureSpec != mPrevWidthMeasureSpec
+                            || heightMeasureSpec != mPrevHeightMeasureSpec;
             boolean isSpecExactly =
                     MeasureSpec.getMode(widthMeasureSpec).isExactly()
                             && MeasureSpec.getMode(heightMeasureSpec).isExactly();
             boolean matchesSpecSize =
-                    measuredWidth == MeasureSpec.getSize(widthMeasureSpec)
-                            && measuredHeight == MeasureSpec.getSize(heightMeasureSpec);
+                    getMeasuredWidth() == MeasureSpec.getSize(widthMeasureSpec)
+                            && getMeasuredHeight() == MeasureSpec.getSize(heightMeasureSpec);
             needsLayout = specChanged
                     && (!isSpecExactly || !matchesSpecSize);
         }
@@ -451,23 +467,38 @@ public class View {
             // remove the flag first anyway
             mPrivateFlags &= ~PFLAG_MEASURED_DIMENSION_SET;
 
+            // measure ourselves, this should set the measured dimension flag back
             onMeasure(widthMeasureSpec, heightMeasureSpec);
 
             // the flag should be added in onMeasure() by calling setMeasuredDimension()
             if ((mPrivateFlags & PFLAG_MEASURED_DIMENSION_SET) == 0) {
-                throw new IllegalStateException("Measured dimension unspecified on measure");
+                throw new IllegalStateException(getClass().getName() +
+                        "#onMeasure() did not set the measured dimension" +
+                        "by calling setMeasuredDimension()");
             }
 
             mPrivateFlags |= PFLAG_LAYOUT_REQUIRED;
         }
 
-        prevWidthMeasureSpec = widthMeasureSpec;
-        prevHeightMeasureSpec = heightMeasureSpec;
+        mPrevWidthMeasureSpec = widthMeasureSpec;
+        mPrevHeightMeasureSpec = heightMeasureSpec;
     }
 
     /**
-     * Measure this view and should be override and shouldn't call super.onMeasure()
-     * You must call {@link #setMeasuredDimension(int, int)} to set measurement result
+     * Measure the view and its content to determine the measured width and the
+     * measured height. This method is invoked by {@link #measure(int, int)} and
+     * should be overridden by subclasses to provide accurate and efficient
+     * measurement of their contents.
+     * <p>
+     * <strong>CONTRACT:</strong> When overriding this method, you
+     * <em>must</em> call {@link #setMeasuredDimension(int, int)} to store the
+     * measured width and height of this view. Failure to do so will trigger an
+     * <code>IllegalStateException</code>, thrown by {@link #measure(int, int)}.
+     * Calling super.onMeasure() is a valid use.
+     * <p>
+     * The base class implementation of measure defaults to the background size,
+     * unless a larger size is allowed by the MeasureSpec. Subclasses should
+     * override the base one to provide better measurements of their content.
      *
      * @param widthMeasureSpec  width measure specification imposed by the parent
      *                          {@link MeasureSpec}
@@ -475,19 +506,19 @@ public class View {
      *                          {@link MeasureSpec}
      */
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        setMeasuredDimension(getDefaultSize(minWidth, widthMeasureSpec),
-                getDefaultSize(minHeight, heightMeasureSpec));
+        setMeasuredDimension(getDefaultSize(mMinWidth, widthMeasureSpec),
+                getDefaultSize(mMinHeight, heightMeasureSpec));
     }
 
     /**
-     * Set measurement result, should be called on {@link #onMeasure(int, int)}
+     * Set the measured dimension, must be called by {@link #onMeasure(int, int)}
      *
-     * @param measuredWidth  measured width of this view
-     * @param measuredHeight measured height of this view
+     * @param measuredWidth  the measured width of this view
+     * @param measuredHeight the measured height of this view
      */
     protected final void setMeasuredDimension(int measuredWidth, int measuredHeight) {
-        this.measuredWidth = measuredWidth;
-        this.measuredHeight = measuredHeight;
+        mMeasuredWidth = measuredWidth;
+        mMeasuredHeight = measuredHeight;
 
         mPrivateFlags |= PFLAG_MEASURED_DIMENSION_SET;
     }
@@ -500,7 +531,7 @@ public class View {
      * @return measured width of this view
      */
     public final int getMeasuredWidth() {
-        return measuredWidth;
+        return mMeasuredWidth;
     }
 
     /**
@@ -511,7 +542,7 @@ public class View {
      * @return measured height of this view
      */
     public final int getMeasuredHeight() {
-        return measuredHeight;
+        return mMeasuredHeight;
     }
 
     /**
@@ -547,48 +578,80 @@ public class View {
         requestLayout();
     }
 
-    public int getMinWidth() {
-        return minWidth;
-    }
-
-    public int getMinHeight() {
-        return minHeight;
+    /**
+     * Returns the minimum width of the view.
+     *
+     * @return the minimum width the view will try to be, in pixels
+     * @see #setMinimumWidth(int)
+     */
+    public int getMinimumWidth() {
+        return mMinWidth;
     }
 
     /**
-     * Helper method to get default size
+     * Sets the minimum width of the view. It is not guaranteed the view will
+     * be able to achieve this minimum width (for example, if its parent layout
+     * constrains it with less available width).
      *
-     * @param size        default size
-     * @param measureSpec measure specification
-     * @return measured size
+     * @param minWidth The minimum width the view will try to be, in pixels
+     * @see #getMinimumWidth()
+     */
+    public void setMinimumWidth(int minWidth) {
+        mMinWidth = minWidth;
+        requestLayout();
+    }
+
+    /**
+     * Returns the minimum height of the view.
+     *
+     * @return the minimum height the view will try to be, in pixels
+     * @see #setMinimumHeight(int)
+     */
+    public int getMinimumHeight() {
+        return mMinHeight;
+    }
+
+    /**
+     * Sets the minimum height of the view. It is not guaranteed the view will
+     * be able to achieve this minimum height (for example, if its parent layout
+     * constrains it with less available height).
+     *
+     * @param minHeight The minimum height the view will try to be, in pixels
+     * @see #getMinimumHeight()
+     */
+    public void setMinimumHeight(int minHeight) {
+        mMinHeight = minHeight;
+        requestLayout();
+    }
+
+    /**
+     * Utility to return a default size. Uses the supplied size if the
+     * MeasureSpec imposed no constraints. Will get larger if allowed
+     * by the MeasureSpec.
+     *
+     * @param size        default size for this view
+     * @param measureSpec measure spec imposed by the parent
+     * @return the measured size of this view
      */
     public static int getDefaultSize(int size, int measureSpec) {
-
         switch (MeasureSpec.getMode(measureSpec)) {
-            case UNSPECIFIED:
-                break;
-            case AT_MOST:
             case EXACTLY:
+            case AT_MOST:
                 return MeasureSpec.getSize(measureSpec);
         }
-
         return size;
     }
 
     public static int resolveSize(int size, int measureSpec) {
         int specSize = MeasureSpec.getSize(measureSpec);
-        int result;
         switch (MeasureSpec.getMode(measureSpec)) {
             case AT_MOST:
-                result = Math.min(specSize, size);
-                break;
+                return Math.min(specSize, size);
             case EXACTLY:
-                result = specSize;
-                break;
+                return specSize;
             default:
-                result = size;
+                return size;
         }
-        return result;
     }
 
     /**
@@ -640,19 +703,20 @@ public class View {
     }
 
     /**
-     * Generate next view identifier, multi-threaded
+     * Generate a value suitable for use in {@link #setId(int)}.
+     * This value will not collide with ID values generated at build time by aapt for R.id.
      *
-     * @return generated id
+     * @return a generated ID value
      */
     public static int generateViewId() {
-        for (; ; ) {
-            int cur = GENERATED_ID.get();
-            int next = cur + 1;
-            if (next < 1) {
-                next = 1;
-            }
-            if (GENERATED_ID.compareAndSet(cur, next)) {
-                return cur;
+        while (true) {
+            final int result = sNextGeneratedId.get();
+            // aapt-generated IDs have the high byte nonzero; clamp to the range under that.
+            int newValue = result + 1;
+            if (newValue > 0x00FFFFFF)
+                newValue = 1;
+            if (sNextGeneratedId.compareAndSet(result, newValue)) {
+                return result;
             }
         }
     }
@@ -1820,7 +1884,7 @@ public class View {
             altSize = 5;
         }
 
-        private void draw(@Nonnull CanvasForge canvas) {
+        private void draw(@Nonnull Canvas canvas) {
             /*if (!barHovered && !isDragging && brightness > 0.5f) {
                 if (canvas.getDrawingTime() > startTime) {
                     float change = (startTime - canvas.getDrawingTime()) / 2000.0f;
@@ -2293,7 +2357,7 @@ public class View {
          *
          * @param canvas canvas to draw content
          */
-        public void onDrawShadow(@Nonnull CanvasForge canvas) {
+        public void onDrawShadow(@Nonnull Canvas canvas) {
             View view = viewRef.get();
             if (view != null) {
                 view.onDraw(canvas);

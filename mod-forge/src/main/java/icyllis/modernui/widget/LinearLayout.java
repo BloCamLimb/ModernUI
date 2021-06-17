@@ -18,6 +18,7 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.CanvasForge;
 import icyllis.modernui.view.Gravity;
@@ -217,7 +218,7 @@ public class LinearLayout extends ViewGroup {
     }
 
     @Override
-    protected void onDraw(@Nonnull CanvasForge canvas) {
+    protected void onDraw(@Nonnull Canvas canvas) {
         if (divider != null) {
             if (orientation == Orientation.VERTICAL) {
                 drawDividersVertical(canvas);
@@ -440,7 +441,7 @@ public class LinearLayout extends ViewGroup {
         int heightSize = totalLength;
 
         // Check against our minimum height
-        heightSize = Math.max(heightSize, getMinHeight());
+        heightSize = Math.max(heightSize, getMinimumHeight());
 
         // Reconcile our calculated size with the heightMeasureSpec
         heightSize = resolveSize(heightSize, heightMeasureSpec);
@@ -508,7 +509,7 @@ public class LinearLayout extends ViewGroup {
             maxWidth = alternativeMaxWidth;
         }
 
-        maxWidth = Math.max(maxWidth, getMinWidth());
+        maxWidth = Math.max(maxWidth, getMinimumWidth());
 
         setMeasuredDimension(resolveSize(maxWidth, widthMeasureSpec), heightSize);
 
@@ -685,7 +686,7 @@ public class LinearLayout extends ViewGroup {
         int widthSize = totalLength;
 
         // Check against our minimum width
-        widthSize = Math.max(widthSize, getMinWidth());
+        widthSize = Math.max(widthSize, getMinimumWidth());
 
         // Reconcile our calculated size with the widthMeasureSpec
         widthSize = resolveSize(widthSize, widthMeasureSpec);
@@ -777,7 +778,7 @@ public class LinearLayout extends ViewGroup {
         }
 
         // Check against our minimum height
-        maxHeight = Math.max(maxHeight, getMinHeight());
+        maxHeight = Math.max(maxHeight, getMinimumHeight());
 
         setMeasuredDimension(widthSize, resolveSize(maxHeight, heightMeasureSpec));
 

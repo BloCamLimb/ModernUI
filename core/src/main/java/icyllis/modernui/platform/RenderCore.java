@@ -110,10 +110,11 @@ public final class RenderCore {
         try {
             caps = GL.getCapabilities();
             LOGGER.debug(MARKER, "Sharing OpenGL context with an existing one");
+            GLWrapper.initialize(caps, true);
         } catch (IllegalStateException e) {
             caps = GL.createCapabilities();
+            GLWrapper.initialize(caps, false);
         }
-        GLWrapper.initialize(caps);
 
         sInitialized = true;
     }

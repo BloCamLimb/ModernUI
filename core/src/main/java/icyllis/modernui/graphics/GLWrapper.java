@@ -117,36 +117,38 @@ public final class GLWrapper extends GL45C {
     }
 
     @RenderThread
-    public static void initialize(@Nonnull GLCapabilities caps) {
+    public static void initialize(@Nonnull GLCapabilities caps, boolean hasContext) {
         RenderCore.checkRenderThread();
         if (sInitialized) {
             return;
         }
 
-        if (caps.OpenGL43) {
-            LOGGER.debug(RenderCore.MARKER, "Using OpenGL 4.3 for error logging");
-            GLDebugMessageCallback proc = GLDebugMessageCallback.create(GLWrapper::onDebugMessage);
-            glDebugMessageCallback(proc, NULL);
-            glEnable(GL_DEBUG_OUTPUT);
-        } else if (caps.GL_KHR_debug) {
-            LOGGER.debug(RenderCore.MARKER, "Using KHR_debug for error logging");
-            GLDebugMessageCallback proc = GLDebugMessageCallback.create(GLWrapper::onDebugMessage);
-            KHRDebug.glDebugMessageCallback(proc, NULL);
-            glEnable(GL_DEBUG_OUTPUT);
-        } else if (caps.GL_ARB_debug_output) {
-            LOGGER.debug(RenderCore.MARKER, "Using ARB_debug_output for error logging");
-            GLDebugMessageARBCallback proc = GLDebugMessageARBCallback.create((source, type, id, severity, length, message, userParam) ->
-                    LOGGER.info(MARKER, "0x{} [{}, {}, {}]: {}",
-                            Integer.toHexString(id), getSourceARB(source), getTypeARB(type), getSeverityARB(severity),
-                            GLDebugMessageARBCallback.getMessage(length, message)));
-            glDebugMessageCallbackARB(proc, NULL);
-        } else if (caps.GL_AMD_debug_output) {
-            LOGGER.debug(RenderCore.MARKER, "Using AMD_debug_output for error logging");
-            GLDebugMessageAMDCallback proc = GLDebugMessageAMDCallback.create((id, category, severity, length, message, userParam) ->
-                    LOGGER.info(MARKER, "0x{} [{}, {}]: {}",
-                            Integer.toHexString(id), getCategoryAMD(category), getSeverityAMD(severity),
-                            GLDebugMessageAMDCallback.getMessage(length, message)));
-            glDebugMessageCallbackAMD(proc, NULL);
+        if (!hasContext) {
+            if (caps.OpenGL43) {
+                LOGGER.debug(RenderCore.MARKER, "Using OpenGL 4.3 for error logging");
+                GLDebugMessageCallback proc = GLDebugMessageCallback.create(GLWrapper::onDebugMessage);
+                glDebugMessageCallback(proc, NULL);
+                glEnable(GL_DEBUG_OUTPUT);
+            } else if (caps.GL_KHR_debug) {
+                LOGGER.debug(RenderCore.MARKER, "Using KHR_debug for error logging");
+                GLDebugMessageCallback proc = GLDebugMessageCallback.create(GLWrapper::onDebugMessage);
+                KHRDebug.glDebugMessageCallback(proc, NULL);
+                glEnable(GL_DEBUG_OUTPUT);
+            } else if (caps.GL_ARB_debug_output) {
+                LOGGER.debug(RenderCore.MARKER, "Using ARB_debug_output for error logging");
+                GLDebugMessageARBCallback proc = GLDebugMessageARBCallback.create((source, type, id, severity, length, message, userParam) ->
+                        LOGGER.info(MARKER, "0x{} [{}, {}, {}]: {}",
+                                Integer.toHexString(id), getSourceARB(source), getTypeARB(type), getSeverityARB(severity),
+                                GLDebugMessageARBCallback.getMessage(length, message)));
+                glDebugMessageCallbackARB(proc, NULL);
+            } else if (caps.GL_AMD_debug_output) {
+                LOGGER.debug(RenderCore.MARKER, "Using AMD_debug_output for error logging");
+                GLDebugMessageAMDCallback proc = GLDebugMessageAMDCallback.create((id, category, severity, length, message, userParam) ->
+                        LOGGER.info(MARKER, "0x{} [{}, {}]: {}",
+                                Integer.toHexString(id), getCategoryAMD(category), getSeverityAMD(severity),
+                                GLDebugMessageAMDCallback.getMessage(length, message)));
+                glDebugMessageCallbackAMD(proc, NULL);
+            }
         }
 
         sMaxTextureSize = glGetInteger(GL_MAX_TEXTURE_SIZE);
@@ -161,8 +163,8 @@ public final class GLWrapper extends GL45C {
                     Matcher matcher = Pattern.compile("([0-9]+)\\\\.([0-9]+)(\\\\.([0-9]+))?(.+)?")
                             .matcher(glVersion);
                     glVersion = String.format("%s.%s", matcher.group(1), matcher.group(2));
-                } catch (Exception ignored) {
-
+                } catch (Exception e) {
+                    LOGGER.info(MARKER, "Failed to parse OpenGL version");
                 }
             }
             int count = 0;
@@ -227,11 +229,6 @@ public final class GLWrapper extends GL45C {
             }
         }
 
-        //FIXME remove ResourceLocation
-        /*ArcProgram.createPrograms();
-        CircleProgram.createPrograms();
-        RectProgram.createPrograms();
-        RoundRectProgram.createPrograms();*/
         LOGGER.info(RenderCore.MARKER, "Graphics API: OpenGL {}", glGetString(GL_VERSION));
         LOGGER.info(RenderCore.MARKER, "OpenGL Renderer: {} {}", glGetString(GL_VENDOR), glGetString(GL_RENDERER));
 
@@ -334,9 +331,9 @@ public final class GLWrapper extends GL45C {
             glBindTexture(target, texture);
     }
 
-    public static void bindTextureUnit(int unit, int texture) {
+    /*public static void bindTextureUnit(int unit, int texture) {
 
-    }
+    }*/
 
     @RenderThread
     public static void deleteTexture(int texture) {
@@ -383,6 +380,15 @@ public final class GLWrapper extends GL45C {
         }
     }
 
+    public static void deleteFramebufferAsync(int framebuffer, @Nullable Runnable r) {
+        if (RenderCore.isOnRenderThread()) {
+            glDeleteFramebuffers(framebuffer);
+        } else {
+            RenderCore.recordRenderCall(Objects.requireNonNullElseGet(r,
+                    () -> (Runnable) () -> glDeleteFramebuffers(framebuffer)));
+        }
+    }
+
     @RenderThread
     public static void bindVertexArray(int array) {
         if (array != sVertexArray) {
@@ -420,6 +426,14 @@ public final class GLWrapper extends GL45C {
             sCullMode = mode;
             glCullFace(mode);
         }
+    }
+
+    /**
+     * Use undefined shader program.
+     */
+    @RenderThread
+    public static void stopProgram() {
+        glUseProgram(0);
     }
 
     /**

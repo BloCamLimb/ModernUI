@@ -26,11 +26,11 @@ import javax.annotation.Nonnull;
  * A canvas is used to draw contents for View, using shaders, such as
  * rectangles, round rectangles, circular arcs, lines, images etc.
  * <p>
- * A canvas contains a model view matrix stack. Builds vertex buffers,
- * uniform buffers and records draw commands for each primitives. Also
- * controls multiple color buffer, the depth buffer and the stencil buffer.
- * However, where to draw is undefined. Normally, all the contents are
- * eventually drawn to the UI framebuffer.
+ * A canvas should contain a matrix stack, build vertex buffers and
+ * uniform buffers, and record draw commands for each primitives. Besides,
+ * it controls the depth buffer, the stencil buffer and multiple color
+ * buffers. However, where to draw is undefined. Normally, all the contents
+ * are eventually drawn to a custom framebuffer.
  *
  * @since Core 1.6
  */
@@ -172,9 +172,8 @@ public abstract class Canvas {
      * the specified paint. The Style is ignored in the paint, lines are always "framed".
      * Stroke width in the paint represents the line width.
      * <p>
-     * Actually, a line without smooth radius is drawn as a filled rectangle, otherwise
-     * a filled round rectangle, rotated around the midpoint of the line. So it's a bit
-     * heavy to draw.
+     * Actually, a line is drawn as a filled round rectangle, rotated around the midpoint
+     * of the line. So it's a bit heavy to draw.
      *
      * @param startX The x-coordinate of the start point of the line
      * @param startY The y-coordinate of the start point of the line
@@ -198,7 +197,7 @@ public abstract class Canvas {
      *               (count >> 2).
      * @param paint  The paint used to draw the lines
      */
-    public void drawLines(@Nonnull float[] pts, int offset, int count, @Nonnull Paint paint) {
+    public final void drawLines(@Nonnull float[] pts, int offset, int count, @Nonnull Paint paint) {
         count /= 4;
         for (int i = 0; i < count; i++) {
             drawLine(pts[offset++], pts[offset++], pts[offset++], pts[offset++], paint);
@@ -276,4 +275,15 @@ public abstract class Canvas {
      */
     public abstract void drawRoundImage(@Nonnull Image image, float left, float top,
                                         float radius, @Nonnull Paint paint);
+
+    /**
+     * Get an extension of this canvas, if available.
+     *
+     * @param type the type of extension
+     * @param <T>  any subclasses of Canvas
+     * @return an extension canvas, or null
+     */
+    public <T> T getExtension(@Nonnull Class<T> type) {
+        return null;
+    }
 }
