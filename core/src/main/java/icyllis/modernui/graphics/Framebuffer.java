@@ -18,9 +18,11 @@
 
 package icyllis.modernui.graphics;
 
+import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.texture.Texture2D;
 
 import javax.annotation.Nonnull;
+import java.lang.ref.Cleaner;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
 
@@ -33,40 +35,38 @@ import static icyllis.modernui.graphics.GLWrapper.*;
  * buffers. To output this framebuffer to screen, blit the attached textures
  * or copy the renderbuffer pixels to the default framebuffer that preserved
  * by window graphics context.
+ * <p>
+ * Losing the reference of the object will delete the framebuffer automatically.
  *
  * @see <a href="https://www.khronos.org/opengl/wiki/Framebuffer_Object">Framebuffer Object</a>
  */
 public final class Framebuffer implements AutoCloseable {
 
-    private int mId = GLWrapper.INVALID_ID;
-
-    private int mTarget;
+    private Ref mRef;
 
     public Framebuffer() {
     }
 
-    public int getId() {
-        if (mId == GLWrapper.INVALID_ID)
-            mId = glGenFramebuffers();
-        return mId;
+    public int get() {
+        if (mRef == null)
+            mRef = new Ref(this);
+        return mRef.framebuffer;
     }
 
     /**
      * Binds this framebuffer object to draw and read target.
      */
     public void bind() {
-        bindFramebuffer(getId());
-        mTarget = GL_FRAMEBUFFER;
+        glBindFramebuffer(GL_FRAMEBUFFER, get());
     }
 
     public void bindDraw() {
-        bindDrawFramebuffer(getId());
-        mTarget = GL_DRAW_FRAMEBUFFER;
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, get());
     }
 
     public void bindRead() {
-        bindReadFramebuffer(getId());
-        mTarget = GL_READ_FRAMEBUFFER;
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, get());
+        glBindRenderbuffer();
     }
 
     // min color attachments: 0-7
@@ -80,7 +80,26 @@ public final class Framebuffer implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
+        if (mRef != null) {
+            mRef.cleanup.clean();
+            mRef = null;
+        }
+    }
 
+    private static final class Ref implements Runnable {
+
+        private final int framebuffer;
+        private final Cleaner.Cleanable cleanup;
+
+        private Ref(@Nonnull Framebuffer owner) {
+            framebuffer = glCreateFramebuffers();
+            cleanup = ModernUI.registerCleanup(owner, this);
+        }
+
+        @Override
+        public void run() {
+            deleteFramebufferAsync(framebuffer, this);
+        }
     }
 }

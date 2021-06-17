@@ -18,6 +18,7 @@
 
 package icyllis.modernui.graphics.drawable;
 
+import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.CanvasForge;
 
 import javax.annotation.Nonnull;
@@ -42,7 +43,7 @@ public abstract class Drawable {
      *
      * @param canvas the canvas to draw things
      */
-    public abstract void draw(@Nonnull CanvasForge canvas);
+    public abstract void draw(@Nonnull Canvas canvas);
 
     /**
      * Returns the drawable's intrinsic width. Actually a layout params.

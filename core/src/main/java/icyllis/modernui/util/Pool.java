@@ -20,8 +20,6 @@ package icyllis.modernui.util;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Objects;
-import java.util.function.Supplier;
 
 /**
  * Interface for managing a pool of objects.
@@ -31,26 +29,17 @@ import java.util.function.Supplier;
 public interface Pool<T> {
 
     /**
-     * @return An instance from the pool if such, null otherwise.
+     * @return an instance from the pool if such, null otherwise.
      */
     @Nullable
     T acquire();
 
     /**
-     * @param supplier The supplier that returns a new instance.
-     * @return An instance from the pool if such, or from the supplier.
-     */
-    @Nonnull
-    default T acquire(@Nonnull Supplier<T> supplier) {
-        return Objects.requireNonNullElseGet(acquire(), supplier);
-    }
-
-    /**
      * Release an instance to the pool.
      *
-     * @param instance The instance to release.
-     * @return Whether the instance was put in the pool.
-     * @throws IllegalStateException If the instance is already in the pool.
+     * @param instance the instance to release.
+     * @return {@code true} if the instance was put in the pool, otherwise the pool is full
+     * @throws IllegalStateException if the instance is already in the pool.
      */
     boolean release(@Nonnull T instance);
 }

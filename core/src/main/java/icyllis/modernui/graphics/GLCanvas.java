@@ -28,6 +28,8 @@ import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.platform.RenderCore;
+import icyllis.modernui.util.Pool;
+import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import org.lwjgl.system.MemoryUtil;
@@ -51,6 +53,9 @@ import static icyllis.modernui.graphics.GLWrapper.*;
 public final class GLCanvas extends Canvas {
 
     private static GLCanvas INSTANCE;
+
+    // we have only one instance
+    private static final Pool<Matrix4> sMatrixPool = Pools.simple(20);
 
     /**
      * Uniform block binding points
@@ -144,6 +149,8 @@ public final class GLCanvas extends Canvas {
     private final int mArcUBO;
 
     private final List<Texture2D> mTextures = new ArrayList<>();
+
+    private final List<Object> mExtensions = new ArrayList<>();
 
     private GLCanvas() {
         mProjectionUBO = glCreateBuffers();
@@ -500,16 +507,26 @@ public final class GLCanvas extends Canvas {
         return mMatrixStack.getFirst();
     }
 
+    public void addExtension(Object o) {
+        mExtensions.add(o);
+    }
+
     @Override
     public int save() {
         int saveCount = getSaveCount();
-        mMatrixStack.push(getMatrix().copy());
+        Matrix4 m = sMatrixPool.acquire();
+        if (m == null) {
+            m = getMatrix().copy();
+        } else {
+            m.set(getMatrix());
+        }
+        mMatrixStack.push(m);
         return saveCount;
     }
 
     @Override
     public void restore() {
-        mMatrixStack.pop();
+        sMatrixPool.release(mMatrixStack.pop());
         if (mMatrixStack.isEmpty()) {
             throw new IllegalStateException("Underflow in restore");
         }
@@ -525,9 +542,9 @@ public final class GLCanvas extends Canvas {
         if (saveCount < 1) {
             throw new IllegalArgumentException("Underflow in restoreToCount");
         }
-        Deque<?> stack = mMatrixStack;
+        Deque<Matrix4> stack = mMatrixStack;
         while (stack.size() > saveCount) {
-            stack.pop();
+            sMatrixPool.release(stack.pop());
         }
     }
 
@@ -708,13 +725,14 @@ public final class GLCanvas extends Canvas {
             float t = paint.getStrokeWidth() * 0.5f;
             float cx = (stopX + startX) * 0.5f;
             float cy = (stopY + startY) * 0.5f;
-            float theta = MathUtil.atan2(stopY - startY, stopX - startX);
+            float ang = MathUtil.atan2(stopY - startY, stopX - startX);
             save();
-            getMatrix().translate(cx, cy, 0);
-            getMatrix().rotateZ(theta);
-            getMatrix().translate(-cx, -cy, 0);
-            float sin = MathUtil.sin(-theta);
-            float cos = MathUtil.cos(-theta);
+            Matrix4 mat = getMatrix();
+            mat.translate(cx, cy, 0);
+            mat.rotateZ(ang);
+            mat.translate(-cx, -cy, 0);
+            float sin = MathUtil.sin(-ang);
+            float cos = MathUtil.cos(-ang);
             float left = (startX - cx) * cos - (startY - cy) * sin + cx;
             float right = (stopX - cx) * cos - (stopY - cy) * sin + cx;
             addRoundRectFill(left - t, cy - t, right + t, cy + t, t, paint);
@@ -809,5 +827,16 @@ public final class GLCanvas extends Canvas {
         mTextures.add(source.mTexture);
         getMatrix().get(checkModelViewBuffer());
         mDrawStates.add(DRAW_ROUND_IMAGE);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> T getExtension(@Nonnull Class<T> type) {
+        for (Object c : mExtensions) {
+            if (type.isInstance(c)) {
+                return (T) c;
+            }
+        }
+        return super.getExtension(type);
     }
 }

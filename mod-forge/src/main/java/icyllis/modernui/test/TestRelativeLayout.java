@@ -18,8 +18,8 @@
 
 package icyllis.modernui.test;
 
+import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.math.TextAlign;
-import icyllis.modernui.graphics.CanvasForge;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.widget.RelativeLayout;
 import icyllis.modernui.view.View;
@@ -61,7 +61,7 @@ public class TestRelativeLayout extends RelativeLayout {
         public String text;
 
         @Override
-        protected void onDraw(@Nonnull CanvasForge canvas) {
+        protected void onDraw(@Nonnull Canvas canvas) {
             canvas.resetColor();
             canvas.setTextAlign(TextAlign.CENTER);
             canvas.drawText(text, getLeft() + getWidth() / 2.0f, getTop() + 4.0f);

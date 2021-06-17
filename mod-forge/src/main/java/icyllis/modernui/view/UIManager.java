@@ -68,7 +68,7 @@ import java.util.function.LongConsumer;
 public final class UIManager {
 
     // the global instance
-    private static UIManager instance;
+    private static volatile UIManager instance;
 
     // logger marker
     public static final Marker MARKER = MarkerManager.getMarker("UIManager");
@@ -171,15 +171,8 @@ public final class UIManager {
         AnimationHandler.init(c -> mAnimationHandler = c);
     }
 
-    /**
-     * Returns the global UI service
-     *
-     * @return the instance
-     */
-    //TODO remove this method
     @Nonnull
     public static UIManager getInstance() {
-        // this is called on mixing Minecraft's MouseHandler
         if (instance == null) {
             synchronized (UIManager.class) {
                 if (instance == null) {
@@ -190,7 +183,6 @@ public final class UIManager {
         return instance;
     }
 
-    // internal method
     public static void initialize() {
         RenderCore.checkRenderThread();
         if (instance.mCanvas == null) {

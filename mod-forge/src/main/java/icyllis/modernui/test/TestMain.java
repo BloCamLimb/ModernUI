@@ -40,22 +40,23 @@ import icyllis.modernui.text.GraphemeBreak;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.system.Callback;
+import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Path;
-import java.util.Arrays;
+import java.util.*;
 import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
 import java.util.stream.Stream;
 
+import static icyllis.modernui.graphics.GLWrapper.GL_RGB8;
+import static icyllis.modernui.graphics.GLWrapper.GL_UNSIGNED_BYTE;
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.opengl.GL11C.*;
 
 @SuppressWarnings("unused")
 public class TestMain {
@@ -112,6 +113,8 @@ public class TestMain {
         GRAPHICS.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
     }
 
+
+
     public static void main(String[] args) throws InterruptedException {
         /*String s = "\u0641\u0647\u0648\u064a\u062a\u062d\u062f\u0651\u062b\u0020\u0628\u0644\u063a\u0629\u0020";
         Font font = ALL_FONTS.stream().filter(f -> f.canDisplayUpTo("\u0641\u0647\u0648") == -1).findFirst().get();
@@ -148,6 +151,9 @@ public class TestMain {
         mat.rotateZ(MathUtil.PI_DIV_2);
         mat.translate(-2, 0, 0);
         pos.transform(mat);
+
+
+
         //ModernUI.LOGGER.info(MathUtil.atan2(-1, -1));
         //ModernUI.LOGGER.info(pos);
         /*try {
