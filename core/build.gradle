@@ -59,8 +59,8 @@ publishing {
             name 'IzzelAliz'
             url 'https://maven.izzel.io/releases'
             credentials {
-                username = project.getProperty("maven_user")
-                password = project.getProperty("izzel_maven_token")
+                username = project.findProperty("maven_user")
+                password = project.findProperty("izzel_maven_token")
             }
         }
     }
