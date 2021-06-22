@@ -20,7 +20,6 @@ package icyllis.modernui.view;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.CanvasForge;
 import net.minecraft.Util;
 
 import javax.annotation.Nonnull;
@@ -714,7 +713,7 @@ public abstract class ViewGroup extends View implements ViewParent {
 
     private void addViewInner(@Nonnull final View child, int index, @Nonnull LayoutParams params) {
         if (child.getParent() != null) {
-            ModernUI.LOGGER.fatal(UIManager.MARKER,
+            ModernUI.LOGGER.fatal(MARKER,
                     "Failed to add child view {} to {}. The child has already a parent.", child, this);
             return;
         }
@@ -784,7 +783,7 @@ public abstract class ViewGroup extends View implements ViewParent {
      * ViewGroup.
      *
      * <p><strong>Note:</strong> do not invoke this method from
-     * {@link #draw(CanvasForge)}, {@link View#onDraw(icyllis.modernui.graphics.Canvas)},
+     * {@link #draw(Canvas)}, {@link View#onDraw(icyllis.modernui.graphics.Canvas)},
      * {@link View#dispatchDraw(Canvas)} or any related method.</p>
      */
     public void removeAllViews() {
@@ -802,7 +801,7 @@ public abstract class ViewGroup extends View implements ViewParent {
      * view measuring and layout pipeline.
      *
      * <p><strong>Note:</strong> do not invoke this method from
-     * {@link #draw(CanvasForge)}, {@link View#onDraw(icyllis.modernui.graphics.Canvas)},
+     * {@link #draw(Canvas)}, {@link View#onDraw(icyllis.modernui.graphics.Canvas)},
      * {@link View#dispatchDraw(Canvas)} or any related method.</p>
      */
     public void removeAllViewsInLayout() {

@@ -22,7 +22,7 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.ContextClient;
 import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.graphics.shader.ShaderManager;
-import icyllis.modernui.view.LayoutIO;
+import icyllis.modernui.screen.LayoutIO;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.Minecraft;

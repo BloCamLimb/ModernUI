@@ -18,6 +18,7 @@
 
 package icyllis.modernui.graphics.math;
 
+@Deprecated
 public enum TextAlign {
     LEFT(0.0f),
     CENTER(0.5f),

@@ -170,10 +170,10 @@ public abstract class Canvas {
     /**
      * Draw a line segment with the specified start and stop x,y coordinates, using
      * the specified paint. The Style is ignored in the paint, lines are always "framed".
-     * Stroke width in the paint represents the line width.
+     * Stroke width in the paint represents the width of the line.
      * <p>
-     * Actually, a line is drawn as a filled round rectangle, rotated around the midpoint
-     * of the line. So it's a bit heavy to draw.
+     * Actually, a line is drawn as a filled round rectangle, rotated around the
+     * midpoint of the line. So it's a bit heavy to draw.
      *
      * @param startX The x-coordinate of the start point of the line
      * @param startY The y-coordinate of the start point of the line
@@ -275,15 +275,4 @@ public abstract class Canvas {
      */
     public abstract void drawRoundImage(@Nonnull Image image, float left, float top,
                                         float radius, @Nonnull Paint paint);
-
-    /**
-     * Get an extension of this canvas, if available.
-     *
-     * @param type the type of extension
-     * @param <T>  any subclasses of Canvas
-     * @return an extension canvas, or null
-     */
-    public <T> T getExtension(@Nonnull Class<T> type) {
-        return null;
-    }
 }

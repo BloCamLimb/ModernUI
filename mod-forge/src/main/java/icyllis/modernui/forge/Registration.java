@@ -18,22 +18,19 @@
 
 package icyllis.modernui.forge;
 
+import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.PluginList;
-import icyllis.modernui.mixin.AccessOption;
-import icyllis.modernui.mixin.AccessVideoSettingsScreen;
 import icyllis.modernui.graphics.B3DRedirector;
 import icyllis.modernui.graphics.GLWrapper;
-import icyllis.modernui.graphics.shader.program.ArcProgram;
-import icyllis.modernui.graphics.shader.program.CircleProgram;
-import icyllis.modernui.graphics.shader.program.RectProgram;
-import icyllis.modernui.graphics.shader.program.RoundRectProgram;
 import icyllis.modernui.graphics.textmc.ModernFontRenderer;
 import icyllis.modernui.graphics.textmc.TextLayoutProcessor;
+import icyllis.modernui.mixin.AccessOption;
+import icyllis.modernui.mixin.AccessVideoSettingsScreen;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.test.TestMenu;
-import icyllis.modernui.view.UIManager;
+import icyllis.modernui.screen.UIManager;
 import net.minecraft.client.CycleOption;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Option;
@@ -151,11 +148,8 @@ final class Registration {
         event.getMinecraftSupplier().get().execute(() -> {
             GLWrapper.setRedirector(new B3DRedirector());
             RenderCore.initialize();
-            ArcProgram.createPrograms();
-            CircleProgram.createPrograms();
-            RectProgram.createPrograms();
-            RoundRectProgram.createPrograms();
-            UIManager.initialize();
+            Window window = Minecraft.getInstance().getWindow();
+            UIManager.getInstance().initialize(window.getWidth(), window.getHeight());
             TextLayoutProcessor.getInstance().initRenderer();
             ModernFontRenderer.change(Config.CLIENT.globalRenderer.get(), Config.CLIENT.allowShadow.get());
         });

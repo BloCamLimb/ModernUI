@@ -34,6 +34,7 @@ import static org.lwjgl.opengl.GL11C.GL_RGBA;
 /**
  * Icon is a cached full texture or a part of texture specially used in UI
  */
+@Deprecated
 public class Icon {
 
     private final ResourceLocation location;

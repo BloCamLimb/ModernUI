@@ -28,6 +28,7 @@ import org.lwjgl.opengl.GL43C;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 
+@Deprecated
 public class RoundRectProgram extends Shader {
 
     private static Fill sFill;

@@ -150,8 +150,6 @@ public final class GLCanvas extends Canvas {
 
     private final List<Texture2D> mTextures = new ArrayList<>();
 
-    private final List<Object> mExtensions = new ArrayList<>();
-
     private GLCanvas() {
         mProjectionUBO = glCreateBuffers();
         glNamedBufferStorage(mProjectionUBO, PROJECTION_UNIFORM_SIZE, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
@@ -229,6 +227,9 @@ public final class GLCanvas extends Canvas {
 
     public void render() {
         RenderCore.checkRenderThread();
+        if (mDrawStates.isEmpty()) {
+            return;
+        }
         if (getSaveCount() != 1) {
             throw new IllegalStateException("Unbalanced save()/restore() pair");
         }
@@ -505,10 +506,6 @@ public final class GLCanvas extends Canvas {
     @Nonnull
     public Matrix4 getMatrix() {
         return mMatrixStack.getFirst();
-    }
-
-    public void addExtension(Object o) {
-        mExtensions.add(o);
     }
 
     @Override
@@ -827,16 +824,5 @@ public final class GLCanvas extends Canvas {
         mTextures.add(source.mTexture);
         getMatrix().get(checkModelViewBuffer());
         mDrawStates.add(DRAW_ROUND_IMAGE);
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T> T getExtension(@Nonnull Class<T> type) {
-        for (Object c : mExtensions) {
-            if (type.isInstance(c)) {
-                return (T) c;
-            }
-        }
-        return super.getExtension(type);
     }
 }

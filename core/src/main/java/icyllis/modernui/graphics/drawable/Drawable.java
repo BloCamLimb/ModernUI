@@ -19,7 +19,6 @@
 package icyllis.modernui.graphics.drawable;
 
 import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.CanvasForge;
 
 import javax.annotation.Nonnull;
 
@@ -35,7 +34,6 @@ public abstract class Drawable {
 
     /**
      * Draw things in bounds.
-     * Before you draw in the method, you have to call {@link CanvasForge#moveTo(Drawable)},
      * (0, 0) will be the top left of the bounds,
      * (width, height) will be the bottom right of the bounds.
      * See {@link #getWidth()}

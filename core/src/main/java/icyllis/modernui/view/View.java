@@ -21,10 +21,8 @@ package icyllis.modernui.view;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.CanvasForge;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.math.Point;
-import icyllis.modernui.widget.ScrollController;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.glfw.GLFW;
@@ -1776,9 +1774,7 @@ public class View {
      *
      * @param keyCode   see {@link GLFW}, for example {@link GLFW#GLFW_KEY_W}
      * @param scanCode  keyboard scan code, seldom used
-     * @param modifiers modifier key, for example {@link GLFW#GLFW_MOD_CONTROL}
-     *                  Actually you need {@link Screen#hasControlDown()},
-     *                  {@link Screen#hasShiftDown()}, {@link Screen#hasAltDown()}
+     * @param modifiers modifier key
      * @return return {@code true} if action performed
      */
     protected boolean onKeyPressed(int keyCode, int scanCode, int modifiers) {
@@ -1790,9 +1786,7 @@ public class View {
      *
      * @param keyCode   see {@link GLFW}, for example {@link GLFW#GLFW_KEY_W}
      * @param scanCode  keyboard scan code, seldom used
-     * @param modifiers modifier key, for example {@link GLFW#GLFW_MOD_CONTROL}.
-     *                  Actually you need {@link Screen#hasControlDown()},
-     *                  {@link Screen#hasShiftDown()}, {@link Screen#hasAltDown()}
+     * @param modifiers modifier key
      * @return return {@code true} if action performed
      */
     protected boolean onKeyReleased(int keyCode, int scanCode, int modifiers) {
@@ -1803,9 +1797,7 @@ public class View {
      * Called when a unicode character typed.
      *
      * @param codePoint char code
-     * @param modifiers modifier key, for example {@link GLFW#GLFW_MOD_CONTROL}
-     *                  Actually you need {@link Screen#hasControlDown()},
-     *                  {@link Screen#hasShiftDown()}, {@link Screen#hasAltDown()}
+     * @param modifiers modifier key
      * @return return {@code true} if action performed
      */
     protected boolean onCharTyped(char codePoint, int modifiers) {
@@ -1837,7 +1829,6 @@ public class View {
     /**
      * This class encapsulated methods to handle events of and draw the scroll bar.
      * Scrollbar is integrated in the view it's created.
-     * To control the scroll amount, use {@link ScrollController}
      *
      * @since 1.6
      */
@@ -2329,7 +2320,7 @@ public class View {
         /**
          * Construct a shadow builder object with no associated View. This
          * constructor variant is only useful when the {@link #onProvideShadowCenter(Point)}}
-         * and {@link #onDrawShadow(CanvasForge)} methods are also overridden in order
+         * and {@link #onDrawShadow(Canvas)} methods are also overridden in order
          * to supply the drag shadow's dimensions and appearance without
          * reference to any View object.
          */

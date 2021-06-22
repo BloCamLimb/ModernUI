@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.view;
+package icyllis.modernui.screen;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -41,14 +41,15 @@ import java.util.Objects;
 // And render layer for tooltips etc
 
 /**
- * ContainerScreen can hold a container menu including item stack interaction and
- * network communication. Actually we don't know the menu type, so generic doesn't matter.
- * This is required because most of mods (like JEI) check if instanceof {@link AbstractContainerScreen}
- * rather than {@link net.minecraft.client.gui.screens.inventory.MenuAccess}, however, we don't need
- * anything in the super class.
+ * ContainerScreen holds a container menu for item stack interaction and
+ * network communication. As a feature of Minecraft, GUI initiated by the
+ * server will always be this class. It behaves like JEI checking if
+ * instanceof {@link AbstractContainerScreen}. Therefore, this class serves
+ * as a marker, the complexity of business logic is not reflected in this
+ * class, we don't need anything in the super class.
  *
- * @param <T> container menu type
- * @see MainScreen
+ * @param <T> the type of container menu
+ * @see SimpleScreen
  * @see net.minecraft.client.gui.screens.MenuScreens.ScreenConstructor
  */
 @OnlyIn(Dist.CLIENT)

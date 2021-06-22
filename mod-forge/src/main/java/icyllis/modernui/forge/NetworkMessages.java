@@ -20,7 +20,7 @@ package icyllis.modernui.forge;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.mixin.AccessFoodData;
-import icyllis.modernui.view.UIManager;
+import icyllis.modernui.screen.UIManager;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.Registry;
 import net.minecraft.network.FriendlyByteBuf;

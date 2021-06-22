@@ -21,6 +21,7 @@ package icyllis.modernui.graphics.shader.uniform;
 import icyllis.modernui.graphics.shader.ShaderUniform;
 import org.lwjgl.opengl.GL20;
 
+@Deprecated
 public class UniformFloat extends ShaderUniform<Float> {
 
     public UniformFloat(int location) {

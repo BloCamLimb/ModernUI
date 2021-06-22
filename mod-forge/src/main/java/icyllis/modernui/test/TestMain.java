@@ -40,14 +40,12 @@ import icyllis.modernui.text.GraphemeBreak;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.system.Callback;
-import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Path;
 import java.util.*;
@@ -196,7 +194,7 @@ public class TestMain {
                 }
 
                 while (window.exists()) {
-                    if (window.needsRefresh()) {
+                    if (window.isRefreshNeeded()) {
                         GLWrapper.resetFrame(window);
                         GLWrapper.enableCull();
                         RenderSystem.enableBlend();

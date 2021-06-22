@@ -21,6 +21,8 @@ package icyllis.modernui.platform;
 import com.ibm.icu.text.DateFormat;
 import com.ibm.icu.text.SimpleDateFormat;
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.annotation.RenderThread;
+import icyllis.modernui.graphics.texture.Texture2D;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.stb.STBIWriteCallback;
 import org.lwjgl.stb.STBIWriteCallbackI;
@@ -155,6 +157,30 @@ public final class Bitmap implements AutoCloseable {
     }
 
     /**
+     * Creates a bitmap whose image downloaded from the given texture and level.
+     *
+     * @param format  number of channels
+     * @param texture the texture to download from
+     * @param level   the level-of-detail number of the desired image
+     * @return the created bitmap
+     */
+    @Nonnull
+    @RenderThread
+    public static Bitmap download(@Nonnull Format format, @Nonnull Texture2D texture, int level) {
+        RenderCore.checkRenderThread();
+        glPixelStorei(GL_PACK_ROW_LENGTH, 0);
+        glPixelStorei(GL_PACK_SKIP_ROWS, 0);
+        glPixelStorei(GL_PACK_SKIP_PIXELS, 0);
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+        int width = texture.getWidth();
+        int height = texture.getHeight();
+        Bitmap bitmap = new Bitmap(format, width, height, false);
+        glGetTextureImage(texture.get(), level, format.glFormat, GL_UNSIGNED_BYTE,
+                bitmap.getSize(), bitmap.getPixels());
+        return bitmap;
+    }
+
+    /**
      * Decodes an image from channel. This method doesn't close the channel.
      *
      * @param format  the format to convert to, or {@code null} to use format in file
@@ -217,6 +243,10 @@ public final class Bitmap implements AutoCloseable {
 
     public int getHeight() {
         return mHeight;
+    }
+
+    public int getSize() {
+        return mFormat.channels * mWidth * mHeight;
     }
 
     /**

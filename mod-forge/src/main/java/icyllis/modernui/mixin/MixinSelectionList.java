@@ -20,7 +20,7 @@ package icyllis.modernui.mixin;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import icyllis.modernui.view.UIManager;
+import icyllis.modernui.screen.UIManager;
 import icyllis.modernui.widget.ScrollController;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.AbstractSelectionList;

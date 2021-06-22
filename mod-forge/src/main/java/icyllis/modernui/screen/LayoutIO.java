@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.view;
+package icyllis.modernui.screen;
 
 import icyllis.modernui.view.View;
 import net.minecraftforge.api.distmarker.Dist;
@@ -27,6 +27,7 @@ import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Map;
 
+//TODO
 public final class LayoutIO {
 
     public static final Type UI_RESOURCE_TYPE = new Type();

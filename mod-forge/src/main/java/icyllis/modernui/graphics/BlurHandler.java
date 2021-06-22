@@ -24,7 +24,7 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.mixin.AccessGameRenderer;
 import icyllis.modernui.mixin.AccessPostChain;
-import icyllis.modernui.view.MuiScreen;
+import icyllis.modernui.screen.MuiScreen;
 import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;

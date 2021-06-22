@@ -16,23 +16,19 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.view;
+package icyllis.modernui.screen;
 
-import icyllis.modernui.core.ContextWrapper;
+import icyllis.modernui.view.View;
 import icyllis.modernui.widget.FrameLayout;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
- * Represents an application screen context, for handling lifecycle events.
+ * The callback handling screen lifecycle events.
  */
-@OnlyIn(Dist.CLIENT)
-public abstract class Screen extends ContextWrapper {
+public abstract class ScreenCallback {
 
     UIManager window;
 
-    public Screen() {
-        super(null);
+    protected ScreenCallback() {
     }
 
     public abstract void onCreate();
