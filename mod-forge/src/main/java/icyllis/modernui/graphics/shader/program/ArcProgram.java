@@ -25,6 +25,7 @@ import org.lwjgl.opengl.GL43C;
 
 import javax.annotation.Nonnull;
 
+@Deprecated
 public class ArcProgram extends Shader {
 
     private static Fill sFill;

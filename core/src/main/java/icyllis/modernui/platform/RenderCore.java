@@ -82,7 +82,7 @@ public final class RenderCore {
         return Thread.currentThread() == sRenderThread;
     }
 
-    public static void interruptThread() {
+    public static void interrupt() {
         sRenderThread.interrupt();
     }
 
@@ -109,12 +109,11 @@ public final class RenderCore {
         GLCapabilities caps;
         try {
             caps = GL.getCapabilities();
-            LOGGER.debug(MARKER, "Sharing OpenGL context with an existing one");
-            GLWrapper.initialize(caps, true);
+            LOGGER.debug(MARKER, "Found an existing OpenGL context");
         } catch (IllegalStateException e) {
             caps = GL.createCapabilities();
-            GLWrapper.initialize(caps, false);
         }
+        GLWrapper.initialize(caps);
 
         sInitialized = true;
     }

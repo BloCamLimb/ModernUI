@@ -34,6 +34,12 @@ public class TimedTask {
         mExecutionTime = executionTime;
     }
 
+    /**
+     * Ticks the task.
+     *
+     * @param currTime current time, keep the same unit of the constructor
+     * @return {@code true} task is handled
+     */
     public boolean doExecuteTask(long currTime) {
         if (currTime >= mExecutionTime) {
             mRunnable.run();

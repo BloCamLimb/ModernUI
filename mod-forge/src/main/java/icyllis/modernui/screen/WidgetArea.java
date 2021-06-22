@@ -16,11 +16,12 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.widget;
+package icyllis.modernui.screen;
 
 /**
  * This is an template for complex shape such as circle, sector
  */
+@Deprecated
 public interface WidgetArea {
 
     /**

@@ -18,7 +18,7 @@
 
 package icyllis.modernui.forge;
 
-import icyllis.modernui.view.Screen;
+import icyllis.modernui.screen.ScreenCallback;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -57,7 +57,7 @@ public class OpenMenuEvent extends Event implements IModBusEvent {
     private final AbstractContainerMenu menu;
 
     @Nullable
-    private Screen mScreen;
+    private ScreenCallback mScreen;
 
     public OpenMenuEvent(@Nonnull AbstractContainerMenu menu) {
         this.menu = menu;
@@ -79,13 +79,13 @@ public class OpenMenuEvent extends Event implements IModBusEvent {
      *
      * @param screen the application user interface
      */
-    public void setScreen(@Nonnull Screen screen) {
+    public void setScreen(@Nonnull ScreenCallback screen) {
         this.mScreen = screen;
         setCanceled(true);
     }
 
     @Nullable
-    public Screen getScreen() {
+    public ScreenCallback getScreen() {
         return mScreen;
     }
 }

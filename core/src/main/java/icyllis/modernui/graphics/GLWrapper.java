@@ -117,38 +117,40 @@ public final class GLWrapper extends GL45C {
     }
 
     @RenderThread
-    public static void initialize(@Nonnull GLCapabilities caps, boolean hasContext) {
+    public static void initialize(@Nonnull GLCapabilities caps) {
         RenderCore.checkRenderThread();
         if (sInitialized) {
             return;
         }
 
-        if (!hasContext) {
+        if (glGetPointer(GL_DEBUG_CALLBACK_FUNCTION) == NULL) {
             if (caps.OpenGL43) {
-                LOGGER.debug(RenderCore.MARKER, "Using OpenGL 4.3 for error logging");
+                LOGGER.debug(MARKER, "Using OpenGL 4.3 for error logging");
                 GLDebugMessageCallback proc = GLDebugMessageCallback.create(GLWrapper::onDebugMessage);
                 glDebugMessageCallback(proc, NULL);
                 glEnable(GL_DEBUG_OUTPUT);
             } else if (caps.GL_KHR_debug) {
-                LOGGER.debug(RenderCore.MARKER, "Using KHR_debug for error logging");
+                LOGGER.debug(MARKER, "Using KHR_debug for error logging");
                 GLDebugMessageCallback proc = GLDebugMessageCallback.create(GLWrapper::onDebugMessage);
                 KHRDebug.glDebugMessageCallback(proc, NULL);
                 glEnable(GL_DEBUG_OUTPUT);
             } else if (caps.GL_ARB_debug_output) {
-                LOGGER.debug(RenderCore.MARKER, "Using ARB_debug_output for error logging");
+                LOGGER.debug(MARKER, "Using ARB_debug_output for error logging");
                 GLDebugMessageARBCallback proc = GLDebugMessageARBCallback.create((source, type, id, severity, length, message, userParam) ->
-                        LOGGER.info(MARKER, "0x{} [{}, {}, {}]: {}",
+                        LOGGER.info(MARKER, "0x{}[{},{},{}]: {}",
                                 Integer.toHexString(id), getSourceARB(source), getTypeARB(type), getSeverityARB(severity),
                                 GLDebugMessageARBCallback.getMessage(length, message)));
                 glDebugMessageCallbackARB(proc, NULL);
             } else if (caps.GL_AMD_debug_output) {
-                LOGGER.debug(RenderCore.MARKER, "Using AMD_debug_output for error logging");
+                LOGGER.debug(MARKER, "Using AMD_debug_output for error logging");
                 GLDebugMessageAMDCallback proc = GLDebugMessageAMDCallback.create((id, category, severity, length, message, userParam) ->
-                        LOGGER.info(MARKER, "0x{} [{}, {}]: {}",
+                        LOGGER.info(MARKER, "0x{}[{},{}]: {}",
                                 Integer.toHexString(id), getCategoryAMD(category), getSeverityAMD(severity),
                                 GLDebugMessageAMDCallback.getMessage(length, message)));
                 glDebugMessageCallbackAMD(proc, NULL);
             }
+        } else {
+            LOGGER.debug(MARKER, "Found an existing OpenGL debug callback");
         }
 
         sMaxTextureSize = glGetInteger(GL_MAX_TEXTURE_SIZE);
@@ -386,6 +388,15 @@ public final class GLWrapper extends GL45C {
         } else {
             RenderCore.recordRenderCall(Objects.requireNonNullElseGet(r,
                     () -> (Runnable) () -> glDeleteFramebuffers(framebuffer)));
+        }
+    }
+
+    public static void deleteRenderbufferAsync(int renderbuffer, @Nullable Runnable r) {
+        if (RenderCore.isOnRenderThread()) {
+            glDeleteRenderbuffers(renderbuffer);
+        } else {
+            RenderCore.recordRenderCall(Objects.requireNonNullElseGet(r,
+                    () -> (Runnable) () -> glDeleteRenderbuffers(renderbuffer)));
         }
     }
 

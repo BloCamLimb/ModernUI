@@ -16,7 +16,10 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.view;
+package icyllis.modernui.screen;
 
+/**
+ * A convenient way to check instanceof MenuScreen or SimpleScreen
+ */
 public interface MuiScreen {
 }

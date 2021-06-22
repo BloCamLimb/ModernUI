@@ -24,7 +24,7 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.math.TextAlign;
-import icyllis.modernui.view.Screen;
+import icyllis.modernui.screen.ScreenCallback;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
 import icyllis.modernui.widget.FrameLayout;
@@ -39,7 +39,7 @@ import java.awt.*;
 
 import static icyllis.modernui.view.ViewGroup.LayoutParams.MATCH_PARENT;
 
-public class TestPauseUI extends Screen {
+public class TestPauseUI extends ScreenCallback {
 
     @Override
     public void onCreate() {

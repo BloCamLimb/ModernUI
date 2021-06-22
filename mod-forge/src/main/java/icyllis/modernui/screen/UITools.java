@@ -16,8 +16,10 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.view;
+package icyllis.modernui.screen;
 
+import icyllis.modernui.view.View;
+import icyllis.modernui.view.ViewGroup;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -28,6 +30,7 @@ import javax.annotation.Nonnull;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
+//TODO
 @SuppressWarnings("unused")
 @OnlyIn(Dist.CLIENT)
 public class UITools {

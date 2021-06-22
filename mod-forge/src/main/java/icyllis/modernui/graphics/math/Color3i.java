@@ -21,7 +21,7 @@ package icyllis.modernui.graphics.math;
 /**
  * No use, actually deprecated
  */
-@SuppressWarnings("unused")
+@Deprecated
 public class Color3i {
 
     /**

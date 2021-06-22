@@ -31,7 +31,7 @@ public class B3DRedirector implements GLWrapper.Redirector {
 
     @Override
     public void onInit() {
-        ModernUI.LOGGER.info(RenderCore.MARKER, "Sharing OpenGL states with Blaze3D");
+        ModernUI.LOGGER.info(RenderCore.MARKER, "Integrated with Blaze3D");
     }
 
     @Override

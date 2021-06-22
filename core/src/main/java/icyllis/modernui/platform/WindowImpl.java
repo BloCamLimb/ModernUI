@@ -120,7 +120,7 @@ public final class WindowImpl extends Window {
     private void callbackRefresh(long window) {
         if (!mNeedRefresh) {
             mNeedRefresh = true;
-            RenderCore.interruptThread();
+            RenderCore.interrupt();
         }
     }
 
@@ -171,12 +171,7 @@ public final class WindowImpl extends Window {
     }
 
     @Override
-    public boolean exists() {
-        return !glfwWindowShouldClose(mHandle);
-    }
-
-    @Override
-    public boolean needsRefresh() {
+    public boolean isRefreshNeeded() {
         return mNeedRefresh;
     }
 
@@ -188,6 +183,7 @@ public final class WindowImpl extends Window {
 
     @Override
     public void destroy() {
+        super.destroy();
         Callbacks.glfwFreeCallbacks(mHandle);
         glfwDestroyWindow(mHandle);
     }

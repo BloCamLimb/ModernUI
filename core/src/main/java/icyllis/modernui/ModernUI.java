@@ -63,11 +63,11 @@ public class ModernUI extends ContextWrapper {
     }
 
     public static void initInternal() {
-        Path resourcesDir = Path.of(System.getenv("MOD_ASSETS"));
+        Path resourcesDir = Path.of(System.getenv("MOD_ASSETS"), ID);
         new ModernUI().attachBaseContext(new Context() {
             @Override
             public ReadableByteChannel getResource(@Nonnull Path path) throws IOException {
-                return Files.newByteChannel(resourcesDir.resolve(ID).resolve(path), StandardOpenOption.READ);
+                return Files.newByteChannel(resourcesDir.resolve(path), StandardOpenOption.READ);
             }
 
             @Nullable
@@ -94,7 +94,7 @@ public class ModernUI extends ContextWrapper {
      *
      * @param target the target to monitor
      * @param action a {@code Runnable} to invoke when the target becomes phantom reachable
-     * @return a {@code Cleanable} instance
+     * @return a {@code Cleanable} instance for explicit cleaning
      */
     @Nonnull
     public static Cleanable registerCleanup(@Nonnull Object target, @Nonnull Runnable action) {

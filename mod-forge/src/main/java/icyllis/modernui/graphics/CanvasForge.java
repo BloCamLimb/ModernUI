@@ -33,7 +33,7 @@ import icyllis.modernui.graphics.shader.program.RoundRectProgram;
 import icyllis.modernui.graphics.textmc.TextLayoutProcessor;
 import icyllis.modernui.graphics.textmc.pipeline.TextRenderNode;
 import icyllis.modernui.platform.RenderCore;
-import icyllis.modernui.view.UIManager;
+import icyllis.modernui.screen.UIManager;
 import icyllis.modernui.view.View;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;

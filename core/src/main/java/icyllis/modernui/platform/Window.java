@@ -28,7 +28,7 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
- * Represents a window to operating system
+ * Represents a window to operating system, providing OpenGL context.
  */
 public abstract class Window implements AutoCloseable {
 
@@ -110,18 +110,22 @@ public abstract class Window implements AutoCloseable {
     public abstract boolean shouldClose();
 
     /**
-     * A helper method that reverses should close result.
+     * A helper method that inverts {@link #shouldClose()}
      *
      * @return {@code true} if this window still exists
      * @see #shouldClose()
      */
-    public abstract boolean exists();
+    public boolean exists() {
+        return !shouldClose();
+    }
 
-    public abstract boolean needsRefresh();
+    public abstract boolean isRefreshNeeded();
 
     public abstract void swapBuffers();
 
-    public abstract void destroy();
+    public void destroy() {
+        sWindows.remove(mHandle);
+    }
 
     /**
      * Returns the x-coordinate of the top-left corner of this window
@@ -171,11 +175,11 @@ public abstract class Window implements AutoCloseable {
         return (float) getWidth() / getHeight();
     }
 
-    public double screenToPixelX() {
+    public double getScreenPixelFactorX() {
         return (double) getWidth() / getScreenWidth();
     }
 
-    public double screenToPixelY() {
+    public double getScreenPixelFactorY() {
         return (double) getHeight() / getScreenHeight();
     }
 

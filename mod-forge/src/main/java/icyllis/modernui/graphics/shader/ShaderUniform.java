@@ -18,6 +18,7 @@
 
 package icyllis.modernui.graphics.shader;
 
+@Deprecated
 public abstract class ShaderUniform<T> {
 
     protected final int location;

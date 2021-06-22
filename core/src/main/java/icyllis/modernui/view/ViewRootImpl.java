@@ -18,9 +18,7 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.CanvasForge;
-import icyllis.modernui.math.Point;
+import icyllis.modernui.graphics.Canvas;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -31,8 +29,6 @@ import javax.annotation.Nullable;
  */
 public final class ViewRootImpl implements ViewParent {
 
-    private final UIManager master;
-
     private boolean hasDragOperation;
 
     private View mView;
@@ -40,8 +36,7 @@ public final class ViewRootImpl implements ViewParent {
     /*private final int[] inBounds  = new int[]{0, 0, 0, 0};
     private final int[] outBounds = new int[4];*/
 
-    public ViewRootImpl(UIManager manager) {
-        master = manager;
+    public ViewRootImpl() {
     }
 
     void setView(@Nonnull View view) {
@@ -59,12 +54,12 @@ public final class ViewRootImpl implements ViewParent {
     }
 
     boolean startDragAndDrop(@Nonnull View view, @Nullable DragData data, @Nullable View.DragShadow shadow, int flags) {
-        if (master.dragEvent != null) {
+        /*if (master.dragEvent != null) {
             ModernUI.LOGGER.error(View.MARKER, "startDragAndDrop failed by another ongoing operation");
             return false;
-        }
+        }*/
 
-        Point center = new Point();
+        /*Point center = new Point();
         if (shadow == null) {
             shadow = new View.DragShadow(view);
             if (view.isHovered()) {
@@ -76,15 +71,15 @@ public final class ViewRootImpl implements ViewParent {
             }
         } else {
             shadow.onProvideShadowCenter(center);
-        }
+        }*/
 
-        master.dragEvent = new DragEvent(data);
+        /*master.dragEvent = new DragEvent(data);
         master.dragShadow = shadow;
-        master.dragShadowCenter = center;
+        master.dragShadowCenter = center;*/
 
         hasDragOperation = true;
 
-        master.performDrag(DragEvent.ACTION_DRAG_STARTED);
+        //master.performDrag(DragEvent.ACTION_DRAG_STARTED);
         return true;
     }
 
@@ -104,7 +99,7 @@ public final class ViewRootImpl implements ViewParent {
         mView.layout(0, 0, mView.getMeasuredWidth(), mView.getMeasuredHeight());
     }
 
-    void onDraw(CanvasForge canvas) {
+    void onDraw(Canvas canvas) {
         /*if (mView != null) {
             mView.draw(canvas);
         }*/
@@ -179,7 +174,7 @@ public final class ViewRootImpl implements ViewParent {
      */
     @Override
     public void requestLayout() {
-        master.mLayoutRequested = true;
+        //master.mLayoutRequested = true;
     }
 
     @Override

@@ -22,6 +22,7 @@ import com.mojang.math.Vector4f;
 import icyllis.modernui.graphics.shader.ShaderUniform;
 import org.lwjgl.opengl.GL20;
 
+@Deprecated
 public class UniformVec4 extends ShaderUniform<Vector4f> {
 
     public UniformVec4(int location) {

@@ -27,6 +27,7 @@ import org.lwjgl.opengl.GL43C;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 
+@Deprecated
 public class RectProgram extends Shader {
 
     public static final ResourceLocation VERT = new ResourceLocation(ModernUI.ID, "shaders/pos_color.vert");

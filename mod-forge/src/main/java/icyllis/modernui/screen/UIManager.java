@@ -16,18 +16,21 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.view;
+package icyllis.modernui.screen;
 
 import com.ibm.icu.util.ULocale;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.Tesselator;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.AnimationHandler;
+import icyllis.modernui.annotation.RenderThread;
+import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.forge.ModernUIForge;
 import icyllis.modernui.forge.OpenMenuEvent;
-import icyllis.modernui.graphics.BlurHandler;
-import icyllis.modernui.graphics.CanvasForge;
-import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.textmc.ModernFontRenderer;
 import icyllis.modernui.graphics.textmc.TextLayoutProcessor;
 import icyllis.modernui.math.Point;
@@ -35,6 +38,7 @@ import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.test.TestHUD;
 import icyllis.modernui.test.TestPauseUI;
 import icyllis.modernui.util.TimedTask;
+import icyllis.modernui.view.*;
 import icyllis.modernui.widget.FrameLayout;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
@@ -53,17 +57,18 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.annotation.concurrent.NotThreadSafe;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.LongConsumer;
 
 /**
- * Manages almost everything related to UI at the bottom level.
+ * Manage UI thread and connect Minecraft to Modern UI view system.
  */
+@NotThreadSafe
 @SuppressWarnings("unused")
 public final class UIManager {
 
@@ -80,7 +85,7 @@ public final class UIManager {
     //private final Map<ContainerType<?>, Function<? extends Container, ApplicationUI>> mScreenRegistry = new HashMap<>();
 
     // application window
-    private final ViewRootImpl mAppWindow = new ViewRootImpl(this);
+    private final ViewRootImpl mAppWindow = new ViewRootImpl();
 
     // the top-level view of the window
     private final DecorView mDecorView = new DecorView();
@@ -93,7 +98,7 @@ public final class UIManager {
     private MuiScreen mMuiScreen;
 
     // application UI used to send lifecycle events
-    private Screen mScreen;
+    private ScreenCallback mScreen;
 
     // main fragment of a UI
     //private Fragment fragment;
@@ -124,7 +129,11 @@ public final class UIManager {
     // lazy loading because this class is loaded before GL initialization
     // will be init when Minecraft finished loading, and open MainMenuScreen
     // also init font renderer when loaded
-    private CanvasForge mCanvas;
+    private CanvasForge mFCanvas;
+
+    private GLCanvas mCanvas;
+
+    private Framebuffer mFramebuffer;
 
     // the most child hovered view, render at the top of other hovered ancestor views
     @Nullable
@@ -165,6 +174,9 @@ public final class UIManager {
 
     private LongConsumer mAnimationHandler;
 
+    private Thread mUiThread;
+    private final Object mRenderLock = new Object();
+
     private UIManager() {
         MinecraftForge.EVENT_BUS.register(this);
         mAppWindow.setView(mDecorView);
@@ -183,13 +195,35 @@ public final class UIManager {
         return instance;
     }
 
-    public static void initialize() {
+    @RenderThread
+    public void initialize(int width, int height) {
         RenderCore.checkRenderThread();
-        if (instance.mCanvas == null) {
-            instance.mCanvas = CanvasForge.getInstance();
+        if (mUiThread == null) {
+            mCanvas = GLCanvas.initialize();
+            mFramebuffer = new Framebuffer(width, height);
+            mFramebuffer.attachTexture(GLWrapper.GL_COLOR_ATTACHMENT0, GLWrapper.GL_RGBA8);
+            mFramebuffer.attachRenderbuffer(GLWrapper.GL_DEPTH_STENCIL_ATTACHMENT, GLWrapper.GL_DEPTH24_STENCIL8);
+            mFCanvas = CanvasForge.getInstance();
+            mUiThread = new Thread(this::run, "UI thread");
+            mUiThread.start();
             ModernUI.LOGGER.info(MARKER, "UIManager initialized");
-        } else {
-            throw new IllegalStateException("Already initialized");
+        }
+    }
+
+    public void interrupt() {
+        mUiThread.interrupt();
+    }
+
+    @UiThread
+    private void run() {
+        while (true) {
+            synchronized (mRenderLock) {
+
+            }
+            try {
+                mUiThread.join();
+            } catch (InterruptedException ignored) {
+            }
         }
     }
 
@@ -199,9 +233,9 @@ public final class UIManager {
      * @param screen the application user interface
      * @see #start(MuiScreen, int, int)
      */
-    public void openGUI(@Nonnull Screen screen) {
+    public void openGUI(@Nonnull ScreenCallback screen) {
         mScreen = screen;
-        minecraft.setScreen(new MainScreen(this));
+        minecraft.setScreen(new SimpleScreen(this));
     }
 
     /**
@@ -217,7 +251,7 @@ public final class UIManager {
     public boolean openGUI(@Nonnull LocalPlayer player, @Nonnull AbstractContainerMenu menu, @Nonnull String pid) {
         OpenMenuEvent event = new OpenMenuEvent(menu);
         ModernUIForge.get().post(pid, event);
-        Screen screen = event.getScreen();
+        ScreenCallback screen = event.getScreen();
         if (screen != null) {
             mScreen = screen;
             player.containerMenu = menu;
@@ -345,7 +379,7 @@ public final class UIManager {
     }
 
     @Nullable
-    public Screen getOpenGUI() {
+    public ScreenCallback getOpenGUI() {
         return mScreen;
     }
 
@@ -391,7 +425,7 @@ public final class UIManager {
      *
      * @see org.lwjgl.glfw.GLFWCursorPosCallbackI
      * @see net.minecraft.client.MouseHandler
-     * @see MainScreen
+     * @see SimpleScreen
      * @see MenuScreen
      */
     void onCursorEvent(double cursorX, double cursorY) {
@@ -735,48 +769,33 @@ public final class UIManager {
         }
     }*/
 
-    /**
-     * Real-time rendering
-     */
-    void render() {
-        final Window window = minecraft.getWindow();
+    @RenderThread
+    public void render() {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        RenderSystem.disableAlphaTest();
         RenderSystem.enableDepthTest();
         RenderSystem.depthMask(false);
-        RenderSystem.matrixMode(GL11.GL_PROJECTION);
-        RenderSystem.loadIdentity();
-        RenderSystem.ortho(0.0D, window.getWidth(), window.getHeight(), 0.0D, 1000.0D, 3000.0D);
-        RenderSystem.matrixMode(GL11.GL_MODELVIEW);
-        Paint.take().reset();
-
-        /*canvas.moveToZero();
-        canvas.setColor(0, 0, 0, 51);
-        canvas.drawRect(0, 0, width, height);
-        RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.DST_COLOR, GlStateManager.DestFactor.SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
-        canvas.setColor(255, 255, 255, (int) (255 * (255.0f / (255 - 51) - 1)));
-        canvas.drawRect(60, 60, width - 60, height - 60);
-        RenderSystem.defaultBlendFunc();*/
-
-        mCanvas.setDrawingTime(mDrawingTimeMillis);
-
-        mAppWindow.onDraw(mCanvas);
-        /*if (popup != null) {
-            popup.draw(drawTime);
-        }*/
-        //UIEditor.INSTANCE.draw(canvas);
-        //TODO use shader uniforms
-        GL11.glDisable(GL11.GL_LINE_SMOOTH);
-        GL11.glLineWidth(1.0f);
-        RenderSystem.enableTexture();
-        RenderSystem.disableBlend();
-
-        RenderSystem.matrixMode(GL11.GL_PROJECTION);
-        RenderSystem.loadIdentity();
-        RenderSystem.ortho(0.0D, (double) window.getWidth() / window.getGuiScale(),
-                (double) window.getHeight() / window.getGuiScale(), 0.0D, 1000.0D, 3000.0D);
-        RenderSystem.matrixMode(GL11.GL_MODELVIEW);
+        int texture;
+        synchronized (mRenderLock) {
+            Framebuffer framebuffer = mFramebuffer;
+            framebuffer.resize(mWidth, mHeight);
+            framebuffer.bindDraw();
+            framebuffer.setDrawBuffer(GLWrapper.GL_COLOR_ATTACHMENT0);
+            mCanvas.render();
+            texture = framebuffer.getAttachedTextureName(GLWrapper.GL_COLOR_ATTACHMENT0);
+        }
+        GLWrapper.glBindFramebuffer(GLWrapper.GL_DRAW_FRAMEBUFFER, GLWrapper.DEFAULT_FRAMEBUFFER);
+        RenderSystem.bindTexture(texture);
+        Tesselator tesselator = RenderSystem.renderThreadTesselator();
+        BufferBuilder bufferbuilder = tesselator.getBuilder();
+        bufferbuilder.begin(GLWrapper.GL_QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
+        bufferbuilder.vertex(0.0D, mHeight, 0.0D).color(255, 255, 255, 255).uv(0.0F, 0.0F).endVertex();
+        bufferbuilder.vertex(mWidth, mHeight, 0.0D).color(255, 255, 255, 255).uv(1, 0.0F).endVertex();
+        bufferbuilder.vertex(mWidth, 0.0D, 0.0D).color(255, 255, 255, 255).uv(1, 1).endVertex();
+        bufferbuilder.vertex(0.0D, 0.0D, 0.0D).color(255, 255, 255, 255).uv(0.0F, 1).endVertex();
+        tesselator.end();
+        RenderSystem.bindTexture(0);
+        RenderSystem.depthMask(true);
     }
 
     @SubscribeEvent
@@ -792,7 +811,7 @@ public final class UIManager {
                 break;
             case HEALTH:
                 if (TestHUD.sBars)
-                    TestHUD.sInstance.drawBars(mCanvas);
+                    TestHUD.sInstance.drawBars(mFCanvas);
                 break;
         }
     }
@@ -808,7 +827,7 @@ public final class UIManager {
             final Window window = minecraft.getWindow();
             double cursorX = minecraft.mouseHandler.xpos() * (double) window.getGuiScaledWidth() / (double) window.getScreenWidth();
             double cursorY = minecraft.mouseHandler.ypos() * (double) window.getGuiScaledHeight() / (double) window.getScreenHeight();
-            TestHUD.sInstance.drawTooltip(mCanvas, event.getLines(), (ModernFontRenderer) minecraft.font, event.getStack(),
+            TestHUD.sInstance.drawTooltip(mFCanvas, event.getLines(), (ModernFontRenderer) minecraft.font, event.getStack(),
                     event.getMatrixStack(), event.getX(), event.getY(), (float) cursorX, (float) cursorY, event.getScreenWidth(), event.getScreenHeight());
             event.setCanceled(true);
         }

@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.view;
+package icyllis.modernui.screen;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import icyllis.modernui.graphics.BlurHandler;
@@ -36,36 +36,40 @@ import javax.annotation.Nonnull;
  * @see MenuScreen
  */
 @OnlyIn(Dist.CLIENT)
-final class MainScreen extends Screen implements MuiScreen {
+final class SimpleScreen extends Screen implements MuiScreen {
 
-    private final UIManager master;
+    private final UIManager host;
 
-    MainScreen(UIManager window) {
+    SimpleScreen(UIManager window) {
         super(TextComponent.EMPTY);
-        master = window;
+        host = window;
     }
 
     @Override
     public void init(@Nonnull Minecraft minecraft, int width, int height) {
         this.minecraft = minecraft;
-        master.start(this, width, height);
+        this.width = width;
+        this.height = height;
+        host.start(this, width, height);
         BlurHandler.INSTANCE.forceBlur();
     }
 
     @Override
     public void resize(@Nonnull Minecraft minecraft, int width, int height) {
-        master.resize(width, height);
+        this.width = width;
+        this.height = height;
+        host.resize(width, height);
     }
 
     @Override
     public void render(@Nonnull PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        master.render();
+        host.render();
     }
 
     @Override
     public void onClose() {
         super.onClose();
-        master.stop();
+        host.stop();
     }
 
     //TODO configurable
@@ -78,7 +82,7 @@ final class MainScreen extends Screen implements MuiScreen {
 
     @Override
     public void mouseMoved(double mouseX, double mouseY) {
-        master.onCursorEvent(mouseX, mouseY);
+        host.onCursorEvent(mouseX, mouseY);
     }
 
     @Override
@@ -101,23 +105,23 @@ final class MainScreen extends Screen implements MuiScreen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        return master.onScrollEvent();
+        return host.onScrollEvent();
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (master.screenKeyDown(keyCode, scanCode, modifiers)) {
+        if (host.screenKeyDown(keyCode, scanCode, modifiers)) {
             return true;
         } else if (keyCode == GLFW.GLFW_KEY_ESCAPE && shouldCloseOnEsc()) {
-            if (master.onBackPressed()) {
+            if (host.onBackPressed()) {
                 return true;
             }
-            master.closeGUI();
+            host.closeGUI();
             return true;
         } else if (keyCode == GLFW.GLFW_KEY_TAB) {
             boolean searchNext = !hasShiftDown();
-            if (!master.sChangeKeyboard(searchNext)) {
-                return master.sChangeKeyboard(searchNext);
+            if (!host.sChangeKeyboard(searchNext)) {
+                return host.sChangeKeyboard(searchNext);
             }
             return true;
         }
@@ -126,11 +130,11 @@ final class MainScreen extends Screen implements MuiScreen {
 
     @Override
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-        return master.screenKeyUp(keyCode, scanCode, modifiers);
+        return host.screenKeyUp(keyCode, scanCode, modifiers);
     }
 
     @Override
     public boolean charTyped(char codePoint, int modifiers) {
-        return master.sCharTyped(codePoint, modifiers);
+        return host.sCharTyped(codePoint, modifiers);
     }
 }

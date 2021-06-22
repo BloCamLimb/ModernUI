@@ -19,7 +19,7 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.animation.TimeInterpolator;
-import icyllis.modernui.view.UIManager;
+import icyllis.modernui.screen.UIManager;
 import net.minecraft.util.Mth;
 
 import javax.annotation.Nonnull;

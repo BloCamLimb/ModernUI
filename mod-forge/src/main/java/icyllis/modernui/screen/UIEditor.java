@@ -16,11 +16,13 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.view;
+package icyllis.modernui.screen;
 
 import icyllis.modernui.forge.ModernUIForge;
 import icyllis.modernui.graphics.CanvasForge;
 import icyllis.modernui.graphics.math.TextAlign;
+import icyllis.modernui.view.View;
+import icyllis.modernui.view.ViewParent;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraftforge.api.distmarker.Dist;
@@ -37,8 +39,7 @@ import java.util.List;
 
 @Deprecated
 @OnlyIn(Dist.CLIENT)
-public enum UIEditor {
-    INSTANCE;
+public class UIEditor {
 
     @Nullable
     private View hoveredView;
@@ -55,6 +56,9 @@ public enum UIEditor {
     private int bottom = 14;
 
     private int[] hoveredLocation = new int[2];
+
+    private UIEditor() {
+    }
 
     public void setHoveredWidget(@Nullable Object obj) {
         if (!working) {

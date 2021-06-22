@@ -18,14 +18,14 @@
 
 package icyllis.modernui.test;
 
-import icyllis.modernui.view.Screen;
+import icyllis.modernui.screen.ScreenCallback;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.widget.FrameLayout;
 import icyllis.modernui.widget.ScrollView;
 
-public class TestUI extends Screen {
+public class TestUI extends ScreenCallback {
 
     @Override
     public void onCreate() {
