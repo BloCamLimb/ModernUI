@@ -24,8 +24,8 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * The top of a view hierarchy, implementing the needed protocol between View
- * and the UIManager
+ * The top of a view hierarchy, implementing the needed protocol between View and
+ * Window. However, another class is required for a complete protocol.
  */
 public final class ViewRootImpl implements ViewParent {
 
@@ -39,7 +39,7 @@ public final class ViewRootImpl implements ViewParent {
     public ViewRootImpl() {
     }
 
-    void setView(@Nonnull View view) {
+    public void setView(@Nonnull View view) {
         if (mView == null) {
             mView = view;
             /*ViewGroup.LayoutParams params = view.getLayoutParams();
@@ -83,7 +83,7 @@ public final class ViewRootImpl implements ViewParent {
         return true;
     }
 
-    void performLayout(int widthSpec, int heightSpec) {
+    public void performLayout(int widthSpec, int heightSpec) {
         if (mView == null) {
             return;
         }
@@ -105,7 +105,7 @@ public final class ViewRootImpl implements ViewParent {
         }*/
     }
 
-    boolean onInputEvent(InputEvent event) {
+    public boolean onInputEvent(InputEvent event) {
         if (mView != null) {
             if (event instanceof KeyEvent) {
                 return processKeyEvent((KeyEvent) event);
@@ -154,7 +154,7 @@ public final class ViewRootImpl implements ViewParent {
         }
     }
 
-    void tick(int ticks) {
+    public void tick(int ticks) {
         if (mView != null) {
             mView.tick(ticks);
         }

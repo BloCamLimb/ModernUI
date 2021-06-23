@@ -44,13 +44,14 @@ public class MixinMouseHandler {
                                     boolean flag, int i, boolean[] aboolean, double d0, double d1) {
     }*/
 
-    private final UIManager receiver = UIManager.getInstance();
+    private final UIManager callback = UIManager.getInstance();
 
     /**
      * Capture the horizontal scroll offset
      */
-    @Inject(method = "onScroll", at = @At("HEAD"))
+    @Inject(method = "onScroll", at = @At(value = "INVOKE",
+            target = "Lnet/minecraft/client/gui/screens/Screen;mouseScrolled(DDD)Z"))
     private void onScrollCallback(long handle, double xoffset, double yoffset, CallbackInfo ci) {
-        receiver.onEarlyScrollCallback(xoffset, yoffset);
+        callback.onScroll(xoffset, yoffset);
     }
 }

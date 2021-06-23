@@ -68,24 +68,24 @@ public final class Framebuffer implements AutoCloseable {
 
     public void resize(int width, int height) {
         if (mWidth != width || mHeight != height) {
+            mWidth = width;
+            mHeight = height;
             for (var entry : mAttachments.int2ObjectEntrySet()) {
                 AutoCloseable a = entry.getValue();
                 if (a instanceof Texture2D) {
                     Texture2D texture = (Texture2D) a;
                     int internalFormat = glGetTextureParameteri(texture.get(), GL_TEXTURE_INTERNAL_FORMAT);
                     texture.close();
-                    texture.init(internalFormat, width, height, 0);
+                    texture.init(internalFormat, width, height, 1);
                     glNamedFramebufferTexture(get(), entry.getIntKey(), texture.get(), 0);
                 } else if (a instanceof Renderbuffer) {
                     Renderbuffer renderbuffer = (Renderbuffer) a;
                     int internalFormat = glGetRenderbufferParameteri(renderbuffer.get(), GL_RENDERBUFFER_INTERNAL_FORMAT);
                     renderbuffer.close();
-                    renderbuffer.init(internalFormat, mWidth, mHeight);
+                    renderbuffer.init(internalFormat, width, height);
                     glNamedFramebufferRenderbuffer(get(), entry.getIntKey(), GL_RENDERBUFFER, renderbuffer.get());
                 }
             }
-            mWidth = width;
-            mHeight = height;
         }
     }
 
@@ -106,7 +106,7 @@ public final class Framebuffer implements AutoCloseable {
 
     public void attachTexture(int attachPoint, int internalFormat) {
         Texture2D texture = new Texture2D();
-        texture.init(internalFormat, mWidth, mHeight, 0);
+        texture.init(internalFormat, mWidth, mHeight, 1);
         glNamedFramebufferTexture(get(), attachPoint, texture.get(), 0);
         mAttachments.put(attachPoint, texture);
     }
@@ -148,12 +148,21 @@ public final class Framebuffer implements AutoCloseable {
      * @param attachPoint specify an attachment point
      * @return the texture name
      */
-    public int getAttachedTextureName(int attachPoint) {
+    public int getAttachedTextureRaw(int attachPoint) {
         AutoCloseable a = mAttachments.get(attachPoint);
         if (a instanceof Texture) {
             return ((Texture) a).get();
         }
         return DEFAULT_TEXTURE;
+    }
+
+    @Nullable
+    public Texture2D getAttachedTexture(int attachPoint) {
+        AutoCloseable a = mAttachments.get(attachPoint);
+        if (a instanceof Texture2D) {
+            return ((Texture2D) a);
+        }
+        return null;
     }
 
     @Nullable

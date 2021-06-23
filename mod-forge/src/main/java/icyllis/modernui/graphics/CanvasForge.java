@@ -136,7 +136,7 @@ public class CanvasForge {
      * at the wrong time.
      *
      * @return the instance
-     * @see UIManager#initialize()
+     * @see UIManager#initRenderer()
      */
     public static CanvasForge getInstance() {
         RenderCore.checkRenderThread();
@@ -596,7 +596,7 @@ public class CanvasForge {
         BufferUploader.end(mBufferBuilder);
     }
 
-    /*public void drawRoundRect(float left, float top, float right, float bottom,
+    public void drawRoundRect(float left, float top, float right, float bottom,
                               float radius, @Nonnull Paint paint) {
         radius = Math.max(0, radius);
         switch (paint.getStyle()) {
@@ -617,7 +617,7 @@ public class CanvasForge {
         program.setRadius(r, Math.min(r, paint.getSmoothRadius()));
         program.setInnerRect(left + r, top + r, right - r, bottom - r);
         upload(left, top, right, bottom, paint.getColor());
-        Shader.stop();
+        GLWrapper.stopProgram();
     }
 
     protected void strokeRoundRect(float left, float top, float right, float bottom,
@@ -628,8 +628,8 @@ public class CanvasForge {
         program.setRadius(r, Math.min(thickness, paint.getSmoothRadius()), thickness);
         program.setInnerRect(left + r, top + r, right - r, bottom - r);
         upload(left - r, top - r, right + r, bottom + r, paint.getColor());
-        Shader.stop();
-    }*/
+        GLWrapper.stopProgram();
+    }
 
     @Deprecated
     protected void upload(float left, float top, float right, float bottom, int color) {

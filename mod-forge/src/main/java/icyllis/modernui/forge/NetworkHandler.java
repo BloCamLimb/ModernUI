@@ -62,7 +62,7 @@ public class NetworkHandler {
 
     public static final Marker MARKER = MarkerManager.getMarker("Network");
 
-    private final ResourceLocation mChannel;
+    private final ResourceLocation mId;
 
     private final String mProtocol;
     private final boolean mOptional;
@@ -102,7 +102,7 @@ public class NetworkHandler {
         mClientHandler = FMLEnvironment.dist.isClient() ? clientHandler.get().get() : null;
         mServerHandler = serverHandler;
         EventNetworkChannel network = NetworkRegistry.ChannelBuilder
-                .named(mChannel = new ResourceLocation(modid, name))
+                .named(mId = new ResourceLocation(modid, name))
                 .networkProtocolVersion(this::getProtocolVersion)
                 .clientAcceptedVersions(this::checkS2CProtocol)
                 .serverAcceptedVersions(this::checkC2SProtocol)
@@ -131,7 +131,7 @@ public class NetworkHandler {
     private boolean checkS2CProtocol(@Nonnull String serverProtocol) {
         boolean allowAbsent = mOptional && serverProtocol.equals(NetworkRegistry.ABSENT);
         if (allowAbsent) {
-            ModernUI.LOGGER.debug(MARKER, "Connecting to a server that does not have {} channel available", mChannel);
+            ModernUI.LOGGER.debug(MARKER, "Connecting to a server that does not have {} channel available", mId);
         }
         return allowAbsent || serverProtocol.equals(mProtocol);
     }
@@ -150,7 +150,7 @@ public class NetworkHandler {
     }
 
     @OnlyIn(Dist.CLIENT)
-    private void onS2CMessageReceived(NetworkEvent.ServerCustomPayloadEvent event) {
+    private void onS2CMessageReceived(@Nonnull NetworkEvent.ServerCustomPayloadEvent event) {
         // received on main thread of effective side
         if (mClientHandler != null) {
             LocalPlayer player = Minecraft.getInstance().player;
@@ -162,7 +162,7 @@ public class NetworkHandler {
         event.getSource().get().setPacketHandled(true);
     }
 
-    private void onC2SMessageReceived(NetworkEvent.ClientCustomPayloadEvent event) {
+    private void onC2SMessageReceived(@Nonnull NetworkEvent.ClientCustomPayloadEvent event) {
         // received on main thread of effective side
         if (mServerHandler != null) {
             ServerPlayer player = event.getSource().get().getSender();
@@ -183,7 +183,7 @@ public class NetworkHandler {
      * @see C2SMsgHandler
      */
     @Nonnull
-    public FriendlyByteBuf targetAt(int index) {
+    public static FriendlyByteBuf buffer(int index) {
         FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
         buffer.writeShort(index);
         return buffer;
@@ -195,13 +195,13 @@ public class NetworkHandler {
      *
      * @param data the packet data
      * @return a broadcaster to broadcast the packet
-     * @see #targetAt(int)
+     * @see #buffer(int)
      */
     @Nonnull
     public Broadcaster getBroadcaster(@Nonnull FriendlyByteBuf data) {
         Broadcaster b = mPool.acquire();
         if (b == null) b = new Broadcaster();
-        b.data = data;
+        b.mData = data;
         return b;
     }
 
@@ -212,19 +212,19 @@ public class NetworkHandler {
      * to be called on the server side
      */
     @OnlyIn(Dist.CLIENT)
-    public void sendToServer(@Nonnull FriendlyByteBuf buf) {
+    public void sendToServer(@Nonnull FriendlyByteBuf data) {
         ClientPacketListener connection = Minecraft.getInstance().getConnection();
         if (connection != null)
-            connection.send(new ServerboundCustomPayloadPacket(mChannel, buf));
+            connection.send(new ServerboundCustomPayloadPacket(mId, data));
+        data.release();
     }
 
     public class Broadcaster {
 
-        // a ByteBuf wrapper for write data more friendly
-        private FriendlyByteBuf data;
+        private FriendlyByteBuf mData;
 
         protected void recycle() {
-            data = null;
+            mData = null;
             mPool.release(this);
         }
 
@@ -234,7 +234,7 @@ public class NetworkHandler {
          * @param player the server player
          */
         public void sendToPlayer(@Nonnull Player player) {
-            ((ServerPlayer) player).connection.send(new ClientboundCustomPayloadPacket(mChannel, data));
+            ((ServerPlayer) player).connection.send(new ClientboundCustomPayloadPacket(mId, mData));
             recycle();
         }
 
@@ -244,7 +244,7 @@ public class NetworkHandler {
          * @param player the server player
          */
         public void sendToPlayer(@Nonnull ServerPlayer player) {
-            player.connection.send(new ClientboundCustomPayloadPacket(mChannel, data));
+            player.connection.send(new ClientboundCustomPayloadPacket(mId, mData));
             recycle();
         }
 
@@ -254,7 +254,7 @@ public class NetworkHandler {
          * @param players players on server
          */
         public void sendToPlayers(@Nonnull Iterable<? extends Player> players) {
-            final Packet<?> packet = new ClientboundCustomPayloadPacket(mChannel, data);
+            final Packet<?> packet = new ClientboundCustomPayloadPacket(mId, mData);
             for (Player player : players)
                 ((ServerPlayer) player).connection.send(packet);
             recycle();
@@ -265,7 +265,7 @@ public class NetworkHandler {
          */
         public void sendToAll() {
             ServerLifecycleHooks.getCurrentServer().getPlayerList()
-                    .broadcastAll(new ClientboundCustomPayloadPacket(mChannel, data));
+                    .broadcastAll(new ClientboundCustomPayloadPacket(mId, mData));
             recycle();
         }
 
@@ -276,7 +276,7 @@ public class NetworkHandler {
          */
         public void sendToDimension(@Nonnull ResourceKey<Level> dimension) {
             ServerLifecycleHooks.getCurrentServer().getPlayerList()
-                    .broadcastAll(new ClientboundCustomPayloadPacket(mChannel, data), dimension);
+                    .broadcastAll(new ClientboundCustomPayloadPacket(mId, mData), dimension);
             recycle();
         }
 
@@ -294,7 +294,7 @@ public class NetworkHandler {
                                  double x, double y, double z, double radius,
                                  @Nonnull ResourceKey<Level> dimension) {
             ServerLifecycleHooks.getCurrentServer().getPlayerList().broadcast(excluded,
-                    x, y, z, radius, dimension, new ClientboundCustomPayloadPacket(mChannel, data));
+                    x, y, z, radius, dimension, new ClientboundCustomPayloadPacket(mId, mData));
             recycle();
         }
 
@@ -307,7 +307,7 @@ public class NetworkHandler {
          */
         public void sendToTrackingEntity(@Nonnull Entity entity) {
             ((ServerLevel) entity.level).getChunkSource().broadcast(
-                    entity, new ClientboundCustomPayloadPacket(mChannel, data));
+                    entity, new ClientboundCustomPayloadPacket(mId, mData));
             recycle();
         }
 
@@ -320,7 +320,7 @@ public class NetworkHandler {
          */
         public void sendToTrackingAndSelf(@Nonnull Entity entity) {
             ((ServerLevel) entity.level).getChunkSource().broadcastAndSend(
-                    entity, new ClientboundCustomPayloadPacket(mChannel, data));
+                    entity, new ClientboundCustomPayloadPacket(mId, mData));
             recycle();
         }
 
@@ -330,7 +330,7 @@ public class NetworkHandler {
          * @param chunk the chunk that players in
          */
         public void sendToTrackingChunk(@Nonnull LevelChunk chunk) {
-            final Packet<?> packet = new ClientboundCustomPayloadPacket(mChannel, data);
+            final Packet<?> packet = new ClientboundCustomPayloadPacket(mId, mData);
             ((ServerLevel) chunk.getLevel()).getChunkSource().chunkMap.getPlayers(
                     chunk.getPos(), false).forEach(player -> player.connection.send(packet));
             recycle();

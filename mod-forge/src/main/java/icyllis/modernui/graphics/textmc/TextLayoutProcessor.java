@@ -176,9 +176,9 @@ public class TextLayoutProcessor {
     public void initRenderer() {
         if (glyphManager == null) {
             glyphManager = GlyphManager.getInstance();
-            ModernUI.LOGGER.info(RenderCore.MARKER, "Text engine initialized");
+            ModernUI.LOGGER.info(RenderCore.MARKER, "Text renderer initialized");
         } else {
-            throw new IllegalStateException("Already initialized");
+            throw new IllegalStateException();
         }
     }
 

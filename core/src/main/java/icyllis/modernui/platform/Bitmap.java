@@ -172,8 +172,8 @@ public final class Bitmap implements AutoCloseable {
         glPixelStorei(GL_PACK_SKIP_ROWS, 0);
         glPixelStorei(GL_PACK_SKIP_PIXELS, 0);
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
-        int width = texture.getWidth();
-        int height = texture.getHeight();
+        int width = texture.getWidth(level);
+        int height = texture.getHeight(level);
         Bitmap bitmap = new Bitmap(format, width, height, false);
         glGetTextureImage(texture.get(), level, format.glFormat, GL_UNSIGNED_BYTE,
                 bitmap.getSize(), bitmap.getPixels());

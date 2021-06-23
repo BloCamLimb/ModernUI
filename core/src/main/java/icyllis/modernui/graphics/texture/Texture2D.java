@@ -53,20 +53,23 @@ public class Texture2D extends Texture {
      * This method can be called multiple times, which represents re-specifying this texture.
      *
      * @param internalFormat how image data stored in GPU
-     * @param mipmapLevel    max mipmap level, min is 0
+     * @param maxLevel       max mipmap level, min is 0
      * @see #init(int, int, int, int)
      */
     @Deprecated
-    public void initCompat(int internalFormat, int width, int height, int mipmapLevel) {
+    public void initCompat(int internalFormat, int width, int height, int maxLevel) {
+        if (maxLevel < 0) {
+            throw new IllegalArgumentException();
+        }
         bind();
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mipmapLevel);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, maxLevel);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_LOD, 0);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, mipmapLevel);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, maxLevel);
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f);
 
-        // null ptr represents not modifying the image data, but allocating enough memory
-        for (int level = 0; level <= mipmapLevel; level++) {
+        // null ptr represents not modifying the image data, but allocates memory
+        for (int level = 0; level <= maxLevel; level++) {
             nglTexImage2D(GL_TEXTURE_2D, level, internalFormat, width >> level,
                     height >> level, 0, GL_RED, GL_UNSIGNED_BYTE, MemoryUtil.NULL);
         }
@@ -83,16 +86,19 @@ public class Texture2D extends Texture {
      * When using mipmap, texture size must be power of two, and at least 2^mipmapLevel
      *
      * @param internalFormat sized internal format used to store the image in GPU
-     * @param mipmapLevel    max mipmap level, min is 0
+     * @param levels         the number of mipmap levels, min is 1
      */
-    public void init(int internalFormat, int width, int height, int mipmapLevel) {
+    public void init(int internalFormat, int width, int height, int levels) {
+        if (levels < 1) {
+            throw new IllegalArgumentException();
+        }
         final int texture = get();
         glTextureParameteri(texture, GL_TEXTURE_BASE_LEVEL, 0);
-        glTextureParameteri(texture, GL_TEXTURE_MAX_LEVEL, mipmapLevel);
+        glTextureParameteri(texture, GL_TEXTURE_MAX_LEVEL, levels - 1);
         glTextureParameteri(texture, GL_TEXTURE_MIN_LOD, 0);
-        glTextureParameteri(texture, GL_TEXTURE_MAX_LOD, mipmapLevel);
+        glTextureParameteri(texture, GL_TEXTURE_MAX_LOD, levels - 1);
         glTextureParameterf(texture, GL_TEXTURE_LOD_BIAS, 0.0f);
-        glTextureStorage2D(texture, mipmapLevel, internalFormat, width, height);
+        glTextureStorage2D(texture, levels, internalFormat, width, height);
     }
 
     /**
@@ -172,11 +178,11 @@ public class Texture2D extends Texture {
      *
      * @return texture width
      */
-    public int getWidth() {
-        return glGetTextureParameteri(get(), GL_TEXTURE_WIDTH);
+    public int getWidth(int level) {
+        return glGetTextureLevelParameteri(get(), level, GL_TEXTURE_WIDTH);
     }
 
-    public int getHeight() {
-        return glGetTextureParameteri(get(), GL_TEXTURE_HEIGHT);
+    public int getHeight(int level) {
+        return glGetTextureLevelParameteri(get(), level, GL_TEXTURE_HEIGHT);
     }
 }

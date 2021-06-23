@@ -16,9 +16,8 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.forge;
+package icyllis.modernui.screen;
 
-import icyllis.modernui.screen.ScreenCallback;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -33,7 +32,7 @@ import javax.annotation.Nullable;
  * This event occurred when the server requires the client to open a user
  * interface to display a container menu in a world, this event is cancelled
  * after setting the application screen. The menu is created on the client by
- * registering {@link net.minecraftforge.fml.network.IContainerFactory factory},
+ * the registered {@link net.minecraftforge.fml.network.IContainerFactory factory},
  * which contains custom network data from server, you can set the application
  * screen through the data and the menu type.  For example:
  *
@@ -54,33 +53,33 @@ import javax.annotation.Nullable;
 public class OpenMenuEvent extends Event implements IModBusEvent {
 
     @Nonnull
-    private final AbstractContainerMenu menu;
+    private final AbstractContainerMenu mMenu;
 
     @Nullable
     private ScreenCallback mScreen;
 
     public OpenMenuEvent(@Nonnull AbstractContainerMenu menu) {
-        this.menu = menu;
+        mMenu = menu;
     }
 
     /**
      * Get the source of the event.
      *
-     * @return container menu
+     * @return the container menu
      */
     @Nonnull
     public AbstractContainerMenu getMenu() {
-        return menu;
+        return mMenu;
     }
 
     /**
      * Set the application UI for the menu. After calling this method,
      * the event will be canceled.
      *
-     * @param screen the application user interface
+     * @param screen the application screen
      */
     public void setScreen(@Nonnull ScreenCallback screen) {
-        this.mScreen = screen;
+        mScreen = screen;
         setCanceled(true);
     }
 

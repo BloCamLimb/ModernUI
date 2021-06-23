@@ -190,10 +190,10 @@ public class UIEditor {
         if (!Screen.hasControlDown()) {
             return;
         }
-        if (event.getKey() == GLFW.GLFW_KEY_T) {
-            if (UIManager.getInstance().hasOpenGUI()) {
+        /*if (event.getKey() == GLFW.GLFW_KEY_T) {
+            if (UIManager.getInstance(.hasOpenGUI()) {
                 iterateWorking();
             }
-        }
+        }*/
     }
 }

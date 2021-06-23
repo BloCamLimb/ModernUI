@@ -25,7 +25,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
 
@@ -50,7 +49,8 @@ final class SimpleScreen extends Screen implements MuiScreen {
         this.minecraft = minecraft;
         this.width = width;
         this.height = height;
-        host.start(this, width, height);
+        host.init(this, width, height);
+        //TODO configurable
         BlurHandler.INSTANCE.forceBlur();
     }
 
@@ -62,14 +62,14 @@ final class SimpleScreen extends Screen implements MuiScreen {
     }
 
     @Override
-    public void render(@Nonnull PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void render(@Nonnull PoseStack matrixStack, int mouseX, int mouseY, float deltaTick) {
         host.render();
     }
 
     @Override
-    public void onClose() {
-        super.onClose();
-        host.stop();
+    public void removed() {
+        super.removed();
+        host.removed();
     }
 
     //TODO configurable
@@ -78,45 +78,44 @@ final class SimpleScreen extends Screen implements MuiScreen {
         return false;
     }
 
-    // IMPL - IGuiEventListener
+    // IMPL - GuiEventListener
 
     @Override
     public void mouseMoved(double mouseX, double mouseY) {
-        host.onCursorEvent(mouseX, mouseY);
+        host.onCursorPos();
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        // Pass the event
-        return false;
+        host.onMouseButton();
+        return true;
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
-        // Pass the event
-        return false;
+        host.onMouseButton();
+        return true;
     }
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double deltaX, double deltaY) {
-        // Consume the event but do nothing
         return true;
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        return host.onScrollEvent();
+        return true;
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (host.screenKeyDown(keyCode, scanCode, modifiers)) {
+        /*if (host.screenKeyDown(keyCode, scanCode, modifiers)) {
             return true;
         } else if (keyCode == GLFW.GLFW_KEY_ESCAPE && shouldCloseOnEsc()) {
             if (host.onBackPressed()) {
                 return true;
             }
-            host.closeGUI();
+            host.closeGui();
             return true;
         } else if (keyCode == GLFW.GLFW_KEY_TAB) {
             boolean searchNext = !hasShiftDown();
@@ -124,13 +123,13 @@ final class SimpleScreen extends Screen implements MuiScreen {
                 return host.sChangeKeyboard(searchNext);
             }
             return true;
-        }
+        }*/
         return false;
     }
 
     @Override
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-        return host.screenKeyUp(keyCode, scanCode, modifiers);
+        return false;
     }
 
     @Override

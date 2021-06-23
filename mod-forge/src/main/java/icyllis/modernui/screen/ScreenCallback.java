@@ -26,7 +26,7 @@ import icyllis.modernui.widget.FrameLayout;
  */
 public abstract class ScreenCallback {
 
-    UIManager window;
+    UIManager host;
 
     protected ScreenCallback() {
     }
@@ -34,6 +34,6 @@ public abstract class ScreenCallback {
     public abstract void onCreate();
 
     public void setContentView(View view, FrameLayout.LayoutParams params) {
-        window.setContentView(view, params);
+        host.setContentView(view, params);
     }
 }

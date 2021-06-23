@@ -228,7 +228,7 @@ public class LinearLayout extends ViewGroup {
         }
     }
 
-    private void drawDividersVertical(@Nonnull CanvasForge canvas) {
+    private void drawDividersVertical(@Nonnull Canvas canvas) {
         // draw the divider before first non-GONE child
         // faster than Android API, because we draw every frame
         boolean began = false;
@@ -267,12 +267,12 @@ public class LinearLayout extends ViewGroup {
         }
     }
 
-    private void drawHorizontalDivider(@Nonnull CanvasForge canvas, int top) {
+    private void drawHorizontalDivider(@Nonnull Canvas canvas, int top) {
         divider.setBounds(getLeft() + dividerPadding, top, getRight() - dividerPadding, top + dividerHeight);
         divider.draw(canvas);
     }
 
-    private void drawDividersHorizontal(@Nonnull CanvasForge canvas) {
+    private void drawDividersHorizontal(@Nonnull Canvas canvas) {
         boolean began = false;
         View lastDraw = null;
 
@@ -308,7 +308,7 @@ public class LinearLayout extends ViewGroup {
         }
     }
 
-    private void drawVerticalDivider(@Nonnull CanvasForge canvas, int left) {
+    private void drawVerticalDivider(@Nonnull Canvas canvas, int left) {
         divider.setBounds(left, getTop() + dividerPadding, left + dividerWidth, getBottom() - dividerPadding);
         divider.draw(canvas);
     }

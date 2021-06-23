@@ -18,7 +18,6 @@
 
 package icyllis.modernui.forge;
 
-import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.PluginList;
@@ -144,12 +143,11 @@ final class Registration {
     static void setupClient(@Nonnull FMLClientSetupEvent event) {
         //SettingsManager.INSTANCE.buildAllSettings();
         //UIManager.getInstance().registerMenuScreen(Registration.TEST_MENU, menu -> new TestUI());
-
+        ModernUI.LOGGER.info("SETUP CLIENT");
         event.getMinecraftSupplier().get().execute(() -> {
             GLWrapper.setRedirector(new B3DRedirector());
             RenderCore.initialize();
-            Window window = Minecraft.getInstance().getWindow();
-            UIManager.getInstance().initialize(window.getWidth(), window.getHeight());
+            UIManager.getInstance().initRenderer();
             TextLayoutProcessor.getInstance().initRenderer();
             ModernFontRenderer.change(Config.CLIENT.globalRenderer.get(), Config.CLIENT.allowShadow.get());
         });

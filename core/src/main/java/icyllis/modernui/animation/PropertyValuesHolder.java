@@ -21,6 +21,7 @@ package icyllis.modernui.animation;
 import sun.misc.Unsafe;
 
 import javax.annotation.Nonnull;
+import java.lang.reflect.Field;
 
 /**
  * This class holds information about a property and the values that that property
@@ -38,9 +39,11 @@ public class PropertyValuesHolder<T, V, P> {
 
     static {
         try {
-            UNSAFE = (Unsafe) Unsafe.class.getDeclaredField("theUnsafe").get(null);
+            Field field = Unsafe.class.getDeclaredField("theUnsafe");
+            field.setAccessible(true);
+            UNSAFE = (Unsafe) field.get(null);
         } catch (Exception e) {
-            throw new IllegalStateException("No UNSAFE");
+            throw new IllegalStateException("No UNSAFE", e);
         }
     }
 

@@ -56,8 +56,8 @@ public class TestPauseUI extends ScreenCallback {
         linearLayout.setDivider(new Drawable() {
             @Override
             public void draw(@Nonnull Canvas canvas) {
-                canvas.setRGBA(192, 192, 192, 128);
-                canvas.drawLine(0, 0, getWidth(), 0);
+                /*canvas.setRGBA(192, 192, 192, 128);
+                canvas.drawLine(0, 0, getWidth(), 0);*/
             }
 
             @Override
@@ -88,9 +88,9 @@ public class TestPauseUI extends ScreenCallback {
         @Override
         protected void onDraw(@Nonnull Canvas canvas) {
             super.onDraw(canvas);
-            canvas.resetColor();
+            /*canvas.resetColor();
             canvas.setTextAlign(TextAlign.CENTER);
-            canvas.drawText(k, getWidth() >> 1, 0);
+            canvas.drawText(k, getWidth() >> 1, 0);*/
         }
     }
 
