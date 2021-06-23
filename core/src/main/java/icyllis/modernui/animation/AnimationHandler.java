@@ -24,7 +24,6 @@ import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Consumer;
 import java.util.function.LongConsumer;
 
 public class AnimationHandler {
@@ -34,10 +33,13 @@ public class AnimationHandler {
     private final CopyOnWriteArrayList<FrameCallback> mCallbacks = new CopyOnWriteArrayList<>();
     private final Object2LongMap<FrameCallback> mDelayedStartTime = new Object2LongOpenHashMap<>();
 
-    public static void init(Consumer<LongConsumer> setCallback) {
+    @Nonnull
+    public static synchronized LongConsumer init() {
         if (sInstance == null) {
             sInstance = new AnimationHandler();
-            setCallback.accept(sInstance::doAnimationFrame);
+            return sInstance::doAnimationFrame;
+        } else {
+            throw new IllegalStateException();
         }
     }
 

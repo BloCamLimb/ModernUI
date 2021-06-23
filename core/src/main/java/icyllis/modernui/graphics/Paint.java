@@ -78,7 +78,7 @@ public class Paint {
     }
 
     /**
-     * Get and reset the thread-local paint.
+     * Returns the thread-local paint. The paint will be reset.
      * <p>
      * For example:
      * <pre>

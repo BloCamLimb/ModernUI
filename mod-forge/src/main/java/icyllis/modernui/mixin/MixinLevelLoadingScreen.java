@@ -51,7 +51,8 @@ public class MixinLevelLoadingScreen extends Screen {
 
     @Inject(method = "render", at = @At("TAIL"))
     private void render(PoseStack matrixStack, int scaledMouseX, int scaledMouseY, float deltaTick, CallbackInfo ci) {
-        RenderSystem.enableBlend();
+        //TODO fix?
+        /*RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableDepthTest();
         Paint paint = Paint.take();
@@ -66,7 +67,7 @@ public class MixinLevelLoadingScreen extends Screen {
         paint.setRGBA(64, 64, 64, 128);
         CanvasForge.getInstance().drawCircle(width / 2.0f, height / 2.0f - 36.0f, 15 + amp, paint);
         paint.setRGBA(255, 255, 255, 255);
-        CanvasForge.getInstance().drawArc(width / 2.0f, height / 2.0f - 36.0f, 15 + amp, -90, mSweep, paint);
+        CanvasForge.getInstance().drawArc(width / 2.0f, height / 2.0f - 36.0f, 15 + amp, -90, mSweep, paint);*/
     }
 
     @Redirect(method = "render",

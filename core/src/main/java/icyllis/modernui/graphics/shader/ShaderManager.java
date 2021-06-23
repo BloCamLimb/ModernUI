@@ -204,7 +204,7 @@ public class ShaderManager {
         glLinkProgram(program);
         if (glGetProgrami(program, GL_LINK_STATUS) == GL_FALSE) {
             String log = glGetProgramInfoLog(program, 8192);
-            ModernUI.LOGGER.error(MARKER, "Failed to link shader program:\n{}", log);
+            ModernUI.LOGGER.error(MARKER, "Failed to link shader program: {}", log);
             // deletion detaches all shader shards
             glDeleteProgram(program);
             program = 0;

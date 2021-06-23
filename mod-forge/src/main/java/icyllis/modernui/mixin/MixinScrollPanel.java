@@ -79,7 +79,7 @@ public abstract class MixinScrollPanel implements ScrollController.IListener {
 
     @Inject(method = "render", at = @At("HEAD"))
     private void preRender(PoseStack matrix, int mouseX, int mouseY, float partialTicks, CallbackInfo ci) {
-        mScrollController.update(UIManager.getInstance().getDrawingTime());
+        mScrollController.update(UIManager.getInstance().getElapsedTime());
     }
 
     @Inject(method = "render", at = @At(value = "INVOKE", shift = At.Shift.BEFORE, target = "Lnet/minecraftforge/client/gui/ScrollPanel;drawPanel(Lcom/mojang/blaze3d/vertex/PoseStack;IILcom/mojang/blaze3d/vertex/Tesselator;II)V"), remap = false)

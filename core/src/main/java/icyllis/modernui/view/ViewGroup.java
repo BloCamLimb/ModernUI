@@ -20,7 +20,7 @@ package icyllis.modernui.view;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.Canvas;
-import net.minecraft.Util;
+import icyllis.modernui.platform.RenderCore;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -504,7 +504,7 @@ public abstract class ViewGroup extends View implements ViewParent {
         if (mFirstTouchTarget != null) {
             boolean syntheticEvent = false;
             if (event == null) {
-                final long time = Util.getNanos();
+                final long time = RenderCore.timeNanos();
                 /*event = MotionEvent.obtain(now, now,
                         MotionEvent.ACTION_CANCEL, 0.0f, 0.0f, 0);*/
                 syntheticEvent = true;

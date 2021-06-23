@@ -56,7 +56,7 @@ public final class NetworkMessages {
 
     @Nonnull
     public static NetworkHandler.Broadcaster food(float foodSaturationLevel, float foodExhaustionLevel) {
-        FriendlyByteBuf buf = network.targetAt(0);
+        FriendlyByteBuf buf = NetworkHandler.buffer(0);
         buf.writeFloat(foodSaturationLevel);
         buf.writeFloat(foodExhaustionLevel);
         return network.getBroadcaster(buf);
@@ -64,7 +64,7 @@ public final class NetworkMessages {
 
     @Nonnull
     static NetworkHandler.Broadcaster menu(int containerId, int menuId, Consumer<FriendlyByteBuf> writer) {
-        FriendlyByteBuf buf = network.targetAt(1);
+        FriendlyByteBuf buf = NetworkHandler.buffer(1);
         buf.writeVarInt(containerId);
         buf.writeVarInt(menuId);
         if (writer != null) {
@@ -110,10 +110,11 @@ public final class NetworkMessages {
                 if (menu == null) {
                     ModernUI.LOGGER.error(UIManager.MARKER, "No container menu created from menu type: {}", key);
                 } else if (key != null) {
-                    success = UIManager.getInstance().openGUI(player, menu, key.getNamespace());
+                    success = UIManager.getInstance().openMenu(player, menu, key.getNamespace());
                 }
             }
-            if (!success) player.closeContainer(); // close server container
+            if (!success)
+                player.closeContainer(); // close server menu
         }
     }
 }

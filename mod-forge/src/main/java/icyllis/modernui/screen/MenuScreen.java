@@ -18,7 +18,6 @@
 
 package icyllis.modernui.screen;
 
-import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.vertex.PoseStack;
 import icyllis.modernui.ModernUI;
 import net.minecraft.client.Minecraft;
@@ -27,18 +26,13 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ClickType;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.event.GuiContainerEvent;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.common.MinecraftForge;
-import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
-import java.util.Objects;
-
-//TODO rewrite vanilla code, make item slots can be rendered with alpha
-// And render layer for tooltips etc
 
 /**
  * ContainerScreen holds a container menu for item stack interaction and
@@ -55,32 +49,30 @@ import java.util.Objects;
 @OnlyIn(Dist.CLIENT)
 final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContainerScreen<T> implements MuiScreen {
 
-    private final UIManager master;
+    private final UIManager host;
 
     MenuScreen(@Nonnull T menu, Inventory inventory, UIManager window) {
         super(menu, inventory, TextComponent.EMPTY);
-        master = window;
+        host = window;
     }
 
     @Override
     public void init(@Nonnull Minecraft minecraft, int width, int height) {
-        //TODO remove super.init()
-        super.init(minecraft, width, height);
-        master.start(this, width, height);
+        this.minecraft = minecraft;
+        this.width = width;
+        this.height = height;
+        init();
+        host.init(this, width, height);
+        MinecraftForge.EVENT_BUS.post(new GuiScreenEvent.InitGuiEvent.Post(this, buttons, this::widget, this::widget));
     }
 
     @Override
     public void resize(@Nonnull Minecraft minecraft, int width, int height) {
-        // these are two public fields
         this.width = width;
         this.height = height;
-
-        master.resize(width, height);
-
-        // compatibility with Forge mods, like JEI
-        if (!MinecraftForge.EVENT_BUS.post(new GuiScreenEvent.InitGuiEvent.Pre(this, buttons, this::widget, this::widget))) {
-            MinecraftForge.EVENT_BUS.post(new GuiScreenEvent.InitGuiEvent.Post(this, buttons, this::widget, this::widget));
-        }
+        init();
+        host.resize(width, height);
+        MinecraftForge.EVENT_BUS.post(new GuiScreenEvent.InitGuiEvent.Post(this, buttons, this::widget, this::widget));
 
         /*ModernUI.LOGGER.debug("Scaled: {}x{} Framebuffer: {}x{} Window: {}x{}", width, height, minecraft.getMainWindow().getFramebufferWidth(),
                 minecraft.getMainWindow().getFramebufferHeight(), minecraft.getMainWindow().getWidth(), minecraft.getMainWindow().getHeight());*/
@@ -94,64 +86,59 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
 
     @Override
     public void render(@Nonnull PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        super.render(matrixStack, mouseX, mouseY, partialTicks);
-        master.render();
+        //TODO configurable bg
+        renderBackground(matrixStack);
+        MinecraftForge.EVENT_BUS.post(new GuiContainerEvent.DrawBackground(this, matrixStack, mouseX, mouseY));
+        host.render();
     }
 
     @Override
     protected void renderBg(@Nonnull PoseStack matrixStack, float partialTicks, int x, int y) {
-        renderBackground(matrixStack);
     }
 
     @Override
-    protected void renderLabels(@Nonnull PoseStack matrixStack, int x, int y) {
-
+    public void removed() {
+        super.removed();
+        host.removed();
     }
 
-    @Override
-    public void onClose() {
-        super.onClose();
-        master.stop();
-    }
-
-    // IMPL - IGuiEventListener
+    // IMPL - GuiEventListener
 
     @Override
     public void mouseMoved(double mouseX, double mouseY) {
-        master.onCursorEvent(mouseX, mouseY);
+        host.onCursorPos();
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        // Pass the event
-        return false;
+        host.onMouseButton();
+        return true;
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
-        // Pass the event
-        return false;
+        host.onMouseButton();
+        return true;
     }
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double deltaX, double deltaY) {
-        // Consume the event but do nothing
         return true;
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        return master.onScrollEvent();
+        return true;
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (master.screenKeyDown(keyCode, scanCode, modifiers)) {
+        /*if (host.screenKeyDown(keyCode, scanCode, modifiers)) {
             return true;
         } else {
             InputConstants.Key mouseKey = InputConstants.getKey(keyCode, scanCode);
             if (keyCode == GLFW.GLFW_KEY_ESCAPE || Objects.requireNonNull(this.minecraft).options.keyInventory.isActiveAndMatches(mouseKey)) {
-                if (master.onBackPressed()) {
+                if (host.onBackPressed()) {
                     return true;
                 }
                 Objects.requireNonNull(Objects.requireNonNull(this.minecraft).player).closeContainer();
@@ -159,8 +146,8 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
             }
             if (keyCode == GLFW.GLFW_KEY_TAB) {
                 boolean searchNext = !hasShiftDown();
-                if (!master.sChangeKeyboard(searchNext)) {
-                    return master.sChangeKeyboard(searchNext);
+                if (!host.sChangeKeyboard(searchNext)) {
+                    return host.sChangeKeyboard(searchNext);
                 }
                 return true;
             }
@@ -176,17 +163,17 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
                     return true;
                 }
             } else return this.minecraft.options.keyDrop.isActiveAndMatches(mouseKey);
-        }
+        }*/
         return false;
     }
 
     @Override
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-        return master.screenKeyUp(keyCode, scanCode, modifiers);
+        return false;
     }
 
     @Override
     public boolean charTyped(char codePoint, int modifiers) {
-        return master.sCharTyped(codePoint, modifiers);
+        return host.sCharTyped(codePoint, modifiers);
     }
 }

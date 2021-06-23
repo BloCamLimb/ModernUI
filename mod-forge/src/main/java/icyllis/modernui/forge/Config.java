@@ -277,7 +277,7 @@ public final class Config {
             BlurHandler.sBackgroundAlpha = backgroundAlpha.get().floatValue();
             BlurHandler.INSTANCE.loadBlacklist(blurBlacklist.get());
 
-            TestHUD.sTooltip = tooltip.get();
+            //TestHUD.sTooltip = tooltip.get();
             String tooltipColor = this.tooltipColor.get();
             try {
                 int i = Integer.valueOf(tooltipColor.substring(2), 16);
@@ -288,7 +288,7 @@ public final class Config {
                 ModernUI.LOGGER.error(ModernUI.MARKER, "Wrong color format for setting tooltip color: {}", tooltipColor, e);
             }
             TestHUD.sDing = ding.get();
-            TestHUD.sBars = hudBars.get();
+            //TestHUD.sBars = hudBars.get();
 
             Minecraft.getInstance().submit(() -> ModernFontRenderer.change(globalRenderer.get(), allowShadow.get()));
             GlyphManager.sPreferredFont = preferredFont.get();

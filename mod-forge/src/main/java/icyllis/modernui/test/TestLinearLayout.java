@@ -75,9 +75,9 @@ public class TestLinearLayout extends LinearLayout {
         setDivider(new Drawable() {
             @Override
             public void draw(@Nonnull Canvas canvas) {
-                canvas.moveTo(this);
+                /*canvas.moveTo(this);
                 canvas.setRGBA(192, 192, 192, 128);
-                canvas.drawLine(0, 0, getWidth(), 0);
+                canvas.drawLine(0, 0, getWidth(), 0);*/
             }
 
             @Override
@@ -155,7 +155,7 @@ public class TestLinearLayout extends LinearLayout {
     @Override
     protected void onDraw(@Nonnull Canvas canvas) {
         super.onDraw(canvas);
-        canvas.moveTo(this);
+        /*canvas.moveTo(this);
         canvas.resetColor();
         canvas.setTextAlign(TextAlign.LEFT);
         canvas.save();
@@ -165,10 +165,9 @@ public class TestLinearLayout extends LinearLayout {
         canvas.drawText("\u0054\u0068\u0069\u0073\u0020\u0069\u0073\u0020\u0627\u0644\u0644\u063a\u0629\u0020" +
                 "\u0627\u0644\u0639\u0631\u0628\u064a\u0629\u002c\u0020\u0061\u006e\u0064\u0020" +
                 "\u0073\u0068\u0065\u0020\u0069\u0073\u0020\u6d77\u87ba", 10, 20);
-        canvas.restore();
+        canvas.restore();*/
 
         Paint paint = Paint.take();
-        paint.reset();
         paint.setStyle(Paint.Style.FILL);
         canvas.drawRoundRect(6, 90, 46, 104, 7, paint);
 
@@ -182,7 +181,7 @@ public class TestLinearLayout extends LinearLayout {
         paint.setStyle(Paint.Style.FILL);
         canvas.drawRect(6, 126, 86, 156, paint);
 
-        canvas.drawRoundImage(ICON, 6, 160, 166, 320, iconRadius, paint);
+        //canvas.drawRoundImage(ICON, 6, 160, 166, 320, iconRadius, paint);
 
         paint.setStyle(Paint.Style.STROKE);
         paint.setSmoothRadius(2.0f);
@@ -331,9 +330,9 @@ public class TestLinearLayout extends LinearLayout {
                 paint.setRGBA(140, 200, 240, 128);
                 canvas.drawRoundRect(0, 1, getWidth(), getHeight() - 2, 4, paint);
             }
-            canvas.resetColor();
+            /*canvas.resetColor();
             canvas.setTextAlign(TextAlign.CENTER);
-            canvas.drawText(str, getWidth() >> 1, 4);
+            canvas.drawText(str, getWidth() >> 1, 4);*/
         }
     }
 
@@ -354,8 +353,8 @@ public class TestLinearLayout extends LinearLayout {
 
         @Override
         protected void onDraw(@Nonnull Canvas canvas) {
-            canvas.setTextAlign(TextAlign.LEFT);
-            canvas.drawText("" + ChatFormatting.RED + ChatFormatting.BLUE + "G", offset, offsetY + 4);
+            /*canvas.setTextAlign(TextAlign.LEFT);
+            canvas.drawText("" + ChatFormatting.RED + ChatFormatting.BLUE + "G", offset, offsetY + 4);*/
         }
 
         @Override

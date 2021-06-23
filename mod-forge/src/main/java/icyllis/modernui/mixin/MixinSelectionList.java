@@ -82,7 +82,7 @@ public abstract class MixinSelectionList implements ScrollController.IListener {
             mScrollController = new ScrollController(this);
             skipAnimationTo(scrollAmount);
         }
-        mScrollController.update(UIManager.getInstance().getDrawingTime());
+        mScrollController.update(UIManager.getInstance().getElapsedTime());
     }
 
     @Inject(method = "render", at = @At(value = "INVOKE", shift = At.Shift.BEFORE, target = "Lnet/minecraft/client/gui/components/AbstractSelectionList;renderHeader(Lcom/mojang/blaze3d/vertex/PoseStack;IILcom/mojang/blaze3d/vertex/Tesselator;)V"))

@@ -19,6 +19,7 @@
 package icyllis.modernui.graphics;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.graphics.shader.Shader;
 import icyllis.modernui.graphics.shader.ShaderManager;
 import icyllis.modernui.graphics.texture.Texture2D;
@@ -44,7 +45,7 @@ import java.util.List;
 import static icyllis.modernui.graphics.GLWrapper.*;
 
 /**
- * Modern UI implementation to Canvas, handling multi-threaded rendering.
+ * Modern OpenGL implementation to Canvas, handling multi-threaded rendering.
  * <p>
  * This helps to build OpenGL buffers from UI thread, using multiple vertex
  * array objects, uniform buffer objects and vertex buffer objects. Later
@@ -168,6 +169,7 @@ public final class GLCanvas extends Canvas {
         ShaderManager.getInstance().addListener(this::onLoadShaders);
     }
 
+    @RenderThread
     public static GLCanvas initialize() {
         RenderCore.checkRenderThread();
         if (INSTANCE == null) {
@@ -215,6 +217,7 @@ public final class GLCanvas extends Canvas {
      *
      * @param projection the project matrix to replace current one
      */
+    @RenderThread
     public void setProjection(Matrix4 projection) {
         RenderCore.checkRenderThread();
         ByteBuffer buffer = glMapNamedBuffer(mProjectionUBO, GL_WRITE_ONLY);
@@ -225,6 +228,7 @@ public final class GLCanvas extends Canvas {
         glUnmapNamedBuffer(mProjectionUBO);
     }
 
+    @RenderThread
     public void render() {
         RenderCore.checkRenderThread();
         if (mDrawStates.isEmpty()) {
@@ -233,15 +237,16 @@ public final class GLCanvas extends Canvas {
         if (getSaveCount() != 1) {
             throw new IllegalStateException("Unbalanced save()/restore() pair");
         }
-        // upload textures
-        RenderCore.flushRenderCalls();
         uploadBuffers();
 
-        // uniform bindings are shared, we must re-bind before we use them
+        // uniform bindings are globally shared, we must re-bind before we use them
         glBindBufferBase(GL_UNIFORM_BUFFER, MATRIX_BLOCK_BINDING, mProjectionUBO);
         glBindBufferBase(GL_UNIFORM_BUFFER, ROUND_RECT_BINDING, mRoundRectUBO);
         glBindBufferBase(GL_UNIFORM_BUFFER, CIRCLE_BINDING, mCircleUBO);
         glBindBufferBase(GL_UNIFORM_BUFFER, ARC_BINDING, mArcUBO);
+
+        final int prevVAO = glGetInteger(GL_VERTEX_ARRAY_BINDING);
+        final int prevProgram = glGetInteger(GL_CURRENT_PROGRAM);
 
         long uniformDataPtr = MemoryUtil.memAddress(mUniformData.flip());
 
@@ -407,6 +412,9 @@ public final class GLCanvas extends Canvas {
             }
             instance++;
         }
+
+        glBindVertexArray(prevVAO);
+        glUseProgram(prevProgram);
 
         mTextures.clear();
         mUniformData.clear();

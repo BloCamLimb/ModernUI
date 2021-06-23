@@ -62,7 +62,8 @@ public final class ContextClient extends Context {
 
     @Override
     public ReadableByteChannel getResource(@Nonnull Path path) throws IOException {
-        return Channels.newChannel(mResourceManager.getResource(new ResourceLocation(mNamespace, path.toString())).getInputStream());
+        return Channels.newChannel(mResourceManager.getResource(new ResourceLocation(mNamespace, path.toString()
+        .replace('\\', '/'))).getInputStream());
     }
 
     @Nullable
