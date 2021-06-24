@@ -99,7 +99,7 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
     @Override
     public void removed() {
         super.removed();
-        host.removed();
+        host.finish();
     }
 
     // IMPL - GuiEventListener

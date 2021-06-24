@@ -52,8 +52,6 @@ import java.util.Objects;
 
 public class TestHUD {
 
-    public static boolean sDing;
-    public static boolean sFirstScreenOpened;
     public static boolean sBars;
 
     //private static DecimalFormat decimalFormat = new DecimalFormat("#.00");

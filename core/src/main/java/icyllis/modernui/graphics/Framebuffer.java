@@ -53,6 +53,8 @@ public final class Framebuffer implements AutoCloseable {
     private Ref mRef;
     private Int2ObjectMap<AutoCloseable> mAttachments;
 
+    private final float[] mClearColor = new float[4];
+
     public Framebuffer(int width, int height) {
         mWidth = width;
         mHeight = height;
@@ -64,29 +66,6 @@ public final class Framebuffer implements AutoCloseable {
             mAttachments = new Int2ObjectArrayMap<>();
         }
         return mRef.framebuffer;
-    }
-
-    public void resize(int width, int height) {
-        if (mWidth != width || mHeight != height) {
-            mWidth = width;
-            mHeight = height;
-            for (var entry : mAttachments.int2ObjectEntrySet()) {
-                AutoCloseable a = entry.getValue();
-                if (a instanceof Texture2D) {
-                    Texture2D texture = (Texture2D) a;
-                    int internalFormat = glGetTextureParameteri(texture.get(), GL_TEXTURE_INTERNAL_FORMAT);
-                    texture.close();
-                    texture.init(internalFormat, width, height, 1);
-                    glNamedFramebufferTexture(get(), entry.getIntKey(), texture.get(), 0);
-                } else if (a instanceof Renderbuffer) {
-                    Renderbuffer renderbuffer = (Renderbuffer) a;
-                    int internalFormat = glGetRenderbufferParameteri(renderbuffer.get(), GL_RENDERBUFFER_INTERNAL_FORMAT);
-                    renderbuffer.close();
-                    renderbuffer.init(internalFormat, width, height);
-                    glNamedFramebufferRenderbuffer(get(), entry.getIntKey(), GL_RENDERBUFFER, renderbuffer.get());
-                }
-            }
-        }
     }
 
     /**
@@ -106,7 +85,9 @@ public final class Framebuffer implements AutoCloseable {
 
     public void attachTexture(int attachPoint, int internalFormat) {
         Texture2D texture = new Texture2D();
-        texture.init(internalFormat, mWidth, mHeight, 1);
+        //texture.init(internalFormat, mWidth, mHeight, 1);
+        glTextureStorage2D(texture.get(), 1, internalFormat, mWidth, mHeight);
+        texture.setFilter(GL_NEAREST, GL_NEAREST);
         glNamedFramebufferTexture(get(), attachPoint, texture.get(), 0);
         mAttachments.put(attachPoint, texture);
     }
@@ -133,12 +114,73 @@ public final class Framebuffer implements AutoCloseable {
     }
 
     /**
+     * Reallocate all attachments to the new size, if changed.
+     */
+    public void resize(int width, int height) {
+        if (mWidth != width || mHeight != height) {
+            mWidth = width;
+            mHeight = height;
+            for (var entry : mAttachments.int2ObjectEntrySet()) {
+                AutoCloseable a = entry.getValue();
+                if (a instanceof Texture2D) {
+                    Texture2D texture = (Texture2D) a;
+                    int internalFormat = glGetTextureParameteri(texture.get(), GL_TEXTURE_INTERNAL_FORMAT);
+                    texture.close();
+                    glTextureStorage2D(texture.get(), 1, internalFormat, mWidth, mHeight);
+                    texture.setFilter(GL_NEAREST, GL_NEAREST);
+                    glNamedFramebufferTexture(get(), entry.getIntKey(), texture.get(), 0);
+                } else if (a instanceof Renderbuffer) {
+                    Renderbuffer renderbuffer = (Renderbuffer) a;
+                    int internalFormat = glGetRenderbufferParameteri(renderbuffer.get(), GL_RENDERBUFFER_INTERNAL_FORMAT);
+                    renderbuffer.close();
+                    renderbuffer.init(internalFormat, width, height);
+                    glNamedFramebufferRenderbuffer(get(), entry.getIntKey(), GL_RENDERBUFFER, renderbuffer.get());
+                }
+            }
+        }
+    }
+
+    /**
+     * Set the color used for {@link #clearColorBuffer()}, default clear color is (0,0,0,0).
+     */
+    public void setClearColor(float r, float g, float b, float a) {
+        mClearColor[0] = r;
+        mClearColor[1] = g;
+        mClearColor[2] = b;
+        mClearColor[3] = a;
+    }
+
+    /**
+     * Clear the current color buffer set by {@link #setDrawBuffer(int)} to the color
+     * set by {@link #setClearColor(float, float, float, float)}, default clear color is (0,0,0,0).
+     */
+    public void clearColorBuffer() {
+        // here drawbuffer is zero, because setDrawBuffer only set the buffer with index 0
+        glClearNamedFramebufferfv(get(), GL_COLOR, 0, mClearColor);
+    }
+
+    /**
+     * Clear the current depth buffer set by {@link #setDrawBuffer(int)} to
+     * 1.0f, and stencil buffer to 0.
+     */
+    public void clearDepthStencilBuffer() {
+        // for depth or stencil, the drawbuffer must be 0
+        glClearNamedFramebufferfi(get(), GL_DEPTH_STENCIL, 0, 1.0f, 0);
+    }
+
+    /**
      * Set the color buffer for <code>layout(location = 0) out vec4 fragColor</code>.
+     * That means the color buffer index is 0.
+     * <p>
+     * Note that only GL_COLOR_ATTACHMENT[x] or GL_NONE is accepted by a framebuffer
+     * object. Values such as GL_FRONT_LEFT, GL_BACK are only accepted by the default
+     * framebuffer (reserved by the window).
      *
-     * @param buffer buf
+     * @param buffer enum buffer
      */
     public void setDrawBuffer(int buffer) {
         glNamedFramebufferDrawBuffer(get(), buffer);
+        glNamedFramebufferReadBuffer(get(), buffer);
     }
 
     /**

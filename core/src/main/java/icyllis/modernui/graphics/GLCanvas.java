@@ -149,6 +149,9 @@ public final class GLCanvas extends Canvas {
     private final int mCircleUBO;
     private final int mArcUBO;
 
+    private int mCurrVertexArray;
+    private int mCurrProgram;
+
     private final List<Texture2D> mTextures = new ArrayList<>();
 
     private GLCanvas() {
@@ -228,6 +231,22 @@ public final class GLCanvas extends Canvas {
         glUnmapNamedBuffer(mProjectionUBO);
     }
 
+    private void bindVertexArray(@Nonnull VertexFormat format) {
+        int t = format.getVertexArray();
+        if (mCurrVertexArray != t) {
+            glBindVertexArray(t);
+            mCurrVertexArray = t;
+        }
+    }
+
+    private void useProgram(@Nonnull Shader shader) {
+        int t = shader.get();
+        if (mCurrProgram != t) {
+            glUseProgram(t);
+            mCurrProgram = t;
+        }
+    }
+
     @RenderThread
     public void render() {
         RenderCore.checkRenderThread();
@@ -247,24 +266,11 @@ public final class GLCanvas extends Canvas {
 
         final int prevVAO = glGetInteger(GL_VERTEX_ARRAY_BINDING);
         final int prevProgram = glGetInteger(GL_CURRENT_PROGRAM);
+        mCurrVertexArray = prevVAO;
+        mCurrProgram = prevProgram;
 
         long uniformDataPtr = MemoryUtil.memAddress(mUniformData.flip());
 
-        final int posColorVAO = POS_COLOR.getVertexArray();
-        final int posColorTexVAO = POS_COLOR_TEX.getVertexArray();
-
-        final int colorShader = COLOR_FILL.get();
-        final int colorImageShader = COLOR_TEX.get();
-        final int roundRectShader = ROUND_RECT_FILL.get();
-        final int roundImageShader = ROUND_RECT_TEX.get();
-        final int roundRectStrokeShader = ROUND_RECT_STROKE.get();
-        final int circleShader = CIRCLE_FILL.get();
-        final int circleStrokeShader = CIRCLE_STROKE.get();
-        final int arcShader = ARC_FILL.get();
-        final int arcStrokeShader = ARC_STROKE.get();
-
-        // draw states
-        int vao = 0, program = 0;
         // base instance
         int instance = 0;
         // generic array index
@@ -276,27 +282,15 @@ public final class GLCanvas extends Canvas {
         for (int draw : mDrawStates) {
             switch (draw) {
                 case DRAW_RECT:
-                    if (vao != posColorVAO) {
-                        glBindVertexArray(posColorVAO);
-                        vao = posColorVAO;
-                    }
-                    if (program != colorShader) {
-                        glUseProgram(colorShader);
-                        program = colorShader;
-                    }
+                    bindVertexArray(POS_COLOR);
+                    useProgram(COLOR_FILL);
                     glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, posColorIndex, 4, 1, instance);
                     posColorIndex += 4;
                     break;
 
                 case DRAW_ROUND_RECT:
-                    if (vao != posColorVAO) {
-                        glBindVertexArray(posColorVAO);
-                        vao = posColorVAO;
-                    }
-                    if (program != roundRectShader) {
-                        glUseProgram(roundRectShader);
-                        program = roundRectShader;
-                    }
+                    bindVertexArray(POS_COLOR);
+                    useProgram(ROUND_RECT_FILL);
                     nglNamedBufferSubData(mRoundRectUBO, 0, ROUND_RECT_UNIFORM_SIZE, uniformDataPtr);
                     uniformDataPtr += ROUND_RECT_UNIFORM_SIZE;
                     glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, posColorIndex, 4, 1, instance);
@@ -304,14 +298,8 @@ public final class GLCanvas extends Canvas {
                     break;
 
                 case DRAW_ROUND_RECT_OUTLINE:
-                    if (vao != posColorVAO) {
-                        glBindVertexArray(posColorVAO);
-                        vao = posColorVAO;
-                    }
-                    if (program != roundRectStrokeShader) {
-                        glUseProgram(roundRectStrokeShader);
-                        program = roundRectStrokeShader;
-                    }
+                    bindVertexArray(POS_COLOR);
+                    useProgram(ROUND_RECT_STROKE);
                     nglNamedBufferSubData(mRoundRectUBO, 0, ROUND_RECT_UNIFORM_SIZE, uniformDataPtr);
                     uniformDataPtr += ROUND_RECT_UNIFORM_SIZE;
                     glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, posColorIndex, 4, 1, instance);
@@ -319,14 +307,8 @@ public final class GLCanvas extends Canvas {
                     break;
 
                 case DRAW_ROUND_IMAGE:
-                    if (vao != posColorTexVAO) {
-                        glBindVertexArray(posColorTexVAO);
-                        vao = posColorTexVAO;
-                    }
-                    if (program != roundImageShader) {
-                        glUseProgram(roundImageShader);
-                        program = roundImageShader;
-                    }
+                    bindVertexArray(POS_COLOR_TEX);
+                    useProgram(ROUND_RECT_TEX);
                     nglNamedBufferSubData(mRoundRectUBO, 0, ROUND_RECT_UNIFORM_SIZE, uniformDataPtr);
                     uniformDataPtr += ROUND_RECT_UNIFORM_SIZE;
                     glBindTextureUnit(0, mTextures.get(textureIndex).get());
@@ -336,14 +318,8 @@ public final class GLCanvas extends Canvas {
                     break;
 
                 case DRAW_IMAGE:
-                    if (vao != posColorTexVAO) {
-                        glBindVertexArray(posColorTexVAO);
-                        vao = posColorTexVAO;
-                    }
-                    if (program != colorImageShader) {
-                        glUseProgram(colorImageShader);
-                        program = colorImageShader;
-                    }
+                    bindVertexArray(POS_COLOR_TEX);
+                    useProgram(COLOR_TEX);
                     glBindTextureUnit(0, mTextures.get(textureIndex).get());
                     textureIndex++;
                     glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, posColorTexIndex, 4, 1, instance);
@@ -351,14 +327,8 @@ public final class GLCanvas extends Canvas {
                     break;
 
                 case DRAW_CIRCLE:
-                    if (vao != posColorVAO) {
-                        glBindVertexArray(posColorVAO);
-                        vao = posColorVAO;
-                    }
-                    if (program != circleShader) {
-                        glUseProgram(circleShader);
-                        program = circleShader;
-                    }
+                    bindVertexArray(POS_COLOR);
+                    useProgram(CIRCLE_FILL);
                     nglNamedBufferSubData(mCircleUBO, 0, CIRCLE_UNIFORM_SIZE, uniformDataPtr);
                     uniformDataPtr += CIRCLE_UNIFORM_SIZE;
                     glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, posColorIndex, 4, 1, instance);
@@ -366,14 +336,8 @@ public final class GLCanvas extends Canvas {
                     break;
 
                 case DRAW_CIRCLE_OUTLINE:
-                    if (vao != posColorVAO) {
-                        glBindVertexArray(posColorVAO);
-                        vao = posColorVAO;
-                    }
-                    if (program != circleStrokeShader) {
-                        glUseProgram(circleStrokeShader);
-                        program = circleStrokeShader;
-                    }
+                    bindVertexArray(POS_COLOR);
+                    useProgram(CIRCLE_STROKE);
                     nglNamedBufferSubData(mCircleUBO, 0, CIRCLE_UNIFORM_SIZE, uniformDataPtr);
                     uniformDataPtr += CIRCLE_UNIFORM_SIZE;
                     glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, posColorIndex, 4, 1, instance);
@@ -381,14 +345,8 @@ public final class GLCanvas extends Canvas {
                     break;
 
                 case DRAW_ARC:
-                    if (vao != posColorVAO) {
-                        glBindVertexArray(posColorVAO);
-                        vao = posColorVAO;
-                    }
-                    if (program != arcShader) {
-                        glUseProgram(arcShader);
-                        program = arcShader;
-                    }
+                    bindVertexArray(POS_COLOR);
+                    useProgram(ARC_FILL);
                     nglNamedBufferSubData(mArcUBO, 0, ARC_UNIFORM_SIZE, uniformDataPtr);
                     uniformDataPtr += ARC_UNIFORM_SIZE;
                     glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, posColorIndex, 4, 1, instance);
@@ -396,14 +354,8 @@ public final class GLCanvas extends Canvas {
                     break;
 
                 case DRAW_ARC_OUTLINE:
-                    if (vao != posColorVAO) {
-                        glBindVertexArray(posColorVAO);
-                        vao = posColorVAO;
-                    }
-                    if (program != arcStrokeShader) {
-                        glUseProgram(arcStrokeShader);
-                        program = arcStrokeShader;
-                    }
+                    bindVertexArray(POS_COLOR);
+                    useProgram(ARC_STROKE);
                     nglNamedBufferSubData(mArcUBO, 0, ARC_UNIFORM_SIZE, uniformDataPtr);
                     uniformDataPtr += ARC_UNIFORM_SIZE;
                     glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, posColorIndex, 4, 1, instance);
@@ -733,9 +685,11 @@ public final class GLCanvas extends Canvas {
             float ang = MathUtil.atan2(stopY - startY, stopX - startX);
             save();
             Matrix4 mat = getMatrix();
+            // rotate the round rect
             mat.translate(cx, cy, 0);
             mat.rotateZ(ang);
             mat.translate(-cx, -cy, 0);
+            // rotate positions to horizontal
             float sin = MathUtil.sin(-ang);
             float cos = MathUtil.cos(-ang);
             float left = (startX - cx) * cos - (startY - cy) * sin + cx;

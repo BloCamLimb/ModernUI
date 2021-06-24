@@ -35,11 +35,8 @@ import icyllis.modernui.graphics.Framebuffer;
 import icyllis.modernui.graphics.GLCanvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.textmc.TextLayoutProcessor;
-import icyllis.modernui.graphics.texture.Texture2D;
 import icyllis.modernui.math.Matrix4;
-import icyllis.modernui.platform.Bitmap;
 import icyllis.modernui.platform.RenderCore;
-import icyllis.modernui.test.TestHUD;
 import icyllis.modernui.test.TestPauseUI;
 import icyllis.modernui.util.TimedTask;
 import icyllis.modernui.view.*;
@@ -64,7 +61,6 @@ import org.apache.logging.log4j.MarkerManager;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
-import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -85,6 +81,9 @@ public final class UIManager {
 
     // logger marker
     public static final Marker MARKER = MarkerManager.getMarker("UIManager");
+
+    // config value
+    public static boolean sDing;
 
     // minecraft client
     private final Minecraft minecraft = Minecraft.getInstance();
@@ -120,7 +119,7 @@ public final class UIManager {
 
     // lazy loading
     private GLCanvas mCanvas;
-    private Framebuffer mFramebuffer;
+    private final Framebuffer mFramebuffer;
 
     private final Thread mUiThread;
     private final Object mRenderLock = new Object();
@@ -130,8 +129,12 @@ public final class UIManager {
 
     boolean mPendingRepostCursorEvent = false;
 
+    private boolean mFirstScreenOpened = false;
+
     private UIManager() {
         mAnimationCallback = AnimationHandler.init();
+        Window window = minecraft.getWindow();
+        mFramebuffer = new Framebuffer(window.getWidth(), window.getHeight());
         mUiThread = new Thread(this::run, "UI thread");
         MinecraftForge.EVENT_BUS.register(this);
     }
@@ -153,10 +156,10 @@ public final class UIManager {
         RenderCore.checkRenderThread();
         if (mCanvas == null) {
             mCanvas = GLCanvas.initialize();
-            Window window = minecraft.getWindow();
-            mFramebuffer = new Framebuffer(window.getWidth(), window.getHeight());
             mFramebuffer.attachTexture(GL_COLOR_ATTACHMENT0, GL_RGBA8);
-            mFramebuffer.attachRenderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
+            // no depth buffer
+            mFramebuffer.attachRenderbuffer(GL_STENCIL_ATTACHMENT, GL_STENCIL_INDEX8);
+            mFramebuffer.setDrawBuffer(GL_COLOR_ATTACHMENT0);
             mUiThread.start();
             ModernUI.LOGGER.info(MARKER, "UIManager initialized");
         }
@@ -168,12 +171,34 @@ public final class UIManager {
         for (; ; ) {
             // holds the lock
             synchronized (mRenderLock) {
+                mAnimationCallback.accept(mFrameTimeMillis);
                 Paint paint = Paint.take();
-                paint.setStrokeWidth(6);
-                mCanvas.drawLine(20, 20, 200, 200, paint);
-                if (mTicks < 1) {
-                    ModernUI.LOGGER.info("Draw on UI thread");
+                paint.setStrokeWidth(8);
+                paint.setSmoothRadius(3);
+                int c = (int) mElapsedTimeMillis / 300;
+                c = Math.min(c, 10);
+                float[] pts = new float[c * 2 + 2];
+                pts[0] = 90;
+                pts[1] = 30;
+                for (int i = 0; i < c; i++) {
+                    pts[2 + i * 2] = Math.min((i + 2) * 60, mElapsedTimeMillis / 5) + 30;
+                    if ((i & 1) == 0) {
+                        if (mElapsedTimeMillis >= (i + 2) * 300) {
+                            pts[3 + i * 2] = 90;
+                        } else {
+                            pts[3 + i * 2] = 30 + (mElapsedTimeMillis % 300) / 5f;
+                        }
+                    } else {
+                        if (mElapsedTimeMillis >= (i + 2) * 300) {
+                            pts[3 + i * 2] = 30;
+                        } else {
+                            pts[3 + i * 2] = 90 - (mElapsedTimeMillis % 300) / 5f;
+                        }
+                    }
                 }
+                //ModernUI.LOGGER.info(Arrays.toString(pts));
+                mCanvas.drawStripLines(pts, paint);
+                mCanvas.drawLine(60, 20, 600, 90, paint);
             }
             try {
                 mUiThread.join();
@@ -227,20 +252,7 @@ public final class UIManager {
         mScreen = screen;
 
         // init view of this UI
-        /*if (mAppWindow.mView == null) {
-            if (fragment == null) {
-                ModernUI.LOGGER.fatal(MARKER, "Fragment can't be null when opening a gui screen");
-                closeGui();
-                return;
-            }
-            View view = fragment.onCreateView();
-            if (view == null) {
-                ModernUI.LOGGER.fatal(MARKER, "The view created from the main fragment shouldn't be null");
-                closeGui();
-                return;
-            }
-            mAppWindow.setView(view);
-        }*/
+
 
         resize(width, height);
     }
@@ -250,13 +262,15 @@ public final class UIManager {
         final Screen next = event.getGui();
         mCloseScreen = next == null;
 
-        if (TestHUD.sDing && !TestHUD.sFirstScreenOpened) {
-            minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.EXPERIENCE_ORB_PICKUP, 1.0f));
-            TestHUD.sFirstScreenOpened = true;
+        if (!mFirstScreenOpened) {
+            if (sDing) {
+                minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.EXPERIENCE_ORB_PICKUP, 1.0f));
+            }
+            mFirstScreenOpened = true;
         }
 
         if (mCloseScreen) {
-            removed();
+            finish();
             return;
         }
 
@@ -374,6 +388,16 @@ public final class UIManager {
             case GLFW_KEY_R:
                 TextLayoutProcessor.getInstance().reload();
                 break;
+            case GLFW_KEY_C:
+                double rand = Math.random();
+                if (rand < 0.33) {
+                    mFramebuffer.setClearColor(1, 1, 1, 1);
+                } else if (rand < 0.67) {
+                    mFramebuffer.setClearColor(0, 0, 0, 1);
+                } else {
+                    mFramebuffer.setClearColor(0, 0, 0, 0);
+                }
+                break;
             case GLFW_KEY_G:
                 if (minecraft.screen == null && minecraft.hasSingleplayerServer() &&
                         minecraft.getSingleplayerServer() != null && !minecraft.getSingleplayerServer().isPublished()) {
@@ -421,44 +445,43 @@ public final class UIManager {
 
     }
 
-    /*private void mouseMoved() {
-        if (view != null && !view.updateMouseHover(mouseX, mouseY)) {
-            setHovered(null);
-        }
-    }*/
-
     @RenderThread
-    public void render() {
+    void render() {
+        RenderSystem.enableCull();
         RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.enableDepthTest();
-        RenderSystem.depthMask(false);
+        // blend alpha correctly, since the Minecraft.mainRenderTarget has no alpha (always 1)
+        RenderSystem.blendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
         int width = minecraft.getWindow().getWidth();
         int height = minecraft.getWindow().getHeight();
+
+        Framebuffer framebuffer = mFramebuffer;
+        framebuffer.resize(width, height);
+        framebuffer.clearColorBuffer();
+        framebuffer.clearDepthStencilBuffer();
+        framebuffer.bind();
+
+        Matrix4 projection = Matrix4.makeOrthographic(width, -height, 0, 2000);
+        GLCanvas canvas = mCanvas;
+        canvas.setProjection(projection);
+
+        // wait UI thread, if slow
+        synchronized (mRenderLock) {
+            // flush tasks from UI thread, such as texture uploading
+            RenderCore.flushRenderCalls();
+            canvas.render();
+        }
+        int texture = framebuffer.getAttachedTextureRaw(GL_COLOR_ATTACHMENT0);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, minecraft.getMainRenderTarget().frameBufferId);
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.enableTexture();
+        RenderSystem.bindTexture(texture);
 
         GlStateManager._matrixMode(5889);
         GlStateManager._loadIdentity();
         GlStateManager._ortho(0.0D, width, height, 0.0D, 1000.0D, 3000.0D);
 
-        int texture;
-        // wait UI thread, if slow
-        synchronized (mRenderLock) {
-            // upload textures
-            RenderCore.flushRenderCalls();
-            Framebuffer framebuffer = mFramebuffer;
-            framebuffer.resize(width, height);
-            framebuffer.bindDraw();
-            framebuffer.setDrawBuffer(GL_COLOR_ATTACHMENT0);
-            Matrix4 projection = Matrix4.makeOrthographic(width, -height, 0, 2000);
-            mCanvas.setProjection(projection);
-            mCanvas.render();
-            texture = framebuffer.getAttachedTextureRaw(GL_COLOR_ATTACHMENT0);
-        }
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, minecraft.getMainRenderTarget().frameBufferId);
-        RenderSystem.enableTexture();
-        RenderSystem.bindTexture(texture);
-        GlStateManager._color4f(1.0F, 1.0F, 1.0F, 1.0F);
         Tesselator tesselator = RenderSystem.renderThreadTesselator();
         BufferBuilder builder = tesselator.getBuilder();
         builder.begin(GL_QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
@@ -469,10 +492,11 @@ public final class UIManager {
         builder.vertex(0, 0, 0).color(255, 255, 255, 255).uv(0, 1).endVertex();
         tesselator.end();
         RenderSystem.bindTexture(0);
-        RenderSystem.depthMask(true);
+        RenderSystem.disableTexture();
 
         GlStateManager._loadIdentity();
-        GlStateManager._ortho(0.0D, width / getGuiScale(), height / getGuiScale(), 0.0D, 1000.0D, 3000.0D);
+        GlStateManager._ortho(0.0D, width / getGuiScale(), height / getGuiScale(),
+                0.0D, 1000.0D, 3000.0D);
         GlStateManager._matrixMode(5888);
     }
 
@@ -542,7 +566,7 @@ public final class UIManager {
         mLayoutRequested = false;
     }
 
-    void removed() {
+    void finish() {
         if (!mCloseScreen || mScreen == null) {
             return;
         }
@@ -576,14 +600,13 @@ public final class UIManager {
     @SubscribeEvent
     void onRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
+            // the Timer is different from that in Event when game paused
+            long deltaMillis = (long) (minecraft.getDeltaFrameTime() * 50);
+            mElapsedTimeMillis += deltaMillis;
+            mFrameTimeMillis = RenderCore.timeMillis();
             if (mCallback != null) {
                 mUiThread.interrupt();
             }
-            // the Timer is different from that in Event when game paused
-            long deltaMillis = (long) (minecraft.getDeltaFrameTime() * 50);
-            mFrameTimeMillis = RenderCore.timeMillis();
-            mElapsedTimeMillis += deltaMillis;
-            mAnimationCallback.accept(mFrameTimeMillis);
             BlurHandler.INSTANCE.update(mElapsedTimeMillis);
         } else {
             // layout after updating animations and before drawing
@@ -1013,5 +1036,11 @@ public final class UIManager {
         }*//*
         mAppWindow.onMouseEvent(event);
         cursorRefreshRequested = false;
+    }*/
+
+    /*private void mouseMoved() {
+        if (view != null && !view.updateMouseHover(mouseX, mouseY)) {
+            setHovered(null);
+        }
     }*/
 }

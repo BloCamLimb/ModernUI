@@ -28,8 +28,8 @@ import icyllis.modernui.graphics.textmc.TextLayoutProcessor;
 import icyllis.modernui.mixin.AccessOption;
 import icyllis.modernui.mixin.AccessVideoSettingsScreen;
 import icyllis.modernui.platform.RenderCore;
-import icyllis.modernui.test.TestMenu;
 import icyllis.modernui.screen.UIManager;
+import icyllis.modernui.test.TestMenu;
 import net.minecraft.client.CycleOption;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Option;
@@ -143,7 +143,6 @@ final class Registration {
     static void setupClient(@Nonnull FMLClientSetupEvent event) {
         //SettingsManager.INSTANCE.buildAllSettings();
         //UIManager.getInstance().registerMenuScreen(Registration.TEST_MENU, menu -> new TestUI());
-        ModernUI.LOGGER.info("SETUP CLIENT");
         event.getMinecraftSupplier().get().execute(() -> {
             GLWrapper.setRedirector(new B3DRedirector());
             RenderCore.initialize();

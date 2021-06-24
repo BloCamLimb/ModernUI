@@ -24,8 +24,7 @@ import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.ast.Node;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.GLCanvas;
-import icyllis.modernui.graphics.GLWrapper;
+import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.shader.ShaderManager;
@@ -55,6 +54,8 @@ import java.util.stream.Stream;
 import static icyllis.modernui.graphics.GLWrapper.GL_RGB8;
 import static icyllis.modernui.graphics.GLWrapper.GL_UNSIGNED_BYTE;
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.opengl.GL11C.GL_RGBA8;
+import static org.lwjgl.opengl.GL30C.GL_COLOR_ATTACHMENT0;
 
 @SuppressWarnings("unused")
 public class TestMain {
@@ -192,6 +193,8 @@ public class TestMain {
                 } catch (IOException e) {
                     throw new IllegalStateException();
                 }
+                Framebuffer framebuffer = new Framebuffer(window.getWidth(), window.getHeight());
+                framebuffer.attachTexture(GL_COLOR_ATTACHMENT0, GL_RGBA8);
 
                 while (window.exists()) {
                     if (window.isRefreshNeeded()) {
@@ -199,9 +202,9 @@ public class TestMain {
                         GLWrapper.enableCull();
                         RenderSystem.enableBlend();
                         RenderSystem.defaultBlendFunc();
-                        RenderSystem.disableDepthTest();
+                        //RenderSystem.disableDepthTest();
                         //GlStateManager._colorMask(true, true, true, true);
-                        RenderSystem.depthMask(false);
+                        //RenderSystem.depthMask(false);
 
                         // UI thread
                         canvas.save();
@@ -226,7 +229,9 @@ public class TestMain {
 
                         canvas.restore();
                         paint.setStrokeWidth(8);
+                        paint.setRGBA(120, 220, 240, 192);
                         canvas.drawLine(20, 20, 140, 60, paint);
+                        canvas.drawLine(120, 30, 60, 80, paint);
 
                         // render thread, wait UI thread
                         canvas.render();
