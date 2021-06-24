@@ -24,6 +24,7 @@ import icyllis.modernui.graphics.textmc.ModernFontRenderer;
 import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.graphics.textmc.TextLayoutProcessor;
 import icyllis.modernui.graphics.BlurHandler;
+import icyllis.modernui.screen.UIManager;
 import icyllis.modernui.test.TestHUD;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ChatScreen;
@@ -287,7 +288,7 @@ public final class Config {
             } catch (NumberFormatException e) {
                 ModernUI.LOGGER.error(ModernUI.MARKER, "Wrong color format for setting tooltip color: {}", tooltipColor, e);
             }
-            TestHUD.sDing = ding.get();
+            UIManager.sDing = ding.get();
             //TestHUD.sBars = hudBars.get();
 
             Minecraft.getInstance().submit(() -> ModernFontRenderer.change(globalRenderer.get(), allowShadow.get()));

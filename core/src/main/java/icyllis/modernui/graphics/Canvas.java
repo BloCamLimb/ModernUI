@@ -198,7 +198,10 @@ public abstract class Canvas {
      * @param paint  The paint used to draw the lines
      */
     public final void drawLines(@Nonnull float[] pts, int offset, int count, @Nonnull Paint paint) {
-        count /= 4;
+        if (offset + count > pts.length) {
+            throw new IllegalArgumentException();
+        }
+        count >>= 2;
         for (int i = 0; i < count; i++) {
             drawLine(pts[offset++], pts[offset++], pts[offset++], pts[offset++], paint);
         }
@@ -214,6 +217,47 @@ public abstract class Canvas {
      */
     public final void drawLines(@Nonnull float[] pts, @Nonnull Paint paint) {
         drawLines(pts, 0, pts.length, paint);
+    }
+
+    /**
+     * Draw a series of lines. The first line is taken from 4 consecutive values in the pts
+     * array, and each remaining line is taken from last 2 values and next 2 values in the array.
+     * Thus to draw 1 line, the array must contain at least 4 values. This is logically the same as
+     * drawing the array as follows: drawLine(pts[0], pts[1], pts[2], pts[3]) followed by
+     * drawLine(pts[2], pts[3], pts[4], pts[5]) and so on.
+     *
+     * @param pts    The array of points of the lines to draw [x0 y0 x1 y1 x2 y2 ...]
+     * @param offset Number of values in the array to skip before drawing.
+     * @param count  The number of values in the array to process, after skipping "offset" of them.
+     *               Since each line uses 4 values, the number of "lines" that are drawn is really
+     *               ((count - 2) >> 1).
+     * @param paint  The paint used to draw the lines
+     */
+    public final void drawStripLines(@Nonnull float[] pts, int offset, int count, @Nonnull Paint paint) {
+        if (offset + count > pts.length) {
+            throw new IllegalArgumentException();
+        }
+        if (count < 4) {
+            return;
+        }
+        float x, y;
+        drawLine(pts[offset++], pts[offset++], x = pts[offset++], y = pts[offset++], paint);
+        count = (count - 4) >> 1;
+        for (int i = 0; i < count; i++) {
+            drawLine(x, y, x = pts[offset++], y = pts[offset++], paint);
+        }
+    }
+
+    /**
+     * A helper version of {@link #drawStripLines(float[], int, int, Paint)}, with its offset is 0
+     * and count is the length of the pts array.
+     *
+     * @param pts   The array of points of the lines to draw [x0 y0 x1 y1 x2 y2 ...]
+     * @param paint The paint used to draw the lines
+     * @see #drawStripLines(float[], int, int, Paint)
+     */
+    public final void drawStripLines(@Nonnull float[] pts, @Nonnull Paint paint) {
+        drawStripLines(pts, 0, pts.length, paint);
     }
 
     /**
@@ -250,7 +294,7 @@ public abstract class Canvas {
     public abstract void drawImage(@Nonnull Image image, float left, float top, @Nonnull Paint paint);
 
     /**
-     * Draw a rectangle with round corners within a rectangular bounds.
+     * Draw a rectangle with rounded corners within a rectangular bounds.
      *
      * @param left   the left of the rectangular bounds
      * @param top    the top of the rectangular bounds
@@ -263,7 +307,7 @@ public abstract class Canvas {
                                        float radius, @Nonnull Paint paint);
 
     /**
-     * Draw the specified image with round corners, whose top/left corner at (x,y)
+     * Draw the specified image with rounded corners, whose top/left corner at (x,y)
      * using the specified paint, transformed by the current matrix. The Style is
      * ignored in the paint, images are always filled.
      *

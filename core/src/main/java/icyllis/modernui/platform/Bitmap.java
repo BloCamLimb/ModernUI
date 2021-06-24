@@ -50,14 +50,14 @@ import java.util.Date;
 import java.util.stream.Collectors;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
-import static org.lwjgl.system.MemoryUtil.NULL;
+import static org.lwjgl.system.MemoryUtil.*;
 
 /**
  * Represents a bitmap, with its image data in native. It is used for operations
  * on the application side, such as read from/write to stream/channel. Compared
  * with {@link icyllis.modernui.graphics.Image}, this data is completely stored
- * in RAM rather than in GPU memory. Losing the reference of a bitmap object will
- * automatically free the native memory.
+ * in RAM with an uncompressed format, rather than in GPU memory. Losing the
+ * reference of a bitmap object will automatically free the native memory.
  */
 @SuppressWarnings("unused")
 public final class Bitmap implements AutoCloseable {
@@ -168,15 +168,27 @@ public final class Bitmap implements AutoCloseable {
     @RenderThread
     public static Bitmap download(@Nonnull Format format, @Nonnull Texture2D texture, int level) {
         RenderCore.checkRenderThread();
+        final int width = texture.getWidth(level);
+        final int height = texture.getHeight(level);
+        final Bitmap bitmap = new Bitmap(format, width, height, false);
+        final long p = bitmap.getPixels();
         glPixelStorei(GL_PACK_ROW_LENGTH, 0);
         glPixelStorei(GL_PACK_SKIP_ROWS, 0);
         glPixelStorei(GL_PACK_SKIP_PIXELS, 0);
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
-        int width = texture.getWidth(level);
-        int height = texture.getHeight(level);
-        Bitmap bitmap = new Bitmap(format, width, height, false);
         glGetTextureImage(texture.get(), level, format.glFormat, GL_UNSIGNED_BYTE,
-                bitmap.getSize(), bitmap.getPixels());
+                bitmap.getSize(), p);
+        // flip vertical
+        final int len = width * format.channels;
+        final long temp = nmemAlloc(len);
+        for (int i = 0; i < height >> 1; i++) {
+            final int a = i * len;
+            final int b = (height - i - 1) * len;
+            memCopy(p + a, temp, len);
+            memCopy(p + b, p + a, len);
+            memCopy(temp, p + b, len);
+        }
+        nmemFree(temp);
         return bitmap;
     }
 
@@ -284,18 +296,20 @@ public final class Bitmap implements AutoCloseable {
      */
     public void saveToPath(@Nonnull Path path, @Nonnull SaveFormat format, int quality) throws IOException {
         checkReleased();
-        try (final ByteChannel channel = Files.newByteChannel(path,
+        final ByteChannel channel = Files.newByteChannel(path,
                 StandardOpenOption.WRITE,
                 StandardOpenOption.CREATE,
-                StandardOpenOption.TRUNCATE_EXISTING)) {
+                StandardOpenOption.TRUNCATE_EXISTING);
+        try (channel) {
             final IOException[] exception = new IOException[1];
-            try (STBIWriteCallback func = STBIWriteCallback.create((context, data, size) -> {
+            final STBIWriteCallback func = STBIWriteCallback.create((context, data, size) -> {
                 try {
                     channel.write(STBIWriteCallback.getData(data, size));
                 } catch (IOException e) {
                     exception[0] = e;
                 }
-            })) {
+            });
+            try (func) {
                 final boolean success = format.write(func, mWidth, mHeight, mFormat, mRef.mPixels, quality);
                 if (success) {
                     if (exception[0] != null) {
