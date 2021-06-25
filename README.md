@@ -4,8 +4,14 @@
 [![MavenForge](https://img.shields.io/badge/dynamic/xml?color=yellowgreen&label=Latest%20Version&query=%2Fmetadata%2Fversioning%2Flatest&url=https%3A%2F%2Fmaven.izzel.io%2Freleases%2Ficyllis%2Fmodernui%2FModernUI-Forge%2Fmaven-metadata.xml)]()
 [![MavenCore](https://img.shields.io/badge/dynamic/xml?color=orange&label=Core%20Version&query=%2Fmetadata%2Fversioning%2Flatest&url=https%3A%2F%2Fmaven.izzel.io%2Freleases%2Ficyllis%2Fmodernui%2FModernUI-Core%2Fmaven-metadata.xml)]()
 [![Discord](https://img.shields.io/discord/696234198767501363?color=green&label=Discord&style=flat)](https://discord.gg/kmyGKt2)
-### Homepage
-Description and releases for Minecraft Mod are available on [CurseForge](https://www.curseforge.com/minecraft/mc-mods/modern-ui)  
+### Description
+Modern UI is a UI framework for desktop application development.
+Many of the structures are similar to Android, but the implementation can be quite different.
+The render engine uses OpenGL 4.5 core profile and can be multi-threaded, so the performance is much better than 2D graphics libraries drawn by CPU.
+The text engine is unicode-based and uses HarfBuzz and ICU4j, so it has a broad compatibility for various languages.
+
+This project is still in early stages.  
+Releases for Minecraft Mod are available on [CurseForge](https://www.curseforge.com/minecraft/mc-mods/modern-ui).  
 If you have any questions, feel free to join our [Discord](https://discord.gg/kmyGKt2) server.
 ### License
 * Modern UI
@@ -70,6 +76,8 @@ dependencies {
     compile fg.deobf("icyllis.modernui:ModernUI-Forge:${modernui_version}@pom")
 }
 ```
+### Debugging Modern UI
+Note that for debugging in Minecraft environment, you need to pack shaders in the core module to a resource pack in the run directory.
 ### Screenshots
 ![new](https://i.loli.net/2021/03/24/nMZhJaiz7qDp2xF.png)
 #### out-of-date
