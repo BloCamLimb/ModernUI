@@ -18,10 +18,7 @@
 
 package icyllis.modernui.mixin;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import icyllis.modernui.graphics.CanvasForge;
-import icyllis.modernui.graphics.Paint;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.screens.LevelLoadingScreen;
 import net.minecraft.client.gui.screens.Screen;

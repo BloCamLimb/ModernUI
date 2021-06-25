@@ -16,10 +16,11 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics;
+package icyllis.modernui.forge;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.graphics.GLWrapper;
 import icyllis.modernui.platform.RenderCore;
 
 import static icyllis.modernui.graphics.GLWrapper.GL_TEXTURE_2D;

@@ -25,9 +25,9 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.animation.Animation;
 import icyllis.modernui.animation.Applier;
-import icyllis.modernui.graphics.CanvasForge;
+import icyllis.modernui.screen.CanvasForge;
 import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.graphics.textmc.ModernFontRenderer;
+import icyllis.modernui.textmc.ModernFontRenderer;
 import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.mixin.AccessFoodData;
 import icyllis.modernui.math.MathUtil;
@@ -127,11 +127,11 @@ public class TestHUD {
 
         paint.setRGB(255, 19, 19);
         paint.setStyle(Paint.Style.FILL);
-        canvas.drawRoundRect(0, 25, right, 37, 6, paint);
+        //canvas.drawRoundRect(0, 25, right, 37, 6, paint);
 
         paint.setRGB(255, 255, 255);
         paint.setStyle(Paint.Style.STROKE);
-        canvas.drawRoundRect(0, 25, 140, 37, 6, paint);
+        //canvas.drawRoundRect(0, 25, 140, 37, 6, paint);
 
         int air = player.getAirSupply();
         if (air != mLastAir) {
@@ -141,11 +141,11 @@ public class TestHUD {
         right = air * 140f / player.getMaxAirSupply();
         paint.setRGB(86, 184, 255);
         paint.setStyle(Paint.Style.FILL);
-        canvas.drawRoundRect(0, 11, right, 23, 6, paint);
+        //canvas.drawRoundRect(0, 11, right, 23, 6, paint);
 
         paint.setRGB(255, 255, 255);
         paint.setStyle(Paint.Style.STROKE);
-        canvas.drawRoundRect(0, 11, 140, 23, 6, paint);
+        //canvas.drawRoundRect(0, 11, 140, 23, 6, paint);
 
         int foodLevel = foodData.getFoodLevel();
         if (foodLevel != mLastHunger) {
@@ -155,19 +155,19 @@ public class TestHUD {
         right = foodLevel * 7;
         paint.setRGB(184, 132, 88);
         paint.setStyle(Paint.Style.FILL);
-        canvas.drawRoundRect(0, -3, right, 9, 6, paint);
+        //canvas.drawRoundRect(0, -3, right, 9, 6, paint);
 
         paint.setRGB(255, 255, 255);
         paint.setStyle(Paint.Style.STROKE);
-        canvas.drawRoundRect(0, -3, 140, 9, 6, paint);
+        //canvas.drawRoundRect(0, -3, 140, 9, 6, paint);
 
-        canvas.resetColor();
+        /*canvas.resetColor();
         canvas.setAlpha((int) (mBarAlpha * 0xff * 2));
         canvas.setTextAlign(TextAlign.CENTER);
         canvas.drawText(String.format("%.2f / %.2f", player.getHealth(), player.getMaxHealth()), 70, 27);
         canvas.drawText(String.format("%d / %d", player.getAirSupply(), player.getMaxAirSupply()), 70, 13);
         canvas.drawText(String.format("%d / %.2f / %.2f", foodData.getFoodLevel(), foodData.getSaturationLevel(),
-                ((AccessFoodData) foodData).getExhaustionLevel()), 70, -1);
+                ((AccessFoodData) foodData).getExhaustionLevel()), 70, -1);*/
 
         RenderSystem.enableDepthTest();
         GL11.glPopMatrix();
@@ -274,15 +274,15 @@ public class TestHUD {
 
         paint.setRGBA(0, 0, 0, 208);
         paint.setStyle(Paint.Style.FILL);
-        canvas.drawRoundRect(tooltipX - H_BORDER, tooltipY - V_BORDER,
-                tooltipX + tooltipWidth + H_BORDER, tooltipY + tooltipHeight + V_BORDER, 3, paint);
+        /*canvas.drawRoundRect(tooltipX - H_BORDER, tooltipY - V_BORDER,
+                tooltipX + tooltipWidth + H_BORDER, tooltipY + tooltipHeight + V_BORDER, 3, paint);*/
 
         paint.setRGBA(sTooltipR, sTooltipG, sTooltipB, 240);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(1.5f);
-        canvas.drawRoundRect(tooltipX - H_BORDER, tooltipY - V_BORDER,
+        /*canvas.drawRoundRect(tooltipX - H_BORDER, tooltipY - V_BORDER,
                 tooltipX + tooltipWidth + H_BORDER, tooltipY + tooltipHeight + V_BORDER, 3, paint);
-        /*canvas.drawRoundedFrameT1(tooltipX - H_BORDER, tooltipY - V_BORDER,
+        canvas.drawRoundedFrameT1(tooltipX - H_BORDER, tooltipY - V_BORDER,
                 tooltipX + tooltipWidth + H_BORDER, tooltipY + tooltipHeight + V_BORDER, 3);*/
 
         GL11.glPopMatrix();

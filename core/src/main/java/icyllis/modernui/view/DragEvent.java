@@ -44,17 +44,17 @@ public class DragEvent {
     private double x;
     private double y;
 
-    private final DragData data;
+    private final Object mLocalState;
 
     private boolean result;
 
     /**
      * A drag and drop operation only creates an instance by system
      *
-     * @param data drag data
+     * @param localState
      */
-    DragEvent(DragData data) {
-        this.data = data;
+    DragEvent(Object localState) {
+        mLocalState = localState;
     }
 
     public int getAction() {
@@ -69,8 +69,8 @@ public class DragEvent {
         return y;
     }
 
-    public Object getData() {
-        return data;
+    public Object getLocalState() {
+        return mLocalState;
     }
 
     public boolean getResult() {
@@ -99,7 +99,7 @@ public class DragEvent {
                 .append("action", action)
                 .append("x", x)
                 .append("y", y)
-                .append("data", data)
+                .append("data", mLocalState)
                 .append("result", result)
                 .toString();
     }

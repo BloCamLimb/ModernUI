@@ -18,21 +18,18 @@
 
 package icyllis.modernui.test;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.*;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.math.Icon;
-import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
 import icyllis.modernui.widget.LinearLayout;
 import icyllis.modernui.widget.Orientation;
 import net.minecraft.ChatFormatting;
 import net.minecraft.resources.ResourceLocation;
-import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 
@@ -174,7 +171,7 @@ public class TestLinearLayout extends LinearLayout {
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(4.0f);
         canvas.save();
-        GL11.glRotatef(30, 0, 0, 1);
+        canvas.rotate(30);
         canvas.drawRoundRect(6, 110, 86, 124, 6, paint);
         canvas.restore();
 
@@ -194,7 +191,7 @@ public class TestLinearLayout extends LinearLayout {
         paint.setAlpha(255);
         // 1
 
-        canvas.save();
+        /*canvas.save();
         RenderSystem.depthMask(true);
 
         //canvas.scale(f, f, getLeft() + 10, getTop() + 10);
@@ -214,7 +211,7 @@ public class TestLinearLayout extends LinearLayout {
         canvas.drawRoundRect(0, 0, 40, 40, 6, paint);
 
         canvas.restore();
-        RenderSystem.depthMask(false);
+        RenderSystem.depthMask(false);*/
 
 
         // 4

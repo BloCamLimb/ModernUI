@@ -30,14 +30,15 @@ import icyllis.modernui.animation.AnimationHandler;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.forge.ModernUIForge;
-import icyllis.modernui.graphics.BlurHandler;
 import icyllis.modernui.graphics.Framebuffer;
 import icyllis.modernui.graphics.GLCanvas;
 import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.graphics.textmc.TextLayoutProcessor;
+import icyllis.modernui.graphics.texture.Texture2D;
 import icyllis.modernui.math.Matrix4;
+import icyllis.modernui.platform.Bitmap;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.test.TestPauseUI;
+import icyllis.modernui.textmc.TextLayoutProcessor;
 import icyllis.modernui.util.TimedTask;
 import icyllis.modernui.view.*;
 import net.minecraft.Util;
@@ -47,6 +48,8 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
@@ -61,6 +64,7 @@ import org.apache.logging.log4j.MarkerManager;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
+import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -73,22 +77,25 @@ import static org.lwjgl.glfw.GLFW.*;
  * Manage UI thread and connect Minecraft to Modern UI view system at bottom level.
  */
 @NotThreadSafe
-@SuppressWarnings("unused")
+@OnlyIn(Dist.CLIENT)
 public final class UIManager {
-
-    // the global instance
-    private static volatile UIManager instance;
 
     // logger marker
     public static final Marker MARKER = MarkerManager.getMarker("UIManager");
 
+    // the global instance
+    private static volatile UIManager sInstance;
+
     // config value
-    public static boolean sDing;
+    public static boolean sPlaySoundOnLoaded;
 
     // minecraft client
     private final Minecraft minecraft = Minecraft.getInstance();
 
-    // application window
+    // minecraft window
+    private final Window window = minecraft.getWindow();
+
+    // root view
     private final ViewRootImpl mRoot = new ViewRootImpl();
 
     // the top-level view of the window
@@ -107,6 +114,7 @@ public final class UIManager {
     // a list of UI tasks
     private final List<TimedTask> mTasks = new CopyOnWriteArrayList<>();
 
+    // animation update callback
     private final LongConsumer mAnimationCallback;
 
     // elapsed ticks from a gui open, update every tick, 20 = 1 second
@@ -133,22 +141,22 @@ public final class UIManager {
 
     private UIManager() {
         mAnimationCallback = AnimationHandler.init();
-        Window window = minecraft.getWindow();
         mFramebuffer = new Framebuffer(window.getWidth(), window.getHeight());
         mUiThread = new Thread(this::run, "UI thread");
         MinecraftForge.EVENT_BUS.register(this);
     }
 
+    // internal use
     @Nonnull
     public static UIManager getInstance() {
-        if (instance == null) {
+        if (sInstance == null) {
             synchronized (UIManager.class) {
-                if (instance == null) {
-                    instance = new UIManager();
+                if (sInstance == null) {
+                    sInstance = new UIManager();
                 }
             }
         }
-        return instance;
+        return sInstance;
     }
 
     @RenderThread
@@ -165,53 +173,11 @@ public final class UIManager {
         }
     }
 
-    @UiThread
-    private void run() {
-        mRoot.setView(mDecor);
-        for (; ; ) {
-            // holds the lock
-            synchronized (mRenderLock) {
-                mAnimationCallback.accept(mFrameTimeMillis);
-                Paint paint = Paint.take();
-                paint.setStrokeWidth(8);
-                paint.setSmoothRadius(3);
-                int c = (int) mElapsedTimeMillis / 300;
-                c = Math.min(c, 10);
-                float[] pts = new float[c * 2 + 2];
-                pts[0] = 90;
-                pts[1] = 30;
-                for (int i = 0; i < c; i++) {
-                    pts[2 + i * 2] = Math.min((i + 2) * 60, mElapsedTimeMillis / 5) + 30;
-                    if ((i & 1) == 0) {
-                        if (mElapsedTimeMillis >= (i + 2) * 300) {
-                            pts[3 + i * 2] = 90;
-                        } else {
-                            pts[3 + i * 2] = 30 + (mElapsedTimeMillis % 300) / 5f;
-                        }
-                    } else {
-                        if (mElapsedTimeMillis >= (i + 2) * 300) {
-                            pts[3 + i * 2] = 30;
-                        } else {
-                            pts[3 + i * 2] = 90 - (mElapsedTimeMillis % 300) / 5f;
-                        }
-                    }
-                }
-                //ModernUI.LOGGER.info(Arrays.toString(pts));
-                mCanvas.drawStripLines(pts, paint);
-                mCanvas.drawLine(60, 20, 600, 90, paint);
-            }
-            try {
-                mUiThread.join();
-            } catch (InterruptedException ignored) {
-            }
-        }
-    }
-
     /**
-     * Open an application UI and create views
+     * Open an application UI and create views.
      *
      * @param screen the application user interface
-     * @see #init(MuiScreen, int, int)
+     * @see #start(MuiScreen)
      */
     public void openGui(@Nonnull ScreenCallback screen) {
         mCallback = screen;
@@ -232,19 +198,31 @@ public final class UIManager {
         return true;
     }
 
-    void setContentView(View view, ViewGroup.LayoutParams params) {
-        mDecor.removeAllViews();
-        mDecor.addView(view, params);
+    /**
+     * Get elapsed time in UI, update every frame
+     *
+     * @return drawing time in milliseconds
+     */
+    public long getElapsedTime() {
+        return mElapsedTimeMillis;
     }
 
     /**
-     * Called when open a mui screen, or back to the mui screen
+     * Get elapsed ticks from a gui open, update every tick, 20 = 1 second
      *
-     * @param screen the current Screen
-     * @param width  scaled game main window width
-     * @param height scaled game main window height
+     * @return elapsed ticks
      */
-    void init(@Nonnull MuiScreen screen, int width, int height) {
+    public int getElapsedTicks() {
+        return mTicks;
+    }
+
+    @Nullable
+    public ScreenCallback getCallback() {
+        return mCallback;
+    }
+
+    // Called when open a screen from Modern UI, or back to the screen
+    void start(@Nonnull MuiScreen screen) {
         if (mScreen == null) {
             mCallback.host = this;
             mCallback.onCreate();
@@ -254,7 +232,12 @@ public final class UIManager {
         // init view of this UI
 
 
-        resize(width, height);
+        resize();
+    }
+
+    void setContentView(View view, ViewGroup.LayoutParams params) {
+        mDecor.removeAllViews();
+        mDecor.addView(view, params);
     }
 
     @SubscribeEvent
@@ -263,7 +246,7 @@ public final class UIManager {
         mCloseScreen = next == null;
 
         if (!mFirstScreenOpened) {
-            if (sDing) {
+            if (sPlaySoundOnLoaded) {
                 minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.EXPERIENCE_ORB_PICKUP, 1.0f));
             }
             mFirstScreenOpened = true;
@@ -288,17 +271,13 @@ public final class UIManager {
         }
     }
 
-    @Nullable
-    public ScreenCallback getCallback() {
-        return mCallback;
-    }
-
     /**
      * Post a task that will run on next pre-tick after delayed ticks
      *
      * @param runnable     runnable task
      * @param delayedTicks delayed ticks to run the task
      */
+    @Deprecated
     public void postTask(@Nonnull Runnable runnable, int delayedTicks) {
         if (delayedTicks <= 0) {
             runnable.run();
@@ -310,6 +289,60 @@ public final class UIManager {
     //TODO move inside view
     public void repostCursorEvent() {
         mPendingRepostCursorEvent = true;
+    }
+
+    @UiThread
+    private void run() {
+        mRoot.setView(mDecor);
+        for (; ; ) {
+            // holds the lock
+            synchronized (mRenderLock) {
+                mAnimationCallback.accept(mFrameTimeMillis);
+                if (mTicks >= 150)
+                    return;
+                Paint paint = Paint.take();
+                paint.setStrokeWidth(6);
+                int c = (int) mElapsedTimeMillis / 300;
+                c = Math.min(c, 8);
+                float[] pts = new float[c * 2 + 2];
+                pts[0] = 90;
+                pts[1] = 30;
+                for (int i = 0; i < c; i++) {
+                    pts[2 + i * 2] = Math.min((i + 2) * 60, mElapsedTimeMillis / 5) + 30;
+                    if ((i & 1) == 0) {
+                        if (mElapsedTimeMillis >= (i + 2) * 300) {
+                            pts[3 + i * 2] = 90;
+                        } else {
+                            pts[3 + i * 2] = 30 + (mElapsedTimeMillis % 300) / 5f;
+                        }
+                    } else {
+                        if (mElapsedTimeMillis >= (i + 2) * 300) {
+                            pts[3 + i * 2] = 30;
+                        } else {
+                            pts[3 + i * 2] = 90 - (mElapsedTimeMillis % 300) / 5f;
+                        }
+                    }
+                }
+                //ModernUI.LOGGER.info(Arrays.toString(pts));
+                mCanvas.drawStripLines(pts, paint);
+                paint.setRGB(255, 180, 100);
+                mCanvas.drawCircle(90, 30, 6, paint);
+                mCanvas.drawCircle(150, 90, 6, paint);
+                mCanvas.drawCircle(210, 30, 6, paint);
+                mCanvas.drawCircle(270, 90, 6, paint);
+                mCanvas.drawCircle(330, 30, 6, paint);
+                mCanvas.drawCircle(390, 90, 6, paint);
+                mCanvas.drawCircle(450, 30, 6, paint);
+                mCanvas.drawCircle(510, 90, 6, paint);
+                mCanvas.drawCircle(570, 30, 6, paint);
+
+                mRoot.onDraw(mCanvas);
+            }
+            try {
+                mUiThread.join();
+            } catch (InterruptedException ignored) {
+            }
+        }
     }
 
     /**
@@ -389,13 +422,14 @@ public final class UIManager {
                 TextLayoutProcessor.getInstance().reload();
                 break;
             case GLFW_KEY_C:
-                double rand = Math.random();
-                if (rand < 0.33) {
-                    mFramebuffer.setClearColor(1, 1, 1, 1);
-                } else if (rand < 0.67) {
-                    mFramebuffer.setClearColor(0, 0, 0, 1);
-                } else {
-                    mFramebuffer.setClearColor(0, 0, 0, 0);
+                Texture2D texture = mFramebuffer.getAttachedTexture(GL_COLOR_ATTACHMENT0);
+                if (texture != null) {
+                    Bitmap bitmap = Bitmap.download(Bitmap.Format.RGBA, texture, 0);
+                    try (bitmap) {
+                        bitmap.saveDialog(Bitmap.SaveFormat.PNG, 0);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
                 break;
             case GLFW_KEY_G:
@@ -430,7 +464,7 @@ public final class UIManager {
         }
     }
 
-    boolean sCharTyped(char codePoint, int modifiers) {
+    boolean charTyped(char ch) {
         //TODO
         /*if (popup != null) {
             return popup.charTyped(codePoint, modifiers);
@@ -441,39 +475,39 @@ public final class UIManager {
         return false;//root.charTyped(codePoint, modifiers);
     }
 
-    void performDrag(int action) {
-
-    }
-
     @RenderThread
     void render() {
         RenderSystem.enableCull();
         RenderSystem.enableBlend();
         // blend alpha correctly, since the Minecraft.mainRenderTarget has no alpha (always 1)
+        // and our framebuffer is totally a transparent layer
         RenderSystem.blendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
-        int width = minecraft.getWindow().getWidth();
-        int height = minecraft.getWindow().getHeight();
-
-        Framebuffer framebuffer = mFramebuffer;
-        framebuffer.resize(width, height);
-        framebuffer.clearColorBuffer();
-        framebuffer.clearDepthStencilBuffer();
-        framebuffer.bind();
+        int width = window.getWidth();
+        int height = window.getHeight();
 
         Matrix4 projection = Matrix4.makeOrthographic(width, -height, 0, 2000);
         GLCanvas canvas = mCanvas;
+        Framebuffer framebuffer = mFramebuffer;
+
         canvas.setProjection(projection);
 
         // wait UI thread, if slow
         synchronized (mRenderLock) {
-            // flush tasks from UI thread, such as texture uploading
-            RenderCore.flushRenderCalls();
-            canvas.render();
+            // check if need redraw
+            if (mTicks < 150) {
+                framebuffer.resize(width, height);
+                framebuffer.clearColorBuffer();
+                framebuffer.clearDepthStencilBuffer();
+                framebuffer.bindDraw();
+                // flush tasks from UI thread, such as texture uploading
+                RenderCore.flushRenderCalls();
+                canvas.render();
+            }
         }
         int texture = framebuffer.getAttachedTextureRaw(GL_COLOR_ATTACHMENT0);
 
-        glBindFramebuffer(GL_FRAMEBUFFER, minecraft.getMainRenderTarget().frameBufferId);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, minecraft.getMainRenderTarget().frameBufferId);
         RenderSystem.defaultBlendFunc();
         RenderSystem.enableTexture();
         RenderSystem.bindTexture(texture);
@@ -485,17 +519,16 @@ public final class UIManager {
         Tesselator tesselator = RenderSystem.renderThreadTesselator();
         BufferBuilder builder = tesselator.getBuilder();
         builder.begin(GL_QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
-        //TODO global alpha transformation
-        builder.vertex(0, height, 0).color(255, 255, 255, 255).uv(0, 0).endVertex();
-        builder.vertex(width, height, 0).color(255, 255, 255, 255).uv(1, 0).endVertex();
-        builder.vertex(width, 0, 0).color(255, 255, 255, 255).uv(1, 1).endVertex();
-        builder.vertex(0, 0, 0).color(255, 255, 255, 255).uv(0, 1).endVertex();
+        int alpha = (int) Math.min(255, mElapsedTimeMillis);
+        builder.vertex(0, height, 0).color(255, 255, 255, alpha).uv(0, 0).endVertex();
+        builder.vertex(width, height, 0).color(255, 255, 255, alpha).uv(1, 0).endVertex();
+        builder.vertex(width, 0, 0).color(255, 255, 255, alpha).uv(1, 1).endVertex();
+        builder.vertex(0, 0, 0).color(255, 255, 255, alpha).uv(0, 1).endVertex();
         tesselator.end();
         RenderSystem.bindTexture(0);
-        RenderSystem.disableTexture();
 
         GlStateManager._loadIdentity();
-        GlStateManager._ortho(0.0D, width / getGuiScale(), height / getGuiScale(),
+        GlStateManager._ortho(0.0D, width / window.getGuiScale(), height / window.getGuiScale(),
                 0.0D, 1000.0D, 3000.0D);
         GlStateManager._matrixMode(5888);
     }
@@ -535,12 +568,9 @@ public final class UIManager {
     }
 
     /**
-     * Called when game window size changed, used to re-layout the UI
-     *
-     * @param width  scaled game window width
-     * @param height scaled game window height
+     * Called when game window size changed, used to re-layout the window.
      */
-    void resize(int width, int height) {
+    void resize() {
         doLayout();
     }
 
@@ -549,7 +579,6 @@ public final class UIManager {
      */
     private void doLayout() {
         long startTime = Util.getNanos();
-        final Window window = minecraft.getWindow();
         int width = window.getWidth();
         int height = window.getHeight();
         int widthSpec = MeasureSpec.makeMeasureSpec(width, MeasureSpec.Mode.EXACTLY);
@@ -618,28 +647,6 @@ public final class UIManager {
                 }
             }
         }
-    }
-
-    /**
-     * Get elapsed time in UI, update every frame
-     *
-     * @return drawing time in milliseconds
-     */
-    public long getElapsedTime() {
-        return mElapsedTimeMillis;
-    }
-
-    /**
-     * Get elapsed ticks from a gui open, update every tick, 20 = 1 second
-     *
-     * @return elapsed ticks
-     */
-    public int getElapsedTicks() {
-        return mTicks;
-    }
-
-    public double getGuiScale() {
-        return minecraft.getWindow().getGuiScale();
     }
 
     // main fragment of a UI

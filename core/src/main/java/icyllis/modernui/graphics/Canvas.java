@@ -168,6 +168,39 @@ public abstract class Canvas {
     public abstract void drawCircle(float cx, float cy, float radius, @Nonnull Paint paint);
 
     /**
+     * Draw the specified Rect using the specified Paint. The rectangle will be filled or framed
+     * based on the Style in the paint. The smooth radius is ignored in the paint.
+     *
+     * @param r     The rectangle to be drawn.
+     * @param paint The paint used to draw the rectangle
+     */
+    public abstract void drawRect(@Nonnull Rect r, @Nonnull Paint paint);
+
+    /**
+     * Draw the specified Rect using the specified paint. The rectangle will be filled or framed
+     * based on the Style in the paint. The smooth radius is ignored in the paint.
+     *
+     * @param left   The left side of the rectangle to be drawn
+     * @param top    The top side of the rectangle to be drawn
+     * @param right  The right side of the rectangle to be drawn
+     * @param bottom The bottom side of the rectangle to be drawn
+     * @param paint  The paint used to draw the rect
+     */
+    public abstract void drawRect(float left, float top, float right, float bottom, @Nonnull Paint paint);
+
+    /**
+     * Draw the specified image with its top/left corner at (x,y), using the
+     * specified paint, transformed by the current matrix. The Style and smooth
+     * radius is ignored in the paint, images are always filled.
+     *
+     * @param image the image to be drawn
+     * @param left  the position of the left side of the image being drawn
+     * @param top   the position of the top side of the image being drawn
+     * @param paint the paint used to draw the round image
+     */
+    public abstract void drawImage(@Nonnull Image image, float left, float top, @Nonnull Paint paint);
+
+    /**
      * Draw a line segment with the specified start and stop x,y coordinates, using
      * the specified paint. The Style is ignored in the paint, lines are always "framed".
      * Stroke width in the paint represents the width of the line.
@@ -259,39 +292,6 @@ public abstract class Canvas {
     public final void drawStripLines(@Nonnull float[] pts, @Nonnull Paint paint) {
         drawStripLines(pts, 0, pts.length, paint);
     }
-
-    /**
-     * Draw the specified Rect using the specified Paint. The rectangle will be filled or framed
-     * based on the Style in the paint. The smooth radius is ignored in the paint.
-     *
-     * @param r     The rectangle to be drawn.
-     * @param paint The paint used to draw the rectangle
-     */
-    public abstract void drawRect(@Nonnull Rect r, @Nonnull Paint paint);
-
-    /**
-     * Draw the specified Rect using the specified paint. The rectangle will be filled or framed
-     * based on the Style in the paint. The smooth radius is ignored in the paint.
-     *
-     * @param left   The left side of the rectangle to be drawn
-     * @param top    The top side of the rectangle to be drawn
-     * @param right  The right side of the rectangle to be drawn
-     * @param bottom The bottom side of the rectangle to be drawn
-     * @param paint  The paint used to draw the rect
-     */
-    public abstract void drawRect(float left, float top, float right, float bottom, @Nonnull Paint paint);
-
-    /**
-     * Draw the specified image with its top/left corner at (x,y), using the
-     * specified paint, transformed by the current matrix. The Style and smooth
-     * radius is ignored in the paint, images are always filled.
-     *
-     * @param image the image to be drawn
-     * @param left  the position of the left side of the image being drawn
-     * @param top   the position of the top side of the image being drawn
-     * @param paint the paint used to draw the round image
-     */
-    public abstract void drawImage(@Nonnull Image image, float left, float top, @Nonnull Paint paint);
 
     /**
      * Draw a rectangle with rounded corners within a rectangular bounds.

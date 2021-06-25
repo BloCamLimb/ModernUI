@@ -19,7 +19,7 @@
 package icyllis.modernui.forge;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.BlurHandler;
+import icyllis.modernui.screen.BlurHandler;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.screen.OpenMenuEvent;
 import icyllis.modernui.test.TestMenu;

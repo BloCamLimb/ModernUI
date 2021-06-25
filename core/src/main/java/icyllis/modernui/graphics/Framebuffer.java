@@ -56,8 +56,8 @@ public final class Framebuffer implements AutoCloseable {
     private final float[] mClearColor = new float[4];
 
     public Framebuffer(int width, int height) {
-        mWidth = width;
-        mHeight = height;
+        mWidth = Math.max(1, width);
+        mHeight = Math.max(1, height);
     }
 
     public int get() {
@@ -85,9 +85,7 @@ public final class Framebuffer implements AutoCloseable {
 
     public void attachTexture(int attachPoint, int internalFormat) {
         Texture2D texture = new Texture2D();
-        //texture.init(internalFormat, mWidth, mHeight, 1);
-        glTextureStorage2D(texture.get(), 1, internalFormat, mWidth, mHeight);
-        texture.setFilter(GL_NEAREST, GL_NEAREST);
+        texture.init(internalFormat, mWidth, mHeight, 1);
         glNamedFramebufferTexture(get(), attachPoint, texture.get(), 0);
         mAttachments.put(attachPoint, texture);
     }
@@ -126,8 +124,7 @@ public final class Framebuffer implements AutoCloseable {
                     Texture2D texture = (Texture2D) a;
                     int internalFormat = glGetTextureParameteri(texture.get(), GL_TEXTURE_INTERNAL_FORMAT);
                     texture.close();
-                    glTextureStorage2D(texture.get(), 1, internalFormat, mWidth, mHeight);
-                    texture.setFilter(GL_NEAREST, GL_NEAREST);
+                    texture.init(internalFormat, width, height, 1);
                     glNamedFramebufferTexture(get(), entry.getIntKey(), texture.get(), 0);
                 } else if (a instanceof Renderbuffer) {
                     Renderbuffer renderbuffer = (Renderbuffer) a;
@@ -180,7 +177,6 @@ public final class Framebuffer implements AutoCloseable {
      */
     public void setDrawBuffer(int buffer) {
         glNamedFramebufferDrawBuffer(get(), buffer);
-        glNamedFramebufferReadBuffer(get(), buffer);
     }
 
     /**

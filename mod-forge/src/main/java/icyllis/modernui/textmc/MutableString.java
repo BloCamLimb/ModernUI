@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.textmc;
+package icyllis.modernui.textmc;
 
 import it.unimi.dsi.fastutil.chars.CharArrayList;
 

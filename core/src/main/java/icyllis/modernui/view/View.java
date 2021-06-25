@@ -247,6 +247,8 @@ public class View {
     private int mMeasuredWidth;
     private int mMeasuredHeight;
 
+    private Drawable mBackground;
+
     /**
      * Scrollbars
      */
@@ -1086,6 +1088,21 @@ public class View {
     }
 
     /**
+     * Set the background to a given Drawable, or remove the background. If the
+     * background has padding, this View's padding is set to the background's
+     * padding. However, when a background is removed, this View's padding isn't
+     * touched.
+     *
+     * @param background The Drawable to use as the background, or null to remove the
+     *        background
+     */
+    public void setBackground(@Nullable Drawable background) {
+        if (background == mBackground) {
+            return;
+        }
+    }
+
+    /**
      * Computes the coordinates of this view in its window. The argument
      * must be an array of two integers. After the method returns, the array
      * contains the x and y location in that order.
@@ -1165,20 +1182,20 @@ public class View {
      * Both are passed a {@link DragEvent} object that has a
      * {@link DragEvent#getAction()} value of {@link DragEvent#ACTION_DRAG_STARTED}.
      *
-     * @param data   The data to be transferred by the drag and drop operation. It can be in any form,
-     *               which can not only store the required data, but also let the view identify whether
-     *               it can accept the followed DragEvent.
-     * @param shadow The shadow object to draw the shadow, {@code null} will generate a default shadow.
-     * @param flags  Flags, 0 for no flags.
+     * @param localState The data to be transferred by the drag and drop operation. It can be in any form,
+     *                   which can not only store the required data, but also let the view identify whether
+     *                   it can accept the followed DragEvent.
+     * @param shadow     The shadow object to draw the shadow, {@code null} will generate a default shadow.
+     * @param flags      Flags, 0 for no flags.
      * @return {@code true} if operation successfully started, {@code false} means the system was
      * unable to start the operation because of another ongoing operation or some other reasons.
      */
-    public final boolean startDragAndDrop(@Nullable DragData data, @Nullable DragShadow shadow, int flags) {
+    public final boolean startDragAndDrop(@Nullable Object localState, @Nullable DragShadow shadow, int flags) {
         if (viewRoot == null) {
             ModernUI.LOGGER.error(MARKER, "startDragAndDrop called out of a window");
             return false;
         }
-        return viewRoot.startDragAndDrop(this, data, shadow, flags);
+        return viewRoot.startDragAndDrop(this, localState, shadow, flags);
     }
 
     /**

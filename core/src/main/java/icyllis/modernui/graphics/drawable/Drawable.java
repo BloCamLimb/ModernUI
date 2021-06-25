@@ -19,32 +19,195 @@
 package icyllis.modernui.graphics.drawable;
 
 import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.math.Rect;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.lang.ref.WeakReference;
 
 /**
- * A drawing unit in a view, draw content in given bounds
+ * A Drawable represents something that can be drawn within its bounds.
  */
 public abstract class Drawable {
 
-    private int left;
-    private int top;
-    private int right;
-    private int bottom;
+    private static final Rect ZERO_BOUNDS_RECT = new Rect();
+
+    @Nonnull
+    private Rect mBounds = ZERO_BOUNDS_RECT;
+    @Nullable
+    private WeakReference<Callback> mCallback;
 
     /**
-     * Draw things in bounds.
-     * (0, 0) will be the top left of the bounds,
-     * (width, height) will be the bottom right of the bounds.
-     * See {@link #getWidth()}
-     * See {@link #getHeight()}
+     * Draw in its bounds (set via setBounds) respecting optional effects such
+     * as alpha (set via setAlpha) and color filter (set via setColorFilter).
      *
      * @param canvas the canvas to draw things
      */
     public abstract void draw(@Nonnull Canvas canvas);
 
     /**
-     * Returns the drawable's intrinsic width. Actually a layout params.
+     * Set the bounds of this drawable for drawing
+     *
+     * @param left   left bound
+     * @param top    top bound
+     * @param right  right bound
+     * @param bottom bottom bound
+     */
+    public void setBounds(int left, int top, int right, int bottom) {
+        Rect bounds = mBounds;
+        if (bounds == ZERO_BOUNDS_RECT) {
+            bounds = mBounds = new Rect();
+        }
+        if (bounds.left != left || bounds.top != top ||
+                bounds.right != right || bounds.bottom != bottom) {
+            if (!bounds.isEmpty()) {
+                invalidateSelf();
+            }
+            mBounds.set(left, top, right, bottom);
+            onBoundsChange(mBounds);
+        }
+    }
+
+    /**
+     * Specify a bounding rectangle for the Drawable. This is where the drawable
+     * will draw when its draw() method is called.
+     */
+    public void setBounds(@Nonnull Rect bounds) {
+        setBounds(bounds.left, bounds.top, bounds.right, bounds.bottom);
+    }
+
+    /**
+     * Return a copy of the drawable's bounds in the specified Rect (allocated
+     * by the caller). The bounds specify where this will draw when its draw()
+     * method is called.
+     *
+     * @param bounds Rect to receive the drawable's bounds (allocated by the
+     *               caller).
+     */
+    public final void copyBounds(@Nonnull Rect bounds) {
+        bounds.set(mBounds);
+    }
+
+    /**
+     * Return a copy of the drawable's bounds in a new Rect. This returns the
+     * same values as getBounds(), but the returned object is guaranteed to not
+     * be changed later by the drawable (i.e. it retains no reference to this
+     * rect). If the caller already has a Rect allocated, call copyBounds(rect).
+     *
+     * @return A copy of the drawable's bounds
+     */
+    @Nonnull
+    public final Rect copyBounds() {
+        return mBounds.copy();
+    }
+
+    /**
+     * Return the drawable's bounds Rect. Note: for efficiency, the returned
+     * object may be the same object stored in the drawable (though this is not
+     * guaranteed), so if a persistent copy of the bounds is needed, call
+     * copyBounds(rect) instead.
+     * You should also not change the object returned by this method as it may
+     * be the same object stored in the drawable.
+     *
+     * @return The bounds of the drawable (which may change later, so caller
+     * beware). DO NOT ALTER the returned object as it may change the
+     * stored bounds of this drawable.
+     * @see #copyBounds()
+     * @see #copyBounds(Rect)
+     */
+    @Nonnull
+    public final Rect getBounds() {
+        if (mBounds == ZERO_BOUNDS_RECT) {
+            mBounds = new Rect();
+        }
+        return mBounds;
+    }
+
+    /**
+     * Get actual width for drawing
+     *
+     * @return width
+     */
+    public final int getWidth() {
+        return mBounds.width();
+    }
+
+    /**
+     * Get actual height for drawing
+     *
+     * @return height
+     */
+    public final int getHeight() {
+        return mBounds.height();
+    }
+
+    /**
+     * Implement this interface if you want to create an animated drawable that
+     * extends {@link Drawable Drawable}. Upon retrieving a drawable, use
+     * {@link Drawable#setCallback(Callback)} to supply your implementation of
+     * the interface to the drawable; it uses this interface to schedule and
+     * execute animation changes.
+     */
+    public interface Callback {
+
+        /**
+         * Called when the drawable needs to be redrawn.  A view at this point
+         * should invalidate itself (or at least the part of itself where the
+         * drawable appears).
+         *
+         * @param drawable The drawable that is requesting the update.
+         */
+        void invalidateDrawable(@Nonnull Drawable drawable);
+    }
+
+    /**
+     * Bind a {@link Callback} object to this Drawable.  Required for clients
+     * that want to support animated drawables.
+     *
+     * @param cb The client's Callback implementation.
+     * @see #getCallback()
+     */
+    public final void setCallback(@Nullable Callback cb) {
+        mCallback = cb != null ? new WeakReference<>(cb) : null;
+    }
+
+    /**
+     * Return the current {@link Callback} implementation attached to this
+     * Drawable.
+     *
+     * @return A {@link Callback} instance or null if no callback was set.
+     * @see #setCallback(Callback)
+     */
+    @Nullable
+    public Callback getCallback() {
+        return mCallback != null ? mCallback.get() : null;
+    }
+
+    /**
+     * Use the current {@link Callback} implementation to have this Drawable
+     * redrawn.  Does nothing if there is no Callback attached to the
+     * Drawable.
+     *
+     * @see Callback#invalidateDrawable
+     * @see #getCallback()
+     * @see #setCallback(Callback)
+     */
+    public void invalidateSelf() {
+        final Callback callback = getCallback();
+        if (callback != null) {
+            callback.invalidateDrawable(this);
+        }
+    }
+
+    /**
+     * Override this in your subclass to change appearance if you vary based on
+     * the bounds.
+     */
+    protected void onBoundsChange(@Nonnull Rect bounds) {
+    }
+
+    /**
+     * Returns the drawable's intrinsic width.
      * <p>
      * Intrinsic width is the width at which the drawable would like to be laid
      * out, including any inherent padding. If the drawable has no intrinsic
@@ -57,7 +220,7 @@ public abstract class Drawable {
     }
 
     /**
-     * Returns the drawable's intrinsic height. Actually a layout params.
+     * Returns the drawable's intrinsic height.
      * <p>
      * Intrinsic height is the height at which the drawable would like to be
      * laid out, including any inherent padding. If the drawable has no
@@ -70,64 +233,28 @@ public abstract class Drawable {
     }
 
     /**
-     * Get actual width for drawing
+     * Returns the minimum width suggested by this Drawable. If a View uses this
+     * Drawable as a background, it is suggested that the View use at least this
+     * value for its width. (There will be some scenarios where this will not be
+     * possible.) This value should INCLUDE any padding.
      *
-     * @return width
+     * @return The minimum width suggested by this Drawable. If this Drawable
+     * doesn't have a suggested minimum width, 0 is returned.
      */
-    public final int getWidth() {
-        return right - left;
+    public int getMinimumWidth() {
+        return Math.max(getIntrinsicWidth(), 0);
     }
 
     /**
-     * Get actual height for drawing
+     * Returns the minimum height suggested by this Drawable. If a View uses this
+     * Drawable as a background, it is suggested that the View use at least this
+     * value for its height. (There will be some scenarios where this will not be
+     * possible.) This value should INCLUDE any padding.
      *
-     * @return height
+     * @return The minimum height suggested by this Drawable. If this Drawable
+     * doesn't have a suggested minimum height, 0 is returned.
      */
-    public final int getHeight() {
-        return bottom - top;
-    }
-
-    public final int getLeft() {
-        return left;
-    }
-
-    public final int getTop() {
-        return top;
-    }
-
-    public final int getRight() {
-        return right;
-    }
-
-    public final int getBottom() {
-        return bottom;
-    }
-
-    /**
-     * Set the bounds of this drawable for drawing
-     *
-     * @param left   left bound
-     * @param top    top bound
-     * @param right  right bound
-     * @param bottom bottom bound
-     */
-    public void setBounds(int left, int top, int right, int bottom) {
-        if (this.left != left || this.top != top ||
-                this.right != right || this.bottom != bottom) {
-
-            this.left = left;
-            this.top = top;
-            this.right = right;
-            this.bottom = bottom;
-
-            onBoundsChanged();
-        }
-    }
-
-    /**
-     * Called when bounds changed, including position or size
-     */
-    protected void onBoundsChanged() {
-
+    public int getMinimumHeight() {
+        return Math.max(getIntrinsicHeight(), 0);
     }
 }

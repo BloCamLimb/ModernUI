@@ -19,10 +19,8 @@
 package icyllis.modernui.mixin;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import icyllis.modernui.graphics.BlurHandler;
+import icyllis.modernui.screen.BlurHandler;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.renderer.texture.TextureManager;
-import net.minecraft.resources.ResourceLocation;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -32,7 +30,7 @@ import javax.annotation.Nonnull;
 @Mixin(Screen.class)
 public class MixinScreen {
 
-    private static final ResourceLocation BACKGROUND = new ResourceLocation("textures/block/dark_oak_planks.png");
+    //private static final ResourceLocation BACKGROUND = new ResourceLocation("textures/block/spruce_planks.png");
 
     @Redirect(
             method = "renderBackground(Lcom/mojang/blaze3d/vertex/PoseStack;I)V",
@@ -46,7 +44,7 @@ public class MixinScreen {
         BlurHandler.INSTANCE.drawScreenBackground(screen, stack, x1, y1, x2, y2);
     }
 
-    @Redirect(
+    /*@Redirect(
             method = "renderDirtBackground",
             at = @At(value = "INVOKE",
                     target = "Lnet/minecraft/client/renderer/texture/TextureManager;bind(Lnet/minecraft/resources/ResourceLocation;)V"
@@ -54,5 +52,5 @@ public class MixinScreen {
     )
     private void bindDirtBackgroundTexture(@Nonnull TextureManager textureManager, ResourceLocation rl) {
         textureManager.bind(BACKGROUND);
-    }
+    }*/
 }

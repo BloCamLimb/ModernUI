@@ -19,7 +19,6 @@
 package icyllis.modernui.screen;
 
 import icyllis.modernui.forge.ModernUIForge;
-import icyllis.modernui.graphics.CanvasForge;
 import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewParent;
