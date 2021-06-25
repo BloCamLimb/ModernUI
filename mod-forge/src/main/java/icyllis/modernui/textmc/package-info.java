@@ -16,8 +16,8 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.view;
-
-@Deprecated
-public class DragData {
-}
+/**
+ * Simplified font engine for Minecraft vanilla only, do not
+ * use these in Modern UI.
+ */
+package icyllis.modernui.textmc;

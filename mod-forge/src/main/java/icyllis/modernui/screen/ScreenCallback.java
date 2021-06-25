@@ -19,7 +19,7 @@
 package icyllis.modernui.screen;
 
 import icyllis.modernui.view.View;
-import icyllis.modernui.widget.FrameLayout;
+import icyllis.modernui.view.ViewGroup;
 
 /**
  * The callback handling screen lifecycle events.
@@ -33,7 +33,7 @@ public abstract class ScreenCallback {
 
     public abstract void onCreate();
 
-    public void setContentView(View view, FrameLayout.LayoutParams params) {
+    public void setContentView(View view, ViewGroup.LayoutParams params) {
         host.setContentView(view, params);
     }
 }

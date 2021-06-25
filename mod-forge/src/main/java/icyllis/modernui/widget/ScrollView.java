@@ -62,10 +62,10 @@ public class ScrollView extends FrameLayout implements ScrollController.IListene
 
     @Override
     protected void dispatchDraw(@Nonnull Canvas canvas) {
-        /*scrollController.update(canvas.getDrawingTime());
-        canvas.clipVertical(this);
+        //scrollController.update(canvas.getDrawingTime());
+        //canvas.clipVertical(this);
         super.dispatchDraw(canvas);
-        canvas.clipEnd();*/
+        //canvas.clipEnd();
     }
 
     @Override

@@ -32,8 +32,6 @@ import icyllis.modernui.graphics.shader.program.RectProgram;
 import icyllis.modernui.graphics.shader.program.RoundRectProgram;
 import icyllis.modernui.graphics.textmc.TextLayoutProcessor;
 import icyllis.modernui.graphics.textmc.pipeline.TextRenderNode;
-import icyllis.modernui.platform.RenderCore;
-import icyllis.modernui.screen.UIManager;
 import icyllis.modernui.view.View;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -43,108 +41,16 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.lwjgl.opengl.GL43;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * CanvasForge is an extension to Canvas, which provides more drawing
- * methods used in Minecraft.
- * <p>
  * The font renderer uses another system, which has two parts, one for Modern UI, and
  * the global one is using RenderType, make Modern UI font renderer work everywhere,
  * because it's not always called in GUI, likes screens of other mods, TileEntityRenderer
  * or in world rendering, that also need matrix transformation to be compatible with vanilla
- *
- * @author BloCamLimb
  */
-public class CanvasForge {
-
-    private static CanvasForge instance;
-
-    /**
-     * Instances
-     */
-    private final Window mMainWindow;
-    private final ItemRenderer mItemRenderer;
-
-    private final TextLayoutProcessor mFontEngine = TextLayoutProcessor.getInstance();
-
-    private final GLCanvas mCanvas = GLCanvas.getInstance();
-
-    @Deprecated
-    private final BufferBuilder mBufferBuilder = Tesselator.getInstance().getBuilder();
-
-
-    /**
-     * Paint colors, unsigned int
-     */
-    @Deprecated
-    private int r = 255;
-    @Deprecated
-    private int g = 255;
-    @Deprecated
-    private int b = 255;
-    @Deprecated
-    private int a = 255;
-
-
-    /**
-     * Depth
-     */
-    @Deprecated
-    private double z = 0.0D;
-
-    /*
-     * Drawing location offset, view or drawable
-     */
-    /*private int drawingX = 0;
-    private int drawingY = 0;*/
-
-    /**
-     * Elapsed time from a gui open
-     */
-    @Deprecated
-    private long drawingTime = 0;
-
-
-    /**
-     * Text align
-     */
-    @Deprecated
-    private float alignFactor = TextAlign.LEFT.offsetFactor;
-
-
-    /**
-     * GL states
-     */
-    @Deprecated
-    private static boolean lineAA = false;
-
-
-    private CanvasForge(@Nullable Minecraft minecraft) {
-        if (minecraft != null) {
-            mMainWindow = minecraft.getWindow();
-            mItemRenderer = minecraft.getItemRenderer();
-        } else {
-            mMainWindow = null;
-            mItemRenderer = null;
-        }
-    }
-
-    /**
-     * This will start the render engine of Modern UI. Always do not call this
-     * at the wrong time.
-     *
-     * @return the instance
-     * @see UIManager#initRenderer()
-     */
-    public static CanvasForge getInstance() {
-        RenderCore.checkRenderThread();
-        if (instance == null) {
-            instance = new CanvasForge(Minecraft.getInstance());
-        }
-        return instance;
-    }
+@Deprecated
+public class Canvas {
 
     /**
      * Set current paint color with alpha.
@@ -154,11 +60,13 @@ public class CanvasForge {
      * @param b blue component [0, 255]
      * @param a alpha component [0, 255]
      */
+    @Deprecated
     public void setRGBA(int r, int g, int b, int a) {
-        this.r = r;
+        throw new UnsupportedOperationException();
+        /*this.r = r;
         this.g = g;
         this.b = b;
-        this.a = a;
+        this.a = a;*/
     }
 
     /**
@@ -170,9 +78,10 @@ public class CanvasForge {
      */
     @Deprecated
     public void setRGB(int r, int g, int b) {
-        this.r = r;
+        throw new UnsupportedOperationException();
+        /*this.r = r;
         this.g = g;
-        this.b = b;
+        this.b = b;*/
     }
 
     /**
@@ -182,10 +91,11 @@ public class CanvasForge {
      */
     @Deprecated
     public void setColor(int color) {
-        a = color >> 24 & 0xff;
+        throw new UnsupportedOperationException();
+        /*a = color >> 24 & 0xff;
         r = color >> 16 & 0xff;
         g = color >> 8 & 0xff;
-        b = color & 0xff;
+        b = color & 0xff;*/
     }
 
     /**
@@ -193,18 +103,22 @@ public class CanvasForge {
      *
      * @param a alpha [0,255]
      */
+    @Deprecated
     public void setAlpha(int a) {
-        this.a = a;
+        throw new UnsupportedOperationException();
+        //this.a = a;
     }
 
     /**
      * Reset color to white color and completely opaque.
      */
+    @Deprecated
     public void resetColor() {
-        r = 255;
+        throw new UnsupportedOperationException();
+        /*r = 255;
         g = 255;
         b = 255;
-        a = 255;
+        a = 255;*/
     }
 
     /**
@@ -214,13 +128,15 @@ public class CanvasForge {
      */
     @Deprecated
     public long getDrawingTime() {
-        return drawingTime;
+        throw new UnsupportedOperationException();
+        //return drawingTime;
     }
 
     // inner use
     @Deprecated
     public void setDrawingTime(long drawingTime) {
-        this.drawingTime = drawingTime;
+        throw new UnsupportedOperationException();
+        //this.drawingTime = drawingTime;
     }
 
     /**
@@ -230,7 +146,8 @@ public class CanvasForge {
      */
     @Deprecated
     public void setLineAntiAliasing(boolean aa) {
-        if (aa) {
+        throw new UnsupportedOperationException();
+        /*if (aa) {
             if (!lineAA) {
                 GL43.glEnable(GL43.GL_LINE_SMOOTH);
                 GL43.glHint(GL43.GL_LINE_SMOOTH_HINT, GL43.GL_NICEST);
@@ -239,7 +156,7 @@ public class CanvasForge {
         } else if (lineAA) {
             GL43.glDisable(GL43.GL_LINE_SMOOTH);
             lineAA = false;
-        }
+        }*/
     }
 
     /**
@@ -249,7 +166,8 @@ public class CanvasForge {
      */
     @Deprecated
     public void setLineWidth(float width) {
-        RenderSystem.lineWidth(width);
+        throw new UnsupportedOperationException();
+        //RenderSystem.lineWidth(width);
     }
 
     /**
@@ -260,7 +178,8 @@ public class CanvasForge {
      */
     @Deprecated
     public void setZ(double z) {
-        this.z = z;
+        throw new UnsupportedOperationException();
+        //this.z = z;
     }
 
     /**
@@ -271,7 +190,8 @@ public class CanvasForge {
      */
     @Deprecated
     public void setTextAlign(@Nonnull TextAlign align) {
-        alignFactor = align.offsetFactor;
+        throw new UnsupportedOperationException();
+        //alignFactor = align.offsetFactor;
     }
 
     /**
@@ -302,10 +222,10 @@ public class CanvasForge {
     public float drawText(String text, float x, float y) {
         if (text == null || text.isEmpty())
             return 0;
-        final TextRenderNode node = mFontEngine.lookupVanillaNode(text, Style.EMPTY);
-        if (alignFactor > 0)
-            x -= node.advance * alignFactor;
-        return node.drawText(mBufferBuilder, text, x, y, r, g, b, a);
+        final TextRenderNode node = mTextEngine.lookupVanillaNode(text, Style.EMPTY);
+        /*if (alignFactor > 0)
+            x -= node.advance * alignFactor;*/
+        return node.drawText(Tesselator.getInstance().getBuilder(), text, x, y, 255, 255, 255, 255);
     }
 
     @Deprecated
@@ -324,6 +244,7 @@ public class CanvasForge {
             case STROKE:
                 strokeArc(centerX, centerY, radius, startAngle, sweepAngle, paint);
         }
+        throw new UnsupportedOperationException();
     }
 
     @Deprecated
@@ -346,6 +267,7 @@ public class CanvasForge {
             upload(cx - radius, cy - radius, cx + radius, cy + radius, paint.getColor());
             GLWrapper.stopProgram();
         }
+        throw new UnsupportedOperationException();
     }
 
     @Deprecated
@@ -370,6 +292,7 @@ public class CanvasForge {
             upload(cx - outer, cy - outer, cx + outer, cy + outer, paint.getColor());
             GLWrapper.stopProgram();
         }
+        throw new UnsupportedOperationException();
     }
 
     @Deprecated
@@ -384,6 +307,7 @@ public class CanvasForge {
                 return;
         }
         fillRect(left, top, right, bottom, paint);
+        throw new UnsupportedOperationException();
     }
 
     @Deprecated
@@ -399,6 +323,7 @@ public class CanvasForge {
         }
         upload(left, top, right, bottom, paint.getColor());
         GLWrapper.stopProgram();
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -412,7 +337,8 @@ public class CanvasForge {
      */
     @Deprecated
     public void drawRectOutline(float left, float top, float right, float bottom, float thickness) {
-        RenderSystem.disableTexture();
+        throw new UnsupportedOperationException();
+        //RenderSystem.disableTexture();
 
         /*left += drawingX;
         top += drawingY;
@@ -424,49 +350,49 @@ public class CanvasForge {
 
         featheredRect.setInnerRect(left - thickness + 0.25f, top - thickness + 0.25f, right - 0.25f, top - 0.25f);*/
 
-        final int r = this.r;
+        /*final int r = this.r;
         final int g = this.g;
         final int b = this.b;
         final int a = this.a;
-        final double z = this.z;
+        final double z = this.z;*/
 
-        mBufferBuilder.begin(GL43.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
+        /*mBufferBuilder.begin(GL43.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
         mBufferBuilder.vertex(left - thickness, top, z).color(r, g, b, a).endVertex();
         mBufferBuilder.vertex(right, top, z).color(r, g, b, a).endVertex();
         mBufferBuilder.vertex(right, top - thickness, z).color(r, g, b, a).endVertex();
         mBufferBuilder.vertex(left - thickness, top - thickness, z).color(r, g, b, a).endVertex();
         mBufferBuilder.end();
-        BufferUploader.end(mBufferBuilder);
+        BufferUploader.end(mBufferBuilder);*/
 
         //featheredRect.setInnerRect(right + 0.25f, top - thickness + 0.25f, right + thickness - 0.25f, bottom - 0.25f);
 
-        mBufferBuilder.begin(GL43.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
+        /*mBufferBuilder.begin(GL43.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
         mBufferBuilder.vertex(right, bottom, z).color(r, g, b, a).endVertex();
         mBufferBuilder.vertex(right + thickness, bottom, z).color(r, g, b, a).endVertex();
         mBufferBuilder.vertex(right + thickness, top - thickness, z).color(r, g, b, a).endVertex();
         mBufferBuilder.vertex(right, top - thickness, z).color(r, g, b, a).endVertex();
         mBufferBuilder.end();
-        BufferUploader.end(mBufferBuilder);
+        BufferUploader.end(mBufferBuilder);*/
 
         //featheredRect.setInnerRect(left + 0.25f, bottom + 0.25f, right + thickness - 0.25f, bottom + thickness - 0.25f);
 
-        mBufferBuilder.begin(GL43.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
+        /*mBufferBuilder.begin(GL43.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
         mBufferBuilder.vertex(left, bottom + thickness, z).color(r, g, b, a).endVertex();
         mBufferBuilder.vertex(right + thickness, bottom + thickness, z).color(r, g, b, a).endVertex();
         mBufferBuilder.vertex(right + thickness, bottom, z).color(r, g, b, a).endVertex();
         mBufferBuilder.vertex(left, bottom, z).color(r, g, b, a).endVertex();
         mBufferBuilder.end();
-        BufferUploader.end(mBufferBuilder);
+        BufferUploader.end(mBufferBuilder);*/
 
         //featheredRect.setInnerRect(left - thickness + 0.25f, top + 0.25f, left - 0.25f, bottom + thickness - 0.25f);
 
-        mBufferBuilder.begin(GL43.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
+        /*mBufferBuilder.begin(GL43.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
         mBufferBuilder.vertex(left - thickness, bottom + thickness, z).color(r, g, b, a).endVertex();
         mBufferBuilder.vertex(left, bottom + thickness, z).color(r, g, b, a).endVertex();
         mBufferBuilder.vertex(left, top, z).color(r, g, b, a).endVertex();
         mBufferBuilder.vertex(left - thickness, top, z).color(r, g, b, a).endVertex();
         mBufferBuilder.end();
-        BufferUploader.end(mBufferBuilder);
+        BufferUploader.end(mBufferBuilder);*/
 
         //ShaderTools.releaseShader();
     }
@@ -482,14 +408,15 @@ public class CanvasForge {
      */
     @Deprecated
     public void drawOctagonRectFrame(float left, float top, float right, float bottom, float bevel) {
-        RenderSystem.disableTexture();
+        throw new UnsupportedOperationException();
+        //RenderSystem.disableTexture();
 
         /*left += drawingX;
         top += drawingY;
         right += drawingX;
         bottom += drawingY;*/
 
-        final int r = this.r;
+        /*final int r = this.r;
         final int g = this.g;
         final int b = this.b;
         final int a = this.a;
@@ -505,7 +432,7 @@ public class CanvasForge {
         mBufferBuilder.vertex(left + bevel, top, z).color(r, g, b, a).endVertex();
         mBufferBuilder.vertex(left, top + bevel, z).color(r, g, b, a).endVertex();
         mBufferBuilder.end();
-        BufferUploader.end(mBufferBuilder);
+        BufferUploader.end(mBufferBuilder);*/
     }
 
     /**
@@ -519,20 +446,21 @@ public class CanvasForge {
      */
     @Deprecated
     public void drawRectLines(float left, float top, float right, float bottom) {
-        RenderSystem.disableTexture();
+        throw new UnsupportedOperationException();
+        //RenderSystem.disableTexture();
 
         /*left += drawingX;
         top += drawingY;
         right += drawingX;
         bottom += drawingY;*/
 
-        mBufferBuilder.begin(GL43.GL_LINE_LOOP, DefaultVertexFormat.POSITION_COLOR);
+        /*mBufferBuilder.begin(GL43.GL_LINE_LOOP, DefaultVertexFormat.POSITION_COLOR);
         mBufferBuilder.vertex(left, bottom, z).color(r, g, b, a).endVertex();
         mBufferBuilder.vertex(right, bottom, z).color(r, g, b, a).endVertex();
         mBufferBuilder.vertex(right, top, z).color(r, g, b, a).endVertex();
         mBufferBuilder.vertex(left, top, z).color(r, g, b, a).endVertex();
         mBufferBuilder.end();
-        BufferUploader.end(mBufferBuilder);
+        BufferUploader.end(mBufferBuilder);*/
     }
 
     @Deprecated
@@ -548,6 +476,7 @@ public class CanvasForge {
             case STROKE:
                 strokeCircle(centerX, centerY, radius, paint);
         }
+        throw new UnsupportedOperationException();
     }
 
     @Deprecated
@@ -558,6 +487,7 @@ public class CanvasForge {
         program.setCenter(cx, cy);
         upload(cx - r, cy - r, cx + r, cy + r, paint.getColor());
         GLWrapper.stopProgram();
+        throw new UnsupportedOperationException();
     }
 
     @Deprecated
@@ -570,6 +500,7 @@ public class CanvasForge {
         program.setCenter(cx, cy);
         upload(cx - outer, cy - outer, cx + outer, cy + outer, paint.getColor());
         GLWrapper.stopProgram();
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -582,20 +513,22 @@ public class CanvasForge {
      */
     @Deprecated
     public void drawLine(float startX, float startY, float stopX, float stopY) {
-        RenderSystem.disableTexture();
+        throw new UnsupportedOperationException();
+        /*RenderSystem.disableTexture();*/
 
         /*startX += drawingX;
         stopX += drawingX;
         startY += drawingY;
         stopY += drawingY;*/
 
-        mBufferBuilder.begin(GL43.GL_LINES, DefaultVertexFormat.POSITION_COLOR);
+        /*mBufferBuilder.begin(GL43.GL_LINES, DefaultVertexFormat.POSITION_COLOR);
         mBufferBuilder.vertex(startX, startY, z).color(r, g, b, a).endVertex();
         mBufferBuilder.vertex(stopX, stopY, z).color(r, g, b, a).endVertex();
         mBufferBuilder.end();
-        BufferUploader.end(mBufferBuilder);
+        BufferUploader.end(mBufferBuilder);*/
     }
 
+    @Deprecated
     public void drawRoundRect(float left, float top, float right, float bottom,
                               float radius, @Nonnull Paint paint) {
         radius = Math.max(0, radius);
@@ -608,8 +541,10 @@ public class CanvasForge {
             case STROKE:
                 strokeRoundRect(left, top, right, bottom, radius, paint);
         }
+        throw new UnsupportedOperationException();
     }
 
+    @Deprecated
     protected void fillRoundRect(float left, float top, float right, float bottom,
                                  float r, @Nonnull Paint paint) {
         final RoundRectProgram.Fill program = RoundRectProgram.fill();
@@ -618,8 +553,10 @@ public class CanvasForge {
         program.setInnerRect(left + r, top + r, right - r, bottom - r);
         upload(left, top, right, bottom, paint.getColor());
         GLWrapper.stopProgram();
+        throw new UnsupportedOperationException();
     }
 
+    @Deprecated
     protected void strokeRoundRect(float left, float top, float right, float bottom,
                                    float r, @Nonnull Paint paint) {
         final RoundRectProgram.Stroke program = RoundRectProgram.stroke();
@@ -629,6 +566,7 @@ public class CanvasForge {
         program.setInnerRect(left + r, top + r, right - r, bottom - r);
         upload(left - r, top - r, right + r, bottom + r, paint.getColor());
         GLWrapper.stopProgram();
+        throw new UnsupportedOperationException();
     }
 
     @Deprecated
@@ -647,11 +585,13 @@ public class CanvasForge {
         builder.vertex(left, top, 0).color(r, g, b, a).endVertex();
         builder.end();
         BufferUploader.end(builder);
+        throw new UnsupportedOperationException();
     }
 
     @Deprecated
     public void drawRoundedFrameT1(float left, float top, float right, float bottom, float radius) {
-        RoundRectProgram.Stroke program = RoundRectProgram.stroke();
+        throw new UnsupportedOperationException();
+        /*RoundRectProgram.Stroke program = RoundRectProgram.stroke();
         program.use();
         program.setRadius(radius, 1.0f, 1.0f);
         program.setInnerRect(left + radius, top + radius, right - radius, bottom - radius);
@@ -662,7 +602,7 @@ public class CanvasForge {
         mBufferBuilder.vertex(left, top, z).color(201, 200, 232, a).endVertex();
         mBufferBuilder.end();
         BufferUploader.end(mBufferBuilder);
-        GLWrapper.stopProgram();
+        GLWrapper.stopProgram();*/
     }
 
     /**
@@ -701,66 +641,62 @@ public class CanvasForge {
         BufferUploader.end(builder);
 
         GLWrapper.stopProgram();
-    }
-
-    /**
-     * Draw item default instance, without any NBT data
-     * Size on screen: 16 * 16 * GuiScale
-     *
-     * @param item item
-     * @param x    x pos
-     * @param y    y pos
-     */
-    public void drawItem(@Nonnull Item item, float x, float y) {
-        mItemRenderer.renderGuiItem(item.getDefaultInstance(), (int) (x), (int) (y));
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-    }
-
-    /**
-     * Draw item stack with NBT
-     *
-     * @param stack item stack to draw
-     * @param x     x pos
-     * @param y     y pos
-     */
-    public void drawItemStack(@Nonnull ItemStack stack, float x, float y) {
-        mItemRenderer.renderGuiItem(stack, (int) (x), (int) (y));
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-    }
-
-    /**
-     * Draw item stack with NBT and their damage bar, amount etc
-     *
-     * @param stack item stack to draw
-     * @param x     x pos
-     * @param y     y pos
-     */
-    public void drawItemStackWithOverlays(@Nonnull ItemStack stack, float x, float y) {
-        mItemRenderer.renderGuiItem(stack, (int) (x), (int) (y));
-        mItemRenderer.renderGuiItemDecorations(Minecraft.getInstance().font, stack, (int) (x), (int) (y));
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
+        throw new UnsupportedOperationException();
     }
 
     @Deprecated
     public void clipVertical(@Nonnull View view) {
-        GL43.glEnable(GL43.GL_SCISSOR_TEST);
-        GL43.glScissor(0, mMainWindow.getHeight() - view.getBottom(),
-                mMainWindow.getWidth(), view.getHeight());
+        throw new UnsupportedOperationException();
+        /*GL43.glEnable(GL43.GL_SCISSOR_TEST);
+        GL43.glScissor(0, window.getHeight() - view.getBottom(),
+                window.getWidth(), view.getHeight());*/
     }
 
     @Deprecated
     public void clipStart(float x, float y, float width, float height) {
-        double scale = mMainWindow.getGuiScale();
+        throw new UnsupportedOperationException();
+        /*double scale = window.getGuiScale();
         GL43.glEnable(GL43.GL_SCISSOR_TEST);
-        GL43.glScissor((int) (x * scale), (int) (mMainWindow.getHeight() - ((y + height) * scale)),
-                (int) (width * scale), (int) (height * scale));
+        GL43.glScissor((int) (x * scale), (int) (window.getHeight() - ((y + height) * scale)),
+                (int) (width * scale), (int) (height * scale));*/
     }
 
     @Deprecated
     public void clipEnd() {
-        GL43.glDisable(GL43.GL_SCISSOR_TEST);
+        throw new UnsupportedOperationException();
+        /*GL43.glDisable(GL43.GL_SCISSOR_TEST);*/
     }
+
+    /*@Deprecated
+    private final BufferBuilder mBufferBuilder = Tesselator.getInstance().getBuilder();*/
+
+
+    /*@Deprecated
+    private int r = 255;
+    @Deprecated
+    private int g = 255;
+    @Deprecated
+    private int b = 255;
+    @Deprecated
+    private int a = 255;
+
+
+    @Deprecated
+    private double z = 0.0D;*/
+
+    /*
+     * Drawing location offset, view or drawable
+     */
+    /*private int drawingX = 0;
+    private int drawingY = 0;*/
+
+    /*@Deprecated
+    private long drawingTime = 0;
+
+
+    @Deprecated
+    private float alignFactor = TextAlign.LEFT.offsetFactor;
+
+    @Deprecated
+    private static boolean lineAA = false;*/
 }

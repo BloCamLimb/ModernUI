@@ -22,7 +22,7 @@ import com.mojang.blaze3d.platform.Window;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.forge.MuiForgeCompat;
 import icyllis.modernui.graphics.font.GlyphManager;
-import icyllis.modernui.graphics.textmc.TextLayoutProcessor;
+import icyllis.modernui.textmc.TextLayoutProcessor;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.view.ViewConfig;
 import net.minecraft.util.Mth;

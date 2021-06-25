@@ -19,9 +19,9 @@
 package icyllis.modernui.graphics.font;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.textmc.VanillaTextKey;
-import icyllis.modernui.graphics.textmc.pipeline.TextRenderNode;
-import icyllis.modernui.graphics.textmc.pipeline.TextRenderType;
+import icyllis.modernui.textmc.VanillaTextKey;
+import icyllis.modernui.textmc.pipeline.TextRenderNode;
+import icyllis.modernui.textmc.pipeline.TextRenderType;
 import icyllis.modernui.graphics.texture.Texture2D;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.text.FontCollection;

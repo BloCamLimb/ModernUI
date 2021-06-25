@@ -19,7 +19,6 @@
 package icyllis.modernui.screen;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import icyllis.modernui.graphics.BlurHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.TextComponent;
@@ -49,7 +48,7 @@ final class SimpleScreen extends Screen implements MuiScreen {
         this.minecraft = minecraft;
         this.width = width;
         this.height = height;
-        host.init(this, width, height);
+        host.start(this);
         //TODO configurable
         BlurHandler.INSTANCE.forceBlur();
     }
@@ -58,11 +57,11 @@ final class SimpleScreen extends Screen implements MuiScreen {
     public void resize(@Nonnull Minecraft minecraft, int width, int height) {
         this.width = width;
         this.height = height;
-        host.resize(width, height);
+        host.resize();
     }
 
     @Override
-    public void render(@Nonnull PoseStack matrixStack, int mouseX, int mouseY, float deltaTick) {
+    public void render(@Nonnull PoseStack poseStack, int mouseX, int mouseY, float deltaTick) {
         host.render();
     }
 
@@ -133,7 +132,7 @@ final class SimpleScreen extends Screen implements MuiScreen {
     }
 
     @Override
-    public boolean charTyped(char codePoint, int modifiers) {
-        return host.sCharTyped(codePoint, modifiers);
+    public boolean charTyped(char ch, int modifiers) {
+        return host.charTyped(ch);
     }
 }

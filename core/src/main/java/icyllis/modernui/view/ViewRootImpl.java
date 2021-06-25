@@ -53,7 +53,7 @@ public final class ViewRootImpl implements ViewParent {
         }
     }
 
-    boolean startDragAndDrop(@Nonnull View view, @Nullable DragData data, @Nullable View.DragShadow shadow, int flags) {
+    boolean startDragAndDrop(@Nonnull View view, @Nullable Object data, @Nullable View.DragShadow shadow, int flags) {
         /*if (master.dragEvent != null) {
             ModernUI.LOGGER.error(View.MARKER, "startDragAndDrop failed by another ongoing operation");
             return false;
@@ -99,10 +99,10 @@ public final class ViewRootImpl implements ViewParent {
         mView.layout(0, 0, mView.getMeasuredWidth(), mView.getMeasuredHeight());
     }
 
-    void onDraw(Canvas canvas) {
-        /*if (mView != null) {
+    public void onDraw(Canvas canvas) {
+        if (mView != null) {
             mView.draw(canvas);
-        }*/
+        }
     }
 
     public boolean onInputEvent(InputEvent event) {

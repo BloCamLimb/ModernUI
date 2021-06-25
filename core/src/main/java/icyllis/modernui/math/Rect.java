@@ -27,6 +27,8 @@ import javax.annotation.Nullable;
 @SuppressWarnings("unused")
 public class Rect {
 
+    private static final ThreadLocal<Rect> TLS = ThreadLocal.withInitial(Rect::new);
+
     public int left;
     public int top;
     public int right;
@@ -36,6 +38,14 @@ public class Rect {
      * Create a new Rect with all coordinates initialized to 0.
      */
     public Rect() {
+    }
+
+    /**
+     * @return the thread-local instance
+     */
+    @Nonnull
+    public static Rect get() {
+        return TLS.get();
     }
 
     /**

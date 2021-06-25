@@ -128,7 +128,7 @@ public class ScrollController {
     public void scrollTo(float target, int duration) {
         startTime = UIManager.getInstance().getElapsedTime();
         startValue = currValue;
-        float scale = (float) UIManager.getInstance().getGuiScale();
+        float scale = (float) 3;
         float endX = Mth.clamp(target, 0, maxValue) * scale;
         targetValue = (int) endX / scale;
         this.duration = duration;
@@ -143,7 +143,7 @@ public class ScrollController {
         float lastTime = startTime;
         startTime = UIManager.getInstance().getElapsedTime();
         startValue = currValue;
-        float scale = (float) UIManager.getInstance().getGuiScale();
+        float scale = (float) 3;
         float end = Mth.clamp(target, 0, maxValue) * scale;
         targetValue = (int) end / scale;
         if (startValue == targetValue) {

@@ -16,13 +16,13 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.textmc;
+package icyllis.modernui.textmc;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.mixin.AccessFontRenderer;
 import icyllis.modernui.mixin.MixinClientLanguage;
-import icyllis.modernui.graphics.textmc.pipeline.TextRenderNode;
+import icyllis.modernui.textmc.pipeline.TextRenderNode;
 import icyllis.modernui.platform.RenderCore;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.StringSplitter;

@@ -62,7 +62,7 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
         this.width = width;
         this.height = height;
         init();
-        host.init(this, width, height);
+        host.start(this);
         MinecraftForge.EVENT_BUS.post(new GuiScreenEvent.InitGuiEvent.Post(this, buttons, this::widget, this::widget));
     }
 
@@ -71,7 +71,7 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
         this.width = width;
         this.height = height;
         init();
-        host.resize(width, height);
+        host.resize();
         MinecraftForge.EVENT_BUS.post(new GuiScreenEvent.InitGuiEvent.Post(this, buttons, this::widget, this::widget));
 
         /*ModernUI.LOGGER.debug("Scaled: {}x{} Framebuffer: {}x{} Window: {}x{}", width, height, minecraft.getMainWindow().getFramebufferWidth(),
@@ -85,15 +85,15 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
     }
 
     @Override
-    public void render(@Nonnull PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void render(@Nonnull PoseStack poseStack, int mouseX, int mouseY, float deltaTick) {
         //TODO configurable bg
-        renderBackground(matrixStack);
-        MinecraftForge.EVENT_BUS.post(new GuiContainerEvent.DrawBackground(this, matrixStack, mouseX, mouseY));
+        renderBackground(poseStack);
+        MinecraftForge.EVENT_BUS.post(new GuiContainerEvent.DrawBackground(this, poseStack, mouseX, mouseY));
         host.render();
     }
 
     @Override
-    protected void renderBg(@Nonnull PoseStack matrixStack, float partialTicks, int x, int y) {
+    protected void renderBg(@Nonnull PoseStack poseStack, float deltaTick, int x, int y) {
     }
 
     @Override
@@ -173,7 +173,7 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
     }
 
     @Override
-    public boolean charTyped(char codePoint, int modifiers) {
-        return host.sCharTyped(codePoint, modifiers);
+    public boolean charTyped(char ch, int modifiers) {
+        return host.charTyped(ch);
     }
 }
