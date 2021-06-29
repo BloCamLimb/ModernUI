@@ -80,18 +80,10 @@ public abstract class ViewGroup extends View implements ViewParent {
 
     @Override
     protected void dispatchDraw(@Nonnull Canvas canvas) {
-        final boolean doTranslate = (getScrollX() != 0 || getScrollY() != 0);
-        if (doTranslate) {
-            canvas.save();
-            canvas.translate(-getScrollX(), -getScrollY());
-        }
         final View[] views = mChildren;
         final int count = mChildrenCount;
         for (int i = 0; i < count; i++) {
-            views[i].draw(canvas);
-        }
-        if (doTranslate) {
-            canvas.restore();
+            views[i].draw(canvas, this);
         }
     }
 

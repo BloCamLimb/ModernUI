@@ -93,7 +93,7 @@ public final class UIManager {
     private final Minecraft minecraft = Minecraft.getInstance();
 
     // minecraft window
-    private final Window window = minecraft.getWindow();
+    private final Window mWindow = minecraft.getWindow();
 
     // root view
     private final ViewRootImpl mRoot = new ViewRootImpl();
@@ -141,7 +141,7 @@ public final class UIManager {
 
     private UIManager() {
         mAnimationCallback = AnimationHandler.init();
-        mFramebuffer = new Framebuffer(window.getWidth(), window.getHeight());
+        mFramebuffer = new Framebuffer(mWindow.getWidth(), mWindow.getHeight());
         mUiThread = new Thread(this::run, "UI thread");
         MinecraftForge.EVENT_BUS.register(this);
     }
@@ -293,13 +293,20 @@ public final class UIManager {
 
     @UiThread
     private void run() {
-        mRoot.setView(mDecor);
+        final Window window = mWindow;
+        final ViewRootImpl root = mRoot;
+        final GLCanvas canvas = mCanvas;
+        root.setView(mDecor);
+        ModernUI.LOGGER.info(MARKER, "View system installed");
         for (; ; ) {
             // holds the lock
             synchronized (mRenderLock) {
                 mAnimationCallback.accept(mFrameTimeMillis);
+
                 if (mTicks >= 150)
                     return;
+                canvas.reset(window.getWidth(), window.getHeight());
+
                 Paint paint = Paint.take();
                 paint.setStrokeWidth(6);
                 int c = (int) mElapsedTimeMillis / 300;
@@ -324,19 +331,19 @@ public final class UIManager {
                     }
                 }
                 //ModernUI.LOGGER.info(Arrays.toString(pts));
-                mCanvas.drawStripLines(pts, paint);
+                canvas.drawStripLines(pts, paint);
                 paint.setRGB(255, 180, 100);
-                mCanvas.drawCircle(90, 30, 6, paint);
-                mCanvas.drawCircle(150, 90, 6, paint);
-                mCanvas.drawCircle(210, 30, 6, paint);
-                mCanvas.drawCircle(270, 90, 6, paint);
-                mCanvas.drawCircle(330, 30, 6, paint);
-                mCanvas.drawCircle(390, 90, 6, paint);
-                mCanvas.drawCircle(450, 30, 6, paint);
-                mCanvas.drawCircle(510, 90, 6, paint);
-                mCanvas.drawCircle(570, 30, 6, paint);
+                canvas.drawCircle(90, 30, 6, paint);
+                canvas.drawCircle(150, 90, 6, paint);
+                canvas.drawCircle(210, 30, 6, paint);
+                canvas.drawCircle(270, 90, 6, paint);
+                canvas.drawCircle(330, 30, 6, paint);
+                canvas.drawCircle(390, 90, 6, paint);
+                canvas.drawCircle(450, 30, 6, paint);
+                canvas.drawCircle(510, 90, 6, paint);
+                canvas.drawCircle(570, 30, 6, paint);
 
-                mRoot.onDraw(mCanvas);
+                root.onDraw(canvas);
             }
             try {
                 mUiThread.join();
@@ -483,8 +490,8 @@ public final class UIManager {
         // and our framebuffer is totally a transparent layer
         RenderSystem.blendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
-        int width = window.getWidth();
-        int height = window.getHeight();
+        int width = mWindow.getWidth();
+        int height = mWindow.getHeight();
 
         Matrix4 projection = Matrix4.makeOrthographic(width, -height, 0, 2000);
         GLCanvas canvas = mCanvas;
@@ -495,6 +502,8 @@ public final class UIManager {
         // wait UI thread, if slow
         synchronized (mRenderLock) {
             // check if need redraw
+            final int oldVertexArray = glGetInteger(GL_VERTEX_ARRAY_BINDING);
+            final int oldProgram = glGetInteger(GL_CURRENT_PROGRAM);
             if (mTicks < 150) {
                 framebuffer.resize(width, height);
                 framebuffer.clearColorBuffer();
@@ -504,6 +513,8 @@ public final class UIManager {
                 RenderCore.flushRenderCalls();
                 canvas.render();
             }
+            glBindVertexArray(oldVertexArray);
+            glUseProgram(oldProgram);
         }
         int texture = framebuffer.getAttachedTextureRaw(GL_COLOR_ATTACHMENT0);
 
@@ -528,7 +539,7 @@ public final class UIManager {
         RenderSystem.bindTexture(0);
 
         GlStateManager._loadIdentity();
-        GlStateManager._ortho(0.0D, width / window.getGuiScale(), height / window.getGuiScale(),
+        GlStateManager._ortho(0.0D, width / mWindow.getGuiScale(), height / mWindow.getGuiScale(),
                 0.0D, 1000.0D, 3000.0D);
         GlStateManager._matrixMode(5888);
     }
@@ -579,8 +590,8 @@ public final class UIManager {
      */
     private void doLayout() {
         long startTime = Util.getNanos();
-        int width = window.getWidth();
-        int height = window.getHeight();
+        int width = mWindow.getWidth();
+        int height = mWindow.getHeight();
         int widthSpec = MeasureSpec.makeMeasureSpec(width, MeasureSpec.Mode.EXACTLY);
         int heightSpec = MeasureSpec.makeMeasureSpec(height, MeasureSpec.Mode.EXACTLY);
 

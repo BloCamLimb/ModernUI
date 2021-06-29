@@ -26,16 +26,22 @@ import javax.annotation.Nonnull;
  * A canvas is used to draw contents for View, using shaders, such as
  * rectangles, round rectangles, circular arcs, lines, images etc.
  * <p>
- * A canvas should contain a matrix stack, build vertex buffers and
- * uniform buffers, and record draw commands for each primitives. Besides,
- * it controls the depth buffer, the stencil buffer and multiple color
- * buffers. However, where to draw is undefined. Normally, all the contents
- * are eventually drawn to a custom framebuffer.
+ * A canvas contains a matrix/clip stack, build vertex/uniform buffers
+ * and record draw commands for each primitives. It also controls the
+ * color/stencil buffer. However, where to draw is undefined. For GUI,
+ * all the contents are eventually drawn to the UI framebuffer.
+ * <p>
+ * Note: there's no depth buffer in the UI framebuffer so depth test
+ * appears to be disabled. All layers are considered translucent and
+ * drawn from far to near, you cannot handle the z-order manually.
  *
  * @since Core 1.6
  */
 public abstract class Canvas {
 
+    /**
+     * You cannot create just a base Canvas since there's no software rendering.
+     */
     protected Canvas() {
     }
 
@@ -54,13 +60,18 @@ public abstract class Canvas {
     /**
      * This call balances a previous call to save(), and is used to remove all
      * modifications to the matrix/clip state since the last save call. It is
-     * an error to call restore() more times than save() was called.
+     * an error to call restore() more or less times than save() was called in
+     * the final state.
+     * <p>
+     * If current clip doesn't change, it won't generate overhead for modifying
+     * the stencil buffer.
      */
     public abstract void restore();
 
     /**
      * Returns the number of matrix/clip states on the Canvas' private stack.
-     * This will equal # save() calls - # restore() calls. Minimum value is 1.
+     * This will equal # save() calls - # restore() calls. The initial and
+     * minimum value are 1.
      */
     public abstract int getSaveCount();
 
@@ -69,11 +80,13 @@ public abstract class Canvas {
      * count reached saveCount. It is an error for saveCount to be less than 1.
      * <p>
      * Example:
+     * <pre>
      * int count = canvas.save();
      * ... // more calls potentially to save()
      * canvas.restoreToCount(count);
-     * // now the canvas is back in the same state it was before the initial
-     * // call to save().
+     * // now the canvas is back in the same state it
+     * // was before the initial call to save().
+     * </pre>
      *
      * @param saveCount The save level to restore to.
      */
@@ -113,7 +126,7 @@ public abstract class Canvas {
     /**
      * Premultiply the current matrix with the specified rotation.
      *
-     * @param degrees The amount to rotate, in degrees
+     * @param degrees The angle to rotate, in degrees
      */
     public abstract void rotate(float degrees);
 
@@ -132,8 +145,45 @@ public abstract class Canvas {
         translate(-px, -py);
     }
 
-    // WIP, use stencil test
-    private void clip() {
+    /**
+     * Intersect the current clip with the specified rectangle and updates
+     * the stencil buffer if changed, which is expressed in local coordinates.
+     * The clip bounds cannot be expanded unless restore() is called.
+     *
+     * @param left   The left side of the rectangle to intersect with the
+     *               current clip
+     * @param top    The top of the rectangle to intersect with the current clip
+     * @param right  The right side of the rectangle to intersect with the
+     *               current clip
+     * @param bottom The bottom of the rectangle to intersect with the current
+     *               clip
+     * @return true if the resulting clip is non-empty, otherwise, further
+     * drawing will be always quick rejected until restore() is called
+     */
+    public boolean clipRect(float left, float top, float right, float bottom) {
+        return true;
+    }
+
+    /**
+     * Return true if the specified rectangle, after being transformed by the
+     * current matrix, would lie completely outside of the current clip. Call
+     * this to check if an area you intend to draw into is clipped out (and
+     * therefore you can skip making the draw calls). Note that all drawing
+     * methods call this method by default.
+     *
+     * @param left   The left side of the rectangle to compare with the
+     *               current clip
+     * @param top    The top of the rectangle to compare with the current
+     *               clip
+     * @param right  The right side of the rectangle to compare with the
+     *               current clip
+     * @param bottom The bottom of the rectangle to compare with the
+     *               current clip
+     * @return true if the given rect (transformed by the canvas' matrix)
+     * intersecting with the maximum rect representing the canvas' clip is empty
+     */
+    public boolean quickReject(float left, float top, float right, float bottom) {
+        return false;
     }
 
     /**
@@ -174,7 +224,9 @@ public abstract class Canvas {
      * @param r     The rectangle to be drawn.
      * @param paint The paint used to draw the rectangle
      */
-    public abstract void drawRect(@Nonnull Rect r, @Nonnull Paint paint);
+    public void drawRect(@Nonnull Rect r, @Nonnull Paint paint) {
+        drawRect(r.left, r.top, r.right, r.bottom, paint);
+    }
 
     /**
      * Draw the specified Rect using the specified paint. The rectangle will be filled or framed
@@ -230,7 +282,7 @@ public abstract class Canvas {
      *               (count >> 2).
      * @param paint  The paint used to draw the lines
      */
-    public final void drawLines(@Nonnull float[] pts, int offset, int count, @Nonnull Paint paint) {
+    public void drawLines(@Nonnull float[] pts, int offset, int count, @Nonnull Paint paint) {
         if (offset + count > pts.length) {
             throw new IllegalArgumentException();
         }
@@ -266,7 +318,7 @@ public abstract class Canvas {
      *               ((count - 2) >> 1).
      * @param paint  The paint used to draw the lines
      */
-    public final void drawStripLines(@Nonnull float[] pts, int offset, int count, @Nonnull Paint paint) {
+    public void drawStripLines(@Nonnull float[] pts, int offset, int count, @Nonnull Paint paint) {
         if (offset + count > pts.length) {
             throw new IllegalArgumentException();
         }

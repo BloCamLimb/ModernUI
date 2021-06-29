@@ -19,6 +19,7 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.annotation.CallSuper;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.drawable.Drawable;
@@ -89,8 +90,11 @@ public class View {
      */
     private static final int PFLAG_HOVERED = 0x10000000;
 
+    private static final int PFLAG2_BACKGROUND_SIZE_CHANGED = 0x00000001;
+
     // private flags
     int mPrivateFlags;
+    int mPrivateFlags2;
 
     /**
      * View visibility.
@@ -177,7 +181,8 @@ public class View {
      * |--------|--------|--------|--------|
      */
     /**
-     * View flags
+     * The view flags hold various views states.
+     * <p>
      * {@link #setStateFlag(int, int)}
      */
     int mViewFlags;
@@ -268,53 +273,94 @@ public class View {
     /**
      * This method is called by ViewGroup.drawChild() to have each child view draw itself.
      */
-    void draw(@Nonnull Canvas canvas, @Nonnull ViewGroup parent) {
+    final void draw(@Nonnull Canvas canvas, @Nonnull ViewGroup parent) {
+        computeScroll();
+        int sx = mScrollX;
+        int sy = mScrollY;
 
+        int saveCount = canvas.save();
+        canvas.translate(mLeft - sx, mTop - sy);
+
+        draw(canvas);
+
+        canvas.restoreToCount(saveCount);
     }
 
     /**
-     * Raw draw method, do not override this
+     * Raw method that directly draws this view and its background, foreground,
+     * overlay and all children to the given canvas. When implementing a view,
+     * override {@link #onDraw(Canvas)} instead of this.
+     * <p>
+     * This is not the entry point for the view system to draw.
      *
      * @param canvas the canvas to draw content
      */
+    @CallSuper
     public void draw(@Nonnull Canvas canvas) {
-        if ((mViewFlags & VISIBILITY_MASK) == 0) {
+        drawBackground(canvas);
+
+        onDraw(canvas);
+
+        dispatchDraw(canvas);
+
+        onDrawForeground(canvas);
+    }
+
+    private void drawBackground(@Nonnull Canvas canvas) {
+        final Drawable background = mBackground;
+        if (background == null) {
+            return;
+        }
+        if ((mPrivateFlags2 & PFLAG2_BACKGROUND_SIZE_CHANGED) != 0) {
+            background.setBounds(0, 0, getWidth(), getHeight());
+            mPrivateFlags2 &= ~PFLAG2_BACKGROUND_SIZE_CHANGED;
+        }
+
+        final int scrollX = mScrollX;
+        final int scrollY = mScrollY;
+        if ((scrollX | scrollY) == 0) {
+            background.draw(canvas);
+        } else {
             canvas.save();
-            canvas.translate(mLeft, mTop);
-
-            onDraw(canvas);
-
-            dispatchDraw(canvas);
-
-            //TODO Draw scrollbars
-            if (verticalScrollBar != null) {
-                verticalScrollBar.draw(canvas);
-            }
+            canvas.translate(scrollX, scrollY);
+            background.draw(canvas);
             canvas.restore();
         }
     }
 
     /**
-     * Draw this view if visible
-     * Before you draw in the method, you have to call {@link CanvasForge#moveTo(View)},
-     * (0, 0) will be the top left of the bounds,
-     * (width, height) will be the bottom right of the bounds.
-     * See {@link #getWidth()}
-     * See {@link #getHeight()}
+     * Draw the content of this view, implement this to do your drawing.
+     * <p>
+     * Note that (0, 0) will be the top left of the bounds, and (width, height)
+     * will be the bottom right of the bounds.
      *
-     * @param canvas canvas to draw content
+     * @param canvas the canvas to draw content
      */
     protected void onDraw(@Nonnull Canvas canvas) {
-
     }
 
     /**
-     * Draw child views if visible
+     * Draw the child views.
      *
-     * @param canvas canvas to draw content
+     * @param canvas the canvas to draw content
      */
     protected void dispatchDraw(@Nonnull Canvas canvas) {
+    }
 
+    /**
+     * Draw any foreground content for this view.
+     * <p>
+     * Foreground content may consist of scroll bars, a {@link #setForeground foreground}
+     * drawable or other view-specific decorations. The foreground is drawn on top of the
+     * primary view content.
+     *
+     * @param canvas the canvas to draw content
+     */
+    //TODO foreground
+    public void onDrawForeground(@Nonnull Canvas canvas) {
+        if (verticalScrollBar != null) {
+            verticalScrollBar.draw(canvas);
+        }
     }
 
     /**
@@ -322,6 +368,7 @@ public class View {
      *
      * @param ticks elapsed ticks from a gui open, 20 tick = 1 second
      */
+    @Deprecated
     protected void tick(int ticks) {
 
     }
@@ -918,18 +965,18 @@ public class View {
     }
 
     /**
-     * Get view current layout width
+     * Get the width of the view.
      *
-     * @return width
+     * @return the width in pixels
      */
     public final int getWidth() {
         return mRight - mLeft;
     }
 
     /**
-     * Get view current layout height
+     * Get the height of the view.
      *
-     * @return height
+     * @return the height in pixels
      */
     public final int getHeight() {
         return mBottom - mTop;
@@ -1094,12 +1141,13 @@ public class View {
      * touched.
      *
      * @param background The Drawable to use as the background, or null to remove the
-     *        background
+     *                   background
      */
     public void setBackground(@Nullable Drawable background) {
         if (background == mBackground) {
             return;
         }
+        mBackground = background;
     }
 
     /**
@@ -1114,8 +1162,8 @@ public class View {
             throw new IllegalArgumentException("Location array length must be two at least");
         }
 
-        float x = mLeft;
-        float y = mTop;
+        int x = mLeft;
+        int y = mTop;
 
         ViewParent parent = this.mParent;
         while (parent != null) {
@@ -1124,8 +1172,8 @@ public class View {
             parent = parent.getParent();
         }
 
-        location[0] = (int) x;
-        location[1] = (int) y;
+        location[0] = x;
+        location[1] = y;
     }
 
     /**
@@ -1168,6 +1216,14 @@ public class View {
         }
         return false;
     }*/
+
+    /**
+     * Called by a parent to request that a child update its values for mScrollX
+     * and mScrollY if necessary. This will typically be done if the child is
+     * animating a scroll using a Scroller.
+     */
+    public void computeScroll() {
+    }
 
     /**
      * Starts a drag and drop operation. This method passes a {@link DragShadow} object to
