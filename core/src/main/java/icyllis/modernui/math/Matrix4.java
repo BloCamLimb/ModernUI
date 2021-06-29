@@ -1221,6 +1221,26 @@ public class Matrix4 implements Cloneable {
         vec.z = z;
     }
 
+    /**
+     * Get the maximum bounds after transforming the rect bounds.
+     *
+     * @param r the rect to transform
+     */
+    public void transform(@Nonnull RectF r) {
+        float x1 = m11 * r.left + m12 * r.top + m14;
+        float y1 = m21 * r.left + m22 * r.top + m24;
+        float x2 = m11 * r.right + m12 * r.top + m14;
+        float y2 = m21 * r.right + m22 * r.top + m24;
+        float x3 = m11 * r.left + m12 * r.bottom + m14;
+        float y3 = m21 * r.left + m22 * r.bottom + m24;
+        float x4 = m11 * r.right + m12 * r.bottom + m14;
+        float y4 = m21 * r.right + m22 * r.bottom + m24;
+        r.left = Math.min(x1, Math.min(x2, Math.min(x3, x4)));
+        r.top = Math.min(y1, Math.min(y2, Math.min(y3, y4)));
+        r.right = Math.max(x1, Math.max(x2, Math.max(x3, x4)));
+        r.bottom = Math.max(y1, Math.max(y2, Math.max(y3, y4)));
+    }
+
     public boolean isAffine() {
         return m14 == 0.0f && m24 == 0.0f && m34 == 0.0f && m44 == 1.0f;
     }

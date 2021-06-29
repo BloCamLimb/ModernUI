@@ -24,9 +24,9 @@ import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.ast.Node;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.shader.ShaderManager;
 import icyllis.modernui.graphics.texture.Texture2D;
 import icyllis.modernui.math.MathUtil;
@@ -47,8 +47,10 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import static icyllis.modernui.graphics.GLWrapper.GL_RGB8;
@@ -113,7 +115,6 @@ public class TestMain {
     }
 
 
-
     public static void main(String[] args) throws InterruptedException {
         /*String s = "\u0641\u0647\u0648\u064a\u062a\u062d\u062f\u0651\u062b\u0020\u0628\u0644\u063a\u0629\u0020";
         Font font = ALL_FONTS.stream().filter(f -> f.canDisplayUpTo("\u0641\u0647\u0648") == -1).findFirst().get();
@@ -151,8 +152,6 @@ public class TestMain {
         mat.translate(-2, 0, 0);
         pos.transform(mat);
 
-
-
         //ModernUI.LOGGER.info(MathUtil.atan2(-1, -1));
         //ModernUI.LOGGER.info(pos);
         /*try {
@@ -173,9 +172,9 @@ public class TestMain {
                 RenderSystem.initRenderThread();
                 GLCanvas canvas = GLCanvas.initialize();
                 ShaderManager.getInstance().reload();
-                //Matrix4.makePerspective(MathUtil.PI_DIV_2, window.getAspectRatio(), 0.001f, 1000);
                 // OpenGL coordinates origin is "bottom" left, we flip it
                 Matrix4 projection = Matrix4.makeOrthographic(window.getWidth(), -window.getHeight(), 0, 2000);
+                //projection = Matrix4.makePerspective(MathUtil.PI_DIV_2, window.getAspectRatio(), 0.01f, 1000);
                 canvas.setProjection(projection);
 
                 Image image;
@@ -205,10 +204,11 @@ public class TestMain {
                         //RenderSystem.disableDepthTest();
                         //GlStateManager._colorMask(true, true, true, true);
                         //RenderSystem.depthMask(false);
-
+                        canvas.reset(window.getWidth(), window.getHeight());
                         // UI thread
                         canvas.save();
-                        canvas.rotate(-10, 640, 360);
+
+                        //canvas.rotate(-10, 640, 360);
                         //canvas.scale(5, 5);
                         Paint paint = Paint.take();
                         paint.setSmoothRadius(3);

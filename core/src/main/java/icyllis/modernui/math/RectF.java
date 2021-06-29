@@ -22,22 +22,22 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * Represents a rectangle.
+ * Represents a rectangle holding four float coordinates.
  */
 @SuppressWarnings("unused")
-public class Rect {
+public class RectF {
 
-    private static final ThreadLocal<Rect> TLS = ThreadLocal.withInitial(Rect::new);
+    private static final ThreadLocal<RectF> TLS = ThreadLocal.withInitial(RectF::new);
 
-    public int left;
-    public int top;
-    public int right;
-    public int bottom;
+    public float left;
+    public float top;
+    public float right;
+    public float bottom;
 
     /**
-     * Create a new Rect with all coordinates initialized to 0.
+     * Create a new empty RectF. All coordinates are initialized to 0.
      */
-    public Rect() {
+    public RectF() {
     }
 
     /**
@@ -50,22 +50,31 @@ public class Rect {
      * @param right  The X coordinate of the right side of the rectangle
      * @param bottom The Y coordinate of the bottom of the rectangle
      */
-    public Rect(int left, int top, int right, int bottom) {
+    public RectF(float left, float top, float right, float bottom) {
         this.left = left;
         this.top = top;
         this.right = right;
         this.bottom = bottom;
     }
 
+    public RectF(@Nullable Rect r) {
+        if (r != null) {
+            left = r.left;
+            top = r.top;
+            right = r.right;
+            bottom = r.bottom;
+        }
+    }
+
     /**
-     * Get the thread local Rect. Do not cache this object or make
+     * Get the thread local RectF. Do not cache this object or make
      * it a member variable, this is only intended for temporary
      * calculation in method stack to avoid new object construction.
      *
      * @return the thread-local instance
      */
     @Nonnull
-    public static Rect get() {
+    public static RectF get() {
         return TLS.get();
     }
 
@@ -76,8 +85,8 @@ public class Rect {
      * @param r the rect to copy from
      */
     @Nonnull
-    public static Rect copy(@Nullable Rect r) {
-        return r == null ? new Rect() : r.copy();
+    public static RectF copy(@Nullable RectF r) {
+        return r == null ? new RectF() : r.copy();
     }
 
     /**
@@ -91,7 +100,7 @@ public class Rect {
      * @return the rectangle's width. This does not check for a valid rectangle
      * (i.e. left <= right) so the result may be negative.
      */
-    public final int width() {
+    public final float width() {
         return right - left;
     }
 
@@ -99,39 +108,23 @@ public class Rect {
      * @return the rectangle's height. This does not check for a valid rectangle
      * (i.e. top <= bottom) so the result may be negative.
      */
-    public final int height() {
+    public final float height() {
         return bottom - top;
     }
 
     /**
-     * @return the horizontal center of the rectangle. If the computed value
-     * is fractional, this method returns the largest integer that is
-     * less than the computed value.
+     * @return the horizontal center of the rectangle. This does not check for
+     * a valid rectangle (i.e. left <= right)
      */
-    public final int centerX() {
-        return (left + right) >> 1;
-    }
-
-    /**
-     * @return the vertical center of the rectangle. If the computed value
-     * is fractional, this method returns the largest integer that is
-     * less than the computed value.
-     */
-    public final int centerY() {
-        return (top + bottom) >> 1;
-    }
-
-    /**
-     * @return the exact horizontal center of the rectangle as a float.
-     */
-    public final float exactCenterX() {
+    public final float centerX() {
         return (left + right) * 0.5f;
     }
 
     /**
-     * @return the exact vertical center of the rectangle as a float.
+     * @return the vertical center of the rectangle. This does not check for
+     * a valid rectangle (i.e. top <= bottom)
      */
-    public final float exactCenterY() {
+    public final float centerY() {
         return (top + bottom) * 0.5f;
     }
 
@@ -152,11 +145,24 @@ public class Rect {
      * @param right  The X coordinate of the right side of the rectangle
      * @param bottom The Y coordinate of the bottom of the rectangle
      */
-    public void set(int left, int top, int right, int bottom) {
+    public void set(float left, float top, float right, float bottom) {
         this.left = left;
         this.top = top;
         this.right = right;
         this.bottom = bottom;
+    }
+
+    /**
+     * Copy the coordinates from src into this rectangle.
+     *
+     * @param src The rectangle whose coordinates are copied into this
+     *            rectangle.
+     */
+    public void set(@Nonnull RectF src) {
+        this.left = src.left;
+        this.top = src.top;
+        this.right = src.right;
+        this.bottom = src.bottom;
     }
 
     /**
@@ -179,7 +185,7 @@ public class Rect {
      * @param dx The amount to add to the rectangle's left and right coordinates
      * @param dy The amount to add to the rectangle's top and bottom coordinates
      */
-    public void offset(int dx, int dy) {
+    public void offset(float dx, float dy) {
         left += dx;
         top += dy;
         right += dx;
@@ -193,7 +199,7 @@ public class Rect {
      * @param newLeft The new "left" coordinate for the rectangle
      * @param newTop  The new "top" coordinate for the rectangle
      */
-    public void offsetTo(int newLeft, int newTop) {
+    public void offsetTo(float newLeft, float newTop) {
         right += newLeft - left;
         bottom += newTop - top;
         left = newLeft;
@@ -209,39 +215,11 @@ public class Rect {
      * @param dx The amount to add(subtract) from the rectangle's left(right)
      * @param dy The amount to add(subtract) from the rectangle's top(bottom)
      */
-    public void inset(int dx, int dy) {
+    public void inset(float dx, float dy) {
         left += dx;
         top += dy;
         right -= dx;
         bottom -= dy;
-    }
-
-    /**
-     * Insets the rectangle on all sides specified by the dimensions of the {@code insets}
-     * rectangle.
-     *
-     * @param insets The rectangle specifying the insets on all side.
-     */
-    public void inset(@Nonnull Rect insets) {
-        left += insets.left;
-        top += insets.top;
-        right -= insets.right;
-        bottom -= insets.bottom;
-    }
-
-    /**
-     * Insets the rectangle on all sides specified by the insets.
-     *
-     * @param left   The amount to add from the rectangle's left
-     * @param top    The amount to add from the rectangle's top
-     * @param right  The amount to subtract from the rectangle's right
-     * @param bottom The amount to subtract from the rectangle's bottom
-     */
-    public void inset(int left, int top, int right, int bottom) {
-        this.left += left;
-        this.top += top;
-        this.right -= right;
-        this.bottom -= bottom;
     }
 
     /**
@@ -255,7 +233,7 @@ public class Rect {
      * @return true iff (x,y) are contained by the rectangle, where containment
      * means left <= x < right and top <= y < bottom
      */
-    public boolean contains(int x, int y) {
+    public boolean contains(float x, float y) {
         return left < right && top < bottom  // check for empty first
                 && x >= left && x < right && y >= top && y < bottom;
     }
@@ -272,7 +250,7 @@ public class Rect {
      * @return true iff the the 4 specified sides of a rectangle are inside or
      * equal to this rectangle
      */
-    public boolean contains(int left, int top, int right, int bottom) {
+    public boolean contains(float left, float top, float right, float bottom) {
         // check for empty first
         return this.left < this.right && this.top < this.bottom
                 // now check for containment
@@ -285,14 +263,15 @@ public class Rect {
      * rectangle. An empty rectangle never contains another rectangle.
      *
      * @param r The rectangle being tested for containment.
-     * @return true if the specified rectangle r is inside or equal to this
+     * @return true iff the specified rectangle r is inside or equal to this
      * rectangle
      */
-    public boolean contains(@Nonnull Rect r) {
+    public boolean contains(@Nonnull RectF r) {
         // check for empty first
         return this.left < this.right && this.top < this.bottom
                 // now check for containment
-                && left <= r.left && top <= r.top && right >= r.right && bottom >= r.bottom;
+                && left <= r.left && top <= r.top
+                && right >= r.right && bottom >= r.bottom;
     }
 
     /**
@@ -300,7 +279,7 @@ public class Rect {
      * rectangle, return true and set this rectangle to that intersection,
      * otherwise return false and do not change this rectangle. No check is
      * performed to see if either rectangle is empty. Note: To just test for
-     * intersection, use {@link #intersects(Rect, Rect)}.
+     * intersection, use intersects()
      *
      * @param left   The left side of the rectangle being intersected with this
      *               rectangle
@@ -313,12 +292,21 @@ public class Rect {
      * (and this rectangle is then set to that intersection) else
      * return false and do not change this rectangle.
      */
-    public boolean intersect(int left, int top, int right, int bottom) {
-        if (this.left < right && left < this.right && this.top < bottom && top < this.bottom) {
-            if (this.left < left) this.left = left;
-            if (this.top < top) this.top = top;
-            if (this.right > right) this.right = right;
-            if (this.bottom > bottom) this.bottom = bottom;
+    public boolean intersect(float left, float top, float right, float bottom) {
+        if (this.left < right && left < this.right
+                && this.top < bottom && top < this.bottom) {
+            if (this.left < left) {
+                this.left = left;
+            }
+            if (this.top < top) {
+                this.top = top;
+            }
+            if (this.right > right) {
+                this.right = right;
+            }
+            if (this.bottom > bottom) {
+                this.bottom = bottom;
+            }
             return true;
         }
         return false;
@@ -335,21 +323,8 @@ public class Rect {
      * (and this rectangle is then set to that intersection) else
      * return false and do not change this rectangle.
      */
-    public boolean intersect(@Nonnull Rect r) {
+    public boolean intersect(@Nonnull RectF r) {
         return intersect(r.left, r.top, r.right, r.bottom);
-    }
-
-    /**
-     * If the specified rectangle intersects this rectangle, set this rectangle to that
-     * intersection, otherwise set this rectangle to the empty rectangle.
-     *
-     * @see #inset(int, int, int, int) but without checking if the rects overlap.
-     */
-    public void intersectUnchecked(@Nonnull Rect other) {
-        left = Math.max(left, other.left);
-        top = Math.max(top, other.top);
-        right = Math.min(right, other.right);
-        bottom = Math.min(bottom, other.bottom);
     }
 
     /**
@@ -364,8 +339,9 @@ public class Rect {
      * this rectangle to that intersection. If they do not, return
      * false and do not change this rectangle.
      */
-    public boolean setIntersect(@Nonnull Rect a, @Nonnull Rect b) {
-        if (a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom) {
+    public boolean setIntersect(@Nonnull RectF a, @Nonnull RectF b) {
+        if (a.left < b.right && b.left < a.right
+                && a.top < b.bottom && b.top < a.bottom) {
             left = Math.max(a.left, b.left);
             top = Math.max(a.top, b.top);
             right = Math.min(a.right, b.right);
@@ -389,22 +365,43 @@ public class Rect {
      * @return true iff the specified rectangle intersects this rectangle. In
      * no event is this rectangle modified.
      */
-    public boolean intersects(int left, int top, int right, int bottom) {
-        return this.left < right && left < this.right && this.top < bottom && top < this.bottom;
+    public boolean intersects(float left, float top, float right,
+                              float bottom) {
+        return this.left < right && left < this.right
+                && this.top < bottom && top < this.bottom;
     }
 
     /**
      * Returns true iff the two specified rectangles intersect. In no event are
      * either of the rectangles modified. To record the intersection,
-     * use {@link #intersect(Rect)} or {@link #setIntersect(Rect, Rect)}.
+     * use intersect() or setIntersect().
      *
      * @param a The first rectangle being tested for intersection
      * @param b The second rectangle being tested for intersection
      * @return true iff the two specified rectangles intersect. In no event are
      * either of the rectangles modified.
      */
-    public static boolean intersects(@Nonnull Rect a, @Nonnull Rect b) {
-        return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+    public static boolean intersects(@Nonnull RectF a, @Nonnull RectF b) {
+        return a.left < b.right && b.left < a.right
+                && a.top < b.bottom && b.top < a.bottom;
+    }
+
+    /**
+     * Set the dst integer Rect by rounding this rectangle's coordinates
+     * to their nearest integer values.
+     */
+    public void round(@Nonnull Rect dst) {
+        dst.set(Math.round(left), Math.round(top),
+                Math.round(right), Math.round(bottom));
+    }
+
+    /**
+     * Set the dst integer Rect by rounding "out" this rectangle, choosing the
+     * floor of top and left, and the ceiling of right and bottom.
+     */
+    public void roundOut(@Nonnull Rect dst) {
+        dst.set((int) Math.floor(left), (int) Math.floor(top),
+                (int) Math.ceil(right), (int) Math.ceil(bottom));
     }
 
     /**
@@ -417,13 +414,17 @@ public class Rect {
      * @param right  The right edge being unioned with this rectangle
      * @param bottom The bottom edge being unioned with this rectangle
      */
-    public void union(int left, int top, int right, int bottom) {
+    public void union(float left, float top, float right, float bottom) {
         if ((left < right) && (top < bottom)) {
             if ((this.left < this.right) && (this.top < this.bottom)) {
-                if (this.left > left) this.left = left;
-                if (this.top > top) this.top = top;
-                if (this.right < right) this.right = right;
-                if (this.bottom < bottom) this.bottom = bottom;
+                if (this.left > left)
+                    this.left = left;
+                if (this.top > top)
+                    this.top = top;
+                if (this.right < right)
+                    this.right = right;
+                if (this.bottom < bottom)
+                    this.bottom = bottom;
             } else {
                 this.left = left;
                 this.top = top;
@@ -440,7 +441,7 @@ public class Rect {
      *
      * @param r The rectangle being unioned with this rectangle
      */
-    public void union(@Nonnull Rect r) {
+    public void union(@Nonnull RectF r) {
         union(r.left, r.top, r.right, r.bottom);
     }
 
@@ -451,7 +452,7 @@ public class Rect {
      * @param x The x coordinate of the point to add to the rectangle
      * @param y The y coordinate of the point to add to the rectangle
      */
-    public void union(int x, int y) {
+    public void union(float x, float y) {
         if (x < left) {
             left = x;
         } else if (x > right) {
@@ -473,12 +474,12 @@ public class Rect {
      */
     public void sort() {
         if (left > right) {
-            int temp = left;
+            float temp = left;
             left = right;
             right = temp;
         }
         if (top > bottom) {
-            int temp = top;
+            float temp = top;
             top = bottom;
             bottom = temp;
         }
@@ -488,28 +489,28 @@ public class Rect {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Rect rect = (Rect) o;
-        return left == rect.left && top == rect.top && right == rect.right && bottom == rect.bottom;
+
+        RectF r = (RectF) o;
+        return left == r.left && top == r.top && right == r.right && bottom == r.bottom;
     }
 
     @Override
     public int hashCode() {
-        int result = left;
-        result = 31 * result + top;
-        result = 31 * result + right;
-        result = 31 * result + bottom;
+        int result = (left != +0.0f ? Float.floatToIntBits(left) : 0);
+        result = 31 * result + (top != +0.0f ? Float.floatToIntBits(top) : 0);
+        result = 31 * result + (right != +0.0f ? Float.floatToIntBits(right) : 0);
+        result = 31 * result + (bottom != +0.0f ? Float.floatToIntBits(bottom) : 0);
         return result;
     }
 
     @Override
     public String toString() {
-        return "Rect(" + left + ", " +
-                top + " - " + right +
-                ", " + bottom + ")";
+        return "RectF(" + left + ", " + top + ", "
+                + right + ", " + bottom + ")";
     }
 
     @Nonnull
-    public Rect copy() {
-        return new Rect(left, top, right, bottom);
+    public RectF copy() {
+        return new RectF(left, top, right, bottom);
     }
 }

@@ -28,6 +28,7 @@ import icyllis.modernui.graphics.vertex.VertexFormat;
 import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
+import icyllis.modernui.math.RectF;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
@@ -36,6 +37,7 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
+import javax.annotation.concurrent.NotThreadSafe;
 import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -49,14 +51,17 @@ import static icyllis.modernui.graphics.GLWrapper.*;
  * <p>
  * This helps to build OpenGL buffers from UI thread, using multiple vertex
  * array objects, uniform buffer objects and vertex buffer objects. Later
- * calls OpenGL functions on render thread.
+ * calls OpenGL functions on render thread. Since GLCanvas is highly integrated,
+ * you can't draw other things except those defined in Canvas easily.
  */
+@NotThreadSafe
 public final class GLCanvas extends Canvas {
 
     private static GLCanvas INSTANCE;
 
-    // we have only one instance
+    // we have only one instance called on UI thread only
     private static final Pool<Matrix4> sMatrixPool = Pools.simple(20);
+    private static final Pool<Rect> sClipPool = Pools.simple(20);
 
     /**
      * Uniform block binding points
@@ -130,17 +135,21 @@ public final class GLCanvas extends Canvas {
     }
 
     private final Deque<Matrix4> mMatrixStack = new ArrayDeque<>();
+    private final Deque<Rect> mClipStack = new ArrayDeque<>();
 
     private final IntList mDrawStates = new IntArrayList();
 
     private int mPosColorVBO = INVALID_ID;
     private ByteBuffer mPosColorData = MemoryUtil.memAlloc(1024);
+    private boolean mRecreatePosColor = true;
 
     private int mPosColorTexVBO = INVALID_ID;
     private ByteBuffer mPosColorTexData = MemoryUtil.memAlloc(1024);
+    private boolean mRecreatePosColorTex = true;
 
     private int mModelViewVBO = INVALID_ID;
     private ByteBuffer mModelViewData = MemoryUtil.memAlloc(1024);
+    private boolean mRecreateModelView = true;
 
     private final int mProjectionUBO;
 
@@ -153,6 +162,9 @@ public final class GLCanvas extends Canvas {
     private int mCurrProgram;
 
     private final List<Texture2D> mTextures = new ArrayList<>();
+
+    // the actual clip depth
+    private int mClipRef = 0;
 
     private GLCanvas() {
         mProjectionUBO = glCreateBuffers();
@@ -168,6 +180,7 @@ public final class GLCanvas extends Canvas {
         glNamedBufferStorage(mArcUBO, ARC_UNIFORM_SIZE, GL_DYNAMIC_STORAGE_BIT);
 
         mMatrixStack.push(Matrix4.identity());
+        mClipStack.push(new Rect());
 
         ShaderManager.getInstance().addListener(this::onLoadShaders);
     }
@@ -177,13 +190,14 @@ public final class GLCanvas extends Canvas {
         RenderCore.checkRenderThread();
         if (INSTANCE == null) {
             INSTANCE = new GLCanvas();
+            // for instanced-rendering
             POS_COLOR.setBindingDivisor(INSTANCED_BINDING, 1);
             POS_COLOR_TEX.setBindingDivisor(INSTANCED_BINDING, 1);
         }
         return INSTANCE;
     }
 
-    // internal use
+    // exposed for internal use, be aware of the thread-safety
     public static GLCanvas getInstance() {
         return INSTANCE;
     }
@@ -192,8 +206,8 @@ public final class GLCanvas extends Canvas {
         int posColor = manager.getShard(ModernUI.get(), "pos_color.vert");
         int posColorTex = manager.getShard(ModernUI.get(), "pos_color_tex.vert");
 
-        int fill = manager.getShard(ModernUI.get(), "color_fill.frag");
-        int tex = manager.getShard(ModernUI.get(), "color_tex.frag");
+        int colorFill = manager.getShard(ModernUI.get(), "color_fill.frag");
+        int colorTex = manager.getShard(ModernUI.get(), "color_tex.frag");
         int roundRectFill = manager.getShard(ModernUI.get(), "round_rect_fill.frag");
         int roundRectTex = manager.getShard(ModernUI.get(), "round_rect_tex.frag");
         int roundRectStroke = manager.getShard(ModernUI.get(), "round_rect_stroke.frag");
@@ -202,8 +216,8 @@ public final class GLCanvas extends Canvas {
         int arcFill = manager.getShard(ModernUI.get(), "arc_fill.frag");
         int arcStroke = manager.getShard(ModernUI.get(), "arc_stroke.frag");
 
-        manager.create(COLOR_FILL, posColor, fill);
-        manager.create(COLOR_TEX, posColorTex, tex);
+        manager.create(COLOR_FILL, posColor, colorFill);
+        manager.create(COLOR_TEX, posColorTex, colorTex);
         manager.create(ROUND_RECT_FILL, posColor, roundRectFill);
         manager.create(ROUND_RECT_TEX, posColorTex, roundRectTex);
         manager.create(ROUND_RECT_STROKE, posColor, roundRectStroke);
@@ -221,14 +235,25 @@ public final class GLCanvas extends Canvas {
      * @param projection the project matrix to replace current one
      */
     @RenderThread
-    public void setProjection(Matrix4 projection) {
+    public void setProjection(@Nonnull Matrix4 projection) {
         RenderCore.checkRenderThread();
         ByteBuffer buffer = glMapNamedBuffer(mProjectionUBO, GL_WRITE_ONLY);
         if (buffer == null) {
-            throw new IllegalStateException();
+            throw new IllegalStateException("You don't have GL_MAP_WRITE_BIT bit flag");
         }
         projection.get(buffer);
         glUnmapNamedBuffer(mProjectionUBO);
+    }
+
+    /**
+     * Resets the clip bounds and matrix.
+     *
+     * @param width  the width in pixels
+     * @param height the height in pixels
+     */
+    public void reset(int width, int height) {
+        getMatrix().setIdentity();
+        getClip().set(0, 0, width, height);
     }
 
     private void bindVertexArray(@Nonnull VertexFormat format) {
@@ -264,12 +289,12 @@ public final class GLCanvas extends Canvas {
         glBindBufferBase(GL_UNIFORM_BUFFER, CIRCLE_BINDING, mCircleUBO);
         glBindBufferBase(GL_UNIFORM_BUFFER, ARC_BINDING, mArcUBO);
 
-        final int prevVAO = glGetInteger(GL_VERTEX_ARRAY_BINDING);
-        final int prevProgram = glGetInteger(GL_CURRENT_PROGRAM);
-        mCurrVertexArray = prevVAO;
-        mCurrProgram = prevProgram;
+        mCurrVertexArray = 0;
+        mCurrProgram = 0;
 
-        long uniformDataPtr = MemoryUtil.memAddress(mUniformData.flip());
+        mUniformData.flip();
+
+        long uniformDataPtr = MemoryUtil.memAddress(mUniformData);
 
         // base instance
         int instance = 0;
@@ -365,75 +390,61 @@ public final class GLCanvas extends Canvas {
             instance++;
         }
 
-        glBindVertexArray(prevVAO);
-        glUseProgram(prevProgram);
-
         mTextures.clear();
         mUniformData.clear();
         mDrawStates.clear();
     }
 
     private void uploadBuffers() {
-        if (mPosColorVBO == INVALID_ID) {
-            createPosColorVBO();
-        } else {
-            int size = glGetNamedBufferParameteri(mPosColorVBO, GL_BUFFER_SIZE);
-            if (size < mPosColorData.capacity()) {
-                createPosColorVBO();
-            }
-        }
+        ensurePosColorVBO();
         mPosColorData.flip();
         glNamedBufferSubData(mPosColorVBO, 0, mPosColorData);
         mPosColorData.clear();
 
-        if (mPosColorTexVBO == INVALID_ID) {
-            createPosColorTexVBO();
-        } else {
-            int size = glGetNamedBufferParameteri(mPosColorTexVBO, GL_BUFFER_SIZE);
-            if (size < mPosColorTexData.capacity()) {
-                createPosColorTexVBO();
-            }
-        }
+        ensurePosColorTexVBO();
         mPosColorTexData.flip();
         glNamedBufferSubData(mPosColorTexVBO, 0, mPosColorTexData);
         mPosColorTexData.clear();
 
-        if (mModelViewVBO == INVALID_ID) {
-            createModelViewVBO();
-        } else {
-            int size = glGetNamedBufferParameteri(mModelViewVBO, GL_BUFFER_SIZE);
-            if (size < mModelViewData.capacity()) {
-                createModelViewVBO();
-            }
-        }
+        ensureModelViewVBO();
         mModelViewData.flip();
         glNamedBufferSubData(mModelViewVBO, 0, mModelViewData);
         mModelViewData.clear();
     }
 
-    private void createPosColorVBO() {
+    private void ensurePosColorVBO() {
+        if (!mRecreatePosColor)
+            return;
         mPosColorVBO = glCreateBuffers();
         glNamedBufferStorage(mPosColorVBO, mPosColorData.capacity(), GL_DYNAMIC_STORAGE_BIT);
         POS_COLOR.setVertexBuffer(GENERIC_BINDING, mPosColorVBO, 0);
+        mRecreatePosColor = false;
     }
 
-    private void createPosColorTexVBO() {
+    private void ensurePosColorTexVBO() {
+        if (!mRecreatePosColorTex)
+            return;
         mPosColorTexVBO = glCreateBuffers();
         glNamedBufferStorage(mPosColorTexVBO, mPosColorTexData.capacity(), GL_DYNAMIC_STORAGE_BIT);
         POS_COLOR_TEX.setVertexBuffer(GENERIC_BINDING, mPosColorTexVBO, 0);
+        mRecreatePosColorTex = false;
     }
 
-    private void createModelViewVBO() {
+    private void ensureModelViewVBO() {
+        if (!mRecreateModelView)
+            return;
         mModelViewVBO = glCreateBuffers();
         glNamedBufferStorage(mModelViewVBO, mModelViewData.capacity(), GL_DYNAMIC_STORAGE_BIT);
         // configure
         POS_COLOR.setVertexBuffer(INSTANCED_BINDING, mModelViewVBO, 0);
         POS_COLOR_TEX.setVertexBuffer(INSTANCED_BINDING, mModelViewVBO, 0);
+        mRecreateModelView = false;
     }
 
     private ByteBuffer checkPosColorBuffer() {
         if (mPosColorData.remaining() < 256) {
             mPosColorData = MemoryUtil.memRealloc(mPosColorData, mPosColorData.capacity() << 1);
+            mRecreatePosColor = true;
             ModernUI.LOGGER.debug("Resize pos color buffer to {} bytes", mPosColorData.capacity());
         }
         return mPosColorData;
@@ -442,6 +453,7 @@ public final class GLCanvas extends Canvas {
     private ByteBuffer checkPosColorTexBuffer() {
         if (mPosColorTexData.remaining() < 256) {
             mPosColorTexData = MemoryUtil.memRealloc(mPosColorTexData, mPosColorTexData.capacity() << 1);
+            mRecreatePosColorTex = true;
             ModernUI.LOGGER.debug("Resize pos color tex buffer to {} bytes", mPosColorTexData.capacity());
         }
         return mPosColorTexData;
@@ -458,6 +470,7 @@ public final class GLCanvas extends Canvas {
     private ByteBuffer checkModelViewBuffer() {
         if (mModelViewData.remaining() < 64) {
             mModelViewData = MemoryUtil.memRealloc(mModelViewData, mModelViewData.capacity() << 1);
+            mRecreateModelView = true;
             ModernUI.LOGGER.debug("Resize model view buffer to {} bytes", mModelViewData.capacity());
         }
         return mModelViewData;
@@ -468,9 +481,16 @@ public final class GLCanvas extends Canvas {
         return mMatrixStack.getFirst();
     }
 
+    // this is only the maximum clip bounds transformed by current model view matrix
+    @Nonnull
+    private Rect getClip() {
+        return mClipStack.getFirst();
+    }
+
     @Override
     public int save() {
         int saveCount = getSaveCount();
+
         Matrix4 m = sMatrixPool.acquire();
         if (m == null) {
             m = getMatrix().copy();
@@ -478,15 +498,30 @@ public final class GLCanvas extends Canvas {
             m.set(getMatrix());
         }
         mMatrixStack.push(m);
+
+        Rect r = sClipPool.acquire();
+        if (r == null) {
+            r = getClip().copy();
+        } else {
+            r.set(getClip());
+        }
+        mClipStack.push(r);
+
         return saveCount;
     }
 
     @Override
     public void restore() {
         sMatrixPool.release(mMatrixStack.pop());
+        Rect last = mClipStack.pop();
         if (mMatrixStack.isEmpty()) {
             throw new IllegalStateException("Underflow in restore");
         }
+
+        if (!last.equals(getClip())) {
+
+        }
+        sClipPool.release(last);
     }
 
     @Override
@@ -521,6 +556,30 @@ public final class GLCanvas extends Canvas {
     public void rotate(float degrees) {
         if (degrees != 0.0f)
             getMatrix().rotateZ(MathUtil.toRadians(degrees));
+    }
+
+    private static final class Clip {
+
+        private final Rect mBounds = new Rect();
+        private int mDepth;
+    }
+
+    @Override
+    public boolean clipRect(float left, float top, float right, float bottom) {
+        return super.clipRect(left, top, right, bottom);
+    }
+
+    @Override
+    public boolean quickReject(float left, float top, float right, float bottom) {
+        Rect clip = getClip();
+        if (clip.isEmpty())
+            return true;
+        Rect test = Rect.get();
+        RectF temp = RectF.get();
+        temp.set(left, top, right, bottom);
+        getMatrix().transform(temp);
+        temp.roundOut(test);
+        return !Rect.intersects(clip, test);
     }
 
     private void putRectColor(float left, float top, float right, float bottom, int color) {
@@ -697,11 +756,6 @@ public final class GLCanvas extends Canvas {
             addRoundRectFill(left - t, cy - t, right + t, cy + t, t, paint);
             restore();
         }
-    }
-
-    @Override
-    public void drawRect(@Nonnull Rect r, @Nonnull Paint paint) {
-        drawRect(r.left, r.top, r.right, r.bottom, paint);
     }
 
     @Override
