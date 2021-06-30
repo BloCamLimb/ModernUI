@@ -394,7 +394,7 @@ public class Rect {
     }
 
     /**
-     * Returns true iff the two specified rectangles intersect. In no event are
+     * Returns true if the two specified rectangles intersect. In no event are
      * either of the rectangles modified. To record the intersection,
      * use {@link #intersect(Rect)} or {@link #setIntersect(Rect, Rect)}.
      *

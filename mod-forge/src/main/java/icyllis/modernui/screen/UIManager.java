@@ -33,6 +33,7 @@ import icyllis.modernui.forge.ModernUIForge;
 import icyllis.modernui.graphics.Framebuffer;
 import icyllis.modernui.graphics.GLCanvas;
 import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.graphics.texture.Texture;
 import icyllis.modernui.graphics.texture.Texture2D;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.platform.Bitmap;
@@ -297,14 +298,12 @@ public final class UIManager {
         final ViewRootImpl root = mRoot;
         final GLCanvas canvas = mCanvas;
         root.setView(mDecor);
-        ModernUI.LOGGER.info(MARKER, "View system installed");
+        ModernUI.LOGGER.info(MARKER, "View system initialized");
         for (; ; ) {
             // holds the lock
             synchronized (mRenderLock) {
                 mAnimationCallback.accept(mFrameTimeMillis);
 
-                if (mTicks >= 150)
-                    return;
                 canvas.reset(window.getWidth(), window.getHeight());
 
                 Paint paint = Paint.take();
@@ -429,14 +428,12 @@ public final class UIManager {
                 TextLayoutProcessor.getInstance().reload();
                 break;
             case GLFW_KEY_C:
-                Texture2D texture = mFramebuffer.getAttachedTexture(GL_COLOR_ATTACHMENT0);
-                if (texture != null) {
-                    Bitmap bitmap = Bitmap.download(Bitmap.Format.RGBA, texture, 0);
-                    try (bitmap) {
-                        bitmap.saveDialog(Bitmap.SaveFormat.PNG, 0);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                Texture texture = mFramebuffer.getAttachedTexture(GL_COLOR_ATTACHMENT0);
+                Bitmap bitmap = Bitmap.download(Bitmap.Format.RGBA, (Texture2D) texture);
+                try (bitmap) {
+                    bitmap.saveDialog(Bitmap.SaveFormat.PNG, 0);
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
                 break;
             case GLFW_KEY_G:
@@ -486,6 +483,8 @@ public final class UIManager {
     void render() {
         RenderSystem.enableCull();
         RenderSystem.enableBlend();
+        RenderSystem.activeTexture(GL_TEXTURE0);
+
         // blend alpha correctly, since the Minecraft.mainRenderTarget has no alpha (always 1)
         // and our framebuffer is totally a transparent layer
         RenderSystem.blendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
@@ -504,19 +503,22 @@ public final class UIManager {
             // check if need redraw
             final int oldVertexArray = glGetInteger(GL_VERTEX_ARRAY_BINDING);
             final int oldProgram = glGetInteger(GL_CURRENT_PROGRAM);
-            if (mTicks < 150) {
-                framebuffer.resize(width, height);
-                framebuffer.clearColorBuffer();
-                framebuffer.clearDepthStencilBuffer();
-                framebuffer.bindDraw();
-                // flush tasks from UI thread, such as texture uploading
-                RenderCore.flushRenderCalls();
-                canvas.render();
-            }
+            glEnable(GL_STENCIL_TEST);
+            glStencilMaskSeparate(GL_FRONT, 0xff);
+
+            framebuffer.resize(width, height);
+            framebuffer.clearColorBuffer();
+            framebuffer.clearDepthStencilBuffer();
+            framebuffer.bindDraw();
+            // flush tasks from UI thread, such as texture uploading
+            RenderCore.flushRenderCalls();
+            canvas.render();
+
             glBindVertexArray(oldVertexArray);
             glUseProgram(oldProgram);
+            glDisable(GL_STENCIL_TEST);
         }
-        int texture = framebuffer.getAttachedTextureRaw(GL_COLOR_ATTACHMENT0);
+        int texture = framebuffer.getAttachedTexture(GL_COLOR_ATTACHMENT0).get();
 
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, minecraft.getMainRenderTarget().frameBufferId);
         RenderSystem.defaultBlendFunc();

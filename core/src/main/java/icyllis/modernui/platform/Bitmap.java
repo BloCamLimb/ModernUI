@@ -157,26 +157,26 @@ public final class Bitmap implements AutoCloseable {
     }
 
     /**
-     * Creates a bitmap whose image downloaded from the given texture and level.
+     * Creates a bitmap whose image downloaded from the given texture. The image of
+     * the level-of-detail 0 will be taken.
      *
      * @param format  number of channels
      * @param texture the texture to download from
-     * @param level   the level-of-detail number of the desired image
      * @return the created bitmap
      */
     @Nonnull
     @RenderThread
-    public static Bitmap download(@Nonnull Format format, @Nonnull Texture2D texture, int level) {
+    public static Bitmap download(@Nonnull Format format, @Nonnull Texture2D texture) {
         RenderCore.checkRenderThread();
-        final int width = texture.getWidth(level);
-        final int height = texture.getHeight(level);
+        final int width = texture.getWidth(0);
+        final int height = texture.getHeight(0);
         final Bitmap bitmap = new Bitmap(format, width, height, false);
         final long p = bitmap.getPixels();
         glPixelStorei(GL_PACK_ROW_LENGTH, 0);
         glPixelStorei(GL_PACK_SKIP_ROWS, 0);
         glPixelStorei(GL_PACK_SKIP_PIXELS, 0);
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
-        glGetTextureImage(texture.get(), level, format.glFormat, GL_UNSIGNED_BYTE,
+        glGetTextureImage(texture.get(), 0, format.glFormat, GL_UNSIGNED_BYTE,
                 bitmap.getSize(), p);
         // flip vertical
         final int len = width * format.channels;

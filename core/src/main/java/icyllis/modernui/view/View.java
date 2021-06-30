@@ -280,6 +280,7 @@ public class View {
 
         int saveCount = canvas.save();
         canvas.translate(mLeft - sx, mTop - sy);
+        canvas.clipRect(0, 0, getWidth(), getHeight());
 
         draw(canvas);
 

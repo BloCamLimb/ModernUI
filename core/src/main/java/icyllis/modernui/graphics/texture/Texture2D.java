@@ -52,7 +52,7 @@ public class Texture2D extends Texture {
      * <p>
      * This method can be called multiple times, which represents re-specifying this texture.
      *
-     * @param internalFormat how image data stored in GPU
+     * @param internalFormat sized internal format used for the image on GPU side
      * @param maxLevel       max mipmap level, min is 0
      * @see #init(int, int, int, int)
      */
@@ -61,12 +61,14 @@ public class Texture2D extends Texture {
         if (maxLevel < 0) {
             throw new IllegalArgumentException();
         }
+        if (width < 1 || height < 1) {
+            throw new IllegalArgumentException();
+        }
         bind();
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, maxLevel);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_LOD, 0);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, maxLevel);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f);
 
         // null ptr represents not modifying the image data, but allocates memory
         for (int level = 0; level <= maxLevel; level++) {
@@ -85,20 +87,28 @@ public class Texture2D extends Texture {
      * <p>
      * When using mipmap, texture size must be power of two, and at least 2^mipmapLevel
      *
-     * @param internalFormat sized internal format used to store the image in GPU
-     * @param levels         the number of mipmap levels, min is 1
+     * @param internalFormat sized internal format used for the image on GPU side
+     * @param maxLevel       max mipmap level, min is 0
      */
-    public void init(int internalFormat, int width, int height, int levels) {
-        if (levels < 1) {
+    public void init(int internalFormat, int width, int height, int maxLevel) {
+        if (maxLevel < 0) {
+            throw new IllegalArgumentException();
+        }
+        if (width < 1 || height < 1) {
             throw new IllegalArgumentException();
         }
         final int texture = get();
+        // mipmap generation is from (baseLevel + 1) to max level
         glTextureParameteri(texture, GL_TEXTURE_BASE_LEVEL, 0);
-        glTextureParameteri(texture, GL_TEXTURE_MAX_LEVEL, levels - 1);
+        glTextureParameteri(texture, GL_TEXTURE_MAX_LEVEL, maxLevel);
+
+        // min lod is 0 because we generate mipmap based at level 0
+        // so there's no larger images
         glTextureParameteri(texture, GL_TEXTURE_MIN_LOD, 0);
-        glTextureParameteri(texture, GL_TEXTURE_MAX_LOD, levels - 1);
-        glTextureParameterf(texture, GL_TEXTURE_LOD_BIAS, 0.0f);
-        glTextureStorage2D(texture, levels, internalFormat, width, height);
+        glTextureParameteri(texture, GL_TEXTURE_MAX_LOD, maxLevel);
+
+        // the number of levels is max level + 1, because it's between [0, maxLevel]
+        glTextureStorage2D(texture, maxLevel + 1, internalFormat, width, height);
     }
 
     /**

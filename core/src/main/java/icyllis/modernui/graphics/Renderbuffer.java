@@ -42,8 +42,14 @@ public final class Renderbuffer implements AutoCloseable {
         return mRef.renderbuffer;
     }
 
-    public void init(int internalFormat, int width, int height) {
-        glNamedRenderbufferStorage(get(), internalFormat, width, height);
+    public void init(int internalFormat, int width, int height, int samples) {
+        if (samples < 0) {
+            throw new IllegalArgumentException();
+        } else if (samples > 0) {
+            glNamedRenderbufferStorageMultisample(get(), samples, internalFormat, width, height);
+        } else {
+            glNamedRenderbufferStorage(get(), internalFormat, width, height);
+        }
     }
 
     @Override

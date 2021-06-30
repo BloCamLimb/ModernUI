@@ -25,7 +25,6 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.ref.Cleaner;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
@@ -52,6 +51,8 @@ public final class Framebuffer implements AutoCloseable {
 
     private Ref mRef;
     private Int2ObjectMap<AutoCloseable> mAttachments;
+
+    //private int mMsaaLevel = 0;
 
     private final float[] mClearColor = new float[4];
 
@@ -83,23 +84,23 @@ public final class Framebuffer implements AutoCloseable {
         glBindFramebuffer(GL_READ_FRAMEBUFFER, get());
     }
 
-    public void attachTexture(int attachPoint, int internalFormat) {
+    public void attachTexture(int attachmentPoint, int internalFormat) {
         Texture2D texture = new Texture2D();
-        texture.init(internalFormat, mWidth, mHeight, 1);
-        glNamedFramebufferTexture(get(), attachPoint, texture.get(), 0);
-        mAttachments.put(attachPoint, texture);
+        texture.init(internalFormat, mWidth, mHeight, 0);
+        glNamedFramebufferTexture(get(), attachmentPoint, texture.get(), 0);
+        mAttachments.put(attachmentPoint, texture);
     }
 
-    public void attachRenderbuffer(int attachPoint, int internalFormat) {
+    public void attachRenderbuffer(int attachmentPoint, int internalFormat) {
         Renderbuffer renderbuffer = new Renderbuffer();
-        renderbuffer.init(internalFormat, mWidth, mHeight);
-        glNamedFramebufferRenderbuffer(get(), attachPoint, GL_RENDERBUFFER, renderbuffer.get());
-        mAttachments.put(attachPoint, renderbuffer);
+        renderbuffer.init(internalFormat, mWidth, mHeight, 0);
+        glNamedFramebufferRenderbuffer(get(), attachmentPoint, GL_RENDERBUFFER, renderbuffer.get());
+        mAttachments.put(attachmentPoint, renderbuffer);
     }
 
-    public void removeAttachment(int attachPoint) {
-        if (mAttachments.remove(attachPoint) != null) {
-            glNamedFramebufferTexture(get(), attachPoint, DEFAULT_TEXTURE, 0);
+    public void removeAttachment(int attachmentPoint) {
+        if (mAttachments.remove(attachmentPoint) != null) {
+            glNamedFramebufferTexture(get(), attachmentPoint, DEFAULT_TEXTURE, 0);
         }
     }
 
@@ -115,24 +116,25 @@ public final class Framebuffer implements AutoCloseable {
      * Reallocate all attachments to the new size, if changed.
      */
     public void resize(int width, int height) {
-        if (mWidth != width || mHeight != height) {
-            mWidth = width;
-            mHeight = height;
-            for (var entry : mAttachments.int2ObjectEntrySet()) {
-                AutoCloseable a = entry.getValue();
-                if (a instanceof Texture2D) {
-                    Texture2D texture = (Texture2D) a;
-                    int internalFormat = glGetTextureParameteri(texture.get(), GL_TEXTURE_INTERNAL_FORMAT);
-                    texture.close();
-                    texture.init(internalFormat, width, height, 1);
-                    glNamedFramebufferTexture(get(), entry.getIntKey(), texture.get(), 0);
-                } else if (a instanceof Renderbuffer) {
-                    Renderbuffer renderbuffer = (Renderbuffer) a;
-                    int internalFormat = glGetRenderbufferParameteri(renderbuffer.get(), GL_RENDERBUFFER_INTERNAL_FORMAT);
-                    renderbuffer.close();
-                    renderbuffer.init(internalFormat, width, height);
-                    glNamedFramebufferRenderbuffer(get(), entry.getIntKey(), GL_RENDERBUFFER, renderbuffer.get());
-                }
+        if (mWidth == width && mHeight == height) {
+            return;
+        }
+        mWidth = width;
+        mHeight = height;
+        for (var entry : mAttachments.int2ObjectEntrySet()) {
+            AutoCloseable a = entry.getValue();
+            if (a instanceof Texture2D) {
+                Texture2D texture = (Texture2D) a;
+                int internalFormat = glGetTextureParameteri(texture.get(), GL_TEXTURE_INTERNAL_FORMAT);
+                texture.close();
+                texture.init(internalFormat, width, height, 0);
+                glNamedFramebufferTexture(get(), entry.getIntKey(), texture.get(), 0);
+            } else if (a instanceof Renderbuffer) {
+                Renderbuffer renderbuffer = (Renderbuffer) a;
+                int internalFormat = glGetRenderbufferParameteri(renderbuffer.get(), GL_RENDERBUFFER_INTERNAL_FORMAT);
+                renderbuffer.close();
+                renderbuffer.init(internalFormat, width, height, 0);
+                glNamedFramebufferRenderbuffer(get(), entry.getIntKey(), GL_RENDERBUFFER, renderbuffer.get());
             }
         }
     }
@@ -181,35 +183,27 @@ public final class Framebuffer implements AutoCloseable {
 
     /**
      * Returns the attached texture with the given attachment point.
-     * If the attachment is not a texture or detached, 0 will be returned.
      *
-     * @param attachPoint specify an attachment point
+     * @param attachmentPoint specify an attachment point
      * @return the texture name
+     * @throws IllegalArgumentException attachment is not a texture or detached
      */
-    public int getAttachedTextureRaw(int attachPoint) {
-        AutoCloseable a = mAttachments.get(attachPoint);
+    @Nonnull
+    public Texture getAttachedTexture(int attachmentPoint) {
+        AutoCloseable a = mAttachments.get(attachmentPoint);
         if (a instanceof Texture) {
-            return ((Texture) a).get();
+            return ((Texture) a);
         }
-        return DEFAULT_TEXTURE;
+        throw new IllegalArgumentException();
     }
 
-    @Nullable
-    public Texture2D getAttachedTexture(int attachPoint) {
-        AutoCloseable a = mAttachments.get(attachPoint);
-        if (a instanceof Texture2D) {
-            return ((Texture2D) a);
-        }
-        return null;
-    }
-
-    @Nullable
-    public Renderbuffer getAttachedRenderbuffer(int attachPoint) {
-        AutoCloseable a = mAttachments.get(attachPoint);
+    @Nonnull
+    public Renderbuffer getAttachedRenderbuffer(int attachmentPoint) {
+        AutoCloseable a = mAttachments.get(attachmentPoint);
         if (a instanceof Renderbuffer) {
             return (Renderbuffer) a;
         }
-        return null;
+        throw new IllegalArgumentException();
     }
 
     @Override
