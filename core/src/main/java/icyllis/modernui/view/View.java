@@ -278,11 +278,20 @@ public class View {
         int sx = mScrollX;
         int sy = mScrollY;
 
+        if (canvas.quickReject(mLeft - sx, mTop - sy, mRight - sx, mBottom - sy)) {
+            // quick rejected
+            return;
+        }
+
         int saveCount = canvas.save();
         canvas.translate(mLeft - sx, mTop - sy);
-        canvas.clipRect(0, 0, getWidth(), getHeight());
+        boolean hasSpace = canvas.clipRect(0, 0, getWidth(), getHeight());
 
-        draw(canvas);
+        if (hasSpace) {
+            draw(canvas);
+        } else {
+            throw new IllegalStateException();
+        }
 
         canvas.restoreToCount(saveCount);
     }
