@@ -184,7 +184,7 @@ public final class GLCanvas extends Canvas {
     private final List<Texture2D> mTextures = new ArrayList<>();
 
     // absolute value presents the reference value, and sign represents whether to
-    // update the stencil buffer (positive - update)
+    // update the stencil buffer (positive = update, or just change stencil func)
     private final IntList mClipDepths = new IntArrayList();
 
 
@@ -625,6 +625,7 @@ public final class GLCanvas extends Canvas {
         }
     }
 
+    // see also clipRect
     private void restoreClip(@Nonnull Rect b) {
         if (b.isEmpty()) {
             mClipDepths.add(-getClip().mDepth);
@@ -698,19 +699,20 @@ public final class GLCanvas extends Canvas {
             return true;
         }
 
-        test.intersect(clip.mBounds);
-        boolean empty = test.isEmpty();
-        clip.mBounds.set(test);
+        boolean intersects = clip.mBounds.intersect(test);
         int depth = ++clip.mDepth;
-        if (empty) {
+        if (!intersects) {
+            // empty
             mClipDepths.add(-depth);
+            clip.mBounds.setEmpty();
         } else {
+            // updating stencil must have a color
             putRectColor(left, top, right, bottom, ~0);
             matrix.get(getModelViewBuffer());
             mClipDepths.add(depth);
         }
         mDrawStates.add(DRAW_CLIP_PUSH);
-        return !empty;
+        return intersects;
     }
 
     @Override
