@@ -331,7 +331,11 @@ public final class UIManager {
                 }
                 //ModernUI.LOGGER.info(Arrays.toString(pts));
                 canvas.drawStripLines(pts, paint);
-                paint.setRGB(255, 180, 100);
+
+                root.onDraw(canvas);
+
+                paint.reset();
+                paint.setRGBA(255, 180, 100, 255);
                 canvas.drawCircle(90, 30, 6, paint);
                 canvas.drawCircle(150, 90, 6, paint);
                 canvas.drawCircle(210, 30, 6, paint);
@@ -341,8 +345,6 @@ public final class UIManager {
                 canvas.drawCircle(450, 30, 6, paint);
                 canvas.drawCircle(510, 90, 6, paint);
                 canvas.drawCircle(570, 30, 6, paint);
-
-                root.onDraw(canvas);
             }
             try {
                 mUiThread.join();
@@ -484,6 +486,7 @@ public final class UIManager {
         RenderSystem.enableCull();
         RenderSystem.enableBlend();
         RenderSystem.activeTexture(GL_TEXTURE0);
+        RenderSystem.disableDepthTest();
 
         // blend alpha correctly, since the Minecraft.mainRenderTarget has no alpha (always 1)
         // and our framebuffer is totally a transparent layer
@@ -504,7 +507,6 @@ public final class UIManager {
             final int oldVertexArray = glGetInteger(GL_VERTEX_ARRAY_BINDING);
             final int oldProgram = glGetInteger(GL_CURRENT_PROGRAM);
             glEnable(GL_STENCIL_TEST);
-            glStencilMaskSeparate(GL_FRONT, 0xff);
 
             framebuffer.resize(width, height);
             framebuffer.clearColorBuffer();

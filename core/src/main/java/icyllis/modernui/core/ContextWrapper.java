@@ -18,7 +18,7 @@
 
 package icyllis.modernui.core;
 
-import icyllis.modernui.graphics.Image;
+import icyllis.modernui.graphics.Sprite;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -66,7 +66,7 @@ public abstract class ContextWrapper extends Context {
 
     @Nullable
     @Override
-    public Image getImage(@Nonnull Path path, boolean antiAliasing) {
+    public Sprite getImage(@Nonnull Path path, boolean antiAliasing) {
         return mBase.getImage(path, antiAliasing);
     }
 }

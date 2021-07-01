@@ -24,7 +24,7 @@ import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.ast.Node;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.Image;
+import icyllis.modernui.graphics.Sprite;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.shader.ShaderManager;
@@ -57,6 +57,7 @@ import static icyllis.modernui.graphics.GLWrapper.GL_RGB8;
 import static icyllis.modernui.graphics.GLWrapper.GL_UNSIGNED_BYTE;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11C.GL_RGBA8;
+import static org.lwjgl.opengl.GL11C.GL_STENCIL_TEST;
 import static org.lwjgl.opengl.GL30C.GL_COLOR_ATTACHMENT0;
 
 @SuppressWarnings("unused")
@@ -177,7 +178,7 @@ public class TestMain {
                 //projection = Matrix4.makePerspective(MathUtil.PI_DIV_2, window.getAspectRatio(), 0.01f, 1000);
                 canvas.setProjection(projection);
 
-                Image image;
+                Sprite sprite;
                 try (ReadableByteChannel channel = ModernUI.get().getResource(Path.of("7-160413104Q45C.png"))) {
                     Bitmap bitmap = Bitmap.decode(null, channel);
                     Texture2D texture2D = new Texture2D();
@@ -188,7 +189,7 @@ public class TestMain {
                             0, 0, 1, bitmap.getFormat().glFormat, GL_UNSIGNED_BYTE, bitmap.getPixels());
                     texture2D.setFilter(true, true);
                     texture2D.generateMipmap();
-                    image = new Image(new Image.Source(width, height, texture2D));
+                    sprite = new Sprite(new Sprite.Source(width, height, texture2D));
                 } catch (IOException e) {
                     throw new IllegalStateException();
                 }
@@ -201,12 +202,12 @@ public class TestMain {
                         GLWrapper.enableCull();
                         RenderSystem.enableBlend();
                         RenderSystem.defaultBlendFunc();
+                        GLWrapper.glEnable(GL_STENCIL_TEST);
                         //RenderSystem.disableDepthTest();
                         //GlStateManager._colorMask(true, true, true, true);
                         //RenderSystem.depthMask(false);
                         canvas.reset(window.getWidth(), window.getHeight());
                         // UI thread
-                        canvas.save();
 
                         //canvas.rotate(-10, 640, 360);
                         //canvas.scale(5, 5);
@@ -216,6 +217,10 @@ public class TestMain {
                         //canvas.drawCircle(60, 60, 20, paint);
                         paint.setStyle(Paint.Style.FILL);
                         paint.setRGBA(120, 220, 240, 192);
+                        canvas.translate(100, 0);
+
+                        canvas.save();
+                        canvas.clipRect(130, 40, 310, 110);
                         canvas.drawRoundRect(120, 50, 300, 100, 10, paint);
 
                         paint.setStyle(Paint.Style.STROKE);
@@ -223,11 +228,11 @@ public class TestMain {
                         paint.setRGBA(255, 255, 255, 255);
                         //canvas.drawCircle(60, 60, 20, paint);
                         canvas.drawRoundRect(120, 50, 300, 100, 10, paint);
+                        canvas.restore();
 
                         paint.setStrokeWidth(10);
                         canvas.drawArc(200, 200, 30, 90, -90, paint);
 
-                        canvas.restore();
                         paint.setStrokeWidth(8);
                         paint.setRGBA(120, 220, 240, 192);
                         canvas.drawLine(20, 20, 140, 60, paint);

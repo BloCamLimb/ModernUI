@@ -20,19 +20,16 @@ package icyllis.modernui.graphics;
 
 import icyllis.modernui.graphics.texture.Texture2D;
 
-import java.io.Closeable;
-import java.io.IOException;
-
 /**
- * Images that can be used for drawing and processing. The image data is
+ * Sprites that can be used for drawing and processing. The image data is
  * stored in GPU memory, and an instance of this is associated with an OpenGL
  * texture object.
  */
-public class Image implements Closeable {
+public class Sprite implements AutoCloseable {
 
     private final Source mSource;
 
-    public Image(Source source) {
+    public Sprite(Source source) {
         mSource = source;
     }
 
@@ -41,7 +38,7 @@ public class Image implements Closeable {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
 
     }
 
