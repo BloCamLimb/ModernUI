@@ -18,7 +18,7 @@
 
 package icyllis.modernui.core;
 
-import icyllis.modernui.graphics.Image;
+import icyllis.modernui.graphics.Sprite;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -46,5 +46,5 @@ public abstract class Context {
      * @return an image or <code>null</code> if errors occurred
      */
     @Nullable
-    public abstract Image getImage(@Nonnull Path path, boolean antiAliasing);
+    public abstract Sprite getImage(@Nonnull Path path, boolean antiAliasing);
 }

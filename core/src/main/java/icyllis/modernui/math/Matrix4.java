@@ -1227,14 +1227,14 @@ public class Matrix4 implements Cloneable {
      * @param r the rect to transform
      */
     public void transform(@Nonnull RectF r) {
-        float x1 = m11 * r.left + m12 * r.top + m14;
-        float y1 = m21 * r.left + m22 * r.top + m24;
-        float x2 = m11 * r.right + m12 * r.top + m14;
-        float y2 = m21 * r.right + m22 * r.top + m24;
-        float x3 = m11 * r.left + m12 * r.bottom + m14;
-        float y3 = m21 * r.left + m22 * r.bottom + m24;
-        float x4 = m11 * r.right + m12 * r.bottom + m14;
-        float y4 = m21 * r.right + m22 * r.bottom + m24;
+        float x1 = m11 * r.left + m21 * r.top + m41;
+        float y1 = m12 * r.left + m22 * r.top + m42;
+        float x2 = m11 * r.right + m21 * r.top + m41;
+        float y2 = m12 * r.right + m22 * r.top + m42;
+        float x3 = m11 * r.left + m21 * r.bottom + m41;
+        float y3 = m12 * r.left + m22 * r.bottom + m42;
+        float x4 = m11 * r.right + m21 * r.bottom + m41;
+        float y4 = m12 * r.right + m22 * r.bottom + m42;
         r.left = Math.min(x1, Math.min(x2, Math.min(x3, x4)));
         r.top = Math.min(y1, Math.min(y2, Math.min(y3, y4)));
         r.right = Math.max(x1, Math.max(x2, Math.max(x3, x4)));

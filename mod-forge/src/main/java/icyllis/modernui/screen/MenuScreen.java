@@ -88,7 +88,6 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
     public void render(@Nonnull PoseStack poseStack, int mouseX, int mouseY, float deltaTick) {
         //TODO configurable bg
         renderBackground(poseStack);
-        MinecraftForge.EVENT_BUS.post(new GuiContainerEvent.DrawBackground(this, poseStack, mouseX, mouseY));
         host.render();
     }
 

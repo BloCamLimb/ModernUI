@@ -19,6 +19,7 @@
 package icyllis.modernui.graphics;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.graphics.texture.Renderbuffer;
 import icyllis.modernui.graphics.texture.Texture;
 import icyllis.modernui.graphics.texture.Texture2D;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;

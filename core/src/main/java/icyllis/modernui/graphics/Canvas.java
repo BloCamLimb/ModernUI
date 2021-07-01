@@ -160,9 +160,7 @@ public abstract class Canvas {
      * @return true if the resulting clip is non-empty, otherwise, further
      * drawing will be always quick rejected until restore() is called
      */
-    public boolean clipRect(float left, float top, float right, float bottom) {
-        return true;
-    }
+    public abstract boolean clipRect(float left, float top, float right, float bottom);
 
     /**
      * Return true if the specified rectangle, after being transformed by the
@@ -182,9 +180,7 @@ public abstract class Canvas {
      * @return true if the given rect (transformed by the canvas' matrix)
      * intersecting with the maximum rect representing the canvas' clip is empty
      */
-    public boolean quickReject(float left, float top, float right, float bottom) {
-        return false;
-    }
+    public abstract boolean quickReject(float left, float top, float right, float bottom);
 
     /**
      * Draw a circular arc.
@@ -245,12 +241,12 @@ public abstract class Canvas {
      * specified paint, transformed by the current matrix. The Style and smooth
      * radius is ignored in the paint, images are always filled.
      *
-     * @param image the image to be drawn
-     * @param left  the position of the left side of the image being drawn
-     * @param top   the position of the top side of the image being drawn
-     * @param paint the paint used to draw the round image
+     * @param sprite the image to be drawn
+     * @param left   the position of the left side of the image being drawn
+     * @param top    the position of the top side of the image being drawn
+     * @param paint  the paint used to draw the round image
      */
-    public abstract void drawImage(@Nonnull Image image, float left, float top, @Nonnull Paint paint);
+    public abstract void drawImage(@Nonnull Sprite sprite, float left, float top, @Nonnull Paint paint);
 
     /**
      * Draw a line segment with the specified start and stop x,y coordinates, using
@@ -363,12 +359,12 @@ public abstract class Canvas {
      * using the specified paint, transformed by the current matrix. The Style is
      * ignored in the paint, images are always filled.
      *
-     * @param image  the image to be drawn
+     * @param sprite the image to be drawn
      * @param left   the position of the left side of the image being drawn
      * @param top    the position of the top side of the image being drawn
      * @param radius the radius used to round the corners
      * @param paint  the paint used to draw the round image
      */
-    public abstract void drawRoundImage(@Nonnull Image image, float left, float top,
+    public abstract void drawRoundImage(@Nonnull Sprite sprite, float left, float top,
                                         float radius, @Nonnull Paint paint);
 }

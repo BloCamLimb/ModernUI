@@ -56,6 +56,8 @@ import static icyllis.modernui.graphics.GLWrapper.*;
  * <p>
  * Here, drawing means recording on UI thread (or synchronized), and rendering
  * means calling OpenGL draw functions on the render thread.
+ * <p>
+ * The color buffer drawn to must be index 0, and stencil buffer must be 8-bit.
  */
 @NotThreadSafe
 public final class GLCanvas extends Canvas {
@@ -121,8 +123,8 @@ public final class GLCanvas extends Canvas {
     public static final int DRAW_CIRCLE_OUTLINE = 7;
     public static final int DRAW_ARC = 8;
     public static final int DRAW_ARC_OUTLINE = 9;
-    public static final int DRAW_CLIP_DOWN = 10;
-    public static final int DRAW_CLIP_UP = 11;
+    public static final int DRAW_CLIP_PUSH = 10;
+    public static final int DRAW_CLIP_POP = 11;
 
     /**
      * Uniform block sizes, use std140 layout
@@ -313,6 +315,9 @@ public final class GLCanvas extends Canvas {
         glBindBufferBase(GL_UNIFORM_BUFFER, CIRCLE_BINDING, mCircleUBO);
         glBindBufferBase(GL_UNIFORM_BUFFER, ARC_BINDING, mArcUBO);
 
+        glStencilFuncSeparate(GL_FRONT, GL_EQUAL, 0, 0xff);
+        glStencilMaskSeparate(GL_FRONT, 0xff);
+
         mCurrVertexArray = 0;
         mCurrProgram = 0;
 
@@ -413,33 +418,44 @@ public final class GLCanvas extends Canvas {
                     posColorIndex += 4;
                     break;
 
-                case DRAW_CLIP_DOWN:
+                case DRAW_CLIP_PUSH:
                     depth = mClipDepths.getInt(clipIndex);
-                    glStencilFuncSeparate(GL_FRONT, GL_EQUAL, depth - 1, 0xff);
-                    glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_KEEP, GL_INCR);
 
-                    bindVertexArray(POS_COLOR);
-                    useProgram(COLOR_FILL);
-                    glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, posColorIndex, 4, 1, instance);
-                    posColorIndex += 4;
+                    if (depth >= 0) {
+                        glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_KEEP, GL_INCR);
+                        glColorMaski(0, false, false, false, false);
 
-                    glStencilFuncSeparate(GL_FRONT, GL_EQUAL, depth, 0xff);
-                    glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_KEEP, GL_KEEP);
+                        bindVertexArray(POS_COLOR);
+                        useProgram(COLOR_FILL);
+                        glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, posColorIndex, 4, 1, instance);
+                        posColorIndex += 4;
+
+                        glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_KEEP, GL_KEEP);
+                        glColorMaski(0, true, true, true, true);
+                    }
+
+                    glStencilFuncSeparate(GL_FRONT, GL_EQUAL, Math.abs(depth), 0xff);
                     clipIndex++;
                     break;
 
-                case DRAW_CLIP_UP:
+                case DRAW_CLIP_POP:
                     depth = mClipDepths.getInt(clipIndex);
-                    glStencilFuncSeparate(GL_FRONT, GL_LESS, depth, 0xff);
-                    glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_KEEP, GL_REPLACE);
 
-                    bindVertexArray(POS_COLOR);
-                    useProgram(COLOR_FILL);
-                    glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, posColorIndex, 4, 1, instance);
-                    posColorIndex += 4;
+                    if (depth >= 0) {
+                        glStencilFuncSeparate(GL_FRONT, GL_LESS, depth, 0xff);
+                        glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_KEEP, GL_REPLACE);
+                        glColorMaski(0, false, false, false, false);
 
-                    glStencilFuncSeparate(GL_FRONT, GL_EQUAL, depth, 0xff);
-                    glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_KEEP, GL_KEEP);
+                        bindVertexArray(POS_COLOR);
+                        useProgram(COLOR_FILL);
+                        glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, posColorIndex, 4, 1, instance);
+                        posColorIndex += 4;
+
+                        glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_KEEP, GL_KEEP);
+                        glColorMaski(0, true, true, true, true);
+                    }
+
+                    glStencilFuncSeparate(GL_FRONT, GL_EQUAL, Math.abs(depth), 0xff);
                     clipIndex++;
                     break;
 
@@ -577,10 +593,7 @@ public final class GLCanvas extends Canvas {
         }
         final Clip l = mClipStack.pop();
         if (l.mDepth != getClip().mDepth) {
-            putRectColor(l.mBounds.left, l.mBounds.top, l.mBounds.right, l.mBounds.bottom, 0);
-            IDENTITY_MAT.get(getModelViewBuffer());
-            mClipDepths.add(getClip().mDepth);
-            mDrawStates.add(DRAW_CLIP_UP);
+            restoreClip(l.mBounds);
         }
         sClipPool.release(l);
     }
@@ -608,12 +621,19 @@ public final class GLCanvas extends Canvas {
         }
 
         if (l != null && top != getClip().mDepth) {
-            Rect b = l.mBounds;
-            putRectColor(b.left, b.top, b.right, b.bottom, 0);
+            restoreClip(l.mBounds);
+        }
+    }
+
+    private void restoreClip(@Nonnull Rect b) {
+        if (b.isEmpty()) {
+            mClipDepths.add(-getClip().mDepth);
+        } else {
+            putRectColor(b.left, b.top, b.right, b.bottom, ~0);
             IDENTITY_MAT.get(getModelViewBuffer());
             mClipDepths.add(getClip().mDepth);
-            mDrawStates.add(DRAW_CLIP_UP);
         }
+        mDrawStates.add(DRAW_CLIP_POP);
     }
 
     @Override
@@ -681,15 +701,15 @@ public final class GLCanvas extends Canvas {
         test.intersect(clip.mBounds);
         boolean empty = test.isEmpty();
         clip.mBounds.set(test);
-        int ref = ++clip.mDepth;
+        int depth = ++clip.mDepth;
         if (empty) {
-            mClipDepths.add(-ref);
+            mClipDepths.add(-depth);
         } else {
-            putRectColor(left, top, right, bottom, 0);
+            putRectColor(left, top, right, bottom, ~0);
             matrix.get(getModelViewBuffer());
-            mClipDepths.add(ref);
+            mClipDepths.add(depth);
         }
-        mDrawStates.add(DRAW_CLIP_DOWN);
+        mDrawStates.add(DRAW_CLIP_PUSH);
         return !empty;
     }
 
@@ -713,8 +733,8 @@ public final class GLCanvas extends Canvas {
         ByteBuffer buffer = getPosColorBuffer();
         byte r = (byte) ((color >> 16) & 0xff);
         byte g = (byte) ((color >> 8) & 0xff);
-        byte b = (byte) ((color) & 0xff);
-        byte a = (byte) ((color >> 24) & 0xff);
+        byte b = (byte) (color & 0xff);
+        byte a = (byte) (color >>> 24);
         // CCW
         buffer.putFloat(left)
                 .putFloat(bottom)
@@ -735,8 +755,8 @@ public final class GLCanvas extends Canvas {
         ByteBuffer buffer = getPosColorTexBuffer();
         byte r = (byte) ((color >> 16) & 0xff);
         byte g = (byte) ((color >> 8) & 0xff);
-        byte b = (byte) ((color) & 0xff);
-        byte a = (byte) ((color >> 24) & 0xff);
+        byte b = (byte) (color & 0xff);
+        byte a = (byte) (color >>> 24);
         buffer.putFloat(left)
                 .putFloat(bottom)
                 .put(r).put(g).put(b).put(a)
@@ -762,6 +782,9 @@ public final class GLCanvas extends Canvas {
             return;
         if (sweepAngle >= 360) {
             drawCircle(cx, cy, radius, paint);
+            return;
+        }
+        if (quickReject(cx - radius, cy - radius, cx + radius, cy + radius)) {
             return;
         }
         sweepAngle %= 360;
@@ -811,6 +834,9 @@ public final class GLCanvas extends Canvas {
     public void drawCircle(float cx, float cy, float radius, @Nonnull Paint paint) {
         if (radius <= 0)
             return;
+        if (quickReject(cx - radius, cy - radius, cx + radius, cy + radius)) {
+            return;
+        }
         if (paint.getStyle() != Paint.Style.STROKE) {
             addCircleFill(cx, cy, radius, paint);
         }
@@ -857,12 +883,18 @@ public final class GLCanvas extends Canvas {
             float t = paint.getStrokeWidth() * 0.5f;
             float top = Math.min(startY, stopY);
             float bottom = Math.max(startY, stopY);
+            if (quickReject(startX - t, top - t, startX + t, bottom + t)) {
+                return;
+            }
             addRoundRectFill(startX - t, top - t, startX + t, bottom + t, t, paint);
         } else if (MathUtil.approxEqual(startY, stopY)) {
             // horizontal
             float t = paint.getStrokeWidth() * 0.5f;
             float left = Math.min(startX, stopX);
             float right = Math.max(startX, stopX);
+            if (quickReject(left - t, startY - t, right + t, startY + t)) {
+                return;
+            }
             addRoundRectFill(left - t, startY - t, right + t, startY + t, t, paint);
         } else {
             float t = paint.getStrokeWidth() * 0.5f;
@@ -880,6 +912,9 @@ public final class GLCanvas extends Canvas {
             float cos = MathUtil.cos(-ang);
             float left = (startX - cx) * cos - (startY - cy) * sin + cx;
             float right = (stopX - cx) * cos - (stopY - cy) * sin + cx;
+            if (quickReject(left - t, cy - t, right + t, cy + t)) {
+                return;
+            }
             addRoundRectFill(left - t, cy - t, right + t, cy + t, t, paint);
             restore();
         }
@@ -887,16 +922,17 @@ public final class GLCanvas extends Canvas {
 
     @Override
     public void drawRect(float left, float top, float right, float bottom, @Nonnull Paint paint) {
-        if (right <= left || bottom <= top)
+        if (quickReject(left, top, right, bottom)) {
             return;
+        }
         putRectColor(left, top, right, bottom, paint.getColor());
         getMatrix().get(getModelViewBuffer());
         mDrawStates.add(DRAW_RECT);
     }
 
     @Override
-    public void drawImage(@Nonnull Image image, float left, float top, @Nonnull Paint paint) {
-        Image.Source source = image.getSource();
+    public void drawImage(@Nonnull Sprite sprite, float left, float top, @Nonnull Paint paint) {
+        Sprite.Source source = sprite.getSource();
         putRectColorUV(left, top, left + source.mWidth, top + source.mHeight, paint.getColor(),
                 0, 0, 1, 1);
         mTextures.add(source.mTexture);
@@ -906,8 +942,9 @@ public final class GLCanvas extends Canvas {
 
     @Override
     public void drawRoundRect(float left, float top, float right, float bottom, float radius, @Nonnull Paint paint) {
-        if (right <= left || bottom <= top)
+        if (quickReject(left, top, right, bottom)) {
             return;
+        }
         if (radius < 0)
             radius = 0;
         if (paint.getStyle() != Paint.Style.STROKE) {
@@ -950,8 +987,8 @@ public final class GLCanvas extends Canvas {
     }
 
     @Override
-    public void drawRoundImage(@Nonnull Image image, float left, float top, float radius, @Nonnull Paint paint) {
-        Image.Source source = image.getSource();
+    public void drawRoundImage(@Nonnull Sprite sprite, float left, float top, float radius, @Nonnull Paint paint) {
+        Sprite.Source source = sprite.getSource();
         putRectColorUV(left, top, left + source.mWidth, top + source.mHeight, paint.getColor(),
                 0, 0, 1, 1);
         if (radius < 0)
