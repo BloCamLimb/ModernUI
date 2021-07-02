@@ -1222,9 +1222,9 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Get the maximum bounds after transforming the rect bounds.
+     * Transform a rectangle to get the maximum bounds.
      *
-     * @param r the rect to transform
+     * @param r the rectangle to transform
      */
     public void transform(@Nonnull RectF r) {
         float x1 = m11 * r.left + m21 * r.top + m41;
@@ -1239,6 +1239,16 @@ public class Matrix4 implements Cloneable {
         r.top = Math.min(y1, Math.min(y2, Math.min(y3, y4)));
         r.right = Math.max(x1, Math.max(x2, Math.max(x3, x4)));
         r.bottom = Math.max(y1, Math.max(y2, Math.max(y3, y4)));
+    }
+
+    /**
+     * Transform a point in the X-Y plane.
+     *
+     * @param p the point to transform
+     */
+    public void transform(@Nonnull PointF p) {
+        p.set(m11 * p.x + m21 * p.y + m41,
+                m12 * p.x + m22 * p.y + m42);
     }
 
     public boolean isAffine() {

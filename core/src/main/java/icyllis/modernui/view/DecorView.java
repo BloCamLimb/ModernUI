@@ -21,7 +21,10 @@ package icyllis.modernui.view;
 import icyllis.modernui.widget.FrameLayout;
 
 /**
- * System view, the top-level view, the parent of content view
+ * DecorView is the internal policy for the view system. It's the top-level
+ * view and the parent of content view. It always has the same dimension
+ * as the window. Note it doesn't have any decorations like the title bar,
+ * they are provided by the window on the operating system.
  */
 public class DecorView extends FrameLayout {
 }

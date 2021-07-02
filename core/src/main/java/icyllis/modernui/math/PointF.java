@@ -22,41 +22,46 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * Represents a point holding two integer values.
+ * Represents a point holding two float values.
  */
-public class Point {
+public class PointF {
 
-    private static final ThreadLocal<Point> TLS = ThreadLocal.withInitial(Point::new);
+    private static final ThreadLocal<PointF> TLS = ThreadLocal.withInitial(PointF::new);
 
-    public int x;
-    public int y;
+    public float x;
+    public float y;
 
-    public Point() {
+    public PointF() {
     }
 
-    public Point(int x, int y) {
+    public PointF(float x, float y) {
         this.x = x;
         this.y = y;
     }
 
+    public PointF(@Nonnull Point p) {
+        x = p.x;
+        y = p.y;
+    }
+
     /**
-     * Get the thread local Point. Do not cache this object or store
+     * Get the thread local PointF. Do not cache this object or store
      * it as a member variable, this is only intended for temporary
      * calculation in method stack to avoid new object construction.
      *
      * @return the thread-local instance
      */
     @Nonnull
-    public static Point get() {
+    public static PointF get() {
         return TLS.get();
     }
 
     @Nonnull
-    public static Point copy(@Nullable Point p) {
-        return p == null ? new Point() : p.copy();
+    public static PointF copy(@Nullable PointF p) {
+        return p == null ? new PointF() : p.copy();
     }
 
-    public void set(int x, int y) {
+    public void set(float x, float y) {
         this.x = x;
         this.y = y;
     }
@@ -66,14 +71,30 @@ public class Point {
         y = p.y;
     }
 
+    public void set(@Nonnull PointF p) {
+        x = p.x;
+        y = p.y;
+    }
+
     public void negate() {
         x = -x;
         y = -y;
     }
 
-    public void offset(int dx, int dy) {
+    public void offset(float dx, float dy) {
         x += dx;
         y += dy;
+    }
+
+    /**
+     * Return the euclidean distance from (0,0) to the point
+     */
+    public float length() {
+        return MathUtil.hypot(x, y);
+    }
+
+    public void round(@Nonnull Point dst) {
+        dst.set(Math.round(x), Math.round(y));
     }
 
     @Override
@@ -81,28 +102,28 @@ public class Point {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Point point = (Point) o;
+        PointF pointF = (PointF) o;
 
-        if (x != point.x) return false;
-        return y == point.y;
+        if (Float.compare(pointF.x, x) != 0) return false;
+        return Float.compare(pointF.y, y) == 0;
     }
 
     @Override
     public int hashCode() {
-        int result = x;
-        result = 31 * result + y;
+        int result = (x != +0.0f ? Float.floatToIntBits(x) : 0);
+        result = 31 * result + (y != +0.0f ? Float.floatToIntBits(y) : 0);
         return result;
     }
 
     @Override
     public String toString() {
-        return "Point(" +
+        return "PointF(" +
                 x + ", " + y +
                 ')';
     }
 
     @Nonnull
-    public Point copy() {
-        return new Point(x, y);
+    public PointF copy() {
+        return new PointF(x, y);
     }
 }

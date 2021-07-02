@@ -291,8 +291,8 @@ public abstract class ViewGroup extends View implements ViewParent {
      */
     private boolean dispatchTransformedGenericPointerEvent(MotionEvent event, View child) {
         boolean handled;
-        final float offsetX = getScrollX() - child.mLeft;
-        final float offsetY = getScrollY() - child.mTop;
+        final float offsetX = mScrollX - child.mLeft;
+        final float offsetY = mScrollY - child.mTop;
         event.offsetLocation(offsetX, offsetY);
         handled = child.dispatchGenericMotionEvent(event);
         event.offsetLocation(-offsetX, -offsetY);
@@ -603,16 +603,6 @@ public abstract class ViewGroup extends View implements ViewParent {
         return false;
     }
 
-    @Override
-    public float getScrollX() {
-        return 0;
-    }
-
-    @Override
-    public float getScrollY() {
-        return 0;
-    }
-
     private float[] getTempLocationF() {
         if (mTempPosition == null) {
             mTempPosition = new float[2];
@@ -641,8 +631,8 @@ public abstract class ViewGroup extends View implements ViewParent {
     }
 
     void transformPointToViewLocal(float[] point, View child) {
-        point[0] += getScrollX() - child.mLeft;
-        point[1] += getScrollY() - child.mTop;
+        point[0] += mScrollX - child.mLeft;
+        point[1] += mScrollY - child.mTop;
     }
 
     /**
@@ -726,9 +716,9 @@ public abstract class ViewGroup extends View implements ViewParent {
 
         child.assignParent(this);
 
-        ViewRootImpl viewRoot = this.viewRoot;
-        if (viewRoot != null) {
-            child.dispatchAttachedToWindow(viewRoot);
+        AttachInfo attachInfo = mAttachInfo;
+        if (attachInfo != null) {
+            child.dispatchAttachedToWindow(attachInfo);
         }
     }
 
@@ -871,12 +861,12 @@ public abstract class ViewGroup extends View implements ViewParent {
         final View[] views = mChildren;
         final int count = mChildrenCount;
 
-        View view;
+        View v;
         for (int i = 0; i < count; i++) {
-            view = views[i].findViewTraversal(id);
+            v = views[i].findViewTraversal(id);
 
-            if (view != null) {
-                return (T) view;
+            if (v != null) {
+                return (T) v;
             }
         }
 
@@ -1168,8 +1158,8 @@ public abstract class ViewGroup extends View implements ViewParent {
     }
 
     @Override
-    final void dispatchAttachedToWindow(ViewRootImpl viewRoot) {
-        super.dispatchAttachedToWindow(viewRoot);
+    final void dispatchAttachedToWindow(AttachInfo info) {
+        super.dispatchAttachedToWindow(info);
     }
 
     @Override

@@ -21,14 +21,14 @@ package icyllis.modernui.view;
 import javax.annotation.Nullable;
 
 /**
- * Defines an object that can act as a parent of a view
+ * Defines an object that can work as a parent of a View.
  */
 public interface ViewParent {
 
     /**
-     * Returns the parent of this ViewParent
+     * Returns the parent of this ViewParent.
      *
-     * @return the parent or {@code null} if parent is ViewRoot
+     * @return the parent or {@code null} if the parent is not available
      */
     @Nullable
     ViewParent getParent();
@@ -38,16 +38,6 @@ public interface ViewParent {
      * child of this view parent. This will schedule a layout pass of the view tree.
      */
     void requestLayout();
-
-    /**
-     * The scroll offset in horizontal direction, used for view coordinate transformation.
-     */
-    float getScrollX();
-
-    /**
-     * The scroll offset in vertical direction, used for view coordinate transformation.
-     */
-    float getScrollY();
 
     /**
      * This method is called on the parent when a child's drawable state
