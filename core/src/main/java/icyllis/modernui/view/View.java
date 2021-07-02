@@ -23,7 +23,10 @@ import icyllis.modernui.annotation.CallSuper;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Point;
+import icyllis.modernui.math.PointF;
+import icyllis.modernui.math.Transformation;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.glfw.GLFW;
@@ -53,9 +56,6 @@ public class View {
      */
     public static final int NO_ID = -1;
 
-    /**
-     * @see #generateViewId()
-     */
     private static final AtomicInteger sNextGeneratedId = new AtomicInteger(1);
 
     /*
@@ -196,10 +196,11 @@ public class View {
     /**
      * Internal use
      */
-    ViewRootImpl viewRoot;
+    AttachInfo mAttachInfo;
 
     /**
-     * View id to identify this view in UI hierarchy
+     * View id to identify this view in the hierarchy.
+     * <p>
      * {@link #getId()}
      * {@link #setId(int)}
      */
@@ -231,11 +232,37 @@ public class View {
      * horizontally.
      */
     protected int mScrollX;
+
     /**
      * The offset, in pixels, by which the content of this view is scrolled
      * vertically.
      */
     protected int mScrollY;
+
+    /**
+     * The transform matrix for the View. This transform is calculated internally
+     * based on the translation, rotation, and scale properties. This matrix
+     * affects the view both logically (such as click event) and visually.
+     */
+    private Transformation mTransformation;
+
+    /**
+     * The transition matrix for the View only used for transition animations. This
+     * is a separate object because it does not change the properties of the view,
+     * only visual effects are affected. This can be null if there is no animation.
+     */
+    @Nullable
+    private Matrix4 mTransitionMatrix;
+
+    /**
+     * The opacity of the view as manipulated by the Fade transition. This is a
+     * property only used by transitions, which is composited with the other alpha
+     * values to calculate the final visual alpha value (offscreen rendering).
+     * <p>
+     * Note that a View has no alpha property, because alpha only affects visual
+     * effects, but not logically. And will have a great impact on performance.
+     */
+    private float mTransitionAlpha = 1f;
 
     private int mMinWidth;
     private int mMinHeight;
@@ -712,9 +739,9 @@ public class View {
     }
 
     /**
-     * Get the parent of this view
+     * Gets the parent of this view. Note the parent is not necessarily a View.
      *
-     * @return parent of this view
+     * @return the parent of this view
      */
     @Nullable
     public final ViewParent getParent() {
@@ -722,53 +749,54 @@ public class View {
     }
 
     /**
-     * Assign parent view, this method is called by system
-     * Internal method, derived classes should NOT override
-     * or call this method for any reason
+     * Sets the parent view during layout.
      *
-     * @param parent parent view
-     * @throws RuntimeException parent is already assigned
+     * @param parent the parent of this view
      */
-    final void assignParent(@Nonnull ViewParent parent) {
-        if (this.mParent == null) {
-            this.mParent = parent;
+    final void assignParent(@Nullable ViewParent parent) {
+        if (mParent == null) {
+            mParent = parent;
+        } else if (parent == null) {
+            mParent = null;
         } else {
-            throw new RuntimeException("Parent of view " + this + " has been assigned");
+            throw new IllegalStateException("The parent of view " + this + " has been assigned");
         }
     }
 
     /**
-     * Get the ID of this view
+     * Returns this view's identifier.
      *
-     * @return view id
+     * @return a positive integer used to identify the view or {@link #NO_ID}
+     * if the view has no ID
+     * @see #setId(int)
+     * @see #findViewById(int)
      */
     public int getId() {
         return mId;
     }
 
     /**
-     * ID should not be repeated in the same view group and should be a positive number
+     * Sets the identifier for this view. The identifier does not have to be
+     * unique in this view's hierarchy. The identifier should be a positive
+     * integer.
      *
-     * @param id view id
+     * @param id a number used to identify the view
+     * @see #NO_ID
+     * @see #getId()
+     * @see #findViewById(int)
      */
     public void setId(int id) {
-        if (id == NO_ID) {
-            this.mId = generateViewId();
-        } else {
-            this.mId = id;
-        }
+        mId = id;
     }
 
     /**
      * Generate a value suitable for use in {@link #setId(int)}.
-     * This value will not collide with ID values generated at build time by aapt for R.id.
      *
      * @return a generated ID value
      */
     public static int generateViewId() {
-        while (true) {
+        for (; ; ) {
             final int result = sNextGeneratedId.get();
-            // aapt-generated IDs have the high byte nonzero; clamp to the range under that.
             int newValue = result + 1;
             if (newValue > 0x00FFFFFF)
                 newValue = 1;
@@ -1032,27 +1060,63 @@ public class View {
         return mBottom;
     }
 
-    /*public final void setListening(boolean listening) {
-        if (this.listening != listening) {
-            this.listening = listening;
-            onListeningChanged(listening);
+    /**
+     * The transform matrix of this view, which is calculated based on the current
+     * rotation, scale, and pivot properties. This will affect this view logically
+     * (such as for events) and visually.
+     * <p>
+     * Note that the matrix should be only used as read-only (like transforming
+     * coordinates). In that case, you should call {@link #hasIdentityMatrix()}
+     * first to check if the operation can be skipped, because this method will
+     * create the matrix if not available. Otherwise, if you want to change the
+     * transform matrix, you should use methods such as {@link #setTranslationX(float)}.
+     *
+     * @return the current transform matrix for the view
+     * @see #getRotation()
+     * @see #getScaleX()
+     * @see #getScaleY()
+     * @see #getPivotX()
+     * @see #getPivotY()
+     */
+    @Nonnull
+    public final Matrix4 getMatrix() {
+        ensureTransformation();
+        return mTransformation.getMatrix();
+    }
+
+    /**
+     * Returns true if the transform matrix is the identity matrix.
+     *
+     * @return true if the transform matrix is the identity matrix, false otherwise.
+     */
+    public final boolean hasIdentityMatrix() {
+        if (mTransformation == null) {
+            return true;
+        }
+        return mTransformation.getMatrix().isIdentity();
+    }
+
+    private void ensureTransformation() {
+        if (mTransformation == null) {
+            mTransformation = new Transformation();
         }
     }
 
-    public final boolean isListening() {
-        return listening;
+    /**
+     * Sets the horizontal location of this view relative to its {@link #getLeft() left} position.
+     * This effectively positions the object post-layout, in addition to wherever the object's
+     * layout placed it. This is not used for transition animation.
+     *
+     * @param translationX The horizontal position of this view relative to its left position,
+     *                     in pixels.
+     */
+    public void setTranslationX(float translationX) {
+        ensureTransformation();
+        mTransformation.setTranslationX(translationX);
     }
 
-    protected void onListeningChanged(boolean listening) {
-
-    }
-
-    protected void onVisibleChanged(boolean visible) {
-
-    }*/
-
-    void dispatchAttachedToWindow(ViewRootImpl viewRoot) {
-        this.viewRoot = viewRoot;
+    void dispatchAttachedToWindow(AttachInfo info) {
+        mAttachInfo = info;
     }
 
     /**
@@ -1161,43 +1225,70 @@ public class View {
     }
 
     /**
-     * Computes the coordinates of this view in its window. The argument
-     * must be an array of two integers. After the method returns, the array
-     * contains the x and y location in that order.
+     * Finds the topmost view in the current view hierarchy.
      *
-     * @param location an array of two integers in which to hold the coordinates
+     * @return the topmost view containing this view
      */
-    public void getLocationInWindow(@Nonnull int[] location) {
-        if (location.length < 2) {
-            throw new IllegalArgumentException("Location array length must be two at least");
+    public final View getRootView() {
+        if (mAttachInfo != null) {
+            View v = mAttachInfo.mRootView;
+            if (v != null) {
+                return v;
+            }
         }
 
-        int x = mLeft;
-        int y = mTop;
+        View v = this;
 
-        ViewParent parent = this.mParent;
-        while (parent != null) {
-            x -= parent.getScrollX();
-            y -= parent.getScrollY();
-            parent = parent.getParent();
+        while (v.mParent instanceof View) {
+            v = (View) v.mParent;
         }
 
-        location[0] = x;
-        location[1] = y;
+        return v;
+    }
+
+    /**
+     * Computes the coordinates of this view in its window.
+     *
+     * @param out the point in which to hold the coordinates
+     */
+    public void getLocationInWindow(@Nonnull Point out) {
+        if (mAttachInfo == null) {
+            out.set(0, 0);
+            return;
+        }
+
+        PointF p = PointF.get();
+        p.set(0, 0);
+
+        if (!hasIdentityMatrix()) {
+            getMatrix().transform(p);
+        }
+
+        p.offset(mLeft, mTop);
+
+        ViewParent parent = mParent;
+        while (parent instanceof View) {
+            View view = (View) parent;
+            p.offset(-view.mScrollX, -view.mScrollY);
+
+            if (!view.hasIdentityMatrix()) {
+                view.getMatrix().transform(p);
+            }
+
+            p.offset(view.mLeft, view.mTop);
+            parent = view.mParent;
+        }
+
+        p.round(out);
     }
 
     /**
      * Finds the first descendant view with the given ID, the view itself if
      * the ID matches {@link #getId()}, or {@code null} if the ID is invalid
      * (< 0) or there is no matching view in the hierarchy.
-     * <p>
-     * <strong>Note:</strong> In most cases -- depending on compiler support --
-     * the resulting view is automatically cast to the target class type. If
-     * the target class type is unconstrained, an explicit cast may be
-     * necessary.
      *
-     * @param id the ID to search for
-     * @return a view with given ID if found, or {@code null} otherwise
+     * @param id the id to search for
+     * @return a view with given id if found, or {@code null} otherwise
      */
     @Nullable
     public final <T extends View> T findViewById(int id) {
@@ -1205,6 +1296,25 @@ public class View {
             return null;
         }
         return findViewTraversal(id);
+    }
+
+    /**
+     * Finds the first descendant view with the given ID, the view itself if the ID
+     * matches {@link #getId()}, or results in an error.
+     *
+     * @param id the ID to search for
+     * @return a view with given ID
+     * @throws IllegalArgumentException the ID is invalid or there is no matching view
+     *                                  in the hierarchy
+     * @see View#findViewById(int)
+     */
+    @Nonnull
+    public final <T extends View> T getViewById(int id) {
+        T view = findViewById(id);
+        if (view == null) {
+            throw new IllegalArgumentException("ID does not reference a View inside this View");
+        }
+        return view;
     }
 
     @SuppressWarnings("unchecked")
@@ -1237,7 +1347,7 @@ public class View {
 
     /**
      * Starts a drag and drop operation. This method passes a {@link DragShadow} object to
-     * the window system. The system calls {@link DragShadow#onDrawShadow(CanvasForge)}
+     * the window system. The system calls {@link DragShadow#onDrawShadow(Canvas)}
      * to draw the drag shadow itself at proper level.
      * <p>
      * Once the system has the drag shadow, it begins the drag and drop operation by sending
@@ -1257,11 +1367,11 @@ public class View {
      * unable to start the operation because of another ongoing operation or some other reasons.
      */
     public final boolean startDragAndDrop(@Nullable Object localState, @Nullable DragShadow shadow, int flags) {
-        if (viewRoot == null) {
+        if (mAttachInfo == null) {
             ModernUI.LOGGER.error(MARKER, "startDragAndDrop called out of a window");
             return false;
         }
-        return viewRoot.startDragAndDrop(this, localState, shadow, flags);
+        return mAttachInfo.mViewRootImpl.startDragAndDrop(this, localState, shadow, flags);
     }
 
     /**

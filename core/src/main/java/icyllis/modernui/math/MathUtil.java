@@ -149,6 +149,11 @@ public final class MathUtil {
         return (float) Math.atan2(a, b);
     }
 
+    // hypot
+    public static float hypot(float x, float y) {
+        return (float) Math.hypot(x, y);
+    }
+
     // clamp 'a' in range [min,max]
     public static int clamp(int a, int min, int max) {
         return Math.max(Math.min(a, max), min);

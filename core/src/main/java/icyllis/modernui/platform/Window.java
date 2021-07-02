@@ -28,7 +28,7 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
- * Represents a window to operating system, providing OpenGL context.
+ * Represents a window to operating system, which provides OpenGL context.
  */
 public abstract class Window implements AutoCloseable {
 
@@ -95,10 +95,19 @@ public abstract class Window implements AutoCloseable {
         return new WindowImpl(handle, state, borderless, fullscreen);
     }
 
+    /**
+     * Get the pointer of this window in the window system.
+     *
+     * @return the handle of the window
+     */
     public final long getHandle() {
         return mHandle;
     }
 
+    /**
+     * Makes the OpenGL context of this window on the current calling thread.
+     * It can only be on one thread at the same time.
+     */
     public abstract void makeCurrent();
 
     /**
@@ -109,20 +118,17 @@ public abstract class Window implements AutoCloseable {
      */
     public abstract boolean shouldClose();
 
-    /**
-     * A helper method that inverts {@link #shouldClose()}
-     *
-     * @return {@code true} if this window still exists
-     * @see #shouldClose()
-     */
-    public boolean exists() {
-        return !shouldClose();
-    }
-
     public abstract boolean isRefreshNeeded();
 
+    /**
+     * Swaps the default framebuffer in the current OpenGL context to the
+     * operating system.
+     */
     public abstract void swapBuffers();
 
+    /**
+     * Destroys the window and remove all callbacks.
+     */
     public void destroy() {
         sWindows.remove(mHandle);
     }
@@ -171,16 +177,8 @@ public abstract class Window implements AutoCloseable {
      */
     public abstract int getScreenHeight();
 
-    public float getAspectRatio() {
+    public final float getAspectRatio() {
         return (float) getWidth() / getHeight();
-    }
-
-    public double getScreenPixelFactorX() {
-        return (double) getWidth() / getScreenWidth();
-    }
-
-    public double getScreenPixelFactorY() {
-        return (double) getHeight() / getScreenHeight();
     }
 
     @Override

@@ -67,8 +67,8 @@ public class RectF {
     }
 
     /**
-     * Get the thread local RectF. Do not cache this object or make
-     * it a member variable, this is only intended for temporary
+     * Get the thread local RectF. Do not cache this object or store
+     * it as a member variable, this is only intended for temporary
      * calculation in method stack to avoid new object construction.
      *
      * @return the thread-local instance

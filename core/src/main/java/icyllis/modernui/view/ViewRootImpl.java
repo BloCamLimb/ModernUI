@@ -25,7 +25,8 @@ import javax.annotation.Nullable;
 
 /**
  * The top of a view hierarchy, implementing the needed protocol between View and
- * Window. However, another class is required for a complete protocol.
+ * Window. There must also be a class handle events from Window to ViewRootImpl,
+ * so methods are public for external calls.
  */
 public final class ViewRootImpl implements ViewParent {
 
@@ -33,10 +34,13 @@ public final class ViewRootImpl implements ViewParent {
 
     private View mView;
 
+    private final AttachInfo mAttachInfo;
+
     /*private final int[] inBounds  = new int[]{0, 0, 0, 0};
     private final int[] outBounds = new int[4];*/
 
     public ViewRootImpl() {
+        mAttachInfo = new AttachInfo(this);
     }
 
     public void setView(@Nonnull View view) {
@@ -48,8 +52,9 @@ public final class ViewRootImpl implements ViewParent {
                 params = new LayoutParams();
                 view.setLayoutParams(params);
             }*/
+            mAttachInfo.mRootView = view;
             view.assignParent(this);
-            view.dispatchAttachedToWindow(this);
+            view.dispatchAttachedToWindow(mAttachInfo);
         }
     }
 
@@ -175,16 +180,6 @@ public final class ViewRootImpl implements ViewParent {
     @Override
     public void requestLayout() {
         //master.mLayoutRequested = true;
-    }
-
-    @Override
-    public float getScrollX() {
-        return 0;
-    }
-
-    @Override
-    public float getScrollY() {
-        return 0;
     }
 
     @Override

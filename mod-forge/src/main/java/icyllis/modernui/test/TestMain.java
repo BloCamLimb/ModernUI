@@ -196,7 +196,7 @@ public class TestMain {
                 Framebuffer framebuffer = new Framebuffer(window.getWidth(), window.getHeight());
                 framebuffer.attachTexture(GL_COLOR_ATTACHMENT0, GL_RGBA8);
 
-                while (window.exists()) {
+                while (!window.shouldClose()) {
                     if (window.isRefreshNeeded()) {
                         GLWrapper.resetFrame(window);
                         GLWrapper.enableCull();
@@ -301,7 +301,7 @@ public class TestMain {
                 }
             }, "Open-File").start();*/
 
-            while (sWindow == null || sWindow.exists()) {
+            while (sWindow == null || !sWindow.shouldClose()) {
                 glfwWaitEventsTimeout(1 / 288D);
             }
             t.interrupt();

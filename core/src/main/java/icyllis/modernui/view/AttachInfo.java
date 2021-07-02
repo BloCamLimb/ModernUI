@@ -16,24 +16,25 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.screen;
-
-import icyllis.modernui.view.View;
-import icyllis.modernui.view.ViewGroup;
+package icyllis.modernui.view;
 
 /**
- * Callback to handle user interface lifecycle events.
+ * A set of information given to a view when it is attached to its parent
+ * window.
  */
-public abstract class ScreenCallback {
+final class AttachInfo {
 
-    UIManager host;
+    /**
+     * The view root impl.
+     */
+    final ViewRootImpl mViewRootImpl;
 
-    protected ScreenCallback() {
-    }
+    /**
+     * The top view of the hierarchy.
+     */
+    View mRootView;
 
-    public abstract void onCreate();
-
-    public void setContentView(View view, ViewGroup.LayoutParams params) {
-        host.setContentView(view, params);
+    AttachInfo(ViewRootImpl viewRootImpl) {
+        mViewRootImpl = viewRootImpl;
     }
 }
