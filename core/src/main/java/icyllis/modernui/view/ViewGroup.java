@@ -32,6 +32,12 @@ public abstract class ViewGroup extends View implements ViewParent {
     private static final int ARRAY_CAPACITY_INCREMENT = 12;
 
     /**
+     * When set, ViewGroup invalidates only the child's rectangle
+     * Set by default
+     */
+    static final int FLAG_CLIP_CHILDREN = 0x1;
+
+    /**
      * When set, the drawing method will call {@link #getChildDrawingOrder(int, int)}
      * to get the index of the child to draw for that iteration.
      */
@@ -75,7 +81,7 @@ public abstract class ViewGroup extends View implements ViewParent {
     private boolean mHoveredSelf;
 
     public ViewGroup() {
-
+        mGroupFlags |= FLAG_CLIP_CHILDREN;
     }
 
     @Override
@@ -83,7 +89,7 @@ public abstract class ViewGroup extends View implements ViewParent {
         final View[] views = mChildren;
         final int count = mChildrenCount;
         for (int i = 0; i < count; i++) {
-            views[i].draw(canvas, this);
+            views[i].draw(canvas, this, (mGroupFlags & FLAG_CLIP_CHILDREN) != 0);
         }
     }
 
@@ -1160,6 +1166,9 @@ public abstract class ViewGroup extends View implements ViewParent {
     @Override
     final void dispatchAttachedToWindow(AttachInfo info) {
         super.dispatchAttachedToWindow(info);
+        for (int i = 0; i < mChildrenCount; i++) {
+            mChildren[i].dispatchAttachedToWindow(info);
+        }
     }
 
     @Override

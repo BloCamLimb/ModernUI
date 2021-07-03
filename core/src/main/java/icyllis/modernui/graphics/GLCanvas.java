@@ -205,6 +205,8 @@ public final class GLCanvas extends Canvas {
         mMatrixStack.push(Matrix4.identity());
         mClipStack.push(new Clip());
 
+        ModernUI.LOGGER.info("Created GLCanvas, saveCon: {}", getSaveCount());
+
         ShaderManager.getInstance().addListener(this::onLoadShaders);
     }
 
@@ -639,13 +641,13 @@ public final class GLCanvas extends Canvas {
 
     @Override
     public void translate(float dx, float dy) {
-        if (dx != 1.0f && dy != 1.0f)
+        if (dx != 0.0f || dy != 0.0f)
             getMatrix().translate(dx, dy, 0);
     }
 
     @Override
     public void scale(float sx, float sy) {
-        if (sx != 1.0f && sy != 1.0f)
+        if (sx != 1.0f || sy != 1.0f)
             getMatrix().scale(sx, sy, 1);
     }
 
@@ -653,6 +655,11 @@ public final class GLCanvas extends Canvas {
     public void rotate(float degrees) {
         if (degrees != 0.0f)
             getMatrix().rotateZ(MathUtil.toRadians(degrees));
+    }
+
+    @Override
+    public void multiply(@Nonnull Matrix4 matrix) {
+        getMatrix().multiply(matrix);
     }
 
     private static final class Clip {
@@ -888,7 +895,7 @@ public final class GLCanvas extends Canvas {
             if (quickReject(startX - t, top - t, startX + t, bottom + t)) {
                 return;
             }
-            addRoundRectFill(startX - t, top - t, startX + t, bottom + t, t, paint);
+            addRoundRectFill(startX - t, top - t, startX + t, bottom + t, t, 0, paint);
         } else if (MathUtil.approxEqual(startY, stopY)) {
             // horizontal
             float t = paint.getStrokeWidth() * 0.5f;
@@ -897,7 +904,7 @@ public final class GLCanvas extends Canvas {
             if (quickReject(left - t, startY - t, right + t, startY + t)) {
                 return;
             }
-            addRoundRectFill(left - t, startY - t, right + t, startY + t, t, paint);
+            addRoundRectFill(left - t, startY - t, right + t, startY + t, t, 0, paint);
         } else {
             float t = paint.getStrokeWidth() * 0.5f;
             float cx = (stopX + startX) * 0.5f;
@@ -917,7 +924,7 @@ public final class GLCanvas extends Canvas {
             if (quickReject(left - t, cy - t, right + t, cy + t)) {
                 return;
             }
-            addRoundRectFill(left - t, cy - t, right + t, cy + t, t, paint);
+            addRoundRectFill(left - t, cy - t, right + t, cy + t, t, 0, paint);
             restore();
         }
     }
@@ -943,46 +950,81 @@ public final class GLCanvas extends Canvas {
     }
 
     @Override
-    public void drawRoundRect(float left, float top, float right, float bottom, float radius, @Nonnull Paint paint) {
+    public void drawRoundRect(float left, float top, float right, float bottom, float radius,
+                              int side, @Nonnull Paint paint) {
         if (quickReject(left, top, right, bottom)) {
             return;
         }
         if (radius < 0)
             radius = 0;
         if (paint.getStyle() != Paint.Style.STROKE) {
-            addRoundRectFill(left, top, right, bottom, radius, paint);
+            addRoundRectFill(left, top, right, bottom, radius, side, paint);
         }
         if (paint.getStyle() != Paint.Style.FILL) {
-            addRoundRectStroke(left, top, right, bottom, radius, paint);
+            addRoundRectStroke(left, top, right, bottom, radius, side, paint);
         }
     }
 
     private void addRoundRectFill(float left, float top, float right, float bottom,
-                                  float radius, @Nonnull Paint paint) {
+                                  float radius, int side, @Nonnull Paint paint) {
+        float sm = Math.min(radius, paint.getSmoothRadius());
         putRectColor(left, top, right, bottom, paint.getColor());
         ByteBuffer buffer = getUniformBuffer();
-        buffer.putFloat(left + radius)
-                .putFloat(top + radius)
-                .putFloat(right - radius)
-                .putFloat(bottom - radius);
+        if ((side & RIGHT) == RIGHT) {
+            buffer.putFloat(left);
+        } else {
+            buffer.putFloat(left + radius);
+        }
+        if ((side & BOTTOM) == BOTTOM) {
+            buffer.putFloat(top);
+        } else {
+            buffer.putFloat(top + radius);
+        }
+        if ((side & LEFT) == LEFT) {
+            buffer.putFloat(right);
+        } else {
+            buffer.putFloat(right - radius);
+        }
+        if ((side & TOP) == TOP) {
+            buffer.putFloat(bottom);
+        } else {
+            buffer.putFloat(bottom - radius);
+        }
         buffer.putFloat(radius)
-                .putFloat(Math.min(radius, paint.getSmoothRadius()));
+                .putFloat(sm);
         buffer.position(buffer.position() + 4);
         getMatrix().get(getModelViewBuffer());
         mDrawStates.add(DRAW_ROUND_RECT);
     }
 
     private void addRoundRectStroke(float left, float top, float right, float bottom,
-                                    float radius, @Nonnull Paint paint) {
+                                    float radius, int side, @Nonnull Paint paint) {
         float half = Math.min(paint.getStrokeWidth() * 0.5f, radius);
+        float sm = Math.min(half, paint.getSmoothRadius());
         putRectColor(left - half, top - half, right + half, bottom + half, paint.getColor());
         ByteBuffer buffer = getUniformBuffer();
-        buffer.putFloat(left + radius)
-                .putFloat(top + radius)
-                .putFloat(right - radius)
-                .putFloat(bottom - radius);
+        if ((side & RIGHT) == RIGHT) {
+            buffer.putFloat(left);
+        } else {
+            buffer.putFloat(left + radius);
+        }
+        if ((side & BOTTOM) == BOTTOM) {
+            buffer.putFloat(top);
+        } else {
+            buffer.putFloat(top + radius);
+        }
+        if ((side & LEFT) == LEFT) {
+            buffer.putFloat(right);
+        } else {
+            buffer.putFloat(right - radius);
+        }
+        if ((side & TOP) == TOP) {
+            buffer.putFloat(bottom);
+        } else {
+            buffer.putFloat(bottom - radius);
+        }
         buffer.putFloat(radius)
-                .putFloat(Math.min(half, paint.getSmoothRadius()))
+                .putFloat(sm)
                 .putFloat(half);
         getMatrix().get(getModelViewBuffer());
         mDrawStates.add(DRAW_ROUND_RECT_OUTLINE);

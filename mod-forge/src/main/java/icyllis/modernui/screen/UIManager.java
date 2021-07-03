@@ -32,7 +32,6 @@ import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.forge.ModernUIForge;
 import icyllis.modernui.graphics.Framebuffer;
 import icyllis.modernui.graphics.GLCanvas;
-import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.texture.Texture;
 import icyllis.modernui.graphics.texture.Texture2D;
 import icyllis.modernui.math.Matrix4;
@@ -97,10 +96,10 @@ public final class UIManager {
     private final Window mWindow = minecraft.getWindow();
 
     // root view
-    private final ViewRootImpl mRoot = new ViewRootImpl();
+    private ViewRootImpl mRoot;
 
     // the top-level view of the window
-    private final DecorView mDecor = new DecorView();
+    private DecorView mDecor;
 
     // true if there will be no screen to open
     private boolean mCloseScreen;
@@ -132,9 +131,6 @@ public final class UIManager {
 
     private final Thread mUiThread;
     private final Object mRenderLock = new Object();
-
-    boolean mLayoutRequested = false;
-    private long mLastLayoutTime = 0;
 
     boolean mPendingRepostCursorEvent = false;
 
@@ -226,7 +222,7 @@ public final class UIManager {
     void start(@Nonnull MuiScreen screen) {
         if (mScreen == null) {
             mCallback.host = this;
-            mCallback.onCreate();
+            postTask(() -> mCallback.onCreate(), 0);
         }
         mScreen = screen;
 
@@ -273,18 +269,13 @@ public final class UIManager {
     }
 
     /**
-     * Post a task that will run on next pre-tick after delayed ticks
+     * Post a task that will run on UI thread in specified milliseconds.
      *
-     * @param runnable     runnable task
-     * @param delayedTicks delayed ticks to run the task
+     * @param action runnable task
+     * @param delay  delayed time to run the task in milliseconds
      */
-    @Deprecated
-    public void postTask(@Nonnull Runnable runnable, int delayedTicks) {
-        if (delayedTicks <= 0) {
-            runnable.run();
-            return;
-        }
-        mTasks.add(new TimedTask(runnable, getElapsedTicks() + delayedTicks));
+    public void postTask(@Nonnull Runnable action, int delay) {
+        mTasks.add(new TimedTask(action, mFrameTimeMillis + delay));
     }
 
     //TODO move inside view
@@ -294,19 +285,35 @@ public final class UIManager {
 
     @UiThread
     private void run() {
-        final Window window = mWindow;
-        final ViewRootImpl root = mRoot;
-        final GLCanvas canvas = mCanvas;
-        root.setView(mDecor);
+        final ViewRootImpl root = mRoot = new ViewRootImpl(mCanvas);
+        root.setView(mDecor = new DecorView());
         ModernUI.LOGGER.info(MARKER, "View system initialized");
         for (; ; ) {
+            try {
+                mUiThread.join();
+            } catch (InterruptedException ignored) {
+            }
+
             // holds the lock
             synchronized (mRenderLock) {
+                // 1. do tasks
+                if (!mTasks.isEmpty()) {
+                    mTasks.removeIf(task -> task.doExecuteTask(mFrameTimeMillis));
+                }
+                if (mScreen == null) {
+                    return;
+                }
+
+                // 2. do input events
+
+                // 3. do animations
                 mAnimationCallback.accept(mFrameTimeMillis);
 
-                canvas.reset(window.getWidth(), window.getHeight());
+                // 4. do traversal
+                root.doTraversal();
 
-                Paint paint = Paint.take();
+                // test stuff
+                /*Paint paint = Paint.take();
                 paint.setStrokeWidth(6);
                 int c = (int) mElapsedTimeMillis / 300;
                 c = Math.min(c, 8);
@@ -329,26 +336,18 @@ public final class UIManager {
                         }
                     }
                 }
-                //ModernUI.LOGGER.info(Arrays.toString(pts));
-                canvas.drawStripLines(pts, paint);
+                mCanvas.drawStripLines(pts, paint);
 
-                root.onDraw(canvas);
-
-                paint.reset();
                 paint.setRGBA(255, 180, 100, 255);
-                canvas.drawCircle(90, 30, 6, paint);
-                canvas.drawCircle(150, 90, 6, paint);
-                canvas.drawCircle(210, 30, 6, paint);
-                canvas.drawCircle(270, 90, 6, paint);
-                canvas.drawCircle(330, 30, 6, paint);
-                canvas.drawCircle(390, 90, 6, paint);
-                canvas.drawCircle(450, 30, 6, paint);
-                canvas.drawCircle(510, 90, 6, paint);
-                canvas.drawCircle(570, 30, 6, paint);
-            }
-            try {
-                mUiThread.join();
-            } catch (InterruptedException ignored) {
+                mCanvas.drawCircle(90, 30, 6, paint);
+                mCanvas.drawCircle(150, 90, 6, paint);
+                mCanvas.drawCircle(210, 30, 6, paint);
+                mCanvas.drawCircle(270, 90, 6, paint);
+                mCanvas.drawCircle(330, 30, 6, paint);
+                mCanvas.drawCircle(390, 90, 6, paint);
+                mCanvas.drawCircle(450, 30, 6, paint);
+                mCanvas.drawCircle(510, 90, 6, paint);
+                mCanvas.drawCircle(570, 30, 6, paint);*/
             }
         }
     }
@@ -503,22 +502,23 @@ public final class UIManager {
 
         // wait UI thread, if slow
         synchronized (mRenderLock) {
-            // check if need redraw
-            final int oldVertexArray = glGetInteger(GL_VERTEX_ARRAY_BINDING);
-            final int oldProgram = glGetInteger(GL_CURRENT_PROGRAM);
-            glEnable(GL_STENCIL_TEST);
+            if (mRoot.isFrameDrawn()) {
+                final int oldVertexArray = glGetInteger(GL_VERTEX_ARRAY_BINDING);
+                final int oldProgram = glGetInteger(GL_CURRENT_PROGRAM);
+                glEnable(GL_STENCIL_TEST);
 
-            framebuffer.resize(width, height);
-            framebuffer.clearColorBuffer();
-            framebuffer.clearDepthStencilBuffer();
-            framebuffer.bindDraw();
-            // flush tasks from UI thread, such as texture uploading
-            RenderCore.flushRenderCalls();
-            canvas.render();
+                framebuffer.resize(width, height);
+                framebuffer.clearColorBuffer();
+                framebuffer.clearDepthStencilBuffer();
+                framebuffer.bindDraw();
+                // flush tasks from UI thread, such as texture uploading
+                RenderCore.flushRenderCalls();
+                canvas.render();
 
-            glBindVertexArray(oldVertexArray);
-            glUseProgram(oldProgram);
-            glDisable(GL_STENCIL_TEST);
+                glBindVertexArray(oldVertexArray);
+                glUseProgram(oldProgram);
+                glDisable(GL_STENCIL_TEST);
+            }
         }
         int texture = framebuffer.getAttachedTexture(GL_COLOR_ATTACHMENT0).get();
 
@@ -586,28 +586,7 @@ public final class UIManager {
      * Called when game window size changed, used to re-layout the window.
      */
     void resize() {
-        doLayout();
-    }
-
-    /**
-     * Directly layout UI window
-     */
-    private void doLayout() {
-        long startTime = Util.getNanos();
-        int width = mWindow.getWidth();
-        int height = mWindow.getHeight();
-        int widthSpec = MeasureSpec.makeMeasureSpec(width, MeasureSpec.Mode.EXACTLY);
-        int heightSpec = MeasureSpec.makeMeasureSpec(height, MeasureSpec.Mode.EXACTLY);
-
-        mRoot.performLayout(widthSpec, heightSpec);
-
-        if (ModernUIForge.isDeveloperMode()) {
-            ModernUI.LOGGER.info(MARKER, "Layout done in {} \u03bcs, framebuffer size: {}x{}",
-                    (Util.getNanos() - startTime) / 1000.0f, width, height);
-            //UITools.runViewTraversal(mDecorView, v -> ModernUI.LOGGER.debug(MARKER, "{}: {}x{}", v, v.getWidth(), v.getHeight()));
-        }
-        onCursorPos();
-        mLayoutRequested = false;
+        postTask(() -> mRoot.setFrame(mWindow.getWidth(), mWindow.getHeight()), 0);
     }
 
     void finish() {
@@ -616,24 +595,20 @@ public final class UIManager {
         }
         mTasks.clear();
         mScreen = null;
-        mCallback.host = null;
-        mCallback = null;
-        mLastLayoutTime = 0;
-        mLayoutRequested = false;
-        mDecor.removeAllViews();
+        if (mCallback != null) {
+            mCallback.host = null;
+            mCallback = null;
+        }
         UITools.useDefaultCursor();
         minecraft.keyboardHandler.setSendRepeatsToGui(false);
+        postTask(() -> mDecor.removeAllViews(), 0);
     }
 
     @SubscribeEvent
     void onClientTick(@Nonnull TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
             ++mTicks;
-            mRoot.tick(mTicks);
-            // view ticking is always performed before tasks
-            if (!mTasks.isEmpty()) {
-                mTasks.removeIf(task -> task.doExecuteTask(mTicks));
-            }
+            postTask(() -> mRoot.tick(mTicks), 0);
         } else {
             if (mPendingRepostCursorEvent) {
                 onCursorPos();
@@ -652,7 +627,7 @@ public final class UIManager {
                 mUiThread.interrupt();
             }
             BlurHandler.INSTANCE.update(mElapsedTimeMillis);
-        } else {
+        }/* else {
             // layout after updating animations and before drawing
             if (mLayoutRequested) {
                 // fixed at 40Hz
@@ -661,7 +636,7 @@ public final class UIManager {
                     doLayout();
                 }
             }
-        }
+        }*/
     }
 
     // main fragment of a UI
@@ -671,6 +646,9 @@ public final class UIManager {
     //private View view;
 
     //private IModule popup;
+
+    //boolean mLayoutRequested = false;
+    //private long mLastLayoutTime = 0;
 
     // registered menu screens
     //private final Map<ContainerType<?>, Function<? extends Container, ApplicationUI>> mScreenRegistry = new HashMap<>();

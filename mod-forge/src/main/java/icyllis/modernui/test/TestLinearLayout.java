@@ -128,9 +128,10 @@ public class TestLinearLayout extends LinearLayout {
                 .applyTo(new Applier(-90, 270, () -> arcEnd, v -> arcEnd = v)
                         .setInterpolator(TimeInterpolator.ACCELERATE));
 
-        Animator<?> anim = ObjectAnimator.ofFloat(this, sRoundRectLengthProp, 0, 80);
+        ObjectAnimator<?> anim = ObjectAnimator.ofFloat(this, sRoundRectLengthProp, 0, 80);
         anim.setDuration(400);
         anim.setInterpolator(TimeInterpolator.OVERSHOOT);
+        anim.addUpdateListener(a -> invalidate());
         mRoundRectLenAnim = anim;
 
         roundRectAlphaAni = new Animation(250)
