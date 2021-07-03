@@ -60,8 +60,9 @@ public class View {
 
     /*
      * Private masks
-     * |--------|--------|--------|--------|
      *
+     * |--------|--------|--------|--------|
+     *                             1         PFLAG_SKIP_DRAW
      * |--------|--------|--------|--------|
      *                         1             PFLAG_DRAWABLE_STATE_DIRTY
      *                        1              PFLAG_MEASURED_DIMENSION_SET
@@ -72,13 +73,11 @@ public class View {
      *     1                                 PFLAG_HOVERED
      * |--------|--------|--------|--------|
      */
+    static final int PFLAG_SKIP_DRAW = 0x00000080;
     static final int PFLAG_DRAWABLE_STATE_DIRTY = 0x00000400;
-
-    static final int PFLAG_MEASURED_DIMENSION_SET = 1 << 11;
-
-    static final int PFLAG_FORCE_LAYOUT = 1 << 12;
-
-    static final int PFLAG_LAYOUT_REQUIRED = 1 << 13;
+    static final int PFLAG_MEASURED_DIMENSION_SET = 0x00000800;
+    static final int PFLAG_FORCE_LAYOUT = 0x00001000;
+    static final int PFLAG_LAYOUT_REQUIRED = 0x00002000;
 
     /**
      * Indicates whether the view is temporarily detached.
@@ -242,7 +241,7 @@ public class View {
     /**
      * The transform matrix for the View. This transform is calculated internally
      * based on the translation, rotation, and scale properties. This matrix
-     * affects the view both logically (such as click event) and visually.
+     * affects the view both logically (such as for events) and visually.
      */
     private Transformation mTransformation;
 
@@ -260,7 +259,7 @@ public class View {
      * values to calculate the final visual alpha value (offscreen rendering).
      * <p>
      * Note that a View has no alpha property, because alpha only affects visual
-     * effects, but not logically. And will have a great impact on performance.
+     * effects, and will have an impact on performance.
      */
     private float mTransitionAlpha = 1f;
 
@@ -300,26 +299,54 @@ public class View {
     /**
      * This method is called by ViewGroup.drawChild() to have each child view draw itself.
      */
-    final void draw(@Nonnull Canvas canvas, @Nonnull ViewGroup parent) {
-        computeScroll();
-        int sx = mScrollX;
-        int sy = mScrollY;
-
-        if (canvas.quickReject(mLeft - sx, mTop - sy, mRight - sx, mBottom - sy)) {
+    final void draw(@Nonnull Canvas canvas, @Nonnull ViewGroup group, boolean clip) {
+        final boolean identity = hasIdentityMatrix();
+        if (clip && identity &&
+                canvas.quickReject(mLeft, mTop, mRight, mBottom)) {
             // quick rejected
             return;
         }
 
-        int saveCount = canvas.save();
-        canvas.translate(mLeft - sx, mTop - sy);
-        boolean hasSpace = canvas.clipRect(0, 0, getWidth(), getHeight());
-
-        if (hasSpace) {
-            draw(canvas);
-        } else {
-            throw new IllegalStateException();
+        float alpha = mTransitionAlpha;
+        if (alpha <= 0) {
+            // completely transparent
+            return;
         }
 
+        computeScroll();
+        int sx = mScrollX;
+        int sy = mScrollY;
+
+        int saveCount = canvas.save();
+        canvas.translate(mLeft, mTop);
+
+        if (mTransitionMatrix != null) {
+            canvas.multiply(mTransitionMatrix);
+        }
+        if (!identity) {
+            canvas.multiply(getMatrix());
+        }
+
+        // true if clip region is not empty, or quick rejected
+        boolean hasSpace = true;
+        if (clip) {
+            hasSpace = canvas.clipRect(0, 0, getWidth(), getHeight());
+        }
+
+        canvas.translate(-sx, -sy);
+
+        if (hasSpace) {
+            //TODO stacked offscreen rendering
+            /*if (alpha < 1) {
+
+            }*/
+
+            if ((mPrivateFlags & PFLAG_SKIP_DRAW) == PFLAG_SKIP_DRAW) {
+                dispatchDraw(canvas);
+            } else {
+                draw(canvas);
+            }
+        }
         canvas.restoreToCount(saveCount);
     }
 
@@ -411,16 +438,16 @@ public class View {
     }
 
     /**
-     * Assign rect area of this view and all descendants
+     * Specifies the rectangle area of this view and all its descendants.
      * <p>
-     * Derived classes should NOT override this method for any reason
-     * Derived classes with children should override onLayout()
+     * Derived classes should NOT override this method for any reason.
+     * Derived classes with children should override {@link #onLayout(boolean)}.
      * In that method, they should call layout() on each of their children
      *
-     * @param left   left position, relative to game window
-     * @param top    top position, relative to game window
-     * @param right  right position, relative to game window
-     * @param bottom bottom position, relative to game window
+     * @param left   left position, relative to parent
+     * @param top    top position, relative to parent
+     * @param right  right position, relative to parent
+     * @param bottom bottom position, relative to parent
      */
     public void layout(int left, int top, int right, int bottom) {
         boolean changed = setFrame(left, top, right, bottom);
@@ -900,6 +927,16 @@ public class View {
     }
 
     /**
+     * Invalidate the whole view hierarchy. All views will be redrawn
+     * in the future.
+     */
+    public final void invalidate() {
+        if (mAttachInfo != null) {
+            mAttachInfo.mViewRootImpl.invalidate();
+        }
+    }
+
+    /**
      * Define whether the horizontal scrollbar should have or not.
      * The scrollbar is null by default.
      *
@@ -1003,6 +1040,29 @@ public class View {
     }
 
     /**
+     * Return the scrolled left position of this view. This is the left edge of
+     * the displayed part of your view. You do not need to draw any pixels
+     * farther left, since those are outside of the frame of your view on
+     * screen.
+     *
+     * @return The left edge of the displayed part of your view, in pixels.
+     */
+    public final int getScrollX() {
+        return mScrollX;
+    }
+
+    /**
+     * Return the scrolled top position of this view. This is the top edge of
+     * the displayed part of your view. You do not need to draw any pixels above
+     * it, since those are outside of the frame of your view on screen.
+     *
+     * @return The top edge of the displayed part of your view, in pixels.
+     */
+    public final int getScrollY() {
+        return mScrollY;
+    }
+
+    /**
      * Get the width of the view.
      *
      * @return the width in pixels
@@ -1068,10 +1128,11 @@ public class View {
      * Note that the matrix should be only used as read-only (like transforming
      * coordinates). In that case, you should call {@link #hasIdentityMatrix()}
      * first to check if the operation can be skipped, because this method will
-     * create the matrix if not available. Otherwise, if you want to change the
+     * create the matrix if not available. However, if you want to change the
      * transform matrix, you should use methods such as {@link #setTranslationX(float)}.
      *
      * @return the current transform matrix for the view
+     * @see #hasIdentityMatrix()
      * @see #getRotation()
      * @see #getScaleX()
      * @see #getScaleY()
@@ -1088,6 +1149,7 @@ public class View {
      * Returns true if the transform matrix is the identity matrix.
      *
      * @return true if the transform matrix is the identity matrix, false otherwise.
+     * @see #getMatrix()
      */
     public final boolean hasIdentityMatrix() {
         if (mTransformation == null) {
@@ -1113,6 +1175,39 @@ public class View {
     public void setTranslationX(float translationX) {
         ensureTransformation();
         mTransformation.setTranslationX(translationX);
+    }
+
+    /**
+     * Changes the transition matrix on the view. This is only used in the transition animation
+     * framework, {@link Transition}. When the animation finishes, the matrix
+     * should be cleared by calling this method with <code>null</code> as the matrix parameter.
+     * <p>
+     * Note that this matrix only affects the visual effect of this view, you should never
+     * call this method. You should use methods such as {@link #setTranslationX(float)}} instead
+     * to change the transformation logically.
+     *
+     * @param matrix the matrix, null indicates that the matrix should be cleared.
+     * @see #getTransitionMatrix()
+     */
+    public final void setTransitionMatrix(@Nullable Matrix4 matrix) {
+        mTransitionMatrix = matrix;
+    }
+
+    /**
+     * Changes the transition matrix on the view. This is only used in the transition animation
+     * framework, {@link Transition}. Returns <code>null</code> when there is no
+     * transformation provided by {@link #setTransitionMatrix(Matrix4)}.
+     * <p>
+     * Note that this matrix only affects the visual effect of this view, you should never
+     * call this method. You should use methods such as {@link #setTranslationX(float)}} instead
+     * to change the transformation logically.
+     *
+     * @return the matrix, null indicates that the matrix should be cleared.
+     * @see #setTransitionMatrix(Matrix4)
+     */
+    @Nullable
+    public final Matrix4 getTransitionMatrix() {
+        return mTransitionMatrix;
     }
 
     void dispatchAttachedToWindow(AttachInfo info) {

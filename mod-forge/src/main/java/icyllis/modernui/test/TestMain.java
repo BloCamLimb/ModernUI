@@ -24,7 +24,7 @@ import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.ast.Node;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.Sprite;
+import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.shader.ShaderManager;
@@ -36,6 +36,7 @@ import icyllis.modernui.platform.Bitmap;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.platform.Window;
 import icyllis.modernui.text.GraphemeBreak;
+import icyllis.modernui.view.Gravity;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.system.Callback;
@@ -160,6 +161,7 @@ public class TestMain {
         } catch (RunnerException e) {
             e.printStackTrace();
         }*/
+        ModernUI.LOGGER.info(Gravity.TOP & Gravity.BOTTOM);
         if (!CREATE_WINDOW)
             return;
         try {
@@ -179,7 +181,7 @@ public class TestMain {
                 canvas.setProjection(projection);
 
                 Sprite sprite;
-                try (ReadableByteChannel channel = ModernUI.get().getResource(Path.of("7-160413104Q45C.png"))) {
+                try (ReadableByteChannel channel = ModernUI.get().getResource(Path.of("74523424_p0.png"))) {
                     Bitmap bitmap = Bitmap.decode(null, channel);
                     Texture2D texture2D = new Texture2D();
                     int width = bitmap.getWidth();
@@ -209,25 +211,39 @@ public class TestMain {
                         canvas.reset(window.getWidth(), window.getHeight());
                         // UI thread
 
+                        canvas.save();
                         //canvas.rotate(-10, 640, 360);
-                        //canvas.scale(5, 5);
                         Paint paint = Paint.take();
                         paint.setSmoothRadius(3);
-                        //canvas.drawRoundImage(image, 100, 20, 3, paint);
+                        canvas.drawRoundImage(sprite, 100, 20, 15, paint);
                         //canvas.drawCircle(60, 60, 20, paint);
-                        paint.setStyle(Paint.Style.FILL);
-                        paint.setRGBA(120, 220, 240, 192);
-                        canvas.translate(100, 0);
+                        canvas.translate(300, 0);
+                        //canvas.clipRect(130, 40, 310, 110);
 
-                        canvas.save();
-                        canvas.clipRect(130, 40, 310, 110);
-                        canvas.drawRoundRect(120, 50, 300, 100, 10, paint);
+
+                        paint.setStyle(Paint.Style.FILL);
+
+                        paint.setRGBA(40, 40, 40, 255);
+                        canvas.drawRoundRect(120, 50, 200, 90, 10, Canvas.TOP, paint);
+                        paint.setRGBA(128, 128, 128, 255);
+                        canvas.drawRoundRect(120, 90, 200, 130, 2, paint);
+                        paint.setRGBA(40, 40, 40, 255);
+                        canvas.drawRoundRect(120, 130, 200, 170, 2, paint);
+                        canvas.drawRoundRect(120, 170, 200, 210, 2, paint);
+                        canvas.drawRoundRect(120, 210, 200, 250, 10, Canvas.BOTTOM, paint);
+
+                        paint.setStrokeWidth(4);
+                        paint.setSmoothRadius(2);
+                        paint.setRGBA(192, 192, 192, 255);
+                        canvas.drawLine(122, 90,  198, 90, paint);
+                        canvas.drawLine(122, 130, 198, 130, paint);
+                        canvas.drawLine(122, 170, 198, 170, paint);
+                        canvas.drawLine(122, 210, 198, 210, paint);
 
                         paint.setStyle(Paint.Style.STROKE);
-                        paint.setStrokeWidth(6);
                         paint.setRGBA(255, 255, 255, 255);
                         //canvas.drawCircle(60, 60, 20, paint);
-                        canvas.drawRoundRect(120, 50, 300, 100, 10, paint);
+                        canvas.drawRoundRect(120, 50, 200, 250, 10, paint);
                         canvas.restore();
 
                         paint.setStrokeWidth(10);

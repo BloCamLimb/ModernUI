@@ -18,7 +18,11 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.ModernUI;
+import icyllis.modernui.graphics.GLCanvas;
+import icyllis.modernui.platform.RenderCore;
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.MarkerManager;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -30,17 +34,34 @@ import javax.annotation.Nullable;
  */
 public final class ViewRootImpl implements ViewParent {
 
+    private static final Marker MARKER = MarkerManager.getMarker("ViewRootImpl");
+
+    private final AttachInfo mAttachInfo;
+    private final Thread mThread;
+    private final GLCanvas mCanvas;
+
+    private boolean mTraversalScheduled;
+    private boolean mWillDrawSoon;
+    private boolean mLayoutRequested;
+    private boolean mInvalidated;
+    private boolean mHandlingDraw;
+    private boolean mKeepInvalidated;
+    private boolean mDrawn;
+
     private boolean hasDragOperation;
 
     private View mView;
 
-    private final AttachInfo mAttachInfo;
+    private int mWidth;
+    private int mHeight;
 
     /*private final int[] inBounds  = new int[]{0, 0, 0, 0};
     private final int[] outBounds = new int[4];*/
 
-    public ViewRootImpl() {
+    public ViewRootImpl(GLCanvas canvas) {
         mAttachInfo = new AttachInfo(this);
+        mThread = Thread.currentThread();
+        mCanvas = canvas;
     }
 
     public void setView(@Nonnull View view) {
@@ -55,6 +76,14 @@ public final class ViewRootImpl implements ViewParent {
             mAttachInfo.mRootView = view;
             view.assignParent(this);
             view.dispatchAttachedToWindow(mAttachInfo);
+        }
+    }
+
+    public void setFrame(int width, int height) {
+        if (width != mWidth || height != mHeight) {
+            mWidth = width;
+            mHeight = height;
+            requestLayout();
         }
     }
 
@@ -88,25 +117,63 @@ public final class ViewRootImpl implements ViewParent {
         return true;
     }
 
-    public void performLayout(int widthSpec, int heightSpec) {
-        if (mView == null) {
-            return;
+    private void checkThread() {
+        if (mThread != Thread.currentThread()) {
+            throw new IllegalStateException("Not called from UI thread");
         }
-
-        mView.measure(widthSpec, heightSpec);
-
-        /*inBounds[2] = MeasureSpec.getSize(widthSpec);
-        inBounds[3] = MeasureSpec.getSize(heightSpec);
-
-        Gravity.apply(lp.gravity, mView.getMeasuredWidth(), mView.getMeasuredHeight(),
-                inBounds, lp.x, lp.y, outBounds);*/
-
-        mView.layout(0, 0, mView.getMeasuredWidth(), mView.getMeasuredHeight());
     }
 
-    public void onDraw(Canvas canvas) {
-        if (mView != null) {
-            mView.draw(canvas);
+    public void doTraversal() {
+        if (mTraversalScheduled) {
+            mTraversalScheduled = false;
+            performTraversal();
+        }
+    }
+
+    public void scheduleTraversal() {
+        if (!mTraversalScheduled) {
+            mTraversalScheduled = true;
+        }
+    }
+
+    private void performTraversal() {
+        final View host = mView;
+
+        if (host == null)
+            return;
+
+        mWillDrawSoon = true;
+
+        int width = mWidth;
+        int height = mHeight;
+        if (mLayoutRequested || width != host.getMeasuredWidth() || height != host.getMeasuredHeight()) {
+            long startTime = RenderCore.timeNanos();
+
+            int widthSpec = MeasureSpec.makeMeasureSpec(width, MeasureSpec.Mode.EXACTLY);
+            int heightSpec = MeasureSpec.makeMeasureSpec(height, MeasureSpec.Mode.EXACTLY);
+
+            host.measure(widthSpec, heightSpec);
+
+            host.layout(0, 0, host.getMeasuredWidth(), host.getMeasuredHeight());
+
+            ModernUI.LOGGER.info(MARKER, "Layout done in {} \u03bcs, window size: {}x{}",
+                    (RenderCore.timeNanos() - startTime) / 1000.0f, width, height);
+            mLayoutRequested = false;
+        }
+
+        mWillDrawSoon = false;
+
+        if (mInvalidated) {
+            mHandlingDraw = true;
+            mCanvas.reset(width, height);
+            host.draw(mCanvas);
+            mHandlingDraw = false;
+            if (mKeepInvalidated) {
+                mKeepInvalidated = false;
+            } else {
+                mInvalidated = false;
+            }
+            mDrawn = true;
         }
     }
 
@@ -153,6 +220,12 @@ public final class ViewRootImpl implements ViewParent {
         }
     }*/
 
+    public boolean isFrameDrawn() {
+        boolean b = mDrawn;
+        mDrawn = false;
+        return b;
+    }
+
     void performDragEvent(DragEvent event) {
         if (hasDragOperation) {
 
@@ -162,6 +235,17 @@ public final class ViewRootImpl implements ViewParent {
     public void tick(int ticks) {
         if (mView != null) {
             mView.tick(ticks);
+        }
+    }
+
+    void invalidate() {
+        checkThread();
+        mInvalidated = true;
+        if (!mWillDrawSoon) {
+            if (mHandlingDraw) {
+                mKeepInvalidated = true;
+            }
+            scheduleTraversal();
         }
     }
 
@@ -179,7 +263,9 @@ public final class ViewRootImpl implements ViewParent {
      */
     @Override
     public void requestLayout() {
-        //master.mLayoutRequested = true;
+        checkThread();
+        mLayoutRequested = true;
+        scheduleTraversal();
     }
 
     @Override

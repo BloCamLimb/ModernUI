@@ -18,7 +18,9 @@
 
 package icyllis.modernui.graphics;
 
+import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
+import icyllis.modernui.math.RectF;
 
 import javax.annotation.Nonnull;
 
@@ -38,6 +40,14 @@ import javax.annotation.Nonnull;
  * @since Core 1.6
  */
 public abstract class Canvas {
+
+    /**
+     * Bit flags representing the sides.
+     */
+    public static final int TOP = 1;
+    public static final int BOTTOM = 1 << 1;
+    public static final int LEFT = 1 << 2;
+    public static final int RIGHT = 1 << 3;
 
     /**
      * You cannot create just a base Canvas since there's no software rendering.
@@ -93,7 +103,7 @@ public abstract class Canvas {
     public abstract void restoreToCount(int saveCount);
 
     /**
-     * Premultiply the current matrix with the specified translation
+     * Premultiply the current matrix by the specified translation
      *
      * @param dx The distance to translate in X
      * @param dy The distance to translate in Y
@@ -101,7 +111,7 @@ public abstract class Canvas {
     public abstract void translate(float dx, float dy);
 
     /**
-     * Premultiply the current matrix with the specified scale.
+     * Premultiply the current matrix by the specified scale.
      *
      * @param sx The amount to scale in X
      * @param sy The amount to scale in Y
@@ -109,7 +119,7 @@ public abstract class Canvas {
     public abstract void scale(float sx, float sy);
 
     /**
-     * Premultiply the current matrix with the specified scale.
+     * Premultiply the current matrix by the specified scale.
      *
      * @param sx The amount to scale in X
      * @param sy The amount to scale in Y
@@ -124,7 +134,7 @@ public abstract class Canvas {
     }
 
     /**
-     * Premultiply the current matrix with the specified rotation.
+     * Premultiply the current matrix by the specified rotation.
      *
      * @param degrees The angle to rotate, in degrees
      */
@@ -132,7 +142,7 @@ public abstract class Canvas {
 
     /**
      * Rotate canvas clockwise around the pivot point with specified angle, this is
-     * equivalent to premultiply the current matrix with the specified rotation.
+     * equivalent to premultiply the current matrix by the specified rotation.
      *
      * @param degrees The amount to rotate, in degrees
      * @param px      The x-coord for the pivot point (unchanged by the rotation)
@@ -143,6 +153,39 @@ public abstract class Canvas {
         translate(px, py);
         rotate(degrees);
         translate(-px, -py);
+    }
+
+    /**
+     * Premultiply the current matrix by the specified matrix.
+     *
+     * @param matrix the matrix to multiply
+     */
+    public abstract void multiply(@Nonnull Matrix4 matrix);
+
+    /**
+     * Intersect the current clip with the specified rectangle and updates
+     * the stencil buffer if changed, which is expressed in local coordinates.
+     * The clip bounds cannot be expanded unless restore() is called.
+     *
+     * @param rect The rectangle to intersect with the current clip.
+     * @return true if the resulting clip is non-empty, otherwise further
+     * drawing will be always quick rejected until restore() is called
+     */
+    public boolean clipRect(@Nonnull Rect rect) {
+        return clipRect(rect.left, rect.top, rect.right, rect.bottom);
+    }
+
+    /**
+     * Intersect the current clip with the specified rectangle and updates
+     * the stencil buffer if changed, which is expressed in local coordinates.
+     * The clip bounds cannot be expanded unless restore() is called.
+     *
+     * @param rect The rectangle to intersect with the current clip.
+     * @return true if the resulting clip is non-empty, otherwise further
+     * drawing will be always quick rejected until restore() is called
+     */
+    public boolean clipRect(@Nonnull RectF rect) {
+        return clipRect(rect.left, rect.top, rect.right, rect.bottom);
     }
 
     /**
@@ -157,10 +200,25 @@ public abstract class Canvas {
      *               current clip
      * @param bottom The bottom of the rectangle to intersect with the current
      *               clip
-     * @return true if the resulting clip is non-empty, otherwise, further
+     * @return true if the resulting clip is non-empty, otherwise further
      * drawing will be always quick rejected until restore() is called
      */
     public abstract boolean clipRect(float left, float top, float right, float bottom);
+
+    /**
+     * Return true if the specified rectangle, after being transformed by the
+     * current matrix, would lie completely outside of the current clip. Call
+     * this to check if an area you intend to draw into is clipped out (and
+     * therefore you can skip making the draw calls). Note that all drawing
+     * methods call this method by default.
+     *
+     * @param rect the rect to compare with the current clip
+     * @return true if the given rect (transformed by the canvas' matrix)
+     * intersecting with the maximum rect representing the canvas' clip is empty
+     */
+    public boolean quickReject(@Nonnull RectF rect) {
+        return quickReject(rect.left, rect.top, rect.right, rect.bottom);
+    }
 
     /**
      * Return true if the specified rectangle, after being transformed by the
@@ -221,6 +279,17 @@ public abstract class Canvas {
      * @param paint The paint used to draw the rectangle
      */
     public void drawRect(@Nonnull Rect r, @Nonnull Paint paint) {
+        drawRect(r.left, r.top, r.right, r.bottom, paint);
+    }
+
+    /**
+     * Draw the specified Rect using the specified Paint. The rectangle will be filled or framed
+     * based on the Style in the paint. The smooth radius is ignored in the paint.
+     *
+     * @param r     The rectangle to be drawn.
+     * @param paint The paint used to draw the rectangle
+     */
+    public void drawRect(@Nonnull RectF r, @Nonnull Paint paint) {
         drawRect(r.left, r.top, r.right, r.bottom, paint);
     }
 
@@ -342,7 +411,35 @@ public abstract class Canvas {
     }
 
     /**
-     * Draw a rectangle with rounded corners within a rectangular bounds.
+     * Draw a rectangle with rounded corners within a rectangular bounds. The round
+     * rectangle will be filled or framed based on the Style in the paint.
+     *
+     * @param rect   The rectangular bounds of the round rect to be drawn
+     * @param radius the radius used to round the corners
+     * @param paint  the paint used to draw the round rectangle
+     */
+    public void drawRoundRect(@Nonnull RectF rect, float radius, @Nonnull Paint paint) {
+        drawRoundRect(rect.left, rect.top, rect.right, rect.bottom, radius, 0, paint);
+    }
+
+    /**
+     * Draw a rectangle with rounded corners within a rectangular bounds. The round
+     * rectangle will be filled or framed based on the Style in the paint.
+     *
+     * @param rect   The rectangular bounds of the round rect to be drawn
+     * @param radius the radius used to round the corners
+     * @param side   the side to round, accepted values are 0 (all sides),
+     *               or one of {@link #TOP}, {@link #BOTTOM}, {@link #LEFT},
+     *               {@link #RIGHT}, or any combination of two adjacent sides
+     * @param paint  the paint used to draw the round rectangle
+     */
+    public void drawRoundRect(@Nonnull RectF rect, float radius, int side, @Nonnull Paint paint) {
+        drawRoundRect(rect.left, rect.top, rect.right, rect.bottom, radius, side, paint);
+    }
+
+    /**
+     * Draw a rectangle with rounded corners within a rectangular bounds. The round
+     * rectangle will be filled or framed based on the Style in the paint.
      *
      * @param left   the left of the rectangular bounds
      * @param top    the top of the rectangular bounds
@@ -351,8 +448,27 @@ public abstract class Canvas {
      * @param radius the radius used to round the corners
      * @param paint  the paint used to draw the round rectangle
      */
+    public void drawRoundRect(float left, float top, float right, float bottom,
+                              float radius, @Nonnull Paint paint) {
+        drawRoundRect(left, top, right, bottom, radius, 0, paint);
+    }
+
+    /**
+     * Draw a rectangle with rounded corners within a rectangular bounds. The round
+     * rectangle will be filled or framed based on the Style in the paint.
+     *
+     * @param left   the left of the rectangular bounds
+     * @param top    the top of the rectangular bounds
+     * @param right  the right of the rectangular bounds
+     * @param bottom the bottom of the rectangular bounds
+     * @param radius the radius used to round the corners
+     * @param side   the side to round, accepted values are 0 (all sides),
+     *               or one of {@link #TOP}, {@link #BOTTOM}, {@link #LEFT},
+     *               {@link #RIGHT}, or any combination of two adjacent sides
+     * @param paint  the paint used to draw the round rectangle
+     */
     public abstract void drawRoundRect(float left, float top, float right, float bottom,
-                                       float radius, @Nonnull Paint paint);
+                                       float radius, int side, @Nonnull Paint paint);
 
     /**
      * Draw the specified image with rounded corners, whose top/left corner at (x,y)
