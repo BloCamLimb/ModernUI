@@ -33,6 +33,12 @@ public class AnimationHandler {
     private final CopyOnWriteArrayList<FrameCallback> mCallbacks = new CopyOnWriteArrayList<>();
     private final Object2LongMap<FrameCallback> mDelayedStartTime = new Object2LongOpenHashMap<>();
 
+    private long mCurrentFrameTime;
+
+    private AnimationHandler() {
+        mCurrentFrameTime = RenderCore.timeMillis();
+    }
+
     @Nonnull
     public static synchronized LongConsumer init() {
         if (sInstance == null) {
@@ -47,8 +53,20 @@ public class AnimationHandler {
         return sInstance;
     }
 
+    /**
+     * Returns the current animation time in milliseconds used to update animations.
+     * This value is updated when a new frame started, it's different from
+     * {@link RenderCore#timeMillis()} which gives you a real current time.
+     *
+     * @return the current animation time in milliseconds
+     */
+    public static long currentTimeMillis() {
+        return sInstance.mCurrentFrameTime;
+    }
+
     private void doAnimationFrame(long frameTime) {
         long currentTime = RenderCore.timeMillis();
+        mCurrentFrameTime = frameTime;
         for (FrameCallback callback : mCallbacks) {
             if (isCallbackDue(callback, currentTime)) {
                 callback.doAnimationFrame(frameTime);
@@ -86,11 +104,11 @@ public class AnimationHandler {
         return false;
     }
 
-    void autoCancelBasedOn(ObjectAnimator<?> animator) {
+    void autoCancelBasedOn(ObjectAnimator animator) {
         for (int i = mCallbacks.size() - 1; i >= 0; i--) {
             FrameCallback cb = mCallbacks.get(i);
             if (animator.shouldAutoCancel(cb)) {
-                ((Animator<?>) cb).cancel();
+                ((Animator) cb).cancel();
             }
         }
     }

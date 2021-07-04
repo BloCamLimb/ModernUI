@@ -16,9 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.view;
-
-import icyllis.modernui.widget.FrameLayout;
+package icyllis.modernui.widget;
 
 /**
  * DecorView is the internal policy for the view system. It's the top-level

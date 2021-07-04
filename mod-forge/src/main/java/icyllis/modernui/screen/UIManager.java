@@ -41,6 +41,7 @@ import icyllis.modernui.test.TestPauseUI;
 import icyllis.modernui.textmc.TextLayoutProcessor;
 import icyllis.modernui.util.TimedTask;
 import icyllis.modernui.view.*;
+import icyllis.modernui.widget.DecorView;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -133,13 +134,15 @@ public final class UIManager {
     private final Object mRenderLock = new Object();
 
     boolean mPendingRepostCursorEvent = false;
+    private MotionEvent mPendingMouseEvent;
 
     private boolean mFirstScreenOpened = false;
+    private boolean mProjectionChanged = false;
 
     private UIManager() {
         mAnimationCallback = AnimationHandler.init();
         mFramebuffer = new Framebuffer(mWindow.getWidth(), mWindow.getHeight());
-        mUiThread = new Thread(this::run, "UI thread");
+        mUiThread = new Thread(this::run, "Mui thread");
         MinecraftForge.EVENT_BUS.register(this);
     }
 
@@ -285,8 +288,9 @@ public final class UIManager {
 
     @UiThread
     private void run() {
-        final ViewRootImpl root = mRoot = new ViewRootImpl(mCanvas);
-        root.setView(mDecor = new DecorView());
+        mRoot = new ViewRootImpl(mCanvas);
+        mDecor = new DecorView();
+        mRoot.setView(mDecor);
         ModernUI.LOGGER.info(MARKER, "View system initialized");
         for (; ; ) {
             try {
@@ -310,7 +314,7 @@ public final class UIManager {
                 mAnimationCallback.accept(mFrameTimeMillis);
 
                 // 4. do traversal
-                root.doTraversal();
+                mRoot.doTraversal();
 
                 // test stuff
                 /*Paint paint = Paint.take();
@@ -361,11 +365,11 @@ public final class UIManager {
      * @see MenuScreen
      */
     void onCursorPos() {
-        final long now = Util.getNanos();
-        double x = minecraft.mouseHandler.xpos();
-        double y = minecraft.mouseHandler.ypos();
+        final long now = RenderCore.timeNanos();
+        float x = (float) minecraft.mouseHandler.xpos();
+        float y = (float) minecraft.mouseHandler.ypos();
         MotionEvent event = MotionEvent.obtain(now, now, MotionEvent.ACTION_HOVER_MOVE,
-                (float) x, (float) y, 0);
+                x, y, 0);
         mRoot.onInputEvent(event);
         mPendingRepostCursorEvent = false;
     }
@@ -382,21 +386,27 @@ public final class UIManager {
         // We should ensure (overlay == null && screen != null)
         // and the screen must be a mui screen
         if (minecraft.overlay == null && mScreen != null) {
-            ModernUI.LOGGER.debug(MARKER, "Button: {} {} {}", event.getButton(), event.getAction(), event.getMods());
+            ModernUI.LOGGER.info(MARKER, "Button: {} {} {}", event.getButton(), event.getAction(), event.getMods());
+            final long now = RenderCore.timeNanos();
+            float x = (float) minecraft.mouseHandler.xpos();
+            float y = (float) minecraft.mouseHandler.ypos();
+            mPendingMouseEvent = MotionEvent.obtain(now, now, 0, event.getAction() == GLFW_PRESS ?
+                            MotionEvent.ACTION_DOWN : MotionEvent.ACTION_UP, x, y, event.getMods(),
+                    1 << event.getButton(), 0);
         }
     }
 
     void onMouseButton() {
-
+        mRoot.onInputEvent(mPendingMouseEvent);
     }
 
     // Internal method
     public void onScroll(double scrollX, double scrollY) {
-        final long now = Util.getNanos();
-        double x = minecraft.mouseHandler.xpos();
-        double y = minecraft.mouseHandler.ypos();
+        final long now = RenderCore.timeNanos();
+        float x = (float) minecraft.mouseHandler.xpos();
+        float y = (float) minecraft.mouseHandler.ypos();
         MotionEvent event = MotionEvent.obtain(now, now, MotionEvent.ACTION_SCROLL,
-                (float) x, (float) y, 0);
+                x, y, 0);
         event.setRawAxisValue(MotionEvent.AXIS_HSCROLL, (float) scrollX);
         event.setRawAxisValue(MotionEvent.AXIS_VSCROLL, (float) scrollY);
         boolean handled = mRoot.onInputEvent(event);
@@ -429,13 +439,17 @@ public final class UIManager {
                 TextLayoutProcessor.getInstance().reload();
                 break;
             case GLFW_KEY_C:
+                // make a screenshot
                 Texture texture = mFramebuffer.getAttachedTexture(GL_COLOR_ATTACHMENT0);
                 Bitmap bitmap = Bitmap.download(Bitmap.Format.RGBA, (Texture2D) texture);
-                try (bitmap) {
-                    bitmap.saveDialog(Bitmap.SaveFormat.PNG, 0);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                Util.ioPool().execute(() -> {
+                    try (bitmap) {
+                        bitmap.saveDialog(Bitmap.SaveFormat.PNG, 0);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
+
                 break;
             case GLFW_KEY_G:
                 if (minecraft.screen == null && minecraft.hasSingleplayerServer() &&
@@ -494,15 +508,18 @@ public final class UIManager {
         int width = mWindow.getWidth();
         int height = mWindow.getHeight();
 
-        Matrix4 projection = Matrix4.makeOrthographic(width, -height, 0, 2000);
         GLCanvas canvas = mCanvas;
         Framebuffer framebuffer = mFramebuffer;
 
-        canvas.setProjection(projection);
+        if (mProjectionChanged) {
+            Matrix4 projection = Matrix4.makeOrthographic(width, -height, 0, 2000);
+            canvas.setProjection(projection);
+            mProjectionChanged = false;
+        }
 
         // wait UI thread, if slow
         synchronized (mRenderLock) {
-            if (mRoot.isFrameDrawn()) {
+            if (mRoot.isReadyForRendering()) {
                 final int oldVertexArray = glGetInteger(GL_VERTEX_ARRAY_BINDING);
                 final int oldProgram = glGetInteger(GL_CURRENT_PROGRAM);
                 glEnable(GL_STENCIL_TEST);
@@ -540,7 +557,7 @@ public final class UIManager {
         builder.vertex(width, 0, 0).color(255, 255, 255, alpha).uv(1, 1).endVertex();
         builder.vertex(0, 0, 0).color(255, 255, 255, alpha).uv(0, 1).endVertex();
         tesselator.end();
-        RenderSystem.bindTexture(0);
+        RenderSystem.bindTexture(DEFAULT_TEXTURE);
 
         GlStateManager._loadIdentity();
         GlStateManager._ortho(0.0D, width / mWindow.getGuiScale(), height / mWindow.getGuiScale(),
@@ -587,6 +604,7 @@ public final class UIManager {
      */
     void resize() {
         postTask(() -> mRoot.setFrame(mWindow.getWidth(), mWindow.getHeight()), 0);
+        mProjectionChanged = true;
     }
 
     void finish() {

@@ -46,7 +46,7 @@ class IntKeyframeSet extends KeyframeSet<Integer> implements Keyframes.IntKeyfra
     @Override
     public int getIntValue(float fraction) {
         final Keyframe[] keyframes = mKeyframes;
-        final TimeInterpolator interpolator;
+        final Interpolator interpolator;
         final int length = keyframes.length;
         if (fraction <= 0f) {
             final IntKeyframe prevKeyframe = (IntKeyframe) keyframes[0];

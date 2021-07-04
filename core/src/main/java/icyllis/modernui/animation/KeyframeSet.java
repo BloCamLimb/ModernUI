@@ -111,7 +111,7 @@ public class KeyframeSet<T> implements Keyframes<T> {
     @Override
     public T getValue(float fraction) {
         final Keyframe[] keyframes = mKeyframes;
-        final TimeInterpolator interpolator;
+        final Interpolator interpolator;
         final int length = keyframes.length;
         if (length == 2) {
             final Keyframe nextKeyframe = keyframes[1];

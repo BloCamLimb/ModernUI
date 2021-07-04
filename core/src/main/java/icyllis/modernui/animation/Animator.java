@@ -29,10 +29,8 @@ import java.util.concurrent.CopyOnWriteArraySet;
 /**
  * This is the base for classes which provide basic support for animations which can be
  * started, ended, and have listeners added to them.
- *
- * @param <T> the type of the target object
  */
-public abstract class Animator<T> {
+public abstract class Animator {
 
     public static final Marker MARKER = MarkerManager.getMarker("Animator");
 
@@ -177,18 +175,18 @@ public abstract class Animator<T> {
      * The time interpolator used in calculating the elapsed fraction of the
      * animation. The interpolator determines whether the animation runs with
      * linear or non-linear motion, such as acceleration and deceleration. The
-     * default value is {@link TimeInterpolator#ACCELERATE_DECELERATE}.
+     * default value is {@link Interpolator#ACCELERATE_DECELERATE}.
      *
      * @param value the interpolator to be used by this animation
      */
-    public abstract void setInterpolator(TimeInterpolator value);
+    public abstract void setInterpolator(Interpolator value);
 
     /**
      * Returns the timing interpolator that this animation uses.
      *
      * @return The timing interpolator for this animation.
      */
-    public abstract TimeInterpolator getInterpolator();
+    public abstract Interpolator getInterpolator();
 
     /**
      * Returns whether this Animator is currently running (having been started and gone past any
@@ -296,7 +294,7 @@ public abstract class Animator<T> {
      *
      * @param target The object being animated
      */
-    public void setTarget(@Nullable T target) {
+    public void setTarget(@Nullable Object target) {
     }
 
     /**
@@ -335,7 +333,7 @@ public abstract class Animator<T> {
          * @param animation The started animation.
          * @param isReverse Whether the animation is playing in reverse.
          */
-        default void onAnimationStart(@Nonnull Animator<?> animation, boolean isReverse) {
+        default void onAnimationStart(@Nonnull Animator animation, boolean isReverse) {
         }
 
         /**
@@ -345,7 +343,7 @@ public abstract class Animator<T> {
          * @param animation The animation which reached its end.
          * @param isReverse Whether the animation is playing in reverse.
          */
-        default void onAnimationEnd(@Nonnull Animator<?> animation, boolean isReverse) {
+        default void onAnimationEnd(@Nonnull Animator animation, boolean isReverse) {
         }
 
         /**
@@ -354,7 +352,7 @@ public abstract class Animator<T> {
          *
          * @param animation The animation which was canceled.
          */
-        default void onAnimationCancel(@Nonnull Animator<?> animation) {
+        default void onAnimationCancel(@Nonnull Animator animation) {
         }
 
         /**
@@ -362,7 +360,7 @@ public abstract class Animator<T> {
          *
          * @param animation The animation which was repeated.
          */
-        default void onAnimationRepeat(@Nonnull Animator<?> animation) {
+        default void onAnimationRepeat(@Nonnull Animator animation) {
         }
 
         /**
@@ -371,7 +369,7 @@ public abstract class Animator<T> {
          * @param animation The animation being paused.
          * @see #pause()
          */
-        default void onAnimationPause(@Nonnull Animator<?> animation) {
+        default void onAnimationPause(@Nonnull Animator animation) {
         }
 
         /**
@@ -381,7 +379,7 @@ public abstract class Animator<T> {
          * @param animation The animation being resumed.
          * @see #resume()
          */
-        default void onAnimationResume(@Nonnull Animator<?> animation) {
+        default void onAnimationResume(@Nonnull Animator animation) {
         }
     }
 }

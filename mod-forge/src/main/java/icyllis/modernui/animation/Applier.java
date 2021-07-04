@@ -39,7 +39,7 @@ public class Applier {
     private final Consumer<Float> setter;
 
     @Nonnull
-    private TimeInterpolator interpolator = TimeInterpolator.LINEAR;
+    private Interpolator interpolator = Interpolator.LINEAR;
 
     public Applier(float startValue, float endValue, Supplier<Float> getter, Consumer<Float> setter) {
         this.startValue = startValue;
@@ -48,7 +48,7 @@ public class Applier {
         this.setter = setter;
     }
 
-    public Applier setInterpolator(@Nonnull TimeInterpolator interpolator) {
+    public Applier setInterpolator(@Nonnull Interpolator interpolator) {
         this.interpolator = interpolator;
         return this;
     }
