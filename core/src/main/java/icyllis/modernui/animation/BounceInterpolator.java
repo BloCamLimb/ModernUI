@@ -18,10 +18,10 @@
 
 package icyllis.modernui.animation;
 
-public class BounceInterpolator implements TimeInterpolator {
+public class BounceInterpolator implements Interpolator {
 
     /**
-     * @see TimeInterpolator#BOUNCE
+     * @see Interpolator#BOUNCE
      */
     BounceInterpolator() {
     }

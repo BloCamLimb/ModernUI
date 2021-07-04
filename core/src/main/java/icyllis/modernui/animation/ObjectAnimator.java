@@ -18,7 +18,6 @@
 
 package icyllis.modernui.animation;
 
-import icyllis.modernui.platform.RenderCore;
 import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 
 import javax.annotation.Nonnull;
@@ -46,13 +45,11 @@ import java.util.Set;
  * from the target object when the animator starts, just like animators with only one
  * value specified. In addition, an optional interpolator can be specified. The interpolator will
  * be applied on the interval between the keyframe that the interpolator is set on and the previous
- * keyframe. When no interpolator is supplied, the default {@link TimeInterpolator#ACCELERATE_DECELERATE}
+ * keyframe. When no interpolator is supplied, the default {@link Interpolator#ACCELERATE_DECELERATE}
  * will be used.
- *
- * @param <T> the type of the target object
  */
 @SuppressWarnings("unused")
-public final class ObjectAnimator<T> extends Animator<T> implements AnimationHandler.FrameCallback {
+public final class ObjectAnimator extends Animator implements AnimationHandler.FrameCallback {
 
     /**
      * Internal usage, global config value
@@ -81,7 +78,7 @@ public final class ObjectAnimator<T> extends Animator<T> implements AnimationHan
      * A weak reference to the target object on which the property exists, set
      * in the constructor. We'll cancel the animation if this goes away.
      */
-    private WeakReference<T> mTarget;
+    private WeakReference<Object> mTarget;
 
     /**
      * Additional playing state to indicate whether an animator has been start()'d. There is
@@ -218,12 +215,12 @@ public final class ObjectAnimator<T> extends Animator<T> implements AnimationHan
      * calculate the animated values.
      */
     @Nonnull
-    private TimeInterpolator mInterpolator = TimeInterpolator.ACCELERATE_DECELERATE;
+    private Interpolator mInterpolator = Interpolator.ACCELERATE_DECELERATE;
 
     /**
      * The property/value sets being animated.
      */
-    private PropertyValuesHolder<T, ?, ?>[] mValues;
+    private PropertyValuesHolder<Object, ?, ?>[] mValues;
 
     private boolean mAutoCancel = false;
 
@@ -249,8 +246,8 @@ public final class ObjectAnimator<T> extends Animator<T> implements AnimationHan
      * @return An ObjectAnimator object that is set up to animate between the given values.
      */
     @Nonnull
-    public static <T> ObjectAnimator<T> ofInt(@Nullable T target, @Nonnull IntProperty<T> property,
-                                              @Nonnull int... values) {
+    public static <T> ObjectAnimator ofInt(@Nullable T target, @Nonnull IntProperty<T> property,
+                                           @Nonnull int... values) {
         return ofPropertyValuesHolder(target, PropertyValuesHolder.ofInt(property, values));
     }
 
@@ -268,8 +265,8 @@ public final class ObjectAnimator<T> extends Animator<T> implements AnimationHan
      * @return An ObjectAnimator object that is set up to animate between the given values.
      */
     @Nonnull
-    public static <T> ObjectAnimator<T> ofColor(@Nullable T target, @Nonnull IntProperty<T> property,
-                                                @Nonnull int... values) {
+    public static <T> ObjectAnimator ofColor(@Nullable T target, @Nonnull IntProperty<T> property,
+                                             @Nonnull int... values) {
         PropertyValuesHolder<T, Integer, Integer> v = PropertyValuesHolder.ofInt(property, values);
         v.setEvaluator(ColorEvaluator.getInstance());
         return ofPropertyValuesHolder(target, v);
@@ -289,8 +286,8 @@ public final class ObjectAnimator<T> extends Animator<T> implements AnimationHan
      * @return An ObjectAnimator object that is set up to animate between the given values.
      */
     @Nonnull
-    public static <T> ObjectAnimator<T> ofFloat(@Nullable T target, @Nonnull FloatProperty<T> property,
-                                                @Nonnull float... values) {
+    public static <T> ObjectAnimator ofFloat(@Nullable T target, @Nonnull FloatProperty<T> property,
+                                             @Nonnull float... values) {
         return ofPropertyValuesHolder(target, PropertyValuesHolder.ofFloat(property, values));
     }
 
@@ -317,8 +314,8 @@ public final class ObjectAnimator<T> extends Animator<T> implements AnimationHan
      */
     @Nonnull
     @SafeVarargs
-    public static <T, V> ObjectAnimator<T> ofObject(@Nullable T target, @Nonnull Property<T, V> property,
-                                                    @Nonnull TypeEvaluator<V> evaluator, @Nonnull V... values) {
+    public static <T, V> ObjectAnimator ofObject(@Nullable T target, @Nonnull Property<T, V> property,
+                                                 @Nonnull TypeEvaluator<V> evaluator, @Nonnull V... values) {
         return ofPropertyValuesHolder(target, PropertyValuesHolder.ofObject(property, evaluator, values));
     }
 
@@ -349,9 +346,9 @@ public final class ObjectAnimator<T> extends Animator<T> implements AnimationHan
      */
     @Nonnull
     @SafeVarargs
-    public static <T, V, P> ObjectAnimator<T> ofObject(@Nullable T target, @Nonnull Property<T, P> property,
-                                                       @Nonnull TypeConverter<V, P> converter,
-                                                       @Nonnull TypeEvaluator<V> evaluator, @Nonnull V... values) {
+    public static <T, V, P> ObjectAnimator ofObject(@Nullable T target, @Nonnull Property<T, P> property,
+                                                    @Nonnull TypeConverter<V, P> converter,
+                                                    @Nonnull TypeEvaluator<V> evaluator, @Nonnull V... values) {
         return ofPropertyValuesHolder(target,
                 PropertyValuesHolder.ofObject(property, converter, evaluator, values));
     }
@@ -375,9 +372,9 @@ public final class ObjectAnimator<T> extends Animator<T> implements AnimationHan
      */
     @Nonnull
     @SafeVarargs
-    public static <T> ObjectAnimator<T> ofPropertyValuesHolder(@Nullable T target,
-                                                               @Nonnull PropertyValuesHolder<T, ?, ?>... values) {
-        ObjectAnimator<T> anim = new ObjectAnimator<>();
+    public static <T> ObjectAnimator ofPropertyValuesHolder(@Nullable T target,
+                                                            @Nonnull PropertyValuesHolder<T, ?, ?>... values) {
+        ObjectAnimator anim = new ObjectAnimator();
         anim.setTarget(target);
         anim.setValues(values);
         return anim;
@@ -599,14 +596,14 @@ public final class ObjectAnimator<T> extends Animator<T> implements AnimationHan
      * The time interpolator used in calculating the elapsed fraction of the
      * animation. The interpolator determines whether the animation runs with
      * linear or non-linear motion, such as acceleration and deceleration. The
-     * default value is {@link TimeInterpolator#ACCELERATE_DECELERATE}.
+     * default value is {@link Interpolator#ACCELERATE_DECELERATE}.
      *
      * @param value the interpolator to be used by this animation. A value of <code>null</code>
      *              will result in linear interpolation.
      */
     @Override
-    public void setInterpolator(@Nullable TimeInterpolator value) {
-        mInterpolator = Objects.requireNonNullElse(value, TimeInterpolator.LINEAR);
+    public void setInterpolator(@Nullable Interpolator value) {
+        mInterpolator = Objects.requireNonNullElse(value, Interpolator.LINEAR);
     }
 
     /**
@@ -616,7 +613,7 @@ public final class ObjectAnimator<T> extends Animator<T> implements AnimationHan
      */
     @Nonnull
     @Override
-    public TimeInterpolator getInterpolator() {
+    public Interpolator getInterpolator() {
         return mInterpolator;
     }
 
@@ -656,7 +653,7 @@ public final class ObjectAnimator<T> extends Animator<T> implements AnimationHan
      */
     public void reverse() {
         if (isPulsingInternal()) {
-            long currentTime = RenderCore.timeMillis();
+            long currentTime = AnimationHandler.currentTimeMillis();
             long currentPlayTime = currentTime - mStartTime;
             long timeLeft = getScaledDuration() - currentPlayTime;
             mStartTime = currentTime - timeLeft;
@@ -737,7 +734,7 @@ public final class ObjectAnimator<T> extends Animator<T> implements AnimationHan
         fraction = clampFraction(fraction);
         if (isPulsingInternal()) {
             long seekTime = (long) (getScaledDuration() * fraction);
-            long currentTime = RenderCore.timeMillis();
+            long currentTime = AnimationHandler.currentTimeMillis();
             // Only modify the start time when the animation is running. Seek fraction will ensure
             // non-running animations skip to the correct start time.
             mStartTime = currentTime - seekTime;
@@ -754,9 +751,9 @@ public final class ObjectAnimator<T> extends Animator<T> implements AnimationHan
     @Override
     public void setupStartValues() {
         initAnimation();
-        final T target = getTarget();
+        final Object target = getTarget();
         if (target != null) {
-            for (PropertyValuesHolder<T, ?, ?> value : mValues) {
+            for (var value : mValues) {
                 value.setupStartValue(target);
             }
         }
@@ -765,9 +762,9 @@ public final class ObjectAnimator<T> extends Animator<T> implements AnimationHan
     @Override
     public void setupEndValues() {
         initAnimation();
-        final T target = getTarget();
+        final Object target = getTarget();
         if (target != null) {
-            for (PropertyValuesHolder<T, ?, ?> value : mValues) {
+            for (var value : mValues) {
                 value.setupEndValue(target);
             }
         }
@@ -781,9 +778,9 @@ public final class ObjectAnimator<T> extends Animator<T> implements AnimationHan
      *
      * @param values The set of values, per property, being animated between.
      */
-    @SafeVarargs
-    public final void setValues(@Nonnull PropertyValuesHolder<T, ?, ?>... values) {
-        mValues = values;
+    @SuppressWarnings("unchecked")
+    public final void setValues(@Nonnull PropertyValuesHolder<?, ?, ?>... values) {
+        mValues = (PropertyValuesHolder<Object, ?, ?>[]) values;
         // New property/values/target should cause re-initialization prior to starting
         mInitialized = false;
     }
@@ -797,7 +794,7 @@ public final class ObjectAnimator<T> extends Animator<T> implements AnimationHan
      * that define the animation.
      */
     @Nonnull
-    public PropertyValuesHolder<T, ?, ?>[] getValues() {
+    public PropertyValuesHolder<Object, ?, ?>[] getValues() {
         return mValues;
     }
 
@@ -810,8 +807,8 @@ public final class ObjectAnimator<T> extends Animator<T> implements AnimationHan
      */
     private void initAnimation() {
         if (!mInitialized) {
-            final T target = getTarget();
-            for (PropertyValuesHolder<T, ?, ?> value : mValues) {
+            final Object target = getTarget();
+            for (var value : mValues) {
                 // mValueType may change due to setter/getter setup; do this before calling init(),
                 // which uses mValueType to set up the default type evaluator.
                 if (target != null) {
@@ -908,7 +905,7 @@ public final class ObjectAnimator<T> extends Animator<T> implements AnimationHan
         if (durationScale == 0f) {
             durationScale = 1f;
         }
-        return (long) ((RenderCore.timeMillis() - mStartTime) / durationScale);
+        return (long) ((AnimationHandler.currentTimeMillis() - mStartTime) / durationScale);
     }
 
     private void removeAnimationCallback() {
@@ -1119,13 +1116,13 @@ public final class ObjectAnimator<T> extends Animator<T> implements AnimationHan
      * @return The object being animated
      */
     @Nullable
-    public T getTarget() {
+    public Object getTarget() {
         return mTarget == null ? null : mTarget.get();
     }
 
     @Override
-    public void setTarget(@Nullable T target) {
-        final T oldTarget = getTarget();
+    public void setTarget(@Nullable Object target) {
+        final Object oldTarget = getTarget();
         if (oldTarget != target) {
             if (isStarted()) {
                 cancel();
@@ -1156,7 +1153,7 @@ public final class ObjectAnimator<T> extends Animator<T> implements AnimationHan
     }
 
     private void animateValue(float fraction) {
-        final T target = getTarget();
+        final Object target = getTarget();
         if (mTarget != null && target == null) {
             // We lost the target reference, cancel and clean up. Note: we allow null target if the
             // target has never been set, that is, listener mode.
@@ -1166,7 +1163,7 @@ public final class ObjectAnimator<T> extends Animator<T> implements AnimationHan
         fraction = mInterpolator.getInterpolation(fraction);
         mCurrentFraction = fraction;
 
-        for (PropertyValuesHolder<T, ?, ?> value : mValues) {
+        for (var value : mValues) {
             value.calculateValue(fraction);
         }
         if (mUpdateListeners != null) {
@@ -1175,7 +1172,7 @@ public final class ObjectAnimator<T> extends Animator<T> implements AnimationHan
             }
         }
         if (target != null) {
-            for (PropertyValuesHolder<T, ?, ?> value : mValues) {
+            for (var value : mValues) {
                 value.setAnimatedValue(target);
             }
         }
@@ -1187,7 +1184,7 @@ public final class ObjectAnimator<T> extends Animator<T> implements AnimationHan
             return true;
         }
         if (anim instanceof ObjectAnimator) {
-            final ObjectAnimator<?> it = (ObjectAnimator<?>) anim;
+            final ObjectAnimator it = (ObjectAnimator) anim;
             if (it.mAutoCancel) {
                 PropertyValuesHolder<?, ?, ?>[] itsValues = it.getValues();
                 if (it.getTarget() == getTarget() && mValues.length == itsValues.length) {
@@ -1233,6 +1230,6 @@ public final class ObjectAnimator<T> extends Animator<T> implements AnimationHan
          *
          * @param animation The animation which was repeated.
          */
-        void onAnimationUpdate(@Nonnull ObjectAnimator<?> animation);
+        void onAnimationUpdate(@Nonnull ObjectAnimator animation);
     }
 }

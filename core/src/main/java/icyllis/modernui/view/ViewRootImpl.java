@@ -42,16 +42,15 @@ public final class ViewRootImpl implements ViewParent {
 
     private boolean mTraversalScheduled;
     private boolean mWillDrawSoon;
+    private boolean mIsDrawing;
+    private boolean mHasDrawn;
     private boolean mLayoutRequested;
     private boolean mInvalidated;
-    private boolean mHandlingDraw;
     private boolean mKeepInvalidated;
-    private boolean mDrawn;
 
     private boolean hasDragOperation;
 
     private View mView;
-
     private int mWidth;
     private int mHeight;
 
@@ -124,10 +123,11 @@ public final class ViewRootImpl implements ViewParent {
     }
 
     public void doTraversal() {
-        if (mTraversalScheduled) {
+        //TODO the input events
+        //if (mTraversalScheduled) {
             mTraversalScheduled = false;
             performTraversal();
-        }
+        //}
     }
 
     public void scheduleTraversal() {
@@ -163,29 +163,33 @@ public final class ViewRootImpl implements ViewParent {
 
         mWillDrawSoon = false;
 
-        if (mInvalidated) {
-            mHandlingDraw = true;
+        //if (mInvalidated) {
+            mIsDrawing = true;
             mCanvas.reset(width, height);
             host.draw(mCanvas);
-            mHandlingDraw = false;
+            mIsDrawing = false;
             if (mKeepInvalidated) {
                 mKeepInvalidated = false;
             } else {
                 mInvalidated = false;
             }
-            mDrawn = true;
-        }
+            mHasDrawn = true;
+        //}
     }
 
     public boolean onInputEvent(InputEvent event) {
-        if (mView != null) {
-            if (event instanceof KeyEvent) {
-                return processKeyEvent((KeyEvent) event);
-            } else {
-                return processPointerEvent((MotionEvent) event);
+        try {
+            if (mView != null) {
+                if (event instanceof KeyEvent) {
+                    return processKeyEvent((KeyEvent) event);
+                } else {
+                    return processPointerEvent((MotionEvent) event);
+                }
             }
+            return false;
+        } finally {
+            event.recycle();
         }
-        return false;
     }
 
     private boolean processKeyEvent(KeyEvent event) {
@@ -220,9 +224,9 @@ public final class ViewRootImpl implements ViewParent {
         }
     }*/
 
-    public boolean isFrameDrawn() {
-        boolean b = mDrawn;
-        mDrawn = false;
+    public boolean isReadyForRendering() {
+        boolean b = mHasDrawn;
+        mHasDrawn = false;
         return b;
     }
 
@@ -242,7 +246,7 @@ public final class ViewRootImpl implements ViewParent {
         checkThread();
         mInvalidated = true;
         if (!mWillDrawSoon) {
-            if (mHandlingDraw) {
+            if (mIsDrawing) {
                 mKeepInvalidated = true;
             }
             scheduleTraversal();

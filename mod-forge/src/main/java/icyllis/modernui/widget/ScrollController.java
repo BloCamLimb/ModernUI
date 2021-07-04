@@ -18,9 +18,8 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.animation.TimeInterpolator;
-import icyllis.modernui.screen.UIManager;
-import net.minecraft.util.Mth;
+import icyllis.modernui.animation.AnimationHandler;
+import icyllis.modernui.animation.Interpolator;
 
 import javax.annotation.Nonnull;
 
@@ -32,12 +31,12 @@ import javax.annotation.Nonnull;
 @SuppressWarnings("unused")
 public class ScrollController {
 
-    private float startValue;
-    private float targetValue;
+    private int startValue;
+    private int targetValue;
 
-    private float maxValue;
+    private int maxValue;
 
-    private float currValue;
+    private int currValue;
 
     private long startTime;
     private int duration;
@@ -57,10 +56,10 @@ public class ScrollController {
     public void update(long time) {
         if (currValue != targetValue) {
             float p = Math.min((float) (time - startTime) / duration, 1);
-            p = TimeInterpolator.DECELERATE.getInterpolation(p);
-            currValue = Mth.lerp(p, startValue, targetValue);
+            p = Interpolator.DECELERATE.getInterpolation(p);
+            currValue = startValue + Math.round(p * (targetValue - startValue));
             listener.onScrollAmountUpdated(this, currValue);
-            UIManager.getInstance().repostCursorEvent();
+            //UIManager.getInstance().repostCursorEvent();
         }
     }
 
@@ -70,7 +69,7 @@ public class ScrollController {
      * @param max scroll range
      */
     public void setMaxScroll(float max) {
-        maxValue = max;
+        maxValue = (int) max;
     }
 
     /**
@@ -79,7 +78,7 @@ public class ScrollController {
      * @param start start value
      */
     public void setStartValue(float start) {
-        startValue = start;
+        startValue = (int) start;
     }
 
     /**
@@ -126,11 +125,9 @@ public class ScrollController {
      * @param duration scroll duration in milliseconds
      */
     public void scrollTo(float target, int duration) {
-        startTime = UIManager.getInstance().getElapsedTime();
+        startTime = AnimationHandler.currentTimeMillis();
         startValue = currValue;
-        float scale = (float) 3;
-        float endX = Mth.clamp(target, 0, maxValue) * scale;
-        targetValue = (int) endX / scale;
+        targetValue = (int) target;
         this.duration = duration;
     }
 
@@ -141,11 +138,9 @@ public class ScrollController {
      */
     public boolean scrollTo(float target) {
         float lastTime = startTime;
-        startTime = UIManager.getInstance().getElapsedTime();
+        startTime = AnimationHandler.currentTimeMillis();
         startValue = currValue;
-        float scale = (float) 3;
-        float end = Mth.clamp(target, 0, maxValue) * scale;
-        targetValue = (int) end / scale;
+        targetValue = (int) target;
         if (startValue == targetValue) {
             return false;
         }
@@ -172,7 +167,7 @@ public class ScrollController {
     public void abortAnimation() {
         currValue = targetValue;
         listener.onScrollAmountUpdated(this, currValue);
-        UIManager.getInstance().repostCursorEvent();
+        //UIManager.getInstance().repostCursorEvent();
     }
 
     public boolean isScrolling() {

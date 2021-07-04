@@ -26,7 +26,7 @@ import javax.annotation.Nullable;
  * by {@link ObjectAnimator} to define the values that the animation target will have over the course
  * of the animation. As the time proceeds from one keyframe to the other, the value of the
  * target object will animate between the value at the previous keyframe and the value at the
- * next keyframe. Each keyframe also holds an optional {@link TimeInterpolator}
+ * next keyframe. Each keyframe also holds an optional {@link Interpolator}
  * object, which defines the time interpolation over the inter-value preceding the keyframe.
  *
  * <p>The Keyframe class itself is abstract. The type-specific factory methods will return
@@ -63,7 +63,7 @@ public abstract class Keyframe {
      * (the default) results in linear interpolation over the interval.
      */
     @Nullable
-    private TimeInterpolator mInterpolator = null;
+    private Interpolator mInterpolator = null;
 
     /**
      * Constructs a Keyframe object with the given time and value. The time defines the
@@ -219,7 +219,7 @@ public abstract class Keyframe {
      * @return The optional interpolator for this Keyframe.
      */
     @Nullable
-    public TimeInterpolator getInterpolator() {
+    public Interpolator getInterpolator() {
         return mInterpolator;
     }
 
@@ -227,7 +227,7 @@ public abstract class Keyframe {
      * Sets the optional interpolator for this Keyframe. A value of <code>null</code> indicates
      * that there is no interpolation, which is the same as linear interpolation.
      */
-    public void setInterpolator(@Nullable TimeInterpolator interpolator) {
+    public void setInterpolator(@Nullable Interpolator interpolator) {
         mInterpolator = interpolator;
     }
 

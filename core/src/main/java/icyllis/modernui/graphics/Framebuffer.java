@@ -24,9 +24,11 @@ import icyllis.modernui.graphics.texture.Texture;
 import icyllis.modernui.graphics.texture.Texture2D;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import org.lwjgl.BufferUtils;
 
 import javax.annotation.Nonnull;
 import java.lang.ref.Cleaner;
+import java.nio.FloatBuffer;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
 
@@ -55,7 +57,7 @@ public final class Framebuffer implements AutoCloseable {
 
     //private int mMsaaLevel = 0;
 
-    private final float[] mClearColor = new float[4];
+    private final FloatBuffer mClearColor = BufferUtils.createFloatBuffer(4);
 
     public Framebuffer(int width, int height) {
         mWidth = Math.max(1, width);
@@ -144,10 +146,7 @@ public final class Framebuffer implements AutoCloseable {
      * Set the color used for {@link #clearColorBuffer()}, default clear color is (0,0,0,0).
      */
     public void setClearColor(float r, float g, float b, float a) {
-        mClearColor[0] = r;
-        mClearColor[1] = g;
-        mClearColor[2] = b;
-        mClearColor[3] = a;
+        mClearColor.put(r).put(g).put(b).put(a).flip();
     }
 
     /**

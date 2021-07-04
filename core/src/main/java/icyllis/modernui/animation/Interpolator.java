@@ -27,13 +27,13 @@ import javax.annotation.Nonnull;
  * to have non-linear motion, such as acceleration and deceleration.
  */
 @FunctionalInterface
-public interface TimeInterpolator {
+public interface Interpolator {
 
     /**
      * The linear interpolator.
      */
     @Nonnull
-    TimeInterpolator LINEAR = in -> in;
+    Interpolator LINEAR = in -> in;
 
     /**
      * The constant accelerate interpolator whose factor is 1.0.
@@ -41,7 +41,7 @@ public interface TimeInterpolator {
      * @see #accelerate(float)
      */
     @Nonnull
-    TimeInterpolator ACCELERATE = in -> in * in;
+    Interpolator ACCELERATE = in -> in * in;
 
     /**
      * The constant decelerate interpolator whose factor is 1.0.
@@ -49,14 +49,14 @@ public interface TimeInterpolator {
      * @see #decelerate(float)
      */
     @Nonnull
-    TimeInterpolator DECELERATE = in -> 1.0f - (1.0f - in) * (1.0f - in);
+    Interpolator DECELERATE = in -> 1.0f - (1.0f - in) * (1.0f - in);
 
     /**
      * The interpolator where the rate of change starts and ends slowly but
      * accelerates through the middle.
      */
     @Nonnull
-    TimeInterpolator ACCELERATE_DECELERATE = in -> MathUtil.cos((in + 1.0f) * MathUtil.PI) * 0.5f + 0.5f;
+    Interpolator ACCELERATE_DECELERATE = in -> MathUtil.cos((in + 1.0f) * MathUtil.PI) * 0.5f + 0.5f;
 
     /**
      * The constant cycle interpolator that indicates 1/4 cycle sine wave.
@@ -64,7 +64,7 @@ public interface TimeInterpolator {
      * @see #cycle(float)
      */
     @Nonnull
-    TimeInterpolator SINE = in -> MathUtil.sin(MathUtil.PI_DIV_2 * in);
+    Interpolator SINE = in -> MathUtil.sin(MathUtil.PI_DIV_2 * in);
 
     /**
      * The constant anticipate interpolator whose tension is 2.0.
@@ -72,7 +72,7 @@ public interface TimeInterpolator {
      * @see #anticipate(float)
      */
     @Nonnull
-    TimeInterpolator ANTICIPATE = in -> in * in * (3.0f * in - 2.0f);
+    Interpolator ANTICIPATE = in -> in * in * (3.0f * in - 2.0f);
 
     /**
      * The constant overshoot interpolator whose tension is 2.0.
@@ -80,7 +80,7 @@ public interface TimeInterpolator {
      * @see #overshoot(float)
      */
     @Nonnull
-    TimeInterpolator OVERSHOOT = in -> (in - 1.0f) * (in - 1.0f) * (3.0f * (in - 1.0f) + 2.0f) + 1.0f;
+    Interpolator OVERSHOOT = in -> (in - 1.0f) * (in - 1.0f) * (3.0f * (in - 1.0f) + 2.0f) + 1.0f;
 
     /**
      * The constant anticipate/overshoot interpolator whose tension is 2.0.
@@ -88,7 +88,7 @@ public interface TimeInterpolator {
      * @see #anticipateOvershoot(float)
      */
     @Nonnull
-    TimeInterpolator ANTICIPATE_OVERSHOOT = in -> {
+    Interpolator ANTICIPATE_OVERSHOOT = in -> {
         in *= 2.0f;
         if (in < 0.5f) {
             return 0.5f * in * in * (4.0f * in - 3.0f);
@@ -102,13 +102,10 @@ public interface TimeInterpolator {
      * The bounce interpolator where the change bounces at the end.
      */
     @Nonnull
-    TimeInterpolator BOUNCE = new BounceInterpolator();
+    Interpolator BOUNCE = new BounceInterpolator();
 
-    /**
-     * The interpolator default used in scroller.
-     */
     @Nonnull
-    TimeInterpolator VISCOUS_FLUID = new ViscousFluidInterpolator();
+    Interpolator VISCOUS_FLUID = new ViscousFluidInterpolator();
 
     /**
      * Get interpolation value. This interpolated value is then multiplied by the change in
@@ -129,7 +126,7 @@ public interface TimeInterpolator {
      * @return an accelerate interpolator
      */
     @Nonnull
-    static TimeInterpolator accelerate(float factor) {
+    static Interpolator accelerate(float factor) {
         if (factor == 1.0f)
             return ACCELERATE;
         return t -> (float) Math.pow(t, factor * 2.0);
@@ -143,7 +140,7 @@ public interface TimeInterpolator {
      * @return a decelerate interpolator
      */
     @Nonnull
-    static TimeInterpolator decelerate(float factor) {
+    static Interpolator decelerate(float factor) {
         if (factor == 1.0f)
             return DECELERATE;
         return t -> (float) (1.0f - Math.pow(1.0f - t, factor * 2.0));
@@ -155,7 +152,7 @@ public interface TimeInterpolator {
      * be returned.
      */
     @Nonnull
-    static TimeInterpolator cycle(float cycle) {
+    static Interpolator cycle(float cycle) {
         if (cycle == 0.25f)
             return SINE;
         return t -> MathUtil.sin(MathUtil.TWO_PI * cycle * t);
@@ -169,7 +166,7 @@ public interface TimeInterpolator {
      * @return an anticipate interpolator
      */
     @Nonnull
-    static TimeInterpolator anticipate(float tension) {
+    static Interpolator anticipate(float tension) {
         if (tension == 2.0f)
             return ANTICIPATE;
         return t -> t * t * ((tension + 1.0f) * t - tension);
@@ -183,7 +180,7 @@ public interface TimeInterpolator {
      * @return an overshoot interpolator
      */
     @Nonnull
-    static TimeInterpolator overshoot(float tension) {
+    static Interpolator overshoot(float tension) {
         if (tension == 2.0f)
             return OVERSHOOT;
         return t -> {
@@ -203,7 +200,7 @@ public interface TimeInterpolator {
      * @return an anticipate/overshoot interpolator
      */
     @Nonnull
-    static TimeInterpolator anticipateOvershoot(float tension) {
+    static Interpolator anticipateOvershoot(float tension) {
         return anticipateOvershoot(tension, 1.5f);
     }
 
@@ -221,7 +218,7 @@ public interface TimeInterpolator {
      * @return an anticipate/overshoot interpolator
      */
     @Nonnull
-    static TimeInterpolator anticipateOvershoot(float tension, float extraTension) {
+    static Interpolator anticipateOvershoot(float tension, float extraTension) {
         final float v = tension * extraTension;
         if (v == 3.0f)
             return ANTICIPATE_OVERSHOOT;

@@ -205,7 +205,7 @@ public final class GLCanvas extends Canvas {
         mMatrixStack.push(Matrix4.identity());
         mClipStack.push(new Clip());
 
-        ModernUI.LOGGER.info("Created GLCanvas, saveCon: {}", getSaveCount());
+        ModernUI.LOGGER.info(MARKER, "Created GLCanvas: {}", getSaveCount());
 
         ShaderManager.getInstance().addListener(this::onLoadShaders);
     }

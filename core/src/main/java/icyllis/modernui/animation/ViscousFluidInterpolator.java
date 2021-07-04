@@ -18,7 +18,7 @@
 
 package icyllis.modernui.animation;
 
-public class ViscousFluidInterpolator implements TimeInterpolator {
+class ViscousFluidInterpolator implements Interpolator {
 
     private static final float VISCOUS_FLUID_SCALE = 8.0f;
 
@@ -35,7 +35,7 @@ public class ViscousFluidInterpolator implements TimeInterpolator {
     }
 
     /**
-     * @see TimeInterpolator#VISCOUS_FLUID
+     * @see Interpolator#VISCOUS_FLUID
      */
     ViscousFluidInterpolator() {
     }

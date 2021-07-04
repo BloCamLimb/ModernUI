@@ -18,6 +18,7 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.animation.AnimationHandler;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
@@ -34,7 +35,6 @@ import javax.annotation.Nonnull;
 public class ScrollView extends FrameLayout implements ScrollController.IListener {
 
     private int scrollRange;
-    private int scrollAmount;
 
     private final ScrollController scrollController = new ScrollController(this);
 
@@ -63,7 +63,7 @@ public class ScrollView extends FrameLayout implements ScrollController.IListene
         scrollController.setMaxScroll(scrollRange);
         // scroller may not callback this method
         if (getVerticalScrollBar() != null) {
-            getVerticalScrollBar().setParameters(scrollRange, scrollAmount, getHeight());
+            getVerticalScrollBar().setParameters(scrollRange, mScrollY, getHeight());
         }
     }
 
@@ -74,6 +74,11 @@ public class ScrollView extends FrameLayout implements ScrollController.IListene
             scrollRange = Math.max(0, child.getHeight() - getHeight());
         }
         return scrollRange;
+    }
+
+    @Override
+    public void computeScroll() {
+        scrollController.update(AnimationHandler.currentTimeMillis());
     }
 
     @Override
@@ -104,9 +109,10 @@ public class ScrollView extends FrameLayout implements ScrollController.IListene
 
     @Override
     public void onScrollAmountUpdated(ScrollController controller, float amount) {
-        scrollAmount = (int) amount;
+        mScrollY = (int) amount;
         if (getVerticalScrollBar() != null) {
-            getVerticalScrollBar().setParameters(scrollRange, scrollAmount, getHeight());
+            getVerticalScrollBar().setParameters(scrollRange, mScrollY, getHeight());
         }
+        invalidate();
     }
 }
