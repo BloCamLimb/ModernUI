@@ -42,7 +42,7 @@ import java.util.*;
  */
 public class FontCollection {
 
-    public static final Marker MARKER = MarkerManager.getMarker("Font");
+    public static final Marker MARKER = MarkerManager.getMarker("FontCollection");
 
     @Nonnull
     public static final FontCollection SANS_SERIF;
@@ -88,7 +88,7 @@ public class FontCollection {
         }
         sSansSerifFont = sansSerif;
 
-        sFontFamilyNames = new ObjectArrayList<>(families);
+        sFontFamilyNames = List.of(families);
 
         Font builtIn = null;
         try (InputStream stream = FontCollection.class.getResourceAsStream("/assets/modernui/font/biliw.otf")) {

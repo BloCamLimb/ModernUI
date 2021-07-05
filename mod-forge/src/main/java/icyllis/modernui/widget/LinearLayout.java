@@ -841,7 +841,7 @@ public class LinearLayout extends ViewGroup {
     }
 
     @Override
-    protected void onLayout(boolean changed) {
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         if (orientation == Orientation.VERTICAL) {
             layoutVertical();
         } else {

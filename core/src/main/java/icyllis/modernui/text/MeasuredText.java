@@ -119,7 +119,7 @@ public class MeasuredText {
             if (end > mText.length) {
                 throw new IllegalArgumentException("Style exceeds the text length");
             }
-            mRuns.add(new StyleRun(mCurrentOffset, end, paint.copyToInternal(), isRtl));
+            mRuns.add(new StyleRun(mCurrentOffset, end, paint.copyAsBase(), isRtl));
             mCurrentOffset = end;
         }
 

@@ -19,6 +19,7 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.graphics.GLCanvas;
 import icyllis.modernui.platform.RenderCore;
 import org.apache.logging.log4j.Marker;
@@ -26,11 +27,13 @@ import org.apache.logging.log4j.MarkerManager;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.LinkedList;
 
 /**
  * The top of a view hierarchy, implementing the needed protocol between View and
  * Window. There must also be a class handle events from Window to ViewRootImpl,
- * so methods are public for external calls.
+ * so methods are public for external calls. You may need to change this class
+ * to run your own stand-alone application.
  */
 public final class ViewRootImpl implements ViewParent {
 
@@ -39,6 +42,8 @@ public final class ViewRootImpl implements ViewParent {
     private final AttachInfo mAttachInfo;
     private final Thread mThread;
     private final GLCanvas mCanvas;
+
+    private final LinkedList<InputEvent> mInputEvents = new LinkedList<>();
 
     private boolean mTraversalScheduled;
     private boolean mWillDrawSoon;
@@ -122,11 +127,12 @@ public final class ViewRootImpl implements ViewParent {
         }
     }
 
+    @UiThread
     public void doTraversal() {
         //TODO the input events
         //if (mTraversalScheduled) {
-            mTraversalScheduled = false;
-            performTraversal();
+        mTraversalScheduled = false;
+        performTraversal();
         //}
     }
 
@@ -164,31 +170,40 @@ public final class ViewRootImpl implements ViewParent {
         mWillDrawSoon = false;
 
         //if (mInvalidated) {
-            mIsDrawing = true;
-            mCanvas.reset(width, height);
-            host.draw(mCanvas);
-            mIsDrawing = false;
-            if (mKeepInvalidated) {
-                mKeepInvalidated = false;
-            } else {
-                mInvalidated = false;
-            }
-            mHasDrawn = true;
+        mIsDrawing = true;
+        mCanvas.reset(width, height);
+        host.draw(mCanvas);
+        mIsDrawing = false;
+        if (mKeepInvalidated) {
+            mKeepInvalidated = false;
+        } else {
+            mInvalidated = false;
+        }
+        mHasDrawn = true;
         //}
     }
 
-    public boolean onInputEvent(InputEvent event) {
-        try {
-            if (mView != null) {
-                if (event instanceof KeyEvent) {
-                    return processKeyEvent((KeyEvent) event);
-                } else {
-                    return processPointerEvent((MotionEvent) event);
+    public void enqueueInputEvent(@Nonnull InputEvent event) {
+        mInputEvents.add(event);
+    }
+
+    @UiThread
+    public void doProcessInputEvents() {
+        if (mView != null) {
+            InputEvent event;
+            while ((event = mInputEvents.poll()) != null) {
+                try {
+                    if (event instanceof KeyEvent) {
+                        processKeyEvent((KeyEvent) event);
+                    } else {
+                        processPointerEvent((MotionEvent) event);
+                    }
+                } finally {
+                    event.recycle();
                 }
             }
-            return false;
-        } finally {
-            event.recycle();
+        } else {
+            mInputEvents.clear();
         }
     }
 

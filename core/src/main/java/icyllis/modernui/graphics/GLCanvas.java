@@ -187,6 +187,9 @@ public final class GLCanvas extends Canvas {
     // update the stencil buffer (positive = update, or just change stencil func)
     private final IntList mClipDepths = new IntArrayList();
 
+    private final Rect mTmpRect = new Rect();
+    private final RectF mTmpRectF = new RectF();
+
 
     // constructor on render thread
     private GLCanvas() {
@@ -694,11 +697,11 @@ public final class GLCanvas extends Canvas {
             return false;
         }
         Matrix4 matrix = getMatrix();
-        RectF temp = RectF.get();
+        RectF temp = mTmpRectF;
         temp.set(left, top, right, bottom);
         matrix.transform(temp);
 
-        Rect test = Rect.get();
+        Rect test = mTmpRect;
         temp.roundOut(test);
 
         // not empty and not changed, return true
@@ -730,12 +733,58 @@ public final class GLCanvas extends Canvas {
         Rect clip = getClip().mBounds;
         if (clip.isEmpty())
             return true;
-        Rect test = Rect.get();
-        RectF temp = RectF.get();
+        Rect test = mTmpRect;
+        RectF temp = mTmpRectF;
         temp.set(left, top, right, bottom);
         getMatrix().transform(temp);
         temp.roundOut(test);
         return !Rect.intersects(clip, test);
+    }
+
+    private void putRectColor(float left, float top, float right, float bottom, @Nonnull Paint paint) {
+        if (paint.isMultiColor()) {
+            ByteBuffer buffer = getPosColorBuffer();
+            int[] colors = paint.getColors();
+
+            // CCW
+            int color = colors[3];
+            byte r = (byte) ((color >> 16) & 0xff);
+            byte g = (byte) ((color >> 8) & 0xff);
+            byte b = (byte) (color & 0xff);
+            byte a = (byte) (color >>> 24);
+            buffer.putFloat(left)
+                    .putFloat(bottom)
+                    .put(r).put(g).put(b).put(a);
+
+            color = colors[2];
+            r = (byte) ((color >> 16) & 0xff);
+            g = (byte) ((color >> 8) & 0xff);
+            b = (byte) (color & 0xff);
+            a = (byte) (color >>> 24);
+            buffer.putFloat(right)
+                    .putFloat(bottom)
+                    .put(r).put(g).put(b).put(a);
+
+            color = colors[0];
+            r = (byte) ((color >> 16) & 0xff);
+            g = (byte) ((color >> 8) & 0xff);
+            b = (byte) (color & 0xff);
+            a = (byte) (color >>> 24);
+            buffer.putFloat(left)
+                    .putFloat(top)
+                    .put(r).put(g).put(b).put(a);
+
+            color = colors[1];
+            r = (byte) ((color >> 16) & 0xff);
+            g = (byte) ((color >> 8) & 0xff);
+            b = (byte) (color & 0xff);
+            a = (byte) (color >>> 24);
+            buffer.putFloat(right)
+                    .putFloat(top)
+                    .put(r).put(g).put(b).put(a);
+        } else {
+            putRectColor(left, top, right, bottom, paint.getColor());
+        }
     }
 
     private void putRectColor(float left, float top, float right, float bottom, int color) {
@@ -808,7 +857,7 @@ public final class GLCanvas extends Canvas {
 
     private void addArcFill(float cx, float cy, float radius, float middle,
                             float sweepAngle, @Nonnull Paint paint) {
-        putRectColor(cx - radius, cy - radius, cx + radius, cy + radius, paint.getColor());
+        putRectColor(cx - radius, cy - radius, cx + radius, cy + radius, paint);
         ByteBuffer buffer = getUniformBuffer();
         buffer.putFloat(radius)
                 .putFloat(Math.min(radius, paint.getSmoothRadius()));
@@ -825,7 +874,7 @@ public final class GLCanvas extends Canvas {
                               float sweepAngle, @Nonnull Paint paint) {
         float half = Math.min(paint.getStrokeWidth() * 0.5f, radius);
         float outer = radius + half;
-        putRectColor(cx - outer, cy - outer, cx + outer, cy + outer, paint.getColor());
+        putRectColor(cx - outer, cy - outer, cx + outer, cy + outer, paint);
         ByteBuffer buffer = getUniformBuffer();
         buffer.putFloat(radius)
                 .putFloat(Math.min(half, paint.getSmoothRadius()))
@@ -855,7 +904,7 @@ public final class GLCanvas extends Canvas {
     }
 
     private void addCircleFill(float cx, float cy, float radius, @Nonnull Paint paint) {
-        putRectColor(cx - radius, cy - radius, cx + radius, cy + radius, paint.getColor());
+        putRectColor(cx - radius, cy - radius, cx + radius, cy + radius, paint);
         ByteBuffer buffer = getUniformBuffer();
         // vec4
         buffer.putFloat(radius)
@@ -871,7 +920,7 @@ public final class GLCanvas extends Canvas {
     private void addCircleStroke(float cx, float cy, float radius, @Nonnull Paint paint) {
         float half = Math.min(paint.getStrokeWidth() * 0.5f, radius);
         float outer = radius + half;
-        putRectColor(cx - outer, cy - outer, cx + outer, cy + outer, paint.getColor());
+        putRectColor(cx - outer, cy - outer, cx + outer, cy + outer, paint);
         ByteBuffer buffer = getUniformBuffer();
         buffer.putFloat(radius - half)
                 .putFloat(outer)
@@ -934,7 +983,7 @@ public final class GLCanvas extends Canvas {
         if (quickReject(left, top, right, bottom)) {
             return;
         }
-        putRectColor(left, top, right, bottom, paint.getColor());
+        putRectColor(left, top, right, bottom, paint);
         getMatrix().get(getModelViewBuffer());
         mDrawStates.add(DRAW_RECT);
     }
@@ -968,7 +1017,7 @@ public final class GLCanvas extends Canvas {
     private void addRoundRectFill(float left, float top, float right, float bottom,
                                   float radius, int side, @Nonnull Paint paint) {
         float sm = Math.min(radius, paint.getSmoothRadius());
-        putRectColor(left, top, right, bottom, paint.getColor());
+        putRectColor(left, top, right, bottom, paint);
         ByteBuffer buffer = getUniformBuffer();
         if ((side & RIGHT) == RIGHT) {
             buffer.putFloat(left);
@@ -1001,7 +1050,7 @@ public final class GLCanvas extends Canvas {
                                     float radius, int side, @Nonnull Paint paint) {
         float half = Math.min(paint.getStrokeWidth() * 0.5f, radius);
         float sm = Math.min(half, paint.getSmoothRadius());
-        putRectColor(left - half, top - half, right + half, bottom + half, paint.getColor());
+        putRectColor(left - half, top - half, right + half, bottom + half, paint);
         ByteBuffer buffer = getUniformBuffer();
         if ((side & RIGHT) == RIGHT) {
             buffer.putFloat(left);

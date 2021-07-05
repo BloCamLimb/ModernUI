@@ -27,8 +27,6 @@ import javax.annotation.Nullable;
 @SuppressWarnings("unused")
 public class Rect {
 
-    private static final ThreadLocal<Rect> TLS = ThreadLocal.withInitial(Rect::new);
-
     public int left;
     public int top;
     public int right;
@@ -55,18 +53,6 @@ public class Rect {
         this.top = top;
         this.right = right;
         this.bottom = bottom;
-    }
-
-    /**
-     * Get the thread local Rect. Do not cache this object or store
-     * it as a member variable, this is only intended for temporary
-     * calculation in method stack to avoid new object construction.
-     *
-     * @return the thread-local instance
-     */
-    @Nonnull
-    public static Rect get() {
-        return TLS.get();
     }
 
     /**

@@ -257,4 +257,22 @@ public abstract class Drawable {
     public int getMinimumHeight() {
         return Math.max(getIntrinsicHeight(), 0);
     }
+
+    /**
+     * Specify an alpha value for the drawable. 0 means fully transparent, and
+     * 255 means fully opaque.
+     */
+    public void setAlpha(int alpha) {
+    }
+
+    /**
+     * Gets the current alpha value for the drawable. 0 means fully transparent,
+     * 255 means fully opaque. This method is implemented by
+     * Drawable subclasses and the value returned is specific to how that class treats alpha.
+     * The default return value is 255 if the class does not override this method to return a value
+     * specific to its use of alpha.
+     */
+    public int getAlpha() {
+        return 0xFF;
+    }
 }

@@ -40,7 +40,10 @@ import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.test.TestPauseUI;
 import icyllis.modernui.textmc.TextLayoutProcessor;
 import icyllis.modernui.util.TimedTask;
-import icyllis.modernui.view.*;
+import icyllis.modernui.view.MotionEvent;
+import icyllis.modernui.view.View;
+import icyllis.modernui.view.ViewGroup;
+import icyllis.modernui.view.ViewRootImpl;
 import icyllis.modernui.widget.DecorView;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
@@ -133,7 +136,6 @@ public final class UIManager {
     private final Thread mUiThread;
     private final Object mRenderLock = new Object();
 
-    boolean mPendingRepostCursorEvent = false;
     private MotionEvent mPendingMouseEvent;
 
     private boolean mFirstScreenOpened = false;
@@ -142,7 +144,7 @@ public final class UIManager {
     private UIManager() {
         mAnimationCallback = AnimationHandler.init();
         mFramebuffer = new Framebuffer(mWindow.getWidth(), mWindow.getHeight());
-        mUiThread = new Thread(this::run, "Mui thread");
+        mUiThread = new Thread(this::run, "UI thread");
         MinecraftForge.EVENT_BUS.register(this);
     }
 
@@ -205,15 +207,6 @@ public final class UIManager {
      */
     public long getElapsedTime() {
         return mElapsedTimeMillis;
-    }
-
-    /**
-     * Get elapsed ticks from a gui open, update every tick, 20 = 1 second
-     *
-     * @return elapsed ticks
-     */
-    public int getElapsedTicks() {
-        return mTicks;
     }
 
     @Nullable
@@ -281,11 +274,6 @@ public final class UIManager {
         mTasks.add(new TimedTask(action, mFrameTimeMillis + delay));
     }
 
-    //TODO move inside view
-    public void repostCursorEvent() {
-        mPendingRepostCursorEvent = true;
-    }
-
     @UiThread
     private void run() {
         mRoot = new ViewRootImpl(mCanvas);
@@ -302,6 +290,7 @@ public final class UIManager {
             synchronized (mRenderLock) {
                 // 1. do tasks
                 if (!mTasks.isEmpty()) {
+                    // batched processing
                     mTasks.removeIf(task -> task.doExecuteTask(mFrameTimeMillis));
                 }
                 if (mScreen == null) {
@@ -309,6 +298,7 @@ public final class UIManager {
                 }
 
                 // 2. do input events
+                mRoot.doProcessInputEvents();
 
                 // 3. do animations
                 mAnimationCallback.accept(mFrameTimeMillis);
@@ -370,8 +360,8 @@ public final class UIManager {
         float y = (float) minecraft.mouseHandler.ypos();
         MotionEvent event = MotionEvent.obtain(now, now, MotionEvent.ACTION_HOVER_MOVE,
                 x, y, 0);
-        mRoot.onInputEvent(event);
-        mPendingRepostCursorEvent = false;
+        mRoot.enqueueInputEvent(event);
+        //mPendingRepostCursorEvent = false;
     }
 
     /**
@@ -386,18 +376,24 @@ public final class UIManager {
         // We should ensure (overlay == null && screen != null)
         // and the screen must be a mui screen
         if (minecraft.overlay == null && mScreen != null) {
-            ModernUI.LOGGER.info(MARKER, "Button: {} {} {}", event.getButton(), event.getAction(), event.getMods());
+            //ModernUI.LOGGER.info(MARKER, "Button: {} {} {}", event.getButton(), event.getAction(), event.getMods());
             final long now = RenderCore.timeNanos();
             float x = (float) minecraft.mouseHandler.xpos();
             float y = (float) minecraft.mouseHandler.ypos();
+            int buttonState = 0;
+            for (int i = 0; i < 5; i++) {
+                if (glfwGetMouseButton(mWindow.getWindow(), i) == GLFW_PRESS) {
+                    buttonState |= 1 << i;
+                }
+            }
             mPendingMouseEvent = MotionEvent.obtain(now, now, 0, event.getAction() == GLFW_PRESS ?
                             MotionEvent.ACTION_DOWN : MotionEvent.ACTION_UP, x, y, event.getMods(),
-                    1 << event.getButton(), 0);
+                    buttonState, 0);
         }
     }
 
     void onMouseButton() {
-        mRoot.onInputEvent(mPendingMouseEvent);
+        mRoot.enqueueInputEvent(mPendingMouseEvent);
     }
 
     // Internal method
@@ -409,10 +405,7 @@ public final class UIManager {
                 x, y, 0);
         event.setRawAxisValue(MotionEvent.AXIS_HSCROLL, (float) scrollX);
         event.setRawAxisValue(MotionEvent.AXIS_VSCROLL, (float) scrollY);
-        boolean handled = mRoot.onInputEvent(event);
-        if (handled) {
-            mPendingRepostCursorEvent = true;
-        }
+        mRoot.enqueueInputEvent(event);
     }
 
     @SubscribeEvent
@@ -622,30 +615,32 @@ public final class UIManager {
         postTask(() -> mDecor.removeAllViews(), 0);
     }
 
+    @Deprecated
     @SubscribeEvent
     void onClientTick(@Nonnull TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
             ++mTicks;
             postTask(() -> mRoot.tick(mTicks), 0);
-        } else {
+        }
+        /* else {
             if (mPendingRepostCursorEvent) {
                 onCursorPos();
             }
-        }
+        }*/
     }
 
     @SubscribeEvent
     void onRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
-            // the Timer is different from that in Event when game paused
-            long deltaMillis = (long) (minecraft.getDeltaFrameTime() * 50);
-            mElapsedTimeMillis += deltaMillis;
+            final long lastFrameTime = mFrameTimeMillis;
             mFrameTimeMillis = RenderCore.timeMillis();
-            if (mCallback != null) {
+            mElapsedTimeMillis += mFrameTimeMillis - lastFrameTime;
+            if (mScreen != null) {
                 mUiThread.interrupt();
             }
             BlurHandler.INSTANCE.update(mElapsedTimeMillis);
-        }/* else {
+        }
+        /* else {
             // layout after updating animations and before drawing
             if (mLayoutRequested) {
                 // fixed at 40Hz
@@ -656,6 +651,8 @@ public final class UIManager {
             }
         }*/
     }
+
+    //boolean mPendingRepostCursorEvent = false;
 
     // main fragment of a UI
     //private Fragment fragment;
@@ -774,6 +771,15 @@ public final class UIManager {
         };
     }*/
 
+    /*
+     * Get elapsed ticks from a gui open, update every tick, 20 = 1 second
+     *
+     * @return elapsed ticks
+     */
+    /*public int getElapsedTicks() {
+        return mTicks;
+    }*/
+
     /*@Deprecated
     public void openPopup(IModule popup, boolean refresh) {
         throw new UnsupportedOperationException();
@@ -846,6 +852,10 @@ public final class UIManager {
 
     /*public boolean hasOpenGUI() {
         return mScreen != null;
+    }*/
+
+    /*public void repostCursorEvent() {
+        mPendingRepostCursorEvent = true;
     }*/
     
     /*@Deprecated

@@ -26,8 +26,6 @@ import javax.annotation.Nullable;
  */
 public class Point {
 
-    private static final ThreadLocal<Point> TLS = ThreadLocal.withInitial(Point::new);
-
     public int x;
     public int y;
 
@@ -37,18 +35,6 @@ public class Point {
     public Point(int x, int y) {
         this.x = x;
         this.y = y;
-    }
-
-    /**
-     * Get the thread local Point. Do not cache this object or store
-     * it as a member variable, this is only intended for temporary
-     * calculation in method stack to avoid new object construction.
-     *
-     * @return the thread-local instance
-     */
-    @Nonnull
-    public static Point get() {
-        return TLS.get();
     }
 
     @Nonnull

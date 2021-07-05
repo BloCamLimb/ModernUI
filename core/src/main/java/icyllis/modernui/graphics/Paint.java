@@ -30,6 +30,8 @@ public class Paint {
 
     private static final int STYLE_MASK = 0x3;
 
+    private static final int MULTI_COLOR = 0x4;
+
     /**
      * The Style specifies if the primitive being drawn is filled, stroked, or
      * both (in the same color). The default is FILL.
@@ -62,6 +64,8 @@ public class Paint {
     private float mStrokeWidth;
     private float mSmoothRadius;
 
+    private final int[] mColors = new int[4];
+
     /**
      * Creates a new Paint.
      *
@@ -71,18 +75,24 @@ public class Paint {
         reset();
     }
 
+    /**
+     * Reset the paint to default states.
+     */
     public void reset() {
         mColor = ~0;
+        mFlags = 0;
         mStrokeWidth = 2;
         mSmoothRadius = 2;
     }
 
     /**
-     * Returns the thread-local paint. The paint will be reset.
+     * Returns the thread-local paint, the paint will be reset before return.
+     * Do not cache this object, it's only for stack operation.
      * <p>
      * For example:
      * <pre>
-     * void onDraw(Canvas canvas) {
+     * &#64;Override
+     * protected void onDraw(Canvas canvas) {
      *     var paint = Paint.take();
      *     paint.setColor(mColorA);
      *     canvas.drawRect(mRectA, paint);
@@ -110,6 +120,7 @@ public class Paint {
      */
     public void setRGBA(int r, int g, int b, int a) {
         mColor = (a << 24) | (r << 16) | (g << 8) | b;
+        mFlags &= ~MULTI_COLOR;
     }
 
     /**
@@ -121,15 +132,17 @@ public class Paint {
      */
     public void setRGB(int r, int g, int b) {
         mColor = (mColor & 0xFF000000) | (r << 16) | (g << 8) | b;
+        mFlags &= ~MULTI_COLOR;
     }
 
     /**
-     * Set current paint color in 0xAARRGGBB format.
+     * Set current paint color in 0xAARRGGBB format. The default color is white.
      *
      * @param color the color to set
      */
     public void setColor(int color) {
         mColor = color;
+        mFlags &= ~MULTI_COLOR;
     }
 
     /**
@@ -139,6 +152,7 @@ public class Paint {
      */
     public void setAlpha(int a) {
         mColor = (mColor & 0xFFFFFF) | (a << 24);
+        mFlags &= ~MULTI_COLOR;
     }
 
     /**
@@ -154,8 +168,42 @@ public class Paint {
     }
 
     /**
+     * Set the colors in ARGB and enable multi color mode. When enabled, a primitive
+     * should use the colors sequentially, and {@link #setColor(int)} is ignored. You can
+     * use this to make gradient effect or edge fading in one pass, without shaders.
+     * <p>
+     * By default, this mode is disabled. Calling other methods like {@link #setColor(int)}
+     * or {@link #setAlpha(int)} disables the mode as well.
+     *
+     * @param colors a list of sequential colors, maximum count is 4
+     */
+    public void setColors(@Nonnull int[] colors) {
+        int l = Math.min(colors.length, mColors.length);
+        System.arraycopy(colors, 0, mColors, 0, l);
+        mFlags |= MULTI_COLOR;
+    }
+
+    /**
+     * Returns the backing array of the multi colors. Do not modify the array.
+     *
+     * @return the backing array of the multi colors
+     */
+    public int[] getColors() {
+        return mColors;
+    }
+
+    /**
+     * Returns whether multiple colors is used.
+     *
+     * @return whether multi color mode is enabled
+     */
+    public boolean isMultiColor() {
+        return (mFlags & MULTI_COLOR) != 0;
+    }
+
+    /**
      * Return the paint's style, used for controlling how primitives' geometries
-     * are interpreted (except images, which always assumes Fill).
+     * are interpreted (except where noted).
      *
      * @return the paint's style setting (Fill, Stroke, StrokeAndFill)
      */
@@ -210,7 +258,7 @@ public class Paint {
      * Set the smooth radius in pixels for this paint.
      * <p>
      * Smooth radius is used to smooth the edges of geometry. The default value is 2.0 px.
-     * Particularly, rectangles doesn't accept this value, use drawRound* for that.
+     * This value may be ignored by implementation.
      *
      * @param radius the new feather radius to set
      */
