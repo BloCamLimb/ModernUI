@@ -188,6 +188,16 @@ final class ScrollBar extends Drawable implements Drawable.Callback {
         }
     }
 
+    public int getSize(boolean vertical) {
+        if (vertical) {
+            return mVerticalTrack != null ? mVerticalTrack.getIntrinsicWidth() :
+                    mVerticalThumb != null ? mVerticalThumb.getIntrinsicWidth() : 0;
+        } else {
+            return mHorizontalTrack != null ? mHorizontalTrack.getIntrinsicHeight() :
+                    mHorizontalThumb != null ? mHorizontalThumb.getIntrinsicHeight() : 0;
+        }
+    }
+
     @Nullable
     public Drawable getVerticalTrackDrawable() {
         return mVerticalTrack;

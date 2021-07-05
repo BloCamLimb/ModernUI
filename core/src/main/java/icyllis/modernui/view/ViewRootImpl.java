@@ -42,6 +42,7 @@ public final class ViewRootImpl implements ViewParent {
     private final AttachInfo mAttachInfo;
     private final Thread mThread;
     private final GLCanvas mCanvas;
+    private final Handler mHandler;
 
     private final LinkedList<InputEvent> mInputEvents = new LinkedList<>();
 
@@ -62,10 +63,11 @@ public final class ViewRootImpl implements ViewParent {
     /*private final int[] inBounds  = new int[]{0, 0, 0, 0};
     private final int[] outBounds = new int[4];*/
 
-    public ViewRootImpl(GLCanvas canvas) {
+    public ViewRootImpl(GLCanvas canvas, Handler handler) {
         mAttachInfo = new AttachInfo(this);
         mThread = Thread.currentThread();
         mCanvas = canvas;
+        mHandler = handler;
     }
 
     public void setView(@Nonnull View view) {
@@ -268,6 +270,14 @@ public final class ViewRootImpl implements ViewParent {
         }
     }
 
+    void postTask(@Nonnull Runnable action, long delay) {
+        mHandler.postTask(action, delay);
+    }
+
+    void removeTask(@Nonnull Runnable action) {
+        mHandler.removeTask(action);
+    }
+
     @Nullable
     @Override
     public ViewParent getParent() {
@@ -290,6 +300,13 @@ public final class ViewRootImpl implements ViewParent {
     @Override
     public void childDrawableStateChanged(View child) {
 
+    }
+
+    public interface Handler {
+
+        void postTask(@Nonnull Runnable action, long delay);
+
+        void removeTask(@Nonnull Runnable action);
     }
 
     /*@Deprecated

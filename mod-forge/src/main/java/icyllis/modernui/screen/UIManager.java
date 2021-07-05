@@ -82,7 +82,7 @@ import static org.lwjgl.glfw.GLFW.*;
  */
 @NotThreadSafe
 @OnlyIn(Dist.CLIENT)
-public final class UIManager {
+public final class UIManager implements ViewRootImpl.Handler {
 
     // logger marker
     public static final Marker MARKER = MarkerManager.getMarker("UIManager");
@@ -270,13 +270,19 @@ public final class UIManager {
      * @param action runnable task
      * @param delay  delayed time to run the task in milliseconds
      */
-    public void postTask(@Nonnull Runnable action, int delay) {
+    @Override
+    public void postTask(@Nonnull Runnable action, long delay) {
         mTasks.add(new TimedTask(action, mFrameTimeMillis + delay));
+    }
+
+    @Override
+    public void removeTask(@Nonnull Runnable action) {
+        mTasks.removeIf(t -> t.mRunnable == action);
     }
 
     @UiThread
     private void run() {
-        mRoot = new ViewRootImpl(mCanvas);
+        mRoot = new ViewRootImpl(mCanvas, this);
         mDecor = new DecorView();
         mRoot.setView(mDecor);
         ModernUI.LOGGER.info(MARKER, "View system initialized");

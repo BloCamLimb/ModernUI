@@ -260,16 +260,17 @@ public abstract class Drawable {
 
     /**
      * Specify an alpha value for the drawable. 0 means fully transparent, and
-     * 255 means fully opaque.
+     * 255 means fully opaque. But not necessarily, subclasses may use alpha to
+     * achieve specific effects under specific circumstances.
      */
     public void setAlpha(int alpha) {
     }
 
     /**
      * Gets the current alpha value for the drawable. 0 means fully transparent,
-     * 255 means fully opaque. This method is implemented by
-     * Drawable subclasses and the value returned is specific to how that class treats alpha.
-     * The default return value is 255 if the class does not override this method to return a value
+     * 255 means fully opaque. This method is implemented by Drawable subclasses and
+     * the value returned is specific to how that class treats alpha. The default
+     * return value is 255 if the class does not override this method to return a value
      * specific to its use of alpha.
      */
     public int getAlpha() {

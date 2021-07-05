@@ -21,7 +21,7 @@ package icyllis.modernui.mixin;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import icyllis.modernui.screen.UIManager;
-import icyllis.modernui.widget.ScrollController;
+import icyllis.modernui.screen.ScrollController;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.client.gui.ScrollPanel;
 import org.spongepowered.asm.mixin.Final;

@@ -42,6 +42,9 @@ public class Sprite implements AutoCloseable {
 
     }
 
+    /**
+     * The shared, immutable texture source for a Sprite.
+     */
     public static class Source {
 
         final int mWidth;
