@@ -19,14 +19,12 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.animation.AnimationHandler;
 import icyllis.modernui.annotation.CallSuper;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.math.Matrix4;
-import icyllis.modernui.math.Point;
-import icyllis.modernui.math.PointF;
-import icyllis.modernui.math.Transformation;
+import icyllis.modernui.math.*;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.glfw.GLFW;
@@ -431,9 +429,8 @@ public class View implements Drawable.Callback {
      *
      * @param canvas the canvas to draw content
      */
-    //TODO foreground
     public void onDrawForeground(@Nonnull Canvas canvas) {
-
+        onDrawScrollBars(canvas);
     }
 
     /**
@@ -449,6 +446,144 @@ public class View implements Drawable.Callback {
             return;
         }
         boolean invalidate = false;
+        if (cache.mState == ScrollCache.FADING) {
+            long currentTime = AnimationHandler.currentTimeMillis();
+            float fraction = (float) (currentTime - cache.mFadeStartTime) / cache.mFadeDuration;
+            if (fraction >= 1.0f) {
+                cache.mState = ScrollCache.OFF;
+                return;
+            } else {
+                int alpha = (int) ((1.0f - fraction) * 255);
+                cache.mScrollBar.setAlpha(alpha);
+            }
+            invalidate = true;
+        } else {
+            cache.mScrollBar.setAlpha(255);
+        }
+
+        boolean drawHorizontalScrollBar = isHorizontalScrollBarEnabled();
+        boolean drawVerticalScrollBar = isVerticalScrollBarEnabled();
+        if (drawVerticalScrollBar || drawHorizontalScrollBar) {
+            final ScrollBar scrollBar = cache.mScrollBar;
+
+            if (drawHorizontalScrollBar) {
+                scrollBar.setParameters(computeHorizontalScrollRange(),
+                        computeHorizontalScrollOffset(),
+                        computeHorizontalScrollExtent(), false);
+                final Rect bounds = cache.mScrollBarBounds;
+                getHorizontalScrollBarBounds(bounds, null);
+                scrollBar.setBounds(bounds.left, bounds.top,
+                        bounds.right, bounds.bottom);
+                scrollBar.draw(canvas);
+                if (invalidate) {
+                    invalidate();
+                }
+            }
+
+            if (drawVerticalScrollBar) {
+                scrollBar.setParameters(computeVerticalScrollRange(),
+                        computeVerticalScrollOffset(),
+                        computeVerticalScrollExtent(), true);
+                final Rect bounds = cache.mScrollBarBounds;
+                getVerticalScrollBarBounds(bounds, null);
+                scrollBar.setBounds(bounds.left, bounds.top,
+                        bounds.right, bounds.bottom);
+                scrollBar.draw(canvas);
+                if (invalidate) {
+                    invalidate();
+                }
+            }
+        }
+    }
+
+    private void getHorizontalScrollBarBounds(@Nullable Rect drawBounds,
+                                              @Nullable Rect touchBounds) {
+        final Rect bounds = drawBounds != null ? drawBounds : touchBounds;
+        if (bounds == null) {
+            return;
+        }
+        final boolean drawVerticalScrollBar = isVerticalScrollBarEnabled();
+        final int size = getHorizontalScrollbarHeight();
+        final int verticalScrollBarGap = drawVerticalScrollBar ?
+                getVerticalScrollbarWidth() : 0;
+        final int width = mRight - mLeft;
+        final int height = mBottom - mTop;
+        bounds.top = mScrollY + height - size;
+        bounds.left = mScrollX;
+        bounds.right = mScrollX + width - verticalScrollBarGap;
+        bounds.bottom = bounds.top + size;
+
+        if (touchBounds == null) {
+            return;
+        }
+        if (touchBounds != bounds) {
+            touchBounds.set(bounds);
+        }
+    }
+
+    private void getVerticalScrollBarBounds(@Nullable Rect drawBounds, @Nullable Rect touchBounds) {
+        final Rect bounds = drawBounds != null ? drawBounds : touchBounds;
+        if (bounds == null) {
+            return;
+        }
+        final int size = getVerticalScrollbarWidth();
+        final int width = mRight - mLeft;
+        final int height = mBottom - mTop;
+        bounds.left = mScrollX + width - size;
+        bounds.top = mScrollY;
+        bounds.right = bounds.left + size;
+        bounds.bottom = mScrollY + height;
+
+        if (touchBounds == null) {
+            return;
+        }
+        if (touchBounds != bounds) {
+            touchBounds.set(bounds);
+        }
+    }
+
+    /**
+     * Returns the width of the vertical scrollbar.
+     *
+     * @return The width in pixels of the vertical scrollbar or 0 if there
+     * is no vertical scrollbar.
+     */
+    public int getVerticalScrollbarWidth() {
+        ScrollCache cache = mScrollCache;
+        if (cache != null) {
+            ScrollBar scrollBar = cache.mScrollBar;
+            if (scrollBar != null) {
+                int size = scrollBar.getSize(true);
+                if (size <= 0) {
+                    size = cache.mScrollBarSize;
+                }
+                return size;
+            }
+            return 0;
+        }
+        return 0;
+    }
+
+    /**
+     * Returns the height of the horizontal scrollbar.
+     *
+     * @return The height in pixels of the horizontal scrollbar or 0 if
+     * there is no horizontal scrollbar.
+     */
+    protected int getHorizontalScrollbarHeight() {
+        ScrollCache cache = mScrollCache;
+        if (cache != null) {
+            ScrollBar scrollBar = cache.mScrollBar;
+            if (scrollBar != null) {
+                int size = scrollBar.getSize(false);
+                if (size <= 0) {
+                    size = cache.mScrollBarSize;
+                }
+                return size;
+            }
+            return 0;
+        }
+        return 0;
     }
 
     /**
@@ -975,7 +1110,7 @@ public class View implements Drawable.Callback {
 
     private void initScrollCache() {
         if (mScrollCache == null) {
-            mScrollCache = new ScrollCache();
+            mScrollCache = new ScrollCache(this);
         }
     }
 
@@ -1085,6 +1220,97 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * <p>Trigger the scrollbars to draw. When invoked this method starts an
+     * animation to fade the scrollbars out after a default delay. If a subclass
+     * provides animated scrolling, the start delay should equal the duration
+     * of the scrolling animation.</p>
+     *
+     * <p>The animation starts only if at least one of the scrollbars is
+     * enabled, as specified by {@link #isHorizontalScrollBarEnabled()} and
+     * {@link #isVerticalScrollBarEnabled()}. When the animation is started,
+     * this method returns true, and false otherwise. If the animation is
+     * started, this method calls {@link #invalidate()}; in that case the
+     * caller should not call {@link #invalidate()}.</p>
+     *
+     * <p>This method should be invoked every time a subclass directly updates
+     * the scroll parameters.</p>
+     *
+     * <p>This method is automatically invoked by {@link #scrollBy(int, int)}
+     * and {@link #scrollTo(int, int)}.</p>
+     *
+     * @return true if the animation is played, false otherwise
+     * @see #awakenScrollBars(int)
+     * @see #scrollBy(int, int)
+     * @see #scrollTo(int, int)
+     * @see #isHorizontalScrollBarEnabled()
+     * @see #isVerticalScrollBarEnabled()
+     * @see #setHorizontalScrollBarEnabled(boolean)
+     * @see #setVerticalScrollBarEnabled(boolean)
+     */
+    protected final boolean awakenScrollBars() {
+        return mScrollCache != null && awakenScrollBars(500);
+    }
+
+    /**
+     * <p>
+     * Trigger the scrollbars to draw. When invoked this method starts an
+     * animation to fade the scrollbars out after a fixed delay. If a subclass
+     * provides animated scrolling, the start delay should equal the duration of
+     * the scrolling animation.
+     * </p>
+     *
+     * <p>
+     * The animation starts only if at least one of the scrollbars is enabled,
+     * as specified by {@link #isHorizontalScrollBarEnabled()} and
+     * {@link #isVerticalScrollBarEnabled()}. When the animation is started,
+     * this method returns true, and false otherwise. If the animation is
+     * started, this method calls {@link #invalidate()}; in that case the caller
+     * should not call {@link #invalidate()}.
+     * </p>
+     *
+     * <p>
+     * This method should be invoked every time a subclass directly updates the
+     * scroll parameters.
+     * </p>
+     *
+     * @param startDelay the delay, in milliseconds, after which the animation
+     *                   should start; when the delay is 0, the animation starts
+     *                   immediately
+     * @return true if the animation is played, false otherwise
+     * @see #scrollBy(int, int)
+     * @see #scrollTo(int, int)
+     * @see #isHorizontalScrollBarEnabled()
+     * @see #isVerticalScrollBarEnabled()
+     * @see #setHorizontalScrollBarEnabled(boolean)
+     * @see #setVerticalScrollBarEnabled(boolean)
+     */
+    protected boolean awakenScrollBars(int startDelay) {
+        final ScrollCache scrollCache = mScrollCache;
+        if (scrollCache == null || !scrollCache.mFadeScrollBars) {
+            return false;
+        }
+        initializeScrollBarDrawable();
+        if (isHorizontalScrollBarEnabled() || isVerticalScrollBarEnabled()) {
+            if (scrollCache.mState == ScrollCache.OFF) {
+                // first takes longer
+                startDelay = Math.max(1250, startDelay);
+            } else {
+                startDelay = Math.max(0, startDelay);
+            }
+            scrollCache.mFadeStartTime = AnimationHandler.currentTimeMillis() + startDelay;
+            scrollCache.mState = ScrollCache.ON;
+            if (startDelay <= 0) {
+                scrollCache.mState = ScrollCache.FADING;
+            } else if (mAttachInfo != null) {
+                AnimationHandler.getInstance().register(scrollCache, startDelay);
+            }
+            invalidate();
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Return the scrolled left position of this view. This is the left edge of
      * the displayed part of your view. You do not need to draw any pixels
      * farther left, since those are outside of the frame of your view on
@@ -1105,6 +1331,118 @@ public class View implements Drawable.Callback {
      */
     public final int getScrollY() {
         return mScrollY;
+    }
+
+    /**
+     * <p>Compute the horizontal range that the horizontal scrollbar
+     * represents.</p>
+     *
+     * <p>The range is expressed in arbitrary units that must be the same as the
+     * units used by {@link #computeHorizontalScrollExtent()} and
+     * {@link #computeHorizontalScrollOffset()}.</p>
+     *
+     * <p>The default range is the drawing width of this view.</p>
+     *
+     * @return the total horizontal range represented by the horizontal
+     * scrollbar
+     * @see #computeHorizontalScrollExtent()
+     * @see #computeHorizontalScrollOffset()
+     */
+    protected int computeHorizontalScrollRange() {
+        return getWidth();
+    }
+
+    /**
+     * <p>Compute the horizontal offset of the horizontal scrollbar's thumb
+     * within the horizontal range. This value is used to compute the position
+     * of the thumb within the scrollbar's track.</p>
+     *
+     * <p>The range is expressed in arbitrary units that must be the same as the
+     * units used by {@link #computeHorizontalScrollRange()} and
+     * {@link #computeHorizontalScrollExtent()}.</p>
+     *
+     * <p>The default offset is the scroll offset of this view.</p>
+     *
+     * @return the horizontal offset of the scrollbar's thumb
+     * @see #computeHorizontalScrollRange()
+     * @see #computeHorizontalScrollExtent()
+     */
+    protected int computeHorizontalScrollOffset() {
+        return mScrollX;
+    }
+
+    /**
+     * <p>Compute the horizontal extent of the horizontal scrollbar's thumb
+     * within the horizontal range. This value is used to compute the length
+     * of the thumb within the scrollbar's track.</p>
+     *
+     * <p>The range is expressed in arbitrary units that must be the same as the
+     * units used by {@link #computeHorizontalScrollRange()} and
+     * {@link #computeHorizontalScrollOffset()}.</p>
+     *
+     * <p>The default extent is the drawing width of this view.</p>
+     *
+     * @return the horizontal extent of the scrollbar's thumb
+     * @see #computeHorizontalScrollRange()
+     * @see #computeHorizontalScrollOffset()
+     */
+    protected int computeHorizontalScrollExtent() {
+        return getWidth();
+    }
+
+    /**
+     * <p>Compute the vertical range that the vertical scrollbar represents.</p>
+     *
+     * <p>The range is expressed in arbitrary units that must be the same as the
+     * units used by {@link #computeVerticalScrollExtent()} and
+     * {@link #computeVerticalScrollOffset()}.</p>
+     *
+     * @return the total vertical range represented by the vertical scrollbar
+     *
+     * <p>The default range is the drawing height of this view.</p>
+     * @see #computeVerticalScrollExtent()
+     * @see #computeVerticalScrollOffset()
+     */
+    protected int computeVerticalScrollRange() {
+        return getHeight();
+    }
+
+    /**
+     * <p>Compute the vertical offset of the vertical scrollbar's thumb
+     * within the horizontal range. This value is used to compute the position
+     * of the thumb within the scrollbar's track.</p>
+     *
+     * <p>The range is expressed in arbitrary units that must be the same as the
+     * units used by {@link #computeVerticalScrollRange()} and
+     * {@link #computeVerticalScrollExtent()}.</p>
+     *
+     * <p>The default offset is the scroll offset of this view.</p>
+     *
+     * @return the vertical offset of the scrollbar's thumb
+     * @see #computeVerticalScrollRange()
+     * @see #computeVerticalScrollExtent()
+     */
+    protected int computeVerticalScrollOffset() {
+        return mScrollY;
+    }
+
+    /**
+     * <p>Compute the vertical extent of the vertical scrollbar's thumb
+     * within the vertical range. This value is used to compute the length
+     * of the thumb within the scrollbar's track.</p>
+     *
+     * <p>The range is expressed in arbitrary units that must be the same as the
+     * units used by {@link #computeVerticalScrollRange()} and
+     * {@link #computeVerticalScrollOffset()}.</p>
+     *
+     * <p>The default extent is the drawing height of this view.</p>
+     *
+     * @return the vertical extent of the scrollbar's thumb
+     * @see #computeVerticalScrollRange()
+     * @see #computeVerticalScrollOffset()
+     */
+    protected int computeVerticalScrollExtent() {
+        return getHeight();
     }
 
     /**

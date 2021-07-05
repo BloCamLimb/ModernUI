@@ -26,8 +26,8 @@ import javax.annotation.Nonnull;
 public class TimedTask {
 
     @Nonnull
-    private final Runnable mRunnable;
-    private final long mExecutionTime;
+    public final Runnable mRunnable;
+    public final long mExecutionTime;
 
     public TimedTask(@Nonnull Runnable runnable, long executionTime) {
         mRunnable = runnable;

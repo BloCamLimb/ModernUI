@@ -10,7 +10,7 @@
  * Modern UI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
+ * GNU Lesser General License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
@@ -18,33 +18,55 @@
 
 package icyllis.modernui.view;
 
+import icyllis.modernui.animation.AnimationHandler;
+import icyllis.modernui.math.Rect;
+
 /**
  * Controls the scroll bar rendering for View only.
  */
-final class ScrollCache {
+final class ScrollCache implements AnimationHandler.FrameCallback {
 
     /**
      * Scrollbars are not visible
      */
-    public static final int OFF = 0;
+    static final int OFF = 0;
 
     /**
      * Scrollbars are visible
      */
-    public static final int ON = 1;
+    static final int ON = 1;
 
     /**
      * Scrollbars are fading away
      */
-    public static final int FADING = 2;
+    static final int FADING = 2;
+
+    private final View mHost;
 
     /**
      * The current state of the scrollbars: ON, OFF, or FADING
      */
-    public int mState = OFF;
+    int mState = OFF;
 
-    public ScrollBar mScrollBar;
+    ScrollBar mScrollBar;
 
-    public ScrollCache() {
+    int mScrollBarSize = 12;
+
+    boolean mFadeScrollBars = true;
+    long mFadeStartTime;
+    long mFadeDuration = 500;
+
+    final Rect mScrollBarBounds = new Rect();
+    final Rect mScrollBarTouchBounds = new Rect();
+
+    ScrollCache(View host) {
+        mHost = host;
+    }
+
+    @Override
+    public void doAnimationFrame(long frameTime) {
+        mState = FADING;
+        mHost.invalidate();
+        AnimationHandler.getInstance().unregister(this);
     }
 }
