@@ -44,7 +44,7 @@ public class TextPaint extends FontPaint {
      *
      * @return a internal paint
      */
-    public FontPaint copyToInternal() {
+    public FontPaint copyAsBase() {
         return new FontPaint(this);
     }
 

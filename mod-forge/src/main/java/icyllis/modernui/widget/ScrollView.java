@@ -24,6 +24,7 @@ import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.test.drawable.ScrollThumbDrawable;
 import icyllis.modernui.view.MotionEvent;
+import icyllis.modernui.screen.ScrollBar;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewConfig;
 
@@ -40,7 +41,7 @@ public class ScrollView extends FrameLayout implements ScrollController.IListene
 
     public ScrollView() {
         setVerticalScrollBarEnabled(true);
-        ScrollBar bar = new ScrollBar();
+        ScrollBar bar = new ScrollBar(View.this);
         bar.setThumbDrawable(new ScrollThumbDrawable());
         bar.setTrackDrawable(new Drawable() {
             @Override
@@ -56,8 +57,8 @@ public class ScrollView extends FrameLayout implements ScrollController.IListene
     }
 
     @Override
-    protected void onLayout(boolean changed) {
-        super.onLayout(changed);
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        super.onLayout(changed, left, top, right, bottom);
         scrollRange = getScrollRange();
         // we must specify max scroll amount
         scrollController.setMaxScroll(scrollRange);

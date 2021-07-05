@@ -23,6 +23,9 @@ package icyllis.modernui.widget;
  * view and the parent of content view. It always has the same dimension
  * as the window. Note it doesn't have any decorations like the title bar,
  * they are provided by the window on the operating system.
+ * <p>
+ * This class is public only for stand-alone application development at the
+ * bottom level. It is not a stable API and should not be considered a widget.
  */
 public class DecorView extends FrameLayout {
 }

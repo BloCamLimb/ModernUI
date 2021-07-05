@@ -18,27 +18,33 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.math.PointF;
-
 /**
- * A set of information given to a view when it is attached to its parent
- * window.
+ * Controls the scroll bar rendering for View only.
  */
-final class AttachInfo {
+final class ScrollCache {
 
     /**
-     * The view root impl.
+     * Scrollbars are not visible
      */
-    final ViewRootImpl mViewRootImpl;
+    public static final int OFF = 0;
 
     /**
-     * The top view of the hierarchy.
+     * Scrollbars are visible
      */
-    View mRootView;
+    public static final int ON = 1;
 
-    PointF mTmpPointF = new PointF();
+    /**
+     * Scrollbars are fading away
+     */
+    public static final int FADING = 2;
 
-    AttachInfo(ViewRootImpl viewRootImpl) {
-        mViewRootImpl = viewRootImpl;
+    /**
+     * The current state of the scrollbars: ON, OFF, or FADING
+     */
+    public int mState = OFF;
+
+    public ScrollBar mScrollBar;
+
+    public ScrollCache() {
     }
 }

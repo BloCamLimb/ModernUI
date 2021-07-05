@@ -24,7 +24,6 @@ import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.ast.Node;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.shader.ShaderManager;
@@ -214,7 +213,7 @@ public class TestMain {
                         canvas.save();
                         //canvas.rotate(-10, 640, 360);
                         Paint paint = Paint.take();
-                        paint.setSmoothRadius(3);
+                        paint.setSmoothRadius(2);
                         canvas.drawRoundImage(sprite, 100, 20, 15, paint);
                         //canvas.drawCircle(60, 60, 20, paint);
                         canvas.translate(300, 0);
@@ -223,22 +222,22 @@ public class TestMain {
 
                         paint.setStyle(Paint.Style.FILL);
 
-                        paint.setRGBA(40, 40, 40, 255);
-                        canvas.drawRoundRect(120, 50, 200, 90, 10, Canvas.TOP, paint);
-                        paint.setRGBA(128, 128, 128, 255);
+                        paint.setColors(new int[]{0xff66ccff, 0xffffb6c0, 0xffffb6c0, 0xff66ccff});
+                        canvas.drawRoundRect(120, 50, 200, 90, 10, paint);
+                        /*paint.setRGBA(128, 128, 128, 255);
                         canvas.drawRoundRect(120, 90, 200, 130, 2, paint);
                         paint.setRGBA(40, 40, 40, 255);
                         canvas.drawRoundRect(120, 130, 200, 170, 2, paint);
                         canvas.drawRoundRect(120, 170, 200, 210, 2, paint);
-                        canvas.drawRoundRect(120, 210, 200, 250, 10, Canvas.BOTTOM, paint);
+                        canvas.drawRoundRect(120, 210, 200, 250, 10, Canvas.BOTTOM, paint);*/
 
                         paint.setStrokeWidth(4);
-                        paint.setSmoothRadius(2);
+                        /*paint.setSmoothRadius(2);
                         paint.setRGBA(192, 192, 192, 255);
-                        canvas.drawLine(122, 90,  198, 90, paint);
+                        canvas.drawLine(122, 90, 198, 90, paint);
                         canvas.drawLine(122, 130, 198, 130, paint);
                         canvas.drawLine(122, 170, 198, 170, paint);
-                        canvas.drawLine(122, 210, 198, 210, paint);
+                        canvas.drawLine(122, 210, 198, 210, paint);*/
 
                         paint.setStyle(Paint.Style.STROKE);
                         paint.setRGBA(255, 255, 255, 255);

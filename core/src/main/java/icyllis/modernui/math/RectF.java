@@ -27,8 +27,6 @@ import javax.annotation.Nullable;
 @SuppressWarnings("unused")
 public class RectF {
 
-    private static final ThreadLocal<RectF> TLS = ThreadLocal.withInitial(RectF::new);
-
     public float left;
     public float top;
     public float right;
@@ -64,18 +62,6 @@ public class RectF {
             right = r.right;
             bottom = r.bottom;
         }
-    }
-
-    /**
-     * Get the thread local RectF. Do not cache this object or store
-     * it as a member variable, this is only intended for temporary
-     * calculation in method stack to avoid new object construction.
-     *
-     * @return the thread-local instance
-     */
-    @Nonnull
-    public static RectF get() {
-        return TLS.get();
     }
 
     /**

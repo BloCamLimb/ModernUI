@@ -709,7 +709,7 @@ public class RelativeLayout extends ViewGroup {
     }
 
     @Override
-    protected void onLayout(boolean changed) {
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         final int count = getChildCount();
 
         for (int i = 0; i < count; i++) {

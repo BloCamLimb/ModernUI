@@ -99,7 +99,7 @@ public abstract class ViewGroup extends View implements ViewParent {
     }
 
     @Override
-    protected abstract void onLayout(boolean changed);
+    protected abstract void onLayout(boolean changed, int left, int top, int right, int bottom);
 
     private int getAndVerifyPreorderedIndex(int childrenCount, int i, boolean customOrder) {
         final int childIndex;

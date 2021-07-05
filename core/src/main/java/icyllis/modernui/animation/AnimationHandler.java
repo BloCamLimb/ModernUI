@@ -28,6 +28,7 @@ import java.util.function.LongConsumer;
 
 public class AnimationHandler {
 
+    // support thread-local?
     private static AnimationHandler sInstance;
 
     private final CopyOnWriteArrayList<FrameCallback> mCallbacks = new CopyOnWriteArrayList<>();
@@ -74,20 +75,30 @@ public class AnimationHandler {
         }
     }
 
+    /**
+     * Register a callback. If registered, the delay will be overridden.
+     *
+     * @param callback the callback to register
+     * @param delay    delayed time in milliseconds, if > 0
+     */
     public void register(@Nonnull FrameCallback callback, long delay) {
-        mCallbacks.addIfAbsent(callback);
+        boolean added = mCallbacks.addIfAbsent(callback);
         if (delay > 0) {
             mDelayedStartTime.put(callback, RenderCore.timeMillis() + delay);
+        } else if (!added) {
+            mDelayedStartTime.removeLong(callback);
         }
     }
 
     public void unregister(@Nonnull FrameCallback callback) {
-        mCallbacks.remove(callback);
-        mDelayedStartTime.removeLong(callback);
+        boolean removed = mCallbacks.remove(callback);
+        if (removed) {
+            mDelayedStartTime.removeLong(callback);
+        }
     }
 
     /**
-     * Remove the callbacks from mDelayedCallbackStartTime once they have passed the initial delay
+     * Remove the callbacks from mDelayedStartTime once they have passed the initial delay
      * so that they can start getting frame callbacks.
      *
      * @return true if they have passed the initial delay or have no delay, false otherwise.
@@ -97,7 +108,7 @@ public class AnimationHandler {
         if (startTime == 0) {
             return true;
         }
-        if (startTime < currentTime) {
+        if (currentTime >= startTime) {
             mDelayedStartTime.removeLong(callback);
             return true;
         }
@@ -114,7 +125,7 @@ public class AnimationHandler {
     }
 
     /**
-     * Callbacks that receives notifications for animation timing and frame commit timing.
+     * Callbacks that receives notifications for animation timing.
      */
     public interface FrameCallback {
 
