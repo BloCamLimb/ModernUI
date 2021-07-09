@@ -21,6 +21,7 @@ package icyllis.modernui.widget;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.math.Rect;
 import icyllis.modernui.view.MotionEvent;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewConfig;
@@ -47,8 +48,9 @@ public class ScrollView extends FrameLayout {
             @Override
             public void draw(@Nonnull Canvas canvas) {
                 Paint paint = Paint.take();
-                paint.setRGBA(128, 128, 128, (int) (alpha * 0.502));
-                canvas.drawRect(getBounds(), paint);
+                paint.setRGBA(84, 190, 196, (int) (alpha * 0.5));
+                Rect bounds = getBounds();
+                canvas.drawRoundRect(bounds.left, bounds.top + 1, bounds.right - 1, bounds.bottom - 1, bounds.width() / 2f - 0.5f, paint);
             }
 
             @Override
@@ -62,8 +64,11 @@ public class ScrollView extends FrameLayout {
             @Override
             public void draw(@Nonnull Canvas canvas) {
                 Paint paint = Paint.take();
-                paint.setRGBA(16, 16, 16, (int) (alpha * 0.157));
-                canvas.drawRect(getBounds(), paint);
+                paint.setRGBA(128, 128, 128, (int) (alpha * 0.75));
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(3);
+                Rect bounds = getBounds();
+                canvas.drawRoundRect(bounds.left, bounds.top + 1, bounds.right - 1, bounds.bottom - 1, bounds.width() / 2f - 0.5f, paint);
             }
 
             @Override
@@ -158,7 +163,7 @@ public class ScrollView extends FrameLayout {
             final int bottom = getChildAt(0).getHeight();
             final int maxY = Math.max(0, bottom - height);
             final int scrollY = mScrollY;
-            int dy = Math.round(delta * -60.0f * ViewConfig.sViewScale);
+            int dy = Math.round(delta * -60.0f * ViewConfig.get().getViewScale());
             dy = Math.max(0, Math.min(mScroller.getFinalY() + dy, maxY)) - scrollY;
             mScroller.startScroll(mScrollX, scrollY, 0, dy);
             invalidate();

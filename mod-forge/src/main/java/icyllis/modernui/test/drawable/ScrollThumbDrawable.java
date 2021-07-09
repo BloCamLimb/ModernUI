@@ -24,6 +24,7 @@ import icyllis.modernui.graphics.drawable.Drawable;
 
 import javax.annotation.Nonnull;
 
+@Deprecated
 public class ScrollThumbDrawable extends Drawable {
 
     @Override
@@ -33,7 +34,7 @@ public class ScrollThumbDrawable extends Drawable {
         paint.setSmoothRadius(0);
         paint.setStyle(Paint.Style.FILL);
         paint.setRGBA(128, 128, 128, 128);
-        canvas.drawRect(0, 0, getWidth(), getHeight(), paint);
+        //canvas.drawRect(0, 0, getWidth(), getHeight(), paint);
     }
 
     @Override

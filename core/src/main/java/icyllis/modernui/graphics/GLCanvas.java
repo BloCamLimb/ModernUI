@@ -671,14 +671,14 @@ public final class GLCanvas extends Canvas {
         private final Rect mBounds = new Rect();
         private int mDepth;
 
-        private void set(@Nonnull Clip c) {
+        public void set(@Nonnull Clip c) {
             mBounds.set(c.mBounds);
             mDepth = c.mDepth;
         }
 
         // deep copy
         @Nonnull
-        private Clip copy() {
+        public Clip copy() {
             Clip c = new Clip();
             c.set(this);
             return c;
@@ -989,11 +989,11 @@ public final class GLCanvas extends Canvas {
     }
 
     @Override
-    public void drawImage(@Nonnull Sprite sprite, float left, float top, @Nonnull Paint paint) {
-        Sprite.Source source = sprite.getSource();
-        putRectColorUV(left, top, left + source.mWidth, top + source.mHeight, paint.getColor(),
+    public void drawImage(@Nonnull Image image, float left, float top, @Nonnull Paint paint) {
+        Image.Source source = image.getSource();
+        putRectColorUV(left, top, left + source.width, top + source.height, paint.getColor(),
                 0, 0, 1, 1);
-        mTextures.add(source.mTexture);
+        mTextures.add(source.texture);
         getMatrix().get(getModelViewBuffer());
         mDrawStates.add(DRAW_IMAGE);
     }
@@ -1080,21 +1080,21 @@ public final class GLCanvas extends Canvas {
     }
 
     @Override
-    public void drawRoundImage(@Nonnull Sprite sprite, float left, float top, float radius, @Nonnull Paint paint) {
-        Sprite.Source source = sprite.getSource();
-        putRectColorUV(left, top, left + source.mWidth, top + source.mHeight, paint.getColor(),
+    public void drawRoundImage(@Nonnull Image image, float left, float top, float radius, @Nonnull Paint paint) {
+        Image.Source source = image.getSource();
+        putRectColorUV(left, top, left + source.width, top + source.height, paint.getColor(),
                 0, 0, 1, 1);
         if (radius < 0)
             radius = 0;
         ByteBuffer buffer = getUniformBuffer();
         buffer.putFloat(left + radius)
                 .putFloat(top + radius)
-                .putFloat(left + source.mWidth - radius)
-                .putFloat(top + source.mHeight - radius);
+                .putFloat(left + source.width - radius)
+                .putFloat(top + source.height - radius);
         buffer.putFloat(radius)
                 .putFloat(Math.min(radius, paint.getSmoothRadius()));
         buffer.position(buffer.position() + 4);
-        mTextures.add(source.mTexture);
+        mTextures.add(source.texture);
         getMatrix().get(getModelViewBuffer());
         mDrawStates.add(DRAW_ROUND_IMAGE);
     }

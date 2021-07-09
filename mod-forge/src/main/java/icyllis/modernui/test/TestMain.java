@@ -24,8 +24,10 @@ import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.ast.Node;
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.graphics.GLCanvas;
+import icyllis.modernui.graphics.GLWrapper;
+import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.shader.ShaderManager;
 import icyllis.modernui.graphics.texture.Texture2D;
 import icyllis.modernui.math.MathUtil;
@@ -35,7 +37,6 @@ import icyllis.modernui.platform.Bitmap;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.platform.Window;
 import icyllis.modernui.text.GraphemeBreak;
-import icyllis.modernui.view.Gravity;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.system.Callback;
@@ -56,9 +57,7 @@ import java.util.stream.Stream;
 import static icyllis.modernui.graphics.GLWrapper.GL_RGB8;
 import static icyllis.modernui.graphics.GLWrapper.GL_UNSIGNED_BYTE;
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.opengl.GL11C.GL_RGBA8;
 import static org.lwjgl.opengl.GL11C.GL_STENCIL_TEST;
-import static org.lwjgl.opengl.GL30C.GL_COLOR_ATTACHMENT0;
 
 @SuppressWarnings("unused")
 public class TestMain {
@@ -160,7 +159,7 @@ public class TestMain {
         } catch (RunnerException e) {
             e.printStackTrace();
         }*/
-        ModernUI.LOGGER.info(Gravity.TOP & Gravity.BOTTOM);
+        //ModernUI.LOGGER.info(Gravity.TOP & Gravity.BOTTOM);
         if (!CREATE_WINDOW)
             return;
         try {
@@ -179,7 +178,7 @@ public class TestMain {
                 //projection = Matrix4.makePerspective(MathUtil.PI_DIV_2, window.getAspectRatio(), 0.01f, 1000);
                 canvas.setProjection(projection);
 
-                Sprite sprite;
+                Image image;
                 try (ReadableByteChannel channel = ModernUI.get().getResource(Path.of("74523424_p0.png"))) {
                     Bitmap bitmap = Bitmap.decode(null, channel);
                     Texture2D texture2D = new Texture2D();
@@ -190,12 +189,10 @@ public class TestMain {
                             0, 0, 1, bitmap.getFormat().glFormat, GL_UNSIGNED_BYTE, bitmap.getPixels());
                     texture2D.setFilter(true, true);
                     texture2D.generateMipmap();
-                    sprite = new Sprite(new Sprite.Source(width, height, texture2D));
+                    image = new Image(new Image.Source(texture2D, width, height));
                 } catch (IOException e) {
                     throw new IllegalStateException();
                 }
-                Framebuffer framebuffer = new Framebuffer(window.getWidth(), window.getHeight());
-                framebuffer.attachTexture(GL_COLOR_ATTACHMENT0, GL_RGBA8);
 
                 while (!window.shouldClose()) {
                     if (window.isRefreshNeeded()) {
@@ -214,7 +211,7 @@ public class TestMain {
                         //canvas.rotate(-10, 640, 360);
                         Paint paint = Paint.take();
                         paint.setSmoothRadius(2);
-                        canvas.drawRoundImage(sprite, 100, 20, 15, paint);
+                        canvas.drawRoundImage(image, 100, 20, 15, paint);
                         //canvas.drawCircle(60, 60, 20, paint);
                         canvas.translate(300, 0);
                         //canvas.clipRect(130, 40, 310, 110);

@@ -19,16 +19,46 @@
 package icyllis.modernui.view;
 
 /**
- * Global view config, including methods to standards used in UI.
+ * View config, including methods to standards used in UI.
  */
 public class ViewConfig {
+
+    private static final ViewConfig sInstance = new ViewConfig();
 
     /**
      * View scale, determined by user preference or depends on your device
      */
-    public static float sViewScale = 1;
+    private float mViewScale = 1;
 
-    public static int spToPx(float sp) {
-        return (int) (sp * sViewScale + 0.5f);
+    private ViewConfig() {
+    }
+
+    /**
+     * @return global view config
+     */
+    public static ViewConfig get() {
+        return sInstance;
+    }
+
+    public void setViewScale(float scale) {
+        mViewScale = scale;
+    }
+
+    public float getViewScale() {
+        return mViewScale;
+    }
+
+    /**
+     * Get the size in pixels that matches the layout standards.
+     *
+     * @param p scaling-independent pixel
+     * @return size in pixels
+     */
+    public int getViewSize(float p) {
+        return Math.round(p * mViewScale);
+    }
+
+    public int getTextSize(float p) {
+        return Math.round(p * mViewScale);
     }
 }

@@ -128,13 +128,11 @@ public final class Framebuffer implements AutoCloseable {
             AutoCloseable a = entry.getValue();
             if (a instanceof Texture2D) {
                 Texture2D texture = (Texture2D) a;
-                int internalFormat = glGetTextureParameteri(texture.get(), GL_TEXTURE_INTERNAL_FORMAT);
-                texture.close();
-                texture.init(internalFormat, width, height, 0);
+                texture.resize(width, height, false);
                 glNamedFramebufferTexture(get(), entry.getIntKey(), texture.get(), 0);
             } else if (a instanceof Renderbuffer) {
                 Renderbuffer renderbuffer = (Renderbuffer) a;
-                int internalFormat = glGetRenderbufferParameteri(renderbuffer.get(), GL_RENDERBUFFER_INTERNAL_FORMAT);
+                int internalFormat = glGetNamedRenderbufferParameteri(renderbuffer.get(), GL_RENDERBUFFER_INTERNAL_FORMAT);
                 renderbuffer.close();
                 renderbuffer.init(internalFormat, width, height, 0);
                 glNamedFramebufferRenderbuffer(get(), entry.getIntKey(), GL_RENDERBUFFER, renderbuffer.get());

@@ -22,7 +22,7 @@ import com.ibm.icu.text.DateFormat;
 import com.ibm.icu.text.SimpleDateFormat;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.graphics.Sprite;
+import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.texture.Texture2D;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.stb.STBIWriteCallback;
@@ -56,7 +56,7 @@ import static org.lwjgl.system.MemoryUtil.*;
 /**
  * Represents a bitmap, with its image data in native. It is used for operations
  * on the client side, such as reading from/writing to a stream/channel. Compared
- * with {@link Sprite Sprites}, this data is completely stored in RAM with an
+ * with {@link Image Sprites}, this data is completely stored in RAM with an
  * uncompressed format. Losing the reference of a bitmap object will automatically
  * free the native memory.
  */

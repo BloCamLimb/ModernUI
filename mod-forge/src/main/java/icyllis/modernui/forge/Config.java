@@ -20,8 +20,8 @@ package icyllis.modernui.forge;
 
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.graphics.font.GlyphManagerForge;
 import icyllis.modernui.textmc.ModernFontRenderer;
-import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.textmc.TextLayoutProcessor;
 import icyllis.modernui.screen.BlurHandler;
 import icyllis.modernui.screen.UIManager;
@@ -292,11 +292,11 @@ public final class Config {
             //TestHUD.sBars = hudBars.get();
 
             Minecraft.getInstance().submit(() -> ModernFontRenderer.change(globalRenderer.get(), allowShadow.get()));
-            GlyphManager.sPreferredFont = preferredFont.get();
-            GlyphManager.sAntiAliasing = antiAliasing.get();
-            GlyphManager.sHighPrecision = highPrecision.get();
-            GlyphManager.sEnableMipmap = enableMipmap.get();
-            GlyphManager.sMipmapLevel = mipmapLevel.get();
+            GlyphManagerForge.sPreferredFont = preferredFont.get();
+            GlyphManagerForge.sAntiAliasing = antiAliasing.get();
+            GlyphManagerForge.sHighPrecision = highPrecision.get();
+            GlyphManagerForge.sEnableMipmap = enableMipmap.get();
+            GlyphManagerForge.sMipmapLevel = mipmapLevel.get();
             //GlyphManager.sResolutionLevel = resolutionLevel.get();
             TextLayoutProcessor.sDefaultFontSize = defaultFontSize.get();
         }

@@ -40,8 +40,8 @@ public abstract class Texture implements AutoCloseable {
 
     /**
      * Returns the OpenGL texture object name represented by this object.
-     * It will be generated if it's unassigned. This operation does not
-     * allocate GPU memory unless initialization.
+     * It's always a valid value but may change if this was recycled.
+     * This operation does not allocate GPU memory unless initialization.
      *
      * @return texture object name
      */
@@ -76,6 +76,17 @@ public abstract class Texture implements AutoCloseable {
             mRef.cleanup.clean();
             mRef = null;
         }
+    }
+
+    /**
+     * Regenerate the texture name and returns the previous reference.
+     *
+     * @return cleanup action
+     */
+    protected final Runnable realloc() {
+        Ref r = mRef;
+        mRef = new Ref(this);
+        return r;
     }
 
     private static final class Ref implements Runnable {
