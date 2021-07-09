@@ -24,7 +24,7 @@ import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Matrix4f;
-import icyllis.modernui.graphics.font.GlyphManager;
+import icyllis.modernui.graphics.font.GlyphManagerForge;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.Sheets;
 import org.lwjgl.opengl.GL11;
@@ -94,7 +94,7 @@ public class TextRenderNode {
         final int startB = b;
 
         y += BASELINE_OFFSET;
-        x -= GlyphManager.GLYPH_OFFSET;
+        x -= GlyphManagerForge.GLYPH_OFFSET;
         RenderSystem.enableTexture();
 
         for (GlyphRender glyph : glyphs) {
@@ -117,7 +117,7 @@ public class TextRenderNode {
             r = startR;
             g = startG;
             b = startB;
-            x += GlyphManager.GLYPH_OFFSET;
+            x += GlyphManagerForge.GLYPH_OFFSET;
             RenderSystem.disableTexture();
             builder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
             for (GlyphRender glyph : glyphs) {
@@ -151,7 +151,7 @@ public class TextRenderNode {
             ((MultiBufferSource.BufferSource) buffer).endBatch(Sheets.signSheet());
 
         y += VANILLA_BASELINE_OFFSET;
-        x -= GlyphManager.GLYPH_OFFSET;
+        x -= GlyphManagerForge.GLYPH_OFFSET;
 
         for (GlyphRender glyph : glyphs) {
             if (glyph.color != GlyphRender.COLOR_NO_CHANGE) {
@@ -175,7 +175,7 @@ public class TextRenderNode {
         }
 
         VertexConsumer builder = null;
-        x += GlyphManager.GLYPH_OFFSET;
+        x += GlyphManagerForge.GLYPH_OFFSET;
 
         if (hasEffect) {
             r = startR;

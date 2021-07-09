@@ -124,24 +124,6 @@ public abstract class Drawable {
     }
 
     /**
-     * Get actual width for drawing
-     *
-     * @return width
-     */
-    public final int getWidth() {
-        return mBounds.width();
-    }
-
-    /**
-     * Get actual height for drawing
-     *
-     * @return height
-     */
-    public final int getHeight() {
-        return mBounds.height();
-    }
-
-    /**
      * Implement this interface if you want to create an animated drawable that
      * extends {@link Drawable Drawable}. Upon retrieving a drawable, use
      * {@link Drawable#setCallback(Callback)} to supply your implementation of

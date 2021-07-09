@@ -20,7 +20,7 @@ package icyllis.modernui.forge;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.ContextClient;
-import icyllis.modernui.graphics.font.GlyphManager;
+import icyllis.modernui.graphics.font.GlyphManagerForge;
 import icyllis.modernui.graphics.shader.ShaderManager;
 import icyllis.modernui.screen.LayoutIO;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
@@ -146,9 +146,9 @@ public final class ModernUIForge extends ModernUI {
                 .getResource(new ResourceLocation(cfgFont))) {
             Font f = Font.createFont(Font.TRUETYPE_FONT, resource.getInputStream());
             setter.accept(f);
-            ModernUI.LOGGER.debug(GlyphManager.MARKER, "Preferred font {} was loaded", f.getFamily(Locale.ROOT));
+            ModernUI.LOGGER.debug(GlyphManagerForge.MARKER, "Preferred font {} was loaded", f.getFamily(Locale.ROOT));
         } catch (Exception e) {
-            ModernUI.LOGGER.warn(GlyphManager.MARKER, "Preferred font {} failed to load", cfgFont, e);
+            ModernUI.LOGGER.warn(GlyphManagerForge.MARKER, "Preferred font {} failed to load", cfgFont, e);
         }
     }
 

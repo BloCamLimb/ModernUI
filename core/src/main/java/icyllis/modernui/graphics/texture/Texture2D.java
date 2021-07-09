@@ -107,12 +107,42 @@ public class Texture2D extends Texture {
         glTextureParameteri(texture, GL_TEXTURE_MIN_LOD, 0);
         glTextureParameteri(texture, GL_TEXTURE_MAX_LOD, maxLevel);
 
-        // the number of levels is max level + 1, because it's between [0, maxLevel]
+        // the number of levels is maxLevel + 1, because it's [0, maxLevel]
         glTextureStorage2D(texture, maxLevel + 1, internalFormat, width, height);
     }
 
     /**
-     * Upload image data to GPU. Alignment for {@link icyllis.modernui.platform.Bitmap} is 1 (byte-aligned).
+     * Regenerate the texture to the new size.
+     *
+     * @param width  new width of the texture
+     * @param height new height of the texture
+     * @param copy   true if copy the data from the old one
+     */
+    public void resize(int width, int height, boolean copy) {
+        int old = get();
+        int oldWidth = getWidth(0);
+        int oldHeight = getHeight(0);
+        if (width == oldWidth && height == oldHeight) {
+            return;
+        }
+        int internalFormat = glGetTextureLevelParameteri(old, 0, GL_TEXTURE_INTERNAL_FORMAT);
+        int maxLevel = glGetTextureParameteri(old, GL_TEXTURE_MAX_LEVEL);
+
+        Runnable cleanup = realloc();
+        init(internalFormat, width, height, maxLevel);
+        if (copy) {
+            glCopyImageSubData(old, GL_TEXTURE_2D, 0, 0, 0, 0,
+                    get(), GL_TEXTURE_2D, 0, 0, 0, 0,
+                    Math.min(width, oldWidth), Math.min(height, oldHeight), 1);
+            if (maxLevel > 0) {
+                generateMipmap();
+            }
+        }
+        cleanup.run();
+    }
+
+    /**
+     * Upload image data to GPU. {@link icyllis.modernui.platform.Bitmap} is byte-aligned.
      *
      * @param level     the level for the image
      * @param rowLength row length if data width is not equal to texture width, or 0

@@ -19,12 +19,12 @@
 package icyllis.modernui.graphics.font;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.textmc.VanillaTextKey;
-import icyllis.modernui.textmc.pipeline.TextRenderNode;
-import icyllis.modernui.textmc.pipeline.TextRenderType;
 import icyllis.modernui.graphics.texture.Texture2D;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.text.FontCollection;
+import icyllis.modernui.textmc.VanillaTextKey;
+import icyllis.modernui.textmc.pipeline.TextRenderNode;
+import icyllis.modernui.textmc.pipeline.TextRenderType;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
@@ -49,7 +49,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
-import static icyllis.modernui.graphics.GLWrapper.*;
+import static icyllis.modernui.graphics.GLWrapper.GL_ALPHA;
+import static icyllis.modernui.graphics.GLWrapper.GL_UNSIGNED_BYTE;
 
 /**
  * Find matching fonts and glyphs, measure glyph metrics and draw them of
@@ -61,11 +62,11 @@ import static icyllis.modernui.graphics.GLWrapper.*;
 //TODO use custom shaders to replace MOJANG's in 1.17, use GL_R8 format
 // also fix depth ordering
 @SuppressWarnings("unused")
-public class GlyphManager extends GlyphManagerBase {
+public class GlyphManagerForge extends GlyphManagerBase {
 
     public static final Marker MARKER = MarkerManager.getMarker("Glyph");
 
-    private static GlyphManager instance;
+    private static GlyphManagerForge instance;
 
     /**
      * Config values.
@@ -113,14 +114,14 @@ public class GlyphManager extends GlyphManagerBase {
     /**
      * For bilinear or trilinear mipmap textures, similar to {@link #GLYPH_SPACING}, but must be smaller than it
      */
-    private static final int GLYPH_BORDER = 2;
+    private static final int GLYPH_BORDER = 1;
 
     /**
      * The width in pixels of a transparent border between individual glyphs in the cache texture. This border keeps neighboring
      * glyphs from "bleeding through" when the scaled GUI resolution is not pixel aligned and sometimes results in off-by-one
      * sampling of the glyph cache textures.
      */
-    private static final int GLYPH_SPACING = GLYPH_BORDER + 1;
+    private static final int GLYPH_SPACING = GLYPH_BORDER + 0;
 
     /**
      * For drawing, due to {@link #GLYPH_BORDER}, we need an offset for drawing glyphs
@@ -227,7 +228,7 @@ public class GlyphManager extends GlyphManagerBase {
     /**
      * A single instance of GlyphManager is allocated for internal use.
      */
-    private GlyphManager() {
+    private GlyphManagerForge() {
         instance = this;
         /* Set background color for use with clearRect() */
         mGlyphGraphics.setBackground(BG_COLOR);
@@ -245,10 +246,10 @@ public class GlyphManager extends GlyphManagerBase {
 
     // internal use
     @Nonnull
-    public static GlyphManager getInstance() {
+    public static GlyphManagerForge getInstance() {
         RenderCore.checkRenderThread();
         if (instance == null)
-            new GlyphManager();
+            new GlyphManagerForge();
         return instance;
     }
 
@@ -428,7 +429,7 @@ public class GlyphManager extends GlyphManagerBase {
         // the key should be cached in layout step, see deriveFont()
         long fontKey = (long) mFontKeyMap.getInt(font) << 32;
         return mGlyphCache.computeIfAbsent(fontKey | glyphCode,
-                iLoveSukazyo -> cacheGlyph(font, glyphCode));
+                l -> cacheGlyph(font, glyphCode));
     }
 
     /**

@@ -310,12 +310,12 @@ public abstract class Canvas {
      * specified paint, transformed by the current matrix. The Style and smooth
      * radius is ignored in the paint, images are always filled.
      *
-     * @param sprite the image to be drawn
+     * @param image the image to be drawn
      * @param left   the position of the left side of the image being drawn
      * @param top    the position of the top side of the image being drawn
      * @param paint  the paint used to draw the round image
      */
-    public abstract void drawImage(@Nonnull Sprite sprite, float left, float top, @Nonnull Paint paint);
+    public abstract void drawImage(@Nonnull Image image, float left, float top, @Nonnull Paint paint);
 
     /**
      * Draw a line segment with the specified start and stop x,y coordinates, using
@@ -475,12 +475,12 @@ public abstract class Canvas {
      * using the specified paint, transformed by the current matrix. The Style is
      * ignored in the paint, images are always filled.
      *
-     * @param sprite the image to be drawn
+     * @param image the image to be drawn
      * @param left   the position of the left side of the image being drawn
      * @param top    the position of the top side of the image being drawn
      * @param radius the radius used to round the corners
      * @param paint  the paint used to draw the round image
      */
-    public abstract void drawRoundImage(@Nonnull Sprite sprite, float left, float top,
+    public abstract void drawRoundImage(@Nonnull Image image, float left, float top,
                                         float radius, @Nonnull Paint paint);
 }

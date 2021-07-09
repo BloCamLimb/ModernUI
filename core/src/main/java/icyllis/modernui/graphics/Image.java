@@ -21,15 +21,15 @@ package icyllis.modernui.graphics;
 import icyllis.modernui.graphics.texture.Texture2D;
 
 /**
- * Sprites that can be used for drawing and processing. The image data is
+ * Images that can be used for drawing and processing. The image data is
  * stored in GPU memory, and an instance of this is associated with an OpenGL
  * texture object.
  */
-public class Sprite implements AutoCloseable {
+public class Image implements AutoCloseable {
 
     private final Source mSource;
 
-    public Sprite(Source source) {
+    public Image(Source source) {
         mSource = source;
     }
 
@@ -47,14 +47,14 @@ public class Sprite implements AutoCloseable {
      */
     public static class Source {
 
-        final int mWidth;
-        final int mHeight;
-        final Texture2D mTexture;
+        final Texture2D texture;
+        final int width;
+        final int height;
 
-        public Source(int width, int height, Texture2D texture) {
-            mWidth = width;
-            mHeight = height;
-            mTexture = texture;
+        public Source(Texture2D texture, int width, int height) {
+            this.texture = texture;
+            this.width = width;
+            this.height = height;
         }
     }
 }

@@ -1268,8 +1268,8 @@ public abstract class ViewGroup extends View implements ViewParent {
          *               {@link #MATCH_PARENT}, or a fixed value
          */
         public LayoutParams(int width, int height) {
-            this.width = width >= 0 ? ViewConfig.spToPx(width) : width;
-            this.height = height >= 0 ? ViewConfig.spToPx(height) : height;
+            this.width = width >= 0 ? ViewConfig.get().getViewSize(width) : width;
+            this.height = height >= 0 ? ViewConfig.get().getViewSize(height) : height;
         }
 
         /**
@@ -1338,10 +1338,10 @@ public abstract class ViewGroup extends View implements ViewParent {
          * @param bottom the bottom margin size
          */
         public void setMargins(int left, int top, int right, int bottom) {
-            leftMargin = ViewConfig.spToPx(left);
-            topMargin = ViewConfig.spToPx(top);
-            rightMargin = ViewConfig.spToPx(right);
-            bottomMargin = ViewConfig.spToPx(bottom);
+            leftMargin = left;
+            topMargin = top;
+            rightMargin = right;
+            bottomMargin = bottom;
         }
 
         /**

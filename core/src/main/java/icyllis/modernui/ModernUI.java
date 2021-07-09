@@ -20,7 +20,7 @@ package icyllis.modernui;
 
 import icyllis.modernui.core.Context;
 import icyllis.modernui.core.ContextWrapper;
-import icyllis.modernui.graphics.Sprite;
+import icyllis.modernui.graphics.Image;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
@@ -72,7 +72,7 @@ public class ModernUI extends ContextWrapper {
 
             @Nullable
             @Override
-            public Sprite getImage(@Nonnull Path path, boolean antiAliasing) {
+            public Image getImage(@Nonnull Path path, boolean antiAliasing) {
                 return null;
             }
         });

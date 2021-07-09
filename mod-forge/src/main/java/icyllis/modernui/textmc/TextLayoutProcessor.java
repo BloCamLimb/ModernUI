@@ -23,7 +23,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.ibm.icu.text.Bidi;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.font.GlyphManager;
+import icyllis.modernui.graphics.font.GlyphManagerForge;
 import icyllis.modernui.graphics.font.TexturedGlyph;
 import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.mixin.MixinClientLanguage;
@@ -73,7 +73,7 @@ public class TextLayoutProcessor {
      * Draw and cache all glyphs of all fonts needed
      * Lazy-loading because we are waiting for render system to initialize
      */
-    private GlyphManager glyphManager;
+    private GlyphManagerForge glyphManager;
 
     /*
      * A cache of recently seen strings to their fully laid-out state, complete with color changes and texture coordinates of
@@ -160,7 +160,7 @@ public class TextLayoutProcessor {
      * The 4 element array is index by the font style (combination of Font.PLAIN, Font.BOLD, and Font.ITALIC), and each of the
      * nested elements is index by the digit value 0-9.
      *
-     * @deprecated {@link GlyphManager#lookupDigits(Font)}
+     * @deprecated {@link GlyphManagerForge#lookupDigits(Font)}
      */
     @Deprecated
     private void cacheDigitGlyphs() {
@@ -175,7 +175,7 @@ public class TextLayoutProcessor {
 
     public void initRenderer() {
         if (glyphManager == null) {
-            glyphManager = GlyphManager.getInstance();
+            glyphManager = GlyphManagerForge.getInstance();
             ModernUI.LOGGER.info(RenderCore.MARKER, "Text renderer initialized");
         } else {
             throw new IllegalStateException();
@@ -870,7 +870,7 @@ public class TextLayoutProcessor {
                 boolean layout = font != f && codePoint != 32;
                 if (layout) {
                     layoutFont(data, text, last, next, flag, glyphManager.deriveFont(
-                            font, style.getFontStyle(), sDefaultFontSize * GlyphManager.sResolutionLevel), style.isObfuscated(),
+                            font, style.getFontStyle(), sDefaultFontSize * GlyphManagerForge.sResolutionLevel), style.isObfuscated(),
                             effect);
                     font = f;
                     last = next;
@@ -881,7 +881,7 @@ public class TextLayoutProcessor {
         /* layout the rest text if not empty */
         if (font != null) {
             layoutFont(data, text, last, limit, flag, glyphManager.deriveFont(
-                    font, style.getFontStyle(), sDefaultFontSize * GlyphManager.sResolutionLevel), style.isObfuscated(),
+                    font, style.getFontStyle(), sDefaultFontSize * GlyphManagerForge.sResolutionLevel), style.isObfuscated(),
                     effect);
         }
     }

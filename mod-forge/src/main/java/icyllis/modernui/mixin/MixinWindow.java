@@ -21,9 +21,9 @@ package icyllis.modernui.mixin;
 import com.mojang.blaze3d.platform.Window;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.forge.MuiForgeCompat;
-import icyllis.modernui.graphics.font.GlyphManager;
-import icyllis.modernui.textmc.TextLayoutProcessor;
+import icyllis.modernui.graphics.font.GlyphManagerForge;
 import icyllis.modernui.platform.RenderCore;
+import icyllis.modernui.textmc.TextLayoutProcessor;
 import icyllis.modernui.view.ViewConfig;
 import net.minecraft.util.Mth;
 import org.spongepowered.asm.mixin.Mixin;
@@ -51,13 +51,13 @@ public class MixinWindow {
         if (i != scaleFactor) {
             ModernUI.LOGGER.warn(ModernUI.MARKER, "Gui scale should be an integer: {}", scaleFactor);
         }
-        int oldLevel = Math.min((int) (ViewConfig.sViewScale + 0.5f), 3);
+        int oldLevel = Math.min((int) (ViewConfig.get().getViewScale() + 0.5f), 3);
         int newLevel = Math.min((int) (i * 0.5f + 0.5f), 3);
         if (RenderCore.isInitialized() && oldLevel != newLevel) {
             TextLayoutProcessor.getInstance().reload();
         }
         // See standards
-        GlyphManager.sResolutionLevel = newLevel;
-        ViewConfig.sViewScale = i * 0.5f;
+        GlyphManagerForge.sResolutionLevel = newLevel;
+        ViewConfig.get().setViewScale(i * 0.5f);
     }
 }

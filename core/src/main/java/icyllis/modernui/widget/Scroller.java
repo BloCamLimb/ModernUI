@@ -54,7 +54,7 @@ public class Scroller {
     }
 
     public Scroller(Interpolator interpolator, boolean flywheel) {
-        mInterpolator = Objects.requireNonNullElse(interpolator, Interpolator.SINE);
+        mInterpolator = Objects.requireNonNullElse(interpolator, Interpolator.DECELERATE);
         mFlywheel = flywheel;
     }
 

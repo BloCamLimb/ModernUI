@@ -32,7 +32,7 @@ import java.util.LinkedList;
 /**
  * The top of a view hierarchy, implementing the needed protocol between View and
  * Window. There must also be a class handle events from Window to ViewRootImpl,
- * so methods are public for external calls. You may need to change this class
+ * so methods are public for external calls. You may need to modify this class
  * to run your own stand-alone application.
  */
 public final class ViewRootImpl implements ViewParent {
@@ -171,6 +171,7 @@ public final class ViewRootImpl implements ViewParent {
 
         mWillDrawSoon = false;
 
+        //TODO
         //if (mInvalidated) {
         mIsDrawing = true;
         mCanvas.reset(width, height);
@@ -189,8 +190,8 @@ public final class ViewRootImpl implements ViewParent {
         mInputEvents.add(event);
     }
 
-    @UiThread
     public void doProcessInputEvents() {
+        checkThread();
         if (mView != null) {
             InputEvent event;
             while ((event = mInputEvents.poll()) != null) {

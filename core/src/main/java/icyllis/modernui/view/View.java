@@ -453,7 +453,7 @@ public class View implements Drawable.Callback {
                 cache.mState = ScrollCache.OFF;
                 return;
             } else {
-                int alpha = (int) ((1.0f - fraction) * 255);
+                int alpha = 255 - (int) (fraction * 255);
                 cache.mScrollBar.setAlpha(alpha);
             }
             invalidate = true;

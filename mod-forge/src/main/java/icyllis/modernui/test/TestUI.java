@@ -18,12 +18,18 @@
 
 package icyllis.modernui.test;
 
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.math.Rect;
 import icyllis.modernui.screen.ScreenCallback;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.widget.FrameLayout;
 import icyllis.modernui.widget.ScrollView;
+
+import javax.annotation.Nonnull;
 
 public class TestUI extends ScreenCallback {
 
@@ -34,8 +40,19 @@ public class TestUI extends ScreenCallback {
         contentViewParams.gravity = Gravity.CENTER;
 
         View ll = new TestLinearLayout();
-        ll.setLayoutParams(new FrameLayout.LayoutParams(280, 480));
+        FrameLayout.LayoutParams cl = new FrameLayout.LayoutParams(280, 480);
+        ll.setLayoutParams(cl);
         contentView.addView(ll);
+
+        contentView.setBackground(new Drawable() {
+            @Override
+            public void draw(@Nonnull Canvas canvas) {
+                Paint paint = Paint.take();
+                Rect b = getBounds();
+                paint.setRGBA(8, 8, 8, 80);
+                canvas.drawRoundRect(b.left, b.top, b.right, b.bottom, 8, paint);
+            }
+        });
 
         setContentView(contentView, contentViewParams);
     }

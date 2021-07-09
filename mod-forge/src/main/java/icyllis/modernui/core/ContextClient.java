@@ -18,7 +18,7 @@
 
 package icyllis.modernui.core;
 
-import icyllis.modernui.graphics.Sprite;
+import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.texture.Texture2D;
 import icyllis.modernui.platform.Bitmap;
 import icyllis.modernui.platform.RenderCore;
@@ -47,7 +47,7 @@ public final class ContextClient extends Context {
     private final String mNamespace;
     private ResourceManager mResourceManager;
 
-    private Map<Path, Sprite.Source> mImageMap = new HashMap<>();
+    private Map<Path, Image.Source> mImageMap = new HashMap<>();
 
     public ContextClient(String namespace) {
         mNamespace = namespace;
@@ -68,10 +68,10 @@ public final class ContextClient extends Context {
 
     @Nullable
     @Override
-    public Sprite getImage(@Nonnull Path path, boolean aa) {
-        Sprite.Source source = mImageMap.get(path);
+    public Image getImage(@Nonnull Path path, boolean aa) {
+        Image.Source source = mImageMap.get(path);
         if (source != null) {
-            return new Sprite(source);
+            return new Image(source);
         }
         try (Resource resource = mResourceManager.getResource(new ResourceLocation(mNamespace, path.toString()))) {
             Bitmap bitmap = Bitmap.decode(Bitmap.Format.RGBA, resource.getInputStream());
@@ -89,9 +89,9 @@ public final class ContextClient extends Context {
                     texture2D.setFilter(false, false);
                 }
             });
-            source = new Sprite.Source(width, height, texture2D);
+            source = new Image.Source(texture2D, width, height);
             mImageMap.put(path, source);
-            return new Sprite(source);
+            return new Image(source);
         } catch (Exception e) {
             e.printStackTrace();
         }
