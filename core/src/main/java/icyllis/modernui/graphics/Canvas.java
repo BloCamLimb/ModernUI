@@ -483,4 +483,7 @@ public abstract class Canvas {
      */
     public abstract void drawRoundImage(@Nonnull Image image, float left, float top,
                                         float radius, @Nonnull Paint paint);
+
+    public abstract void drawTextRun(@Nonnull CharSequence text, int start, int end,
+                                     float x, float y, boolean isRtl, @Nonnull Paint paint);
 }

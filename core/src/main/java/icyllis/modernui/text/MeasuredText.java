@@ -39,10 +39,10 @@ public class MeasuredText {
     public final Run[] mRuns;
 
     /**
-     * Follows grapheme cluster break, for example: there are 6 chars,
+     * This follows grapheme cluster break. For example: there are 6 chars (uint_16),
      * the first two are the first grapheme, the last four are the second one.
-     * Then mAdvances[0] = first grapheme, mAdvances[2] = second grapheme,
-     * others are zero. This is in logical order of textBuf.
+     * Then mAdvances[0] is for the first grapheme, mAdvances[2] for the second one,
+     * other elements are zero. It's in the same order of mTextBuf.
      */
     public final float[] mAdvances;
 
@@ -171,7 +171,7 @@ public class MeasuredText {
         }
     }
 
-    // a logical run, child of bidi run
+    // a logical run, subrange of bidi run
     public static abstract class Run {
 
         // range in context

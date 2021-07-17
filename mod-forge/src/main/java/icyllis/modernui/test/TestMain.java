@@ -18,6 +18,7 @@
 
 package icyllis.modernui.test;
 
+import com.ibm.icu.text.Bidi;
 import com.ibm.icu.text.BreakIterator;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.vladsch.flexmark.parser.Parser;
@@ -28,6 +29,7 @@ import icyllis.modernui.graphics.GLCanvas;
 import icyllis.modernui.graphics.GLWrapper;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.graphics.font.GlyphManagerBase;
 import icyllis.modernui.graphics.shader.ShaderManager;
 import icyllis.modernui.graphics.texture.Texture2D;
 import icyllis.modernui.math.MathUtil;
@@ -36,7 +38,7 @@ import icyllis.modernui.math.Vector3;
 import icyllis.modernui.platform.Bitmap;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.platform.Window;
-import icyllis.modernui.text.GraphemeBreak;
+import icyllis.modernui.text.*;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.system.Callback;
@@ -151,6 +153,50 @@ public class TestMain {
         mat.rotateZ(MathUtil.PI_DIV_2);
         mat.translate(-2, 0, 0);
         pos.transform(mat);
+
+        String text = "\u0639\u0646\u062f\u0645\u0627\u0020\u064a\u0631\u064a\u062f\u0020\u0627\u0644\u0639\u0627\u0644\u0645\u0020\u0623\u0646\u0020\u202a\u064a\u062a\u0643\u0644\u0651\u0645\u0020\u202c\u0020\u060c\u0020\u0641\u0647\u0648\u0020\u064a\u062a\u062d\u062f\u0651\u062b\u0020\u0628\u0644\u063a\u0629\u0020\u064a\u0648\u0646\u064a\u0643\u0648\u062f\u002e\u0020\u062a\u0633\u062c\u0651\u0644\u0020\u0627\u0644\u0622\u0646\u0020\u0644\u062d\u0636\u0648\u0631\u0020\u0627\u0644\u0645\u0624\u062a\u0645\u0631\u0020\u0627\u0644\u062f\u0648\u0644\u064a\u0020\u0627\u0644\u0639\u0627\u0634\u0631\u0020\u0644\u064a\u0648\u0646\u064a\u0643\u0648\u062f\u0020\u0028\u0055\u006e\u0069\u0063\u006f\u0064\u0065\u0020\u0043\u006f\u006e\u0066\u0065\u0072\u0065\u006e\u0063\u0065\u0029\u060c\u0020\u0627\u0644\u0630\u064a\u0020\u0633\u064a\u0639\u0642\u062f\u0020\u0641\u064a\u0020\u0031\u0030\u002d\u0031\u0032\u0020\u0622\u0630\u0627\u0631\u0020\u0031\u0039\u0039\u0037\u0020\u0628\u0645\u062f\u064a\u0646\u0629\u0020\u0645\u064e\u0627\u064a\u0650\u0646\u0652\u062a\u0652\u0633\u060c\u0020\u0623\u0644\u0645\u0627\u0646\u064a\u0627\u002e\u0020\u0648\u0020\u0633\u064a\u062c\u0645\u0639\u0020\u0627\u0644\u0645\u0624\u062a\u0645\u0631\u0020\u0628\u064a\u0646\u0020\u062e\u0628\u0631\u0627\u0621\u0020\u0645\u0646\u0020\u0643\u0627\u0641\u0629";
+        char[] textC = text.toCharArray();
+
+        new GlyphManagerBase();
+        TextPaint tp = new TextPaint();
+        var mt = MeasuredParagraph.buildForStaticLayout(tp, text, 0, text.length(), TextDirectionHeuristics.FIRSTSTRONG_LTR, null);
+        var dirs =  mt.getDirections(0, text.length());
+        for (int i = 0; i < dirs.getRunCount(); i++) {
+            int st = dirs.getRunStart(i);
+            ModernUI.LOGGER.info("Measure: {}, RTL {}, {} to {}", i, dirs.isRunRtl(i), st, st + dirs.getRunLength(i));
+            for (var run : FontCollection.SERIF.itemize(textC, st, st + dirs.getRunLength(i))) {
+                ModernUI.LOGGER.info("FontRun: {} to {}", run.getStart(), run.getEnd());
+                GlyphVector vector = run.getFamily().layoutGlyphVector(GRAPHICS.getFontRenderContext(),
+                        textC, run.getStart(), run.getEnd(), dirs.isRunRtl(i) ? Font.LAYOUT_RIGHT_TO_LEFT : Font.LAYOUT_LEFT_TO_RIGHT);
+                for (int j = 0; j < vector.getNumGlyphs(); j++) {
+                    ModernUI.LOGGER.info("GlyphIndex: {}, GlyphCode: {}, Pos: {}, CharIndex: {}", j,
+                            vector.getGlyphCode(j), vector.getGlyphPosition(j), vector.getGlyphCharIndex(j));
+                }
+            }
+        }
+
+        /*Bidi bidi = new Bidi(text.toCharArray(), 0, null, 0, text.length(), Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT);
+        int runCount = bidi.getRunCount();
+        byte[] levels = new byte[runCount];
+        Integer[] ranges = new Integer[runCount];
+
+        *//* Reorder contiguous runs of text into their display order from left to right *//*
+        for (int index = 0; index < runCount; index++) {
+            levels[index] = (byte) bidi.getRunLevel(index);
+            ranges[index] = index;
+        }
+        Bidi.reorderVisually(levels, 0, ranges, 0, runCount);
+        ModernUI.LOGGER.info("Reorder: {}", Arrays.toString(Bidi.reorderVisual(levels)));
+
+
+        for (int logicalIndex = 0; logicalIndex < runCount; logicalIndex++) {
+            int visualIndex = ranges[logicalIndex];
+
+            ModernUI.LOGGER.info("Bidi: {}, RTL {}, {} to {}", logicalIndex, (bidi.getRunLevel(visualIndex) & 1) != 0,
+                    bidi.getRunStart(visualIndex), bidi.getRunLimit(visualIndex));
+        }*/
+
+
 
         //ModernUI.LOGGER.info(MathUtil.atan2(-1, -1));
         //ModernUI.LOGGER.info(pos);

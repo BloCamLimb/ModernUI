@@ -31,17 +31,49 @@ public class StaticLayout extends TextLayout {
 
     private static final int DEFAULT_MAX_LINE_HEIGHT = -1;
 
+    private static final Pool<Builder> sPool = Pools.concurrent(1);
+
+    /**
+     * Obtain a builder for constructing StaticLayout objects.
+     *
+     * @param source The text to be laid out, optionally with spans
+     * @param start  The index of the start of the text
+     * @param end    The index + 1 of the end of the text
+     * @param paint  The base paint used for layout
+     * @param width  The width in pixels
+     * @return a builder object used for constructing the StaticLayout
+     */
+    @Nonnull
+    public static Builder builder(@Nonnull CharSequence source, int start, int end,
+                                  @Nonnull TextPaint paint, int width) {
+        Builder b = sPool.acquire();
+        if (b == null) {
+            b = new Builder();
+        }
+
+        b.mText = source;
+        b.mStart = start;
+        b.mEnd = end;
+        b.mPaint = paint;
+        b.mWidth = width;
+        b.mAlignment = Alignment.ALIGN_NORMAL;
+        b.mTextDir = TextDirectionHeuristics.FIRSTSTRONG_LTR;
+        b.mFallbackLineSpacing = true; // default true
+        return b;
+    }
+
     /**
      * Builder for static layouts. The builder is the preferred pattern for constructing
      * StaticLayout objects and should be preferred over the constructors, particularly to access
-     * newer features. To build a static layout, first call {@link #obtain} with the required
+     * newer features. To build a static layout, first call {@link #builder} with the required
      * arguments (text, paint, and width), then call setters for optional parameters, and finally
      * {@link #build} to build the StaticLayout object. Parameters not explicitly set will get
      * default values.
      */
     public final static class Builder {
 
-        private static final Pool<Builder> sPool = Pools.concurrent(3);
+        // cached instance
+        private final FontMetricsInt mFontMetricsInt = new FontMetricsInt();
 
         private CharSequence mText;
         private int mStart;
@@ -53,34 +85,6 @@ public class StaticLayout extends TextLayout {
         private boolean mFallbackLineSpacing;
 
         private Builder() {
-        }
-
-        /**
-         * Obtain a builder for constructing StaticLayout objects.
-         *
-         * @param source The text to be laid out, optionally with spans
-         * @param start  The index of the start of the text
-         * @param end    The index + 1 of the end of the text
-         * @param paint  The base paint used for layout
-         * @param width  The width in pixels
-         * @return a builder object used for constructing the StaticLayout
-         */
-        @Nonnull
-        public static Builder obtain(@Nonnull CharSequence source, int start, int end,
-                                     @Nonnull TextPaint paint, int width) {
-            Builder b = sPool.acquire();
-            if (b == null)
-                b = new Builder();
-
-            b.mText = source;
-            b.mStart = start;
-            b.mEnd = end;
-            b.mPaint = paint;
-            b.mWidth = width;
-            b.mAlignment = Alignment.ALIGN_NORMAL;
-            b.mTextDir = TextDirectionHeuristics.FIRSTSTRONG_LTR;
-            b.mFallbackLineSpacing = true; // default true
-            return b;
         }
 
         /**
@@ -221,9 +225,9 @@ public class StaticLayout extends TextLayout {
     // 29 bits
     private static final int START_MASK = 0x1FFFFFFF;
     // 31 bit
-    private static final int DIR_SHIFT  = 30;
+    private static final int DIR_SHIFT = 30;
     // 30 bit
-    private static final int TAB_MASK   = 0x20000000;
+    private static final int TAB_MASK = 0x20000000;
 
 
     private int mLineCount;
@@ -258,10 +262,12 @@ public class StaticLayout extends TextLayout {
 
     // Used by DynamicLayout
     StaticLayout(@Nullable CharSequence text) {
+        super(text);
         mColumns = COLUMNS_ELLIPSIZE;
     }
 
-    private StaticLayout(Builder b) {
+    private StaticLayout(@Nonnull Builder b) {
+        super(b.mText);
         mColumns = COLUMNS_NORMAL;
         generate(b);
     }
@@ -287,7 +293,7 @@ public class StaticLayout extends TextLayout {
         // current height in pixels
         int v = 0;
 
-        FontMetricsInt fm = new FontMetricsInt();
+        FontMetricsInt fm = b.mFontMetricsInt;
 
         LineBreaker.ParagraphConstraints constraints =
                 new LineBreaker.ParagraphConstraints();

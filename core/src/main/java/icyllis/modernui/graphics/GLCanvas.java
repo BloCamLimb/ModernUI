@@ -1098,4 +1098,10 @@ public final class GLCanvas extends Canvas {
         getMatrix().get(getModelViewBuffer());
         mDrawStates.add(DRAW_ROUND_IMAGE);
     }
+
+    @Override
+    public void drawTextRun(@Nonnull CharSequence text, int start, int end, float x, float y,
+                            boolean isRtl, @Nonnull Paint paint) {
+
+    }
 }

@@ -710,14 +710,12 @@ public class TextLayoutProcessor {
             else {
                 int runCount = bidi.getRunCount();
                 byte[] levels = new byte[runCount];
-                Integer[] ranges = new Integer[runCount];
 
                 /* Reorder contiguous runs of text into their display order from left to right */
-                for (int index = 0; index < runCount; index++) {
-                    levels[index] = (byte) bidi.getRunLevel(index);
-                    ranges[index] = index;
+                for (int i = 0; i < runCount; i++) {
+                    levels[i] = (byte) bidi.getRunLevel(i);
                 }
-                Bidi.reorderVisually(levels, 0, ranges, 0, runCount);
+                int[] ranges = Bidi.reorderVisual(levels);
 
                 /*
                  * Every GlyphVector must be created on a contiguous run of left-to-right or right-to-left text. Keep track of
@@ -728,7 +726,7 @@ public class TextLayoutProcessor {
                     int logicalIndex = ranges[visualIndex];
 
                     /* An odd numbered level indicates right-to-left ordering */
-                    int flag = (bidi.getRunLevel(logicalIndex) & 1) == 1 ? Font.LAYOUT_RIGHT_TO_LEFT : Font.LAYOUT_LEFT_TO_RIGHT;
+                    int flag = (bidi.getRunLevel(logicalIndex) & 1) != 0 ? Font.LAYOUT_RIGHT_TO_LEFT : Font.LAYOUT_LEFT_TO_RIGHT;
                     layoutStyle(data, text, bidi.getRunStart(logicalIndex), bidi.getRunLimit(logicalIndex), flag);
                 }
             }

@@ -29,7 +29,7 @@ public class TabStops {
     private int mNumStops;
     private float mTabWidth;
 
-    public TabStops(@Nullable float[] stops, float tabWidth) {
+    public TabStops(float[] stops, float tabWidth) {
         mStops = stops;
         mNumStops = stops == null ? 0 : stops.length;
         mTabWidth = tabWidth;
@@ -39,7 +39,7 @@ public class TabStops {
         reset(tabWidth, spans);
     }
 
-    void reset(float tabWidth, Object[] spans) {
+    public void reset(float tabWidth, Object[] spans) {
         mTabWidth = tabWidth;
 
         int ns = 0;
@@ -48,11 +48,11 @@ public class TabStops {
             for (Object o : spans) {
                 if (o instanceof TabStopSpan) {
                     if (stops == null) {
-                        stops = new float[10];
+                        stops = new float[2];
                     } else if (ns == stops.length) {
-                        float[] nstops = new float[ns * 2];
-                        System.arraycopy(stops, 0, nstops, 0, ns);
-                        stops = nstops;
+                        float[] newStops = new float[ns << 1];
+                        System.arraycopy(stops, 0, newStops, 0, ns);
+                        stops = newStops;
                     }
                     stops[ns++] = ((TabStopSpan) o).getTabStop();
                 }
@@ -67,25 +67,24 @@ public class TabStops {
         mNumStops = ns;
     }
 
-    // return next tab width
-    float nextTab(float currWidth) {
+    public float nextTab(float width) {
         final int ns = mNumStops;
         if (ns > 0) {
             float[] stops = mStops;
             for (int i = 0; i < ns; ++i) {
                 float stop = stops[i];
-                if (stop > currWidth) {
+                if (stop > width) {
                     return stop;
                 }
             }
         }
-        return nextDefaultStop(currWidth, mTabWidth);
+        return nextDefaultStop(width, mTabWidth);
     }
 
     /**
      * Returns the position of next tab stop.
      */
-    public static float nextDefaultStop(float currWidth, float tabWidth) {
-        return (int) (currWidth / tabWidth + 1) * tabWidth;
+    public static float nextDefaultStop(float width, float tabWidth) {
+        return (int) (width / tabWidth + 1) * tabWidth;
     }
 }

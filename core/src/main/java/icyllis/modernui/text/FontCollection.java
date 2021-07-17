@@ -22,7 +22,6 @@ import com.ibm.icu.impl.UCharacterProperty;
 import com.ibm.icu.lang.UCharacter;
 import com.ibm.icu.lang.UCharacterCategory;
 import icyllis.modernui.ModernUI;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
@@ -232,7 +231,7 @@ public class FontCollection {
         if (offset == limit)
             return Collections.emptyList();
 
-        final ObjectArrayList<Run> result = new ObjectArrayList<>();
+        final List<Run> result = new ArrayList<>();
 
         Run lastRun = null;
         Font lastFamily = null;
@@ -317,7 +316,7 @@ public class FontCollection {
                         // character (which means start would already be zero), or we have only seen
                         // characters that don't need any font support (which means we need to adjust
                         // start to be 0 to include those characters).
-                        start = 0;
+                        start = offset;
                     }
                     Run run = new Run(family, start, 0);
                     result.add(run);
@@ -335,7 +334,7 @@ public class FontCollection {
         if (lastFamily == null) {
             // No character needed any font support, so it doesn't really matter which font they end up
             // getting displayed in. We put the whole string in one run, using the first font.
-            result.add(new Run(mFonts[0], 0, limit));
+            result.add(new Run(mFonts[0], offset, limit));
         }
         return result;
     }

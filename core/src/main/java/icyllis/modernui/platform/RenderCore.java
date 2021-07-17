@@ -43,7 +43,7 @@ import static icyllis.modernui.ModernUI.LOGGER;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
- * Represents the graphics window system and its backend part.
+ * The core class for the window system and its backend part.
  */
 public final class RenderCore {
 
@@ -70,7 +70,7 @@ public final class RenderCore {
         if (errorCode == GLFW.GLFW_FORMAT_UNAVAILABLE && sIgnoreFormatError)
             return;
         String desc = descPtr == NULL ? "" : MemoryUtil.memUTF8(descPtr);
-        LOGGER.error(MARKER, "GLFW Error: 0x{}, {}", Integer.toHexString(errorCode), desc);
+        LOGGER.error(MARKER, "GLFW Error: 0x{} {}", Integer.toHexString(errorCode), desc);
     }
 
     public static void checkRenderThread() {
@@ -109,10 +109,19 @@ public final class RenderCore {
         GLCapabilities caps;
         try {
             caps = GL.getCapabilities();
-            LOGGER.debug(MARKER, "Found an existing OpenGL context");
+            //noinspection ConstantConditions
+            if (caps == null) {
+                // checks may be disabled
+                caps = GL.createCapabilities();
+            }
         } catch (IllegalStateException e) {
             caps = GL.createCapabilities();
         }
+        //noinspection ConstantConditions
+        if (caps == null) {
+            throw new IllegalStateException("Failed to acquire OpenGL capabilities");
+        }
+
         GLWrapper.initialize(caps);
 
         sInitialized = true;
