@@ -20,9 +20,31 @@ package icyllis.modernui.text;
 
 /**
  * Controls the layout of a single line of styled text, for measuring in visual
- * order and for rendering. Each TextLine holds an image that stores the
- * rendered result. The process of layout can be from any thread and the rendering
- * pipeline is based on Java native so can be from any thread as well.
+ * order and rendering. It can be used in any view without a TextView to draw a
+ * line of text.
  */
 public class TextLine {
+
+    private TextPaint mPaint;
+    private CharSequence mText;
+    private int mStart;
+    private int mLen;
+    private int mDir;
+    private Directions mDirections;
+
+    public void draw() {
+        float h = 0;
+        final int e = mDirections.getRunCount();
+        for (int i = 0; i < e; i++) {
+            final int st = mDirections.getRunStart(i);
+            if (st > mLen) {
+                break;
+            }
+            final int lim = Math.min(st + mDirections.getRunLength(i), mLen);
+            final boolean isRtl = mDirections.isRunRtl(i);
+
+            /*h += drawRun(c, st, lim, isRtl, x + h, top, y, bottom,
+                    i != (e - 1) || lim != mLen);*/
+        }
+    }
 }

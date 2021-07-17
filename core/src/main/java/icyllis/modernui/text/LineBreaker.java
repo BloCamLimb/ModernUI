@@ -35,39 +35,7 @@ public class LineBreaker {
 
     private static final int NOWHERE = 0xFFFFFFFF;
 
-    private static BreakIterator sBreaker = BreakIterator.getLineInstance(Locale.ROOT);
-
-    /**
-     * Break paragraph into lines.
-     * <p>
-     * The result is filled to out param.
-     *
-     * @param measuredPara a result of the text measurement
-     * @param constraints  constraints for a single paragraph
-     * @param indents      the supplied array provides the total amount of indentation per
-     *                     line, in pixel. This amount is the sum of both left and right
-     *                     indentations. For lines past the last element in the array, the
-     *                     indentation amount of the last element is used.
-     * @param lineNumber   a line number (index offset) of this paragraph
-     * @return the result of line break
-     */
-    @Nonnull
-    public static Result computeLineBreaks(@Nonnull MeasuredText measuredPara, @Nonnull ParagraphConstraints constraints,
-                                           @Nullable int[] indents, int lineNumber) {
-        if (measuredPara.getTextBuf().length == 0)
-            return new Result();
-        final float[] floatIndents;
-        if (indents == null)
-            floatIndents = null;
-        else {
-            floatIndents = new float[indents.length];
-            for (int i = 0; i < indents.length; i++)
-                floatIndents[i] = indents[i];
-        }
-        DefaultLineWidth lineWidth = new DefaultLineWidth(constraints.mFirstWidth, constraints.mWidth, floatIndents, lineNumber);
-        TabStops tabStops = new TabStops(constraints.mVariableTabStops, constraints.mDefaultTabStop);
-        return new LineBreaker(measuredPara.getTextBuf(), measuredPara, lineWidth, tabStops).getResult();
-    }
+    private static final BreakIterator sBreaker = BreakIterator.getLineInstance(Locale.ROOT);
 
     // This function determines whether a character is a space that disappears at end of line.
     // It is the Unicode set: [[:General_Category=Space_Separator:]-[:Line_Break=Glue:]], plus '\n'.
@@ -81,11 +49,6 @@ public class LineBreaker {
                 // THIN SPACE, HAIR SPACE
                 || c == 0x205F  // MEDIUM MATHEMATICAL SPACE
                 || c == 0x3000;
-    }
-
-    // change breaker locale
-    static void setLocale(Locale locale) {
-        sBreaker = BreakIterator.getLineInstance(locale);
     }
 
     @Nonnull
@@ -115,7 +78,33 @@ public class LineBreaker {
         mLineWidthLimits = lineWidthLimits;
         mTabStops = tabStops;
         mLineWidthLimit = lineWidthLimits.getAt(0);
-        process();
+    }
+
+    /**
+     * Break paragraph into lines.
+     * <p>
+     * The result is filled to out param.
+     *
+     * @param measuredPara a result of the text measurement
+     * @param constraints  constraints for a single paragraph
+     * @param indents      the supplied array provides the total amount of indentation per
+     *                     line, in pixel. This amount is the sum of both left and right
+     *                     indentations. For lines past the last element in the array, the
+     *                     indentation amount of the last element is used.
+     * @param lineNumber   a line number (index offset) of this paragraph
+     * @return the result of line break
+     */
+    @Nonnull
+    public static Result computeLineBreaks(@Nonnull MeasuredText measuredPara, @Nonnull ParagraphConstraints constraints,
+                                           @Nullable int[] indents, int lineNumber) {
+        if (measuredPara.getTextBuf().length == 0) {
+            return new Result();
+        }
+        DefaultLineWidth lineWidth = new DefaultLineWidth(constraints.mFirstWidth, constraints.mWidth, indents, lineNumber);
+        TabStops tabStops = new TabStops(constraints.mVariableTabStops, constraints.mDefaultTabStop);
+        LineBreaker breaker = new LineBreaker(measuredPara.getTextBuf(), measuredPara, lineWidth, tabStops);
+        breaker.process();
+        return breaker.getResult();
     }
 
     private void process() {
@@ -154,8 +143,9 @@ public class LineBreaker {
             int start = getPrevLineBreakOffset();
             // The word in the new line may still be too long for the line limit.
             // Try general line break first, otherwise try grapheme boundary or out of the line width
-            if (!tryLineBreak() && doLineBreakWithGraphemeBounds(start, offset))
+            if (!tryLineBreak() && doLineBreakWithGraphemeBounds(start, offset)) {
                 return;
+            }
         }
 
 
@@ -168,8 +158,9 @@ public class LineBreaker {
 
     // general line break, use ICU line break iterator, not word breaker
     private boolean tryLineBreak() {
-        if (mPrevBoundaryOffset == NOWHERE)
+        if (mPrevBoundaryOffset == NOWHERE) {
             return false;
+        }
 
         breakLineAt(mPrevBoundaryOffset, mLineWidthAtPrevBoundary,
                 mLineWidth - mCharsAdvanceAtPrevBoundary,
@@ -184,8 +175,10 @@ public class LineBreaker {
         // Starting from + 1 since at least one character needs to be assigned to a line.
         for (int i = start + 1; i < end; i++) {
             final float w = mMeasuredText.mAdvances[i];
-            if (w == 0)
-                continue; // w == 0 means here is not a grapheme bounds. Don't break here.
+            if (w == 0) {
+                // w == 0 means here is not a grapheme bounds. Don't break here.
+                continue;
+            }
             if (width + w > mLineWidthLimit) {
                 // Okay, here is the longest position.
                 breakLineAt(i, width, mLineWidth - width, mCharsAdvance - width);
@@ -235,10 +228,11 @@ public class LineBreaker {
     @Nonnull
     private Result getResult() {
         int prevBreakOffset = 0;
-        int[] ascents = new int[mBreakPoints.size()];
-        int[] descents = new int[mBreakPoints.size()];
+        final int size = mBreakPoints.size();
+        final int[] ascents = new int[size];
+        final int[] descents = new int[size];
         FontMetricsInt fm = new FontMetricsInt();
-        for (int i = 0; i < mBreakPoints.size(); i++) {
+        for (int i = 0; i < size; i++) {
             BreakPoint breakPoint = mBreakPoints.get(i);
             for (int j = prevBreakOffset; j < breakPoint.mOffset; j++)
                 if (mTextBuf[j] == '\u0009') {
@@ -384,11 +378,11 @@ public class LineBreaker {
         // for rest lines
         private final float mRestWidth;
         @Nullable
-        private final float[] mIndents;
+        private final int[] mIndents;
         // the offset in mIndents
         private final int mOffset;
 
-        public DefaultLineWidth(float firstWidth, float restWidth, @Nullable float[] indents, int offset) {
+        public DefaultLineWidth(float firstWidth, float restWidth, @Nullable int[] indents, int offset) {
             mFirstWidth = firstWidth;
             mRestWidth = restWidth;
             mIndents = indents;
@@ -412,7 +406,7 @@ public class LineBreaker {
             return minWidth;
         }
 
-        private float getIndent(@Nullable float[] indents, int line) {
+        private float getIndent(@Nullable int[] indents, int line) {
             if (indents == null || indents.length == 0)
                 return 0;
             final int index = line + mOffset;

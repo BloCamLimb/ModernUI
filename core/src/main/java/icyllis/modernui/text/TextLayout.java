@@ -27,11 +27,17 @@ import java.lang.reflect.Array;
  * A base class that manages text layout in visual elements on the screen.
  * <p>
  * This layout is based on Unicode specification to meet a good internationalization
- * requirement, and also supports a wide variety of styles. Note that it will handle
- * multiple paragraphs, line breaking etc. So it's usually for a page or a text
- * area, not a single line of text or words. Naturally, the layout process is heavy.
+ * requirement, and also supports a wide variety of styles. Handle multiple paragraphs,
+ * line breaking etc. It's usually for a page or an area,
+ * not just a single line of text or words. Naturally, the layout process is heavy.
  */
 public abstract class TextLayout {
+
+    private CharSequence mText;
+
+    protected TextLayout(CharSequence text) {
+        mText = text;
+    }
 
     /**
      * Returns the same as <code>text.getSpans()</code>, except where
@@ -70,14 +76,6 @@ public abstract class TextLayout {
         } else {*/
         return text.getSpans(start, end, type);
         //}
-    }
-
-    /**
-     * Stores information about bidirectional (left-to-right or right-to-left)
-     * text within the layout of a line.
-     */
-    public static class Directions {
-
     }
 
     public enum Alignment {

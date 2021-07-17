@@ -149,8 +149,6 @@ public final class GLWrapper extends GL45C {
                                 GLDebugMessageAMDCallback.getMessage(length, message)));
                 glDebugMessageCallbackAMD(proc, NULL);
             }
-        } else {
-            LOGGER.debug(MARKER, "Found an existing OpenGL debug callback");
         }
 
         sMaxTextureSize = glGetInteger(GL_MAX_TEXTURE_SIZE);

@@ -18,9 +18,17 @@
 
 package icyllis.modernui.text;
 
-public class DynamicLayout extends TextLayout {
+import java.awt.font.GlyphVector;
 
-    protected DynamicLayout(CharSequence text) {
-        super(text);
+public class TextLayoutValue {
+
+    private int[] glyphCodes;
+    private float[] positions;
+
+    public TextLayoutValue(char[] text) {
+        GlyphVector vector = GlyphManager.getInstance().layoutGlyphVector(FontCollection.sSansSerifFont,
+                text, 0, text.length, false);
+        glyphCodes = vector.getGlyphCodes(0, vector.getNumGlyphs(), null);
+        positions = vector.getGlyphPositions(0, vector.getNumGlyphs(), null);
     }
 }

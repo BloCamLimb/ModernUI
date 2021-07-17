@@ -62,15 +62,15 @@ public class GlyphManagerBase {
     /**
      * Given a single OpenType font, perform full text layout and create a new GlyphVector for a string.
      *
-     * @param font        the Font used to layout a GlyphVector for the string
-     * @param text        the string to layout
-     * @param start       the offset into text at which to start the layout
-     * @param limit       the (offset + length) at which to stop performing the layout
-     * @param layoutFlags either {@link Font#LAYOUT_RIGHT_TO_LEFT} or {@link Font#LAYOUT_LEFT_TO_RIGHT}
+     * @param font  the Font used to layout a GlyphVector for the string
+     * @param text  the string to layout
+     * @param start the offset into text at which to start the layout
+     * @param limit the (offset + length) at which to stop performing the layout
+     * @param flags either {@link Font#LAYOUT_RIGHT_TO_LEFT} or {@link Font#LAYOUT_LEFT_TO_RIGHT}
      * @return the newly laid-out GlyphVector
      */
-    public GlyphVector layoutGlyphVector(@Nonnull Font font, char[] text, int start, int limit, int layoutFlags) {
-        return font.layoutGlyphVector(mGlyphGraphics.getFontRenderContext(), text, start, limit, layoutFlags);
+    public GlyphVector layoutGlyphVector(@Nonnull Font font, char[] text, int start, int limit, int flags) {
+        return font.layoutGlyphVector(mGlyphGraphics.getFontRenderContext(), text, start, limit, flags);
     }
 
     /**

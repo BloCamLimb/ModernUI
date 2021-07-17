@@ -99,6 +99,22 @@ public class GlyphManager {
     }
 
     /**
+     * Given a font, perform full text layout/shaping and create a new GlyphVector for a text.
+     *
+     * @param font  the derived Font used to layout a GlyphVector for the text
+     * @param text  the text to layout
+     * @param start the offset into text at which to start the layout
+     * @param limit the (offset + length) at which to stop performing the layout
+     * @param isRtl whether the text should layout right-to-left
+     * @return the newly laid-out GlyphVector
+     */
+    @Nonnull
+    public GlyphVector layoutGlyphVector(@Nonnull Font font, char[] text, int start, int limit, boolean isRtl) {
+        return font.layoutGlyphVector(mGraphics.getFontRenderContext(), text, start, limit,
+                isRtl ? Font.LAYOUT_RIGHT_TO_LEFT : Font.LAYOUT_LEFT_TO_RIGHT);
+    }
+
+    /**
      * Given a derived font and a glyph code within that font, locate the glyph's pre-rendered image
      * in the glyph atlas and return its cache entry,. The entry stores the texture with the
      * pre-rendered glyph image, as well as the position and size of that image within the texture.

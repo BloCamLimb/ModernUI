@@ -24,7 +24,6 @@ import icyllis.modernui.text.style.MetricAffectingSpan;
 import icyllis.modernui.text.style.ReplacementSpan;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
-import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 
 import javax.annotation.Nonnull;
@@ -63,9 +62,8 @@ public class MeasuredParagraph {
 
     // The bidi level for individual characters.
     //
-    // This is empty if mLtrWithoutBidi is true.
-    @Nonnull
-    private final ByteArrayList mLevels = new ByteArrayList();
+    // This is null if mLtrWithoutBidi is true.
+    private byte[] mLevels;
 
     /*@Deprecated
     @Nonnull
@@ -97,7 +95,6 @@ public class MeasuredParagraph {
      */
     public void release() {
         reset();
-        mLevels.trim();
         //mAdvances.trim();
         mSpanEndCache.trim();
         mFontMetrics.trim();
@@ -109,8 +106,8 @@ public class MeasuredParagraph {
     private void reset() {
         mSpanned = null;
         mCopiedBuffer = null;
+        mLevels = null;
         //mWholeWidth = 0;
-        mLevels.clear();
         //mAdvances.clear();
         mSpanEndCache.clear();
         mFontMetrics.clear();
@@ -119,8 +116,6 @@ public class MeasuredParagraph {
 
     /**
      * Returns the length of the paragraph.
-     * <p>
-     * This is always available.
      */
     public int getTextLength() {
         return mTextLength;
@@ -129,8 +124,6 @@ public class MeasuredParagraph {
     /**
      * Returns the characters to be measured. This will be the same value
      * as {@link MeasuredText#getTextBuf()} if {@link #getMeasuredText()} available.
-     * <p>
-     * This is always available.
      */
     @Nonnull
     public char[] getChars() {
@@ -138,13 +131,139 @@ public class MeasuredParagraph {
     }
 
     /**
-     * Returns the first paragraph direction. Either {@link Bidi#DIRECTION_LEFT_TO_RIGHT}
+     * Returns the base paragraph direction. Either {@link Bidi#DIRECTION_LEFT_TO_RIGHT}
      * or {@link Bidi#DIRECTION_RIGHT_TO_LEFT)
-     * <p>
-     * This is always available.
      */
     public int getParagraphDir() {
         return mParaDir;
+    }
+
+    /**
+     * Returns the directions.
+     */
+    @Nonnull
+    public Directions getDirections(int start, int end) {
+        if (start > end) {
+            throw new IllegalArgumentException();
+        }
+        if (start == end || mLtrWithoutBidi) {
+            return Directions.ALL_LEFT_TO_RIGHT;
+        }
+
+        final int baseLevel = mParaDir == Bidi.DIRECTION_LEFT_TO_RIGHT ? 0 : 1;
+        final byte[] levels = mLevels;
+
+        int curLevel = levels[start];
+        int minLevel = curLevel;
+        int runCount = 1;
+        for (int i = start + 1; i < end; ++i) {
+            int level = levels[i];
+            if (level != curLevel) {
+                curLevel = level;
+                ++runCount;
+            }
+        }
+
+        // add final run for trailing counter-directional whitespace
+        int visLen = end - start;
+        if ((curLevel & 1) != (baseLevel & 1)) {
+            // look for visible end
+            while (--visLen >= 0) {
+                char ch = mCopiedBuffer[start + visLen];
+
+                if (ch == '\n') {
+                    --visLen;
+                    break;
+                }
+
+                if (ch != ' ' && ch != '\t') {
+                    break;
+                }
+            }
+            ++visLen;
+            if (visLen != end - start) {
+                ++runCount;
+            }
+        }
+
+        if (runCount == 1 && minLevel == baseLevel) {
+            // we're done, only one run on this line
+            if ((minLevel & 1) != 0) {
+                return Directions.ALL_RIGHT_TO_LEFT;
+            }
+            return Directions.ALL_LEFT_TO_RIGHT;
+        }
+
+        int[] ld = new int[runCount * 2];
+        int maxLevel = minLevel;
+        int levelBits = minLevel << Directions.RUN_LEVEL_SHIFT;
+
+        // Start of first pair is always 0, we write
+        // length then start at each new run, and the
+        // last run length after we're done.
+        int n = 1;
+        int prev = start;
+        curLevel = minLevel;
+        for (int i = start, e = start + visLen; i < e; ++i) {
+            int level = levels[i];
+            if (level != curLevel) {
+                curLevel = level;
+                if (level > maxLevel) {
+                    maxLevel = level;
+                } else if (level < minLevel) {
+                    minLevel = level;
+                }
+                // XXX ignore run length limit of 2^RUN_LEVEL_SHIFT
+                ld[n++] = (i - prev) | levelBits;
+                ld[n++] = i - start;
+                levelBits = curLevel << Directions.RUN_LEVEL_SHIFT;
+                prev = i;
+            }
+        }
+        ld[n] = (start + visLen - prev) | levelBits;
+        if (visLen < end - start) {
+            ld[++n] = visLen;
+            ld[++n] = (end - start - visLen) | (baseLevel << Directions.RUN_LEVEL_SHIFT);
+        }
+
+        // See if we need to swap any runs.
+        // If the min level run direction doesn't match the base
+        // direction, we always need to swap (at this point
+        // we have more than one run).
+        // Otherwise, we don't need to swap the lowest level.
+        // Since there are no logically adjacent runs at the same
+        // level, if the max level is the same as the (new) min
+        // level, we have a series of alternating levels that
+        // is already in order, so there's no more to do.
+        final boolean swap;
+        if ((minLevel & 1) == baseLevel) {
+            minLevel += 1;
+            swap = maxLevel > minLevel;
+        } else {
+            swap = runCount > 1;
+        }
+        if (swap) {
+            for (int level = maxLevel - 1; level >= minLevel; --level) {
+                for (int i = 0; i < ld.length; i += 2) {
+                    if (levels[ld[i]] >= level) {
+                        int e = i + 2;
+                        while (e < ld.length && levels[ld[e]] >= level) {
+                            e += 2;
+                        }
+                        for (int low = i, hi = e - 2; low < hi; low += 2, hi -= 2) {
+                            int x = ld[low];
+                            ld[low] = ld[hi];
+                            ld[hi] = x;
+                            x = ld[low + 1];
+                            ld[low + 1] = ld[hi + 1];
+                            ld[hi + 1] = x;
+                        }
+                        i = e + 2;
+                    }
+                }
+            }
+        }
+        return new Directions(ld);
     }
 
     /**
@@ -269,8 +388,10 @@ public class MeasuredParagraph {
                 int startInPara = mSpanned.getSpanStart(span) - start;
                 int endInPara = mSpanned.getSpanEnd(span) - start;
                 // The span interval may be larger and must be restricted to [start, end)
-                if (startInPara < 0) startInPara = 0;
-                if (endInPara > mTextLength) endInPara = mTextLength;
+                if (startInPara < 0)
+                    startInPara = 0;
+                if (endInPara > mTextLength)
+                    endInPara = mTextLength;
                 Arrays.fill(mCopiedBuffer, startInPara, endInPara, '\uFFFC');
             }
         }
@@ -279,7 +400,7 @@ public class MeasuredParagraph {
                 || dir == TextDirectionHeuristics.FIRSTSTRONG_LTR
                 || dir == TextDirectionHeuristics.ANYRTL_LTR)
                 && !Bidi.requiresBidi(mCopiedBuffer, 0, mTextLength)) {
-            mLevels.clear();
+            mLevels = null;
             mParaDir = Bidi.DIRECTION_LEFT_TO_RIGHT;
             mLtrWithoutBidi = true;
         } else {
@@ -296,14 +417,10 @@ public class MeasuredParagraph {
                 final boolean isRtl = dir.isRtl(mCopiedBuffer, 0, mTextLength);
                 paraLevel = isRtl ? Bidi.RTL : Bidi.LTR;
             }
-            mLevels.size(mTextLength);
-            final Bidi icuBidi = new Bidi(mTextLength, 0);
-            icuBidi.setPara(mCopiedBuffer, paraLevel, null);
-            for (int i = 0; i < mTextLength; i++) {
-                mLevels.set(i, icuBidi.getLevelAt(i));
-            }
-            // odd numbers indicate RTL
-            mParaDir = (icuBidi.getParaLevel() & 0x1) == 0 ? Bidi.DIRECTION_LEFT_TO_RIGHT : Bidi.DIRECTION_RIGHT_TO_LEFT;
+            Bidi bidi = new Bidi(mTextLength, 0);
+            bidi.setPara(mCopiedBuffer, paraLevel, null);
+            mLevels = bidi.getLevels();
+            mParaDir = (bidi.getParaLevel() & 0x1) == 0 ? Bidi.DIRECTION_LEFT_TO_RIGHT : Bidi.DIRECTION_RIGHT_TO_LEFT;
             mLtrWithoutBidi = false;
         }
     }
@@ -355,18 +472,18 @@ public class MeasuredParagraph {
             builder.addStyleRun(mCachedPaint, end - start, false);
         } else {
             // If there is multiple bidi levels, split into individual bidi level and apply style.
-            byte level = mLevels.getByte(start);
+            byte level = mLevels[start];
             // Note that the empty text or empty range won't reach this method.
             // Safe to search from start + 1.
             for (int levelStart = start, levelEnd = start + 1; ; ++levelEnd) {
-                if (levelEnd == end || mLevels.getByte(levelEnd) != level) { // bidi run
+                if (levelEnd == end || mLevels[levelEnd] != level) { // bidi run
                     final boolean isRtl = (level & 0x1) != 0;
                     builder.addStyleRun(mCachedPaint, levelEnd - levelStart, isRtl);
                     if (levelEnd == end) {
                         break;
                     }
                     levelStart = levelEnd;
-                    level = mLevels.getByte(levelEnd);
+                    level = mLevels[levelEnd];
                 }
             }
         }
