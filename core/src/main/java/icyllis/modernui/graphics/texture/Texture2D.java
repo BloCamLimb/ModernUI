@@ -20,6 +20,8 @@ package icyllis.modernui.graphics.texture;
 
 import org.lwjgl.system.MemoryUtil;
 
+import java.lang.ref.Cleaner;
+
 import static icyllis.modernui.graphics.GLWrapper.*;
 
 /**
@@ -116,7 +118,7 @@ public class Texture2D extends Texture {
      *
      * @param width  new width of the texture
      * @param height new height of the texture
-     * @param copy   true if copy the data from the old one
+     * @param copy   true to copy the level 0 image data from the old one to the new one
      */
     public void resize(int width, int height, boolean copy) {
         int old = get();
@@ -128,8 +130,8 @@ public class Texture2D extends Texture {
         int internalFormat = glGetTextureLevelParameteri(old, 0, GL_TEXTURE_INTERNAL_FORMAT);
         int maxLevel = glGetTextureParameteri(old, GL_TEXTURE_MAX_LEVEL);
 
-        Runnable cleanup = realloc();
-        init(internalFormat, width, height, maxLevel);
+        Cleaner.Cleanable cleanup = recreate();
+        initCompat(internalFormat, width, height, maxLevel);
         if (copy) {
             glCopyImageSubData(old, GL_TEXTURE_2D, 0, 0, 0, 0,
                     get(), GL_TEXTURE_2D, 0, 0, 0, 0,
@@ -138,7 +140,22 @@ public class Texture2D extends Texture {
                 generateMipmap();
             }
         }
-        cleanup.run();
+        if (cleanup != null) {
+            cleanup.clean();
+        }
+    }
+
+    /**
+     * Clear the image with zeros.
+     *
+     * @param level the level of the image
+     */
+    public void clear(int level) {
+        nglClearTexImage(get(), level, GL_RED, GL_UNSIGNED_BYTE, MemoryUtil.NULL);
+    }
+
+    public void clear(int level, int x, int y, int width, int height) {
+        nglClearTexSubImage(get(), level, x, y, 0, width, height, 1, GL_RED, GL_UNSIGNED_BYTE, MemoryUtil.NULL);
     }
 
     /**

@@ -161,13 +161,14 @@ public final class Bitmap implements AutoCloseable {
      * Creates a bitmap whose image downloaded from the given texture. The image of
      * the level-of-detail 0 will be taken.
      *
-     * @param format  number of channels
+     * @param format  the bitmap format to convert the image to
      * @param texture the texture to download from
+     * @param flipY   flip the image vertically, such as the texture is from a framebuffer
      * @return the created bitmap
      */
     @Nonnull
     @RenderThread
-    public static Bitmap download(@Nonnull Format format, @Nonnull Texture2D texture) {
+    public static Bitmap download(@Nonnull Format format, @Nonnull Texture2D texture, boolean flipY) {
         RenderCore.checkRenderThread();
         final int width = texture.getWidth(0);
         final int height = texture.getHeight(0);
@@ -179,17 +180,18 @@ public final class Bitmap implements AutoCloseable {
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
         glGetTextureImage(texture.get(), 0, format.glFormat, GL_UNSIGNED_BYTE,
                 bitmap.getSize(), p);
-        // flip vertical
-        final int len = width * format.channels;
-        final long temp = nmemAlloc(len);
-        for (int i = 0; i < height >> 1; i++) {
-            final int a = i * len;
-            final int b = (height - i - 1) * len;
-            memCopy(p + a, temp, len);
-            memCopy(p + b, p + a, len);
-            memCopy(temp, p + b, len);
+        if (flipY) {
+            final int stride = width * format.channels;
+            final long temp = nmemAllocChecked(stride);
+            for (int i = 0, e = height >> 1; i < e; i++) {
+                final int a = i * stride;
+                final int b = (height - i - 1) * stride;
+                memCopy(p + a, temp, stride);
+                memCopy(p + b, p + a, stride);
+                memCopy(temp, p + b, stride);
+            }
+            nmemFree(temp);
         }
-        nmemFree(temp);
         return bitmap;
     }
 

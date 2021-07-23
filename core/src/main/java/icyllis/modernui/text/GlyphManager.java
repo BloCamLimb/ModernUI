@@ -19,7 +19,6 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.platform.RenderCore;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.system.MemoryUtil;
 
@@ -30,6 +29,7 @@ import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 public class GlyphManager {
 
@@ -38,10 +38,17 @@ public class GlyphManager {
      */
     private static final Color BG_COLOR = new Color(0, 0, 0, 0);
 
+    private static final Function<Font, FontAtlas> sFactory = f -> new FontAtlas();
+
     /**
      * The global instance.
      */
     private static volatile GlyphManager sInstance;
+
+    /**
+     * All font atlases, with specified font family, size and style.
+     */
+    private Map<Font, FontAtlas> mAtlases;
 
     /**
      * Draw a single glyph onto this image and then loaded from here into an OpenGL texture.
@@ -64,14 +71,9 @@ public class GlyphManager {
     private ByteBuffer mImageBuffer;
 
     /**
-     * All font atlases, with specified font family, size and style.
+     * The head address of mImageBuffer.
      */
-    private Map<Font, GlyphAtlas> mAtlases;
-
-    /**
-     * The lock used with getGlyph()
-     */
-    private final Object mQueryLock = new Object();
+    private long mUploadData;
 
     private GlyphManager() {
         // init
@@ -94,6 +96,11 @@ public class GlyphManager {
      * Reload the glyph manager, clear all created textures.
      */
     public void reload() {
+        if (mAtlases != null) {
+            for (FontAtlas atlas : mAtlases.values()) {
+                atlas.mTexture.close();
+            }
+        }
         mAtlases = new HashMap<>();
         allocateImage(64, 64);
     }
@@ -120,36 +127,34 @@ public class GlyphManager {
      * pre-rendered glyph image, as well as the position and size of that image within the texture.
      *
      * @param font      the font (with size and style) to which this glyphCode belongs and which
-     *                  was used to pre-render the glyph,
+     *                  was used to pre-render the glyph
      * @param glyphCode the font specific glyph code (should be laid-out) to lookup in the atlas
-     * @return the cached glyph info
+     * @return the cached glyph sprite
      */
     @Nonnull
-    public GlyphInfo getGlyph(@Nonnull Font font, int glyphCode) {
-        GlyphAtlas atlas;
-        synchronized (mQueryLock) {
-            atlas = mAtlases.computeIfAbsent(font, f -> new GlyphAtlas());
-        }
-        GlyphInfo glyph = atlas.getGlyph(glyphCode);
-        if (glyph.width == GlyphInfo.CREATED) {
-            RenderCore.recordRenderCall(
-                    () -> cacheGlyph(font, glyphCode, atlas, glyph));
-            glyph.width = GlyphInfo.UPLOADING;
+    @RenderThread
+    public TexturedGlyph lookupGlyph(@Nonnull Font font, int glyphCode) {
+        FontAtlas atlas = mAtlases.computeIfAbsent(font, sFactory);
+        TexturedGlyph glyph = atlas.getGlyph(glyphCode);
+        if (glyph.texture == null) {
+            glyph.texture = atlas.mTexture;
+            cacheGlyph(font, glyphCode, atlas, glyph);
         }
         return glyph;
     }
 
+    @RenderThread
     public void export() {
-        mAtlases.values().forEach(GlyphAtlas::export);
+        mAtlases.values().forEach(FontAtlas::export);
     }
 
     @RenderThread
-    private void cacheGlyph(@Nonnull Font font, int glyphCode, @Nonnull GlyphAtlas atlas, @Nonnull GlyphInfo glyph) {
+    private void cacheGlyph(@Nonnull Font font, int glyphCode, @Nonnull FontAtlas atlas, @Nonnull TexturedGlyph glyph) {
         // there's no need to layout glyph vector, we only draw the specific glyphCode
         // which is already laid-out in LayoutEngine
         GlyphVector vector = font.createGlyphVector(mGraphics.getFontRenderContext(), new int[]{glyphCode});
 
-        Rectangle bounds = vector.getGlyphPixelBounds(0, null, 0, 0);
+        Rectangle bounds = vector.getPixelBounds(null, 0, 0);
         glyph.advance = vector.getGlyphMetrics(0).getAdvanceX();
         glyph.offsetX = bounds.x;
         glyph.offsetY = bounds.y;
@@ -173,7 +178,7 @@ public class GlyphManager {
         }
         mImageBuffer.flip();
 
-        atlas.stitch(glyph, MemoryUtil.memAddress(mImageBuffer));
+        atlas.stitch(glyph, mUploadData);
 
         mGraphics.clearRect(0, 0, mImage.getWidth(), mImage.getHeight());
         mImageBuffer.clear();
@@ -184,7 +189,8 @@ public class GlyphManager {
         mGraphics = mImage.createGraphics();
 
         mImageData = new int[width * height];
-        mImageBuffer = BufferUtils.createByteBuffer(width * height);
+        mImageBuffer = BufferUtils.createByteBuffer(mImageData.length);
+        mUploadData = MemoryUtil.memAddress(mImageBuffer);
 
         // set background color for use with clearRect()
         mGraphics.setBackground(BG_COLOR);

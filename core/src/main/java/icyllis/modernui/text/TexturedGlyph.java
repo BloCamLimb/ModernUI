@@ -27,22 +27,17 @@ import icyllis.modernui.graphics.texture.Texture2D;
  *
  * @since 2.0
  */
-public class GlyphInfo {
-
-    /**
-     * Marks the current state before the glyph is uploaded.
-     */
-    static final int CREATED = -1;
-    static final int UPLOADING = -2;
+public class TexturedGlyph {
 
     /**
      * The texture that contains this glyph image.
      */
-    final Texture2D texture;
+    Texture2D texture;
 
     /**
      * The horizontal advance in pixels of this glyph.
      */
+    //TODO remove this
     float advance;
 
     /**
@@ -85,9 +80,6 @@ public class GlyphInfo {
      */
     float v2;
 
-    public GlyphInfo(Texture2D texture) {
-        this.texture = texture;
-        // use the width as the marker before it's assigned
-        width = CREATED;
+    public TexturedGlyph() {
     }
 }

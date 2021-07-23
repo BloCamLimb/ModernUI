@@ -440,7 +440,7 @@ public final class UIManager implements ViewRootImpl.Handler {
             case GLFW_KEY_C:
                 // make a screenshot
                 Texture texture = mFramebuffer.getAttachedTexture(GL_COLOR_ATTACHMENT0);
-                Bitmap bitmap = Bitmap.download(Bitmap.Format.RGBA, (Texture2D) texture);
+                Bitmap bitmap = Bitmap.download(Bitmap.Format.RGBA, (Texture2D) texture, true);
                 Util.ioPool().execute(() -> {
                     try (bitmap) {
                         bitmap.saveDialog(Bitmap.SaveFormat.PNG, 0);

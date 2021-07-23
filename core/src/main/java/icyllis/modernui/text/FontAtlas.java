@@ -22,11 +22,9 @@ import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.graphics.texture.Texture2D;
 import icyllis.modernui.platform.Bitmap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 import javax.annotation.Nonnull;
-import javax.annotation.concurrent.ThreadSafe;
 import java.io.IOException;
 import java.util.function.IntFunction;
 
@@ -36,97 +34,129 @@ import static icyllis.modernui.graphics.GLWrapper.GL_UNSIGNED_BYTE;
 /**
  * Maintains a font texture atlas, which is specified with a font family, size and style.
  * The glyphs in the texture are tightly packed, dynamically generated with mipmaps. Each
- * glyph is represented as a TexturedGlyph.
+ * glyph is represented as a {@link TexturedGlyph}.
  * <p>
  * The initial texture size is 256*256, and each enlargement double the height and width
  * alternately. The max texture size would be 16384*16384 and the image is 8-bit grayscale.
  * The OpenGL texture id may change due to enlarging the texture size.
+ *
+ * @see GlyphManager
  */
-@ThreadSafe
-public class GlyphAtlas {
+@RenderThread
+public class FontAtlas {
 
     /**
      * The width in pixels of a transparent border between individual glyphs in the atlas.
      * This border keeps neighboring glyphs from "bleeding through" when mipmap used.
      */
     private static final int GLYPH_BORDER = 1;
-
     private static final int INITIAL_SIZE = 256;
-
     private static final int MIPMAP_LEVEL = 4;
 
-    // OpenHashMap uses less memory than RBTree/AVLTree, but higher than ArrayMap
-    private final Int2ObjectMap<GlyphInfo> mGlyphs =
-            Int2ObjectMaps.synchronize(new Int2ObjectOpenHashMap<>());
+    private static final IntFunction<TexturedGlyph> sFactory = i -> new TexturedGlyph();
 
     // texture object is immutable, but texture ID (the int) can change by resizing
-    private final Texture2D mTexture = new Texture2D();
+    public final Texture2D mTexture = new Texture2D();
 
-    private final IntFunction<GlyphInfo> mFactory = i -> new GlyphInfo(mTexture);
+    // OpenHashMap uses less memory than RBTree/AVLTree, but higher than ArrayMap
+    private final Int2ObjectMap<TexturedGlyph> mGlyphs = new Int2ObjectOpenHashMap<>();
 
+    // position for next glyph sprite
     private int mPosX = GLYPH_BORDER;
     private int mPosY = GLYPH_BORDER;
 
+    // max height of current line
     private int mLineHeight;
 
+    // current texture size
     private int mWidth;
     private int mHeight;
 
-    public GlyphAtlas() {
+    // create from any thread
+    public FontAtlas() {
     }
 
     @Nonnull
-    public GlyphInfo getGlyph(int glyphCode) {
-        return mGlyphs.computeIfAbsent(glyphCode, mFactory);
+    public TexturedGlyph getGlyph(int glyphCode) {
+        return mGlyphs.computeIfAbsent(glyphCode, sFactory);
     }
 
-    public void export() {
+    void export() {
         try {
-            Bitmap.download(Bitmap.Format.RGBA, mTexture)
+            Bitmap.download(Bitmap.Format.RGBA, mTexture, false)
                     .saveDialog(Bitmap.SaveFormat.PNG, 0);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    @RenderThread
-    public void stitch(GlyphInfo glyph, long data) {
+    public void stitch(TexturedGlyph glyph, long data) {
         if (mWidth == 0) {
-            enlarge();
+            resize();
         }
         if (mPosX + glyph.width + GLYPH_BORDER >= mWidth) {
             mPosX = GLYPH_BORDER;
+            // we are on the right half
             if (mWidth == mHeight && mWidth != INITIAL_SIZE) {
                 mPosX += mWidth >> 1;
             }
-            mPosY += mLineHeight + GLYPH_BORDER << 1;
+            mPosY += mLineHeight + GLYPH_BORDER * 2;
             mLineHeight = 0;
         }
         if (mPosY + glyph.height + GLYPH_BORDER >= mHeight) {
+            // move to the right half
             if (mWidth != mHeight) {
                 mPosX = GLYPH_BORDER + mWidth;
                 mPosY = GLYPH_BORDER;
             }
-            enlarge();
+            resize();
         }
 
         mTexture.upload(0, mPosX, mPosY, glyph.width, glyph.height, glyph.width,
                 0, 0, 1, GL_ALPHA, GL_UNSIGNED_BYTE, data);
+        mTexture.generateMipmap();
 
-        mPosX += glyph.width + GLYPH_BORDER << 1;
+        glyph.u1 = (float) mPosX / mWidth;
+        glyph.v1 = (float) mPosY / mHeight;
+        glyph.u2 = (float) (mPosX + glyph.width) / mWidth;
+        glyph.v2 = (float) (mPosY + glyph.height) / mHeight;
+
+        mPosX += glyph.width + GLYPH_BORDER * 2;
         mLineHeight = Math.max(mLineHeight, glyph.height);
     }
 
-    private void enlarge() {
+    private void resize() {
+        // never initialized
         if (mWidth == 0) {
             mWidth = mHeight = INITIAL_SIZE;
             mTexture.initCompat(GL_ALPHA, INITIAL_SIZE, INITIAL_SIZE, MIPMAP_LEVEL);
-            return;
-        } else if (mHeight != mWidth) {
-            mWidth <<= 1;
+            // we have border that not upload data, so generate mipmap may leave undefined data
+            mTexture.clear(0);
         } else {
-            mHeight <<= 1;
+            final boolean vertical;
+            if (mHeight != mWidth) {
+                mWidth <<= 1;
+                for (TexturedGlyph glyph : mGlyphs.values()) {
+                    glyph.u1 *= 0.5;
+                    glyph.u2 *= 0.5;
+                }
+                vertical = false;
+            } else {
+                mHeight <<= 1;
+                for (TexturedGlyph glyph : mGlyphs.values()) {
+                    glyph.v1 *= 0.5;
+                    glyph.v2 *= 0.5;
+                }
+                vertical = true;
+            }
+
+            mTexture.resize(mWidth, mHeight, true);
+            if (vertical) {
+                mTexture.clear(0, 0, mHeight >> 1, mWidth, mHeight >> 1);
+            } else {
+                mTexture.clear(0, mWidth >> 1, 0, mWidth >> 1, mHeight);
+            }
+            // we later generate mipmap
         }
-        mTexture.resize(mWidth, mHeight, true);
     }
 }
