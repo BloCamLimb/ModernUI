@@ -46,8 +46,9 @@ public abstract class Texture implements AutoCloseable {
      * @return texture object name
      */
     public final int get() {
-        if (mRef == null)
+        if (mRef == null) {
             mRef = new Ref(this);
+        }
         return mRef.texture;
     }
 
@@ -79,14 +80,17 @@ public abstract class Texture implements AutoCloseable {
     }
 
     /**
-     * Regenerate the texture name and returns the previous reference.
+     * Re-create the OpenGL texture and returns the cleanup action for the previous one.
+     * You should call the cleanup action if you will not touch the previous texture any more.
+     * Otherwise it will be cleaned when this Texture object become phantom-reachable.
      *
-     * @return cleanup action
+     * @return cleanup action, null if this texture was recycled or never initialized
      */
-    protected final Runnable realloc() {
-        Ref r = mRef;
+    @Nullable
+    public final Cleaner.Cleanable recreate() {
+        final Ref r = mRef;
         mRef = new Ref(this);
-        return r;
+        return r != null ? r.cleanup : null;
     }
 
     private static final class Ref implements Runnable {
@@ -96,7 +100,7 @@ public abstract class Texture implements AutoCloseable {
 
         private Ref(@Nonnull Texture owner) {
             // the first binding to target defines the texture type,
-            // glCreateTextures does this
+            // but we use DSA, glCreateTextures does this
             texture = glCreateTextures(owner.getTarget());
             cleanup = ModernUI.registerCleanup(owner, this);
         }
