@@ -89,7 +89,7 @@ public final class Framebuffer implements AutoCloseable {
 
     public void attachTexture(int attachmentPoint, int internalFormat) {
         Texture2D texture = new Texture2D();
-        texture.init(internalFormat, mWidth, mHeight, 0);
+        texture.initCore(internalFormat, mWidth, mHeight, 0);
         glNamedFramebufferTexture(get(), attachmentPoint, texture.get(), 0);
         mAttachments.put(attachmentPoint, texture);
     }

@@ -56,9 +56,8 @@ public class Texture2D extends Texture {
      *
      * @param internalFormat sized internal format used for the image on GPU side
      * @param maxLevel       max mipmap level, min is 0
-     * @see #init(int, int, int, int)
+     * @see #initCore(int, int, int, int)
      */
-    @Deprecated
     public void initCompat(int internalFormat, int width, int height, int maxLevel) {
         if (maxLevel < 0) {
             throw new IllegalArgumentException();
@@ -92,7 +91,7 @@ public class Texture2D extends Texture {
      * @param internalFormat sized internal format used for the image on GPU side
      * @param maxLevel       max mipmap level, min is 0
      */
-    public void init(int internalFormat, int width, int height, int maxLevel) {
+    public void initCore(int internalFormat, int width, int height, int maxLevel) {
         if (maxLevel < 0) {
             throw new IllegalArgumentException();
         }
@@ -121,19 +120,19 @@ public class Texture2D extends Texture {
      * @param copy   true to copy the level 0 image data from the old one to the new one
      */
     public void resize(int width, int height, boolean copy) {
-        int old = get();
+        int oldTex = get();
         int oldWidth = getWidth(0);
         int oldHeight = getHeight(0);
         if (width == oldWidth && height == oldHeight) {
             return;
         }
-        int internalFormat = glGetTextureLevelParameteri(old, 0, GL_TEXTURE_INTERNAL_FORMAT);
-        int maxLevel = glGetTextureParameteri(old, GL_TEXTURE_MAX_LEVEL);
+        int internalFormat = glGetTextureLevelParameteri(oldTex, 0, GL_TEXTURE_INTERNAL_FORMAT);
+        int maxLevel = glGetTextureParameteri(oldTex, GL_TEXTURE_MAX_LEVEL);
 
         Cleaner.Cleanable cleanup = recreate();
         initCompat(internalFormat, width, height, maxLevel);
         if (copy) {
-            glCopyImageSubData(old, GL_TEXTURE_2D, 0, 0, 0, 0,
+            glCopyImageSubData(oldTex, GL_TEXTURE_2D, 0, 0, 0, 0,
                     get(), GL_TEXTURE_2D, 0, 0, 0, 0,
                     Math.min(width, oldWidth), Math.min(height, oldHeight), 1);
             if (maxLevel > 0) {

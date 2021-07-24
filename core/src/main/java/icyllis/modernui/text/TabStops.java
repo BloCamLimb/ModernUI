@@ -35,11 +35,11 @@ public class TabStops {
         mTabWidth = tabWidth;
     }
 
-    public TabStops(float tabWidth, Object[] spans) {
+    public TabStops(float tabWidth, @Nullable Object[] spans) {
         reset(tabWidth, spans);
     }
 
-    public void reset(float tabWidth, Object[] spans) {
+    public void reset(float tabWidth, @Nullable Object[] spans) {
         mTabWidth = tabWidth;
 
         int ns = 0;

@@ -79,7 +79,7 @@ public final class ContextClient extends Context {
             int width = bitmap.getWidth();
             int height = bitmap.getHeight();
             RenderCore.recordRenderCall(() -> {
-                texture2D.init(GL_RGBA8, width, height, aa ? 4 : 0);
+                texture2D.initCore(GL_RGBA8, width, height, aa ? 4 : 0);
                 texture2D.upload(0, 0, 0, width, height, 0,
                         0, 0, 1, GL_RGBA, GL_UNSIGNED_BYTE, bitmap.getPixels());
                 if (aa) {

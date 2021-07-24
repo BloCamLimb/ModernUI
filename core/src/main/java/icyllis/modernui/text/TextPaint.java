@@ -19,8 +19,6 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.graphics.font.FontMetricsInt;
-import icyllis.modernui.graphics.font.GlyphManagerBase;
-import icyllis.modernui.graphics.font.FontPaint;
 
 import javax.annotation.Nonnull;
 
@@ -54,6 +52,6 @@ public class TextPaint extends FontPaint {
      * @param fm a FontMetrics to store the result
      */
     public void getFontMetrics(FontMetricsInt fm) {
-        GlyphManagerBase.getInstance().getFontMetrics(mFontCollection, mFontStyle, mFontSize, fm);
+        GlyphManager.getInstance().getFontMetrics(mFontCollection, mFontStyle, mFontSize, fm);
     }
 }

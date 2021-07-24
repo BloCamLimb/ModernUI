@@ -118,7 +118,7 @@ public abstract class Window implements AutoCloseable {
      */
     public abstract boolean shouldClose();
 
-    public abstract boolean isRefreshNeeded();
+    public abstract boolean isContentDirty();
 
     /**
      * Swaps the default framebuffer in the current OpenGL context to the

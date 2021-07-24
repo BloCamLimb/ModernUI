@@ -73,7 +73,7 @@ public class Icon {
         try (Resource resource = manager.getResource(location);
              Bitmap bitmap = Bitmap.decode(Bitmap.Format.RGBA, resource.getInputStream())) {
             Texture2D texture = new Texture2D();
-            texture.init(GL_RGBA8, bitmap.getWidth(), bitmap.getHeight(), aa ? 4 : 0);
+            texture.initCore(GL_RGBA8, bitmap.getWidth(), bitmap.getHeight(), aa ? 4 : 0);
             texture.upload(0, 0, 0, bitmap.getWidth(), bitmap.getHeight(), 0,
                     0, 0, 1, GL_RGBA, GL_UNSIGNED_BYTE, bitmap.getPixels());
             if (aa) {
