@@ -41,7 +41,7 @@ import java.util.*;
  */
 public class FontCollection {
 
-    public static final Marker MARKER = MarkerManager.getMarker("FontCollection");
+    public static final Marker MARKER = MarkerManager.getMarker("Font");
 
     @Nonnull
     public static final FontCollection SANS_SERIF;
@@ -214,7 +214,7 @@ public class FontCollection {
         return (c >= 0xE0100 && c <= 0xE01FF) || (c >= 0xFE00 && c <= 0xFE0F);
     }
 
-    // an array of font families
+    // an array of base fonts
     @Nonnull
     private final Font[] mFonts;
 
@@ -228,8 +228,9 @@ public class FontCollection {
     // calculate font runs
     public List<Run> itemize(@Nonnull final char[] text, final int offset, final int limit) {
         it.unimi.dsi.fastutil.Arrays.ensureFromTo(text.length, offset, limit);
-        if (offset == limit)
+        if (offset == limit) {
             return Collections.emptyList();
+        }
 
         final List<Run> result = new ArrayList<>();
 
@@ -248,14 +249,16 @@ public class FontCollection {
             if (Character.isLowSurrogate(_c2)) {
                 nextCh = Character.toCodePoint(_c1, _c2);
                 ++index;
-            } else if (Character.isSurrogate(_c1))
+            } else if (Character.isSurrogate(_c1)) {
                 nextCh = REPLACEMENT_CHARACTER;
-            else
+            } else {
                 nextCh = _c1;
-        } else if (Character.isSurrogate(_c1))
+            }
+        } else if (Character.isSurrogate(_c1)) {
             nextCh = REPLACEMENT_CHARACTER;
-        else
+        } else {
             nextCh = _c1;
+        }
         ++index;
 
         boolean running = true;
@@ -271,16 +274,20 @@ public class FontCollection {
                     if (Character.isLowSurrogate(_c2)) {
                         nextCh = Character.toCodePoint(_c1, _c2);
                         ++index;
-                    } else if (Character.isSurrogate(_c1))
+                    } else if (Character.isSurrogate(_c1)) {
                         nextCh = REPLACEMENT_CHARACTER;
-                    else
+                    } else {
                         nextCh = _c1;
-                } else if (Character.isSurrogate(_c1))
+                    }
+                } else if (Character.isSurrogate(_c1)) {
                     nextCh = REPLACEMENT_CHARACTER;
-                else
+                } else {
                     nextCh = _c1;
+                }
                 ++index;
-            } else running = false;
+            } else {
+                running = false;
+            }
 
             boolean shouldContinueRun = false;
             if (doesNotNeedFontSupport(ch)) {
@@ -339,7 +346,7 @@ public class FontCollection {
         return result;
     }
 
-    // raw array
+    // backing array, base fonts
     @Nonnull
     public Font[] getFonts() {
         return mFonts;
@@ -347,12 +354,16 @@ public class FontCollection {
 
     // no scores
     private Font getFamilyForChar(int ch) {
-        for (Font font : mFonts)
-            if (font.canDisplay(ch))
+        for (Font font : mFonts) {
+            if (font.canDisplay(ch)) {
                 return font;
-        for (Font font : FontCollection.sAllFontFamilies)
-            if (font.canDisplay(ch))
+            }
+        }
+        for (Font font : sAllFontFamilies) {
+            if (font.canDisplay(ch)) {
                 return font;
+            }
+        }
         return mFonts[0];
     }
 
@@ -382,8 +393,8 @@ public class FontCollection {
             mEnd = end;
         }
 
-        // font family without style and size
-        public Font getFamily() {
+        // base font without style and size
+        public Font getFont() {
             return mFont;
         }
 

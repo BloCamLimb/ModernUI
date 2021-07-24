@@ -19,6 +19,8 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.annotation.RenderThread;
+import icyllis.modernui.graphics.font.FontMetricsInt;
+import icyllis.modernui.graphics.font.GraphemeMetrics;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.system.MemoryUtil;
 
@@ -28,7 +30,9 @@ import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 public class GlyphManager {
@@ -70,11 +74,6 @@ public class GlyphManager {
      */
     private ByteBuffer mImageBuffer;
 
-    /**
-     * The head address of mImageBuffer.
-     */
-    private long mUploadData;
-
     private GlyphManager() {
         // init
         reload();
@@ -109,7 +108,7 @@ public class GlyphManager {
      * Given a font, perform full text layout/shaping and create a new GlyphVector for a text.
      *
      * @param font  the derived Font used to layout a GlyphVector for the text
-     * @param text  the text to layout
+     * @param text  the plain text to layout
      * @param start the offset into text at which to start the layout
      * @param limit the (offset + length) at which to stop performing the layout
      * @param isRtl whether the text should layout right-to-left
@@ -123,7 +122,7 @@ public class GlyphManager {
 
     /**
      * Given a derived font and a glyph code within that font, locate the glyph's pre-rendered image
-     * in the glyph atlas and return its cache entry,. The entry stores the texture with the
+     * in the glyph atlas and return its cache entry. The entry stores the texture with the
      * pre-rendered glyph image, as well as the position and size of that image within the texture.
      *
      * @param font      the font (with size and style) to which this glyphCode belongs and which
@@ -178,7 +177,7 @@ public class GlyphManager {
         }
         mImageBuffer.flip();
 
-        atlas.stitch(glyph, mUploadData);
+        atlas.stitch(glyph, MemoryUtil.memAddress(mImageBuffer));
 
         mGraphics.clearRect(0, 0, mImage.getWidth(), mImage.getHeight());
         mImageBuffer.clear();
@@ -190,7 +189,6 @@ public class GlyphManager {
 
         mImageData = new int[width * height];
         mImageBuffer = BufferUtils.createByteBuffer(mImageData.length);
-        mUploadData = MemoryUtil.memAddress(mImageBuffer);
 
         // set background color for use with clearRect()
         mGraphics.setBackground(BG_COLOR);
@@ -204,5 +202,34 @@ public class GlyphManager {
         // enable text antialias and highly precise rendering
         mGraphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         mGraphics.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+    }
+
+    /**
+     * Re-calculate font metrics in pixels, the higher 32 bits are ascent and
+     * lower 32 bits are descent.
+     */
+    public void getFontMetrics(@Nonnull FontCollection font, int style, int size, @Nonnull FontMetricsInt fm) {
+        fm.reset();
+        for (Font f : font.getFonts()) {
+            fm.extendBy(mGraphics.getFontMetrics(f.deriveFont(style, size)));
+        }
+    }
+
+    public void measure(@Nonnull char[] text, int contextStart, int contextEnd, @Nonnull FontPaint paint, boolean isRtl,
+                        @Nonnull BiConsumer<GraphemeMetrics, FontPaint> consumer) {
+        final List<FontCollection.Run> runs = paint.mFontCollection.itemize(text, contextStart, contextEnd);
+        float advance = 0;
+        final FontMetricsInt fm = new FontMetricsInt();
+        for (FontCollection.Run run : runs) {
+            final Font font;
+            synchronized (this) {
+                font = run.getFont().deriveFont(paint.mFontStyle, paint.mFontSize);
+            }
+            final GlyphVector vector = layoutGlyphVector(font, text, run.getStart(), run.getEnd(), isRtl);
+            final int num = vector.getNumGlyphs();
+            advance += vector.getGlyphPosition(num).getX();
+            fm.extendBy(mGraphics.getFontMetrics(font));
+        }
+        consumer.accept(new GraphemeMetrics(advance, fm), paint);
     }
 }

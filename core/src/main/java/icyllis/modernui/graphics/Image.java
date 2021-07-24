@@ -22,7 +22,7 @@ import icyllis.modernui.graphics.texture.Texture2D;
 
 /**
  * Image is the advanced form of OpenGL 2D texture that can be used for drawing
- * and processing with flexibility.
+ * and processing with flexibility. This is not the OpenGL image.
  */
 //TODO
 public class Image implements AutoCloseable {

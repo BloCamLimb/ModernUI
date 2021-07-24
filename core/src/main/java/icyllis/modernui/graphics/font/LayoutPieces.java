@@ -18,6 +18,8 @@
 
 package icyllis.modernui.graphics.font;
 
+import icyllis.modernui.text.FontPaint;
+import icyllis.modernui.text.GlyphManager;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
@@ -51,7 +53,7 @@ public class LayoutPieces {
             piece = mMetricsMap.get(mLookupKey.update(start, end, dir, paintId));
         }
         if (piece == null) {
-            MeasureEngine.getInstance().create(textBuf, start, end, paint, dir, consumer);
+            GlyphManager.getInstance().measure(textBuf, start, end, paint, dir, consumer);
         } else {
             consumer.accept(piece, paint);
         }

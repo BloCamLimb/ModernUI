@@ -90,7 +90,7 @@ public class FontAtlas {
         }
     }
 
-    public void stitch(TexturedGlyph glyph, long data) {
+    public void stitch(@Nonnull TexturedGlyph glyph, long data) {
         if (mWidth == 0) {
             resize();
         }

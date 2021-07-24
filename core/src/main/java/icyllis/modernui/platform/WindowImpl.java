@@ -171,7 +171,7 @@ public final class WindowImpl extends Window {
     }
 
     @Override
-    public boolean isRefreshNeeded() {
+    public boolean isContentDirty() {
         return mNeedRefresh;
     }
 

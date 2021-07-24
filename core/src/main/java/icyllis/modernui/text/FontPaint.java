@@ -16,11 +16,10 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.font;
+package icyllis.modernui.text;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.math.MathUtil;
-import icyllis.modernui.text.FontCollection;
 
 import javax.annotation.Nonnull;
 import java.awt.*;

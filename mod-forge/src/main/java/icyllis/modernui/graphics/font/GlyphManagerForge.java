@@ -28,8 +28,9 @@ import icyllis.modernui.textmc.pipeline.TextRenderType;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
-import it.unimi.dsi.fastutil.longs.Long2ObjectRBTreeMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Marker;
@@ -62,7 +63,7 @@ import static icyllis.modernui.graphics.GLWrapper.GL_UNSIGNED_BYTE;
 //TODO use custom shaders to replace MOJANG's in 1.17, use GL_R8 format
 // also fix depth ordering
 @SuppressWarnings("unused")
-public class GlyphManagerForge extends GlyphManagerBase {
+public class GlyphManagerForge {
 
     public static final Marker MARKER = MarkerManager.getMarker("Glyph");
 
@@ -121,7 +122,7 @@ public class GlyphManagerForge extends GlyphManagerBase {
      * glyphs from "bleeding through" when the scaled GUI resolution is not pixel aligned and sometimes results in off-by-one
      * sampling of the glyph cache textures.
      */
-    private static final int GLYPH_SPACING = GLYPH_BORDER + 0;
+    private static final int GLYPH_SPACING = GLYPH_BORDER + 1;
 
     /**
      * For drawing, due to {@link #GLYPH_BORDER}, we need an offset for drawing glyphs
@@ -134,6 +135,26 @@ public class GlyphManagerForge extends GlyphManagerBase {
      * Transparent (alpha zero) black background color for use with BufferedImage.clearRect().
      */
     private static final Color BG_COLOR = new Color(0, 0, 0, 0);
+
+    public static final int TEXTURE_SIZE = 1024;
+
+    /**
+     * All font glyphs are packed inside this image and are then loaded from here into an OpenGL texture.
+     */
+    protected final BufferedImage mGlyphImage = new BufferedImage(TEXTURE_SIZE, TEXTURE_SIZE, BufferedImage.TYPE_INT_ARGB);
+
+    /**
+     * The Graphics2D associated with glyphTextureImage and used for bit blit between stringImage.
+     */
+    protected final Graphics2D mGlyphGraphics = mGlyphImage.createGraphics();
+
+    /**
+     * A cache of all fonts that have at least one glyph pre-rendered in a texture.
+     * Each font maps to an integer (monotonically increasing) which forms the
+     * upper 32 bits of the key into the glyphCache map. This font cache can include
+     * different styles of the same font family like bold or italic and different size.
+     */
+    protected final Object2IntMap<Font> mFontKeyMap = new Object2IntOpenHashMap<>();
 
 
     /**
@@ -161,9 +182,6 @@ public class GlyphManagerForge extends GlyphManagerBase {
      */
     private final ByteBuffer mUploadBuffer = BufferUtils.createByteBuffer(mImageData.length);
 
-    // the head address
-    private final long mDataPtr = MemoryUtil.memAddress(mUploadBuffer);
-
     /*
      * A single integer direct buffer with native byte ordering used for returning values from glGenTextures().
      */
@@ -190,8 +208,7 @@ public class GlyphManagerForge extends GlyphManagerBase {
      * upper 32 are the id of the font in the {@link #mFontKeyMap}. This makes
      * for a single globally unique number to identify any glyph from any font.
      */
-    private final Long2ObjectMap<TexturedGlyph> mGlyphCache =
-            Long2ObjectMaps.synchronize(new Long2ObjectRBTreeMap<>());
+    private final Long2ObjectMap<TexturedGlyph> mGlyphCache = new Long2ObjectOpenHashMap<>();
 
     /**
      * Font ID {@link #mFontKeyMap} to an array of length 10 represent 0-9 digits (in that order)
@@ -348,6 +365,36 @@ public class GlyphManagerForge extends GlyphManagerBase {
 
         /* If no supported fonts found, use the default one (first in selectedFonts) so it can draw its unknown character glyphs */
         return mSelectedFonts.get(0);
+    }
+
+    /**
+     * Given a single OpenType font, perform full text layout and create a new GlyphVector for a string.
+     *
+     * @param font  the Font used to layout a GlyphVector for the string
+     * @param text  the string to layout
+     * @param start the offset into text at which to start the layout
+     * @param limit the (offset + length) at which to stop performing the layout
+     * @param flags either {@link Font#LAYOUT_RIGHT_TO_LEFT} or {@link Font#LAYOUT_LEFT_TO_RIGHT}
+     * @return the newly laid-out GlyphVector
+     */
+    public GlyphVector layoutGlyphVector(@Nonnull Font font, char[] text, int start, int limit, int flags) {
+        return font.layoutGlyphVector(mGlyphGraphics.getFontRenderContext(), text, start, limit, flags);
+    }
+
+    /**
+     * Derive a font family with given style and size
+     *
+     * @param family font family (with plain style and size 1)
+     * @param style  font style
+     * @param size   font size in pixel
+     * @return derived font with style and size
+     */
+    @Nonnull
+    public Font deriveFont(@Nonnull Font family, int style, int size) {
+        family = family.deriveFont(style, size); // a new Font object, but they are equal)
+        /* Ensure this font is already in fontKeyMap so it can be referenced by lookupGlyph() later on */
+        mFontKeyMap.putIfAbsent(family, mFontKeyMap.size());
+        return family;
     }
 
     // test only
@@ -825,7 +872,8 @@ public class GlyphManagerForge extends GlyphManagerBase {
     private void uploadTexture(int x, int y, int width, int height) {
         /* Load imageBuffer with pixel data ready for transfer to OpenGL texture */
         updateImageBuffer(x, y, width, height);
-        mTexture.upload(0, x, y, width, height, width, 0, 0, 1, GL_ALPHA, GL_UNSIGNED_BYTE, mDataPtr);
+        mTexture.upload(0, x, y, width, height, width, 0, 0, 1,
+                GL_ALPHA, GL_UNSIGNED_BYTE, MemoryUtil.memAddress(mUploadBuffer));
 
         /*GL11.glPixelStorei(GL11.GL_UNPACK_ROW_LENGTH, width); // not full texture
         GL11.glPixelStorei(GL11.GL_UNPACK_SKIP_ROWS, 0);
