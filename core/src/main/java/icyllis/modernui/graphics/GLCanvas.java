@@ -30,6 +30,7 @@ import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.math.RectF;
 import icyllis.modernui.platform.RenderCore;
+import icyllis.modernui.text.FontPaint;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -68,6 +69,7 @@ public final class GLCanvas extends Canvas {
     private static final Pool<Matrix4> sMatrixPool = Pools.simple(20);
     private static final Pool<Clip> sClipPool = Pools.simple(20);
 
+    // a client side identity matrix
     private static final Matrix4 IDENTITY_MAT = Matrix4.identity();
 
     /**
@@ -152,7 +154,7 @@ public final class GLCanvas extends Canvas {
     private final IntList mDrawStates = new IntArrayList();
 
 
-    // start - 3 vertex buffer objects
+    // 3 vertex buffer objects
     private int mPosColorVBO = INVALID_ID;
     private ByteBuffer mPosColorData = MemoryUtil.memAlloc(1024);
     private boolean mRecreatePosColor = true;
@@ -164,7 +166,6 @@ public final class GLCanvas extends Canvas {
     private int mModelViewVBO = INVALID_ID;
     private ByteBuffer mModelViewData = MemoryUtil.memAlloc(1024);
     private boolean mRecreateModelView = true;
-    // end
 
 
     // the universal uniform block
@@ -258,8 +259,8 @@ public final class GLCanvas extends Canvas {
     }
 
     /**
-     * Set global projection matrix. This is required before rendering, and
-     * may not changed in a frame.
+     * Set global projection matrix. This is required when window size changed and
+     * called before rendering. It should not change in a frame.
      *
      * @param projection the project matrix to replace current one
      */
@@ -275,7 +276,7 @@ public final class GLCanvas extends Canvas {
     }
 
     /**
-     * Resets the clip bounds and matrix. This is required before drawing.
+     * Resets the clip bounds and matrix. This is required before drawing each frame.
      *
      * @param width  the width in pixels
      * @param height the height in pixels
@@ -934,20 +935,24 @@ public final class GLCanvas extends Canvas {
 
     @Override
     public void drawLine(float startX, float startY, float stopX, float stopY, @Nonnull Paint paint) {
+        float t = paint.getStrokeWidth() * 0.5f;
         if (MathUtil.approxEqual(startX, stopX)) {
-            if (MathUtil.approxEqual(startY, stopY))
-                return;
-            // vertical
-            float t = paint.getStrokeWidth() * 0.5f;
-            float top = Math.min(startY, stopY);
-            float bottom = Math.max(startY, stopY);
-            if (quickReject(startX - t, top - t, startX + t, bottom + t)) {
-                return;
+            if (MathUtil.approxEqual(startY, stopY)) {
+                if (quickReject(startX - t, startY - t, startX + t, startY + t)) {
+                    return;
+                }
+                addCircleFill(startX, startY, t, paint);
+            } else {
+                // vertical
+                float top = Math.min(startY, stopY);
+                float bottom = Math.max(startY, stopY);
+                if (quickReject(startX - t, top - t, startX + t, bottom + t)) {
+                    return;
+                }
+                addRoundRectFill(startX - t, top - t, startX + t, bottom + t, t, 0, paint);
             }
-            addRoundRectFill(startX - t, top - t, startX + t, bottom + t, t, 0, paint);
         } else if (MathUtil.approxEqual(startY, stopY)) {
             // horizontal
-            float t = paint.getStrokeWidth() * 0.5f;
             float left = Math.min(startX, stopX);
             float right = Math.max(startX, stopX);
             if (quickReject(left - t, startY - t, right + t, startY + t)) {
@@ -955,7 +960,6 @@ public final class GLCanvas extends Canvas {
             }
             addRoundRectFill(left - t, startY - t, right + t, startY + t, t, 0, paint);
         } else {
-            float t = paint.getStrokeWidth() * 0.5f;
             float cx = (stopX + startX) * 0.5f;
             float cy = (stopY + startY) * 0.5f;
             float ang = MathUtil.atan2(stopY - startY, stopX - startX);
@@ -1101,7 +1105,9 @@ public final class GLCanvas extends Canvas {
 
     @Override
     public void drawTextRun(@Nonnull CharSequence text, int start, int end, float x, float y,
-                            boolean isRtl, @Nonnull Paint paint) {
-
+                            boolean isRtl, @Nonnull FontPaint paint) {
+        if ((start | end | end - start | text.length() - end) < 0) {
+            throw new IndexOutOfBoundsException();
+        }
     }
 }

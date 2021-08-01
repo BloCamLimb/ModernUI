@@ -16,24 +16,35 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.font;
+package icyllis.modernui.text;
 
-import javax.annotation.Nonnull;
+import java.awt.*;
 
-/**
- * The layout of a grapheme cluster, which may contain multiple glyphs.
- *
- * @see icyllis.modernui.text.GraphemeBreak
- */
-public class GraphemeMetrics {
+// font run, subrange of style run
+public class FontRun {
 
-    public final float mAdvance;
-    public final int mAscent;
-    public final int mDescent;
+    final Font mFont;
+    final int mStart;
+    int mEnd;
 
-    public GraphemeMetrics(float advance, @Nonnull FontMetricsInt extent) {
-        mAdvance = advance;
-        mAscent = extent.mAscent;
-        mDescent = extent.mDescent;
+    public FontRun(Font font, int start, int end) {
+        mFont = font;
+        mStart = start;
+        mEnd = end;
+    }
+
+    // base font without style and size
+    public Font getFont() {
+        return mFont;
+    }
+
+    // start index (inclusive)
+    public int getStart() {
+        return mStart;
+    }
+
+    // end index (exclusive)
+    public int getEnd() {
+        return mEnd;
     }
 }

@@ -19,7 +19,6 @@
 package icyllis.modernui.text;
 
 import com.ibm.icu.text.BreakIterator;
-import icyllis.modernui.graphics.font.FontMetricsInt;
 import it.unimi.dsi.fastutil.ints.IntArrays;
 
 import javax.annotation.Nonnull;
@@ -113,7 +112,7 @@ public class LineBreaker {
 
         Locale locale = null;
         int nextBoundary = 0;
-        for (MeasuredText.Run run : mMeasuredText.mRuns) {
+        for (var run : mMeasuredText.mRuns) {
 
             Locale newLocale = run.getLocale();
             if (locale != newLocale) {

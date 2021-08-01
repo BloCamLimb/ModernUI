@@ -18,17 +18,22 @@
 
 package icyllis.modernui.text;
 
-import java.awt.font.GlyphVector;
+import javax.annotation.Nonnull;
 
-public class TextLayoutValue {
+/**
+ * The layout of a grapheme cluster, which may contain multiple glyphs.
+ *
+ * @see icyllis.modernui.text.GraphemeBreak
+ */
+public class GraphemeMetrics {
 
-    private int[] glyphCodes;
-    private float[] positions;
+    public final float mAdvance;
+    public final int mAscent;
+    public final int mDescent;
 
-    public TextLayoutValue(char[] text) {
-        GlyphVector vector = GlyphManager.getInstance().layoutGlyphVector(FontCollection.sSansSerifFont,
-                text, 0, text.length, false);
-        glyphCodes = vector.getGlyphCodes(0, vector.getNumGlyphs(), null);
-        positions = vector.getGlyphPositions(0, vector.getNumGlyphs(), null);
+    public GraphemeMetrics(float advance, @Nonnull FontMetricsInt extent) {
+        mAdvance = advance;
+        mAscent = extent.mAscent;
+        mDescent = extent.mDescent;
     }
 }

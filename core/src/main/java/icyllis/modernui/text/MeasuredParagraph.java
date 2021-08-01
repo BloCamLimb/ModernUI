@@ -19,7 +19,6 @@
 package icyllis.modernui.text;
 
 import com.ibm.icu.text.Bidi;
-import icyllis.modernui.graphics.font.FontMetricsInt;
 import icyllis.modernui.text.style.MetricAffectingSpan;
 import icyllis.modernui.text.style.ReplacementSpan;
 import icyllis.modernui.util.Pool;

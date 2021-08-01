@@ -59,6 +59,9 @@ public class ModernUI extends ContextWrapper {
 
     public ModernUI() {
         sInstance = this;
+        if (Runtime.version().feature() < 11) {
+            throw new RuntimeException("JRE 11 or above is required");
+        }
         //mLoaderPool = Executors.newSingleThreadExecutor(target -> new Thread(target, "mui-loading-core"));
     }
 

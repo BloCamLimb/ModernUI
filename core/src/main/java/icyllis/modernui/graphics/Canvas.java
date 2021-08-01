@@ -21,6 +21,7 @@ package icyllis.modernui.graphics;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.math.RectF;
+import icyllis.modernui.text.FontPaint;
 
 import javax.annotation.Nonnull;
 
@@ -311,9 +312,9 @@ public abstract class Canvas {
      * radius is ignored in the paint, images are always filled.
      *
      * @param image the image to be drawn
-     * @param left   the position of the left side of the image being drawn
-     * @param top    the position of the top side of the image being drawn
-     * @param paint  the paint used to draw the round image
+     * @param left  the position of the left side of the image being drawn
+     * @param top   the position of the top side of the image being drawn
+     * @param paint the paint used to draw the round image
      */
     public abstract void drawImage(@Nonnull Image image, float left, float top, @Nonnull Paint paint);
 
@@ -475,7 +476,7 @@ public abstract class Canvas {
      * using the specified paint, transformed by the current matrix. The Style is
      * ignored in the paint, images are always filled.
      *
-     * @param image the image to be drawn
+     * @param image  the image to be drawn
      * @param left   the position of the left side of the image being drawn
      * @param top    the position of the top side of the image being drawn
      * @param radius the radius used to round the corners
@@ -484,6 +485,17 @@ public abstract class Canvas {
     public abstract void drawRoundImage(@Nonnull Image image, float left, float top,
                                         float radius, @Nonnull Paint paint);
 
+    /**
+     * Draw a run of text. If you don't know what a text run is, do not call this method directly.
+     *
+     * @param text  the text to render
+     * @param start context start of the text for shaping and rendering
+     * @param end   context end of the text for shaping and rendering
+     * @param x     relative horizontal position at which to draw the text between runs inside a line
+     * @param y     the vertical baseline of the line of text
+     * @param isRtl whether the run is in right-to-left direction
+     * @param paint the paint used to draw the text
+     */
     public abstract void drawTextRun(@Nonnull CharSequence text, int start, int end,
-                                     float x, float y, boolean isRtl, @Nonnull Paint paint);
+                                     float x, float y, boolean isRtl, @Nonnull FontPaint paint);
 }

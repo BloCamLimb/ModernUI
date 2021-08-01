@@ -18,27 +18,20 @@
 
 package icyllis.modernui.text;
 
-import icyllis.modernui.graphics.texture.Texture2D;
-
 /**
  * This class holds information for a glyph about its pre-rendered image in an
  * OpenGL texture. The glyph must be laid-out so that it has something to render
  * in a context.
  *
+ * @see GlyphManager
  * @since 2.0
  */
 public class TexturedGlyph {
 
     /**
-     * The texture that contains this glyph image.
+     * The OpenGL texture ID that contains this glyph image.
      */
-    Texture2D texture;
-
-    /**
-     * The horizontal advance in pixels of this glyph.
-     */
-    //TODO remove this
-    float advance;
+    int texture;
 
     /**
      * The horizontal offset to baseline.
@@ -79,7 +72,4 @@ public class TexturedGlyph {
      * The vertical texture coordinate of the lower-right corner.
      */
     float v2;
-
-    public TexturedGlyph() {
-    }
 }
