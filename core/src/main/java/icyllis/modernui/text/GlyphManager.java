@@ -19,12 +19,11 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.graphics.font.FontMetricsInt;
-import icyllis.modernui.graphics.font.GraphemeMetrics;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
@@ -128,15 +127,15 @@ public class GlyphManager {
      * @param font      the font (with size and style) to which this glyphCode belongs and which
      *                  was used to pre-render the glyph
      * @param glyphCode the font specific glyph code (should be laid-out) to lookup in the atlas
-     * @return the cached glyph sprite
+     * @return the cached glyph sprite or null if the glyph doesn't need to render
      */
-    @Nonnull
+    @Nullable
     @RenderThread
     public TexturedGlyph lookupGlyph(@Nonnull Font font, int glyphCode) {
         FontAtlas atlas = mAtlases.computeIfAbsent(font, sFactory);
         TexturedGlyph glyph = atlas.getGlyph(glyphCode);
-        if (glyph.texture == null) {
-            glyph.texture = atlas.mTexture;
+        if (glyph != null && glyph.texture == 0) {
+            glyph.texture = atlas.mTexture.get();
             cacheGlyph(font, glyphCode, atlas, glyph);
         }
         return glyph;
@@ -154,7 +153,7 @@ public class GlyphManager {
         GlyphVector vector = font.createGlyphVector(mGraphics.getFontRenderContext(), new int[]{glyphCode});
 
         Rectangle bounds = vector.getPixelBounds(null, 0, 0);
-        glyph.advance = vector.getGlyphMetrics(0).getAdvanceX();
+        //glyph.advance = vector.getGlyphMetrics(0).getAdvanceX();
         glyph.offsetX = bounds.x;
         glyph.offsetY = bounds.y;
         glyph.width = bounds.width;
@@ -208,23 +207,27 @@ public class GlyphManager {
      * Re-calculate font metrics in pixels, the higher 32 bits are ascent and
      * lower 32 bits are descent.
      */
-    public void getFontMetrics(@Nonnull FontCollection font, int style, int size, @Nonnull FontMetricsInt fm) {
+    public void getFontMetrics(@Nonnull Typeface typeface, @Nonnull FontPaint paint, @Nonnull FontMetricsInt fm) {
         fm.reset();
-        for (Font f : font.getFonts()) {
-            fm.extendBy(mGraphics.getFontMetrics(f.deriveFont(style, size)));
+        for (Font f : typeface.getFonts()) {
+            fm.extendBy(mGraphics.getFontMetrics(f.deriveFont(paint.mFontStyle, paint.mFontSize)));
         }
+    }
+
+    // extend metrics
+    public Font getFontMetrics(@Nonnull Font font, @Nonnull FontPaint paint, @Nonnull FontMetricsInt fm) {
+        font = font.deriveFont(paint.mFontStyle, paint.mFontSize);
+        fm.extendBy(mGraphics.getFontMetrics(font));
+        return font;
     }
 
     public void measure(@Nonnull char[] text, int contextStart, int contextEnd, @Nonnull FontPaint paint, boolean isRtl,
                         @Nonnull BiConsumer<GraphemeMetrics, FontPaint> consumer) {
-        final List<FontCollection.Run> runs = paint.mFontCollection.itemize(text, contextStart, contextEnd);
+        final List<FontRun> runs = paint.mTypeface.itemize(text, contextStart, contextEnd);
         float advance = 0;
         final FontMetricsInt fm = new FontMetricsInt();
-        for (FontCollection.Run run : runs) {
-            final Font font;
-            synchronized (this) {
-                font = run.getFont().deriveFont(paint.mFontStyle, paint.mFontSize);
-            }
+        for (FontRun run : runs) {
+            final Font font = run.getFont().deriveFont(paint.mFontStyle, paint.mFontSize);
             final GlyphVector vector = layoutGlyphVector(font, text, run.getStart(), run.getEnd(), isRtl);
             final int num = vector.getNumGlyphs();
             advance += vector.getGlyphPosition(num).getX();

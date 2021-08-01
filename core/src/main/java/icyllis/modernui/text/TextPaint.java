@@ -18,12 +18,10 @@
 
 package icyllis.modernui.text;
 
-import icyllis.modernui.graphics.font.FontMetricsInt;
-
 import javax.annotation.Nonnull;
 
 /**
- * This class holds data used during text measuring and drawing.
+ * This class holds data used during text measuring and drawing at higher levels.
  */
 public class TextPaint extends FontPaint {
 
@@ -52,6 +50,6 @@ public class TextPaint extends FontPaint {
      * @param fm a FontMetrics to store the result
      */
     public void getFontMetrics(FontMetricsInt fm) {
-        GlyphManager.getInstance().getFontMetrics(mFontCollection, mFontStyle, mFontSize, fm);
+        GlyphManager.getInstance().getFontMetrics(mTypeface, this, fm);
     }
 }

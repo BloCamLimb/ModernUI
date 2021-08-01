@@ -21,7 +21,7 @@ package icyllis.modernui.graphics.font;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.texture.Texture2D;
 import icyllis.modernui.platform.RenderCore;
-import icyllis.modernui.text.FontCollection;
+import icyllis.modernui.text.Typeface;
 import icyllis.modernui.textmc.VanillaTextKey;
 import icyllis.modernui.textmc.pipeline.TextRenderNode;
 import icyllis.modernui.textmc.pipeline.TextRenderType;
@@ -319,7 +319,7 @@ public class GlyphManagerForge {
                     ModernUI.LOGGER.warn(MARKER, "Preferred font {} is invalid", cfgFont);
                 }
             } else {
-                Optional<Font> font = FontCollection.sAllFontFamilies.stream().filter(f -> f.getFamily(Locale.ROOT).equals(cfgFont)).findFirst();
+                Optional<Font> font = Typeface.sAllFontFamilies.stream().filter(f -> f.getFamily(Locale.ROOT).equals(cfgFont)).findFirst();
                 if (font.isPresent()) {
                     mSelectedFonts.add(font.get());
                     ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", cfgFont);
@@ -329,10 +329,10 @@ public class GlyphManagerForge {
             }
         }
 
-        if (FontCollection.sBuiltInFont != null) {
-            mSelectedFonts.add(FontCollection.sBuiltInFont);
+        if (Typeface.sBuiltInFont != null) {
+            mSelectedFonts.add(Typeface.sBuiltInFont);
         }
-        mSelectedFonts.add(FontCollection.sSansSerifFont);
+        mSelectedFonts.add(Typeface.sSansSerifFont);
     }
 
     /**
@@ -353,7 +353,7 @@ public class GlyphManagerForge {
         }
 
         /* If still not found, try searching through all fonts installed on the system for the first that can layout this string */
-        for (Font font : FontCollection.sAllFontFamilies) {
+        for (Font font : Typeface.sAllFontFamilies) {
             /* Only use the font if it can layout at least the first character of the requested string range */
             if (font.canDisplay(codePoint)) {
                 /* If found, add this font to the selectedFonts list so it can be looked up faster next time */
@@ -441,7 +441,7 @@ public class GlyphManagerForge {
         }
 
         /* If still not found, try searching through all fonts installed on the system for the first that can layout this string */
-        for (Font font : FontCollection.sAllFontFamilies) {
+        for (Font font : Typeface.sAllFontFamilies) {
             /* Only use the font if it can layout at least the first character of the requested string range */
             if (font.canDisplay(codePoint)) {
                 /* If found, add this font to the selectedFonts list so it can be looked up faster next time */

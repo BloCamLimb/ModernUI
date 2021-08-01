@@ -20,7 +20,7 @@ package icyllis.modernui.text;
 
 import javax.annotation.Nonnull;
 
-public class TextLayoutEngine {
+public class LayoutCache {
 
 
 

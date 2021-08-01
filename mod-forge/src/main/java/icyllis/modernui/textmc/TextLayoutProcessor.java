@@ -28,7 +28,7 @@ import icyllis.modernui.graphics.font.TexturedGlyph;
 import icyllis.modernui.graphics.math.Color3i;
 import icyllis.modernui.mixin.MixinClientLanguage;
 import icyllis.modernui.platform.RenderCore;
-import icyllis.modernui.text.FontCollection;
+import icyllis.modernui.text.Typeface;
 import icyllis.modernui.textmc.pipeline.*;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -807,7 +807,7 @@ public class TextLayoutProcessor {
      * @param limit end index (exclusive) of the text
      * @param flag  layout direction, either {@link Font#LAYOUT_LEFT_TO_RIGHT} or {@link Font#LAYOUT_RIGHT_TO_LEFT}
      * @param style the style to layout the text
-     * @see FontCollection#itemize(char[], int, int)
+     * @see Typeface#itemize(char[], int, int)
      */
     private void layoutText(TextProcessData data, char[] text, int start, int limit, int flag, @Nonnull FormattingStyle style) {
         /*

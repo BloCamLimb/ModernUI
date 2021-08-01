@@ -26,6 +26,9 @@ import java.awt.*;
 import java.util.Locale;
 import java.util.Objects;
 
+/**
+ * The base paint used with text layout engine at lower levels.
+ */
 public class FontPaint {
 
     /**
@@ -46,14 +49,14 @@ public class FontPaint {
     private static final int FONT_STYLE_MASK = REGULAR | BOLD | ITALIC;
 
     // shared pointer
-    protected FontCollection mFontCollection;
+    protected Typeface mTypeface;
     protected Locale mLocale;
     protected int mFontStyle;
     protected int mFontSize;
 
     public FontPaint() {
         //TODO replace with current user preference
-        mFontCollection = FontCollection.SANS_SERIF;
+        mTypeface = Typeface.SANS_SERIF;
         mLocale = ModernUI.get().getSelectedLocale();
     }
 
@@ -65,7 +68,7 @@ public class FontPaint {
      * Copy the data from paint into this TextPaint
      */
     public void set(@Nonnull FontPaint paint) {
-        mFontCollection = paint.mFontCollection;
+        mTypeface = paint.mTypeface;
         mLocale = paint.mLocale;
         mFontStyle = paint.mFontStyle;
         mFontSize = paint.mFontSize;
@@ -74,15 +77,15 @@ public class FontPaint {
     /**
      * Set the font collection object to draw the text.
      *
-     * @param fontCollection the font collection
+     * @param typeface the font collection
      */
-    public void setFontCollection(@Nonnull FontCollection fontCollection) {
-        mFontCollection = fontCollection;
+    public void setTypeface(@Nonnull Typeface typeface) {
+        mTypeface = typeface;
     }
 
     @Nonnull
-    public FontCollection getFontCollection() {
-        return mFontCollection;
+    public Typeface getTypeface() {
+        return mTypeface;
     }
 
     /**
@@ -155,14 +158,14 @@ public class FontPaint {
 
         if (mFontStyle != that.mFontStyle) return false;
         if (mFontSize != that.mFontSize) return false;
-        if (!Objects.equals(mFontCollection, that.mFontCollection))
+        if (!Objects.equals(mTypeface, that.mTypeface))
             return false;
         return Objects.equals(mLocale, that.mLocale);
     }
 
     @Override
     public int hashCode() {
-        int result = mFontCollection != null ? mFontCollection.hashCode() : 0;
+        int result = mTypeface != null ? mTypeface.hashCode() : 0;
         result = 31 * result + (mLocale != null ? mLocale.hashCode() : 0);
         result = 31 * result + mFontStyle;
         result = 31 * result + mFontSize;

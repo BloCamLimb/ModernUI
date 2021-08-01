@@ -39,22 +39,22 @@ import java.util.*;
  * <p>
  * The static part of this class is managing all fonts used in Modern UI.
  */
-public class FontCollection {
+public class Typeface {
 
-    public static final Marker MARKER = MarkerManager.getMarker("Font");
+    public static final Marker MARKER = MarkerManager.getMarker("Typeface");
 
     @Nonnull
-    public static final FontCollection SANS_SERIF;
+    public static final Typeface SANS_SERIF;
     @Nonnull
-    public static final FontCollection SERIF;
+    public static final Typeface SERIF;
     @Nonnull
-    public static final FontCollection MONOSPACED;
+    public static final Typeface MONOSPACED;
 
     @Deprecated
     @Nullable
     public static final Font sBuiltInFont;
 
-    // internal
+    // internal use
     @Nonnull
     public static final Font sSansSerifFont;
 
@@ -63,9 +63,9 @@ public class FontCollection {
 
     private static final List<String> sFontFamilyNames;
 
-    // internal
+    // internal use
     public static final List<Font> sAllFontFamilies = new ArrayList<>();
-    static final Map<String, FontCollection> sSystemFontMap = new HashMap<>();
+    static final Map<String, Typeface> sSystemFontMap = new HashMap<>();
 
     static {
         //checkJava();
@@ -90,7 +90,7 @@ public class FontCollection {
         sFontFamilyNames = List.of(families);
 
         Font builtIn = null;
-        try (InputStream stream = FontCollection.class.getResourceAsStream("/assets/modernui/font/biliw.otf")) {
+        try (InputStream stream = Typeface.class.getResourceAsStream("/assets/modernui/font/biliw.otf")) {
             if (stream != null) {
                 sAllFontFamilies.add(builtIn = Font.createFont(Font.TRUETYPE_FONT, stream));
             } else {
@@ -102,10 +102,10 @@ public class FontCollection {
         sBuiltInFont = builtIn;
 
         for (Font fontFamily : sAllFontFamilies) {
-            FontCollection fontCollection = new FontCollection(new Font[]{fontFamily, sansSerif});
+            Typeface typeface = new Typeface(new Font[]{fontFamily, sansSerif});
             String family = fontFamily.getFamily(Locale.ROOT);
-            fontCollection = sSystemFontMap.putIfAbsent(family, fontCollection);
-            if (fontCollection != null) {
+            typeface = sSystemFontMap.putIfAbsent(family, typeface);
+            if (typeface != null) {
                 ModernUI.LOGGER.warn(MARKER, "Duplicated font family: {}", family);
             }
         }
@@ -158,8 +158,8 @@ public class FontCollection {
     }
 
     @Nonnull
-    public static FontCollection getSystemFont(@Nonnull String familyName) {
-        FontCollection t = sSystemFontMap.get(familyName);
+    public static Typeface getSystemFont(@Nonnull String familyName) {
+        Typeface t = sSystemFontMap.get(familyName);
         return t == null ? SANS_SERIF : t;
     }
 
@@ -218,7 +218,7 @@ public class FontCollection {
     @Nonnull
     private final Font[] mFonts;
 
-    private FontCollection(@Nonnull Font[] fonts) {
+    private Typeface(@Nonnull Font[] fonts) {
         if (fonts.length == 0) {
             throw new IllegalArgumentException("Font set cannot be empty");
         }
@@ -226,15 +226,15 @@ public class FontCollection {
     }
 
     // calculate font runs
-    public List<Run> itemize(@Nonnull final char[] text, final int offset, final int limit) {
+    public List<FontRun> itemize(@Nonnull final char[] text, final int offset, final int limit) {
         it.unimi.dsi.fastutil.Arrays.ensureFromTo(text.length, offset, limit);
         if (offset == limit) {
             return Collections.emptyList();
         }
 
-        final List<Run> result = new ArrayList<>();
+        final List<FontRun> result = new ArrayList<>();
 
-        Run lastRun = null;
+        FontRun lastRun = null;
         Font lastFamily = null;
 
         int nextCh;
@@ -325,7 +325,7 @@ public class FontCollection {
                         // start to be 0 to include those characters).
                         start = offset;
                     }
-                    Run run = new Run(family, start, 0);
+                    FontRun run = new FontRun(family, start, 0);
                     result.add(run);
                     lastRun = run;
                     lastFamily = family;
@@ -341,7 +341,7 @@ public class FontCollection {
         if (lastFamily == null) {
             // No character needed any font support, so it doesn't really matter which font they end up
             // getting displayed in. We put the whole string in one run, using the first font.
-            result.add(new Run(mFonts[0], offset, limit));
+            result.add(new FontRun(mFonts[0], offset, limit));
         }
         return result;
     }
@@ -371,41 +371,12 @@ public class FontCollection {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        FontCollection that = (FontCollection) o;
+        Typeface that = (Typeface) o;
         return Arrays.equals(mFonts, that.mFonts);
     }
 
     @Override
     public int hashCode() {
         return Arrays.hashCode(mFonts);
-    }
-
-    // font run, child of style run
-    public static class Run {
-
-        private final Font mFont;
-        private final int mStart;
-        private int mEnd;
-
-        public Run(Font font, int start, int end) {
-            mFont = font;
-            mStart = start;
-            mEnd = end;
-        }
-
-        // base font without style and size
-        public Font getFont() {
-            return mFont;
-        }
-
-        // start index (inclusive)
-        public int getStart() {
-            return mStart;
-        }
-
-        // end index (exclusive)
-        public int getEnd() {
-            return mEnd;
-        }
     }
 }

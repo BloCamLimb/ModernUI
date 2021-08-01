@@ -18,7 +18,6 @@
 
 package icyllis.modernui.text;
 
-import icyllis.modernui.graphics.font.FontMetricsInt;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.ints.IntArrays;

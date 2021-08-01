@@ -18,9 +18,6 @@
 
 package icyllis.modernui.text;
 
-import icyllis.modernui.graphics.font.FontMetricsInt;
-import icyllis.modernui.graphics.font.LayoutPieces;
-
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
@@ -213,7 +210,7 @@ public class MeasuredText {
 
         @Override
         public void getMetrics(@Nonnull char[] text, @Nonnull float[] advances, @Nonnull LayoutPieces outPieces) {
-            GraphemeBreak.getTextRuns(text, getLocale(), mStart, mEnd,
+            GraphemeBreak.forTextRun(text, getLocale(), mStart, mEnd,
                     (st, en) -> GlyphManager.getInstance().measure(text, st, en, mPaint, mIsRtl,
                             (lp, pt) -> {
                                 advances[st] = lp.mAdvance;
@@ -225,7 +222,7 @@ public class MeasuredText {
         public void getExtent(@Nonnull char[] text, int start, int end, @Nonnull LayoutPieces pieces,
                               @Nonnull FontMetricsInt extent) {
             final int paintId = pieces.findPaintId(mPaint);
-            GraphemeBreak.getTextRuns(text, getLocale(), start, end,
+            GraphemeBreak.forTextRun(text, getLocale(), start, end,
                     (st, en) -> pieces.getOrCreate(text, st, en, mPaint, mIsRtl, paintId,
                             (lp, pt) -> extent.extendBy(lp.mAscent, lp.mDescent)));
         }

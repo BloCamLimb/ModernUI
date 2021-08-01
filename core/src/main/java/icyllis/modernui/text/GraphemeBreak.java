@@ -170,8 +170,8 @@ public final class GraphemeBreak {
                         offset, op);
     }
 
-    public static void getTextRuns(@Nonnull char[] text, @Nonnull Locale locale, int contextStart, int contextEnd,
-                                   @Nonnull RunConsumer consumer) {
+    public static void forTextRun(@Nonnull char[] text, @Nonnull Locale locale, int contextStart, int contextEnd,
+                                  @Nonnull RunConsumer consumer) {
         if (sUseICU) {
             final BreakIterator breaker = BreakIterator.getCharacterInstance(locale);
             breaker.setText(new CharArrayIterator(text, contextStart, contextEnd));

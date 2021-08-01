@@ -16,10 +16,8 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.font;
+package icyllis.modernui.text;
 
-import icyllis.modernui.text.FontPaint;
-import icyllis.modernui.text.GlyphManager;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;

@@ -25,6 +25,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.function.IntFunction;
 
@@ -76,9 +77,14 @@ public class FontAtlas {
     public FontAtlas() {
     }
 
-    @Nonnull
+    @Nullable
     public TexturedGlyph getGlyph(int glyphCode) {
         return mGlyphs.computeIfAbsent(glyphCode, sFactory);
+    }
+
+    // needed when the glyph has nothing to render
+    public void replaceNull(int glyphCode) {
+        mGlyphs.put(glyphCode, null);
     }
 
     void export() {
@@ -136,25 +142,30 @@ public class FontAtlas {
             final boolean vertical;
             if (mHeight != mWidth) {
                 mWidth <<= 1;
-                for (TexturedGlyph glyph : mGlyphs.values()) {
-                    glyph.u1 *= 0.5;
-                    glyph.u2 *= 0.5;
-                }
                 vertical = false;
             } else {
                 mHeight <<= 1;
-                for (TexturedGlyph glyph : mGlyphs.values()) {
-                    glyph.v1 *= 0.5;
-                    glyph.v2 *= 0.5;
-                }
                 vertical = true;
             }
 
             mTexture.resize(mWidth, mHeight, true);
+
             if (vertical) {
                 mTexture.clear(0, 0, mHeight >> 1, mWidth, mHeight >> 1);
+                for (TexturedGlyph glyph : mGlyphs.values()) {
+                    glyph.v1 *= 0.5;
+                    glyph.v2 *= 0.5;
+                    // texture id changed
+                    glyph.texture = mTexture.get();
+                }
             } else {
                 mTexture.clear(0, mWidth >> 1, 0, mWidth >> 1, mHeight);
+                for (TexturedGlyph glyph : mGlyphs.values()) {
+                    glyph.u1 *= 0.5;
+                    glyph.u2 *= 0.5;
+                    // texture id changed
+                    glyph.texture = mTexture.get();
+                }
             }
             // we later generate mipmap
         }

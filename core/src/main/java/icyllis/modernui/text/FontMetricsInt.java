@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.font;
+package icyllis.modernui.text;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
@@ -34,6 +34,9 @@ public class FontMetricsInt {
      * This is always a positive integer.
      */
     public int mDescent;
+
+    public FontMetricsInt() {
+    }
 
     public void reset() {
         mAscent = mDescent = 0;

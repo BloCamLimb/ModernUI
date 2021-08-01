@@ -153,14 +153,16 @@ public final class RenderCore {
         try {
             if (channel instanceof SeekableByteChannel) {
                 final SeekableByteChannel ch = (SeekableByteChannel) channel;
-                ptr = MemoryUtil.memAlloc((int) ch.size() + 1); // +1 EOF
+                ptr = MemoryUtil.memAlloc((int) (ch.size() - ch.position() + 1)); // +1 EOF
                 //noinspection StatementWithEmptyBody
                 while (ch.read(ptr) != -1) ;
             } else {
                 ptr = MemoryUtil.memAlloc(4096);
-                while (channel.read(ptr) != -1)
-                    if (ptr.remaining() <= 0)
+                while (channel.read(ptr) != -1) {
+                    if (ptr.remaining() <= 0) {
                         ptr = MemoryUtil.memRealloc(ptr, ptr.capacity() << 1);
+                    }
+                }
             }
         } catch (Throwable t) {
             MemoryUtil.memFree(ptr);
