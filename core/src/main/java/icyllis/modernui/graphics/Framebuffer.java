@@ -115,6 +115,12 @@ public final class Framebuffer implements AutoCloseable {
         mAttachments.clear();
     }
 
+    public void reset(int width, int height) {
+        resize(width, height);
+        clearColorBuffer();
+        clearDepthStencilBuffer();
+    }
+
     /**
      * Reallocate all attachments to the new size, if changed.
      */

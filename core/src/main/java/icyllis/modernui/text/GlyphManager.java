@@ -128,7 +128,7 @@ public class GlyphManager {
      * @param font      the font (with size and style) to which this glyphCode belongs and which
      *                  was used to pre-render the glyph
      * @param glyphCode the font specific glyph code (should be laid-out) to lookup in the atlas
-     * @return the cached glyph sprite or null if the glyph doesn't need to render
+     * @return the cached glyph sprite or null if the glyph has nothing to render
      */
     @Nullable
     @RenderThread
@@ -137,7 +137,9 @@ public class GlyphManager {
         TexturedGlyph glyph = atlas.getGlyph(glyphCode);
         if (glyph != null && glyph.texture == 0) {
             glyph.texture = atlas.mTexture.get();
-            cacheGlyph(font, glyphCode, atlas, glyph);
+            if (cacheGlyph(font, glyphCode, atlas, glyph)) {
+                return null;
+            }
         }
         return glyph;
     }
@@ -145,18 +147,24 @@ public class GlyphManager {
     @RenderThread
     public void debug() {
         for (var atlas : mAtlases.entrySet()) {
-            ModernUI.LOGGER.info("Atlas {}, Font {}", atlas.getValue(), atlas.getKey());
+            ModernUI.LOGGER.info("FontAtlas {}", atlas.getKey());
             atlas.getValue().debug();
         }
     }
 
     @RenderThread
-    private void cacheGlyph(@Nonnull Font font, int glyphCode, @Nonnull FontAtlas atlas, @Nonnull TexturedGlyph glyph) {
+    private boolean cacheGlyph(@Nonnull Font font, int glyphCode, @Nonnull FontAtlas atlas, @Nonnull TexturedGlyph glyph) {
         // there's no need to layout glyph vector, we only draw the specific glyphCode
         // which is already laid-out in LayoutEngine
         GlyphVector vector = font.createGlyphVector(mGraphics.getFontRenderContext(), new int[]{glyphCode});
 
         Rectangle bounds = vector.getPixelBounds(null, 0, 0);
+
+        if (bounds.width == 0 || bounds.height == 0) {
+            atlas.replaceWithNull(glyphCode);
+            return true;
+        }
+
         //glyph.advance = vector.getGlyphMetrics(0).getAdvanceX();
         glyph.offsetX = bounds.x;
         glyph.offsetY = bounds.y;
@@ -184,6 +192,7 @@ public class GlyphManager {
 
         mGraphics.clearRect(0, 0, mImage.getWidth(), mImage.getHeight());
         mImageBuffer.clear();
+        return false;
     }
 
     private void allocateImage(int width, int height) {
@@ -211,6 +220,7 @@ public class GlyphManager {
      * Re-calculate font metrics in pixels, the higher 32 bits are ascent and
      * lower 32 bits are descent.
      */
+    @SuppressWarnings("MagicConstant")
     public void getFontMetrics(@Nonnull Typeface typeface, @Nonnull FontPaint paint, @Nonnull FontMetricsInt fm) {
         fm.reset();
         for (Font f : typeface.getFonts()) {
@@ -219,12 +229,14 @@ public class GlyphManager {
     }
 
     // extend metrics
+    @SuppressWarnings("MagicConstant")
     public Font getFontMetrics(@Nonnull Font font, @Nonnull FontPaint paint, @Nonnull FontMetricsInt fm) {
         font = font.deriveFont(paint.mFontStyle, paint.mFontSize);
         fm.extendBy(mGraphics.getFontMetrics(font));
         return font;
     }
 
+    @SuppressWarnings("MagicConstant")
     public void measure(@Nonnull char[] text, int contextStart, int contextEnd, @Nonnull FontPaint paint, boolean isRtl,
                         @Nonnull BiConsumer<GraphemeMetrics, FontPaint> consumer) {
         final List<FontRun> runs = paint.mTypeface.itemize(text, contextStart, contextEnd);

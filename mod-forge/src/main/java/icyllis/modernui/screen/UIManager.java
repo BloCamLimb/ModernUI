@@ -518,17 +518,13 @@ public final class UIManager implements ViewRootImpl.Handler {
 
         // wait UI thread, if slow
         synchronized (mRenderLock) {
-            if (mRoot.isReadyForRendering()) {
+            if (mRoot.hasDrawn()) {
                 final int oldVertexArray = glGetInteger(GL_VERTEX_ARRAY_BINDING);
                 final int oldProgram = glGetInteger(GL_CURRENT_PROGRAM);
                 glEnable(GL_STENCIL_TEST);
 
-                framebuffer.resize(width, height);
-                framebuffer.clearColorBuffer();
-                framebuffer.clearDepthStencilBuffer();
+                framebuffer.reset(width, height);
                 framebuffer.bindDraw();
-                // flush tasks from UI thread, such as texture uploading
-                RenderCore.flushRenderCalls();
                 canvas.render();
 
                 glBindVertexArray(oldVertexArray);
