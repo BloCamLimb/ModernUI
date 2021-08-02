@@ -18,6 +18,7 @@
 
 package icyllis.modernui.text;
 
+import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.graphics.texture.Texture2D;
 import icyllis.modernui.platform.Bitmap;
@@ -87,7 +88,10 @@ public class FontAtlas {
         mGlyphs.put(glyphCode, null);
     }
 
-    void export() {
+    void debug() {
+        for (var glyph : mGlyphs.int2ObjectEntrySet()) {
+            ModernUI.LOGGER.info("GlyphCode {}, {}", glyph.getIntKey(), glyph.getValue());
+        }
         try {
             Bitmap.download(Bitmap.Format.RGBA, mTexture, false)
                     .saveDialog(Bitmap.SaveFormat.PNG, 0);

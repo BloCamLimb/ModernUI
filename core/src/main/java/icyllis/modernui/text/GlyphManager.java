@@ -18,6 +18,7 @@
 
 package icyllis.modernui.text;
 
+import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.system.MemoryUtil;
@@ -142,8 +143,11 @@ public class GlyphManager {
     }
 
     @RenderThread
-    public void export() {
-        mAtlases.values().forEach(FontAtlas::export);
+    public void debug() {
+        for (var atlas : mAtlases.entrySet()) {
+            ModernUI.LOGGER.info("Atlas {}, Font {}", atlas.getValue(), atlas.getKey());
+            atlas.getValue().debug();
+        }
     }
 
     @RenderThread

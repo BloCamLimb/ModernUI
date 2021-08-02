@@ -58,6 +58,8 @@ public class FontPaint {
         //TODO replace with current user preference
         mTypeface = Typeface.SANS_SERIF;
         mLocale = ModernUI.get().getSelectedLocale();
+        mFontStyle = REGULAR;
+        mFontSize = 32;
     }
 
     public FontPaint(@Nonnull FontPaint paint) {
