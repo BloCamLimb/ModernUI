@@ -59,6 +59,7 @@ public class LayoutPiece {
         FloatList positions = new FloatArrayList();
         mAdvances = new float[limit - start];
 
+        // deferred
         List<TexturedGlyph> glyphs = new ArrayList<>();
 
         List<FontRun> items = paint.mTypeface.itemize(buf, start, limit);
@@ -70,8 +71,11 @@ public class LayoutPiece {
             GlyphVector vector = engine.layoutGlyphVector(derived, buf, run.mStart, run.mEnd, isRtl);
 
             int num = vector.getNumGlyphs();
-            positions.addElements(positions.size(),
-                    vector.getGlyphPositions(0, num, null));
+            float[] pos = vector.getGlyphPositions(0, num, null);
+            for (int i = 0; i < pos.length; i += 2) {
+                pos[i] += mAdvance;
+            }
+            positions.addElements(positions.size(), pos);
 
             ClusterWork clusterWork = new ClusterWork(derived, buf, isRtl, mAdvances, start);
             GraphemeBreak.forTextRun(buf, paint.mLocale, run.mStart, run.mEnd, clusterWork);

@@ -31,45 +31,62 @@ public class TexturedGlyph {
     /**
      * The OpenGL texture ID that contains this glyph image.
      */
-    int texture;
+    public int texture;
 
     /**
      * The horizontal offset to baseline.
      */
-    int offsetX;
+    public int offsetX;
 
     /**
      * The vertical offset to baseline.
      */
-    int offsetY;
+    public int offsetY;
 
     /**
      * The total width of this glyph image in pixels.
      */
-    int width;
+    public int width;
 
     /**
      * The total height of this glyph image in pixels.
      */
-    int height;
+    public int height;
 
     /**
      * The horizontal texture coordinate of the upper-left corner.
      */
-    float u1;
+    public float u1;
 
     /**
      * The vertical texture coordinate of the upper-left corner.
      */
-    float v1;
+    public float v1;
 
     /**
      * The horizontal texture coordinate of the lower-right corner.
      */
-    float u2;
+    public float u2;
 
     /**
      * The vertical texture coordinate of the lower-right corner.
      */
-    float v2;
+    public float v2;
+
+    public TexturedGlyph() {
+    }
+
+    @Override
+    public String toString() {
+        return "TexturedGlyph{" + "texture=" + texture +
+                ", offsetX=" + offsetX +
+                ", offsetY=" + offsetY +
+                ", width=" + width +
+                ", height=" + height +
+                ", u1=" + u1 +
+                ", v1=" + v1 +
+                ", u2=" + u2 +
+                ", v2=" + v2 +
+                '}';
+    }
 }

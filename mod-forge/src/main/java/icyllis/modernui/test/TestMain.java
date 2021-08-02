@@ -37,8 +37,9 @@ import icyllis.modernui.math.Vector3;
 import icyllis.modernui.platform.Bitmap;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.platform.Window;
-import icyllis.modernui.text.*;
 import icyllis.modernui.text.GlyphManager;
+import icyllis.modernui.text.GraphemeBreak;
+import icyllis.modernui.text.TextPaint;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.system.Callback;
@@ -235,7 +236,7 @@ public class TestMain {
                         "After a hundred or two audition and small parts, you know I decided, you know, I had enough, then I get into escort work.";*/
                 char[] textC = text.toCharArray();
 
-                TextPaint tp = new TextPaint();
+                /*TextPaint tp = new TextPaint();
                 var mt = MeasuredParagraph.buildForStaticLayout(tp, text, 0, text.length(), TextDirectionHeuristics.FIRSTSTRONG_LTR, null);
                 var dirs = mt.getDirections(0, text.length());
                 for (int i = 0; i < dirs.getRunCount(); i++) {
@@ -253,7 +254,7 @@ public class TestMain {
                         }
                     }
                 }
-                glyphManager.export();
+                glyphManager.export();*/
 
                 while (!window.shouldClose()) {
                     if (window.isContentDirty()) {
@@ -272,7 +273,10 @@ public class TestMain {
                         //canvas.rotate(-10, 640, 360);
                         Paint paint = Paint.take();
                         paint.setSmoothRadius(2);
+                        canvas.save();
+                        canvas.scale(0.7f, 0.7f);
                         canvas.drawRoundImage(image, 100, 20, 15, paint);
+                        canvas.restore();
                         //canvas.drawCircle(60, 60, 20, paint);
                         canvas.translate(300, 0);
                         //canvas.clipRect(130, 40, 310, 110);
@@ -311,8 +315,14 @@ public class TestMain {
                         canvas.drawLine(20, 20, 140, 60, paint);
                         canvas.drawLine(120, 30, 60, 80, paint);
 
+                        canvas.drawTextRun("我的名字是ななひら", 0, 9, 930, 170, false, new TextPaint());
+                        String tcc = "আমি আজ সকালের নাস্তা খাব না";
+                        canvas.drawTextRun(tcc, 0, tcc.length(), 630, 270, false, new TextPaint());
+
                         // render thread, wait UI thread
+                        RenderCore.flushRenderCalls();
                         canvas.render();
+                        //glyphManager.debug();
 
                         /*GL11.glMatrixMode(GL11.GL_PROJECTION);
                         GL43.glPushMatrix();

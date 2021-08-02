@@ -21,7 +21,7 @@ package icyllis.modernui.graphics;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.math.RectF;
-import icyllis.modernui.text.FontPaint;
+import icyllis.modernui.text.TextPaint;
 
 import javax.annotation.Nonnull;
 
@@ -497,5 +497,5 @@ public abstract class Canvas {
      * @param paint the paint used to draw the text
      */
     public abstract void drawTextRun(@Nonnull CharSequence text, int start, int end,
-                                     float x, float y, boolean isRtl, @Nonnull FontPaint paint);
+                                     float x, float y, boolean isRtl, @Nonnull TextPaint paint);
 }

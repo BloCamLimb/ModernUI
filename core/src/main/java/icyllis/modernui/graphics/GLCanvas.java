@@ -30,7 +30,10 @@ import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.math.RectF;
 import icyllis.modernui.platform.RenderCore;
-import icyllis.modernui.text.FontPaint;
+import icyllis.modernui.text.LayoutPiece;
+import icyllis.modernui.text.TextPaint;
+import icyllis.modernui.text.TextUtils;
+import icyllis.modernui.text.TexturedGlyph;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -38,6 +41,7 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
@@ -79,6 +83,7 @@ public final class GLCanvas extends Canvas {
     public static final int ROUND_RECT_BINDING = 1;
     public static final int CIRCLE_BINDING = 2;
     public static final int ARC_BINDING = 3;
+    public static final int GLYPH_BINDING = 4;
 
     /**
      * Vertex buffer binding points
@@ -99,6 +104,7 @@ public final class GLCanvas extends Canvas {
      */
     public static final VertexFormat POS_COLOR;
     public static final VertexFormat POS_COLOR_TEX;
+    public static final VertexFormat POS_TEX_NO_MAT;
 
     /**
      * Shader programs
@@ -112,6 +118,7 @@ public final class GLCanvas extends Canvas {
     public static final Shader CIRCLE_STROKE = new Shader();
     public static final Shader ARC_FILL = new Shader();
     public static final Shader ARC_STROKE = new Shader();
+    public static final Shader GLYPH_BATCH = new Shader();
 
     /**
      * Recording commands
@@ -127,6 +134,7 @@ public final class GLCanvas extends Canvas {
     public static final int DRAW_ARC_OUTLINE = 9;
     public static final int DRAW_CLIP_PUSH = 10;
     public static final int DRAW_CLIP_POP = 11;
+    public static final int DRAW_TEXT = 12;
 
     /**
      * Uniform block sizes, use std140 layout
@@ -135,6 +143,7 @@ public final class GLCanvas extends Canvas {
     public static final int ROUND_RECT_UNIFORM_SIZE = 28;
     public static final int CIRCLE_UNIFORM_SIZE = 24;
     public static final int ARC_UNIFORM_SIZE = 32;
+    public static final int GLYPH_UNIFORM_SIZE = 80;
 
     static {
         POS = new VertexAttrib(GENERIC_BINDING, VertexAttrib.Src.FLOAT, VertexAttrib.Dst.VEC2, false);
@@ -143,6 +152,7 @@ public final class GLCanvas extends Canvas {
         MODEL_VIEW = new VertexAttrib(INSTANCED_BINDING, VertexAttrib.Src.FLOAT, VertexAttrib.Dst.MAT4, false);
         POS_COLOR = new VertexFormat(POS, COLOR, MODEL_VIEW);
         POS_COLOR_TEX = new VertexFormat(POS, COLOR, UV, MODEL_VIEW);
+        POS_TEX_NO_MAT = new VertexFormat(POS, UV);
     }
 
 
@@ -167,8 +177,13 @@ public final class GLCanvas extends Canvas {
     private ByteBuffer mModelViewData = MemoryUtil.memAlloc(1024);
     private boolean mRecreateModelView = true;
 
+    // dynamic updated VBO
+    private int mGlyphVBO = INVALID_ID;
+    private ByteBuffer mGlyphData = MemoryUtil.memAlloc(1024);
+    private boolean mRecreateGlyph = true;
 
-    // the universal uniform block
+
+    // universal uniform blocks
     private final int mProjectionUBO;
 
     // the data used for updating the uniform blocks
@@ -176,10 +191,12 @@ public final class GLCanvas extends Canvas {
     private final int mRoundRectUBO;
     private final int mCircleUBO;
     private final int mArcUBO;
+    private final int mGlyphUBO;
 
     // used in rendering, local states
     private int mCurrVertexArray;
     private int mCurrProgram;
+    private int mCurrTexture;
 
     // using textures of draw states, in the order of calling
     private final List<Texture2D> mTextures = new ArrayList<>();
@@ -187,6 +204,8 @@ public final class GLCanvas extends Canvas {
     // absolute value presents the reference value, and sign represents whether to
     // update the stencil buffer (positive = update, or just change stencil func)
     private final IntList mClipDepths = new IntArrayList();
+
+    private final List<TextDraw> mTextDraws = new ArrayList<>();
 
     private final Rect mTmpRect = new Rect();
     private final RectF mTmpRectF = new RectF();
@@ -196,6 +215,9 @@ public final class GLCanvas extends Canvas {
     private GLCanvas() {
         mProjectionUBO = glCreateBuffers();
         glNamedBufferStorage(mProjectionUBO, PROJECTION_UNIFORM_SIZE, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
+
+        mGlyphUBO = glCreateBuffers();
+        glNamedBufferStorage(mGlyphUBO, GLYPH_UNIFORM_SIZE, GL_DYNAMIC_STORAGE_BIT);
 
         mRoundRectUBO = glCreateBuffers();
         glNamedBufferStorage(mRoundRectUBO, ROUND_RECT_UNIFORM_SIZE, GL_DYNAMIC_STORAGE_BIT);
@@ -234,6 +256,7 @@ public final class GLCanvas extends Canvas {
     private void onLoadShaders(@Nonnull ShaderManager manager) {
         int posColor = manager.getShard(ModernUI.get(), "pos_color.vert");
         int posColorTex = manager.getShard(ModernUI.get(), "pos_color_tex.vert");
+        int glyphBatch = manager.getShard(ModernUI.get(), "glyph_batch.vert");
 
         int colorFill = manager.getShard(ModernUI.get(), "color_fill.frag");
         int colorTex = manager.getShard(ModernUI.get(), "color_tex.frag");
@@ -244,6 +267,7 @@ public final class GLCanvas extends Canvas {
         int circleStroke = manager.getShard(ModernUI.get(), "circle_stroke.frag");
         int arcFill = manager.getShard(ModernUI.get(), "arc_fill.frag");
         int arcStroke = manager.getShard(ModernUI.get(), "arc_stroke.frag");
+        int glyphTex = manager.getShard(ModernUI.get(), "glyph_tex.frag");
 
         manager.create(COLOR_FILL, posColor, colorFill);
         manager.create(COLOR_TEX, posColorTex, colorTex);
@@ -254,6 +278,7 @@ public final class GLCanvas extends Canvas {
         manager.create(CIRCLE_STROKE, posColor, circleStroke);
         manager.create(ARC_FILL, posColor, arcFill);
         manager.create(ARC_STROKE, posColor, arcStroke);
+        manager.create(GLYPH_BATCH, glyphBatch, glyphTex);
 
         ModernUI.LOGGER.info(MARKER, "Loaded shader programs");
     }
@@ -304,6 +329,13 @@ public final class GLCanvas extends Canvas {
         }
     }
 
+    private void bindTexture(int tex) {
+        if (mCurrTexture != tex) {
+            glBindTextureUnit(0, tex);
+            mCurrTexture = tex;
+        }
+    }
+
     @RenderThread
     public void render() {
         RenderCore.checkRenderThread();
@@ -320,12 +352,14 @@ public final class GLCanvas extends Canvas {
         glBindBufferBase(GL_UNIFORM_BUFFER, ROUND_RECT_BINDING, mRoundRectUBO);
         glBindBufferBase(GL_UNIFORM_BUFFER, CIRCLE_BINDING, mCircleUBO);
         glBindBufferBase(GL_UNIFORM_BUFFER, ARC_BINDING, mArcUBO);
+        glBindBufferBase(GL_UNIFORM_BUFFER, GLYPH_BINDING, mGlyphUBO);
 
         glStencilFuncSeparate(GL_FRONT, GL_EQUAL, 0, 0xff);
         glStencilMaskSeparate(GL_FRONT, 0xff);
 
         mCurrVertexArray = 0;
         mCurrProgram = 0;
+        mCurrTexture = 0;
 
         mUniformData.flip();
 
@@ -339,7 +373,8 @@ public final class GLCanvas extends Canvas {
         // textures
         int textureIndex = 0;
         int clipIndex = 0;
-        int depth;
+        int clipDepth;
+        int textIndex = 0;
 
         for (int draw : mDrawStates) {
             switch (draw) {
@@ -371,10 +406,10 @@ public final class GLCanvas extends Canvas {
                 case DRAW_ROUND_IMAGE:
                     bindVertexArray(POS_COLOR_TEX);
                     useProgram(ROUND_RECT_TEX);
+                    bindTexture(mTextures.get(textureIndex).get());
+                    textureIndex++;
                     nglNamedBufferSubData(mRoundRectUBO, 0, ROUND_RECT_UNIFORM_SIZE, uniformDataPtr);
                     uniformDataPtr += ROUND_RECT_UNIFORM_SIZE;
-                    glBindTextureUnit(0, mTextures.get(textureIndex).get());
-                    textureIndex++;
                     glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, posColorTexIndex, 4, 1, instance);
                     posColorTexIndex += 4;
                     break;
@@ -382,7 +417,7 @@ public final class GLCanvas extends Canvas {
                 case DRAW_IMAGE:
                     bindVertexArray(POS_COLOR_TEX);
                     useProgram(COLOR_TEX);
-                    glBindTextureUnit(0, mTextures.get(textureIndex).get());
+                    bindTexture(mTextures.get(textureIndex).get());
                     textureIndex++;
                     glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, posColorTexIndex, 4, 1, instance);
                     posColorTexIndex += 4;
@@ -425,9 +460,9 @@ public final class GLCanvas extends Canvas {
                     break;
 
                 case DRAW_CLIP_PUSH:
-                    depth = mClipDepths.getInt(clipIndex);
+                    clipDepth = mClipDepths.getInt(clipIndex);
 
-                    if (depth >= 0) {
+                    if (clipDepth >= 0) {
                         glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_KEEP, GL_INCR);
                         glColorMaski(0, false, false, false, false);
 
@@ -440,15 +475,15 @@ public final class GLCanvas extends Canvas {
                         glColorMaski(0, true, true, true, true);
                     }
 
-                    glStencilFuncSeparate(GL_FRONT, GL_EQUAL, Math.abs(depth), 0xff);
+                    glStencilFuncSeparate(GL_FRONT, GL_EQUAL, Math.abs(clipDepth), 0xff);
                     clipIndex++;
                     break;
 
                 case DRAW_CLIP_POP:
-                    depth = mClipDepths.getInt(clipIndex);
+                    clipDepth = mClipDepths.getInt(clipIndex);
 
-                    if (depth >= 0) {
-                        glStencilFuncSeparate(GL_FRONT, GL_LESS, depth, 0xff);
+                    if (clipDepth >= 0) {
+                        glStencilFuncSeparate(GL_FRONT, GL_LESS, clipDepth, 0xff);
                         glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_KEEP, GL_REPLACE);
                         glColorMaski(0, false, false, false, false);
 
@@ -461,9 +496,34 @@ public final class GLCanvas extends Canvas {
                         glColorMaski(0, true, true, true, true);
                     }
 
-                    glStencilFuncSeparate(GL_FRONT, GL_EQUAL, Math.abs(depth), 0xff);
+                    glStencilFuncSeparate(GL_FRONT, GL_EQUAL, Math.abs(clipDepth), 0xff);
                     clipIndex++;
                     break;
+
+                case DRAW_TEXT: {
+                    bindVertexArray(POS_TEX_NO_MAT);
+                    useProgram(GLYPH_BATCH);
+                    nglNamedBufferSubData(mGlyphUBO, 0, GLYPH_UNIFORM_SIZE, uniformDataPtr);
+                    uniformDataPtr += GLYPH_UNIFORM_SIZE;
+
+                    TextDraw text = mTextDraws.get(textIndex++);
+                    final TexturedGlyph[] glyphs = text.mLayoutPiece.getGlyphs();
+                    final float[] positions = text.mLayoutPiece.getPositions();
+                    for (int i = 0, e = glyphs.length; i < e; i++) {
+                        putGlyph(glyphs[i], text.mX + positions[i * 2], text.mY + positions[i * 2 + 1]);
+                    }
+
+                    checkGlyphVBO();
+                    mGlyphData.flip();
+                    glNamedBufferSubData(mGlyphVBO, 0, mGlyphData);
+                    mGlyphData.clear();
+
+                    for (int i = 0, e = glyphs.length; i < e; i++) {
+                        bindTexture(glyphs[i].texture);
+                        glDrawArrays(GL_TRIANGLE_STRIP, i << 2, 4);
+                    }
+                    break;
+                }
 
                 default:
                     throw new IllegalStateException("Unexpected draw state " + draw);
@@ -523,6 +583,15 @@ public final class GLCanvas extends Canvas {
         mRecreateModelView = false;
     }
 
+    private void checkGlyphVBO() {
+        if (!mRecreateGlyph)
+            return;
+        mGlyphVBO = glCreateBuffers();
+        glNamedBufferStorage(mGlyphVBO, mGlyphData.capacity(), GL_DYNAMIC_STORAGE_BIT);
+        POS_TEX_NO_MAT.setVertexBuffer(GENERIC_BINDING, mGlyphVBO, 0);
+        mRecreateGlyph = false;
+    }
+
     private ByteBuffer getPosColorBuffer() {
         if (mPosColorData.remaining() < 256) {
             mPosColorData = MemoryUtil.memRealloc(mPosColorData, mPosColorData.capacity() << 1);
@@ -556,6 +625,15 @@ public final class GLCanvas extends Canvas {
             ModernUI.LOGGER.debug("Resize universal uniform buffer to {} bytes", mUniformData.capacity());
         }
         return mUniformData;
+    }
+
+    private ByteBuffer getGlyphBuffer() {
+        if (mGlyphData.remaining() < 64) {
+            mGlyphData = MemoryUtil.memRealloc(mGlyphData, mGlyphData.capacity() << 1);
+            mRecreateGlyph = true;
+            ModernUI.LOGGER.debug("Resize glyph buffer to {} bytes", mGlyphData.capacity());
+        }
+        return mGlyphData;
     }
 
     @Nonnull
@@ -834,6 +912,29 @@ public final class GLCanvas extends Canvas {
                 .putFloat(u1).putFloat(v0);
     }
 
+    private void putGlyph(@Nullable TexturedGlyph glyph, float left, float top) {
+        if (glyph == null) {
+            return;
+        }
+        ByteBuffer buffer = getGlyphBuffer();
+        left += glyph.offsetX;
+        top += glyph.offsetY;
+        float right = left + glyph.width;
+        float bottom = top + glyph.height;
+        buffer.putFloat(left)
+                .putFloat(bottom)
+                .putFloat(glyph.u1).putFloat(glyph.v2);
+        buffer.putFloat(right)
+                .putFloat(bottom)
+                .putFloat(glyph.u2).putFloat(glyph.v2);
+        buffer.putFloat(left)
+                .putFloat(top)
+                .putFloat(glyph.u1).putFloat(glyph.v1);
+        buffer.putFloat(right)
+                .putFloat(top)
+                .putFloat(glyph.u2).putFloat(glyph.v1);
+    }
+
     @Override
     public void drawArc(float cx, float cy, float radius, float startAngle,
                         float sweepAngle, @Nonnull Paint paint) {
@@ -1105,9 +1206,30 @@ public final class GLCanvas extends Canvas {
 
     @Override
     public void drawTextRun(@Nonnull CharSequence text, int start, int end, float x, float y,
-                            boolean isRtl, @Nonnull FontPaint paint) {
+                            boolean isRtl, @Nonnull TextPaint paint) {
         if ((start | end | end - start | text.length() - end) < 0) {
             throw new IndexOutOfBoundsException();
+        }
+        char[] chars = new char[end - start];
+        TextUtils.getChars(text, start, end, chars, 0);
+        LayoutPiece piece = new LayoutPiece(chars, 0, end - start, isRtl, paint);
+        mTextDraws.add(new TextDraw(piece, x, y));
+        ByteBuffer buffer = getUniformBuffer();
+        getMatrix().get(buffer);
+        buffer.putFloat(1).putFloat(1).putFloat(1).putFloat(1);
+        mDrawStates.add(DRAW_TEXT);
+    }
+
+    private static class TextDraw {
+
+        private final LayoutPiece mLayoutPiece;
+        private final float mX;
+        private final float mY;
+
+        public TextDraw(LayoutPiece layoutPiece, float x, float y) {
+            mLayoutPiece = layoutPiece;
+            mX = x;
+            mY = y;
         }
     }
 }
