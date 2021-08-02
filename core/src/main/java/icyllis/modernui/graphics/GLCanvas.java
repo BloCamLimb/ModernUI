@@ -41,7 +41,6 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
@@ -339,6 +338,7 @@ public final class GLCanvas extends Canvas {
     @RenderThread
     public void render() {
         RenderCore.checkRenderThread();
+        RenderCore.flushRenderCalls();
         if (mDrawStates.isEmpty()) {
             return;
         }
@@ -534,9 +534,11 @@ public final class GLCanvas extends Canvas {
         mTextures.clear();
         mClipDepths.clear();
         mUniformData.clear();
+        mTextDraws.clear();
         mDrawStates.clear();
     }
 
+    @RenderThread
     private void uploadBuffers() {
         checkPosColorVBO();
         mPosColorData.flip();
@@ -554,6 +556,7 @@ public final class GLCanvas extends Canvas {
         mModelViewData.clear();
     }
 
+    @RenderThread
     private void checkPosColorVBO() {
         if (!mRecreatePosColor)
             return;
@@ -563,6 +566,7 @@ public final class GLCanvas extends Canvas {
         mRecreatePosColor = false;
     }
 
+    @RenderThread
     private void checkPosColorTexVBO() {
         if (!mRecreatePosColorTex)
             return;
@@ -572,6 +576,7 @@ public final class GLCanvas extends Canvas {
         mRecreatePosColorTex = false;
     }
 
+    @RenderThread
     private void checkModelViewVBO() {
         if (!mRecreateModelView)
             return;
@@ -583,6 +588,7 @@ public final class GLCanvas extends Canvas {
         mRecreateModelView = false;
     }
 
+    @RenderThread
     private void checkGlyphVBO() {
         if (!mRecreateGlyph)
             return;
@@ -627,6 +633,7 @@ public final class GLCanvas extends Canvas {
         return mUniformData;
     }
 
+    @RenderThread
     private ByteBuffer getGlyphBuffer() {
         if (mGlyphData.remaining() < 64) {
             mGlyphData = MemoryUtil.memRealloc(mGlyphData, mGlyphData.capacity() << 1);
@@ -912,10 +919,8 @@ public final class GLCanvas extends Canvas {
                 .putFloat(u1).putFloat(v0);
     }
 
-    private void putGlyph(@Nullable TexturedGlyph glyph, float left, float top) {
-        if (glyph == null) {
-            return;
-        }
+    @RenderThread
+    private void putGlyph(@Nonnull TexturedGlyph glyph, float left, float top) {
         ByteBuffer buffer = getGlyphBuffer();
         left += glyph.offsetX;
         top += glyph.offsetY;

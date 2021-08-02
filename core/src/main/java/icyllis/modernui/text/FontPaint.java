@@ -51,15 +51,13 @@ public class FontPaint {
     // shared pointer
     protected Typeface mTypeface;
     protected Locale mLocale;
-    protected int mFontStyle;
-    protected int mFontSize;
+    protected int mFontStyle = REGULAR;
+    protected int mFontSize = 24;
 
     public FontPaint() {
         //TODO replace with current user preference
-        mTypeface = Typeface.SANS_SERIF;
+        mTypeface = Typeface.PREFERENCE;
         mLocale = ModernUI.get().getSelectedLocale();
-        mFontStyle = REGULAR;
-        mFontSize = 32;
     }
 
     public FontPaint(@Nonnull FontPaint paint) {

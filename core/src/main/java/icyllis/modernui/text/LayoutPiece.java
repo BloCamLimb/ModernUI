@@ -25,6 +25,7 @@ import it.unimi.dsi.fastutil.floats.FloatList;
 import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.font.GlyphVector;
+import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,12 +37,12 @@ import java.util.List;
  */
 public class LayoutPiece {
 
-    // all glyphs used for rendering, null elements that have nothing to render
+    // all glyphs used for rendering, invisible glyphs have been removed
     // the order is visually left-to-right
     private TexturedGlyph[] mGlyphs;
 
     // x1 y1 x2 y2... relative to the same pivot, for rendering mGlyphs
-    private final float[] mPositions;
+    private float[] mPositions;
 
     // the size and order are relative to the text buf (char array)
     // only grapheme cluster bounds have advances, others are zeros
@@ -56,11 +57,11 @@ public class LayoutPiece {
 
     public LayoutPiece(@Nonnull char[] buf, int start, int limit, boolean isRtl, @Nonnull FontPaint paint) {
         GlyphManager engine = GlyphManager.getInstance();
-        FloatList positions = new FloatArrayList();
         mAdvances = new float[limit - start];
 
         // deferred
         List<TexturedGlyph> glyphs = new ArrayList<>();
+        FloatList positions = new FloatArrayList();
 
         List<FontRun> items = paint.mTypeface.itemize(buf, start, limit);
         for (int runIndex = isRtl ? items.size() - 1 : 0;
@@ -70,20 +71,13 @@ public class LayoutPiece {
             Font derived = engine.getFontMetrics(run.mFont, paint, mExtent);
             GlyphVector vector = engine.layoutGlyphVector(derived, buf, run.mStart, run.mEnd, isRtl);
 
-            int num = vector.getNumGlyphs();
-            float[] pos = vector.getGlyphPositions(0, num, null);
-            for (int i = 0; i < pos.length; i += 2) {
-                pos[i] += mAdvance;
-            }
-            positions.addElements(positions.size(), pos);
-
             ClusterWork clusterWork = new ClusterWork(derived, buf, isRtl, mAdvances, start);
             GraphemeBreak.forTextRun(buf, paint.mLocale, run.mStart, run.mEnd, clusterWork);
 
-            mAdvance += vector.getGlyphPosition(num).getX();
-
-            TextureWork textureWork = new TextureWork(vector, glyphs);
+            TextureWork textureWork = new TextureWork(vector, glyphs, positions, mAdvance);
             RenderCore.recordRenderCall(textureWork);
+
+            mAdvance += vector.getGlyphPosition(vector.getNumGlyphs()).getX();
 
             if (isRtl) {
                 runIndex--;
@@ -91,9 +85,11 @@ public class LayoutPiece {
                 runIndex++;
             }
         }
-        mPositions = positions.toFloatArray();
-
-        RenderCore.recordRenderCall(() -> mGlyphs = glyphs.toArray(new TexturedGlyph[0]));
+        // flatten
+        RenderCore.recordRenderCall(() -> {
+            mGlyphs = glyphs.toArray(new TexturedGlyph[0]);
+            mPositions = positions.toFloatArray();
+        });
     }
 
     private static class ClusterWork implements GraphemeBreak.RunConsumer {
@@ -123,17 +119,28 @@ public class LayoutPiece {
 
         private final GlyphVector mVector;
         private final List<TexturedGlyph> mGlyphs;
+        private final FloatList mPositions;
+        private final float mOffsetX;
 
-        private TextureWork(GlyphVector vector, List<TexturedGlyph> glyphs) {
+        private TextureWork(GlyphVector vector, List<TexturedGlyph> glyphs, FloatList positions, float offsetX) {
             mVector = vector;
             mGlyphs = glyphs;
+            mPositions = positions;
+            mOffsetX = offsetX;
         }
 
         @Override
         public void run() {
             GlyphManager engine = GlyphManager.getInstance();
             for (int i = 0, e = mVector.getNumGlyphs(); i < e; i++) {
-                mGlyphs.add(engine.lookupGlyph(mVector.getFont(), mVector.getGlyphCode(i)));
+                TexturedGlyph glyph = engine.lookupGlyph(mVector.getFont(), mVector.getGlyphCode(i));
+                // ignore invisible glyphs
+                if (glyph != null) {
+                    mGlyphs.add(glyph);
+                    Point2D point = mVector.getGlyphPosition(i);
+                    mPositions.add((float) point.getX() + mOffsetX);
+                    mPositions.add((float) point.getY());
+                }
             }
         }
     }

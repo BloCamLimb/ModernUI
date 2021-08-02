@@ -84,7 +84,7 @@ public class FontAtlas {
     }
 
     // needed when the glyph has nothing to render
-    public void replaceNull(int glyphCode) {
+    public void replaceWithNull(int glyphCode) {
         mGlyphs.put(glyphCode, null);
     }
 

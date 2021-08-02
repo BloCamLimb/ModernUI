@@ -242,7 +242,7 @@ public final class ViewRootImpl implements ViewParent {
         }
     }*/
 
-    public boolean isReadyForRendering() {
+    public boolean hasDrawn() {
         boolean b = mHasDrawn;
         mHasDrawn = false;
         return b;

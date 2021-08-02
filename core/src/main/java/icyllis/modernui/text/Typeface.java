@@ -41,7 +41,8 @@ import java.util.*;
  */
 public class Typeface {
 
-    public static final Marker MARKER = MarkerManager.getMarker("Typeface");
+    // log marker
+    public static final Marker MARKER = MarkerManager.getMarker("Font");
 
     @Nonnull
     public static final Typeface SANS_SERIF;
@@ -49,6 +50,9 @@ public class Typeface {
     public static final Typeface SERIF;
     @Nonnull
     public static final Typeface MONOSPACED;
+
+    @Nonnull
+    public static final Typeface PREFERENCE;
 
     @Deprecated
     @Nullable
@@ -72,6 +76,8 @@ public class Typeface {
         /* Use Java's logical font as the default initial font if user does not override it in some configuration file */
         GraphicsEnvironment.getLocalGraphicsEnvironment().preferLocaleFonts();
 
+        List<Font> p = new ArrayList<>();
+
         String[] families = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames(Locale.ROOT);
         Font sansSerif = null;
         for (String family : families) {
@@ -79,13 +85,18 @@ public class Typeface {
             sAllFontFamilies.add(font);
             if (family.equals(Font.SANS_SERIF)) {
                 sansSerif = font;
+            } else if (family.equals("Microsoft YaHei")) {
+                p.add(font);
             }
         }
         if (sansSerif == null) {
             sansSerif = new Font(Font.SANS_SERIF, Font.PLAIN, 1);
-            ModernUI.LOGGER.warn(MARKER, "Sans Serif is missing");
+            ModernUI.LOGGER.warn(MARKER, "Sans Serif is missing?");
         }
         sSansSerifFont = sansSerif;
+
+        p.add(sansSerif);
+        PREFERENCE = new Typeface(p.toArray(new Font[0]));
 
         sFontFamilyNames = List.of(families);
 
@@ -101,27 +112,32 @@ public class Typeface {
         }
         sBuiltInFont = builtIn;
 
-        for (Font fontFamily : sAllFontFamilies) {
-            Typeface typeface = new Typeface(new Font[]{fontFamily, sansSerif});
-            String family = fontFamily.getFamily(Locale.ROOT);
+        for (Font font : sAllFontFamilies) {
+            String family = font.getFamily(Locale.ROOT);
+            if (family.equals(Font.SANS_SERIF)) {
+                continue;
+            }
+            Typeface typeface = new Typeface(new Font[]{font, sansSerif});
             typeface = sSystemFontMap.putIfAbsent(family, typeface);
             if (typeface != null) {
-                ModernUI.LOGGER.warn(MARKER, "Duplicated font family: {}", family);
+                ModernUI.LOGGER.warn(MARKER, "Ignoring duplicated font family: {}", family);
             }
         }
 
-        SANS_SERIF = sSystemFontMap.get(Font.SANS_SERIF);
-        SERIF = sSystemFontMap.get(Font.SERIF);
-        MONOSPACED = sSystemFontMap.get(Font.MONOSPACED);
-        if (SANS_SERIF == null) {
-            throw new IllegalStateException("Sans Serif font is missing");
+        // no backup strategy
+        SANS_SERIF = new Typeface(new Font[]{sansSerif});
+
+        Typeface serif = sSystemFontMap.get(Font.SERIF);
+        if (serif == null) {
+            serif = new Typeface(new Font[]{new Font(Font.SERIF, Font.PLAIN, 1)});
         }
-        if (SERIF == null) {
-            throw new IllegalStateException("Serif font is missing");
+        SERIF = serif;
+
+        Typeface monospaced = sSystemFontMap.get(Font.MONOSPACED);
+        if (monospaced == null) {
+            monospaced = new Typeface(new Font[]{new Font(Font.MONOSPACED, Font.PLAIN, 1)});
         }
-        if (MONOSPACED == null) {
-            throw new IllegalStateException("Monospaced font is missing");
-        }
+        MONOSPACED = monospaced;
     }
 
     /*@Deprecated

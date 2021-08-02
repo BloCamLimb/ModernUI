@@ -315,12 +315,12 @@ public class TestMain {
                         canvas.drawLine(20, 20, 140, 60, paint);
                         canvas.drawLine(120, 30, 60, 80, paint);
 
-                        canvas.drawTextRun("我的名字是ななひら", 0, 9, 930, 170, false, new TextPaint());
-                        String tcc = "আমি আজ সকালের নাস্তা খাব না";
-                        canvas.drawTextRun(tcc, 0, tcc.length(), 630, 270, false, new TextPaint());
+                        String tcc = "今日も一日頑張るぞい";
+                        canvas.drawTextRun(tcc, 0, tcc.length(), 730, 170, false, new TextPaint());
+                        tcc = "আমি আজ সকালের নাস্তা খাব না";
+                        canvas.drawTextRun(tcc, 0, tcc.length(), 660, 240, false, new TextPaint());
 
                         // render thread, wait UI thread
-                        RenderCore.flushRenderCalls();
                         canvas.render();
                         //glyphManager.debug();
 
