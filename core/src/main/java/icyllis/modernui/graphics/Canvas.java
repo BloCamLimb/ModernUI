@@ -491,7 +491,7 @@ public abstract class Canvas {
      * @param text  the text to render
      * @param start context start of the text for shaping and rendering
      * @param end   context end of the text for shaping and rendering
-     * @param x     relative horizontal position at which to draw the text between runs inside a line
+     * @param x     the horizontal position at which to draw the text between runs inside a line
      * @param y     the vertical baseline of the line of text
      * @param isRtl whether the run is in right-to-left direction
      * @param paint the paint used to draw the text

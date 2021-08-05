@@ -55,6 +55,7 @@ public abstract class Window implements AutoCloseable {
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ANY_PROFILE);
         glfwWindowHintString(GLFW_X11_CLASS_NAME, title);
         glfwWindowHintString(GLFW_X11_INSTANCE_NAME, title);
+        glfwWindowHint(GLFW_SAMPLES, 4);
 
         // create window
         Monitor monitor = Monitor.getPrimary();
@@ -180,6 +181,8 @@ public abstract class Window implements AutoCloseable {
     public final float getAspectRatio() {
         return (float) getWidth() / getHeight();
     }
+
+    public abstract void maximize();
 
     @Override
     public final void close() throws Exception {
