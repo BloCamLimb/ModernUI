@@ -39,6 +39,7 @@ import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.platform.Window;
 import icyllis.modernui.text.GlyphManager;
 import icyllis.modernui.text.GraphemeBreak;
+import icyllis.modernui.text.LayoutCache;
 import icyllis.modernui.text.TextPaint;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -63,6 +64,7 @@ import static icyllis.modernui.graphics.GLWrapper.GL_RGB8;
 import static icyllis.modernui.graphics.GLWrapper.GL_UNSIGNED_BYTE;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11C.GL_STENCIL_TEST;
+import static org.lwjgl.opengl.GL13C.GL_MULTISAMPLE;
 
 @SuppressWarnings("unused")
 public class TestMain {
@@ -263,6 +265,7 @@ public class TestMain {
                         RenderSystem.enableBlend();
                         RenderSystem.defaultBlendFunc();
                         GLWrapper.glEnable(GL_STENCIL_TEST);
+                        GLWrapper.glEnable(GL_MULTISAMPLE);
                         //RenderSystem.disableDepthTest();
                         //GlStateManager._colorMask(true, true, true, true);
                         //RenderSystem.depthMask(false);
@@ -305,6 +308,9 @@ public class TestMain {
                         paint.setRGBA(255, 255, 255, 255);
                         //canvas.drawCircle(60, 60, 20, paint);
                         canvas.drawRoundRect(120, 50, 200, 250, 10, paint);
+
+                        canvas.rotate(45);
+                        canvas.drawRect(190, 60, 270, 140, paint);
                         canvas.restore();
 
                         paint.setStrokeWidth(10);

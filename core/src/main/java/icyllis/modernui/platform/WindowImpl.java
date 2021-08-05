@@ -240,4 +240,8 @@ public final class WindowImpl extends Window {
         return mScreenHeight;
     }
 
+    @Override
+    public void maximize() {
+        glfwMaximizeWindow(mHandle);
+    }
 }

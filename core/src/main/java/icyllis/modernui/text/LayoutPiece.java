@@ -18,6 +18,7 @@
 
 package icyllis.modernui.text;
 
+import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.platform.RenderCore;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.floats.FloatList;
@@ -38,7 +39,7 @@ import java.util.List;
 public class LayoutPiece {
 
     // all glyphs used for rendering, invisible glyphs have been removed
-    // the order is visually left-to-right
+    // the order is visually left-to-right. shared pointers
     private TexturedGlyph[] mGlyphs;
 
     // x1 y1 x2 y2... relative to the same pivot, for rendering mGlyphs
@@ -50,25 +51,27 @@ public class LayoutPiece {
     private final float[] mAdvances;
 
     // maximum font metrics
-    private final FontMetricsInt mExtent = new FontMetricsInt();
+    private final int mAscent;
+    private final int mDescent;
 
     // total advance
     private float mAdvance;
 
-    public LayoutPiece(@Nonnull char[] buf, int start, int limit, boolean isRtl, @Nonnull FontPaint paint) {
+    public LayoutPiece(@Nonnull char[] buf, int start, int end, boolean isRtl, @Nonnull FontPaint paint) {
         GlyphManager engine = GlyphManager.getInstance();
-        mAdvances = new float[limit - start];
+        mAdvances = new float[end - start];
+        FontMetricsInt extent = new FontMetricsInt();
 
         // deferred
         List<TexturedGlyph> glyphs = new ArrayList<>();
         FloatList positions = new FloatArrayList();
 
-        List<FontRun> items = paint.mTypeface.itemize(buf, start, limit);
+        List<FontRun> items = paint.mTypeface.itemize(buf, start, end);
         for (int runIndex = isRtl ? items.size() - 1 : 0;
              isRtl ? runIndex >= 0 : runIndex < items.size(); ) {
             FontRun run = items.get(runIndex);
 
-            Font derived = engine.getFontMetrics(run.mFont, paint, mExtent);
+            Font derived = engine.getFontMetrics(run.mFont, paint, extent);
             GlyphVector vector = engine.layoutGlyphVector(derived, buf, run.mStart, run.mEnd, isRtl);
 
             ClusterWork clusterWork = new ClusterWork(derived, buf, isRtl, mAdvances, start);
@@ -90,6 +93,9 @@ public class LayoutPiece {
             mGlyphs = glyphs.toArray(new TexturedGlyph[0]);
             mPositions = positions.toFloatArray();
         });
+
+        mAscent = extent.mAscent;
+        mDescent = extent.mDescent;
     }
 
     private static class ClusterWork implements GraphemeBreak.RunConsumer {
@@ -157,11 +163,18 @@ public class LayoutPiece {
         return mAdvances;
     }
 
-    public FontMetricsInt getExtent() {
-        return mExtent;
+    public void getExtent(@Nonnull FontMetricsInt extent) {
+        extent.mAscent = mAscent;
+        extent.mDescent = mDescent;
     }
 
     public float getAdvance() {
         return mAdvance;
+    }
+
+    public int getMemoryUsage() {
+        return MathUtil.roundUp(16 + 16 + 16 + 4 + 4 + 4 +
+                (mGlyphs == null ? 0 : mGlyphs.length * (8 + 4 + 4)) +
+                mAdvances.length * 4, 8);
     }
 }

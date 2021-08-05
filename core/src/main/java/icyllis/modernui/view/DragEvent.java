@@ -18,8 +18,6 @@
 
 package icyllis.modernui.view;
 
-import org.apache.commons.lang3.builder.ToStringBuilder;
-
 /**
  * A drag and drop operation
  *
@@ -95,12 +93,11 @@ public class DragEvent {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this)
-                .append("action", action)
-                .append("x", x)
-                .append("y", y)
-                .append("data", mLocalState)
-                .append("result", result)
-                .toString();
+        return "DragEvent{" + "action=" + action +
+                ", x=" + x +
+                ", y=" + y +
+                ", mLocalState=" + mLocalState +
+                ", result=" + result +
+                '}';
     }
 }

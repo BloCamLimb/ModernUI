@@ -19,8 +19,6 @@
 package icyllis.modernui.view;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.system.Platform;
 
@@ -1154,15 +1152,24 @@ public final class MotionEvent extends InputEvent {
         return (mModifiers & GLFW.GLFW_MOD_NUM_LOCK) != 0;
     }
 
+    @Nonnull
     @Override
     public String toString() {
-        return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
-                .append("action", actionToString(mAction))
-                .append("x", getX())
-                .append("y", getY())
-                .append("flags", "0x" + Integer.toHexString(mFlags))
-                .append("eventTime", getEventTime())
-                .toString();
+        StringBuilder msg = new StringBuilder();
+        msg.append("MotionEvent{action=")
+                .append(actionToString(getAction()));
+        msg.append(", x=")
+                .append(getX());
+        msg.append(", y=")
+                .append(getY());
+        if (mFlags != 0) {
+            msg.append(", flags=0x")
+                    .append(Integer.toHexString(mFlags));
+        }
+        msg.append(", eventTime=")
+                .append(getEventTime());
+        msg.append("}");
+        return msg.toString();
     }
 
     /**

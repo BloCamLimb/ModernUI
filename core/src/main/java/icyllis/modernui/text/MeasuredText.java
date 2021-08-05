@@ -19,6 +19,7 @@
 package icyllis.modernui.text;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -70,6 +71,30 @@ public class MeasuredText {
                 run.getExtent(mTextBuf, Math.max(start, run.mStart), Math.min(end, run.mEnd), mLayoutPieces, extent);
             }
         }
+    }
+
+    public void getAdvanceAt(int pos) {
+
+    }
+
+    // binary search with start offsets
+    @Nullable
+    private Run search(int pos) {
+        int low = 0;
+        int high = mRuns.length - 1;
+
+        while (low <= high) {
+            int mid = (low + high) >>> 1;
+            Run run = mRuns[mid];
+
+            if (run.mStart < pos)
+                low = mid + 1;
+            else if (run.mStart > pos)
+                high = mid - 1;
+            else
+                return run;
+        }
+        return null;
     }
 
     /**

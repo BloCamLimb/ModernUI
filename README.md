@@ -28,9 +28,7 @@ If you have any questions, feel free to join our [Discord](https://discord.gg/km
   - [caffeine](https://github.com/ben-manes/caffeine) by Ben Manes
   - [flexmark-java](https://github.com/vsch/flexmark-java) by Atlassian Pty Ltd, Vladimir Schneider
   - [fastutil](https://github.com/vigna/fastutil) by Vigna
-  - Apache Commons Lang 3
-  - Apache Log4j 2
-  - ICU4J by IBM
+  - Apache log4j, IBM icu4j
 ### Adding Modern UI to your project
 #### Environment requirements
 - Windows, Linux or Classic macOS

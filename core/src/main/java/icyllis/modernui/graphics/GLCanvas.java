@@ -30,10 +30,7 @@ import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.math.RectF;
 import icyllis.modernui.platform.RenderCore;
-import icyllis.modernui.text.LayoutPiece;
-import icyllis.modernui.text.TextPaint;
-import icyllis.modernui.text.TextUtils;
-import icyllis.modernui.text.TexturedGlyph;
+import icyllis.modernui.text.*;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -522,6 +519,7 @@ public final class GLCanvas extends Canvas {
                         bindTexture(glyphs[i].texture);
                         glDrawArrays(GL_TRIANGLE_STRIP, i << 2, 4);
                     }
+                    ModernUI.LOGGER.info(text.mLayoutPiece.getMemoryUsage());
                     break;
                 }
 
@@ -1217,7 +1215,7 @@ public final class GLCanvas extends Canvas {
         }
         char[] chars = new char[end - start];
         TextUtils.getChars(text, start, end, chars, 0);
-        LayoutPiece piece = new LayoutPiece(chars, 0, end - start, isRtl, paint);
+        LayoutPiece piece = LayoutCache.getOrCreate(chars, 0, end - start, isRtl, paint);
         mTextDraws.add(new TextDraw(piece, x, y));
         ByteBuffer buffer = getUniformBuffer();
         getMatrix().get(buffer);
