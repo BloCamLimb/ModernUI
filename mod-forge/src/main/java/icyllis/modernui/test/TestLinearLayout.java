@@ -24,6 +24,7 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.math.Icon;
+import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
 import icyllis.modernui.widget.LinearLayout;
@@ -178,6 +179,9 @@ public class TestLinearLayout extends LinearLayout {
 
         paint.setStyle(Paint.Style.FILL);
         canvas.drawRect(6, 126, 86, 156, paint);
+
+        String tcc = "今日も一日頑張るぞい";
+        canvas.drawTextRun(tcc, 0, tcc.length(), 20, 270, false, new TextPaint());
 
         //canvas.drawRoundImage(ICON, 6, 160, 166, 320, iconRadius, paint);
 

@@ -41,6 +41,7 @@ public class PrecomputedText {
     }
 
     // create new paras
+    @Nonnull
     public static ParagraphInfo[] createMeasuredParagraphs(@Nonnull TextPaint paint, @Nonnull CharSequence text,
                                                            int start, int end, @Nonnull TextDirectionHeuristic dir) {
         List<ParagraphInfo> list = new ArrayList<>();
@@ -55,9 +56,7 @@ public class PrecomputedText {
             }
             final ParagraphInfo info = new ParagraphInfo(paraEnd, MeasuredParagraph.buildForStaticLayout(
                     paint, text, paraStart, paraEnd, dir, null));
-            if (info.measured.getTextLength() > 0) {
-                list.add(info);
-            }
+            list.add(info);
         }
         return list.toArray(new ParagraphInfo[0]);
     }

@@ -525,7 +525,10 @@ public final class GLCanvas extends Canvas {
                 default:
                     throw new IllegalStateException("Unexpected draw state " + draw);
             }
-            instance++;
+
+            if (draw != DRAW_TEXT) {
+                instance++;
+            }
         }
 
         mTextures.clear();
@@ -811,11 +814,13 @@ public final class GLCanvas extends Canvas {
     @Override
     public boolean quickReject(float left, float top, float right, float bottom) {
         // empty rect, always reject
-        if (right <= left || bottom <= top)
+        if (right <= left || bottom <= top) {
             return true;
+        }
         Rect clip = getClip().mBounds;
-        if (clip.isEmpty())
+        if (clip.isEmpty()) {
             return true;
+        }
         Rect test = mTmpRect;
         RectF temp = mTmpRectF;
         temp.set(left, top, right, bottom);

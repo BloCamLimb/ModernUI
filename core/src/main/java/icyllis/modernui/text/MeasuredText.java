@@ -20,40 +20,47 @@ package icyllis.modernui.text;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.annotation.concurrent.ThreadSafe;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 /**
- * Holds the result of text shaping and layout of the single paragraph.
+ * For the result of text shaping and layout of the single paragraph.
  */
+@ThreadSafe
 public class MeasuredText {
 
-    private final char[] mText;
-    public final Run[] mRuns;
+    private final char[] mTextBuf;
+    private final Run[] mRuns;
 
-    private MeasuredText(@Nonnull char[] text, @Nonnull Run[] runs) {
-        mText = text;
+    private MeasuredText(@Nonnull char[] textBuf, @Nonnull Run[] runs) {
+        mTextBuf = textBuf;
         mRuns = runs;
-        if (text.length != 0) {
-            for (Run run : mRuns) {
-                run.measure(text);
+        if (textBuf.length != 0) {
+            for (Run run : runs) {
+                run.measure(textBuf);
             }
         }
     }
 
     /**
-     * @return the backend buffer of the text
+     * @return the backend buffer of the text, elements may change if recycled at higher level
      */
     @Nonnull
-    public char[] getText() {
-        return mText;
+    public char[] getTextBuf() {
+        return mTextBuf;
+    }
+
+    @Nonnull
+    public Run[] getRuns() {
+        return mRuns;
     }
 
     public void getExtent(int start, int end, FontMetricsInt extent) {
         for (Run run : mRuns) {
             if (start < run.mEnd && end > run.mStart) {
-                run.getExtent(mText, Math.max(start, run.mStart), Math.min(end, run.mEnd), extent);
+                run.getExtent(mTextBuf, Math.max(start, run.mStart), Math.min(end, run.mEnd), extent);
             }
         }
     }
@@ -64,7 +71,7 @@ public class MeasuredText {
      * This follows grapheme cluster break. For example: there are 6 chars (uint_16),
      * the first two are the first grapheme, the last four are the second one.
      * Then mAdvances[0] is for the first grapheme, mAdvances[2] for the second one,
-     * other elements are zero. It's in the same order of {@link #getText()}
+     * other elements are zero. It's in the same order of {@link #getTextBuf()}
      *
      * @param pos the char index
      */
@@ -77,17 +84,17 @@ public class MeasuredText {
     }
 
     /**
-     * Returns the precomputed layout for a single style run with the given range.
+     * Returns the layout piece for a single style run with the given range.
      *
      * @param start start of range
      * @param end   end of range
-     * @return the layout
+     * @return the layout or nothing to draw
      */
     @Nullable
     public LayoutPiece getLayoutPiece(int start, int end) {
         Run run = search(start);
         if (run != null) {
-            return run.getLayout(mText, start, end);
+            return run.getLayout(mTextBuf, start, end);
         }
         return null;
     }
@@ -110,6 +117,14 @@ public class MeasuredText {
                 return run;
         }
         return null;
+    }
+
+    public int getMemoryUsage() {
+        int size = 12 + 8 + 8 + 16;
+        for (Run run : mRuns) {
+            size += run.getMemoryUsage();
+        }
+        return size;
     }
 
     /**
@@ -225,6 +240,7 @@ public class MeasuredText {
         public abstract void getExtent(@Nonnull char[] text, int start, int end,
                                        @Nonnull FontMetricsInt extent);
 
+        @Nullable
         public abstract LayoutPiece getLayout(@Nonnull char[] text, int start, int end);
 
         public abstract float getAdvanceAt(int pos);
@@ -238,6 +254,8 @@ public class MeasuredText {
         // Returns the locale for this run.
         @Nonnull
         public abstract Locale getLocale();
+
+        public abstract int getMemoryUsage();
     }
 
     public static class StyleRun extends Run {
@@ -296,6 +314,12 @@ public class MeasuredText {
         public Locale getLocale() {
             return mPaint.getTextLocale();
         }
+
+        @Override
+        public int getMemoryUsage() {
+            // 12 + 4 + 4 + (12 + 8 + 8 + 4 + 4) + 1 + 8
+            return 72 + mLayoutPiece.getMemoryUsage();
+        }
     }
 
     public static class ReplacementRun extends Run {
@@ -319,9 +343,18 @@ public class MeasuredText {
 
         }
 
+        @Nullable
         @Override
         public LayoutPiece getLayout(@Nonnull char[] text, int start, int end) {
             return null;
+        }
+
+        @Override
+        public float getAdvanceAt(int pos) {
+            if (pos == mStart) {
+                return mWidth;
+            }
+            return 0;
         }
 
         @Override
@@ -341,10 +374,9 @@ public class MeasuredText {
         }
 
         @Override
-        public float getAdvanceAt(int pos) {
-            if (pos == mStart)
-                return mWidth;
-            return 0;
+        public int getMemoryUsage() {
+            // 12 + 4 + 4 + 8 + 4
+            return 32;
         }
     }
 }

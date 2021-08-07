@@ -22,6 +22,7 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.graphics.texture.Texture2D;
 import icyllis.modernui.platform.Bitmap;
+import icyllis.modernui.platform.RenderCore;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
@@ -88,15 +89,17 @@ public class FontAtlas {
         mGlyphs.put(glyphCode, null);
     }
 
-    void debug() {
+    public void debug() {
         for (var glyph : mGlyphs.int2ObjectEntrySet()) {
             ModernUI.LOGGER.info("GlyphCode {}, {}", glyph.getIntKey(), glyph.getValue());
         }
-        try {
-            Bitmap.download(Bitmap.Format.RGBA, mTexture, false)
-                    .saveDialog(Bitmap.SaveFormat.PNG, 0);
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (RenderCore.isOnRenderThread()) {
+            try {
+                Bitmap.download(Bitmap.Format.RGBA, mTexture, false)
+                        .saveDialog(Bitmap.SaveFormat.PNG, 0);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -142,6 +145,7 @@ public class FontAtlas {
             mTexture.initCompat(GL_ALPHA, INITIAL_SIZE, INITIAL_SIZE, MIPMAP_LEVEL);
             // we have border that not upload data, so generate mipmap may leave undefined data
             mTexture.clear(0);
+            mTexture.setFilter(true, true);
         } else {
             final boolean vertical;
             if (mHeight != mWidth) {
