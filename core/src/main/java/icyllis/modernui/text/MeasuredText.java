@@ -29,55 +29,70 @@ import java.util.Locale;
  */
 public class MeasuredText {
 
-    @Nonnull
-    private final char[] mTextBuf;
-    @Nonnull
+    private final char[] mText;
     public final Run[] mRuns;
 
-    /**
-     * This follows grapheme cluster break. For example: there are 6 chars (uint_16),
-     * the first two are the first grapheme, the last four are the second one.
-     * Then mAdvances[0] is for the first grapheme, mAdvances[2] for the second one,
-     * other elements are zero. It's in the same order of mTextBuf.
-     */
-    public final float[] mAdvances;
-
-    public final LayoutPieces mLayoutPieces = new LayoutPieces();
-
-    private MeasuredText(@Nonnull char[] textBuf, @Nonnull Run[] runs) {
-        mTextBuf = textBuf;
+    private MeasuredText(@Nonnull char[] text, @Nonnull Run[] runs) {
+        mText = text;
         mRuns = runs;
-        mAdvances = new float[textBuf.length];
-        measure(textBuf);
-    }
-
-    private void measure(@Nonnull char[] textBuf) {
-        if (textBuf.length == 0)
-            return;
-        for (Run run : mRuns) {
-            run.getMetrics(textBuf, mAdvances, mLayoutPieces);
+        if (text.length != 0) {
+            for (Run run : mRuns) {
+                run.measure(text);
+            }
         }
     }
 
-    // the raw text buf array
+    /**
+     * @return the backend buffer of the text
+     */
     @Nonnull
-    public char[] getTextBuf() {
-        return mTextBuf;
+    public char[] getText() {
+        return mText;
     }
 
     public void getExtent(int start, int end, FontMetricsInt extent) {
         for (Run run : mRuns) {
             if (start < run.mEnd && end > run.mStart) {
-                run.getExtent(mTextBuf, Math.max(start, run.mStart), Math.min(end, run.mEnd), mLayoutPieces, extent);
+                run.getExtent(mText, Math.max(start, run.mStart), Math.min(end, run.mEnd), extent);
             }
         }
     }
 
-    public void getAdvanceAt(int pos) {
-
+    /**
+     * Returns the advance of the char at the given index of the text buffer.
+     * <p>
+     * This follows grapheme cluster break. For example: there are 6 chars (uint_16),
+     * the first two are the first grapheme, the last four are the second one.
+     * Then mAdvances[0] is for the first grapheme, mAdvances[2] for the second one,
+     * other elements are zero. It's in the same order of {@link #getText()}
+     *
+     * @param pos the char index
+     */
+    public float getAdvanceAt(int pos) {
+        Run run = search(pos);
+        if (run == null) {
+            return 0;
+        }
+        return run.getAdvanceAt(pos);
     }
 
-    // binary search with start offsets
+    /**
+     * Returns the precomputed layout for a single style run with the given range.
+     *
+     * @param start start of range
+     * @param end   end of range
+     * @return the layout
+     */
+    @Nullable
+    public LayoutPiece getLayoutPiece(int start, int end) {
+        Run run = search(start);
+        if (run != null) {
+            return run.getLayout(mText, start, end);
+        }
+        return null;
+    }
+
+    // binary search with ranges
     @Nullable
     private Run search(int pos) {
         int low = 0;
@@ -87,7 +102,7 @@ public class MeasuredText {
             int mid = (low + high) >>> 1;
             Run run = mRuns[mid];
 
-            if (run.mStart < pos)
+            if (run.mEnd < pos)
                 low = mid + 1;
             else if (run.mStart > pos)
                 high = mid - 1;
@@ -204,12 +219,15 @@ public class MeasuredText {
         }
 
         // Compute metrics
-        public abstract void getMetrics(@Nonnull char[] text, @Nonnull float[] advances,
-                                        @Nonnull LayoutPieces outPieces);
+        public abstract void measure(@Nonnull char[] text);
 
         // Extend extent
-        public abstract void getExtent(@Nonnull char[] text, int start, int end, @Nonnull LayoutPieces pieces,
+        public abstract void getExtent(@Nonnull char[] text, int start, int end,
                                        @Nonnull FontMetricsInt extent);
+
+        public abstract LayoutPiece getLayout(@Nonnull char[] text, int start, int end);
+
+        public abstract float getAdvanceAt(int pos);
 
         // Returns true if this run is RTL. Otherwise returns false.
         public abstract boolean isRtl();
@@ -227,6 +245,8 @@ public class MeasuredText {
         public final FontPaint mPaint;
         private final boolean mIsRtl;
 
+        private LayoutPiece mLayoutPiece;
+
         public StyleRun(int start, int end, FontPaint paint, boolean isRtl) {
             super(start, end);
             mPaint = paint;
@@ -234,22 +254,31 @@ public class MeasuredText {
         }
 
         @Override
-        public void getMetrics(@Nonnull char[] text, @Nonnull float[] advances, @Nonnull LayoutPieces outPieces) {
-            GraphemeBreak.forTextRun(text, getLocale(), mStart, mEnd,
-                    (st, en) -> GlyphManager.getInstance().measure(text, st, en, mPaint, mIsRtl,
-                            (lp, pt) -> {
-                                advances[st] = lp.mAdvance;
-                                outPieces.insert(st, en, lp, mIsRtl, pt);
-                            }));
+        public void measure(@Nonnull char[] text) {
+            mLayoutPiece = LayoutCache.getOrCreate(text, mStart, mEnd, mIsRtl, mPaint);
         }
 
         @Override
-        public void getExtent(@Nonnull char[] text, int start, int end, @Nonnull LayoutPieces pieces,
+        public void getExtent(@Nonnull char[] text, int start, int end,
                               @Nonnull FontMetricsInt extent) {
-            final int paintId = pieces.findPaintId(mPaint);
-            GraphemeBreak.forTextRun(text, getLocale(), start, end,
-                    (st, en) -> pieces.getOrCreate(text, st, en, mPaint, mIsRtl, paintId,
-                            (lp, pt) -> extent.extendBy(lp.mAscent, lp.mDescent)));
+            if (start == mStart && end == mEnd) {
+                mLayoutPiece.getExtent(extent);
+            } else {
+                LayoutCache.getOrCreate(text, start, end, mIsRtl, mPaint).getExtent(extent);
+            }
+        }
+
+        @Override
+        public LayoutPiece getLayout(@Nonnull char[] text, int start, int end) {
+            if (start == mStart && end == mEnd) {
+                return mLayoutPiece;
+            }
+            return LayoutCache.getOrCreate(text, start, end, mIsRtl, mPaint);
+        }
+
+        @Override
+        public float getAdvanceAt(int pos) {
+            return mLayoutPiece.getAdvances()[pos - mStart];
         }
 
         @Override
@@ -281,14 +310,18 @@ public class MeasuredText {
         }
 
         @Override
-        public void getMetrics(@Nonnull char[] text, @Nonnull float[] advances, @Nonnull LayoutPieces outPieces) {
-            advances[mStart] = mWidth;
+        public void measure(@Nonnull char[] text) {
             //TODO: Get the extents information from the caller.
         }
 
         @Override
-        public void getExtent(@Nonnull char[] text, int start, int end, @Nonnull LayoutPieces pieces, @Nonnull FontMetricsInt extent) {
+        public void getExtent(@Nonnull char[] text, int start, int end, @Nonnull FontMetricsInt extent) {
 
+        }
+
+        @Override
+        public LayoutPiece getLayout(@Nonnull char[] text, int start, int end) {
+            return null;
         }
 
         @Override
@@ -305,6 +338,13 @@ public class MeasuredText {
         @Override
         public Locale getLocale() {
             return mLocale;
+        }
+
+        @Override
+        public float getAdvanceAt(int pos) {
+            if (pos == mStart)
+                return mWidth;
+            return 0;
         }
     }
 }

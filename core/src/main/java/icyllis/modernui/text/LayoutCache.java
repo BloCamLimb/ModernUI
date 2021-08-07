@@ -20,6 +20,7 @@ package icyllis.modernui.text;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 
@@ -29,6 +30,13 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Globally shared layout cache. Useful when recycling layouts, or raw data source and
+ * layout information are separated.
+ *
+ * @see LayoutPiece
+ * @since 2.6
+ */
 @ThreadSafe
 public class LayoutCache {
 
@@ -38,6 +46,9 @@ public class LayoutCache {
     @Nonnull
     public static LayoutPiece getOrCreate(@Nonnull char[] buf, int start, int end,
                                           boolean dir, @Nonnull FontPaint paint) {
+        if (end - start > 512) {
+            return new LayoutPiece(buf, start, end, dir, paint);
+        }
         if (sCache == null) {
             synchronized (LayoutCache.class) {
                 if (sCache == null) {
@@ -63,8 +74,22 @@ public class LayoutCache {
         return piece;
     }
 
+    // this only returns measurable memory usage, in other words, at least
+    public static int getMemoryUsage() {
+        if (sCache == null) {
+            return 0;
+        }
+        int size = 0;
+        for (var entry : sCache.asMap().entrySet()) {
+            size += entry.getKey().getMemoryUsage();
+            size += entry.getValue().getMemoryUsage();
+        }
+        return size;
+    }
+
     private static class Key {
 
+        // for Lookup case, this is only a pointer to the requester
         char[] mChars;
         Typeface mTypeface;
         int mFontStyle;
@@ -76,7 +101,7 @@ public class LayoutCache {
         }
 
         /**
-         * Copy constructor
+         * Copy constructor, used as a key stored in the cache
          */
         private Key(@Nonnull LookupKey key) {
             // deep copy chars
@@ -93,9 +118,8 @@ public class LayoutCache {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (!(o instanceof Key)) return false;
-            if (o instanceof LookupKey)
-                return o.equals(this);
+            // we never compare with a LookupKey
+            if (o.getClass() != Key.class) return false;
             Key key = (Key) o;
 
             if (mFontStyle != key.mFontStyle) return false;
@@ -116,6 +140,10 @@ public class LayoutCache {
             result = 31 * result + mLocale.hashCode();
             result = 31 * result + (mIsRtl ? 1 : 0);
             return result;
+        }
+
+        private int getMemoryUsage() {
+            return MathUtil.roundUp(12 + 16 + 8 + 4 + 4 + 8 + 1 + (mChars.length << 1), 8);
         }
     }
 
@@ -143,7 +171,8 @@ public class LayoutCache {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (!(o instanceof Key)) return false;
+            // we never compare with a LookupKey
+            if (o.getClass() != Key.class) return false;
 
             Key key = (Key) o;
 

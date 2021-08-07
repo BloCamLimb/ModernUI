@@ -201,7 +201,7 @@ public final class GLCanvas extends Canvas {
     // update the stencil buffer (positive = update, or just change stencil func)
     private final IntList mClipDepths = new IntArrayList();
 
-    private final List<TextDraw> mTextDraws = new ArrayList<>();
+    private final List<TextInfo> mTextInfos = new ArrayList<>();
 
     private final Rect mTmpRect = new Rect();
     private final RectF mTmpRectF = new RectF();
@@ -503,7 +503,7 @@ public final class GLCanvas extends Canvas {
                     nglNamedBufferSubData(mGlyphUBO, 0, GLYPH_UNIFORM_SIZE, uniformDataPtr);
                     uniformDataPtr += GLYPH_UNIFORM_SIZE;
 
-                    TextDraw text = mTextDraws.get(textIndex++);
+                    TextInfo text = mTextInfos.get(textIndex++);
                     final TexturedGlyph[] glyphs = text.mLayoutPiece.getGlyphs();
                     final float[] positions = text.mLayoutPiece.getPositions();
                     for (int i = 0, e = glyphs.length; i < e; i++) {
@@ -519,7 +519,6 @@ public final class GLCanvas extends Canvas {
                         bindTexture(glyphs[i].texture);
                         glDrawArrays(GL_TRIANGLE_STRIP, i << 2, 4);
                     }
-                    ModernUI.LOGGER.info(text.mLayoutPiece.getMemoryUsage());
                     break;
                 }
 
@@ -532,7 +531,7 @@ public final class GLCanvas extends Canvas {
         mTextures.clear();
         mClipDepths.clear();
         mUniformData.clear();
-        mTextDraws.clear();
+        mTextInfos.clear();
         mDrawStates.clear();
     }
 
@@ -1216,20 +1215,20 @@ public final class GLCanvas extends Canvas {
         char[] chars = new char[end - start];
         TextUtils.getChars(text, start, end, chars, 0);
         LayoutPiece piece = LayoutCache.getOrCreate(chars, 0, end - start, isRtl, paint);
-        mTextDraws.add(new TextDraw(piece, x, y));
+        mTextInfos.add(new TextInfo(piece, x, y));
         ByteBuffer buffer = getUniformBuffer();
         getMatrix().get(buffer);
         buffer.putFloat(1).putFloat(1).putFloat(1).putFloat(1);
         mDrawStates.add(DRAW_TEXT);
     }
 
-    private static class TextDraw {
+    private static class TextInfo {
 
         private final LayoutPiece mLayoutPiece;
         private final float mX;
         private final float mY;
 
-        public TextDraw(LayoutPiece layoutPiece, float x, float y) {
+        public TextInfo(LayoutPiece layoutPiece, float x, float y) {
             mLayoutPiece = layoutPiece;
             mX = x;
             mY = y;

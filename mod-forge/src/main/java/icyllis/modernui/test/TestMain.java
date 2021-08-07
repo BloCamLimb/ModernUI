@@ -24,7 +24,6 @@ import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.ast.Node;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.core.PmxModel;
 import icyllis.modernui.graphics.GLCanvas;
 import icyllis.modernui.graphics.GLWrapper;
 import icyllis.modernui.graphics.Image;
@@ -49,9 +48,7 @@ import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -158,12 +155,6 @@ public class TestMain {
         mat.rotateZ(MathUtil.PI_DIV_2);
         mat.translate(-2, 0, 0);
         pos.transform(mat);
-
-        try {
-            PmxModel.decode(Channels.newChannel(new FileInputStream("E:/MMD/ganyu_by_原神_7381ccd84ee8763ce63b3ad638e1c49b/甘雨.pmx"))).debug();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
         /*Bidi bidi = new Bidi(text.toCharArray(), 0, null, 0, text.length(), Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT);
         int runCount = bidi.getRunCount();
@@ -320,6 +311,7 @@ public class TestMain {
                         paint.setRGBA(120, 220, 240, 192);
                         canvas.drawLine(20, 20, 140, 60, paint);
                         canvas.drawLine(120, 30, 60, 80, paint);
+                        ModernUI.LOGGER.info("LayoutCache: {}", LayoutCache.getMemoryUsage());
 
                         String tcc = "今日も一日頑張るぞい";
                         canvas.drawTextRun(tcc, 0, tcc.length(), 730, 170, false, new TextPaint());
@@ -329,6 +321,7 @@ public class TestMain {
                         // render thread, wait UI thread
                         canvas.render();
                         //glyphManager.debug();
+                        ModernUI.LOGGER.info("LayoutCache: {}", LayoutCache.getMemoryUsage());
 
                         /*GL11.glMatrixMode(GL11.GL_PROJECTION);
                         GL43.glPushMatrix();
