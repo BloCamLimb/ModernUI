@@ -30,9 +30,7 @@ import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.shader.ShaderManager;
 import icyllis.modernui.graphics.texture.Texture2D;
-import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Matrix4;
-import icyllis.modernui.math.Vector3;
 import icyllis.modernui.platform.Bitmap;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.platform.Window;
@@ -57,11 +55,8 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-import static icyllis.modernui.graphics.GLWrapper.GL_RGB8;
-import static icyllis.modernui.graphics.GLWrapper.GL_UNSIGNED_BYTE;
+import static icyllis.modernui.graphics.GLWrapper.*;
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.opengl.GL11C.GL_STENCIL_TEST;
-import static org.lwjgl.opengl.GL13C.GL_MULTISAMPLE;
 
 @SuppressWarnings("unused")
 public class TestMain {
@@ -149,12 +144,12 @@ public class TestMain {
         mat.rotateX(MathUtil.PI_DIV_4);
         vec3.transform(mat);
         ModernUI.LOGGER.info("\n{}\n{}\n{}\nEq: {}, {}", vec1, vec2, vec3, vec1.equivalent(vec2), vec2.equivalent(vec3));*/
-        Matrix4 mat = Matrix4.identity();
+        /*Matrix4 mat = Matrix4.identity();
         Vector3 pos = new Vector3(3, 0, 0);
         mat.translate(2, 0, 0);
         mat.rotateZ(MathUtil.PI_DIV_2);
         mat.translate(-2, 0, 0);
-        pos.transform(mat);
+        pos.transform(mat);*/
 
         /*Bidi bidi = new Bidi(text.toCharArray(), 0, null, 0, text.length(), Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT);
         int runCount = bidi.getRunCount();
@@ -256,7 +251,6 @@ public class TestMain {
                         RenderSystem.enableBlend();
                         RenderSystem.defaultBlendFunc();
                         GLWrapper.glEnable(GL_STENCIL_TEST);
-                        GLWrapper.glEnable(GL_MULTISAMPLE);
                         //RenderSystem.disableDepthTest();
                         //GlStateManager._colorMask(true, true, true, true);
                         //RenderSystem.depthMask(false);
@@ -268,6 +262,14 @@ public class TestMain {
                         Paint paint = Paint.take();
                         paint.setSmoothRadius(2);
                         canvas.save();
+
+                        canvas.rotate(30);
+                        String tcc = "今日も一日頑張るぞい";
+                        canvas.drawTextRun(tcc, 0, tcc.length(), 730, 170, false, new TextPaint());
+                        tcc = "আমি আজ সকালের নাস্তা খাব না";
+                        canvas.drawTextRun(tcc, 0, tcc.length(), 660, 240, false, new TextPaint());
+                        canvas.rotate(-30);
+
                         canvas.scale(0.7f, 0.7f);
                         canvas.drawRoundImage(image, 100, 20, 15, paint);
                         canvas.restore();
@@ -311,12 +313,6 @@ public class TestMain {
                         paint.setRGBA(120, 220, 240, 192);
                         canvas.drawLine(20, 20, 140, 60, paint);
                         canvas.drawLine(120, 30, 60, 80, paint);
-                        ModernUI.LOGGER.info("LayoutCache: {}", LayoutCache.getMemoryUsage());
-
-                        String tcc = "今日も一日頑張るぞい";
-                        canvas.drawTextRun(tcc, 0, tcc.length(), 730, 170, false, new TextPaint());
-                        tcc = "আমি আজ সকালের নাস্তা খাব না";
-                        canvas.drawTextRun(tcc, 0, tcc.length(), 660, 240, false, new TextPaint());
 
                         // render thread, wait UI thread
                         canvas.render();

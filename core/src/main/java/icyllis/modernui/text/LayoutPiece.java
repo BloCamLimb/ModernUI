@@ -172,7 +172,7 @@ public class LayoutPiece {
     }
 
     public int getMemoryUsage() {
-        return MathUtil.roundUp(12 + 16 + 16 + 16 + 4 + 4 + 4 +
+        return MathUtil.roundUp(12 + 16 + 8 + 16 + 8 + 16 + 8 + 4 + 4 + 4 +
                 (mGlyphs == null ? 0 : mGlyphs.length << 4) +
                 (mAdvances.length << 2), 8);
     }

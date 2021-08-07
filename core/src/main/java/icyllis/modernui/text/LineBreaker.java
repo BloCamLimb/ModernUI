@@ -84,7 +84,7 @@ public class LineBreaker {
      * <p>
      * The result is filled to out param.
      *
-     * @param measuredPara a result of the text measurement
+     * @param measuredText a result of the text measurement
      * @param constraints  constraints for a single paragraph
      * @param indents      the supplied array provides the total amount of indentation per
      *                     line, in pixel. This amount is the sum of both left and right
@@ -94,14 +94,14 @@ public class LineBreaker {
      * @return the result of line break
      */
     @Nonnull
-    public static Result computeLineBreaks(@Nonnull MeasuredText measuredPara, @Nonnull ParagraphConstraints constraints,
+    public static Result computeLineBreaks(@Nullable MeasuredText measuredText, @Nonnull ParagraphConstraints constraints,
                                            @Nullable int[] indents, int lineNumber) {
-        if (measuredPara.getText().length == 0) {
+        if (measuredText == null || measuredText.getTextBuf().length == 0) {
             return new Result();
         }
         DefaultLineWidth lineWidth = new DefaultLineWidth(constraints.mFirstWidth, constraints.mWidth, indents, lineNumber);
         TabStops tabStops = new TabStops(constraints.mVariableTabStops, constraints.mDefaultTabStop);
-        LineBreaker breaker = new LineBreaker(measuredPara.getText(), measuredPara, lineWidth, tabStops);
+        LineBreaker breaker = new LineBreaker(measuredText.getTextBuf(), measuredText, lineWidth, tabStops);
         breaker.process();
         return breaker.getResult();
     }
@@ -112,7 +112,7 @@ public class LineBreaker {
 
         Locale locale = null;
         int nextBoundary = 0;
-        for (var run : mMeasuredText.mRuns) {
+        for (var run : mMeasuredText.getRuns()) {
 
             Locale newLocale = run.getLocale();
             if (locale != newLocale) {

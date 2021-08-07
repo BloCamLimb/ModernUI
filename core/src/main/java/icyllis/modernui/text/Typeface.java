@@ -85,7 +85,7 @@ public class Typeface {
             sAllFontFamilies.add(font);
             if (family.equals(Font.SANS_SERIF)) {
                 sansSerif = font;
-            } else if (family.equals("Microsoft YaHei")) {
+            } else if (p.isEmpty() && family.startsWith("SimHei")) {
                 p.add(font);
             }
         }
