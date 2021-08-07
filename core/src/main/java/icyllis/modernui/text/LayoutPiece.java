@@ -164,8 +164,7 @@ public class LayoutPiece {
     }
 
     public void getExtent(@Nonnull FontMetricsInt extent) {
-        extent.mAscent = mAscent;
-        extent.mDescent = mDescent;
+        extent.extendBy(mAscent, mDescent);
     }
 
     public float getAdvance() {
@@ -173,8 +172,8 @@ public class LayoutPiece {
     }
 
     public int getMemoryUsage() {
-        return MathUtil.roundUp(16 + 16 + 16 + 4 + 4 + 4 +
-                (mGlyphs == null ? 0 : mGlyphs.length * (8 + 4 + 4)) +
-                mAdvances.length * 4, 8);
+        return MathUtil.roundUp(12 + 16 + 16 + 16 + 4 + 4 + 4 +
+                (mGlyphs == null ? 0 : mGlyphs.length << 4) +
+                (mAdvances.length << 2), 8);
     }
 }

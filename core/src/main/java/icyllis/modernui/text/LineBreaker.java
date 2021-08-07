@@ -96,12 +96,12 @@ public class LineBreaker {
     @Nonnull
     public static Result computeLineBreaks(@Nonnull MeasuredText measuredPara, @Nonnull ParagraphConstraints constraints,
                                            @Nullable int[] indents, int lineNumber) {
-        if (measuredPara.getTextBuf().length == 0) {
+        if (measuredPara.getText().length == 0) {
             return new Result();
         }
         DefaultLineWidth lineWidth = new DefaultLineWidth(constraints.mFirstWidth, constraints.mWidth, indents, lineNumber);
         TabStops tabStops = new TabStops(constraints.mVariableTabStops, constraints.mDefaultTabStop);
-        LineBreaker breaker = new LineBreaker(measuredPara.getTextBuf(), measuredPara, lineWidth, tabStops);
+        LineBreaker breaker = new LineBreaker(measuredPara.getText(), measuredPara, lineWidth, tabStops);
         breaker.process();
         return breaker.getResult();
     }
@@ -122,7 +122,7 @@ public class LineBreaker {
             }
 
             for (int i = run.mStart; i < run.mEnd; i++) {
-                updateLineWidth(mTextBuf[i], mMeasuredText.mAdvances[i]);
+                updateLineWidth(mTextBuf[i], mMeasuredText.getAdvanceAt(i));
 
                 if (i + 1 == nextBoundary) {
                     if (run.canBreak() || nextBoundary == run.mEnd) {
@@ -169,11 +169,11 @@ public class LineBreaker {
 
     //TODO: Respect trailing line end spaces.
     private boolean doLineBreakWithGraphemeBounds(int start, int end) {
-        float width = mMeasuredText.mAdvances[start];
+        float width = mMeasuredText.getAdvanceAt(start);
 
         // Starting from + 1 since at least one character needs to be assigned to a line.
         for (int i = start + 1; i < end; i++) {
-            final float w = mMeasuredText.mAdvances[i];
+            final float w = mMeasuredText.getAdvanceAt(i);
             if (w == 0) {
                 // w == 0 means here is not a grapheme bounds. Don't break here.
                 continue;

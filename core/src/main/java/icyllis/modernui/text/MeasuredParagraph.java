@@ -122,7 +122,7 @@ public class MeasuredParagraph {
 
     /**
      * Returns the characters to be measured. This will be the same value
-     * as {@link MeasuredText#getTextBuf()} if {@link #getMeasuredText()} available.
+     * as {@link MeasuredText#getText()} if {@link #getMeasuredText()} available.
      */
     @Nonnull
     public char[] getChars() {
