@@ -28,7 +28,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.Arrays;
 import java.util.Locale;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Globally shared layout cache. Useful when recycling layouts, or raw data source and
@@ -53,7 +52,8 @@ public class LayoutCache {
             synchronized (LayoutCache.class) {
                 if (sCache == null) {
                     sCache = Caffeine.newBuilder()
-                            .expireAfterAccess(20, TimeUnit.SECONDS)
+                            .maximumSize(500)
+                            //.expireAfterAccess(20, TimeUnit.SECONDS)
                             .build();
                 }
             }
@@ -66,9 +66,7 @@ public class LayoutCache {
                 key.update(buf, start, end, paint, dir));
         if (piece == null) {
             piece = new LayoutPiece(buf, start, end, dir, paint);
-            if (sCache.estimatedSize() < 500) {
-                sCache.put(key.copy(), piece);
-            }
+            sCache.put(key.copy(), piece);
         }
         sLookupKeys.release(key);
         return piece;
@@ -143,7 +141,7 @@ public class LayoutCache {
         }
 
         private int getMemoryUsage() {
-            return MathUtil.roundUp(12 + 16 + 8 + 4 + 4 + 8 + 1 + (mChars.length << 1), 8);
+            return MathUtil.roundUp(12 + 16 + 8 + 8 + 4 + 4 + 8 + 1 + (mChars.length << 1), 8);
         }
     }
 

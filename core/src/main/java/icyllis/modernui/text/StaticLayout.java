@@ -359,7 +359,7 @@ public class StaticLayout extends TextLayout {
                         width += lineWidths[i];
                     } else {
                         for (int j = (i == 0 ? 0 : breaks[i - 1]); j < breaks[i]; j++) {
-                            width += measuredPara.getMeasuredText().getAdvanceAt(j);
+                            width += measuredPara.getMeasuredText().getAdvance(j);
                         }
                     }
                     hasTab |= hasTabs[i];

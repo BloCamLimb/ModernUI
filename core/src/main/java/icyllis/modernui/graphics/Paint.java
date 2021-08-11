@@ -18,6 +18,9 @@
 
 package icyllis.modernui.graphics;
 
+import icyllis.modernui.util.Pool;
+import icyllis.modernui.util.Pools;
+
 import javax.annotation.Nonnull;
 
 /**
@@ -26,7 +29,7 @@ import javax.annotation.Nonnull;
  */
 public class Paint {
 
-    private static final ThreadLocal<Paint> TLS = ThreadLocal.withInitial(Paint::new);
+    private static final Pool<Paint> sPool = Pools.concurrent(4);
 
     private static final int STYLE_MASK = 0x3;
 
@@ -76,7 +79,7 @@ public class Paint {
     }
 
     /**
-     * Reset the paint to default states.
+     * Reset the paint to defaults.
      */
     public void reset() {
         mColor = ~0;
@@ -86,8 +89,9 @@ public class Paint {
     }
 
     /**
-     * Returns the thread-local paint, the paint will be reset before return.
-     * Do not cache this object, it's only for stack operation.
+     * Returns a paint from the shared pool, the paint will be reset before return.
+     * This method is designed for temporary operations, a {@link #recycle()} is
+     * expected after use.
      * <p>
      * For example:
      * <pre>
@@ -98,15 +102,20 @@ public class Paint {
      *     canvas.drawRect(mRectA, paint);
      *     paint.setColor(mColorB);
      *     canvas.drawRect(mRectB, paint);
+     *     paint.recycle();
      * }
      * </pre>
      *
-     * @return a shared paint object
+     * @return a pooled paint
      */
     @Nonnull
     public static Paint take() {
-        Paint paint = TLS.get();
-        paint.reset();
+        Paint paint = sPool.acquire();
+        if (paint == null) {
+            paint = new Paint();
+        } else {
+            paint.reset();
+        }
         return paint;
     }
 
@@ -176,6 +185,7 @@ public class Paint {
      * or {@link #setAlpha(int)} disables the mode as well.
      *
      * @param colors a list of sequential colors, maximum count is 4
+     * @see #isMultiColor()
      */
     public void setColors(@Nonnull int[] colors) {
         int l = Math.min(colors.length, mColors.length);
@@ -187,6 +197,7 @@ public class Paint {
      * Returns the backing array of the multi colors. Do not modify the array.
      *
      * @return the backing array of the multi colors
+     * @see #setColors(int[])
      */
     public int[] getColors() {
         return mColors;
@@ -196,6 +207,7 @@ public class Paint {
      * Returns whether multiple colors is used.
      *
      * @return whether multi color mode is enabled
+     * @see #setColors(int[])
      */
     public boolean isMultiColor() {
         return (mFlags & MULTI_COLOR) != 0;
@@ -264,5 +276,13 @@ public class Paint {
      */
     public void setSmoothRadius(float radius) {
         mSmoothRadius = Math.max(0, radius);
+    }
+
+    /**
+     * Recycle this paint, this object cannot be used anymore after calling.
+     * This is mostly used for the paint obtained via {@link #take()}.
+     */
+    public void recycle() {
+        sPool.release(this);
     }
 }

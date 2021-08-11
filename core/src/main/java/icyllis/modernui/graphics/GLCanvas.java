@@ -1220,10 +1220,29 @@ public final class GLCanvas extends Canvas {
         char[] chars = new char[end - start];
         TextUtils.getChars(text, start, end, chars, 0);
         LayoutPiece piece = LayoutCache.getOrCreate(chars, 0, end - start, isRtl, paint);
+        addTextRun(piece, x, y, paint.color);
+    }
+
+    @Override
+    public void drawTextRun(@Nonnull MeasuredText text, int start, int end, float x, float y,
+                            @Nonnull TextPaint paint) {
+        if ((start | end | end - start) < 0) {
+            throw new IndexOutOfBoundsException();
+        }
+        LayoutPiece piece = text.getLayoutPiece(start, end);
+        if (piece != null) {
+            addTextRun(piece, x, y, paint.color);
+        }
+    }
+
+    private void addTextRun(@Nonnull LayoutPiece piece, float x, float y, int color) {
         mTextInfos.add(new TextInfo(piece, x, y));
         ByteBuffer buffer = getUniformBuffer();
         getMatrix().get(buffer);
-        buffer.putFloat(1).putFloat(1).putFloat(1).putFloat(1);
+        buffer.putFloat(((color >> 16) & 0xff) / 255f)
+                .putFloat(((color >> 8) & 0xff) / 255f)
+                .putFloat((color & 0xff) / 255f)
+                .putFloat((color >>> 24) / 255f);
         mDrawStates.add(DRAW_TEXT);
     }
 

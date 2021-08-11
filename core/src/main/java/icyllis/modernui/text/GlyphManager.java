@@ -236,7 +236,7 @@ public class GlyphManager {
         return font;
     }
 
-    @SuppressWarnings("MagicConstant")
+    /*@SuppressWarnings("MagicConstant")
     public void measure(@Nonnull char[] text, int contextStart, int contextEnd, @Nonnull FontPaint paint, boolean isRtl,
                         @Nonnull BiConsumer<GraphemeMetrics, FontPaint> consumer) {
         final List<FontRun> runs = paint.mTypeface.itemize(text, contextStart, contextEnd);
@@ -250,5 +250,5 @@ public class GlyphManager {
             fm.extendBy(mGraphics.getFontMetrics(font));
         }
         consumer.accept(new GraphemeMetrics(advance, fm), paint);
-    }
+    }*/
 }

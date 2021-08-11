@@ -25,6 +25,12 @@ import javax.annotation.Nonnull;
  */
 public class TextPaint extends FontPaint {
 
+    // the glyph color
+    public int color;
+
+    // 0 means no background
+    public int bgColor;
+
     public TextPaint() {
     }
 
@@ -33,6 +39,8 @@ public class TextPaint extends FontPaint {
      */
     public void set(@Nonnull TextPaint paint) {
         super.set(paint);
+        color = paint.color;
+        bgColor = paint.bgColor;
     }
 
     /**

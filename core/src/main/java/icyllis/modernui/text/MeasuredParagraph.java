@@ -258,12 +258,12 @@ public class MeasuredParagraph {
     }
 
     /**
-     * Returns the MetricsAffectingSpan end indices.
+     * Returns the {@link MetricAffectingSpan} end indices.
      * <p>
      * If the input text is not a spanned string, this has one value that is the length of the text.
      * <p>
      * This is available only if the MeasuredParagraph is computed with buildForStaticLayout.
-     * Returns empty array in other cases.
+     * and the text is not empty. Returns empty array in other cases.
      */
     @Nonnull
     public IntArrayList getSpanEndCache() {
@@ -276,7 +276,7 @@ public class MeasuredParagraph {
      * This array holds the repeat of ascent, descent of font metrics value.
      * <p>
      * This is available only if the MeasuredParagraph is computed with buildForStaticLayout.
-     * Returns empty array in other cases.
+     * and the text is not empty. Returns empty array in other cases.
      */
     @Nonnull
     public IntArrayList getFontMetrics() {
@@ -287,7 +287,7 @@ public class MeasuredParagraph {
      * Returns the result of the MeasuredParagraph.
      * <p>
      * This is available only if the MeasuredParagraph is computed with buildForStaticLayout
-     * and the text length is greater than zero. Returns null in other cases.
+     * and the text is not empty. Returns null in other cases.
      */
     @Nullable
     public MeasuredText getMeasuredText() {

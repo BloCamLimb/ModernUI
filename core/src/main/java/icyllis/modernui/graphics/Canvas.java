@@ -21,6 +21,7 @@ package icyllis.modernui.graphics;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.math.RectF;
+import icyllis.modernui.text.MeasuredText;
 import icyllis.modernui.text.TextPaint;
 
 import javax.annotation.Nonnull;
@@ -498,4 +499,17 @@ public abstract class Canvas {
      */
     public abstract void drawTextRun(@Nonnull CharSequence text, int start, int end,
                                      float x, float y, boolean isRtl, @Nonnull TextPaint paint);
+
+    /**
+     * Draw a run of text. If you don't know what a text run is, do not call this method directly.
+     *
+     * @param text  the text to draw, which has been measured and computed glyph layout
+     * @param start context start of the text for shaping and rendering
+     * @param end   context end of the text for shaping and rendering
+     * @param x     the horizontal position at which to draw the text between runs inside a line
+     * @param y     the vertical baseline of the line of text
+     * @param paint the paint used to draw the text
+     */
+    public abstract void drawTextRun(@Nonnull MeasuredText text, int start, int end,
+                                     float x, float y, @Nonnull TextPaint paint);
 }

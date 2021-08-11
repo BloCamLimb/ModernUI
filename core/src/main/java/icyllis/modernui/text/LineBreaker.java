@@ -122,7 +122,7 @@ public class LineBreaker {
             }
 
             for (int i = run.mStart; i < run.mEnd; i++) {
-                updateLineWidth(mTextBuf[i], mMeasuredText.getAdvanceAt(i));
+                updateLineWidth(mTextBuf[i], mMeasuredText.getAdvance(i));
 
                 if (i + 1 == nextBoundary) {
                     if (run.canBreak() || nextBoundary == run.mEnd) {
@@ -169,11 +169,11 @@ public class LineBreaker {
 
     //TODO: Respect trailing line end spaces.
     private boolean doLineBreakWithGraphemeBounds(int start, int end) {
-        float width = mMeasuredText.getAdvanceAt(start);
+        float width = mMeasuredText.getAdvance(start);
 
         // Starting from + 1 since at least one character needs to be assigned to a line.
         for (int i = start + 1; i < end; i++) {
-            final float w = mMeasuredText.getAdvanceAt(i);
+            final float w = mMeasuredText.getAdvance(i);
             if (w == 0) {
                 // w == 0 means here is not a grapheme bounds. Don't break here.
                 continue;
