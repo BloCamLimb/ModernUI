@@ -24,10 +24,12 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import javax.annotation.Nonnull;
-import javax.annotation.concurrent.ThreadSafe;
 import java.util.function.BiConsumer;
 
-@ThreadSafe
+/**
+ * @see LayoutCache
+ */
+@Deprecated
 public class LayoutPieces {
 
     public static final int NO_PAINT_ID = -1;

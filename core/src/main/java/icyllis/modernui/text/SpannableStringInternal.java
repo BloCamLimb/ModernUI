@@ -42,7 +42,7 @@ import javax.annotation.Nonnull;
 import java.lang.reflect.Array;
 
 // modified version of https://android.googlesource.com/
-abstract class SpannableStringInternal {
+abstract class SpannableStringInternal implements Spanned {
 
     private static final int START = 0;
     private static final int END = 1;
@@ -251,6 +251,7 @@ abstract class SpannableStringInternal {
     }
 
     @Nonnull
+    @Override
     @SuppressWarnings({"unchecked", "ConstantConditions"})
     public <T> T[] getSpans(int start, int end, @Nonnull Class<T> type) {
         final int count = mSpanCount;
@@ -265,15 +266,19 @@ abstract class SpannableStringInternal {
             int spanStart = data[i * COLUMNS + START];
             int spanEnd = data[i * COLUMNS + END];
 
-            if (spanStart > end || spanEnd < start)
+            if (spanStart > end || spanEnd < start) {
                 continue;
+            }
 
-            if (spanStart != spanEnd && start != end)
-                if (spanStart == end || spanEnd == start)
+            if (spanStart != spanEnd && start != end) {
+                if (spanStart == end || spanEnd == start) {
                     continue;
+                }
+            }
 
-            if (type != Object.class && !type.isInstance(spans[i]))
+            if (type != Object.class && !type.isInstance(spans[i])) {
                 continue;
+            }
 
             if (found == 0) {
                 first = spans[i];
@@ -293,26 +298,30 @@ abstract class SpannableStringInternal {
                     System.arraycopy(temp, j, temp, j + 1, found - j);
                     temp[j] = spans[i];
                     found++;
-                } else
+                } else {
                     temp[found++] = spans[i];
+                }
             }
         }
 
-        if (found == 0)
+        if (found == 0) {
             return (T[]) (type == Object.class ? ObjectArrays.EMPTY_ARRAY : Array.newInstance(type, 0));
+        }
         if (found == 1) {
             temp = (Object[]) Array.newInstance(type, 1);
             temp[0] = first;
             return (T[]) temp;
         }
-        if (found == temp.length)
+        if (found == temp.length) {
             return (T[]) temp;
+        }
 
         Object[] r = (Object[]) Array.newInstance(type, found);
         System.arraycopy(temp, 0, r, 0, found);
         return (T[]) r;
     }
 
+    @Override
     public int getSpanStart(Object span) {
         final Object[] spans = mSpans;
         for (int i = mSpanCount - 1; i >= 0; i--)
@@ -321,6 +330,7 @@ abstract class SpannableStringInternal {
         return -1;
     }
 
+    @Override
     public int getSpanEnd(Object span) {
         final Object[] spans = mSpans;
         for (int i = mSpanCount - 1; i >= 0; i--)
@@ -329,6 +339,7 @@ abstract class SpannableStringInternal {
         return -1;
     }
 
+    @Override
     public int getSpanFlags(Object span) {
         final Object[] spans = mSpans;
         for (int i = mSpanCount - 1; i >= 0; i--)
@@ -337,6 +348,7 @@ abstract class SpannableStringInternal {
         return 0;
     }
 
+    @Override
     public int nextSpanTransition(int start, int limit, @Nonnull Class<?> type) {
         final int count = mSpanCount;
         final Object[] spans = mSpans;
@@ -380,10 +392,12 @@ abstract class SpannableStringInternal {
         return mText;
     }
 
+    @Override
     public final int length() {
         return mText.length();
     }
 
+    @Override
     public final char charAt(int index) {
         return mText.charAt(index);
     }

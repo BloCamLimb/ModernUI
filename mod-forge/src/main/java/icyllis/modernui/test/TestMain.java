@@ -34,10 +34,7 @@ import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.platform.Bitmap;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.platform.Window;
-import icyllis.modernui.text.GlyphManager;
-import icyllis.modernui.text.GraphemeBreak;
-import icyllis.modernui.text.LayoutCache;
-import icyllis.modernui.text.TextPaint;
+import icyllis.modernui.text.*;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.system.Callback;
@@ -133,6 +130,9 @@ public class TestMain {
 
         float[] av = new float[]{1, 3, 2, 4.1f, 6, 0, 6, 0.5f, 5, 7, 11.3f, 9, 9.1f, 15, 8, 10};
         float[] bv = new float[]{9.1f, 2, 7, 5, 3.3f, 6.1f, 5.5f, 4, 0, 8, 3, 1, 2.7f, 3, 9, 2};
+        int[] intervals = new int[]{0, 4, 9, 15, 17};
+        ModernUI.LOGGER.info(search(intervals, 4));
+        ModernUI.LOGGER.info(search(intervals, 10));
         //Quaternion q = Quaternion.fromAxisAngle(0.40824829f, 0.81649658f, 0.40824829f, MathUtil.PI_DIV_3);
         /*Vector3 vec1 = new Vector3(5, 2, 2);
         Vector3 vec2 = vec1.copy();
@@ -217,12 +217,12 @@ public class TestMain {
 
                 GlyphManager glyphManager = GlyphManager.getInstance();
 
-                String text = "\u0639\u0646\u062f\u0645\u0627\u0020\u064a\u0631\u064a\u062f\u0020\u0627\u0644\u0639\u0627\u0644\u0645\u0020\u0623\u0646\u0020\u202a\u064a\u062a\u0643\u0644\u0651\u0645\u0020\u202c\u0020\u060c\u0020\u0641\u0647\u0648\u0020\u064a\u062a\u062d\u062f\u0651\u062b\u0020\u0628\u0644\u063a\u0629\u0020\u064a\u0648\u0646\u064a\u0643\u0648\u062f\u002e\u0020\u062a\u0633\u062c\u0651\u0644\u0020\u0627\u0644\u0622\u0646\u0020\u0644\u062d\u0636\u0648\u0631\u0020\u0627\u0644\u0645\u0624\u062a\u0645\u0631\u0020\u0627\u0644\u062f\u0648\u0644\u064a\u0020\u0627\u0644\u0639\u0627\u0634\u0631\u0020\u0644\u064a\u0648\u0646\u064a\u0643\u0648\u062f\u0020\u0028\u0055\u006e\u0069\u0063\u006f\u0064\u0065\u0020\u0043\u006f\u006e\u0066\u0065\u0072\u0065\u006e\u0063\u0065\u0029\u060c\u0020\u0627\u0644\u0630\u064a\u0020\u0633\u064a\u0639\u0642\u062f\u0020\u0641\u064a\u0020\u0031\u0030\u002d\u0031\u0032\u0020\u0622\u0630\u0627\u0631\u0020\u0031\u0039\u0039\u0037\u0020\u0628\u0645\u062f\u064a\u0646\u0629\u0020\u0645\u064e\u0627\u064a\u0650\u0646\u0652\u062a\u0652\u0633\u060c\u0020\u0623\u0644\u0645\u0627\u0646\u064a\u0627\u002e\u0020\u0648\u0020\u0633\u064a\u062c\u0645\u0639\u0020\u0627\u0644\u0645\u0624\u062a\u0645\u0631\u0020\u0628\u064a\u0646\u0020\u062e\u0628\u0631\u0627\u0621\u0020\u0645\u0646\u0020\u0643\u0627\u0641\u0629";
+                String text = "\u0639\u0646\u062f\u0645\u0627\u0020\u064a\u0631\u064a\u062f\u0020\u0627\u0644\u0639\u0627\u0644\u0645\u0020\u0623\u0646\u0020\u202a\u064a\u062a\u0643\u0644\u0651\u0645\u0020\u202c\u0020\u060c\u0020\u0641\u0647\u0648\u0020\u064a\u062a\u062d\u062f\u0651\u062b\u0020\u0628\u0644\u063a\u0629\u0020\u064a\u0648\u0646\u064a\u0643\u0648\u062f\u002e\u0020\u062a\u0633\u062c\u0651\u0644\u0020\u0627\u0644\u0622\u0646\u0020\u0644\u062d\u0636\u0648\u0631\u0020\u0627\u0644\u0645\u0624\u062a\u0645\u0631\u0020\u0627\u0644\u062f\u0648\u0644\u064a\u0020\u0627\u0644\u0639\u0627\u0634\u0631\u0020\u0644\u064a\u0648\u0646\u064a\u0643\u0648\u062f\u0020\u0028\u0055\u006e\u0069\u0063\u006f\u0064\u0065\u0020\u0043\u006f\u006e\u0066\u0065\u0072\u0065\u006e\u0063\u0065\u0029";
                 /*text = "My name is Van, I'm 30 years old, and I'm from Japan. I'm an artist, I'm a performance artist. " +
                         "I'm hired for people to fulfill their fantasies, their deep dark fantasies. " +
                         "I was gonna be a movie star, you know with modelling and uh, acting. " +
                         "After a hundred or two audition and small parts, you know I decided, you know, I had enough, then I get into escort work.";*/
-                char[] textC = text.toCharArray();
+                //char[] textC = text.toCharArray();
 
                 /*TextPaint tp = new TextPaint();
                 var mt = MeasuredParagraph.buildForStaticLayout(tp, text, 0, text.length(), TextDirectionHeuristics.FIRSTSTRONG_LTR, null);
@@ -244,6 +244,8 @@ public class TestMain {
                 }
                 glyphManager.export();*/
 
+                TextLine textLine = new TextLine(text);
+
                 while (!window.shouldClose()) {
                     if (window.isContentDirty()) {
                         GLWrapper.resetFrame(window);
@@ -262,13 +264,6 @@ public class TestMain {
                         Paint paint = Paint.take();
                         paint.setSmoothRadius(2);
                         canvas.save();
-
-                        canvas.rotate(30);
-                        String tcc = "今日も一日頑張るぞい";
-                        canvas.drawTextRun(tcc, 0, tcc.length(), 730, 170, false, new TextPaint());
-                        tcc = "আমি আজ সকালের নাস্তা খাব না";
-                        canvas.drawTextRun(tcc, 0, tcc.length(), 660, 240, false, new TextPaint());
-                        canvas.rotate(-30);
 
                         canvas.scale(0.7f, 0.7f);
                         canvas.drawRoundImage(image, 100, 20, 15, paint);
@@ -313,6 +308,19 @@ public class TestMain {
                         paint.setRGBA(120, 220, 240, 192);
                         canvas.drawLine(20, 20, 140, 60, paint);
                         canvas.drawLine(120, 30, 60, 80, paint);
+
+                        var textPaint = new TextPaint();
+                        textPaint.color = 0xff40ddee;
+                        canvas.rotate(30);
+                        String tcc = "今日も一日頑張るぞい";
+                        canvas.drawTextRun(tcc, 0, tcc.length(), 730, 170, false, textPaint);
+                        tcc = "আমি আজ সকালের নাস্তা খাব না";
+                        canvas.drawTextRun(tcc, 0, tcc.length(), 660, 240, false, textPaint);
+                        canvas.rotate(-30);
+
+                        textLine.draw(canvas, 1220, 400);
+
+                        paint.recycle();
 
                         // render thread, wait UI thread
                         canvas.render();
@@ -394,6 +402,23 @@ public class TestMain {
             glfwTerminate();
             ModernUI.LOGGER.info(MARKER, "Stopped");
         }
+    }
+
+    private static int search(int[] a, int pos) {
+        int low = 0;
+        int high = a.length - 1;
+
+        while (low <= high) {
+            int mid = (low + high) >>> 1;
+
+            if (a[mid + 1] <= pos)
+                low = mid + 1;
+            else if (a[mid] > pos)
+                high = mid - 1;
+            else
+                return mid;
+        }
+        return -1;
     }
 
     public static float calcMachineEpsilon() {

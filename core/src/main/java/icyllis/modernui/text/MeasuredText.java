@@ -20,14 +20,17 @@ package icyllis.modernui.text;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.annotation.concurrent.Immutable;
+import javax.annotation.concurrent.NotThreadSafe;
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 /**
- * For the result of text shaping and layout of the single paragraph.
+ * For the result of text shaping, measurement and glyph layout of a single paragraph.
  */
+@Immutable
 @ThreadSafe
 public class MeasuredText {
 
@@ -57,6 +60,13 @@ public class MeasuredText {
         return mRuns;
     }
 
+    /**
+     * Expands the font metrics with those of the chars in the given range of the text buffer.
+     *
+     * @param start  the start index
+     * @param end    the end index
+     * @param extent receives the metrics
+     */
     public void getExtent(int start, int end, FontMetricsInt extent) {
         for (Run run : mRuns) {
             if (start < run.mEnd && end > run.mStart) {
@@ -75,12 +85,28 @@ public class MeasuredText {
      *
      * @param pos the char index
      */
-    public float getAdvanceAt(int pos) {
-        Run run = search(pos);
+    public float getAdvance(int pos) {
+        Run run = searchRun(pos);
         if (run == null) {
-            return 0;
+            return 0f;
         }
-        return run.getAdvanceAt(pos);
+        return run.getAdvance(pos);
+    }
+
+    /**
+     * Returns the advance of the chars in the given range of the text buffer.
+     *
+     * @param start the start index
+     * @param end   the end index
+     */
+    public float getAdvance(int start, int end) {
+        float r = 0f;
+        for (Run run : mRuns) {
+            for (int i = Math.max(start, run.mStart), e = Math.min(end, run.mEnd); i < e; i++) {
+                r += run.getAdvance(i);
+            }
+        }
+        return r;
     }
 
     /**
@@ -92,7 +118,7 @@ public class MeasuredText {
      */
     @Nullable
     public LayoutPiece getLayoutPiece(int start, int end) {
-        Run run = search(start);
+        Run run = searchRun(start);
         if (run != null) {
             return run.getLayout(mTextBuf, start, end);
         }
@@ -101,7 +127,7 @@ public class MeasuredText {
 
     // binary search with ranges
     @Nullable
-    private Run search(int pos) {
+    private Run searchRun(int pos) {
         int low = 0;
         int high = mRuns.length - 1;
 
@@ -109,7 +135,7 @@ public class MeasuredText {
             int mid = (low + high) >>> 1;
             Run run = mRuns[mid];
 
-            if (run.mEnd < pos)
+            if (run.mEnd <= pos)
                 low = mid + 1;
             else if (run.mStart > pos)
                 high = mid - 1;
@@ -130,6 +156,7 @@ public class MeasuredText {
     /**
      * For creating a MeasuredText.
      */
+    @NotThreadSafe
     public static class Builder {
 
         private final List<Run> mRuns = new ArrayList<>();
@@ -243,7 +270,7 @@ public class MeasuredText {
         @Nullable
         public abstract LayoutPiece getLayout(@Nonnull char[] text, int start, int end);
 
-        public abstract float getAdvanceAt(int pos);
+        public abstract float getAdvance(int pos);
 
         // Returns true if this run is RTL. Otherwise returns false.
         public abstract boolean isRtl();
@@ -295,7 +322,7 @@ public class MeasuredText {
         }
 
         @Override
-        public float getAdvanceAt(int pos) {
+        public float getAdvance(int pos) {
             return mLayoutPiece.getAdvances()[pos - mStart];
         }
 
@@ -350,7 +377,7 @@ public class MeasuredText {
         }
 
         @Override
-        public float getAdvanceAt(int pos) {
+        public float getAdvance(int pos) {
             if (pos == mStart) {
                 return mWidth;
             }
