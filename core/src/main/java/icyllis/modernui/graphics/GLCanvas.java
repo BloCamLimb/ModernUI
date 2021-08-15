@@ -227,7 +227,7 @@ public final class GLCanvas extends Canvas {
         mMatrixStack.push(Matrix4.identity());
         mClipStack.push(new Clip());
 
-        ModernUI.LOGGER.info(MARKER, "Created GLCanvas: {}", getSaveCount());
+        //ModernUI.LOGGER.info(MARKER, "Created GLCanvas: {}", getSaveCount());
 
         ShaderManager.getInstance().addListener(this::onLoadShaders);
     }
@@ -276,7 +276,7 @@ public final class GLCanvas extends Canvas {
         manager.create(ARC_STROKE, posColor, arcStroke);
         manager.create(GLYPH_BATCH, glyphBatch, glyphTex);
 
-        ModernUI.LOGGER.info(MARKER, "Loaded shader programs");
+        //ModernUI.LOGGER.info(MARKER, "Loaded shader programs");
     }
 
     /**

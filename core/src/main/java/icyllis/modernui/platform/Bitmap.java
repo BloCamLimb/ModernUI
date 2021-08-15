@@ -56,7 +56,7 @@ import static org.lwjgl.system.MemoryUtil.*;
 /**
  * Represents a bitmap, with its image data in native. It is used for operations
  * on the client side, such as reading from/writing to a stream/channel. Compared
- * with {@link Image Sprites}, this data is completely stored in RAM with an
+ * with {@link Image Images}, this data is completely stored in RAM with an
  * uncompressed format. Losing the reference of a bitmap object will automatically
  * free the native memory.
  */

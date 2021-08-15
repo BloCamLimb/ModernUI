@@ -20,7 +20,7 @@ package icyllis.modernui.text;
 
 /**
  * Stores information about bidirectional (left-to-right or right-to-left)
- * text within the layout of a line.
+ * text within the layout of a line in rendering order.
  */
 public class Directions {
 
