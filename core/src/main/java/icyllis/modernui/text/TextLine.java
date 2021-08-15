@@ -19,7 +19,6 @@
 package icyllis.modernui.text;
 
 import com.ibm.icu.text.Bidi;
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.text.style.CharacterStyle;
 import icyllis.modernui.text.style.MetricAffectingSpan;
@@ -64,8 +63,6 @@ public class TextLine {
         mDir = mMeasuredParagraph.getParagraphDir();
         mDirections = mMeasuredParagraph.getDirections(0, mLen);
         mMeasuredText = mMeasuredParagraph.getMeasuredText();
-        assert mMeasuredText != null;
-        ModernUI.LOGGER.info("BaseDir: {}, MemoryUsage: {}", mDir, mMeasuredText.getMemoryUsage());
     }
 
     public void draw(Canvas canvas, float x, float y) {
@@ -78,28 +75,28 @@ public class TextLine {
             final int runLimit = Math.min(runStart + mDirections.getRunLength(runIndex), mLen);
             final boolean runIsRtl = mDirections.isRunRtl(runIndex);
 
-            float advance = mMeasuredText.getAdvance(runStart, runLimit);
+            final float advance = mMeasuredText.getAdvance(runStart, runLimit);
             if (mDir == Bidi.DIRECTION_LEFT_TO_RIGHT == runIsRtl) {
-                drawStyleRun(mPaint, runStart, runLimit, runIsRtl, canvas, x - advance, y);
-            } else
+                if (runIsRtl) {
+                    x += advance;
+                } else {
+                    x -= advance;
+                }
                 drawStyleRun(mPaint, runStart, runLimit, runIsRtl, canvas, x, y);
-            x -= advance;
-            /*h += drawRun(c, st, lim, isRtl, x + h, top, y, bottom,
-                    i != (e - 1) || lim != mLen);*/
+            } else {
+                drawStyleRun(mPaint, runStart, runLimit, runIsRtl, canvas, x, y);
+                if (runIsRtl) {
+                    x -= advance;
+                } else {
+                    x += advance;
+                }
+            }
         }
     }
 
     private void drawBidiRun(int start, int measureLimit, int limit, boolean runIsRtl,
                              @Nonnull Canvas canvas, float x, int y) {
-        boolean needsSpanMeasurement;
-        if (mSpanned == null) {
-            needsSpanMeasurement = false;
-        } else {
-            mMetricAffectingSpanSpanSet.init(mSpanned, mStart + start, mStart + limit);
-            mCharacterStyleSpanSet.init(mSpanned, mStart + start, mStart + limit);
-            needsSpanMeasurement = mMetricAffectingSpanSpanSet.numberOfSpans != 0
-                    || mCharacterStyleSpanSet.numberOfSpans != 0;
-        }
+
 
         final float originalX = x;
     }

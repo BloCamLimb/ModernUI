@@ -294,16 +294,53 @@ public class MeasuredParagraph {
         return mMeasuredText;
     }
 
+    /**
+     * Returns the advance of the given range.
+     * <p>
+     * This is not available if the MeasuredParagraph is computed with buildForBidi.
+     * Returns 0 if the MeasuredParagraph is computed with buildForBidi.
+     *
+     * @param start the inclusive start offset of the target region in the text
+     * @param end   the exclusive end offset of the target region in the text
+     */
+    public float getAdvance(int start, int end) {
+        if (mMeasuredText == null) {
+            return 0f;
+        } else {
+            return mMeasuredText.getAdvance(start, end);
+        }
+    }
+
     @Nonnull
     private static MeasuredParagraph obtain() {
         final MeasuredParagraph c = sPool.acquire();
         return c == null ? new MeasuredParagraph() : c;
     }
 
+    /**
+     * Generates new MeasuredParagraph for StaticLayout.
+     * <p>
+     * If recycle is null, this returns new instance. If recycle is not null, this fills computed
+     * result to recycle and returns recycle.
+     * <p>
+     * Full layout (glyph layout) will be always performed, the global layout cache will be always
+     * used.
+     *
+     * @param paint   the base paint to be used for drawing the text
+     * @param text    the character sequence to be measured
+     * @param start   the inclusive start offset of the target region in the text
+     * @param end     the exclusive end offset of the target region in the text
+     * @param dir     the text direction algorithm
+     * @param recycle pass existing object if you want to recycle it
+     * @return measured para
+     */
     @Nonnull
     public static MeasuredParagraph buildForStaticLayout(@Nonnull TextPaint paint, @Nonnull CharSequence text,
                                                          int start, int end, @Nonnull TextDirectionHeuristic dir,
                                                          @Nullable MeasuredParagraph recycle) {
+        if ((start | end | end - start | text.length() - end) < 0) {
+            throw new IllegalArgumentException();
+        }
         final MeasuredParagraph c = recycle == null ? obtain() : recycle;
         c.resetAndAnalyzeBidi(text, start, end, dir);
         if (end > start) {
@@ -336,14 +373,9 @@ public class MeasuredParagraph {
         reset();
         mSpanned = text instanceof Spanned ? (Spanned) text : null;
         mTextStart = start;
-        final int length = end - start;
+        int length = end - start;
 
-        if (mCopiedBuffer == null || mCopiedBuffer.length != length) {
-            mCopiedBuffer = new char[length];
-        }
-        if (length <= 0) {
-            return;
-        }
+        mCopiedBuffer = new char[length];
         TextUtils.getChars(text, start, end, mCopiedBuffer, 0);
 
         // Replace characters associated with ReplacementSpan to U+FFFC.

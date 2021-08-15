@@ -102,8 +102,8 @@ public class MeasuredText {
     public float getAdvance(int start, int end) {
         float r = 0f;
         for (Run run : mRuns) {
-            for (int i = Math.max(start, run.mStart), e = Math.min(end, run.mEnd); i < e; i++) {
-                r += run.getAdvance(i);
+            if (start < run.mEnd && end > run.mStart) {
+                r += run.getAdvance(Math.max(start, run.mStart), Math.min(end, run.mEnd));
             }
         }
         return r;
@@ -125,9 +125,17 @@ public class MeasuredText {
         return null;
     }
 
-    // binary search with ranges
+    /**
+     * Binary search with ranges.
+     *
+     * @param pos char index
+     * @return the run
+     */
     @Nullable
-    private Run searchRun(int pos) {
+    public Run searchRun(int pos) {
+        if (pos < 0 || pos >= mTextBuf.length) {
+            return null;
+        }
         int low = 0;
         int high = mRuns.length - 1;
 
@@ -261,7 +269,7 @@ public class MeasuredText {
         }
 
         // Compute metrics
-        public abstract void measure(@Nonnull char[] text);
+        protected abstract void measure(@Nonnull char[] text);
 
         // Extend extent
         public abstract void getExtent(@Nonnull char[] text, int start, int end,
@@ -270,7 +278,9 @@ public class MeasuredText {
         @Nullable
         public abstract LayoutPiece getLayout(@Nonnull char[] text, int start, int end);
 
-        public abstract float getAdvance(int pos);
+        protected abstract float getAdvance(int pos);
+
+        protected abstract float getAdvance(int start, int end);
 
         // Returns true if this run is RTL. Otherwise returns false.
         public abstract boolean isRtl();
@@ -327,6 +337,18 @@ public class MeasuredText {
         }
 
         @Override
+        public float getAdvance(int start, int end) {
+            if (start == mStart && end == mEnd) {
+                return mLayoutPiece.getAdvance();
+            }
+            float adv = 0;
+            for (int i = start - mStart, e = end - mStart; i < e; i++) {
+                adv += mLayoutPiece.getAdvances()[i];
+            }
+            return adv;
+        }
+
+        @Override
         public boolean isRtl() {
             return mIsRtl;
         }
@@ -379,6 +401,14 @@ public class MeasuredText {
         @Override
         public float getAdvance(int pos) {
             if (pos == mStart) {
+                return mWidth;
+            }
+            return 0;
+        }
+
+        @Override
+        public float getAdvance(int start, int end) {
+            if (start == mStart) {
                 return mWidth;
             }
             return 0;

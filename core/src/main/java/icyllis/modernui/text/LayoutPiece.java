@@ -18,10 +18,13 @@
 
 package icyllis.modernui.text;
 
+import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.platform.RenderCore;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.floats.FloatList;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
@@ -45,6 +48,9 @@ public class LayoutPiece {
     // x1 y1 x2 y2... relative to the same pivot, for rendering mGlyphs
     private float[] mPositions;
 
+    // glyphs to char indices
+    private int[] mCharIndices;
+
     // the size and order are relative to the text buf (char array)
     // only grapheme cluster bounds have advances, others are zeros
     // eg: [13.57, 0, 14.26, 0, 0]
@@ -57,16 +63,26 @@ public class LayoutPiece {
     // total advance
     private float mAdvance;
 
+    /**
+     * Creates the glyph layout of a piece.
+     *
+     * @param buf   text buffer
+     * @param start start char offset
+     * @param end   end char index
+     * @param isRtl whether to layout in right-to-left
+     * @param paint the font paint affecting the glyph layout
+     */
     public LayoutPiece(@Nonnull char[] buf, int start, int end, boolean isRtl, @Nonnull FontPaint paint) {
         GlyphManager engine = GlyphManager.getInstance();
         mAdvances = new float[end - start];
         FontMetricsInt extent = new FontMetricsInt();
 
-        // deferred
-        List<TexturedGlyph> glyphs = new ArrayList<>();
-        FloatList positions = new FloatArrayList();
+        // async on render thread
+        final List<TexturedGlyph> glyphs = new ArrayList<>();
+        final FloatList positions = new FloatArrayList();
+        final IntList charIndices = new IntArrayList();
 
-        List<FontRun> items = paint.mTypeface.itemize(buf, start, end);
+        final List<FontRun> items = paint.mTypeface.itemize(buf, start, end);
         for (int runIndex = isRtl ? items.size() - 1 : 0;
              isRtl ? runIndex >= 0 : runIndex < items.size(); ) {
             FontRun run = items.get(runIndex);
@@ -77,7 +93,7 @@ public class LayoutPiece {
             ClusterWork clusterWork = new ClusterWork(derived, buf, isRtl, mAdvances, start);
             GraphemeBreak.forTextRun(buf, paint.mLocale, run.mStart, run.mEnd, clusterWork);
 
-            TextureWork textureWork = new TextureWork(vector, glyphs, positions, mAdvance);
+            TextureWork textureWork = new TextureWork(vector, glyphs, positions, mAdvance, charIndices, run.mStart);
             RenderCore.recordRenderCall(textureWork);
 
             mAdvance += vector.getGlyphPosition(vector.getNumGlyphs()).getX();
@@ -92,6 +108,7 @@ public class LayoutPiece {
         RenderCore.recordRenderCall(() -> {
             mGlyphs = glyphs.toArray(new TexturedGlyph[0]);
             mPositions = positions.toFloatArray();
+            mCharIndices = charIndices.toIntArray();
         });
 
         mAscent = extent.mAscent;
@@ -127,12 +144,17 @@ public class LayoutPiece {
         private final List<TexturedGlyph> mGlyphs;
         private final FloatList mPositions;
         private final float mOffsetX;
+        private final IntList mIndices;
+        private final int mStart;
 
-        private TextureWork(GlyphVector vector, List<TexturedGlyph> glyphs, FloatList positions, float offsetX) {
+        private TextureWork(GlyphVector vector, List<TexturedGlyph> glyphs, FloatList positions,
+                            float offsetX, IntList indices, int start) {
             mVector = vector;
             mGlyphs = glyphs;
             mPositions = positions;
             mOffsetX = offsetX;
+            mIndices = indices;
+            mStart = start;
         }
 
         @Override
@@ -146,34 +168,79 @@ public class LayoutPiece {
                     Point2D point = mVector.getGlyphPosition(i);
                     mPositions.add((float) point.getX() + mOffsetX);
                     mPositions.add((float) point.getY());
+                    mIndices.add(mVector.getGlyphCharIndex(i) + mStart);
                 }
             }
         }
     }
 
+    /**
+     * The array is about all visible glyphs for rendering in order from left to right.
+     *
+     * @return glyphs
+     */
+    @RenderThread
     public TexturedGlyph[] getGlyphs() {
         return mGlyphs;
     }
 
+    /**
+     * This array holds the repeat of x offset, y offset of glyph positions.
+     * The length is twice as long as the glyph array.
+     *
+     * @return glyph positions
+     */
+    @RenderThread
     public float[] getPositions() {
         return mPositions;
     }
 
+    /**
+     * This array maps glyph to start char index of original text buffer with constructor char offset.
+     * For RTL text is in descending order, since glyphs array is always left to right.
+     * <p>
+     * This can be used to render the sub-range of this piece, if target index doesn't break grapheme cluster.
+     * The length is equal to that of the glyph array.
+     *
+     * @return char indices
+     */
+    @RenderThread
+    public int[] getCharIndices() {
+        return mCharIndices;
+    }
+
+    /**
+     * The array of all chars advance, the length and order are relative to the text buffer.
+     * Only grapheme cluster bounds have advances, others are zeros. For example: [13.57, 0, 14.26, 0, 0].
+     * The length is constructor <code>end - start</code>.
+     *
+     * @return advances
+     */
     public float[] getAdvances() {
         return mAdvances;
     }
 
+    /**
+     * Expands the font metrics of the maximum extent of this piece.
+     *
+     * @param extent to expand from
+     */
     public void getExtent(@Nonnull FontMetricsInt extent) {
         extent.extendBy(mAscent, mDescent);
     }
 
+    /**
+     * Returns the total advance of this piece.
+     *
+     * @return advance
+     */
     public float getAdvance() {
         return mAdvance;
     }
 
     public int getMemoryUsage() {
-        return MathUtil.roundUp(12 + 16 + 8 + 16 + 8 + 16 + 8 + 4 + 4 + 4 +
-                (mGlyphs == null ? 0 : mGlyphs.length << 4) +
+        return MathUtil.roundUp(12 + 16 + 8 + 16 + 8 + 16 + 8 + 16 + 8 + 4 + 4 + 4 +
+                (mGlyphs == null ? 0 : mGlyphs.length * (8 + 4 + 4 + 4)) +
                 (mAdvances.length << 2), 8);
     }
 }

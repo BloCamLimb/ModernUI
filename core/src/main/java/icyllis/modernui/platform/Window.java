@@ -128,13 +128,6 @@ public abstract class Window implements AutoCloseable {
     public abstract void swapBuffers();
 
     /**
-     * Destroys the window and remove all callbacks.
-     */
-    public void destroy() {
-        sWindows.remove(mHandle);
-    }
-
-    /**
      * Returns the x-coordinate of the top-left corner of this window
      * in virtual screen coordinate system.
      *
@@ -184,9 +177,21 @@ public abstract class Window implements AutoCloseable {
 
     public abstract void maximize();
 
+    /**
+     * Sets window icon.
+     *
+     * @param low  16*16
+     * @param mid  32*32
+     * @param high 48*48
+     */
+    public abstract void setIcon(@Nonnull Bitmap low, @Nonnull Bitmap mid, @Nonnull Bitmap high);
+
+    /**
+     * Closes the window and remove all callbacks.
+     */
     @Override
-    public final void close() throws Exception {
-        destroy();
+    public void close() {
+        sWindows.remove(mHandle);
     }
 
     /**

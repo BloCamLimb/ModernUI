@@ -50,6 +50,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
@@ -187,6 +188,16 @@ public class TestMain {
             Thread.currentThread().setName("Main-Thread");
             RenderCore.initBackend();
             sWindow = Window.create("Modern UI Layout Editor", Window.State.WINDOWED, 1280, 720);
+            try (var c1 = ModernUI.get().getResource(Path.of("AppLogo16x.png"));
+                 var bitmap1 = Bitmap.decode(null, c1);
+                 var c2 = ModernUI.get().getResource(Path.of("AppLogo32x.png"));
+                 var bitmap2 = Bitmap.decode(null, c2);
+                 var c3 = ModernUI.get().getResource(Path.of("AppLogo48x.png"));
+                 var bitmap3 = Bitmap.decode(null, c3)) {
+                sWindow.setIcon(bitmap1, bitmap2, bitmap3);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             Thread t = new Thread(() -> {
                 final Window window = sWindow;
                 window.makeCurrent();
@@ -325,7 +336,7 @@ public class TestMain {
                         // render thread, wait UI thread
                         canvas.render();
                         //glyphManager.debug();
-                        ModernUI.LOGGER.info("LayoutCache: {}", LayoutCache.getMemoryUsage());
+                        ModernUI.LOGGER.info("LayoutCache: {} bytes", LayoutCache.getMemoryUsage());
 
                         /*GL11.glMatrixMode(GL11.GL_PROJECTION);
                         GL43.glPushMatrix();
@@ -393,7 +404,7 @@ public class TestMain {
             t.interrupt();
         } finally {
             if (sWindow != null) {
-                sWindow.destroy();
+                sWindow.close();
             }
             Stream.of(glfwSetMonitorCallback(null),
                     glfwSetErrorCallback(null))
@@ -402,6 +413,10 @@ public class TestMain {
             glfwTerminate();
             ModernUI.LOGGER.info(MARKER, "Stopped");
         }
+    }
+
+    private static void abc(Supplier<?> supplier) {
+
     }
 
     private static int search(int[] a, int pos) {

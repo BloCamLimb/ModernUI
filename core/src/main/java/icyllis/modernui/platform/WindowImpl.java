@@ -21,12 +21,14 @@ package icyllis.modernui.platform;
 import icyllis.modernui.ModernUI;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.glfw.Callbacks;
+import org.lwjgl.glfw.GLFWImage;
 import org.lwjgl.system.MemoryStack;
 
 import javax.annotation.Nonnull;
 import java.nio.IntBuffer;
 
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.system.MemoryUtil.memPutAddress;
 
 public final class WindowImpl extends Window {
 
@@ -67,8 +69,9 @@ public final class WindowImpl extends Window {
         glfwSetWindowContentScaleCallback(handle, this::callbackContentScale);
 
         glfwSetKeyCallback(handle, (window, keycode, scancode, action, mods) -> {
-            ModernUI.LOGGER.info(
-                    MarkerManager.getMarker("Input"), "OnKeyEvent{action: {}, key: {}}", action, keycode);
+            if (keycode == GLFW_KEY_ESCAPE) {
+                glfwSetWindowShouldClose(mHandle, true);
+            }
             if (action == GLFW_PRESS && (mods & GLFW_MOD_CONTROL) != 0 && keycode == GLFW_KEY_V) {
                 ModernUI.LOGGER.info("Paste: {}", Clipboard.getText());
             }
@@ -181,13 +184,6 @@ public final class WindowImpl extends Window {
         mNeedRefresh = false;
     }
 
-    @Override
-    public void destroy() {
-        super.destroy();
-        Callbacks.glfwFreeCallbacks(mHandle);
-        glfwDestroyWindow(mHandle);
-    }
-
     /**
      * Returns the x-coordinate of the top-left corner of this window
      * in virtual screen coordinate system.
@@ -243,5 +239,34 @@ public final class WindowImpl extends Window {
     @Override
     public void maximize() {
         glfwMaximizeWindow(mHandle);
+    }
+
+    @Override
+    public void setIcon(@Nonnull Bitmap low, @Nonnull Bitmap mid, @Nonnull Bitmap high) {
+        GLFWImage.Buffer images = GLFWImage.mallocStack(3);
+        images.position(0);
+        images.width(low.getWidth());
+        images.height(low.getHeight());
+        memPutAddress(images.address() + GLFWImage.PIXELS, low.getPixels());
+
+        images.position(1);
+        images.width(mid.getWidth());
+        images.height(mid.getHeight());
+        memPutAddress(images.address() + GLFWImage.PIXELS, mid.getPixels());
+
+        images.position(2);
+        images.width(high.getWidth());
+        images.height(high.getHeight());
+        memPutAddress(images.address() + GLFWImage.PIXELS, high.getPixels());
+
+        images.position(0);
+        glfwSetWindowIcon(mHandle, images);
+    }
+
+    @Override
+    public void close() {
+        super.close();
+        Callbacks.glfwFreeCallbacks(mHandle);
+        glfwDestroyWindow(mHandle);
     }
 }
