@@ -23,6 +23,7 @@ import icyllis.modernui.ModernUI;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.ref.Cleaner;
+import java.util.function.IntSupplier;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
 
@@ -30,7 +31,7 @@ import static icyllis.modernui.graphics.GLWrapper.*;
  * Represents OpenGL texture objects at low-level. Losing the
  * reference of this object will delete the texture automatically.
  */
-public abstract class Texture implements AutoCloseable {
+public abstract class Texture implements IntSupplier, AutoCloseable {
 
     @Nullable
     private Ref mRef;
@@ -50,6 +51,11 @@ public abstract class Texture implements AutoCloseable {
             mRef = new Ref(this);
         }
         return mRef.texture;
+    }
+
+    @Override
+    public int getAsInt() {
+        return get();
     }
 
     public abstract int getTarget();

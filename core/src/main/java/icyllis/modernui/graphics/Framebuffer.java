@@ -22,6 +22,7 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.texture.Renderbuffer;
 import icyllis.modernui.graphics.texture.Texture;
 import icyllis.modernui.graphics.texture.Texture2D;
+import icyllis.modernui.graphics.texture.Texture2DMultisample;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.lwjgl.BufferUtils;
@@ -88,15 +89,15 @@ public final class Framebuffer implements AutoCloseable {
     }
 
     public void attachTexture(int attachmentPoint, int internalFormat) {
-        Texture2D texture = new Texture2D();
-        texture.initCore(internalFormat, mWidth, mHeight, 0);
+        Texture2DMultisample texture = new Texture2DMultisample();
+        texture.init(internalFormat, mWidth, mHeight, 4);
         glNamedFramebufferTexture(get(), attachmentPoint, texture.get(), 0);
         mAttachments.put(attachmentPoint, texture);
     }
 
     public void attachRenderbuffer(int attachmentPoint, int internalFormat) {
         Renderbuffer renderbuffer = new Renderbuffer();
-        renderbuffer.init(internalFormat, mWidth, mHeight, 0);
+        renderbuffer.init(internalFormat, mWidth, mHeight, 4);
         glNamedFramebufferRenderbuffer(get(), attachmentPoint, GL_RENDERBUFFER, renderbuffer.get());
         mAttachments.put(attachmentPoint, renderbuffer);
     }

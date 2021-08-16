@@ -18,13 +18,9 @@
 
 package icyllis.modernui.screen;
 
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.Tesselator;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.AnimationHandler;
 import icyllis.modernui.annotation.RenderThread;
@@ -516,34 +512,40 @@ public final class UIManager implements ViewRootImpl.Handler {
             mProjectionChanged = false;
         }
 
+        final int oldVertexArray = glGetInteger(GL_VERTEX_ARRAY_BINDING);
+        final int oldProgram = glGetInteger(GL_CURRENT_PROGRAM);
+
         // wait UI thread, if slow
         synchronized (mRenderLock) {
             if (mRoot.hasDrawn()) {
-                final int oldVertexArray = glGetInteger(GL_VERTEX_ARRAY_BINDING);
-                final int oldProgram = glGetInteger(GL_CURRENT_PROGRAM);
                 glEnable(GL_STENCIL_TEST);
 
                 framebuffer.reset(width, height);
                 framebuffer.bindDraw();
                 canvas.render();
 
-                glBindVertexArray(oldVertexArray);
-                glUseProgram(oldProgram);
                 glDisable(GL_STENCIL_TEST);
             }
         }
-        int texture = framebuffer.getAttachedTexture(GL_COLOR_ATTACHMENT0).get();
+        Texture texture = framebuffer.getAttachedTexture(GL_COLOR_ATTACHMENT0);
 
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, minecraft.getMainRenderTarget().frameBufferId);
         RenderSystem.defaultBlendFunc();
-        RenderSystem.enableTexture();
-        RenderSystem.bindTexture(texture);
+        //RenderSystem.enableTexture();
+        //RenderSystem.bindTexture(texture);
 
-        GlStateManager._matrixMode(5889);
+        /*GlStateManager._matrixMode(5889);
         GlStateManager._loadIdentity();
-        GlStateManager._ortho(0.0D, width, height, 0.0D, 1000.0D, 3000.0D);
+        GlStateManager._ortho(0.0D, width, height, 0.0D, 1000.0D, 3000.0D);*/
 
-        Tesselator tesselator = RenderSystem.renderThreadTesselator();
+        int alpha = (int) Math.min(255, mElapsedTimeMillis);
+        canvas.drawTextureMs(texture, 0, 0, width, height, alpha << 24 | 0xffffff);
+        canvas.render();
+
+        glBindVertexArray(oldVertexArray);
+        glUseProgram(oldProgram);
+
+        /*Tesselator tesselator = RenderSystem.renderThreadTesselator();
         BufferBuilder builder = tesselator.getBuilder();
         builder.begin(GL_QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
         int alpha = (int) Math.min(255, mElapsedTimeMillis);
@@ -551,13 +553,13 @@ public final class UIManager implements ViewRootImpl.Handler {
         builder.vertex(width, height, 0).color(255, 255, 255, alpha).uv(1, 0).endVertex();
         builder.vertex(width, 0, 0).color(255, 255, 255, alpha).uv(1, 1).endVertex();
         builder.vertex(0, 0, 0).color(255, 255, 255, alpha).uv(0, 1).endVertex();
-        tesselator.end();
+        tesselator.end();*/
         RenderSystem.bindTexture(DEFAULT_TEXTURE);
 
-        GlStateManager._loadIdentity();
+        /*GlStateManager._loadIdentity();
         GlStateManager._ortho(0.0D, width / mWindow.getGuiScale(), height / mWindow.getGuiScale(),
                 0.0D, 1000.0D, 3000.0D);
-        GlStateManager._matrixMode(5888);
+        GlStateManager._matrixMode(5888);*/
     }
 
     @SubscribeEvent

@@ -173,15 +173,18 @@ public class TestLinearLayout extends LinearLayout {
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(4.0f);
         canvas.save();
-        canvas.rotate(30);
-        canvas.drawRoundRect(6, 110, 86, 124, 6, paint);
-        canvas.restore();
+        canvas.rotate(-45, 0, 50);
+        canvas.drawRoundRect(26, 110, 106, 124, 6, paint);
 
         paint.setStyle(Paint.Style.FILL);
-        canvas.drawRect(6, 126, 86, 156, paint);
+        canvas.drawRect(26, 126, 106, 156, paint);
+        canvas.restore();
 
         String tcc = "今日も一日頑張るぞい";
-        canvas.drawTextRun(tcc, 0, tcc.length(), 20, 270, false, new TextPaint());
+        TextPaint textPaint = TextPaint.obtain();
+        textPaint.color = 0xfff4a460;
+        canvas.drawTextRun(tcc, 0, tcc.length(), 20, 270, false, textPaint);
+        textPaint.recycle();
 
         //canvas.drawRoundImage(ICON, 6, 160, 166, 320, iconRadius, paint);
 

@@ -22,7 +22,7 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.graphics.shader.Shader;
 import icyllis.modernui.graphics.shader.ShaderManager;
-import icyllis.modernui.graphics.texture.Texture2D;
+import icyllis.modernui.graphics.texture.Texture;
 import icyllis.modernui.graphics.vertex.VertexAttrib;
 import icyllis.modernui.graphics.vertex.VertexFormat;
 import icyllis.modernui.math.MathUtil;
@@ -115,6 +115,7 @@ public final class GLCanvas extends Canvas {
     public static final Shader ARC_FILL = new Shader();
     public static final Shader ARC_STROKE = new Shader();
     public static final Shader GLYPH_BATCH = new Shader();
+    public static final Shader COLOR_TEX_MS = new Shader();
 
     /**
      * Recording commands
@@ -131,6 +132,7 @@ public final class GLCanvas extends Canvas {
     public static final int DRAW_CLIP_PUSH = 10;
     public static final int DRAW_CLIP_POP = 11;
     public static final int DRAW_TEXT = 12;
+    public static final int DRAW_IMAGE_MS = 13;
 
     /**
      * Uniform block sizes, use std140 layout
@@ -195,7 +197,7 @@ public final class GLCanvas extends Canvas {
     private int mCurrTexture;
 
     // using textures of draw states, in the order of calling
-    private final List<Texture2D> mTextures = new ArrayList<>();
+    private final List<Texture> mTextures = new ArrayList<>();
 
     // absolute value presents the reference value, and sign represents whether to
     // update the stencil buffer (positive = update, or just change stencil func)
@@ -264,6 +266,7 @@ public final class GLCanvas extends Canvas {
         int arcFill = manager.getShard(ModernUI.get(), "arc_fill.frag");
         int arcStroke = manager.getShard(ModernUI.get(), "arc_stroke.frag");
         int glyphTex = manager.getShard(ModernUI.get(), "glyph_tex.frag");
+        int colorTexMs = manager.getShard(ModernUI.get(), "color_tex_4x.frag");
 
         manager.create(COLOR_FILL, posColor, colorFill);
         manager.create(COLOR_TEX, posColorTex, colorTex);
@@ -275,8 +278,9 @@ public final class GLCanvas extends Canvas {
         manager.create(ARC_FILL, posColor, arcFill);
         manager.create(ARC_STROKE, posColor, arcStroke);
         manager.create(GLYPH_BATCH, glyphBatch, glyphTex);
+        manager.create(COLOR_TEX_MS, posColorTex, colorTexMs);
 
-        //ModernUI.LOGGER.info(MARKER, "Loaded shader programs");
+        ModernUI.LOGGER.info(MARKER, "Loaded shader programs");
     }
 
     /**
@@ -414,6 +418,15 @@ public final class GLCanvas extends Canvas {
                 case DRAW_IMAGE:
                     bindVertexArray(POS_COLOR_TEX);
                     useProgram(COLOR_TEX);
+                    bindTexture(mTextures.get(textureIndex).get());
+                    textureIndex++;
+                    glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, posColorTexIndex, 4, 1, instance);
+                    posColorTexIndex += 4;
+                    break;
+
+                case DRAW_IMAGE_MS:
+                    bindVertexArray(POS_COLOR_TEX);
+                    useProgram(COLOR_TEX_MS);
                     bindTexture(mTextures.get(textureIndex).get());
                     textureIndex++;
                     glDrawArraysInstancedBaseInstance(GL_TRIANGLE_STRIP, posColorTexIndex, 4, 1, instance);
@@ -1108,6 +1121,15 @@ public final class GLCanvas extends Canvas {
         mTextures.add(source.texture);
         getMatrix().get(getModelViewBuffer());
         mDrawStates.add(DRAW_IMAGE);
+    }
+
+    public void drawTextureMs(@Nonnull Texture texture, float l, float t, float r, float b, int color) {
+        // flip vertical
+        putRectColorUV(l, t, r, b, color,
+                0, 1, 1, 0);
+        mTextures.add(texture);
+        getMatrix().get(getModelViewBuffer());
+        mDrawStates.add(DRAW_IMAGE_MS);
     }
 
     @Override
