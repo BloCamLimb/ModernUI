@@ -171,4 +171,14 @@ public class FontPaint {
         result = 31 * result + mFontSize;
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "FontPaint{" +
+                "mTypeface=" + mTypeface +
+                ", mLocale=" + mLocale +
+                ", mFontStyle=" + mFontStyle +
+                ", mFontSize=" + mFontSize +
+                '}';
+    }
 }

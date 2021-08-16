@@ -23,8 +23,6 @@ import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.platform.RenderCore;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.floats.FloatList;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntList;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
@@ -49,7 +47,7 @@ public class LayoutPiece {
     private float[] mPositions;
 
     // glyphs to char indices
-    private int[] mCharIndices;
+    //private int[] mCharIndices;
 
     // the size and order are relative to the text buf (char array)
     // only grapheme cluster bounds have advances, others are zeros
@@ -80,7 +78,7 @@ public class LayoutPiece {
         // async on render thread
         final List<TexturedGlyph> glyphs = new ArrayList<>();
         final FloatList positions = new FloatArrayList();
-        final IntList charIndices = new IntArrayList();
+        //final IntList charIndices = new IntArrayList();
 
         final List<FontRun> items = paint.mTypeface.itemize(buf, start, end);
         for (int runIndex = isRtl ? items.size() - 1 : 0;
@@ -93,7 +91,7 @@ public class LayoutPiece {
             ClusterWork clusterWork = new ClusterWork(derived, buf, isRtl, mAdvances, start);
             GraphemeBreak.forTextRun(buf, paint.mLocale, run.mStart, run.mEnd, clusterWork);
 
-            TextureWork textureWork = new TextureWork(vector, glyphs, positions, mAdvance, charIndices, run.mStart);
+            TextureWork textureWork = new TextureWork(vector, glyphs, positions, mAdvance);
             RenderCore.recordRenderCall(textureWork);
 
             mAdvance += vector.getGlyphPosition(vector.getNumGlyphs()).getX();
@@ -108,7 +106,7 @@ public class LayoutPiece {
         RenderCore.recordRenderCall(() -> {
             mGlyphs = glyphs.toArray(new TexturedGlyph[0]);
             mPositions = positions.toFloatArray();
-            mCharIndices = charIndices.toIntArray();
+            //mCharIndices = charIndices.toIntArray();
         });
 
         mAscent = extent.mAscent;
@@ -144,17 +142,12 @@ public class LayoutPiece {
         private final List<TexturedGlyph> mGlyphs;
         private final FloatList mPositions;
         private final float mOffsetX;
-        private final IntList mIndices;
-        private final int mStart;
 
-        private TextureWork(GlyphVector vector, List<TexturedGlyph> glyphs, FloatList positions,
-                            float offsetX, IntList indices, int start) {
+        private TextureWork(GlyphVector vector, List<TexturedGlyph> glyphs, FloatList positions, float offsetX) {
             mVector = vector;
             mGlyphs = glyphs;
             mPositions = positions;
             mOffsetX = offsetX;
-            mIndices = indices;
-            mStart = start;
         }
 
         @Override
@@ -168,7 +161,6 @@ public class LayoutPiece {
                     Point2D point = mVector.getGlyphPosition(i);
                     mPositions.add((float) point.getX() + mOffsetX);
                     mPositions.add((float) point.getY());
-                    mIndices.add(mVector.getGlyphCharIndex(i) + mStart);
                 }
             }
         }
@@ -204,9 +196,9 @@ public class LayoutPiece {
      *
      * @return char indices
      */
-    @RenderThread
+    @Deprecated
     public int[] getCharIndices() {
-        return mCharIndices;
+        return null;
     }
 
     /**

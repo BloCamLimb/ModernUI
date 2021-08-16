@@ -487,7 +487,7 @@ public abstract class Canvas {
                                         float radius, @Nonnull Paint paint);
 
     /**
-     * Draw a run of text. If you don't know what a text run is, do not call this method directly.
+     * Draw a run of text.
      *
      * @param text  the text to render
      * @param start context start of the text for shaping and rendering
@@ -497,11 +497,13 @@ public abstract class Canvas {
      * @param isRtl whether the run is in right-to-left direction
      * @param paint the paint used to draw the text
      */
+    @Deprecated
     public abstract void drawTextRun(@Nonnull CharSequence text, int start, int end,
                                      float x, float y, boolean isRtl, @Nonnull TextPaint paint);
 
     /**
-     * Draw a run of text. If you don't know what a text run is, do not call this method directly.
+     * Draw a run of text. The given range cannot excess a style run or break grapheme cluster.
+     * If you don't know what a text run is, do not call this method directly.
      *
      * @param text  the text to draw, which has been measured and computed glyph layout
      * @param start context start of the text for shaping and rendering

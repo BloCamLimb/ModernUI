@@ -18,9 +18,6 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.util.Pool;
-import icyllis.modernui.util.Pools;
-
 import javax.annotation.Nonnull;
 
 /**
@@ -29,7 +26,7 @@ import javax.annotation.Nonnull;
  */
 public class Paint {
 
-    private static final Pool<Paint> sPool = Pools.concurrent(4);
+    private static final ThreadLocal<Paint> TLS = ThreadLocal.withInitial(Paint::new);
 
     private static final int STYLE_MASK = 0x3;
 
@@ -89,9 +86,9 @@ public class Paint {
     }
 
     /**
-     * Returns a paint from the shared pool, the paint will be reset before return.
-     * This method is designed for temporary operations, a {@link #recycle()} is
-     * expected after use.
+     * Returns the thread-local paint, the paint will be reset before return.
+     * This method is designed for temporary operations, all stack-push methods
+     * cannot use this object anymore.
      * <p>
      * For example:
      * <pre>
@@ -102,20 +99,15 @@ public class Paint {
      *     canvas.drawRect(mRectA, paint);
      *     paint.setColor(mColorB);
      *     canvas.drawRect(mRectB, paint);
-     *     paint.recycle();
      * }
      * </pre>
      *
-     * @return a pooled paint
+     * @return the thread-local paint
      */
     @Nonnull
     public static Paint take() {
-        Paint paint = sPool.acquire();
-        if (paint == null) {
-            paint = new Paint();
-        } else {
-            paint.reset();
-        }
+        Paint paint = TLS.get();
+        paint.reset();
         return paint;
     }
 
@@ -276,13 +268,5 @@ public class Paint {
      */
     public void setSmoothRadius(float radius) {
         mSmoothRadius = Math.max(0, radius);
-    }
-
-    /**
-     * Recycle this paint, this object cannot be used anymore after calling.
-     * This is mostly used for the paint obtained via {@link #take()}.
-     */
-    public void recycle() {
-        sPool.release(this);
     }
 }
