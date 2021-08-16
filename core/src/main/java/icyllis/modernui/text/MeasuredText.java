@@ -24,11 +24,14 @@ import javax.annotation.concurrent.Immutable;
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
 /**
  * For the result of text shaping, measurement and glyph layout of a single paragraph.
+ *
+ * @see MeasuredParagraph
  */
 @Immutable
 @ThreadSafe
@@ -161,6 +164,13 @@ public class MeasuredText {
         return size;
     }
 
+    @Override
+    public String toString() {
+        return "MeasuredText{" +
+                "mRuns=" + Arrays.toString(mRuns) +
+                '}';
+    }
+
     /**
      * For creating a MeasuredText.
      */
@@ -190,13 +200,15 @@ public class MeasuredText {
          * Keeps an internal offset which increases at every append. The initial value for this
          * offset is zero. After the style is applied the internal offset is moved to {@code offset
          * + length}, and next call will start from this new position.
+         * <p>
+         * If paint is TextPaint, then a copy of base class will be used, or ensure it is immutable.
          *
          * @param paint  a paint
          * @param length a length to be applied with a given paint, can not exceed the length of the
          *               text
          * @param isRtl  true if the text is in RTL context, otherwise false.
          */
-        public void addStyleRun(@Nonnull TextPaint paint, int length, boolean isRtl) {
+        public void addStyleRun(@Nonnull FontPaint paint, int length, boolean isRtl) {
             if (length <= 0) {
                 throw new IllegalArgumentException("length can not be negative");
             }
@@ -204,7 +216,10 @@ public class MeasuredText {
             if (end > mText.length) {
                 throw new IllegalArgumentException("Style exceeds the text length");
             }
-            mRuns.add(new StyleRun(mCurrentOffset, end, paint.copyAsBase(), isRtl));
+            if (paint instanceof TextPaint) {
+                paint = ((TextPaint) paint).copyAsBase();
+            }
+            mRuns.add(new StyleRun(mCurrentOffset, end, paint, isRtl));
             mCurrentOffset = end;
         }
 
@@ -263,7 +278,7 @@ public class MeasuredText {
         public final int mStart;
         public final int mEnd;
 
-        public Run(int start, int end) {
+        private Run(int start, int end) {
             mStart = start;
             mEnd = end;
         }
@@ -272,11 +287,11 @@ public class MeasuredText {
         protected abstract void measure(@Nonnull char[] text);
 
         // Extend extent
-        public abstract void getExtent(@Nonnull char[] text, int start, int end,
-                                       @Nonnull FontMetricsInt extent);
+        protected abstract void getExtent(@Nonnull char[] text, int start, int end,
+                                          @Nonnull FontMetricsInt extent);
 
         @Nullable
-        public abstract LayoutPiece getLayout(@Nonnull char[] text, int start, int end);
+        protected abstract LayoutPiece getLayout(@Nonnull char[] text, int start, int end);
 
         protected abstract float getAdvance(int pos);
 
@@ -302,20 +317,20 @@ public class MeasuredText {
 
         private LayoutPiece mLayoutPiece;
 
-        public StyleRun(int start, int end, FontPaint paint, boolean isRtl) {
+        private StyleRun(int start, int end, FontPaint paint, boolean isRtl) {
             super(start, end);
             mPaint = paint;
             mIsRtl = isRtl;
         }
 
         @Override
-        public void measure(@Nonnull char[] text) {
+        protected void measure(@Nonnull char[] text) {
             mLayoutPiece = LayoutCache.getOrCreate(text, mStart, mEnd, mIsRtl, mPaint);
         }
 
         @Override
-        public void getExtent(@Nonnull char[] text, int start, int end,
-                              @Nonnull FontMetricsInt extent) {
+        protected void getExtent(@Nonnull char[] text, int start, int end,
+                                 @Nonnull FontMetricsInt extent) {
             if (start == mStart && end == mEnd) {
                 mLayoutPiece.getExtent(extent);
             } else {
@@ -324,7 +339,7 @@ public class MeasuredText {
         }
 
         @Override
-        public LayoutPiece getLayout(@Nonnull char[] text, int start, int end) {
+        protected LayoutPiece getLayout(@Nonnull char[] text, int start, int end) {
             if (start == mStart && end == mEnd) {
                 return mLayoutPiece;
             }
@@ -332,12 +347,12 @@ public class MeasuredText {
         }
 
         @Override
-        public float getAdvance(int pos) {
+        protected float getAdvance(int pos) {
             return mLayoutPiece.getAdvances()[pos - mStart];
         }
 
         @Override
-        public float getAdvance(int start, int end) {
+        protected float getAdvance(int start, int end) {
             if (start == mStart && end == mEnd) {
                 return mLayoutPiece.getAdvance();
             }
@@ -369,6 +384,17 @@ public class MeasuredText {
             // 12 + 4 + 4 + (12 + 8 + 8 + 4 + 4) + 1 + 8
             return 72 + mLayoutPiece.getMemoryUsage();
         }
+
+        @Override
+        public String toString() {
+            return "StyleRun{" +
+                    "mStart=" + mStart +
+                    ", mEnd=" + mEnd +
+                    ", mPaint=" + mPaint +
+                    ", mIsRtl=" + mIsRtl +
+                    ", mLayoutPiece=" + mLayoutPiece +
+                    '}';
+        }
     }
 
     public static class ReplacementRun extends Run {
@@ -376,30 +402,30 @@ public class MeasuredText {
         private final float mWidth;
         private final Locale mLocale;
 
-        public ReplacementRun(int start, int end, float width, Locale locale) {
+        private ReplacementRun(int start, int end, float width, Locale locale) {
             super(start, end);
             mWidth = width;
             mLocale = locale;
         }
 
         @Override
-        public void measure(@Nonnull char[] text) {
+        protected void measure(@Nonnull char[] text) {
             //TODO: Get the extents information from the caller.
         }
 
         @Override
-        public void getExtent(@Nonnull char[] text, int start, int end, @Nonnull FontMetricsInt extent) {
+        protected void getExtent(@Nonnull char[] text, int start, int end, @Nonnull FontMetricsInt extent) {
 
         }
 
         @Nullable
         @Override
-        public LayoutPiece getLayout(@Nonnull char[] text, int start, int end) {
+        protected LayoutPiece getLayout(@Nonnull char[] text, int start, int end) {
             return null;
         }
 
         @Override
-        public float getAdvance(int pos) {
+        protected float getAdvance(int pos) {
             if (pos == mStart) {
                 return mWidth;
             }
@@ -407,7 +433,7 @@ public class MeasuredText {
         }
 
         @Override
-        public float getAdvance(int start, int end) {
+        protected float getAdvance(int start, int end) {
             if (start == mStart) {
                 return mWidth;
             }
@@ -434,6 +460,16 @@ public class MeasuredText {
         public int getMemoryUsage() {
             // 12 + 4 + 4 + 8 + 4
             return 32;
+        }
+
+        @Override
+        public String toString() {
+            return "ReplacementRun{" +
+                    "mStart=" + mStart +
+                    ", mEnd=" + mEnd +
+                    ", mWidth=" + mWidth +
+                    ", mLocale=" + mLocale +
+                    '}';
         }
     }
 }

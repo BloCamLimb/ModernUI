@@ -25,7 +25,8 @@ import org.lwjgl.system.Platform;
 import javax.annotation.Nonnull;
 
 /**
- * Object that indicates movement events (mouse, touchpad etc)
+ * Object that indicates movement events (mouse, touchpad etc) and designed
+ * for desktop application.
  */
 @SuppressWarnings("unused")
 public final class MotionEvent extends InputEvent {

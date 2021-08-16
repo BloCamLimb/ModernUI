@@ -18,6 +18,9 @@
 
 package icyllis.modernui.text;
 
+import icyllis.modernui.util.Pool;
+import icyllis.modernui.util.Pools;
+
 import javax.annotation.Nonnull;
 
 /**
@@ -25,13 +28,33 @@ import javax.annotation.Nonnull;
  */
 public class TextPaint extends FontPaint {
 
-    // the glyph color
+    private static final Pool<TextPaint> sPool = Pools.concurrent(4);
+
+    // the glyph/text/chars/foreground color
     public int color;
 
     // 0 means no background
     public int bgColor;
 
+    /**
+     * Creates the new TextPaint.
+     */
     public TextPaint() {
+    }
+
+    /**
+     * Returns a TextPaint from the shared pool, a {@link #recycle()} is
+     * expected after use.
+     *
+     * @return a pooled object, states are undefined
+     */
+    @Nonnull
+    public static TextPaint obtain() {
+        TextPaint paint = sPool.acquire();
+        if (paint == null) {
+            return new TextPaint();
+        }
+        return paint;
     }
 
     /**
@@ -59,5 +82,12 @@ public class TextPaint extends FontPaint {
      */
     public void getFontMetrics(FontMetricsInt fm) {
         GlyphManager.getInstance().getFontMetrics(mTypeface, this, fm);
+    }
+
+    /**
+     * Recycle this text paint, this object cannot be used anymore after recycling.
+     */
+    public void recycle() {
+        sPool.release(this);
     }
 }

@@ -200,7 +200,7 @@ abstract class SpannableStringInternal implements Spanned {
         }
 
         if (mSpanCount + 1 >= mSpans.length) {
-            Object[] newSpans = new Object[mSpanCount + (mSpanCount >> 1)];
+            Object[] newSpans = new Object[mSpanCount == 0 ? 2 : mSpanCount << 1];
             int[] newData = new int[newSpans.length * COLUMNS];
 
             System.arraycopy(mSpans, 0, newSpans, 0, mSpanCount);
