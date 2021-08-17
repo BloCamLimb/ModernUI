@@ -8,6 +8,7 @@ dependencies {
     implementation "it.unimi.dsi:fastutil:${fastutil_version}"
     implementation "com.ibm.icu:icu4j:${icu4j_version}"
     implementation "com.github.ben-manes.caffeine:caffeine:${caffeine_version}"
+    implementation "com.vladsch.flexmark:flexmark:${flexmark_version}"
 
     def lwjglNatives = "natives-linux"
     switch (OperatingSystem.current()) {

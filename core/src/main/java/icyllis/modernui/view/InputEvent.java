@@ -23,8 +23,6 @@ package icyllis.modernui.view;
  */
 public abstract class InputEvent {
 
-    protected boolean mRecycled;
-
     InputEvent() {
     }
 
@@ -40,19 +38,7 @@ public abstract class InputEvent {
      * <p>
      * This method should only be called by system.
      */
-    public void recycle() {
-        if (mRecycled) {
-            throw new IllegalStateException(this + " recycled twice");
-        }
-        mRecycled = true;
-    }
-
-    /**
-     * Re-initialize the event for reuse (after recycling).
-     */
-    protected void prepareForReuse() {
-        mRecycled = false;
-    }
+    public abstract void recycle();
 
     /**
      * Get the time in milliseconds that this event object

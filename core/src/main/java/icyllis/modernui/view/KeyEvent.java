@@ -26,6 +26,11 @@ public class KeyEvent extends InputEvent {
     }
 
     @Override
+    public void recycle() {
+
+    }
+
+    @Override
     public long getEventTime() {
         return 0;
     }
