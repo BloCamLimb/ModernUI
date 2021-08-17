@@ -165,11 +165,13 @@ public final class TextUtils {
         return -1;
     }
 
-    private static final String[] sBinaryCompacts = new String[]{" bytes", " KB", "MB", " GB"};
+    private static final String[] sBinaryCompacts = new String[]{" bytes", " KB", " MB", " GB"};
 
     @Nonnull
-    public static String compactBinary(int number) {
-        int i = (Integer.SIZE - 1 - Integer.numberOfLeadingZeros(number)) / 10;
-        return number / (1 << (i * 10)) + sBinaryCompacts[i];
+    public static String compactBinary(int num) {
+        if (num == 0)
+            return "0 bytes";
+        int i = (Integer.SIZE - 1 - Integer.numberOfLeadingZeros(num)) / 10;
+        return num / (1 << (i * 10)) + sBinaryCompacts[i];
     }
 }

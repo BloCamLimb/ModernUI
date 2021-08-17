@@ -28,6 +28,7 @@ import org.apache.logging.log4j.MarkerManager;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.awt.*;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -77,6 +78,13 @@ public class Typeface {
         GraphicsEnvironment.getLocalGraphicsEnvironment().preferLocaleFonts();
 
         List<Font> p = new ArrayList<>();
+
+        try (InputStream stream = new FileInputStream("F:/Torus Regular.otf")) {
+            Font font = Font.createFont(Font.TRUETYPE_FONT, stream);
+            p.add(font);
+        } catch (FontFormatException | IOException e) {
+            e.printStackTrace();
+        }
 
         String[] families = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames(Locale.ROOT);
         Font sansSerif = null;

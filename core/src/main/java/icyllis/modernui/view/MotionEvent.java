@@ -18,6 +18,8 @@
 
 package icyllis.modernui.view;
 
+import icyllis.modernui.util.Pool;
+import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.system.Platform;
@@ -25,8 +27,8 @@ import org.lwjgl.system.Platform;
 import javax.annotation.Nonnull;
 
 /**
- * Object that indicates movement events (mouse, touchpad etc) and designed
- * for desktop application.
+ * Object that indicates movement events (mouse, touchpad etc).
+ * Modified for desktop application, multiple pointers are disabled.
  */
 @SuppressWarnings("unused")
 public final class MotionEvent extends InputEvent {
@@ -38,12 +40,12 @@ public final class MotionEvent extends InputEvent {
      * has not been assigned or is not available.  It cannot appear as
      * a pointer id inside a {@link MotionEvent}.
      */
-    public static final int INVALID_POINTER_ID = -1;
+    private static final int INVALID_POINTER_ID = -1;
 
     /**
      * Bit mask of the parts of the action code that are the action itself.
      */
-    public static final int ACTION_MASK = 0xff;
+    private static final int ACTION_MASK = 0xff;
 
     /**
      * Constant for {@link #getActionMasked}: A pressed gesture has started, the
@@ -101,7 +103,7 @@ public final class MotionEvent extends InputEvent {
      * unmasked action returned by {@link #getAction}.
      * </p>
      */
-    public static final int ACTION_POINTER_DOWN = 5;
+    private static final int ACTION_POINTER_DOWN = 5;
 
     /**
      * Constant for {@link #getActionMasked}: A non-primary pointer has gone up.
@@ -112,7 +114,7 @@ public final class MotionEvent extends InputEvent {
      * unmasked action returned by {@link #getAction}.
      * </p>
      */
-    public static final int ACTION_POINTER_UP = 6;
+    private static final int ACTION_POINTER_UP = 6;
 
     /**
      * Constant for {@link #getActionMasked}: A change happened but the pointer
@@ -182,7 +184,7 @@ public final class MotionEvent extends InputEvent {
      * {@link View#onTouchEvent(MotionEvent)}.
      * </p>
      */
-    public static final int ACTION_BUTTON_PRESS = 11;
+    private static final int ACTION_BUTTON_PRESS = 11;
 
     /**
      * Constant for {@link #getActionMasked}: A button has been released.
@@ -195,7 +197,7 @@ public final class MotionEvent extends InputEvent {
      * {@link View#onTouchEvent(MotionEvent)}.
      * </p>
      */
-    public static final int ACTION_BUTTON_RELEASE = 12;
+    private static final int ACTION_BUTTON_RELEASE = 12;
 
     /**
      * Bits in the action code that represent a pointer index, used with
@@ -207,7 +209,7 @@ public final class MotionEvent extends InputEvent {
      *
      * @see #getActionIndex
      */
-    public static final int ACTION_POINTER_INDEX_MASK = 0xff00;
+    private static final int ACTION_POINTER_INDEX_MASK = 0xff00;
 
     /**
      * Bit shift for the action bits holding the pointer index as
@@ -215,7 +217,7 @@ public final class MotionEvent extends InputEvent {
      *
      * @see #getActionIndex
      */
-    public static final int ACTION_POINTER_INDEX_SHIFT = 8;
+    private static final int ACTION_POINTER_INDEX_SHIFT = 8;
 
 
     /**
@@ -272,35 +274,35 @@ public final class MotionEvent extends InputEvent {
      *
      * @see #getToolType
      */
-    public static final int TOOL_TYPE_UNKNOWN = 0;
+    private static final int TOOL_TYPE_UNKNOWN = 0;
 
     /**
      * Tool type constant: The tool is a finger.
      *
      * @see #getToolType
      */
-    public static final int TOOL_TYPE_FINGER = 1;
+    private static final int TOOL_TYPE_FINGER = 1;
 
     /**
      * Tool type constant: The tool is a stylus.
      *
      * @see #getToolType
      */
-    public static final int TOOL_TYPE_STYLUS = 2;
+    private static final int TOOL_TYPE_STYLUS = 2;
 
     /**
      * Tool type constant: The tool is a mouse.
      *
      * @see #getToolType
      */
-    public static final int TOOL_TYPE_MOUSE = 3;
+    private static final int TOOL_TYPE_MOUSE = 3;
 
     /**
      * Tool type constant: The tool is an eraser or a stylus being used in an inverted posture.
      *
      * @see #getToolType
      */
-    public static final int TOOL_TYPE_ERASER = 4;
+    private static final int TOOL_TYPE_ERASER = 4;
 
 
     /**
@@ -379,15 +381,9 @@ public final class MotionEvent extends InputEvent {
      */
     public static final int AXIS_HSCROLL = 10;
 
-    @Deprecated
-    private static final int HISTORY_CURRENT = Integer.MIN_VALUE;
-
     private static final float INVALID_CURSOR_POSITION = Float.NaN;
 
-    private static final int MAX_RECYCLED = 10;
-    private static final Object sRecyclerLock = new Object();
-    private static MotionEvent sRecyclerTop;
-    private static int sRecyclerUsed;
+    private static final Pool<MotionEvent> sPool = Pools.concurrent(10);
 
     // Shared temporary objects used when translating coordinates supplied by
     // the caller into single element PointerCoords and pointer id arrays.
@@ -408,8 +404,6 @@ public final class MotionEvent extends InputEvent {
         }
     }
 
-    private MotionEvent mNext;
-
     private int mAction;
     private int mActionButton;
     private int mFlags;
@@ -428,22 +422,14 @@ public final class MotionEvent extends InputEvent {
     private final ObjectArrayList<PointerCoords> mPointerCoords = new ObjectArrayList<>();
 
     private MotionEvent() {
-
     }
 
     @Nonnull
     private static MotionEvent obtain() {
-        final MotionEvent event;
-        synchronized (sRecyclerLock) {
-            event = sRecyclerTop;
-            if (event == null) {
-                return new MotionEvent();
-            }
-            sRecyclerTop = event.mNext;
-            sRecyclerUsed--;
+        final MotionEvent event = sPool.acquire();
+        if (event == null) {
+            return new MotionEvent();
         }
-        event.mNext = null;
-        event.prepareForReuse();
         return event;
     }
 
@@ -630,14 +616,7 @@ public final class MotionEvent extends InputEvent {
      */
     @Override
     public final void recycle() {
-        super.recycle();
-        synchronized (sRecyclerLock) {
-            if (sRecyclerUsed < MAX_RECYCLED) {
-                sRecyclerUsed++;
-                mNext = sRecyclerTop;
-                sRecyclerTop = this;
-            }
-        }
+        sPool.release(this);
     }
 
     /**
@@ -1105,7 +1084,7 @@ public final class MotionEvent extends InputEvent {
     }
 
     /**
-     * Returns the pressed state of the CTRL key.  If it's running on OSX,
+     * Returns the pressed state of the CTRL key. If it's running on OSX,
      * returns the pressed state of the SUPER key.
      *
      * @return true if the CTRL key is pressed, false otherwise
@@ -1355,7 +1334,7 @@ public final class MotionEvent extends InputEvent {
      * Objects of this type can be used to specify the pointer id and tool type
      * when creating new {@link MotionEvent} objects and to query pointer properties in bulk.
      */
-    public static final class PointerProperties {
+    private static final class PointerProperties {
 
         /**
          * The pointer id, range between 0 and 31.

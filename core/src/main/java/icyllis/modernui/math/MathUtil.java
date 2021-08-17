@@ -215,4 +215,14 @@ public final class MathUtil {
     public static float lerp(float f, float st, float en) {
         return st + f * (en - st);
     }
+
+    // n - positive
+    public static int numOnes(int n) {
+        if (n == 0)
+            return 0;
+        int r = 1;
+        while ((n &= n - 1) != 0)
+            r++;
+        return r;
+    }
 }

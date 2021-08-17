@@ -19,15 +19,14 @@
 package icyllis.modernui.test;
 
 import com.ibm.icu.text.BreakIterator;
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.ast.Node;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.GLCanvas;
-import icyllis.modernui.graphics.GLWrapper;
+import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.shader.ShaderManager;
 import icyllis.modernui.graphics.texture.Texture2D;
 import icyllis.modernui.math.Matrix4;
@@ -51,7 +50,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
@@ -133,8 +131,6 @@ public class TestMain {
         float[] av = new float[]{1, 3, 2, 4.1f, 6, 0, 6, 0.5f, 5, 7, 11.3f, 9, 9.1f, 15, 8, 10};
         float[] bv = new float[]{9.1f, 2, 7, 5, 3.3f, 6.1f, 5.5f, 4, 0, 8, 3, 1, 2.7f, 3, 9, 2};
         int[] intervals = new int[]{0, 4, 9, 15, 17};
-        ModernUI.LOGGER.info(search(intervals, 4));
-        ModernUI.LOGGER.info(search(intervals, 10));
         //Quaternion q = Quaternion.fromAxisAngle(0.40824829f, 0.81649658f, 0.40824829f, MathUtil.PI_DIV_3);
         /*Vector3 vec1 = new Vector3(5, 2, 2);
         Vector3 vec2 = vec1.copy();
@@ -188,7 +184,7 @@ public class TestMain {
         try {
             Thread.currentThread().setName("Main-Thread");
             RenderCore.initBackend();
-            sWindow = Window.create("Modern UI Layout Editor", Window.State.WINDOWED, 1280, 720);
+            sWindow = Window.create("Modern UI Layout Editor", Window.State.WINDOWED, 1600, 900);
             try (var c1 = ModernUI.get().getResource(Path.of("AppLogo16x.png"));
                  var bitmap1 = Bitmap.decode(null, c1);
                  var c2 = ModernUI.get().getResource(Path.of("AppLogo32x.png"));
@@ -199,42 +195,75 @@ public class TestMain {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            Thread t = new Thread(() -> {
-                final Window window = sWindow;
-                window.makeCurrent();
-                RenderCore.initialize();
-                RenderSystem.initRenderThread();
-                GLCanvas canvas = GLCanvas.initialize();
-                ShaderManager.getInstance().reload();
-                // OpenGL coordinates origin is "bottom" left, we flip it
-                Matrix4 projection = Matrix4.makeOrthographic(window.getWidth(), -window.getHeight(), 0, 2000);
-                //projection = Matrix4.makePerspective(MathUtil.PI_DIV_2, window.getAspectRatio(), 0.01f, 1000);
-                canvas.setProjection(projection);
+            Thread renderThread = new Thread(TestMain::runRenderThread, "Render-Thread");
+            renderThread.start();
+            Thread soundThread = new Thread(TestMain::runSoundThread, "Sound-Thread");
+            soundThread.start();
 
-                Image image;
-                try (ReadableByteChannel channel = ModernUI.get().getResource(Path.of("74523424_p0.png"))) {
-                    Bitmap bitmap = Bitmap.decode(null, channel);
-                    Texture2D texture2D = new Texture2D();
-                    int width = bitmap.getWidth();
-                    int height = bitmap.getHeight();
-                    texture2D.initCore(GL_RGB8, width, height, 4);
-                    texture2D.upload(0, 0, 0, width, height, 0,
-                            0, 0, 1, bitmap.getFormat().glFormat, GL_UNSIGNED_BYTE, bitmap.getPixels());
-                    texture2D.setFilter(true, true);
-                    texture2D.generateMipmap();
-                    image = new Image(new Image.Source(texture2D, width, height));
-                } catch (IOException e) {
-                    throw new IllegalStateException();
+            /*new Thread(() -> {
+                // convert to png format with alpha channel
+                try (Bitmap b = Bitmap.openDialog(Bitmap.Format.RGBA)) {
+                    if (b != null) {
+                        b.saveDialog(Bitmap.SaveFormat.PNG, 0);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
+            }, "Open-File").start();*/
 
-                GlyphManager glyphManager = GlyphManager.getInstance();
+            while (sWindow == null || !sWindow.shouldClose()) {
+                glfwWaitEventsTimeout(1 / 288D);
+            }
+            renderThread.interrupt();
+            soundThread.interrupt();
+        } finally {
+            if (sWindow != null) {
+                sWindow.close();
+            }
+            Stream.of(glfwSetMonitorCallback(null),
+                    glfwSetErrorCallback(null))
+                    .filter(Objects::nonNull)
+                    .forEach(Callback::free);
+            glfwTerminate();
+            ModernUI.LOGGER.info(MARKER, "Stopped");
+        }
+    }
 
-                String text; //= "\u0639\u0646\u062f\u0645\u0627\u0020\u064a\u0631\u064a\u062f\u0020\u0627\u0644\u0639\u0627\u0644\u0645\u0020\u0623\u0646\u0020\u202a\u064a\u062a\u0643\u0644\u0651\u0645\u0020\u202c\u0020\u060c\u0020\u0641\u0647\u0648\u0020\u064a\u062a\u062d\u062f\u0651\u062b\u0020\u0628\u0644\u063a\u0629\u0020\u064a\u0648\u0646\u064a\u0643\u0648\u062f\u002e\u0020\u062a\u0633\u062c\u0651\u0644\u0020\u0627\u0644\u0622\u0646\u0020\u0644\u062d\u0636\u0648\u0631\u0020\u0627\u0644\u0645\u0624\u062a\u0645\u0631\u0020\u0627\u0644\u062f\u0648\u0644\u064a\u0020\u0627\u0644\u0639\u0627\u0634\u0631\u0020\u0644\u064a\u0648\u0646\u064a\u0643\u0648\u062f\u0020\u0028\u0055\u006e\u0069\u0063\u006f\u0064\u0065\u0020\u0043\u006f\u006e\u0066\u0065\u0072\u0065\u006e\u0063\u0065\u0029";
-                text = "My name is Van, I'm 30 years old, and I'm from Japan. I'm an artist, I'm a performance artist. " +
-                        "I'm hired for people to fulfill their fantasies, their deep dark fantasies. " +
-                        "I was gonna be a movie star, you know with modelling and uh, acting. " +
-                        "After a hundred or two audition and small parts, you know I decided, you know, I had enough, then I get into escort work.";
-                //char[] textC = text.toCharArray();
+    private static void runRenderThread() {
+        final Window window = sWindow;
+        window.makeCurrent();
+        RenderCore.initialize();
+        GLCanvas canvas = GLCanvas.initialize();
+        ShaderManager.getInstance().reload();
+        // OpenGL coordinates origin is "bottom" left, we flip it
+        Matrix4 projection = Matrix4.makeOrthographic(window.getWidth(), -window.getHeight(), 0, 2000);
+        //projection = Matrix4.makePerspective(MathUtil.PI_DIV_2, window.getAspectRatio(), 0.01f, 1000);
+        canvas.setProjection(projection);
+
+        Image image;
+        try (ReadableByteChannel channel = ModernUI.get().getResource(Path.of("eromanga.png"))) {
+            Bitmap bitmap = Bitmap.decode(null, channel);
+            Texture2D texture2D = new Texture2D();
+            int width = bitmap.getWidth();
+            int height = bitmap.getHeight();
+            texture2D.initCore(GL_RGB8, width, height, 4);
+            texture2D.upload(0, 0, 0, width, height, 0,
+                    0, 0, 1, bitmap.getFormat().glFormat, GL_UNSIGNED_BYTE, bitmap.getPixels());
+            texture2D.setFilter(true, true);
+            texture2D.generateMipmap();
+            image = new Image(new Image.Source(texture2D, width, height));
+        } catch (IOException e) {
+            throw new IllegalStateException();
+        }
+
+        //GlyphManager glyphManager = GlyphManager.getInstance();
+
+        String text; //= "\u0639\u0646\u062f\u0645\u0627\u0020\u064a\u0631\u064a\u062f\u0020\u0627\u0644\u0639\u0627\u0644\u0645\u0020\u0623\u0646\u0020\u202a\u064a\u062a\u0643\u0644\u0651\u0645\u0020\u202c\u0020\u060c\u0020\u0641\u0647\u0648\u0020\u064a\u062a\u062d\u062f\u0651\u062b\u0020\u0628\u0644\u063a\u0629\u0020\u064a\u0648\u0646\u064a\u0643\u0648\u062f\u002e\u0020\u062a\u0633\u062c\u0651\u0644\u0020\u0627\u0644\u0622\u0646\u0020\u0644\u062d\u0636\u0648\u0631\u0020\u0627\u0644\u0645\u0624\u062a\u0645\u0631\u0020\u0627\u0644\u062f\u0648\u0644\u064a\u0020\u0627\u0644\u0639\u0627\u0634\u0631\u0020\u0644\u064a\u0648\u0646\u064a\u0643\u0648\u062f\u0020\u0028\u0055\u006e\u0069\u0063\u006f\u0064\u0065\u0020\u0043\u006f\u006e\u0066\u0065\u0072\u0065\u006e\u0063\u0065\u0029";
+        text = "My name is Van, I'm 30 years old, and I'm from Japan. I'm an artist, I'm a performance artist. " +
+                "I'm hired for people to fulfill their fantasies, their deep dark fantasies.";
+                /*"I was gonna be a movie star, you know with modelling and uh, acting. " +
+                "After a hundred or two audition and small parts, you know I decided, you know, I had enough, then I get into escort work.";*/
+        //char[] textC = text.toCharArray();
 
                 /*TextPaint tp = new TextPaint();
                 var mt = MeasuredParagraph.buildForStaticLayout(tp, text, 0, text.length(), TextDirectionHeuristics.FIRSTSTRONG_LTR, null);
@@ -256,168 +285,139 @@ public class TestMain {
                 }
                 glyphManager.export();*/
 
-                Spannable spannable = SpannableString.valueOf(text);
-                spannable.setSpan(new AbsoluteSizeSpan(16), 50, text.length(), 0);
-                TextLine textLine = new TextLine(spannable);
+        Spannable spannable = SpannableString.valueOf(text);
+        spannable.setSpan(new AbsoluteSizeSpan(18), 54, text.length(), 0);
+        TextLine textLine = new TextLine(spannable);
 
-                while (!window.shouldClose()) {
-                    if (window.isContentDirty()) {
-                        GLWrapper.resetFrame(window);
-                        GLWrapper.enableCull();
-                        RenderSystem.enableBlend();
-                        RenderSystem.defaultBlendFunc();
-                        GLWrapper.glEnable(GL_STENCIL_TEST);
-                        //RenderSystem.disableDepthTest();
-                        //GlStateManager._colorMask(true, true, true, true);
-                        //RenderSystem.depthMask(false);
-                        canvas.reset(window.getWidth(), window.getHeight());
-                        // UI thread
+        WaveformGraph graph = null;
+        try {
+            graph = new WaveformGraph();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
-                        canvas.save();
-                        //canvas.rotate(-10, 640, 360);
-                        Paint paint = Paint.take();
-                        paint.setSmoothRadius(2);
-                        canvas.save();
+        long lastTime = RenderCore.timeMillis();
 
-                        canvas.scale(0.7f, 0.7f);
-                        canvas.drawRoundImage(image, 100, 20, 15, paint);
-                        canvas.restore();
-                        //canvas.drawCircle(60, 60, 20, paint);
-                        canvas.translate(300, 0);
-                        //canvas.clipRect(130, 40, 310, 110);
+        while (!window.shouldClose()) {
+            long delta = RenderCore.timeMillis() - lastTime;
+            if (delta > 16) {
+                lastTime += 16;
+                GLWrapper.resetFrame(window);
+                GLWrapper.enableCull();
+                GLWrapper.glEnable(GL_BLEND);
+                GLWrapper.glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+                GLWrapper.glEnable(GL_STENCIL_TEST);
+                GLWrapper.glEnable(GL_MULTISAMPLE);
+                canvas.reset(window.getWidth(), window.getHeight());
+                // UI thread
+
+                Paint paint = Paint.take();
+
+                canvas.save();
+                canvas.scale(0.8334f, 0.8334f);
+                paint.setRGB(192, 192, 192);
+                canvas.drawImage(image, 0, 0, paint);
+                canvas.restore();
 
 
-                        paint.setStyle(Paint.Style.FILL);
+                drawOsuScore(canvas);
 
-                        paint.setColors(new int[]{0xff66ccff, 0xffffb6c0, 0xffffb6c0, 0xff66ccff});
-                        canvas.drawRoundRect(120, 50, 200, 90, 10, paint);
-                        /*paint.setRGBA(128, 128, 128, 255);
-                        canvas.drawRoundRect(120, 90, 200, 130, 2, paint);
-                        paint.setRGBA(40, 40, 40, 255);
-                        canvas.drawRoundRect(120, 130, 200, 170, 2, paint);
-                        canvas.drawRoundRect(120, 170, 200, 210, 2, paint);
-                        canvas.drawRoundRect(120, 210, 200, 250, 10, Canvas.BOTTOM, paint);*/
 
-                        paint.setStrokeWidth(4);
-                        /*paint.setSmoothRadius(2);
-                        paint.setRGBA(192, 192, 192, 255);
-                        canvas.drawLine(122, 90, 198, 90, paint);
-                        canvas.drawLine(122, 130, 198, 130, paint);
-                        canvas.drawLine(122, 170, 198, 170, paint);
-                        canvas.drawLine(122, 210, 198, 210, paint);*/
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setRGBA(255, 255, 255, 255);
+                canvas.drawRoundRect(120, 50, 200, 250, 10, paint);
 
-                        paint.setStyle(Paint.Style.STROKE);
-                        paint.setRGBA(255, 255, 255, 255);
-                        //canvas.drawCircle(60, 60, 20, paint);
-                        canvas.drawRoundRect(120, 50, 200, 250, 10, paint);
+                canvas.save();
+                canvas.rotate(45);
+                canvas.drawRect(190, 60, 270, 140, paint);
+                canvas.restore();
 
-                        canvas.rotate(45);
-                        canvas.drawRect(190, 60, 270, 140, paint);
-                        canvas.restore();
+                paint.setStrokeWidth(10);
+                canvas.drawArc(200, 200, 30, 90, -90, paint);
 
-                        paint.setStrokeWidth(10);
-                        canvas.drawArc(200, 200, 30, 90, -90, paint);
+                paint.setStrokeWidth(8);
+                paint.setRGBA(120, 220, 240, 192);
+                canvas.drawLine(20, 20, 140, 60, paint);
+                canvas.drawLine(120, 30, 60, 80, paint);
 
-                        paint.setStrokeWidth(8);
-                        paint.setRGBA(120, 220, 240, 192);
-                        canvas.drawLine(20, 20, 140, 60, paint);
-                        canvas.drawLine(120, 30, 60, 80, paint);
+                TextPaint paint1 = new TextPaint();
+                paint1.color = 0xff40ddee;
+                canvas.rotate(30);
+                String tcc = "今日も一日頑張るぞい";
+                canvas.drawTextRun(tcc, 0, tcc.length(), 730, 170, false, paint1);
+                tcc = "আমি আজ সকালের নাস্তা খাব না";
+                canvas.drawTextRun(tcc, 0, tcc.length(), 660, 240, false, paint1);
+                canvas.rotate(-30);
 
-                        var textPaint = new TextPaint();
-                        textPaint.color = 0xff40ddee;
-                        canvas.rotate(30);
-                        String tcc = "今日も一日頑張るぞい";
-                        canvas.drawTextRun(tcc, 0, tcc.length(), 730, 170, false, textPaint);
-                        tcc = "আমি আজ সকালের নাস্তা খাব না";
-                        canvas.drawTextRun(tcc, 0, tcc.length(), 660, 240, false, textPaint);
-                        canvas.rotate(-30);
+                textLine.draw(canvas, 32, 400);
 
-                        textLine.draw(canvas, 20, 400);
-
-                        // render thread, wait UI thread
-                        canvas.render();
-                        //glyphManager.debug();
-                        ModernUI.LOGGER.info("LayoutCache: {} bytes", LayoutCache.getMemoryUsage());
-
-                        /*GL11.glMatrixMode(GL11.GL_PROJECTION);
-                        GL43.glPushMatrix();
-                        GL11.glLoadIdentity();
-                        //RenderSystem.ortho(0.0D, window.getWidth(), window.getHeight(), 0.0D, 1000.0D, 3000.0D);
-                        //a.multiply(b);
-                        GL11.glMultMatrixf(projection);
-                        GL11.glMatrixMode(GL11.GL_MODELVIEW);
-                        GL43.glPushMatrix();
-                        GL11.glLoadIdentity();
-                        //GlStateManager._translatef(0.0F, 0.0F, -2000.0F);
-                        Paint paint = Paint.take();
-                        GL11.glPushMatrix();
-                        GL11.glTranslatef(-1.58f * window.getAspectRatio(), -1.0f, -3.8f);
-                        GL11.glScalef(1 / 90f, -1 / 90f, 1 / 90f);
-                        GL11.glRotatef(90, 0, 1, 0);
-
-                        paint.reset();
-                        paint.setSmoothRadius(6);
-                        paint.setStyle(Paint.Style.STROKE);
-                        paint.setStrokeWidth(16);
-                        CanvasForge.getInstance().drawRoundRect(0, 20, 100, 70, 14, paint);
-                        paint.setColor(0xFFAADCF0);
-                        CanvasForge.getInstance().drawRoundRect(0, -110, 100, -60, 14, paint);
-                        GL11.glPopMatrix();
-
-                        GL11.glTranslatef(1.58f * window.getAspectRatio(), 1.0f, -4.8f);
-                        GL11.glScalef(1 / 90f, -1 / 90f, 1 / 90f);
-                        GL11.glRotatef(-90, 0, 1, 0);
-                        CanvasForge.getInstance().drawRoundRect(0, 20, 100, 70, 14, paint);
-                        CanvasForge.getInstance().drawRoundRect(-20, 190, 80, 240, 14, paint);
-                        CanvasForge.getInstance().setLineAntiAliasing(true);
-                        CanvasForge.getInstance().drawRect(-20, 0, 120, 90, paint);
-
-                        GL11.glPopMatrix();
-                        GL11.glMatrixMode(GL11.GL_PROJECTION);
-                        GL11.glPopMatrix();
-                        GL11.glMatrixMode(GL11.GL_MODELVIEW);*/
-
-                        window.swapBuffers();
-                    }
-                    try {
-                        Thread.currentThread().join(1000);
-                    } catch (InterruptedException ignored) {
-                        // waiting for interruption
-                    }
+                if (graph != null) {
+                    graph.update(delta);
+                    graph.draw(canvas);
                 }
-            }, "Render-Thread");
-            t.start();
 
-            /*new Thread(() -> {
-                // convert to png format with alpha channel
-                try (Bitmap b = Bitmap.openDialog(Bitmap.Format.RGBA)) {
-                    if (b != null) {
-                        b.saveDialog(Bitmap.SaveFormat.PNG, 0);
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }, "Open-File").start();*/
+                // render thread, wait UI thread
+                canvas.render();
 
-            while (sWindow == null || !sWindow.shouldClose()) {
-                glfwWaitEventsTimeout(1 / 288D);
+                window.swapBuffers();
             }
-            t.interrupt();
-        } finally {
-            if (sWindow != null) {
-                sWindow.close();
+            try {
+                Thread.currentThread().join(6);
+            } catch (InterruptedException ignored) {
+                // waiting for interruption
             }
-            Stream.of(glfwSetMonitorCallback(null),
-                    glfwSetErrorCallback(null))
-                    .filter(Objects::nonNull)
-                    .forEach(Callback::free);
-            glfwTerminate();
-            ModernUI.LOGGER.info(MARKER, "Stopped");
         }
     }
 
-    private static void abc(Supplier<?> supplier) {
+    private static void runSoundThread() {
+        while (!sWindow.shouldClose()) {
+            try {
+                Thread.currentThread().join(1000);
+            } catch (InterruptedException ignored) {
+            }
+        }
+    }
 
+    private static void drawOsuScore(Canvas canvas) {
+        Paint paint = Paint.take();
+        paint.setRGBA(0, 0, 0, 64);
+
+        // bottom
+        canvas.drawRoundRect(24, 900 - 12 - 314, 1600 - 24, 900 - 12, 20, paint);
+        canvas.drawRoundRect(800 - 224, 900 - 12 - 314, 800 + 224, 900 - 12 - 314 + 64, 20, paint);
+
+        // top right
+        canvas.drawRoundRect(1600 - 520, 28, 1600 - 16, 28 + 250, 18, paint);
+        canvas.drawRoundRect(1600 - 520, 28, 1600 - 16, 28 + 44, 18, paint);
+
+        paint.setAlpha(96);
+
+        // middle
+        canvas.drawRoundRect(24, 344, 1600 - 24, 344 + 200, 20, paint);
+        canvas.drawRoundRect(24, 344 + 90, 1600 - 24, 344 + 200, 20, paint);
+
+        // stars
+        canvas.drawRoundRect(414, 208, 414 + 236, 208 + 70, 35, paint);
+
+        // top left
+        canvas.drawRoundRect(18, 24, 18 + 370, 24 + 254, 20, paint);
+
+        paint.setStrokeWidth(4);
+        paint.setRGBA(229, 188, 177, 255);
+        canvas.drawLine(40, 318, 1600 - 40, 318, paint);
+
+        String s = "Hitorigoto -TV MIX-";
+        TextPaint textPaint = new TextPaint();
+        textPaint.color = 0xff000000;
+        textPaint.setFontSize(45);
+        canvas.drawTextRun(s, 0, s.length(), 408, 75, false, textPaint);
+        textPaint.color = ~0;
+        textPaint.setFontSize(44);
+        canvas.drawTextRun(s, 0, s.length(), 414, 78, false, textPaint);
+
+        s = "Info";
+        textPaint.setFontSize(24);
+        canvas.drawTextRun(s, 0, s.length(), 1310, 56, false, textPaint);
     }
 
     private static int search(int[] a, int pos) {
@@ -569,4 +569,42 @@ public class TestMain {
 
         ImageIO.write(image, "png", new File("F:/a.png"));*/
     }
+
+    /*GL11.glMatrixMode(GL11.GL_PROJECTION);
+                GL43.glPushMatrix();
+                GL11.glLoadIdentity();
+                //RenderSystem.ortho(0.0D, window.getWidth(), window.getHeight(), 0.0D, 1000.0D, 3000.0D);
+                //a.multiply(b);
+                GL11.glMultMatrixf(projection);
+                GL11.glMatrixMode(GL11.GL_MODELVIEW);
+                GL43.glPushMatrix();
+                GL11.glLoadIdentity();
+                //GlStateManager._translatef(0.0F, 0.0F, -2000.0F);
+                Paint paint = Paint.take();
+                GL11.glPushMatrix();
+                GL11.glTranslatef(-1.58f * window.getAspectRatio(), -1.0f, -3.8f);
+                GL11.glScalef(1 / 90f, -1 / 90f, 1 / 90f);
+                GL11.glRotatef(90, 0, 1, 0);
+
+                paint.reset();
+                paint.setSmoothRadius(6);
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(16);
+                CanvasForge.getInstance().drawRoundRect(0, 20, 100, 70, 14, paint);
+                paint.setColor(0xFFAADCF0);
+                CanvasForge.getInstance().drawRoundRect(0, -110, 100, -60, 14, paint);
+                GL11.glPopMatrix();
+
+                GL11.glTranslatef(1.58f * window.getAspectRatio(), 1.0f, -4.8f);
+                GL11.glScalef(1 / 90f, -1 / 90f, 1 / 90f);
+                GL11.glRotatef(-90, 0, 1, 0);
+                CanvasForge.getInstance().drawRoundRect(0, 20, 100, 70, 14, paint);
+                CanvasForge.getInstance().drawRoundRect(-20, 190, 80, 240, 14, paint);
+                CanvasForge.getInstance().setLineAntiAliasing(true);
+                CanvasForge.getInstance().drawRect(-20, 0, 120, 90, paint);
+
+                GL11.glPopMatrix();
+                GL11.glMatrixMode(GL11.GL_PROJECTION);
+                GL11.glPopMatrix();
+                GL11.glMatrixMode(GL11.GL_MODELVIEW);*/
 }
