@@ -18,50 +18,60 @@
 
 package icyllis.modernui.test;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.audio.WaveDecoder;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.math.FFT;
 
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
-import java.util.Arrays;
 
 public class WaveformGraph {
 
-    private WaveDecoder mWaveDecoder;
+    public WaveDecoder mWaveDecoder;
 
-    private float[] mAmplitudes = new float[120];
-    private float[] mTempAmplitudes = new float[120];
+    private final float[] mAmplitudes = new float[120];
+    private final float[] mTempAmplitudes = new float[1024];
 
-    private long mTime;
+    private final FFT mFFT;
+
+    public int mSongLength;
 
     public WaveformGraph() throws Exception {
         mWaveDecoder = new WaveDecoder(FileChannel.open(Path.of("F:", "2.wav")));
+        mFFT = new FFT(mTempAmplitudes.length, mWaveDecoder.mSampleRate);
+        //mFFT.linAverages(mAmplitudes.length + 1);
+        mFFT.logAverages(220, 24);
+        mSongLength = (int) ((float) mWaveDecoder.mSamples.length / mWaveDecoder.mSampleRate * 1000);
     }
 
-    public void update(long deltaMillis) {
+    public void update(long time, long delta) {
         float[] temp = mTempAmplitudes;
-        Arrays.fill(temp, 0);
-        if (mTime + deltaMillis < mWaveDecoder.mSamples.length / mWaveDecoder.mSampleRate * 1000L) {
-            int sampleStart = (int) (mTime / 1000f * mWaveDecoder.mSampleRate);
-            int sampleEnd = sampleStart + (int) (deltaMillis / 1000f * mWaveDecoder.mSampleRate);
+
+        if (time < mSongLength) {
+            int sampleStart = (int) (time / 1000f * mWaveDecoder.mSampleRate) - mTempAmplitudes.length;
+            if (sampleStart < 0)
+                sampleStart = 0;
+            /*int sampleEnd = sampleStart + (int) (deltaMillis / 1000f * mWaveDecoder.mSampleRate);
             for (int i = sampleStart; i < sampleEnd; i++) {
                 temp[(int) (mWaveDecoder.mSamples[i] * temp.length)] += 1;
-            }
-            for (int i = 0; i < temp.length; i++) {
-                float dec = mAmplitudes[i] - deltaMillis * 0.0008f * (mAmplitudes[i] + 0.03f);
-                mAmplitudes[i] = Math.max(dec, temp[i] / deltaMillis / 10);
+            }*/
+            System.arraycopy(mWaveDecoder.mSamples, sampleStart, temp, 0, mTempAmplitudes.length);
+            mFFT.forward(temp);
+
+            int len = Math.min(mFFT.avgSize() - 24, mAmplitudes.length);
+            for (int i = 0; i < len; i++) {
+                float dec = mAmplitudes[i] - delta * 0.0008f * (mAmplitudes[i] + 0.03f);
+                mAmplitudes[i] = Math.max(dec, mFFT.getAvg(i + 6) / delta / 10);
             }
         }
-        mTime += deltaMillis;
     }
 
     public void draw(Canvas canvas) {
         Paint paint = Paint.take();
-        paint.setRGBA(100, 220, 240, 255);
         for (int i = 0; i < mAmplitudes.length; i++) {
-            canvas.drawRect(30 + i * 12, 600 - mAmplitudes[i] * 300, 40 + i * 12, 600, paint);
+            paint.setRGBA(100 + i, 220 - i, 240 - i * 2, 255);
+            canvas.drawRect(81 + i * 12, 800 - mAmplitudes[i] * 300, 91 + i * 12, 800, paint);
         }
     }
 }

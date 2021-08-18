@@ -29,6 +29,7 @@ public class WaveDecoder {
 
     public int mSampleRate;
     public float[] mSamples;
+    public short[] mData;
 
     public WaveDecoder(@Nonnull FileChannel channel) throws Exception {
         ByteBuffer buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
@@ -36,18 +37,20 @@ public class WaveDecoder {
         if (buffer.getInt() != 0x46464952) {
             throw new IllegalArgumentException("Not RIFF");
         }
-        // file size
-        buffer.getInt();
+        // skip file length
+        buffer.position(8);
         if (buffer.getInt() != 0x45564157) {
             throw new IllegalArgumentException("Not WAVE");
         }
         if (buffer.getInt() != 0x20746d66) {
             throw new IllegalArgumentException("Not fmt chunk");
         }
-        int chunkSize = buffer.getInt();
-        if (chunkSize < 16) {
+        // format chunk size may 18 bytes
+        int chunk = buffer.getInt();
+        if (chunk < 16) {
             throw new IllegalArgumentException("Chunk size is invalid");
         }
+        chunk += 20;
         short format = buffer.getShort();
         if (format != 1) {
             throw new IllegalArgumentException("Not PCM format");
@@ -61,26 +64,28 @@ public class WaveDecoder {
                 buffer.getShort() != 16) {
             throw new IllegalArgumentException("Not 16-bit sample");
         }
-        if (chunkSize > 16) {
-            buffer.position(buffer.position() + chunkSize - 16);
-        }
+        buffer.position(chunk);
         if (buffer.getInt() != 0x61746164) {
             throw new IllegalArgumentException("Not data chunk");
         }
         float f = 1.0f / 65536;
         int dataSize = buffer.getInt();
         float[] samples = new float[dataSize / 2 / channels];
+        short[] data = new short[dataSize / 2];
         for (int i = 0; i < samples.length; i++) {
             float sample = 0;
             for (int j = 0; j < channels; j++) {
-                int val = buffer.getShort() + 32768;
+                short v = buffer.getShort();
+                data[i * channels + j] = v;
+                int val = v + 32768;
                 sample += f * val;
             }
             samples[i] = sample / channels;
         }
-        ModernUI.LOGGER.info("Song Length: {} secs", samples.length / sampleRate);
+        ModernUI.LOGGER.info("Song Length: {} seconds", (double) samples.length / sampleRate);
 
         mSampleRate = sampleRate;
         mSamples = samples;
+        mData = data;
     }
 }

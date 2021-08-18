@@ -23,6 +23,7 @@ import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.ast.Node;
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.audio.AudioManager;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
@@ -110,6 +111,8 @@ public class TestMain {
         GRAPHICS.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
     }
 
+    static WaveformGraph graph = null;
+
 
     public static void main(String[] args) throws InterruptedException {
         /*String s = "\u0641\u0647\u0648\u064a\u062a\u062d\u062f\u0651\u062b\u0020\u0628\u0644\u063a\u0629\u0020";
@@ -131,6 +134,25 @@ public class TestMain {
         float[] av = new float[]{1, 3, 2, 4.1f, 6, 0, 6, 0.5f, 5, 7, 11.3f, 9, 9.1f, 15, 8, 10};
         float[] bv = new float[]{9.1f, 2, 7, 5, 3.3f, 6.1f, 5.5f, 4, 0, 8, 3, 1, 2.7f, 3, 9, 2};
         int[] intervals = new int[]{0, 4, 9, 15, 17};
+
+        /*float[] re = new float[256];
+        float[] im = new float[256];
+
+        for (int i = 0; i < 256; i++) {
+            re[i] = MathUtil.cos(2 * MathUtil.PI * i / 256f);
+            im[i] = 0;
+        }
+
+        ModernUI.LOGGER.info("Before \n{}\n{}", Arrays.toString(re), Arrays.toString(im));
+        FFT.fft(re, im);
+
+        float[] ff = new float[256];
+        for (int i = 0; i < 256; i++) {
+            ff[i] = MathUtil.sqrt(re[i] * re[i] + im[i] * im[i]);
+        }
+
+        ModernUI.LOGGER.info("After \n{}", Arrays.toString(ff));*/
+
         //Quaternion q = Quaternion.fromAxisAngle(0.40824829f, 0.81649658f, 0.40824829f, MathUtil.PI_DIV_3);
         /*Vector3 vec1 = new Vector3(5, 2, 2);
         Vector3 vec2 = vec1.copy();
@@ -193,6 +215,11 @@ public class TestMain {
                  var bitmap3 = Bitmap.decode(null, c3)) {
                 sWindow.setIcon(bitmap1, bitmap2, bitmap3);
             } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                graph = new WaveformGraph();
+            } catch (Exception e) {
                 e.printStackTrace();
             }
             Thread renderThread = new Thread(TestMain::runRenderThread, "Render-Thread");
@@ -289,17 +316,11 @@ public class TestMain {
         spannable.setSpan(new AbsoluteSizeSpan(18), 54, text.length(), 0);
         TextLine textLine = new TextLine(spannable);
 
-        WaveformGraph graph = null;
-        try {
-            graph = new WaveformGraph();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
         long lastTime = RenderCore.timeMillis();
 
         while (!window.shouldClose()) {
-            long delta = RenderCore.timeMillis() - lastTime;
+            long time = RenderCore.timeMillis();
+            long delta = time - lastTime;
             if (delta > 16) {
                 lastTime += 16;
                 GLWrapper.resetFrame(window);
@@ -342,17 +363,23 @@ public class TestMain {
 
                 TextPaint paint1 = new TextPaint();
                 paint1.color = 0xff40ddee;
-                canvas.rotate(30);
-                String tcc = "今日も一日頑張るぞい";
+                //canvas.rotate(30);
+                /*String tcc = "今日も一日頑張るぞい";
                 canvas.drawTextRun(tcc, 0, tcc.length(), 730, 170, false, paint1);
                 tcc = "আমি আজ সকালের নাস্তা খাব না";
-                canvas.drawTextRun(tcc, 0, tcc.length(), 660, 240, false, paint1);
-                canvas.rotate(-30);
+                canvas.drawTextRun(tcc, 0, tcc.length(), 660, 240, false, paint1);*/
+                float playTime = AudioManager.getInstance().getTime();
+                String tcc = String.format("%.1f / %.1f", playTime, graph.mSongLength / 1000f);
+                canvas.drawTextRun(tcc, 0, tcc.length(), 750, 620, false, paint1);
+                //canvas.rotate(-30);
 
                 textLine.draw(canvas, 32, 400);
 
+                paint.setStyle(Paint.Style.FILL);
+                canvas.drawRoundRect(100, 840, 100 + playTime / graph.mSongLength * 1400000, 860, 10, paint);
+
                 if (graph != null) {
-                    graph.update(delta);
+                    graph.update((long) (playTime * 1000L) + 32, delta);
                     graph.draw(canvas);
                 }
 
@@ -370,6 +397,9 @@ public class TestMain {
     }
 
     private static void runSoundThread() {
+        AudioManager audioManager = AudioManager.getInstance();
+        audioManager.init();
+        audioManager.play(graph.mWaveDecoder);
         while (!sWindow.shouldClose()) {
             try {
                 Thread.currentThread().join(1000);
