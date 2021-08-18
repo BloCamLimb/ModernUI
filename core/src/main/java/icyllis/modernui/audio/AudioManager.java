@@ -18,5 +18,49 @@
 
 package icyllis.modernui.audio;
 
+import org.lwjgl.openal.*;
+import org.lwjgl.system.MemoryUtil;
+
+import javax.annotation.Nonnull;
+
 public class AudioManager {
+
+    private static final AudioManager instance = new AudioManager();
+
+    private long mDevice;
+    private long mContext;
+
+    private int mSource;
+
+    private AudioManager() {
+
+    }
+
+    public static AudioManager getInstance() {
+        return instance;
+    }
+
+    public void init() {
+        mDevice = ALC10.nalcOpenDevice(MemoryUtil.NULL);
+        ALCCapabilities aLCCapabilities = ALC.createCapabilities(mDevice);
+        mContext = ALC10.nalcCreateContext(mDevice, MemoryUtil.NULL);
+        ALC10.alcMakeContextCurrent(mContext);
+        AL.createCapabilities(aLCCapabilities);
+        AL10.alEnable(EXTSourceDistanceModel.AL_SOURCE_DISTANCE_MODEL);
+    }
+
+    public void play(@Nonnull WaveDecoder waveDecoder) {
+        mSource = AL10.alGenSources();
+        int mBuffer = AL10.alGenBuffers();
+        AL10.alBufferData(mBuffer, AL10.AL_FORMAT_STEREO16, waveDecoder.mData, waveDecoder.mSampleRate);
+        AL10.alSourcei(mSource, AL10.AL_BUFFER, mBuffer);
+        AL10.alSourcePlay(mSource);
+    }
+
+    public float getTime() {
+        if (mSource == 0) {
+            return 0;
+        }
+        return AL11.alGetSourcef(mSource, AL11.AL_SEC_OFFSET);
+    }
 }
