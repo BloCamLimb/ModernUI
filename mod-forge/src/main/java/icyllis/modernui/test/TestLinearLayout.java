@@ -91,6 +91,9 @@ public class TestLinearLayout extends LinearLayout {
             LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(200, 36);
             v.setEnabled(true);
             v.setClickable(true);
+            if (i == 2) {
+                v.setOnClickListener(v1 -> ModernUI.LOGGER.info("Clicked {}", v1));
+            }
             addView(v, p);
         }
         addView(new DView(Interpolator.DECELERATE, 0), new LinearLayout.LayoutParams(120, 40));
