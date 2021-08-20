@@ -405,8 +405,8 @@ public final class UIManager implements ViewRootImpl.Handler {
         float y = (float) minecraft.mouseHandler.ypos();
         MotionEvent event = MotionEvent.obtain(now, now, MotionEvent.ACTION_SCROLL,
                 x, y, 0);
-        event.setRawAxisValue(MotionEvent.AXIS_HSCROLL, (float) scrollX);
-        event.setRawAxisValue(MotionEvent.AXIS_VSCROLL, (float) scrollY);
+        event.setAxisValue(MotionEvent.AXIS_HSCROLL, (float) scrollX);
+        event.setAxisValue(MotionEvent.AXIS_VSCROLL, (float) scrollY);
         mRoot.enqueueInputEvent(event);
     }
 

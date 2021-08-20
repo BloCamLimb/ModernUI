@@ -54,6 +54,7 @@ public class AudioManager {
         int mBuffer = AL10.alGenBuffers();
         AL10.alBufferData(mBuffer, AL10.AL_FORMAT_STEREO16, waveDecoder.mData, waveDecoder.mSampleRate);
         AL10.alSourcei(mSource, AL10.AL_BUFFER, mBuffer);
+        AL10.alSourcef(mSource, AL10.AL_GAIN, 0.75f);
         AL10.alSourcePlay(mSource);
     }
 
@@ -62,5 +63,10 @@ public class AudioManager {
             return 0;
         }
         return AL11.alGetSourcef(mSource, AL11.AL_SEC_OFFSET);
+    }
+
+    public void close() {
+        ALC11.alcCloseDevice(mDevice);
+        ALC11.alcDestroyContext(mContext);
     }
 }
