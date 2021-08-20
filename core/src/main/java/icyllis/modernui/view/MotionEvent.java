@@ -20,7 +20,6 @@ package icyllis.modernui.view;
 
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.system.Platform;
 
@@ -28,7 +27,7 @@ import javax.annotation.Nonnull;
 
 /**
  * Object that indicates movement events (mouse, touchpad etc).
- * Modified for desktop application, multiple pointers are disabled.
+ * Modified for desktop application, such as multiple pointers are disabled.
  */
 @SuppressWarnings("unused")
 public final class MotionEvent extends InputEvent {
@@ -381,28 +380,10 @@ public final class MotionEvent extends InputEvent {
      */
     public static final int AXIS_HSCROLL = 10;
 
-    private static final float INVALID_CURSOR_POSITION = Float.NaN;
+    private static final int INITIAL_PACKED_AXIS_VALUES = 2;
 
     private static final Pool<MotionEvent> sPool = Pools.concurrent(10);
 
-    // Shared temporary objects used when translating coordinates supplied by
-    // the caller into single element PointerCoords and pointer id arrays.
-    private static final Object gSharedTempLock = new Object();
-    private static PointerCoords[] gSharedTempPointerCoords;
-    private static PointerProperties[] gSharedTempPointerProperties;
-
-    @SuppressWarnings("SameParameterValue")
-    private static void ensureSharedTempPointerCapacity(int desiredCapacity) {
-        if (gSharedTempPointerCoords == null
-                || gSharedTempPointerCoords.length < desiredCapacity) {
-            int capacity = gSharedTempPointerCoords != null ? gSharedTempPointerCoords.length : 1;
-            while (capacity < desiredCapacity) {
-                capacity *= 2;
-            }
-            gSharedTempPointerCoords = PointerCoords.createArray(capacity);
-            gSharedTempPointerProperties = PointerProperties.createArray(capacity);
-        }
-    }
 
     private int mAction;
     private int mActionButton;
@@ -418,8 +399,8 @@ public final class MotionEvent extends InputEvent {
     private long mDownTime;
     private long mEventTime;
 
-    private final ObjectArrayList<PointerProperties> mPointerProperties = new ObjectArrayList<>();
-    private final ObjectArrayList<PointerCoords> mPointerCoords = new ObjectArrayList<>();
+    private long mPackedAxisBits;
+    private float[] mPackedAxisValues;
 
     private MotionEvent() {
     }
@@ -430,37 +411,6 @@ public final class MotionEvent extends InputEvent {
         if (event == null) {
             return new MotionEvent();
         }
-        return event;
-    }
-
-    /**
-     * Create a new MotionEvent, filling in all of the basic values that
-     * define the motion.
-     *
-     * @param downTime     The time (in ns) when the user originally pressed down to start
-     *                     a stream of position events.  This must be obtained from {@link GLFW#glfwGetTime()}.
-     * @param eventTime    The the time (in ns) when this specific event was generated.  This
-     *                     must be obtained from {@link GLFW#glfwGetTime()}.
-     * @param action       The kind of action being performed, such as {@link #ACTION_DOWN}.
-     * @param pointerCount The number of pointers that will be in this event.
-     * @param properties   An array of <em>pointerCount</em> values providing
-     *                     a {@link PointerProperties} property object for each pointer, which must
-     *                     include the pointer identifier.
-     * @param coords       An array of <em>pointerCount</em> values providing
-     *                     a {@link PointerCoords} coordinate object for each pointer.
-     * @param modifiers    The modifier keys that were in effect when the event was generated.
-     * @param buttonState  The state of buttons that are pressed.
-     * @param flags        The motion event flags.
-     */
-    @Nonnull
-    public static MotionEvent obtain(long downTime, long eventTime, int action,
-                                     int pointerCount, PointerProperties[] properties,
-                                     PointerCoords[] coords, int modifiers,
-                                     int buttonState, int flags) {
-        MotionEvent event = obtain();
-        event.initialize(action, 0, flags, modifiers, buttonState,
-                0, 0, INVALID_CURSOR_POSITION, INVALID_CURSOR_POSITION,
-                downTime, eventTime, pointerCount, properties, coords);
         return event;
     }
 
@@ -490,29 +440,17 @@ public final class MotionEvent extends InputEvent {
     public static MotionEvent obtain(long downTime, long eventTime, int action,
                                      int actionButton, float x, float y,
                                      int modifiers, int buttonState, int flags) {
-        final int actionMasked = action & ACTION_MASK;
-        if ((actionMasked == ACTION_BUTTON_PRESS
-                || actionMasked == ACTION_BUTTON_RELEASE) && actionButton == 0) {
+        if ((action & ACTION_MASK) != action) {
+            throw new IllegalArgumentException("Multiple pointers are disabled");
+        }
+        if ((action == ACTION_BUTTON_PRESS || action == ACTION_BUTTON_RELEASE) && actionButton == 0) {
             throw new IllegalArgumentException("actionButton should be defined for action press or release");
         }
         MotionEvent event = obtain();
-        synchronized (gSharedTempLock) {
-            ensureSharedTempPointerCapacity(1);
-            final PointerProperties[] properties = gSharedTempPointerProperties;
-            properties[0].reset();
-            properties[0].id = 0;
-
-            final PointerCoords[] coords = gSharedTempPointerCoords;
-            coords[0].reset();
-            coords[0].setAxisValue(AXIS_X, x);
-            coords[0].setAxisValue(AXIS_Y, y);
-
-            event.initialize(action, actionButton, flags, modifiers, buttonState,
-                    0, 0, INVALID_CURSOR_POSITION, INVALID_CURSOR_POSITION,
-                    downTime, eventTime,
-                    1, properties, coords);
-            return event;
-        }
+        event.initialize(action, actionButton, flags, modifiers, buttonState,
+                0, 0, x, y,
+                downTime, eventTime);
+        return event;
     }
 
     /**
@@ -537,26 +475,25 @@ public final class MotionEvent extends InputEvent {
         mRawYCursorPosition = other.mRawYCursorPosition;
         mDownTime = other.mDownTime;
         mEventTime = other.mEventTime;
-        mPointerProperties.clear();
-        mPointerProperties.addAll(other.mPointerProperties);
-        mPointerCoords.clear();
-        mPointerCoords.addAll(other.mPointerCoords);
+
+        final long bits = other.mPackedAxisBits;
+        mPackedAxisBits = bits;
+        if (bits != 0) {
+            final float[] otherValues = other.mPackedAxisValues;
+            final int count = Long.bitCount(bits);
+            float[] values = mPackedAxisValues;
+            if (values == null || count > values.length) {
+                values = new float[otherValues.length];
+                mPackedAxisValues = values;
+            }
+            System.arraycopy(otherValues, 0, values, 0, count);
+        }
     }
 
     @SuppressWarnings("SameParameterValue")
     private void initialize(int action, int actionButton, int flags, int modifiers, int buttonState,
                             float xOffset, float yOffset, float rawXCursorPosition, float rawYCursorPosition,
-                            long downTime, long eventTime, int pointerCount,
-                            @Nonnull PointerProperties[] pointerProperties, @Nonnull PointerCoords[] pointerCoords) {
-        if (pointerCount < 1) {
-            throw new IllegalArgumentException("pointerCount must be at least 1");
-        }
-        if (pointerProperties.length < pointerCount) {
-            throw new IllegalArgumentException("pointerProperties array must be large enough to hold all pointers");
-        }
-        if (pointerCoords.length < pointerCount) {
-            throw new IllegalArgumentException("pointerCoords array must be large enough to hold all pointers");
-        }
+                            long downTime, long eventTime) {
         mAction = action;
         mActionButton = actionButton;
         mFlags = flags;
@@ -568,11 +505,7 @@ public final class MotionEvent extends InputEvent {
         mRawYCursorPosition = rawYCursorPosition;
         mDownTime = downTime;
         mEventTime = eventTime;
-        mPointerProperties.clear();
-        mPointerProperties.addElements(0, pointerProperties, 0, pointerCount);
-        mPointerCoords.clear();
-        mPointerCoords.addElements(0, pointerCoords, 0, pointerCount);
-        updateCursorPosition();
+        mPackedAxisBits = 0;
     }
 
     /**
@@ -585,6 +518,7 @@ public final class MotionEvent extends InputEvent {
      *
      * <p>If the source is not mouse it sets cursor position to NaN.
      */
+    @Deprecated
     private void updateCursorPosition() {
         // to-add: check source is mouse
         float x = 0;
@@ -603,6 +537,12 @@ public final class MotionEvent extends InputEvent {
         setCursorPosition(x, y);
     }
 
+    /**
+     * Sets cursor position to given coordinates. The coordinate in parameters should be after
+     * offsetting. In other words, the effect of this function is {@link #getXCursorPosition()} and
+     * {@link #getYCursorPosition()} will return the same value passed in the parameters.
+     */
+    @Deprecated
     private void setCursorPosition(float x, float y) {
         mRawXCursorPosition = x - mXOffset;
         mRawYCursorPosition = y - mYOffset;
@@ -637,7 +577,8 @@ public final class MotionEvent extends InputEvent {
      *
      * @return The action, such as {@link #ACTION_DOWN} or {@link #ACTION_POINTER_DOWN}.
      */
-    public final int getActionMasked() {
+    @Deprecated
+    protected final int getActionMasked() {
         return mAction & ACTION_MASK;
     }
 
@@ -651,7 +592,8 @@ public final class MotionEvent extends InputEvent {
      *
      * @return The index associated with the action.
      */
-    public final int getActionIndex() {
+    @Deprecated
+    protected final int getActionIndex() {
         return (mAction & ACTION_POINTER_INDEX_MASK) >> ACTION_POINTER_INDEX_SHIFT;
     }
 
@@ -667,7 +609,6 @@ public final class MotionEvent extends InputEvent {
      * @return true if this motion event is a touch event.
      */
     public final boolean isTouchEvent() {
-        // to-add: check source is a pointer device
         switch (mAction & ACTION_MASK) {
             case ACTION_DOWN:
             case ACTION_UP:
@@ -727,8 +668,9 @@ public final class MotionEvent extends InputEvent {
      * The number of pointers of data contained in this event.  Always
      * >= 1.
      */
-    public final int getPointerCount() {
-        return mPointerProperties.size();
+    @Deprecated
+    protected final int getPointerCount() {
+        return 1;
     }
 
     /**
@@ -740,11 +682,12 @@ public final class MotionEvent extends InputEvent {
      * @param pointerIndex Raw index of pointer to retrieve.  Value may be from 0
      *                     (the first pointer that is down) to {@link #getPointerCount()}-1.
      */
-    public final int getPointerId(int pointerIndex) {
+    @Deprecated
+    protected final int getPointerId(int pointerIndex) {
         if (pointerIndex < 0 || pointerIndex >= getPointerCount()) {
             throw new IllegalArgumentException("pointerIndex out of range");
         }
-        return mPointerProperties.get(pointerIndex).id;
+        return INVALID_POINTER_ID;
     }
 
     /**
@@ -760,11 +703,12 @@ public final class MotionEvent extends InputEvent {
      * @see #TOOL_TYPE_STYLUS
      * @see #TOOL_TYPE_MOUSE
      */
-    public final int getToolType(int pointerIndex) {
+    @Deprecated
+    protected final int getToolType(int pointerIndex) {
         if (pointerIndex < 0 || pointerIndex >= getPointerCount()) {
             throw new IllegalArgumentException("pointerIndex out of range");
         }
-        return mPointerProperties.get(pointerIndex).toolType;
+        return TOOL_TYPE_UNKNOWN;
     }
 
     public final boolean isHoverExitPending() {
@@ -806,39 +750,13 @@ public final class MotionEvent extends InputEvent {
         setAction(ACTION_CANCEL);
     }
 
-    /*private long getEventTimeNanos(int historyPos) {
-        if (historyPos == HISTORY_CURRENT) {
-            return mSampleEventTimes.getLong(getHistorySize());
-        } else {
-            if (historyPos < 0 || historyPos >= getHistorySize()) {
-                throw new IllegalArgumentException("historyPos out of range");
-            }
-            return mSampleEventTimes.getLong(historyPos);
-        }
-    }*/
 
+    @Deprecated
     private PointerCoords getRawPointerCoords(int pointerIndex) {
-        return mPointerCoords.get(pointerIndex);
+        throw new IllegalStateException();
     }
 
-    /*private PointerCoords getHistoricalRawPointerCoords(int pointerIndex, int historyIndex) {
-        return mSamplePointerCoords.get(historyIndex * getPointerCount() + pointerIndex);
-    }*/
-
-    /*private float getAxisValue(int axis, int pointerIndex, int historyPos) {
-        if (pointerIndex < 0 || pointerIndex >= getPointerCount()) {
-            throw new IllegalArgumentException("pointerIndex out of range");
-        }
-        if (historyPos == HISTORY_CURRENT) {
-            return getAxisValue(axis, pointerIndex);
-        } else {
-            if (historyPos < 0 || historyPos >= getHistorySize()) {
-                throw new IllegalArgumentException("historyPos out of range");
-            }
-            return getHistoricalAxisValue(axis, pointerIndex, historyPos);
-        }
-    }*/
-
+    @Deprecated
     private float getRawAxisValue(int axis, int pointerIndex) {
         if (pointerIndex < 0 || pointerIndex >= getPointerCount()) {
             throw new IllegalArgumentException("pointerIndex out of range");
@@ -846,6 +764,7 @@ public final class MotionEvent extends InputEvent {
         return getRawPointerCoords(pointerIndex).getAxisValue(axis);
     }
 
+    @Deprecated
     private float getAxisValue(int axis, int pointerIndex) {
         if (pointerIndex < 0 || pointerIndex >= getPointerCount()) {
             throw new IllegalArgumentException("pointerIndex out of range");
@@ -860,40 +779,78 @@ public final class MotionEvent extends InputEvent {
         return value;
     }
 
-    // internal method
-    public void setRawAxisValue(int axis, float value) {
-        getRawPointerCoords(0).setAxisValue(axis, value);
-    }
-
-    // internal method
-    public void setRawAxisValue(int axis, float value, int pointerIndex) {
-        if (pointerIndex < 0 || pointerIndex >= getPointerCount()) {
-            throw new IllegalArgumentException("pointerIndex out of range");
-        }
-        getRawPointerCoords(pointerIndex).setAxisValue(axis, value);
-    }
-
-    /*private float getHistoricalAxisValue(int axis, int pointerIndex, int historyIndex) {
-        float value = getHistoricalRawPointerCoords(pointerIndex, historyIndex).getAxisValue(axis);
+    /**
+     * Sets the value associated with the specified axis.
+     *
+     * @param axis  The axis identifier for the axis value to assign.
+     * @param value The value to set.
+     */
+    public void setAxisValue(int axis, float value) {
         switch (axis) {
             case AXIS_X:
-                return value + mXOffset;
             case AXIS_Y:
-                return value + mYOffset;
+                throw new IllegalArgumentException("Axis X and Y are not expected to change.");
+            default: {
+                if (axis < 0 || axis > 63) {
+                    throw new IllegalArgumentException("Axis out of range.");
+                }
+                final long bits = mPackedAxisBits;
+                final long axisBit = 0x8000000000000000L >>> axis;
+                final int index = Long.bitCount(bits & ~(0xFFFFFFFFFFFFFFFFL >>> axis));
+                float[] values = mPackedAxisValues;
+                if ((bits & axisBit) == 0) {
+                    if (values == null) {
+                        values = new float[INITIAL_PACKED_AXIS_VALUES];
+                        mPackedAxisValues = values;
+                    } else {
+                        final int count = Long.bitCount(bits);
+                        if (count < values.length) {
+                            if (index != count) {
+                                System.arraycopy(values, index, values, index + 1,
+                                        count - index);
+                            }
+                        } else {
+                            float[] newValues = new float[count * 2];
+                            System.arraycopy(values, 0, newValues, 0, index);
+                            System.arraycopy(values, index, newValues, index + 1,
+                                    count - index);
+                            values = newValues;
+                            mPackedAxisValues = values;
+                        }
+                    }
+                    mPackedAxisBits = bits | axisBit;
+                }
+                values[index] = value;
+            }
         }
-        return value;
-    }*/
+    }
 
     /**
-     * Get axis value for the first pointer index (may be an
-     * arbitrary pointer identifier).
+     * Gets the value associated with the specified axis for the first
+     * pointer index (may be an arbitrary pointer identifier).
      *
      * @param axis The axis identifier for the axis value to retrieve.
-     * @see #AXIS_X
-     * @see #AXIS_Y
+     * @return The value associated with the axis, or 0 if none.
      */
     public final float getAxisValue(int axis) {
-        return getAxisValue(axis, 0);
+        switch (axis) {
+            case AXIS_X:
+                return getX();
+            case AXIS_Y:
+                return getY();
+            default: {
+                if (axis < 0 || axis > 63) {
+                    throw new IllegalArgumentException("Axis out of range.");
+                }
+                final long bits = mPackedAxisBits;
+                final long axisBit = 0x8000000000000000L >>> axis;
+                if ((bits & axisBit) == 0) {
+                    return 0;
+                }
+                final int index = Long.bitCount(bits & ~(0xFFFFFFFFFFFFFFFFL >>> axis));
+                return mPackedAxisValues[index];
+            }
+        }
     }
 
     /**
@@ -903,7 +860,7 @@ public final class MotionEvent extends InputEvent {
      * @see #AXIS_X
      */
     public final float getX() {
-        return getAxisValue(AXIS_X, 0);
+        return mRawXCursorPosition + mXOffset;
     }
 
     /**
@@ -913,7 +870,7 @@ public final class MotionEvent extends InputEvent {
      * @see #AXIS_Y
      */
     public final float getY() {
-        return getAxisValue(AXIS_Y, 0);
+        return mRawYCursorPosition + mYOffset;
     }
 
     /**
@@ -927,7 +884,8 @@ public final class MotionEvent extends InputEvent {
      *                     (the first pointer that is down) to {@link #getPointerCount()}-1.
      * @see #AXIS_X
      */
-    public final float getX(int pointerIndex) {
+    @Deprecated
+    protected final float getX(int pointerIndex) {
         return getAxisValue(AXIS_X, pointerIndex);
     }
 
@@ -942,7 +900,8 @@ public final class MotionEvent extends InputEvent {
      *                     (the first pointer that is down) to {@link #getPointerCount()}-1.
      * @see #AXIS_Y
      */
-    public final float getY(int pointerIndex) {
+    @Deprecated
+    protected final float getY(int pointerIndex) {
         return getAxisValue(AXIS_Y, pointerIndex);
     }
 
@@ -956,7 +915,7 @@ public final class MotionEvent extends InputEvent {
      * @see #AXIS_X
      */
     public final float getRawX() {
-        return getRawAxisValue(AXIS_X, 0);
+        return mRawXCursorPosition;
     }
 
     /**
@@ -969,7 +928,7 @@ public final class MotionEvent extends InputEvent {
      * @see #AXIS_Y
      */
     public final float getRawY() {
-        return getRawAxisValue(AXIS_Y, 0);
+        return mRawYCursorPosition;
     }
 
     /**
@@ -983,7 +942,8 @@ public final class MotionEvent extends InputEvent {
      * @see #getX(int)
      * @see #AXIS_X
      */
-    public float getRawX(int pointerIndex) {
+    @Deprecated
+    protected float getRawX(int pointerIndex) {
         return getRawAxisValue(AXIS_X, pointerIndex);
     }
 
@@ -998,7 +958,8 @@ public final class MotionEvent extends InputEvent {
      * @see #getY(int)
      * @see #AXIS_Y
      */
-    public float getRawY(int pointerIndex) {
+    @Deprecated
+    protected float getRawY(int pointerIndex) {
         return getRawAxisValue(AXIS_Y, pointerIndex);
     }
 
@@ -1018,7 +979,8 @@ public final class MotionEvent extends InputEvent {
      * Returns the x coordinate of mouse cursor position when this event is
      * reported. This value is only valid if the device is a mouse.
      */
-    public float getXCursorPosition() {
+    @Deprecated
+    protected float getXCursorPosition() {
         return mRawXCursorPosition + mXOffset;
     }
 
@@ -1026,7 +988,8 @@ public final class MotionEvent extends InputEvent {
      * Returns the y coordinate of mouse cursor position when this event is
      * reported. This value is only valid if the device is a mouse.
      */
-    public float getYCursorPosition() {
+    @Deprecated
+    protected float getYCursorPosition() {
         return mRawYCursorPosition + mYOffset;
     }
 
@@ -1161,6 +1124,7 @@ public final class MotionEvent extends InputEvent {
      * @return The symbolic name of the specified action.
      * @see #getAction()
      */
+    @Nonnull
     public static String actionToString(int action) {
         switch (action) {
             case ACTION_DOWN:
@@ -1204,7 +1168,7 @@ public final class MotionEvent extends InputEvent {
      * creating new {@link MotionEvent} objects and to query pointer coordinates
      * in bulk.
      */
-    public static final class PointerCoords {
+    private static final class PointerCoords {
 
         private static final int INITIAL_PACKED_AXIS_VALUES = 8;
 
@@ -1215,7 +1179,6 @@ public final class MotionEvent extends InputEvent {
          * Creates a pointer coords object with all axes initialized to zero.
          */
         public PointerCoords() {
-
         }
 
         /**

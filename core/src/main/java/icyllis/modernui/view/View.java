@@ -305,6 +305,9 @@ public class View implements Drawable.Callback {
      */
     private ViewGroup.LayoutParams mLayoutParams;
 
+    @Nullable
+    ListenerInfo mListenerInfo;
+
     /**
      * This method is called by ViewGroup.drawChild() to have each child view draw itself.
      */
@@ -1902,7 +1905,7 @@ public class View implements Drawable.Callback {
      * @param event the motion event to be dispatched.
      * @return true if the event was handled by the view, false otherwise.
      */
-    public final boolean dispatchPointerEvent(MotionEvent event) {
+    public final boolean dispatchPointerEvent(@Nonnull MotionEvent event) {
         if (event.isTouchEvent()) {
             return dispatchTouchEvent(event);
         } else {
@@ -2261,16 +2264,8 @@ public class View implements Drawable.Callback {
      * @param event The motion event to be dispatched.
      * @return {@code true} if the event was handled by the view, {@code false} otherwise
      */
-    public boolean dispatchTouchEvent(MotionEvent event) {
-        boolean handled = false;
-
-        final int actionMasked = event.getActionMasked();
-
-        if (onTouchEvent(event)) {
-            handled = true;
-        }
-
-        return handled;
+    public boolean dispatchTouchEvent(@Nonnull MotionEvent event) {
+        return onTouchEvent(event);
     }
 
     /**
@@ -2279,7 +2274,7 @@ public class View implements Drawable.Callback {
      * @param event the touch event
      * @return {@code true} if the event was handled by the view, {@code false} otherwise
      */
-    public boolean onTouchEvent(MotionEvent event) {
+    public boolean onTouchEvent(@Nonnull MotionEvent event) {
         return false;
     }
 
@@ -2603,9 +2598,43 @@ public class View implements Drawable.Callback {
         }
     }
 
+    static class ListenerInfo {
+
+        private OnClickListener mOnClickListener;
+
+        private OnHoverListener mOnHoverListener;
+    }
+
+    /**
+     * Interface definition for a callback to be invoked when a view is clicked.
+     */
     @FunctionalInterface
+    public interface OnClickListener {
+
+        /**
+         * Called when a view has been clicked.
+         *
+         * @param v The view that was clicked.
+         */
+        void onClick(View v);
+    }
+
+    /**
+     * Interface definition for a callback to be invoked when a hover event is
+     * dispatched to this view. The callback will be invoked before the hover
+     * event is given to the view.
+     */
     public interface OnHoverListener {
 
-        void onHover(View v, MotionEvent event);
+        /**
+         * Called when a hover event is dispatched to a view. This allows listeners to
+         * get a chance to respond before the target view.
+         *
+         * @param v     The view the hover event has been dispatched to.
+         * @param event The MotionEvent object containing full information about
+         *              the event.
+         * @return True if the listener has consumed the event, false otherwise.
+         */
+        boolean onHover(View v, MotionEvent event);
     }
 }

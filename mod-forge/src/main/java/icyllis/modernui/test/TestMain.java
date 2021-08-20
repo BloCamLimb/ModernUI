@@ -406,6 +406,7 @@ public class TestMain {
             } catch (InterruptedException ignored) {
             }
         }
+        audioManager.close();
     }
 
     private static void drawOsuScore(Canvas canvas) {

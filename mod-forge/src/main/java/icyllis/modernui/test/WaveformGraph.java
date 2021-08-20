@@ -38,7 +38,7 @@ public class WaveformGraph {
     public int mSongLength;
 
     public WaveformGraph() throws Exception {
-        mWaveDecoder = new WaveDecoder(FileChannel.open(Path.of("F:", "2.wav")));
+        mWaveDecoder = new WaveDecoder(FileChannel.open(Path.of("F:", "Rubia.wav")));
         mFFT = new FFT(mTempAmplitudes.length, mWaveDecoder.mSampleRate);
         //mFFT.linAverages(mAmplitudes.length + 1);
         mFFT.logAverages(220, 24);

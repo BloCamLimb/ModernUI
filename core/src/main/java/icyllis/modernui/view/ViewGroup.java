@@ -21,6 +21,8 @@ package icyllis.modernui.view;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.platform.RenderCore;
+import icyllis.modernui.util.Pool;
+import icyllis.modernui.util.Pools;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -67,7 +69,7 @@ public abstract class ViewGroup extends View implements ViewParent {
     private float[] mTempPosition;
 
     // First touch target in the linked list of touch targets.
-    private TouchTarget mFirstTouchTarget;
+    private TouchTarget mTouchTarget;
 
     // First hover target in the linked list of hover targets.
     // The hover targets are children which have received ACTION_HOVER_ENTER.
@@ -463,10 +465,6 @@ public abstract class ViewGroup extends View implements ViewParent {
         }
     }*/
 
-    private void resetTouchState() {
-
-    }
-
     /**
      * Resets the cancel next up flag.
      *
@@ -484,34 +482,38 @@ public abstract class ViewGroup extends View implements ViewParent {
      * Clears all touch targets.
      */
     private void clearTouchTargets() {
-        TouchTarget target = mFirstTouchTarget;
+        TouchTarget target = mTouchTarget;
         if (target != null) {
-            do {
-                TouchTarget next = target.next;
-                target.recycle();
-                target = next;
-            } while (target != null);
-            mFirstTouchTarget = null;
+            target.recycle();
+            mTouchTarget = null;
         }
+    }
+
+    /**
+     * Resets all touch state in preparation for a new cycle.
+     */
+    private void resetTouchState() {
+        clearTouchTargets();
+        resetCancelNextUpFlag(this);
+        mGroupFlags &= ~FLAG_DISALLOW_INTERCEPT;
     }
 
     /**
      * Cancels and clears all touch targets.
      */
-    private void cancelAndClearTouchTargets(MotionEvent event) {
-        if (mFirstTouchTarget != null) {
+    private void cancelAndClearTouchTargets(@Nullable MotionEvent event) {
+        TouchTarget target = mTouchTarget;
+        if (target != null) {
             boolean syntheticEvent = false;
             if (event == null) {
                 final long time = RenderCore.timeNanos();
-                /*event = MotionEvent.obtain(now, now,
-                        MotionEvent.ACTION_CANCEL, 0.0f, 0.0f, 0);*/
+                event = MotionEvent.obtain(time, time,
+                        MotionEvent.ACTION_CANCEL, 0.0f, 0.0f, 0);
                 syntheticEvent = true;
             }
 
-            for (TouchTarget target = mFirstTouchTarget; target != null; target = target.next) {
-                resetCancelNextUpFlag(target.child);
-                //dispatchTransformedTouchEvent(event, true, target.child, target.pointerIdBits);
-            }
+            resetCancelNextUpFlag(target.child);
+            dispatchTransformedTouchEvent(event, target.child, true);
             clearTouchTargets();
 
             if (syntheticEvent) {
@@ -521,14 +523,13 @@ public abstract class ViewGroup extends View implements ViewParent {
     }
 
     @Override
-    public boolean dispatchTouchEvent(MotionEvent ev) {
+    public boolean dispatchTouchEvent(@Nonnull MotionEvent ev) {
         boolean handled = false;
 
         final int action = ev.getAction();
-        final int actionMasked = ev.getActionMasked();
 
         // Handle an initial down.
-        if (actionMasked == MotionEvent.ACTION_DOWN) {
+        if (action == MotionEvent.ACTION_DOWN) {
             // Throw away all previous state when starting a new touch gesture.
             // The framework may have dropped the up or cancel event for the previous gesture
             // due to an app switch, ANR, or some other state change.
@@ -538,7 +539,7 @@ public abstract class ViewGroup extends View implements ViewParent {
 
         // Check for interception.
         final boolean intercepted;
-        if (actionMasked == MotionEvent.ACTION_DOWN || mFirstTouchTarget != null) {
+        if (action == MotionEvent.ACTION_DOWN || mTouchTarget != null) {
             final boolean allowIntercept = (mGroupFlags & FLAG_DISALLOW_INTERCEPT) == 0;
             if (allowIntercept) {
                 intercepted = onInterceptTouchEvent(ev);
@@ -554,12 +555,61 @@ public abstract class ViewGroup extends View implements ViewParent {
 
         // Check for cancellation.
         final boolean canceled = resetCancelNextUpFlag(this)
-                || actionMasked == MotionEvent.ACTION_CANCEL;
+                || action == MotionEvent.ACTION_CANCEL;
 
-        if (!canceled && !intercepted) {
+        // Update list of touch targets for pointer down, if needed.
+        TouchTarget newTouchTarget = null;
+        boolean dispatchedToNewTarget = false;
+        if (!canceled && !intercepted && action == MotionEvent.ACTION_DOWN && mChildrenCount > 0) {
+            final float x = ev.getX();
+            final float y = ev.getY();
 
+            //TODO ordering
+            final View[] children = mChildren;
+            for (int i = mChildrenCount - 1; i >= 0; i--) {
+                final View child = children[i];
+                if (!child.canReceivePointerEvents()
+                        || !isTransformedTouchPointInView(x, y, child, null)) {
+                    continue;
+                }
+
+                resetCancelNextUpFlag(child);
+                if (dispatchTransformedTouchEvent(ev, child, false)) {
+                    mTouchTarget = TouchTarget.obtain(child);
+                    dispatchedToNewTarget = true;
+                    break;
+                }
+            }
         }
 
+        // Dispatch to touch targets.
+        if (mTouchTarget == null) {
+            // No touch targets so treat this as an ordinary view.
+            handled = dispatchTransformedTouchEvent(ev, null, canceled);
+        } else {
+            // Dispatch to touch targets, excluding the new touch target if we already
+            // dispatched to it.  Cancel touch targets if necessary.
+            TouchTarget predecessor = null;
+            TouchTarget target = mTouchTarget;
+            if (dispatchedToNewTarget) {
+                handled = true;
+            } else {
+                final boolean cancelChild = resetCancelNextUpFlag(target.child)
+                        || intercepted;
+                if (dispatchTransformedTouchEvent(ev, target.child, cancelChild)) {
+                    handled = true;
+                }
+                if (cancelChild) {
+                    mTouchTarget = null;
+                    target.recycle();
+                }
+            }
+        }
+
+        // Update list of touch targets for pointer up or cancel, if needed.
+        if (canceled || action == MotionEvent.ACTION_UP) {
+            resetTouchState();
+        }
         return handled;
     }
 
@@ -616,6 +666,56 @@ public abstract class ViewGroup extends View implements ViewParent {
         return mTempPosition;
     }
 
+    /**
+     * Transforms a motion event into the coordinate space of a particular child view,
+     * filters out irrelevant pointer ids, and overrides its action if necessary.
+     * If child is null, assumes the MotionEvent will be sent to this ViewGroup instead.
+     */
+    private boolean dispatchTransformedTouchEvent(@Nonnull MotionEvent event,
+                                                  @Nullable View child, boolean cancel) {
+        final boolean handled;
+
+        // Canceling motions is a special case.  We don't need to perform any transformations
+        // or filtering.  The important part is the action, not the contents.
+        final int oldAction = event.getAction();
+        if (cancel || oldAction == MotionEvent.ACTION_CANCEL) {
+            event.setAction(MotionEvent.ACTION_CANCEL);
+            if (child == null) {
+                handled = super.dispatchTouchEvent(event);
+            } else {
+                handled = child.dispatchTouchEvent(event);
+            }
+            event.setAction(oldAction);
+            return handled;
+        }
+
+        if (child == null || child.hasIdentityMatrix()) {
+            if (child == null) {
+                handled = super.dispatchTouchEvent(event);
+            } else {
+                final float offsetX = mScrollX - child.mLeft;
+                final float offsetY = mScrollY - child.mTop;
+                event.offsetLocation(offsetX, offsetY);
+
+                handled = child.dispatchTouchEvent(event);
+
+                event.offsetLocation(-offsetX, -offsetY);
+            }
+        } else {
+            final MotionEvent transformedEvent = MotionEvent.obtain(event);
+
+            final float offsetX = mScrollX - child.mLeft;
+            final float offsetY = mScrollY - child.mTop;
+            transformedEvent.offsetLocation(offsetX, offsetY);
+            //TODO
+            //transformedEvent.transform(child.getInverseMatrix());
+
+            handled = child.dispatchTouchEvent(transformedEvent);
+
+            transformedEvent.recycle();
+        }
+        return handled;
+    }
 
     /**
      * Returns true if a child view contains the specified point when transformed
@@ -1432,40 +1532,21 @@ public abstract class ViewGroup extends View implements ViewParent {
      */
     private static final class TouchTarget {
 
-        private static final int MAX_RECYCLED = 32;
-        private static final Object sRecyclerLock = new Object();
-        private static TouchTarget sRecyclerTop;
-        private static int sRecyclerUsed;
-
-        public static final int ALL_POINTER_IDS = ~0; // all ones
+        private static final Pool<TouchTarget> sPool = Pools.concurrent(12);
 
         // The touched view, one of the child of this ViewGroup
         public View child;
-
-        // The combined bit mask of pointer ids for all pointers captured by the target.
-        public int pointerIdBits;
-
-        // The next target in the linked list.
-        public TouchTarget next;
 
         private TouchTarget() {
         }
 
         @Nonnull
-        public static TouchTarget obtain(@Nonnull View child, int pointerIdBits) {
-            final TouchTarget target;
-            synchronized (sRecyclerLock) {
-                if (sRecyclerTop == null) {
-                    target = new TouchTarget();
-                } else {
-                    target = sRecyclerTop;
-                    sRecyclerTop = target.next;
-                    sRecyclerUsed--;
-                    target.next = null;
-                }
+        public static TouchTarget obtain(@Nonnull View child) {
+            TouchTarget target = sPool.acquire();
+            if (target == null) {
+                target = new TouchTarget();
             }
             target.child = child;
-            target.pointerIdBits = pointerIdBits;
             return target;
         }
 
@@ -1473,16 +1554,8 @@ public abstract class ViewGroup extends View implements ViewParent {
             if (child == null) {
                 throw new IllegalStateException(this + " already recycled");
             }
-            synchronized (sRecyclerLock) {
-                if (sRecyclerUsed < MAX_RECYCLED) {
-                    sRecyclerUsed++;
-                    next = sRecyclerTop;
-                    sRecyclerTop = this;
-                } else {
-                    next = null;
-                }
-                child = null;
-            }
+            sPool.release(this);
+            child = null;
         }
     }
 }
