@@ -388,14 +388,22 @@ public final class UIManager implements ViewRootImpl.Handler {
                     buttonState |= 1 << i;
                 }
             }
-            mPendingMouseEvent = MotionEvent.obtain(now, now, 0, event.getAction() == GLFW_PRESS ?
-                            MotionEvent.ACTION_DOWN : MotionEvent.ACTION_UP, x, y, event.getMods(),
-                    buttonState, 0);
+            int actionButton = 1 << event.getButton();
+            int action = event.getAction() == GLFW_PRESS ?
+                    MotionEvent.ACTION_DOWN : MotionEvent.ACTION_UP;
+            if ((action == MotionEvent.ACTION_DOWN && (buttonState ^ actionButton) == 0)
+                    || (action == MotionEvent.ACTION_UP && buttonState == 0)) {
+                mPendingMouseEvent = MotionEvent.obtain(now, now, action, actionButton,
+                        x, y, event.getMods(), buttonState, 0);
+            }
         }
     }
 
     void onMouseButton() {
-        mRoot.enqueueInputEvent(mPendingMouseEvent);
+        if (mPendingMouseEvent != null) {
+            mRoot.enqueueInputEvent(mPendingMouseEvent);
+            mPendingMouseEvent = null;
+        }
     }
 
     // Internal method

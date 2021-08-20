@@ -83,6 +83,7 @@ public class View implements Drawable.Callback {
      *                        1              PFLAG_MEASURED_DIMENSION_SET
      *                       1               PFLAG_FORCE_LAYOUT
      *                      1                PFLAG_LAYOUT_REQUIRED
+     *                     1                 PFLAG_PRESSED
      * |--------|--------|--------|--------|
      *       1                               PFLAG_CANCEL_NEXT_UP_EVENT
      *     1                                 PFLAG_HOVERED
@@ -93,6 +94,7 @@ public class View implements Drawable.Callback {
     static final int PFLAG_MEASURED_DIMENSION_SET = 0x00000800;
     static final int PFLAG_FORCE_LAYOUT = 0x00001000;
     static final int PFLAG_LAYOUT_REQUIRED = 0x00002000;
+    private static final int PFLAG_PRESSED = 0x00004000;
 
     /**
      * Indicates whether the view is temporarily detached.
@@ -183,6 +185,15 @@ public class View implements Drawable.Callback {
      */
     static final int CLICKABLE = 0x00004000;
 
+    /**
+     * <p>
+     * Indicates this view can be context clicked. When context clickable, a View reacts to a
+     * context click (e.g. a primary stylus button press or right mouse click) by notifying the
+     * OnContextClickListener.
+     * </p>
+     */
+    static final int CONTEXT_CLICKABLE = 0x00800000;
+
     /*
      * View masks
      * |--------|--------|--------|--------|
@@ -192,6 +203,8 @@ public class View implements Drawable.Callback {
      *                              11       SCROLLBARS
      * |--------|--------|--------|--------|
      *                     1                 CLICKABLE
+     * |--------|--------|--------|--------|
+     *           1                           CONTEXT_CLICKABLE
      * |--------|--------|--------|--------|
      */
     /**
@@ -1038,6 +1051,72 @@ public class View implements Drawable.Callback {
      */
     public void setClickable(boolean clickable) {
         setFlags(clickable ? CLICKABLE : 0, CLICKABLE);
+    }
+
+    /**
+     * Indicates whether this view reacts to context clicks or not.
+     *
+     * @return true if the view is context clickable, false otherwise
+     * @see #setContextClickable(boolean)
+     */
+    public boolean isContextClickable() {
+        return (mViewFlags & CONTEXT_CLICKABLE) == CONTEXT_CLICKABLE;
+    }
+
+    /**
+     * Enables or disables context clicking for this view. This event can launch the listener.
+     *
+     * @param contextClickable true to make the view react to a context click, false otherwise
+     * @see #isContextClickable()
+     */
+    public void setContextClickable(boolean contextClickable) {
+        setFlags(contextClickable ? CONTEXT_CLICKABLE : 0, CONTEXT_CLICKABLE);
+    }
+
+    /**
+     * Sets the pressed state for this view.
+     *
+     * @param pressed Pass true to set the View's internal state to "pressed", or false to reverts
+     *                the View's internal state from a previously set "pressed" state.
+     * @see #isClickable()
+     * @see #setClickable(boolean)
+     */
+    public void setPressed(boolean pressed) {
+        final boolean needsRefresh = pressed != ((mPrivateFlags & PFLAG_PRESSED) == PFLAG_PRESSED);
+
+        if (pressed) {
+            mPrivateFlags |= PFLAG_PRESSED;
+        } else {
+            mPrivateFlags &= ~PFLAG_PRESSED;
+        }
+
+        if (needsRefresh) {
+            refreshDrawableState();
+        }
+        dispatchSetPressed(pressed);
+    }
+
+    /**
+     * Dispatch setPressed to all of this View's children.
+     *
+     * @param pressed The new pressed state
+     * @see #setPressed(boolean)
+     */
+    protected void dispatchSetPressed(boolean pressed) {
+    }
+
+    /**
+     * Indicates whether the view is currently in pressed state. Unless
+     * {@link #setPressed(boolean)} is explicitly called, only clickable views can enter
+     * the pressed state.
+     *
+     * @return true if the view is currently pressed, false otherwise
+     * @see #setPressed(boolean)
+     * @see #isClickable()
+     * @see #setClickable(boolean)
+     */
+    public boolean isPressed() {
+        return (mPrivateFlags & PFLAG_PRESSED) == PFLAG_PRESSED;
     }
 
     void setFlags(int flags, int mask) {
@@ -2187,6 +2266,37 @@ public class View implements Drawable.Callback {
 
     }
 
+    @Nonnull
+    ListenerInfo getListenerInfo() {
+        if (mListenerInfo == null) {
+            mListenerInfo = new ListenerInfo();
+        }
+        return mListenerInfo;
+    }
+
+    /**
+     * Register a callback to be invoked when this view is clicked. If this view is not
+     * clickable, it becomes clickable.
+     *
+     * @param l The callback that will run
+     * @see #setClickable(boolean)
+     */
+    public void setOnClickListener(@Nullable OnClickListener l) {
+        if (!isClickable()) {
+            setClickable(true);
+        }
+        getListenerInfo().mOnClickListener = l;
+    }
+
+    /**
+     * Return whether this view has an attached OnClickListener.  Returns
+     * true if there is a listener, false if there is none.
+     */
+    public boolean hasOnClickListeners() {
+        ListenerInfo li = mListenerInfo;
+        return (li != null && li.mOnClickListener != null);
+    }
+
     /*
      * Internal method. Check if mouse hover this view.
      *
@@ -2270,15 +2380,66 @@ public class View implements Drawable.Callback {
 
     /**
      * Implement this method to handle touch screen motion events.
+     * <p>
+     * If this method is used to detect click actions, it is recommended that
+     * the actions be performed by implementing and calling
+     * {@link #performClick()}. This will ensure consistent system behavior.
      *
      * @param event the touch event
      * @return {@code true} if the event was handled by the view, {@code false} otherwise
      */
     public boolean onTouchEvent(@Nonnull MotionEvent event) {
+        final int action = event.getAction();
+        final int viewFlags = mViewFlags;
+        final boolean clickable = (viewFlags & CLICKABLE) == CLICKABLE
+                || (viewFlags & CONTEXT_CLICKABLE) == CONTEXT_CLICKABLE;
+
+        if ((viewFlags & ENABLED_MASK) == DISABLED) {
+            if (action == MotionEvent.ACTION_UP && (mPrivateFlags & PFLAG_PRESSED) != 0) {
+                setPressed(false);
+            }
+            // A disabled view that is clickable still consumes the touch
+            // events, it just doesn't respond to them.
+            return clickable;
+        }
+
+        if (clickable) {
+            switch (action) {
+                case MotionEvent.ACTION_UP:
+                    if ((mPrivateFlags & PFLAG_PRESSED) != 0) {
+                        performClick();
+                    }
+                    break;
+                case MotionEvent.ACTION_DOWN:
+                    setPressed(true);
+                    break;
+            }
+
+            return true;
+        }
+
         return false;
     }
 
     boolean isOnScrollbarThumb(float x, float y) {
+        return false;
+    }
+
+    /**
+     * Call this view's OnClickListener, if it is defined.  Performs all normal
+     * actions associated with clicking: reporting accessibility event, playing
+     * a sound, etc.
+     *
+     * @return True there was an assigned OnClickListener that was called, false
+     * otherwise is returned.
+     */
+    public boolean performClick() {
+        final ListenerInfo li = mListenerInfo;
+        if (li != null && li.mOnClickListener != null) {
+            //playSoundEffect(SoundEffectConstants.CLICK);
+            li.mOnClickListener.onClick(this);
+            return true;
+        }
         return false;
     }
 

@@ -589,11 +589,10 @@ public abstract class ViewGroup extends View implements ViewParent {
         } else {
             // Dispatch to touch targets, excluding the new touch target if we already
             // dispatched to it.  Cancel touch targets if necessary.
-            TouchTarget predecessor = null;
-            TouchTarget target = mTouchTarget;
             if (dispatchedToNewTarget) {
                 handled = true;
             } else {
+                final TouchTarget target = mTouchTarget;
                 final boolean cancelChild = resetCancelNextUpFlag(target.child)
                         || intercepted;
                 if (dispatchTransformedTouchEvent(ev, target.child, cancelChild)) {
