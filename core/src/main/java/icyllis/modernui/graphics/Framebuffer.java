@@ -21,7 +21,6 @@ package icyllis.modernui.graphics;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.texture.Renderbuffer;
 import icyllis.modernui.graphics.texture.Texture;
-import icyllis.modernui.graphics.texture.Texture2D;
 import icyllis.modernui.graphics.texture.Texture2DMultisample;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -48,6 +47,7 @@ import static icyllis.modernui.graphics.GLWrapper.*;
  *
  * @see <a href="https://www.khronos.org/opengl/wiki/Framebuffer_Object">Framebuffer Object</a>
  */
+//TODO WIP
 public final class Framebuffer implements AutoCloseable {
 
     private int mWidth;
@@ -122,6 +122,14 @@ public final class Framebuffer implements AutoCloseable {
         clearDepthStencilBuffer();
     }
 
+    public int getWidth() {
+        return mWidth;
+    }
+
+    public int getHeight() {
+        return mHeight;
+    }
+
     /**
      * Reallocate all attachments to the new size, if changed.
      */
@@ -133,15 +141,17 @@ public final class Framebuffer implements AutoCloseable {
         mHeight = height;
         for (var entry : mAttachments.int2ObjectEntrySet()) {
             AutoCloseable a = entry.getValue();
-            if (a instanceof Texture2D) {
-                Texture2D texture = (Texture2D) a;
-                texture.resize(width, height, false);
+            if (a instanceof Texture2DMultisample) {
+                Texture2DMultisample texture = (Texture2DMultisample) a;
+                int internalFormat = glGetTextureLevelParameteri(texture.get(), 0, GL_TEXTURE_INTERNAL_FORMAT);
+                texture.close();
+                texture.init(internalFormat, width, height, 4);
                 glNamedFramebufferTexture(get(), entry.getIntKey(), texture.get(), 0);
             } else if (a instanceof Renderbuffer) {
                 Renderbuffer renderbuffer = (Renderbuffer) a;
                 int internalFormat = glGetNamedRenderbufferParameteri(renderbuffer.get(), GL_RENDERBUFFER_INTERNAL_FORMAT);
                 renderbuffer.close();
-                renderbuffer.init(internalFormat, width, height, 0);
+                renderbuffer.init(internalFormat, width, height, 4);
                 glNamedFramebufferRenderbuffer(get(), entry.getIntKey(), GL_RENDERBUFFER, renderbuffer.get());
             }
         }

@@ -23,10 +23,8 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.annotation.concurrent.ThreadSafe;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * For the result of text shaping, measurement and glyph layout of a single paragraph.
@@ -167,7 +165,7 @@ public class MeasuredText {
     @Override
     public String toString() {
         return "MeasuredText{" +
-                "mRuns=" + Arrays.toString(mRuns) +
+                Arrays.stream(mRuns).map(Objects::toString).collect(Collectors.joining("\n")) +
                 '}';
     }
 
@@ -216,10 +214,7 @@ public class MeasuredText {
             if (end > mText.length) {
                 throw new IllegalArgumentException("Style exceeds the text length");
             }
-            if (paint instanceof TextPaint) {
-                paint = ((TextPaint) paint).copyAsBase();
-            }
-            mRuns.add(new StyleRun(mCurrentOffset, end, paint, isRtl));
+            mRuns.add(new StyleRun(mCurrentOffset, end, paint.toBase(), isRtl));
             mCurrentOffset = end;
         }
 
@@ -239,7 +234,7 @@ public class MeasuredText {
          *               text
          * @param width  a replacement width of the range in pixels
          */
-        public void addReplacementRun(@Nonnull TextPaint paint, int length, float width) {
+        public void addReplacementRun(@Nonnull FontPaint paint, int length, float width) {
             if (length <= 0) {
                 throw new IllegalArgumentException("length can not be negative");
             }

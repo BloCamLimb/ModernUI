@@ -403,4 +403,17 @@ public class Typeface {
     public int hashCode() {
         return Arrays.hashCode(mFonts);
     }
+
+    @Override
+    public String toString() {
+        StringBuilder b = new StringBuilder();
+        b.append("Typeface{");
+        for (int i = 0, e = mFonts.length; i < e; i++) {
+            if (i > 0) {
+                b.append(", ");
+            }
+            b.append(mFonts[i].getFamily(Locale.ROOT));
+        }
+        return b.append('}').toString();
+    }
 }

@@ -66,12 +66,9 @@ public class TextPaint extends FontPaint {
         bgColor = paint.bgColor;
     }
 
-    /**
-     * Create a copy of this paint to a paint for internal layout engine.
-     *
-     * @return a internal paint
-     */
-    public FontPaint copyAsBase() {
+    @Nonnull
+    @Override
+    public FontPaint toBase() {
         return new FontPaint(this);
     }
 
