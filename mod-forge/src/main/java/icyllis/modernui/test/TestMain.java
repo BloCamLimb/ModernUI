@@ -111,7 +111,7 @@ public class TestMain {
         GRAPHICS.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
     }
 
-    static WaveformGraph graph = null;
+    static SpectrumGraph graph = null;
 
 
     public static void main(String[] args) throws InterruptedException {
@@ -218,7 +218,7 @@ public class TestMain {
                 e.printStackTrace();
             }
             try {
-                graph = new WaveformGraph();
+                graph = new SpectrumGraph();
             } catch (Exception e) {
                 e.printStackTrace();
             }

@@ -78,6 +78,7 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
      * A weak reference to the target object on which the property exists, set
      * in the constructor. We'll cancel the animation if this goes away.
      */
+    @Nullable
     private WeakReference<Object> mTarget;
 
     /**
@@ -207,6 +208,7 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
     /**
      * The set of listeners to be sent events through the life of an animation.
      */
+    @Nullable
     Set<UpdateListener> mUpdateListeners = null;
 
     /**

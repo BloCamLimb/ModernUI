@@ -22,6 +22,7 @@ import com.ibm.icu.text.DateFormat;
 import com.ibm.icu.text.SimpleDateFormat;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
+import icyllis.modernui.graphics.Framebuffer;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.texture.Texture2D;
 import org.lwjgl.PointerBuffer;
@@ -180,6 +181,41 @@ public final class Bitmap implements AutoCloseable {
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
         glGetTextureImage(texture.get(), 0, format.glFormat, GL_UNSIGNED_BYTE,
                 bitmap.getSize(), p);
+        if (flipY) {
+            final int stride = width * format.channels;
+            final long temp = nmemAllocChecked(stride);
+            for (int i = 0, e = height >> 1; i < e; i++) {
+                final int a = i * stride;
+                final int b = (height - i - 1) * stride;
+                memCopy(p + a, temp, stride);
+                memCopy(p + b, p + a, stride);
+                memCopy(temp, p + b, stride);
+            }
+            nmemFree(temp);
+        }
+        return bitmap;
+    }
+
+    /**
+     * Creates a bitmap whose image downloaded from the given framebuffer content
+     * bound as a read framebuffer. The color buffer 0 will be taken.
+     *
+     * @param format      the bitmap format to convert the image to
+     * @param framebuffer the framebuffer to download from
+     * @param flipY       flip the image vertically, such as the texture is from a framebuffer
+     * @return the created bitmap
+     */
+    @Nonnull
+    @RenderThread
+    public static Bitmap download(@Nonnull Format format, @Nonnull Framebuffer framebuffer, boolean flipY) {
+        RenderCore.checkRenderThread();
+        final int width = framebuffer.getWidth();
+        final int height = framebuffer.getHeight();
+        final Bitmap bitmap = new Bitmap(format, width, height, false);
+        final long p = bitmap.getPixels();
+        framebuffer.bindRead();
+        glReadBuffer(0);
+        glReadPixels(0, 0, width, height, format.glFormat, GL_UNSIGNED_BYTE, p);
         if (flipY) {
             final int stride = width * format.channels;
             final long temp = nmemAllocChecked(stride);

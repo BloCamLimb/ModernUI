@@ -1123,10 +1123,10 @@ public final class GLCanvas extends Canvas {
         mDrawStates.add(DRAW_IMAGE);
     }
 
-    public void drawTextureMs(@Nonnull Texture texture, float l, float t, float r, float b, int color) {
+    public void drawTextureMSAA(@Nonnull Texture texture, float l, float t, float r, float b, int color, boolean flipY) {
         // flip vertical
         putRectColorUV(l, t, r, b, color,
-                0, 1, 1, 0);
+                0, flipY ? 1 : 0, 1, flipY ? 0 : 1);
         mTextures.add(texture);
         getMatrix().get(getModelViewBuffer());
         mDrawStates.add(DRAW_IMAGE_MS);

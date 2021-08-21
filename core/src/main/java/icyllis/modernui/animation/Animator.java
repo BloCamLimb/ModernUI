@@ -47,6 +47,7 @@ public abstract class Animator {
     /**
      * The set of listeners to be sent events through the life of an animation.
      */
+    @Nullable
     Set<Listener> mListeners;
 
     /**

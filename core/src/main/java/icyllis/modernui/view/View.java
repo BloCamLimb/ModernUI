@@ -2408,10 +2408,15 @@ public class View implements Drawable.Callback {
                 case MotionEvent.ACTION_UP:
                     if ((mPrivateFlags & PFLAG_PRESSED) != 0) {
                         performClick();
+                        setPressed(false);
                     }
                     break;
                 case MotionEvent.ACTION_DOWN:
                     setPressed(true);
+                    break;
+
+                case MotionEvent.ACTION_CANCEL:
+                    setPressed(false);
                     break;
             }
 

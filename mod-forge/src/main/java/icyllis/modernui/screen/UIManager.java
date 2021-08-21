@@ -29,9 +29,7 @@ import icyllis.modernui.forge.ModernUIForge;
 import icyllis.modernui.graphics.Framebuffer;
 import icyllis.modernui.graphics.GLCanvas;
 import icyllis.modernui.graphics.texture.Texture;
-import icyllis.modernui.graphics.texture.Texture2D;
 import icyllis.modernui.math.Matrix4;
-import icyllis.modernui.platform.Bitmap;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.test.TestPauseUI;
 import icyllis.modernui.textmc.TextLayoutProcessor;
@@ -41,7 +39,6 @@ import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.view.ViewRootImpl;
 import icyllis.modernui.widget.DecorView;
-import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
@@ -64,7 +61,6 @@ import org.apache.logging.log4j.MarkerManager;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
-import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -441,19 +437,19 @@ public final class UIManager implements ViewRootImpl.Handler {
             case GLFW_KEY_R:
                 TextLayoutProcessor.getInstance().reload();
                 break;
+
             case GLFW_KEY_C:
-                // make a screenshot
-                Texture texture = mFramebuffer.getAttachedTexture(GL_COLOR_ATTACHMENT0);
-                Bitmap bitmap = Bitmap.download(Bitmap.Format.RGBA, (Texture2D) texture, true);
+                // take a screenshot, MSAA framebuffer doesn't support that
+                /*Bitmap bitmap = Bitmap.download(Bitmap.Format.RGBA, mFramebuffer, true);
                 Util.ioPool().execute(() -> {
                     try (bitmap) {
                         bitmap.saveDialog(Bitmap.SaveFormat.PNG, 0);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                });
-
+                });*/
                 break;
+
             case GLFW_KEY_G:
                 if (minecraft.screen == null && minecraft.hasSingleplayerServer() &&
                         minecraft.getSingleplayerServer() != null && !minecraft.getSingleplayerServer().isPublished()) {
@@ -462,6 +458,7 @@ public final class UIManager implements ViewRootImpl.Handler {
                 /*minecraft.getLanguageManager().getLanguages().forEach(l ->
                         ModernUI.LOGGER.info(MARKER, "Locale {} RTL {}", l.getCode(), ULocale.forLocale(l.getJavaLocale()).isRightToLeft()));*/
                 break;
+
             case GLFW_KEY_P:
                 if (minecraft.screen == null) {
                     break;
@@ -505,7 +502,7 @@ public final class UIManager implements ViewRootImpl.Handler {
         RenderSystem.disableDepthTest();
 
         // blend alpha correctly, since the Minecraft.mainRenderTarget has no alpha (always 1)
-        // and our framebuffer is totally a transparent layer
+        // and our framebuffer is always a transparent layer
         RenderSystem.blendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
         int width = mWindow.getWidth();
@@ -516,6 +513,7 @@ public final class UIManager implements ViewRootImpl.Handler {
 
         if (mProjectionChanged) {
             Matrix4 projection = Matrix4.makeOrthographic(width, -height, 0, 2000);
+            // heavy overhead
             canvas.setProjection(projection);
             mProjectionChanged = false;
         }
@@ -537,37 +535,20 @@ public final class UIManager implements ViewRootImpl.Handler {
         }
         Texture texture = framebuffer.getAttachedTexture(GL_COLOR_ATTACHMENT0);
 
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, minecraft.getMainRenderTarget().frameBufferId);
+        // draw MSAA off-screen result to Minecraft main framebuffer (not the default framebuffer)
         RenderSystem.defaultBlendFunc();
-        //RenderSystem.enableTexture();
-        //RenderSystem.bindTexture(texture);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, minecraft.getMainRenderTarget().frameBufferId);
 
-        /*GlStateManager._matrixMode(5889);
-        GlStateManager._loadIdentity();
-        GlStateManager._ortho(0.0D, width, height, 0.0D, 1000.0D, 3000.0D);*/
-
+        // do alpha fade in
         int alpha = (int) Math.min(255, mElapsedTimeMillis);
-        canvas.drawTextureMs(texture, 0, 0, width, height, alpha << 24 | 0xffffff);
+        canvas.drawTextureMSAA(texture, 0, 0, width, height, alpha << 24 | 0xffffff, true);
         canvas.render();
 
         glBindVertexArray(oldVertexArray);
         glUseProgram(oldProgram);
 
-        /*Tesselator tesselator = RenderSystem.renderThreadTesselator();
-        BufferBuilder builder = tesselator.getBuilder();
-        builder.begin(GL_QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
-        int alpha = (int) Math.min(255, mElapsedTimeMillis);
-        builder.vertex(0, height, 0).color(255, 255, 255, alpha).uv(0, 0).endVertex();
-        builder.vertex(width, height, 0).color(255, 255, 255, alpha).uv(1, 0).endVertex();
-        builder.vertex(width, 0, 0).color(255, 255, 255, alpha).uv(1, 1).endVertex();
-        builder.vertex(0, 0, 0).color(255, 255, 255, alpha).uv(0, 1).endVertex();
-        tesselator.end();*/
+        // force to change Blaze3D state
         RenderSystem.bindTexture(DEFAULT_TEXTURE);
-
-        /*GlStateManager._loadIdentity();
-        GlStateManager._ortho(0.0D, width / mWindow.getGuiScale(), height / mWindow.getGuiScale(),
-                0.0D, 1000.0D, 3000.0D);
-        GlStateManager._matrixMode(5888);*/
     }
 
     @SubscribeEvent

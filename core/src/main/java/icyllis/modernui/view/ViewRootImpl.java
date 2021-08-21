@@ -131,11 +131,10 @@ public final class ViewRootImpl implements ViewParent {
 
     @UiThread
     public void doTraversal() {
-        //TODO the input events
-        //if (mTraversalScheduled) {
-        mTraversalScheduled = false;
-        performTraversal();
-        //}
+        if (mTraversalScheduled) {
+            mTraversalScheduled = false;
+            performTraversal();
+        }
     }
 
     public void scheduleTraversal() {
@@ -171,19 +170,18 @@ public final class ViewRootImpl implements ViewParent {
 
         mWillDrawSoon = false;
 
-        //TODO
-        //if (mInvalidated) {
-        mIsDrawing = true;
-        mCanvas.reset(width, height);
-        host.draw(mCanvas);
-        mIsDrawing = false;
-        if (mKeepInvalidated) {
-            mKeepInvalidated = false;
-        } else {
-            mInvalidated = false;
+        if (mInvalidated) {
+            mIsDrawing = true;
+            mCanvas.reset(width, height);
+            host.draw(mCanvas);
+            mIsDrawing = false;
+            if (mKeepInvalidated) {
+                mKeepInvalidated = false;
+            } else {
+                mInvalidated = false;
+            }
+            mHasDrawn = true;
         }
-        mHasDrawn = true;
-        //}
     }
 
     public void enqueueInputEvent(@Nonnull InputEvent event) {

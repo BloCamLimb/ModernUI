@@ -149,6 +149,17 @@ public class FontPaint {
         mFontSize = MathUtil.clamp(fontSize, 8, 96);
     }
 
+    /**
+     * Create a copy of this paint as the base class paint for internal
+     * layout engine. Subclasses must ensure that be immutable.
+     *
+     * @return a internal paint
+     */
+    @Nonnull
+    public FontPaint toBase() {
+        return this;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
