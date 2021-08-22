@@ -18,102 +18,217 @@
 
 package icyllis.modernui.math;
 
-public abstract class FourierTransform {
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+/**
+ * Provides Fast Fourier Transform. It is an efficient way to calculate the Complex Discrete Fourier
+ * Transform, which is commonly used to analyze the spectrum of an audio buffer.
+ */
+public class FourierTransform {
 
     /**
-     * A constant indicating no window should be used on sample buffers.
+     * Constants indicating which window should be used on sample buffers.
+     *
+     * @see #setWindowFunc(int)
      */
     public static final int NONE = 0;
-    /**
-     * A constant indicating a Hamming window should be used on sample buffers.
-     */
-    public static final int HAMMING = 1;
-    protected static final int LINAVG = 2;
-    protected static final int LOGAVG = 3;
-    protected static final int NOAVG = 4;
-    protected static final float TWO_PI = (float) (2 * Math.PI);
-    protected int timeSize;
-    protected int sampleRate;
-    protected float bandWidth;
-    protected int whichWindow;
-    protected float[] real;
-    protected float[] imag;
-    protected float[] spectrum;
-    protected float[] averages;
-    protected int whichAverage;
-    protected int octaves;
-    protected int avgPerOctave;
+    public static final int BARTLETT = 1;
+    public static final int HAMMING = 2;
+    public static final int HANN = 3;
+    public static final int BLACKMAN = 4;
 
-    /**
-     * Construct a FourierTransform that will analyze sample buffers that are
-     * <code>ts</code> samples long and contain samples with a <code>sr</code>
-     * sample rate.
-     *
-     * @param ts the length of the buffers that will be analyzed
-     * @param sr the sample rate of the samples that will be analyzed
-     */
-    FourierTransform(int ts, float sr) {
-        timeSize = ts;
-        sampleRate = (int) sr;
-        bandWidth = (2f / timeSize) * ((float) sampleRate / 2f);
-        noAverages();
-        allocateArrays();
-        whichWindow = NONE;
+    private static final int LINEAR = 1;
+    private static final int LOG = 2;
+
+    private final int mTimeSize;
+    private final int mSampleRate;
+    private final float mBandWidth;
+
+    private final float[] mReal;
+    private final float[] mImag;
+    private final float[] mSpectrum;
+
+    // bit reversing table
+    private final int[] mReverse;
+
+    @Nullable
+    private float[] mWindow;
+
+    @Nullable
+    private float[] mAverages;
+    private int mAverageMode;
+    private int mOctaves;
+    private int mAvgPerOctave;
+
+    private FourierTransform(int timeSize, int sampleRate) {
+        mTimeSize = timeSize;
+        mSampleRate = sampleRate;
+        mBandWidth = (float) sampleRate / timeSize;
+
+        mReal = new float[timeSize];
+        mImag = new float[timeSize];
+        mSpectrum = new float[(timeSize >> 1) + 1];
+
+        int[] reverse = new int[timeSize];
+        for (int limit = 1, bit = timeSize >> 1; limit < timeSize; limit <<= 1, bit >>= 1) {
+            for (int i = 0; i < limit; i++) {
+                reverse[i + limit] = reverse[i] + bit;
+            }
+        }
+        mReverse = reverse;
     }
 
-    // allocating real, imag, and spectrum are the responsibility of derived
-    // classes
-    // because the size of the arrays will depend on the implementation being used
-    // this enforces that responsibility
-    protected abstract void allocateArrays();
+    /**
+     * Creates an FFT that will accept sample buffers that are <code>timeSize</code> long and have
+     * been recorded with a sample rate of <code>sampleRate</code>. <code>timeSize</code>
+     * <em>must</em> be a power of two.
+     *
+     * @param timeSize   the length of the sample buffers you will be analyzing
+     * @param sampleRate the sample rate of the audio you will be analyzing
+     */
+    @Nonnull
+    public static FourierTransform create(int timeSize, int sampleRate) {
+        if (timeSize > 0 & (timeSize & (timeSize - 1)) != 0) {
+            throw new IllegalArgumentException("timeSize must be a power of two");
+        }
+        return new FourierTransform(timeSize, sampleRate);
+    }
 
-    protected void setComplex(float[] r, float[] i) {
-        if (real.length != r.length && imag.length != i.length) {
-            throw new IllegalArgumentException("This won't work");
-        } else {
-            System.arraycopy(r, 0, real, 0, r.length);
-            System.arraycopy(i, 0, imag, 0, i.length);
+
+    /**
+     * Performs a forward transform on values in <code>samples</code>.
+     *
+     * @param samples the buffer of samples
+     * @param offset  the offset to start at in the buffer, the exceeded part of next timeSize()
+     *                samples from the starting index in the buffer will be filled with zeros.
+     */
+    public void forward(@Nonnull float[] samples, int offset) {
+        if (offset < 0 || offset >= samples.length) {
+            throw new IllegalArgumentException();
+        }
+        // copy samples to real/imag in bit-reversed order
+        // the imag array is filled with zeros
+        for (int i = 0; i < mTimeSize; i++) {
+            int j = mReverse[i];
+            if (j + offset >= samples.length) {
+                mReal[i] = 0.0f;
+            } else {
+                float sample = samples[j + offset];
+                // window the data in samples
+                if (mWindow != null) {
+                    sample *= mWindow[j];
+                }
+                mReal[i] = sample;
+            }
+            mImag[i] = 0.0f;
+        }
+        // perform the fft
+        fft();
+        // fill the spectrum buffer with amplitudes
+        fillSpectrum();
+    }
+
+    /**
+     * Performs a forward transform on the passed buffers.
+     *
+     * @param real   the real part of the time domain signal to transform
+     * @param imag   the imaginary part of the time domain signal to transform
+     * @param offset the offset to start at in the buffer, the exceeded part of next timeSize() *
+     *               samples from the starting index in the buffer will be filled with zeros.
+     */
+    public void forward(@Nonnull float[] real, @Nonnull float[] imag, int offset) {
+        if (offset < 0 || real.length != imag.length || offset >= real.length) {
+            throw new IllegalArgumentException();
+        }
+        // copy samples to real/imag in bit-reversed order
+        // the imag array is filled with zeros
+        for (int i = 0; i < mTimeSize; i++) {
+            int j = mReverse[i];
+            if (j + offset >= real.length) {
+                mReal[i] = 0.0f;
+                mImag[i] = 0.0f;
+            } else {
+                mReal[i] = real[j + offset];
+                mImag[i] = imag[j + offset];
+            }
+        }
+        fft();
+        fillSpectrum();
+    }
+
+    // performs an in-place fft on the data in the real and imag arrays
+    // bit reversing is not necessary as the data will already be bit reversed
+    private void fft() {
+        for (int halfSize = 1; halfSize < mTimeSize; halfSize <<= 1) {
+            float k = -MathUtil.PI / halfSize;
+            float phaseShiftStepR = MathUtil.cos(k);
+            float phaseShiftStepI = MathUtil.sin(k);
+            // current phase shift
+            float currentPhaseShiftR = 1.0f;
+            float currentPhaseShiftI = 0.0f;
+            for (int fftStep = 0; fftStep < halfSize; fftStep++) {
+                for (int i = fftStep; i < mTimeSize; i += halfSize << 1) {
+                    int off = i + halfSize;
+                    float tr =
+                            (currentPhaseShiftR * mReal[off]) - (currentPhaseShiftI * mImag[off]);
+                    float ti =
+                            (currentPhaseShiftR * mImag[off]) + (currentPhaseShiftI * mReal[off]);
+                    mReal[off] = mReal[i] - tr;
+                    mImag[off] = mImag[i] - ti;
+                    mReal[i] += tr;
+                    mImag[i] += ti;
+                }
+                float tmpR = currentPhaseShiftR;
+                currentPhaseShiftR =
+                        (tmpR * phaseShiftStepR) - (currentPhaseShiftI * phaseShiftStepI);
+                currentPhaseShiftI =
+                        (tmpR * phaseShiftStepI) + (currentPhaseShiftI * phaseShiftStepR);
+            }
         }
     }
 
     // fill the spectrum array with the amps of the data in real and imag
     // used so that this class can handle creating the average array
     // and also do spectrum shaping if necessary
-    protected void fillSpectrum() {
-        for (int i = 0; i < spectrum.length; i++) {
-            spectrum[i] = (float) Math.sqrt(real[i] * real[i] + imag[i] * imag[i]);
+    private void fillSpectrum() {
+        for (int i = 0; i < mSpectrum.length; i++) {
+            mSpectrum[i] = MathUtil.sqrt(mReal[i] * mReal[i] + mImag[i] * mImag[i]);
         }
 
-        if (whichAverage == LINAVG) {
-            int avgWidth = (int) spectrum.length / averages.length;
-            for (int i = 0; i < averages.length; i++) {
+        if (mAverages == null) {
+            return;
+        }
+        if (mAverageMode == LINEAR) {
+            int avgWidth = mSpectrum.length / mAverages.length;
+            for (int i = 0; i < mAverages.length; i++) {
                 float avg = 0;
                 int j;
                 for (j = 0; j < avgWidth; j++) {
                     int offset = j + i * avgWidth;
-                    if (offset < spectrum.length) {
-                        avg += spectrum[offset];
+                    if (offset < mSpectrum.length) {
+                        avg += mSpectrum[offset];
                     } else {
                         break;
                     }
                 }
                 avg /= j + 1;
-                averages[i] = avg;
+                mAverages[i] = avg;
             }
-        } else if (whichAverage == LOGAVG) {
-            for (int i = 0; i < octaves; i++) {
+        } else if (mAverageMode == LOG) {
+            for (int i = 0; i < mOctaves; i++) {
                 float lowFreq, hiFreq, freqStep;
                 if (i == 0) {
                     lowFreq = 0;
                 } else {
-                    lowFreq = (sampleRate / 2) / (float) Math.pow(2, octaves - i);
+                    lowFreq = (mSampleRate / 2f) / (1L << mOctaves - i);
                 }
-                hiFreq = (sampleRate / 2) / (float) Math.pow(2, octaves - i - 1);
-                freqStep = (hiFreq - lowFreq) / avgPerOctave;
+                hiFreq = (mSampleRate / 2f) / (1L << mOctaves - i - 1);
+                freqStep = (hiFreq - lowFreq) / mAvgPerOctave;
                 float f = lowFreq;
-                for (int j = 0; j < avgPerOctave; j++) {
-                    int offset = j + i * avgPerOctave;
-                    averages[offset] = calcAvg(f, f + freqStep);
+                for (int j = 0; j < mAvgPerOctave; j++) {
+                    int offset = j + i * mAvgPerOctave;
+                    mAverages[offset] = getAverage(f, f + freqStep);
                     f += freqStep;
                 }
             }
@@ -123,80 +238,100 @@ public abstract class FourierTransform {
     /**
      * Sets the object to not compute averages.
      */
-    public void noAverages() {
-        averages = new float[0];
-        whichAverage = NOAVG;
+    public void setNoAverages() {
+        mAverages = null;
+        mAverageMode = NONE;
     }
 
     /**
-     * Sets the number of averages used when computing the spectrum and spaces the
-     * averages in a linear manner. In other words, each average band will be
+     * Sets the number of averages used when computing the spectrum and spaces the averages in a
+     * linear manner. In other words, each average band will be
      * <code>specSize() / numAvg</code> bands wide.
      *
-     * @param numAvg how many averages to compute
+     * @param num how many averages to compute
      */
-    public void linAverages(int numAvg) {
-        if (numAvg > spectrum.length / 2) {
-            throw new IllegalArgumentException("The number of averages for this transform can be at most " + spectrum.length / 2 + ".");
-        } else {
-            averages = new float[numAvg];
+    public void setLinearAverages(int num) {
+        if (num > mSpectrum.length / 2) {
+            throw new IllegalArgumentException("The number of averages for this transform can be " +
+                    "at most " + mSpectrum.length / 2 + ".");
         }
-        whichAverage = LINAVG;
+        mAverages = new float[num];
+        mAverageMode = LINEAR;
     }
 
     /**
-     * Sets the number of averages used when computing the spectrum based on the
-     * minimum bandwidth for an octave and the number of bands per octave. For
-     * example, with audio that has a sample rate of 44100 Hz,
+     * Sets the number of averages used when computing the spectrum based on the minimum bandwidth
+     * for an octave and the number of bands per octave. For example, with audio that has a sample
+     * rate of 44100 Hz,
      * <code>logAverages(11, 1)</code> will result in 12 averages, each
-     * corresponding to an octave, the first spanning 0 to 11 Hz. To ensure that
-     * each octave band is a full octave, the number of octaves is computed by
-     * dividing the Nyquist frequency by two, and then the result of that by two,
-     * and so on. This means that the actual bandwidth of the lowest octave may
-     * not be exactly the value specified.
+     * corresponding to an octave, the first spanning 0 to 11 Hz. To ensure that each octave band is
+     * a full octave, the number of octaves is computed by dividing the Nyquist frequency by two,
+     * and then the result of that by two, and so on. This means that the actual bandwidth of the
+     * lowest octave may not be exactly the value specified.
      *
      * @param minBandwidth   the minimum bandwidth used for an octave
      * @param bandsPerOctave how many bands to split each octave into
      */
-    public void logAverages(int minBandwidth, int bandsPerOctave) {
-        float nyq = (float) sampleRate / 2f;
-        octaves = 1;
+    public void setLogAverages(int minBandwidth, int bandsPerOctave) {
+        float nyq = mSampleRate / 2f;
+        mOctaves = 1;
         while ((nyq /= 2) > minBandwidth) {
-            octaves++;
+            mOctaves++;
         }
-        avgPerOctave = bandsPerOctave;
-        averages = new float[octaves * bandsPerOctave];
-        whichAverage = LOGAVG;
+        mAvgPerOctave = bandsPerOctave;
+        mAverages = new float[mOctaves * bandsPerOctave];
+        mAverageMode = LOG;
     }
 
     /**
-     * Sets the window to use on the samples before taking the forward transform.
-     * If an invalid window is asked for, an error will be reported and the
-     * current window will not be changed.
+     * Sets the window to use on the samples before taking the forward transform. If an invalid
+     * window is asked for, an error will be reported and the current window will not be changed.
+     * {@link #NONE} is the default, equivalent to the rectangular window.
      *
-     * @param which FourierTransform.HAMMING or FourierTransform.NONE
+     * @param func window function, such as {@link #HAMMING}
+     * @throws IllegalArgumentException invalid window function
      */
-    public void window(int which) {
-        if (which < 0 || which > 1) {
-            throw new IllegalArgumentException("Invalid window type.");
-        } else {
-            whichWindow = which;
+    public void setWindowFunc(int func) {
+        if (func == NONE) {
+            mWindow = null;
+            return;
         }
-    }
-
-    protected void doWindow(float[] samples) {
-        switch (whichWindow) {
+        float[] window = mWindow;
+        if (window == null) {
+            window = new float[mTimeSize];
+        }
+        final int n = window.length - 1;
+        switch (func) {
             case HAMMING:
-                hamming(samples);
+                for (int i = 0; i <= n; i++) {
+                    window[i] = (0.54f - 0.46f * MathUtil.cos(MathUtil.TWO_PI * i / n));
+                }
                 break;
-        }
-    }
 
-    // windows the data in samples with a Hamming window
-    protected void hamming(float[] samples) {
-        for (int i = 0; i < samples.length; i++) {
-            samples[i] *= (0.54f - 0.46f * Math.cos(TWO_PI * i / (samples.length - 1)));
+            case BLACKMAN:
+                for (int i = 0; i <= n; i++) {
+                    window[i] = (0.42f - 0.5f * MathUtil.cos(MathUtil.TWO_PI * i / n)
+                            + 0.08f * MathUtil.cos(MathUtil.FOUR_PI * i / n));
+                }
+                break;
+
+            case HANN:
+                for (int i = 0; i <= n; i++) {
+                    final float sin = MathUtil.sin(MathUtil.PI * i / n);
+                    window[i] = sin * sin;
+                }
+                break;
+
+            case BARTLETT:
+                for (int i = 0; i <= n; i++) {
+                    window[i] = 1 - Math.abs((i * 2 - n) / n);
+                }
+                break;
+
+            default:
+                throw new IllegalArgumentException("Unrecognized window function " + func);
         }
+        mWindow = window;
     }
 
     /**
@@ -204,19 +339,30 @@ public abstract class FourierTransform {
      *
      * @return the length of the time domain signal expected by this transform
      */
-    public int timeSize() {
-        return timeSize;
+    public int getTimeSize() {
+        return mTimeSize;
     }
 
     /**
-     * Returns the size of the spectrum created by this transform. In other words,
-     * the number of frequency bands produced by this transform. This is typically
-     * equal to <code>timeSize()/2 + 1</code>, see above for an explanation.
+     * Returns the size of the spectrum created by this transform. In other words, the number of
+     * frequency bands produced by this transform. This is typically equal to <code>timeSize()/2 +
+     * 1</code>, see above for an explanation.
      *
      * @return the size of the spectrum
      */
-    public int specSize() {
-        return spectrum.length;
+    public int getBandSize() {
+        return mSpectrum.length;
+    }
+
+    /**
+     * Returns the width of each frequency band in the spectrum (in Hz). It should be noted that the
+     * bandwidth of the first and last frequency bands is half as large as the value returned by
+     * this function.
+     *
+     * @return the width of each frequency band in Hz.
+     */
+    public float getBandWidth() {
+        return mBandWidth;
     }
 
     /**
@@ -226,20 +372,7 @@ public abstract class FourierTransform {
      * @return the amplitude of the requested frequency band
      */
     public float getBand(int i) {
-        if (i < 0) i = 0;
-        if (i > spectrum.length - 1) i = spectrum.length - 1;
-        return spectrum[i];
-    }
-
-    /**
-     * Returns the width of each frequency band in the spectrum (in Hz). It should
-     * be noted that the bandwidth of the first and last frequency bands is half
-     * as large as the value returned by this function.
-     *
-     * @return the width of each frequency band in Hz.
-     */
-    public float getBandWidth() {
-        return bandWidth;
+        return mSpectrum[i];
     }
 
     /**
@@ -247,37 +380,70 @@ public abstract class FourierTransform {
      * <code>a</code>. You can use this to shape the spectrum before using
      * <code>inverse()</code>.
      *
-     * @param i the frequency band to modify
-     * @param a the new amplitude
+     * @param band      the frequency band to modify
+     * @param amplitude the new amplitude
      */
-    public abstract void setBand(int i, float a);
+    public void setBand(int band, float amplitude) {
+        if (amplitude < 0) {
+            throw new IllegalArgumentException("Can't set a frequency band to a negative value.");
+        }
+        if (mReal[band] == 0 && mImag[band] == 0) {
+            mReal[band] = amplitude;
+            mSpectrum[band] = amplitude;
+        } else {
+            mReal[band] /= mSpectrum[band];
+            mImag[band] /= mSpectrum[band];
+            mSpectrum[band] = amplitude;
+            mReal[band] *= mSpectrum[band];
+            mImag[band] *= mSpectrum[band];
+        }
+        if (band != 0 && band != mTimeSize / 2) {
+            mReal[mTimeSize - band] = mReal[band];
+            mImag[mTimeSize - band] = -mImag[band];
+        }
+    }
 
     /**
-     * Scales the amplitude of the <code>i<sup>th</sup></code> frequency band
-     * by <code>s</code>. You can use this to shape the spectrum before using
+     * Scales the amplitude of the <code>i<sup>th</sup></code> frequency band by <code>s</code>. You
+     * can use this to shape the spectrum before using
      * <code>inverse()</code>.
      *
-     * @param i the frequency band to modify
-     * @param s the scaling factor
+     * @param band  the frequency band to modify
+     * @param scale the scaling factor
      */
-    public abstract void scaleBand(int i, float s);
+    public void scaleBand(int band, float scale) {
+        if (scale < 0) {
+            throw new IllegalArgumentException("Can't scale a frequency band by a negative value.");
+        }
+        if (mSpectrum[band] != 0) {
+            mReal[band] /= mSpectrum[band];
+            mImag[band] /= mSpectrum[band];
+            mSpectrum[band] *= scale;
+            mReal[band] *= mSpectrum[band];
+            mImag[band] *= mSpectrum[band];
+        }
+        if (band != 0 && band != mTimeSize / 2) {
+            mReal[mTimeSize - band] = mReal[band];
+            mImag[mTimeSize - band] = -mImag[band];
+        }
+    }
 
     /**
-     * Returns the index of the frequency band that contains the requested
-     * frequency.
+     * Returns the index of the frequency band that contains the requested frequency.
      *
      * @param freq the frequency you want the index for (in Hz)
      * @return the index of the frequency band that contains freq
      */
     public int freqToIndex(float freq) {
         // special case: freq is lower than the bandwidth of spectrum[0]
-        if (freq < getBandWidth() / 2) return 0;
+        if (freq < getBandWidth() / 2)
+            return 0;
         // special case: freq is within the bandwidth of spectrum[spectrum.length - 1]
-        if (freq > sampleRate / 2 - getBandWidth() / 2) return spectrum.length - 1;
+        if (freq > (mSampleRate - getBandWidth()) / 2)
+            return mSpectrum.length - 1;
         // all other cases
-        float fraction = freq / (float) sampleRate;
-        int i = Math.round(timeSize * fraction);
-        return i;
+        float fraction = freq / mSampleRate;
+        return Math.round(mTimeSize * fraction);
     }
 
     /**
@@ -289,10 +455,11 @@ public abstract class FourierTransform {
         float bw = getBandWidth();
         // special case: the width of the first bin is half that of the others.
         //               so the center frequency is a quarter of the way.
-        if (i == 0) return bw * 0.25f;
+        if (i == 0)
+            return bw * 0.25f;
         // special case: the width of the last bin is half that of the others.
-        if (i == spectrum.length - 1) {
-            float lastBinBeginFreq = (sampleRate / 2) - (bw / 2);
+        if (i == mSpectrum.length - 1) {
+            float lastBinBeginFreq = (mSampleRate - bw) / 2;
             float binHalfWidth = bw * 0.25f;
             return lastBinBeginFreq + binHalfWidth;
         }
@@ -309,38 +476,38 @@ public abstract class FourierTransform {
      * @param i which average band you want the center frequency of.
      */
     public float getAverageCenterFrequency(int i) {
-        if (whichAverage == LINAVG) {
+        if (mAverages == null) {
+            return 0;
+        }
+        if (mAverageMode == LINEAR) {
             // an average represents a certain number of bands in the spectrum
-            int avgWidth = (int) spectrum.length / averages.length;
+            int avgWidth = mSpectrum.length / mAverages.length;
             // the "center" bin of the average, this is fudgy.
             int centerBinIndex = i * avgWidth + avgWidth / 2;
             return indexToFreq(centerBinIndex);
-
-        } else if (whichAverage == LOGAVG) {
+        } else if (mAverageMode == LOG) {
             // which "octave" is this index in?
-            int octave = i / avgPerOctave;
+            int octave = i / mAvgPerOctave;
             // which band within that octave is this?
-            int offset = i % avgPerOctave;
+            int offset = i % mAvgPerOctave;
             float lowFreq, hiFreq, freqStep;
             // figure out the low frequency for this octave
             if (octave == 0) {
                 lowFreq = 0;
             } else {
-                lowFreq = (sampleRate / 2) / (float) Math.pow(2, octaves - octave);
+                lowFreq = (mSampleRate / 2f) / (1L << mOctaves - octave);
             }
             // and the high frequency for this octave
-            hiFreq = (sampleRate / 2) / (float) Math.pow(2, octaves - octave - 1);
+            hiFreq = (mSampleRate / 2f) / (1L << mOctaves - octave - 1);
             // each average band within the octave will be this big
-            freqStep = (hiFreq - lowFreq) / avgPerOctave;
+            freqStep = (hiFreq - lowFreq) / mAvgPerOctave;
             // figure out the low frequency of the band we care about
             float f = lowFreq + offset * freqStep;
             // the center of the band will be the low plus half the width
             return f + freqStep / 2;
         }
-
         return 0;
     }
-
 
     /**
      * Gets the amplitude of the requested frequency in the spectrum.
@@ -348,7 +515,7 @@ public abstract class FourierTransform {
      * @param freq the frequency in Hz
      * @return the amplitude of the frequency in the spectrum
      */
-    public float getFreq(float freq) {
+    public float getFrequency(float freq) {
         return getBand(freqToIndex(freq));
     }
 
@@ -356,21 +523,21 @@ public abstract class FourierTransform {
      * Sets the amplitude of the requested frequency in the spectrum to
      * <code>a</code>.
      *
-     * @param freq the frequency in Hz
-     * @param a    the new amplitude
+     * @param freq      the frequency in Hz
+     * @param amplitude the new amplitude
      */
-    public void setFreq(float freq, float a) {
-        setBand(freqToIndex(freq), a);
+    public void setFrequency(float freq, float amplitude) {
+        setBand(freqToIndex(freq), amplitude);
     }
 
     /**
      * Scales the amplitude of the requested frequency by <code>a</code>.
      *
-     * @param freq the frequency in Hz
-     * @param s    the scaling factor
+     * @param freq  the frequency in Hz
+     * @param scale the scaling factor
      */
-    public void scaleFreq(float freq, float s) {
-        scaleBand(freqToIndex(freq), s);
+    public void scaleFrequency(float freq, float scale) {
+        scaleBand(freqToIndex(freq), scale);
     }
 
     /**
@@ -378,8 +545,8 @@ public abstract class FourierTransform {
      *
      * @return the length of the averages array
      */
-    public int avgSize() {
-        return averages.length;
+    public int getAverageSize() {
+        return mAverages == null ? 0 : mAverages.length;
     }
 
     /**
@@ -388,13 +555,8 @@ public abstract class FourierTransform {
      * @param i the average you want the value of
      * @return the value of the requested average band
      */
-    public float getAvg(int i) {
-        float ret;
-        if (averages.length > 0)
-            ret = averages[i];
-        else
-            ret = 0;
-        return ret;
+    public float getAverage(int i) {
+        return mAverages == null ? 0 : mAverages[i];
     }
 
     /**
@@ -405,83 +567,14 @@ public abstract class FourierTransform {
      * @param hiFreq  the upper bound of the band
      * @return the average of all spectrum values within the bounds
      */
-    public float calcAvg(float lowFreq, float hiFreq) {
+    public float getAverage(float lowFreq, float hiFreq) {
         int lowBound = freqToIndex(lowFreq);
         int hiBound = freqToIndex(hiFreq);
         float avg = 0;
         for (int i = lowBound; i <= hiBound; i++) {
-            avg += spectrum[i];
+            avg += mSpectrum[i];
         }
         avg /= (hiBound - lowBound + 1);
         return avg;
-    }
-
-    /**
-     * Performs a forward transform on <code>buffer</code>.
-     *
-     * @param buffer the buffer to analyze
-     */
-    public abstract void forward(float[] buffer);
-
-    /**
-     * Performs a forward transform on values in <code>buffer</code>.
-     *
-     * @param buffer  the buffer of samples
-     * @param startAt the index to start at in the buffer. there must be at least timeSize() samples
-     *                between the starting index and the end of the buffer. If there aren't, an
-     *                error will be issued and the operation will not be performed.
-     */
-    public void forward(float[] buffer, int startAt) {
-        if (buffer.length - startAt < timeSize) {
-            throw new IllegalArgumentException("FourierTransform.forward: not enough samples in the buffer between " + startAt + " and " + buffer.length + " to perform a transform.");
-        }
-
-        // copy the section of samples we want to analyze
-        float[] section = new float[timeSize];
-        System.arraycopy(buffer, startAt, section, 0, section.length);
-        forward(section);
-    }
-
-
-    /**
-     * Performs an inverse transform of the frequency spectrum and places the
-     * result in <code>buffer</code>.
-     *
-     * @param buffer the buffer to place the result of the inverse transform in
-     */
-    public abstract void inverse(float[] buffer);
-
-    /**
-     * Performs an inverse transform of the frequency spectrum represented by
-     * freqReal and freqImag and places the result in buffer.
-     *
-     * @param freqReal the real part of the frequency spectrum
-     * @param freqImag the imaginary part the frequency spectrum
-     * @param buffer   the buffer to place the inverse transform in
-     */
-    public void inverse(float[] freqReal, float[] freqImag, float[] buffer) {
-        setComplex(freqReal, freqImag);
-        inverse(buffer);
-    }
-
-    /**
-     * @return the spectrum of the last FourierTransform.forward() call.
-     */
-    public float[] getSpectrum() {
-        return spectrum;
-    }
-
-    /**
-     * @return the real part of the last FourierTransform.forward() call.
-     */
-    public float[] getRealPart() {
-        return real;
-    }
-
-    /**
-     * @return the imaginary part of the last FourierTransform.forward() call.
-     */
-    public float[] getImaginaryPart() {
-        return imag;
     }
 }

@@ -18,10 +18,10 @@
 
 package icyllis.modernui.test;
 
+import icyllis.modernui.ModernUI;
 import icyllis.modernui.audio.WaveDecoder;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.math.FFT;
 import icyllis.modernui.math.FourierTransform;
 
 import java.nio.channels.FileChannel;
@@ -32,36 +32,30 @@ public class SpectrumGraph {
     public WaveDecoder mWaveDecoder;
 
     private final float[] mAmplitudes = new float[60];
-    private final float[] mTempAmplitudes = new float[1024];
 
-    private final FFT mFFT;
+    private final FourierTransform mFFT;
 
     public int mSongLength;
 
     public SpectrumGraph() throws Exception {
-        mWaveDecoder = new WaveDecoder(FileChannel.open(Path.of("F:", "Rubia.wav")));
-        mFFT = new FFT(mTempAmplitudes.length, mWaveDecoder.mSampleRate);
-        //mFFT.linAverages(mAmplitudes.length + 1);
-        mFFT.logAverages(250, 14);
-        mSongLength = (int) ((float) mWaveDecoder.mSamples.length / mWaveDecoder.mSampleRate * 1000);
+        mWaveDecoder = new WaveDecoder(FileChannel.open(Path.of("F:", "5.wav")));
+        mFFT = FourierTransform.create(1024, mWaveDecoder.mSampleRate);
+        mFFT.setLogAverages(250, 14);
+        mFFT.setWindowFunc(FourierTransform.BLACKMAN);
+        mSongLength =
+                (int) ((float) mWaveDecoder.mSamples.length / mWaveDecoder.mSampleRate * 1000);
+        ModernUI.LOGGER.info("Average size: {}", mFFT.getAverageSize());
     }
 
     public void update(long time, long delta) {
-        float[] temp = mTempAmplitudes;
-
         if (time < mSongLength) {
-            int sampleStart = (int) (time / 1000f * mWaveDecoder.mSampleRate) - mTempAmplitudes.length;
-            /*int sampleEnd = sampleStart + (int) (deltaMillis / 1000f * mWaveDecoder.mSampleRate);
-            for (int i = sampleStart; i < sampleEnd; i++) {
-                temp[(int) (mWaveDecoder.mSamples[i] * temp.length)] += 1;
-            }*/
-            System.arraycopy(mWaveDecoder.mSamples, sampleStart, temp, 0, mTempAmplitudes.length);
-            mFFT.forward(temp);
+            int sampleStart = (int) (time / 1000f * mWaveDecoder.mSampleRate);
+            mFFT.forward(mWaveDecoder.mSamples, sampleStart);
 
-            int len = Math.min(mFFT.avgSize() - 20, mAmplitudes.length);
+            int len = Math.min(mFFT.getAverageSize() - 4, mAmplitudes.length);
             for (int i = 0; i < len; i++) {
                 float dec = mAmplitudes[i] - delta * 0.0012f * (mAmplitudes[i] + 0.03f);
-                mAmplitudes[i] = Math.max(dec, mFFT.getAvg(i + 2) / 160);
+                mAmplitudes[i] = Math.max(dec, mFFT.getAverage(i + 4) / 160);
             }
         }
     }

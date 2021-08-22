@@ -379,7 +379,7 @@ public class TestMain {
                 canvas.drawRoundRect(100, 840, 100 + playTime / graph.mSongLength * 1400000, 860, 10, paint);
 
                 if (graph != null) {
-                    graph.update((long) (playTime * 1000L) + 32, delta);
+                    graph.update((long) (playTime * 1000L) + 16, delta);
                     graph.draw(canvas);
                 }
 
