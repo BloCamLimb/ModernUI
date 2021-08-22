@@ -20,7 +20,7 @@ package icyllis.modernui.math;
 
 public final class MathUtil {
 
-    private static volatile float[] SINE_TABLE;
+    private static volatile float[] SIN_TABLE;
 
     public static final float PI = (float) Math.PI;
 
@@ -29,27 +29,29 @@ public final class MathUtil {
     public static final float PI_DIV_4 = (float) (Math.PI / 4);
     public static final float PI_DIV_6 = (float) (Math.PI / 6);
     public static final float TWO_PI = (float) (Math.PI * 2);
+    public static final float THREE_PI = (float) (Math.PI * 3);
+    public static final float FOUR_PI = (float) (Math.PI * 4);
     public static final float THREE_PI_DIV_2 = (float) (Math.PI * 3 / 2);
 
     private static final float DEG_TO_RAD = 0.017453292519943295f;
 
-    public static synchronized void initSineTable() {
-        if (SINE_TABLE == null) {
+    public static synchronized void initSinTable() {
+        if (SIN_TABLE == null) {
             float[] v = new float[0x10000];
             for (int i = 0; i < 0x10000; i++)
                 v[i] = (float) Math.sin(i * 9.587379924285257E-5);
-            SINE_TABLE = v;
+            SIN_TABLE = v;
         }
     }
 
     // fast sin, error +- 0.000152, in radians
     public static float fsin(float a) {
-        return SINE_TABLE[Math.round(a * 10430.378f) & 0xffff];
+        return SIN_TABLE[Math.round(a * 10430.378f) & 0xffff];
     }
 
     // fast cos, error +- 0.000152, in radians
     public static float fcos(float a) {
-        return SINE_TABLE[(Math.round(a * 10430.378f) + 0x4000) & 0xffff];
+        return SIN_TABLE[(Math.round(a * 10430.378f) + 0x4000) & 0xffff];
     }
 
     // sin
