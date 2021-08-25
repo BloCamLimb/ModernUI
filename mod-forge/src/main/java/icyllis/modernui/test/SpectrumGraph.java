@@ -18,11 +18,12 @@
 
 package icyllis.modernui.test;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.audio.WaveDecoder;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.math.FourierTransform;
+import icyllis.modernui.math.MathUtil;
+import icyllis.modernui.platform.RenderCore;
 
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
@@ -38,13 +39,11 @@ public class SpectrumGraph {
     public int mSongLength;
 
     public SpectrumGraph() throws Exception {
-        mWaveDecoder = new WaveDecoder(FileChannel.open(Path.of("F:", "5.wav")));
+        mWaveDecoder = new WaveDecoder(FileChannel.open(Path.of("F:", "7.wav")));
         mFFT = FourierTransform.create(1024, mWaveDecoder.mSampleRate);
         mFFT.setLogAverages(250, 14);
-        mFFT.setWindowFunc(FourierTransform.BLACKMAN);
-        mSongLength =
-                (int) ((float) mWaveDecoder.mSamples.length / mWaveDecoder.mSampleRate * 1000);
-        ModernUI.LOGGER.info("Average size: {}", mFFT.getAverageSize());
+        mFFT.setWindowFunc(FourierTransform.NONE);
+        mSongLength = (int) ((float) mWaveDecoder.mSamples.length / mWaveDecoder.mSampleRate * 1000);
     }
 
     public void update(long time, long delta) {
@@ -52,19 +51,29 @@ public class SpectrumGraph {
             int sampleStart = (int) (time / 1000f * mWaveDecoder.mSampleRate);
             mFFT.forward(mWaveDecoder.mSamples, sampleStart);
 
-            int len = Math.min(mFFT.getAverageSize() - 4, mAmplitudes.length);
+            int len = Math.min(mFFT.getAverageSize() - 5, mAmplitudes.length);
+            int iOff = (int) (time / 200);
             for (int i = 0; i < len; i++) {
                 float dec = mAmplitudes[i] - delta * 0.0012f * (mAmplitudes[i] + 0.03f);
-                mAmplitudes[i] = Math.max(dec, mFFT.getAverage(i + 4) / 160);
+                mAmplitudes[i] = Math.max(dec, mFFT.getAverage(((i + iOff) % len) + 5) / 160);
             }
         }
     }
 
     public void draw(Canvas canvas) {
         Paint paint = Paint.take();
+        long time = RenderCore.timeMillis();
+        float b = 1.5f + MathUtil.sin(time / 600f) / 2;
         for (int i = 0; i < mAmplitudes.length; i++) {
-            paint.setRGBA(100 + i * 2, 220 - i * 2, 240 - i * 4, 255);
-            canvas.drawRect(320 + i * 16, 800 - mAmplitudes[i] * 300, 334 + i * 16, 800, paint);
+            // lines
+            //paint.setRGBA(100 + i * 2, 220 - i * 2, 240 - i * 4, 255);
+            //canvas.drawRect(320 + i * 16, 800 - mAmplitudes[i] * 300, 334 + i * 16, 800, paint);
+            // circular
+            float f = Math.abs((i + (int) (time / 100)) % mAmplitudes.length - (mAmplitudes.length - 1) / 2f)
+                    / (mAmplitudes.length - 1) * b;
+            paint.setRGBA(100 + (int) (f * 120), 220 - (int) (f * 130), 240 - (int) (f * 20), 255);
+            canvas.rotate(-360f / mAmplitudes.length, 800, 450);
+            canvas.drawRect(794, 330 - mAmplitudes[i] * 200, 806, 330, paint);
         }
     }
 }

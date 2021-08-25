@@ -23,6 +23,7 @@ import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
 
+//TODO WIP
 public class AudioManager {
 
     private static final AudioManager instance = new AudioManager();
@@ -33,7 +34,6 @@ public class AudioManager {
     private int mSource;
 
     private AudioManager() {
-
     }
 
     public static AudioManager getInstance() {
@@ -42,11 +42,13 @@ public class AudioManager {
 
     public void init() {
         mDevice = ALC10.nalcOpenDevice(MemoryUtil.NULL);
-        ALCCapabilities aLCCapabilities = ALC.createCapabilities(mDevice);
+        ALCCapabilities alcCapabilities = ALC.createCapabilities(mDevice);
         mContext = ALC10.nalcCreateContext(mDevice, MemoryUtil.NULL);
         ALC10.alcMakeContextCurrent(mContext);
-        AL.createCapabilities(aLCCapabilities);
-        AL10.alEnable(EXTSourceDistanceModel.AL_SOURCE_DISTANCE_MODEL);
+        ALCapabilities alCapabilities = AL.createCapabilities(alcCapabilities);
+        if (alCapabilities.AL_EXT_source_distance_model) {
+            AL10.alEnable(EXTSourceDistanceModel.AL_SOURCE_DISTANCE_MODEL);
+        }
     }
 
     public void play(@Nonnull WaveDecoder waveDecoder) {

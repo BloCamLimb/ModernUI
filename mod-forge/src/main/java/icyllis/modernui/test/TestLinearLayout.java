@@ -24,7 +24,6 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.math.Icon;
-import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
 import icyllis.modernui.widget.LinearLayout;
@@ -36,7 +35,8 @@ import javax.annotation.Nonnull;
 
 public class TestLinearLayout extends LinearLayout {
 
-    private static final Icon ICON = new Icon(new ResourceLocation(ModernUI.ID, "textures/gui/suk.png"), 0, 0, 1, 1, true);
+    private static final Icon ICON = new Icon(new ResourceLocation(ModernUI.ID, "textures/gui/suk.png"), 0, 0, 1, 1,
+            true);
 
     private float c = 10;
     private float f = 0;
@@ -91,9 +91,6 @@ public class TestLinearLayout extends LinearLayout {
             LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(200, 36);
             v.setEnabled(true);
             v.setClickable(true);
-            if (i == 2) {
-                v.setOnClickListener(v1 -> ModernUI.LOGGER.info("Clicked {}", v1));
-            }
             addView(v, p);
         }
         addView(new DView(Interpolator.DECELERATE, 0), new LinearLayout.LayoutParams(120, 40));
@@ -126,7 +123,10 @@ public class TestLinearLayout extends LinearLayout {
                         .setInterpolator(Interpolator.DECELERATE));
 
         arcStartAni = new Animation(800)
-                .applyTo(new Applier(-90, 270, () -> arcStart, v -> arcStart = v)
+                .applyTo(new Applier(-90, 270, () -> arcStart, v -> {
+                    arcStart = v;
+                    invalidate();
+                })
                         .setInterpolator(Interpolator.DECELERATE));
         arcEndAni = new Animation(800)
                 .applyTo(new Applier(-90, 270, () -> arcEnd, v -> arcEnd = v)
@@ -176,18 +176,12 @@ public class TestLinearLayout extends LinearLayout {
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(4.0f);
         canvas.save();
-        canvas.rotate(-45, 0, 50);
-        canvas.drawRoundRect(26, 110, 106, 124, 6, paint);
-
-        paint.setStyle(Paint.Style.FILL);
-        canvas.drawRect(26, 126, 106, 156, paint);
+        canvas.rotate(30);
+        canvas.drawRoundRect(6, 110, 86, 124, 6, paint);
         canvas.restore();
 
-        String tcc = "今日も一日頑張るぞい";
-        TextPaint textPaint = TextPaint.obtain();
-        textPaint.color = 0xfff4a460;
-        canvas.drawTextRun(tcc, 0, tcc.length(), 20, 270, false, textPaint);
-        textPaint.recycle();
+        paint.setStyle(Paint.Style.FILL);
+        canvas.drawRect(6, 126, 86, 156, paint);
 
         //canvas.drawRoundImage(ICON, 6, 160, 166, 320, iconRadius, paint);
 
@@ -227,7 +221,7 @@ public class TestLinearLayout extends LinearLayout {
 
         // 4
 
-        paint.reset();
+        /*paint.reset();
 
         canvas.save();
         canvas.translate((float) Math.sin(circleAcc1) * 8, (float) Math.cos(circleAcc1) * 8);
@@ -247,13 +241,14 @@ public class TestLinearLayout extends LinearLayout {
         canvas.save();
         canvas.translate((float) Math.sin(circleAcc4) * 8, (float) Math.cos(circleAcc4) * 8);
         canvas.drawCircle(40, 18, 1.5f, paint);
-        canvas.restore();
+        canvas.restore();*/
 
 
         // 5
 
         /*canvas.drawRect(35, 55, 45, 65);
-        RenderSystem.blendFuncSeparate(GL11.GL_ONE_MINUS_DST_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE_MINUS_DST_ALPHA, GL11.GL_ZERO);
+        RenderSystem.blendFuncSeparate(GL11.GL_ONE_MINUS_DST_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11
+        .GL_ONE_MINUS_DST_ALPHA, GL11.GL_ZERO);
         canvas.drawCircle(40, 60, 4);
         RenderSystem.defaultBlendFunc();*/
 
@@ -332,7 +327,8 @@ public class TestLinearLayout extends LinearLayout {
 
         @Override
         protected void onDraw(@Nonnull Canvas canvas) {
-            String str = ChatFormatting.UNDERLINE + "Modern" + ChatFormatting.AQUA + " UI"/* + TextFormatting.OBFUSCATED + "\u0629\u064a\u0628\u0631\u0639\u0644\u0627" + TextFormatting.STRIKETHROUGH + "\u2642"*/;
+            String str = ChatFormatting.UNDERLINE + "Modern" + ChatFormatting.AQUA + " UI"/* + TextFormatting
+            .OBFUSCATED + "\u0629\u064a\u0628\u0631\u0639\u0644\u0627" + TextFormatting.STRIKETHROUGH + "\u2642"*/;
             if (isHovered()) {
                 Paint paint = Paint.take();
                 paint.setRGBA(140, 200, 240, 128);
