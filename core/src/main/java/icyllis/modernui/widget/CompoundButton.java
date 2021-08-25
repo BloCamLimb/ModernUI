@@ -18,46 +18,27 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.view.View;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
  * A button with two states, checked and unchecked. When the button is pressed
- * or clicked, the state changes automatically.
+ * or clicked to perform an action, the state changes automatically.
+ * <p>
+ * Note that all events are handled on UI thread, this means your listener code
+ * must execute quickly to avoid delaying your UI response to further actions.
  */
-public abstract class CompoundButton extends Button implements Checkable {
+public abstract class CompoundButton extends View implements Checkable {
 
     private boolean mChecked;
     // broadcast check state changes to listeners, prevent dead loop
     private boolean mBroadcasting;
 
-    private Drawable mButtonDrawable;
-
     private OnCheckedChangeListener mOnCheckedChangeListener;
 
     public CompoundButton() {
         setChecked(false);
-    }
-
-    @Override
-    protected void onDraw(@Nonnull Canvas canvas) {
-        final Drawable buttonDrawable = mButtonDrawable;
-        super.onDraw(canvas);
-        if (buttonDrawable != null) {
-            buttonDrawable.draw(canvas);
-            /*final int scrollX = mScrollX;
-            final int scrollY = mScrollY;
-            if (scrollX == 0 && scrollY == 0) {
-                buttonDrawable.draw(canvas);
-            } else {
-                canvas.translate(scrollX, scrollY);
-                buttonDrawable.draw(canvas);
-                canvas.translate(-scrollX, -scrollY);
-            }*/
-        }
     }
 
     @Override
@@ -97,26 +78,6 @@ public abstract class CompoundButton extends Button implements Checkable {
      */
     public void setOnCheckedChangeListener(@Nullable OnCheckedChangeListener listener) {
         mOnCheckedChangeListener = listener;
-    }
-
-    /**
-     * Sets a drawable as the compound button image.
-     *
-     * @param drawable the drawable to set
-     */
-    public void setButtonDrawable(@Nullable Drawable drawable) {
-        if (mButtonDrawable != drawable) {
-            mButtonDrawable = drawable;
-        }
-    }
-
-    /**
-     * @return the drawable used as the compound button image
-     * @see #setButtonDrawable(Drawable)
-     */
-    @Nullable
-    public Drawable getButtonDrawable() {
-        return mButtonDrawable;
     }
 
     /**

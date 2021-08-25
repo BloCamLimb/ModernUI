@@ -23,8 +23,6 @@ import icyllis.modernui.core.ContextClient;
 import icyllis.modernui.graphics.font.GlyphManagerForge;
 import icyllis.modernui.graphics.shader.ShaderManager;
 import icyllis.modernui.screen.LayoutIO;
-import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ReloadableResourceManager;
@@ -47,7 +45,9 @@ import java.awt.*;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.function.Consumer;
 
 @Mod(ModernUI.ID)
@@ -73,7 +73,7 @@ public final class ModernUIForge extends ModernUI {
         }
     }
 
-    private final Object2ObjectMap<String, IEventBus> mModEventBuses = new Object2ObjectOpenHashMap<>();
+    private final Map<String, IEventBus> mModEventBuses = new HashMap<>();
 
     // mod-loading thread
     public ModernUIForge() {
@@ -90,7 +90,7 @@ public final class ModernUIForge extends ModernUI {
                         .registerReloadListener(
                                 (ISelectiveResourceReloadListener) (manager, predicate) -> {
                                     if (predicate.test(VanillaResourceType.SHADERS)) {
-                                        ShaderManager.getInstance().reload();
+                                        Minecraft.getInstance().submit(ShaderManager.getInstance()::reload);
                                     }
                                 }
                         );
@@ -166,9 +166,11 @@ public final class ModernUIForge extends ModernUI {
 
     public <T extends Event & IModBusEvent> boolean post(@Nullable String modid, @Nonnull T event) {
         if (modid == null) {
-            for (IEventBus bus : mModEventBuses.values())
-                if (bus.post(event))
+            for (IEventBus bus : mModEventBuses.values()) {
+                if (bus.post(event)) {
                     return true;
+                }
+            }
         } else {
             IEventBus bus = mModEventBuses.get(modid);
             return bus != null && bus.post(event);
