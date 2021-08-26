@@ -29,13 +29,13 @@ import javax.annotation.Nonnull;
  *
  * @param <T> The class on which the Property is declared.
  */
-public interface FloatProperty<T> extends Property<T, Float> {
+public abstract class FloatProperty<T> implements Property<T, Float> {
 
-    void setValue(@Nonnull T target, float value);
+    public abstract void setValue(@Nonnull T target, float value);
 
     @Deprecated
     @Override
-    default void set(@Nonnull T target, @Nonnull Float value) {
+    public final void set(@Nonnull T target, @Nonnull Float value) {
         setValue(target, value);
     }
 }

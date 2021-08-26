@@ -29,13 +29,13 @@ import javax.annotation.Nonnull;
  *
  * @param <T> The class on which the Property is declared.
  */
-public interface IntProperty<T> extends Property<T, Integer> {
+public abstract class IntProperty<T> implements Property<T, Integer> {
 
-    void setValue(@Nonnull T target, int value);
+    public abstract void setValue(@Nonnull T target, int value);
 
     @Deprecated
     @Override
-    default void set(@Nonnull T target, @Nonnull Integer value) {
+    public final void set(@Nonnull T target, @Nonnull Integer value) {
         setValue(target, value);
     }
 }

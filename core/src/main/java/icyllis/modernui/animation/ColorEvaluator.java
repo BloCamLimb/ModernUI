@@ -20,27 +20,57 @@ package icyllis.modernui.animation;
 
 import icyllis.modernui.math.MathUtil;
 
+import javax.annotation.Nonnull;
+
+/**
+ * This evaluator can be used to perform type interpolation between integer
+ * values that represent ARGB colors.
+ */
 public class ColorEvaluator implements TypeEvaluator<Integer> {
 
     private static final ColorEvaluator sInstance = new ColorEvaluator();
 
+    private ColorEvaluator() {
+    }
+
+    /**
+     * Returns an instance of <code>ColorEvaluator</code> that may be used in
+     * {@link PropertyValuesHolder#setEvaluator(TypeEvaluator)}. The same instance may
+     * be used in multiple <code>Animator</code>s because it holds no state.
+     * Or directly use {@link #evaluate(float, int, int)} for the algorithm.
+     *
+     * @return An instance of <code>ColorEvaluator</code>.
+     */
     public static ColorEvaluator getInstance() {
         return sInstance;
     }
 
-    @Override
-    public Integer evaluate(float fraction, Integer startValue, Integer endValue) {
-        int startInt = startValue;
-        float startA = ((startInt >> 24) & 0xff) / 255.0f;
-        float startR = ((startInt >> 16) & 0xff) / 255.0f;
-        float startG = ((startInt >> 8) & 0xff) / 255.0f;
-        float startB = (startInt & 0xff) / 255.0f;
+    /**
+     * This function returns the calculated in-between value for a color
+     * given integers that represent the start and end values in the four
+     * bytes of the 32-bit int. Each channel is separately linearly interpolated
+     * and the resulting calculated values are recombined into the return value.
+     *
+     * @param fraction   The fraction from the starting to the ending values
+     * @param startValue A 32-bit int value representing colors in the
+     *                   separate bytes of the parameter
+     * @param endValue   A 32-bit int value representing colors in the
+     *                   separate bytes of the parameter
+     * @return A value that is calculated to be the linearly interpolated
+     * result, derived by separating the start and end values into separate
+     * color channels and interpolating each one separately, recombining the
+     * resulting values in the same way.
+     */
+    public static int evaluate(float fraction, int startValue, int endValue) {
+        float startA = ((startValue >> 24) & 0xff) / 255.0f;
+        float startR = ((startValue >> 16) & 0xff) / 255.0f;
+        float startG = ((startValue >> 8) & 0xff) / 255.0f;
+        float startB = (startValue & 0xff) / 255.0f;
 
-        int endInt = endValue;
-        float endA = ((endInt >> 24) & 0xff) / 255.0f;
-        float endR = ((endInt >> 16) & 0xff) / 255.0f;
-        float endG = ((endInt >> 8) & 0xff) / 255.0f;
-        float endB = (endInt & 0xff) / 255.0f;
+        float endA = ((endValue >> 24) & 0xff) / 255.0f;
+        float endR = ((endValue >> 16) & 0xff) / 255.0f;
+        float endG = ((endValue >> 8) & 0xff) / 255.0f;
+        float endB = (endValue & 0xff) / 255.0f;
 
         // convert from sRGB to linear
         startR = (float) Math.pow(startR, 2.2);
@@ -64,5 +94,13 @@ public class ColorEvaluator implements TypeEvaluator<Integer> {
         b = (float) Math.pow(b, 1.0 / 2.2) * 255.0f;
 
         return Math.round(a) << 24 | Math.round(r) << 16 | Math.round(g) << 8 | Math.round(b);
+    }
+
+    /**
+     * @see #evaluate(float, int, int)
+     */
+    @Override
+    public Integer evaluate(float fraction, @Nonnull Integer startValue, @Nonnull Integer endValue) {
+        return evaluate(fraction, startValue.intValue(), endValue.intValue());
     }
 }

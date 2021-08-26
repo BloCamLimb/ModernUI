@@ -17,5 +17,5 @@ void main() {
     color += texelFetch(u_Sampler, coord, 2);
     color += texelFetch(u_Sampler, coord, 3);
 
-    fragColor = color / 4.0 * f_Color;
+    fragColor = (color / 4.0) * f_Color;
 }

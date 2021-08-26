@@ -467,7 +467,7 @@ public class PropertyValuesHolder<T, V, P> {
         }
     }
 
-    static class UnsafeIntProperty<T> implements IntProperty<T> {
+    static class UnsafeIntProperty<T> extends IntProperty<T> {
 
         private final long mOffset;
 

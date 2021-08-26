@@ -22,6 +22,7 @@ import org.lwjgl.openal.*;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
+import java.util.concurrent.Executors;
 
 //TODO WIP
 public class AudioManager {
@@ -58,6 +59,7 @@ public class AudioManager {
         AL10.alSourcei(mSource, AL10.AL_BUFFER, mBuffer);
         AL10.alSourcef(mSource, AL10.AL_GAIN, 0.75f);
         AL10.alSourcePlay(mSource);
+        ALC11.alcGetCurrentContext();
     }
 
     public float getTime() {
@@ -68,7 +70,7 @@ public class AudioManager {
     }
 
     public void close() {
-        ALC11.alcCloseDevice(mDevice);
         ALC11.alcDestroyContext(mContext);
+        ALC11.alcCloseDevice(mDevice);
     }
 }

@@ -68,21 +68,19 @@ public class WaveDecoder {
         if (buffer.getInt() != 0x61746164) {
             throw new IllegalArgumentException("Not data chunk");
         }
-        float f = 1.0f / 65536;
+        float f = 1.0f / 32767.5f;
         int dataSize = buffer.getInt();
-        float[] samples = new float[dataSize / 2 / channels];
-        short[] data = new short[dataSize / 2];
+        short[] data = new short[dataSize >> 1]; // 16-bit
+        float[] samples = new float[data.length / channels];
         for (int i = 0; i < samples.length; i++) {
             float sample = 0;
             for (int j = 0; j < channels; j++) {
                 short v = buffer.getShort();
                 data[i * channels + j] = v;
-                int val = v + 32768;
-                sample += f * val;
+                sample += (v + 0.5) * f;
             }
             samples[i] = sample / channels;
         }
-        ModernUI.LOGGER.info("Song Length: {} seconds", (double) samples.length / sampleRate);
 
         mSampleRate = sampleRate;
         mSamples = samples;
