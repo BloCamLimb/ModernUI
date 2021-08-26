@@ -28,6 +28,7 @@ import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
 import icyllis.modernui.widget.LinearLayout;
 import icyllis.modernui.widget.Orientation;
+import icyllis.modernui.widget.SwitchButton;
 import net.minecraft.ChatFormatting;
 import net.minecraft.resources.ResourceLocation;
 
@@ -87,8 +88,15 @@ public class TestLinearLayout extends LinearLayout {
         setDividerPadding(8);
 
         for (int i = 0; i < 8; i++) {
-            View v = new CView();
-            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(200, 36);
+            View v;
+            LinearLayout.LayoutParams p;
+            if (i == 4) {
+                v = new SwitchButton();
+                p = new LinearLayout.LayoutParams(100, 36);
+            } else {
+                v = new CView();
+                p = new LinearLayout.LayoutParams(200, 36);
+            }
             v.setEnabled(true);
             v.setClickable(true);
             addView(v, p);
@@ -176,12 +184,12 @@ public class TestLinearLayout extends LinearLayout {
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(4.0f);
         canvas.save();
-        canvas.rotate(30);
+        canvas.rotate(-45);
         canvas.drawRoundRect(6, 110, 86, 124, 6, paint);
-        canvas.restore();
 
         paint.setStyle(Paint.Style.FILL);
         canvas.drawRect(6, 126, 86, 156, paint);
+        canvas.restore();
 
         //canvas.drawRoundImage(ICON, 6, 160, 166, 320, iconRadius, paint);
 

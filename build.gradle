@@ -1,9 +1,9 @@
 buildscript {
     dependencies {
-        classpath 'org.ow2.asm:asm:9.0'
-        classpath 'org.ow2.asm:asm-commons:9.0'
-        classpath 'org.ow2.asm:asm-tree:9.0'
-        classpath 'org.ow2.asm:asm-util:9.0'
+        classpath 'org.ow2.asm:asm:9.2'
+        classpath 'org.ow2.asm:asm-commons:9.2'
+        classpath 'org.ow2.asm:asm-tree:9.2'
+        classpath 'org.ow2.asm:asm-util:9.2'
     }
 }
 
@@ -11,7 +11,7 @@ plugins {
     id 'maven-publish'
     id 'dev.architectury.loom' version '0.8.0-SNAPSHOT' apply false
     id 'com.matthewprenger.cursegradle' version '1.4.0' apply false
-    id 'com.github.johnrengelman.shadow' version '5.2.0' apply false
+    id 'com.github.johnrengelman.shadow' version '7.0.0' apply false
 }
 
 allprojects {

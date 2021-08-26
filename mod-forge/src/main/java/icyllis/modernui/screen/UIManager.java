@@ -158,6 +158,7 @@ public final class UIManager implements ViewRootImpl.Handler {
         RenderCore.checkRenderThread();
         if (mCanvas == null) {
             mCanvas = GLCanvas.initialize();
+            glEnable(GL_MULTISAMPLE);
             mFramebuffer.attachTexture(GL_COLOR_ATTACHMENT0, GL_RGBA8);
             // no depth buffer
             mFramebuffer.attachRenderbuffer(GL_STENCIL_ATTACHMENT, GL_STENCIL_INDEX8);

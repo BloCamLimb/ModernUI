@@ -39,7 +39,7 @@ public class SpectrumGraph {
     public int mSongLength;
 
     public SpectrumGraph() throws Exception {
-        mWaveDecoder = new WaveDecoder(FileChannel.open(Path.of("F:", "7.wav")));
+        mWaveDecoder = new WaveDecoder(FileChannel.open(Path.of("F:", "6.wav")));
         mFFT = FourierTransform.create(1024, mWaveDecoder.mSampleRate);
         mFFT.setLogAverages(250, 14);
         mFFT.setWindowFunc(FourierTransform.NONE);
@@ -55,7 +55,7 @@ public class SpectrumGraph {
             int iOff = (int) (time / 200);
             for (int i = 0; i < len; i++) {
                 float dec = mAmplitudes[i] - delta * 0.0012f * (mAmplitudes[i] + 0.03f);
-                mAmplitudes[i] = Math.max(dec, mFFT.getAverage(((i + iOff) % len) + 5) / 160);
+                mAmplitudes[i] = Math.max(dec, mFFT.getAverage(((i + iOff) % len) + 5) / 300);
             }
         }
     }

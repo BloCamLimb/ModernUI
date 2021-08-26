@@ -131,9 +131,12 @@ public class TestMain {
 
         ModernUI.initInternal();
 
-        float[] av = new float[]{1, 3, 2, 4.1f, 6, 0, 6, 0.5f, 5, 7, 11.3f, 9, 9.1f, 15, 8, 10};
+        /*float[] av = new float[]{1, 3, 2, 4.1f, 6, 0, 6, 0.5f, 5, 7, 11.3f, 9, 9.1f, 15, 8, 10};
         float[] bv = new float[]{9.1f, 2, 7, 5, 3.3f, 6.1f, 5.5f, 4, 0, 8, 3, 1, 2.7f, 3, 9, 2};
-        int[] intervals = new int[]{0, 4, 9, 15, 17};
+        int[] intervals = new int[]{0, 4, 9, 15, 17};*/
+
+        ModernUI.LOGGER.info((short) 40000);
+        ModernUI.LOGGER.info(40000 - 32768);
 
         /*float[] re = new float[256];
         float[] im = new float[256];

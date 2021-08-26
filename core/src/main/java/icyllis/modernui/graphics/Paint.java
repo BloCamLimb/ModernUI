@@ -87,8 +87,9 @@ public class Paint {
 
     /**
      * Returns the thread-local paint, the paint will be reset before return.
-     * This method is designed for temporary operations, all stack-push methods
-     * cannot use this object anymore.
+     * This method is designed for temporary operations, for a drawing operation
+     * that is not after this method or {@link #reset()}, the state of the paint
+     * may be modified.
      * <p>
      * For example:
      * <pre>
@@ -97,6 +98,8 @@ public class Paint {
      *     var paint = Paint.take();
      *     paint.setColor(mColorA);
      *     canvas.drawRect(mRectA, paint);
+     *     mDrawable.draw(canvas);
+     *     paint.reset(); // the drawable may use the paint
      *     paint.setColor(mColorB);
      *     canvas.drawRect(mRectB, paint);
      * }
