@@ -1085,6 +1085,33 @@ public abstract class ViewGroup extends View implements ViewParent {
         }
     }
 
+    /**
+     * Returns whether this group's children are clipped to their bounds before drawing.
+     * The default value is true.
+     *
+     * @return True if the group's children will be clipped to their bounds,
+     * false otherwise.
+     * @see #setClipChildren(boolean)
+     */
+    public boolean getClipChildren() {
+        return ((mGroupFlags & FLAG_CLIP_CHILDREN) != 0);
+    }
+
+    /**
+     * By default, children are clipped to their bounds before drawing. This
+     * allows view groups to override this behavior for animations, etc.
+     *
+     * @param clipChildren true to clip children to their bounds,
+     *                     false otherwise
+     */
+    public void setClipChildren(boolean clipChildren) {
+        boolean previousValue = (mGroupFlags & FLAG_CLIP_CHILDREN) == FLAG_CLIP_CHILDREN;
+        if (clipChildren != previousValue) {
+            setBooleanFlag(FLAG_CLIP_CHILDREN, clipChildren);
+            invalidate();
+        }
+    }
+
     /*@Override
     final boolean onCursorPosEvent(LinkedList<View> route, double x, double y) {
         if (x >= mLeft && x < mRight && y >= mTop && y < mBottom) {

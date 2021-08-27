@@ -22,12 +22,11 @@ import org.lwjgl.openal.*;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
-import java.util.concurrent.Executors;
 
 //TODO WIP
 public class AudioManager {
 
-    private static final AudioManager instance = new AudioManager();
+    private static final AudioManager sInstance = new AudioManager();
 
     private long mDevice;
     private long mContext;
@@ -37,18 +36,25 @@ public class AudioManager {
     private AudioManager() {
     }
 
+    /**
+     * Returns the global <code>AudioManager</code> instance.
+     *
+     * @return the global instance
+     */
     public static AudioManager getInstance() {
-        return instance;
+        return sInstance;
     }
 
     public void init() {
-        mDevice = ALC10.nalcOpenDevice(MemoryUtil.NULL);
-        ALCCapabilities alcCapabilities = ALC.createCapabilities(mDevice);
-        mContext = ALC10.nalcCreateContext(mDevice, MemoryUtil.NULL);
-        ALC10.alcMakeContextCurrent(mContext);
-        ALCapabilities alCapabilities = AL.createCapabilities(alcCapabilities);
-        if (alCapabilities.AL_EXT_source_distance_model) {
-            AL10.alEnable(EXTSourceDistanceModel.AL_SOURCE_DISTANCE_MODEL);
+        if (ALC10.alcGetCurrentContext() == 0) {
+            mDevice = ALC10.nalcOpenDevice(MemoryUtil.NULL);
+            ALCCapabilities alcCapabilities = ALC.createCapabilities(mDevice);
+            mContext = ALC10.nalcCreateContext(mDevice, MemoryUtil.NULL);
+            ALC10.alcMakeContextCurrent(mContext);
+            ALCapabilities alCapabilities = AL.createCapabilities(alcCapabilities);
+            if (alCapabilities.AL_EXT_source_distance_model) {
+                AL10.alEnable(EXTSourceDistanceModel.AL_SOURCE_DISTANCE_MODEL);
+            }
         }
     }
 
@@ -59,7 +65,6 @@ public class AudioManager {
         AL10.alSourcei(mSource, AL10.AL_BUFFER, mBuffer);
         AL10.alSourcef(mSource, AL10.AL_GAIN, 0.75f);
         AL10.alSourcePlay(mSource);
-        ALC11.alcGetCurrentContext();
     }
 
     public float getTime() {
@@ -71,6 +76,9 @@ public class AudioManager {
 
     public void close() {
         ALC11.alcDestroyContext(mContext);
-        ALC11.alcCloseDevice(mDevice);
+        if (mDevice != 0) {
+            ALC11.alcCloseDevice(mDevice);
+            mDevice = 0;
+        }
     }
 }

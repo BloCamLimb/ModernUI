@@ -18,6 +18,8 @@
 
 package icyllis.modernui.test;
 
+import icyllis.modernui.animation.AnimationHandler;
+import icyllis.modernui.audio.AudioManager;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
@@ -25,7 +27,6 @@ import icyllis.modernui.math.Rect;
 import icyllis.modernui.screen.ScreenCallback;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
-import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.widget.FrameLayout;
 import icyllis.modernui.widget.ScrollView;
 
@@ -35,8 +36,8 @@ public class TestUI extends ScreenCallback {
 
     @Override
     public void onCreate() {
-        ViewGroup contentView = new ScrollView();
-        FrameLayout.LayoutParams contentViewParams = new FrameLayout.LayoutParams(280, 280);
+        ScrollView contentView = new ScrollView();
+        FrameLayout.LayoutParams contentViewParams = new FrameLayout.LayoutParams(500, 280);
         contentViewParams.gravity = Gravity.CENTER;
 
         View ll = new TestLinearLayout();
@@ -45,12 +46,25 @@ public class TestUI extends ScreenCallback {
         contentView.addView(ll);
 
         contentView.setBackground(new Drawable() {
+            long lastTime = AnimationHandler.currentTimeMillis();
+
             @Override
             public void draw(@Nonnull Canvas canvas) {
                 Paint paint = Paint.take();
                 Rect b = getBounds();
                 paint.setRGBA(8, 8, 8, 80);
                 canvas.drawRoundRect(b.left, b.top, b.right, b.bottom, 8, paint);
+
+                SpectrumGraph graph = TestMain.graph;
+                long time = AnimationHandler.currentTimeMillis();
+                long delta = time - lastTime;
+                lastTime = time;
+                if (graph != null) {
+                    float playTime = AudioManager.getInstance().getTime();
+                    graph.update((long) (playTime * 1000L) + 16, delta);
+                    graph.draw(canvas, getBounds().centerX(), getBounds().centerY());
+                    invalidateSelf();
+                }
             }
         });
 

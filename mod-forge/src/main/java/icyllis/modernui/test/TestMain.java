@@ -61,10 +61,10 @@ public class TestMain {
 
     public static final Marker MARKER = MarkerManager.getMarker("Test");
 
-    private static final List<Font> ALL_FONTS;
+    private static List<Font> ALL_FONTS;
 
-    private static final BufferedImage IMAGE = new BufferedImage(1024, 1024, BufferedImage.TYPE_INT_ARGB);
-    private static final Graphics2D GRAPHICS = IMAGE.createGraphics();
+    private static BufferedImage IMAGE;
+    private static Graphics2D GRAPHICS;
 
     public static final boolean CREATE_WINDOW = true;
 
@@ -100,19 +100,15 @@ public class TestMain {
         88 89 90 91 92 93 94 95 96 4096x
      */
 
+    public static SpectrumGraph graph = null;
+
     static {
-        GraphicsEnvironment.getLocalGraphicsEnvironment().preferLocaleFonts();
-        ALL_FONTS = Arrays.asList(GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts());
-        GRAPHICS.setColor(Color.BLACK);
-        GRAPHICS.fillRect(0, 0, 1024, 1024);
-        GRAPHICS.setColor(Color.WHITE);
-        GRAPHICS.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-        GRAPHICS.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
-        GRAPHICS.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        try {
+            graph = new SpectrumGraph();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
-
-    static SpectrumGraph graph = null;
-
 
     public static void main(String[] args) throws InterruptedException {
         /*String s = "\u0641\u0647\u0648\u064a\u062a\u062d\u062f\u0651\u062b\u0020\u0628\u0644\u063a\u0629\u0020";
@@ -131,12 +127,21 @@ public class TestMain {
 
         ModernUI.initInternal();
 
+        IMAGE = new BufferedImage(1024, 1024, BufferedImage.TYPE_INT_ARGB);
+        GRAPHICS = IMAGE.createGraphics();
+
+        GraphicsEnvironment.getLocalGraphicsEnvironment().preferLocaleFonts();
+        ALL_FONTS = Arrays.asList(GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts());
+        GRAPHICS.setColor(Color.BLACK);
+        GRAPHICS.fillRect(0, 0, 1024, 1024);
+        GRAPHICS.setColor(Color.WHITE);
+        GRAPHICS.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        GRAPHICS.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+        GRAPHICS.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
         /*float[] av = new float[]{1, 3, 2, 4.1f, 6, 0, 6, 0.5f, 5, 7, 11.3f, 9, 9.1f, 15, 8, 10};
         float[] bv = new float[]{9.1f, 2, 7, 5, 3.3f, 6.1f, 5.5f, 4, 0, 8, 3, 1, 2.7f, 3, 9, 2};
         int[] intervals = new int[]{0, 4, 9, 15, 17};*/
-
-        ModernUI.LOGGER.info((short) 40000);
-        ModernUI.LOGGER.info(40000 - 32768);
 
         /*float[] re = new float[256];
         float[] im = new float[256];
@@ -166,7 +171,8 @@ public class TestMain {
         Matrix4 mat = Matrix4.identity();
         mat.rotateX(MathUtil.PI_DIV_4);
         vec3.transform(mat);
-        ModernUI.LOGGER.info("\n{}\n{}\n{}\nEq: {}, {}", vec1, vec2, vec3, vec1.equivalent(vec2), vec2.equivalent(vec3));*/
+        ModernUI.LOGGER.info("\n{}\n{}\n{}\nEq: {}, {}", vec1, vec2, vec3, vec1.equivalent(vec2), vec2.equivalent
+        (vec3));*/
         /*Matrix4 mat = Matrix4.identity();
         Vector3 pos = new Vector3(3, 0, 0);
         mat.translate(2, 0, 0);
@@ -218,11 +224,6 @@ public class TestMain {
                  var bitmap3 = Bitmap.decode(null, c3)) {
                 sWindow.setIcon(bitmap1, bitmap2, bitmap3);
             } catch (IOException e) {
-                e.printStackTrace();
-            }
-            try {
-                graph = new SpectrumGraph();
-            } catch (Exception e) {
                 e.printStackTrace();
             }
             Thread renderThread = new Thread(TestMain::runRenderThread, "Render-Thread");
@@ -288,15 +289,24 @@ public class TestMain {
 
         //GlyphManager glyphManager = GlyphManager.getInstance();
 
-        String text; //= "\u0639\u0646\u062f\u0645\u0627\u0020\u064a\u0631\u064a\u062f\u0020\u0627\u0644\u0639\u0627\u0644\u0645\u0020\u0623\u0646\u0020\u202a\u064a\u062a\u0643\u0644\u0651\u0645\u0020\u202c\u0020\u060c\u0020\u0641\u0647\u0648\u0020\u064a\u062a\u062d\u062f\u0651\u062b\u0020\u0628\u0644\u063a\u0629\u0020\u064a\u0648\u0646\u064a\u0643\u0648\u062f\u002e\u0020\u062a\u0633\u062c\u0651\u0644\u0020\u0627\u0644\u0622\u0646\u0020\u0644\u062d\u0636\u0648\u0631\u0020\u0627\u0644\u0645\u0624\u062a\u0645\u0631\u0020\u0627\u0644\u062f\u0648\u0644\u064a\u0020\u0627\u0644\u0639\u0627\u0634\u0631\u0020\u0644\u064a\u0648\u0646\u064a\u0643\u0648\u062f\u0020\u0028\u0055\u006e\u0069\u0063\u006f\u0064\u0065\u0020\u0043\u006f\u006e\u0066\u0065\u0072\u0065\u006e\u0063\u0065\u0029";
+        String text; //= "\u0639\u0646\u062f\u0645\u0627\u0020\u064a\u0631\u064a\u062f\u0020\u0627\u0644\u0639\u0627
+        // \u0644\u0645\u0020\u0623\u0646\u0020\u202a\u064a\u062a\u0643\u0644\u0651\u0645\u0020\u202c\u0020\u060c
+        // \u0020\u0641\u0647\u0648\u0020\u064a\u062a\u062d\u062f\u0651\u062b\u0020\u0628\u0644\u063a\u0629\u0020
+        // \u064a\u0648\u0646\u064a\u0643\u0648\u062f\u002e\u0020\u062a\u0633\u062c\u0651\u0644\u0020\u0627\u0644
+        // \u0622\u0646\u0020\u0644\u062d\u0636\u0648\u0631\u0020\u0627\u0644\u0645\u0624\u062a\u0645\u0631\u0020
+        // \u0627\u0644\u062f\u0648\u0644\u064a\u0020\u0627\u0644\u0639\u0627\u0634\u0631\u0020\u0644\u064a\u0648
+        // \u0646\u064a\u0643\u0648\u062f\u0020\u0028\u0055\u006e\u0069\u0063\u006f\u0064\u0065\u0020\u0043\u006f
+        // \u006e\u0066\u0065\u0072\u0065\u006e\u0063\u0065\u0029";
         text = "My name is Van, I'm 30 years old, and I'm from Japan. I'm an artist, I'm a performance artist. " +
                 "I'm hired for people to fulfill their fantasies, their deep dark fantasies.";
                 /*"I was gonna be a movie star, you know with modelling and uh, acting. " +
-                "After a hundred or two audition and small parts, you know I decided, you know, I had enough, then I get into escort work.";*/
+                "After a hundred or two audition and small parts, you know I decided, you know, I had enough, then I
+                get into escort work.";*/
         //char[] textC = text.toCharArray();
 
                 /*TextPaint tp = new TextPaint();
-                var mt = MeasuredParagraph.buildForStaticLayout(tp, text, 0, text.length(), TextDirectionHeuristics.FIRSTSTRONG_LTR, null);
+                var mt = MeasuredParagraph.buildForStaticLayout(tp, text, 0, text.length(), TextDirectionHeuristics
+                .FIRSTSTRONG_LTR, null);
                 var dirs = mt.getDirections(0, text.length());
                 for (int i = 0; i < dirs.getRunCount(); i++) {
                     int st = dirs.getRunStart(i);
@@ -305,7 +315,8 @@ public class TestMain {
                     for (var run : Typeface.SERIF.itemize(textC, st, runLimit)) {
                         ModernUI.LOGGER.info("FontRun: {} to {}", run.getStart(), run.getEnd());
                         GlyphVector vector = run.getFont().layoutGlyphVector(GRAPHICS.getFontRenderContext(),
-                                textC, run.getStart(), run.getEnd(), dirs.isRunRtl(i) ? Font.LAYOUT_RIGHT_TO_LEFT : Font.LAYOUT_LEFT_TO_RIGHT);
+                                textC, run.getStart(), run.getEnd(), dirs.isRunRtl(i) ? Font.LAYOUT_RIGHT_TO_LEFT :
+                                Font.LAYOUT_LEFT_TO_RIGHT);
                         for (int j = 0; j < vector.getNumGlyphs(); j++) {
                             ModernUI.LOGGER.info("GlyphIndex: {}, GlyphCode: {}, Pos: {}, CharIndex: {}", j,
                                     vector.getGlyphCode(j), vector.getGlyphPosition(j), vector.getGlyphCharIndex(j));
@@ -387,7 +398,7 @@ public class TestMain {
 
                 if (graph != null) {
                     graph.update((long) (playTime * 1000L) + 16, delta);
-                    graph.draw(canvas);
+                    graph.draw(canvas, 800, 450);
                 }
 
                 // render thread, wait UI thread
@@ -488,7 +499,8 @@ public class TestMain {
         int offset = 0;
         int prevOffset = 0;
         Font font = ALL_FONTS.stream().filter(f -> f.canDisplayUpTo("\u0641\u0647\u0648") == -1).findFirst().get();
-        while ((offset = GraphemeBreak.getTextRunCursor(s, Locale.getDefault(), 0, s.length(), offset, GraphemeBreak.AFTER)) != prevOffset) {
+        while ((offset = GraphemeBreak.getTextRunCursor(s, Locale.getDefault(), 0, s.length(), offset,
+                GraphemeBreak.AFTER)) != prevOffset) {
             toEscapeChars(s.substring(prevOffset, offset));
             GlyphVector vector = font.layoutGlyphVector(GRAPHICS.getFontRenderContext(),
                     s.toCharArray(), prevOffset, offset, Font.LAYOUT_RIGHT_TO_LEFT);
@@ -537,7 +549,8 @@ public class TestMain {
 
     public static void testGraphemeBreak() {
         GraphemeBreak.sUseICU = true;
-        String bengaliHello = "\u09b9\u09cd\u09af\u09be\u09b2\u09cb"; // two graphemes, first four chars and last two chars
+        String bengaliHello = "\u09b9\u09cd\u09af\u09be\u09b2\u09cb"; // two graphemes, first four chars and last two
+        // chars
         ModernUI.LOGGER.info(MARKER, GraphemeBreak.getTextRunCursor(bengaliHello, Locale.getDefault(),
                 3, bengaliHello.length(), bengaliHello.length(), GraphemeBreak.BEFORE)); // output 4, correct
     }
