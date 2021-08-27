@@ -137,7 +137,7 @@ public class SwitchButton extends CompoundButton {
         canvas.drawCircle(thumbX, thumbY, buttonRadius, paint);
 
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(3f);
+        paint.setStrokeWidth(4f);
         paint.setColor(0xFFDDDDDD);
         canvas.drawCircle(thumbX, thumbY, buttonRadius - 1f, paint);
     }

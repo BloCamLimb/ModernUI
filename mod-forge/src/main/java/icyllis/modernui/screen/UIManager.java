@@ -25,12 +25,14 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.AnimationHandler;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.annotation.UiThread;
+import icyllis.modernui.audio.AudioManager;
 import icyllis.modernui.forge.ModernUIForge;
 import icyllis.modernui.graphics.Framebuffer;
 import icyllis.modernui.graphics.GLCanvas;
 import icyllis.modernui.graphics.texture.Texture;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.platform.RenderCore;
+import icyllis.modernui.test.TestMain;
 import icyllis.modernui.test.TestPauseUI;
 import icyllis.modernui.textmc.TextLayoutProcessor;
 import icyllis.modernui.util.TimedTask;
@@ -449,6 +451,10 @@ public final class UIManager implements ViewRootImpl.Handler {
                         e.printStackTrace();
                     }
                 });*/
+                break;
+
+            case GLFW_KEY_H:
+                AudioManager.getInstance().play(TestMain.graph.mWaveDecoder);
                 break;
 
             case GLFW_KEY_G:

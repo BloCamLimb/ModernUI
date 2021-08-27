@@ -60,7 +60,7 @@ public class SpectrumGraph {
         }
     }
 
-    public void draw(Canvas canvas) {
+    public void draw(Canvas canvas, float cx, float cy) {
         Paint paint = Paint.take();
         long time = RenderCore.timeMillis();
         float b = 1.5f + MathUtil.sin(time / 600f) / 2;
@@ -72,8 +72,8 @@ public class SpectrumGraph {
             float f = Math.abs((i + (int) (time / 100)) % mAmplitudes.length - (mAmplitudes.length - 1) / 2f)
                     / (mAmplitudes.length - 1) * b;
             paint.setRGBA(100 + (int) (f * 120), 220 - (int) (f * 130), 240 - (int) (f * 20), 255);
-            canvas.rotate(-360f / mAmplitudes.length, 800, 450);
-            canvas.drawRect(794, 330 - mAmplitudes[i] * 200, 806, 330, paint);
+            canvas.rotate(-360f / mAmplitudes.length, cx, cy);
+            canvas.drawRect(cx - 6, cy - 120 - mAmplitudes[i] * 200, cx + 6, cy - 120, paint);
         }
     }
 }
