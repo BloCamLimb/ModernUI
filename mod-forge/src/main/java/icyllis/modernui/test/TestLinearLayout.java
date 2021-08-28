@@ -74,14 +74,14 @@ public class TestLinearLayout extends LinearLayout {
         setDivider(new Drawable() {
             @Override
             public void draw(@Nonnull Canvas canvas) {
-                /*canvas.moveTo(this);
-                canvas.setRGBA(192, 192, 192, 128);
-                canvas.drawLine(0, 0, getWidth(), 0);*/
+                Paint paint = Paint.take();
+                paint.setRGBA(192, 192, 192, 128);
+                canvas.drawRect(getBounds(), paint);
             }
 
             @Override
             public int getIntrinsicHeight() {
-                return 1;
+                return 2;
             }
         });
         setShowDividers(SHOW_DIVIDER_MIDDLE | SHOW_DIVIDER_END);

@@ -32,6 +32,8 @@ import java.util.Arrays;
 
 /**
  * MeasuredParagraph provides text information for rendering purpose.
+ * <p>
+ * See the specification document for details.
  */
 @NotThreadSafe
 public class MeasuredParagraph {
@@ -369,7 +371,8 @@ public class MeasuredParagraph {
         return c;
     }
 
-    private void resetAndAnalyzeBidi(@Nonnull CharSequence text, int start, int end, @Nonnull TextDirectionHeuristic dir) {
+    private void resetAndAnalyzeBidi(@Nonnull CharSequence text, int start, int end,
+                                     @Nonnull TextDirectionHeuristic dir) {
         reset();
         mSpanned = text instanceof Spanned ? (Spanned) text : null;
         mTextStart = start;

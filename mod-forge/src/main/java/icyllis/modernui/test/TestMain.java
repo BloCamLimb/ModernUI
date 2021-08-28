@@ -383,6 +383,10 @@ public class TestMain {
                 tcc = "আমি আজ সকালের নাস্তা খাব না";
                 canvas.drawTextRun(tcc, 0, tcc.length(), 660, 240, false, paint1);*/
                 float playTime = AudioManager.getInstance().getTime();
+
+                graph.update((long) (playTime * 1000L) + 16, delta);
+                graph.draw(canvas, 800, 450);
+
                 String tcc = String.format("%d / %d", (int) playTime, graph.mSongLength / 1000);
                 canvas.drawTextRun(tcc, 0, tcc.length(), 760, 456, false, paint1);
                 //canvas.rotate(-30);
@@ -392,14 +396,10 @@ public class TestMain {
                 //paint.setStyle(Paint.Style.FILL);
                 //canvas.drawRoundRect(100, 840, 100 + playTime / graph.mSongLength * 1400000, 860, 10, paint);
                 paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(8);
                 paint.setRGBA(255, 255, 255, 192);
                 canvas.drawArc(800, 450, 100, -90,
                         360 * (playTime * 1000f / graph.mSongLength), paint);
-
-                if (graph != null) {
-                    graph.update((long) (playTime * 1000L) + 16, delta);
-                    graph.draw(canvas, 800, 450);
-                }
 
                 // render thread, wait UI thread
                 canvas.render();

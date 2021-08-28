@@ -20,7 +20,10 @@ package icyllis.modernui.math;
 
 public final class MathUtil {
 
-    private static volatile float[] SIN_TABLE;
+    private static final boolean USE_SIN_TABLE = false;
+
+    // 256 kB
+    private static final float[] SIN_TABLE;
 
     public static final float PI = (float) Math.PI;
 
@@ -35,12 +38,14 @@ public final class MathUtil {
 
     private static final float DEG_TO_RAD = 0.017453292519943295f;
 
-    public static synchronized void initSinTable() {
-        if (SIN_TABLE == null) {
+    static {
+        if (USE_SIN_TABLE) {
             float[] v = new float[0x10000];
             for (int i = 0; i < 0x10000; i++)
                 v[i] = (float) Math.sin(i * 9.587379924285257E-5);
             SIN_TABLE = v;
+        } else {
+            SIN_TABLE = null;
         }
     }
 

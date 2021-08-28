@@ -507,6 +507,7 @@ public final class UIManager implements ViewRootImpl.Handler {
         RenderSystem.enableBlend();
         RenderSystem.activeTexture(GL_TEXTURE0);
         RenderSystem.disableDepthTest();
+        RenderSystem.disableAlphaTest();
 
         // blend alpha correctly, since the Minecraft.mainRenderTarget has no alpha (always 1)
         // and our framebuffer is always a transparent layer

@@ -39,20 +39,37 @@ import java.util.Locale;
 @ThreadSafe
 public class LayoutCache {
 
+    public static final int MAX_PIECE_LENGTH = 128;
+
     private static final Pool<LookupKey> sLookupKeys = Pools.concurrent(2);
     private static volatile Cache<Key, LayoutPiece> sCache;
 
+    /**
+     * Get or create the layout piece from the global cache with given requirements.
+     * <p>
+     * In particular, the given range cannot exceed {@link #MAX_PIECE_LENGTH} to
+     * increase the reuse rate of pieced text. The given text must be in the same
+     * paragraph and should not break the grapheme cluster.
+     *
+     * @param buf   text buffer, cannot be null or empty
+     * @param start start char offset
+     * @param end   end char index
+     * @param dir   whether to layout in right-to-left
+     * @param paint the font paint affecting measurement
+     * @return the layout piece
+     */
     @Nonnull
     public static LayoutPiece getOrCreate(@Nonnull char[] buf, int start, int end,
                                           boolean dir, @Nonnull FontPaint paint) {
-        if (end - start > 512) {
-            return new LayoutPiece(buf, start, end, dir, paint);
+        if (start < 0 || start > end || end - start > MAX_PIECE_LENGTH
+                || buf.length == 0 || end > buf.length) {
+            throw new IllegalArgumentException();
         }
         if (sCache == null) {
             synchronized (LayoutCache.class) {
                 if (sCache == null) {
                     sCache = Caffeine.newBuilder()
-                            .maximumSize(500)
+                            .maximumSize(1000)
                             //.expireAfterAccess(20, TimeUnit.SECONDS)
                             .build();
                 }
@@ -65,10 +82,14 @@ public class LayoutCache {
         LayoutPiece piece = sCache.getIfPresent(
                 key.update(buf, start, end, paint, dir));
         if (piece == null) {
+            final Key k = key.copy();
+            // recycle the lookup key earlier, since creating layout is heavy
+            sLookupKeys.release(key);
             piece = new LayoutPiece(buf, start, end, dir, paint);
-            sCache.put(key.copy(), piece);
+            sCache.put(k, piece);
+        } else {
+            sLookupKeys.release(key);
         }
-        sLookupKeys.release(key);
         return piece;
     }
 

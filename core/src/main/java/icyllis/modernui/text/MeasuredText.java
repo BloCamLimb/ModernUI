@@ -39,23 +39,33 @@ public class MeasuredText {
     private final Run[] mRuns;
 
     private MeasuredText(@Nonnull char[] textBuf, @Nonnull Run[] runs) {
+        if ((textBuf.length == 0) != (runs.length == 0)) {
+            throw new IllegalArgumentException();
+        }
         mTextBuf = textBuf;
         mRuns = runs;
-        if (textBuf.length != 0) {
-            for (Run run : runs) {
-                run.measure(textBuf);
-            }
+        for (Run run : runs) {
+            run.measure(textBuf);
         }
     }
 
     /**
-     * @return the backend buffer of the text, elements may change if recycled at higher level
+     * Returns the text buffer. Elements may change if recycled at higher level,
+     * keep it synchronized with MeasuredText.
+     *
+     * @return the backend buffer of the text
      */
     @Nonnull
     public char[] getTextBuf() {
         return mTextBuf;
     }
 
+    /**
+     * Returns runs of text. Successive style runs may remain the same font paint
+     * under optimization consideration.
+     *
+     * @return all text runs, may empty if text buf is empty
+     */
     @Nonnull
     public Run[] getRuns() {
         return mRuns;
@@ -68,7 +78,7 @@ public class MeasuredText {
      * @param end    the end index
      * @param extent receives the metrics
      */
-    public void getExtent(int start, int end, FontMetricsInt extent) {
+    public void getExtent(int start, int end, @Nonnull FontMetricsInt extent) {
         for (Run run : mRuns) {
             if (start < run.mEnd && end > run.mStart) {
                 run.getExtent(mTextBuf, Math.max(start, run.mStart), Math.min(end, run.mEnd), extent);
@@ -101,13 +111,13 @@ public class MeasuredText {
      * @param end   the end index
      */
     public float getAdvance(int start, int end) {
-        float r = 0f;
+        float a = 0f;
         for (Run run : mRuns) {
             if (start < run.mEnd && end > run.mStart) {
-                r += run.getAdvance(Math.max(start, run.mStart), Math.min(end, run.mEnd));
+                a += run.getAdvance(Math.max(start, run.mStart), Math.min(end, run.mEnd));
             }
         }
-        return r;
+        return a;
     }
 
     /**
@@ -154,6 +164,11 @@ public class MeasuredText {
         return null;
     }
 
+    /**
+     * Note: The text buffer is not within the calculation range.
+     *
+     * @return memory usage in bytes
+     */
     public int getMemoryUsage() {
         int size = 12 + 8 + 8 + 16;
         for (Run run : mRuns) {
@@ -186,7 +201,7 @@ public class MeasuredText {
          * <p>
          * The MeasuredText returned by build method will hold a reference of the text.
          *
-         * @param text a text
+         * @param text a text, with full range, can be empty
          */
         public Builder(@Nonnull char[] text) {
             mText = text;
@@ -200,6 +215,8 @@ public class MeasuredText {
          * + length}, and next call will start from this new position.
          * <p>
          * If paint is TextPaint, then a copy of base class will be used, or ensure it is immutable.
+         * You can recycle the font paint for making multiple style runs without measurement
+         * requirement changes.
          *
          * @param paint  a paint
          * @param length a length to be applied with a given paint, can not exceed the length of the
@@ -214,7 +231,17 @@ public class MeasuredText {
             if (end > mText.length) {
                 throw new IllegalArgumentException("Style exceeds the text length");
             }
-            mRuns.add(new StyleRun(mCurrentOffset, end, paint.toBase(), isRtl));
+            if (length <= LayoutCache.MAX_PIECE_LENGTH) {
+                mRuns.add(new StyleRun(mCurrentOffset, end, paint.toBase(), isRtl));
+            } else {
+                paint = paint.toBase(); // shared
+                int s = mCurrentOffset, e = s;
+                do {
+                    e = Math.min(e + LayoutCache.MAX_PIECE_LENGTH, end);
+                    mRuns.add(new StyleRun(s, e, paint, isRtl));
+                    s = e;
+                } while (s < end);
+            }
             mCurrentOffset = end;
         }
 
@@ -279,18 +306,17 @@ public class MeasuredText {
         }
 
         // Compute metrics
-        protected abstract void measure(@Nonnull char[] text);
+        abstract void measure(@Nonnull char[] text);
 
         // Extend extent
-        protected abstract void getExtent(@Nonnull char[] text, int start, int end,
-                                          @Nonnull FontMetricsInt extent);
+        abstract void getExtent(@Nonnull char[] text, int start, int end, @Nonnull FontMetricsInt extent);
 
         @Nullable
-        protected abstract LayoutPiece getLayout(@Nonnull char[] text, int start, int end);
+        abstract LayoutPiece getLayout(@Nonnull char[] text, int start, int end);
 
-        protected abstract float getAdvance(int pos);
+        abstract float getAdvance(int pos);
 
-        protected abstract float getAdvance(int start, int end);
+        abstract float getAdvance(int start, int end);
 
         // Returns true if this run is RTL. Otherwise returns false.
         public abstract boolean isRtl();
@@ -319,13 +345,13 @@ public class MeasuredText {
         }
 
         @Override
-        protected void measure(@Nonnull char[] text) {
+        void measure(@Nonnull char[] text) {
             mLayoutPiece = LayoutCache.getOrCreate(text, mStart, mEnd, mIsRtl, mPaint);
         }
 
         @Override
-        protected void getExtent(@Nonnull char[] text, int start, int end,
-                                 @Nonnull FontMetricsInt extent) {
+        void getExtent(@Nonnull char[] text, int start, int end,
+                       @Nonnull FontMetricsInt extent) {
             if (start == mStart && end == mEnd) {
                 mLayoutPiece.getExtent(extent);
             } else {
@@ -334,7 +360,7 @@ public class MeasuredText {
         }
 
         @Override
-        protected LayoutPiece getLayout(@Nonnull char[] text, int start, int end) {
+        LayoutPiece getLayout(@Nonnull char[] text, int start, int end) {
             if (start == mStart && end == mEnd) {
                 return mLayoutPiece;
             }
@@ -342,20 +368,20 @@ public class MeasuredText {
         }
 
         @Override
-        protected float getAdvance(int pos) {
+        float getAdvance(int pos) {
             return mLayoutPiece.getAdvances()[pos - mStart];
         }
 
         @Override
-        protected float getAdvance(int start, int end) {
+        float getAdvance(int start, int end) {
             if (start == mStart && end == mEnd) {
                 return mLayoutPiece.getAdvance();
             }
-            float adv = 0;
+            float a = 0;
             for (int i = start - mStart, e = end - mStart; i < e; i++) {
-                adv += mLayoutPiece.getAdvances()[i];
+                a += mLayoutPiece.getAdvances()[i];
             }
-            return adv;
+            return a;
         }
 
         @Override
@@ -404,23 +430,23 @@ public class MeasuredText {
         }
 
         @Override
-        protected void measure(@Nonnull char[] text) {
+        void measure(@Nonnull char[] text) {
             //TODO: Get the extents information from the caller.
         }
 
         @Override
-        protected void getExtent(@Nonnull char[] text, int start, int end, @Nonnull FontMetricsInt extent) {
+        void getExtent(@Nonnull char[] text, int start, int end, @Nonnull FontMetricsInt extent) {
 
         }
 
         @Nullable
         @Override
-        protected LayoutPiece getLayout(@Nonnull char[] text, int start, int end) {
+        LayoutPiece getLayout(@Nonnull char[] text, int start, int end) {
             return null;
         }
 
         @Override
-        protected float getAdvance(int pos) {
+        float getAdvance(int pos) {
             if (pos == mStart) {
                 return mWidth;
             }
@@ -428,8 +454,8 @@ public class MeasuredText {
         }
 
         @Override
-        protected float getAdvance(int start, int end) {
-            if (start == mStart) {
+        float getAdvance(int start, int end) {
+            if (start <= mStart) {
                 return mWidth;
             }
             return 0;
