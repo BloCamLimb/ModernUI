@@ -39,7 +39,7 @@ public class SpectrumGraph {
     public int mSongLength;
 
     public SpectrumGraph() throws Exception {
-        mWaveDecoder = new WaveDecoder(FileChannel.open(Path.of("F:", "6.wav")));
+        mWaveDecoder = new WaveDecoder(FileChannel.open(Path.of("F:", "7.wav")));
         mFFT = FourierTransform.create(1024, mWaveDecoder.mSampleRate);
         mFFT.setLogAverages(250, 14);
         mFFT.setWindowFunc(FourierTransform.NONE);
@@ -61,9 +61,15 @@ public class SpectrumGraph {
     }
 
     public void draw(Canvas canvas, float cx, float cy) {
-        Paint paint = Paint.take();
+        var paint = Paint.take();
         long time = RenderCore.timeMillis();
         float b = 1.5f + MathUtil.sin(time / 600f) / 2;
+        paint.setRGBA(160, 155, 230, (int) (80 * b));
+        paint.setSmoothRadius(100);
+        paint.setStrokeWidth(200);
+        paint.setStyle(Paint.Style.STROKE);
+        canvas.drawCircle(cx, cy, 130, paint);
+        paint.reset();
         for (int i = 0; i < mAmplitudes.length; i++) {
             // lines
             //paint.setRGBA(100 + i * 2, 220 - i * 2, 240 - i * 4, 255);

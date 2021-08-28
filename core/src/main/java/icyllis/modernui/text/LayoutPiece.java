@@ -64,13 +64,16 @@ public class LayoutPiece {
     /**
      * Creates the glyph layout of a piece.
      *
-     * @param buf   text buffer
+     * @param buf   text buffer, cannot be null or empty
      * @param start start char offset
      * @param end   end char index
      * @param isRtl whether to layout in right-to-left
-     * @param paint the font paint affecting the glyph layout
+     * @param paint the font paint affecting measurement
      */
     public LayoutPiece(@Nonnull char[] buf, int start, int end, boolean isRtl, @Nonnull FontPaint paint) {
+        if (start < 0 || start > end || buf.length == 0 || end > buf.length) {
+            throw new IllegalArgumentException();
+        }
         GlyphManager engine = GlyphManager.getInstance();
         mAdvances = new float[end - start];
         FontMetricsInt extent = new FontMetricsInt();

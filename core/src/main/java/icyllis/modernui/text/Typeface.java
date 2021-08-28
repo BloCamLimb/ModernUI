@@ -74,7 +74,8 @@ public class Typeface {
 
     static {
         //checkJava();
-        /* Use Java's logical font as the default initial font if user does not override it in some configuration file */
+        /* Use Java's logical font as the default initial font if user does not override it in some configuration
+        file */
         GraphicsEnvironment.getLocalGraphicsEnvironment().preferLocaleFonts();
 
         List<Font> p = new ArrayList<>();
@@ -167,7 +168,8 @@ public class Typeface {
                     int update = Integer.parseInt(javaVersion.split("_")[1].split("-")[0]);
                     if (update < 201) {
                         sJavaTooOld = true;
-                        ModernUI.LOGGER.warn(GlyphManager.MARKER, "Java {} is too old to use external fonts", javaVersion);
+                        ModernUI.LOGGER.warn(GlyphManager.MARKER, "Java {} is too old to use external fonts",
+                        javaVersion);
                     }
                 } catch (NumberFormatException | IndexOutOfBoundsException e) {
                     ModernUI.LOGGER.warn(ModernUI.MARKER, "Failed to check java version update: {}", javaVersion, e);
@@ -251,7 +253,9 @@ public class Typeface {
 
     // calculate font runs
     public List<FontRun> itemize(@Nonnull final char[] text, final int offset, final int limit) {
-        it.unimi.dsi.fastutil.Arrays.ensureFromTo(text.length, offset, limit);
+        if (offset < 0 || offset > limit || limit > text.length) {
+            throw new IllegalArgumentException();
+        }
         if (offset == limit) {
             return Collections.emptyList();
         }

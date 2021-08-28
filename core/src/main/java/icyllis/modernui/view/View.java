@@ -355,7 +355,7 @@ public class View implements Drawable.Callback {
         // true if clip region is not empty, or quick rejected
         boolean hasSpace = true;
         if (clip) {
-            hasSpace = canvas.clipRect(0, 0, getWidth(), getHeight());
+            hasSpace = canvas.clipRect(0, 0, mRight - mLeft, mBottom - mTop);
         }
 
         canvas.translate(-sx, -sy);
@@ -376,7 +376,7 @@ public class View implements Drawable.Callback {
     }
 
     /**
-     * Raw method that directly draws this view and its background, foreground,
+     * Base method that directly draws this view and its background, foreground,
      * overlay and all children to the given canvas. When implementing a view,
      * override {@link #onDraw(Canvas)} instead of this.
      * <p>
@@ -401,7 +401,7 @@ public class View implements Drawable.Callback {
             return;
         }
         if ((mPrivateFlags2 & PFLAG2_BACKGROUND_SIZE_CHANGED) != 0) {
-            background.setBounds(0, 0, getWidth(), getHeight());
+            background.setBounds(0, 0, mRight - mLeft, mBottom - mTop);
             mPrivateFlags2 &= ~PFLAG2_BACKGROUND_SIZE_CHANGED;
         }
 
@@ -410,10 +410,9 @@ public class View implements Drawable.Callback {
         if ((scrollX | scrollY) == 0) {
             background.draw(canvas);
         } else {
-            canvas.save();
             canvas.translate(scrollX, scrollY);
             background.draw(canvas);
-            canvas.restore();
+            canvas.translate(-scrollX, -scrollY);
         }
     }
 
