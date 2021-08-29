@@ -44,6 +44,7 @@ import static icyllis.modernui.graphics.GLWrapper.GL_UNSIGNED_BYTE;
  * The OpenGL texture id may change due to enlarging the texture size.
  *
  * @see GlyphManager
+ * @see TexturedGlyph
  */
 @RenderThread
 public class FontAtlas {
@@ -91,7 +92,7 @@ public class FontAtlas {
 
     public void debug() {
         for (var glyph : mGlyphs.int2ObjectEntrySet()) {
-            ModernUI.LOGGER.info("GlyphCode {}, {}", glyph.getIntKey(), glyph.getValue());
+            ModernUI.LOGGER.info(GlyphManager.MARKER, "GlyphCode {}: {}", glyph.getIntKey(), glyph.getValue());
         }
         if (RenderCore.isOnRenderThread()) {
             try {

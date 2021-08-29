@@ -21,6 +21,9 @@ package icyllis.modernui.text;
 import javax.annotation.Nonnull;
 import java.awt.*;
 
+/**
+ * Also known as Font Extent.
+ */
 public class FontMetricsInt {
 
     /**

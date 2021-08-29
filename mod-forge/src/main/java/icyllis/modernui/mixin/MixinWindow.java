@@ -20,12 +20,12 @@ package icyllis.modernui.mixin;
 
 import com.mojang.blaze3d.platform.Window;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.forge.MuiForgeCompat;
+import icyllis.modernui.forge.MForgeCompat;
 import icyllis.modernui.graphics.font.GlyphManagerForge;
+import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.textmc.TextLayoutProcessor;
 import icyllis.modernui.view.ViewConfig;
-import net.minecraft.util.Mth;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.injection.At;
@@ -41,8 +41,8 @@ public class MixinWindow {
      */
     @Overwrite
     public int calculateScale(int guiScaleIn, boolean forceUnicode) {
-        int r = MuiForgeCompat.calcGuiScales((Window) (Object) this);
-        return guiScaleIn > 0 ? Mth.clamp(guiScaleIn, r >> 8 & 0xf, r & 0xf) : r >> 4 & 0xf;
+        int r = MForgeCompat.calcGuiScales((Window) (Object) this);
+        return guiScaleIn > 0 ? MathUtil.clamp(guiScaleIn, r >> 8 & 0xf, r & 0xf) : r >> 4 & 0xf;
     }
 
     @Inject(method = "setGuiScale", at = @At("TAIL"))

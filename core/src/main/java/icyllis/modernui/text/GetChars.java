@@ -19,10 +19,10 @@
 package icyllis.modernui.text;
 
 /**
- * Implement this interface if your CharSequence has a getChars() method
- * like the one in String that is faster than calling charAt() multiple times.
+ * Implement this interface if your {@link CharSequence} has a {@link String#getChars(int, int, char[], int)}
+ * method like the one in {@link String} that is faster than calling {@link CharSequence#charAt(int)} multiple times.
  */
 public interface GetChars extends CharSequence {
 
-    void getChars(int start, int end, char[] dest, int destoff);
+    void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin);
 }

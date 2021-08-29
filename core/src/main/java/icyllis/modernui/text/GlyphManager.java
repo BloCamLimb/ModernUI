@@ -20,6 +20,8 @@ package icyllis.modernui.text;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.system.MemoryUtil;
 
@@ -33,7 +35,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+/**
+ * Manages all glyphs, font atlases, measures glyph metrics and draw them of
+ * different sizes and styles, and upload them to generated OpenGL textures.
+ *
+ * @see FontAtlas
+ * @see Typeface
+ */
 public class GlyphManager {
+
+    public static final Marker MARKER = MarkerManager.getMarker("Glyph");
 
     /**
      * Transparent (alpha zero) black background color for use with BufferedImage.clearRect().
@@ -145,13 +156,14 @@ public class GlyphManager {
     @RenderThread
     public void debug() {
         for (var atlas : mAtlases.entrySet()) {
-            ModernUI.LOGGER.info("FontAtlas {}", atlas.getKey());
+            ModernUI.LOGGER.info(MARKER, atlas.getKey());
             atlas.getValue().debug();
         }
     }
 
     @RenderThread
-    private boolean cacheGlyph(@Nonnull Font font, int glyphCode, @Nonnull FontAtlas atlas, @Nonnull TexturedGlyph glyph) {
+    private boolean cacheGlyph(@Nonnull Font font, int glyphCode, @Nonnull FontAtlas atlas,
+                               @Nonnull TexturedGlyph glyph) {
         // there's no need to layout glyph vector, we only draw the specific glyphCode
         // which is already laid-out in LayoutEngine
         GlyphVector vector = font.createGlyphVector(mGraphics.getFontRenderContext(), new int[]{glyphCode});
@@ -226,7 +238,11 @@ public class GlyphManager {
         }
     }
 
-    // extend metrics
+    /**
+     * Extend metrics.
+     *
+     * @see LayoutPiece#LayoutPiece(char[], int, int, boolean, FontPaint)
+     */
     @SuppressWarnings("MagicConstant")
     public Font getFontMetrics(@Nonnull Font font, @Nonnull FontPaint paint, @Nonnull FontMetricsInt fm) {
         font = font.deriveFont(paint.mFontStyle, paint.mFontSize);
