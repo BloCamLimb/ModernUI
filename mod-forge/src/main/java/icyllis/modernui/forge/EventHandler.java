@@ -60,7 +60,7 @@ final class EventHandler {
     static void onRightClickItem(@Nonnull PlayerInteractEvent.RightClickItem event) {
         if (ModernUIForge.isDeveloperMode()) {
             if (event.getSide().isServer() && event.getItemStack().getItem() == Items.DIAMOND) {
-                MuiForgeCompat.openMenu(event.getPlayer(), TestMenu::new);
+                MForgeCompat.openMenu(event.getPlayer(), TestMenu::new);
             }
         }
     }
@@ -151,7 +151,7 @@ final class EventHandler {
         @SubscribeEvent
         static void onGuiInit(@Nonnull GuiScreenEvent.InitGuiEvent event) {
             if (event.getGui() instanceof VideoSettingsScreen) {
-                NEW_GUI_SCALE.setMaxValue(MuiForgeCompat.calcGuiScales() & 0xf);
+                NEW_GUI_SCALE.setMaxValue(MForgeCompat.calcGuiScales() & 0xf);
             }
         }
 

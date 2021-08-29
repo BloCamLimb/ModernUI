@@ -41,9 +41,9 @@ import java.util.function.Consumer;
 /**
  * Compatibility layer for Minecraft Forge mods, exposed for external calls.
  */
-public final class MuiForgeCompat {
+public final class MForgeCompat {
 
-    private MuiForgeCompat() {
+    private MForgeCompat() {
     }
 
     /**

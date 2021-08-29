@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
  * For the result of text shaping, measurement and glyph layout of a single paragraph.
  *
  * @see MeasuredParagraph
+ * @see LayoutCache
  */
 @Immutable
 @ThreadSafe
@@ -95,6 +96,7 @@ public class MeasuredText {
      * other elements are zero. It's in the same order of {@link #getTextBuf()}
      *
      * @param pos the char index
+     * @return advance
      */
     public float getAdvance(int pos) {
         Run run = searchRun(pos);
@@ -109,6 +111,8 @@ public class MeasuredText {
      *
      * @param start the start index
      * @param end   the end index
+     * @return advance
+     * @see #getAdvance(int)
      */
     public float getAdvance(int start, int end) {
         float a = 0f;
@@ -333,9 +337,11 @@ public class MeasuredText {
 
     public static class StyleRun extends Run {
 
+        // maybe a shared pointer, but its contents must be immutable (read only)
         public final FontPaint mPaint;
         private final boolean mIsRtl;
 
+        // obtained from cache or newly created, but may removed from cache later
         private LayoutPiece mLayoutPiece;
 
         private StyleRun(int start, int end, FontPaint paint, boolean isRtl) {
@@ -403,7 +409,9 @@ public class MeasuredText {
         @Override
         public int getMemoryUsage() {
             // 12 + 4 + 4 + (12 + 8 + 8 + 4 + 4) + 1 + 8
-            return 72 + mLayoutPiece.getMemoryUsage();
+            // here assumes paint is partially shared (one third)
+            // don't worry layout piece is null, see MeasuredText constructor
+            return 48 + mLayoutPiece.getMemoryUsage();
         }
 
         @Override

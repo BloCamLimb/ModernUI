@@ -289,16 +289,16 @@ public class TestMain {
 
         //GlyphManager glyphManager = GlyphManager.getInstance();
 
-        String text; //= "\u0639\u0646\u062f\u0645\u0627\u0020\u064a\u0631\u064a\u062f\u0020\u0627\u0644\u0639\u0627
-        // \u0644\u0645\u0020\u0623\u0646\u0020\u202a\u064a\u062a\u0643\u0644\u0651\u0645\u0020\u202c\u0020\u060c
-        // \u0020\u0641\u0647\u0648\u0020\u064a\u062a\u062d\u062f\u0651\u062b\u0020\u0628\u0644\u063a\u0629\u0020
-        // \u064a\u0648\u0646\u064a\u0643\u0648\u062f\u002e\u0020\u062a\u0633\u062c\u0651\u0644\u0020\u0627\u0644
-        // \u0622\u0646\u0020\u0644\u062d\u0636\u0648\u0631\u0020\u0627\u0644\u0645\u0624\u062a\u0645\u0631\u0020
-        // \u0627\u0644\u062f\u0648\u0644\u064a\u0020\u0627\u0644\u0639\u0627\u0634\u0631\u0020\u0644\u064a\u0648
-        // \u0646\u064a\u0643\u0648\u062f\u0020\u0028\u0055\u006e\u0069\u0063\u006f\u0064\u0065\u0020\u0043\u006f
-        // \u006e\u0066\u0065\u0072\u0065\u006e\u0063\u0065\u0029";
-        text = "My name is Van, I'm 30 years old, and I'm from Japan. I'm an artist, I'm a performance artist. " +
-                "I'm hired for people to fulfill their fantasies, their deep dark fantasies.";
+        String text = "\u0639\u0646\u062f\u0645\u0627\u0020\u064a\u0631\u064a\u062f\u0020\u0627\u0644\u0639\u0627" +
+                "\u0644\u0645\u0020\u0623\u0646\u0020\u202a\u064a\u062a\u0643\u0644\u0651\u0645\u0020\u202c\u0020" +
+                "\u060c\u0020\u0641\u0647\u0648\u0020\u064a\u062a\u062d\u062f\u0651\u062b\u0020\u0628\u0644\u063a" +
+                "\u0629\u0020\u064a\u0648\u0646\u064a\u0643\u0648\u062f\u002e\u0020\u062a\u0633\u062c\u0651\u0644" +
+                "\u0020\u0627\u0644\u0622\u0646\u0020\u0644\u062d\u0636\u0648\u0631\u0020\u0627\u0644\u0645\u0624" +
+                "\u062a\u0645\u0631\u0020\u0627\u0644\u062f\u0648\u0644\u064a\u0020\u0627\u0644\u0639\u0627\u0634" +
+                "\u0631\u0020\u0644\u064a\u0648\u0646\u064a\u0643\u0648\u062f\u0020\u0028\u0055\u006e\u0069\u0063" +
+                "\u006f\u0064\u0065\u0020\u0043\u006f\u006e\u0066\u0065\u0072\u0065\u006e\u0063\u0065\u0029";
+        /*text = "My name is Van, I'm 30 years old, and I'm from Japan. I'm an artist, I'm a performance artist. " +
+                "I'm hired for people to fulfill their fantasies, their deep dark fantasies.";*/
                 /*"I was gonna be a movie star, you know with modelling and uh, acting. " +
                 "After a hundred or two audition and small parts, you know I decided, you know, I had enough, then I
                 get into escort work.";*/
@@ -329,6 +329,7 @@ public class TestMain {
         Spannable spannable = SpannableString.valueOf(text);
         spannable.setSpan(new AbsoluteSizeSpan(18), 54, text.length(), 0);
         TextLine textLine = new TextLine(spannable);
+        ModernUI.LOGGER.info(LayoutCache.getMemoryUsage());
 
         long lastTime = RenderCore.timeMillis();
 

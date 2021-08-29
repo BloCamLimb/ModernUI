@@ -57,20 +57,21 @@ public final class TextUtils {
         }
     }
 
-    public static void getChars(@Nonnull CharSequence s, int start, int end,
-                                char[] dest, int destoff) {
+    public static void getChars(@Nonnull CharSequence s, int srcBegin, int srcEnd,
+                                @Nonnull char[] dst, int dstBegin) {
         final Class<? extends CharSequence> c = s.getClass();
         if (c == String.class)
-            ((String) s).getChars(start, end, dest, destoff);
+            ((String) s).getChars(srcBegin, srcEnd, dst, dstBegin);
         else if (c == StringBuffer.class)
-            ((StringBuffer) s).getChars(start, end, dest, destoff);
+            ((StringBuffer) s).getChars(srcBegin, srcEnd, dst, dstBegin);
         else if (c == StringBuilder.class)
-            ((StringBuilder) s).getChars(start, end, dest, destoff);
+            ((StringBuilder) s).getChars(srcBegin, srcEnd, dst, dstBegin);
         else if (s instanceof GetChars)
-            ((GetChars) s).getChars(start, end, dest, destoff);
-        else
-            for (int i = start; i < end; i++)
-                dest[destoff++] = s.charAt(i);
+            ((GetChars) s).getChars(srcBegin, srcEnd, dst, dstBegin);
+        else {
+            for (int i = srcBegin; i < srcEnd; i++)
+                dst[dstBegin++] = s.charAt(i);
+        }
     }
 
     /**
@@ -113,8 +114,9 @@ public final class TextUtils {
             }
         }
 
-        if (copy == null)
+        if (copy == null) {
             return spans;
+        }
         T[] result = (T[]) Array.newInstance(clazz, count);
         System.arraycopy(copy, 0, result, 0, count);
         return result;

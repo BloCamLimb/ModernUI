@@ -25,6 +25,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -49,8 +50,8 @@ public class PmxModel {
     }
 
     @Nonnull
-    public static PmxModel decode(@Nonnull ReadableByteChannel channel) throws IOException {
-        ByteBuffer buf = RenderCore.readResource(channel);
+    public static PmxModel decode(@Nonnull FileChannel channel) throws IOException {
+        ByteBuffer buf = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
         buf.order(ByteOrder.LITTLE_ENDIAN);
         buf.rewind();
         PmxModel model = new PmxModel();

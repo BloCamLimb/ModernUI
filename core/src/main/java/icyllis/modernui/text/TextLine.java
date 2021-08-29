@@ -63,7 +63,7 @@ public class TextLine {
         if (text instanceof Spanned) {
             mSpanned = (Spanned) text;
         }
-        ModernUI.LOGGER.info(mMeasuredText);
+        ModernUI.LOGGER.info(mMeasuredParagraph.getMemoryUsage());
     }
 
     /**

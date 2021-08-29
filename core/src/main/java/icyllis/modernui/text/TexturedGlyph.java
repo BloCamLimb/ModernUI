@@ -24,6 +24,7 @@ package icyllis.modernui.text;
  * in a context.
  *
  * @see GlyphManager
+ * @see FontAtlas
  * @since 2.0
  */
 public class TexturedGlyph {

@@ -31,7 +31,7 @@ import java.util.Locale;
 
 /**
  * Globally shared layout cache. Useful when recycling layouts, or raw data source and
- * layout information are separated.
+ * layout information are separated. Max memory usage: 3~4 MB.
  *
  * @see LayoutPiece
  * @since 2.6
@@ -70,7 +70,6 @@ public class LayoutCache {
                 if (sCache == null) {
                     sCache = Caffeine.newBuilder()
                             .maximumSize(1000)
-                            //.expireAfterAccess(20, TimeUnit.SECONDS)
                             .build();
                 }
             }
@@ -93,7 +92,11 @@ public class LayoutCache {
         return piece;
     }
 
-    // this only returns measurable memory usage, in other words, at least
+    /**
+     * This only returns measurable memory usage, in other words, at least
+     *
+     * @return memory usage in bytes
+     */
     public static int getMemoryUsage() {
         if (sCache == null) {
             return 0;
@@ -102,6 +105,7 @@ public class LayoutCache {
         for (var entry : sCache.asMap().entrySet()) {
             size += entry.getKey().getMemoryUsage();
             size += entry.getValue().getMemoryUsage();
+            size += 40; // a node object
         }
         return size;
     }

@@ -402,8 +402,8 @@ abstract class SpannableStringInternal implements Spanned {
         return mText.charAt(index);
     }
 
-    public final void getChars(int start, int end, char[] dest, int off) {
-        mText.getChars(start, end, dest, off);
+    public final void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
+        mText.getChars(srcBegin, srcEnd, dst, dstBegin);
     }
 
     // Same as SpannableStringBuilder

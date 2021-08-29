@@ -35,6 +35,8 @@ import java.util.List;
  * The layout of a styled text run, including glyphs' measurements and rendering info.
  *
  * @see LayoutCache
+ * @see GlyphManager
+ * @see GraphemeBreak
  * @since 2.6
  */
 public class LayoutPiece {
@@ -222,6 +224,24 @@ public class LayoutPiece {
      */
     public void getExtent(@Nonnull FontMetricsInt extent) {
         extent.extendBy(mAscent, mDescent);
+    }
+
+    /**
+     * Gets the font metrics of the maximum extent of this piece.
+     *
+     * @return ascent to baseline, always positive
+     */
+    public int getAscent() {
+        return mAscent;
+    }
+
+    /**
+     * Gets the font metrics of the maximum extent of this piece.
+     *
+     * @return descent to baseline, always positive
+     */
+    public int getDescent() {
+        return mDescent;
     }
 
     /**

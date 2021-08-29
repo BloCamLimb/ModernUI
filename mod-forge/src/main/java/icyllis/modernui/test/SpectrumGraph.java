@@ -64,7 +64,7 @@ public class SpectrumGraph {
         var paint = Paint.take();
         long time = RenderCore.timeMillis();
         float b = 1.5f + MathUtil.sin(time / 600f) / 2;
-        paint.setRGBA(160, 155, 230, (int) (80 * b));
+        paint.setRGBA(160, 155, 230, (int) (64 * b));
         paint.setSmoothRadius(100);
         paint.setStrokeWidth(200);
         paint.setStyle(Paint.Style.STROKE);

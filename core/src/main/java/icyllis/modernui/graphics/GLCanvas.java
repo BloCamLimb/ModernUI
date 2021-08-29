@@ -1123,7 +1123,8 @@ public final class GLCanvas extends Canvas {
         mDrawStates.add(DRAW_IMAGE);
     }
 
-    public void drawTextureMSAA(@Nonnull Texture texture, float l, float t, float r, float b, int color, boolean flipY) {
+    public void drawTextureMSAA(@Nonnull Texture texture, float l, float t, float r, float b, int color,
+                                boolean flipY) {
         // flip vertical
         putRectColorUV(l, t, r, b, color,
                 0, flipY ? 1 : 0, 1, flipY ? 0 : 1);
@@ -1233,6 +1234,7 @@ public final class GLCanvas extends Canvas {
         mDrawStates.add(DRAW_ROUND_IMAGE);
     }
 
+    @Deprecated
     @Override
     public void drawTextRun(@Nonnull CharSequence text, int start, int end, float x, float y,
                             boolean isRtl, @Nonnull TextPaint paint) {
@@ -1252,8 +1254,11 @@ public final class GLCanvas extends Canvas {
             throw new IndexOutOfBoundsException();
         }
         LayoutPiece piece = text.getLayoutPiece(start, end);
-        if (piece != null) {
-            addTextRun(piece, x, y, paint.color);
+        if (piece != null && piece.getAdvances().length != 0) {
+            if (!quickReject(x, y - piece.getAscent(),
+                    x + piece.getAdvance(), y + piece.getDescent())) {
+                addTextRun(piece, x, y, paint.color);
+            }
         }
     }
 

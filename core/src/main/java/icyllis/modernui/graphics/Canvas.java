@@ -39,7 +39,7 @@ import javax.annotation.Nonnull;
  * appears to be disabled. All layers are considered translucent and
  * drawn from far to near, you cannot handle the z-order manually.
  *
- * @since Core 1.6
+ * @since 1.6
  */
 public abstract class Canvas {
 
