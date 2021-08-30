@@ -27,6 +27,7 @@ import org.apache.logging.log4j.MarkerManager;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.annotation.concurrent.Immutable;
 import java.awt.*;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -40,6 +41,7 @@ import java.util.*;
  * <p>
  * The static part of this class is managing all fonts used in Modern UI.
  */
+@Immutable
 public class Typeface {
 
     // log marker

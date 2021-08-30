@@ -42,7 +42,12 @@ import javax.annotation.Nonnull;
  * The classes that affect character-level text formatting in a way that
  * changes the metric of characters extend this class.
  */
-public abstract class MetricAffectingSpan extends CharacterStyle {
+public abstract class MetricAffectingSpan extends CharacterStyle implements UpdateLayout {
+
+    @Override
+    public final void updateDrawState(@Nonnull TextPaint paint) {
+        // NO-OP, except generating a new layout
+    }
 
     /**
      * Classes that extend MetricAffectingSpan implement this method to update the text formatting
@@ -79,14 +84,6 @@ public abstract class MetricAffectingSpan extends CharacterStyle {
          */
         Passthrough(@Nonnull MetricAffectingSpan cs) {
             mStyle = cs;
-        }
-
-        /**
-         * Passes updateDrawState through to the underlying MetricAffectingSpan.
-         */
-        @Override
-        public void updateDrawState(@Nonnull TextPaint paint) {
-            mStyle.updateDrawState(paint);
         }
 
         /**

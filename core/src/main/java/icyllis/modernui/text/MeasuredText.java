@@ -144,6 +144,33 @@ public class MeasuredText {
      * Binary search with ranges.
      *
      * @param pos char index
+     * @return the run index
+     */
+    public int search(int pos) {
+        if (pos < 0 || pos >= mTextBuf.length) {
+            return -1;
+        }
+        int low = 0;
+        int high = mRuns.length - 1;
+
+        while (low <= high) {
+            int mid = (low + high) >>> 1;
+            Run run = mRuns[mid];
+
+            if (run.mEnd <= pos)
+                low = mid + 1;
+            else if (run.mStart > pos)
+                high = mid - 1;
+            else
+                return mid;
+        }
+        return -(low + 1);
+    }
+
+    /**
+     * Binary search with ranges.
+     *
+     * @param pos char index
      * @return the run
      */
     @Nullable

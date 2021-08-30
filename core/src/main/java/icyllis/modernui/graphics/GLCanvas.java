@@ -1244,7 +1244,7 @@ public final class GLCanvas extends Canvas {
         char[] chars = new char[end - start];
         TextUtils.getChars(text, start, end, chars, 0);
         LayoutPiece piece = LayoutCache.getOrCreate(chars, 0, end - start, isRtl, paint);
-        addTextRun(piece, x, y, paint.color);
+        addTextRun(piece, x, y, paint.getColor());
     }
 
     @Override
@@ -1257,7 +1257,7 @@ public final class GLCanvas extends Canvas {
         if (piece != null && piece.getAdvances().length != 0) {
             if (!quickReject(x, y - piece.getAscent(),
                     x + piece.getAdvance(), y + piece.getDescent())) {
-                addTextRun(piece, x, y, paint.color);
+                addTextRun(piece, x, y, paint.getColor());
             }
         }
     }

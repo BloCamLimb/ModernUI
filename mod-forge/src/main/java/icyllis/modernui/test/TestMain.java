@@ -36,6 +36,8 @@ import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.platform.Window;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.style.AbsoluteSizeSpan;
+import icyllis.modernui.text.style.ForegroundColorSpan;
+import icyllis.modernui.text.style.StyleSpan;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.system.Callback;
@@ -289,16 +291,16 @@ public class TestMain {
 
         //GlyphManager glyphManager = GlyphManager.getInstance();
 
-        String text = "\u0639\u0646\u062f\u0645\u0627\u0020\u064a\u0631\u064a\u062f\u0020\u0627\u0644\u0639\u0627" +
+        String text;/* = "\u0639\u0646\u062f\u0645\u0627\u0020\u064a\u0631\u064a\u062f\u0020\u0627\u0644\u0639\u0627" +
                 "\u0644\u0645\u0020\u0623\u0646\u0020\u202a\u064a\u062a\u0643\u0644\u0651\u0645\u0020\u202c\u0020" +
                 "\u060c\u0020\u0641\u0647\u0648\u0020\u064a\u062a\u062d\u062f\u0651\u062b\u0020\u0628\u0644\u063a" +
                 "\u0629\u0020\u064a\u0648\u0646\u064a\u0643\u0648\u062f\u002e\u0020\u062a\u0633\u062c\u0651\u0644" +
                 "\u0020\u0627\u0644\u0622\u0646\u0020\u0644\u062d\u0636\u0648\u0631\u0020\u0627\u0644\u0645\u0624" +
                 "\u062a\u0645\u0631\u0020\u0627\u0644\u062f\u0648\u0644\u064a\u0020\u0627\u0644\u0639\u0627\u0634" +
                 "\u0631\u0020\u0644\u064a\u0648\u0646\u064a\u0643\u0648\u062f\u0020\u0028\u0055\u006e\u0069\u0063" +
-                "\u006f\u0064\u0065\u0020\u0043\u006f\u006e\u0066\u0065\u0072\u0065\u006e\u0063\u0065\u0029";
-        /*text = "My name is Van, I'm 30 years old, and I'm from Japan. I'm an artist, I'm a performance artist. " +
-                "I'm hired for people to fulfill their fantasies, their deep dark fantasies.";*/
+                "\u006f\u0064\u0065\u0020\u0043\u006f\u006e\u0066\u0065\u0072\u0065\u006e\u0063\u0065\u0029";*/
+        text = "My name is Van, I'm 30 years old, and I'm from Japan. I'm an artist, I'm a performance artist. " +
+                "I'm hired for people to fulfill their fantasies, their deep dark fantasies.";
                 /*"I was gonna be a movie star, you know with modelling and uh, acting. " +
                 "After a hundred or two audition and small parts, you know I decided, you know, I had enough, then I
                 get into escort work.";*/
@@ -327,7 +329,9 @@ public class TestMain {
                 glyphManager.export();*/
 
         Spannable spannable = SpannableString.valueOf(text);
-        spannable.setSpan(new AbsoluteSizeSpan(18), 54, text.length(), 0);
+        spannable.setSpan(new ForegroundColorSpan(0xfff699b4), 54, text.length(), 0);
+        spannable.setSpan(new AbsoluteSizeSpan(18), 29, text.length() - 20, 0);
+        spannable.setSpan(new StyleSpan(FontPaint.BOLD), text.length() - 20, text.length(), 0);
         TextLine textLine = new TextLine(spannable);
         ModernUI.LOGGER.info(LayoutCache.getMemoryUsage());
 
@@ -377,7 +381,7 @@ public class TestMain {
                 canvas.drawLine(120, 30, 60, 80, paint);
 
                 TextPaint paint1 = new TextPaint();
-                paint1.color = 0xff40ddee;
+                paint1.setColor(0xff40ddee);
                 //canvas.rotate(30);
                 /*String tcc = "今日も一日頑張るぞい";
                 canvas.drawTextRun(tcc, 0, tcc.length(), 730, 170, false, paint1);
@@ -392,7 +396,7 @@ public class TestMain {
                 canvas.drawTextRun(tcc, 0, tcc.length(), 760, 456, false, paint1);
                 //canvas.rotate(-30);
 
-                //textLine.draw(canvas, 32, 400);
+                textLine.draw(canvas, 32, 400);
 
                 //paint.setStyle(Paint.Style.FILL);
                 //canvas.drawRoundRect(100, 840, 100 + playTime / graph.mSongLength * 1400000, 860, 10, paint);
@@ -458,10 +462,10 @@ public class TestMain {
 
         String s = "Hitorigoto -TV MIX-";
         TextPaint textPaint = new TextPaint();
-        textPaint.color = 0xff000000;
+        textPaint.setColor(0xff000000);
         textPaint.setFontSize(45);
         canvas.drawTextRun(s, 0, s.length(), 408, 75, false, textPaint);
-        textPaint.color = ~0;
+        textPaint.setColor(~0);
         textPaint.setFontSize(44);
         canvas.drawTextRun(s, 0, s.length(), 414, 78, false, textPaint);
 

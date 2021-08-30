@@ -18,6 +18,23 @@
 
 package icyllis.modernui.text.style;
 
-//TODO
-public abstract class ReplacementSpan extends MetricAffectingSpan {
+import icyllis.modernui.text.TextPaint;
+
+import javax.annotation.Nonnull;
+
+/**
+ * A span that strikes through the text it's attached to.
+ */
+public class StrikethroughSpan extends CharacterStyle implements UpdateAppearance {
+
+    /**
+     * Creates a {@link StrikethroughSpan}.
+     */
+    public StrikethroughSpan() {
+    }
+
+    @Override
+    public void updateDrawState(@Nonnull TextPaint paint) {
+        paint.setStrikethrough(true);
+    }
 }

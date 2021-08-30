@@ -184,7 +184,7 @@ public class LayoutCache {
             mStart = start;
             mEnd = end;
             mTypeface = paint.mTypeface;
-            mFontStyle = paint.mFontStyle;
+            mFontStyle = paint.mFlags;
             mFontSize = paint.mFontSize;
             mLocale = paint.mLocale;
             mIsRtl = dir;

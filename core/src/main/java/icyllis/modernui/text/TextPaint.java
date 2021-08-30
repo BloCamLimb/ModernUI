@@ -28,10 +28,19 @@ import javax.annotation.Nonnull;
  */
 public class TextPaint extends FontPaint {
 
+    /**
+     * Paint flag that applies an underline decoration to drawn text.
+     */
+    private static final int UNDERLINE_FLAG = 0x08;
+
+    /**
+     * Paint flag that applies a strike-through decoration to drawn text.
+     */
+    private static final int STRIKETHROUGH_FLAG = 0x10;
+
     private static final Pool<TextPaint> sPool = Pools.concurrent(4);
 
-    // the glyph/text/chars/foreground color
-    public int color;
+    private int mColor;
 
     // 0 means no background
     public int bgColor;
@@ -40,11 +49,12 @@ public class TextPaint extends FontPaint {
      * Creates the new TextPaint.
      */
     public TextPaint() {
+        mColor = ~0;
     }
 
     /**
-     * Returns a TextPaint from the shared pool, a {@link #recycle()} is
-     * expected after use.
+     * Returns a TextPaint from the shared pool, a {@link #set(TextPaint)} is
+     * expected before use and a {@link #recycle()} after use.
      *
      * @return a pooled object, states are undefined
      */
@@ -62,13 +72,139 @@ public class TextPaint extends FontPaint {
      */
     public void set(@Nonnull TextPaint paint) {
         super.set(paint);
-        color = paint.color;
+        mColor = paint.mColor;
         bgColor = paint.bgColor;
+    }
+
+    /**
+     * Return the paint's color in sRGB. Note that the color is a 32bit value
+     * containing alpha as well as r,g,b. This 32bit value is not premultiplied,
+     * meaning that its alpha can be any value, regardless of the values of
+     * r,g,b. See the Color class for more details.
+     *
+     * @return the paint's color (and alpha).
+     */
+    public int getColor() {
+        return mColor;
+    }
+
+    /**
+     * Set the paint's color. Note that the color is an int containing alpha
+     * as well as r,g,b. This 32bit value is not premultiplied, meaning that
+     * its alpha can be any value, regardless of the values of r,g,b.
+     * See the Color class for more details.
+     *
+     * @param color The new color (including alpha) to set in the paint.
+     */
+    public void setColor(int color) {
+        mColor = color;
+    }
+
+    /**
+     * Helper for getFlags(), returning true if UNDERLINE_TEXT_FLAG bit is set
+     *
+     * @return true if the underlineText bit is set in the paint's flags.
+     * @see #setUnderline(boolean)
+     */
+    public final boolean isUnderline() {
+        return (mFlags & UNDERLINE_FLAG) != 0;
+    }
+
+    /**
+     * Helper for setFlags(), setting or clearing the UNDERLINE_TEXT_FLAG bit
+     *
+     * @param underline true to set the underline bit in the paint's
+     *                  flags, false to clear it.
+     * @see #isUnderline()
+     */
+    public void setUnderline(boolean underline) {
+        if (underline) {
+            mFlags |= UNDERLINE_FLAG;
+        } else {
+            mFlags &= ~UNDERLINE_FLAG;
+        }
+    }
+
+    /**
+     * Returns the distance from top of the underline to the baseline in pixels.
+     * <p>
+     * The result is positive for positions that are below the baseline.
+     * This method returns where the underline should be drawn independent of if the {@link
+     * #UNDERLINE_FLAG} bit is set.
+     *
+     * @return the position of the underline in pixels
+     * @see #isUnderline()
+     * @see #getUnderlineThickness(FontMetricsInt)
+     * @see #setUnderline(boolean)
+     */
+    public float getUnderlineOffset(@Nonnull FontMetricsInt fm) {
+        return fm.mDescent / 3f;
+    }
+
+    /**
+     * Returns the thickness of the underline in pixels.
+     *
+     * @return the thickness of the underline in pixels
+     * @see #isUnderline()
+     * @see #getUnderlineOffset(FontMetricsInt)
+     * @see #setUnderline(boolean)
+     */
+    public float getUnderlineThickness(@Nonnull FontMetricsInt fm) {
+        return fm.mAscent / 12f;
+    }
+
+    /**
+     * Helper for getFlags(), returning true if STRIKE_THRU_TEXT_FLAG bit is set
+     *
+     * @return true if the {@link #STRIKETHROUGH_FLAG} bit is set in the paint's flags.
+     * @see #setStrikethrough(boolean)
+     */
+    public final boolean isStrikethrough() {
+        return (mFlags & STRIKETHROUGH_FLAG) != 0;
+    }
+
+    /**
+     * Helper for setFlags(), setting or clearing the STRIKE_THRU_TEXT_FLAG bit
+     *
+     * @param strikethrough true to set the strikethrough bit in the paint's
+     *                      flags, false to clear it.
+     * @see #isStrikethrough()
+     */
+    public void setStrikethrough(boolean strikethrough) {
+        if (strikethrough) {
+            mFlags |= STRIKETHROUGH_FLAG;
+        } else {
+            mFlags &= ~STRIKETHROUGH_FLAG;
+        }
+    }
+
+    /**
+     * Distance from top of the strike-through line to the baseline in pixels.
+     * <p>
+     * The result is negative for positions that are above the baseline.
+     * This method returns where the strike-through line should be drawn independent of if the
+     * {@link #STRIKETHROUGH_FLAG} bit is set.
+     *
+     * @return the position of the strike-through line in pixels
+     * @see #getStrikethroughThickness(FontMetricsInt)
+     */
+    public float getStrikethroughOffset(@Nonnull FontMetricsInt fm) {
+        return -fm.mAscent / 2f;
+    }
+
+    /**
+     * Returns the thickness of the strike-through line in pixels.
+     *
+     * @return the position of the strike-through line in pixels
+     * @see #getStrikethroughOffset(FontMetricsInt)
+     */
+    public float getStrikethroughThickness(@Nonnull FontMetricsInt fm) {
+        return fm.mAscent / 12f;
     }
 
     @Nonnull
     @Override
-    public FontPaint toBase() {
+    public final FontPaint toBase() {
         return new FontPaint(this);
     }
 

@@ -252,7 +252,7 @@ public class Paint {
     /**
      * Get current smooth radius.
      * <p>
-     * Smooth radius is used to smooth the edges of geometry. The default value is 2.0 px.
+     * Smooth radius is used to smooth and blur the edges of geometry. The default value is 2.0 px.
      *
      * @return feather radius
      * @see #setSmoothRadius(float)
@@ -264,7 +264,7 @@ public class Paint {
     /**
      * Set the smooth radius in pixels for this paint.
      * <p>
-     * Smooth radius is used to smooth the edges of geometry. The default value is 2.0 px.
+     * Smooth radius is used to smooth and blur the edges of geometry. The default value is 2.0 px.
      * This value may be ignored by implementation.
      *
      * @param radius the new feather radius to set
