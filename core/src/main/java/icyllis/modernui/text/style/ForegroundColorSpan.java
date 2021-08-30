@@ -23,31 +23,31 @@ import icyllis.modernui.text.TextPaint;
 import javax.annotation.Nonnull;
 
 /**
- * A span that changes the size of the text it's attached to.
+ * Changes the color of the text to which the span is attached.
  */
-public class AbsoluteSizeSpan extends MetricAffectingSpan {
+public class ForegroundColorSpan extends CharacterStyle implements UpdateAppearance {
 
-    private final int mSize;
+    private final int mColor;
 
     /**
-     * Set the text size to <code>size</code> physical pixels.
+     * Creates a {@link ForegroundColorSpan} from a color integer.
+     *
+     * @param color color integer that defines the text color
      */
-    public AbsoluteSizeSpan(int size) {
-        mSize = size;
+    public ForegroundColorSpan(int color) {
+        mColor = color;
     }
 
     /**
-     * Get the text size.
-     *
-     * @return the text size, either in physical pixels or device-independent pixels.
-     * @see AbsoluteSizeSpan#AbsoluteSizeSpan(int)
+     * @return the foreground color of this span.
+     * @see ForegroundColorSpan#ForegroundColorSpan(int)
      */
-    public int getSize() {
-        return mSize;
+    public int getForegroundColor() {
+        return mColor;
     }
 
     @Override
-    public void updateMeasureState(@Nonnull TextPaint paint) {
-        paint.setFontSize(mSize);
+    public void updateDrawState(@Nonnull TextPaint paint) {
+        paint.setColor(mColor);
     }
 }

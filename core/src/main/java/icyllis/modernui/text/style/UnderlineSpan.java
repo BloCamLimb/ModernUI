@@ -18,6 +18,23 @@
 
 package icyllis.modernui.text.style;
 
-//TODO
-public abstract class ReplacementSpan extends MetricAffectingSpan {
+import icyllis.modernui.text.TextPaint;
+
+import javax.annotation.Nonnull;
+
+/**
+ * A span that underlines the text it's attached to.
+ */
+public class UnderlineSpan extends CharacterStyle implements UpdateAppearance {
+
+    /**
+     * Creates an {@link UnderlineSpan}.
+     */
+    public UnderlineSpan() {
+    }
+
+    @Override
+    public void updateDrawState(@Nonnull TextPaint paint) {
+        paint.setUnderline(true);
+    }
 }

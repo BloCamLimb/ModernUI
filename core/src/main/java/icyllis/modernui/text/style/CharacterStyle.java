@@ -88,7 +88,7 @@ public abstract class CharacterStyle {
         /**
          * Creates a new Passthrough of the specified CharacterStyle.
          */
-        public Passthrough(CharacterStyle cs) {
+        private Passthrough(CharacterStyle cs) {
             mStyle = cs;
         }
 

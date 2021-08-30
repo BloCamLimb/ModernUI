@@ -18,6 +18,10 @@
 
 package icyllis.modernui.text;
 
+import icyllis.modernui.text.style.CharacterStyle;
+import icyllis.modernui.util.Pool;
+import icyllis.modernui.util.Pools;
+
 import javax.annotation.Nonnull;
 import java.lang.reflect.Array;
 import java.util.Arrays;
@@ -26,59 +30,67 @@ import java.util.Arrays;
  * A cached set of spans. Caches the result of {@link Spanned#getSpans(int, int, Class)} and then
  * provides faster access to {@link Spanned#nextSpanTransition(int, int, Class)}.
  * <p>
- * Fields are left public for a convenient direct access.
+ * Fields are public for a convenient direct access (read only).
  * <p>
  * Note that empty spans are ignored by this class.
  */
-public class SpanSet<E> {
+public class SpanSet {
 
-    private final Class<? extends E> classType;
+    private static final Pool<SpanSet> sPool = Pools.concurrent(1);
 
-    public int numberOfSpans;
-    public E[] spans;
-    public int[] spanStarts;
-    public int[] spanEnds;
-    public int[] spanFlags;
+    public int mSize;
+    public CharacterStyle[] mSpans;
+    public int[] mSpanStarts;
+    public int[] mSpanEnds;
+    public int[] mSpanFlags;
 
-    public SpanSet(Class<? extends E> type) {
-        classType = type;
-        numberOfSpans = 0;
+    public SpanSet() {
     }
 
-    @SuppressWarnings("unchecked")
-    public void init(@Nonnull Spanned spanned, int start, int limit) {
-        final E[] allSpans = spanned.getSpans(start, limit, classType);
-        final int length = allSpans.length;
+    @Nonnull
+    public static SpanSet obtain() {
+        SpanSet spanSet = sPool.acquire();
+        if (spanSet == null) {
+            return new SpanSet();
+        }
+        return spanSet;
+    }
 
-        if (length > 0 && (spans == null || spans.length < length)) {
+    public void init(@Nonnull Spanned spanned, int start, int limit) {
+        final CharacterStyle[] allSpans = spanned.getSpans(start, limit, CharacterStyle.class);
+        final int length = allSpans == null ? 0 : allSpans.length;
+
+        if (length > 0 && (mSpans == null || mSpans.length < length)) {
             // These arrays may end up being too large because of the discarded empty spans
-            spans = (E[]) Array.newInstance(classType, length);
-            spanStarts = new int[length];
-            spanEnds = new int[length];
-            spanFlags = new int[length];
+            mSpans = (CharacterStyle[]) Array.newInstance(CharacterStyle.class, length);
+            mSpanStarts = new int[length];
+            mSpanEnds = new int[length];
+            mSpanFlags = new int[length];
         }
 
-        int prevNumberOfSpans = numberOfSpans;
-        numberOfSpans = 0;
-        for (final E span : allSpans) {
-            final int spanStart = spanned.getSpanStart(span);
-            final int spanEnd = spanned.getSpanEnd(span);
-            if (spanStart == spanEnd) continue;
+        int oldSize = mSize;
+        mSize = 0;
+        if (allSpans != null) {
+            for (final CharacterStyle span : allSpans) {
+                final int spanStart = spanned.getSpanStart(span);
+                final int spanEnd = spanned.getSpanEnd(span);
+                if (spanStart == spanEnd) continue;
 
-            final int spanFlag = spanned.getSpanFlags(span);
+                final int spanFlag = spanned.getSpanFlags(span);
 
-            spans[numberOfSpans] = span;
-            spanStarts[numberOfSpans] = spanStart;
-            spanEnds[numberOfSpans] = spanEnd;
-            spanFlags[numberOfSpans] = spanFlag;
+                mSpans[mSize] = span;
+                mSpanStarts[mSize] = spanStart;
+                mSpanEnds[mSize] = spanEnd;
+                mSpanFlags[mSize] = spanFlag;
 
-            numberOfSpans++;
+                mSize++;
+            }
         }
 
         // cleanup extra spans left over from previous init() call
-        if (numberOfSpans < prevNumberOfSpans) {
-            // prevNumberofSpans was > 0, therefore spans != null
-            Arrays.fill(spans, numberOfSpans, prevNumberOfSpans, null);
+        if (mSize < oldSize) {
+            // oldSize was > 0, therefore mSpans != null
+            Arrays.fill(mSpans, mSize, oldSize, null);
         }
     }
 
@@ -88,9 +100,9 @@ public class SpanSet<E> {
      * @param end must be strictly greater than start
      */
     public boolean hasSpansIntersecting(int start, int end) {
-        for (int i = 0; i < numberOfSpans; i++) {
+        for (int i = 0; i < mSize; i++) {
             // equal test is valid since both intervals are not empty by construction
-            if (spanStarts[i] >= end || spanEnds[i] <= start) continue;
+            if (mSpanStarts[i] >= end || mSpanEnds[i] <= start) continue;
             return true;
         }
         return false;
@@ -99,12 +111,14 @@ public class SpanSet<E> {
     /**
      * Similar to {@link Spanned#nextSpanTransition(int, int, Class)}
      */
-    int getNextTransition(int start, int limit) {
-        for (int i = 0; i < numberOfSpans; i++) {
-            final int spanStart = spanStarts[i];
-            final int spanEnd = spanEnds[i];
-            if (spanStart > start && spanStart < limit) limit = spanStart;
-            if (spanEnd > start && spanEnd < limit) limit = spanEnd;
+    public int getNextTransition(int start, int limit) {
+        for (int i = 0; i < mSize; i++) {
+            final int spanStart = mSpanStarts[i];
+            final int spanEnd = mSpanEnds[i];
+            if (spanStart > start && spanStart < limit)
+                limit = spanStart;
+            if (spanEnd > start && spanEnd < limit)
+                limit = spanEnd;
         }
         return limit;
     }
@@ -113,8 +127,9 @@ public class SpanSet<E> {
      * Removes all internal references to the spans to avoid memory leaks.
      */
     public void recycle() {
-        if (spans != null) {
-            Arrays.fill(spans, 0, numberOfSpans, null);
+        if (mSpans != null) {
+            Arrays.fill(mSpans, 0, mSize, null);
         }
+        sPool.release(this);
     }
 }

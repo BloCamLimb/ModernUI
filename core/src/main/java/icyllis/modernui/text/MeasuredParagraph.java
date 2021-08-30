@@ -427,8 +427,10 @@ public class MeasuredParagraph {
                             MetricAffectingSpan.class);
                     MetricAffectingSpan[] spans = c.mSpanned.getSpans(spanStart, spanEnd,
                             MetricAffectingSpan.class);
-                    spans = TextUtils.removeEmptySpans(spans, c.mSpanned,
-                            MetricAffectingSpan.class);
+                    if (spans != null) {
+                        spans = TextUtils.removeEmptySpans(spans, c.mSpanned,
+                                MetricAffectingSpan.class);
+                    }
                     c.applyMetricsAffectingSpan(paint, spans, spanStart, spanEnd, builder);
                     c.mSpanEndCache.add(spanEnd);
                 }
@@ -453,15 +455,17 @@ public class MeasuredParagraph {
         // Replace characters associated with ReplacementSpan to U+FFFC.
         if (mSpanned != null) {
             final ReplacementSpan[] spans = mSpanned.getSpans(start, end, ReplacementSpan.class);
-            for (ReplacementSpan span : spans) {
-                int startInPara = mSpanned.getSpanStart(span) - start;
-                int endInPara = mSpanned.getSpanEnd(span) - start;
-                // The span interval may be larger and must be restricted to [start, end)
-                if (startInPara < 0)
-                    startInPara = 0;
-                if (endInPara > length)
-                    endInPara = length;
-                Arrays.fill(mCopiedBuffer, startInPara, endInPara, '\uFFFC');
+            if (spans != null) {
+                for (ReplacementSpan span : spans) {
+                    int startInPara = mSpanned.getSpanStart(span) - start;
+                    int endInPara = mSpanned.getSpanEnd(span) - start;
+                    // The span interval may be larger and must be restricted to [start, end)
+                    if (startInPara < 0)
+                        startInPara = 0;
+                    if (endInPara > length)
+                        endInPara = length;
+                    Arrays.fill(mCopiedBuffer, startInPara, endInPara, '\uFFFC');
+                }
             }
         }
 

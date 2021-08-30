@@ -91,7 +91,8 @@ public final class TextUtils {
      * {@link Spanned#getSpanEnd(Object)} have been removed. The initial order is preserved
      */
     @SuppressWarnings("unchecked")
-    public static <T> T[] removeEmptySpans(@Nonnull T[] spans, Spanned spanned, Class<T> clazz) {
+    @Nonnull
+    public static <T> T[] removeEmptySpans(@Nonnull T[] spans, @Nonnull Spanned spanned, @Nonnull Class<T> clazz) {
         T[] copy = null;
         int count = 0;
 
@@ -116,6 +117,9 @@ public final class TextUtils {
 
         if (copy == null) {
             return spans;
+        }
+        if (count == copy.length) {
+            return copy;
         }
         T[] result = (T[]) Array.newInstance(clazz, count);
         System.arraycopy(copy, 0, result, 0, count);

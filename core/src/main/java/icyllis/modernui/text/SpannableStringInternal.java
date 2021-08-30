@@ -39,6 +39,7 @@ import it.unimi.dsi.fastutil.ints.IntArrays;
 import it.unimi.dsi.fastutil.objects.ObjectArrays;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.lang.reflect.Array;
 
 // modified version of https://android.googlesource.com/
@@ -74,24 +75,28 @@ abstract class SpannableStringInternal implements Spanned {
     private void copySpansFromSpanned(@Nonnull Spanned src, int start, int end, boolean ignoreNoCopySpan) {
         Object[] spans = src.getSpans(start, end, Object.class);
 
-        for (Object span : spans) {
-            if (ignoreNoCopySpan && span instanceof NoCopySpan)
-                continue;
+        if (spans != null) {
+            for (Object span : spans) {
+                if (ignoreNoCopySpan && span instanceof NoCopySpan) {
+                    continue;
+                }
 
-            int st = src.getSpanStart(span);
-            int en = src.getSpanEnd(span);
-            int fl = src.getSpanFlags(span);
+                int st = src.getSpanStart(span);
+                int en = src.getSpanEnd(span);
+                int fl = src.getSpanFlags(span);
 
-            if (st < start)
-                st = start;
-            if (en > end)
-                en = end;
+                if (st < start)
+                    st = start;
+                if (en > end)
+                    en = end;
 
-            setSpan(span, st - start, en - start, fl, false);
+                setSpan(span, st - start, en - start, fl, false);
+            }
         }
     }
 
-    private void copySpansFromInternal(@Nonnull SpannableStringInternal src, int start, int end, boolean ignoreNoCopySpan) {
+    private void copySpansFromInternal(@Nonnull SpannableStringInternal src, int start, int end,
+                                       boolean ignoreNoCopySpan) {
         int count = 0;
         final int[] srcData = src.mSpanData;
         final Object[] srcSpans = src.mSpans;
@@ -250,7 +255,7 @@ abstract class SpannableStringInternal implements Spanned {
         }
     }
 
-    @Nonnull
+    @Nullable
     @Override
     @SuppressWarnings({"unchecked", "ConstantConditions"})
     public <T> T[] getSpans(int start, int end, @Nonnull Class<T> type) {
@@ -305,7 +310,7 @@ abstract class SpannableStringInternal implements Spanned {
         }
 
         if (found == 0) {
-            return (T[]) (type == Object.class ? ObjectArrays.EMPTY_ARRAY : Array.newInstance(type, 0));
+            return null;
         }
         if (found == 1) {
             temp = (Object[]) Array.newInstance(type, 1);
@@ -355,35 +360,45 @@ abstract class SpannableStringInternal implements Spanned {
         final int[] data = mSpanData;
 
         for (int i = 0; i < count; i++) {
-            int st = data[i * COLUMNS + START];
-            int en = data[i * COLUMNS + END];
+            final int spanStart = data[i * COLUMNS + START];
+            final int spanEnd = data[i * COLUMNS + END];
 
-            if (st > start && st < limit && (type == Object.class || type.isInstance(spans[i])))
-                limit = st;
-            if (en > start && en < limit && (type == Object.class || type.isInstance(spans[i])))
-                limit = en;
+            if (spanStart > start && spanStart < limit
+                    && (type == Object.class || type.isInstance(spans[i])))
+                limit = spanStart;
+            if (spanEnd > start && spanEnd < limit
+                    && (type == Object.class || type.isInstance(spans[i])))
+                limit = spanEnd;
         }
-
         return limit;
     }
 
     private void sendSpanAdded(Object span, int start, int end) {
         final SpanWatcher[] watchers = getSpans(start, end, SpanWatcher.class);
-        for (SpanWatcher spanWatcher : watchers)
-            spanWatcher.onSpanAdded((Spannable) this, span, start, end);
+        if (watchers != null) {
+            for (SpanWatcher spanWatcher : watchers) {
+                spanWatcher.onSpanAdded((Spannable) this, span, start, end);
+            }
+        }
     }
 
     private void sendSpanRemoved(Object span, int start, int end) {
         final SpanWatcher[] watchers = getSpans(start, end, SpanWatcher.class);
-        for (SpanWatcher spanWatcher : watchers)
-            spanWatcher.onSpanRemoved((Spannable) this, span, start, end);
+        if (watchers != null) {
+            for (SpanWatcher spanWatcher : watchers) {
+                spanWatcher.onSpanRemoved((Spannable) this, span, start, end);
+            }
+        }
     }
 
     private void sendSpanChanged(Object span, int s, int e, int st, int en) {
         final SpanWatcher[] watchers = getSpans(Math.min(s, st), Math.max(e, en),
                 SpanWatcher.class);
-        for (SpanWatcher spanWatcher : watchers)
-            spanWatcher.onSpanChanged((Spannable) this, span, s, e, st, en);
+        if (watchers != null) {
+            for (SpanWatcher spanWatcher : watchers) {
+                spanWatcher.onSpanChanged((Spannable) this, span, s, e, st, en);
+            }
+        }
     }
 
     @Nonnull
@@ -415,7 +430,10 @@ abstract class SpannableStringInternal implements Spanned {
             // Check span data
             final Object[] otherSpans = other.getSpans(0, other.length(), Object.class);
             final Object[] thisSpans = getSpans(0, length(), Object.class);
-            if (mSpanCount == otherSpans.length) {
+            if (thisSpans == null && otherSpans == null) {
+                return true;
+            }
+            if (thisSpans != null && otherSpans != null && mSpanCount == otherSpans.length) {
                 for (int i = 0; i < mSpanCount; ++i) {
                     final Object thisSpan = thisSpans[i];
                     final Object otherSpan = otherSpans[i];

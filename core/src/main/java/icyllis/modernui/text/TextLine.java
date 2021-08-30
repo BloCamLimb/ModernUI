@@ -19,7 +19,6 @@
 package icyllis.modernui.text;
 
 import com.ibm.icu.text.Bidi;
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.text.style.CharacterStyle;
 
@@ -49,21 +48,19 @@ public class TextLine {
 
     private Spanned mSpanned;
 
-    private final SpanSet<CharacterStyle> mCharacterStyleSpanSet = new SpanSet<>(CharacterStyle.class);
-
     public TextLine(@Nonnull CharSequence text) {
         mPaint = new TextPaint();
-        mPaint.color = ~0;
+        mPaint.setColor(~0);
         mText = text;
         mLen = text.length();
-        mMeasuredParagraph = MeasuredParagraph.buildForStaticLayout(mPaint, text, 0, mLen, TextDirectionHeuristics.FIRSTSTRONG_LTR, null);
+        mMeasuredParagraph = MeasuredParagraph.buildForStaticLayout(mPaint, text, 0, mLen,
+                TextDirectionHeuristics.FIRSTSTRONG_LTR, null);
         mDir = mMeasuredParagraph.getParagraphDir();
         mDirections = mMeasuredParagraph.getDirections(0, mLen);
         mMeasuredText = mMeasuredParagraph.getMeasuredText();
         if (text instanceof Spanned) {
             mSpanned = (Spanned) text;
         }
-        ModernUI.LOGGER.info(mMeasuredParagraph.getMemoryUsage());
     }
 
     /**
@@ -74,6 +71,8 @@ public class TextLine {
      * @param y      the baseline
      */
     public void draw(@Nonnull Canvas canvas, float x, float y) {
+        final TextPaint wp = TextPaint.obtain();
+        final SpanSet spanSet = SpanSet.obtain();
         final int runCount = mDirections.getRunCount();
         for (int runIndex = 0; runIndex < runCount; runIndex++) {
             final int runStart = mDirections.getRunStart(runIndex);
@@ -83,16 +82,16 @@ public class TextLine {
             final int runLimit = Math.min(runStart + mDirections.getRunLength(runIndex), mLen);
             final boolean runIsRtl = mDirections.isRunRtl(runIndex);
 
-            final float advance = mMeasuredText.getAdvance(runStart, runLimit);
+            final float advance = mMeasuredParagraph.getAdvance(runStart, runLimit);
             if (mDir == Bidi.DIRECTION_LEFT_TO_RIGHT == runIsRtl) {
                 if (runIsRtl) {
                     x += advance;
                 } else {
                     x -= advance;
                 }
-                drawBidiRun(runStart, runLimit, runLimit, runIsRtl, canvas, x, y);
+                drawBidiRun(canvas, x, y, runStart, runLimit, runIsRtl, wp, spanSet);
             } else {
-                drawBidiRun(runStart, runLimit, runLimit, runIsRtl, canvas, x, y);
+                drawBidiRun(canvas, x, y, runStart, runLimit, runIsRtl, wp, spanSet);
                 if (runIsRtl) {
                     x -= advance;
                 } else {
@@ -100,63 +99,55 @@ public class TextLine {
                 }
             }
         }
+        wp.recycle();
+        spanSet.recycle();
     }
 
-    private void drawBidiRun(int start, int measureLimit, int limit, boolean runIsRtl,
-                             @Nonnull Canvas canvas, float x, float y) {
-        TextPaint wp = TextPaint.obtain();
-        boolean hasStyleSpan = false;
-        if (mSpanned != null) {
-            mCharacterStyleSpanSet.init(mSpanned, mStart + start, mStart + limit);
-            hasStyleSpan = mCharacterStyleSpanSet.numberOfSpans != 0;
+    private void drawBidiRun(@Nonnull Canvas canvas, float x, float y, int start, int limit,
+                             boolean runIsRtl, @Nonnull TextPaint wp, @Nonnull SpanSet spanSet) {
+        final boolean singleRun;
+        if (mSpanned == null) {
+            singleRun = true;
+        } else {
+            spanSet.init(mSpanned, mStart + start, mStart + limit);
+            singleRun = spanSet.mSize == 0;
         }
-
-        if (!hasStyleSpan) {
+        if (singleRun) {
             // reset to base paint
             wp.set(mPaint);
             drawStyleRun(wp, start, limit, runIsRtl, canvas, x, y);
         } else {
-            for (int i = start, inext; i < measureLimit; i = inext) {
+            int runIndex = mMeasuredText.search(mStart + start);
+            assert runIndex >= 0;
+            final MeasuredText.Run[] runs = mMeasuredText.getRuns();
+            while (runIndex < runs.length) {
+                final MeasuredText.Run run = runs[runIndex++];
+                final int runStart = run.mStart;
+                final int runEnd = run.mEnd;
                 // reset to base paint
                 wp.set(mPaint);
-                MeasuredText.Run run = mMeasuredText.searchRun(i);
-                if (run != null) {
-                    inext = run.mEnd;
-                    int mlimit = Math.min(inext, measureLimit);
 
-                    /*for (int j = i, jnext; j < mlimit; j = jnext) {
-                        jnext = mCharacterStyleSpanSet.getNextTransition(mStart + j, mStart + inext) -
-                                mStart;
+                for (int k = 0; k < spanSet.mSize; k++) {
+                    // Intentionally using >= and <= as explained above
+                    if ((spanSet.mSpanStarts[k] >= runEnd) ||
+                            (spanSet.mSpanEnds[k] <= runStart)) continue;
 
-                        final int offset = Math.min(jnext, mlimit);
-                        wp.set(mPaint);
-                        for (int k = 0; k < mCharacterStyleSpanSet.numberOfSpans; k++) {
-                            // Intentionally using >= and <= as explained above
-                            if ((mCharacterStyleSpanSet.spanStarts[k] >= mStart + offset) ||
-                                    (mCharacterStyleSpanSet.spanEnds[k] <= mStart + j)) continue;
+                    final CharacterStyle span = spanSet.mSpans[k];
+                    span.updateDrawState(wp);
+                }
 
-                            final CharacterStyle span = mCharacterStyleSpanSet.spans[k];
-                            span.updateDrawState(wp);
-                        }
-                    }*/
-                    if (runIsRtl) {
-                        x -= drawStyleRun(wp, i, mlimit, true, canvas, x, y);
-                    } else {
-                        x += drawStyleRun(wp, i, mlimit, false, canvas, x, y);
-                    }
+                if (runIsRtl) {
+                    x -= drawStyleRun(wp, runStart, runEnd, true, canvas, x, y);
                 } else {
-                    break;
+                    x += drawStyleRun(wp, runStart, runEnd, false, canvas, x, y);
                 }
             }
         }
-        wp.recycle();
     }
 
     private float drawStyleRun(@Nonnull TextPaint paint, int start, int end, boolean runIsRtl,
                                @Nonnull Canvas canvas, float x, float y) {
-        if (end == start) {
-            return 0f;
-        }
+        assert start != end;
         float advance = mMeasuredText.getAdvance(start, end);
 
         final float left, right;

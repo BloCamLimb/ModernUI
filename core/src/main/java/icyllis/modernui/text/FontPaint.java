@@ -46,18 +46,25 @@ public class FontPaint {
      */
     public static final int ITALIC = Font.ITALIC;
 
+    /**
+     * Font style constant to request the bold and italic style
+     */
+    public static final int BOLD_ITALIC = BOLD | ITALIC;
+
     private static final int FONT_STYLE_MASK = REGULAR | BOLD | ITALIC;
 
     // shared pointer
-    protected Typeface mTypeface;
-    protected Locale mLocale;
-    protected int mFontStyle = REGULAR;
-    protected int mFontSize = 24;
+    Typeface mTypeface;
+    Locale mLocale;
+    int mFlags;
+    int mFontSize;
 
     public FontPaint() {
         //TODO replace with current user preference
         mTypeface = Typeface.PREFERENCE;
         mLocale = ModernUI.get().getSelectedLocale();
+        mFlags = REGULAR;
+        mFontSize = 24;
     }
 
     public FontPaint(@Nonnull FontPaint paint) {
@@ -70,7 +77,7 @@ public class FontPaint {
     public void set(@Nonnull FontPaint paint) {
         mTypeface = paint.mTypeface;
         mLocale = paint.mLocale;
-        mFontStyle = paint.mFontStyle;
+        mFlags = paint.mFlags;
         mFontSize = paint.mFontSize;
     }
 
@@ -119,7 +126,11 @@ public class FontPaint {
      * @param fontStyle the style of the font
      */
     public void setFontStyle(int fontStyle) {
-        mFontStyle = (fontStyle & ~FONT_STYLE_MASK) == 0 ? fontStyle : 0;
+        if ((fontStyle & ~FONT_STYLE_MASK) == 0) {
+            mFlags |= fontStyle;
+        } else {
+            mFlags &= ~FONT_STYLE_MASK;
+        }
     }
 
     /**
@@ -128,7 +139,7 @@ public class FontPaint {
      * @return the style of the font
      */
     public int getFontStyle() {
-        return mFontStyle;
+        return mFlags & FONT_STYLE_MASK;
     }
 
     /**
@@ -167,7 +178,7 @@ public class FontPaint {
 
         FontPaint that = (FontPaint) o;
 
-        if (mFontStyle != that.mFontStyle) return false;
+        if (mFlags != that.mFlags) return false;
         if (mFontSize != that.mFontSize) return false;
         if (!Objects.equals(mTypeface, that.mTypeface))
             return false;
@@ -178,7 +189,7 @@ public class FontPaint {
     public int hashCode() {
         int result = mTypeface != null ? mTypeface.hashCode() : 0;
         result = 31 * result + (mLocale != null ? mLocale.hashCode() : 0);
-        result = 31 * result + mFontStyle;
+        result = 31 * result + mFlags;
         result = 31 * result + mFontSize;
         return result;
     }
@@ -188,7 +199,7 @@ public class FontPaint {
         return "FontPaint{" +
                 "mTypeface=" + mTypeface +
                 ", mLocale=" + mLocale +
-                ", mFontStyle=" + mFontStyle +
+                ", mFontStyle=" + mFlags +
                 ", mFontSize=" + mFontSize +
                 '}';
     }

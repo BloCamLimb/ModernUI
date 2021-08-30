@@ -234,7 +234,7 @@ public class GlyphManager {
     public void getFontMetrics(@Nonnull Typeface typeface, @Nonnull FontPaint paint, @Nonnull FontMetricsInt fm) {
         fm.reset();
         for (Font f : typeface.getFonts()) {
-            fm.extendBy(mGraphics.getFontMetrics(f.deriveFont(paint.mFontStyle, paint.mFontSize)));
+            fm.extendBy(mGraphics.getFontMetrics(f.deriveFont(paint.getFontStyle(), paint.mFontSize)));
         }
     }
 
@@ -245,7 +245,7 @@ public class GlyphManager {
      */
     @SuppressWarnings("MagicConstant")
     public Font getFontMetrics(@Nonnull Font font, @Nonnull FontPaint paint, @Nonnull FontMetricsInt fm) {
-        font = font.deriveFont(paint.mFontStyle, paint.mFontSize);
+        font = font.deriveFont(paint.getFontStyle(), paint.mFontSize);
         fm.extendBy(mGraphics.getFontMetrics(font));
         return font;
     }

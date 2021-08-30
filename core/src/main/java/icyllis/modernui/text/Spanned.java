@@ -35,6 +35,7 @@
 package icyllis.modernui.text;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * This is the interface for text that has markup objects attached to
@@ -95,9 +96,9 @@ public interface Spanned extends CharSequence {
      * @param end   end char index of the slice
      * @param type  markup type
      * @param <T>   markup type
-     * @return an array of the markup objects
+     * @return an array of the markup objects, or null if nothing found
      */
-    @Nonnull
+    @Nullable
     <T> T[] getSpans(int start, int end, @Nonnull Class<T> type);
 
     /**
