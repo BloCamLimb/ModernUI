@@ -99,9 +99,6 @@ public class MeasuredParagraph {
     private MeasuredText mMeasuredText;
 
     @Nonnull
-    private final TextPaint mCachedPaint = new TextPaint();
-
-    @Nonnull
     private final FontMetricsInt mCachedFm = new FontMetricsInt();
 
     private MeasuredParagraph() {
@@ -126,6 +123,21 @@ public class MeasuredParagraph {
         mSpanEndCache.clear();
         mFontMetrics.clear();
         mMeasuredText = null;
+    }
+
+    /**
+     * Returns the start offset of the paragraph to the original text.
+     */
+    public int getTextStart() {
+        return mTextStart;
+    }
+
+    /**
+     * Returns the length of the paragraph. This will be the same value
+     * as the length of {@link #getChars()}.
+     */
+    public int getTextLength() {
+        return mCopiedBuffer.length;
     }
 
     /**
@@ -404,7 +416,7 @@ public class MeasuredParagraph {
      * @return measured text
      */
     @Nonnull
-    public static MeasuredParagraph buildForStaticLayout(@Nonnull TextPaint paint, @Nonnull CharSequence text,
+    public static MeasuredParagraph buildForStaticLayout(@Nonnull FontPaint paint, @Nonnull CharSequence text,
                                                          int start, int end, @Nonnull TextDirectionHeuristic dir,
                                                          @Nullable MeasuredParagraph recycle) {
         if ((start | end | end - start | text.length() - end) < 0) {
@@ -496,10 +508,11 @@ public class MeasuredParagraph {
         }
     }
 
-    private void applyMetricsAffectingSpan(@Nonnull TextPaint paint, @Nullable MetricAffectingSpan[] spans,
+    private void applyMetricsAffectingSpan(@Nonnull FontPaint paint, @Nullable MetricAffectingSpan[] spans,
                                            int start, int end, @Nonnull MeasuredText.Builder builder) {
         assert start != end;
-        mCachedPaint.set(paint);
+        TextPaint tp = TextPaint.obtain();
+        tp.set(paint);
 
         ReplacementSpan replacement = null;
         if (spans != null) {
@@ -508,20 +521,20 @@ public class MeasuredParagraph {
                     // The last ReplacementSpan is effective for backward compatibility reasons.
                     replacement = (ReplacementSpan) span;
                 } else {
-                    span.updateMeasureState(mCachedPaint);
+                    span.updateMeasureState(tp);
                 }
             }
         }
 
-        mCachedPaint.getFontMetrics(mCachedFm);
+        GlyphManager.getInstance().getFontMetrics(tp, mCachedFm);
 
         if (replacement != null) {
             //TODO get replacement width
-            builder.addReplacementRun(mCachedPaint, end - start, 0);
+            builder.addReplacementRun(tp, end - start, 0);
         } else {
             assert mSpanned != null;
             final int offset = mTextStart;
-            final FontPaint base = mCachedPaint.toBase();
+            final FontPaint base = tp.toBase();
             int spanEnd;
             for (int spanStart = start; spanStart < end; spanStart = spanEnd) {
                 spanEnd = mSpanned.nextSpanTransition(spanStart, end, CharacterStyle.class);
@@ -531,6 +544,7 @@ public class MeasuredParagraph {
 
         mFontMetrics.add(mCachedFm.mAscent);
         mFontMetrics.add(mCachedFm.mDescent);
+        tp.recycle();
     }
 
     private void applyStyleRun(@Nonnull FontPaint paint, int start, int end,
@@ -575,7 +589,7 @@ public class MeasuredParagraph {
         return MathUtil.roundUp(12 + 8 + 4 + 8 + (mCopiedBuffer == null ?
                 0 : 16 + (mCopiedBuffer.length << 1)) + 4 + (mLevels == null ?
                 0 : 16 + mLevels.length) + 16 + (mSpanEndCache.size() << 2) +
-                16 + (mFontMetrics.size() << 2) + 8 + 8 + 8, 8) +
+                16 + (mFontMetrics.size() << 2) + 8, 8) +
                 (mMeasuredText == null ? 0 : mMeasuredText.getMemoryUsage());
     }
 }

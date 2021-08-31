@@ -209,15 +209,6 @@ public class TextPaint extends FontPaint {
     }
 
     /**
-     * Calculate font metrics in pixels
-     *
-     * @param fm a FontMetrics to store the result
-     */
-    public void getFontMetrics(FontMetricsInt fm) {
-        GlyphManager.getInstance().getFontMetrics(mTypeface, this, fm);
-    }
-
-    /**
      * Recycle this text paint, this object cannot be used anymore after recycling.
      */
     public void recycle() {

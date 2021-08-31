@@ -297,15 +297,15 @@ public class StaticLayout extends TextLayout {
         LineBreaker.ParagraphConstraints constraints =
                 new LineBreaker.ParagraphConstraints();
 
-        PrecomputedText.ParagraphInfo[] paragraphInfo;
+        MeasuredParagraph[] paragraphs;
         final Spanned spanned = (source instanceof Spanned) ? (Spanned) source : null;
 
-        paragraphInfo = PrecomputedText.createMeasuredParagraphs(paint, source, bufStart, bufEnd, textDir);
+        paragraphs = PrecomputedText.createMeasuredParagraphs(paint, source, bufStart, bufEnd, textDir);
 
-        for (int paraIndex = 0, paraStart = 0, paraEnd;
-             paraIndex < paragraphInfo.length;
+        for (int paraIndex = 0, paraStart = 0, paraEnd = 0;
+             paraIndex < paragraphs.length;
              paraIndex++, paraStart = paraEnd) {
-            paraEnd = paragraphInfo[paraIndex].paragraphEnd;
+            paraEnd += paragraphs[paraIndex].getTextLength();
 
             int firstWidth = outerWidth;
             int restWidth = outerWidth;
@@ -314,7 +314,7 @@ public class StaticLayout extends TextLayout {
 
             }
 
-            final MeasuredParagraph measuredPara = paragraphInfo[paraIndex].measured;
+            final MeasuredParagraph measuredPara = paragraphs[paraIndex];
             final int[] spanEndCache = measuredPara.getSpanEndCache().elements();
             final int[] fmCache = measuredPara.getFontMetrics().elements();
 

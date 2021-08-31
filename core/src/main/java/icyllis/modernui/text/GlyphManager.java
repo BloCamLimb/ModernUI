@@ -231,9 +231,9 @@ public class GlyphManager {
      * lower 32 bits are descent.
      */
     @SuppressWarnings("MagicConstant")
-    public void getFontMetrics(@Nonnull Typeface typeface, @Nonnull FontPaint paint, @Nonnull FontMetricsInt fm) {
+    public void getFontMetrics(@Nonnull FontPaint paint, @Nonnull FontMetricsInt fm) {
         fm.reset();
-        for (Font f : typeface.getFonts()) {
+        for (Font f : paint.mTypeface.getFonts()) {
             fm.extendBy(mGraphics.getFontMetrics(f.deriveFont(paint.getFontStyle(), paint.mFontSize)));
         }
     }
