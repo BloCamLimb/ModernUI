@@ -34,6 +34,7 @@
 
 package icyllis.modernui.text.style;
 
+import icyllis.modernui.text.FontPaint;
 import icyllis.modernui.text.TextPaint;
 
 import javax.annotation.Nonnull;
@@ -53,9 +54,9 @@ public abstract class MetricAffectingSpan extends CharacterStyle implements Upda
      * Classes that extend MetricAffectingSpan implement this method to update the text formatting
      * in a way that can change the width or height of characters.
      *
-     * @param paint the paint used for drawing the text
+     * @param paint the paint used for measuring the text
      */
-    public abstract void updateMeasureState(@Nonnull TextPaint paint);
+    public abstract void updateMeasureState(@Nonnull FontPaint paint);
 
     /**
      * Returns "this" for most MetricAffectingSpans, but for
@@ -88,9 +89,10 @@ public abstract class MetricAffectingSpan extends CharacterStyle implements Upda
 
         /**
          * Passes updateMeasureState through to the underlying MetricAffectingSpan.
+         * @param paint
          */
         @Override
-        public void updateMeasureState(@Nonnull TextPaint paint) {
+        public void updateMeasureState(@Nonnull FontPaint paint) {
             mStyle.updateMeasureState(paint);
         }
 

@@ -19,7 +19,6 @@
 package icyllis.modernui.text.style;
 
 import icyllis.modernui.text.FontPaint;
-import icyllis.modernui.text.TextPaint;
 
 import javax.annotation.Nonnull;
 
@@ -40,11 +39,11 @@ public class StyleSpan extends MetricAffectingSpan {
      * Creates a {@link StyleSpan} from a style.
      *
      * @param style An integer constant describing the style for this span. Examples
-     *              include bold, italic, and normal. Values are constants defined
+     *              include bold, italic, and regular. Values are constants defined
      *              in {@link FontPaint}.
      */
     public StyleSpan(int style) {
-        mStyle = style;
+        mStyle = (style & ~FontPaint.FONT_STYLE_MASK) == 0 ? style : FontPaint.REGULAR;
     }
 
     /**
@@ -55,7 +54,7 @@ public class StyleSpan extends MetricAffectingSpan {
     }
 
     @Override
-    public void updateMeasureState(@Nonnull TextPaint paint) {
+    public void updateMeasureState(@Nonnull FontPaint paint) {
         paint.setFontStyle(paint.getFontStyle() | mStyle);
     }
 }

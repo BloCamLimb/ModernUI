@@ -51,7 +51,7 @@ public class FontPaint {
      */
     public static final int BOLD_ITALIC = BOLD | ITALIC;
 
-    private static final int FONT_STYLE_MASK = REGULAR | BOLD | ITALIC;
+    public static final int FONT_STYLE_MASK = REGULAR | BOLD | ITALIC;
 
     // shared pointer
     Typeface mTypeface;
