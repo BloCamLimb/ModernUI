@@ -24,6 +24,8 @@ import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.ast.Node;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.audio.AudioManager;
+import icyllis.modernui.audio.OggDecoder;
+import icyllis.modernui.audio.Track;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
@@ -47,6 +49,7 @@ import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -102,11 +105,14 @@ public class TestMain {
         88 89 90 91 92 93 94 95 96 4096x
      */
 
-    public static SpectrumGraph graph = null;
+    public static SpectrumGraph sGraph;
+    public static Track sTrack;
 
     static {
+        AudioManager.getInstance().initialize();
         try {
-            graph = new SpectrumGraph();
+            sGraph = new SpectrumGraph();
+            sTrack = new Track(sGraph.mWaveDecoder);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -140,6 +146,36 @@ public class TestMain {
         GRAPHICS.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         GRAPHICS.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
         GRAPHICS.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        try (OggDecoder decoder = new OggDecoder(FileChannel.open(Path.of("F:", "9.ogg")))) {
+            decoder.decodeFrame();
+            decoder.decodeFrame();
+            decoder.decodeFrame();
+            decoder.decodeFrame();
+            decoder.decodeFrame();
+            decoder.decodeFrame();
+            decoder.decodeFrame();
+            decoder.decodeFrame();
+            decoder.decodeFrame();
+            decoder.decodeFrame();
+            decoder.decodeFrame();
+            decoder.decodeFrame();
+            decoder.decodeFrame();
+            decoder.decodeFrame();
+            decoder.decodeFrame();
+            decoder.decodeFrame();
+            decoder.decodeFrame();
+            decoder.decodeFrame();
+            decoder.decodeFrame();
+            decoder.decodeFrame();
+            decoder.decodeFrame();
+            decoder.decodeFrame();
+            decoder.decodeFrame();
+            decoder.decodeFrame();
+            decoder.decodeFrame();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         /*float[] av = new float[]{1, 3, 2, 4.1f, 6, 0, 6, 0.5f, 5, 7, 11.3f, 9, 9.1f, 15, 8, 10};
         float[] bv = new float[]{9.1f, 2, 7, 5, 3.3f, 6.1f, 5.5f, 4, 0, 8, 3, 1, 2.7f, 3, 9, 2};
@@ -230,8 +266,6 @@ public class TestMain {
             }
             Thread renderThread = new Thread(TestMain::runRenderThread, "Render-Thread");
             renderThread.start();
-            Thread soundThread = new Thread(TestMain::runSoundThread, "Sound-Thread");
-            soundThread.start();
 
             /*new Thread(() -> {
                 // convert to png format with alpha channel
@@ -248,11 +282,11 @@ public class TestMain {
                 glfwWaitEventsTimeout(1 / 288D);
             }
             renderThread.interrupt();
-            soundThread.interrupt();
         } finally {
             if (sWindow != null) {
                 sWindow.close();
             }
+            AudioManager.getInstance().close();
             Stream.of(glfwSetMonitorCallback(null),
                     glfwSetErrorCallback(null))
                     .filter(Objects::nonNull)
@@ -337,6 +371,8 @@ public class TestMain {
 
         long lastTime = RenderCore.timeMillis();
 
+        sTrack.play();
+
         while (!window.shouldClose()) {
             long time = RenderCore.timeMillis();
             long delta = time - lastTime;
@@ -387,12 +423,12 @@ public class TestMain {
                 canvas.drawTextRun(tcc, 0, tcc.length(), 730, 170, false, paint1);
                 tcc = "আমি আজ সকালের নাস্তা খাব না";
                 canvas.drawTextRun(tcc, 0, tcc.length(), 660, 240, false, paint1);*/
-                float playTime = AudioManager.getInstance().getTime();
+                float playTime = sTrack.getTime();
 
-                graph.update((long) (playTime * 1000L) + 16, delta);
-                graph.draw(canvas, 800, 450);
+                sGraph.update((long) (playTime * 1000L) + 16, delta);
+                sGraph.draw(canvas, 800, 450);
 
-                String tcc = String.format("%d / %d", (int) playTime, graph.mSongLength / 1000);
+                String tcc = String.format("%d / %d", (int) playTime, sGraph.mSongLength / 1000);
                 canvas.drawTextRun(tcc, 0, tcc.length(), 760, 456, false, paint1);
                 //canvas.rotate(-30);
 
@@ -404,7 +440,7 @@ public class TestMain {
                 paint.setStrokeWidth(8);
                 paint.setRGBA(255, 255, 255, 192);
                 canvas.drawArc(800, 450, 100, -90,
-                        360 * (playTime * 1000f / graph.mSongLength), paint);
+                        360 * (playTime * 1000f / sGraph.mSongLength), paint);
 
                 // render thread, wait UI thread
                 canvas.render();
@@ -417,19 +453,6 @@ public class TestMain {
                 // waiting for interruption
             }
         }
-    }
-
-    private static void runSoundThread() {
-        AudioManager audioManager = AudioManager.getInstance();
-        audioManager.init();
-        audioManager.play(graph.mWaveDecoder);
-        while (!sWindow.shouldClose()) {
-            try {
-                Thread.currentThread().join(1000);
-            } catch (InterruptedException ignored) {
-            }
-        }
-        audioManager.close();
     }
 
     private static void drawOsuScore(Canvas canvas) {

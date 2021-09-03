@@ -25,7 +25,6 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.AnimationHandler;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.annotation.UiThread;
-import icyllis.modernui.audio.AudioManager;
 import icyllis.modernui.forge.ModernUIForge;
 import icyllis.modernui.graphics.Framebuffer;
 import icyllis.modernui.graphics.GLCanvas;
@@ -454,7 +453,11 @@ public final class UIManager implements ViewRootImpl.Handler {
                 break;
 
             case GLFW_KEY_H:
-                AudioManager.getInstance().play(TestMain.graph.mWaveDecoder);
+                TestMain.sTrack.play();
+                break;
+
+            case GLFW_KEY_J:
+                TestMain.sTrack.pause();
                 break;
 
             case GLFW_KEY_G:
@@ -463,7 +466,8 @@ public final class UIManager implements ViewRootImpl.Handler {
                     openGui(new TestPauseUI());
                 }
                 /*minecraft.getLanguageManager().getLanguages().forEach(l ->
-                        ModernUI.LOGGER.info(MARKER, "Locale {} RTL {}", l.getCode(), ULocale.forLocale(l.getJavaLocale()).isRightToLeft()));*/
+                        ModernUI.LOGGER.info(MARKER, "Locale {} RTL {}", l.getCode(), ULocale.forLocale(l
+                        .getJavaLocale()).isRightToLeft()));*/
                 break;
 
             case GLFW_KEY_P:
@@ -585,10 +589,14 @@ public final class UIManager implements ViewRootImpl.Handler {
                 return;
             }
             final Window window = minecraft.getWindow();
-            double cursorX = minecraft.mouseHandler.xpos() * (double) window.getGuiScaledWidth() / (double) window.getScreenWidth();
-            double cursorY = minecraft.mouseHandler.ypos() * (double) window.getGuiScaledHeight() / (double) window.getScreenHeight();
-            TestHUD.sInstance.drawTooltip(mFCanvas, event.getLines(), (ModernFontRenderer) minecraft.font, event.getStack(),
-                    event.getMatrixStack(), event.getX(), event.getY(), (float) cursorX, (float) cursorY, event.getScreenWidth(), event.getScreenHeight());
+            double cursorX = minecraft.mouseHandler.xpos() * (double) window.getGuiScaledWidth() / (double) window
+            .getScreenWidth();
+            double cursorY = minecraft.mouseHandler.ypos() * (double) window.getGuiScaledHeight() / (double) window
+            .getScreenHeight();
+            TestHUD.sInstance.drawTooltip(mFCanvas, event.getLines(), (ModernFontRenderer) minecraft.font, event
+            .getStack(),
+                    event.getMatrixStack(), event.getX(), event.getY(), (float) cursorX, (float) cursorY, event
+                    .getScreenWidth(), event.getScreenHeight());
             event.setCanceled(true);
         }*/
     }
@@ -667,7 +675,8 @@ public final class UIManager implements ViewRootImpl.Handler {
     //private long mLastLayoutTime = 0;
 
     // registered menu screens
-    //private final Map<ContainerType<?>, Function<? extends Container, ApplicationUI>> mScreenRegistry = new HashMap<>();
+    //private final Map<ContainerType<?>, Function<? extends Container, ApplicationUI>> mScreenRegistry = new
+    // HashMap<>();
 
     // the most child hovered view, render at the top of other hovered ancestor views
     /*@Nullable
@@ -789,7 +798,8 @@ public final class UIManager implements ViewRootImpl.Handler {
             return;
         }*//*
      *//*if (this.popup != null) {
-            ModernUI.LOGGER.warn(MARKER, "#openPopup() shouldn't be called when there's already a popup, the previous one has been overwritten");
+            ModernUI.LOGGER.warn(MARKER, "#openPopup() shouldn't be called when there's already a popup, the previous
+             one has been overwritten");
         }
         if (refresh) {
             this.screenMouseMove(-1, -1);

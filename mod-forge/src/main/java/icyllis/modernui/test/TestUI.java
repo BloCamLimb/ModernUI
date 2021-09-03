@@ -19,7 +19,6 @@
 package icyllis.modernui.test;
 
 import icyllis.modernui.animation.AnimationHandler;
-import icyllis.modernui.audio.AudioManager;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
@@ -55,12 +54,12 @@ public class TestUI extends ScreenCallback {
                 paint.setRGBA(8, 8, 8, 80);
                 canvas.drawRoundRect(b.left, b.top, b.right, b.bottom, 8, paint);
 
-                SpectrumGraph graph = TestMain.graph;
+                SpectrumGraph graph = TestMain.sGraph;
                 long time = AnimationHandler.currentTimeMillis();
                 long delta = time - lastTime;
                 lastTime = time;
                 if (graph != null) {
-                    float playTime = AudioManager.getInstance().getTime();
+                    float playTime = TestMain.sTrack.getTime();
                     graph.update((long) (playTime * 1000L) + 16, delta);
                     graph.draw(canvas, getBounds().centerX(), getBounds().centerY());
                     invalidateSelf();
