@@ -18,6 +18,10 @@
 
 package icyllis.modernui.audio;
 
+import javax.annotation.Nullable;
+import java.io.IOException;
+import java.nio.FloatBuffer;
+
 /**
  * Sampled sound provides uncompressed PCM audio samples decoded from an
  * {@link java.io.InputStream InputStream} or a {@link java.nio.channels.FileChannel FileChannel}.
@@ -26,4 +30,36 @@ public abstract class SampledSound implements AutoCloseable {
 
     protected int mSampleRate;
     protected int mChannels;
+    protected int mTotalSamples;
+    protected int mOffset;
+
+    public int getSampleRate() {
+        return mSampleRate;
+    }
+
+    public int getChannels() {
+        return mChannels;
+    }
+
+    public int getOffset() {
+        return mOffset;
+    }
+
+    public float getSecOffset() {
+        return (float) mOffset / mSampleRate;
+    }
+
+    public int getTotalSamples() {
+        return mTotalSamples;
+    }
+
+    public float getLength() {
+        return (float) mTotalSamples / mSampleRate;
+    }
+
+    @Nullable
+    public abstract FloatBuffer decodeFrame(@Nullable FloatBuffer output) throws IOException;
+
+    @Override
+    public abstract void close() throws IOException;
 }

@@ -18,7 +18,6 @@
 
 package icyllis.modernui.audio;
 
-import icyllis.modernui.ModernUI;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.stb.STBVorbis;
 import org.lwjgl.stb.STBVorbisInfo;
@@ -26,8 +25,11 @@ import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
 
@@ -37,6 +39,7 @@ public class OggDecoder extends SampledSound {
 
     private final FileChannel mChannel;
     private ByteBuffer mBuffer;
+
     private long mDecoder;
 
     public OggDecoder(@Nonnull FileChannel channel) throws IOException {
@@ -71,6 +74,18 @@ public class OggDecoder extends SampledSound {
                 throw new IOException("Not 1 or 2 channels but " + channels);
             }
             mChannels = channels;
+
+            ByteBuffer temp = stack.malloc(14);
+            temp.order(ByteOrder.LITTLE_ENDIAN);
+            // consider EOF
+            for (int i = 1 + 14; i < 4000; i += 2) {
+                channel.read(temp.clear(), channel.size() - i);
+                // 'OggS' magic
+                if (temp.getInt(0) == 0x5367674f) {
+                    mTotalSamples = temp.getInt(6);
+                    break;
+                }
+            }
         }
     }
 
@@ -112,7 +127,9 @@ public class OggDecoder extends SampledSound {
         }
     }
 
-    public void decodeFrame() throws IOException {
+    @Override
+    @Nullable
+    public FloatBuffer decodeFrame(@Nullable FloatBuffer output) throws IOException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             final PointerBuffer samples = stack.mallocPointer(1);
             final IntBuffer count = stack.mallocInt(1);
@@ -122,13 +139,33 @@ public class OggDecoder extends SampledSound {
                 if (used == 0) {
                     forward();
                     if (read()) {
-                        return;
+                        return null;
                     }
-                } else if (count.get(0) > 0) {
-                    int off = STBVorbis.stb_vorbis_get_sample_offset(mDecoder);
-                    ModernUI.LOGGER.info("Decode frame, used: {}, samples: {}, offset: {}, {}",
-                            used, count.get(), off, mBuffer);
-                    return;
+                } else if ((used = count.get(0)) > 0) {
+                    mOffset = STBVorbis.stb_vorbis_get_sample_offset(mDecoder);
+                    PointerBuffer data = samples.getPointerBuffer(mChannels);
+                    if (mChannels == 1) {
+                        FloatBuffer src = data.getFloatBuffer(0, used);
+                        while (src.hasRemaining()) {
+                            if (output == null || !output.hasRemaining()) {
+                                output = MemoryUtil.memRealloc(output, output == null ? 256 :
+                                        output.capacity() + 256);
+                            }
+                            output.put(src.get());
+                        }
+                    } else if (mChannels == 2) {
+                        FloatBuffer src = data.getFloatBuffer(0, used);
+                        FloatBuffer src2 = data.getFloatBuffer(1, used);
+                        while (src.hasRemaining()) {
+                            if (output == null || output.remaining() < 2) {
+                                output = MemoryUtil.memRealloc(output, output == null ? 256 :
+                                        output.capacity() + 256);
+                            }
+                            output.put(src.get())
+                                    .put(src2.get());
+                        }
+                    }
+                    return output;
                 }
             }
         }

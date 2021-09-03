@@ -26,8 +26,11 @@ import org.lwjgl.openal.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -50,6 +53,8 @@ public class AudioManager implements AutoCloseable {
             Executors.newSingleThreadScheduledExecutor(this::createThread);
 
     private final List<String> mDeviceList = new ArrayList<>();
+
+    private final Set<Track> mTracks = new HashSet<>();
 
     private boolean mInitialized;
     private int mTimer;
@@ -99,6 +104,12 @@ public class AudioManager implements AutoCloseable {
                 if (context != NULL) {
                     ALCCapabilities alcCapabilities = ALC.createCapabilities(device);
                     ALCapabilities alCapabilities = AL.createCapabilities(alcCapabilities);
+                    if (!alcCapabilities.OpenALC11) {
+                        ModernUI.LOGGER.fatal(MARKER, "OpenAL 1.1 is not supported");
+                    }
+                    if (!alCapabilities.AL_EXT_FLOAT32) {
+                        ModernUI.LOGGER.fatal(MARKER, "EXTFloat32 is not supported");
+                    }
                     if (alCapabilities.AL_EXT_source_distance_model) {
                         alEnable(EXTSourceDistanceModel.AL_SOURCE_DISTANCE_MODEL);
                     }
@@ -123,6 +134,7 @@ public class AudioManager implements AutoCloseable {
                 ModernUI.LOGGER.info(MARKER, "Device list changed");
             }
         }
+        mTracks.forEach(Track::tick);
         mTimer = timer;
     }
 
@@ -138,9 +150,20 @@ public class AudioManager implements AutoCloseable {
         }
     }
 
+    public void addTrack(@Nonnull Track track) {
+        mTracks.add(track);
+    }
+
     @Override
     public void close() {
         mExecutorService.shutdown();
+        for (Track track : mTracks) {
+            try {
+                track.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
         destroy();
     }
 }
