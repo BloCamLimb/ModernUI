@@ -18,21 +18,28 @@
 
 package icyllis.modernui.audio;
 
+import org.lwjgl.openal.EXTFloat32;
+import org.lwjgl.system.MemoryUtil;
+
 import javax.annotation.Nonnull;
+import java.io.IOException;
+import java.nio.FloatBuffer;
 
 import static org.lwjgl.openal.AL11.*;
 
 public class Track implements AutoCloseable {
 
     private int mSource;
-    private int mBuffer;
 
-    public Track(@Nonnull WaveDecoder waveDecoder) {
+    private SampledSound mSound;
+    private int mBaseOffset;
+
+    public Track(@Nonnull SampledSound sound) {
         mSource = alGenSources();
-        mBuffer = alGenBuffers();
-        alBufferData(mBuffer, AL_FORMAT_STEREO16, waveDecoder.mData, waveDecoder.mSampleRate);
-        alSourcei(mSource, AL_BUFFER, mBuffer);
+        mSound = sound;
         alSourcef(mSource, AL_GAIN, 0.75f);
+        forward(2);
+        AudioManager.getInstance().addTrack(this);
     }
 
     public void play() {
@@ -51,15 +58,64 @@ public class Track implements AutoCloseable {
         if (mSource == 0) {
             return 0;
         }
-        return alGetSourcef(mSource, AL_SEC_OFFSET);
+        return ((float) mBaseOffset / mSound.getSampleRate()) + alGetSourcef(mSource, AL_SEC_OFFSET);
+    }
+
+    public float getLength() {
+        return mSound.getLength();
+    }
+
+    public void tick() {
+        forward(releaseUsedBuffers());
+    }
+
+    private void forward(int count) {
+        FloatBuffer buffer = null;
+        try {
+            int samplesPerSeconds = mSound.getChannels() * mSound.getSampleRate();
+            for (int i = 0; i < count; i++) {
+                if (buffer != null) {
+                    buffer.position(0);
+                }
+                int offset = mSound.getOffset();
+                while (buffer == null || buffer.position() < samplesPerSeconds) {
+                    buffer = mSound.decodeFrame(buffer);
+                    if (buffer == null) {
+                        break;
+                    }
+                }
+                if (buffer != null) {
+                    buffer.flip();
+                    int buf = alGenBuffers();
+                    alBufferData(buf, mSound.getChannels() == 1 ? EXTFloat32.AL_FORMAT_MONO_FLOAT32 :
+                                    EXTFloat32.AL_FORMAT_STEREO_FLOAT32, buffer,
+                            mSound.getSampleRate());
+                    alSourceQueueBuffers(mSource, buf);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            MemoryUtil.memFree(buffer);
+        }
+    }
+
+    private int releaseUsedBuffers() {
+        int count = alGetSourcei(mSource, AL_BUFFERS_PROCESSED);
+        for (int i = 0; i < count; i++) {
+            int buf = alSourceUnqueueBuffers(mSource);
+            mBaseOffset += alGetBufferi(buf, AL_SIZE) / 4 / mSound.mChannels;
+            alDeleteBuffers(buf);
+        }
+        return count;
     }
 
     @Override
-    public void close() {
+    public void close() throws IOException {
         if (mSource != 0) {
-            alDeleteBuffers(mBuffer);
             alDeleteBuffers(mSource);
             mSource = 0;
         }
+        mSound.close();
     }
 }

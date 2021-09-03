@@ -1095,10 +1095,9 @@ public final class GLCanvas extends Canvas {
             float cos = MathUtil.cos(-ang);
             float left = (startX - cx) * cos - (startY - cy) * sin + cx;
             float right = (stopX - cx) * cos - (stopY - cy) * sin + cx;
-            if (quickReject(left - t, cy - t, right + t, cy + t)) {
-                return;
+            if (!quickReject(left - t, cy - t, right + t, cy + t)) {
+                addRoundRectFill(left - t, cy - t, right + t, cy + t, t, 0, paint);
             }
-            addRoundRectFill(left - t, cy - t, right + t, cy + t, t, 0, paint);
             restore();
         }
     }
