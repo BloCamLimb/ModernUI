@@ -18,5 +18,48 @@
 
 package icyllis.modernui.audio;
 
-public class Track {
+import javax.annotation.Nonnull;
+
+import static org.lwjgl.openal.AL11.*;
+
+public class Track implements AutoCloseable {
+
+    private int mSource;
+    private int mBuffer;
+
+    public Track(@Nonnull WaveDecoder waveDecoder) {
+        mSource = alGenSources();
+        mBuffer = alGenBuffers();
+        alBufferData(mBuffer, AL_FORMAT_STEREO16, waveDecoder.mData, waveDecoder.mSampleRate);
+        alSourcei(mSource, AL_BUFFER, mBuffer);
+        alSourcef(mSource, AL_GAIN, 0.75f);
+    }
+
+    public void play() {
+        if (mSource != 0) {
+            alSourcePlay(mSource);
+        }
+    }
+
+    public void pause() {
+        if (mSource != 0) {
+            alSourcePause(mSource);
+        }
+    }
+
+    public float getTime() {
+        if (mSource == 0) {
+            return 0;
+        }
+        return alGetSourcef(mSource, AL_SEC_OFFSET);
+    }
+
+    @Override
+    public void close() {
+        if (mSource != 0) {
+            alDeleteBuffers(mBuffer);
+            alDeleteBuffers(mSource);
+            mSource = 0;
+        }
+    }
 }

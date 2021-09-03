@@ -18,20 +18,41 @@
 
 package icyllis.modernui.audio;
 
+import icyllis.modernui.ModernUI;
+import icyllis.modernui.annotation.MainThread;
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.openal.*;
-import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import static org.lwjgl.openal.AL11.alEnable;
+import static org.lwjgl.openal.ALC11.*;
+import static org.lwjgl.system.MemoryUtil.NULL;
 
 //TODO WIP
-public class AudioManager {
+public class AudioManager implements AutoCloseable {
+
+    public static final Marker MARKER = MarkerManager.getMarker("Audio");
+
+    // 1, 2, 4, 5, 8, 10, 20, 25, 40, 50, 100, 125, 200, 250 milliseconds
+    public static final int TICK_PERIOD = 20;
 
     private static final AudioManager sInstance = new AudioManager();
 
-    private long mDevice;
-    private long mContext;
+    private final ScheduledExecutorService mExecutorService =
+            Executors.newSingleThreadScheduledExecutor(this::createThread);
 
-    private int mSource;
+    private final List<String> mDeviceList = new ArrayList<>();
+
+    private boolean mInitialized;
+    private int mTimer;
 
     private AudioManager() {
     }
@@ -41,44 +62,85 @@ public class AudioManager {
      *
      * @return the global instance
      */
+    @Nonnull
     public static AudioManager getInstance() {
         return sInstance;
     }
 
-    public void init() {
-        if (ALC10.alcGetCurrentContext() == 0) {
-            mDevice = ALC10.nalcOpenDevice(MemoryUtil.NULL);
-            ALCCapabilities alcCapabilities = ALC.createCapabilities(mDevice);
-            mContext = ALC10.nalcCreateContext(mDevice, MemoryUtil.NULL);
-            ALC10.alcMakeContextCurrent(mContext);
-            ALCapabilities alCapabilities = AL.createCapabilities(alcCapabilities);
-            if (alCapabilities.AL_EXT_source_distance_model) {
-                AL10.alEnable(EXTSourceDistanceModel.AL_SOURCE_DISTANCE_MODEL);
+    @Nonnull
+    private Thread createThread(Runnable target) {
+        Thread t = new Thread(target, "Audio-Thread");
+        if (t.isDaemon())
+            t.setDaemon(false);
+        return t;
+    }
+
+    @MainThread
+    public synchronized void initialize() {
+        if (mInitialized) {
+            return;
+        }
+        setDevice(null);
+        List<String> devices = ALUtil.getStringList(NULL, ALC_ALL_DEVICES_SPECIFIER);
+        if (devices != null) {
+            mDeviceList.addAll(devices);
+        }
+        mExecutorService.scheduleAtFixedRate(this::tick, 0, TICK_PERIOD, TimeUnit.MILLISECONDS);
+        mInitialized = true;
+    }
+
+    public void setDevice(@Nullable String name) {
+        long context = alcGetCurrentContext();
+        if (context == NULL) {
+            long device = alcOpenDevice(name);
+            if (device != NULL) {
+                context = nalcCreateContext(device, NULL);
+                alcMakeContextCurrent(context); // if null, make no context
+                if (context != NULL) {
+                    ALCCapabilities alcCapabilities = ALC.createCapabilities(device);
+                    ALCapabilities alCapabilities = AL.createCapabilities(alcCapabilities);
+                    if (alCapabilities.AL_EXT_source_distance_model) {
+                        alEnable(EXTSourceDistanceModel.AL_SOURCE_DISTANCE_MODEL);
+                    }
+                }
+            } else {
+                ModernUI.LOGGER.info(MARKER, "No suitable audio device was found");
             }
         }
     }
 
-    public void play(@Nonnull WaveDecoder waveDecoder) {
-        mSource = AL10.alGenSources();
-        int mBuffer = AL10.alGenBuffers();
-        AL10.alBufferData(mBuffer, AL10.AL_FORMAT_STEREO16, waveDecoder.mData, waveDecoder.mSampleRate);
-        AL10.alSourcei(mSource, AL10.AL_BUFFER, mBuffer);
-        AL10.alSourcef(mSource, AL10.AL_GAIN, 0.75f);
-        AL10.alSourcePlay(mSource);
-    }
-
-    public float getTime() {
-        if (mSource == 0) {
-            return 0;
+    private void tick() {
+        int timer = (mTimer + 1) & 0x3f;
+        if (timer == 0) {
+            List<String> devices = ALUtil.getStringList(NULL, ALC_ALL_DEVICES_SPECIFIER);
+            if (!mDeviceList.equals(devices)) {
+                mDeviceList.clear();
+                if (devices != null) {
+                    mDeviceList.addAll(devices);
+                }
+                destroy();
+                setDevice(null);
+                ModernUI.LOGGER.info(MARKER, "Device list changed");
+            }
         }
-        return AL11.alGetSourcef(mSource, AL11.AL_SEC_OFFSET);
+        mTimer = timer;
     }
 
+    public void destroy() {
+        long context = alcGetCurrentContext();
+        if (context != NULL) {
+            long device = alcGetContextsDevice(context);
+            alcMakeContextCurrent(NULL);
+            alcDestroyContext(context);
+            if (device != 0) {
+                alcCloseDevice(device);
+            }
+        }
+    }
+
+    @Override
     public void close() {
-        ALC11.alcDestroyContext(mContext);
-        if (mDevice != 0) {
-            ALC11.alcCloseDevice(mDevice);
-            mDevice = 0;
-        }
+        mExecutorService.shutdown();
+        destroy();
     }
 }
