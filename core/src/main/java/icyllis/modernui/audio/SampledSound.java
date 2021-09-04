@@ -37,22 +37,38 @@ public abstract class SampledSound implements AutoCloseable {
         return mSampleRate;
     }
 
+    /**
+     * Get numbers of channels, either 1 or 2.
+     *
+     * @return numbers of channels
+     */
     public int getChannels() {
         return mChannels;
     }
 
+    /**
+     * Get sample offset of the start of next frame.
+     *
+     * @return offset in samples
+     */
     public int getOffset() {
         return mOffset;
     }
 
-    public float getSecOffset() {
-        return (float) mOffset / mSampleRate;
-    }
-
+    /**
+     * Get numbers of samples in one channel.
+     *
+     * @return total samples
+     */
     public int getTotalSamples() {
         return mTotalSamples;
     }
 
+    /**
+     * Get the length of the sound in seconds.
+     *
+     * @return total length
+     */
     public float getLength() {
         return (float) mTotalSamples / mSampleRate;
     }

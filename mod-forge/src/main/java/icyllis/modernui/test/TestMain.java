@@ -111,8 +111,8 @@ public class TestMain {
     static {
         AudioManager.getInstance().initialize();
         try {
-            sGraph = new SpectrumGraph();
-            sTrack = new Track(new OggDecoder(FileChannel.open(Path.of("F:", "9.ogg"))));
+            sTrack = new Track(new OggDecoder(FileChannel.open(Path.of("F:", "10.ogg"))));
+            sGraph = new SpectrumGraph(sTrack);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -337,7 +337,6 @@ public class TestMain {
         spannable.setSpan(new AbsoluteSizeSpan(18), 29, text.length() - 20, 0);
         spannable.setSpan(new StyleSpan(FontPaint.BOLD), text.length() - 20, text.length(), 0);
         TextLine textLine = new TextLine(spannable);
-        ModernUI.LOGGER.info(LayoutCache.getMemoryUsage());
 
         long lastTime = RenderCore.timeMillis();
 
@@ -410,7 +409,7 @@ public class TestMain {
                 paint.setStrokeWidth(8);
                 paint.setRGBA(255, 255, 255, 192);
                 canvas.drawArc(800, 450, 100, -90,
-                        360 * (playTime * 1000f / sGraph.mSongLength), paint);
+                        360 * (playTime / sTrack.getLength()), paint);
 
                 // render thread, wait UI thread
                 canvas.render();

@@ -98,17 +98,17 @@ public class AudioManager implements AutoCloseable {
         long context = alcGetCurrentContext();
         if (context == NULL) {
             long device = alcOpenDevice(name);
+            if (device == NULL && name != null) {
+                device = nalcOpenDevice(NULL);
+            }
             if (device != NULL) {
                 context = nalcCreateContext(device, NULL);
                 alcMakeContextCurrent(context); // if null, make no context
                 if (context != NULL) {
                     ALCCapabilities alcCapabilities = ALC.createCapabilities(device);
                     ALCapabilities alCapabilities = AL.createCapabilities(alcCapabilities);
-                    if (!alcCapabilities.OpenALC11) {
+                    if (!alcCapabilities.OpenALC11 || !alCapabilities.OpenAL11) {
                         ModernUI.LOGGER.fatal(MARKER, "OpenAL 1.1 is not supported");
-                    }
-                    if (!alCapabilities.AL_EXT_FLOAT32) {
-                        ModernUI.LOGGER.fatal(MARKER, "EXTFloat32 is not supported");
                     }
                     if (alCapabilities.AL_EXT_source_distance_model) {
                         alEnable(EXTSourceDistanceModel.AL_SOURCE_DISTANCE_MODEL);
@@ -120,21 +120,26 @@ public class AudioManager implements AutoCloseable {
         }
     }
 
+    // audio thread
     private void tick() {
         int timer = (mTimer + 1) & 0x3f;
-        if (timer == 0) {
-            List<String> devices = ALUtil.getStringList(NULL, ALC_ALL_DEVICES_SPECIFIER);
-            if (!mDeviceList.equals(devices)) {
-                mDeviceList.clear();
-                if (devices != null) {
-                    mDeviceList.addAll(devices);
+        try {
+            if (timer == 0) {
+                List<String> devices = ALUtil.getStringList(NULL, ALC_ALL_DEVICES_SPECIFIER);
+                if (!mDeviceList.equals(devices)) {
+                    mDeviceList.clear();
+                    if (devices != null) {
+                        mDeviceList.addAll(devices);
+                    }
+                    destroy();
+                    setDevice(null);
+                    ModernUI.LOGGER.info(MARKER, "Device list changed");
                 }
-                destroy();
-                setDevice(null);
-                ModernUI.LOGGER.info(MARKER, "Device list changed");
             }
+            mTracks.forEach(Track::tick);
+        } catch (Throwable t) {
+            ModernUI.LOGGER.error(MARKER, "Caught an exception on audio thread", t);
         }
-        mTracks.forEach(Track::tick);
         mTimer = timer;
     }
 
@@ -144,7 +149,7 @@ public class AudioManager implements AutoCloseable {
             long device = alcGetContextsDevice(context);
             alcMakeContextCurrent(NULL);
             alcDestroyContext(context);
-            if (device != 0) {
+            if (device != NULL) {
                 alcCloseDevice(device);
             }
         }

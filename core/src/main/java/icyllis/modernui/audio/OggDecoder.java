@@ -35,6 +35,9 @@ import java.nio.channels.FileChannel;
 
 import static org.lwjgl.system.MemoryUtil.NULL;
 
+/**
+ * Support for Ogg Vorbis.
+ */
 public class OggDecoder extends SampledSound {
 
     private final FileChannel mChannel;
@@ -75,16 +78,18 @@ public class OggDecoder extends SampledSound {
             }
             mChannels = channels;
 
-            ByteBuffer temp = stack.malloc(14);
+            // a slow way to find the length
+            ByteBuffer temp = stack.malloc(4 + 2 + 8);
             temp.order(ByteOrder.LITTLE_ENDIAN);
-            // consider EOF
-            for (int i = 1 + 14; i < 4000; i += 2) {
-                channel.read(temp.clear(), channel.size() - i);
+            final long size = channel.size();
+            for (int i = 1 + temp.capacity(); i < 4000; i++) {
+                channel.read(temp, size - i);
                 // 'OggS' magic
                 if (temp.getInt(0) == 0x5367674f) {
                     mTotalSamples = temp.getInt(6);
                     break;
                 }
+                temp.clear();
             }
         }
     }
@@ -134,18 +139,18 @@ public class OggDecoder extends SampledSound {
             final PointerBuffer samples = stack.mallocPointer(1);
             final IntBuffer count = stack.mallocInt(1);
             for (; ; ) {
-                int used = STBVorbis.stb_vorbis_decode_frame_pushdata(mDecoder, mBuffer, null, samples, count);
-                mBuffer.position(mBuffer.position() + used);
-                if (used == 0) {
+                int n = STBVorbis.stb_vorbis_decode_frame_pushdata(mDecoder, mBuffer, null, samples, count);
+                mBuffer.position(mBuffer.position() + n);
+                if (n == 0) {
                     forward();
                     if (read()) {
                         return null;
                     }
-                } else if ((used = count.get(0)) > 0) {
+                } else if ((n = count.get(0)) > 0) {
                     mOffset = STBVorbis.stb_vorbis_get_sample_offset(mDecoder);
                     PointerBuffer data = samples.getPointerBuffer(mChannels);
                     if (mChannels == 1) {
-                        FloatBuffer src = data.getFloatBuffer(0, used);
+                        FloatBuffer src = data.getFloatBuffer(0, n);
                         while (src.hasRemaining()) {
                             if (output == null || !output.hasRemaining()) {
                                 output = MemoryUtil.memRealloc(output, output == null ? 256 :
@@ -154,16 +159,18 @@ public class OggDecoder extends SampledSound {
                             output.put(src.get());
                         }
                     } else if (mChannels == 2) {
-                        FloatBuffer src = data.getFloatBuffer(0, used);
-                        FloatBuffer src2 = data.getFloatBuffer(1, used);
-                        while (src.hasRemaining()) {
+                        FloatBuffer srcR = data.getFloatBuffer(0, n);
+                        FloatBuffer srcL = data.getFloatBuffer(1, n);
+                        while (srcR.hasRemaining()) {
                             if (output == null || output.remaining() < 2) {
                                 output = MemoryUtil.memRealloc(output, output == null ? 256 :
                                         output.capacity() + 256);
                             }
-                            output.put(src.get())
-                                    .put(src2.get());
+                            output.put(srcR.get())
+                                    .put(srcL.get());
                         }
+                    } else {
+                        throw new IllegalStateException();
                     }
                     return output;
                 }

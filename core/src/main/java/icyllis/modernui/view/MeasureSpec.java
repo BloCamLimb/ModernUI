@@ -69,6 +69,8 @@ public class MeasureSpec {
     /**
      * Measure specification modes.
      */
+    //TODO remove enum class
+    @Deprecated
     public enum Mode {
         /**
          * The parent has not imposed any constraint on the child.
