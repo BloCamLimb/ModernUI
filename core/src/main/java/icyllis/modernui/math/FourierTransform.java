@@ -344,6 +344,15 @@ public class FourierTransform {
     }
 
     /**
+     * Returns the sample rate of signal samples expected by this transform.
+     *
+     * @return the sample rate of signal samples expected by this transform
+     */
+    public int getSampleRate() {
+        return mSampleRate;
+    }
+
+    /**
      * Returns the size of the spectrum created by this transform. In other words, the number of
      * frequency bands produced by this transform. This is typically equal to <code>timeSize()/2 +
      * 1</code>, see above for an explanation.

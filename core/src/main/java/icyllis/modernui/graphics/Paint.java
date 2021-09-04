@@ -56,7 +56,9 @@ public class Paint {
          * is oriented counter-clockwise. This restriction does not apply to
          * either FILL or STROKE.
          */
-        FILL_AND_STROKE()
+        FILL_AND_STROKE();
+
+        private static final Style[] VALUES = values();
     }
 
     private int mColor;
@@ -216,7 +218,7 @@ public class Paint {
      */
     @Nonnull
     public Style getStyle() {
-        return Style.values()[mFlags & STYLE_MASK];
+        return Style.VALUES[mFlags & STYLE_MASK];
     }
 
     /**

@@ -18,49 +18,45 @@
 
 package icyllis.modernui.test;
 
-import icyllis.modernui.audio.WaveDecoder;
+import icyllis.modernui.audio.Track;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.math.FourierTransform;
 import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.platform.RenderCore;
 
-import java.nio.channels.FileChannel;
-import java.nio.file.Path;
+import javax.annotation.Nonnull;
 
 public class SpectrumGraph {
-
-    public WaveDecoder mWaveDecoder;
 
     private final float[] mAmplitudes = new float[60];
 
     private final FourierTransform mFFT;
 
-    public int mSongLength;
-
-    public SpectrumGraph() throws Exception {
-        mWaveDecoder = new WaveDecoder(FileChannel.open(Path.of("F:", "9.wav")));
-        mFFT = FourierTransform.create(1024, mWaveDecoder.mSampleRate);
+    public SpectrumGraph(Track track) {
+        mFFT = FourierTransform.create(1024, track.getSampleRate());
         mFFT.setLogAverages(250, 14);
         mFFT.setWindowFunc(FourierTransform.NONE);
-        mSongLength = (int) ((float) mWaveDecoder.mSamples.length / mWaveDecoder.mSampleRate * 1000);
+        track.setAnalyzer(mFFT, f -> updateAmplitudes());
     }
 
-    public void update(long time, long delta) {
-        if (time < mSongLength) {
-            int sampleStart = (int) (time / 1000f * mWaveDecoder.mSampleRate);
-            mFFT.forward(mWaveDecoder.mSamples, sampleStart);
-
-            int len = Math.min(mFFT.getAverageSize() - 5, mAmplitudes.length);
-            int iOff = (int) (time / 200);
-            for (int i = 0; i < len; i++) {
-                float dec = mAmplitudes[i] - delta * 0.0012f * (mAmplitudes[i] + 0.03f);
-                mAmplitudes[i] = Math.max(dec, mFFT.getAverage(((i + iOff) % len) + 5) / mFFT.getBandSize());
-            }
+    public void updateAmplitudes() {
+        int len = Math.min(mFFT.getAverageSize() - 5, mAmplitudes.length);
+        long time = RenderCore.timeMillis();
+        int iOff = (int) (time / 200);
+        for (int i = 0; i < len; i++) {
+            mAmplitudes[i] = Math.max(mAmplitudes[i], mFFT.getAverage(((i + iOff) % len) + 5) / mFFT.getBandSize());
         }
     }
 
-    public void draw(Canvas canvas, float cx, float cy) {
+    public void update(long time, long delta) {
+        int len = Math.min(mFFT.getAverageSize() - 5, mAmplitudes.length);
+        for (int i = 0; i < len; i++) {
+            mAmplitudes[i] = mAmplitudes[i] - delta * 0.0012f * (mAmplitudes[i] + 0.03f);
+        }
+    }
+
+    public void draw(@Nonnull Canvas canvas, float cx, float cy) {
         var paint = Paint.take();
         long time = RenderCore.timeMillis();
         float b = 1.5f + MathUtil.sin(time / 600f) / 2;
