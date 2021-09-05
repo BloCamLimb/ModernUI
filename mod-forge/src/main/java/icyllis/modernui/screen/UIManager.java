@@ -540,7 +540,7 @@ public final class UIManager implements ViewRootImpl.Handler {
 
                 framebuffer.reset(width, height);
                 framebuffer.bindDraw();
-                canvas.render();
+                canvas.draw();
 
                 glDisable(GL_STENCIL_TEST);
             }
@@ -554,7 +554,7 @@ public final class UIManager implements ViewRootImpl.Handler {
         // do alpha fade in
         int alpha = (int) Math.min(255, mElapsedTimeMillis);
         canvas.drawTextureMSAA(texture, 0, 0, width, height, alpha << 24 | 0xffffff, true);
-        canvas.render();
+        canvas.draw();
 
         glBindVertexArray(oldVertexArray);
         glUseProgram(oldProgram);

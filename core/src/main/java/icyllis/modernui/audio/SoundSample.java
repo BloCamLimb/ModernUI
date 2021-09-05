@@ -26,7 +26,7 @@ import java.nio.FloatBuffer;
  * Sampled sound provides uncompressed PCM audio samples decoded from an
  * {@link java.io.InputStream InputStream} or a {@link java.nio.channels.FileChannel FileChannel}.
  */
-public abstract class SampledSound implements AutoCloseable {
+public abstract class SoundSample implements AutoCloseable {
 
     protected int mSampleRate;
     protected int mChannels;

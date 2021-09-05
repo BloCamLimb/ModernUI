@@ -26,6 +26,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.FloatBuffer;
+import java.util.Arrays;
 import java.util.function.Consumer;
 
 import static org.lwjgl.openal.AL11.*;
@@ -34,7 +35,7 @@ public class Track implements AutoCloseable {
 
     private int mSource;
 
-    private SampledSound mSampledSound;
+    private final SoundSample mSample;
     private int mBaseOffset;
 
     private FourierTransform mFFT;
@@ -43,9 +44,9 @@ public class Track implements AutoCloseable {
     private float[] mMixedSamples;
     private int mMixedSampleCount;
 
-    public Track(@Nonnull SampledSound sound) {
+    public Track(@Nonnull SoundSample sample) {
         mSource = alGenSources();
-        mSampledSound = sound;
+        mSample = sample;
         alSourcef(mSource, AL_GAIN, 0.75f);
         forward(2);
         AudioManager.getInstance().addTrack(this);
@@ -67,15 +68,15 @@ public class Track implements AutoCloseable {
         if (mSource == 0) {
             return 0;
         }
-        return ((float) mBaseOffset / mSampledSound.getSampleRate()) + alGetSourcef(mSource, AL_SEC_OFFSET);
+        return ((float) mBaseOffset / mSample.getSampleRate()) + alGetSourcef(mSource, AL_SEC_OFFSET);
     }
 
     public float getLength() {
-        return mSampledSound.getLength();
+        return mSample.getLength();
     }
 
     public int getSampleRate() {
-        return mSampledSound.mSampleRate;
+        return mSample.mSampleRate;
     }
 
     public void tick() {
@@ -84,7 +85,9 @@ public class Track implements AutoCloseable {
             forward(fr);
         }
         if (alGetSourcei(mSource, AL_SOURCE_STATE) == AL_PLAYING && mFFT != null) {
-            mFFT.forward(mMixedSamples, alGetSourcei(mSource, AL_SAMPLE_OFFSET) + 700);
+            int offset = alGetSourcei(mSource, AL_SAMPLE_OFFSET);
+            mFFT.forward(mMixedSamples,
+                    offset);
             if (mFFTCallback != null) {
                 mFFTCallback.accept(mFFT);
             }
@@ -92,7 +95,7 @@ public class Track implements AutoCloseable {
     }
 
     public void setAnalyzer(@Nullable FourierTransform fft, @Nullable Consumer<FourierTransform> callback) {
-        if (fft != null && fft.getSampleRate() != mSampledSound.getSampleRate()) {
+        if (fft != null && fft.getSampleRate() != mSample.getSampleRate()) {
             throw new IllegalArgumentException("Mismatched sample rate");
         }
         mFFT = fft;
@@ -102,13 +105,14 @@ public class Track implements AutoCloseable {
     private void forward(int count) {
         FloatBuffer buffer = null;
         try {
-            final int targetSamples = mSampledSound.getChannels() * mSampledSound.getSampleRate() / 2;
+            final int targetSamples =
+                    mSample.getChannels() * mSample.getSampleRate() / 25;
             for (int i = 0; i < count; i++) {
                 if (buffer != null) {
                     buffer.position(0);
                 }
                 while (buffer == null || buffer.position() < targetSamples) {
-                    FloatBuffer ret = mSampledSound.decodeFrame(buffer);
+                    FloatBuffer ret = mSample.decodeFrame(buffer);
                     if (ret == null) {
                         break;
                     }
@@ -117,20 +121,22 @@ public class Track implements AutoCloseable {
                 if (buffer != null && buffer.position() > 0) {
                     buffer.flip();
                     int buf = alGenBuffers();
-                    alBufferData(buf, mSampledSound.getChannels() == 1 ? EXTFloat32.AL_FORMAT_MONO_FLOAT32 :
+                    alBufferData(buf, mSample.getChannels() == 1 ? EXTFloat32.AL_FORMAT_MONO_FLOAT32 :
                                     EXTFloat32.AL_FORMAT_STEREO_FLOAT32, buffer,
-                            mSampledSound.getSampleRate());
+                            mSample.getSampleRate());
                     alSourceQueueBuffers(mSource, buf);
-                    int samp = buffer.limit() / mSampledSound.mChannels;
-                    if (mMixedSamples == null || mMixedSamples.length < mMixedSampleCount + samp) {
+                    int samp = buffer.limit() / mSample.mChannels;
+                    if (mMixedSamples == null) {
                         mMixedSamples = new float[mMixedSampleCount + samp];
+                    } else if (mMixedSamples.length < mMixedSampleCount + samp) {
+                        mMixedSamples = Arrays.copyOf(mMixedSamples, mMixedSampleCount + samp);
                     }
                     for (int j = mMixedSampleCount; j < mMixedSampleCount + samp; j++) {
                         float sam = 0;
-                        for (int k = 0; k < mSampledSound.mChannels; k++) {
+                        for (int k = 0; k < mSample.mChannels; k++) {
                             sam += buffer.get();
                         }
-                        sam /= mSampledSound.mChannels;
+                        sam /= mSample.mChannels;
                         mMixedSamples[j] = sam;
                     }
                     mMixedSampleCount += samp;
@@ -147,7 +153,7 @@ public class Track implements AutoCloseable {
         int count = alGetSourcei(mSource, AL_BUFFERS_PROCESSED);
         for (int i = 0; i < count; i++) {
             int buf = alSourceUnqueueBuffers(mSource);
-            int samples = alGetBufferi(buf, AL_SIZE) / 4 / mSampledSound.mChannels;
+            int samples = alGetBufferi(buf, AL_SIZE) / 4 / mSample.mChannels;
             mBaseOffset += samples;
             alDeleteBuffers(buf);
             System.arraycopy(mMixedSamples, samples, mMixedSamples, 0, mMixedSampleCount - samples);
@@ -162,6 +168,6 @@ public class Track implements AutoCloseable {
             alDeleteSources(mSource);
             mSource = 0;
         }
-        mSampledSound.close();
+        mSample.close();
     }
 }

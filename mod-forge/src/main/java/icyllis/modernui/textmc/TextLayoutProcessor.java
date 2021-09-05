@@ -68,6 +68,8 @@ public class TextLayoutProcessor {
      */
     public static int sDefaultFontSize;
 
+    private static final ChatFormatting[] FORMATTINGS = ChatFormatting.values();
+
 
     /**
      * Draw and cache all glyphs of all fonts needed
@@ -233,7 +235,7 @@ public class TextLayoutProcessor {
     @Nullable
     public static ChatFormatting fromFormattingCode(char code) {
         int i = "0123456789abcdefklmnor".indexOf(Character.toLowerCase(code));
-        return i != -1 ? ChatFormatting.values()[i] : null;
+        return i != -1 ? FORMATTINGS[i] : null;
     }
 
     @Nonnull

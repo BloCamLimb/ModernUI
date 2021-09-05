@@ -38,7 +38,7 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 /**
  * Support for Ogg Vorbis.
  */
-public class OggDecoder extends SampledSound {
+public class OggDecoder extends SoundSample {
 
     private final FileChannel mChannel;
     private ByteBuffer mBuffer;
@@ -48,7 +48,7 @@ public class OggDecoder extends SampledSound {
     public OggDecoder(@Nonnull FileChannel channel) throws IOException {
         mChannel = channel;
         // ogg page is 4 KB ~ 16 KB
-        mBuffer = MemoryUtil.memAlloc(1 << 12).flip();
+        mBuffer = MemoryUtil.memAlloc(0x1000).flip();
         try (MemoryStack stack = MemoryStack.stackPush()) {
             final IntBuffer consumed = stack.mallocInt(1);
             final IntBuffer error = stack.mallocInt(1);
@@ -78,15 +78,15 @@ public class OggDecoder extends SampledSound {
             }
             mChannels = channels;
 
-            // a slow way to find the length
+            // a slow way to find the length (last page)
             ByteBuffer temp = stack.malloc(4 + 2 + 8);
             temp.order(ByteOrder.LITTLE_ENDIAN);
             final long size = channel.size();
-            for (int i = 1 + temp.capacity(); i < 4000; i++) {
+            for (int i = 1 + temp.capacity(); i <= 0x4000; i++) {
                 channel.read(temp, size - i);
                 // 'OggS' magic
                 if (temp.getInt(0) == 0x5367674f) {
-                    mTotalSamples = temp.getInt(6);
+                    mTotalSamples = temp.getInt(4 + 2);
                     break;
                 }
                 temp.clear();
