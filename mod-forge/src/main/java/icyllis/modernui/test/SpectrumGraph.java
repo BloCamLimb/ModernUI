@@ -44,15 +44,20 @@ public class SpectrumGraph {
         int len = Math.min(mFFT.getAverageSize() - 5, mAmplitudes.length);
         long time = RenderCore.timeMillis();
         int iOff = (int) (time / 200);
-        for (int i = 0; i < len; i++) {
-            mAmplitudes[i] = Math.max(mAmplitudes[i], mFFT.getAverage(((i + iOff) % len) + 5) / mFFT.getBandSize());
+        synchronized (mAmplitudes) {
+            for (int i = 0; i < len; i++) {
+                float va = mFFT.getAverage(((i + iOff) % len) + 5) / mFFT.getBandSize();
+                mAmplitudes[i] = Math.max(mAmplitudes[i], va);
+            }
         }
     }
 
     public void update(long time, long delta) {
         int len = Math.min(mFFT.getAverageSize() - 5, mAmplitudes.length);
-        for (int i = 0; i < len; i++) {
-            mAmplitudes[i] = mAmplitudes[i] - delta * 0.0012f * (mAmplitudes[i] + 0.03f);
+        synchronized (mAmplitudes) {
+            for (int i = 0; i < len; i++) {
+                mAmplitudes[i] = mAmplitudes[i] - delta * 0.0012f * (mAmplitudes[i] + 0.03f);
+            }
         }
     }
 

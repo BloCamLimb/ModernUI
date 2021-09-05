@@ -55,8 +55,8 @@ import static icyllis.modernui.graphics.GLWrapper.*;
  * using multiple vertex arrays, uniform buffers and vertex buffers. Later
  * calls OpenGL functions on the render thread.
  * <p>
- * Here, drawing means recording on UI thread (or synchronized), and rendering
- * means calling OpenGL draw functions on the render thread.
+ * All drawing methods are recording commands on UI thread (or synchronized),
+ * and {@link #draw()} means calling OpenGL draw functions on the render thread.
  * <p>
  * The color buffer drawn to must be index 0, and stencil buffer must be 8-bit.
  */
@@ -337,7 +337,7 @@ public final class GLCanvas extends Canvas {
     }
 
     @RenderThread
-    public void render() {
+    public void draw() {
         RenderCore.checkRenderThread();
         RenderCore.flushRenderCalls();
         if (mDrawStates.isEmpty()) {

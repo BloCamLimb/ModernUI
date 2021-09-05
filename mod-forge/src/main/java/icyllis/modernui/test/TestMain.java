@@ -412,7 +412,7 @@ public class TestMain {
                         360 * (playTime / sTrack.getLength()), paint);
 
                 // render thread, wait UI thread
-                canvas.render();
+                canvas.draw();
 
                 window.swapBuffers();
             }

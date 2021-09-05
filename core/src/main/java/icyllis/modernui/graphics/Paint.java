@@ -178,6 +178,13 @@ public class Paint {
      * should use the colors sequentially, and {@link #setColor(int)} is ignored. You can
      * use this to make gradient effect or edge fading in one pass, without shaders.
      * <p>
+     * A Paint object has an unique private array storing these values, a copy of given array
+     * will be used. The colors are used in the order of top left, top right, bottom right
+     * and bottom left.
+     * <p>
+     * If the length of given array is less than 4, then rest color values are undefined.
+     * If greater than 4, then rest values are ignored.
+     * <p>
      * By default, this mode is disabled. Calling other methods like {@link #setColor(int)}
      * or {@link #setAlpha(int)} disables the mode as well.
      *
@@ -191,11 +198,13 @@ public class Paint {
     }
 
     /**
-     * Returns the backing array of the multi colors. Do not modify the array.
+     * Returns the backing array of the multi colors. Each call will return
+     * the same array object. Do not modify the elements of the array.
      *
      * @return the backing array of the multi colors
      * @see #setColors(int[])
      */
+    @Nonnull
     public int[] getColors() {
         return mColors;
     }
