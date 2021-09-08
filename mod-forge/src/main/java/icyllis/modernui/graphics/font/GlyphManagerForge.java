@@ -52,6 +52,8 @@ import java.util.Optional;
 
 import static icyllis.modernui.graphics.GLWrapper.GL_ALPHA;
 import static icyllis.modernui.graphics.GLWrapper.GL_UNSIGNED_BYTE;
+import static org.lwjgl.opengl.GL11C.GL_LINEAR_MIPMAP_LINEAR;
+import static org.lwjgl.opengl.GL11C.GL_NEAREST;
 
 /**
  * Find matching fonts and glyphs, measure glyph metrics and draw them of
@@ -85,7 +87,8 @@ public class GlyphManagerForge {
     public static int sResolutionLevel;
 
     /**
-     * The width in pixels of every texture used for caching pre-rendered glyph images. Used by GlyphCache when calculating
+     * The width in pixels of every texture used for caching pre-rendered glyph images. Used by GlyphCache when
+     * calculating
      * floating point 0.0-1.0 texture coordinates. Must be a power of two for mip-mapping to work.
      *
      * @deprecated Use {@link #TEXTURE_SIZE}
@@ -93,7 +96,8 @@ public class GlyphManagerForge {
     @Deprecated
     private static final int TEXTURE_WIDTH = 256;
     /**
-     * The height in pixels of every texture used for caching pre-rendered glyph images. Used by GlyphCache when calculating
+     * The height in pixels of every texture used for caching pre-rendered glyph images. Used by GlyphCache when
+     * calculating
      * floating point 0.0-1.0 texture coordinates. Must be a power of two for mip-mapping to work.
      *
      * @deprecated Use {@link #TEXTURE_SIZE}
@@ -118,8 +122,10 @@ public class GlyphManagerForge {
     private static final int GLYPH_BORDER = 1;
 
     /**
-     * The width in pixels of a transparent border between individual glyphs in the cache texture. This border keeps neighboring
-     * glyphs from "bleeding through" when the scaled GUI resolution is not pixel aligned and sometimes results in off-by-one
+     * The width in pixels of a transparent border between individual glyphs in the cache texture. This border keeps
+     * neighboring
+     * glyphs from "bleeding through" when the scaled GUI resolution is not pixel aligned and sometimes results in
+     * off-by-one
      * sampling of the glyph cache textures.
      */
     private static final int GLYPH_SPACING = GLYPH_BORDER + 1;
@@ -141,7 +147,8 @@ public class GlyphManagerForge {
     /**
      * All font glyphs are packed inside this image and are then loaded from here into an OpenGL texture.
      */
-    protected final BufferedImage mGlyphImage = new BufferedImage(TEXTURE_SIZE, TEXTURE_SIZE, BufferedImage.TYPE_INT_ARGB);
+    protected final BufferedImage mGlyphImage = new BufferedImage(TEXTURE_SIZE, TEXTURE_SIZE,
+            BufferedImage.TYPE_INT_ARGB);
 
     /**
      * The Graphics2D associated with glyphTextureImage and used for bit blit between stringImage.
@@ -188,8 +195,10 @@ public class GlyphManagerForge {
     //private final IntBuffer textureGenBuffer = BufferUtils.createIntBuffer(1);
 
     /**
-     * A list of all fonts that have been returned so far by lookupFont(), and that will always be searched first for a usable font before
-     * searching through allFonts[]. This list will only have plain variation of a font at a dummy point size, unlike fontCache which could
+     * A list of all fonts that have been returned so far by lookupFont(), and that will always be searched first for a
+     * usable font before
+     * searching through allFonts[]. This list will only have plain variation of a font at a dummy point size, unlike
+     * fontCache which could
      * have multiple entries for the various styles (i.e. bold, italic, etc.) of a font.
      */
     private final List<Font> mSelectedFonts = new ObjectArrayList<>();
@@ -222,22 +231,28 @@ public class GlyphManagerForge {
     private int emojiTexture;*/
 
     /**
-     * The X coordinate of the upper=left corner in glyphCacheImage where the next glyph image should be stored. Glyphs are
-     * always added left-to-right on the current line until it fills up, at which point they continue filling the texture on
+     * The X coordinate of the upper=left corner in glyphCacheImage where the next glyph image should be stored. Glyphs
+     * are
+     * always added left-to-right on the current line until it fills up, at which point they continue filling the
+     * texture on
      * the next line.
      */
     private int mCurrPosX = GLYPH_SPACING;
 
     /**
-     * The Y coordinate of the upper-left corner in glyphCacheImage where the next glyph image should be stored. Glyphs are
-     * stored left-to-right in horizontal lines, and top-to-bottom until the entire texture fills up. At that point, a new
-     * texture is allocated to keep storing additional glyphs, and the original texture remains allocated for the lifetime of
+     * The Y coordinate of the upper-left corner in glyphCacheImage where the next glyph image should be stored. Glyphs
+     * are
+     * stored left-to-right in horizontal lines, and top-to-bottom until the entire texture fills up. At that point, a
+     * new
+     * texture is allocated to keep storing additional glyphs, and the original texture remains allocated for the
+     * lifetime of
      * the application.
      */
     private int mCurrPosY = GLYPH_SPACING;
 
     /**
-     * The height in pixels of the current line of glyphs getting written into the texture. This value determines by how much
+     * The height in pixels of the current line of glyphs getting written into the texture. This value determines by how
+     * much
      * cachePosY will get incremented when the current horizontal line in the texture fills up.
      */
     private int mCurrLineHeight = 0;
@@ -250,7 +265,8 @@ public class GlyphManagerForge {
         /* Set background color for use with clearRect() */
         mGlyphGraphics.setBackground(BG_COLOR);
 
-        /* The drawImage() to this buffer will copy all source pixels instead of alpha blending them into the current image */
+        /* The drawImage() to this buffer will copy all source pixels instead of alpha blending them into the current
+         image */
         mGlyphGraphics.setComposite(AlphaComposite.Src);
 
         allocateGlyphTexture();
@@ -313,13 +329,15 @@ public class GlyphManagerForge {
                     //if (!FontCollection.sJavaTooOld) {
                     ModernUI.get().loadFont(cfgFont, mSelectedFonts::add);
                     /*} else {
-                        ModernUI.LOGGER.warn(MARKER, "Cannot load resource pack font {} since Java is too old", cfgFont);
+                        ModernUI.LOGGER.warn(MARKER, "Cannot load resource pack font {} since Java is too old",
+                        cfgFont);
                     }*/
                 } else {
                     ModernUI.LOGGER.warn(MARKER, "Preferred font {} is invalid", cfgFont);
                 }
             } else {
-                Optional<Font> font = Typeface.sAllFontFamilies.stream().filter(f -> f.getFamily(Locale.ROOT).equals(cfgFont)).findFirst();
+                Optional<Font> font =
+                        Typeface.sAllFontFamilies.stream().filter(f -> f.getFamily(Locale.ROOT).equals(cfgFont)).findFirst();
                 if (font.isPresent()) {
                     mSelectedFonts.add(font.get());
                     ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", cfgFont);
@@ -352,7 +370,8 @@ public class GlyphManagerForge {
             }
         }
 
-        /* If still not found, try searching through all fonts installed on the system for the first that can layout this string */
+        /* If still not found, try searching through all fonts installed on the system for the first that can layout
+        this string */
         for (Font font : Typeface.sAllFontFamilies) {
             /* Only use the font if it can layout at least the first character of the requested string range */
             if (font.canDisplay(codePoint)) {
@@ -363,7 +382,8 @@ public class GlyphManagerForge {
             }
         }
 
-        /* If no supported fonts found, use the default one (first in selectedFonts) so it can draw its unknown character glyphs */
+        /* If no supported fonts found, use the default one (first in selectedFonts) so it can draw its unknown
+        character glyphs */
         return mSelectedFonts.get(0);
     }
 
@@ -435,12 +455,14 @@ public class GlyphManagerForge {
         for (Font font : mSelectedFonts) {
             /* Only use the font if it can layout at least the first character of the requested string range */
             if (font.canDisplay(codePoint)) {
-                /* Return a font instance of the proper point size and style; selectedFonts has only 1pt sized plain style fonts */
+                /* Return a font instance of the proper point size and style; selectedFonts has only 1pt sized plain
+                style fonts */
                 return font.deriveFont(fontStyle, fontSize);
             }
         }
 
-        /* If still not found, try searching through all fonts installed on the system for the first that can layout this string */
+        /* If still not found, try searching through all fonts installed on the system for the first that can layout
+        this string */
         for (Font font : Typeface.sAllFontFamilies) {
             /* Only use the font if it can layout at least the first character of the requested string range */
             if (font.canDisplay(codePoint)) {
@@ -448,12 +470,14 @@ public class GlyphManagerForge {
                 mSelectedFonts.add(font);
                 ModernUI.LOGGER.debug(MARKER, "Extra font {} was loaded", font.getName());
 
-                /* Return a font instance of the proper point size and style; allFonts has only 1pt sized plain style fonts */
+                /* Return a font instance of the proper point size and style; allFonts has only 1pt sized plain style
+                 fonts */
                 return font.deriveFont(fontStyle, fontSize);
             }
         }
 
-        /* If no supported fonts found, use the default one (first in selectedFonts) so it can draw its unknown character glyphs */
+        /* If no supported fonts found, use the default one (first in selectedFonts) so it can draw its unknown
+        character glyphs */
         Font font = mSelectedFonts.get(0);
 
         /* Return a font instance of the proper point size and style; selectedFonts only 1pt sized plain style fonts */
@@ -461,12 +485,16 @@ public class GlyphManagerForge {
     }
 
     /**
-     * Given an OpenType font and a glyph code within that font, locate the glyph's pre-rendered image in the glyph cache and return its
-     * cache entry,. The entry stores the texture ID with the pre-rendered glyph image, as well as the position and size of that image
-     * within the texture. This function assumes that any glyph lookup requests passed to it have been already cached by an earlier call
+     * Given an OpenType font and a glyph code within that font, locate the glyph's pre-rendered image in the glyph
+     * cache and return its
+     * cache entry,. The entry stores the texture ID with the pre-rendered glyph image, as well as the position and size
+     * of that image
+     * within the texture. This function assumes that any glyph lookup requests passed to it have been already cached by
+     * an earlier call
      * to cacheGlyphs().
      *
-     * @param font      the font to which this glyphCode belongs and which was used to pre-render the glyph image in cacheGlyphs(),
+     * @param font      the font to which this glyphCode belongs and which was used to pre-render the glyph image in
+     *                  cacheGlyphs(),
      *                  this font should be a derived font with font style and font size
      * @param glyphCode the font specific glyph code to lookup in the cache, for digits {@link #lookupDigits(Font)}
      * @return the cache textured glyph
@@ -661,30 +689,37 @@ public class GlyphManagerForge {
     }
 
     /**
-     * Given an OpenType font and a string, make sure that every glyph used by that string is pre-rendered into an OpenGL texture and cached
+     * Given an OpenType font and a string, make sure that every glyph used by that string is pre-rendered into an
+     * OpenGL texture and cached
      * in the glyphCache map for later retrieval by lookupGlyph()
      *
-     * @param font        the font used to create a GlyphVector for the string and to actually draw the individual glyphs
+     * @param font        the font used to create a GlyphVector for the string and to actually draw the individual
+     *                    glyphs
      * @param text        the string from which to cache glyph images
      * @param start       the offset into text at which to start caching glyphs
      * @param limit       the (offset + length) at which to stop caching glyphs
-     * @param layoutFlags either Font.LAYOUT_RIGHT_TO_LEFT or Font.LAYOUT_LEFT_TO_RIGHT; needed for weak bidirectional characters like
-     *                    parenthesis which are mapped to two different glyph codes depending on the surrounding text direction
+     * @param layoutFlags either Font.LAYOUT_RIGHT_TO_LEFT or Font.LAYOUT_LEFT_TO_RIGHT; needed for weak bidirectional
+     *                    characters like
+     *                    parenthesis which are mapped to two different glyph codes depending on the surrounding text
+     *                    direction
      * @deprecated {@link #cacheGlyph(Font, int)}
      */
     @Deprecated
     private void cacheGlyphs(Font font, char[] text, int start, int limit, int layoutFlags) {
-        /* Create new GlyphVector so glyphs can be moved around (kerning workaround; see below) without affecting caller */
+        /* Create new GlyphVector so glyphs can be moved around (kerning workaround; see below) without affecting
+        caller */
         GlyphVector vector = layoutGlyphVector(font, text, start, limit, layoutFlags);
 
-        /* Pixel aligned bounding box for the entire vector; only set if the vector has to be drawn to cache a glyph image */
+        /* Pixel aligned bounding box for the entire vector; only set if the vector has to be drawn to cache a glyph
+        image */
         Rectangle vectorBounds = null;
 
         /* This forms the upper 32 bits of the fontCache key to make every font/glyph code point unique */
         long fontKey = (long) mFontKeyMap.get(font) << 32;
 
         int numGlyphs = vector.getNumGlyphs(); /* Length of the GlyphVector */
-        Rectangle dirty = null;                /* Total area within texture that needs to be updated with glTexSubImage2D() */
+        Rectangle dirty = null;                /* Total area within texture that needs to be updated with
+        glTexSubImage2D() */
         boolean vectorRendered = false;        /* True if entire GlyphVector was rendered into stringImage */
 
         for (int index = 0; index < numGlyphs; index++) {
@@ -734,7 +769,8 @@ public class GlyphManagerForge {
                 /* Erase the upper-left corner where the string will get drawn*/
                 tempStringGraphics.clearRect(0, 0, vectorBounds.width, vectorBounds.height);
 
-                /* Draw string with opaque white color and baseline adjustment so the upper-left corner of the image is at (0,0) */
+                /* Draw string with opaque white color and baseline adjustment so the upper-left corner of the image
+                is at (0,0) */
                 tempStringGraphics.drawGlyphVector(vector, -vectorBounds.x, -vectorBounds.y);
             }
 
@@ -754,7 +790,8 @@ public class GlyphManagerForge {
             }
 
             /*
-             * If the entire image is full, update the current OpenGL texture with everything changed so far in the image
+             * If the entire image is full, update the current OpenGL texture with everything changed so far in the
+             * image
              * (i.e. the dirty rectangle), allocate a new cache texture, and then continue storing glyph images to the
              * upper-left corner of the new texture.
              */
@@ -834,10 +871,12 @@ public class GlyphManagerForge {
     }
 
     /**
-     * Update a portion of the current glyph cache texture using the contents of the glyphCacheImage with glTexSubImage2D().
+     * Update a portion of the current glyph cache texture using the contents of the glyphCacheImage with
+     * glTexSubImage2D().
      *
      * @param dirty The rectangular region in glyphCacheImage that has changed and needs to be copied into the texture
-     *              bleeding when interpolation is active or add a small "fudge factor" to the UV coordinates like already n FontRenderer
+     *              bleeding when interpolation is active or add a small "fudge factor" to the UV coordinates like
+     *              already n FontRenderer
      */
     @Deprecated
     private void updateTexture(@Nullable Rectangle dirty) {
@@ -899,7 +938,8 @@ public class GlyphManagerForge {
     }
 
     /**
-     * Copy pixel data from a region in glyphCacheImage into imageBuffer and prepare it for use with glText(Sub)Image2D(). This
+     * Copy pixel data from a region in glyphCacheImage into imageBuffer and prepare it for use with
+     * glText(Sub)Image2D(). This
      * function takes care of converting the ARGB format used with BufferedImage into the LA format used by OpenGL.
      *
      * @param x      the horizontal coordinate of the region's upper-left corner
@@ -935,20 +975,26 @@ public class GlyphManagerForge {
         // this only for shape rendering, so we turn it off
         mGlyphGraphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
         if (sAntiAliasing) {
-            mGlyphGraphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            mGlyphGraphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+                    RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         } else {
-            mGlyphGraphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
+            mGlyphGraphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+                    RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
         }
         if (sHighPrecision) {
-            mGlyphGraphics.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+            mGlyphGraphics.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS,
+                    RenderingHints.VALUE_FRACTIONALMETRICS_ON);
         } else {
-            mGlyphGraphics.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_OFF);
+            mGlyphGraphics.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS,
+                    RenderingHints.VALUE_FRACTIONALMETRICS_OFF);
         }
     }
 
     /**
-     * Allocate a new OpenGL texture for caching pre-rendered glyph images. The new texture is initialized to fully transparent
-     * white so the individual glyphs images within can have a transparent border between them. The new texture remains bound
+     * Allocate a new OpenGL texture for caching pre-rendered glyph images. The new texture is initialized to fully
+     * transparent
+     * white so the individual glyphs images within can have a transparent border between them. The new texture remains
+     * bound
      * after returning from the function.
      */
     private void allocateGlyphTexture() {
@@ -962,7 +1008,8 @@ public class GlyphManagerForge {
         //updateImageBuffer(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
 
         /*
-         * Initialize texture with the now cleared BufferedImage. Using a texture with GL_ALPHA8 internal format may result in
+         * Initialize texture with the now cleared BufferedImage. Using a texture with GL_ALPHA8 internal format may
+         * result in
          * faster rendering since the GPU has to only fetch 1 byte per texel instead of 4 with a regular RGBA texture.
          */
 
@@ -1006,7 +1053,7 @@ public class GlyphManagerForge {
             GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
         }*/
 
-        mTexture.setFilter(sAntiAliasing, sEnableMipmap);
+        mTexture.setFilter(GL_LINEAR_MIPMAP_LINEAR, GL_NEAREST);
 
         /* Auto generate mipmap */
         /*if (sEnableMipmap) {
@@ -1024,7 +1071,8 @@ public class GlyphManagerForge {
     }
 
     /**
-     * Allocate and initialize a new BufferedImage and Graphics2D context for rendering strings into. May need to be called
+     * Allocate and initialize a new BufferedImage and Graphics2D context for rendering strings into. May need to be
+     * called
      * at runtime to re-allocate a bigger BufferedImage if cacheGlyphs() is called with a very long string.
      */
     @Deprecated
@@ -1037,7 +1085,8 @@ public class GlyphManagerForge {
         //tempStringGraphics.setBackground(BG_COLOR);
 
         //
-        // Full white (1.0, 1.0, 1.0, 1.0) can be modulated by vertex color to produce a full gamut of text colors, although with
+        // Full white (1.0, 1.0, 1.0, 1.0) can be modulated by vertex color to produce a full gamut of text colors,
+        // although with
         // a GL_ALPHA8 texture, only the alpha component of the color will actually get loaded into the texture.
         //
         //tempStringGraphics.setPaint(Color.WHITE);

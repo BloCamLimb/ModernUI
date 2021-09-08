@@ -59,7 +59,7 @@ public interface Spanned extends CharSequence {
      * into another text and the paragraph boundary constraint
      * is not satisfied, the span is discarded.
      */
-    int SPAN_PARAGRAPH =   0x33;
+    int SPAN_PARAGRAPH = 0x33;
 
     /**
      * This flag will be set for intermediate span changes, meaning there
@@ -99,7 +99,7 @@ public interface Spanned extends CharSequence {
      * @return an array of the markup objects, or null if nothing found
      */
     @Nullable
-    <T> T[] getSpans(int start, int end, @Nonnull Class<T> type);
+    <T> T[] getSpans(int start, int end, Class<T> type);
 
     /**
      * Return the beginning of the range of text to which the specified
@@ -108,7 +108,7 @@ public interface Spanned extends CharSequence {
      * @param span markup object
      * @return the start char index
      */
-    int getSpanStart(Object span);
+    int getSpanStart(@Nonnull Object span);
 
     /**
      * Return the end of the range of text to which the specified
@@ -117,7 +117,7 @@ public interface Spanned extends CharSequence {
      * @param span markup object
      * @return the end char index
      */
-    int getSpanEnd(Object span);
+    int getSpanEnd(@Nonnull Object span);
 
     /**
      * Return the flags that were specified when {@link Spannable#setSpan} was
@@ -127,14 +127,19 @@ public interface Spanned extends CharSequence {
      * @param span markup object
      * @return the flags
      */
-    int getSpanFlags(Object span);
+    int getSpanFlags(@Nonnull Object span);
 
     /**
-     * Return the first offset greater than <code>start</code> where a markup
-     * object of class <code>type</code> begins or ends, or <code>limit</code>
+     * Return the first offset greater than {@code start} where a markup
+     * object of class {@code type} begins or ends, or {@code limit}
      * if there are no starts or ends greater than <code>start</code> but less
-     * than <code>limit</code>. Specify {@code Object.class} for
+     * than {@code limit}. Specify {@code null} or {@code Object.class} for
      * the type if you want every transition regardless of type.
+     *
+     * @param start start char index of the slice
+     * @param limit end char index of the slice
+     * @param type  the markup type
+     * @return transition point
      */
-    int nextSpanTransition(int start, int limit, @Nonnull Class<?> type);
+    int nextSpanTransition(int start, int limit, @Nullable Class<?> type);
 }

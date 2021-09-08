@@ -40,9 +40,7 @@ public class MeasuredText {
     private final Run[] mRuns;
 
     private MeasuredText(@Nonnull char[] textBuf, @Nonnull Run[] runs) {
-        if ((textBuf.length == 0) != (runs.length == 0)) {
-            throw new IllegalArgumentException();
-        }
+        //assert (textBuf.length == 0) == (runs.length == 0);
         mTextBuf = textBuf;
         mRuns = runs;
         for (Run run : runs) {

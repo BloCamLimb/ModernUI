@@ -20,22 +20,30 @@ package icyllis.modernui.text;
 
 import javax.annotation.Nonnull;
 
+/**
+ * This is the class for text whose content is immutable but to which
+ * markup objects can be attached and detached.
+ */
 public class SpannableString extends SpannableStringInternal implements Spannable, GetChars {
 
-    public SpannableString(CharSequence source, boolean ignoreNoCopySpan) {
+    /**
+     * @param source           source object to copy from
+     * @param ignoreNoCopySpan whether to copy NoCopySpans in the {@code source}
+     */
+    public SpannableString(@Nonnull CharSequence source, boolean ignoreNoCopySpan) {
         super(source, 0, source.length(), ignoreNoCopySpan);
     }
 
-    SpannableString(CharSequence source) {
+    SpannableString(@Nonnull CharSequence source) {
         this(source, false);
     }
 
-    private SpannableString(CharSequence source, int start, int end) {
+    private SpannableString(@Nonnull CharSequence source, int start, int end) {
         super(source, start, end, false);
     }
 
     @Nonnull
-    public static SpannableString valueOf(CharSequence source) {
+    public static SpannableString valueOf(@Nonnull CharSequence source) {
         if (source instanceof SpannableString) {
             return (SpannableString) source;
         } else {
@@ -44,12 +52,12 @@ public class SpannableString extends SpannableStringInternal implements Spannabl
     }
 
     @Override
-    public void setSpan(Object span, int start, int end, int flags) {
+    public void setSpan(@Nonnull Object span, int start, int end, int flags) {
         super.setSpan(span, start, end, flags);
     }
 
     @Override
-    public void removeSpan(Object span) {
+    public void removeSpan(@Nonnull Object span) {
         super.removeSpan(span);
     }
 
@@ -57,5 +65,36 @@ public class SpannableString extends SpannableStringInternal implements Spannabl
     @Override
     public final CharSequence subSequence(int start, int end) {
         return new SpannableString(this, start, end);
+    }
+
+    @Override
+    protected void sendSpanAdded(Object span, int start, int end) {
+        final SpanWatcher[] watchers = getSpans(start, end, SpanWatcher.class);
+        if (watchers != null) {
+            for (SpanWatcher watcher : watchers) {
+                watcher.onSpanAdded(this, span, start, end);
+            }
+        }
+    }
+
+    @Override
+    protected void sendSpanRemoved(Object span, int start, int end) {
+        final SpanWatcher[] watchers = getSpans(start, end, SpanWatcher.class);
+        if (watchers != null) {
+            for (SpanWatcher watcher : watchers) {
+                watcher.onSpanRemoved(this, span, start, end);
+            }
+        }
+    }
+
+    @Override
+    protected void sendSpanChanged(Object span, int s, int e, int st, int en) {
+        final SpanWatcher[] watchers = getSpans(Math.min(s, st), Math.max(e, en),
+                SpanWatcher.class);
+        if (watchers != null) {
+            for (SpanWatcher watcher : watchers) {
+                watcher.onSpanChanged(this, span, s, e, st, en);
+            }
+        }
     }
 }

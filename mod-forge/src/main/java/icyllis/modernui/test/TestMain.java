@@ -118,7 +118,7 @@ public class TestMain {
         }
     }
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
         /*String s = "\u0641\u0647\u0648\u064a\u062a\u062d\u062f\u0651\u062b\u0020\u0628\u0644\u063a\u0629\u0020";
         Font font = ALL_FONTS.stream().filter(f -> f.canDisplayUpTo("\u0641\u0647\u0648") == -1).findFirst().get();
         GlyphVector vector = font.layoutGlyphVector(GRAPHICS.getFontRenderContext(),
@@ -392,16 +392,16 @@ public class TestMain {
                 canvas.drawTextRun(tcc, 0, tcc.length(), 730, 170, false, paint1);
                 tcc = "আমি আজ সকালের নাস্তা খাব না";
                 canvas.drawTextRun(tcc, 0, tcc.length(), 660, 240, false, paint1);*/
+                textLine.draw(canvas, 32, 400);
+
                 float playTime = sTrack.getTime();
 
-                sGraph.update((long) (playTime * 1000L) + 16, delta);
+                sGraph.update(delta);
                 sGraph.draw(canvas, 800, 450);
 
                 String tcc = String.format("%d / %d", (int) playTime, (int) sTrack.getLength());
                 canvas.drawTextRun(tcc, 0, tcc.length(), 760, 456, false, paint1);
                 //canvas.rotate(-30);
-
-                textLine.draw(canvas, 32, 400);
 
                 //paint.setStyle(Paint.Style.FILL);
                 //canvas.drawRoundRect(100, 840, 100 + playTime / graph.mSongLength * 1400000, 860, 10, paint);

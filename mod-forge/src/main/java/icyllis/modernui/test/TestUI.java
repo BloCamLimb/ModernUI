@@ -60,7 +60,7 @@ public class TestUI extends ScreenCallback {
                 lastTime = time;
                 if (graph != null) {
                     float playTime = TestMain.sTrack.getTime();
-                    graph.update((long) (playTime * 1000L) + 16, delta);
+                    graph.update(delta);
                     graph.draw(canvas, getBounds().centerX(), getBounds().centerY());
                     invalidateSelf();
                 }

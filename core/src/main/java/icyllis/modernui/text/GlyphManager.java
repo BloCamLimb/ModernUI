@@ -171,7 +171,7 @@ public class GlyphManager {
         Rectangle bounds = vector.getPixelBounds(null, 0, 0);
 
         if (bounds.width == 0 || bounds.height == 0) {
-            atlas.replaceWithNull(glyphCode);
+            atlas.setEmpty(glyphCode);
             return true;
         }
 
