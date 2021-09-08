@@ -18,6 +18,8 @@
 
 package icyllis.modernui.text;
 
+import javax.annotation.Nonnull;
+
 /**
  * This is the interface for text to which markup objects can be
  * attached and detached. This class is modified from Android.
@@ -39,7 +41,7 @@ public interface Spannable extends Spanned {
      * @param end   end char index of the span
      * @param flags flags
      */
-    void setSpan(Object span, int start, int end, int flags);
+    void setSpan(@Nonnull Object span, int start, int end, int flags);
 
     /**
      * Remove the specified object from the range of text to which it
@@ -48,17 +50,17 @@ public interface Spannable extends Spanned {
      *
      * @param span markup object to remove
      */
-    void removeSpan(Object span);
+    void removeSpan(@Nonnull Object span);
 
     /**
      * Remove the specified object from the range of text to which it
      * was attached, if any.  It is OK to remove an object that was never
      * attached in the first place.
      *
-     * @param span markup object to remove
+     * @param span  markup object to remove
      * @param flags flags
      */
-    default void removeSpan(Object span, int flags) {
+    default void removeSpan(@Nonnull Object span, int flags) {
         removeSpan(span);
     }
 
@@ -75,6 +77,7 @@ public interface Spannable extends Spanned {
          * @param source the source that created from
          * @return a new spannable
          */
-        Spannable newSpannable(CharSequence source);
+        @Nonnull
+        Spannable newSpannable(@Nonnull CharSequence source);
     }
 }

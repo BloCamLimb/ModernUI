@@ -93,7 +93,7 @@ final class Registration {
 
     @SubscribeEvent
     static void registerItems(@Nonnull RegistryEvent.Register<Item> event) {
-        if (ModernUIForge.production) {
+        if (ModernUIForge.development) {
             Item.Properties properties = new Item.Properties().stacksTo(1).setISTER(() -> ProjectBuilderRenderer::new);
             event.getRegistry().register(MuiRegistries.PROJECT_BUILDER_ITEM = new Item(properties).setRegistryName("project_builder"));
         }

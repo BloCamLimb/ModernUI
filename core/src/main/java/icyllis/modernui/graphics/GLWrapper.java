@@ -136,14 +136,17 @@ public final class GLWrapper extends GL45C {
                 glEnable(GL_DEBUG_OUTPUT);
             } else if (caps.GL_ARB_debug_output) {
                 LOGGER.debug(MARKER, "Using ARB_debug_output for error logging");
-                GLDebugMessageARBCallback proc = GLDebugMessageARBCallback.create((source, type, id, severity, length, message, userParam) ->
+                GLDebugMessageARBCallback proc = GLDebugMessageARBCallback.create((source, type, id, severity, length
+                        , message, userParam) ->
                         LOGGER.info(MARKER, "0x{}[{},{},{}]: {}",
-                                Integer.toHexString(id), getSourceARB(source), getTypeARB(type), getSeverityARB(severity),
+                                Integer.toHexString(id), getSourceARB(source), getTypeARB(type),
+                                getSeverityARB(severity),
                                 GLDebugMessageARBCallback.getMessage(length, message)));
                 glDebugMessageCallbackARB(proc, NULL);
             } else if (caps.GL_AMD_debug_output) {
                 LOGGER.debug(MARKER, "Using AMD_debug_output for error logging");
-                GLDebugMessageAMDCallback proc = GLDebugMessageAMDCallback.create((id, category, severity, length, message, userParam) ->
+                GLDebugMessageAMDCallback proc = GLDebugMessageAMDCallback.create((id, category, severity, length,
+                                                                                   message, userParam) ->
                         LOGGER.info(MARKER, "0x{}[{},{}]: {}",
                                 Integer.toHexString(id), getCategoryAMD(category), getSeverityAMD(severity),
                                 GLDebugMessageAMDCallback.getMessage(length, message)));
@@ -222,9 +225,12 @@ public final class GLWrapper extends GL45C {
 
             if (count > 0) {
                 ModernUI.get().warnSetup("warning.modernui.old_opengl", "4.5", glVersion);
-                LOGGER.fatal(RenderCore.MARKER, "OpenGL is too old, your version is {} but requires OpenGL 4.5", glVersion);
-                LOGGER.fatal(RenderCore.MARKER, "There are {} GL capabilities that are not supported by your graphics environment", count);
-                LOGGER.fatal(RenderCore.MARKER, "Try to use dedicated GPU for Java applications and upgrade your graphics driver");
+                LOGGER.fatal(RenderCore.MARKER, "OpenGL is too old, your version is {} but requires OpenGL 4.5",
+                        glVersion);
+                LOGGER.fatal(RenderCore.MARKER, "There are {} GL capabilities that are not supported by your graphics" +
+                        " environment", count);
+                LOGGER.fatal(RenderCore.MARKER, "Try to use dedicated GPU for Java applications and upgrade your " +
+                        "graphics driver");
                 throw new RuntimeException("Graphics card or driver does not meet the minimum requirement");
             }
         }
@@ -242,7 +248,8 @@ public final class GLWrapper extends GL45C {
         sInitialized = true;
     }
 
-    private static void onDebugMessage(int source, int type, int id, int severity, int length, long message, long userParam) {
+    private static void onDebugMessage(int source, int type, int id, int severity, int length, long message,
+                                       long userParam) {
         switch (severity) {
             case GL_DEBUG_SEVERITY_HIGH:
                 LOGGER.error(MARKER, "({}|{}|0x{}) {}",

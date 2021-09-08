@@ -31,8 +31,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.function.IntFunction;
 
-import static icyllis.modernui.graphics.GLWrapper.GL_ALPHA;
-import static icyllis.modernui.graphics.GLWrapper.GL_UNSIGNED_BYTE;
+import static icyllis.modernui.graphics.GLWrapper.*;
 
 /**
  * Maintains a font texture atlas, which is specified with a font family, size and style.
@@ -86,7 +85,7 @@ public class FontAtlas {
     }
 
     // needed when the glyph has nothing to render
-    public void replaceWithNull(int glyphCode) {
+    public void setEmpty(int glyphCode) {
         mGlyphs.put(glyphCode, null);
     }
 
@@ -146,7 +145,7 @@ public class FontAtlas {
             mTexture.initCompat(GL_ALPHA, INITIAL_SIZE, INITIAL_SIZE, MIPMAP_LEVEL);
             // we have border that not upload data, so generate mipmap may leave undefined data
             mTexture.clear(0);
-            mTexture.setFilter(true, true);
+            mTexture.setFilter(GL_LINEAR_MIPMAP_LINEAR, GL_NEAREST);
         } else {
             final boolean vertical;
             if (mHeight != mWidth) {

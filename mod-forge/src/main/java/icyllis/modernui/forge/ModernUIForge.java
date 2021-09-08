@@ -57,7 +57,7 @@ public final class ModernUIForge extends ModernUI {
 
     static boolean interceptTipTheScales;
 
-    static boolean production;
+    static boolean development;
     static boolean developerMode;
 
     static {
@@ -96,15 +96,21 @@ public final class ModernUIForge extends ModernUI {
                         );
                 attachBaseContext(new ContextClient(ID));
             }
-            if (production) {
+            if (development) {
                 FMLJavaModLoadingContext.get().getModEventBus().register(EventHandler.ModClientExp.class);
             }
         }
 
+        ModList.get().forEachModContainer((modid, container) -> {
+            if (container instanceof FMLModContainer) {
+                mModEventBuses.put(modid, ((FMLModContainer) container).getEventBus());
+            }
+        });
+
         ModernUI.LOGGER.debug(ModernUI.MARKER, "Modern UI initialized");
     }
 
-    private void init() {
+    private static void init() {
         // get '/run' parent
         Path path = FMLPaths.GAMEDIR.get().getParent();
         // the root directory of your project
@@ -112,7 +118,7 @@ public final class ModernUIForge extends ModernUI {
         String[] r = dir.list((file, name) -> name.equals("build.gradle"));
         if (r != null && r.length > 0 && dir.getName().equals(ModernUI.NAME_CPT)) {
             ModernUI.LOGGER.debug(ModernUI.MARKER, "Working in production environment");
-            production = true;
+            development = true;
         } else if (ModernUI.class.getSigners() == null) {
             ModernUI.LOGGER.debug(MARKER, "Signature is missing");
         }
@@ -122,11 +128,6 @@ public final class ModernUIForge extends ModernUI {
             ModernUI.LOGGER.debug(ModernUI.MARKER, "Intercepting TipTheScales");
             interceptTipTheScales = true;
         }
-
-        ModList.get().forEachModContainer((modid, container) -> {
-            if (container instanceof FMLModContainer)
-                mModEventBuses.put(modid, ((FMLModContainer) container).getEventBus());
-        });
     }
 
     @Override
@@ -153,7 +154,7 @@ public final class ModernUIForge extends ModernUI {
     }
 
     public static boolean isDeveloperMode() {
-        return developerMode || production;
+        return developerMode || development;
     }
 
     public static boolean isOptiFineLoaded() {

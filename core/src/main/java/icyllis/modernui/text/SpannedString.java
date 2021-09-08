@@ -16,26 +16,50 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*
+ * Copyright (C) 2006 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package icyllis.modernui.text;
 
 import javax.annotation.Nonnull;
 
-public class SpannedString extends SpannableStringInternal implements Spanned, GetChars {
+/**
+ * This is the class for text whose content and markup are immutable.
+ * For mutable markup, see {@link SpannableString}.
+ */
+public final class SpannedString extends SpannableStringInternal implements Spanned, GetChars {
 
-    public SpannedString(CharSequence source, boolean ignoreNoCopySpan) {
+    /**
+     * @param source           source object to copy from
+     * @param ignoreNoCopySpan whether to copy NoCopySpans in the {@code source}
+     */
+    public SpannedString(@Nonnull CharSequence source, boolean ignoreNoCopySpan) {
         super(source, 0, source.length(), ignoreNoCopySpan);
     }
 
-    private SpannedString(CharSequence source) {
+    private SpannedString(@Nonnull CharSequence source) {
         this(source, false);
     }
 
-    private SpannedString(CharSequence source, int start, int end) {
+    private SpannedString(@Nonnull CharSequence source, int start, int end) {
         super(source, start, end, false);
     }
 
     @Nonnull
-    public static SpannedString valueOf(CharSequence source) {
+    public static SpannedString valueOf(@Nonnull CharSequence source) {
         if (source instanceof SpannedString) {
             return (SpannedString) source;
         } else {
@@ -43,6 +67,7 @@ public class SpannedString extends SpannableStringInternal implements Spanned, G
         }
     }
 
+    @Nonnull
     @Override
     public CharSequence subSequence(int start, int end) {
         return new SpannedString(this, start, end);
