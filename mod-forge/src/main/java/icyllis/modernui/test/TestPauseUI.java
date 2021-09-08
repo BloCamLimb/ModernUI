@@ -18,12 +18,11 @@
 
 package icyllis.modernui.test;
 
-import icyllis.modernui.animation.Animation;
-import icyllis.modernui.animation.Applier;
+import icyllis.modernui.screen.Animation;
+import icyllis.modernui.screen.Applier;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.screen.ScreenCallback;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;

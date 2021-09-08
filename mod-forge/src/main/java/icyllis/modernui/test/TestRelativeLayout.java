@@ -19,7 +19,6 @@
 package icyllis.modernui.test;
 
 import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.math.TextAlign;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.widget.RelativeLayout;
 import icyllis.modernui.view.View;

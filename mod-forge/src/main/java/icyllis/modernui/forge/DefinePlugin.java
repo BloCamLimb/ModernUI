@@ -16,9 +16,30 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
+package icyllis.modernui.forge;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 /**
- * Extended text engine for Minecraft Vanilla, compatible with Minecraft
- * text styles and components, also providing extra optimizations.
- * Includes text layout and rendering pipeline.
+ * Defines a plugin to Modern UI.
+ * <p>
+ * Any class found with this annotation will be loaded as a Modern UI plugin,
+ * all these classes must be subclasses of {@link Plugin} to work.
+ *
+ * @see Plugin
  */
-package icyllis.modernui.textmc;
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface DefinePlugin {
+
+    /**
+     * The identifier of the plugin, only lowercase letters are allowed.
+     * This is also used as the namespace of your plugin context.
+     *
+     * @return the plugin id
+     */
+    String value();
+}

@@ -16,9 +16,34 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
+package icyllis.modernui.forge;
+
+import icyllis.modernui.core.ContextWrapper;
+
 /**
- * Extended text engine for Minecraft Vanilla, compatible with Minecraft
- * text styles and components, also providing extra optimizations.
- * Includes text layout and rendering pipeline.
+ * Represents a plugin to Modern UI. All instances will be created from Modern UI system.
+ * <p>
+ * Creating a plugin by {@link DefinePlugin}, for example:
+ * <pre>
+ * &#64;DefinePlugin("example")
+ * public class MuiPlugin extends Plugin {
+ *      private static Plugin sInstance;
+ *
+ *      public MuiPlugin() {
+ *          sInstance = this;
+ *      }
+ *
+ *      public static Plugin get() {
+ *          return sInstance;
+ *      }
+ * }
+ * </pre>
+ *
+ * @see DefinePlugin
  */
-package icyllis.modernui.textmc;
+public class Plugin extends ContextWrapper {
+
+    public Plugin() {
+
+    }
+}

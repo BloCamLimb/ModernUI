@@ -20,7 +20,7 @@ package icyllis.modernui.forge;
 
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.font.GlyphManagerForge;
+import icyllis.modernui.textmc.GlyphManagerForge;
 import icyllis.modernui.textmc.ModernFontRenderer;
 import icyllis.modernui.textmc.TextLayoutProcessor;
 import icyllis.modernui.screen.BlurHandler;

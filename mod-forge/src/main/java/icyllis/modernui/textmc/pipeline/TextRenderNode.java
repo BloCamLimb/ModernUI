@@ -24,7 +24,7 @@ import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Matrix4f;
-import icyllis.modernui.graphics.font.GlyphManagerForge;
+import icyllis.modernui.textmc.GlyphManagerForge;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.Sheets;
 import org.lwjgl.opengl.GL11;

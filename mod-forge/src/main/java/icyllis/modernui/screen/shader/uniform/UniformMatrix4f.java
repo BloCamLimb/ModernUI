@@ -16,9 +16,24 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-/**
- * Extended text engine for Minecraft Vanilla, compatible with Minecraft
- * text styles and components, also providing extra optimizations.
- * Includes text layout and rendering pipeline.
- */
-package icyllis.modernui.textmc;
+package icyllis.modernui.screen.shader.uniform;
+
+import icyllis.modernui.screen.shader.ShaderUniform;
+import icyllis.modernui.math.Matrix4;
+
+import javax.annotation.Nonnull;
+
+@Deprecated
+public class UniformMatrix4f extends ShaderUniform<Matrix4> {
+
+    public UniformMatrix4f(int location) {
+        super(location);
+    }
+
+    @Override
+    public void load(@Nonnull Matrix4 data) {
+        if (location != -1) {
+            //GL20.glUniform4fv(location, data.getData());
+        }
+    }
+}

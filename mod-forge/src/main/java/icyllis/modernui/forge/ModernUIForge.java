@@ -19,8 +19,7 @@
 package icyllis.modernui.forge;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.core.ContextClient;
-import icyllis.modernui.graphics.font.GlyphManagerForge;
+import icyllis.modernui.textmc.GlyphManagerForge;
 import icyllis.modernui.graphics.shader.ShaderManager;
 import icyllis.modernui.screen.LayoutIO;
 import net.minecraft.client.Minecraft;

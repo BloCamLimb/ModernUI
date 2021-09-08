@@ -21,7 +21,7 @@ package icyllis.modernui.mixin;
 import com.mojang.blaze3d.platform.Window;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.forge.MForgeCompat;
-import icyllis.modernui.graphics.font.GlyphManagerForge;
+import icyllis.modernui.textmc.GlyphManagerForge;
 import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.textmc.TextLayoutProcessor;

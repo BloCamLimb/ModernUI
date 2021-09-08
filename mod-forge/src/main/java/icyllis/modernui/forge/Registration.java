@@ -20,7 +20,6 @@ package icyllis.modernui.forge;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.core.PluginList;
 import icyllis.modernui.graphics.GLWrapper;
 import icyllis.modernui.textmc.ModernFontRenderer;
 import icyllis.modernui.textmc.TextLayoutProcessor;
