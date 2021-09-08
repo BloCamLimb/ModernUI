@@ -19,8 +19,8 @@
 package icyllis.modernui.forge;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.screen.BlurHandler;
 import icyllis.modernui.platform.RenderCore;
+import icyllis.modernui.screen.BlurHandler;
 import icyllis.modernui.screen.OpenMenuEvent;
 import icyllis.modernui.test.TestMenu;
 import icyllis.modernui.test.TestUI;
@@ -96,12 +96,13 @@ final class EventHandler {
             Map<ResourceLocation, BakedModel> registry = event.getModelRegistry();
             replaceModel(registry, new ModelResourceLocation(
                             Objects.requireNonNull(MuiRegistries.PROJECT_BUILDER_ITEM.getRegistryName()), "inventory"),
-                    m -> new ProjectBuilderModel(m, event.getModelLoader()));
+                    baseModel -> new ProjectBuilderModel(baseModel, event.getModelLoader()));
         }
 
         private static void replaceModel(@Nonnull Map<ResourceLocation, BakedModel> modelRegistry,
-                                         ModelResourceLocation location, @Nonnull Function<BakedModel, BakedModel> factory) {
-            modelRegistry.put(location, factory.apply(modelRegistry.get(location)));
+                                         @Nonnull ModelResourceLocation location,
+                                         @Nonnull Function<BakedModel, BakedModel> replacer) {
+            modelRegistry.put(location, replacer.apply(modelRegistry.get(location)));
         }
     }
 

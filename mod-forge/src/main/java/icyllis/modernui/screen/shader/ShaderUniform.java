@@ -16,9 +16,16 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-/**
- * Extended text engine for Minecraft Vanilla, compatible with Minecraft
- * text styles and components, also providing extra optimizations.
- * Includes text layout and rendering pipeline.
- */
-package icyllis.modernui.textmc;
+package icyllis.modernui.screen.shader;
+
+@Deprecated
+public abstract class ShaderUniform<T> {
+
+    protected final int location;
+
+    public ShaderUniform(int location) {
+        this.location = location;
+    }
+
+    public abstract void load(T data);
+}

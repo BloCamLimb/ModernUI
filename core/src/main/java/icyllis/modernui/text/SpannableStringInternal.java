@@ -177,7 +177,7 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
         return false;
     }
 
-    void setSpan(@Nonnull Object span, int start, int end, int flags) {
+    public void setSpan(@Nonnull Object span, int start, int end, int flags) {
         setSpan(span, start, end, flags, true);
     }
 
@@ -248,7 +248,7 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
         sendSpanAdded(span, start, end);
     }
 
-    void removeSpan(@Nonnull Object span) {
+    public void removeSpan(@Nonnull Object span) {
         removeSpan(span, 0);
     }
 

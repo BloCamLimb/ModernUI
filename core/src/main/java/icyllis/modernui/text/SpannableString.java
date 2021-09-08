@@ -51,16 +51,6 @@ public class SpannableString extends SpannableStringInternal implements Spannabl
         }
     }
 
-    @Override
-    public void setSpan(@Nonnull Object span, int start, int end, int flags) {
-        super.setSpan(span, start, end, flags);
-    }
-
-    @Override
-    public void removeSpan(@Nonnull Object span) {
-        super.removeSpan(span);
-    }
-
     @Nonnull
     @Override
     public final CharSequence subSequence(int start, int end) {

@@ -16,9 +16,17 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-/**
- * Extended text engine for Minecraft Vanilla, compatible with Minecraft
- * text styles and components, also providing extra optimizations.
- * Includes text layout and rendering pipeline.
- */
-package icyllis.modernui.textmc;
+package icyllis.modernui.screen;
+
+@Deprecated
+public enum TextAlign {
+    LEFT(0.0f),
+    CENTER(0.5f),
+    RIGHT(1.0f);
+
+    public final float offsetFactor;
+
+    TextAlign(float offsetFactor) {
+        this.offsetFactor = offsetFactor;
+    }
+}
