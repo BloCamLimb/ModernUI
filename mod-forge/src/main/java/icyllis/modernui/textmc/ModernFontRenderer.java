@@ -22,7 +22,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.mixin.AccessFontRenderer;
 import icyllis.modernui.mixin.MixinClientLanguage;
-import icyllis.modernui.textmc.pipeline.TextRenderNode;
 import icyllis.modernui.platform.RenderCore;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.StringSplitter;
@@ -65,7 +64,7 @@ public class ModernFontRenderer extends Font {
     private boolean mAllowShadow = true;
     private boolean mGlobalRenderer = false;
 
-    private final TextLayoutProcessor mFontEngine = TextLayoutProcessor.getInstance();
+    private final TextLayoutEngine mFontEngine = TextLayoutEngine.getInstance();
 
     // temporary float value used in lambdas
     private final MutableFloat v = new MutableFloat();
@@ -192,7 +191,7 @@ public class ModernFontRenderer extends Font {
     @Override
     public int drawInBatch(@Nonnull FormattedCharSequence text, float x, float y, int color, boolean dropShadow, @Nonnull Matrix4f matrix,
                            @Nonnull MultiBufferSource buffer, boolean seeThrough, int colorBackground, int packedLight) {
-        if (mGlobalRenderer && text.accept((index, style, codePoint) -> style.getFont() != Minecraft.ALT_FONT)) {
+        if (mGlobalRenderer && text.accept((index, style, codePoint) -> !style.getFont().equals(Minecraft.ALT_FONT))) {
             v.setValue(x);
             mFontEngine.handleSequence(text,
                     (t, style) -> {

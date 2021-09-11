@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.textmc.pipeline;
+package icyllis.modernui.textmc;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
@@ -24,7 +24,9 @@ import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Matrix4f;
-import icyllis.modernui.textmc.GlyphManagerForge;
+import icyllis.modernui.textmc.pipeline.EffectRenderType;
+import icyllis.modernui.textmc.pipeline.GlyphRender;
+import icyllis.modernui.textmc.pipeline.TextRenderEffect;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.Sheets;
 import org.lwjgl.opengl.GL11;
@@ -32,7 +34,7 @@ import org.lwjgl.opengl.GL11;
 import javax.annotation.Nonnull;
 
 /**
- * The complete node, including final rendering results and layout information
+ * The complete node includes layout results and rendering information
  */
 public class TextRenderNode {
 
@@ -98,8 +100,8 @@ public class TextRenderNode {
         RenderSystem.enableTexture();
 
         for (GlyphRender glyph : glyphs) {
-            if (glyph.color != GlyphRender.COLOR_NO_CHANGE) {
-                int color = glyph.color;
+            if (glyph.mFlags != GlyphRender.COLOR_NO_CHANGE) {
+                int color = glyph.mFlags;
                 if (color == GlyphRender.USE_INPUT_COLOR) {
                     r = startR;
                     g = startG;
@@ -121,8 +123,8 @@ public class TextRenderNode {
             RenderSystem.disableTexture();
             builder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
             for (GlyphRender glyph : glyphs) {
-                if (glyph.color != GlyphRender.COLOR_NO_CHANGE) {
-                    int color = glyph.color;
+                if (glyph.mFlags != GlyphRender.COLOR_NO_CHANGE) {
+                    int color = glyph.mFlags;
                     if (color == GlyphRender.USE_INPUT_COLOR) {
                         r = startR;
                         g = startG;
@@ -154,8 +156,8 @@ public class TextRenderNode {
         x -= GlyphManagerForge.GLYPH_OFFSET;
 
         for (GlyphRender glyph : glyphs) {
-            if (glyph.color != GlyphRender.COLOR_NO_CHANGE) {
-                int color = glyph.color;
+            if (glyph.mFlags != GlyphRender.COLOR_NO_CHANGE) {
+                int color = glyph.mFlags;
                 if (color == GlyphRender.USE_INPUT_COLOR) {
                     r = startR;
                     g = startG;
@@ -183,8 +185,8 @@ public class TextRenderNode {
             b = startB;
             builder = buffer.getBuffer(EffectRenderType.getRenderType(seeThrough));
             for (GlyphRender glyph : glyphs) {
-                if (glyph.color != GlyphRender.COLOR_NO_CHANGE) {
-                    int color = glyph.color;
+                if (glyph.mFlags != GlyphRender.COLOR_NO_CHANGE) {
+                    int color = glyph.mFlags;
                     if (color == GlyphRender.USE_INPUT_COLOR) {
                         r = startR;
                         g = startG;

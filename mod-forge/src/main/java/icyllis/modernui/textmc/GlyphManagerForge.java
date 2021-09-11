@@ -22,7 +22,6 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.texture.Texture2D;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.text.Typeface;
-import icyllis.modernui.textmc.pipeline.TextRenderNode;
 import icyllis.modernui.textmc.pipeline.TextRenderType;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -216,13 +215,13 @@ public class GlyphManagerForge {
      * upper 32 are the id of the font in the {@link #mFontKeyMap}. This makes
      * for a single globally unique number to identify any glyph from any font.
      */
-    private final Long2ObjectMap<TexturedGlyph> mGlyphCache = new Long2ObjectOpenHashMap<>();
+    private final Long2ObjectMap<TexturedGlyphVanilla> mGlyphCache = new Long2ObjectOpenHashMap<>();
 
     /**
      * Font ID {@link #mFontKeyMap} to an array of length 10 represent 0-9 digits (in that order)
      * These glyph advance are equal for fast rendering. For example {@link VanillaTextKey#hashCode()} did.
      */
-    private final Int2ObjectMap<TexturedGlyph[]> mDigitsMap = new Int2ObjectArrayMap<>(4);
+    private final Int2ObjectMap<TexturedGlyphVanilla[]> mDigitsMap = new Int2ObjectArrayMap<>(4);
 
     /*private final Int2ObjectMap<TexturedGlyph> mEmojiMap = new Int2ObjectArrayMap<>(32);
 
@@ -499,7 +498,7 @@ public class GlyphManagerForge {
      * @return the cache textured glyph
      */
     @Nonnull
-    public TexturedGlyph lookupGlyph(Font font, int glyphCode) {
+    public TexturedGlyphVanilla lookupGlyph(Font font, int glyphCode) {
         // the key should be cached in layout step, see deriveFont()
         long fontKey = (long) mFontKeyMap.getInt(font) << 32;
         return mGlyphCache.computeIfAbsent(fontKey | glyphCode,
@@ -516,7 +515,7 @@ public class GlyphManagerForge {
      */
     @Nonnull
     @Deprecated
-    private TexturedGlyph lookupGlyph(int codePoint, int fontStyle, int fontSize) {
+    private TexturedGlyphVanilla lookupGlyph(int codePoint, int fontStyle, int fontSize) {
         return lookupGlyph(lookupFont(codePoint, fontStyle, fontSize), codePoint);
     }
 
@@ -528,7 +527,7 @@ public class GlyphManagerForge {
      * @return created textured glyph
      */
     @Nonnull
-    private TexturedGlyph cacheGlyph(@Nonnull Font font, int glyphCode) {
+    private TexturedGlyphVanilla cacheGlyph(@Nonnull Font font, int glyphCode) {
 
         /* There's no need to layout glyph vector, we only draw the specific glyphCode
          * which is already laid-out in TextProcessor */
@@ -568,7 +567,7 @@ public class GlyphManagerForge {
         mCurrPosX += renderWidth + GLYPH_SPACING * 2;
         final float f = getResolutionFactor();
 
-        return new TexturedGlyph(mTexture, advance / f, baselineX / f, baselineY / f,
+        return new TexturedGlyphVanilla(mTexture, advance / f, baselineX / f, baselineY / f,
                 width / f, height / f,
                 (float) x / TEXTURE_SIZE, (float) y / TEXTURE_SIZE,
                 (float) (x + width) / TEXTURE_SIZE, (float) (y + height) / TEXTURE_SIZE);
@@ -580,7 +579,7 @@ public class GlyphManagerForge {
      * @param font derived font including style and font size
      * @return array of all digit glyphs 0-9 (in that order)
      */
-    public TexturedGlyph[] lookupDigits(Font font) {
+    public TexturedGlyphVanilla[] lookupDigits(Font font) {
         // the key should be cached in layout step
         int fontKey = mFontKeyMap.getInt(font);
         return mDigitsMap.computeIfAbsent(fontKey,
@@ -595,7 +594,7 @@ public class GlyphManagerForge {
      * @return an array of digits 0-9
      */
     @Deprecated
-    private TexturedGlyph[] lookupDigits(int fontStyle, int fontSize) {
+    private TexturedGlyphVanilla[] lookupDigits(int fontStyle, int fontSize) {
         return lookupDigits(lookupFont(48, fontStyle, fontSize));
     }
 
@@ -607,8 +606,8 @@ public class GlyphManagerForge {
      * @return 0-9 digits (in that order)
      */
     @Nonnull
-    private TexturedGlyph[] cacheDigits(@Nonnull Font font) {
-        TexturedGlyph[] digits = new TexturedGlyph[10];
+    private TexturedGlyphVanilla[] cacheDigits(@Nonnull Font font) {
+        TexturedGlyphVanilla[] digits = new TexturedGlyphVanilla[10];
 
         char[] chars = new char[1];
 
@@ -677,7 +676,7 @@ public class GlyphManagerForge {
             mCurrLineHeight = Math.max(mCurrLineHeight, renderHeight);
             mCurrPosX += standardRenderWidth + GLYPH_SPACING * 2;
 
-            digits[i] = new TexturedGlyph(mTexture,
+            digits[i] = new TexturedGlyphVanilla(mTexture,
                     standardAdvance / f, baselineX / f, baselineY / f,
                     width / f, height / f,
                     (float) x / TEXTURE_SIZE, (float) y / TEXTURE_SIZE,

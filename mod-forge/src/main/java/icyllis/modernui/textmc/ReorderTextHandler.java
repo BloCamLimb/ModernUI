@@ -30,7 +30,7 @@ import javax.annotation.Nullable;
  */
 public class ReorderTextHandler {
 
-    private final MutableString mBuffer = new MutableString();
+    private final CharSequenceBuilder mBuffer = new CharSequenceBuilder();
 
     @Nullable
     private Style mLast;

@@ -41,7 +41,7 @@ import java.util.Optional;
 @OnlyIn(Dist.CLIENT)
 public class ModernStringSplitter extends StringSplitter {
 
-    private final TextLayoutProcessor mFontEngine = TextLayoutProcessor.getInstance();
+    private final TextLayoutEngine mFontEngine = TextLayoutEngine.getInstance();
 
     private final MutableFloat v = new MutableFloat();
 
@@ -149,7 +149,7 @@ public class ModernStringSplitter extends StringSplitter {
         }
 
         /* The string index of the last glyph that wouldn't fit gives the total desired length of the string in characters */
-        return glyphIndex < glyphs.length ? glyphs[glyphIndex].stringIndex : text.length();
+        return glyphIndex < glyphs.length ? glyphs[glyphIndex].mStringIndex : text.length();
     }
 
     /**
@@ -197,7 +197,7 @@ public class ModernStringSplitter extends StringSplitter {
         }
 
         /* The string index of the last glyph that wouldn't fit gives the total desired length of the string in characters */
-        int l = glyphIndex >= 0 ? glyphs[glyphIndex].stringIndex : 0;
+        int l = glyphIndex >= 0 ? glyphs[glyphIndex].mStringIndex : 0;
         return text.substring(l);
     }
 

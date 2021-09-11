@@ -29,7 +29,7 @@ import javax.annotation.Nonnull;
 
 public class SpectrumGraph {
 
-    private static boolean CIRCULAR = false;
+    private static final boolean CIRCULAR = true;
 
     private final float[] mAmplitudes = new float[60];
     private final FourierTransform mFFT;
@@ -61,7 +61,7 @@ public class SpectrumGraph {
         int len = Math.min(mFFT.getAverageSize() - 5, mAmplitudes.length);
         synchronized (mAmplitudes) {
             for (int i = 0; i < len; i++) {
-                mAmplitudes[i] = mAmplitudes[i] - delta * 0.0012f * (mAmplitudes[i] + 0.03f);
+                mAmplitudes[i] = mAmplitudes[i] - delta * 0.002f * (mAmplitudes[i] + 0.03f);
             }
         }
     }
