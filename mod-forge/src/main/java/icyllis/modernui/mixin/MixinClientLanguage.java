@@ -62,9 +62,9 @@ public abstract class MixinClientLanguage {
     @Overwrite
     public FormattedCharSequence getVisualOrder(FormattedText text) {
         return ModernFontRenderer.isGlobalRenderer() ?
-                copier -> !text.visit((s, t) ->
-                        StringDecomposer.iterate(t, s, copier) ? Optional.empty()
-                                : FormattedText.STOP_ITERATION, Style.EMPTY).isPresent()
+                sink -> text.visit((s, t) ->
+                        StringDecomposer.iterate(t, s, sink) ? Optional.empty()
+                                : FormattedText.STOP_ITERATION, Style.EMPTY).isEmpty()
                 : FormattedBidiReorder.reorder(text, isDefaultRightToLeft());
     }
 }

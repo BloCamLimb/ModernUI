@@ -34,7 +34,7 @@ import javax.annotation.Nonnull;
  *
  * @since 2.0
  */
-public class TexturedGlyph {
+public class TexturedGlyphVanilla {
 
     /**
      * Render type for render type buffer system.
@@ -95,7 +95,7 @@ public class TexturedGlyph {
      */
     private final float v2;
 
-    public TexturedGlyph(Texture2D texture, float advance, float baselineX, float baselineY, float width, float height, float u1, float v1, float u2, float v2) {
+    public TexturedGlyphVanilla(Texture2D texture, float advance, float baselineX, float baselineY, float width, float height, float u1, float v1, float u2, float v2) {
         Pair<TextRenderType, TextRenderType> typePair = TextRenderType.getOrCacheType(texture);
         renderType = typePair.getLeft();
         seeThroughType = typePair.getRight();

@@ -24,7 +24,7 @@ import icyllis.modernui.forge.MForgeCompat;
 import icyllis.modernui.textmc.GlyphManagerForge;
 import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.platform.RenderCore;
-import icyllis.modernui.textmc.TextLayoutProcessor;
+import icyllis.modernui.textmc.TextLayoutEngine;
 import icyllis.modernui.view.ViewConfig;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -54,7 +54,7 @@ public class MixinWindow {
         int oldLevel = Math.min((int) (ViewConfig.get().getViewScale() + 0.5f), 3);
         int newLevel = Math.min((int) (i * 0.5f + 0.5f), 3);
         if (RenderCore.isInitialized() && oldLevel != newLevel) {
-            TextLayoutProcessor.getInstance().reload();
+            TextLayoutEngine.getInstance().reload();
         }
         // See standards
         GlyphManagerForge.sResolutionLevel = newLevel;

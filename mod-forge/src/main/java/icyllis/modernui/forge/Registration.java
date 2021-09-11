@@ -22,7 +22,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.GLWrapper;
 import icyllis.modernui.textmc.ModernFontRenderer;
-import icyllis.modernui.textmc.TextLayoutProcessor;
+import icyllis.modernui.textmc.TextLayoutEngine;
 import icyllis.modernui.mixin.AccessOption;
 import icyllis.modernui.mixin.AccessVideoSettingsScreen;
 import icyllis.modernui.platform.RenderCore;
@@ -145,7 +145,7 @@ final class Registration {
             GLWrapper.setRedirector(new B3DRedirector());
             RenderCore.initialize();
             UIManager.getInstance().initRenderer();
-            TextLayoutProcessor.getInstance().initRenderer();
+            TextLayoutEngine.getInstance().initRenderer();
             ModernFontRenderer.change(Config.CLIENT.globalRenderer.get(), Config.CLIENT.allowShadow.get());
         });
 

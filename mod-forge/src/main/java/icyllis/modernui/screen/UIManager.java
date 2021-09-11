@@ -33,7 +33,7 @@ import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.test.TestMain;
 import icyllis.modernui.test.TestPauseUI;
-import icyllis.modernui.textmc.TextLayoutProcessor;
+import icyllis.modernui.textmc.TextLayoutEngine;
 import icyllis.modernui.util.TimedTask;
 import icyllis.modernui.view.MotionEvent;
 import icyllis.modernui.view.View;
@@ -437,7 +437,7 @@ public final class UIManager implements ViewRootImpl.Handler {
         }
         switch (event.getKey()) {
             case GLFW_KEY_R:
-                TextLayoutProcessor.getInstance().reload();
+                TextLayoutEngine.getInstance().reload();
                 break;
 
             case GLFW_KEY_C:

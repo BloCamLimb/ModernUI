@@ -23,51 +23,52 @@ import it.unimi.dsi.fastutil.chars.CharArrayList;
 import javax.annotation.Nonnull;
 
 /**
- * Used for fast lookup
+ * Used for fast lookup.
  */
-public class MutableString implements CharSequence {
+public class CharSequenceBuilder implements CharSequence {
 
-    public final CharArrayList chars = new CharArrayList();
-
-    public void addString(@Nonnull String str) {
-        chars.size(chars.size() + str.length());
-        str.getChars(0, str.length(), chars.elements(), chars.size());
-    }
+    public final CharArrayList mChars = new CharArrayList();
 
     public void addChar(char c) {
-        chars.add(c);
+        mChars.add(c);
     }
 
     public void addCodePoint(int codePoint) {
         if (Character.isBmpCodePoint(codePoint)) {
-            chars.add((char) codePoint);
+            mChars.add((char) codePoint);
         } else {
-            chars.add(Character.highSurrogate(codePoint));
-            chars.add(Character.lowSurrogate(codePoint));
+            mChars.add(Character.highSurrogate(codePoint));
+            mChars.add(Character.lowSurrogate(codePoint));
         }
     }
 
-    public boolean isEmpty() {
-        return chars.isEmpty();
+    public void addString(@Nonnull String str) {
+        int offset = mChars.size();
+        mChars.size(mChars.size() + str.length());
+        str.getChars(0, str.length(), mChars.elements(), offset);
     }
 
     public void clear() {
-        chars.clear();
+        mChars.clear();
     }
 
     @Override
     public int length() {
-        return chars.size();
+        return mChars.size();
     }
 
     @Override
     public char charAt(int index) {
-        return chars.getChar(index);
+        return mChars.getChar(index);
+    }
+
+    public boolean isEmpty() {
+        return mChars.isEmpty();
     }
 
     @Override
     public CharSequence subSequence(int start, int end) {
-        return new String(chars.elements(), start, end - start);
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -79,6 +80,6 @@ public class MutableString implements CharSequence {
     @Nonnull
     @Override
     public String toString() {
-        return new String(chars.toCharArray());
+        return new String(mChars.toCharArray());
     }
 }

@@ -22,7 +22,7 @@ import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.textmc.GlyphManagerForge;
 import icyllis.modernui.textmc.ModernFontRenderer;
-import icyllis.modernui.textmc.TextLayoutProcessor;
+import icyllis.modernui.textmc.TextLayoutEngine;
 import icyllis.modernui.screen.BlurHandler;
 import icyllis.modernui.screen.UIManager;
 import icyllis.modernui.test.TestHUD;
@@ -298,7 +298,7 @@ public final class Config {
             GlyphManagerForge.sEnableMipmap = enableMipmap.get();
             GlyphManagerForge.sMipmapLevel = mipmapLevel.get();
             //GlyphManager.sResolutionLevel = resolutionLevel.get();
-            TextLayoutProcessor.sDefaultFontSize = defaultFontSize.get();
+            TextLayoutEngine.sDefaultFontSize = defaultFontSize.get();
         }
     }
 

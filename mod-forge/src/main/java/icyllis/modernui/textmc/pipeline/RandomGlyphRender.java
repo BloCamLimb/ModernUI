@@ -22,7 +22,7 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.math.Matrix4f;
-import icyllis.modernui.textmc.TexturedGlyph;
+import icyllis.modernui.textmc.TexturedGlyphVanilla;
 import net.minecraft.client.renderer.MultiBufferSource;
 import org.lwjgl.opengl.GL11;
 
@@ -36,24 +36,24 @@ public class RandomGlyphRender extends GlyphRender {
     /**
      * Array of glyphs with same advance
      */
-    private final TexturedGlyph[] glyphs;
+    private final TexturedGlyphVanilla[] glyphs;
 
-    public RandomGlyphRender(TexturedGlyph[] glyphs, byte effect, int stringIndex, float offsetX) {
-        super(effect, stringIndex, offsetX);
+    public RandomGlyphRender(TexturedGlyphVanilla[] glyphs, byte effect, int stringIndex, float offsetX) {
+        super(effect, stringIndex, advance, offsetX);
         this.glyphs = glyphs;
     }
 
     @Override
     public void drawGlyph(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a) {
         builder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
-        glyphs[RANDOM.nextInt(glyphs.length)].drawGlyph(builder, x + offsetX, y, r, g, b, a);
+        glyphs[RANDOM.nextInt(glyphs.length)].drawGlyph(builder, x + mOffsetX, y, r, g, b, a);
         builder.end();
         BufferUploader.end(builder);
     }
 
     @Override
     public void drawGlyph(Matrix4f matrix, @Nonnull MultiBufferSource buffer, @Nonnull CharSequence raw, float x, float y, int r, int g, int b, int a, boolean seeThrough, int light) {
-        glyphs[RANDOM.nextInt(glyphs.length)].drawGlyph(matrix, buffer, x + offsetX, y, r, g, b, a, seeThrough, light);
+        glyphs[RANDOM.nextInt(glyphs.length)].drawGlyph(matrix, buffer, x + mOffsetX, y, r, g, b, a, seeThrough, light);
     }
 
     @Override

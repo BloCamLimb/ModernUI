@@ -22,43 +22,50 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.math.Matrix4f;
-import icyllis.modernui.textmc.TexturedGlyph;
+import icyllis.modernui.text.TexturedGlyph;
+import icyllis.modernui.textmc.CharacterStyleCarrier;
 import net.minecraft.client.renderer.MultiBufferSource;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class StandardGlyphRender extends GlyphRender {
 
     /**
      * The immutable glyph to render
      */
-    private final TexturedGlyph glyph;
+    @Nullable
+    private final TexturedGlyph mGlyph;
 
-    public StandardGlyphRender(TexturedGlyph glyph, byte effect, int stringIndex, float offsetX) {
-        super(effect, stringIndex, offsetX);
-        this.glyph = glyph;
+    public StandardGlyphRender(int stripIndex, float offsetX, float advance, int decoration,
+                               @Nullable TexturedGlyph glyph) {
+        super(stripIndex, offsetX, advance, decoration);
+        mGlyph = glyph;
     }
 
     @Override
-    public void drawGlyph(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a) {
+    public void drawGlyph(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b,
+                          int a) {
         builder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
-        glyph.drawGlyph(builder, x + offsetX, y, r, g, b, a);
+        mGlyph.drawGlyph(builder, x + mOffsetX, y, r, g, b, a);
         builder.end();
         BufferUploader.end(builder);
     }
 
     @Override
-    public void drawGlyph(Matrix4f matrix, @Nonnull MultiBufferSource buffer, @Nonnull CharSequence raw, float x, float y, int r, int g, int b, int a, boolean seeThrough, int light) {
-        glyph.drawGlyph(matrix, buffer, x + offsetX, y, r, g, b, a, seeThrough, light);
+    public void drawGlyph(Matrix4f matrix, @Nonnull MultiBufferSource buffer, @Nonnull CharSequence raw, float x,
+                          float y, int r, int g, int b, int a, boolean seeThrough, int light) {
+        mGlyph.drawGlyph(matrix, buffer, x + mOffsetX, y, r, g, b, a, seeThrough, light);
     }
 
     @Override
     public float getAdvance() {
-        return glyph.getAdvance();
+        return mGlyph.getAdvance();
     }
 
-    /*public float drawString(@Nonnull BufferBuilder builder, @Nonnull String raw, int color, float x, float y, int r, int g, int b, int a) {
+    /*public float drawString(@Nonnull BufferBuilder builder, @Nonnull String raw, int color, float x, float y, int
+    r, int g, int b, int a) {
         if (color != -1) {
             r = color >> 16 & 0xff;
             g = color >> 8 & 0xff;

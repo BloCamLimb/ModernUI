@@ -21,47 +21,52 @@ package icyllis.modernui.textmc.pipeline;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Matrix4f;
-import icyllis.modernui.textmc.FormattingStyle;
+import icyllis.modernui.textmc.CharacterStyleCarrier;
 import net.minecraft.client.renderer.MultiBufferSource;
 
 import javax.annotation.Nonnull;
 
+/**
+ * A rendering glyph. There is no better way to optimize, an instance takes up 40 bytes.
+ */
 public abstract class GlyphRender {
 
     /**
-     * Change to params color
+     * Change to params color.
      */
-    public static final int USE_INPUT_COLOR = FormattingStyle.NO_SPECIFIED_COLOR;
+    public static final int USE_INPUT_COLOR = CharacterStyleCarrier.USE_PARAM_COLOR;
 
     /**
-     * Keep the color state not to change
+     * Keep the color state not to change.
      */
-    public static final int COLOR_NO_CHANGE = -2;
+    public static final int COLOR_NO_CHANGE = 0x40000000;
 
     /**
-     * Glyph effect
+     * Constructor assignment is stripIndex, and it will be adjusted to stringIndex later.
      */
-    public final byte effect;
+    public int mStringIndex;
 
     /**
-     * RGB color, will be inserted later
+     * Offset X to the start of the text, it will be adjusted in RTL layout.
+     * Normalized to Minecraft GUI system.
      */
-    public int color = COLOR_NO_CHANGE;
+    public float mOffsetX;
 
     /**
-     * First assignment is stripIndex, and it will be adjusted to stringIndex later.
+     * Horizontal advance. Normalized to Minecraft GUI system.
      */
-    public int stringIndex;
+    public final float mAdvance;
 
     /**
-     * Offset X to the start of the text, it will be adjusted in RTL layout
+     * Rendering flags, will be inserted later.
      */
-    public float offsetX;
+    public int mFlags = COLOR_NO_CHANGE;
 
-    public GlyphRender(byte effect, int stringIndex, float offsetX) {
-        this.effect = effect;
-        this.stringIndex = stringIndex;
-        this.offsetX = offsetX;
+    public GlyphRender(int stripIndex, float offsetX, float advance, int decoration) {
+        mStringIndex = stripIndex;
+        mOffsetX = offsetX;
+        mAdvance = advance;
+        mFlags |= decoration;
     }
 
     /**
@@ -108,7 +113,7 @@ public abstract class GlyphRender {
      */
     public final void drawEffect(@Nonnull VertexConsumer builder, float x, float y, int r, int g, int b, int a) {
         if (effect != TextRenderEffect.NO_EFFECT) {
-            x += offsetX;
+            x += mOffsetX;
             if (effect == TextRenderEffect.UNDERLINE)
                 TextRenderEffect.Underline.drawEffect(builder, x, x + getAdvance(), y, r, g, b, a);
             else if (effect == TextRenderEffect.STRIKETHROUGH)
@@ -133,7 +138,7 @@ public abstract class GlyphRender {
      */
     public final void drawEffect(Matrix4f matrix, @Nonnull VertexConsumer builder, float x, float y, int r, int g, int b, int a, int light) {
         if (effect != TextRenderEffect.NO_EFFECT) {
-            x += offsetX;
+            x += mOffsetX;
             if (effect == TextRenderEffect.UNDERLINE)
                 TextRenderEffect.Underline.drawEffect(matrix, builder, x, x + getAdvance(), y, r, g, b, a, light);
             else if (effect == TextRenderEffect.STRIKETHROUGH)

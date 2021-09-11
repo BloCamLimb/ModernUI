@@ -129,6 +129,11 @@ public class GlyphManager {
                 isRtl ? Font.LAYOUT_RIGHT_TO_LEFT : Font.LAYOUT_LEFT_TO_RIGHT);
     }
 
+    @Nonnull
+    public GlyphVector createGlyphVector(@Nonnull Font font, char[] text) {
+        return font.createGlyphVector(mGraphics.getFontRenderContext(), text);
+    }
+
     /**
      * Given a derived font and a glyph code within that font, locate the glyph's pre-rendered image
      * in the glyph atlas and return its cache entry. The entry stores the texture with the
