@@ -252,9 +252,9 @@ public final class ViewRootImpl implements ViewParent {
         }
     }
 
-    public void tick(int ticks) {
+    public void tick() {
         if (mView != null) {
-            mView.tick(ticks);
+            mView.tick();
         }
     }
 

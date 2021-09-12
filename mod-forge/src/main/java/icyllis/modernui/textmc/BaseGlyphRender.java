@@ -141,8 +141,8 @@ public abstract class BaseGlyphRender {
      * @param a       final alpha
      * @param light   packed light
      */
-    public final void drawEffect(Matrix4f matrix, @Nonnull VertexConsumer builder, float x, float y, int r, int g,
-                                 int b, int a, int light) {
+    public final void drawEffect(@Nonnull Matrix4f matrix, @Nonnull VertexConsumer builder, float x, float y, int r,
+                                 int g, int b, int a, int light) {
         if ((mFlags & CharacterStyleCarrier.DECORATION_MASK) != 0) {
             x += mOffsetX;
             if ((mFlags & CharacterStyleCarrier.UNDERLINE_MASK) != 0) {

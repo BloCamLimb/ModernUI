@@ -22,6 +22,7 @@ import com.mojang.math.Matrix4f;
 import icyllis.modernui.textmc.ModernFontRenderer;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -48,7 +49,7 @@ public class MixinFontRenderer {
      * @reason Modern Text Engine
      */
     @Overwrite
-    public int drawInBatch(@Nonnull FormattedCharSequence text, float x, float y, int color, boolean dropShadow,
+    public int drawInBatch(@Nonnull Component text, float x, float y, int color, boolean dropShadow,
                            @Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, boolean seeThrough,
                            int colorBackground, int packedLight) {
         return ModernFontRenderer.drawText(text, x, y, color, dropShadow, matrix, source, seeThrough,
@@ -58,6 +59,18 @@ public class MixinFontRenderer {
     /**
      * @author BloCamLimb
      * @reason Modern Text Engine
+     */
+    @Overwrite
+    public int drawInBatch(@Nonnull FormattedCharSequence text, float x, float y, int color, boolean dropShadow,
+                           @Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, boolean seeThrough,
+                           int colorBackground, int packedLight) {
+        return ModernFontRenderer.drawText(text, x, y, color, dropShadow, matrix, source, seeThrough,
+                colorBackground, packedLight);
+    }
+
+    /**
+     * @author BloCamLimb
+     * @reason Modern Text Engine, do not reorder, we have our layout engine
      */
     @Overwrite
     public String bidirectionalShaping(String text) {

@@ -4,25 +4,22 @@
   "compatibilityLevel": "JAVA_11",
   "plugin": "icyllis.modernui.forge.MixinConfigPlugin",
   "package": "icyllis.modernui.mixin",
-  "mixins": [
-    "MixinFoodData"
-  ],
   "client": [
-    "AccessFontRenderer",
     "AccessFoodData",
     "AccessGameRenderer",
     "AccessOption",
     "AccessPostChain",
     "AccessVideoSettings",
+    "MixinBidiReorder",
     "MixinClientLanguage",
     "MixinFontRenderer",
-    "MixinBidiReorder",
     "MixinIngameGui",
-    "MixinLevelLoadingScreen",
+    "MixinLanguage",
     "MixinMouseHandler",
     "MixinScreen",
     "MixinScrollPanel",
     "MixinSelectionList",
+    "MixinStringSplitter",
     "MixinWindow"
   ]
 }

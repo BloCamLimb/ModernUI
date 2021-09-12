@@ -604,10 +604,9 @@ public class View implements Drawable.Callback {
     /**
      * Called from client thread every tick on pre-tick, to update or cache something
      *
-     * @param ticks elapsed ticks from a gui open, 20 tick = 1 second
      */
     @Deprecated
-    protected void tick(int ticks) {
+    protected void tick() {
 
     }
 

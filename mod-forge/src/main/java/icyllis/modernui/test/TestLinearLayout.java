@@ -70,6 +70,8 @@ public class TestLinearLayout extends LinearLayout {
 
     private boolean b;
 
+    private int ticks;
+
     public TestLinearLayout() {
         setOrientation(Orientation.VERTICAL);
         setGravity(Gravity.CENTER);
@@ -304,8 +306,8 @@ public class TestLinearLayout extends LinearLayout {
     }
 
     @Override
-    protected void tick(int ticks) {
-        super.tick(ticks);
+    protected void tick() {
+        ticks++;
         if ((ticks & 15) == 0) {
             if (!b) {
                 cAnim.start();
@@ -372,8 +374,8 @@ public class TestLinearLayout extends LinearLayout {
         }
 
         @Override
-        protected void tick(int ticks) {
-            super.tick(ticks);
+        protected void tick() {
+            super.tick();
             /*if (ticks % 40 == 0) {
                 animation.invert();
             } else if (ticks % 20 == 0) {

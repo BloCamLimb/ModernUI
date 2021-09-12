@@ -1298,11 +1298,11 @@ public abstract class ViewGroup extends View implements ViewParent {
     }
 
     @Override
-    protected void tick(int ticks) {
+    protected void tick() {
         final View[] views = mChildren;
         final int count = mChildrenCount;
         for (int i = 0; i < count; i++) {
-            views[i].tick(ticks);
+            views[i].tick();
         }
     }
 

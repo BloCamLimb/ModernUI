@@ -82,4 +82,32 @@ public class CharSequenceBuilder implements CharSequence {
     public String toString() {
         return new String(mChars.toCharArray());
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o.getClass() != String.class) return false;
+
+        String that = (String) o;
+        int length = length();
+        if (length != that.length()) {
+            return false;
+        }
+        for (int i = 0; i < length; i++) {
+            if (mChars.getChar(i) != that.charAt(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int h = 0;
+        int length = length();
+        for (int i = 0; i < length; i++) {
+            h = 31 * h + mChars.getChar(i);
+        }
+        return h;
+    }
 }

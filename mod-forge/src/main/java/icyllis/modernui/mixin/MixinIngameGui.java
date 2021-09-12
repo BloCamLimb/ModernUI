@@ -19,6 +19,7 @@
 package icyllis.modernui.mixin;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import icyllis.modernui.textmc.ModernStringSplitter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.Gui;
@@ -53,24 +54,23 @@ public abstract class MixinIngameGui {
             at = @At(value = "FIELD", target = "net/minecraft/client/player/LocalPlayer.experienceLevel:I", opcode =
                     Opcodes.GETFIELD)
     )
-    private int pass(LocalPlayer player) {
+    private int fakeExperience(LocalPlayer player) {
         return 0;
     }
 
     @Inject(method = "renderExperienceBar", at = @At("TAIL"))
-    private void exp(PoseStack matrix, int i, CallbackInfo ci) {
+    private void drawExperience(PoseStack matrix, int i, CallbackInfo ci) {
         LocalPlayer player = minecraft.player;
         if (player != null && player.experienceLevel > 0) {
             String s = Integer.toString(player.experienceLevel);
             Font font = getFont();
-            int x = (screenWidth - font.width(s)) / 2;
+            float w = ModernStringSplitter.measure(s);
+            float x = (screenWidth - w) / 2;
             int y = screenHeight - 31 - 4;
-            matrix.pushPose();
-            matrix.translate(x, y, 0);
-            matrix.scale(1.25f, 1.25f, 1);
-            matrix.translate(-x, -y, 0);
-            font.draw(matrix, s, x, y, 0xff000000);
-            matrix.popPose();
+            font.draw(matrix, s, x + 0.5f, y, 0);
+            font.draw(matrix, s, x - 0.5f, y, 0);
+            font.draw(matrix, s, x, y + 0.5f, 0);
+            font.draw(matrix, s, x, y - 0.5f, 0);
             font.draw(matrix, s, x, y, 0xff80ff20);
         }
     }

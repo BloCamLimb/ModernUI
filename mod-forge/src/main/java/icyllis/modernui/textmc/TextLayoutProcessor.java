@@ -29,6 +29,8 @@ import it.unimi.dsi.fastutil.chars.CharArrayList;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Style;
+import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.util.FormattedCharSink;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
@@ -65,7 +67,7 @@ public class TextLayoutProcessor {
      */
     private final List<BaseGlyphRender> mBidiList = new ArrayList<>();
 
-    private final List<BaseGlyphRender> mStyleList = new ArrayList<>();
+    private final List<BaseGlyphRender> mTextList = new ArrayList<>();
 
     /*
      * All color states
@@ -95,6 +97,8 @@ public class TextLayoutProcessor {
     private int mShift;
     private int mNext;
 
+    private Style mStyle;
+
     private void finishBidiRun(float adjust) {
         if (adjust != 0) {
             mBidiList.forEach(e -> e.mOffsetX += adjust);
@@ -103,12 +107,12 @@ public class TextLayoutProcessor {
         mBidiList.clear();
     }
 
-    private void finishStyleRun(float adjust) {
+    private void finishTextRun(float adjust) {
         if (adjust != 0) {
-            mStyleList.forEach(e -> e.mOffsetX += adjust);
+            mTextList.forEach(e -> e.mOffsetX += adjust);
         }
-        mBidiList.addAll(mStyleList);
-        mStyleList.clear();
+        mBidiList.addAll(mTextList);
+        mTextList.clear();
     }
 
     private void release() {
@@ -121,23 +125,56 @@ public class TextLayoutProcessor {
         mHasEffect = false;
         mShift = 0;
         mNext = 0;
+        mStyle = null;
     }
 
     @Nonnull
-    public TextRenderNode doLayout(@Nonnull String text) {
-        char[] chars = resolveFormattingCodes(text);
+    public TextRenderNode doLayout(@Nonnull String text, @Nonnull Style style) {
+        char[] chars = resolveFormattingCodes(text, style);
         TextRenderNode node = performFullLayout(chars, true);
         release();
         return node;
     }
 
     @Nonnull
-    public TextRenderNode doLayout(@Nonnull FormattedText text) {
-        text.visit(mContentBuilder, Style.EMPTY);
+    public TextRenderNode doLayout(@Nonnull FormattedText text, @Nonnull Style style) {
+        text.visit(mContentBuilder, style);
         TextRenderNode node = performFullLayout(mChars.toCharArray(), false);
         release();
         return node;
     }
+
+    @Nonnull
+    public TextRenderNode doLayout(@Nonnull FormattedCharSequence sequence) {
+        sequence.accept(mBuilderSink);
+        TextRenderNode node = performFullLayout(mChars.toCharArray(), false);
+        release();
+        return node;
+    }
+
+    /**
+     * Always LTR.
+     *
+     * @see FormattedTextWrapper#accept(FormattedCharSink)
+     */
+    private final FormattedCharSink mBuilderSink = new FormattedCharSink() {
+
+        @Override
+        public boolean accept(int index, @Nonnull Style style, int codePoint) {
+            if (style != mStyle) {
+                mCarriers.add(new CharacterStyleCarrier(index, index, style));
+                mStyle = style;
+            }
+            if (Character.isBmpCodePoint(codePoint)) {
+                mChars.add((char) codePoint);
+            } else {
+                mChars.add(Character.highSurrogate(codePoint));
+                mChars.add(Character.lowSurrogate(codePoint));
+            }
+            // continue
+            return true;
+        }
+    };
 
     private final FormattedText.StyledContentConsumer<?> mContentBuilder = new FormattedText.StyledContentConsumer<>() {
         @Override
@@ -206,10 +243,10 @@ public class TextLayoutProcessor {
      * @see net.minecraft.util.StringDecomposer
      */
     @Nonnull
-    private char[] resolveFormattingCodes(@Nonnull String text) {
+    private char[] resolveFormattingCodes(@Nonnull String text, @Nonnull Style base) {
         int shift = 0;
 
-        Style style = Style.EMPTY;
+        Style style = base;
         mCarriers.add(new CharacterStyleCarrier(0, 0, style));
 
         // also fix surrogate pairs
@@ -225,7 +262,7 @@ public class TextLayoutProcessor {
                 if (formatting != null) {
                     /* Classic formatting will set all FancyStyling (like BOLD, UNDERLINE) to false if it's a color
                     formatting */
-                    final Style newStyle = formatting == ChatFormatting.RESET ? Style.EMPTY :
+                    final Style newStyle = formatting == ChatFormatting.RESET ? base :
                             style.applyLegacyFormat(formatting);
                     if (!style.equals(newStyle)) {
                         style = newStyle; // transit to new style
@@ -438,26 +475,9 @@ public class TextLayoutProcessor {
             }
         }
 
-        float lastAdvance = mAdvance;
-
         List<FontRun> items = ModernUI.get().getPreferredTypeface().itemize(text, start, limit);
-        for (int runIndex = isRtl ? items.size() - 1 : 0;
-             isRtl ? runIndex >= 0 : runIndex < items.size(); ) {
-            FontRun run = items.get(runIndex);
+        for (FontRun run : items) {
             performTextLayout(text, run.getStart(), run.getEnd(), isRtl, fastDigit, carrier, run.getFont());
-            if (isRtl) {
-                runIndex--;
-            } else {
-                runIndex++;
-            }
-        }
-
-        if (isRtl) {
-            float totalAdvance = mAdvance - lastAdvance;
-            finishStyleRun(-totalAdvance);
-            mLayoutRight -= totalAdvance;
-        } else {
-            finishStyleRun(0);
         }
     }
 
@@ -489,7 +509,7 @@ public class TextLayoutProcessor {
 
             /* Process code point */
             for (int i = start; i < limit; i++) {
-                mStyleList.add(new RandomGlyphRender(start + i, advance, offset, decoration, digits));
+                mTextList.add(new RandomGlyphRender(start + i, advance, offset, decoration, digits));
 
                 offset += advance;
 
@@ -504,6 +524,13 @@ public class TextLayoutProcessor {
             }
 
             mAdvance += offset;
+
+            if (isRtl) {
+                finishTextRun(-offset);
+                mLayoutRight -= offset;
+            } else {
+                finishTextRun(0);
+            }
         } else {
             // The glyphCode matched to the same codePoint is specified in the font, they are different
             // in different font, HarfBuzz is introduced in Java 11 or higher
@@ -517,8 +544,9 @@ public class TextLayoutProcessor {
 
             final var digits = layoutEngine.lookupDigits(font);
 
-            float lastOffset = 0;
-            for (int i = 0; i < num; i++) {
+            float offset = (float) vector.getGlyphPosition(0).getX();
+            float nextOffset = 0;
+            for (int i = 0; i < num; i++, offset = nextOffset) {
                 /*
                  * Back compatibility for Java 8, since LayoutGlyphVector should not have non-standard glyphs
                  * HarfBuzz is introduced in Java 11 or higher
@@ -529,11 +557,9 @@ public class TextLayoutProcessor {
                 }*/
 
                 int stripIndex = vector.getGlyphCharIndex(i) + start;
-                Point2D point = vector.getGlyphPosition(i);
 
-                float offset = (float) (point.getX() / res);
-                float advance = offset - lastOffset;
-                lastOffset = offset;
+                nextOffset = (float) (vector.getGlyphPosition(i + 1).getX() / res);
+                float advance = nextOffset - offset;
 
                 if (isRtl) {
                     offset += mLayoutRight;
@@ -543,7 +569,7 @@ public class TextLayoutProcessor {
 
                 // Digits are not on SMP
                 if (fastDigit && text[stripIndex] == '0') {
-                    mStyleList.add(new DigitGlyphRender(stripIndex, offset, advance, decoration, digits));
+                    mTextList.add(new DigitGlyphRender(stripIndex, offset, advance, decoration, digits));
                     mHasEffect |= decoration != 0;
                     continue;
                 }
@@ -551,14 +577,20 @@ public class TextLayoutProcessor {
                 int glyphCode = vector.getGlyphCode(i);
                 TexturedGlyph glyph = glyphManager.lookupGlyph(font, glyphCode);
 
-                mStyleList.add(new StandardGlyphRender(stripIndex, offset, advance, decoration, glyph));
+                mTextList.add(new StandardGlyphRender(stripIndex, offset, advance, decoration, glyph));
                 if (glyph != null) {
                     mHasEffect |= decoration != 0;
                 }
             }
 
-            float totalAdvance = (float) (vector.getGlyphPosition(num).getX() / res);
-            mAdvance += totalAdvance;
+            mAdvance += nextOffset;
+
+            if (isRtl) {
+                finishTextRun(-nextOffset);
+                mLayoutRight -= nextOffset;
+            } else {
+                finishTextRun(0);
+            }
         }
     }
 

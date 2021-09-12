@@ -18,6 +18,8 @@
 
 package icyllis.modernui.textmc;
 
+import net.minecraft.network.chat.Style;
+
 import javax.annotation.Nonnull;
 
 /**
@@ -39,6 +41,12 @@ public class VanillaTextKey {
     private String mStr;
 
     /**
+     * Reference to vanilla's {@link Style}, we extract the value that will only affect the rendering effect
+     * of the string, and store it as an integer
+     */
+    private int mStyle;
+
+    /**
      * Cached hash code, default is 0
      */
     private int mHash;
@@ -51,6 +59,7 @@ public class VanillaTextKey {
      */
     private VanillaTextKey(@Nonnull VanillaTextKey key) {
         mStr = key.mStr;
+        mStyle = key.mStyle;
         mHash = key.mHash;
     }
 
@@ -61,6 +70,19 @@ public class VanillaTextKey {
      */
     public VanillaTextKey update(@Nonnull String str) {
         mStr = str;
+        mStyle = 0;
+        mHash = 0;
+        return this;
+    }
+
+    /**
+     * Update current str.
+     *
+     * @param str the string
+     */
+    public VanillaTextKey update(@Nonnull String str, @Nonnull Style style) {
+        mStr = str;
+        mStyle = CharacterStyleCarrier.getFlags(style);
         mHash = 0;
         return this;
     }
@@ -74,6 +96,10 @@ public class VanillaTextKey {
     @Override
     public boolean equals(Object o) {
         if (getClass() != o.getClass()) {
+            return false;
+        }
+
+        if (mStyle != ((VanillaTextKey) o).mStyle) {
             return false;
         }
 
@@ -139,7 +165,7 @@ public class VanillaTextKey {
                 formatting = (c == '\u00a7');
             }
 
-            mHash = h;
+            mHash = h = 31 * h + mStyle;
         }
 
         return h;

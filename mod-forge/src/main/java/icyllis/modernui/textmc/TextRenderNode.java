@@ -104,12 +104,14 @@ public class TextRenderNode {
 
     public float drawText(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b,
                           int a, float res) {
+        if (mGlyphs.length == 0) {
+            return 0;
+        }
         final int startR = r;
         final int startG = g;
         final int startB = b;
 
         y += BASELINE_OFFSET;
-        x -= 1;
         RenderSystem.enableTexture();
 
         for (BaseGlyphRender glyph : mGlyphs) {
@@ -132,7 +134,6 @@ public class TextRenderNode {
             r = startR;
             g = startG;
             b = startB;
-            x += 1;
             RenderSystem.disableTexture();
             builder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
             for (BaseGlyphRender glyph : mGlyphs) {
@@ -159,6 +160,9 @@ public class TextRenderNode {
     public float drawText(@Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, @Nullable CharSequence raw,
                           float x, float y, int r, int g, int b, int a, boolean isShadow, boolean seeThrough,
                           int colorBackground, int packedLight, float res) {
+        if (mGlyphs.length == 0) {
+            return 0;
+        }
         final int startR = r;
         final int startG = g;
         final int startB = b;
@@ -168,7 +172,6 @@ public class TextRenderNode {
         }
 
         y += VANILLA_BASELINE_OFFSET;
-        x -= 1;
 
         for (BaseGlyphRender glyph : mGlyphs) {
             if ((glyph.mFlags & BaseGlyphRender.COLOR_NO_CHANGE) == 0) {
@@ -192,7 +195,6 @@ public class TextRenderNode {
         }
 
         VertexConsumer builder = null;
-        x += 1;
 
         if (mHasEffect) {
             r = startR;
