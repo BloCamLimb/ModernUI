@@ -56,7 +56,7 @@ public class OpenMenuEvent extends Event implements IModBusEvent {
     private final AbstractContainerMenu mMenu;
 
     @Nullable
-    private ScreenCallback mScreen;
+    private ScreenCallback mCallback;
 
     public OpenMenuEvent(@Nonnull AbstractContainerMenu menu) {
         mMenu = menu;
@@ -76,15 +76,15 @@ public class OpenMenuEvent extends Event implements IModBusEvent {
      * Set the application UI for the menu. After calling this method,
      * the event will be canceled.
      *
-     * @param screen the application screen
+     * @param callback the application screen screen
      */
-    public void setScreen(@Nonnull ScreenCallback screen) {
-        mScreen = screen;
+    public void setCallback(@Nonnull ScreenCallback callback) {
+        mCallback = callback;
         setCanceled(true);
     }
 
     @Nullable
-    public ScreenCallback getScreen() {
-        return mScreen;
+    public ScreenCallback getCallback() {
+        return mCallback;
     }
 }

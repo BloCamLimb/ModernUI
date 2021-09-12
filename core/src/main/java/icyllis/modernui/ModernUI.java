@@ -21,6 +21,7 @@ package icyllis.modernui;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.core.ContextWrapper;
 import icyllis.modernui.graphics.Image;
+import icyllis.modernui.text.Typeface;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
@@ -28,7 +29,6 @@ import org.apache.logging.log4j.MarkerManager;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.awt.*;
 import java.io.IOException;
 import java.lang.ref.Cleaner;
 import java.lang.ref.Cleaner.Cleanable;
@@ -37,8 +37,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Locale;
-import java.util.concurrent.ExecutorService;
-import java.util.function.Consumer;
 
 /**
  * The core class of the client side of Modern UI
@@ -51,11 +49,9 @@ public class ModernUI extends ContextWrapper {
     public static final Logger LOGGER = LogManager.getLogger(NAME_CPT);
     public static final Marker MARKER = MarkerManager.getMarker("Core");
 
-    protected static ModernUI sInstance;
+    protected static volatile ModernUI sInstance;
 
     private static final Cleaner sCleaner = Cleaner.create();
-
-    private ExecutorService mLoaderPool;
 
     public ModernUI() {
         sInstance = this;
@@ -104,16 +100,13 @@ public class ModernUI extends ContextWrapper {
         return sCleaner.register(target, action);
     }
 
-    public void warnSetup(String key, Object... args) {
-        // pass
-    }
-
     @Nonnull
     public Locale getSelectedLocale() {
         return Locale.getDefault();
     }
 
-    public void loadFont(String rl, Consumer<Font> setter) {
-
+    @Nonnull
+    public Typeface getPreferredTypeface() {
+        return Typeface.INTERNAL;
     }
 }

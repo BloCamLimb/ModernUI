@@ -61,7 +61,7 @@ public class ModernFontRenderer extends Font {
     /**
      * Config values
      */
-    private boolean mAllowShadow = true;
+    public static boolean sAllowShadow = true;
     private boolean mGlobalRenderer = false;
 
     private final TextLayoutEngine mFontEngine = TextLayoutEngine.getInstance();
@@ -79,10 +79,7 @@ public class ModernFontRenderer extends Font {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
         if (instance == null) {
             ModernFontRenderer i = new ModernFontRenderer(fonts);
-            @Deprecated
-            StringSplitter.WidthProvider c = (codePoint, style) ->
-                    i.mFontEngine.lookupVanillaNode(new String(new int[]{codePoint}, 0, 1), style).advance;
-            i.mModernSplitter = new ModernStringSplitter(c);
+            i.mModernSplitter = new ModernStringSplitter(null);
             return instance = i;
         } else {
             throw new IllegalStateException("Already created");
@@ -91,14 +88,14 @@ public class ModernFontRenderer extends Font {
 
     public static void change(boolean global, boolean shadow) {
         RenderCore.checkRenderThread();
-        if (RenderCore.isInitialized()) {
+        /*if (RenderCore.isInitialized()) {
             instance.mGlobalRenderer = global;
             instance.mAllowShadow = shadow;
-        }
+        }*/
     }
 
     public static boolean isGlobalRenderer() {
-        return instance.mGlobalRenderer;
+        return false;
     }
 
     /*static void hook(boolean doHook) {
@@ -148,7 +145,7 @@ public class ModernFontRenderer extends Font {
                            @Nonnull MultiBufferSource buffer, boolean seeThrough, int colorBackground, int packedLight, boolean bidiFlag) {
         if (mGlobalRenderer) {
             // bidiFlag is useless, we have our layout system
-            x += drawLayer0(text, x, y, color, dropShadow, matrix, buffer, seeThrough, colorBackground, packedLight, Style.EMPTY);
+            x += drawLayer(text, x, y, color, dropShadow, matrix, buffer, seeThrough, colorBackground, packedLight, Style.EMPTY);
             return (int) x + (dropShadow ? 1 : 0);
         }
         return super.drawInBatch(text, x, y, color, dropShadow, matrix, buffer, seeThrough, colorBackground, packedLight, bidiFlag);
@@ -161,7 +158,7 @@ public class ModernFontRenderer extends Font {
             v.setValue(x);
             // iterate all siblings
             text.visit((style, t) -> {
-                v.add(drawLayer0(t, v.floatValue(), y, color, dropShadow, matrix,
+                v.add(drawLayer(t, v.floatValue(), y, color, dropShadow, matrix,
                         buffer, seeThrough, colorBackground, packedLight, style));
                 // continue
                 return Optional.empty();
@@ -178,7 +175,7 @@ public class ModernFontRenderer extends Font {
             v.setValue(x);
             // iterate all siblings
             text.visit((style, t) -> {
-                v.add(drawLayer0(t, v.floatValue(), y, color, dropShadow, matrix,
+                v.add(drawLayer(t, v.floatValue(), y, color, dropShadow, matrix,
                         buffer, seeThrough, colorBackground, packedLight, style));
                 // continue
                 return Optional.empty();
@@ -195,7 +192,7 @@ public class ModernFontRenderer extends Font {
             v.setValue(x);
             mFontEngine.handleSequence(text,
                     (t, style) -> {
-                        v.add(drawLayer0(t, v.floatValue(), y, color, dropShadow, matrix,
+                        v.add(drawLayer(t, v.floatValue(), y, color, dropShadow, matrix,
                                 buffer, seeThrough, colorBackground, packedLight, style));
                         // continue, equals to Optional.empty()
                         return false;
@@ -206,9 +203,9 @@ public class ModernFontRenderer extends Font {
         return super.drawInBatch(text, x, y, color, dropShadow, matrix, buffer, seeThrough, colorBackground, packedLight);
     }
 
-    private float drawLayer0(@Nonnull CharSequence text, float x, float y, int color, boolean dropShadow, Matrix4f matrix,
-                             @Nonnull MultiBufferSource buffer, boolean seeThrough, int colorBackground, int packedLight, Style style) {
-        if (text.length() == 0)
+    public float drawLayer(@Nonnull CharSequence text, float x, float y, int color, boolean dropShadow, Matrix4f matrix,
+                                  @Nonnull MultiBufferSource buffer, boolean seeThrough, int colorBackground, int packedLight, Style style) {
+        /*if (text.length() == 0)
             return 0;
 
         // ensure alpha, color can be ARGB, or can be RGB
@@ -224,12 +221,43 @@ public class ModernFontRenderer extends Font {
         TextRenderNode node = mFontEngine.lookupVanillaNode(text, style);
         if (dropShadow && mAllowShadow) {
             node.drawText(matrix, buffer, text, x + 0.8f, y + 0.8f, r >> 2, g >> 2, b >> 2, a, true,
-                    seeThrough, colorBackground, packedLight);
+                    seeThrough, colorBackground, packedLight, );
             matrix = matrix.copy(); // if not drop shadow, we don't need to copy the matrix
             matrix.translate(AccessFontRenderer.shadowLifting());
         }
 
-        return node.drawText(matrix, buffer, text, x, y, r, g, b, a, false, seeThrough, colorBackground, packedLight);
+        return node.drawText(matrix, buffer, text, x, y, r, g, b, a, false, seeThrough, colorBackground, packedLight, );*/
+        return 0;
+    }
+
+    public static float drawLayer(@Nonnull String text, float x, float y, int color, boolean dropShadow,
+                                  @Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, boolean seeThrough,
+                                  int colorBackground, int packedLight) {
+        if (text.length() == 0) {
+            return 0;
+        }
+
+        // ensure alpha, color can be ARGB, or can be RGB
+        // we check if alpha <= 1, then make alpha = 255 (fully opaque)
+        if ((color & 0xfe000000) == 0) {
+            color |= 0xff000000;
+        }
+
+        int a = color >>> 24;
+        int r = color >> 16 & 0xff;
+        int g = color >> 8 & 0xff;
+        int b = color & 0xff;
+
+        TextRenderNode node = TextLayoutEngine.getInstance().lookupVanillaNode(text);
+        float res = TextLayoutEngine.getInstance().getResolutionLevel();
+        if (dropShadow) {
+            node.drawText(matrix, source, text, x + 0.8f, y + 0.8f, r >> 2, g >> 2, b >> 2, a, true,
+                    seeThrough, colorBackground, packedLight, res);
+            matrix = matrix.copy(); // if not drop shadow, we don't need to copy the matrix
+            matrix.translate(AccessFontRenderer.shadowLifting());
+        }
+
+        return node.drawText(matrix, source, text, x, y, r, g, b, a, false, seeThrough, colorBackground, packedLight, res);
     }
 
     @Override

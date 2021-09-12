@@ -18,7 +18,6 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.platform.RenderCore;
@@ -28,6 +27,7 @@ import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.opengl.*;
+import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -224,13 +224,16 @@ public final class GLWrapper extends GL45C {
             }
 
             if (count > 0) {
-                ModernUI.get().warnSetup("warning.modernui.old_opengl", "4.5", glVersion);
                 LOGGER.fatal(RenderCore.MARKER, "OpenGL is too old, your version is {} but requires OpenGL 4.5",
                         glVersion);
                 LOGGER.fatal(RenderCore.MARKER, "There are {} GL capabilities that are not supported by your graphics" +
                         " environment", count);
                 LOGGER.fatal(RenderCore.MARKER, "Try to use dedicated GPU for Java applications and upgrade your " +
                         "graphics driver");
+                TinyFileDialogs.tinyfd_messageBox("Failed to launch Modern UI",
+                        "OpenGL version is too old. OpenGL 4.5 or higher is required (your version is OpenGL " + glVersion +
+                                "). Please upgrade the driver of your video card. For macOS users, see MoltenGL.",
+                        "ok", "error", true);
                 throw new RuntimeException("Graphics card or driver does not meet the minimum requirement");
             }
         }

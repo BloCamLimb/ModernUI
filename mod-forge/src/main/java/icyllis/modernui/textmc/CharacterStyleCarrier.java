@@ -60,14 +60,14 @@ public class CharacterStyleCarrier {
     /**
      * Bit mask representing underline effect
      */
-    private static final int UNDERLINE_MASK = 0x4000000;
+    public static final int UNDERLINE_MASK = 0x4000000;
 
     /**
      * Bit mask representing strikethrough effect
      */
-    private static final int STRIKETHROUGH_MASK = 0x8000000;
+    public static final int STRIKETHROUGH_MASK = 0x8000000;
 
-    private static final int DECORATION_MASK = UNDERLINE_MASK | STRIKETHROUGH_MASK;
+    public static final int DECORATION_MASK = UNDERLINE_MASK | STRIKETHROUGH_MASK;
 
     /**
      * Bit mask representing obfuscated characters rendering

@@ -18,35 +18,27 @@
 
 package icyllis.modernui.textmc;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.ibm.icu.text.Bidi;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.mixin.MixinClientLanguage;
-import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.screen.Color3i;
 import icyllis.modernui.text.GlyphManager;
 import icyllis.modernui.text.TexturedGlyph;
-import icyllis.modernui.textmc.pipeline.DigitGlyphRender;
-import icyllis.modernui.textmc.pipeline.RandomGlyphRender;
-import icyllis.modernui.textmc.pipeline.StandardGlyphRender;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Style;
 import net.minecraft.util.FormattedCharSequence;
+import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.awt.*;
 import java.awt.font.GlyphVector;
-import java.awt.geom.Point2D;
 import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 
 /**
  * Modern Text Engine for Minecraft. Layout text component and extract style info and generate
@@ -63,19 +55,19 @@ public class TextLayoutEngine {
      */
     private static TextLayoutEngine instance;
 
-    /**
+    /*
      * Config values
      */
-    public static int sDefaultFontSize;
+    //public static int sDefaultFontSize;
 
     private static final ChatFormatting[] FORMATTINGS = ChatFormatting.values();
 
 
-    /**
+    /*
      * Draw and cache all glyphs of all fonts needed
      * Lazy-loading because we are waiting for render system to initialize
      */
-    private GlyphManagerForge glyphManager;
+    //private GlyphManagerForge glyphManager;
 
     /*
      * A cache of recently seen strings to their fully laid-out state, complete with color changes and texture
@@ -96,11 +88,9 @@ public class TextLayoutEngine {
      */
     //private WeakHashMap<String, Key> weakRefCache = new WeakHashMap<>();
 
-    private final Cache<VanillaTextKey, TextRenderNode> stringCache = Caffeine.newBuilder()
+    /*private final Cache<VanillaTextKey, TextRenderNode> stringCache = Caffeine.newBuilder()
             .expireAfterAccess(20, TimeUnit.SECONDS)
-            .build();
-
-    private Map<VanillaTextKey, TextRenderNode> mStringCache = new HashMap<>();
+            .build();*/
 
     /**
      * Temporary Key object re-used for lookups with stringCache.get(). Using a temporary object like this avoids the
@@ -109,7 +99,7 @@ public class TextLayoutEngine {
      */
     private final VanillaTextKey mVanillaLookupKey = new VanillaTextKey();
 
-    private Map<Font, TexturedGlyph[]> mDigitMap = new HashMap<>();
+    private Map<VanillaTextKey, TextRenderNode> mStringCache = new HashMap<>();
 
     /*
      * True if digitGlyphs[] has been assigned and cacheString() can begin replacing all digits with '0' in the string.
@@ -118,24 +108,25 @@ public class TextLayoutEngine {
 
     private final TextLayoutProcessor mProcessor = new TextLayoutProcessor();
 
+    // float array representing additional offset X in normalized pixels, first element is standard advance
+    private Map<Font, Pair<TexturedGlyph[], float[]>> mDigitMap = new HashMap<>();
+
     private final ReorderTextHandler reorder = new ReorderTextHandler();
 
-    /**
+    private float mResolutionLevel = 3;
+
+    /*
      * Remove all formatting code even though it's invalid {@link #getFormattingByCode(char)} == null
      */
-    private static final Pattern FORMATTING_REMOVE_PATTERN = Pattern.compile("\u00a7.");
+    //private static final Pattern FORMATTING_REMOVE_PATTERN = Pattern.compile("\u00a7.");
 
-    /**
-     * A single StringCache object is allocated by Minecraft's FontRenderer which forwards all string drawing and
-     * requests for
-     * string width to this class.
-     */
     private TextLayoutEngine() {
         /* StringCache is created by the main game thread; remember it for later thread safety checks */
         //mainThread = Thread.currentThread();
 
         /* Pre-cache the ASCII digits to allow for fast glyph substitution */
         //cacheDigitGlyphs();
+        GlyphManager.getInstance();
     }
 
     /**
@@ -143,48 +134,52 @@ public class TextLayoutEngine {
      *
      * @return the instance
      */
+    @Nonnull
     public static TextLayoutEngine getInstance() {
         if (instance == null) {
             synchronized (TextLayoutEngine.class) {
                 if (instance == null) {
                     instance = new TextLayoutEngine();
+                    ModernUI.LOGGER.info(ModernUI.MARKER, "Text layout engine initialized");
                 }
             }
         }
         return instance;
     }
 
-    public void initRenderer() {
-        if (glyphManager == null) {
-            glyphManager = GlyphManagerForge.getInstance();
-            ModernUI.LOGGER.info(RenderCore.MARKER, "Text renderer initialized");
-        } else {
-            throw new IllegalStateException();
-        }
+    /**
+     * Called when resolution level changed.
+     */
+    public void clearLayoutCache() {
+        mStringCache = new HashMap<>();
+        mDigitMap = new HashMap<>();
+        TextRenderType.clear();
+        // Note max font size is 96, see FontPaint, font size will be (8 * res) in Minecraft
+        mResolutionLevel = Math.min(
+                Math.round((((int) Minecraft.getInstance().getWindow().getGuiScale()) << 2) / 3f), 12f);
     }
 
     /**
-     * Reload glyph manager, delete all generated textures, clear all cached layout data
+     * Lookup cached render node for vanilla text.
+     *
+     * @param text input text
+     * @return the layout
      */
-    public void reload() {
-        glyphManager.reload();
-        clearLayoutCache();
-    }
-
-    public void clearLayoutCache() {
-        stringCache.invalidateAll();
-        mStringCache = new HashMap<>();
-    }
-
     @Nonnull
     public TextRenderNode lookupVanillaNode(@Nonnull String text) {
-        return mStringCache.computeIfAbsent(mVanillaLookupKey.update(text), this::generateVanillaNode);
-    }
-
-    @Nonnull
-    private TextRenderNode generateVanillaNode(@Nonnull VanillaTextKey key) {
-        TextRenderNode node = mProcessor.performFullLayout(key.toString());
-        mStringCache.put(key.copy(), node);
+        if (text.isEmpty()) {
+            return TextRenderNode.EMPTY;
+        }
+        if (!RenderSystem.isOnRenderThread()) {
+            return Minecraft.getInstance()
+                    .submit(() -> lookupVanillaNode(text))
+                    .join();
+        }
+        TextRenderNode node = mStringCache.get(mVanillaLookupKey.update(text));
+        if (node == null) {
+            node = mProcessor.performFullLayout(text);
+            mStringCache.put(mVanillaLookupKey.copy(), node);
+        }
         return node;
     }
 
@@ -206,22 +201,6 @@ public class TextLayoutEngine {
     }
 
     /**
-     * Lookup cached render node for vanilla renderer
-     *
-     * @param string raw formatted string, can't be empty
-     * @param style  text component style, or {@link Style#EMPTY}
-     * @return cached render node
-     */
-    @Nonnull
-    public TextRenderNode lookupVanillaNode(@Nonnull CharSequence string, @Nonnull Style style) {
-        //mVanillaLookupKey.update(string);
-        TextRenderNode node = stringCache.getIfPresent(mVanillaLookupKey);
-        if (node == null)
-            return generateAndCache(mVanillaLookupKey.copy(), string, style);
-        return node;
-    }
-
-    /**
      * Get text formatting from formatting code
      *
      * @param code c
@@ -234,8 +213,13 @@ public class TextLayoutEngine {
         return i != -1 ? FORMATTINGS[i] : null;
     }
 
+    /**
+     * Returns current resolution level for texts.
+     *
+     * @return res, an integer
+     */
     public float getResolutionLevel() {
-        return Math.round((((int) Minecraft.getInstance().getWindow().getGuiScale()) << 2) / 3f);
+        return mResolutionLevel;
     }
 
     /**
@@ -243,23 +227,34 @@ public class TextLayoutEngine {
      *
      * @param font derived font including style and font size
      * @return array of all digit glyphs 0-9 (in that order)
+     * @see #cacheDigits(Font)
      */
     @Nonnull
-    public TexturedGlyph[] lookupDigits(@Nonnull Font font) {
+    public Pair<TexturedGlyph[], float[]> lookupDigits(@Nonnull Font font) {
         return mDigitMap.computeIfAbsent(font, this::cacheDigits);
     }
 
     @Nonnull
-    private TexturedGlyph[] cacheDigits(@Nonnull Font font) {
+    private Pair<TexturedGlyph[], float[]> cacheDigits(@Nonnull Font font) {
         GlyphManager engine = GlyphManager.getInstance();
         TexturedGlyph[] glyphs = new TexturedGlyph[10];
+        float[] offsets = new float[10];
         char[] chars = new char[1];
         for (int i = 0; i < 10; i++) {
             chars[0] = (char) ('0' + i);
             GlyphVector vector = engine.createGlyphVector(font, chars);
             glyphs[i] = engine.lookupGlyph(font, vector.getGlyphCode(0));
+            if (i == 0) {
+                offsets[0] = (float) vector.getGlyphPosition(1).getX();
+            } else {
+                offsets[i] = (float) ((offsets[0] - vector.getGlyphPosition(1).getX()) / 2);
+            }
         }
-        return glyphs;
+        float res = getResolutionLevel();
+        for (int i = 0; i < 10; i++) {
+            offsets[i] /= res;
+        }
+        return Pair.of(glyphs, offsets);
     }
 
     /**
@@ -725,61 +720,61 @@ public class TextLayoutEngine {
     private void layoutFont(TextLayoutProcessor data, char[] text, int start, int limit, int flag, Font font,
                             boolean random,
                             byte effect) {
-        if (random) {
-            /* Random is not worthy to layout */
+        /*if (random) {
+         *//* Random is not worthy to layout *//*
             layoutRandom(data, text, start, limit, flag, font, effect);
         } else {
-            /* The glyphCode matched to the same codePoint is specified in the font, they are different in different
-            font */
+            *//* The glyphCode matched to the same codePoint is specified in the font, they are different in different
+            font *//*
             GlyphVector vector = glyphManager.layoutGlyphVector(font, text, start, limit, flag);
             int num = vector.getNumGlyphs();
 
-            final TexturedGlyphVanilla[] digits = glyphManager.lookupDigits(font);
+            final GlyphManagerForge.VanillaGlyph[] digits = glyphManager.lookupDigits(font);
             final float factor = glyphManager.getResolutionFactor();
 
             for (int i = 0; i < num; i++) {
-                /* Back compatibility for Java 8, since LayoutGlyphVector should not have non-standard glyphs
-                 * HarfBuzz is introduced in Java 11 or higher
-                 */
-                /*if (vector.getGlyphMetrics(i).getAdvanceX() == 0 &&
+                *//* Back compatibility for Java 8, since LayoutGlyphVector should not have non-standard glyphs
+         * HarfBuzz is introduced in Java 11 or higher
+         *//*
+         *//*if (vector.getGlyphMetrics(i).getAdvanceX() == 0 &&
                         vector.getGlyphMetrics(i).getBounds2D().getWidth() == 0) {
                     continue;
-                }*/
+                }*//*
 
                 int stripIndex = vector.getGlyphCharIndex(i) + start;
                 Point2D point = vector.getGlyphPosition(i);
 
                 float offset = (float) (point.getX() / factor);
 
-                /*if (flag == Font.LAYOUT_RIGHT_TO_LEFT) {
+                *//*if (flag == Font.LAYOUT_RIGHT_TO_LEFT) {
                     offset += data.mLayoutRight;
                 } else {
                     offset += data.mAdvance;
-                }*/
+                }*//*
 
                 char o = text[stripIndex];
-                /* Digits are not on SMP */
+                *//* Digits are not on SMP *//*
                 if (o == '0') {
                     //data.mStyleList.add(new DigitGlyphRender(digits, effect, stripIndex, offset));
                     continue;
                 }
 
                 int glyphCode = vector.getGlyphCode(i);
-                TexturedGlyphVanilla glyph = glyphManager.lookupGlyph(font, glyphCode);
+                GlyphManagerForge.VanillaGlyph glyph = glyphManager.lookupGlyph(font, glyphCode);
 
                 //data.mStyleList.add(new StandardGlyphRender(glyph, effect, stripIndex, offset));
             }
 
             float totalAdvance = (float) (vector.getGlyphPosition(num).getX() / factor);
-            /*data.mAdvance += totalAdvance;
+            *//*data.mAdvance += totalAdvance;
 
             if (flag == Font.LAYOUT_RIGHT_TO_LEFT) {
                 data.finishStyleRun(-totalAdvance);
                 data.mLayoutRight -= totalAdvance;
             } else {
                 data.finishStyleRun(0);
-            }*/
-        }
+            }*//*
+        }*/
     }
 
     /*private void layoutEmoji(TextProcessData data, int codePoint, int start, int flag) {
@@ -818,7 +813,7 @@ public class TextLayoutEngine {
      */
     private void layoutRandom(TextLayoutProcessor data, char[] text, int start, int limit, int flag, Font font,
                               byte effect) {
-        final TexturedGlyphVanilla[] digits = glyphManager.lookupDigits(font);
+        /*final GlyphManagerForge.VanillaGlyph[] digits = glyphManager.lookupDigits(font);
         final float stdAdv = digits[0].getAdvance();
 
         float offset;
@@ -828,7 +823,7 @@ public class TextLayoutEngine {
             offset = data.mAdvance;
         }
 
-        /* Process code point */
+        *//* Process code point *//*
         for (int i = start; i < limit; i++) {
             data.mStyleList.add(new RandomGlyphRender(digits, effect, start + i, offset));
 
@@ -850,7 +845,7 @@ public class TextLayoutEngine {
             data.mLayoutRight -= offset;
         } else {
             data.finishStyleRun(0);
-        }
+        }*/
     }
 
     @Deprecated

@@ -26,7 +26,6 @@ import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 import java.awt.*;
 import java.io.FileInputStream;
@@ -49,24 +48,18 @@ public class Typeface {
 
     @Nonnull
     public static final Typeface SANS_SERIF;
+
     @Nonnull
     public static final Typeface SERIF;
+
     @Nonnull
     public static final Typeface MONOSPACED;
 
     @Nonnull
-    public static final Typeface PREFERENCE;
+    public static final Typeface INTERNAL;
 
-    @Deprecated
-    @Nullable
-    public static final Font sBuiltInFont;
-
-    // internal use
     @Nonnull
-    public static final Font sSansSerifFont;
-
-    /*@Deprecated
-    public static boolean sJavaTooOld;*/
+    private static final Font sSansSerifFont;
 
     private static final List<String> sFontFamilyNames;
 
@@ -76,8 +69,7 @@ public class Typeface {
 
     static {
         //checkJava();
-        /* Use Java's logical font as the default initial font if user does not override it in some configuration
-        file */
+        // Use Java's logical font as the default initial font if user does not override it in some configuration file
         GraphicsEnvironment.getLocalGraphicsEnvironment().preferLocaleFonts();
 
         List<Font> p = new ArrayList<>();
@@ -107,21 +99,9 @@ public class Typeface {
         sSansSerifFont = sansSerif;
 
         p.add(sansSerif);
-        PREFERENCE = new Typeface(p.toArray(new Font[0]));
+        INTERNAL = new Typeface(p.toArray(new Font[0]));
 
         sFontFamilyNames = List.of(families);
-
-        Font builtIn = null;
-        try (InputStream stream = Typeface.class.getResourceAsStream("/assets/modernui/font/biliw.otf")) {
-            if (stream != null) {
-                sAllFontFamilies.add(builtIn = Font.createFont(Font.TRUETYPE_FONT, stream));
-            } else {
-                ModernUI.LOGGER.debug(MARKER, "Built-in font was missing");
-            }
-        } catch (FontFormatException | IOException e) {
-            ModernUI.LOGGER.error(MARKER, "Built-in font failed to load", e);
-        }
-        sBuiltInFont = builtIn;
 
         for (Font font : sAllFontFamilies) {
             String family = font.getFamily(Locale.ROOT);
@@ -137,16 +117,19 @@ public class Typeface {
 
         // no backup strategy
         SANS_SERIF = new Typeface(new Font[]{sansSerif});
+        sSystemFontMap.put(Font.SANS_SERIF, SANS_SERIF);
 
         Typeface serif = sSystemFontMap.get(Font.SERIF);
         if (serif == null) {
             serif = new Typeface(new Font[]{new Font(Font.SERIF, Font.PLAIN, 1)});
+            sSystemFontMap.put(Font.SERIF, serif);
         }
         SERIF = serif;
 
         Typeface monospaced = sSystemFontMap.get(Font.MONOSPACED);
         if (monospaced == null) {
             monospaced = new Typeface(new Font[]{new Font(Font.MONOSPACED, Font.PLAIN, 1)});
+            sSystemFontMap.put(Font.MONOSPACED, monospaced);
         }
         MONOSPACED = monospaced;
     }
@@ -179,6 +162,14 @@ public class Typeface {
             }
         }
     }*/
+
+    @Nonnull
+    public static Typeface createTypeface(@Nonnull Font[] fonts) {
+        Font[] f = new Font[fonts.length + 1];
+        System.arraycopy(fonts, 0, f, 0, fonts.length);
+        f[fonts.length] = sSansSerifFont;
+        return new Typeface(f);
+    }
 
     // unmodifiable
     public static List<String> getFontFamilyNames() {

@@ -33,7 +33,6 @@ import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.test.TestMain;
 import icyllis.modernui.test.TestPauseUI;
-import icyllis.modernui.textmc.TextLayoutEngine;
 import icyllis.modernui.util.TimedTask;
 import icyllis.modernui.view.MotionEvent;
 import icyllis.modernui.view.View;
@@ -155,17 +154,18 @@ public final class UIManager implements ViewRootImpl.Handler {
     }
 
     @RenderThread
-    public void initRenderer() {
+    public static void initialize() {
         RenderCore.checkRenderThread();
-        if (mCanvas == null) {
-            mCanvas = GLCanvas.initialize();
+        UIManager m = getInstance();
+        if (m.mCanvas == null) {
+            m.mCanvas = GLCanvas.initialize();
             glEnable(GL_MULTISAMPLE);
-            mFramebuffer.attachTexture(GL_COLOR_ATTACHMENT0, GL_RGBA8);
+            m.mFramebuffer.attachTexture(GL_COLOR_ATTACHMENT0, GL_RGBA8);
             // no depth buffer
-            mFramebuffer.attachRenderbuffer(GL_STENCIL_ATTACHMENT, GL_STENCIL_INDEX8);
-            mFramebuffer.setDrawBuffer(GL_COLOR_ATTACHMENT0);
-            mUiThread.start();
-            ModernUI.LOGGER.info(MARKER, "UIManager initialized");
+            m.mFramebuffer.attachRenderbuffer(GL_STENCIL_ATTACHMENT, GL_STENCIL_INDEX8);
+            m.mFramebuffer.setDrawBuffer(GL_COLOR_ATTACHMENT0);
+            m.mUiThread.start();
+            ModernUI.LOGGER.info(MARKER, "UI system initialized");
         }
     }
 
@@ -183,12 +183,12 @@ public final class UIManager implements ViewRootImpl.Handler {
     // Internal method
     public boolean openMenu(@Nonnull LocalPlayer player, @Nonnull AbstractContainerMenu menu, @Nonnull String modid) {
         OpenMenuEvent event = new OpenMenuEvent(menu);
-        ModernUIForge.get().post(modid, event);
-        ScreenCallback screen = event.getScreen();
-        if (screen == null) {
+        ModernUIForge.fire(modid, event);
+        ScreenCallback callback = event.getCallback();
+        if (callback == null) {
             return false;
         }
-        mCallback = screen;
+        mCallback = callback;
         player.containerMenu = menu;
         minecraft.setScreen(new MenuScreen<>(menu, player.inventory, this));
         return true;
@@ -436,10 +436,6 @@ public final class UIManager implements ViewRootImpl.Handler {
             return;
         }
         switch (event.getKey()) {
-            case GLFW_KEY_R:
-                TextLayoutEngine.getInstance().reload();
-                break;
-
             case GLFW_KEY_C:
                 // take a screenshot, MSAA framebuffer doesn't support that
                 /*Bitmap bitmap = Bitmap.download(Bitmap.Format.RGBA, mFramebuffer, true);

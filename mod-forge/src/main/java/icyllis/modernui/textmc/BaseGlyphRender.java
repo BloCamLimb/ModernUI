@@ -16,12 +16,11 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.textmc.pipeline;
+package icyllis.modernui.textmc;
 
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Matrix4f;
-import icyllis.modernui.textmc.CharacterStyleCarrier;
 import net.minecraft.client.renderer.MultiBufferSource;
 
 import javax.annotation.Nonnull;
@@ -29,7 +28,7 @@ import javax.annotation.Nonnull;
 /**
  * A rendering glyph. There is no better way to optimize, an instance takes up 40 bytes.
  */
-public abstract class GlyphRender {
+public abstract class BaseGlyphRender {
 
     /**
      * Change to params color.
@@ -55,14 +54,14 @@ public abstract class GlyphRender {
     /**
      * Horizontal advance. Normalized to Minecraft GUI system.
      */
-    public final float mAdvance;
+    private final float mAdvance;
 
     /**
      * Rendering flags, will be inserted later.
      */
     public int mFlags = COLOR_NO_CHANGE;
 
-    public GlyphRender(int stripIndex, float offsetX, float advance, int decoration) {
+    public BaseGlyphRender(int stripIndex, float offsetX, float advance, int decoration) {
         mStringIndex = stripIndex;
         mOffsetX = offsetX;
         mAdvance = advance;
@@ -73,22 +72,24 @@ public abstract class GlyphRender {
      * Draw the glyph of this info.
      *
      * @param builder vertex builder
-     * @param raw     needed by {@link DigitGlyphRender}
+     * @param input   needed by {@link DigitGlyphRender}
      * @param x       start x of the whole text
      * @param y       start y of the whole text
      * @param r       final red
      * @param g       final green
      * @param b       final blue
      * @param a       final alpha
+     * @param res     resolution level
      */
-    public abstract void drawGlyph(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b, int a);
+    public abstract void drawGlyph(@Nonnull BufferBuilder builder, @Nonnull String input, float x, float y, int r,
+                                   int g, int b, int a, float res);
 
     /**
      * Draw the glyph of this info.
      *
      * @param matrix     matrix
-     * @param buffer     buffer source
-     * @param raw        needed by {@link DigitGlyphRender}
+     * @param source     buffer source
+     * @param input      needed by {@link DigitGlyphRender}
      * @param x          start x of the whole text
      * @param y          start y of the whole text
      * @param r          final red
@@ -97,8 +98,11 @@ public abstract class GlyphRender {
      * @param a          final alpha
      * @param seeThrough is see through type
      * @param light      packed light
+     * @param res        resolution level
      */
-    public abstract void drawGlyph(Matrix4f matrix, @Nonnull MultiBufferSource buffer, @Nonnull CharSequence raw, float x, float y, int r, int g, int b, int a, boolean seeThrough, int light);
+    public abstract void drawGlyph(@Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source,
+                                   @Nonnull CharSequence input, float x, float y, int r, int g, int b, int a,
+                                   boolean seeThrough, int light, float res);
 
     /**
      * Draw the effect of this info
@@ -112,19 +116,19 @@ public abstract class GlyphRender {
      * @param a       final alpha
      */
     public final void drawEffect(@Nonnull VertexConsumer builder, float x, float y, int r, int g, int b, int a) {
-        if (effect != TextRenderEffect.NO_EFFECT) {
+        if ((mFlags & CharacterStyleCarrier.DECORATION_MASK) != 0) {
             x += mOffsetX;
-            if (effect == TextRenderEffect.UNDERLINE)
-                TextRenderEffect.Underline.drawEffect(builder, x, x + getAdvance(), y, r, g, b, a);
-            else if (effect == TextRenderEffect.STRIKETHROUGH)
-                TextRenderEffect.Strikethrough.drawEffect(builder, x, x + getAdvance(), y, r, g, b, a);
-            else if (effect == TextRenderEffect.UNDERLINE_STRIKETHROUGH)
-                TextRenderEffect.UnderlineStrikethrough.drawEffect(builder, x, x + getAdvance(), y, r, g, b, a);
+            if ((mFlags & CharacterStyleCarrier.UNDERLINE_MASK) != 0) {
+                TextRenderEffect.drawUnderline(builder, x, x + mAdvance, y, r, g, b, a);
+            }
+            if ((mFlags & CharacterStyleCarrier.STRIKETHROUGH_MASK) != 0) {
+                TextRenderEffect.drawStrikethrough(builder, x, x + mAdvance, y, r, g, b, a);
+            }
         }
     }
 
     /**
-     * Draw the effect of this info
+     * Draw the effect of this info.
      *
      * @param matrix  matrix
      * @param builder vertex builder
@@ -136,15 +140,16 @@ public abstract class GlyphRender {
      * @param a       final alpha
      * @param light   packed light
      */
-    public final void drawEffect(Matrix4f matrix, @Nonnull VertexConsumer builder, float x, float y, int r, int g, int b, int a, int light) {
-        if (effect != TextRenderEffect.NO_EFFECT) {
+    public final void drawEffect(Matrix4f matrix, @Nonnull VertexConsumer builder, float x, float y, int r, int g,
+                                 int b, int a, int light) {
+        if ((mFlags & CharacterStyleCarrier.DECORATION_MASK) != 0) {
             x += mOffsetX;
-            if (effect == TextRenderEffect.UNDERLINE)
-                TextRenderEffect.Underline.drawEffect(matrix, builder, x, x + getAdvance(), y, r, g, b, a, light);
-            else if (effect == TextRenderEffect.STRIKETHROUGH)
-                TextRenderEffect.Strikethrough.drawEffect(matrix, builder, x, x + getAdvance(), y, r, g, b, a, light);
-            else if (effect == TextRenderEffect.UNDERLINE_STRIKETHROUGH)
-                TextRenderEffect.UnderlineStrikethrough.drawEffect(matrix, builder, x, x + getAdvance(), y, r, g, b, a, light);
+            if ((mFlags & CharacterStyleCarrier.UNDERLINE_MASK) != 0) {
+                TextRenderEffect.drawUnderline(matrix, builder, x, x + mAdvance, y, r, g, b, a, light);
+            }
+            if ((mFlags & CharacterStyleCarrier.STRIKETHROUGH_MASK) != 0) {
+                TextRenderEffect.drawStrikethrough(matrix, builder, x, x + mAdvance, y, r, g, b, a, light);
+            }
         }
     }
 
@@ -153,5 +158,7 @@ public abstract class GlyphRender {
      *
      * @return advance
      */
-    public abstract float getAdvance();
+    public float getAdvance() {
+        return mAdvance;
+    }
 }

@@ -18,7 +18,6 @@
 
 package icyllis.modernui.textmc;
 
-import icyllis.modernui.textmc.pipeline.GlyphRender;
 import net.minecraft.client.ComponentCollector;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.StringSplitter;
@@ -60,13 +59,13 @@ public class ModernStringSplitter extends StringSplitter {
      * @param text text
      * @return text width
      */
-    @Override
+    /*@Override
     public float stringWidth(@Nullable String text) {
         if (text == null || text.isEmpty()) {
             return 0;
         }
-        return mFontEngine.lookupVanillaNode(text, Style.EMPTY).advance;
-    }
+        return mFontEngine.lookupVanillaNode(text, Style.EMPTY).mAdvance;
+    }*/
 
     /**
      * Get text width
@@ -74,14 +73,14 @@ public class ModernStringSplitter extends StringSplitter {
      * @param text text
      * @return total width
      */
-    @Override
+    /*@Override
     public float stringWidth(@Nonnull FormattedText text) {
         v.setValue(0);
         // iterate all siblings
         text.visit((s, t) -> {
             if (!t.isEmpty()) {
                 if (s.getFont() != Minecraft.ALT_FONT)
-                    v.add(mFontEngine.lookupVanillaNode(t, s).advance);
+                    v.add(mFontEngine.lookupVanillaNode(t, s).mAdvance);
                 else {
                     v.setValue(-1);
                     return FormattedText.STOP_ITERATION;
@@ -91,7 +90,7 @@ public class ModernStringSplitter extends StringSplitter {
             return Optional.empty();
         }, Style.EMPTY);
         return v.floatValue() >= 0 ? v.floatValue() : super.stringWidth(text);
-    }
+    }*/
 
     /**
      * Get text width
@@ -99,17 +98,17 @@ public class ModernStringSplitter extends StringSplitter {
      * @param text text
      * @return total width
      */
-    @Override
+    /*@Override
     public float stringWidth(@Nonnull FormattedCharSequence text) {
         v.setValue(0);
         mFontEngine.handleSequence(text, (t, s) -> {
             if (t.length() != 0) {
-                v.add(mFontEngine.lookupVanillaNode(t, s).advance);
+                v.add(mFontEngine.lookupVanillaNode(t, s).mAdvance);
             }
             return false;
         });
         return v.floatValue();
-    }
+    }*/
 
     /**
      * Get trimmed length / size to width.
@@ -123,19 +122,19 @@ public class ModernStringSplitter extends StringSplitter {
      * @return the length of the text when it is trimmed to be at most /
      * the number of characters from text that will fit inside width
      */
-    @Override
+    /*@Override
     public int plainIndexAtWidth(@Nonnull String text, int width, @Nonnull Style style) {
         return sizeToWidth0(text, width, style);
-    }
+    }*/
 
-    private int sizeToWidth0(@Nonnull CharSequence text, float width, @Nonnull Style style) {
+    /*private int sizeToWidth0(@Nonnull CharSequence text, float width, @Nonnull Style style) {
         if (text.length() == 0) {
             return 0;
         }
-        /* The glyph array for a string is sorted by the string's logical character position */
-        GlyphRender[] glyphs = mFontEngine.lookupVanillaNode(text, style).glyphs;
+        *//* The glyph array for a string is sorted by the string's logical character position *//*
+        BaseGlyphRender[] glyphs = mFontEngine.lookupVanillaNode(text, style).mGlyphs;
 
-        /* Add up the individual advance of each glyph until it exceeds the specified width */
+        *//* Add up the individual advance of each glyph until it exceeds the specified width *//*
         float advance = 0;
         int glyphIndex = 0;
         while (glyphIndex < glyphs.length) {
@@ -148,9 +147,9 @@ public class ModernStringSplitter extends StringSplitter {
             }
         }
 
-        /* The string index of the last glyph that wouldn't fit gives the total desired length of the string in characters */
+        *//* The string index of the last glyph that wouldn't fit gives the total desired length of the string in characters *//*
         return glyphIndex < glyphs.length ? glyphs[glyphIndex].mStringIndex : text.length();
-    }
+    }*/
 
     /**
      * Trim a text so that it fits in the specified width when rendered.
@@ -160,11 +159,11 @@ public class ModernStringSplitter extends StringSplitter {
      * @param style the style of the text
      * @return the trimmed text
      */
-    @Nonnull
+    /*@Nonnull
     @Override
     public String plainHeadByWidth(@Nonnull String text, int width, @Nonnull Style style) {
         return text.substring(0, sizeToWidth0(text, width, style));
-    }
+    }*/
 
     /**
      * Trim a text backwards so that it fits in the specified width when rendered.
@@ -174,16 +173,16 @@ public class ModernStringSplitter extends StringSplitter {
      * @param style the style of the text
      * @return the trimmed text
      */
-    @Nonnull
+    /*@Nonnull
     @Override
     public String plainTailByWidth(@Nonnull String text, int width, @Nonnull Style style) {
         if (text.isEmpty()) {
             return text;
         }
-        /* The glyph array for a string is sorted by the string's logical character position */
-        GlyphRender[] glyphs = mFontEngine.lookupVanillaNode(text, style).glyphs;
+        *//* The glyph array for a string is sorted by the string's logical character position *//*
+        BaseGlyphRender[] glyphs = mFontEngine.lookupVanillaNode(text, style).mGlyphs;
 
-        /* Add up the individual advance of each glyph until it exceeds the specified width */
+        *//* Add up the individual advance of each glyph until it exceeds the specified width *//*
         float advance = 0;
         int glyphIndex = glyphs.length - 1;
         while (glyphIndex >= 0) {
@@ -196,10 +195,10 @@ public class ModernStringSplitter extends StringSplitter {
             }
         }
 
-        /* The string index of the last glyph that wouldn't fit gives the total desired length of the string in characters */
+        *//* The string index of the last glyph that wouldn't fit gives the total desired length of the string in characters *//*
         int l = glyphIndex >= 0 ? glyphs[glyphIndex].mStringIndex : 0;
         return text.substring(l);
-    }
+    }*/
 
     /**
      * Trim a text to find the last sibling text style to handle its click or hover event
@@ -208,7 +207,7 @@ public class ModernStringSplitter extends StringSplitter {
      * @param width the max width
      * @return the last sibling text style
      */
-    @Nullable
+    /*@Nullable
     @Override
     public Style componentStyleAtWidth(@Nonnull FormattedText text, int width) {
         v.setValue(width);
@@ -217,11 +216,11 @@ public class ModernStringSplitter extends StringSplitter {
             if (sizeToWidth0(t, v.floatValue(), s) < t.length()) {
                 return Optional.of(s);
             }
-            v.subtract(mFontEngine.lookupVanillaNode(t, s).advance);
+            v.subtract(mFontEngine.lookupVanillaNode(t, s).mAdvance);
             // continue
             return Optional.empty();
         }, Style.EMPTY).orElse(null);
-    }
+    }*/
 
     /**
      * Trim a text to find the last sibling text style to handle its click or hover event
@@ -230,7 +229,7 @@ public class ModernStringSplitter extends StringSplitter {
      * @param width the max width
      * @return the last sibling text style
      */
-    @Nullable
+    /*@Nullable
     @Override
     public Style componentStyleAtWidth(@Nonnull FormattedCharSequence text, int width) {
         v.setValue(width);
@@ -242,14 +241,14 @@ public class ModernStringSplitter extends StringSplitter {
                 // break with result
                 return true;
             }
-            v.subtract(mFontEngine.lookupVanillaNode(t, s).advance);
+            v.subtract(mFontEngine.lookupVanillaNode(t, s).mAdvance);
             // continue
             return false;
         })) {
             return sr.getValue();
         }
         return null;
-    }
+    }*/
 
     /**
      * Trim to width
@@ -260,7 +259,7 @@ public class ModernStringSplitter extends StringSplitter {
      * @return the trimmed multi text
      */
     //TODO further optimization is possible
-    @Nonnull
+    /*@Nonnull
     @Override
     public FormattedText headByWidth(@Nonnull FormattedText textIn, int width, @Nonnull Style styleIn) {
         ComponentCollector collector = new ComponentCollector();
@@ -281,11 +280,11 @@ public class ModernStringSplitter extends StringSplitter {
                 // add
                 collector.append(FormattedText.of(text, style));
             }
-            v.subtract(mFontEngine.lookupVanillaNode(text, style).advance);
+            v.subtract(mFontEngine.lookupVanillaNode(text, style).mAdvance);
             // continue
             return Optional.empty();
         }, styleIn).orElse(textIn); // full text
-    }
+    }*/
 
     /**
      * Wrap lines

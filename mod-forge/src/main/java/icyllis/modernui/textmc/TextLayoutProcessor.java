@@ -19,13 +19,12 @@
 package icyllis.modernui.textmc;
 
 import com.ibm.icu.text.Bidi;
+import icyllis.modernui.annotation.RenderThread;
+import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.text.FontRun;
 import icyllis.modernui.text.GlyphManager;
 import icyllis.modernui.text.TexturedGlyph;
 import icyllis.modernui.text.Typeface;
-import icyllis.modernui.textmc.pipeline.DigitGlyphRender;
-import icyllis.modernui.textmc.pipeline.GlyphRender;
-import icyllis.modernui.textmc.pipeline.StandardGlyphRender;
 import it.unimi.dsi.fastutil.chars.CharArrayList;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Style;
@@ -41,6 +40,7 @@ import java.util.List;
 /**
  * This is where the text layout is actually performed.
  */
+@RenderThread
 public class TextLayoutProcessor {
 
     /**
@@ -56,14 +56,14 @@ public class TextLayoutProcessor {
     /**
      * List of all processing glyphs
      */
-    private final List<GlyphRender> mAllList = new ArrayList<>();
+    private final List<BaseGlyphRender> mAllList = new ArrayList<>();
 
     /**
      * List of processing glyphs with same layout direction
      */
-    private final List<GlyphRender> mBidiList = new ArrayList<>();
+    private final List<BaseGlyphRender> mBidiList = new ArrayList<>();
 
-    private final List<GlyphRender> mStyleList = new ArrayList<>();
+    private final List<BaseGlyphRender> mStyleList = new ArrayList<>();
 
     /*
      * All color states
@@ -118,17 +118,21 @@ public class TextLayoutProcessor {
 
     @Nonnull
     public TextRenderNode performFullLayout(@Nonnull String text) {
+        RenderCore.checkRenderThread();
+        if (text.isEmpty()) {
+            throw new IllegalArgumentException();
+        }
         char[] chars = resolveFormattingCodes(text);
         TextRenderNode node = null;
         if (chars.length > 0) {
             performBidiAnalysis(chars);
             if (!mAllList.isEmpty()) {
                 finish();
-                node = new TextRenderNode(mAllList.toArray(new GlyphRender[0]), mAdvance, mHasEffect);
+                node = new TextRenderNode(mAllList.toArray(new BaseGlyphRender[0]), mAdvance, mHasEffect);
             }
         }
         if (node == null) {
-            node = new TextRenderNode(new GlyphRender[0], 0, false);
+            node = new TextRenderNode(new BaseGlyphRender[0], 0, false);
         }
         release();
         return node;
@@ -364,7 +368,7 @@ public class TextLayoutProcessor {
 
         float lastAdvance = mAdvance;
 
-        List<FontRun> items = Typeface.PREFERENCE.itemize(text, start, limit);
+        List<FontRun> items = Typeface.INTERNAL.itemize(text, start, limit);
         for (int runIndex = isRtl ? items.size() - 1 : 0;
              isRtl ? runIndex >= 0 : runIndex < items.size(); ) {
             FontRun run = items.get(runIndex);
@@ -398,73 +402,109 @@ public class TextLayoutProcessor {
     @SuppressWarnings("MagicConstant")
     private void performTextLayout(@Nonnull char[] text, int start, int limit, boolean isRtl,
                                    @Nonnull CharacterStyleCarrier carrier, @Nonnull Font font) {
-        // The glyphCode matched to the same codePoint is specified in the font, they are different
-        // in different font, HarfBuzz is introduced in Java 11 or higher
-        GlyphManager engine = GlyphManager.getInstance();
-        TextLayoutEngine layoutEngine = TextLayoutEngine.getInstance();
-        final float res = layoutEngine.getResolutionLevel();
-        font = font.deriveFont(carrier.getFontStyle(), 8 * res);
-        GlyphVector vector = engine.layoutGlyphVector(font, text, start, limit, isRtl);
-        int num = vector.getNumGlyphs();
+        final TextLayoutEngine layoutEngine = TextLayoutEngine.getInstance();
+        final int decoration = carrier.getDecoration();
+        if (carrier.isObfuscated()) {
+            final var digits = layoutEngine.lookupDigits(font);
+            final float advance = digits.getRight()[0];
 
-        final TexturedGlyph[] digits = layoutEngine.lookupDigits(font);
+            float offset;
+            if (isRtl) {
+                offset = mLayoutRight;
+            } else {
+                offset = mAdvance;
+            }
 
-        float lastOffset = 0;
-        for (int i = 0; i < num; i++) {
-            /*
-             * Back compatibility for Java 8, since LayoutGlyphVector should not have non-standard glyphs
-             * HarfBuzz is introduced in Java 11 or higher
-             */
+            /* Process code point */
+            for (int i = start; i < limit; i++) {
+                mStyleList.add(new RandomGlyphRender(start + i, advance, offset, decoration, digits));
+
+                offset += advance;
+
+                char c1 = text[i];
+                if (i + 1 < limit && Character.isHighSurrogate(c1)) {
+                    char c2 = text[i + 1];
+                    if (Character.isLowSurrogate(c2)) {
+                        ++i;
+                    }
+                }
+                mHasEffect |= decoration != 0;
+            }
+
+            mAdvance += offset;
+        } else {
+            // The glyphCode matched to the same codePoint is specified in the font, they are different
+            // in different font, HarfBuzz is introduced in Java 11 or higher
+            GlyphManager glyphManager = GlyphManager.getInstance();
+
+            // Note max font size is 96, see FontPaint, font size will be (8 * res) in Minecraft
+            final float res = layoutEngine.getResolutionLevel();
+            font = font.deriveFont(carrier.getFontStyle(), 8 * res);
+            GlyphVector vector = glyphManager.layoutGlyphVector(font, text, start, limit, isRtl);
+            final int num = vector.getNumGlyphs();
+
+            final var digits = layoutEngine.lookupDigits(font);
+
+            float lastOffset = 0;
+            for (int i = 0; i < num; i++) {
+                /*
+                 * Back compatibility for Java 8, since LayoutGlyphVector should not have non-standard glyphs
+                 * HarfBuzz is introduced in Java 11 or higher
+                 */
                 /*if (vector.getGlyphMetrics(i).getAdvanceX() == 0 &&
                         vector.getGlyphMetrics(i).getBounds2D().getWidth() == 0) {
                     continue;
                 }*/
 
-            int stripIndex = vector.getGlyphCharIndex(i) + start;
-            Point2D point = vector.getGlyphPosition(i);
+                int stripIndex = vector.getGlyphCharIndex(i) + start;
+                Point2D point = vector.getGlyphPosition(i);
 
-            float offset = (float) (point.getX() / res);
-            float advance = offset - lastOffset;
-            lastOffset = offset;
+                float offset = (float) (point.getX() / res);
+                float advance = offset - lastOffset;
+                lastOffset = offset;
 
-            if (isRtl) {
-                offset += mLayoutRight;
-            } else {
-                offset += mAdvance;
+                if (isRtl) {
+                    offset += mLayoutRight;
+                } else {
+                    offset += mAdvance;
+                }
+
+                // Digits are not on SMP
+                if (text[stripIndex] == '0') {
+                    mStyleList.add(new DigitGlyphRender(stripIndex, offset, advance, decoration, digits));
+                    mHasEffect |= decoration != 0;
+                    continue;
+                }
+
+                int glyphCode = vector.getGlyphCode(i);
+                TexturedGlyph glyph = glyphManager.lookupGlyph(font, glyphCode);
+
+                mStyleList.add(new StandardGlyphRender(stripIndex, offset, advance, decoration, glyph));
+                if (glyph != null) {
+                    mHasEffect |= decoration != 0;
+                }
             }
 
-            int decoration = carrier.getDecoration();
-            // Digits are not on SMP
-            if (text[stripIndex] == '0') {
-                mStyleList.add(new DigitGlyphRender(stripIndex, offset, advance, decoration, digits));
-                mHasEffect |= decoration != 0;
-                continue;
-            }
-
-            int glyphCode = vector.getGlyphCode(i);
-            TexturedGlyph glyph = engine.lookupGlyph(font, glyphCode);
-
-            mStyleList.add(new StandardGlyphRender(stripIndex, offset, advance, decoration, glyph));
-            if (glyph != null) {
-                mHasEffect |= decoration != 0;
-            }
+            float totalAdvance = (float) (vector.getGlyphPosition(num).getX() / res);
+            mAdvance += totalAdvance;
         }
-
-        float totalAdvance = (float) (vector.getGlyphPosition(num).getX() / res);
-        mAdvance += totalAdvance;
     }
 
     /**
      * Adjust strip index to string index and insert color transitions.
      */
     private void finish() {
-        /* Sort by stripIndex, mixed with LTR and RTL layout */
+        if (mAllList.isEmpty()) {
+            throw new IllegalStateException();
+        }
+        // sort by stripIndex, mixed with LTR and RTL layout
+        // logical order to visual order for line breaking, etc
         mAllList.sort(Comparator.comparingInt(g -> g.mStringIndex));
 
         /* Shift stripIndex to stringIndex */
         /* Skip the default code */
         int codeIndex = 1, shift = 0;
-        for (GlyphRender glyph : mAllList) {
+        for (BaseGlyphRender glyph : mAllList) {
             /*
              * Adjust the string index for each glyph to point into the original string with un-stripped color codes.
              *  The while
@@ -481,6 +521,7 @@ public class TextLayoutProcessor {
             glyph.mStringIndex += shift;
         }
 
+        // insert color states
         codeIndex = 0;
 
         while (codeIndex < mCarriers.size() - 1 &&
@@ -490,16 +531,15 @@ public class TextLayoutProcessor {
 
         int color = mCarriers.get(codeIndex).getColor();
         /* The default is no color */
-        GlyphRender glyph;
-        if (color != CharacterStyleCarrier.USE_PARAM_COLOR) {
+        /*if (color != CharacterStyleCarrier.USE_PARAM_COLOR) {
             glyph = mAllList.get(0);
-            glyph.mFlags &= ~GlyphRender.COLOR_NO_CHANGE;
+            glyph.mFlags &= ~BaseGlyphRender.COLOR_NO_CHANGE;
             glyph.mFlags |= color;
-        }
+        }*/
 
         if (++codeIndex < mCarriers.size()) {
             for (int glyphIndex = 1; glyphIndex < mAllList.size(); glyphIndex++) {
-                glyph = mAllList.get(glyphIndex);
+                BaseGlyphRender glyph = mAllList.get(glyphIndex);
 
                 if (codeIndex < mCarriers.size() && glyph.mStringIndex > mCarriers.get(codeIndex).mStringIndex) {
                     /* In case of multiple consecutive color codes with the same stripIndex,
@@ -512,7 +552,7 @@ public class TextLayoutProcessor {
                     CharacterStyleCarrier s = mCarriers.get(codeIndex);
                     if (s.getColor() != color) {
                         color = s.getColor();
-                        glyph.mFlags &= ~GlyphRender.COLOR_NO_CHANGE;
+                        glyph.mFlags &= ~BaseGlyphRender.COLOR_NO_CHANGE;
                         glyph.mFlags |= color;
                     }
 

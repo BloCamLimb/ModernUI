@@ -77,7 +77,7 @@ final class EventHandler {
         @SubscribeEvent
         static void onOpenMenu(@Nonnull OpenMenuEvent event) {
             if (event.getMenu().getType() == MuiRegistries.TEST_MENU) {
-                event.setScreen(new TestUI());
+                event.setCallback(new TestUI());
             }
         }
     }

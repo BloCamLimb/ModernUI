@@ -19,9 +19,9 @@
 package icyllis.modernui.forge;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.textmc.GlyphManagerForge;
 import icyllis.modernui.graphics.shader.ShaderManager;
 import icyllis.modernui.screen.LayoutIO;
+import icyllis.modernui.text.Typeface;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ReloadableResourceManager;
@@ -37,6 +37,7 @@ import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.resource.ISelectiveResourceReloadListener;
 import net.minecraftforge.resource.VanillaResourceType;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -44,10 +45,8 @@ import java.awt.*;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.function.Consumer;
+import java.util.List;
+import java.util.*;
 
 @Mod(ModernUI.ID)
 public final class ModernUIForge extends ModernUI {
@@ -72,7 +71,9 @@ public final class ModernUIForge extends ModernUI {
         }
     }
 
-    private final Map<String, IEventBus> mModEventBuses = new HashMap<>();
+    private static final Map<String, IEventBus> sModEventBuses = new HashMap<>();
+
+    private Typeface mTypeface;
 
     // mod-loading thread
     public ModernUIForge() {
@@ -102,7 +103,7 @@ public final class ModernUIForge extends ModernUI {
 
         ModList.get().forEachModContainer((modid, container) -> {
             if (container instanceof FMLModContainer) {
-                mModEventBuses.put(modid, ((FMLModContainer) container).getEventBus());
+                sModEventBuses.put(modid, ((FMLModContainer) container).getEventBus());
             }
         });
 
@@ -116,7 +117,7 @@ public final class ModernUIForge extends ModernUI {
         File dir = path.toFile();
         String[] r = dir.list((file, name) -> name.equals("build.gradle"));
         if (r != null && r.length > 0 && dir.getName().equals(ModernUI.NAME_CPT)) {
-            ModernUI.LOGGER.debug(ModernUI.MARKER, "Working in production environment");
+            ModernUI.LOGGER.debug(ModernUI.MARKER, "Working in development environment");
             development = true;
         } else if (ModernUI.class.getSigners() == null) {
             ModernUI.LOGGER.debug(MARKER, "Signature is missing");
@@ -129,7 +130,6 @@ public final class ModernUIForge extends ModernUI {
         }
     }
 
-    @Override
     public void warnSetup(String key, Object... args) {
         ModLoader.get().addWarning(new ModLoadingWarning(null, ModLoadingStage.SIDED_SETUP, key, args));
     }
@@ -140,15 +140,65 @@ public final class ModernUIForge extends ModernUI {
         return Minecraft.getInstance().getLanguageManager().getSelected().getJavaLocale();
     }
 
+    @Nonnull
     @Override
-    public void loadFont(String cfgFont, Consumer<Font> setter) {
-        try (Resource resource = Minecraft.getInstance().getResourceManager()
-                .getResource(new ResourceLocation(cfgFont))) {
-            Font f = Font.createFont(Font.TRUETYPE_FONT, resource.getInputStream());
-            setter.accept(f);
-            ModernUI.LOGGER.debug(GlyphManagerForge.MARKER, "Preferred font {} was loaded", f.getFamily(Locale.ROOT));
-        } catch (Exception e) {
-            ModernUI.LOGGER.warn(GlyphManagerForge.MARKER, "Preferred font {} failed to load", cfgFont, e);
+    public Typeface getPreferredTypeface() {
+        if (mTypeface == null) {
+            synchronized (this) {
+                if (mTypeface == null) {
+                    List<Font> list = new ArrayList<>();
+                    List<? extends String> configs = Config.CLIENT.fontFamily.get();
+                    if (configs != null) {
+                        loadFonts(configs, list);
+                    }
+                    mTypeface = Typeface.createTypeface(list.toArray(new Font[0]));
+                    ModernUI.LOGGER.info(MARKER, "Loaded typeface: {}", mTypeface);
+                }
+            }
+        }
+        return mTypeface;
+    }
+
+    private static void loadFonts(@Nonnull List<? extends String> configs, @Nonnull List<Font> selected) {
+        for (String cfg : configs) {
+            if (StringUtils.isEmpty(cfg)) {
+                continue;
+            }
+            if (cfg.endsWith(".ttf") || cfg.endsWith(".otf")
+                    || cfg.endsWith(".TTF") || cfg.endsWith(".OTF")) {
+                if (cfg.contains(":/") || cfg.contains(":\\")) {
+                    try {
+                        Font f = Font.createFont(Font.TRUETYPE_FONT, new File(
+                                cfg.replaceAll("\\\\", "/")));
+                        selected.add(f);
+                        ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded with config value {}",
+                                f.getFamily(Locale.ROOT), cfg);
+                    } catch (Exception e) {
+                        ModernUI.LOGGER.warn(MARKER, "Preferred font {} failed to load", cfg, e);
+                    }
+                } else if (cfg.contains(":")) {
+                    try (Resource resource = Minecraft.getInstance().getResourceManager()
+                            .getResource(new ResourceLocation(cfg))) {
+                        Font f = Font.createFont(Font.TRUETYPE_FONT, resource.getInputStream());
+                        selected.add(f);
+                        ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded with config value {}",
+                                f.getFamily(Locale.ROOT), cfg);
+                    } catch (Exception e) {
+                        ModernUI.LOGGER.warn(MARKER, "Preferred font {} failed to load", cfg, e);
+                    }
+                } else {
+                    ModernUI.LOGGER.warn(MARKER, "Preferred font {} is invalid", cfg);
+                }
+            } else {
+                Optional<Font> font =
+                        Typeface.sAllFontFamilies.stream().filter(f -> f.getFamily(Locale.ROOT).equals(cfg)).findFirst();
+                if (font.isPresent()) {
+                    selected.add(font.get());
+                    ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", cfg);
+                } else {
+                    ModernUI.LOGGER.warn(MARKER, "Preferred font {} cannot found or invalid", cfg);
+                }
+            }
         }
     }
 
@@ -160,19 +210,15 @@ public final class ModernUIForge extends ModernUI {
         return optiFineLoaded;
     }
 
-    public static ModernUIForge get() {
-        return (ModernUIForge) sInstance;
-    }
-
-    public <T extends Event & IModBusEvent> boolean post(@Nullable String modid, @Nonnull T event) {
+    public static <T extends Event & IModBusEvent> boolean fire(@Nullable String modid, @Nonnull T event) {
         if (modid == null) {
-            for (IEventBus bus : mModEventBuses.values()) {
+            for (IEventBus bus : sModEventBuses.values()) {
                 if (bus.post(event)) {
                     return true;
                 }
             }
         } else {
-            IEventBus bus = mModEventBuses.get(modid);
+            IEventBus bus = sModEventBuses.get(modid);
             return bus != null && bus.post(event);
         }
         return false;
