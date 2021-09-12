@@ -105,11 +105,13 @@ public class TextLayoutEngine {
 
     private Map<BaseComponent, TextRenderNode> mComponentCache = new HashMap<>();
 
+    private final MultilayerTextKey.Lookup mMultilayerLookupKey = new MultilayerTextKey.Lookup();
+
+    private Map<MultilayerTextKey, TextRenderNode> mMultilayerCache = new HashMap<>();
+
     private final TextLayoutProcessor mProcessor = new TextLayoutProcessor();
 
     private Map<Font, Pair<TexturedGlyph[], float[]>> mDigitMap = new HashMap<>();
-
-    private final ReorderTextHandler reorder = new ReorderTextHandler();
 
     // round(1 * 2 * 1.334)
     private float mResolutionLevel = 3;
@@ -157,6 +159,7 @@ public class TextLayoutEngine {
     public void clearLayoutCache() {
         mStringCache = new HashMap<>();
         mComponentCache = new HashMap<>();
+        mMultilayerCache = new HashMap<>();
         mDigitMap = new HashMap<>();
         TextRenderType.clear();
         // Note max font size is 96, see FontPaint, font size will be (8 * res) in Minecraft
@@ -172,18 +175,79 @@ public class TextLayoutEngine {
      */
     @Nonnull
     public TextRenderNode lookupVanillaNode(@Nonnull String text) {
+        return lookupVanillaNode(text, Style.EMPTY);
+    }
+
+    /**
+     * Lookup cached render node for vanilla text or create the layout.
+     *
+     * @param text  input text
+     * @param style base style
+     * @return the full layout
+     */
+    @Nonnull
+    public TextRenderNode lookupVanillaNode(@Nonnull String text, @Nonnull Style style) {
         if (text.isEmpty()) {
             return TextRenderNode.EMPTY;
         }
         if (!RenderSystem.isOnRenderThread()) {
             return Minecraft.getInstance()
-                    .submit(() -> lookupVanillaNode(text))
+                    .submit(() -> lookupVanillaNode(text, style))
                     .join();
         }
-        TextRenderNode node = mStringCache.get(mVanillaLookupKey.update(text));
+        TextRenderNode node = mStringCache.get(mVanillaLookupKey.update(text, style));
         if (node == null) {
-            node = mProcessor.doLayout(text);
+            node = mProcessor.doLayout(text, style);
             mStringCache.put(mVanillaLookupKey.copy(), node);
+            return node;
+        }
+        return node.get();
+    }
+
+    /**
+     * Lookup cached render node for multilayer text or create the layout.
+     * To perform bidi analysis, we must have the full text of all layers.
+     *
+     * @param text root node
+     * @return the full layout
+     * @see FormattedTextWrapper
+     */
+    public TextRenderNode lookupMultilayerNode(@Nonnull FormattedText text) {
+        return lookupMultilayerNode(text, Style.EMPTY);
+    }
+
+    /**
+     * Lookup cached render node for multilayer text or create the layout.
+     * To perform bidi analysis, we must have the full text of all layers.
+     *
+     * @param text root node
+     * @return the full layout
+     * @see FormattedTextWrapper
+     */
+    public TextRenderNode lookupMultilayerNode(@Nonnull FormattedText text, @Nonnull Style style) {
+        if (!RenderSystem.isOnRenderThread()) {
+            return Minecraft.getInstance()
+                    .submit(() -> lookupMultilayerNode(text))
+                    .join();
+        }
+        if (text == TextComponent.EMPTY || text == FormattedText.EMPTY) {
+            return TextRenderNode.EMPTY;
+        }
+        TextRenderNode node;
+        if (text instanceof BaseComponent) {
+            BaseComponent component = (BaseComponent) text;
+            node = mComponentCache.get(component);
+            if (node == null) {
+                node = mProcessor.doLayout(text, style);
+                mComponentCache.put(component, node);
+                return node;
+            }
+            return node.get();
+        }
+        node = mMultilayerCache.get(mMultilayerLookupKey.update(text, style));
+        if (node == null) {
+            node = mProcessor.doLayout(text, style);
+            mMultilayerCache.put(mMultilayerLookupKey.copy(), node);
             return node;
         }
         return node.get();
@@ -208,22 +272,16 @@ public class TextLayoutEngine {
             return TextRenderNode.EMPTY;
         }
         if (sequence instanceof FormattedTextWrapper) {
-            FormattedText text = ((FormattedTextWrapper) sequence).mText;
-            if (text == TextComponent.EMPTY || text == FormattedText.EMPTY) {
-                return TextRenderNode.EMPTY;
+            return lookupMultilayerNode(((FormattedTextWrapper) sequence).mText);
+        } else {
+            TextRenderNode node = mMultilayerCache.get(mMultilayerLookupKey.update(sequence));
+            if (node == null) {
+                node = mProcessor.doLayout(sequence);
+                mMultilayerCache.put(mMultilayerLookupKey.copy(), node);
+                return node;
             }
-            if (text instanceof BaseComponent) {
-                BaseComponent component = (BaseComponent) text;
-                TextRenderNode node = mComponentCache.get(component);
-                if (node == null) {
-                    node = mProcessor.doLayout(text);
-                    mComponentCache.put(component, node);
-                    return node;
-                }
-                return node.get();
-            }
+            return node.get();
         }
-        return TextRenderNode.EMPTY;
     }
 
     /**
@@ -235,8 +293,9 @@ public class TextLayoutEngine {
      * @param consumer what to do with a part of styled char sequence
      * @return {@code false} if action stopped on the way, {@code true} if the whole text was handled
      */
+    @Deprecated
     public boolean handleSequence(FormattedCharSequence sequence, ReorderTextHandler.IConsumer consumer) {
-        return reorder.handle(sequence, consumer);
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -245,6 +304,11 @@ public class TextLayoutEngine {
     public void tick() {
         mStringCache.values().removeIf(TextRenderNode::tick);
         mComponentCache.values().removeIf(TextRenderNode::tick);
+        mMultilayerCache.values().removeIf(TextRenderNode::tick);
+    }
+
+    public int countEntries() {
+        return mStringCache.size() + mComponentCache.size() + mMultilayerCache.size();
     }
 
     /**

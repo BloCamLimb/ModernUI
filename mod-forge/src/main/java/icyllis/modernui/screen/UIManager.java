@@ -33,6 +33,7 @@ import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.test.TestMain;
 import icyllis.modernui.test.TestPauseUI;
+import icyllis.modernui.textmc.TextLayoutEngine;
 import icyllis.modernui.util.TimedTask;
 import icyllis.modernui.view.MotionEvent;
 import icyllis.modernui.view.View;
@@ -62,7 +63,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.LongConsumer;
 
@@ -467,23 +467,27 @@ public final class UIManager implements ViewRootImpl.Handler {
                 break;
 
             case GLFW_KEY_P:
-                if (minecraft.screen == null) {
-                    break;
-                }
                 StringBuilder builder = new StringBuilder();
                 builder.append("Modern UI Debug Info:\n");
 
                 builder.append("[0] From Modern UI: ");
                 builder.append(mScreen != null);
-                builder.append("\n");
+                builder.append('\n');
 
                 builder.append("[1] Container Menu: ");
                 builder.append(minecraft.player != null ? minecraft.player.containerMenu : null);
-                builder.append("\n");
+                builder.append('\n');
 
                 builder.append("[2] Callback or Screen: ");
-                builder.append(Objects.requireNonNullElseGet(mCallback, () -> minecraft.screen));
-                builder.append("\n");
+                builder.append(mCallback != null ? mCallback : minecraft.screen);
+                builder.append('\n');
+
+                builder.append("[3] Layout Cache Entries: ");
+                builder.append(TextLayoutEngine.getInstance().countEntries());
+                builder.append('\n');
+
+                builder.append("[4] Active Typeface: ");
+                builder.append(ModernUI.get().getPreferredTypeface());
 
                 ModernUI.LOGGER.info(MARKER, builder.toString());
                 break;
@@ -625,7 +629,7 @@ public final class UIManager implements ViewRootImpl.Handler {
     void onClientTick(@Nonnull TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
             ++mTicks;
-            postTask(() -> mRoot.tick(mTicks), 0);
+            postTask(mRoot::tick, 0);
         }
         /* else {
             if (mPendingRepostCursorEvent) {

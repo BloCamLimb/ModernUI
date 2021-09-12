@@ -28,6 +28,7 @@ import javax.annotation.Nullable;
 /**
  * Copy vanilla text from {@link FormattedCharSequence}
  */
+@Deprecated
 public class ReorderTextHandler {
 
     private final CharSequenceBuilder mBuffer = new CharSequenceBuilder();
