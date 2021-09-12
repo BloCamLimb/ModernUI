@@ -22,7 +22,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.GLWrapper;
 import icyllis.modernui.mixin.AccessOption;
-import icyllis.modernui.mixin.AccessVideoSettingsScreen;
+import icyllis.modernui.mixin.AccessVideoSettings;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.screen.UIManager;
 import icyllis.modernui.test.TestMenu;
@@ -167,7 +167,7 @@ final class Registration {
                 ModernUI.LOGGER.error(ModernUI.MARKER, "Failed to be compatible with OptiFine video settings", e);
             }
         } else {
-            settings = AccessVideoSettingsScreen.getOptions();
+            settings = AccessVideoSettings.getOptions();
         }
         if (settings != null) {
             for (int i = 0; i < settings.length; i++) {

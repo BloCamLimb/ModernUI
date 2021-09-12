@@ -241,14 +241,15 @@ public final class Config {
             fontFamily = builder.comment(
                     "A list of font families with precedence relationships to determine the typeface to use in the game.",
                     "Only TrueType and OpenTrue are supported. Each list element can be one of the following three cases.",
-                    "1) Font family name for those installed on your PC, for instance: Microsoft YaHei",
-                    "2) File path for external fonts on your PC, for instance: D:/Fonts/X.otf (backslash is okay)",
+                    "1) Font family name for those installed on your PC, for instance: Segoe UI",
+                    "2) File path for external fonts on your PC, for instance: /usr/shared/fonts/x.otf",
                     "3) Resource location for those loaded with resource packs, for instance: modernui:font/biliw.otf",
                     "This list is only read once when the game is loaded. A game restart is required to reload the setting.")
                     .defineList("fontFamily", () -> {
                         List<String> list = new ArrayList<>();
                         list.add("modernui:font/biliw.otf");
-                        list.add("SimHei");
+                        list.add("Segoe UI");
+                        list.add("SansSerif");
                         return list;
                     }, s -> true);
             allowShadow = builder.comment(
@@ -307,6 +308,7 @@ public final class Config {
             GlyphManagerForge.sMipmapLevel = mipmapLevel.get();*/
             //GlyphManager.sResolutionLevel = resolutionLevel.get();
             //TextLayoutEngine.sDefaultFontSize = defaultFontSize.get();
+            ModernUI.get().getPreferredTypeface();
         }
     }
 

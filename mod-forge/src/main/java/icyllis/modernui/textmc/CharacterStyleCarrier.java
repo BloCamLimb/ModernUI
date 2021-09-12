@@ -200,4 +200,13 @@ public class CharacterStyleCarrier {
     public boolean isLayoutAffecting(@Nonnull CharacterStyleCarrier s) {
         return (mFlags & LAYOUT_MASK) != (s.mFlags & LAYOUT_MASK);
     }
+
+    @Override
+    public String toString() {
+        return "CharacterStyleCarrier{" +
+                "stringIndex=" + mStringIndex +
+                ", stripIndex=" + mStripIndex +
+                ", flags=0x" + Integer.toHexString(mFlags) +
+                '}';
+    }
 }

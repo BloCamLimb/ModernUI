@@ -27,8 +27,10 @@ import icyllis.modernui.text.GlyphManager;
 import icyllis.modernui.text.TexturedGlyph;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.BaseComponent;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraft.util.FormattedCharSequence;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -53,7 +55,7 @@ public class TextLayoutEngine {
     /**
      * Instance on render thread
      */
-    private static TextLayoutEngine instance;
+    private static volatile TextLayoutEngine instance;
 
     /*
      * Config values
@@ -101,24 +103,26 @@ public class TextLayoutEngine {
 
     private Map<VanillaTextKey, TextRenderNode> mStringCache = new HashMap<>();
 
-    /*
-     * True if digitGlyphs[] has been assigned and cacheString() can begin replacing all digits with '0' in the string.
-     */
-    //private boolean digitGlyphsReady = false;
+    private Map<BaseComponent, TextRenderNode> mComponentCache = new HashMap<>();
 
     private final TextLayoutProcessor mProcessor = new TextLayoutProcessor();
 
-    // float array representing additional offset X in normalized pixels, first element is standard advance
     private Map<Font, Pair<TexturedGlyph[], float[]>> mDigitMap = new HashMap<>();
 
     private final ReorderTextHandler reorder = new ReorderTextHandler();
 
+    // round(1 * 2 * 1.334)
     private float mResolutionLevel = 3;
 
     /*
      * Remove all formatting code even though it's invalid {@link #getFormattingByCode(char)} == null
      */
     //private static final Pattern FORMATTING_REMOVE_PATTERN = Pattern.compile("\u00a7.");
+
+    /*
+     * True if digitGlyphs[] has been assigned and cacheString() can begin replacing all digits with '0' in the string.
+     */
+    //private boolean digitGlyphsReady = false;
 
     private TextLayoutEngine() {
         /* StringCache is created by the main game thread; remember it for later thread safety checks */
@@ -152,6 +156,7 @@ public class TextLayoutEngine {
      */
     public void clearLayoutCache() {
         mStringCache = new HashMap<>();
+        mComponentCache = new HashMap<>();
         mDigitMap = new HashMap<>();
         TextRenderType.clear();
         // Note max font size is 96, see FontPaint, font size will be (8 * res) in Minecraft
@@ -160,10 +165,10 @@ public class TextLayoutEngine {
     }
 
     /**
-     * Lookup cached render node for vanilla text.
+     * Lookup cached render node for vanilla text or create the layout.
      *
      * @param text input text
-     * @return the layout
+     * @return the full layout
      */
     @Nonnull
     public TextRenderNode lookupVanillaNode(@Nonnull String text) {
@@ -177,14 +182,48 @@ public class TextLayoutEngine {
         }
         TextRenderNode node = mStringCache.get(mVanillaLookupKey.update(text));
         if (node == null) {
-            node = mProcessor.performFullLayout(text);
+            node = mProcessor.doLayout(text);
             mStringCache.put(mVanillaLookupKey.copy(), node);
+            return node;
         }
-        return node;
+        return node.get();
     }
 
-    public void lookupMultilayerNode(@Nonnull FormattedText text) {
-
+    /**
+     * Lookup cached render node for multilayer text or create the layout.
+     * To perform bidi analysis, we must have the full text of all layers.
+     *
+     * @param sequence deep processor
+     * @return the full layout
+     * @see FormattedTextWrapper
+     */
+    @Nonnull
+    public TextRenderNode lookupMultilayerNode(@Nonnull FormattedCharSequence sequence) {
+        if (!RenderSystem.isOnRenderThread()) {
+            return Minecraft.getInstance()
+                    .submit(() -> lookupMultilayerNode(sequence))
+                    .join();
+        }
+        if (sequence == FormattedCharSequence.EMPTY) {
+            return TextRenderNode.EMPTY;
+        }
+        if (sequence instanceof FormattedTextWrapper) {
+            FormattedText text = ((FormattedTextWrapper) sequence).mText;
+            if (text == TextComponent.EMPTY || text == FormattedText.EMPTY) {
+                return TextRenderNode.EMPTY;
+            }
+            if (text instanceof BaseComponent) {
+                BaseComponent component = (BaseComponent) text;
+                TextRenderNode node = mComponentCache.get(component);
+                if (node == null) {
+                    node = mProcessor.doLayout(text);
+                    mComponentCache.put(component, node);
+                    return node;
+                }
+                return node.get();
+            }
+        }
+        return TextRenderNode.EMPTY;
     }
 
     /**
@@ -198,6 +237,14 @@ public class TextLayoutEngine {
      */
     public boolean handleSequence(FormattedCharSequence sequence, ReorderTextHandler.IConsumer consumer) {
         return reorder.handle(sequence, consumer);
+    }
+
+    /**
+     * Ticks the caches and clear unused entries.
+     */
+    public void tick() {
+        mStringCache.values().removeIf(TextRenderNode::tick);
+        mComponentCache.values().removeIf(TextRenderNode::tick);
     }
 
     /**
@@ -245,8 +292,10 @@ public class TextLayoutEngine {
             GlyphVector vector = engine.createGlyphVector(font, chars);
             glyphs[i] = engine.lookupGlyph(font, vector.getGlyphCode(0));
             if (i == 0) {
+                // standard advance
                 offsets[0] = (float) vector.getGlyphPosition(1).getX();
             } else {
+                // additional offset to center it
                 offsets[i] = (float) ((offsets[0] - vector.getGlyphPosition(1).getX()) / 2);
             }
         }
@@ -811,6 +860,7 @@ public class TextLayoutEngine {
      * @param font   the derived font with fontStyle and fontSize
      * @param effect text render effect
      */
+    @Deprecated
     private void layoutRandom(TextLayoutProcessor data, char[] text, int start, int limit, int flag, Font font,
                               byte effect) {
         /*final GlyphManagerForge.VanillaGlyph[] digits = glyphManager.lookupDigits(font);

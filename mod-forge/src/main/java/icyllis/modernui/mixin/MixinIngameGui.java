@@ -50,7 +50,8 @@ public abstract class MixinIngameGui {
 
     @Redirect(
             method = "renderExperienceBar",
-            at = @At(value = "FIELD", target = "net/minecraft/client/player/LocalPlayer.experienceLevel:I", opcode = Opcodes.GETFIELD)
+            at = @At(value = "FIELD", target = "net/minecraft/client/player/LocalPlayer.experienceLevel:I", opcode =
+                    Opcodes.GETFIELD)
     )
     private int pass(LocalPlayer player) {
         return 0;
@@ -64,10 +65,12 @@ public abstract class MixinIngameGui {
             Font font = getFont();
             int x = (screenWidth - font.width(s)) / 2;
             int y = screenHeight - 31 - 4;
-            font.draw(matrix, s, x + 0.5f, y, 0);
-            font.draw(matrix, s, x - 0.5f, y, 0);
-            font.draw(matrix, s, x, y + 0.5f, 0);
-            font.draw(matrix, s, x, y - 0.5f, 0);
+            matrix.pushPose();
+            matrix.translate(x, y, 0);
+            matrix.scale(1.25f, 1.25f, 1);
+            matrix.translate(-x, -y, 0);
+            font.draw(matrix, s, x, y, 0xff000000);
+            matrix.popPose();
             font.draw(matrix, s, x, y, 0xff80ff20);
         }
     }

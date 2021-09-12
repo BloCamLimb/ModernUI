@@ -20,16 +20,13 @@ package icyllis.modernui.textmc;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.math.Matrix4f;
-import icyllis.modernui.mixin.AccessFontRenderer;
+import com.mojang.math.Vector3f;
 import icyllis.modernui.mixin.MixinClientLanguage;
-import icyllis.modernui.platform.RenderCore;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.StringSplitter;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.font.FontSet;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.locale.Language;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
@@ -38,25 +35,25 @@ import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.mutable.MutableFloat;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Function;
 
 /**
- * Replace vanilla renderer with Modern UI renderer
+ * Modern Text Engine to Minecraft font renderer.
  *
  * @author BloCamLimb
  */
 @OnlyIn(Dist.CLIENT)
 public class ModernFontRenderer extends Font {
 
+    public static final Vector3f SHADOW_OFFSET = new Vector3f(0.0F, 0.0F, 0.03F);
+
     /**
      * Render thread instance
      */
-    private static ModernFontRenderer instance;
+    private static volatile ModernFontRenderer instance;
 
     /**
      * Config values
@@ -86,17 +83,89 @@ public class ModernFontRenderer extends Font {
         }
     }
 
-    public static void change(boolean global, boolean shadow) {
-        RenderCore.checkRenderThread();
-        /*if (RenderCore.isInitialized()) {
-            instance.mGlobalRenderer = global;
-            instance.mAllowShadow = shadow;
-        }*/
+    public static int drawText(@Nonnull String text, float x, float y, int color, boolean dropShadow,
+                               @Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, boolean seeThrough,
+                               int colorBackground, int packedLight) {
+        if (text.length() == 0) {
+            return 0;
+        }
+
+        // ensure alpha, color can be ARGB, or can be RGB
+        // we check if alpha <= 1, then make alpha = 255 (fully opaque)
+        if ((color & 0xfe000000) == 0) {
+            color |= 0xff000000;
+        }
+
+        int a = color >>> 24;
+        int r = color >> 16 & 0xff;
+        int g = color >> 8 & 0xff;
+        int b = color & 0xff;
+
+        TextRenderNode node = TextLayoutEngine.getInstance().lookupVanillaNode(text);
+        float level = TextLayoutEngine.getInstance().getResolutionLevel();
+        if (dropShadow && sAllowShadow) {
+            node.drawText(matrix, source, text, x + 0.8f, y + 0.8f, r >> 2, g >> 2, b >> 2, a, true,
+                    seeThrough, colorBackground, packedLight, level);
+            matrix = matrix.copy(); // if not drop shadow, we don't need to copy the matrix
+            matrix.translate(SHADOW_OFFSET);
+        }
+
+        x += node.drawText(matrix, source, text, x, y, r, g, b, a, false,
+                seeThrough, colorBackground, packedLight, level);
+        if (dropShadow) {
+            return (int) x + 1;
+        } else {
+            return (int) x;
+        }
     }
 
-    public static boolean isGlobalRenderer() {
-        return false;
+    public static int drawText(@Nonnull FormattedCharSequence text, float x, float y, int color, boolean dropShadow,
+                               @Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, boolean seeThrough,
+                               int colorBackground, int packedLight) {
+        if (text == FormattedCharSequence.EMPTY) {
+            return 0;
+        }
+
+        // ensure alpha, color can be ARGB, or can be RGB
+        // we check if alpha <= 1, then make alpha = 255 (fully opaque)
+        if ((color & 0xfe000000) == 0) {
+            color |= 0xff000000;
+        }
+
+        int a = color >>> 24;
+        int r = color >> 16 & 0xff;
+        int g = color >> 8 & 0xff;
+        int b = color & 0xff;
+
+        TextRenderNode node = TextLayoutEngine.getInstance().lookupMultilayerNode(text);
+        float level = TextLayoutEngine.getInstance().getResolutionLevel();
+        if (dropShadow && sAllowShadow) {
+            node.drawText(matrix, source, null, x + 0.8f, y + 0.8f, r >> 2, g >> 2, b >> 2, a, true,
+                    seeThrough, colorBackground, packedLight, level);
+            matrix = matrix.copy(); // if not drop shadow, we don't need to copy the matrix
+            matrix.translate(SHADOW_OFFSET);
+        }
+
+        x += node.drawText(matrix, source, null, x, y, r, g, b, a, false,
+                seeThrough, colorBackground, packedLight, level);
+        if (dropShadow) {
+            return (int) x + 1;
+        } else {
+            return (int) x;
+        }
     }
+
+     /*public static void change(boolean global, boolean shadow) {
+        RenderCore.checkRenderThread();
+        if (RenderCore.isInitialized()) {
+            instance.mGlobalRenderer = global;
+            instance.mAllowShadow = shadow;
+        }
+    }*/
+
+    /*public static boolean isGlobalRenderer() {
+        return false;
+    }*/
 
     /*static void hook(boolean doHook) {
         RenderSystem.assertThread(RenderSystem::isOnRenderThread);
@@ -140,20 +209,26 @@ public class ModernFontRenderer extends Font {
         }
     }*/
 
-    @Override
-    public int drawInBatch(@Nonnull String text, float x, float y, int color, boolean dropShadow, @NotNull Matrix4f matrix,
-                           @Nonnull MultiBufferSource buffer, boolean seeThrough, int colorBackground, int packedLight, boolean bidiFlag) {
+    /*@Override
+    public int drawInBatch(@Nonnull String text, float x, float y, int color, boolean dropShadow,
+                           @NotNull Matrix4f matrix,
+                           @Nonnull MultiBufferSource buffer, boolean seeThrough, int colorBackground,
+                           int packedLight, boolean bidiFlag) {
         if (mGlobalRenderer) {
             // bidiFlag is useless, we have our layout system
-            x += drawLayer(text, x, y, color, dropShadow, matrix, buffer, seeThrough, colorBackground, packedLight, Style.EMPTY);
+            x += drawLayer(text, x, y, color, dropShadow, matrix, buffer, seeThrough, colorBackground, packedLight,
+                    Style.EMPTY);
             return (int) x + (dropShadow ? 1 : 0);
         }
-        return super.drawInBatch(text, x, y, color, dropShadow, matrix, buffer, seeThrough, colorBackground, packedLight, bidiFlag);
+        return super.drawInBatch(text, x, y, color, dropShadow, matrix, buffer, seeThrough, colorBackground,
+                packedLight, bidiFlag);
     }
 
     @Override
-    public int drawInBatch(@Nonnull Component text, float x, float y, int color, boolean dropShadow, @Nonnull Matrix4f matrix,
-                           @Nonnull MultiBufferSource buffer, boolean seeThrough, int colorBackground, int packedLight) {
+    public int drawInBatch(@Nonnull Component text, float x, float y, int color, boolean dropShadow,
+                           @Nonnull Matrix4f matrix,
+                           @Nonnull MultiBufferSource buffer, boolean seeThrough, int colorBackground,
+                           int packedLight) {
         if (mGlobalRenderer) {
             v.setValue(x);
             // iterate all siblings
@@ -165,11 +240,13 @@ public class ModernFontRenderer extends Font {
             }, Style.EMPTY);
             return v.intValue() + (dropShadow ? 1 : 0);
         }
-        return super.drawInBatch(text, x, y, color, dropShadow, matrix, buffer, seeThrough, colorBackground, packedLight);
+        return super.drawInBatch(text, x, y, color, dropShadow, matrix, buffer, seeThrough, colorBackground,
+                packedLight);
     }
 
     // compatibility layer
-    public void drawText(@Nonnull FormattedText text, float x, float y, int color, boolean dropShadow, @Nonnull Matrix4f matrix,
+    public void drawText(@Nonnull FormattedText text, float x, float y, int color, boolean dropShadow,
+                         @Nonnull Matrix4f matrix,
                          @Nonnull MultiBufferSource buffer, boolean seeThrough, int colorBackground, int packedLight) {
         if (mGlobalRenderer) {
             v.setValue(x);
@@ -181,13 +258,16 @@ public class ModernFontRenderer extends Font {
                 return Optional.empty();
             }, Style.EMPTY);
         } else {
-            super.drawInBatch(Language.getInstance().getVisualOrder(text), x, y, color, dropShadow, matrix, buffer, seeThrough, colorBackground, packedLight);
+            super.drawInBatch(Language.getInstance().getVisualOrder(text), x, y, color, dropShadow, matrix, buffer,
+                    seeThrough, colorBackground, packedLight);
         }
     }
 
     @Override
-    public int drawInBatch(@Nonnull FormattedCharSequence text, float x, float y, int color, boolean dropShadow, @Nonnull Matrix4f matrix,
-                           @Nonnull MultiBufferSource buffer, boolean seeThrough, int colorBackground, int packedLight) {
+    public int drawInBatch(@Nonnull FormattedCharSequence text, float x, float y, int color, boolean dropShadow,
+                           @Nonnull Matrix4f matrix,
+                           @Nonnull MultiBufferSource buffer, boolean seeThrough, int colorBackground,
+                           int packedLight) {
         if (mGlobalRenderer && text.accept((index, style, codePoint) -> !style.getFont().equals(Minecraft.ALT_FONT))) {
             v.setValue(x);
             mFontEngine.handleSequence(text,
@@ -200,12 +280,15 @@ public class ModernFontRenderer extends Font {
             );
             return v.intValue() + (dropShadow ? 1 : 0);
         }
-        return super.drawInBatch(text, x, y, color, dropShadow, matrix, buffer, seeThrough, colorBackground, packedLight);
-    }
+        return super.drawInBatch(text, x, y, color, dropShadow, matrix, buffer, seeThrough, colorBackground,
+                packedLight);
+    }*/
 
-    public float drawLayer(@Nonnull CharSequence text, float x, float y, int color, boolean dropShadow, Matrix4f matrix,
-                                  @Nonnull MultiBufferSource buffer, boolean seeThrough, int colorBackground, int packedLight, Style style) {
-        /*if (text.length() == 0)
+    /*public float drawLayer(@Nonnull CharSequence text, float x, float y, int color, boolean dropShadow, Matrix4f
+    matrix,
+                           @Nonnull MultiBufferSource buffer, boolean seeThrough, int colorBackground,
+                           int packedLight, Style style) {
+        if (text.length() == 0)
             return 0;
 
         // ensure alpha, color can be ARGB, or can be RGB
@@ -226,39 +309,10 @@ public class ModernFontRenderer extends Font {
             matrix.translate(AccessFontRenderer.shadowLifting());
         }
 
-        return node.drawText(matrix, buffer, text, x, y, r, g, b, a, false, seeThrough, colorBackground, packedLight, );*/
+        return node.drawText(matrix, buffer, text, x, y, r, g, b, a, false, seeThrough, colorBackground, packedLight,
+         );
         return 0;
-    }
-
-    public static float drawLayer(@Nonnull String text, float x, float y, int color, boolean dropShadow,
-                                  @Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, boolean seeThrough,
-                                  int colorBackground, int packedLight) {
-        if (text.length() == 0) {
-            return 0;
-        }
-
-        // ensure alpha, color can be ARGB, or can be RGB
-        // we check if alpha <= 1, then make alpha = 255 (fully opaque)
-        if ((color & 0xfe000000) == 0) {
-            color |= 0xff000000;
-        }
-
-        int a = color >>> 24;
-        int r = color >> 16 & 0xff;
-        int g = color >> 8 & 0xff;
-        int b = color & 0xff;
-
-        TextRenderNode node = TextLayoutEngine.getInstance().lookupVanillaNode(text);
-        float res = TextLayoutEngine.getInstance().getResolutionLevel();
-        if (dropShadow) {
-            node.drawText(matrix, source, text, x + 0.8f, y + 0.8f, r >> 2, g >> 2, b >> 2, a, true,
-                    seeThrough, colorBackground, packedLight, res);
-            matrix = matrix.copy(); // if not drop shadow, we don't need to copy the matrix
-            matrix.translate(AccessFontRenderer.shadowLifting());
-        }
-
-        return node.drawText(matrix, source, text, x, y, r, g, b, a, false, seeThrough, colorBackground, packedLight, res);
-    }
+    }*/
 
     @Override
     public int width(String string) {
@@ -287,7 +341,8 @@ public class ModernFontRenderer extends Font {
     @Override
     public String plainSubstrByWidth(String text, int width, boolean reverse) {
         if (mGlobalRenderer) {
-            return reverse ? mModernSplitter.plainTailByWidth(text, width, Style.EMPTY) : mModernSplitter.plainHeadByWidth(text, width, Style.EMPTY);
+            return reverse ? mModernSplitter.plainTailByWidth(text, width, Style.EMPTY) :
+                    mModernSplitter.plainHeadByWidth(text, width, Style.EMPTY);
         }
         return super.plainSubstrByWidth(text, width, reverse);
     }

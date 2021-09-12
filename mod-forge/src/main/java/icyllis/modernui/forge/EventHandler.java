@@ -24,6 +24,7 @@ import icyllis.modernui.screen.BlurHandler;
 import icyllis.modernui.screen.OpenMenuEvent;
 import icyllis.modernui.test.TestMenu;
 import icyllis.modernui.test.TestUI;
+import icyllis.modernui.textmc.TextLayoutEngine;
 import net.minecraft.client.ProgressOption;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.VideoSettingsScreen;
@@ -114,6 +115,7 @@ final class EventHandler {
     static class Client {
 
         static ProgressOption NEW_GUI_SCALE;
+
         @Nullable
         private static Screen sCapturedVideoSettingsScreen;
 
@@ -160,6 +162,13 @@ final class EventHandler {
         static void onRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
             if (event.phase == TickEvent.Phase.END) {
                 RenderCore.flushRenderCalls();
+            }
+        }
+
+        @SubscribeEvent
+        static void onClientTick(@Nonnull TickEvent.ClientTickEvent event) {
+            if (event.phase == TickEvent.Phase.END) {
+                TextLayoutEngine.getInstance().tick();
             }
         }
 

@@ -30,6 +30,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Random;
 
 public class RandomGlyphRender extends BaseGlyphRender {
@@ -69,7 +70,7 @@ public class RandomGlyphRender extends BaseGlyphRender {
     }
 
     @Override
-    public void drawGlyph(@Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, @Nonnull CharSequence input,
+    public void drawGlyph(@Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, @Nullable CharSequence input,
                           float x, float y, int r, int g, int b, int a, boolean seeThrough, int light, float res) {
         int idx = RANDOM.nextInt(10);
         TexturedGlyph glyph = mGlyphs.getLeft()[idx];

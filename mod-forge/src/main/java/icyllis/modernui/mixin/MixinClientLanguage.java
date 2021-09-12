@@ -18,28 +18,21 @@
 
 package icyllis.modernui.mixin;
 
-import icyllis.modernui.textmc.ModernFontRenderer;
+import icyllis.modernui.textmc.FormattedTextWrapper;
 import net.minecraft.client.resources.language.ClientLanguage;
-import net.minecraft.client.resources.language.FormattedBidiReorder;
 import net.minecraft.network.chat.FormattedText;
-import net.minecraft.network.chat.Style;
 import net.minecraft.util.FormattedCharSequence;
-import net.minecraft.util.StringDecomposer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
-import org.spongepowered.asm.mixin.Shadow;
-
-import java.util.Optional;
 
 @Mixin(ClientLanguage.class)
-public abstract class MixinClientLanguage {
+public class MixinClientLanguage {
 
-    @Shadow
-    public abstract boolean isDefaultRightToLeft();
+    /*@Shadow
+    public abstract boolean isDefaultRightToLeft();*/
 
     /*@Shadow
     protected abstract String func_239500_d_(String p_239500_1_);
-
 
     @Overwrite
     public String func_230504_a_(String text, boolean token) {
@@ -61,10 +54,6 @@ public abstract class MixinClientLanguage {
      */
     @Overwrite
     public FormattedCharSequence getVisualOrder(FormattedText text) {
-        return ModernFontRenderer.isGlobalRenderer() ?
-                sink -> text.visit((s, t) ->
-                        StringDecomposer.iterate(t, s, sink) ? Optional.empty()
-                                : FormattedText.STOP_ITERATION, Style.EMPTY).isEmpty()
-                : FormattedBidiReorder.reorder(text, isDefaultRightToLeft());
+        return new FormattedTextWrapper(text);
     }
 }

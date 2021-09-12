@@ -165,10 +165,10 @@ public class Typeface {
 
     @Nonnull
     public static Typeface createTypeface(@Nonnull Font[] fonts) {
-        Font[] f = new Font[fonts.length + 1];
-        System.arraycopy(fonts, 0, f, 0, fonts.length);
-        f[fonts.length] = sSansSerifFont;
-        return new Typeface(f);
+        if (fonts.length == 0) {
+            return SANS_SERIF;
+        }
+        return new Typeface(fonts);
     }
 
     // unmodifiable

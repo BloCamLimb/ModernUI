@@ -289,7 +289,7 @@ public class TestHUD {
         for (int i = 0; i < texts.size(); i++) {
             FormattedText text = texts.get(i);
             if (text != null)
-                font.drawText(text, tooltipX, tooltipY, 0xffffffff, true, mat, buf, false, 0, 0xf000f0);
+                //font.drawText(text, tooltipX, tooltipY, 0xffffffff, true, mat, buf, false, 0, 0xf000f0);
             if (i + 1 == titleLinesCount) tooltipY += TITLE_GAP;
             tooltipY += LINE_HEIGHT;
         }
