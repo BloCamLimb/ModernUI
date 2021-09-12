@@ -19,6 +19,7 @@
 package icyllis.modernui.mixin;
 
 import com.mojang.math.Matrix4f;
+import icyllis.modernui.textmc.ModernFontRenderer;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.MultiBufferSource;
 import org.spongepowered.asm.mixin.Mixin;
@@ -37,6 +38,6 @@ public class MixinFontRenderer {
     public int drawInBatch(@Nonnull String text, float x, float y, int color, boolean dropShadow,
                            @Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, boolean seeThrough,
                            int colorBackground, int packedLight, @Deprecated boolean bidiFlag) {
-        return 0;
+        return (int) ModernFontRenderer.drawLayer(text, x, y, color, dropShadow, matrix, source, seeThrough, colorBackground, packedLight);
     }
 }

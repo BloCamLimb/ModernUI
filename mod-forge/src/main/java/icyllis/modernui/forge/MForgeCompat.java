@@ -19,12 +19,12 @@
 package icyllis.modernui.forge;
 
 import com.mojang.blaze3d.platform.Window;
+import icyllis.modernui.math.MathUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuConstructor;
@@ -95,7 +95,8 @@ public final class MForgeCompat {
      * @throws ClassCastException this method is not called on logic server
      * @see net.minecraftforge.common.extensions.IForgeContainerType#create(IContainerFactory)
      */
-    public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor provider, @Nullable Consumer<FriendlyByteBuf> writer) {
+    public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor provider,
+                                @Nullable Consumer<FriendlyByteBuf> writer) {
         openMenu((ServerPlayer) player, provider, writer);
     }
 
@@ -109,7 +110,8 @@ public final class MForgeCompat {
      *                 to the menu supplier (IContainerFactory) that registered on client
      * @see net.minecraftforge.common.extensions.IForgeContainerType#create(IContainerFactory)
      */
-    public static void openMenu(@Nonnull ServerPlayer player, @Nonnull MenuConstructor provider, @Nullable Consumer<FriendlyByteBuf> writer) {
+    public static void openMenu(@Nonnull ServerPlayer player, @Nonnull MenuConstructor provider,
+                                @Nullable Consumer<FriendlyByteBuf> writer) {
         // do the same thing as ServerPlayer.openMenu()
         if (player.containerMenu != player.inventoryMenu) {
             player.closeContainer();
@@ -152,11 +154,11 @@ public final class MForgeCompat {
         double high = Math.max(w, h);
 
         int min;
-        int max = Mth.clamp((int) (base / 26), 1, 6);
+        int max = MathUtil.clamp((int) (base / 26), 1, 9);
         if (max > 1) {
             int i = (int) (base / 64);
             int j = (int) (high / 64);
-            min = Mth.clamp(j != i ? Math.min(i, j) + 1 : i, 2, 6);
+            min = MathUtil.clamp(j != i ? Math.min(i, j) + 1 : i, 2, 9);
         } else {
             min = 1;
         }
@@ -189,7 +191,8 @@ public final class MForgeCompat {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.currentScreen == null) {
             // If press F3 + Esc and is single player and not open LAN world
-            if (usePauseScreen && minecraft.isIntegratedServerRunning() && minecraft.getIntegratedServer() != null && !minecraft.getIntegratedServer().getPublic()) {
+            if (usePauseScreen && minecraft.isIntegratedServerRunning() && minecraft.getIntegratedServer() != null &&
+             !minecraft.getIntegratedServer().getPublic()) {
                 minecraft.displayGuiScreen(new IngameMenuScreen(false));
                 minecraft.getSoundHandler().pause();
             } else {

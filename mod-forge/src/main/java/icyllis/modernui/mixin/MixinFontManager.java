@@ -32,9 +32,9 @@ import java.util.function.Function;
 @Mixin(FontManager.class)
 public class MixinFontManager {
 
-    @Redirect(method = "createFont",
+    /*@Redirect(method = "createFont",
             at = @At(value = "NEW", target = "net/minecraft/client/gui/Font"))
     private Font createFontRenderer(Function<ResourceLocation, FontSet> fonts) {
         return ModernFontRenderer.create(fonts);
-    }
+    }*/
 }

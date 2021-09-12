@@ -16,21 +16,22 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.textmc.pipeline;
+package icyllis.modernui.textmc;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.text.TexturedGlyph;
-import icyllis.modernui.textmc.CharacterStyleCarrier;
 import net.minecraft.client.renderer.MultiBufferSource;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class StandardGlyphRender extends GlyphRender {
+public class StandardGlyphRender extends BaseGlyphRender {
 
     /**
      * The immutable glyph to render
@@ -45,24 +46,50 @@ public class StandardGlyphRender extends GlyphRender {
     }
 
     @Override
-    public void drawGlyph(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b,
-                          int a) {
+    public void drawGlyph(@Nonnull BufferBuilder builder, @Nonnull String input, float x, float y, int r, int g,
+                          int b, int a, float res) {
+        TexturedGlyph glyph = mGlyph;
+        if (glyph == null) {
+            return;
+        }
         builder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
-        mGlyph.drawGlyph(builder, x + mOffsetX, y, r, g, b, a);
+        RenderSystem.bindTexture(glyph.texture);
+        x += mOffsetX;
+        x += glyph.offsetX / res;
+        y += glyph.offsetY / res;
+        final float w = glyph.width / res;
+        final float h = glyph.height / res;
+        builder.vertex(x, y, 0).color(r, g, b, a).uv(glyph.u1, glyph.v1).endVertex();
+        builder.vertex(x, y + h, 0).color(r, g, b, a).uv(glyph.u1, glyph.v2).endVertex();
+        builder.vertex(x + w, y + h, 0).color(r, g, b, a).uv(glyph.u2, glyph.v2).endVertex();
+        builder.vertex(x + w, y, 0).color(r, g, b, a).uv(glyph.u2, glyph.v1).endVertex();
         builder.end();
         BufferUploader.end(builder);
     }
 
     @Override
-    public void drawGlyph(Matrix4f matrix, @Nonnull MultiBufferSource buffer, @Nonnull CharSequence raw, float x,
-                          float y, int r, int g, int b, int a, boolean seeThrough, int light) {
-        mGlyph.drawGlyph(matrix, buffer, x + mOffsetX, y, r, g, b, a, seeThrough, light);
+    public void drawGlyph(@Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, @Nonnull CharSequence input,
+                          float x, float y, int r, int g, int b, int a, boolean seeThrough, int light, float res) {
+        TexturedGlyph glyph = mGlyph;
+        if (glyph == null) {
+            return;
+        }
+        VertexConsumer builder = source.getBuffer(TextRenderType.getOrCreate(glyph.texture, seeThrough));
+        x += mOffsetX;
+        x += glyph.offsetX / res;
+        y += glyph.offsetY / res;
+        final float w = glyph.width / res;
+        final float h = glyph.height / res;
+        builder.vertex(matrix, x, y, 0).color(r, g, b, a).uv(glyph.u1, glyph.v1).uv2(light).endVertex();
+        builder.vertex(matrix, x, y + h, 0).color(r, g, b, a).uv(glyph.u1, glyph.v2).uv2(light).endVertex();
+        builder.vertex(matrix, x + w, y + h, 0).color(r, g, b, a).uv(glyph.u2, glyph.v2).uv2(light).endVertex();
+        builder.vertex(matrix, x + w, y, 0).color(r, g, b, a).uv(glyph.u2, glyph.v1).uv2(light).endVertex();
     }
 
-    @Override
+    /*@Override
     public float getAdvance() {
         return mGlyph.getAdvance();
-    }
+    }*/
 
     /*public float drawString(@Nonnull BufferBuilder builder, @Nonnull String raw, int color, float x, float y, int
     r, int g, int b, int a) {

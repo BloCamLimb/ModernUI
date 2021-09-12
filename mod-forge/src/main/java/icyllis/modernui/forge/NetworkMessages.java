@@ -97,6 +97,7 @@ public final class NetworkMessages {
             ((AccessFoodData) foodData).setExhaustionLevel(buffer.readFloat());
         }
 
+        @SuppressWarnings("deprecation")
         private static void menu(@Nonnull FriendlyByteBuf buffer, @Nonnull LocalPlayer player) {
             final int containerId = buffer.readVarInt();
             final int menuId = buffer.readVarInt();
@@ -113,8 +114,9 @@ public final class NetworkMessages {
                     success = UIManager.getInstance().openMenu(player, menu, key.getNamespace());
                 }
             }
-            if (!success)
+            if (!success) {
                 player.closeContainer(); // close server menu
+            }
         }
     }
 }

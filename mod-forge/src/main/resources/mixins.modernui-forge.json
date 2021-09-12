@@ -16,6 +16,7 @@
     "AccessVideoSettingsScreen",
     "MixinClientLanguage",
     "MixinFontManager",
+    "MixinFontRenderer",
     "MixinIngameGui",
     "MixinLevelLoadingScreen",
     "MixinMouseHandler",

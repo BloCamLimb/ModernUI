@@ -16,38 +16,29 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.textmc.pipeline;
+package icyllis.modernui.textmc;
 
 import com.google.common.collect.ImmutableList;
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import icyllis.modernui.graphics.texture.Texture2D;
-import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import icyllis.modernui.ModernUI;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
-import org.apache.commons.lang3.tuple.Pair;
 import org.lwjgl.opengl.GL11;
 
+import javax.annotation.Nonnull;
 import java.util.Objects;
 
-public class TextRenderType extends RenderType {
+public class EffectRenderType extends RenderType {
 
-    /**
-     * Texture id to render type map
-     */
-    //TODO remove some old textures depend on put order
-    private static final Object2ObjectMap<Texture2D, TextRenderType> TYPES = new Object2ObjectLinkedOpenHashMap<>();
-    private static final Object2ObjectMap<Texture2D, TextRenderType> SEE_THROUGH_TYPES = new Object2ObjectLinkedOpenHashMap<>();
+    private static final EffectRenderType INSTANCE = new EffectRenderType();
+    private static final EffectRenderType SEE_THROUGH = new EffectRenderType(ModernUI.ID + ":text_effect_see_through");
 
-    /**
-     * Only the texture id is different, the rest state are same
-     */
-    private static final ImmutableList<RenderStateShard> GENERAL_STATES;
+    private static final ImmutableList<RenderStateShard> STATES;
     private static final ImmutableList<RenderStateShard> SEE_THROUGH_STATES;
 
     static {
-        GENERAL_STATES = ImmutableList.of(
+        STATES = ImmutableList.of(
+                RenderStateShard.NO_TEXTURE,
                 RenderStateShard.TRANSLUCENT_TRANSPARENCY,
                 RenderStateShard.NO_DIFFUSE_LIGHTING,
                 RenderStateShard.FLAT_SHADE,
@@ -64,6 +55,7 @@ public class TextRenderType extends RenderType {
                 RenderStateShard.DEFAULT_LINE
         );
         SEE_THROUGH_STATES = ImmutableList.of(
+                RenderStateShard.NO_TEXTURE,
                 RenderStateShard.TRANSLUCENT_TRANSPARENCY,
                 RenderStateShard.NO_DIFFUSE_LIGHTING,
                 RenderStateShard.FLAT_SHADE,
@@ -83,48 +75,27 @@ public class TextRenderType extends RenderType {
 
     private final int hashCode;
 
-    /**
-     * The OpenGL texture ID that contains this glyph image.
-     */
-    public final int textureName;
-
-    private TextRenderType(int textureName) {
-        super("modern_text",
-                DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP,
+    private EffectRenderType() {
+        super(ModernUI.ID + ":text_effect",
+                DefaultVertexFormat.POSITION_COLOR_LIGHTMAP,
                 GL11.GL_QUADS, 256, false, true,
-                () -> {
-                    GENERAL_STATES.forEach(RenderStateShard::setupRenderState);
-                    RenderSystem.enableTexture();
-                    RenderSystem.bindTexture(textureName);
-                },
-                () -> GENERAL_STATES.forEach(RenderStateShard::clearRenderState));
-        this.textureName = textureName;
-        this.hashCode = Objects.hash(super.hashCode(), GENERAL_STATES, textureName);
+                () -> STATES.forEach(RenderStateShard::setupRenderState),
+                () -> STATES.forEach(RenderStateShard::clearRenderState));
+        this.hashCode = Objects.hash(super.hashCode(), STATES);
     }
 
-    private TextRenderType(int textureName, String t) {
+    private EffectRenderType(String t) {
         super(t,
-                DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP,
+                DefaultVertexFormat.POSITION_COLOR_LIGHTMAP,
                 GL11.GL_QUADS, 256, false, true,
-                () -> {
-                    SEE_THROUGH_STATES.forEach(RenderStateShard::setupRenderState);
-                    RenderSystem.enableTexture();
-                    RenderSystem.bindTexture(textureName);
-                },
+                () -> SEE_THROUGH_STATES.forEach(RenderStateShard::setupRenderState),
                 () -> SEE_THROUGH_STATES.forEach(RenderStateShard::clearRenderState));
-        this.textureName = textureName;
-        this.hashCode = Objects.hash(super.hashCode(), SEE_THROUGH_STATES, textureName);
+        this.hashCode = Objects.hash(super.hashCode(), SEE_THROUGH_STATES);
     }
 
-    public static Pair<TextRenderType, TextRenderType> getOrCacheType(Texture2D texture) {
-        return Pair.of(TYPES.computeIfAbsent(texture, n -> new TextRenderType(n.get())),
-                SEE_THROUGH_TYPES.computeIfAbsent(texture, n -> new TextRenderType(n.get(), "modern_text_see_through")));
-    }
-
-    public static void deleteTextures() {
-        TYPES.keySet().forEach(Texture2D::close);
-        TYPES.clear();
-        SEE_THROUGH_TYPES.clear();
+    @Nonnull
+    public static EffectRenderType getRenderType(boolean seeThrough) {
+        return seeThrough ? SEE_THROUGH : INSTANCE;
     }
 
     @Override

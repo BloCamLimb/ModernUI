@@ -21,13 +21,12 @@ package icyllis.modernui.forge;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.GLWrapper;
-import icyllis.modernui.textmc.ModernFontRenderer;
-import icyllis.modernui.textmc.TextLayoutEngine;
 import icyllis.modernui.mixin.AccessOption;
 import icyllis.modernui.mixin.AccessVideoSettingsScreen;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.screen.UIManager;
 import icyllis.modernui.test.TestMenu;
+import icyllis.modernui.textmc.TextLayoutEngine;
 import net.minecraft.client.CycleOption;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Option;
@@ -94,7 +93,8 @@ final class Registration {
     static void registerItems(@Nonnull RegistryEvent.Register<Item> event) {
         if (ModernUIForge.development) {
             Item.Properties properties = new Item.Properties().stacksTo(1).setISTER(() -> ProjectBuilderRenderer::new);
-            event.getRegistry().register(MuiRegistries.PROJECT_BUILDER_ITEM = new Item(properties).setRegistryName("project_builder"));
+            event.getRegistry().register(MuiRegistries.PROJECT_BUILDER_ITEM = new Item(properties).setRegistryName(
+                    "project_builder"));
         }
     }
 
@@ -124,8 +124,7 @@ final class Registration {
         }
         if (ModList.get().getModContainerById(new String(new byte[]{0x1f ^ 0x74, (0x4 << 0x1) | 0x41,
                 ~-0x78, 0xd2 >> 0x1}, StandardCharsets.UTF_8).toLowerCase(Locale.ROOT)).isPresent())
-            event.enqueueWork(() -> VertexConsumer.LOGGER.fatal("All {} are {}...",
-                    "things", "gbing wrbng".replace('b', 'o')));
+            event.enqueueWork(() -> VertexConsumer.LOGGER.fatal("Van Darkholme"));
         protocol = ArrayUtils.addAll(protocol, ModList.get().getModFileById(ModernUI.ID).getTrustData()
                 .map(s -> s.getBytes(StandardCharsets.UTF_8)).orElse(null));
 
@@ -144,16 +143,16 @@ final class Registration {
         event.getMinecraftSupplier().get().execute(() -> {
             GLWrapper.setRedirector(new B3DRedirector());
             RenderCore.initialize();
-            UIManager.getInstance().initRenderer();
-            TextLayoutEngine.getInstance().initRenderer();
-            ModernFontRenderer.change(Config.CLIENT.globalRenderer.get(), Config.CLIENT.allowShadow.get());
+            UIManager.initialize();
+            TextLayoutEngine.getInstance().lookupVanillaNode("Modern UI 2.6");
         });
 
         AccessOption.setGuiScale(new CycleOption("options.guiScale",
                 (options, integer) -> options.guiScale = Integer.remainderUnsigned(
                         options.guiScale + integer, (MForgeCompat.calcGuiScales() & 0xf) + 1),
                 (options, cycleOption) -> options.guiScale == 0 ?
-                        ((AccessOption) cycleOption).callGenericValueLabel(new TranslatableComponent("options.guiScale.auto")
+                        ((AccessOption) cycleOption).callGenericValueLabel(new TranslatableComponent("options" +
+                                ".guiScale.auto")
                                 .append(new TextComponent(" (" + (MForgeCompat.calcGuiScales() >> 4 & 0xf) + ")"))) :
                         ((AccessOption) cycleOption).callGenericValueLabel(new TextComponent(Integer.toString(options.guiScale))))
         );
@@ -170,7 +169,7 @@ final class Registration {
         } else {
             settings = AccessVideoSettingsScreen.getOptions();
         }
-        if (settings != null)
+        if (settings != null) {
             for (int i = 0; i < settings.length; i++) {
                 if (settings[i] == Option.GUI_SCALE) {
                     ProgressOption option = new ProgressOption("options.guiScale", 0, 2, 1,
@@ -192,8 +191,9 @@ final class Registration {
                     break;
                 }
             }
-        else
+        } else {
             ModernUI.LOGGER.error(ModernUI.MARKER, "Failed to capture video settings");
+        }
     }
 
     @Nonnull

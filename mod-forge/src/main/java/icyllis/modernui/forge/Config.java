@@ -20,12 +20,10 @@ package icyllis.modernui.forge;
 
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.textmc.GlyphManagerForge;
-import icyllis.modernui.textmc.ModernFontRenderer;
-import icyllis.modernui.textmc.TextLayoutEngine;
 import icyllis.modernui.screen.BlurHandler;
 import icyllis.modernui.screen.UIManager;
 import icyllis.modernui.test.TestHUD;
+import icyllis.modernui.textmc.ModernFontRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraftforge.api.distmarker.Dist;
@@ -97,7 +95,8 @@ public final class Config {
         final ForgeConfigSpec spec = event.getConfig().getSpec();
         if (spec == CLIENT_SPEC) {
             /*try {
-                ((com.electronwill.nightconfig.core.Config) ObfuscationReflectionHelper.findField(ForgeConfigSpec.class, "childConfig").get(CLIENT_SPEC)).set(Lists.newArrayList("tooltip", "frameColor"), "0xE8B4DF");
+                ((com.electronwill.nightconfig.core.Config) ObfuscationReflectionHelper.findField(ForgeConfigSpec
+                .class, "childConfig").get(CLIENT_SPEC)).set(Lists.newArrayList("tooltip", "frameColor"), "0xE8B4DF");
             } catch (IllegalAccessException e) {
                 e.printStackTrace();
             }
@@ -167,16 +166,16 @@ public final class Config {
 
         private final ForgeConfigSpec.ConfigValue<List<? extends String>> blurBlacklist;
 
-        private final ForgeConfigSpec.ConfigValue<String> preferredFont;
+        final ForgeConfigSpec.ConfigValue<List<? extends String>> fontFamily;
 
-        final ForgeConfigSpec.BooleanValue globalRenderer;
-        final ForgeConfigSpec.BooleanValue allowShadow;
-        private final ForgeConfigSpec.BooleanValue antiAliasing;
-        private final ForgeConfigSpec.BooleanValue highPrecision;
-        private final ForgeConfigSpec.BooleanValue enableMipmap;
-        private final ForgeConfigSpec.IntValue mipmapLevel;
+        //final ForgeConfigSpec.BooleanValue globalRenderer;
+        private final ForgeConfigSpec.BooleanValue allowShadow;
+        //private final ForgeConfigSpec.BooleanValue antiAliasing;
+        //private final ForgeConfigSpec.BooleanValue highPrecision;
+        //private final ForgeConfigSpec.BooleanValue enableMipmap;
+        //private final ForgeConfigSpec.IntValue mipmapLevel;
         //private final ForgeConfigSpec.IntValue resolutionLevel;
-        private final ForgeConfigSpec.IntValue defaultFontSize;
+        //private final ForgeConfigSpec.IntValue defaultFontSize;
 
         private Client(@Nonnull ForgeConfigSpec.Builder builder) {
             builder.comment("Screen Config")
@@ -190,7 +189,8 @@ public final class Config {
                     .defineInRange("backgroundAlpha", 0.4, 0, 0.8);
 
             blurEffect = builder.comment(
-                    "Add blur effect to world renderer when opened, it is incompatible with OptiFine's FXAA shader or some mods.")
+                    "Add blur effect to world renderer when opened, it is incompatible with OptiFine's FXAA shader or" +
+                            " some mods.")
                     .define("blurEffect", true);
             blurRadius = builder.comment(
                     "The blur effect radius, higher values result in a small loss of performance.")
@@ -231,22 +231,30 @@ public final class Config {
 
             builder.pop();
 
-            builder.comment("Font Engine Config")
+            builder.comment("Text Engine Config")
                     .push("font");
 
-            globalRenderer = builder.comment(
-                    "Apply Modern UI font renderer (including text layouts) to the entire game rather than only Modern UI itself.")
-                    .define("globalRenderer", true);
-            preferredFont = builder.comment(
-                    "The font with the highest priority to use, the built-in font is always the second choice.",
-                    "This can be font family name if you want to use fonts that installed on your PC, for instance: Microsoft YaHei",
-                    "Or can be file path if you want to use external fonts, for instance: D:/Fonts/biliw.otf",
-                    "Or can be resource location if you want to use fonts in resource packs, for instance: modernui:font/biliw.otf")
-                    .define("preferredFont", "");
+            /*globalRenderer = builder.comment(
+                    "Apply Modern UI font renderer (including text layouts) to the entire game rather than only " +
+                            "Modern UI itself.")
+                    .define("globalRenderer", true);*/
+            fontFamily = builder.comment(
+                    "A list of font families with precedence relationships to determine the typeface to use in the game.",
+                    "Only TrueType and OpenTrue are supported. Each list element can be one of the following three cases.",
+                    "1) Font family name for those installed on your PC, for instance: Microsoft YaHei",
+                    "2) File path for external fonts on your PC, for instance: D:/Fonts/X.otf (backslash is okay)",
+                    "3) Resource location for those loaded with resource packs, for instance: modernui:font/biliw.otf",
+                    "This list is only read once when the game is loaded. A game restart is required to reload the setting.")
+                    .defineList("fontFamily", () -> {
+                        List<String> list = new ArrayList<>();
+                        list.add("modernui:font/biliw.otf");
+                        list.add("SimHei");
+                        return list;
+                    }, s -> true);
             allowShadow = builder.comment(
-                    "Allow global font renderer to draw text with shadow, setting to false can improve performance.")
+                    "Allow font renderer to draw text with shadow, setting to false can improve performance.")
                     .define("allowShadow", true);
-            antiAliasing = builder.comment(
+            /*antiAliasing = builder.comment(
                     "Enable font anti-aliasing.")
                     .define("antiAliasing", true);
             highPrecision = builder.comment(
@@ -257,18 +265,17 @@ public final class Config {
                     .define("enableMipmap", true);
             mipmapLevel = builder.comment(
                     "The mipmap level for font textures.")
-                    .defineInRange("mipmapLevel", 4, 0, 4);
+                    .defineInRange("mipmapLevel", 4, 0, 4);*/
             /*resolutionLevel = builder.comment(
                     "The resolution level of font, higher levels would better work with high resolution monitors.",
                     "Reference: 1 (Standard, 1.5K Fullscreen), 2 (High, 2K~3K Fullscreen), 3 (Ultra, 4K Fullscreen)",
                     "This should match your GUI scale. Scale -> Level: [1,2] -> 1; [3,4] -> 2; [5,) -> 3")
                     .defineInRange("resolutionLevel", 2, 1, 3);*/
-            defaultFontSize = builder.comment(
+            /*defaultFontSize = builder.comment(
                     "The default font size for texts with no size specified. (deprecated, to be removed)")
-                    .defineInRange("defaultFontSize", 16, 12, 20);
+                    .defineInRange("defaultFontSize", 16, 12, 20);*/
 
             builder.pop();
-
         }
 
         private void reload() {
@@ -286,19 +293,20 @@ public final class Config {
                 TestHUD.sTooltipG = i >> 8 & 0xff;
                 TestHUD.sTooltipB = i & 0xff;
             } catch (NumberFormatException e) {
-                ModernUI.LOGGER.error(ModernUI.MARKER, "Wrong color format for setting tooltip color: {}", tooltipColor, e);
+                ModernUI.LOGGER.error(ModernUI.MARKER, "Wrong color format for setting tooltip color: {}",
+                        tooltipColor, e);
             }
             UIManager.sPlaySoundOnLoaded = ding.get();
             //TestHUD.sBars = hudBars.get();
 
-            Minecraft.getInstance().submit(() -> ModernFontRenderer.change(globalRenderer.get(), allowShadow.get()));
-            GlyphManagerForge.sPreferredFont = preferredFont.get();
+            ModernFontRenderer.sAllowShadow = allowShadow.get();
+            /*GlyphManagerForge.sPreferredFont = preferredFont.get();
             GlyphManagerForge.sAntiAliasing = antiAliasing.get();
             GlyphManagerForge.sHighPrecision = highPrecision.get();
             GlyphManagerForge.sEnableMipmap = enableMipmap.get();
-            GlyphManagerForge.sMipmapLevel = mipmapLevel.get();
+            GlyphManagerForge.sMipmapLevel = mipmapLevel.get();*/
             //GlyphManager.sResolutionLevel = resolutionLevel.get();
-            TextLayoutEngine.sDefaultFontSize = defaultFontSize.get();
+            //TextLayoutEngine.sDefaultFontSize = defaultFontSize.get();
         }
     }
 

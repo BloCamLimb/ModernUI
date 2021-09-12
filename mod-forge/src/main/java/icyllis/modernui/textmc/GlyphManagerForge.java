@@ -18,11 +18,12 @@
 
 package icyllis.modernui.textmc;
 
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Matrix4f;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.texture.Texture2D;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.text.Typeface;
-import icyllis.modernui.textmc.pipeline.TextRenderType;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
@@ -30,6 +31,7 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.minecraft.client.renderer.MultiBufferSource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -60,9 +62,7 @@ import static org.lwjgl.opengl.GL11C.GL_NEAREST;
  * RAM usage: &lt; 10MB
  * GPU memory usage: &lt; 22MB
  */
-//TODO use custom shaders to replace MOJANG's in 1.17, use GL_R8 format
-// also fix depth ordering
-@SuppressWarnings("unused")
+@Deprecated
 public class GlyphManagerForge {
 
     public static final Marker MARKER = MarkerManager.getMarker("Glyph");
@@ -131,7 +131,7 @@ public class GlyphManagerForge {
     /**
      * For drawing, due to {@link #GLYPH_BORDER}, we need an offset for drawing glyphs
      *
-     * @see TextRenderNode#drawText(com.mojang.blaze3d.vertex.BufferBuilder, String, float, float, int, int, int, int)
+     * @see TextRenderNode#drawText(com.mojang.blaze3d.vertex.BufferBuilder, String, float, float, int, int, int, int, float)
      */
     public static final float GLYPH_OFFSET = GLYPH_BORDER / 2.0f;
 
@@ -215,13 +215,13 @@ public class GlyphManagerForge {
      * upper 32 are the id of the font in the {@link #mFontKeyMap}. This makes
      * for a single globally unique number to identify any glyph from any font.
      */
-    private final Long2ObjectMap<TexturedGlyphVanilla> mGlyphCache = new Long2ObjectOpenHashMap<>();
+    private final Long2ObjectMap<VanillaGlyph> mGlyphCache = new Long2ObjectOpenHashMap<>();
 
     /**
      * Font ID {@link #mFontKeyMap} to an array of length 10 represent 0-9 digits (in that order)
      * These glyph advance are equal for fast rendering. For example {@link VanillaTextKey#hashCode()} did.
      */
-    private final Int2ObjectMap<TexturedGlyphVanilla[]> mDigitsMap = new Int2ObjectArrayMap<>(4);
+    private final Int2ObjectMap<VanillaGlyph[]> mDigitsMap = new Int2ObjectArrayMap<>(4);
 
     /*private final Int2ObjectMap<TexturedGlyph> mEmojiMap = new Int2ObjectArrayMap<>(32);
 
@@ -275,13 +275,10 @@ public class GlyphManagerForge {
         setRenderingHints();
     }
 
-    // internal use
-    @Nonnull
+    @Deprecated
     public static GlyphManagerForge getInstance() {
         RenderCore.checkRenderThread();
-        if (instance == null)
-            new GlyphManagerForge();
-        return instance;
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -297,7 +294,7 @@ public class GlyphManagerForge {
         //mEmojiMap.clear();
         mTexture = null;
         //emojiTexture = 0;
-        TextRenderType.deleteTextures();
+        TextRenderType.clear();
         mSelectedFonts.clear();
         allocateGlyphTexture();
         loadPreferredFonts();
@@ -325,7 +322,7 @@ public class GlyphManagerForge {
                     }*/
                 } else if (cfgFont.contains(":")) {
                     //if (!FontCollection.sJavaTooOld) {
-                    ModernUI.get().loadFont(cfgFont, mSelectedFonts::add);
+                    //ModernUI.get().loadFont(cfgFont, mSelectedFonts::add);
                     /*} else {
                         ModernUI.LOGGER.warn(MARKER, "Cannot load resource pack font {} since Java is too old",
                         cfgFont);
@@ -345,10 +342,10 @@ public class GlyphManagerForge {
             }
         }
 
-        if (Typeface.sBuiltInFont != null) {
+        /*if (Typeface.sBuiltInFont != null) {
             mSelectedFonts.add(Typeface.sBuiltInFont);
-        }
-        mSelectedFonts.add(Typeface.sSansSerifFont);
+        }*/
+        //mSelectedFonts.add(Typeface.sSansSerifFont);
     }
 
     /**
@@ -498,7 +495,7 @@ public class GlyphManagerForge {
      * @return the cache textured glyph
      */
     @Nonnull
-    public TexturedGlyphVanilla lookupGlyph(Font font, int glyphCode) {
+    public VanillaGlyph lookupGlyph(Font font, int glyphCode) {
         // the key should be cached in layout step, see deriveFont()
         long fontKey = (long) mFontKeyMap.getInt(font) << 32;
         return mGlyphCache.computeIfAbsent(fontKey | glyphCode,
@@ -515,7 +512,7 @@ public class GlyphManagerForge {
      */
     @Nonnull
     @Deprecated
-    private TexturedGlyphVanilla lookupGlyph(int codePoint, int fontStyle, int fontSize) {
+    private VanillaGlyph lookupGlyph(int codePoint, int fontStyle, int fontSize) {
         return lookupGlyph(lookupFont(codePoint, fontStyle, fontSize), codePoint);
     }
 
@@ -527,7 +524,7 @@ public class GlyphManagerForge {
      * @return created textured glyph
      */
     @Nonnull
-    private TexturedGlyphVanilla cacheGlyph(@Nonnull Font font, int glyphCode) {
+    private VanillaGlyph cacheGlyph(@Nonnull Font font, int glyphCode) {
 
         /* There's no need to layout glyph vector, we only draw the specific glyphCode
          * which is already laid-out in TextProcessor */
@@ -567,7 +564,7 @@ public class GlyphManagerForge {
         mCurrPosX += renderWidth + GLYPH_SPACING * 2;
         final float f = getResolutionFactor();
 
-        return new TexturedGlyphVanilla(mTexture, advance / f, baselineX / f, baselineY / f,
+        return new VanillaGlyph(mTexture, advance / f, baselineX / f, baselineY / f,
                 width / f, height / f,
                 (float) x / TEXTURE_SIZE, (float) y / TEXTURE_SIZE,
                 (float) (x + width) / TEXTURE_SIZE, (float) (y + height) / TEXTURE_SIZE);
@@ -579,7 +576,7 @@ public class GlyphManagerForge {
      * @param font derived font including style and font size
      * @return array of all digit glyphs 0-9 (in that order)
      */
-    public TexturedGlyphVanilla[] lookupDigits(Font font) {
+    public VanillaGlyph[] lookupDigits(Font font) {
         // the key should be cached in layout step
         int fontKey = mFontKeyMap.getInt(font);
         return mDigitsMap.computeIfAbsent(fontKey,
@@ -594,7 +591,7 @@ public class GlyphManagerForge {
      * @return an array of digits 0-9
      */
     @Deprecated
-    private TexturedGlyphVanilla[] lookupDigits(int fontStyle, int fontSize) {
+    private VanillaGlyph[] lookupDigits(int fontStyle, int fontSize) {
         return lookupDigits(lookupFont(48, fontStyle, fontSize));
     }
 
@@ -606,8 +603,8 @@ public class GlyphManagerForge {
      * @return 0-9 digits (in that order)
      */
     @Nonnull
-    private TexturedGlyphVanilla[] cacheDigits(@Nonnull Font font) {
-        TexturedGlyphVanilla[] digits = new TexturedGlyphVanilla[10];
+    private VanillaGlyph[] cacheDigits(@Nonnull Font font) {
+        VanillaGlyph[] digits = new VanillaGlyph[10];
 
         char[] chars = new char[1];
 
@@ -676,7 +673,7 @@ public class GlyphManagerForge {
             mCurrLineHeight = Math.max(mCurrLineHeight, renderHeight);
             mCurrPosX += standardRenderWidth + GLYPH_SPACING * 2;
 
-            digits[i] = new TexturedGlyphVanilla(mTexture,
+            digits[i] = new VanillaGlyph(mTexture,
                     standardAdvance / f, baselineX / f, baselineY / f,
                     width / f, height / f,
                     (float) x / TEXTURE_SIZE, (float) y / TEXTURE_SIZE,
@@ -1088,5 +1085,116 @@ public class GlyphManagerForge {
         // a GL_ALPHA8 texture, only the alpha component of the color will actually get loaded into the texture.
         //
         //tempStringGraphics.setPaint(Color.WHITE);
+    }
+
+    /**
+     * This class holds information for a glyph about its pre-rendered image in an OpenGL texture. The texture
+     * coordinates in
+     * this class are normalized in the standard 0.0 - 1.0 OpenGL range.
+     *
+     * @since 2.0
+     */
+    @Deprecated
+    public static class VanillaGlyph {
+
+        /**
+         * Render type for render type buffer system.
+         */
+        private TextRenderType renderType;
+        private TextRenderType seeThroughType;
+
+        // see getAdvance()
+        private final float advance;
+
+        /**
+         * The offset to baseline that specified when drawing.
+         * The value should be a multiple of (1 / guiScale)
+         * This will be used for drawing offset X.
+         */
+        private final float baselineX;
+
+        /**
+         * The offset to baseline that specified when drawing.
+         * The value should be a multiple of (1 / guiScale)
+         * This will be used for drawing offset Y.
+         */
+        private final float baselineY;
+
+        /**
+         * The total width of this glyph image.
+         * In pixels, due to gui scaling, we convert it into float.
+         * The value should be a multiple of (1 / guiScale)
+         * This will be used for drawing size.
+         */
+        private final float width;
+
+        /**
+         * The total height of this glyph image.
+         * In pixels, due to gui scaling, we convert it into float.
+         * The value should be a multiple of (1 / guiScale)
+         * This will be used for drawing size.
+         */
+        private final float height;
+
+        /**
+         * The horizontal texture coordinate of the upper-left corner.
+         */
+        private final float u1;
+
+        /**
+         * The vertical texture coordinate of the upper-left corner.
+         */
+        private final float v1;
+
+        /**
+         * The horizontal texture coordinate of the lower-right corner.
+         */
+        private final float u2;
+
+        /**
+         * The vertical texture coordinate of the lower-right corner.
+         */
+        private final float v2;
+
+        public VanillaGlyph(Texture2D texture, float advance, float baselineX, float baselineY, float width,
+                            float height, float u1, float v1, float u2, float v2) {
+            this.advance = advance;
+            this.baselineX = baselineX;
+            this.baselineY = baselineY;
+            this.width = width;
+            this.height = height;
+            this.u1 = u1;
+            this.v1 = v1;
+            this.u2 = u2;
+            this.v2 = v2;
+        }
+
+        public void drawGlyph(@Nonnull VertexConsumer builder, float x, float y, int r, int g, int b, int a) {
+            //RenderSystem.bindTexture(renderType.textureName);
+            x += baselineX;
+            y += baselineY;
+            builder.vertex(x, y, 0).color(r, g, b, a).uv(u1, v1).endVertex();
+            builder.vertex(x, y + height, 0).color(r, g, b, a).uv(u1, v2).endVertex();
+            builder.vertex(x + width, y + height, 0).color(r, g, b, a).uv(u2, v2).endVertex();
+            builder.vertex(x + width, y, 0).color(r, g, b, a).uv(u2, v1).endVertex();
+        }
+
+        public void drawGlyph(Matrix4f matrix, @Nonnull MultiBufferSource buffer, float x, float y, int r, int g,
+                              int b, int a, boolean seeThrough, int packedLight) {
+            VertexConsumer builder = buffer.getBuffer(seeThrough ? seeThroughType : renderType);
+            x += baselineX;
+            y += baselineY;
+            builder.vertex(matrix, x, y, 0).color(r, g, b, a).uv(u1, v1).uv2(packedLight).endVertex();
+            builder.vertex(matrix, x, y + height, 0).color(r, g, b, a).uv(u1, v2).uv2(packedLight).endVertex();
+            builder.vertex(matrix, x + width, y + height, 0).color(r, g, b, a).uv(u2, v2).uv2(packedLight).endVertex();
+            builder.vertex(matrix, x + width, y, 0).color(r, g, b, a).uv(u2, v1).uv2(packedLight).endVertex();
+        }
+
+        /**
+         * The horizontal advance in high-precision pixels of this glyph.
+         */
+        public float getAdvance() {
+            return advance;
+        }
     }
 }
