@@ -18,16 +18,25 @@
 
 package icyllis.modernui.mixin;
 
-import net.minecraft.client.Option;
-import net.minecraft.client.gui.screens.VideoSettingsScreen;
+import icyllis.modernui.textmc.FormattedTextWrapper;
+import net.minecraft.client.resources.language.FormattedBidiReorder;
+import net.minecraft.network.chat.FormattedText;
+import net.minecraft.util.FormattedCharSequence;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.gen.Accessor;
+import org.spongepowered.asm.mixin.Overwrite;
 
-@Mixin(VideoSettingsScreen.class)
-public interface AccessVideoSettingsScreen {
+import javax.annotation.Nonnull;
 
-    @Accessor("OPTIONS")
-    static Option[] getOptions() {
-        throw new IllegalStateException();
+@Mixin(FormattedBidiReorder.class)
+public class MixinBidiReorder {
+
+    /**
+     * @author BloCamLimb
+     * @reason Modern Text Engine
+     */
+    @Nonnull
+    @Overwrite
+    public static FormattedCharSequence reorder(FormattedText text, boolean defaultRtl) {
+        return new FormattedTextWrapper(text);
     }
 }

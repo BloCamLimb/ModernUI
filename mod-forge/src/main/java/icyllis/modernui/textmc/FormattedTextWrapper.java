@@ -18,31 +18,29 @@
 
 package icyllis.modernui.textmc;
 
+import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Style;
+import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.util.FormattedCharSink;
+import net.minecraft.util.StringDecomposer;
 
-/**
- * The key to iterate base {@link net.minecraft.network.chat.FormattedText} or
- * {@link net.minecraft.util.FormattedCharSequence}.
- *
- * @see VanillaTextKey
- */
-public class MultilayerTextKey {
+import javax.annotation.Nonnull;
+import java.util.Optional;
 
-    /**
-     * Layers.
-     */
-    private CharSequence[] mSequences;
+public class FormattedTextWrapper implements FormattedCharSequence {
 
-    /**
-     * Reference to vanilla's {@link Style}, we extract the value that will only affect the rendering effect
-     * of the string, and store it as an integer
-     */
-    private int[] mStyles;
+    @Nonnull
+    public final FormattedText mText;
 
-    private int mHash;
+    public FormattedTextWrapper(@Nonnull FormattedText text) {
+        mText = text;
+    }
 
-    public MultilayerTextKey(Style style) {
-        // text formatting may render same as style, but we can't separate them easily
-        //this.style = CharacterStyleCarrier.getFlags(style);
+    @Override
+    public boolean accept(FormattedCharSink sink) {
+        // do not reorder, transfer the code points
+        return mText.visit((style, text) ->
+                StringDecomposer.iterate(text, style, sink) ? Optional.empty()
+                        : FormattedText.STOP_ITERATION, Style.EMPTY).isEmpty();
     }
 }

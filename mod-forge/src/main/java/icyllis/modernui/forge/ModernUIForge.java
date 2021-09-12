@@ -146,20 +146,20 @@ public final class ModernUIForge extends ModernUI {
         if (mTypeface == null) {
             synchronized (this) {
                 if (mTypeface == null) {
-                    List<Font> list = new ArrayList<>();
+                    Set<Font> set = new LinkedHashSet<>();
                     List<? extends String> configs = Config.CLIENT.fontFamily.get();
                     if (configs != null) {
-                        loadFonts(configs, list);
+                        loadFonts(configs, set);
                     }
-                    mTypeface = Typeface.createTypeface(list.toArray(new Font[0]));
-                    ModernUI.LOGGER.info(MARKER, "Loaded typeface: {}", mTypeface);
+                    mTypeface = Typeface.createTypeface(set.toArray(new Font[0]));
+                    ModernUI.LOGGER.info(MARKER, "Active: {}", mTypeface);
                 }
             }
         }
         return mTypeface;
     }
 
-    private static void loadFonts(@Nonnull List<? extends String> configs, @Nonnull List<Font> selected) {
+    private static void loadFonts(@Nonnull List<? extends String> configs, @Nonnull Set<Font> selected) {
         for (String cfg : configs) {
             if (StringUtils.isEmpty(cfg)) {
                 continue;
@@ -171,32 +171,32 @@ public final class ModernUIForge extends ModernUI {
                         Font f = Font.createFont(Font.TRUETYPE_FONT, new File(
                                 cfg.replaceAll("\\\\", "/")));
                         selected.add(f);
-                        ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded with config value {}",
+                        ModernUI.LOGGER.debug(MARKER, "Font {} was loaded with config value {}",
                                 f.getFamily(Locale.ROOT), cfg);
                     } catch (Exception e) {
-                        ModernUI.LOGGER.warn(MARKER, "Preferred font {} failed to load", cfg, e);
+                        ModernUI.LOGGER.warn(MARKER, "Font {} failed to load", cfg);
                     }
                 } else if (cfg.contains(":")) {
                     try (Resource resource = Minecraft.getInstance().getResourceManager()
                             .getResource(new ResourceLocation(cfg))) {
                         Font f = Font.createFont(Font.TRUETYPE_FONT, resource.getInputStream());
                         selected.add(f);
-                        ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded with config value {}",
+                        ModernUI.LOGGER.debug(MARKER, "Font {} was loaded with config value {}",
                                 f.getFamily(Locale.ROOT), cfg);
                     } catch (Exception e) {
-                        ModernUI.LOGGER.warn(MARKER, "Preferred font {} failed to load", cfg, e);
+                        ModernUI.LOGGER.warn(MARKER, "Font {} failed to load", cfg);
                     }
                 } else {
-                    ModernUI.LOGGER.warn(MARKER, "Preferred font {} is invalid", cfg);
+                    ModernUI.LOGGER.warn(MARKER, "Font {} is invalid", cfg);
                 }
             } else {
                 Optional<Font> font =
-                        Typeface.sAllFontFamilies.stream().filter(f -> f.getFamily(Locale.ROOT).equals(cfg)).findFirst();
+                        Typeface.sAllFontFamilies.stream().filter(f -> f.getFamily(Locale.ROOT).equalsIgnoreCase(cfg)).findFirst();
                 if (font.isPresent()) {
                     selected.add(font.get());
-                    ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", cfg);
+                    ModernUI.LOGGER.debug(MARKER, "Font {} was loaded", cfg);
                 } else {
-                    ModernUI.LOGGER.warn(MARKER, "Preferred font {} cannot found or invalid", cfg);
+                    ModernUI.LOGGER.warn(MARKER, "Font {} cannot found or invalid", cfg);
                 }
             }
         }

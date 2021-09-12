@@ -22,6 +22,7 @@ import com.mojang.math.Matrix4f;
 import icyllis.modernui.textmc.ModernFontRenderer;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.util.FormattedCharSequence;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 
@@ -38,6 +39,28 @@ public class MixinFontRenderer {
     public int drawInBatch(@Nonnull String text, float x, float y, int color, boolean dropShadow,
                            @Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, boolean seeThrough,
                            int colorBackground, int packedLight, @Deprecated boolean bidiFlag) {
-        return (int) ModernFontRenderer.drawLayer(text, x, y, color, dropShadow, matrix, source, seeThrough, colorBackground, packedLight);
+        return ModernFontRenderer.drawText(text, x, y, color, dropShadow, matrix, source, seeThrough,
+                colorBackground, packedLight);
+    }
+
+    /**
+     * @author BloCamLimb
+     * @reason Modern Text Engine
+     */
+    @Overwrite
+    public int drawInBatch(@Nonnull FormattedCharSequence text, float x, float y, int color, boolean dropShadow,
+                           @Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, boolean seeThrough,
+                           int colorBackground, int packedLight) {
+        return ModernFontRenderer.drawText(text, x, y, color, dropShadow, matrix, source, seeThrough,
+                colorBackground, packedLight);
+    }
+
+    /**
+     * @author BloCamLimb
+     * @reason Modern Text Engine
+     */
+    @Overwrite
+    public String bidirectionalShaping(String text) {
+        return text;
     }
 }

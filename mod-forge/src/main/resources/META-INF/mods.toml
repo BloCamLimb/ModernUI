@@ -12,8 +12,7 @@ license="Multi-licensing, see https://github.com/BloCamLimb/ModernUI for details
     authors="BloCamLimb"
     credits="BloCamLimb, et al., The Android Open Source Project"
     description='''
-    Modern UI is a UI engine for desktop application development, which is mainly used for Minecraft and provides a wealth of functionality.
-    It has broad compatibility, a high performance render engine, a text engine with good internationalization ability and so on.
+    Modern UI is a framework for standlone desktop application development, which provides a wealth of functionality and broad compatibility with good performance.
     '''
 
 [[dependencies.modernui]]

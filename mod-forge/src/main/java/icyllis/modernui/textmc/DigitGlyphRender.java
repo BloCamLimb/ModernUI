@@ -30,9 +30,12 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
- * The key to fast render digit
+ * The key to fast render digit. When given text is String, this is enabled to draw numbers.
+ *
+ * @see VanillaTextKey
  */
 public class DigitGlyphRender extends BaseGlyphRender {
 
@@ -74,9 +77,9 @@ public class DigitGlyphRender extends BaseGlyphRender {
     }
 
     @Override
-    public void drawGlyph(@Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, @Nonnull CharSequence input,
+    public void drawGlyph(@Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, @Nullable CharSequence input,
                           float x, float y, int r, int g, int b, int a, boolean seeThrough, int light, float res) {
-        int idx = input.charAt(mStringIndex) - '0';
+        int idx = input != null ? input.charAt(mStringIndex) - '0' : 0;
         if (idx < 0 || idx >= 10)
             return;
         TexturedGlyph glyph = mDigits.getLeft()[idx];

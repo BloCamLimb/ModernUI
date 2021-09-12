@@ -68,7 +68,7 @@ public class StandardGlyphRender extends BaseGlyphRender {
     }
 
     @Override
-    public void drawGlyph(@Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, @Nonnull CharSequence input,
+    public void drawGlyph(@Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, @Nullable CharSequence input,
                           float x, float y, int r, int g, int b, int a, boolean seeThrough, int light, float res) {
         TexturedGlyph glyph = mGlyph;
         if (glyph == null) {

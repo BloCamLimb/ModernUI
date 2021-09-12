@@ -18,23 +18,16 @@
 
 package icyllis.modernui.mixin;
 
-import icyllis.modernui.textmc.ModernFontRenderer;
-import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.font.FontManager;
-import net.minecraft.client.gui.font.FontSet;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.Option;
+import net.minecraft.client.gui.screens.VideoSettingsScreen;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.gen.Accessor;
 
-import java.util.function.Function;
+@Mixin(VideoSettingsScreen.class)
+public interface AccessVideoSettings {
 
-@Mixin(FontManager.class)
-public class MixinFontManager {
-
-    /*@Redirect(method = "createFont",
-            at = @At(value = "NEW", target = "net/minecraft/client/gui/Font"))
-    private Font createFontRenderer(Function<ResourceLocation, FontSet> fonts) {
-        return ModernFontRenderer.create(fonts);
-    }*/
+    @Accessor("OPTIONS")
+    static Option[] getOptions() {
+        throw new IllegalStateException();
+    }
 }

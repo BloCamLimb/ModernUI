@@ -29,6 +29,8 @@ import net.minecraft.client.renderer.Sheets;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.Arrays;
 
 /**
  * The complete node that including layout results and rendering information.
@@ -48,7 +50,7 @@ public class TextRenderNode {
         }
 
         @Override
-        public float drawText(@Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, @Nonnull CharSequence raw,
+        public float drawText(@Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, @Nullable CharSequence raw,
                               float x, float y, int r, int g, int b, int a, boolean isShadow, boolean seeThrough,
                               int colorBackground, int packedLight, float res) {
             return 0;
@@ -65,6 +67,8 @@ public class TextRenderNode {
      */
     public static final int VANILLA_BASELINE_OFFSET = 6;
 
+    private static final int MAX_LIFESPAN_TICKS = 256; // 12.8 s
+
 
     /**
      * All laid-out glyphs and their render info.
@@ -80,10 +84,22 @@ public class TextRenderNode {
 
     private final boolean mHasEffect;
 
+    transient int mLifespan = MAX_LIFESPAN_TICKS;
+
     public TextRenderNode(@Nonnull BaseGlyphRender[] glyphs, float advance, boolean hasEffect) {
         mGlyphs = glyphs;
         mAdvance = advance;
         mHasEffect = hasEffect;
+    }
+
+    @Nonnull
+    public TextRenderNode get() {
+        mLifespan = MAX_LIFESPAN_TICKS;
+        return this;
+    }
+
+    public boolean tick() {
+        return --mLifespan < 0;
     }
 
     public float drawText(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b,
@@ -140,7 +156,7 @@ public class TextRenderNode {
         return mAdvance;
     }
 
-    public float drawText(@Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, @Nonnull CharSequence raw,
+    public float drawText(@Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, @Nullable CharSequence raw,
                           float x, float y, int r, int g, int b, int a, boolean isShadow, boolean seeThrough,
                           int colorBackground, int packedLight, float res) {
         final int startR = r;
@@ -221,5 +237,14 @@ public class TextRenderNode {
         }
 
         return mAdvance;
+    }
+
+    @Override
+    public String toString() {
+        return "TextRenderNode{" +
+                "mGlyphs=" + Arrays.toString(mGlyphs) +
+                ", mAdvance=" + mAdvance +
+                ", mHasEffect=" + mHasEffect +
+                '}';
     }
 }

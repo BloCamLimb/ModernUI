@@ -24,6 +24,7 @@ import com.mojang.math.Matrix4f;
 import net.minecraft.client.renderer.MultiBufferSource;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * A rendering glyph. There is no better way to optimize, an instance takes up 40 bytes.
@@ -101,7 +102,7 @@ public abstract class BaseGlyphRender {
      * @param res        resolution level
      */
     public abstract void drawGlyph(@Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source,
-                                   @Nonnull CharSequence input, float x, float y, int r, int g, int b, int a,
+                                   @Nullable CharSequence input, float x, float y, int r, int g, int b, int a,
                                    boolean seeThrough, int light, float res);
 
     /**
@@ -160,5 +161,15 @@ public abstract class BaseGlyphRender {
      */
     public float getAdvance() {
         return mAdvance;
+    }
+
+    @Override
+    public String toString() {
+        return "BaseGlyphRender{" +
+                "mStringIndex=" + mStringIndex +
+                ", mOffsetX=" + mOffsetX +
+                ", mAdvance=" + mAdvance +
+                ", mFlags=0x" + Integer.toHexString(mFlags) +
+                '}';
     }
 }
