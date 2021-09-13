@@ -46,7 +46,7 @@ public class MultilayerTextKey {
     /**
      * Layers.
      */
-    private CharSequence[] mSequences;
+    private Object[] mSequences;
 
     /**
      * Reference to vanilla's {@link Style}, we extract the value that will only affect the rendering effect
@@ -59,7 +59,7 @@ public class MultilayerTextKey {
     private MultilayerTextKey() {
     }
 
-    private MultilayerTextKey(CharSequence[] sequences, int[] styles, int hash) {
+    private MultilayerTextKey(Object[] sequences, int[] styles, int hash) {
         // text formatting may render same as style, but we can't separate them easily
         mSequences = sequences;
         mStyles = styles;
@@ -81,8 +81,13 @@ public class MultilayerTextKey {
     public int hashCode() {
         int h = mHash;
         if (h == 0) {
-            h = Arrays.hashCode(mSequences);
-            mHash = h = 31 * h + Arrays.hashCode(mStyles);
+            h = 1;
+            for (Object s : mSequences)
+                h = 31 * h + s.hashCode();
+            int r = 1;
+            for (int i : mStyles)
+                r = 31 * r + i;
+            mHash = h = 31 * h + r;
         }
         return h;
     }
@@ -92,11 +97,13 @@ public class MultilayerTextKey {
      */
     public static class Lookup extends MultilayerTextKey {
 
-        private final List<CharSequence> mSequences = new ArrayList<>();
+        private final List<Object> mSequences = new ArrayList<>();
         private final IntList mStyles = new IntArrayList();
 
         private Style mStyle;
         private CharSequenceBuilder mBuffer;
+
+        private boolean mFromSequence;
 
         // always visual order
         private final FormattedText.StyledContentConsumer<?> mContentBuilder = (style, text) -> {
@@ -129,7 +136,7 @@ public class MultilayerTextKey {
         };
 
         private void release() {
-            for (CharSequence s : mSequences) {
+            for (Object s : mSequences) {
                 if (s instanceof CharSequenceBuilder) {
                     sPool.release((CharSequenceBuilder) s);
                 }
@@ -151,6 +158,7 @@ public class MultilayerTextKey {
             release();
             text.visit(mContentBuilder, style);
             mHash = 0;
+            mFromSequence = false;
             return this;
         }
 
@@ -163,6 +171,7 @@ public class MultilayerTextKey {
                 mStyles.add(CharacterStyleCarrier.getFlags(mStyle));
             }
             mHash = 0;
+            mFromSequence = true;
             return this;
         }
 
@@ -174,22 +183,22 @@ public class MultilayerTextKey {
 
             MultilayerTextKey key = (MultilayerTextKey) o;
 
-            int length = key.mSequences.length;
-            if (mSequences.size() != length) {
-                return false;
-            }
-            for (int i = 0; i < length; i++) {
-                if (!mSequences.get(i).equals(key.mSequences[i])) {
-                    return false;
-                }
-            }
-
-            length = key.mStyles.length;
+            int length = key.mStyles.length;
             if (mStyles.size() != length) {
                 return false;
             }
             for (int i = 0; i < length; i++) {
                 if (mStyles.getInt(i) != key.mStyles[i]) {
+                    return false;
+                }
+            }
+
+            length = key.mSequences.length;
+            if (mSequences.size() != length) {
+                return false;
+            }
+            for (int i = 0; i < length; i++) {
+                if (!mSequences.get(i).equals(key.mSequences[i])) {
                     return false;
                 }
             }
@@ -202,7 +211,7 @@ public class MultilayerTextKey {
             int h = mHash;
             if (h == 0) {
                 h = 1;
-                for (CharSequence s : mSequences)
+                for (Object s : mSequences)
                     h = 31 * h + s.hashCode();
                 int r = 1;
                 for (int i : mStyles)
@@ -212,9 +221,27 @@ public class MultilayerTextKey {
             return h;
         }
 
+        /**
+         * Make a cache key. For different hashCode implementation, we keep FormattedText
+         * and FormattedCharSequence separated even they are equal.
+         *
+         * @return base key
+         */
         public MultilayerTextKey copy() {
-            return new MultilayerTextKey(mSequences.stream().map(CharSequence::toString).toArray(CharSequence[]::new),
-                    mStyles.toIntArray(), mHash);
+            Object[] objects = new Object[mSequences.size()];
+            if (mFromSequence) {
+                for (int i = 0; i < objects.length; i++) {
+                    objects[i] = ((CharSequenceBuilder) mSequences.get(i)).trimChars();
+                }
+            } else {
+                // String
+                for (int i = 0; i < objects.length; i++) {
+                    objects[i] = mSequences.get(i);
+                }
+            }
+            // do not recycle
+            mSequences.clear();
+            return new MultilayerTextKey(objects, mStyles.toIntArray(), mHash);
         }
     }
 }
