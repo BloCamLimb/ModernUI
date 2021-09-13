@@ -23,6 +23,7 @@ import net.minecraft.client.StringSplitter;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Style;
 import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.util.FormattedCharSink;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.mutable.MutableFloat;
@@ -290,12 +291,19 @@ public class ModernStringSplitter extends StringSplitter {
             return null;
         }
         final MutableObject<Style> value = new MutableObject<>();
-        text.accept((i, s, c) -> {
-            if (i >= r) {
-                value.setValue(s);
-                return false;
-            } else {
-                return true;
+        text.accept(new FormattedCharSink() {
+            // note that index will be reset to 0 for composited char sequence
+            // we should get the continuous string index
+            private int mNext;
+
+            @Override
+            public boolean accept(int index, Style s, int ch) {
+                if ((mNext += Character.charCount(ch)) >= r) {
+                    value.setValue(s);
+                    return false;
+                } else {
+                    return true;
+                }
             }
         });
         return value.getValue();

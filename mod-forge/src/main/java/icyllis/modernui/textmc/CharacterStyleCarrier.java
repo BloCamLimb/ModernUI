@@ -29,6 +29,7 @@ import javax.annotation.Nonnull;
 public class CharacterStyleCarrier {
 
     /*
+     * lower 24 bits - color
      * higher 8 bits
      * |--------|
      *         1  BOLD
@@ -36,8 +37,13 @@ public class CharacterStyleCarrier {
      *        11  FONT_STYLE
      *       1    UNDERLINE
      *      1     STRIKETHROUGH
+     *      11    EFFECT
      *     1      OBFUSCATED
+     *     11111  LAYOUT
+     *    1       FORMATTING_CODE
+     *   1        COLOR_NO_CHANGE (GlyphRender)
      *  1         USE_PARAM_COLOR
+     *  1 111111  CHARACTER_STYLE
      * |--------|
      */
     /**
@@ -67,19 +73,24 @@ public class CharacterStyleCarrier {
      */
     public static final int STRIKETHROUGH_MASK = 0x8000000;
 
-    public static final int DECORATION_MASK = UNDERLINE_MASK | STRIKETHROUGH_MASK;
+    public static final int EFFECT_MASK = UNDERLINE_MASK | STRIKETHROUGH_MASK;
 
     /**
      * Bit mask representing obfuscated characters rendering
      */
     private static final int OBFUSCATED_MASK = 0x10000000;
 
-    private static final int LAYOUT_MASK = FONT_STYLE_MASK | DECORATION_MASK | OBFUSCATED_MASK;
+    private static final int LAYOUT_MASK = FONT_STYLE_MASK | EFFECT_MASK | OBFUSCATED_MASK;
+
+    /**
+     * If from formatting code.
+     */
+    private static final int FORMATTING_CODE = 0x20000000;
 
     /**
      * Bit mask representing to use param color.
      */
-    public static final int USE_PARAM_COLOR = 0x80000000;
+    public static final int NO_COLOR_SPECIFIED = 0x80000000;
 
     private static final int COLOR_MASK = 0x80FFFFFF;
 
@@ -99,10 +110,14 @@ public class CharacterStyleCarrier {
      */
     private final int mFlags;
 
-    public CharacterStyleCarrier(int stringIndex, int stripIndex, Style style) {
+    public CharacterStyleCarrier(int stringIndex, int stripIndex, Style style, boolean formattingCode) {
         mStringIndex = stringIndex;
         mStripIndex = stripIndex;
-        mFlags = getFlags(style);
+        int flags = getFlags(style);
+        if (formattingCode) {
+            flags |= FORMATTING_CODE;
+        }
+        mFlags = flags;
     }
 
     /**
@@ -114,7 +129,7 @@ public class CharacterStyleCarrier {
     public static int getFlags(@Nonnull Style style) {
         int v = NORMAL;
         if (style.getColor() == null) {
-            v |= USE_PARAM_COLOR;
+            v |= NO_COLOR_SPECIFIED;
         } else {
             // RGB - 24 bit
             v |= style.getColor().getValue() & 0xFFFFFF;
@@ -138,7 +153,7 @@ public class CharacterStyleCarrier {
     }
 
     /**
-     * The color in 0xRRGGBB format; {@link #USE_PARAM_COLOR} to use param color.
+     * The color in 0xRRGGBB format; {@link #NO_COLOR_SPECIFIED} to use param color.
      *
      * @return color
      */
@@ -183,12 +198,21 @@ public class CharacterStyleCarrier {
     }
 
     /**
-     * Get decoration flags.
+     * Get effect flags.
      *
      * @return decoration
      */
-    public int getDecoration() {
-        return mFlags & DECORATION_MASK;
+    public int getEffect() {
+        return mFlags & EFFECT_MASK;
+    }
+
+    /**
+     * Whether from formatting code in chars. Or markup objects {@link Style}.
+     *
+     * @return formatting code
+     */
+    public boolean isFormattingCode() {
+        return (mFlags & FORMATTING_CODE) != 0;
     }
 
     /**
