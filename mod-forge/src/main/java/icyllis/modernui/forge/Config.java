@@ -24,7 +24,6 @@ import icyllis.modernui.screen.BlurHandler;
 import icyllis.modernui.screen.UIManager;
 import icyllis.modernui.test.TestHUD;
 import icyllis.modernui.textmc.ModernFontRenderer;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -158,11 +157,11 @@ public final class Config {
         private final ForgeConfigSpec.BooleanValue blurEffect;
         private final ForgeConfigSpec.IntValue animationDuration;
         private final ForgeConfigSpec.IntValue blurRadius;
-        private final ForgeConfigSpec.DoubleValue backgroundAlpha;
+        private final ForgeConfigSpec.ConfigValue<List<? extends String>> backgroundColor;
         private final ForgeConfigSpec.BooleanValue tooltip;
         private final ForgeConfigSpec.ConfigValue<String> tooltipColor;
         private final ForgeConfigSpec.BooleanValue ding;
-        private final ForgeConfigSpec.BooleanValue hudBars;
+        //private final ForgeConfigSpec.BooleanValue hudBars;
 
         private final ForgeConfigSpec.ConfigValue<List<? extends String>> blurBlacklist;
 
@@ -182,11 +181,18 @@ public final class Config {
                     .push("screen");
 
             animationDuration = builder.comment(
-                    "The duration of screen background and blur radius animation in milliseconds. (0 = OFF)")
+                    "The duration of GUI background color and blur radius animation in milliseconds. (0 = OFF)")
                     .defineInRange("animationDuration", 200, 0, 800);
-            backgroundAlpha = builder.comment(
-                    "Screen black background opacity in game, higher values will get darker.")
-                    .defineInRange("backgroundAlpha", 0.4, 0, 0.8);
+            backgroundColor = builder.comment(
+                    "The GUI background color in world in 0xAARRGGBB format.",
+                    "Can be one to four values representing top left, top right, bottom right, bottom left color.",
+                    "Multiple values produce a gradient effect, whereas one value has only one color.",
+                    "When values is less than 4, the rest of the corner color will be replaced by the last value.")
+                    .defineList("backgroundColor", () -> {
+                        List<String> list = new ArrayList<>();
+                        list.add("0x66000000");
+                        return list;
+                    }, s -> true);
 
             blurEffect = builder.comment(
                     "Add blur effect to world renderer when opened, it is incompatible with OptiFine's FXAA shader or" +
@@ -225,9 +231,9 @@ public final class Config {
                     "Play a sound effect when the game is loaded.")
                     .define("ding", true);
 
-            hudBars = builder.comment(
+            /*hudBars = builder.comment(
                     "Show additional HUD bars added by ModernUI on the bottom-left of the screen.")
-                    .define("hudBars", false);
+                    .define("hudBars", false);*/
 
             builder.pop();
 
@@ -239,12 +245,15 @@ public final class Config {
                             "Modern UI itself.")
                     .define("globalRenderer", true);*/
             fontFamily = builder.comment(
-                    "A list of font families with precedence relationships to determine the typeface to use in the game.",
-                    "Only TrueType and OpenTrue are supported. Each list element can be one of the following three cases.",
+                    "A list of font families with precedence relationships to determine the typeface to use in the " +
+                            "game.",
+                    "Only TrueType and OpenTrue are supported. Each list element can be one of the following three " +
+                            "cases.",
                     "1) Font family name for those installed on your PC, for instance: Segoe UI",
                     "2) File path for external fonts on your PC, for instance: /usr/shared/fonts/x.otf",
                     "3) Resource location for those loaded with resource packs, for instance: modernui:font/biliw.otf",
-                    "This list is only read once when the game is loaded. A game restart is required to reload the setting.")
+                    "This list is only read once when the game is loaded. A game restart is required to reload the " +
+                            "setting.")
                     .defineList("fontFamily", () -> {
                         List<String> list = new ArrayList<>();
                         list.add("modernui:font/biliw.otf");
@@ -283,17 +292,31 @@ public final class Config {
             BlurHandler.sBlurEffect = blurEffect.get();
             BlurHandler.sAnimationDuration = animationDuration.get();
             BlurHandler.sBlurRadius = blurRadius.get();
-            BlurHandler.sBackgroundAlpha = backgroundAlpha.get().floatValue();
+
+            List<? extends String> colors = backgroundColor.get();
+            int color = 0x66000000;
+            for (int i = 0; i < 4; i++) {
+                if (colors != null && i < colors.size()) {
+                    try {
+                        color = Integer.valueOf(colors.get(i).substring(2), 16);
+                    } catch (Exception e) {
+                        ModernUI.LOGGER.error(ModernUI.MARKER, "Wrong color format for setting background color: {}",
+                                tooltipColor, e);
+                    }
+                }
+                BlurHandler.sBackgroundColor[i] = color;
+            }
+
             BlurHandler.INSTANCE.loadBlacklist(blurBlacklist.get());
 
-            //TestHUD.sTooltip = tooltip.get();
+            TestHUD.sTooltip = tooltip.get();
             String tooltipColor = this.tooltipColor.get();
             try {
                 int i = Integer.valueOf(tooltipColor.substring(2), 16);
                 TestHUD.sTooltipR = i >> 16 & 0xff;
                 TestHUD.sTooltipG = i >> 8 & 0xff;
                 TestHUD.sTooltipB = i & 0xff;
-            } catch (NumberFormatException e) {
+            } catch (Exception e) {
                 ModernUI.LOGGER.error(ModernUI.MARKER, "Wrong color format for setting tooltip color: {}",
                         tooltipColor, e);
             }

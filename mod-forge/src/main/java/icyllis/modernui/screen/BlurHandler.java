@@ -20,11 +20,10 @@ package icyllis.modernui.screen;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
-import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.math.Matrix4f;
+import icyllis.modernui.animation.ColorEvaluator;
 import icyllis.modernui.mixin.AccessGameRenderer;
 import icyllis.modernui.mixin.AccessPostChain;
-import icyllis.modernui.screen.MuiScreen;
 import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -38,6 +37,7 @@ import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -51,7 +51,7 @@ public enum BlurHandler {
     public static boolean sBlurEffect;
     public static float sAnimationDuration;
     public static float sBlurRadius;
-    public static float sBackgroundAlpha;
+    public static int[] sBackgroundColor = new int[4];
 
     // minecraft namespace
     private final ResourceLocation mBlurPostEffect = new ResourceLocation("shaders/post/blur_fast.json");
@@ -59,6 +59,8 @@ public enum BlurHandler {
     private final Minecraft mMinecraft = Minecraft.getInstance();
 
     private final Set<Class<?>> mBlacklist = new ObjectArraySet<>();
+
+    private final int[] mBackgroundColor = new int[4];
 
     /**
      * If is playing animation
@@ -71,14 +73,10 @@ public enum BlurHandler {
     private boolean mBlurring;
 
     /**
-     * If a screen excluded, the other screens that opened after this screen won't be blurred, unless current screen closed
+     * If a screen excluded, the other screens that opened after this screen won't be blurred, unless current screen
+     * closed
      */
     private boolean mScreenOpened;
-
-    /**
-     * Background alpha
-     */
-    private float mBackgroundAlpha;
 
     /**
      * Use blur shader in game renderer post-processing.
@@ -113,10 +111,10 @@ public enum BlurHandler {
             }
             if (sAnimationDuration > 0) {
                 mFadingIn = true;
-                mBackgroundAlpha = 0;
+                Arrays.fill(mBackgroundColor, 0);
             } else {
                 mFadingIn = false;
-                mBackgroundAlpha = sBackgroundAlpha;
+                System.arraycopy(sBackgroundColor, 0, mBackgroundColor, 0, 4);
             }
         } else if (!hasGui && mBlurring) {
             gr.shutdownEffect();
@@ -144,14 +142,16 @@ public enum BlurHandler {
         }
     }
 
-    public void loadBlacklist(@Nonnull List<? extends String> names) {
+    public void loadBlacklist(@Nullable List<? extends String> names) {
         mBlacklist.clear();
-        for (String s : names) {
-            try {
-                Class<?> clazz = Class.forName(s);
-                mBlacklist.add(clazz);
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
+        if (names != null) {
+            for (String s : names) {
+                try {
+                    Class<?> clazz = Class.forName(s);
+                    mBlacklist.add(clazz);
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -165,8 +165,8 @@ public enum BlurHandler {
             if (mBlurring) {
                 updateRadius(p * sBlurRadius);
             }
-            if (mBackgroundAlpha < sBackgroundAlpha) {
-                mBackgroundAlpha = p * sBackgroundAlpha;
+            for (int i = 0; i < 4; i++) {
+                mBackgroundColor[i] = ColorEvaluator.evaluate(p, 0, sBackgroundColor[i]);
             }
             if (p == 1.0f) {
                 mFadingIn = false;
@@ -185,25 +185,28 @@ public enum BlurHandler {
     }
 
     public void drawScreenBackground(@Nonnull Screen screen, @Nonnull PoseStack stack, int x1, int y1, int x2, int y2) {
-        int a = (int) (mBackgroundAlpha * 0xff);
-        if (a == 0)
-            return;
         RenderSystem.disableTexture();
         RenderSystem.enableBlend();
         RenderSystem.disableAlphaTest();
         RenderSystem.defaultBlendFunc();
+        RenderSystem.shadeModel(GL11.GL_SMOOTH);
 
         BufferBuilder builder = Tesselator.getInstance().getBuilder();
         Matrix4f matrix = stack.last().pose();
         int z = screen.getBlitOffset();
         builder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
-        builder.vertex(matrix, x2, y1, z).color(0, 0, 0, a).endVertex();
-        builder.vertex(matrix, x1, y1, z).color(0, 0, 0, a).endVertex();
-        builder.vertex(matrix, x1, y2, z).color(0, 0, 0, a).endVertex();
-        builder.vertex(matrix, x2, y2, z).color(0, 0, 0, a).endVertex();
+        int color = mBackgroundColor[1];
+        builder.vertex(matrix, x2, y1, z).color(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff, color >>> 24).endVertex();
+        color = mBackgroundColor[0];
+        builder.vertex(matrix, x1, y1, z).color(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff, color >>> 24).endVertex();
+        color = mBackgroundColor[3];
+        builder.vertex(matrix, x1, y2, z).color(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff, color >>> 24).endVertex();
+        color = mBackgroundColor[2];
+        builder.vertex(matrix, x2, y2, z).color(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff, color >>> 24).endVertex();
         builder.end();
         BufferUploader.end(builder);
 
+        RenderSystem.shadeModel(GL11.GL_FLAT);
         RenderSystem.disableBlend();
         RenderSystem.enableAlphaTest();
         RenderSystem.enableTexture();
