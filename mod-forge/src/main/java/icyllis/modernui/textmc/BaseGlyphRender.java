@@ -34,7 +34,7 @@ public abstract class BaseGlyphRender {
     /**
      * Change to params color.
      */
-    public static final int USE_INPUT_COLOR = CharacterStyleCarrier.USE_PARAM_COLOR;
+    public static final int USE_INPUT_COLOR = CharacterStyleCarrier.NO_COLOR_SPECIFIED;
 
     /**
      * Keep the color state not to change.
@@ -59,6 +59,8 @@ public abstract class BaseGlyphRender {
 
     /**
      * Rendering flags, will be inserted later.
+     *
+     * @see CharacterStyleCarrier
      */
     public int mFlags = COLOR_NO_CHANGE;
 
@@ -117,7 +119,7 @@ public abstract class BaseGlyphRender {
      * @param a       final alpha
      */
     public final void drawEffect(@Nonnull VertexConsumer builder, float x, float y, int r, int g, int b, int a) {
-        if ((mFlags & CharacterStyleCarrier.DECORATION_MASK) != 0) {
+        if ((mFlags & CharacterStyleCarrier.EFFECT_MASK) != 0) {
             x += mOffsetX;
             if ((mFlags & CharacterStyleCarrier.UNDERLINE_MASK) != 0) {
                 TextRenderEffect.drawUnderline(builder, x, x + mAdvance, y, r, g, b, a);
@@ -143,7 +145,7 @@ public abstract class BaseGlyphRender {
      */
     public final void drawEffect(@Nonnull Matrix4f matrix, @Nonnull VertexConsumer builder, float x, float y, int r,
                                  int g, int b, int a, int light) {
-        if ((mFlags & CharacterStyleCarrier.DECORATION_MASK) != 0) {
+        if ((mFlags & CharacterStyleCarrier.EFFECT_MASK) != 0) {
             x += mOffsetX;
             if ((mFlags & CharacterStyleCarrier.UNDERLINE_MASK) != 0) {
                 TextRenderEffect.drawUnderline(matrix, builder, x, x + mAdvance, y, r, g, b, a, light);
@@ -166,10 +168,10 @@ public abstract class BaseGlyphRender {
     @Override
     public String toString() {
         return "BaseGlyphRender{" +
-                "mStringIndex=" + mStringIndex +
-                ", mOffsetX=" + mOffsetX +
-                ", mAdvance=" + mAdvance +
-                ", mFlags=0x" + Integer.toHexString(mFlags) +
+                "stringIndex=" + mStringIndex +
+                ", offsetX=" + mOffsetX +
+                ", advance=" + mAdvance +
+                ", flags=0x" + Integer.toHexString(mFlags) +
                 '}';
     }
 }

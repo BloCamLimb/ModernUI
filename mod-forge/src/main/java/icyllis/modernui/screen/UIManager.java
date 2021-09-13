@@ -45,6 +45,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraftforge.api.distmarker.Dist;
@@ -471,27 +472,29 @@ public final class UIManager implements ViewRootImpl.Handler {
                 StringBuilder builder = new StringBuilder();
                 builder.append("Modern UI Debug Info:\n");
 
-                builder.append("[0] From Modern UI: ");
+                builder.append("From Modern UI: ");
                 builder.append(mScreen != null);
                 builder.append('\n');
 
-                builder.append("[1] Container Menu: ");
-                builder.append(minecraft.player != null ? minecraft.player.containerMenu : null);
+                builder.append("Container Menu: ");
+                builder.append(minecraft.player == null ? null : minecraft.player.containerMenu == null ? null :
+                        minecraft.player.containerMenu.getClass().getName());
                 builder.append('\n');
 
-                builder.append("[2] Callback or Screen: ");
+                builder.append("Callback or Screen: ");
                 builder.append(mCallback != null ? mCallback.getClass().getName() : minecraft.screen == null ? null :
                         minecraft.screen.getClass().getName());
                 builder.append('\n');
 
-                builder.append("[3] Layout Cache Entries: ");
+                builder.append("Layout Cache Entries: ");
                 builder.append(TextLayoutEngine.getInstance().countEntries());
-                builder.append('\n');
 
-                builder.append("[4] Active Typeface: ");
-                builder.append(ModernUI.get().getPreferredTypeface());
+                String str = builder.toString();
 
-                ModernUI.LOGGER.info(MARKER, builder.toString());
+                ModernUI.LOGGER.info(MARKER, str);
+                if (minecraft.level != null) {
+                    minecraft.gui.getChat().addMessage(Component.nullToEmpty(str));
+                }
                 break;
         }
     }

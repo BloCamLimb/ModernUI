@@ -25,8 +25,16 @@ import net.minecraft.util.FormattedCharSink;
 import net.minecraft.util.StringDecomposer;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 import java.util.Optional;
 
+/**
+ * @see icyllis.modernui.mixin.MixinBidiReorder
+ * @see icyllis.modernui.mixin.MixinClientLanguage
+ * @see icyllis.modernui.mixin.MixinLanguage
+ * @see MultilayerTextKey.Lookup#update(FormattedCharSequence)
+ * @see TextLayoutProcessor#doLayout(FormattedCharSequence)
+ */
 public class FormattedTextWrapper implements FormattedCharSequence {
 
     @Nonnull
@@ -36,6 +44,13 @@ public class FormattedTextWrapper implements FormattedCharSequence {
         mText = text;
     }
 
+    /**
+     * Needed when compositing.
+     *
+     * @param sink code point consumer
+     * @return true if all chars consumed, false otherwise
+     * @see FormattedCharSequence#composite(List)
+     */
     @Override
     public boolean accept(FormattedCharSink sink) {
         // do not reorder, transfer the code points

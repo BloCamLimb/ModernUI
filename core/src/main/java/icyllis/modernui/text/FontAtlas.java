@@ -145,7 +145,6 @@ public class FontAtlas {
             mTexture.initCompat(GL_ALPHA, INITIAL_SIZE, INITIAL_SIZE, MIPMAP_LEVEL);
             // we have border that not upload data, so generate mipmap may leave undefined data
             mTexture.clear(0);
-            mTexture.setFilter(GL_LINEAR_MIPMAP_LINEAR, GL_NEAREST);
         } else {
             final boolean vertical;
             if (mHeight != mWidth) {
@@ -181,7 +180,9 @@ public class FontAtlas {
                     glyph.texture = mTexture.get();
                 }
             }
+
             // we later generate mipmap
         }
+        mTexture.setFilter(GL_LINEAR_MIPMAP_LINEAR, GL_NEAREST);
     }
 }

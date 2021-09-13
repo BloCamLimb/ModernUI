@@ -35,7 +35,6 @@ import net.minecraft.util.FormattedCharSink;
 import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.font.GlyphVector;
-import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -99,6 +98,9 @@ public class TextLayoutProcessor {
 
     private Style mStyle;
 
+    TextLayoutProcessor() {
+    }
+
     private void finishBidiRun(float adjust) {
         if (adjust != 0) {
             mBidiList.forEach(e -> e.mOffsetX += adjust);
@@ -139,7 +141,15 @@ public class TextLayoutProcessor {
     @Nonnull
     public TextRenderNode doLayout(@Nonnull FormattedText text, @Nonnull Style style) {
         text.visit(mContentBuilder, style);
+        /*boolean show = !mChars.isEmpty() && mChars.getChar(0) == '[';
+        if (show) {
+            ModernUI.LOGGER.info("LayoutSequence: {}\n{}", new String(mChars.toCharArray()),
+                    mCarriers.stream().map(Objects::toString).collect(Collectors.joining("\n")));
+        }*/
         TextRenderNode node = performFullLayout(mChars.toCharArray(), false);
+        /*if (show) {
+            ModernUI.LOGGER.info(mAllList.stream().map(Objects::toString).collect(Collectors.joining("\n")));
+        }*/
         release();
         return node;
     }
@@ -164,7 +174,7 @@ public class TextLayoutProcessor {
             // note that index will be reset to 0 for composited char sequence
             // we should get the continuous string index
             if (style != mStyle) {
-                mCarriers.add(new CharacterStyleCarrier(mChars.size(), mChars.size(), style));
+                mCarriers.add(new CharacterStyleCarrier(mChars.size(), mChars.size(), style, false));
                 mStyle = style;
             }
             if (Character.isBmpCodePoint(codePoint)) {
@@ -181,7 +191,7 @@ public class TextLayoutProcessor {
     private final FormattedText.StyledContentConsumer<?> mContentBuilder = new FormattedText.StyledContentConsumer<>() {
         @Override
         public Optional<Object> accept(Style style, @Nonnull String text) {
-            mCarriers.add(new CharacterStyleCarrier(mNext, mNext - mShift, style));
+            mCarriers.add(new CharacterStyleCarrier(mNext, mNext - mShift, style, false));
             final int limit = text.length();
             for (int i = 0; i < limit; ++i) {
                 char c1 = text.charAt(i);
@@ -199,7 +209,7 @@ public class TextLayoutProcessor {
                                 style.applyLegacyFormat(formatting);
                         if (!style.equals(newStyle)) {
                             style = newStyle; // transit to new style
-                            mCarriers.add(new CharacterStyleCarrier(mNext, mNext - mShift, style));
+                            mCarriers.add(new CharacterStyleCarrier(mNext, mNext - mShift, style, true));
                         }
                     }
 
@@ -231,6 +241,7 @@ public class TextLayoutProcessor {
                 }
                 mNext++;
             }
+            // continue
             return Optional.empty();
         }
     };
@@ -249,7 +260,7 @@ public class TextLayoutProcessor {
         int shift = 0;
 
         Style style = base;
-        mCarriers.add(new CharacterStyleCarrier(0, 0, style));
+        mCarriers.add(new CharacterStyleCarrier(0, 0, style, false));
 
         // also fix surrogate pairs
         final int limit = text.length();
@@ -268,7 +279,7 @@ public class TextLayoutProcessor {
                             style.applyLegacyFormat(formatting);
                     if (!style.equals(newStyle)) {
                         style = newStyle; // transit to new style
-                        mCarriers.add(new CharacterStyleCarrier(next, next - shift, style));
+                        mCarriers.add(new CharacterStyleCarrier(next, next - shift, style, true));
                     }
                 }
 
@@ -331,7 +342,7 @@ public class TextLayoutProcessor {
         if (text.length > 0) {
             performBidiAnalysis(text, fastDigit);
             if (!mAllList.isEmpty()) {
-                finish();
+                adjustAndInsertColor();
                 return new TextRenderNode(mAllList.toArray(new BaseGlyphRender[0]), mAdvance, mHasEffect);
             }
         }
@@ -497,7 +508,7 @@ public class TextLayoutProcessor {
     private void performTextLayout(@Nonnull char[] text, int start, int limit, boolean isRtl, boolean fastDigit,
                                    @Nonnull CharacterStyleCarrier carrier, @Nonnull Font font) {
         final TextLayoutEngine layoutEngine = TextLayoutEngine.getInstance();
-        final int decoration = carrier.getDecoration();
+        final int decoration = carrier.getEffect();
         if (carrier.isObfuscated()) {
             final var digits = layoutEngine.lookupDigits(font);
             final float advance = digits.getRight()[0];
@@ -598,18 +609,66 @@ public class TextLayoutProcessor {
 
     /**
      * Adjust strip index to string index and insert color transitions.
+     *
+     * <p>
+     * Example:<br>
+     * 0123456§a78§r9
+     * <p>
+     * Carriers: stringIndex (stripIndex)<br>
+     * 0 - grey (default style)<br>
+     * 3 - blue (style)<br>
+     * 7 (7) - orange (formatting code)<br>
+     * 11 (9) - grey (formatting code)<br>
+     * After:
+     * <table border="1">
+     *   <tr>
+     *     <td>0</th>
+     *     <td>1</th>
+     *     <td>2</th>
+     *     <td>3</th>
+     *     <td>4</th>
+     *     <td>5</th>
+     *     <td>6</th>
+     *     <td>7</th>
+     *     <td>8</th>
+     *     <td>9</th>
+     *   </tr>
+     *   <tr>
+     *     <td>0</th>
+     *     <td>1</th>
+     *     <td>2</th>
+     *     <td>3</th>
+     *     <td>4</th>
+     *     <td>5</th>
+     *     <td>6</th>
+     *     <td>9</th>
+     *     <td>10</th>
+     *     <td>13</th>
+     *   </tr>
+     *   <tr>
+     *     <td>G</th>
+     *     <td></th>
+     *     <td></th>
+     *     <td>B</th>
+     *     <td></th>
+     *     <td></th>
+     *     <td></th>
+     *     <td>O</th>
+     *     <td></th>
+     *     <td>G</th>
+     *   </tr>
+     * </table>
      */
-    private void finish() {
+    private void adjustAndInsertColor() {
         if (mAllList.isEmpty()) {
             throw new IllegalStateException();
         }
-        // sort by stripIndex, mixed with LTR and RTL layout
-        // logical order to visual order for line breaking, etc
+        // Sort by stripIndex, if mixed with LTR and RTL layout.
+        // Logical order to visual order for line breaking, etc.
         mAllList.sort(Comparator.comparingInt(g -> g.mStringIndex));
 
-        /* Shift stripIndex to stringIndex */
-        /* Skip the default code */
-        int codeIndex = 1, shift = 0;
+        // Shift stripIndex to stringIndex
+        int codeIndex = 0, shift = 0;
         for (BaseGlyphRender glyph : mAllList) {
             /*
              * Adjust the string index for each glyph to point into the original string with un-stripped color codes.
@@ -620,51 +679,60 @@ public class TextLayoutProcessor {
              *  of ASCII
              * digits in the original string for fast glyph replacement during rendering.
              */
-            while (codeIndex < mCarriers.size() && glyph.mStringIndex + shift >= mCarriers.get(codeIndex).mStringIndex) {
-                shift += 2;
+            CharacterStyleCarrier carrier;
+            while (codeIndex < mCarriers.size() &&
+                    glyph.mStringIndex + shift >= (carrier = mCarriers.get(codeIndex)).mStringIndex) {
+                if (carrier.isFormattingCode()) {
+                    shift += 2;
+                }
                 codeIndex++;
             }
             glyph.mStringIndex += shift;
         }
 
-        // insert color states
-        codeIndex = 0;
 
+        // insert color flags
+        codeIndex = 0;
+        // In case of multiple consecutive color codes with the same stripIndex,
+        // select the last one which will have active carrier
         while (codeIndex < mCarriers.size() - 1 &&
                 mCarriers.get(codeIndex).mStripIndex == mCarriers.get(codeIndex + 1).mStripIndex) {
             codeIndex++;
         }
 
-        int color = mCarriers.get(codeIndex).getColor();
+        int color = mCarriers.get(codeIndex++).getColor();
         BaseGlyphRender glyph;
-        /* The default is no color */
-        if (color != CharacterStyleCarrier.USE_PARAM_COLOR) {
+        // If there's no input style at the beginning
+        if (color != CharacterStyleCarrier.NO_COLOR_SPECIFIED) {
             glyph = mAllList.get(0);
             glyph.mFlags &= ~BaseGlyphRender.COLOR_NO_CHANGE;
             glyph.mFlags |= color;
         }
 
-        if (++codeIndex < mCarriers.size()) {
-            for (int glyphIndex = 1; glyphIndex < mAllList.size(); glyphIndex++) {
-                glyph = mAllList.get(glyphIndex);
+        if (codeIndex >= mCarriers.size()) {
+            return;
+        }
+        for (int glyphIndex = 1; glyphIndex < mAllList.size() && codeIndex < mCarriers.size(); glyphIndex++) {
+            glyph = mAllList.get(glyphIndex);
 
-                if (codeIndex < mCarriers.size() && glyph.mStringIndex > mCarriers.get(codeIndex).mStringIndex) {
-                    /* In case of multiple consecutive color codes with the same stripIndex,
-                    select the last one which will have active font style */
-                    while (codeIndex < mCarriers.size() - 1 &&
-                            mCarriers.get(codeIndex).mStripIndex == mCarriers.get(codeIndex + 1).mStripIndex) {
-                        codeIndex++;
-                    }
-
-                    CharacterStyleCarrier s = mCarriers.get(codeIndex);
-                    if (s.getColor() != color) {
-                        color = s.getColor();
-                        glyph.mFlags &= ~BaseGlyphRender.COLOR_NO_CHANGE;
-                        glyph.mFlags |= color;
-                    }
-
+            // Can be equal, not formatting code in this case
+            if (glyph.mStringIndex >= mCarriers.get(codeIndex).mStringIndex) {
+                // In case of multiple consecutive color codes with the same stripIndex,
+                // select the last one which will have active carrier,
+                // don't compare indices with formatting codes
+                while (codeIndex < mCarriers.size() - 1 &&
+                        mCarriers.get(codeIndex).mStripIndex == mCarriers.get(codeIndex + 1).mStripIndex) {
                     codeIndex++;
                 }
+
+                CharacterStyleCarrier s = mCarriers.get(codeIndex);
+                if (s.getColor() != color) {
+                    color = s.getColor();
+                    glyph.mFlags &= ~BaseGlyphRender.COLOR_NO_CHANGE;
+                    glyph.mFlags |= color;
+                }
+
+                codeIndex++;
             }
         }
     }
