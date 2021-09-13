@@ -48,6 +48,11 @@ public class CharSequenceBuilder implements CharSequence {
         str.getChars(0, str.length(), mChars.elements(), offset);
     }
 
+    public CharArrayList trimChars() {
+        mChars.trim();
+        return mChars;
+    }
+
     public void clear() {
         mChars.clear();
     }
@@ -85,29 +90,14 @@ public class CharSequenceBuilder implements CharSequence {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o.getClass() != String.class) return false;
+        if (o.getClass() != CharArrayList.class) return false;
 
-        String that = (String) o;
-        int length = length();
-        if (length != that.length()) {
-            return false;
-        }
-        for (int i = 0; i < length; i++) {
-            if (mChars.getChar(i) != that.charAt(i)) {
-                return false;
-            }
-        }
-        return true;
+        CharArrayList that = (CharArrayList) o;
+        return mChars.equals(that);
     }
 
     @Override
     public int hashCode() {
-        int h = 0;
-        int length = length();
-        for (int i = 0; i < length; i++) {
-            h = 31 * h + mChars.getChar(i);
-        }
-        return h;
+        return mChars.hashCode();
     }
 }
