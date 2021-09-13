@@ -161,6 +161,9 @@ public class FontAtlas {
             if (vertical) {
                 mTexture.clear(0, 0, mHeight >> 1, mWidth, mHeight >> 1);
                 for (TexturedGlyph glyph : mGlyphs.values()) {
+                    if (glyph == null) {
+                        continue;
+                    }
                     glyph.v1 *= 0.5;
                     glyph.v2 *= 0.5;
                     // texture id changed
@@ -169,6 +172,9 @@ public class FontAtlas {
             } else {
                 mTexture.clear(0, mWidth >> 1, 0, mWidth >> 1, mHeight);
                 for (TexturedGlyph glyph : mGlyphs.values()) {
+                    if (glyph == null) {
+                        continue;
+                    }
                     glyph.u1 *= 0.5;
                     glyph.u2 *= 0.5;
                     // texture id changed
