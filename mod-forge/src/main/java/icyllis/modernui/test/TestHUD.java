@@ -23,14 +23,15 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.math.Matrix4f;
-import icyllis.modernui.screen.Animation;
-import icyllis.modernui.screen.Applier;
-import icyllis.modernui.screen.CanvasForge;
+import icyllis.modernui.graphics.GLCanvas;
 import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.textmc.ModernFontRenderer;
 import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Matrix4;
+import icyllis.modernui.screen.Animation;
+import icyllis.modernui.screen.CanvasForge;
+import icyllis.modernui.textmc.ModernFontRenderer;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.network.chat.FormattedText;
@@ -41,12 +42,20 @@ import net.minecraft.world.food.FoodData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.client.event.RenderTooltipEvent;
 import net.minecraftforge.common.MinecraftForge;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
+import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+
+import static org.lwjgl.opengl.GL11C.glGetInteger;
+import static org.lwjgl.opengl.GL20C.GL_CURRENT_PROGRAM;
+import static org.lwjgl.opengl.GL20C.glUseProgram;
+import static org.lwjgl.opengl.GL30C.GL_VERTEX_ARRAY_BINDING;
+import static org.lwjgl.opengl.GL30C.glBindVertexArray;
 
 public class TestHUD {
 
@@ -56,9 +65,7 @@ public class TestHUD {
 
     public static final TestHUD sInstance = new TestHUD();
 
-    private final float[] mProj = new float[16];
-
-    private final Animation mBarAlphaAnim;
+    private Animation mBarAlphaAnim;
     private float mBarAlpha = 0.25f;
 
     private float mLastHealth;
@@ -66,9 +73,9 @@ public class TestHUD {
     private int mLastAir;
 
     {
-        mBarAlphaAnim = new Animation(5000)
+        /*mBarAlphaAnim = new Animation(5000)
                 .applyTo(new Applier(0.5f, 0.25f, () -> mBarAlpha, f -> mBarAlpha = f)
-                .setInterpolator(p -> Math.max((p - 0.8f) * 5.0f, 0)));
+                        .setInterpolator(p -> Math.max((p - 0.8f) * 5.0f, 0)));*/
     }
 
     public void drawBars(@Nonnull CanvasForge canvas) {
@@ -85,8 +92,8 @@ public class TestHUD {
         Window windowB3D = minecraft.getWindow();
         float aspectRatio = (float) windowB3D.getWidth() / windowB3D.getHeight();
         Matrix4.makePerspective(MathUtil.PI_DIV_2, aspectRatio, 1.0f, 100.0f)
-                .get(mProj);
-        GL11.glMultMatrixf(mProj);
+                .get(sMat.position(0));
+        GL11.glMultMatrixf(sMat.flip());
 
         GL11.glMatrixMode(GL11.GL_MODELVIEW);
         GL11.glPushMatrix();
@@ -183,35 +190,40 @@ public class TestHUD {
     private final List<FormattedText> mTempTexts = new ArrayList<>();
 
     // config value
-    public static boolean sTooltip;
+    public static boolean sTooltip = true;
     public static int sTooltipR = 170;
     public static int sTooltipG = 220;
     public static int sTooltipB = 240;
 
     // space between mouse and tooltip
     private static final int TOOLTIP_SPACE = 12;
-    private static final int H_BORDER = 5;
+    private static final int H_BORDER = 4;
     private static final int V_BORDER = 4;
     private static final int LINE_HEIGHT = 10;
     private static final int TITLE_GAP = 2;
 
+    private static final FloatBuffer sMat = BufferUtils.createFloatBuffer(16);
+    private static final Matrix4 myMat = new Matrix4();
+
     // test only, this can't handle complex paragraph layout
-    public void drawTooltip(CanvasForge canvas, @Nonnull List<? extends FormattedText> texts,
-                            ModernFontRenderer font, ItemStack stack, PoseStack matrix,
-                            int eventX, int eventY, float mouseX, float mouseY, float width, float height) {
+    public void drawTooltip(GLCanvas canvas, @Nonnull List<? extends FormattedText> texts, Font font, ItemStack stack,
+                            PoseStack matrix, int eventX, int eventY, float mouseX, float mouseY,
+                            float width, float height) {
         float tooltipX = mouseX + TOOLTIP_SPACE;
         float tooltipY = mouseY - TOOLTIP_SPACE;
         int tooltipWidth = 0;
         int tooltipHeight = V_BORDER * 2;
 
-        for (FormattedText text : texts)
+        for (FormattedText text : texts) {
             tooltipWidth = Math.max(tooltipWidth, font.width(text));
+        }
 
         boolean needWrap = false;
         if (tooltipX + tooltipWidth + H_BORDER > width) {
             tooltipX = mouseX - TOOLTIP_SPACE - H_BORDER - tooltipWidth;
             if (tooltipX < H_BORDER) {
-                tooltipWidth = (int) ((mouseX > width / 2) ? mouseX - TOOLTIP_SPACE - H_BORDER * 2 : width - TOOLTIP_SPACE - H_BORDER - mouseX);
+                tooltipWidth = (int) ((mouseX > width / 2) ? mouseX - TOOLTIP_SPACE - H_BORDER * 2 :
+                        width - TOOLTIP_SPACE - H_BORDER - mouseX);
                 needWrap = true;
             }
         }
@@ -222,7 +234,8 @@ public class TestHUD {
             final List<FormattedText> temp = mTempTexts;
             for (int i = 0; i < texts.size(); i++) {
                 List<FormattedText> wrapped = font.getSplitter().splitLines(texts.get(i), tooltipWidth, Style.EMPTY);
-                if (i == 0) titleLinesCount = wrapped.size();
+                if (i == 0)
+                    titleLinesCount = wrapped.size();
                 for (FormattedText text : wrapped) {
                     w = Math.max(w, font.width(text));
                     temp.add(text);
@@ -235,10 +248,12 @@ public class TestHUD {
 
         if (texts.size() > 1) {
             tooltipHeight += (texts.size() - 1) * LINE_HEIGHT;
-            if (texts.size() > titleLinesCount) tooltipHeight += TITLE_GAP;
+            if (texts.size() > titleLinesCount)
+                tooltipHeight += TITLE_GAP;
         }
 
-        if (tooltipY < V_BORDER) tooltipY = V_BORDER;
+        if (tooltipY < V_BORDER)
+            tooltipY = V_BORDER;
         else if (tooltipY + tooltipHeight + V_BORDER > height)
             tooltipY = height - tooltipHeight - V_BORDER;
 
@@ -263,43 +278,62 @@ public class TestHUD {
         final float partialX = tooltipX - tooltipLeft;
         final float partialY = tooltipY - tooltipTop;
 
-        GL11.glPushMatrix();
-        RenderSystem.multMatrix(mat);
+        final int oldVertexArray = glGetInteger(GL_VERTEX_ARRAY_BINDING);
+        final int oldProgram = glGetInteger(GL_CURRENT_PROGRAM);
 
+        Matrix4 projection = Matrix4.makeOrthographic(width, -height, 0, 2000);
+        canvas.setProjection(projection);
+        canvas.reset((int) width, (int) height);
+
+        canvas.save();
+        mat.store(sMat);
+        myMat.set(sMat.position(0));
+        myMat.translate(0, 0, -2000);
+        canvas.multiply(myMat);
 
         Paint paint = Paint.take();
-        paint.reset();
+
+        paint.setSmoothRadius(0.5f);
 
         paint.setRGBA(0, 0, 0, 208);
         paint.setStyle(Paint.Style.FILL);
-        /*canvas.drawRoundRect(tooltipX - H_BORDER, tooltipY - V_BORDER,
-                tooltipX + tooltipWidth + H_BORDER, tooltipY + tooltipHeight + V_BORDER, 3, paint);*/
+        canvas.drawRoundRect(tooltipX - H_BORDER, tooltipY - V_BORDER,
+                tooltipX + tooltipWidth + H_BORDER, tooltipY + tooltipHeight + V_BORDER, 3, paint);
 
         paint.setRGBA(sTooltipR, sTooltipG, sTooltipB, 240);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(1.5f);
-        /*canvas.drawRoundRect(tooltipX - H_BORDER, tooltipY - V_BORDER,
+        canvas.drawRoundRect(tooltipX - H_BORDER, tooltipY - V_BORDER,
                 tooltipX + tooltipWidth + H_BORDER, tooltipY + tooltipHeight + V_BORDER, 3, paint);
-        canvas.drawRoundedFrameT1(tooltipX - H_BORDER, tooltipY - V_BORDER,
+        /*canvas.drawRoundedFrameT1(tooltipX - H_BORDER, tooltipY - V_BORDER,
                 tooltipX + tooltipWidth + H_BORDER, tooltipY + tooltipHeight + V_BORDER, 3);*/
 
-        GL11.glPopMatrix();
+        canvas.restore();
+        canvas.draw();
 
-        final MultiBufferSource.BufferSource buf = MultiBufferSource.immediate(Tesselator.getInstance().getBuilder());
+        glBindVertexArray(oldVertexArray);
+        glUseProgram(oldProgram);
+
+        final MultiBufferSource.BufferSource source =
+                MultiBufferSource.immediate(Tesselator.getInstance().getBuilder());
         for (int i = 0; i < texts.size(); i++) {
             FormattedText text = texts.get(i);
             if (text != null)
-                //font.drawText(text, tooltipX, tooltipY, 0xffffffff, true, mat, buf, false, 0, 0xf000f0);
-            if (i + 1 == titleLinesCount) tooltipY += TITLE_GAP;
+                ModernFontRenderer.drawText(text, tooltipX, tooltipY, 0xffffffff, true, mat, source,
+                        false, 0, 0xf000f0);
+            if (i + 1 == titleLinesCount)
+                tooltipY += TITLE_GAP;
             tooltipY += LINE_HEIGHT;
         }
-        buf.endBatch();
+        source.endBatch();
         matrix.popPose();
 
         GL11.glPushMatrix();
-        GL11.glTranslatef(partialX, partialY, 0); // because of the order of draw calls, we actually don't need z-shifting
+        // because of the order of draw calls, we actually don't need z-shifting
+        GL11.glTranslatef(partialX, partialY, 0);
         // compatibility with Forge mods, like Quark
-        MinecraftForge.EVENT_BUS.post(new RenderTooltipEvent.PostText(stack, texts, matrix, tooltipLeft, tooltipTop, font, tooltipWidth, tooltipHeight));
+        MinecraftForge.EVENT_BUS.post(new RenderTooltipEvent.PostText(stack, texts, matrix, tooltipLeft, tooltipTop,
+                font, tooltipWidth, tooltipHeight));
         GL11.glPopMatrix();
 
         RenderSystem.enableDepthTest();

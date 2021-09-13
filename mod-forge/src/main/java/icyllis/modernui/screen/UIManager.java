@@ -31,6 +31,7 @@ import icyllis.modernui.graphics.GLCanvas;
 import icyllis.modernui.graphics.texture.Texture;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.platform.RenderCore;
+import icyllis.modernui.test.TestHUD;
 import icyllis.modernui.test.TestMain;
 import icyllis.modernui.test.TestPauseUI;
 import icyllis.modernui.textmc.TextLayoutEngine;
@@ -479,7 +480,8 @@ public final class UIManager implements ViewRootImpl.Handler {
                 builder.append('\n');
 
                 builder.append("[2] Callback or Screen: ");
-                builder.append(mCallback != null ? mCallback : minecraft.screen);
+                builder.append(mCallback != null ? mCallback.getClass().getName() : minecraft.screen == null ? null :
+                        minecraft.screen.getClass().getName());
                 builder.append('\n');
 
                 builder.append("[3] Layout Cache Entries: ");
@@ -524,11 +526,11 @@ public final class UIManager implements ViewRootImpl.Handler {
         Framebuffer framebuffer = mFramebuffer;
 
         if (mProjectionChanged) {
-            Matrix4 projection = Matrix4.makeOrthographic(width, -height, 0, 2000);
-            // heavy overhead
-            canvas.setProjection(projection);
+            // Test
             mProjectionChanged = false;
         }
+        Matrix4 projection = Matrix4.makeOrthographic(width, -height, 0, 2000);
+        canvas.setProjection(projection);
 
         final int oldVertexArray = glGetInteger(GL_VERTEX_ARRAY_BINDING);
         final int oldProgram = glGetInteger(GL_CURRENT_PROGRAM);
@@ -582,23 +584,22 @@ public final class UIManager implements ViewRootImpl.Handler {
 
     @SubscribeEvent(priority = EventPriority.LOW)
     void onRenderTooltip(@Nonnull RenderTooltipEvent.Pre event) {
-        /*if (TestHUD.sTooltip) {
-            if (!(minecraft.font instanceof ModernFontRenderer)) {
+        if (TestHUD.sTooltip) {
+            /*if (!(minecraft.font instanceof ModernFontRenderer)) {
                 ModernUI.LOGGER.fatal(MARKER, "Failed to hook FontRenderer, tooltip disabled");
                 TestHUD.sTooltip = false;
                 return;
-            }
+            }*/
             final Window window = minecraft.getWindow();
-            double cursorX = minecraft.mouseHandler.xpos() * (double) window.getGuiScaledWidth() / (double) window
-            .getScreenWidth();
-            double cursorY = minecraft.mouseHandler.ypos() * (double) window.getGuiScaledHeight() / (double) window
-            .getScreenHeight();
-            TestHUD.sInstance.drawTooltip(mFCanvas, event.getLines(), (ModernFontRenderer) minecraft.font, event
-            .getStack(),
-                    event.getMatrixStack(), event.getX(), event.getY(), (float) cursorX, (float) cursorY, event
-                    .getScreenWidth(), event.getScreenHeight());
+            double cursorX =
+                    minecraft.mouseHandler.xpos() * (double) window.getGuiScaledWidth() / (double) window.getScreenWidth();
+            double cursorY =
+                    minecraft.mouseHandler.ypos() * (double) window.getGuiScaledHeight() / (double) window.getScreenHeight();
+            TestHUD.sInstance.drawTooltip(mCanvas, event.getLines(), minecraft.font, event.getStack(),
+                    event.getMatrixStack(), event.getX(), event.getY(), (float) cursorX, (float) cursorY,
+                    event.getScreenWidth(), event.getScreenHeight());
             event.setCanceled(true);
-        }*/
+        }
     }
 
     /**

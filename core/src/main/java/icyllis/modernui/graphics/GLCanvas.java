@@ -208,11 +208,13 @@ public final class GLCanvas extends Canvas {
     private final Rect mTmpRect = new Rect();
     private final RectF mTmpRectF = new RectF();
 
+    private final ByteBuffer mProjectionUpload = MemoryUtil.memAlloc(64);
+
 
     // constructor on render thread
     private GLCanvas() {
         mProjectionUBO = glCreateBuffers();
-        glNamedBufferStorage(mProjectionUBO, PROJECTION_UNIFORM_SIZE, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
+        glNamedBufferStorage(mProjectionUBO, PROJECTION_UNIFORM_SIZE, GL_DYNAMIC_STORAGE_BIT);
 
         mGlyphUBO = glCreateBuffers();
         glNamedBufferStorage(mGlyphUBO, GLYPH_UNIFORM_SIZE, GL_DYNAMIC_STORAGE_BIT);
@@ -292,12 +294,15 @@ public final class GLCanvas extends Canvas {
     @RenderThread
     public void setProjection(@Nonnull Matrix4 projection) {
         RenderCore.checkRenderThread();
-        ByteBuffer buffer = glMapNamedBuffer(mProjectionUBO, GL_WRITE_ONLY);
+        /*ByteBuffer buffer = glMapNamedBuffer(mProjectionUBO, GL_WRITE_ONLY);
         if (buffer == null) {
             throw new IllegalStateException("You don't have GL_MAP_WRITE_BIT bit flag");
         }
         projection.get(buffer);
-        glUnmapNamedBuffer(mProjectionUBO);
+        glUnmapNamedBuffer(mProjectionUBO);*/
+        projection.get(mProjectionUpload);
+        nglNamedBufferSubData(mProjectionUBO, 0, PROJECTION_UNIFORM_SIZE,
+                MemoryUtil.memAddress(mProjectionUpload.flip()));
     }
 
     /**

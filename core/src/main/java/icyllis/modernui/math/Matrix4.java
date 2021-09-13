@@ -545,6 +545,33 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
+     * Set this matrix elements from an array.
+     *
+     * @param a the array to copy from
+     * @see #Matrix4(float...)
+     */
+    public void set(@Nonnull FloatBuffer a) {
+        if (a.remaining() < 16)
+            throw new IllegalArgumentException("The array length must be at least 16");
+        m11 = a.get();
+        m12 = a.get();
+        m13 = a.get();
+        m14 = a.get();
+        m21 = a.get();
+        m22 = a.get();
+        m23 = a.get();
+        m24 = a.get();
+        m31 = a.get();
+        m32 = a.get();
+        m33 = a.get();
+        m34 = a.get();
+        m41 = a.get();
+        m42 = a.get();
+        m43 = a.get();
+        m44 = a.get();
+    }
+
+    /**
      * Get this matrix data, store them into an array.
      *
      * @param a the array to store
