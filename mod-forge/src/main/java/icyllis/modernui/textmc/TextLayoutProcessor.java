@@ -161,8 +161,10 @@ public class TextLayoutProcessor {
 
         @Override
         public boolean accept(int index, @Nonnull Style style, int codePoint) {
+            // note that index will be reset to 0 for composited char sequence
+            // we should get the continuous string index
             if (style != mStyle) {
-                mCarriers.add(new CharacterStyleCarrier(index, index, style));
+                mCarriers.add(new CharacterStyleCarrier(mChars.size(), mChars.size(), style));
                 mStyle = style;
             }
             if (Character.isBmpCodePoint(codePoint)) {

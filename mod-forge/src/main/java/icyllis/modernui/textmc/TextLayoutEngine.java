@@ -31,7 +31,9 @@ import net.minecraft.network.chat.BaseComponent;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextComponent;
+import net.minecraft.server.packs.resources.ReloadableResourceManager;
 import net.minecraft.util.FormattedCharSequence;
+import net.minecraftforge.resource.ISelectiveResourceReloadListener;
 import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.Nonnull;
@@ -133,6 +135,9 @@ public class TextLayoutEngine {
         /* Pre-cache the ASCII digits to allow for fast glyph substitution */
         //cacheDigitGlyphs();
         GlyphManager.getInstance();
+        ((ReloadableResourceManager) Minecraft.getInstance().getResourceManager()).registerReloadListener(
+                (ISelectiveResourceReloadListener) (manager, predicate) -> clearLayoutCache()
+        );
     }
 
     /**
@@ -225,13 +230,13 @@ public class TextLayoutEngine {
      * @see FormattedTextWrapper
      */
     public TextRenderNode lookupMultilayerNode(@Nonnull FormattedText text, @Nonnull Style style) {
-        if (!RenderSystem.isOnRenderThread()) {
-            return Minecraft.getInstance()
-                    .submit(() -> lookupMultilayerNode(text))
-                    .join();
-        }
         if (text == TextComponent.EMPTY || text == FormattedText.EMPTY) {
             return TextRenderNode.EMPTY;
+        }
+        if (!RenderSystem.isOnRenderThread()) {
+            return Minecraft.getInstance()
+                    .submit(() -> lookupMultilayerNode(text, style))
+                    .join();
         }
         TextRenderNode node;
         if (text instanceof BaseComponent) {
@@ -263,13 +268,13 @@ public class TextLayoutEngine {
      */
     @Nonnull
     public TextRenderNode lookupMultilayerNode(@Nonnull FormattedCharSequence sequence) {
+        if (sequence == FormattedCharSequence.EMPTY) {
+            return TextRenderNode.EMPTY;
+        }
         if (!RenderSystem.isOnRenderThread()) {
             return Minecraft.getInstance()
                     .submit(() -> lookupMultilayerNode(sequence))
                     .join();
-        }
-        if (sequence == FormattedCharSequence.EMPTY) {
-            return TextRenderNode.EMPTY;
         }
         if (sequence instanceof FormattedTextWrapper) {
             return lookupMultilayerNode(((FormattedTextWrapper) sequence).mText);
