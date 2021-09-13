@@ -509,6 +509,9 @@ public class TextLayoutProcessor {
                                    @Nonnull CharacterStyleCarrier carrier, @Nonnull Font font) {
         final TextLayoutEngine layoutEngine = TextLayoutEngine.getInstance();
         final int decoration = carrier.getEffect();
+        // Note max font size is 96, see FontPaint, font size will be (8 * res) in Minecraft
+        final float res = layoutEngine.getResolutionLevel();
+        font = font.deriveFont(carrier.getFontStyle(), 8 * res);
         if (carrier.isObfuscated()) {
             final var digits = layoutEngine.lookupDigits(font);
             final float advance = digits.getRight()[0];
@@ -549,9 +552,6 @@ public class TextLayoutProcessor {
             // in different font, HarfBuzz is introduced in Java 11 or higher
             GlyphManager glyphManager = GlyphManager.getInstance();
 
-            // Note max font size is 96, see FontPaint, font size will be (8 * res) in Minecraft
-            final float res = layoutEngine.getResolutionLevel();
-            font = font.deriveFont(carrier.getFontStyle(), 8 * res);
             GlyphVector vector = glyphManager.layoutGlyphVector(font, text, start, limit, isRtl);
             final int num = vector.getNumGlyphs();
 

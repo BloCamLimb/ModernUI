@@ -408,14 +408,16 @@ public final class UIManager implements ViewRootImpl.Handler {
 
     // Internal method
     public void onScroll(double scrollX, double scrollY) {
-        final long now = RenderCore.timeNanos();
-        float x = (float) minecraft.mouseHandler.xpos();
-        float y = (float) minecraft.mouseHandler.ypos();
-        MotionEvent event = MotionEvent.obtain(now, now, MotionEvent.ACTION_SCROLL,
-                x, y, 0);
-        event.setAxisValue(MotionEvent.AXIS_HSCROLL, (float) scrollX);
-        event.setAxisValue(MotionEvent.AXIS_VSCROLL, (float) scrollY);
-        mRoot.enqueueInputEvent(event);
+        if (mScreen != null) {
+            final long now = RenderCore.timeNanos();
+            float x = (float) minecraft.mouseHandler.xpos();
+            float y = (float) minecraft.mouseHandler.ypos();
+            MotionEvent event = MotionEvent.obtain(now, now, MotionEvent.ACTION_SCROLL,
+                    x, y, 0);
+            event.setAxisValue(MotionEvent.AXIS_HSCROLL, (float) scrollX);
+            event.setAxisValue(MotionEvent.AXIS_VSCROLL, (float) scrollY);
+            mRoot.enqueueInputEvent(event);
+        }
     }
 
     @SubscribeEvent
