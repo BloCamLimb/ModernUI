@@ -157,8 +157,12 @@ public final class GLWrapper extends GL45C {
         sMaxTextureSize = glGetInteger(GL_MAX_TEXTURE_SIZE);
         sMaxRenderBufferSize = glGetInteger(GL_MAX_RENDERBUFFER_SIZE);
 
+        String glVersion = glGetString(GL_VERSION);
+
+        LOGGER.info(RenderCore.MARKER, "Graphics API: OpenGL {}", glVersion);
+        LOGGER.info(RenderCore.MARKER, "OpenGL Renderer: {} {}", glGetString(GL_VENDOR), glGetString(GL_RENDERER));
+
         if (!caps.OpenGL45) {
-            String glVersion = glGetString(GL_VERSION);
             if (glVersion == null)
                 glVersion = "UNKNOWN";
             else {
@@ -166,8 +170,7 @@ public final class GLWrapper extends GL45C {
                     Matcher matcher = Pattern.compile("([0-9]+)\\\\.([0-9]+)(\\\\.([0-9]+))?(.+)?")
                             .matcher(glVersion);
                     glVersion = String.format("%s.%s", matcher.group(1), matcher.group(2));
-                } catch (Exception e) {
-                    LOGGER.info(MARKER, "Failed to parse OpenGL version");
+                } catch (Exception ignored) {
                 }
             }
             int count = 0;
@@ -234,12 +237,9 @@ public final class GLWrapper extends GL45C {
                         "OpenGL version is too old. OpenGL 4.5 or higher is required (your version is OpenGL " + glVersion +
                                 "). Please upgrade the driver of your video card. For macOS users, see MoltenGL.",
                         "ok", "error", true);
-                throw new RuntimeException("Graphics card or driver does not meet the minimum requirement");
+                throw new RuntimeException("Unsupported graphics environment");
             }
         }
-
-        LOGGER.info(RenderCore.MARKER, "Graphics API: OpenGL {}", glGetString(GL_VERSION));
-        LOGGER.info(RenderCore.MARKER, "OpenGL Renderer: {} {}", glGetString(GL_VENDOR), glGetString(GL_RENDERER));
 
         if (sRedirector == null) {
             sRedirector = () -> {

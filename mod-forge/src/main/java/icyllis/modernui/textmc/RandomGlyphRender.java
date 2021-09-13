@@ -56,7 +56,10 @@ public class RandomGlyphRender extends BaseGlyphRender {
         TexturedGlyph glyph = mGlyphs.getLeft()[idx];
         builder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
         RenderSystem.bindTexture(glyph.texture);
-        x += mOffsetX + mGlyphs.getRight()[idx];
+        x += mOffsetX;
+        if (idx != 0) {
+            x += mGlyphs.getRight()[idx];
+        }
         x += glyph.offsetX / res;
         y += glyph.offsetY / res;
         final float w = glyph.width / res;
@@ -75,7 +78,10 @@ public class RandomGlyphRender extends BaseGlyphRender {
         int idx = RANDOM.nextInt(10);
         TexturedGlyph glyph = mGlyphs.getLeft()[idx];
         VertexConsumer builder = source.getBuffer(TextRenderType.getOrCreate(glyph.texture, seeThrough));
-        x += mOffsetX + mGlyphs.getRight()[idx];
+        x += mOffsetX;
+        if (idx != 0) {
+            x += mGlyphs.getRight()[idx];
+        }
         x += glyph.offsetX / res;
         y += glyph.offsetY / res;
         final float w = glyph.width / res;
