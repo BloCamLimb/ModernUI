@@ -20,7 +20,6 @@ package icyllis.modernui.forge;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.shader.ShaderManager;
-import icyllis.modernui.screen.LayoutIO;
 import icyllis.modernui.text.Typeface;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
@@ -81,7 +80,6 @@ public final class ModernUIForge extends ModernUI {
 
         init();
         Config.init();
-        LayoutIO.init();
         LocalStorage.init();
 
         if (FMLEnvironment.dist.isClient()) {
