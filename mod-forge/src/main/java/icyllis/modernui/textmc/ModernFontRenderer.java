@@ -18,27 +18,16 @@
 
 package icyllis.modernui.textmc;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.math.Matrix4f;
 import com.mojang.math.Vector3f;
-import icyllis.modernui.mixin.MixinClientLanguage;
-import net.minecraft.client.StringSplitter;
-import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.font.FontSet;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.locale.Language;
 import net.minecraft.network.chat.FormattedText;
-import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextComponent;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.apache.commons.lang3.mutable.MutableFloat;
 
 import javax.annotation.Nonnull;
-import java.util.List;
-import java.util.function.Function;
 
 /**
  * Modern Text Engine to Minecraft font renderer.
@@ -46,29 +35,29 @@ import java.util.function.Function;
  * @author BloCamLimb
  */
 @OnlyIn(Dist.CLIENT)
-public class ModernFontRenderer extends Font {
+public class ModernFontRenderer {
 
     public static final Vector3f SHADOW_OFFSET = new Vector3f(0.0F, 0.0F, 0.03F);
 
-    /**
+    /*
      * Render thread instance
      */
-    private static volatile ModernFontRenderer instance;
+    //private static volatile ModernFontRenderer instance;
 
     /**
      * Config values
      */
     public static boolean sAllowShadow = true;
-    private boolean mGlobalRenderer = false;
+    //private boolean mGlobalRenderer = false;
 
-    private final TextLayoutEngine mFontEngine = TextLayoutEngine.getInstance();
+    //private final TextLayoutEngine mFontEngine = TextLayoutEngine.getInstance();
 
     // temporary float value used in lambdas
-    private final MutableFloat v = new MutableFloat();
+    //private final MutableFloat v = new MutableFloat();
 
-    private ModernStringSplitter mModernSplitter;
+    //private ModernStringSplitter mModernSplitter;
 
-    private ModernFontRenderer(Function<ResourceLocation, FontSet> fonts) {
+    /*private ModernFontRenderer(Function<ResourceLocation, FontSet> fonts) {
         super(fonts);
     }
 
@@ -81,7 +70,7 @@ public class ModernFontRenderer extends Font {
         } else {
             throw new IllegalStateException("Already created");
         }
-    }
+    }*/
 
     public static int drawText(@Nonnull String text, float x, float y, int color, boolean dropShadow,
                                @Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, boolean seeThrough,
@@ -389,7 +378,7 @@ public class ModernFontRenderer extends Font {
         return super.substrByWidth(text, width);
     }*/
 
-    @Override
+    /*@Override
     public int wordWrapHeight(String text, int width) {
         if (mGlobalRenderer)
             return lineHeight * mModernSplitter.splitLines(text, width, Style.EMPTY).size();
@@ -406,7 +395,7 @@ public class ModernFontRenderer extends Font {
     @Override
     public StringSplitter getSplitter() {
         return mGlobalRenderer ? mModernSplitter : super.getSplitter();
-    }
+    }*/
 
     /*@Override
     public int getStringWidth(@Nullable String string) {
@@ -473,7 +462,7 @@ public class ModernFontRenderer extends Font {
 
     }*/
 
-    /**
+    /*
      * Bidi and shaping always works no matter what language is in.
      * So we should analyze the original string without reordering.
      *
@@ -481,12 +470,12 @@ public class ModernFontRenderer extends Font {
      * @return text
      * @see MixinClientLanguage#getVisualOrder(FormattedText)
      */
-    @Deprecated
+    /*@Deprecated
     @Nonnull
     @Override
     public String bidirectionalShaping(@Nonnull String text) {
         if (mGlobalRenderer)
             return text;
         return super.bidirectionalShaping(text);
-    }
+    }*/
 }

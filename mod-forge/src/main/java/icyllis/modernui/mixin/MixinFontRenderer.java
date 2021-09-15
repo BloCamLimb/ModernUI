@@ -90,8 +90,12 @@ public abstract class MixinFontRenderer {
                                   int colorBackground, int packedLight);
 
     /**
+     * Bidi and shaping always works no matter what language is in.
+     * So we should analyze the original string without reordering.
+     * Do not reorder, we have our layout engine.
+     *
      * @author BloCamLimb
-     * @reason Modern Text Engine, do not reorder, we have our layout engine
+     * @reason Modern Text Engine
      */
     @Overwrite
     public String bidirectionalShaping(String text) {
