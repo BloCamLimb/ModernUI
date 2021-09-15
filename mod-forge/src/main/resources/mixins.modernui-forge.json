@@ -5,7 +5,6 @@
   "plugin": "icyllis.modernui.forge.MixinConfigPlugin",
   "package": "icyllis.modernui.mixin",
   "client": [
-    "AccessFoodData",
     "AccessGameRenderer",
     "AccessOption",
     "AccessPostChain",

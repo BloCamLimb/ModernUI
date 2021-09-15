@@ -18,8 +18,6 @@
 
 package icyllis.modernui.forge;
 
-import icyllis.modernui.core.ContextWrapper;
-
 /**
  * Represents a plugin to Modern UI. All instances will be created from Modern UI system.
  * <p>
@@ -41,9 +39,9 @@ import icyllis.modernui.core.ContextWrapper;
  *
  * @see DefinePlugin
  */
-public class Plugin extends ContextWrapper {
+@Deprecated
+public class Plugin {
 
     public Plugin() {
-
     }
 }

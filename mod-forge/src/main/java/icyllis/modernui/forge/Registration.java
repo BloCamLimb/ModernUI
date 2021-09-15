@@ -91,7 +91,7 @@ final class Registration {
 
     @SubscribeEvent
     static void registerItems(@Nonnull RegistryEvent.Register<Item> event) {
-        if (ModernUIForge.development) {
+        if (ModernUIForge.sDevelopment) {
             Item.Properties properties = new Item.Properties().stacksTo(1).setISTER(() -> ProjectBuilderRenderer::new);
             event.getRegistry().register(MuiRegistries.PROJECT_BUILDER_ITEM = new Item(properties).setRegistryName(
                     "project_builder"));
@@ -123,14 +123,14 @@ final class Registration {
             e.printStackTrace();
         }
         if (ModList.get().getModContainerById(new String(new byte[]{0x1f ^ 0x74, (0x4 << 0x1) | 0x41,
-                ~-0x78, 0xd2 >> 0x1}, StandardCharsets.UTF_8).toLowerCase(Locale.ROOT)).isPresent())
+                ~-0x78, 0xd2 >> 0x1}, StandardCharsets.UTF_8).toLowerCase(Locale.ROOT)).isPresent()) {
             event.enqueueWork(() -> VertexConsumer.LOGGER.fatal("Van Darkholme"));
+        }
         protocol = ArrayUtils.addAll(protocol, ModList.get().getModFileById(ModernUI.ID).getTrustData()
                 .map(s -> s.getBytes(StandardCharsets.UTF_8)).orElse(null));
 
-        NetworkMessages.network = new NetworkHandler(ModernUI.ID, "main_network", () -> NetworkMessages::handle,
-                NetworkMessages::handle, protocol == null ? null : DigestUtils.md5Hex(protocol),
-                PluginList.get().size() == 0);
+        NetworkMessages.sNetwork = new NetworkHandler(ModernUI.ID, "main_network", () -> NetworkMessages::handle,
+                NetworkMessages::handle, protocol == null ? null : DigestUtils.md5Hex(protocol), true);
 
         MinecraftForge.EVENT_BUS.register(ServerHandler.INSTANCE);
     }
@@ -140,11 +140,11 @@ final class Registration {
     static void setupClient(@Nonnull FMLClientSetupEvent event) {
         //SettingsManager.INSTANCE.buildAllSettings();
         //UIManager.getInstance().registerMenuScreen(Registration.TEST_MENU, menu -> new TestUI());
-        event.getMinecraftSupplier().get().execute(() -> {
+        Minecraft.getInstance().execute(() -> {
             GLWrapper.setRedirector(new B3DRedirector());
             RenderCore.initialize();
             UIManager.initialize();
-            TextLayoutEngine.getInstance().lookupVanillaNode("Modern UI 2.6");
+            TextLayoutEngine.getInstance().lookupVanillaNode(ModernUI.NAME_CPT);
         });
 
         AccessOption.setGuiScale(new CycleOption("options.guiScale",

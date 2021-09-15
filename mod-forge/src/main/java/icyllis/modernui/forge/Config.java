@@ -376,7 +376,7 @@ public final class Config {
         }
 
         private void reload() {
-            ModernUIForge.developerMode = developerMode.get();
+            ModernUIForge.sDeveloperMode = developerMode.get();
             ServerHandler.INSTANCE.determineShutdownTime();
         }
     }

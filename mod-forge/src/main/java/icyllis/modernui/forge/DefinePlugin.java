@@ -31,6 +31,7 @@ import java.lang.annotation.Target;
  *
  * @see Plugin
  */
+@Deprecated
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface DefinePlugin {

@@ -21,10 +21,10 @@ package icyllis.modernui.screen;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Matrix4f;
+import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.ColorEvaluator;
 import icyllis.modernui.mixin.AccessGameRenderer;
 import icyllis.modernui.mixin.AccessPostChain;
-import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.GameRenderer;
@@ -38,6 +38,7 @@ import org.lwjgl.opengl.GL11;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -56,9 +57,9 @@ public enum BlurHandler {
     // minecraft namespace
     private final ResourceLocation mBlurPostEffect = new ResourceLocation("shaders/post/blur_fast.json");
 
-    private final Minecraft mMinecraft = Minecraft.getInstance();
+    private final Minecraft minecraft = Minecraft.getInstance();
 
-    private final Set<Class<?>> mBlacklist = new ObjectArraySet<>();
+    private final Set<Class<?>> mBlacklist = new HashSet<>();
 
     private final int[] mBackgroundColor = new int[4];
 
@@ -82,25 +83,30 @@ public enum BlurHandler {
      * Use blur shader in game renderer post-processing.
      */
     public void count(@Nullable Screen nextScreen) {
-        if (mMinecraft.level == null) {
+        if (minecraft.level == null) {
             return;
         }
-        final boolean excluded;
-        if (nextScreen == null || nextScreen instanceof MuiScreen) {
-            excluded = false;
-        } else {
+        boolean excluded = false;
+        if (nextScreen != null && !(nextScreen instanceof MuiScreen)) {
             Class<?> t = nextScreen.getClass();
-            excluded = mBlacklist.stream().anyMatch(c -> c.isAssignableFrom(t));
+            if (t != null) {
+                for (Class<?> c : mBlacklist) {
+                    if (c.isAssignableFrom(t)) {
+                        excluded = true;
+                        break;
+                    }
+                }
+            }
         }
         boolean blurDisabled = excluded || !sBlurEffect;
         if (blurDisabled && excluded && mBlurring) {
-            mMinecraft.gameRenderer.shutdownEffect();
+            minecraft.gameRenderer.shutdownEffect();
             mFadingIn = false;
             mBlurring = false;
         }
 
         boolean hasGui = nextScreen != null;
-        GameRenderer gr = mMinecraft.gameRenderer;
+        GameRenderer gr = minecraft.gameRenderer;
         if (hasGui && !mBlurring && !mScreenOpened) {
             if (!blurDisabled && gr.currentEffect() == null) {
                 ((AccessGameRenderer) gr).callLoadEffect(mBlurPostEffect);
@@ -132,8 +138,8 @@ public enum BlurHandler {
         if (!sBlurEffect) {
             return;
         }
-        if (mMinecraft.level != null) {
-            GameRenderer gr = mMinecraft.gameRenderer;
+        if (minecraft.level != null) {
+            GameRenderer gr = minecraft.gameRenderer;
             if (gr.currentEffect() == null) {
                 ((AccessGameRenderer) gr).callLoadEffect(mBlurPostEffect);
                 mFadingIn = true;
@@ -146,11 +152,14 @@ public enum BlurHandler {
         mBlacklist.clear();
         if (names != null) {
             for (String s : names) {
+                if (s == null || s.isEmpty()) {
+                    continue;
+                }
                 try {
                     Class<?> clazz = Class.forName(s);
                     mBlacklist.add(clazz);
                 } catch (ClassNotFoundException e) {
-                    e.printStackTrace();
+                    ModernUI.LOGGER.info(ModernUI.MARKER, "Failed to find blur blacklist class: {}", s, e);
                 }
             }
         }
@@ -175,7 +184,7 @@ public enum BlurHandler {
     }
 
     private void updateRadius(float radius) {
-        PostChain effect = mMinecraft.gameRenderer.currentEffect();
+        PostChain effect = minecraft.gameRenderer.currentEffect();
         if (effect == null)
             return;
         List<PostPass> passes = ((AccessPostChain) effect).getPasses();

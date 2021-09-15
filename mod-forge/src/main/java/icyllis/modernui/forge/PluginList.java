@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Deprecated
 public class PluginList {
 
     private static PluginList sInstance;
@@ -51,10 +52,12 @@ public class PluginList {
                                 Class.forName(data.getMemberName()).asSubclass(Plugin.class)
                                         .getDeclaredConstructor().newInstance());
                         if (v != null) {
-                            ModernUI.LOGGER.error(ModernUI.MARKER, "{} is annotated with the same plugin id {} as {}", data.getMemberName(), pid, v);
+                            ModernUI.LOGGER.error(ModernUI.MARKER, "{} is annotated with the same plugin id {} as {}"
+                                    , data.getMemberName(), pid, v);
                         }
                     } catch (Throwable throwable) {
-                        ModernUI.LOGGER.error(ModernUI.MARKER, "Failed to load plugin: {}", data.getMemberName(), throwable);
+                        ModernUI.LOGGER.error(ModernUI.MARKER, "Failed to load plugin: {}", data.getMemberName(),
+                                throwable);
                     }
                 }
             }

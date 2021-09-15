@@ -26,6 +26,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Map;
 
+@Deprecated
 public class LanguageData {
 
     private static LanguageData sInstance;
