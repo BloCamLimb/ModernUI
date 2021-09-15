@@ -26,32 +26,30 @@ import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.FormattedCharSink;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.apache.commons.lang3.mutable.MutableFloat;
 import org.apache.commons.lang3.mutable.MutableObject;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.List;
 import java.util.Optional;
 
 /**
  * Handle line breaks, get text width, etc. For Vanilla Only.
  */
 @OnlyIn(Dist.CLIENT)
-public class ModernStringSplitter extends StringSplitter {
+public class ModernStringSplitter {
 
-    private final TextLayoutEngine mFontEngine = TextLayoutEngine.getInstance();
+    //private final TextLayoutEngine mFontEngine = TextLayoutEngine.getInstance();
 
-    private final MutableFloat v = new MutableFloat();
+    //private final MutableFloat v = new MutableFloat();
 
-    /**
+    /*
      * Constructor
      *
      * @param vanillaWidths retrieve char width with given codePoint and Style(BOLD)
      */
-    public ModernStringSplitter(WidthProvider vanillaWidths) {
+    /*public ModernStringSplitter(WidthProvider vanillaWidths) {
         super(vanillaWidths);
-    }
+    }*/
 
     /**
      * Get text width
@@ -310,7 +308,7 @@ public class ModernStringSplitter extends StringSplitter {
     }
 
     /**
-     * Trim to width
+     * Trim to width.
      *
      * @param text  the text to trim
      * @param width the max width
@@ -357,32 +355,28 @@ public class ModernStringSplitter extends StringSplitter {
     }
 
     /**
-     * Wrap lines
+     * Wrap lines.
+     * <p>
+     * For performance reasons, Unicode standard is not used, tab stops are not supported.
      *
-     * @param text      text to handle
-     * @param wrapWidth max width of each line
-     * @param style     style for the text
-     * @param retainEnd retain the last word on each line
-     * @param consumer  accept each line result, params{current style, start index (inclusive), end index (exclusive)}
+     * @param text            text to handle
+     * @param width           line width
+     * @param style           style for the text
+     * @param includeEndSpace include the end space char index to consumer
+     * @param linePosConsumer accept each line result, params{line base style, start index (inclusive), end index
+     *                        (exclusive)}
      */
-    //TODO handle complex line wrapping, including bidi analysis, style splitting
-    @Override
-    public void splitLines(String text, int wrapWidth, @Nonnull Style style, boolean retainEnd,
-                           @Nonnull StringSplitter.LinePosConsumer consumer) {
-        super.splitLines(text, wrapWidth, style, retainEnd, consumer);
-    }
-
-    /**
-     * Wrap lines
-     *
-     * @param text      text to handle
-     * @param wrapWidth max width of each line
-     * @param style     style for the text
-     * @return a list of text for each line
-     */
-    @Nonnull
-    @Override
-    public List<FormattedText> splitLines(String text, int wrapWidth, @Nonnull Style style) {
-        return super.splitLines(text, wrapWidth, style);
+    //TODO hard to do, may never implement
+    public static void wrapLines(@Nonnull String text, int width, @Nonnull Style style, boolean includeEndSpace,
+                                 @Nonnull StringSplitter.LinePosConsumer linePosConsumer) {
+        if (text.isEmpty()) {
+            linePosConsumer.accept(style, 0, 0);
+            return;
+        }
+        TextRenderNode node = TextLayoutEngine.getInstance().lookupVanillaNode(text, style);
+        if (width >= node.mAdvance) {
+            linePosConsumer.accept(style, 0, text.length());
+            return;
+        }
     }
 }

@@ -55,7 +55,7 @@ public class FormattedTextWrapper implements FormattedCharSequence {
     public boolean accept(FormattedCharSink sink) {
         // do not reorder, transfer the code points
         return mText.visit((style, text) ->
-                StringDecomposer.iterate(text, style, sink) ? Optional.empty()
+                StringDecomposer.iterateFormatted(text, style, sink) ? Optional.empty()
                         : FormattedText.STOP_ITERATION, Style.EMPTY).isEmpty();
     }
 }

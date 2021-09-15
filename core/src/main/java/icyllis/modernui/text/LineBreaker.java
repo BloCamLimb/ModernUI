@@ -23,6 +23,7 @@ import it.unimi.dsi.fastutil.ints.IntArrays;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.text.CharacterIterator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -94,12 +95,14 @@ public class LineBreaker {
      * @return the result of line break
      */
     @Nonnull
-    public static Result computeLineBreaks(@Nullable MeasuredText measuredText, @Nonnull ParagraphConstraints constraints,
+    public static Result computeLineBreaks(@Nullable MeasuredText measuredText,
+                                           @Nonnull ParagraphConstraints constraints,
                                            @Nullable int[] indents, int lineNumber) {
         if (measuredText == null || measuredText.getTextBuf().length == 0) {
             return new Result();
         }
-        DefaultLineWidth lineWidth = new DefaultLineWidth(constraints.mFirstWidth, constraints.mWidth, indents, lineNumber);
+        DefaultLineWidth lineWidth = new DefaultLineWidth(constraints.mFirstWidth, constraints.mWidth, indents,
+                lineNumber);
         TabStops tabStops = new TabStops(constraints.mVariableTabStops, constraints.mDefaultTabStop);
         LineBreaker breaker = new LineBreaker(measuredText.getTextBuf(), measuredText, lineWidth, tabStops);
         breaker.process();
@@ -108,7 +111,7 @@ public class LineBreaker {
 
     private void process() {
         BreakIterator breaker = sBreaker;
-        breaker.setText(new CharArrayIterator(mTextBuf));
+        CharacterIterator iterator = new CharArrayIterator(mTextBuf);
 
         Locale locale = null;
         int nextBoundary = 0;
@@ -117,6 +120,7 @@ public class LineBreaker {
             Locale newLocale = run.getLocale();
             if (locale != newLocale) {
                 breaker = BreakIterator.getLineInstance(locale);
+                breaker.setText(iterator);
                 nextBoundary = breaker.following(run.mStart);
                 locale = newLocale;
             }
@@ -196,7 +200,8 @@ public class LineBreaker {
     }
 
     // Add a break point
-    private void breakLineAt(int offset, float lineWidth, float remainingNextLineWidth, float remainingNextCharsAdvance) {
+    private void breakLineAt(int offset, float lineWidth, float remainingNextLineWidth,
+                             float remainingNextCharsAdvance) {
         mBreakPoints.add(new BreakPoint(offset, lineWidth));
 
         mLineWidthLimit = mLineWidthLimits.getAt(++mLineNum);
