@@ -122,7 +122,8 @@ public final class MForgeCompat {
         if (menu == null) {
             return;
         }
-        NetworkMessages.openMenu(containerId, Registry.MENU.getId(menu.getType()), writer).sendToPlayer(player);
+        NetworkMessages.openMenu(containerId, Registry.MENU.getId(menu.getType()), writer)
+                .sendToPlayer(player);
         menu.addSlotListener(player);
         player.containerMenu = menu;
         MinecraftForge.EVENT_BUS.post(new PlayerContainerEvent.Open(player, menu));

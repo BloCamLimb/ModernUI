@@ -27,7 +27,7 @@ import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Map;
 
-//TODO
+@Deprecated
 public final class LayoutIO {
 
     public static final Type UI_RESOURCE_TYPE = new Type();
@@ -43,7 +43,6 @@ public final class LayoutIO {
         if (!t.test(LayoutResourceManager.UI_RESOURCE_TYPE)) {
             return;
         }
-        //TODO
     }
 
     public void reloadLayoutResources() {
@@ -68,7 +67,6 @@ public final class LayoutIO {
         } catch (IOException e) {
             //ModernUI.LOGGER.debug(GlobalModuleManager.MARKER, "Can't find widget json at {}", location);
             e.printStackTrace();
-            //TODO in editing mode, create new file in config folder
         } catch (RuntimeException e) {
             ModernUI.LOGGER.fatal(UIManager.MARKER, "Failed to parse widget json at {}", location);
             e.printStackTrace();

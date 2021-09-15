@@ -178,7 +178,6 @@ public class GlyphManagerForge {
     /**
      * Intermediate data array for use with textureImage.getRgb().
      */
-    //TODO May Out of bounds
     private final int[] mImageData = new int[((1 << 6) * (1 << 6)) << 1];
 
     /**
