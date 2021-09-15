@@ -18,12 +18,13 @@
 
 package icyllis.modernui.test;
 
-import icyllis.modernui.ModernUI;
-import icyllis.modernui.animation.*;
+import icyllis.modernui.animation.Animator;
+import icyllis.modernui.animation.FloatProperty;
+import icyllis.modernui.animation.Interpolator;
+import icyllis.modernui.animation.ObjectAnimator;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.screen.Icon;
 import icyllis.modernui.screen.Animation;
 import icyllis.modernui.screen.Applier;
 import icyllis.modernui.view.Gravity;
@@ -32,14 +33,10 @@ import icyllis.modernui.widget.LinearLayout;
 import icyllis.modernui.widget.Orientation;
 import icyllis.modernui.widget.SwitchButton;
 import net.minecraft.ChatFormatting;
-import net.minecraft.resources.ResourceLocation;
 
 import javax.annotation.Nonnull;
 
 public class TestLinearLayout extends LinearLayout {
-
-    private static final Icon ICON = new Icon(new ResourceLocation(ModernUI.ID, "textures/gui/suk.png"), 0, 0, 1, 1,
-            true);
 
     private float c = 10;
     private float f = 0;

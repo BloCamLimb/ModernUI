@@ -21,9 +21,7 @@ package icyllis.modernui.forge;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Item;
-import org.jetbrains.annotations.ApiStatus;
 
-@ApiStatus.Internal
 public final class MuiRegistries {
 
     /**
@@ -38,7 +36,7 @@ public final class MuiRegistries {
     public static MenuType<?> TEST_MENU;
 
     /**
-     * Items (Production Only)
+     * Items (Development Only)
      */
     public static Item PROJECT_BUILDER_ITEM;
 }

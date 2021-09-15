@@ -51,18 +51,18 @@ import java.util.*;
 @Mod(ModernUI.ID)
 public final class ModernUIForge extends ModernUI {
 
-    private static boolean optiFineLoaded;
+    private static boolean sOptiFineLoaded;
 
-    static boolean interceptTipTheScales;
+    static boolean sInterceptTipTheScales;
 
-    static boolean development;
-    static boolean developerMode;
+    static boolean sDevelopment;
+    static boolean sDeveloperMode;
 
     static {
         try {
             Class<?> clazz = Class.forName("optifine.Installer");
             String version = (String) clazz.getMethod("getOptiFineVersion").invoke(null);
-            optiFineLoaded = true;
+            sOptiFineLoaded = true;
             ModernUI.LOGGER.debug(ModernUI.MARKER, "OptiFine installed: {}", version);
         } catch (ClassNotFoundException | NoSuchMethodException ignored) {
 
@@ -73,7 +73,7 @@ public final class ModernUIForge extends ModernUI {
 
     private static final Map<String, IEventBus> sModEventBuses = new HashMap<>();
 
-    private Typeface mTypeface;
+    private volatile Typeface mTypeface;
 
     // mod-loading thread
     public ModernUIForge() {
@@ -96,8 +96,8 @@ public final class ModernUIForge extends ModernUI {
                         );
                 attachBaseContext(new ContextClient(ID));
             }
-            if (development) {
-                FMLJavaModLoadingContext.get().getModEventBus().register(EventHandler.ModClientExp.class);
+            if (sDevelopment) {
+                FMLJavaModLoadingContext.get().getModEventBus().register(EventHandler.ModClientDev.class);
             }
         }
 
@@ -118,19 +118,19 @@ public final class ModernUIForge extends ModernUI {
         String[] r = dir.list((file, name) -> name.equals("build.gradle"));
         if (r != null && r.length > 0 && dir.getName().equals(ModernUI.NAME_CPT)) {
             ModernUI.LOGGER.debug(ModernUI.MARKER, "Working in development environment");
-            development = true;
+            sDevelopment = true;
         } else if (ModernUI.class.getSigners() == null) {
             ModernUI.LOGGER.debug(MARKER, "Signature is missing");
         }
 
         // TipTheScales doesn't work with OptiFine
-        if (ModList.get().isLoaded("tipthescales") && !optiFineLoaded) {
+        if (ModList.get().isLoaded("tipthescales") && !sOptiFineLoaded) {
             ModernUI.LOGGER.debug(ModernUI.MARKER, "Intercepting TipTheScales");
-            interceptTipTheScales = true;
+            sInterceptTipTheScales = true;
         }
     }
 
-    public void warnSetup(String key, Object... args) {
+    public static void warnSetup(String key, Object... args) {
         ModLoader.get().addWarning(new ModLoadingWarning(null, ModLoadingStage.SIDED_SETUP, key, args));
     }
 
@@ -203,11 +203,11 @@ public final class ModernUIForge extends ModernUI {
     }
 
     public static boolean isDeveloperMode() {
-        return developerMode || development;
+        return sDeveloperMode || sDevelopment;
     }
 
     public static boolean isOptiFineLoaded() {
-        return optiFineLoaded;
+        return sOptiFineLoaded;
     }
 
     public static <T extends Event & IModBusEvent> boolean fire(@Nullable String modid, @Nonnull T event) {

@@ -33,44 +33,47 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.function.Consumer;
 
-// internal use
+/**
+ * Internal use
+ */
 public final class NetworkMessages {
 
-    static NetworkHandler network;
+    static NetworkHandler sNetwork;
 
     private NetworkMessages() {
     }
 
-    // handle c2s messages
+    // handle C2S messages
     static void handle(short index, @Nonnull FriendlyByteBuf payload, @Nonnull ServerPlayer player) {
-
     }
 
-    // returns a safe supplier of a s2c handler on client
+    // returns a safe supplier of a S2C handler on client
     @Nonnull
-    static NetworkHandler.S2CMsgHandler handle() {
+    static NetworkHandler.ClientListener handle() {
         return C::handle; // this supplier won't be called on dedicated server, so it's in the C class
     }
 
+    @Deprecated
     @Nonnull
-    public static NetworkHandler.Broadcaster food(float foodSaturationLevel, float foodExhaustionLevel) {
+    public static PacketDispatcher syncFood(float foodSaturationLevel, float foodExhaustionLevel) {
         FriendlyByteBuf buf = NetworkHandler.buffer(0);
         buf.writeFloat(foodSaturationLevel);
         buf.writeFloat(foodExhaustionLevel);
-        return network.getBroadcaster(buf);
+        return sNetwork.getDispatcher(buf);
     }
 
     @Nonnull
-    static NetworkHandler.Broadcaster menu(int containerId, int menuId, Consumer<FriendlyByteBuf> writer) {
+    static PacketDispatcher openMenu(int containerId, int menuId, @Nullable Consumer<FriendlyByteBuf> writer) {
         FriendlyByteBuf buf = NetworkHandler.buffer(1);
         buf.writeVarInt(containerId);
         buf.writeVarInt(menuId);
         if (writer != null) {
             writer.accept(buf);
         }
-        return network.getBroadcaster(buf);
+        return sNetwork.getDispatcher(buf);
     }
 
     // this class doesn't allow to load on dedicated server
@@ -82,23 +85,24 @@ public final class NetworkMessages {
 
         private static void handle(short index, @Nonnull FriendlyByteBuf payload, @Nonnull LocalPlayer player) {
             switch (index) {
-                case 0:
-                    food(payload, player);
-                    break;
+                /*case 0:
+                    syncFood(payload, player);
+                    break;*/
                 case 1:
-                    menu(payload, player);
+                    openMenu(payload, player);
                     break;
             }
         }
 
-        private static void food(@Nonnull FriendlyByteBuf buffer, @Nonnull LocalPlayer player) {
+        @Deprecated
+        private static void syncFood(@Nonnull FriendlyByteBuf buffer, @Nonnull LocalPlayer player) {
             FoodData foodData = player.getFoodData();
             foodData.setSaturation(buffer.readFloat());
             ((AccessFoodData) foodData).setExhaustionLevel(buffer.readFloat());
         }
 
         @SuppressWarnings("deprecation")
-        private static void menu(@Nonnull FriendlyByteBuf buffer, @Nonnull LocalPlayer player) {
+        private static void openMenu(@Nonnull FriendlyByteBuf buffer, @Nonnull LocalPlayer player) {
             final int containerId = buffer.readVarInt();
             final int menuId = buffer.readVarInt();
             final MenuType<?> type = Registry.MENU.byId(menuId);

@@ -18,15 +18,13 @@
 
 package icyllis.modernui.forge;
 
-import org.jetbrains.annotations.ApiStatus;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinWorkerThread;
 
-@ApiStatus.Internal
+@Deprecated
 public final class PluginLoader {
 
     private static PluginLoader sInstance;

@@ -84,7 +84,7 @@ final class EventHandler {
     }
 
     @OnlyIn(Dist.CLIENT)
-    static class ModClientExp {
+    static class ModClientDev {
 
         @SubscribeEvent
         static void onRegistryModel(@Nonnull ModelRegistryEvent event) {
@@ -134,7 +134,7 @@ final class EventHandler {
         @SubscribeEvent(priority = EventPriority.HIGH)
         static void onGuiOpenH(@Nonnull GuiOpenEvent event) {
             // TipTheScales is not good, and it also not compatible with OptiFine
-            if (ModernUIForge.interceptTipTheScales) {
+            if (ModernUIForge.sInterceptTipTheScales) {
                 if (event.getGui() instanceof VideoSettingsScreen) {
                     sCapturedVideoSettingsScreen = event.getGui();
                 }
@@ -153,7 +153,7 @@ final class EventHandler {
 
         @SubscribeEvent
         static void onGuiInit(@Nonnull GuiScreenEvent.InitGuiEvent event) {
-            if (event.getGui() instanceof VideoSettingsScreen) {
+            if (event.getGui() instanceof VideoSettingsScreen && NEW_GUI_SCALE != null) {
                 NEW_GUI_SCALE.setMaxValue(MForgeCompat.calcGuiScales() & 0xf);
             }
         }
