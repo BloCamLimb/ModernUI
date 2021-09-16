@@ -23,6 +23,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.math.Matrix4f;
+import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.GLCanvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.math.MathUtil;
@@ -78,6 +79,7 @@ public class TestHUD {
                         .setInterpolator(p -> Math.max((p - 0.8f) * 5.0f, 0)));*/
     }
 
+    @Deprecated
     public void drawBars(@Nonnull CanvasForge canvas) {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -92,8 +94,8 @@ public class TestHUD {
         Window windowB3D = minecraft.getWindow();
         float aspectRatio = (float) windowB3D.getWidth() / windowB3D.getHeight();
         Matrix4.makePerspective(MathUtil.PI_DIV_2, aspectRatio, 1.0f, 100.0f)
-                .get(sMat.rewind());
-        GL11.glMultMatrixf(sMat.rewind());
+                .get(mMatBuf.rewind());
+        GL11.glMultMatrixf(mMatBuf.rewind());
 
         GL11.glMatrixMode(GL11.GL_MODELVIEW);
         GL11.glPushMatrix();
@@ -202,15 +204,21 @@ public class TestHUD {
     private static final int LINE_HEIGHT = 10;
     private static final int TITLE_GAP = 2;
 
-    private static final FloatBuffer sMat = BufferUtils.createFloatBuffer(16);
-    private static final Matrix4 myMat = new Matrix4();
+    private final FloatBuffer mMatBuf = BufferUtils.createFloatBuffer(16);
+    private final Matrix4 mMyMat = new Matrix4();
 
     // test only, this can't handle complex paragraph layout
     public void drawTooltip(GLCanvas canvas, @Nonnull List<? extends FormattedText> texts, Font font, ItemStack stack,
-                            PoseStack matrix, int eventX, int eventY, float mouseX, float mouseY,
-                            float width, float height) {
-        float tooltipX = mouseX + TOOLTIP_SPACE;
-        float tooltipY = mouseY - TOOLTIP_SPACE;
+                            PoseStack matrix, int mouseX, int mouseY, float pMouseX, float pMouseY,
+                            float width, float height, int fbWidth, int fbHeight) {
+        // matrix transformation for x and y params, compatibility to MineColonies
+        float tooltipX = mouseX + TOOLTIP_SPACE + (pMouseX - (int) pMouseX);
+        float tooltipY = mouseY - TOOLTIP_SPACE + (pMouseY - (int) pMouseY);
+        /*if (mouseX != (int) mouseX || mouseY != (int) mouseY) {
+            // ignore partial pixels
+            tooltipX += mouseX - (int) mouseX;
+            tooltipY += mouseY - (int) mouseY;
+        }*/
         int tooltipWidth = 0;
         int tooltipHeight = V_BORDER * 2;
 
@@ -243,7 +251,8 @@ public class TestHUD {
             }
             tooltipWidth = w;
             texts = temp;
-            tooltipX = (mouseX > width / 2) ? mouseX - TOOLTIP_SPACE - H_BORDER - tooltipWidth : mouseX + TOOLTIP_SPACE;
+            tooltipX = (mouseX > width / 2) ? mouseX - TOOLTIP_SPACE - H_BORDER - tooltipWidth :
+                    mouseX + TOOLTIP_SPACE;
         }
 
         if (texts.size() > 1) {
@@ -265,13 +274,6 @@ public class TestHUD {
         matrix.translate(0, 0, 400); // because of the order of draw calls, we actually don't need z-shifting
         final Matrix4f mat = matrix.last().pose();
 
-        // matrix transformation for x and y params, compatibility to MineColonies
-        if (eventX != (int) mouseX || eventY != (int) mouseY) {
-            // ignore partial pixels
-            tooltipX += eventX - (int) mouseX;
-            tooltipY += eventY - (int) mouseY;
-        }
-
         // smoothing scaled pixels, keep the same partial value as mouse position since tooltipWidth and height are int
         final int tooltipLeft = (int) tooltipX;
         final int tooltipTop = (int) tooltipY;
@@ -281,15 +283,20 @@ public class TestHUD {
         final int oldVertexArray = glGetInteger(GL_VERTEX_ARRAY_BINDING);
         final int oldProgram = glGetInteger(GL_CURRENT_PROGRAM);
 
+        canvas.reset(fbWidth, fbHeight);
+
         Matrix4 projection = Matrix4.makeOrthographic(width, -height, 0, 2000);
         canvas.setProjection(projection);
-        canvas.reset((int) width, (int) height);
 
         canvas.save();
-        mat.store(sMat.rewind()); // Sodium check the remaining
-        myMat.set(sMat.rewind());
-        myMat.translate(0, 0, -2000);
-        canvas.multiply(myMat);
+        GL11.glGetFloatv(GL11.GL_MODELVIEW_MATRIX, mMatBuf.rewind());
+        mMyMat.set(mMatBuf);
+        canvas.multiply(mMyMat);
+
+        mat.store(mMatBuf.rewind()); // Sodium check the remaining
+        mMyMat.set(mMatBuf.rewind());
+        //mMyMat.translate(0, 0, -2000);
+        canvas.multiply(mMyMat);
 
         Paint paint = Paint.take();
 

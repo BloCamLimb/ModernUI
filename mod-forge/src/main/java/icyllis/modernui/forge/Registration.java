@@ -106,7 +106,6 @@ final class Registration {
         GLWrapper.setRedirector(new B3DRedirector());
         RenderCore.initialize();
         UIManager.initialize();
-        TextLayoutEngine.getInstance().lookupVanillaNode(ModernUI.NAME_CPT);
     }
 
     @SubscribeEvent
@@ -144,9 +143,7 @@ final class Registration {
     static void setupClient(@Nonnull FMLClientSetupEvent event) {
         //SettingsManager.INSTANCE.buildAllSettings();
         //UIManager.getInstance().registerMenuScreen(Registration.TEST_MENU, menu -> new TestUI());
-        /*Minecraft.getInstance().execute(() -> {
-
-        });*/
+        Minecraft.getInstance().execute(() -> TextLayoutEngine.getInstance().lookupVanillaNode(ModernUI.NAME_CPT));
 
         AccessOption.setGuiScale(new CycleOption("options.guiScale",
                 (options, integer) -> options.guiScale = Integer.remainderUnsigned(
