@@ -602,7 +602,7 @@ public final class UIManager implements ViewRootImpl.Handler {
                     minecraft.mouseHandler.ypos() * (double) window.getGuiScaledHeight() / (double) window.getScreenHeight();
             TestHUD.sInstance.drawTooltip(mCanvas, event.getLines(), minecraft.font, event.getStack(),
                     event.getMatrixStack(), event.getX(), event.getY(), (float) cursorX, (float) cursorY,
-                    event.getScreenWidth(), event.getScreenHeight());
+                    event.getScreenWidth(), event.getScreenHeight(), window.getWidth(), window.getHeight());
             event.setCanceled(true);
         }
     }

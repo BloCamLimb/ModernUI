@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * This is where the text layout is actually performed.
@@ -133,7 +134,11 @@ public class TextLayoutProcessor {
     @Nonnull
     public TextRenderNode doLayout(@Nonnull String text, @Nonnull Style style) {
         char[] chars = resolveFormattingCodes(text, style);
+        /*ModernUI.LOGGER.info("Layout: {}\n{}", new String(chars),
+                mCarriers.stream().map(Object::toString).collect(Collectors.joining("\n")));*/
         TextRenderNode node = performFullLayout(chars, true);
+        /*ModernUI.LOGGER.info("Glyphs: \n{}",
+                mAllList.stream().map(Object::toString).collect(Collectors.joining("\n")));*/
         release();
         return node;
     }
@@ -203,14 +208,10 @@ public class TextLayoutProcessor {
 
                     ChatFormatting formatting = TextLayoutEngine.getFormattingByCode(text.charAt(i + 1));
                     if (formatting != null) {
-                    /* Classic formatting will set all FancyStyling (like BOLD, UNDERLINE) to false if it's a color
-                    formatting */
-                        final Style newStyle = formatting == ChatFormatting.RESET ? Style.EMPTY :
-                                style.applyLegacyFormat(formatting);
-                        if (!style.equals(newStyle)) {
-                            style = newStyle; // transit to new style
-                            mCarriers.add(new CharacterStyleCarrier(mNext, mNext - mShift, style, true));
-                        }
+                        /* Classic formatting will set all FancyStyling (like BOLD, UNDERLINE) to false if it's a color
+                        formatting */
+                        style = formatting == ChatFormatting.RESET ? Style.EMPTY : style.applyLegacyFormat(formatting);
+                        mCarriers.add(new CharacterStyleCarrier(mNext, mNext - mShift, style, true));
                     }
 
                     i++;
@@ -275,12 +276,8 @@ public class TextLayoutProcessor {
                 if (formatting != null) {
                     /* Classic formatting will set all FancyStyling (like BOLD, UNDERLINE) to false if it's a color
                     formatting */
-                    final Style newStyle = formatting == ChatFormatting.RESET ? base :
-                            style.applyLegacyFormat(formatting);
-                    if (!style.equals(newStyle)) {
-                        style = newStyle; // transit to new style
-                        mCarriers.add(new CharacterStyleCarrier(next, next - shift, style, true));
-                    }
+                    style = formatting == ChatFormatting.RESET ? base : style.applyLegacyFormat(formatting);
+                    mCarriers.add(new CharacterStyleCarrier(next, next - shift, style, true));
                 }
 
                 next++;
@@ -427,7 +424,7 @@ public class TextLayoutProcessor {
             // select the last one which will have active font style
             while (mCarrierIndex < carrierLimit) {
                 CharacterStyleCarrier c = mCarriers.get(mCarrierIndex + 1);
-                if (carrier.mStringIndex == c.mStringIndex) {
+                if (carrier.mStripIndex == c.mStripIndex) {
                     carrier = c;
                     mCarrierIndex++;
                 } else {
@@ -693,14 +690,20 @@ public class TextLayoutProcessor {
 
         // insert color flags
         codeIndex = 0;
+        CharacterStyleCarrier carrier = mCarriers.get(codeIndex);
         // In case of multiple consecutive color codes with the same stripIndex,
         // select the last one which will have active carrier
-        while (codeIndex < mCarriers.size() - 1 &&
-                mCarriers.get(codeIndex).mStripIndex == mCarriers.get(codeIndex + 1).mStripIndex) {
-            codeIndex++;
+        while (codeIndex < mCarriers.size() - 1) {
+            CharacterStyleCarrier c = mCarriers.get(codeIndex + 1);
+            if (carrier.mStripIndex == c.mStripIndex) {
+                carrier = c;
+                codeIndex++;
+            } else {
+                break;
+            }
         }
 
-        int color = mCarriers.get(codeIndex++).getColor();
+        int color = carrier.getColor();
         BaseGlyphRender glyph;
         // If there's no input style at the beginning
         if (color != CharacterStyleCarrier.NO_COLOR_SPECIFIED) {
@@ -709,25 +712,31 @@ public class TextLayoutProcessor {
             glyph.mFlags |= color;
         }
 
-        if (codeIndex >= mCarriers.size()) {
+        if (++codeIndex >= mCarriers.size()) {
             return;
         }
         for (int glyphIndex = 1; glyphIndex < mAllList.size() && codeIndex < mCarriers.size(); glyphIndex++) {
+            carrier = mCarriers.get(codeIndex);
+
+            // In case of multiple consecutive color codes with the same stripIndex,
+            // select the last one which will have active carrier,
+            // don't compare indices with formatting codes
+            while (codeIndex < mCarriers.size() - 1) {
+                CharacterStyleCarrier c = mCarriers.get(codeIndex + 1);
+                if (carrier.mStripIndex == c.mStripIndex) {
+                    carrier = c;
+                    codeIndex++;
+                } else {
+                    break;
+                }
+            }
+
             glyph = mAllList.get(glyphIndex);
 
             // Can be equal, not formatting code in this case
-            if (glyph.mStringIndex >= mCarriers.get(codeIndex).mStringIndex) {
-                // In case of multiple consecutive color codes with the same stripIndex,
-                // select the last one which will have active carrier,
-                // don't compare indices with formatting codes
-                while (codeIndex < mCarriers.size() - 1 &&
-                        mCarriers.get(codeIndex).mStripIndex == mCarriers.get(codeIndex + 1).mStripIndex) {
-                    codeIndex++;
-                }
-
-                CharacterStyleCarrier s = mCarriers.get(codeIndex);
-                if (s.getColor() != color) {
-                    color = s.getColor();
+            if (glyph.mStringIndex >= carrier.mStringIndex) {
+                if (carrier.getColor() != color) {
+                    color = carrier.getColor();
                     glyph.mFlags &= ~BaseGlyphRender.COLOR_NO_CHANGE;
                     glyph.mFlags |= color;
                 }
