@@ -650,7 +650,7 @@ public final class UIManager implements ViewRootImpl.Handler {
             final long lastFrameTime = mFrameTimeMillis;
             mFrameTimeMillis = RenderCore.timeMillis();
             mElapsedTimeMillis += mFrameTimeMillis - lastFrameTime;
-            if (mScreen != null) {
+            if (mScreen != null && minecraft.screen == mScreen) {
                 mUiThread.interrupt();
             }
             BlurHandler.INSTANCE.update(mElapsedTimeMillis);

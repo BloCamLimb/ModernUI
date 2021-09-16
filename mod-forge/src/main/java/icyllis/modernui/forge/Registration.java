@@ -101,8 +101,12 @@ final class Registration {
     @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
     static void loadingClient(ParticleFactoryRegisterEvent event) {
-        // this event fired after LOAD_REGISTRIES and before COMMON_SETUP on client main thread
+        // this event fired after LOAD_REGISTRIES and before COMMON_SETUP on render thread
         // we use this because we want a ResourceReloadListener after language data reloaded
+        GLWrapper.setRedirector(new B3DRedirector());
+        RenderCore.initialize();
+        UIManager.initialize();
+        TextLayoutEngine.getInstance().lookupVanillaNode(ModernUI.NAME_CPT);
     }
 
     @SubscribeEvent
@@ -140,12 +144,9 @@ final class Registration {
     static void setupClient(@Nonnull FMLClientSetupEvent event) {
         //SettingsManager.INSTANCE.buildAllSettings();
         //UIManager.getInstance().registerMenuScreen(Registration.TEST_MENU, menu -> new TestUI());
-        Minecraft.getInstance().execute(() -> {
-            GLWrapper.setRedirector(new B3DRedirector());
-            RenderCore.initialize();
-            UIManager.initialize();
-            TextLayoutEngine.getInstance().lookupVanillaNode(ModernUI.NAME_CPT);
-        });
+        /*Minecraft.getInstance().execute(() -> {
+
+        });*/
 
         AccessOption.setGuiScale(new CycleOption("options.guiScale",
                 (options, integer) -> options.guiScale = Integer.remainderUnsigned(
