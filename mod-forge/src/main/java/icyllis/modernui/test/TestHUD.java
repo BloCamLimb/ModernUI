@@ -92,8 +92,8 @@ public class TestHUD {
         Window windowB3D = minecraft.getWindow();
         float aspectRatio = (float) windowB3D.getWidth() / windowB3D.getHeight();
         Matrix4.makePerspective(MathUtil.PI_DIV_2, aspectRatio, 1.0f, 100.0f)
-                .get(sMat.position(0));
-        GL11.glMultMatrixf(sMat.flip());
+                .get(sMat.rewind());
+        GL11.glMultMatrixf(sMat.rewind());
 
         GL11.glMatrixMode(GL11.GL_MODELVIEW);
         GL11.glPushMatrix();
@@ -286,8 +286,8 @@ public class TestHUD {
         canvas.reset((int) width, (int) height);
 
         canvas.save();
-        mat.store(sMat);
-        myMat.set(sMat.position(0));
+        mat.store(sMat.rewind()); // Sodium check the remaining
+        myMat.set(sMat.rewind());
         myMat.translate(0, 0, -2000);
         canvas.multiply(myMat);
 
