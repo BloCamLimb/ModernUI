@@ -23,7 +23,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.math.Matrix4f;
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.GLCanvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.math.MathUtil;
@@ -285,8 +284,9 @@ public class TestHUD {
 
         canvas.reset(fbWidth, fbHeight);
 
-        Matrix4 projection = Matrix4.makeOrthographic(width, -height, 0, 2000);
-        canvas.setProjection(projection);
+        GL11.glGetFloatv(GL11.GL_PROJECTION_MATRIX, mMatBuf.rewind());
+        mMyMat.set(mMatBuf);
+        canvas.setProjection(mMyMat);
 
         canvas.save();
         GL11.glGetFloatv(GL11.GL_MODELVIEW_MATRIX, mMatBuf.rewind());
@@ -295,7 +295,7 @@ public class TestHUD {
 
         mat.store(mMatBuf.rewind()); // Sodium check the remaining
         mMyMat.set(mMatBuf.rewind());
-        //mMyMat.translate(0, 0, -2000);
+        //myMat.translate(0, 0, -2000);
         canvas.multiply(mMyMat);
 
         Paint paint = Paint.take();
