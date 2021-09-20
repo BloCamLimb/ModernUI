@@ -20,14 +20,14 @@ package icyllis.modernui.screen.shader.program;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.graphics.shader.Shader;
+import icyllis.modernui.graphics.shader.GLProgram;
 import net.minecraft.resources.ResourceLocation;
 import org.lwjgl.opengl.GL43C;
 
 import javax.annotation.Nonnull;
 
 @Deprecated
-public class RoundRectProgram extends Shader {
+public class RoundRectProgram extends GLProgram {
 
     private static Fill sFill;
     private static FillTex sFillTex;

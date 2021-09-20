@@ -18,44 +18,35 @@
 
 package icyllis.modernui.graphics.texture;
 
-import icyllis.modernui.ModernUI;
+import icyllis.modernui.graphics.GLObject;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.ref.Cleaner;
-import java.util.function.IntSupplier;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
 
 /**
- * Represents OpenGL texture objects at low-level. Losing the
- * reference of this object will delete the texture automatically.
+ * Represents OpenGL texture objects at low-level.
  */
-public abstract class Texture implements IntSupplier, AutoCloseable {
+public abstract class GLTexture extends GLObject {
 
-    @Nullable
-    private Ref mRef;
-
-    protected Texture() {
+    protected GLTexture() {
     }
 
     /**
-     * Returns the OpenGL texture object name represented by this object.
-     * It's always a valid value but may change if this was recycled.
-     * This operation does not allocate GPU memory unless initialization.
+     * Returns the OpenGL texture object name currently associated with this
+     * object, or create and initialize it if not available. It may change in
+     * the future if it is explicitly deleted.
      *
-     * @return texture object name
+     * @return OpenGL texture object
      */
+    @Override
     public final int get() {
         if (mRef == null) {
-            mRef = new Ref(this);
+            mRef = new TextureRef(this);
         }
-        return mRef.texture;
-    }
-
-    @Override
-    public int getAsInt() {
-        return get();
+        return mRef.object;
     }
 
     public abstract int getTarget();
@@ -75,17 +66,6 @@ public abstract class Texture implements IntSupplier, AutoCloseable {
     }
 
     /**
-     * An explicit way to delete this texture if present.
-     */
-    @Override
-    public final void close() {
-        if (mRef != null) {
-            mRef.cleanup.clean();
-            mRef = null;
-        }
-    }
-
-    /**
      * Re-create the OpenGL texture and returns the cleanup action for the previous one.
      * You should call the cleanup action if you will not touch the previous texture any more.
      * Otherwise it will be cleaned when this Texture object become phantom-reachable.
@@ -95,28 +75,19 @@ public abstract class Texture implements IntSupplier, AutoCloseable {
     @Nullable
     public final Cleaner.Cleanable recreate() {
         final Ref r = mRef;
-        mRef = new Ref(this);
+        mRef = new TextureRef(this);
         return r != null ? r.cleanup : null;
     }
 
-    private static final class Ref implements Runnable {
+    private static final class TextureRef extends Ref {
 
-        private final int texture;
-        private final Cleaner.Cleanable cleanup;
-
-        private Ref(@Nonnull Texture owner) {
-            // the first binding to target defines the texture type,
-            // but we use DSA, glCreateTextures does this
-            texture = glCreateTextures(owner.getTarget());
-            cleanup = ModernUI.registerCleanup(owner, this);
+        private TextureRef(@Nonnull GLTexture owner) {
+            super(owner, glCreateTextures(owner.getTarget()));
         }
 
         @Override
         public void run() {
-            // if (id == INVALID_ID)
-            // cleanup is synchronized, this method only called once by cleaner
-            deleteTextureAsync(texture, this);
-            // id = INVALID_ID;
+            deleteTextureAsync(object, this);
         }
     }
 }

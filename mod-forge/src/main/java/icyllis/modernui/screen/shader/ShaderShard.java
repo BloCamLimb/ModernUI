@@ -20,7 +20,7 @@ package icyllis.modernui.screen.shader;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.graphics.shader.Shader;
+import icyllis.modernui.graphics.shader.GLProgram;
 import icyllis.modernui.platform.RenderCore;
 import it.unimi.dsi.fastutil.objects.Object2ObjectAVLTreeMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
@@ -52,7 +52,7 @@ public final class ShaderShard {
         mId = id;
     }
 
-    public void attach(@Nonnull Shader program) {
+    public void attach(@Nonnull GLProgram program) {
         if (mAttachCount == Integer.MIN_VALUE) {
             throw new IllegalStateException(this + " has been deleted.");
         }
@@ -65,7 +65,7 @@ public final class ShaderShard {
         }
     }
 
-    public void detach(@Nonnull Shader program) {
+    public void detach(@Nonnull GLProgram program) {
         if (mAttachCount > 0) {
             --mAttachCount;
             glDetachShader(program.get(), mId);

@@ -190,7 +190,7 @@ public class ShaderManager {
      */
     @SuppressWarnings("unchecked")
     @Nonnull
-    public <T extends Shader> T create(@Nullable T shader, int... shards) {
+    public <T extends GLProgram> T create(@Nullable T shader, int... shards) {
         RenderCore.checkRenderThread();
         int program;
         if (shader != null && shader.mProgram != 0) {
@@ -214,7 +214,7 @@ public class ShaderManager {
             }
         }
         if (shader == null) {
-            shader = (T) new Shader();
+            shader = (T) new GLProgram();
         }
         shader.mProgram = program;
         return shader;

@@ -106,7 +106,7 @@ public class Track implements AutoCloseable {
         FloatBuffer buffer = null;
         try {
             final int targetSamples =
-                    mSample.getChannels() * mSample.getSampleRate() / 25;
+                    mSample.getChannels() * mSample.getSampleRate() / 10;
             for (int i = 0; i < count; i++) {
                 if (buffer != null) {
                     buffer.position(0);

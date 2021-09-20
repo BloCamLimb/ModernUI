@@ -19,14 +19,14 @@
 package icyllis.modernui.screen.shader.program;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.shader.Shader;
+import icyllis.modernui.graphics.shader.GLProgram;
 import net.minecraft.resources.ResourceLocation;
 import org.lwjgl.opengl.GL43C;
 
 import javax.annotation.Nonnull;
 
 @Deprecated
-public class RectProgram extends Shader {
+public class RectProgram extends GLProgram {
 
     public static final ResourceLocation VERT = new ResourceLocation(ModernUI.ID, "shaders/pos_color.vert");
     public static final ResourceLocation VERT_TEX = new ResourceLocation(ModernUI.ID, "shaders/pos_color_tex.vert");

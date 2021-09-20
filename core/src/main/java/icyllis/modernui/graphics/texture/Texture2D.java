@@ -28,7 +28,7 @@ import static icyllis.modernui.graphics.GLWrapper.*;
  * Represents OpenGL 2D texture objects at low-level. The OpenGL texture
  * associated with this object may be changed by recycling.
  */
-public class Texture2D extends Texture {
+public class Texture2D extends GLTexture {
 
     /**
      * Creates an instance of Texture2D on application side from any thread.

@@ -18,11 +18,14 @@
 
 package icyllis.modernui.graphics;
 
+import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.math.RectF;
 import icyllis.modernui.text.MeasuredText;
 import icyllis.modernui.text.TextPaint;
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.MarkerManager;
 
 import javax.annotation.Nonnull;
 
@@ -43,17 +46,16 @@ import javax.annotation.Nonnull;
  */
 public abstract class Canvas {
 
+    public static final Marker MARKER = MarkerManager.getMarker("Canvas");
+
     /**
      * Bit flags representing the sides.
      */
-    public static final int TOP = 1;
-    public static final int BOTTOM = 1 << 1;
-    public static final int LEFT = 1 << 2;
-    public static final int RIGHT = 1 << 3;
+    public static final int TOP = 0x1;
+    public static final int BOTTOM = 0x2;
+    public static final int LEFT = 0x4;
+    public static final int RIGHT = 0x8;
 
-    /**
-     * You cannot create just a base Canvas since there's no software rendering.
-     */
     protected Canvas() {
     }
 
@@ -110,7 +112,11 @@ public abstract class Canvas {
      * @param dx The distance to translate in X
      * @param dy The distance to translate in Y
      */
-    public abstract void translate(float dx, float dy);
+    public final void translate(float dx, float dy) {
+        if (dx != 0.0f || dy != 0.0f) {
+            getMatrix().translate(dx, dy, 0);
+        }
+    }
 
     /**
      * Premultiply the current matrix by the specified scale.
@@ -118,7 +124,11 @@ public abstract class Canvas {
      * @param sx The amount to scale in X
      * @param sy The amount to scale in Y
      */
-    public abstract void scale(float sx, float sy);
+    public final void scale(float sx, float sy) {
+        if (sx != 1.0f || sy != 1.0f) {
+            getMatrix().scale(sx, sy, 1);
+        }
+    }
 
     /**
      * Premultiply the current matrix by the specified scale.
@@ -129,10 +139,12 @@ public abstract class Canvas {
      * @param py The y-coord for the pivot point (unchanged by the scale)
      */
     public final void scale(float sx, float sy, float px, float py) {
-        if (sx == 1.0f && sy == 1.0f) return;
-        translate(px, py);
-        scale(sx, sy);
-        translate(-px, -py);
+        if (sx != 1.0f || sy != 1.0f) {
+            Matrix4 matrix = getMatrix();
+            matrix.translate(px, py, 0);
+            matrix.scale(sx, sy, 1);
+            matrix.translate(-px, -py, 0);
+        }
     }
 
     /**
@@ -140,7 +152,11 @@ public abstract class Canvas {
      *
      * @param degrees The angle to rotate, in degrees
      */
-    public abstract void rotate(float degrees);
+    public final void rotate(float degrees) {
+        if (degrees != 0.0f) {
+            getMatrix().rotateZ(MathUtil.toRadians(degrees));
+        }
+    }
 
     /**
      * Rotate canvas clockwise around the pivot point with specified angle, this is
@@ -151,10 +167,12 @@ public abstract class Canvas {
      * @param py      The y-coord for the pivot point (unchanged by the rotation)
      */
     public final void rotate(float degrees, float px, float py) {
-        if (degrees == 0.0f) return;
-        translate(px, py);
-        rotate(degrees);
-        translate(-px, -py);
+        if (degrees != 0.0f) {
+            Matrix4 matrix = getMatrix();
+            matrix.translate(px, py, 0);
+            matrix.rotateZ(MathUtil.toRadians(degrees));
+            matrix.translate(-px, -py, 0);
+        }
     }
 
     /**
@@ -162,7 +180,17 @@ public abstract class Canvas {
      *
      * @param matrix the matrix to multiply
      */
-    public abstract void multiply(@Nonnull Matrix4 matrix);
+    public final void multiply(@Nonnull Matrix4 matrix) {
+        getMatrix().multiply(matrix);
+    }
+
+    /**
+     * Gets the backing matrix for <strong>modification purposes</strong>.
+     *
+     * @return current model view matrix
+     */
+    @Nonnull
+    public abstract Matrix4 getMatrix();
 
     /**
      * Intersect the current clip with the specified rectangle and updates
@@ -173,7 +201,7 @@ public abstract class Canvas {
      * @return true if the resulting clip is non-empty, otherwise further
      * drawing will be always quick rejected until restore() is called
      */
-    public boolean clipRect(@Nonnull Rect rect) {
+    public final boolean clipRect(@Nonnull Rect rect) {
         return clipRect(rect.left, rect.top, rect.right, rect.bottom);
     }
 
@@ -186,7 +214,7 @@ public abstract class Canvas {
      * @return true if the resulting clip is non-empty, otherwise further
      * drawing will be always quick rejected until restore() is called
      */
-    public boolean clipRect(@Nonnull RectF rect) {
+    public final boolean clipRect(@Nonnull RectF rect) {
         return clipRect(rect.left, rect.top, rect.right, rect.bottom);
     }
 
@@ -218,7 +246,7 @@ public abstract class Canvas {
      * @return true if the given rect (transformed by the canvas' matrix)
      * intersecting with the maximum rect representing the canvas' clip is empty
      */
-    public boolean quickReject(@Nonnull RectF rect) {
+    public final boolean quickReject(@Nonnull RectF rect) {
         return quickReject(rect.left, rect.top, rect.right, rect.bottom);
     }
 
@@ -263,6 +291,24 @@ public abstract class Canvas {
                                  float sweepAngle, @Nonnull Paint paint);
 
     /**
+     * Draw a quadratic bezier curve using the specified paint. The three points represent
+     * the starting point, the first control point and the end control point respectively.
+     * <p>
+     * The Style is ignored in the paint, bezier curves are always "framed".
+     * Stroke width in the paint represents the width of the curve.
+     *
+     * @param x0    the x-coordinate of the starting point of the bezier curve
+     * @param y0    the y-coordinate of the starting point of the bezier curve
+     * @param x1    the x-coordinate of the first control point of the bezier curve
+     * @param y1    the y-coordinate of the first control point of the bezier curve
+     * @param x2    the x-coordinate of the end control point of the bezier curve
+     * @param y2    the y-coordinate of the end control point of the bezier curve
+     * @param paint the paint used to draw the bezier curve
+     */
+    public abstract void drawBezier(float x0, float y0, float x1, float y1, float x2, float y2,
+                                    @Nonnull Paint paint);
+
+    /**
      * Draw the specified circle using the specified paint. If radius is <= 0, then nothing will be
      * drawn. The circle will be filled or framed based on the Style in the paint.
      *
@@ -280,7 +326,7 @@ public abstract class Canvas {
      * @param r     The rectangle to be drawn.
      * @param paint The paint used to draw the rectangle
      */
-    public void drawRect(@Nonnull Rect r, @Nonnull Paint paint) {
+    public final void drawRect(@Nonnull Rect r, @Nonnull Paint paint) {
         drawRect(r.left, r.top, r.right, r.bottom, paint);
     }
 
@@ -291,7 +337,7 @@ public abstract class Canvas {
      * @param r     The rectangle to be drawn.
      * @param paint The paint used to draw the rectangle
      */
-    public void drawRect(@Nonnull RectF r, @Nonnull Paint paint) {
+    public final void drawRect(@Nonnull RectF r, @Nonnull Paint paint) {
         drawRect(r.left, r.top, r.right, r.bottom, paint);
     }
 
@@ -324,8 +370,8 @@ public abstract class Canvas {
      * the specified paint. The Style is ignored in the paint, lines are always "framed".
      * Stroke width in the paint represents the width of the line.
      * <p>
-     * Actually, a line is drawn as a filled round rectangle, rotated around the
-     * midpoint of the line. So it's a bit heavy to draw.
+     * Actually, a round line with round corners is drawn as a filled round rectangle,
+     * rotated around the midpoint of the line. So it's a bit heavy to draw.
      *
      * @param startX The x-coordinate of the start point of the line
      * @param startY The y-coordinate of the start point of the line
@@ -333,46 +379,18 @@ public abstract class Canvas {
      * @param stopY  The y-coordinate of the stop point of the line
      * @param paint  The paint used to draw the line
      */
-    public abstract void drawLine(float startX, float startY, float stopX, float stopY,
-                                  @Nonnull Paint paint);
+    public abstract void drawRoundLine(float startX, float startY, float stopX, float stopY,
+                                       @Nonnull Paint paint);
 
     /**
-     * Draw a series of lines. Each line is taken from 4 consecutive values in the pts array. Thus
+     * Draw a series of round lines.
+     * <p>
+     * When discontinuous, each line is taken from 4 consecutive values in the pts array. Thus
      * to draw 1 line, the array must contain at least 4 values. This is logically the same as
      * drawing the array as follows: drawLine(pts[0], pts[1], pts[2], pts[3]) followed by
      * drawLine(pts[4], pts[5], pts[6], pts[7]) and so on.
-     *
-     * @param pts    The array of points of the lines to draw [x0 y0 x1 y1 x2 y2 ...]
-     * @param offset Number of values in the array to skip before drawing.
-     * @param count  The number of values in the array to process, after skipping "offset" of them.
-     *               Since each line uses 4 values, the number of "lines" that are drawn is really
-     *               (count >> 2).
-     * @param paint  The paint used to draw the lines
-     */
-    public void drawLines(@Nonnull float[] pts, int offset, int count, @Nonnull Paint paint) {
-        if (offset + count > pts.length) {
-            throw new IllegalArgumentException();
-        }
-        count >>= 2;
-        for (int i = 0; i < count; i++) {
-            drawLine(pts[offset++], pts[offset++], pts[offset++], pts[offset++], paint);
-        }
-    }
-
-    /**
-     * A helper version of {@link #drawLines(float[], int, int, Paint)}, with its offset is 0
-     * and count is the length of the pts array.
-     *
-     * @param pts   The array of points of the lines to draw [x0 y0 x1 y1 x2 y2 ...]
-     * @param paint The paint used to draw the lines
-     * @see #drawLines(float[], int, int, Paint)
-     */
-    public final void drawLines(@Nonnull float[] pts, @Nonnull Paint paint) {
-        drawLines(pts, 0, pts.length, paint);
-    }
-
-    /**
-     * Draw a series of lines. The first line is taken from 4 consecutive values in the pts
+     * <p>
+     * When continuous, the first line is taken from 4 consecutive values in the pts
      * array, and each remaining line is taken from last 2 values and next 2 values in the array.
      * Thus to draw 1 line, the array must contain at least 4 values. This is logically the same as
      * drawing the array as follows: drawLine(pts[0], pts[1], pts[2], pts[3]) followed by
@@ -382,34 +400,44 @@ public abstract class Canvas {
      * @param offset Number of values in the array to skip before drawing.
      * @param count  The number of values in the array to process, after skipping "offset" of them.
      *               Since each line uses 4 values, the number of "lines" that are drawn is really
-     *               ((count - 2) >> 1).
+     *               (count >> 2) if continuous, or ((count - 2) >> 1).
+     * @param strip  Whether line points are discrete (not continuous)
      * @param paint  The paint used to draw the lines
      */
-    public void drawStripLines(@Nonnull float[] pts, int offset, int count, @Nonnull Paint paint) {
-        if (offset + count > pts.length) {
-            throw new IllegalArgumentException();
+    public void drawRoundLines(@Nonnull float[] pts, int offset, int count, boolean strip,
+                               @Nonnull Paint paint) {
+        if ((offset | count | pts.length - offset - count) < 0) {
+            throw new IndexOutOfBoundsException();
         }
         if (count < 4) {
             return;
         }
-        float x, y;
-        drawLine(pts[offset++], pts[offset++], x = pts[offset++], y = pts[offset++], paint);
-        count = (count - 4) >> 1;
-        for (int i = 0; i < count; i++) {
-            drawLine(x, y, x = pts[offset++], y = pts[offset++], paint);
+        if (strip) {
+            count >>= 2;
+            for (int i = 0; i < count; i++) {
+                drawRoundLine(pts[offset++], pts[offset++], pts[offset++], pts[offset++], paint);
+            }
+        } else {
+            float x, y;
+            drawRoundLine(pts[offset++], pts[offset++], x = pts[offset++], y = pts[offset++], paint);
+            count = (count - 4) >> 1;
+            for (int i = 0; i < count; i++) {
+                drawRoundLine(x, y, x = pts[offset++], y = pts[offset++], paint);
+            }
         }
     }
 
     /**
-     * A helper version of {@link #drawStripLines(float[], int, int, Paint)}, with its offset is 0
-     * and count is the length of the pts array.
+     * A helper version of {@link #drawRoundLines(float[], int, int, boolean, Paint)},
+     * with its offset is 0 and count is the length of the pts array.
      *
      * @param pts   The array of points of the lines to draw [x0 y0 x1 y1 x2 y2 ...]
+     * @param strip Whether line points are discrete
      * @param paint The paint used to draw the lines
-     * @see #drawStripLines(float[], int, int, Paint)
+     * @see #drawRoundLines(float[], int, int, boolean, Paint)
      */
-    public final void drawStripLines(@Nonnull float[] pts, @Nonnull Paint paint) {
-        drawStripLines(pts, 0, pts.length, paint);
+    public final void drawRoundLines(@Nonnull float[] pts, boolean strip, @Nonnull Paint paint) {
+        drawRoundLines(pts, 0, pts.length, strip, paint);
     }
 
     /**
@@ -420,7 +448,7 @@ public abstract class Canvas {
      * @param radius the radius used to round the corners
      * @param paint  the paint used to draw the round rectangle
      */
-    public void drawRoundRect(@Nonnull RectF rect, float radius, @Nonnull Paint paint) {
+    public final void drawRoundRect(@Nonnull RectF rect, float radius, @Nonnull Paint paint) {
         drawRoundRect(rect.left, rect.top, rect.right, rect.bottom, radius, 0, paint);
     }
 
@@ -428,21 +456,6 @@ public abstract class Canvas {
      * Draw a rectangle with rounded corners within a rectangular bounds. The round
      * rectangle will be filled or framed based on the Style in the paint.
      *
-     * @param rect   The rectangular bounds of the round rect to be drawn
-     * @param radius the radius used to round the corners
-     * @param side   the side to round, accepted values are 0 (all sides),
-     *               or one of {@link #TOP}, {@link #BOTTOM}, {@link #LEFT},
-     *               {@link #RIGHT}, or any combination of two adjacent sides
-     * @param paint  the paint used to draw the round rectangle
-     */
-    public void drawRoundRect(@Nonnull RectF rect, float radius, int side, @Nonnull Paint paint) {
-        drawRoundRect(rect.left, rect.top, rect.right, rect.bottom, radius, side, paint);
-    }
-
-    /**
-     * Draw a rectangle with rounded corners within a rectangular bounds. The round
-     * rectangle will be filled or framed based on the Style in the paint.
-     *
      * @param left   the left of the rectangular bounds
      * @param top    the top of the rectangular bounds
      * @param right  the right of the rectangular bounds
@@ -450,8 +463,8 @@ public abstract class Canvas {
      * @param radius the radius used to round the corners
      * @param paint  the paint used to draw the round rectangle
      */
-    public void drawRoundRect(float left, float top, float right, float bottom,
-                              float radius, @Nonnull Paint paint) {
+    public final void drawRoundRect(float left, float top, float right, float bottom,
+                                    float radius, @Nonnull Paint paint) {
         drawRoundRect(left, top, right, bottom, radius, 0, paint);
     }
 
@@ -459,18 +472,33 @@ public abstract class Canvas {
      * Draw a rectangle with rounded corners within a rectangular bounds. The round
      * rectangle will be filled or framed based on the Style in the paint.
      *
+     * @param rect   The rectangular bounds of the round rect to be drawn
+     * @param radius the radius used to round the corners
+     * @param sides  the side to round, accepted values are 0 (all sides),
+     *               or one of {@link #TOP}, {@link #BOTTOM}, {@link #LEFT},
+     *               {@link #RIGHT}, or any combination of two adjacent sides
+     * @param paint  the paint used to draw the round rectangle
+     */
+    public final void drawRoundRect(@Nonnull RectF rect, float radius, int sides, @Nonnull Paint paint) {
+        drawRoundRect(rect.left, rect.top, rect.right, rect.bottom, radius, sides, paint);
+    }
+
+    /**
+     * Draw a rectangle with rounded corners within a rectangular bounds. The round
+     * rectangle will be filled or framed based on the Style in the paint.
+     *
      * @param left   the left of the rectangular bounds
      * @param top    the top of the rectangular bounds
      * @param right  the right of the rectangular bounds
      * @param bottom the bottom of the rectangular bounds
      * @param radius the radius used to round the corners
-     * @param side   the side to round, accepted values are 0 (all sides),
+     * @param sides  the side to round, accepted values are 0 (all sides),
      *               or one of {@link #TOP}, {@link #BOTTOM}, {@link #LEFT},
      *               {@link #RIGHT}, or any combination of two adjacent sides
      * @param paint  the paint used to draw the round rectangle
      */
     public abstract void drawRoundRect(float left, float top, float right, float bottom,
-                                       float radius, int side, @Nonnull Paint paint);
+                                       float radius, int sides, @Nonnull Paint paint);
 
     /**
      * Draw the specified image with rounded corners, whose top/left corner at (x,y)
@@ -497,7 +525,6 @@ public abstract class Canvas {
      * @param isRtl whether the run is in right-to-left direction
      * @param paint the paint used to draw the text
      */
-    @Deprecated
     public abstract void drawTextRun(@Nonnull CharSequence text, int start, int end,
                                      float x, float y, boolean isRtl, @Nonnull TextPaint paint);
 
