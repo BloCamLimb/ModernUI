@@ -16,15 +16,28 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.vertex;
+package icyllis.modernui.graphics.shader;
+
+import icyllis.modernui.graphics.GLWrapper;
 
 /**
- * Represents a vertex buffer object.
+ * Represents OpenGL program objects.
  */
-public class VertexBuffer implements AutoCloseable {
+public class GLProgram {
 
-    @Override
-    public void close() throws Exception {
+    int mProgram;
 
+    public GLProgram() {
+    }
+
+    /**
+     * Use this shader program
+     */
+    public void use() {
+        GLWrapper.glUseProgram(mProgram);
+    }
+
+    public final int get() {
+        return mProgram;
     }
 }

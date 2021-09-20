@@ -52,6 +52,7 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -146,6 +147,7 @@ public class TestMain {
         GRAPHICS.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         GRAPHICS.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
         GRAPHICS.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
 
         /*float[] av = new float[]{1, 3, 2, 4.1f, 6, 0, 6, 0.5f, 5, 7, 11.3f, 9, 9.1f, 15, 8, 10};
         float[] bv = new float[]{9.1f, 2, 7, 5, 3.3f, 6.1f, 5.5f, 4, 0, 8, 3, 1, 2.7f, 3, 9, 2};
@@ -278,7 +280,7 @@ public class TestMain {
         canvas.setProjection(projection);
 
         Image image;
-        try (ReadableByteChannel channel = ModernUI.get().getResource(Path.of("eromanga.png"))) {
+        try (ReadableByteChannel channel = FileChannel.open(Path.of("F:", "eromanga.png"), StandardOpenOption.READ)) {
             Bitmap bitmap = Bitmap.decode(null, channel);
             Texture2D texture2D = new Texture2D();
             int width = bitmap.getWidth();
@@ -382,8 +384,10 @@ public class TestMain {
 
                 paint.setStrokeWidth(8);
                 paint.setRGBA(120, 220, 240, 192);
-                canvas.drawLine(20, 20, 140, 60, paint);
-                canvas.drawLine(120, 30, 60, 80, paint);
+                canvas.drawRoundLine(20, 20, 140, 60, paint);
+                canvas.drawRoundLine(120, 30, 60, 80, paint);
+
+                canvas.drawBezier(300, 100, 400, 320, 480, 170, paint);
 
                 TextPaint paint1 = new TextPaint();
                 paint1.setColor(0xff40ddee);
@@ -450,7 +454,7 @@ public class TestMain {
 
         paint.setStrokeWidth(4);
         paint.setRGBA(229, 188, 177, 255);
-        canvas.drawLine(40, 318, 1600 - 40, 318, paint);
+        canvas.drawRoundLine(40, 318, 1600 - 40, 318, paint);
 
         String s = "Hitorigoto -TV MIX-";
         TextPaint textPaint = new TextPaint();

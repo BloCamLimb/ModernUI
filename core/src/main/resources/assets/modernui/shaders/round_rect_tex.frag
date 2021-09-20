@@ -1,10 +1,11 @@
 #version 450 core
 
-precision mediump float;
-
-layout(std140, binding = 1) uniform PaintBlock {
+layout(std140, binding = 1) uniform SmoothBlock {
+    float u_SmoothRadius;
+};
+layout(std140, binding = 5) uniform PaintBlock {
     vec4 u_InnerRect;
-    vec3 u_Radius;
+    float u_Radius;
 };
 
 layout(location = 0) uniform sampler2D u_Sampler;
@@ -21,9 +22,9 @@ void main() {
 
     vec2 dis = max(br, tl);
 
-    float v = length(max(vec2(0.0), dis)) - u_Radius.x;
+    float v = length(max(vec2(0.0), dis)) - u_Radius;
 
-    float a = 1.0 - smoothstep(-u_Radius.y, 0.0, v);
+    float a = 1.0 - smoothstep(-u_SmoothRadius, 0.0, v);
 
     fragColor = texture(u_Sampler, f_TexCoord) * f_Color * vec4(1.0, 1.0, 1.0, a);
 }

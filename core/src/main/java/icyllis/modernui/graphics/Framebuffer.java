@@ -20,7 +20,7 @@ package icyllis.modernui.graphics;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.texture.Renderbuffer;
-import icyllis.modernui.graphics.texture.Texture;
+import icyllis.modernui.graphics.texture.GLTexture;
 import icyllis.modernui.graphics.texture.Texture2DMultisample;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -204,10 +204,10 @@ public final class Framebuffer implements AutoCloseable {
      * @throws IllegalArgumentException attachment is not a texture or detached
      */
     @Nonnull
-    public Texture getAttachedTexture(int attachmentPoint) {
+    public GLTexture getAttachedTexture(int attachmentPoint) {
         AutoCloseable a = mAttachments.get(attachmentPoint);
-        if (a instanceof Texture) {
-            return ((Texture) a);
+        if (a instanceof GLTexture) {
+            return ((GLTexture) a);
         }
         throw new IllegalArgumentException();
     }

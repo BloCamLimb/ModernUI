@@ -2,10 +2,6 @@
 
 layout(std140, binding = 0) uniform MatrixBlock {
     mat4 u_Projection;
-};
-// change model view matrix and color to uniform, to reduce memory usage
-// maybe keep color as an attribute for gradient effect?
-layout(std140, binding = 4) uniform GlyphBlock {
     mat4 u_ModelView;
     vec4 u_Color;
 };

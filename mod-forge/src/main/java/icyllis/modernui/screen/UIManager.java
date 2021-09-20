@@ -28,7 +28,7 @@ import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.forge.ModernUIForge;
 import icyllis.modernui.graphics.Framebuffer;
 import icyllis.modernui.graphics.GLCanvas;
-import icyllis.modernui.graphics.texture.Texture;
+import icyllis.modernui.graphics.texture.GLTexture;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.test.TestHUD;
@@ -471,33 +471,53 @@ public final class UIManager implements ViewRootImpl.Handler {
                 break;
 
             case GLFW_KEY_P:
-                StringBuilder builder = new StringBuilder();
-                builder.append("Modern UI Debug Info:\n");
-
-                builder.append("From Modern UI: ");
-                builder.append(mScreen != null);
-                builder.append('\n');
-
-                builder.append("Container Menu: ");
-                builder.append(minecraft.player == null ? null : minecraft.player.containerMenu == null ? null :
-                        minecraft.player.containerMenu.getClass().getName());
-                builder.append('\n');
-
-                builder.append("Callback or Screen: ");
-                builder.append(mCallback != null ? mCallback.getClass().getName() : minecraft.screen == null ? null :
-                        minecraft.screen.getClass().getName());
-                builder.append('\n');
-
-                builder.append("Layout Cache Entries: ");
-                builder.append(TextLayoutEngine.getInstance().countEntries());
-
-                String str = builder.toString();
-
-                ModernUI.LOGGER.info(MARKER, str);
-                if (minecraft.level != null) {
-                    minecraft.gui.getChat().addMessage(Component.nullToEmpty(str));
-                }
+                printDebugInfo();
                 break;
+        }
+    }
+
+    private void printDebugInfo() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("Modern UI debug info\n");
+
+        builder.append("Use Modern UI: ");
+        builder.append(mScreen != null);
+        builder.append('\n');
+
+        builder.append("Container Menu: ");
+        AbstractContainerMenu menu = null;
+        if (minecraft.player != null) {
+            menu = minecraft.player.containerMenu;
+        }
+        if (menu != null) {
+            builder.append(menu.getClass().getName());
+            builder.append('\n');
+            try {
+                //noinspection ConstantConditions
+                String ns = menu.getType().getRegistryName().getNamespace();
+                builder.append("Mod Id: ");
+                builder.append(ns);
+                builder.append('\n');
+            } catch (Exception ignored) {
+            }
+        } else {
+            builder.append("null");
+            builder.append('\n');
+        }
+
+        builder.append("Callback or Screen: ");
+        builder.append(mCallback != null ? mCallback.getClass().getName() : minecraft.screen == null ? null :
+                minecraft.screen.getClass().getName());
+        builder.append('\n');
+
+        builder.append("Layout Cache Entries: ");
+        builder.append(TextLayoutEngine.getInstance().countEntries());
+
+        String str = builder.toString();
+
+        ModernUI.LOGGER.info(MARKER, str);
+        if (minecraft.level != null) {
+            minecraft.gui.getChat().addMessage(Component.nullToEmpty(str));
         }
     }
 
@@ -547,12 +567,19 @@ public final class UIManager implements ViewRootImpl.Handler {
 
                 framebuffer.reset(width, height);
                 framebuffer.bindDraw();
-                canvas.draw();
+                try {
+                    canvas.draw();
+                } catch (Throwable t) {
+                    ModernUI.LOGGER.fatal(MARKER,
+                            "Failed to invoke rendering callbacks, please report the issue to related mods");
+                    printDebugInfo();
+                    throw t;
+                }
 
                 glDisable(GL_STENCIL_TEST);
             }
         }
-        Texture texture = framebuffer.getAttachedTexture(GL_COLOR_ATTACHMENT0);
+        GLTexture texture = framebuffer.getAttachedTexture(GL_COLOR_ATTACHMENT0);
 
         // draw MSAA off-screen result to Minecraft main framebuffer (not the default framebuffer)
         RenderSystem.defaultBlendFunc();

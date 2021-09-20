@@ -29,8 +29,7 @@ public class Paint {
     private static final ThreadLocal<Paint> TLS = ThreadLocal.withInitial(Paint::new);
 
     private static final int STYLE_MASK = 0x3;
-
-    private static final int MULTI_COLOR = 0x4;
+    private static final int MULTI_COLOR_MASK = 0x4;
 
     /**
      * The Style specifies if the primitive being drawn is filled, stroked, or
@@ -41,22 +40,13 @@ public class Paint {
          * Geometry drawn with this style will be filled, ignoring all
          * stroke-related settings in the paint.
          */
-        FILL(),
+        FILL,
 
         /**
          * Geometry drawn with this style will be stroked, respecting
          * the stroke-related fields on the paint.
          */
-        STROKE(),
-
-        /**
-         * Geometry drawn with this style will be both filled and
-         * stroked at the same time, respecting the stroke-related fields on
-         * the paint. This mode can give unexpected results if the geometry
-         * is oriented counter-clockwise. This restriction does not apply to
-         * either FILL or STROKE.
-         */
-        FILL_AND_STROKE();
+        STROKE;
 
         private static final Style[] VALUES = values();
     }
@@ -126,7 +116,7 @@ public class Paint {
      */
     public void setRGBA(int r, int g, int b, int a) {
         mColor = (a << 24) | (r << 16) | (g << 8) | b;
-        mFlags &= ~MULTI_COLOR;
+        mFlags &= ~MULTI_COLOR_MASK;
     }
 
     /**
@@ -138,7 +128,7 @@ public class Paint {
      */
     public void setRGB(int r, int g, int b) {
         mColor = (mColor & 0xFF000000) | (r << 16) | (g << 8) | b;
-        mFlags &= ~MULTI_COLOR;
+        mFlags &= ~MULTI_COLOR_MASK;
     }
 
     /**
@@ -148,7 +138,7 @@ public class Paint {
      */
     public void setColor(int color) {
         mColor = color;
-        mFlags &= ~MULTI_COLOR;
+        mFlags &= ~MULTI_COLOR_MASK;
     }
 
     /**
@@ -158,7 +148,7 @@ public class Paint {
      */
     public void setAlpha(int a) {
         mColor = (mColor & 0xFFFFFF) | (a << 24);
-        mFlags &= ~MULTI_COLOR;
+        mFlags &= ~MULTI_COLOR_MASK;
     }
 
     /**
@@ -194,7 +184,7 @@ public class Paint {
     public void setColors(@Nonnull int[] colors) {
         int l = Math.min(colors.length, mColors.length);
         System.arraycopy(colors, 0, mColors, 0, l);
-        mFlags |= MULTI_COLOR;
+        mFlags |= MULTI_COLOR_MASK;
     }
 
     /**
@@ -216,14 +206,14 @@ public class Paint {
      * @see #setColors(int[])
      */
     public boolean isMultiColor() {
-        return (mFlags & MULTI_COLOR) != 0;
+        return (mFlags & MULTI_COLOR_MASK) != 0;
     }
 
     /**
      * Return the paint's style, used for controlling how primitives' geometries
-     * are interpreted (except where noted).
+     * are interpreted, except where noted.
      *
-     * @return the paint's style setting (Fill, Stroke, StrokeAndFill)
+     * @return the paint's style setting (Fill, Stroke)
      */
     @Nonnull
     public Style getStyle() {
@@ -232,7 +222,7 @@ public class Paint {
 
     /**
      * Set the paint's style, used for controlling how primitives' geometries
-     * are interpreted (exclude images, they are always filled).
+     * are interpreted, except where noted.
      *
      * @param style the new style to set in the paint
      */
@@ -243,8 +233,7 @@ public class Paint {
     /**
      * Return the width for stroking. The default value is 2.0 px.
      *
-     * @return the paint's stroke width, used whenever the paint's style is
-     * Stroke or StrokeAndFill.
+     * @return the paint's stroke width, used whenever the paint's style is {@link Style#STROKE}
      */
     public float getStrokeWidth() {
         return mStrokeWidth;
@@ -254,7 +243,7 @@ public class Paint {
      * Set the width for stroking. The default value is 2.0 px.
      *
      * @param width set the paint's stroke width, used whenever the paint's
-     *              style is Stroke or StrokeAndFill.
+     *              style is {@link Style#STROKE}
      */
     public void setStrokeWidth(float width) {
         mStrokeWidth = Math.max(0, width);
@@ -273,7 +262,7 @@ public class Paint {
     }
 
     /**
-     * Set the smooth radius in pixels for this paint.
+     * Set the smooth radius in pixels for this paint. This method is expected to be rarely used.
      * <p>
      * Smooth radius is used to smooth and blur the edges of geometry. The default value is 2.0 px.
      * This value may be ignored by implementation.

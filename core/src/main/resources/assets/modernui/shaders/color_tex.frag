@@ -1,7 +1,5 @@
 #version 450 core
 
-precision mediump float;
-
 layout(location = 0) uniform sampler2D u_Sampler;
 
 smooth in vec4 f_Color;

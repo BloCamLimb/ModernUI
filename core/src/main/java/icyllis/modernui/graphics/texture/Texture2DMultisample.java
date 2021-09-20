@@ -24,7 +24,7 @@ import static icyllis.modernui.graphics.GLWrapper.*;
  * Represents OpenGL multisample 2D texture objects at low-level. The
  * OpenGL texture associated with this object may be changed by recycling.
  */
-public class Texture2DMultisample extends Texture {
+public class Texture2DMultisample extends GLTexture {
 
     public Texture2DMultisample() {
     }

@@ -18,15 +18,16 @@
 
 package icyllis.modernui.graphics.vertex;
 
+import icyllis.modernui.graphics.GLBuffer;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.IntSet;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
 
@@ -35,7 +36,7 @@ import static icyllis.modernui.graphics.GLWrapper.*;
  */
 public class VertexFormat {
 
-    private final Int2ObjectMap<List<VertexAttrib>> mAttributes = new Int2ObjectArrayMap<>();
+    private final Int2ObjectMap<List<VertexAttrib>> mAttributes;
 
     private int mVertexArray = INVALID_ID;
 
@@ -53,10 +54,9 @@ public class VertexFormat {
         if (attribs.length == 0) {
             throw new IllegalArgumentException("No attributes");
         }
-        Arrays.sort(attribs, Comparator.comparingInt(VertexAttrib::getBinding));
-        for (VertexAttrib a : attribs) {
-            mAttributes.computeIfAbsent(a.getBinding(), l -> new ArrayList<>()).add(a);
-        }
+        mAttributes = new Int2ObjectArrayMap<>(Arrays.stream(attribs)
+                .sorted(Comparator.comparingInt(VertexAttrib::getBinding))
+                .collect(Collectors.groupingBy(VertexAttrib::getBinding)));
     }
 
     /**
@@ -64,12 +64,12 @@ public class VertexFormat {
      */
     public int getVertexArray() {
         if (mVertexArray == INVALID_ID) {
-            int array = glCreateVertexArrays();
+            final int array = glCreateVertexArrays();
             int location = 0;
-            for (var c : mAttributes.values()) {
-                // relative offset
+            for (var attribs : mAttributes.values()) {
+                // relative offset in binding point
                 int offset = 0;
-                for (var a : c) {
+                for (var a : attribs) {
                     offset = a.setFormat(array, location, offset);
                     location += a.getRepeat();
                 }
@@ -97,8 +97,8 @@ public class VertexFormat {
      * @param buffer  the vertex buffer
      * @param offset  first vertex/instance data to the head of the buffer, in bytes
      */
-    public void setVertexBuffer(int binding, int buffer, int offset) {
-        glVertexArrayVertexBuffer(getVertexArray(), binding, buffer, offset, getBindingSize(binding));
+    public void setVertexBuffer(int binding, @Nonnull GLBuffer buffer, int offset) {
+        glVertexArrayVertexBuffer(getVertexArray(), binding, buffer.get(), offset, getBindingSize(binding));
         /*ModernUI.LOGGER.info("Bind Vertex Buffer: {VAO={}, bind={}, buffer={}, offset={}, stride={}}",
                 getVertexArray(), binding, buffer, offset, getBindingSize(binding));*/
     }
@@ -118,8 +118,8 @@ public class VertexFormat {
      *
      * @param buffer the element buffer object
      */
-    public void setElementBuffer(int buffer) {
-        glVertexArrayElementBuffer(getVertexArray(), buffer);
+    public void setElementBuffer(@Nonnull GLBuffer buffer) {
+        glVertexArrayElementBuffer(getVertexArray(), buffer.get());
     }
 
     /**
@@ -129,10 +129,10 @@ public class VertexFormat {
      * @return total size in bytes
      */
     public int getBindingSize(int binding) {
-        var c = mAttributes.get(binding);
-        if (c != null) {
+        List<VertexAttrib> attribs = mAttributes.get(binding);
+        if (attribs != null) {
             int size = 0;
-            for (var a : c) {
+            for (var a : attribs) {
                 size += a.getTotalSize();
             }
             return size;
