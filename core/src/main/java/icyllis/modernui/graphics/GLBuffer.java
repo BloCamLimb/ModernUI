@@ -40,10 +40,10 @@ public class GLBuffer extends GLObject {
      */
     @Override
     public final int get() {
-        if (mRef == null) {
-            mRef = new BufferRef(this);
+        if (ref == null) {
+            ref = new BufferRef(this);
         }
-        return mRef.object;
+        return ref.object;
     }
 
     /**

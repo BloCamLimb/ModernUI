@@ -28,14 +28,14 @@ import java.lang.ref.Cleaner;
 /**
  * Represents OpenGL objects at low-level. Losing the reference to this object will delete
  * the associated OpenGL object automatically. An explicit deletion can recycle this object.
- * Except for the constructor, all methods need to be called from the render thread with
- * OpenGL context.
+ * All methods need to be called from the render thread with OpenGL context, except for
+ * the constructor and special notes.
  */
 @RenderThread
 public abstract class GLObject implements AutoCloseable {
 
     @Nullable
-    protected Ref mRef;
+    protected Ref ref;
 
     protected GLObject() {
     }
@@ -55,9 +55,9 @@ public abstract class GLObject implements AutoCloseable {
      */
     @Override
     public void close() {
-        if (mRef != null) {
-            mRef.cleanup.clean();
-            mRef = null;
+        if (ref != null) {
+            ref.cleanup.clean();
+            ref = null;
         }
     }
 

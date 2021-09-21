@@ -18,31 +18,30 @@
 
 package icyllis.modernui.graphics.texture;
 
-import icyllis.modernui.ModernUI;
+import icyllis.modernui.graphics.GLObject;
 
 import javax.annotation.Nonnull;
-import java.lang.ref.Cleaner;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
 
 /**
- * Represents an OpenGL renderbuffer object. Losing the reference
- * of the object will delete the renderbuffer automatically.
+ * Represents OpenGL renderbuffer objects. Losing the reference to this object will
+ * delete the renderbuffer automatically.
  */
-public final class Renderbuffer implements AutoCloseable {
+public final class GLRenderbuffer extends GLObject {
 
-    private Ref mRef;
-
-    public Renderbuffer() {
+    public GLRenderbuffer() {
     }
 
+    @Override
     public int get() {
-        if (mRef == null)
-            mRef = new Ref(this);
-        return mRef.renderbuffer;
+        if (ref == null) {
+            ref = new RenderbufferRef(this);
+        }
+        return ref.object;
     }
 
-    public void init(int internalFormat, int width, int height, int samples) {
+    public void allocate(int internalFormat, int width, int height, int samples) {
         if (samples < 0) {
             throw new IllegalArgumentException();
         } else if (samples > 0) {
@@ -52,27 +51,15 @@ public final class Renderbuffer implements AutoCloseable {
         }
     }
 
-    @Override
-    public void close() {
-        if (mRef != null) {
-            mRef.cleanup.clean();
-            mRef = null;
-        }
-    }
+    private static final class RenderbufferRef extends Ref {
 
-    private static final class Ref implements Runnable {
-
-        private final int renderbuffer;
-        private final Cleaner.Cleanable cleanup;
-
-        private Ref(@Nonnull Renderbuffer owner) {
-            renderbuffer = glCreateRenderbuffers();
-            cleanup = ModernUI.registerCleanup(owner, this);
+        private RenderbufferRef(@Nonnull GLRenderbuffer owner) {
+            super(owner, glCreateRenderbuffers());
         }
 
         @Override
         public void run() {
-            deleteRenderbufferAsync(renderbuffer, this);
+            deleteRenderbufferAsync(object, this);
         }
     }
 }

@@ -20,7 +20,7 @@ package icyllis.modernui.text;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.graphics.texture.Texture2D;
+import icyllis.modernui.graphics.texture.GLTexture;
 import icyllis.modernui.platform.Bitmap;
 import icyllis.modernui.platform.RenderCore;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -59,7 +59,7 @@ public class FontAtlas {
     private static final IntFunction<TexturedGlyph> sFactory = i -> new TexturedGlyph();
 
     // texture object is immutable, but texture ID (the int) can change by resizing
-    public final Texture2D mTexture = new Texture2D();
+    public final GLTexture mTexture = new GLTexture(GL_TEXTURE_2D);
 
     // OpenHashMap uses less memory than RBTree/AVLTree, but higher than ArrayMap
     private final Int2ObjectMap<TexturedGlyph> mGlyphs = new Int2ObjectOpenHashMap<>();
@@ -142,7 +142,7 @@ public class FontAtlas {
         // never initialized
         if (mWidth == 0) {
             mWidth = mHeight = INITIAL_SIZE;
-            mTexture.initCompat(GL_ALPHA, INITIAL_SIZE, INITIAL_SIZE, MIPMAP_LEVEL);
+            mTexture.allocate2DM(GL_ALPHA, INITIAL_SIZE, INITIAL_SIZE, MIPMAP_LEVEL);
             // we have border that not upload data, so generate mipmap may leave undefined data
             mTexture.clear(0);
         } else {

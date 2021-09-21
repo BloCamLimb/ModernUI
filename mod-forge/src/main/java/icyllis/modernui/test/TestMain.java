@@ -31,7 +31,7 @@ import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.shader.ShaderManager;
-import icyllis.modernui.graphics.texture.Texture2D;
+import icyllis.modernui.graphics.texture.GLTexture;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.platform.Bitmap;
 import icyllis.modernui.platform.RenderCore;
@@ -282,15 +282,16 @@ public class TestMain {
         Image image;
         try (ReadableByteChannel channel = FileChannel.open(Path.of("F:", "eromanga.png"), StandardOpenOption.READ)) {
             Bitmap bitmap = Bitmap.decode(null, channel);
-            Texture2D texture2D = new Texture2D();
+            GLTexture texture = new GLTexture(GL_TEXTURE_2D);
             int width = bitmap.getWidth();
             int height = bitmap.getHeight();
-            texture2D.initCore(GL_RGB8, width, height, 4);
-            texture2D.upload(0, 0, 0, width, height, 0,
-                    0, 0, 1, bitmap.getFormat().glFormat, GL_UNSIGNED_BYTE, bitmap.getPixels());
-            texture2D.setFilter(true, true);
-            texture2D.generateMipmap();
-            image = new Image(new Image.Source(texture2D, width, height));
+            texture.setDimension(width, height, 1);
+            texture.allocate2D(GL_RGB8, width, height, 4);
+            texture.upload(0, 0, 0, width, height, 0,
+                    0, 0, 1, bitmap.getGlFormat(), GL_UNSIGNED_BYTE, bitmap.getPixels());
+            texture.setFilter(true, true);
+            texture.generateMipmap();
+            image = new Image(texture);
         } catch (IOException e) {
             throw new IllegalStateException();
         }

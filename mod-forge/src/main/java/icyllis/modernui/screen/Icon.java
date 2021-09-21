@@ -18,18 +18,10 @@
 
 package icyllis.modernui.screen;
 
-import icyllis.modernui.graphics.texture.Texture2D;
-import icyllis.modernui.platform.Bitmap;
-import net.minecraft.client.Minecraft;
+import icyllis.modernui.graphics.texture.GLTexture;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.resources.Resource;
-import net.minecraft.server.packs.resources.ResourceManager;
 
 import javax.annotation.Nullable;
-
-import static icyllis.modernui.graphics.GLWrapper.GL_RGBA8;
-import static icyllis.modernui.graphics.GLWrapper.GL_UNSIGNED_BYTE;
-import static org.lwjgl.opengl.GL11C.GL_RGBA;
 
 /**
  * Icon is a cached full texture or a part of texture specially used in UI
@@ -40,7 +32,7 @@ public class Icon {
     private final ResourceLocation location;
 
     @Nullable
-    private Texture2D texture;
+    private GLTexture texture;
 
     private final float u1;
     private final float v1;
@@ -68,12 +60,12 @@ public class Icon {
         this.aa = aa;
     }
 
-    private void loadTexture() {
+    /*private void loadTexture() {
         ResourceManager manager = Minecraft.getInstance().getResourceManager();
         try (Resource resource = manager.getResource(location);
              Bitmap bitmap = Bitmap.decode(Bitmap.Format.RGBA, resource.getInputStream())) {
             Texture2D texture = new Texture2D();
-            texture.initCore(GL_RGBA8, bitmap.getWidth(), bitmap.getHeight(), aa ? 4 : 0);
+            texture.allocate2D(GL_RGBA8, bitmap.getWidth(), bitmap.getHeight(), aa ? 4 : 0);
             texture.upload(0, 0, 0, bitmap.getWidth(), bitmap.getHeight(), 0,
                     0, 0, 1, GL_RGBA, GL_UNSIGNED_BYTE, bitmap.getPixels());
             if (aa) {
@@ -86,13 +78,13 @@ public class Icon {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
+    }*/
 
     public void bindTexture() {
-        if (texture == null)
+        /*if (texture == null)
             loadTexture();
         else
-            texture.bind();
+            texture.bind();*/
     }
 
     public float getLeft() {

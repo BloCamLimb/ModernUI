@@ -101,7 +101,7 @@ public final class ModernUIForge extends ModernUI {
 
         ModList.get().forEachModContainer((modid, container) -> {
             if (container instanceof FMLModContainer) {
-                sModEventBuses.put(modid, ((FMLModContainer) container).getEventBus());
+                sModEventBuses.put(container.getNamespace(), ((FMLModContainer) container).getEventBus());
             }
         });
 
@@ -208,15 +208,16 @@ public final class ModernUIForge extends ModernUI {
         return sOptiFineLoaded;
     }
 
-    public static <T extends Event & IModBusEvent> boolean fire(@Nullable String modid, @Nonnull T event) {
-        if (modid == null) {
+    @SuppressWarnings("UnusedReturnValue")
+    public static <T extends Event & IModBusEvent> boolean fire(@Nullable String namespace, @Nonnull T event) {
+        if (namespace == null) {
             for (IEventBus bus : sModEventBuses.values()) {
                 if (bus.post(event)) {
                     return true;
                 }
             }
         } else {
-            IEventBus bus = sModEventBuses.get(modid);
+            IEventBus bus = sModEventBuses.get(namespace);
             return bus != null && bus.post(event);
         }
         return false;

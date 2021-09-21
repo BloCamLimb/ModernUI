@@ -128,10 +128,10 @@ public final class GLCanvas extends Canvas {
     public static final int DRAW_CLIP_PUSH = 10;
     public static final int DRAW_CLIP_POP = 11;
     public static final int DRAW_TEXT = 12;
-    public static final int DRAW_IMAGE_MS = 13;
-    public static final int DRAW_MATRIX = 14;
-    public static final int DRAW_SMOOTH = 15;
-    public static final int DRAW_BEZIER = 16;
+    public static final int DRAW_MATRIX = 13;
+    public static final int DRAW_SMOOTH = 14;
+    public static final int DRAW_BEZIER = 15;
+    public static final int DRAW_IMAGE_MS = 16;
 
     /**
      * Uniform block sizes (maximum), use std140 layout
@@ -243,10 +243,18 @@ public final class GLCanvas extends Canvas {
                 .put(mCircleUBO.get())
                 .put(mRoundRectUBO.get())
                 .flip();
+        ModernUI.LOGGER.debug(MARKER,
+                "Uniform buffers: Matrix {}, Smooth {}, Arc {}, Bezier {}, Circle {}, RoundRect {}",
+                mUniformBuffers.get(0), mUniformBuffers.get(1), mUniformBuffers.get(2),
+                mUniformBuffers.get(3), mUniformBuffers.get(4), mUniformBuffers.get(5));
 
         POS_COLOR.setVertexBuffer(GENERIC_BINDING, mPosColorVBO, 0);
         POS_COLOR_TEX.setVertexBuffer(GENERIC_BINDING, mPosColorTexVBO, 0);
         POS_TEX.setVertexBuffer(GENERIC_BINDING, mPosTexVBO, 0);
+
+        ModernUI.LOGGER.debug(MARKER,
+                "Vertex buffers: PosColor {}, PosColorTex {}, PosTex(Glyph) {}",
+                mPosColorVBO.get(), mPosColorTexVBO.get(), mPosTexVBO.get());
 
         mMatrixStack.push(Matrix4.identity());
         mClipStack.push(new Clip());
@@ -267,7 +275,7 @@ public final class GLCanvas extends Canvas {
     }
 
     /**
-     * Exposed for internal use, be aware of the thread-safety.
+     * Exposed for internal use, be aware of the thread-safety and client-controlled GL states.
      *
      * @return the global instance
      */
@@ -610,7 +618,7 @@ public final class GLCanvas extends Canvas {
     }*/
 
     private ByteBuffer checkPosColorMemory() {
-        if (mPosColorMemory.remaining() < 256) {
+        if (mPosColorMemory.remaining() < 48) {
             int cap = mPosColorMemory.capacity();
             cap = cap + (cap >> 1);
             mPosColorMemory = memRealloc(mPosColorMemory, cap);
@@ -621,7 +629,7 @@ public final class GLCanvas extends Canvas {
     }
 
     private ByteBuffer checkPosColorTexMemory() {
-        if (mPosColorTexMemory.remaining() < 256) {
+        if (mPosColorTexMemory.remaining() < 80) {
             int cap = mPosColorTexMemory.capacity();
             cap = cap + (cap >> 1);
             mPosColorTexMemory = memRealloc(mPosColorTexMemory, cap);
@@ -653,7 +661,7 @@ public final class GLCanvas extends Canvas {
     }
 
     private ByteBuffer checkUniformMemory() {
-        if (mUniformMemory.remaining() < 256) {
+        if (mUniformMemory.remaining() < 80) {
             int cap = mUniformMemory.capacity();
             cap = cap + (cap >> 1);
             mUniformMemory = memRealloc(mUniformMemory, cap);
@@ -1023,7 +1031,7 @@ public final class GLCanvas extends Canvas {
     @Override
     public void drawArc(float cx, float cy, float radius, float startAngle,
                         float sweepAngle, @Nonnull Paint paint) {
-        if (sweepAngle == 0 || radius <= 0) {
+        if (MathUtil.approxZero(sweepAngle) || radius < 0.0001f) {
             return;
         }
         if (sweepAngle >= 360) {
@@ -1059,6 +1067,9 @@ public final class GLCanvas extends Canvas {
     private void drawArcStroke(float cx, float cy, float radius, float middleAngle,
                                float sweepAngle, @Nonnull Paint paint) {
         float strokeRadius = Math.min(radius, paint.getStrokeWidth() * 0.5f);
+        if (strokeRadius < 0.0001f) {
+            return;
+        }
         float maxRadius = radius + strokeRadius;
         if (quickReject(cx - maxRadius, cy - maxRadius, cx + maxRadius, cy + maxRadius)) {
             return;
@@ -1079,6 +1090,9 @@ public final class GLCanvas extends Canvas {
     @Override
     public void drawBezier(float x0, float y0, float x1, float y1, float x2, float y2, @Nonnull Paint paint) {
         float strokeRadius = paint.getStrokeWidth() * 0.5f;
+        if (strokeRadius < 0.0001f) {
+            return;
+        }
         float left = Math.min(Math.min(x0, x1), x2) - strokeRadius;
         float top = Math.min(Math.min(y0, y1), y2) - strokeRadius;
         float right = Math.max(Math.max(x0, x1), x2) + strokeRadius;
@@ -1102,7 +1116,7 @@ public final class GLCanvas extends Canvas {
 
     @Override
     public void drawCircle(float cx, float cy, float radius, @Nonnull Paint paint) {
-        if (radius <= 0) {
+        if (radius < 0.0001f) {
             return;
         }
         if (paint.getStyle() == Paint.Style.FILL) {
@@ -1128,6 +1142,9 @@ public final class GLCanvas extends Canvas {
 
     private void drawCircleStroke(float cx, float cy, float radius, @Nonnull Paint paint) {
         float strokeRadius = Math.min(radius, paint.getStrokeWidth() * 0.5f);
+        if (strokeRadius < 0.0001f) {
+            return;
+        }
         float maxRadius = radius + strokeRadius;
         if (quickReject(cx - maxRadius, cy - maxRadius, cx + maxRadius, cy + maxRadius)) {
             return;
@@ -1146,28 +1163,22 @@ public final class GLCanvas extends Canvas {
     @Override
     public void drawRoundLine(float startX, float startY, float stopX, float stopY, @Nonnull Paint paint) {
         float t = paint.getStrokeWidth() * 0.5f;
+        if (t < 0.0001f) {
+            return;
+        }
         if (MathUtil.approxEqual(startX, stopX)) {
             if (MathUtil.approxEqual(startY, stopY)) {
-                if (quickReject(startX - t, startY - t, startX + t, startY + t)) {
-                    return;
-                }
                 drawCircleFill(startX, startY, t, paint);
             } else {
                 // vertical
                 float top = Math.min(startY, stopY);
                 float bottom = Math.max(startY, stopY);
-                if (quickReject(startX - t, top - t, startX + t, bottom + t)) {
-                    return;
-                }
                 drawRoundRectFill(startX - t, top - t, startX + t, bottom + t, t, 0, paint);
             }
         } else if (MathUtil.approxEqual(startY, stopY)) {
             // horizontal
             float left = Math.min(startX, stopX);
             float right = Math.max(startX, stopX);
-            if (quickReject(left - t, startY - t, right + t, startY + t)) {
-                return;
-            }
             drawRoundRectFill(left - t, startY - t, right + t, startY + t, t, 0, paint);
         } else {
             float cx = (stopX + startX) * 0.5f;
@@ -1184,9 +1195,7 @@ public final class GLCanvas extends Canvas {
             float cos = MathUtil.cos(-ang);
             float left = (startX - cx) * cos - (startY - cy) * sin + cx;
             float right = (stopX - cx) * cos - (stopY - cy) * sin + cx;
-            if (!quickReject(left - t, cy - t, right + t, cy + t)) {
-                drawRoundRectFill(left - t, cy - t, right + t, cy + t, t, 0, paint);
-            }
+            drawRoundRectFill(left - t, cy - t, right + t, cy + t, t, 0, paint);
             restore();
         }
     }
@@ -1204,11 +1213,11 @@ public final class GLCanvas extends Canvas {
     //TODO
     @Override
     public void drawImage(@Nonnull Image image, float left, float top, @Nonnull Paint paint) {
-        Image.Source source = image.getSource();
+        GLTexture texture = image.getTexture();
         drawMatrix();
-        putRectColorUV(left, top, left + source.width, top + source.height, paint.getColor(),
+        putRectColorUV(left, top, left + texture.getWidth(), top + texture.getHeight(), paint.getColor(),
                 0, 0, 1, 1);
-        mTextures.add(source.texture);
+        mTextures.add(texture);
         mDrawOps.add(DRAW_IMAGE);
     }
 
@@ -1270,6 +1279,9 @@ public final class GLCanvas extends Canvas {
     private void drawRoundRectStroke(float left, float top, float right, float bottom,
                                      float radius, int sides, @Nonnull Paint paint) {
         float strokeRadius = Math.min(radius, paint.getStrokeWidth() * 0.5f);
+        if (strokeRadius < 0.0001f) {
+            return;
+        }
         if (quickReject(left - strokeRadius, top - strokeRadius, right + strokeRadius, bottom + strokeRadius)) {
             return;
         }
@@ -1308,18 +1320,18 @@ public final class GLCanvas extends Canvas {
         if (radius < 0) {
             radius = 0;
         }
-        Image.Source source = image.getSource();
+        GLTexture texture = image.getTexture();
         drawMatrix();
         drawSmooth(Math.min(radius, paint.getSmoothRadius()));
-        putRectColorUV(left, top, left + source.width, top + source.height, paint.getColor(),
+        putRectColorUV(left, top, left + texture.getWidth(), top + texture.getHeight(), paint.getColor(),
                 0, 0, 1, 1);
         checkUniformMemory()
                 .putFloat(left + radius)
                 .putFloat(top + radius)
-                .putFloat(left + source.width - radius)
-                .putFloat(top + source.height - radius)
+                .putFloat(left + texture.getWidth() - radius)
+                .putFloat(top + texture.getHeight() - radius)
                 .putFloat(radius);
-        mTextures.add(source.texture);
+        mTextures.add(texture);
         mDrawOps.add(DRAW_ROUND_IMAGE);
     }
 
