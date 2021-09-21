@@ -22,9 +22,9 @@ import com.ibm.icu.text.DateFormat;
 import com.ibm.icu.text.SimpleDateFormat;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.graphics.Framebuffer;
+import icyllis.modernui.graphics.GLFramebuffer;
 import icyllis.modernui.graphics.Image;
-import icyllis.modernui.graphics.texture.Texture2D;
+import icyllis.modernui.graphics.texture.GLTexture;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.stb.STBIWriteCallback;
 import org.lwjgl.stb.STBIWriteCallbackI;
@@ -169,10 +169,10 @@ public final class Bitmap implements AutoCloseable {
      */
     @Nonnull
     @RenderThread
-    public static Bitmap download(@Nonnull Format format, @Nonnull Texture2D texture, boolean flipY) {
+    public static Bitmap download(@Nonnull Format format, @Nonnull GLTexture texture, boolean flipY) {
         RenderCore.checkRenderThread();
-        final int width = texture.getWidth(0);
-        final int height = texture.getHeight(0);
+        final int width = texture.getWidth();
+        final int height = texture.getHeight();
         final Bitmap bitmap = new Bitmap(format, width, height, false);
         final long p = bitmap.getPixels();
         glPixelStorei(GL_PACK_ROW_LENGTH, 0);
@@ -207,7 +207,7 @@ public final class Bitmap implements AutoCloseable {
      */
     @Nonnull
     @RenderThread
-    public static Bitmap download(@Nonnull Format format, @Nonnull Framebuffer framebuffer, boolean flipY) {
+    public static Bitmap download(@Nonnull Format format, @Nonnull GLFramebuffer framebuffer, boolean flipY) {
         RenderCore.checkRenderThread();
         final int width = framebuffer.getWidth();
         final int height = framebuffer.getHeight();
@@ -286,6 +286,19 @@ public final class Bitmap implements AutoCloseable {
     @Nonnull
     public Format getFormat() {
         return mFormat;
+    }
+
+    public int getChannels() {
+        return mFormat.channels;
+    }
+
+    /**
+     * Describes the format for OpenGL uploading.
+     *
+     * @return client pixels format in OpenGL
+     */
+    public int getGlFormat() {
+        return mFormat.glFormat;
     }
 
     public int getWidth() {
@@ -393,12 +406,9 @@ public final class Bitmap implements AutoCloseable {
         RGB(3, GL_RGB),
         RGBA(4, GL_RGBA);
 
-        public final int channels;
+        private final int channels;
 
-        /**
-         * Describes the format for OpenGL uploading
-         */
-        public final int glFormat;
+        private final int glFormat;
 
         Format(int channels, int glFormat) {
             this.channels = channels;

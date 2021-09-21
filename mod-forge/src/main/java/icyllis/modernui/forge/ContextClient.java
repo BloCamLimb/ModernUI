@@ -20,16 +20,9 @@ package icyllis.modernui.forge;
 
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Image;
-import icyllis.modernui.graphics.texture.Texture2D;
-import icyllis.modernui.platform.Bitmap;
-import icyllis.modernui.platform.RenderCore;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.resources.ReloadableResourceManager;
-import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraftforge.resource.ISelectiveResourceReloadListener;
-import net.minecraftforge.resource.VanillaResourceType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -37,10 +30,6 @@ import java.io.IOException;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
-
-import static icyllis.modernui.graphics.GLWrapper.*;
 
 @Deprecated
 public final class ContextClient extends Context {
@@ -48,54 +37,46 @@ public final class ContextClient extends Context {
     private final String mNamespace;
     private ResourceManager mResourceManager;
 
-    private Map<Path, Image.Source> mImageMap = new HashMap<>();
-
     public ContextClient(String namespace) {
         mNamespace = namespace;
         mResourceManager = Minecraft.getInstance().getResourceManager();
-        ((ReloadableResourceManager) mResourceManager)
-                .registerReloadListener((ISelectiveResourceReloadListener) (manager, predicate) -> {
-                    if (predicate.test(VanillaResourceType.TEXTURES)) {
-                        mImageMap.clear();
-                    }
-                });
     }
 
     @Override
     public ReadableByteChannel getResource(@Nonnull Path path) throws IOException {
         return Channels.newChannel(mResourceManager.getResource(new ResourceLocation(mNamespace, path.toString()
-        .replace('\\', '/'))).getInputStream());
+                .replace('\\', '/'))).getInputStream());
     }
 
     @Nullable
     @Override
     public Image getImage(@Nonnull Path path, boolean aa) {
-        Image.Source source = mImageMap.get(path);
+        /*Image.Source source = mImageMap.get(path);
         if (source != null) {
             return new Image(source);
         }
         try (Resource resource = mResourceManager.getResource(new ResourceLocation(mNamespace, path.toString()))) {
             Bitmap bitmap = Bitmap.decode(Bitmap.Format.RGBA, resource.getInputStream());
-            Texture2D texture2D = new Texture2D();
+            GLTexture texture = new GLTexture(GL_TEXTURE_2D);
             int width = bitmap.getWidth();
             int height = bitmap.getHeight();
             RenderCore.recordRenderCall(() -> {
-                texture2D.initCore(GL_RGBA8, width, height, aa ? 4 : 0);
-                texture2D.upload(0, 0, 0, width, height, 0,
+                texture.allocate2D(GL_RGBA8, width, height, aa ? 4 : 0);
+                texture.upload(0, 0, 0, width, height, 0,
                         0, 0, 1, GL_RGBA, GL_UNSIGNED_BYTE, bitmap.getPixels());
                 if (aa) {
-                    texture2D.setFilter(true, true);
-                    texture2D.generateMipmap();
+                    texture.setFilter(true, true);
+                    texture.generateMipmap();
                 } else {
-                    texture2D.setFilter(false, false);
+                    texture.setFilter(false, false);
                 }
             });
-            source = new Image.Source(texture2D, width, height);
+            source = null;
             mImageMap.put(path, source);
             return new Image(source);
         } catch (Exception e) {
             e.printStackTrace();
-        }
+        }*/
         return null;
     }
 }

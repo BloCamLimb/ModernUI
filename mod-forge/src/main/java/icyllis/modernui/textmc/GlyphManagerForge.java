@@ -21,7 +21,7 @@ package icyllis.modernui.textmc;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.texture.Texture2D;
+import icyllis.modernui.graphics.texture.GLTexture;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.text.Typeface;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
@@ -52,8 +52,7 @@ import java.util.Optional;
 
 import static icyllis.modernui.graphics.GLWrapper.GL_ALPHA;
 import static icyllis.modernui.graphics.GLWrapper.GL_UNSIGNED_BYTE;
-import static org.lwjgl.opengl.GL11C.GL_LINEAR_MIPMAP_LINEAR;
-import static org.lwjgl.opengl.GL11C.GL_NEAREST;
+import static org.lwjgl.opengl.GL11C.*;
 
 /**
  * Find matching fonts and glyphs, measure glyph metrics and draw them of
@@ -205,7 +204,7 @@ public class GlyphManagerForge {
      * ID of current OpenGL cache texture being used by cacheGlyphs() to store
      * pre-rendered glyph images. Render thread only.
      */
-    private Texture2D mTexture;
+    private GLTexture mTexture;
 
     /**
      * A cache of pre-rendered glyphs mapping each glyph by its glyphCode to
@@ -996,7 +995,7 @@ public class GlyphManagerForge {
         mGlyphGraphics.clearRect(0, 0, TEXTURE_SIZE, TEXTURE_SIZE);
 
         /* Allocate new OpenGL texture */
-        mTexture = new Texture2D();
+        mTexture = new GLTexture(GL_TEXTURE_2D);
 
         /* Load imageBuffer with pixel data ready for transfer to OpenGL texture */
         //updateImageBuffer(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
@@ -1026,7 +1025,7 @@ public class GlyphManagerForge {
             GL11.glTexImage2D(GL11.GL_TEXTURE_2D, level, GL11.GL_ALPHA, TEXTURE_SIZE >> level,
                     TEXTURE_SIZE >> level, 0, GL11.GL_ALPHA, GL11.GL_UNSIGNED_BYTE, (IntBuffer) null);
         }*/
-        mTexture.initCompat(GL_ALPHA, TEXTURE_SIZE, TEXTURE_SIZE, mipmapLevel);
+        mTexture.allocate2DM(GL_ALPHA, TEXTURE_SIZE, TEXTURE_SIZE, mipmapLevel);
 
         //mTexture.swizzle(GL_ONE, GL_ONE, GL_ONE, GL_RED);
 
@@ -1155,7 +1154,7 @@ public class GlyphManagerForge {
          */
         private final float v2;
 
-        public VanillaGlyph(Texture2D texture, float advance, float baselineX, float baselineY, float width,
+        public VanillaGlyph(GLTexture texture, float advance, float baselineX, float baselineY, float width,
                             float height, float u1, float v1, float u2, float v2) {
             this.advance = advance;
             this.baselineX = baselineX;

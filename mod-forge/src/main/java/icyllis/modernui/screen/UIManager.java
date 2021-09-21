@@ -26,8 +26,8 @@ import icyllis.modernui.animation.AnimationHandler;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.forge.ModernUIForge;
-import icyllis.modernui.graphics.Framebuffer;
 import icyllis.modernui.graphics.GLCanvas;
+import icyllis.modernui.graphics.GLFramebuffer;
 import icyllis.modernui.graphics.texture.GLTexture;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.platform.RenderCore;
@@ -125,7 +125,7 @@ public final class UIManager implements ViewRootImpl.Handler {
 
     // lazy loading
     private GLCanvas mCanvas;
-    private final Framebuffer mFramebuffer;
+    private final GLFramebuffer mFramebuffer;
 
     private final Thread mUiThread;
     private final Object mRenderLock = new Object();
@@ -137,7 +137,7 @@ public final class UIManager implements ViewRootImpl.Handler {
 
     private UIManager() {
         mAnimationCallback = AnimationHandler.init();
-        mFramebuffer = new Framebuffer(mWindow.getWidth(), mWindow.getHeight());
+        mFramebuffer = new GLFramebuffer(mWindow.getWidth(), mWindow.getHeight());
         mUiThread = new Thread(this::run, "UI thread");
         MinecraftForge.EVENT_BUS.register(this);
     }
@@ -183,9 +183,9 @@ public final class UIManager implements ViewRootImpl.Handler {
     }
 
     // Internal method
-    public boolean openMenu(@Nonnull LocalPlayer player, @Nonnull AbstractContainerMenu menu, @Nonnull String modid) {
+    public boolean openMenu(@Nonnull LocalPlayer player, @Nonnull AbstractContainerMenu menu, String namespace) {
         OpenMenuEvent event = new OpenMenuEvent(menu);
-        ModernUIForge.fire(modid, event);
+        ModernUIForge.fire(namespace, event);
         ScreenCallback callback = event.getCallback();
         if (callback == null) {
             return false;
@@ -548,7 +548,7 @@ public final class UIManager implements ViewRootImpl.Handler {
         int height = mWindow.getHeight();
 
         GLCanvas canvas = mCanvas;
-        Framebuffer framebuffer = mFramebuffer;
+        GLFramebuffer framebuffer = mFramebuffer;
 
         if (mProjectionChanged) {
             // Test
@@ -586,7 +586,7 @@ public final class UIManager implements ViewRootImpl.Handler {
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, minecraft.getMainRenderTarget().frameBufferId);
 
         // do alpha fade in
-        int alpha = (int) Math.min(255, mElapsedTimeMillis);
+        int alpha = (int) Math.min(0xff, mElapsedTimeMillis);
         canvas.drawTextureMSAA(texture, 0, 0, width, height, alpha << 24 | 0xffffff, true);
         canvas.draw();
 

@@ -18,16 +18,13 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.texture.Renderbuffer;
+import icyllis.modernui.graphics.texture.GLRenderbuffer;
 import icyllis.modernui.graphics.texture.GLTexture;
-import icyllis.modernui.graphics.texture.Texture2DMultisample;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.lwjgl.BufferUtils;
 
 import javax.annotation.Nonnull;
-import java.lang.ref.Cleaner;
 import java.nio.FloatBuffer;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
@@ -48,29 +45,29 @@ import static icyllis.modernui.graphics.GLWrapper.*;
  * @see <a href="https://www.khronos.org/opengl/wiki/Framebuffer_Object">Framebuffer Object</a>
  */
 //TODO WIP
-public final class Framebuffer implements AutoCloseable {
+public final class GLFramebuffer extends GLObject {
 
     private int mWidth;
     private int mHeight;
 
-    private Ref mRef;
-    private Int2ObjectMap<AutoCloseable> mAttachments;
+    private Int2ObjectMap<GLObject> mAttachments;
 
     //private int mMsaaLevel = 0;
 
     private final FloatBuffer mClearColor = BufferUtils.createFloatBuffer(4);
 
-    public Framebuffer(int width, int height) {
+    public GLFramebuffer(int width, int height) {
         mWidth = Math.max(1, width);
         mHeight = Math.max(1, height);
     }
 
+    @Override
     public int get() {
-        if (mRef == null) {
-            mRef = new Ref(this);
+        if (ref == null) {
+            ref = new FramebufferRef(this);
             mAttachments = new Int2ObjectArrayMap<>();
         }
-        return mRef.framebuffer;
+        return ref.object;
     }
 
     /**
@@ -89,15 +86,15 @@ public final class Framebuffer implements AutoCloseable {
     }
 
     public void attachTexture(int attachmentPoint, int internalFormat) {
-        Texture2DMultisample texture = new Texture2DMultisample();
-        texture.init(internalFormat, mWidth, mHeight, 4);
+        GLTexture texture = new GLTexture(GL_TEXTURE_2D_MULTISAMPLE);
+        texture.allocate2DMS(internalFormat, mWidth, mHeight, 4);
         glNamedFramebufferTexture(get(), attachmentPoint, texture.get(), 0);
         mAttachments.put(attachmentPoint, texture);
     }
 
     public void attachRenderbuffer(int attachmentPoint, int internalFormat) {
-        Renderbuffer renderbuffer = new Renderbuffer();
-        renderbuffer.init(internalFormat, mWidth, mHeight, 4);
+        GLRenderbuffer renderbuffer = new GLRenderbuffer();
+        renderbuffer.allocate(internalFormat, mWidth, mHeight, 4);
         glNamedFramebufferRenderbuffer(get(), attachmentPoint, GL_RENDERBUFFER, renderbuffer.get());
         mAttachments.put(attachmentPoint, renderbuffer);
     }
@@ -140,18 +137,19 @@ public final class Framebuffer implements AutoCloseable {
         mWidth = width;
         mHeight = height;
         for (var entry : mAttachments.int2ObjectEntrySet()) {
-            AutoCloseable a = entry.getValue();
-            if (a instanceof Texture2DMultisample) {
-                Texture2DMultisample texture = (Texture2DMultisample) a;
+            GLObject obj = entry.getValue();
+            if (obj instanceof GLTexture) {
+                GLTexture texture = (GLTexture) obj;
                 int internalFormat = glGetTextureLevelParameteri(texture.get(), 0, GL_TEXTURE_INTERNAL_FORMAT);
                 texture.close();
-                texture.init(internalFormat, width, height, 4);
+                texture.allocate2DMS(internalFormat, width, height, 4);
                 glNamedFramebufferTexture(get(), entry.getIntKey(), texture.get(), 0);
-            } else if (a instanceof Renderbuffer) {
-                Renderbuffer renderbuffer = (Renderbuffer) a;
-                int internalFormat = glGetNamedRenderbufferParameteri(renderbuffer.get(), GL_RENDERBUFFER_INTERNAL_FORMAT);
+            } else if (obj instanceof GLRenderbuffer) {
+                GLRenderbuffer renderbuffer = (GLRenderbuffer) obj;
+                int internalFormat = glGetNamedRenderbufferParameteri(renderbuffer.get(),
+                        GL_RENDERBUFFER_INTERNAL_FORMAT);
                 renderbuffer.close();
-                renderbuffer.init(internalFormat, width, height, 4);
+                renderbuffer.allocate(internalFormat, width, height, 4);
                 glNamedFramebufferRenderbuffer(get(), entry.getIntKey(), GL_RENDERBUFFER, renderbuffer.get());
             }
         }
@@ -213,42 +211,32 @@ public final class Framebuffer implements AutoCloseable {
     }
 
     @Nonnull
-    public Renderbuffer getAttachedRenderbuffer(int attachmentPoint) {
+    public GLRenderbuffer getAttachedRenderbuffer(int attachmentPoint) {
         AutoCloseable a = mAttachments.get(attachmentPoint);
-        if (a instanceof Renderbuffer) {
-            return (Renderbuffer) a;
+        if (a instanceof GLRenderbuffer) {
+            return (GLRenderbuffer) a;
         }
         throw new IllegalArgumentException();
     }
 
     @Override
     public void close() {
-        if (mRef != null) {
-            mRef.cleanup.clean();
-            mRef = null;
-            for (var a : mAttachments.values()) {
-                try {
-                    a.close();
-                } catch (Exception ignored) {
-                }
-            }
+        super.close();
+        if (mAttachments != null) {
+            mAttachments.values().forEach(GLObject::close);
             mAttachments = null;
         }
     }
 
-    private static final class Ref implements Runnable {
+    private static final class FramebufferRef extends Ref {
 
-        private final int framebuffer;
-        private final Cleaner.Cleanable cleanup;
-
-        private Ref(@Nonnull Framebuffer owner) {
-            framebuffer = glCreateFramebuffers();
-            cleanup = ModernUI.registerCleanup(owner, this);
+        private FramebufferRef(@Nonnull GLFramebuffer owner) {
+            super(owner, glCreateFramebuffers());
         }
 
         @Override
         public void run() {
-            deleteFramebufferAsync(framebuffer, this);
+            deleteFramebufferAsync(object, this);
         }
     }
 }

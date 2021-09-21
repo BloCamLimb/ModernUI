@@ -18,44 +18,30 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.graphics.texture.Texture2D;
+import icyllis.modernui.graphics.texture.GLTexture;
+
+import javax.annotation.Nonnull;
 
 /**
- * Image is the advanced form of OpenGL 2D texture that can be used for drawing
- * and processing with flexibility. This is designed for application level, it is
- * not the OpenGL image, see mipmap.
+ * This class represents OpenGL 2D textures at high-level, which is used for drawing
+ * and processing in the application layer.
  */
-//TODO wip
-public class Image implements AutoCloseable {
+//TODO
+public class Image {
 
-    private final Source mSource;
+    private final GLTexture mTexture;
 
-    public Image(Source source) {
-        mSource = source;
-    }
-
-    Source getSource() {
-        return mSource;
-    }
-
-    @Override
-    public void close() {
-
+    public Image(@Nonnull GLTexture texture) {
+        mTexture = texture;
     }
 
     /**
-     * The shared texture source.
+     * Returns the backing texture.
+     *
+     * @return OpenGL texture
      */
-    public static class Source {
-
-        final Texture2D texture;
-        final int width;
-        final int height;
-
-        public Source(Texture2D texture, int width, int height) {
-            this.texture = texture;
-            this.width = width;
-            this.height = height;
-        }
+    @Nonnull
+    public final GLTexture getTexture() {
+        return mTexture;
     }
 }

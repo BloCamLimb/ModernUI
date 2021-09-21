@@ -18,10 +18,9 @@
 
 package icyllis.modernui.text;
 
-import it.unimi.dsi.fastutil.Arrays;
-
 import javax.annotation.Nonnull;
 import java.text.CharacterIterator;
+import java.util.Objects;
 
 public class CharArrayIterator implements CharacterIterator {
 
@@ -40,11 +39,10 @@ public class CharArrayIterator implements CharacterIterator {
     }
 
     public CharArrayIterator(@Nonnull char[] text, int start, int end) {
-        Arrays.ensureFromTo(text.length, start, end);
+        pos = Objects.checkFromToIndex(start, end, text.length);
         this.text = text;
         this.start = start;
         this.end = end;
-        pos = start;
     }
 
     @Override
