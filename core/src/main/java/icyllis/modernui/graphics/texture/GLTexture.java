@@ -196,11 +196,13 @@ public class GLTexture extends GLObject {
         glTextureParameteri(texture, GL_TEXTURE_MIN_LOD, 0);
         glTextureParameteri(texture, GL_TEXTURE_MAX_LOD, maxLevel);
 
+        final int p = glGetInteger(GL_TEXTURE_BINDING_2D);
         glBindTexture(GL_TEXTURE_2D, texture);
         for (int level = 0; level <= maxLevel; level++) {
             nglTexImage2D(GL_TEXTURE_2D, level, internalFormat, width >> level,
                     height >> level, 0, GL_RED, GL_UNSIGNED_BYTE, MemoryUtil.NULL);
         }
+        glBindTexture(GL_TEXTURE_2D, p);
 
         long dim = 0;
         dim |= (glGetTextureLevelParameteri(texture, 0, GL_TEXTURE_WIDTH) & SIZE_MASK);

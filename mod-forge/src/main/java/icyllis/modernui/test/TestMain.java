@@ -134,7 +134,7 @@ public class TestMain {
 
         /*System.setProperty("org.lwjgl.librarypath", nativesDir);*/
 
-        ModernUI.initInternal();
+        new ModernUI();
 
         IMAGE = new BufferedImage(1024, 1024, BufferedImage.TYPE_INT_ARGB);
         GRAPHICS = IMAGE.createGraphics();
@@ -226,11 +226,11 @@ public class TestMain {
             Thread.currentThread().setName("Main-Thread");
             RenderCore.initBackend();
             sWindow = Window.create("Modern UI Layout Editor", Window.State.WINDOWED, 1600, 900);
-            try (var c1 = ModernUI.get().getResource(Path.of("AppLogo16x.png"));
+            try (var c1 = ModernUI.get().getResourceAsChannel(ModernUI.ID, "AppLogo16x.png");
                  var bitmap1 = Bitmap.decode(null, c1);
-                 var c2 = ModernUI.get().getResource(Path.of("AppLogo32x.png"));
+                 var c2 = ModernUI.get().getResourceAsChannel(ModernUI.ID, "AppLogo32x.png");
                  var bitmap2 = Bitmap.decode(null, c2);
-                 var c3 = ModernUI.get().getResource(Path.of("AppLogo48x.png"));
+                 var c3 = ModernUI.get().getResourceAsChannel(ModernUI.ID, "AppLogo48x.png");
                  var bitmap3 = Bitmap.decode(null, c3)) {
                 sWindow.setIcon(bitmap1, bitmap2, bitmap3);
             } catch (IOException e) {
@@ -351,7 +351,7 @@ public class TestMain {
             if (delta > 16) {
                 lastTime += 16;
                 GLWrapper.resetFrame(window);
-                GLWrapper.enableCull();
+                glEnable(GL_CULL_FACE);
                 GLWrapper.glEnable(GL_BLEND);
                 GLWrapper.glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
                 GLWrapper.glEnable(GL_STENCIL_TEST);

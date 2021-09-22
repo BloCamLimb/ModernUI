@@ -42,7 +42,11 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.awt.*;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.*;
@@ -92,7 +96,6 @@ public final class ModernUIForge extends ModernUI {
                                     }
                                 }
                         );
-                attachBaseContext(new ContextClient(ID));
             }
             if (sDevelopment) {
                 FMLJavaModLoadingContext.get().getModEventBus().register(EventHandler.ModClientDev.class);
@@ -198,6 +201,18 @@ public final class ModernUIForge extends ModernUI {
                 }
             }
         }
+    }
+
+    @Nonnull
+    @Override
+    public InputStream getResourceAsStream(@Nonnull String namespace, @Nonnull String path) throws IOException {
+        return Minecraft.getInstance().getResourceManager().getResource(new ResourceLocation(namespace, path)).getInputStream();
+    }
+
+    @Nonnull
+    @Override
+    public ReadableByteChannel getResourceAsChannel(@Nonnull String namespace, @Nonnull String path) throws IOException {
+        return Channels.newChannel(getResourceAsStream(namespace, path));
     }
 
     public static boolean isDeveloperMode() {

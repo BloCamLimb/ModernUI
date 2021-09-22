@@ -18,9 +18,6 @@
 
 package icyllis.modernui;
 
-import icyllis.modernui.core.Context;
-import icyllis.modernui.core.ContextWrapper;
-import icyllis.modernui.graphics.Image;
 import icyllis.modernui.text.Typeface;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,8 +25,9 @@ import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.ref.Cleaner;
 import java.lang.ref.Cleaner.Cleanable;
 import java.nio.channels.ReadableByteChannel;
@@ -37,11 +35,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Locale;
+import java.util.Objects;
 
 /**
  * The core class of the client side of Modern UI
  */
-public class ModernUI extends ContextWrapper {
+public class ModernUI {
 
     public static final String ID = "modernui"; // as well as the namespace
     public static final String NAME_CPT = "ModernUI";
@@ -53,28 +52,13 @@ public class ModernUI extends ContextWrapper {
 
     private static final Cleaner sCleaner = Cleaner.create();
 
+    private final Path mAssetsDir = Path.of(Objects.requireNonNullElse(System.getenv("APP_ASSETS"), ""));
+
     public ModernUI() {
         sInstance = this;
         if (Runtime.version().feature() < 11) {
             throw new RuntimeException("JRE 11 or above is required");
         }
-        //mLoaderPool = Executors.newSingleThreadExecutor(target -> new Thread(target, "mui-loading-core"));
-    }
-
-    public static void initInternal() {
-        Path resourcesDir = Path.of(System.getenv("MOD_ASSETS"), ID);
-        new ModernUI().attachBaseContext(new Context() {
-            @Override
-            public ReadableByteChannel getResource(@Nonnull Path path) throws IOException {
-                return Files.newByteChannel(resourcesDir.resolve(path), StandardOpenOption.READ);
-            }
-
-            @Nullable
-            @Override
-            public Image getImage(@Nonnull Path path, boolean antiAliasing) {
-                return null;
-            }
-        });
     }
 
     /**
@@ -108,5 +92,15 @@ public class ModernUI extends ContextWrapper {
     @Nonnull
     public Typeface getPreferredTypeface() {
         return Typeface.INTERNAL;
+    }
+
+    @Nonnull
+    public InputStream getResourceAsStream(@Nonnull String namespace, @Nonnull String path) throws IOException {
+        return new FileInputStream(mAssetsDir.resolve(namespace).resolve(path).toFile());
+    }
+
+    @Nonnull
+    public ReadableByteChannel getResourceAsChannel(@Nonnull String namespace, @Nonnull String path) throws IOException {
+        return Files.newByteChannel(mAssetsDir.resolve(namespace).resolve(path), StandardOpenOption.READ);
     }
 }
