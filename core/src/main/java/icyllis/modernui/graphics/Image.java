@@ -25,6 +25,8 @@ import javax.annotation.Nonnull;
 /**
  * This class represents OpenGL 2D textures at high-level, which is used for drawing
  * and processing in the application layer.
+ * <p>
+ * Memory Management ...
  */
 //TODO
 public class Image {

@@ -20,7 +20,6 @@ package icyllis.modernui.forge;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.GLWrapper;
 import icyllis.modernui.mixin.AccessOption;
 import icyllis.modernui.mixin.AccessVideoSettings;
 import icyllis.modernui.platform.RenderCore;
@@ -103,7 +102,6 @@ final class Registration {
     static void loadingClient(ParticleFactoryRegisterEvent event) {
         // this event fired after LOAD_REGISTRIES and before COMMON_SETUP on render thread
         // we use this because we want a ResourceReloadListener after language data reloaded
-        GLWrapper.setRedirector(new B3DRedirector());
         RenderCore.initialize();
         UIManager.initialize();
     }

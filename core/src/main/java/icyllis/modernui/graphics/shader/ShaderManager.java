@@ -20,7 +20,6 @@ package icyllis.modernui.graphics.shader;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.core.Context;
 import icyllis.modernui.platform.RenderCore;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -29,7 +28,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -46,7 +44,7 @@ public class ShaderManager {
 
     private final Set<Listener> mListeners = new HashSet<>();
 
-    private final Map<Context, Object2IntMap<Path>> mShaders = new HashMap<>();
+    private final Map<String, Object2IntMap<String>> mShaders = new HashMap<>();
 
     public static ShaderManager getInstance() {
         return instance;
@@ -88,13 +86,13 @@ public class ShaderManager {
     /**
      * Get or create a shader shard, call this on listener callback.
      *
-     * @param context  the application context
-     * @param subPaths sub paths to the shader source, parent is 'shaders'
+     * @param namespace the application namespace
+     * @param subPath   sub paths to the shader source, parent is 'shaders'
      * @return the shader shard handle or 0 on failure
-     * @see #getShard(Context, Path, int)
+     * @see #getShard(String, String, int)
      */
-    public int getShard(@Nonnull Context context, @Nonnull String... subPaths) {
-        return getShard(context, Path.of("shaders", subPaths), 0);
+    public int getShard(@Nonnull String namespace, @Nonnull String subPath) {
+        return getShard(namespace, "shaders/" + subPath, 0);
     }
 
     /**
@@ -128,40 +126,45 @@ public class ShaderManager {
      *   </tr>
      * </table>
      *
-     * @param context the application context
-     * @param path    the path of shader source
-     * @param type    the shader type to create, can be 0 for standard file extension
+     * @param namespace the application namespace
+     * @param path      the path of shader source
+     * @param type      the shader type to create, can be 0 for standard file extension
      * @return the shader shard handle or 0 on failure
      */
-    public int getShard(@Nonnull Context context, @Nonnull Path path, int type) {
+    public int getShard(@Nonnull String namespace, @Nonnull String path, int type) {
         RenderCore.checkRenderThread();
-        int shader = mShaders.computeIfAbsent(context, c -> new Object2IntOpenHashMap<>()).getInt(path);
-        if (shader != 0) {
+        int shader = mShaders.computeIfAbsent(namespace, n -> {
+            Object2IntMap<String> r = new Object2IntOpenHashMap<>();
+            r.defaultReturnValue(-1);
+            return r;
+        }).getInt(path);
+        if (shader != -1) {
             return shader;
         }
-        try (ReadableByteChannel channel = context.getResource(path)) {
-            String source = RenderCore.readStringUTF8(channel);
-            if (source == null) {
-                ModernUI.LOGGER.error(MARKER, "Failed to read shader source: {}", path);
+        if (type == 0) {
+            if (path.endsWith(".vert")) {
+                type = GL_VERTEX_SHADER;
+            } else if (path.endsWith(".frag")) {
+                type = GL_FRAGMENT_SHADER;
+            } else if (path.endsWith(".geom")) {
+                type = GL_GEOMETRY_SHADER;
+            } else if (path.endsWith(".tesc")) {
+                type = GL_TESS_CONTROL_SHADER;
+            } else if (path.endsWith(".tese")) {
+                type = GL_TESS_EVALUATION_SHADER;
+            } else if (path.endsWith(".comp")) {
+                type = GL_COMPUTE_SHADER;
+            } else {
+                ModernUI.LOGGER.warn(MARKER, "Unknown type identifier with path: {}", path);
                 return 0;
             }
-            if (type == 0) {
-                String s = path.toString();
-                if (s.endsWith(".vert")) {
-                    type = GL_VERTEX_SHADER;
-                } else if (s.endsWith(".frag")) {
-                    type = GL_FRAGMENT_SHADER;
-                } else if (s.endsWith(".geom")) {
-                    type = GL_GEOMETRY_SHADER;
-                } else if (s.endsWith(".tesc")) {
-                    type = GL_TESS_CONTROL_SHADER;
-                } else if (s.endsWith(".tese")) {
-                    type = GL_TESS_EVALUATION_SHADER;
-                } else if (s.endsWith(".comp")) {
-                    type = GL_COMPUTE_SHADER;
-                } else {
-                    return 0;
-                }
+        }
+        try (ReadableByteChannel channel = ModernUI.get().getResourceAsChannel(namespace, path)) {
+            String source = RenderCore.readStringUTF8(channel);
+            if (source == null) {
+                ModernUI.LOGGER.error(MARKER, "Failed to read shader source path: {}", path);
+                mShaders.get(namespace).putIfAbsent(path, 0);
+                return 0;
             }
             shader = glCreateShader(type);
             glShaderSource(shader, source);
@@ -170,12 +173,15 @@ public class ShaderManager {
                 String log = glGetShaderInfoLog(shader, 8192).trim();
                 ModernUI.LOGGER.error(MARKER, "Failed to compile shader {}:\n{}", path, log);
                 glDeleteShader(shader);
+                mShaders.get(namespace).putIfAbsent(path, 0);
                 return 0;
             }
+            mShaders.get(namespace).putIfAbsent(path, shader);
             return shader;
         } catch (IOException e) {
             ModernUI.LOGGER.error(MARKER, "Failed to get shader source {}\n", path, e);
         }
+        mShaders.get(namespace).putIfAbsent(path, 0);
         return 0;
     }
 

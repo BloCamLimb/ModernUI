@@ -284,22 +284,22 @@ public final class GLCanvas extends Canvas {
     }
 
     private void onLoadShaders(@Nonnull ShaderManager manager) {
-        int posColor = manager.getShard(ModernUI.get(), "pos_color.vert");
-        int posColorTex = manager.getShard(ModernUI.get(), "pos_color_tex.vert");
-        int posTex = manager.getShard(ModernUI.get(), "pos_tex.vert");
+        int posColor = manager.getShard(ModernUI.ID, "pos_color.vert");
+        int posColorTex = manager.getShard(ModernUI.ID, "pos_color_tex.vert");
+        int posTex = manager.getShard(ModernUI.ID, "pos_tex.vert");
 
-        int colorFill = manager.getShard(ModernUI.get(), "color_fill.frag");
-        int colorTex = manager.getShard(ModernUI.get(), "color_tex.frag");
-        int roundRectFill = manager.getShard(ModernUI.get(), "round_rect_fill.frag");
-        int roundRectTex = manager.getShard(ModernUI.get(), "round_rect_tex.frag");
-        int roundRectStroke = manager.getShard(ModernUI.get(), "round_rect_stroke.frag");
-        int circleFill = manager.getShard(ModernUI.get(), "circle_fill.frag");
-        int circleStroke = manager.getShard(ModernUI.get(), "circle_stroke.frag");
-        int arcFill = manager.getShard(ModernUI.get(), "arc_fill.frag");
-        int arcStroke = manager.getShard(ModernUI.get(), "arc_stroke.frag");
-        int bezierCurve = manager.getShard(ModernUI.get(), "bezier_curve.frag");
-        int alphaTex = manager.getShard(ModernUI.get(), "alpha_tex.frag");
-        int colorTexMs = manager.getShard(ModernUI.get(), "color_tex_4x.frag");
+        int colorFill = manager.getShard(ModernUI.ID, "color_fill.frag");
+        int colorTex = manager.getShard(ModernUI.ID, "color_tex.frag");
+        int roundRectFill = manager.getShard(ModernUI.ID, "round_rect_fill.frag");
+        int roundRectTex = manager.getShard(ModernUI.ID, "round_rect_tex.frag");
+        int roundRectStroke = manager.getShard(ModernUI.ID, "round_rect_stroke.frag");
+        int circleFill = manager.getShard(ModernUI.ID, "circle_fill.frag");
+        int circleStroke = manager.getShard(ModernUI.ID, "circle_stroke.frag");
+        int arcFill = manager.getShard(ModernUI.ID, "arc_fill.frag");
+        int arcStroke = manager.getShard(ModernUI.ID, "arc_stroke.frag");
+        int bezierCurve = manager.getShard(ModernUI.ID, "bezier_curve.frag");
+        int alphaTex = manager.getShard(ModernUI.ID, "alpha_tex.frag");
+        int colorTexMs = manager.getShard(ModernUI.ID, "color_tex_4x.frag");
 
         manager.create(COLOR_FILL, posColor, colorFill);
         manager.create(COLOR_TEX, posColorTex, colorTex);
