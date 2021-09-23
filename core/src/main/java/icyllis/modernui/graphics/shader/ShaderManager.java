@@ -46,6 +46,9 @@ public class ShaderManager {
 
     private final Map<String, Object2IntMap<String>> mShaders = new HashMap<>();
 
+    private ShaderManager() {
+    }
+
     public static ShaderManager getInstance() {
         return instance;
     }
@@ -129,7 +132,7 @@ public class ShaderManager {
      * @param namespace the application namespace
      * @param path      the path of shader source
      * @param type      the shader type to create, can be 0 for standard file extension
-     * @return the shader shard handle or 0 on failure
+     * @return the shader shard or 0 on failure
      */
     public int getShard(@Nonnull String namespace, @Nonnull String path, int type) {
         RenderCore.checkRenderThread();
@@ -155,14 +158,14 @@ public class ShaderManager {
             } else if (path.endsWith(".comp")) {
                 type = GL_COMPUTE_SHADER;
             } else {
-                ModernUI.LOGGER.warn(MARKER, "Unknown type identifier with path: {}", path);
+                ModernUI.LOGGER.warn(MARKER, "Unknown type identifier for shader source {}:{}", namespace, path);
                 return 0;
             }
         }
         try (ReadableByteChannel channel = ModernUI.get().getResourceAsChannel(namespace, path)) {
             String source = RenderCore.readStringUTF8(channel);
             if (source == null) {
-                ModernUI.LOGGER.error(MARKER, "Failed to read shader source path: {}", path);
+                ModernUI.LOGGER.error(MARKER, "Failed to read shader source {}:{}", namespace, path);
                 mShaders.get(namespace).putIfAbsent(path, 0);
                 return 0;
             }
@@ -171,7 +174,7 @@ public class ShaderManager {
             glCompileShader(shader);
             if (glGetShaderi(shader, GL_COMPILE_STATUS) == GL_FALSE) {
                 String log = glGetShaderInfoLog(shader, 8192).trim();
-                ModernUI.LOGGER.error(MARKER, "Failed to compile shader {}:\n{}", path, log);
+                ModernUI.LOGGER.error(MARKER, "Failed to compile shader {}:{}\n{}", namespace, path, log);
                 glDeleteShader(shader);
                 mShaders.get(namespace).putIfAbsent(path, 0);
                 return 0;
@@ -179,28 +182,28 @@ public class ShaderManager {
             mShaders.get(namespace).putIfAbsent(path, shader);
             return shader;
         } catch (IOException e) {
-            ModernUI.LOGGER.error(MARKER, "Failed to get shader source {}\n", path, e);
+            ModernUI.LOGGER.error(MARKER, "Failed to get shader source {}:{}\n", namespace, path, e);
         }
         mShaders.get(namespace).putIfAbsent(path, 0);
         return 0;
     }
 
     /**
-     * Create a shader object representing a shader program.
+     * Create a program object representing a shader program.
      * If fails, program will be 0.
      *
-     * @param shader the existing shader object
-     * @param shards shader shards for the shader
+     * @param t      the existing program object
+     * @param shards shader shards for the program
      * @param <T>    custom shader subclasses
-     * @return shader instance
+     * @return program
      */
     @SuppressWarnings("unchecked")
     @Nonnull
-    public <T extends GLProgram> T create(@Nullable T shader, int... shards) {
+    public <T extends GLProgram> T create(@Nullable T t, int... shards) {
         RenderCore.checkRenderThread();
         int program;
-        if (shader != null && shader.mProgram != 0) {
-            program = shader.mProgram;
+        if (t != null && t.mProgram != 0) {
+            program = t.mProgram;
         } else {
             program = glCreateProgram();
         }
@@ -210,8 +213,8 @@ public class ShaderManager {
         glLinkProgram(program);
         if (glGetProgrami(program, GL_LINK_STATUS) == GL_FALSE) {
             String log = glGetProgramInfoLog(program, 8192);
-            ModernUI.LOGGER.error(MARKER, "Failed to link shader program: {}", log);
-            // deletion detaches all shader shards
+            ModernUI.LOGGER.error(MARKER, "Failed to link shader program\n{}", log);
+            // also detaches all shaders
             glDeleteProgram(program);
             program = 0;
         } else {
@@ -219,11 +222,11 @@ public class ShaderManager {
                 glDetachShader(program, s);
             }
         }
-        if (shader == null) {
-            shader = (T) new GLProgram();
+        if (t == null) {
+            t = (T) new GLProgram();
         }
-        shader.mProgram = program;
-        return shader;
+        t.mProgram = program;
+        return t;
     }
 
     /**

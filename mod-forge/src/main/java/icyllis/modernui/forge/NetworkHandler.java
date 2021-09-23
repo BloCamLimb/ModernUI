@@ -88,7 +88,7 @@ public class NetworkHandler {
         }
         mProtocol = protocol;
         mOptional = optional;
-        EventNetworkChannel network = NetworkRegistry.ChannelBuilder
+        EventNetworkChannel channel = NetworkRegistry.ChannelBuilder
                 .named(mId = new ResourceLocation(modid, name))
                 .networkProtocolVersion(this::getProtocolVersion)
                 .clientAcceptedVersions(this::checkS2CProtocol)
@@ -96,12 +96,12 @@ public class NetworkHandler {
                 .eventNetworkChannel();
         if (FMLEnvironment.dist.isClient()) {
             mClientListener = clientListener.get().get();
-            network.addListener(this::onS2CMessageReceived);
+            channel.addListener(this::onS2CMessageReceived);
         } else {
             mClientListener = null;
         }
         mServerListener = serverListener;
-        network.addListener(this::onC2SMessageReceived);
+        channel.addListener(this::onC2SMessageReceived);
     }
 
     /**
@@ -162,10 +162,12 @@ public class NetworkHandler {
      * Allocates a heap buffer to write packet data with index. Once you done that,
      * pass the value returned here to {@link #getDispatcher(FriendlyByteBuf)}.
      * The message index is used to identify what type of message is it, which is
-     * determined by network protocol.
+     * also determined by network protocol version.
      *
      * @param index the message index used on the reception side, ranged from 0 to 32767
      * @return a byte buf to write the packet data (message)
+     * @see #getDispatcher(FriendlyByteBuf)
+     * @see #sendToServer(FriendlyByteBuf)
      */
     @Nonnull
     public static FriendlyByteBuf buffer(int index) {
