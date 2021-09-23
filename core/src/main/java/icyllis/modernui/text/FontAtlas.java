@@ -21,7 +21,7 @@ package icyllis.modernui.text;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.graphics.texture.GLTexture;
-import icyllis.modernui.platform.Bitmap;
+import icyllis.modernui.platform.NativeImage;
 import icyllis.modernui.platform.RenderCore;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -95,8 +95,8 @@ public class FontAtlas {
         }
         if (RenderCore.isOnRenderThread()) {
             try {
-                Bitmap.download(Bitmap.Format.RGBA, mTexture, false)
-                        .saveDialog(Bitmap.SaveFormat.PNG, 0);
+                NativeImage.download(NativeImage.Format.RGBA, mTexture, false)
+                        .saveDialog(NativeImage.SaveFormat.PNG, 0);
             } catch (IOException e) {
                 e.printStackTrace();
             }

@@ -18,16 +18,14 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.math.MathUtil;
-import icyllis.modernui.math.Matrix4;
-import icyllis.modernui.math.Rect;
-import icyllis.modernui.math.RectF;
+import icyllis.modernui.math.*;
 import icyllis.modernui.text.MeasuredText;
 import icyllis.modernui.text.TextPaint;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * A canvas is used to draw contents for View, using shaders, such as
@@ -280,6 +278,27 @@ public abstract class Canvas {
      * The arc is drawn clockwise. An angle of 0 degrees correspond to the geometric angle of 0
      * degrees (3 o'clock on a watch.)
      *
+     * @param center     The center point of the arc to be drawn
+     * @param radius     The radius of the circular arc to be drawn
+     * @param startAngle Starting angle (in degrees) where the arc begins
+     * @param sweepAngle Sweep angle (in degrees) measured clockwise
+     * @param paint      The paint used to draw the arc
+     */
+    public final void drawArc(@Nonnull PointF center, float radius, float startAngle, float sweepAngle,
+                              @Nonnull Paint paint) {
+        drawArc(center.x, center.y, radius, startAngle, sweepAngle, paint);
+    }
+
+    /**
+     * Draw a circular arc.
+     * <p>
+     * If the start angle is negative or >= 360, the start angle is treated as start angle modulo
+     * 360. If the sweep angle is >= 360, then the circle is drawn completely. If the sweep angle is
+     * negative, the sweep angle is treated as sweep angle modulo 360
+     * <p>
+     * The arc is drawn clockwise. An angle of 0 degrees correspond to the geometric angle of 0
+     * degrees (3 o'clock on a watch.)
+     *
      * @param cx         The x-coordinate of the center of the arc to be drawn
      * @param cy         The y-coordinate of the center of the arc to be drawn
      * @param radius     The radius of the circular arc to be drawn
@@ -289,6 +308,22 @@ public abstract class Canvas {
      */
     public abstract void drawArc(float cx, float cy, float radius, float startAngle,
                                  float sweepAngle, @Nonnull Paint paint);
+
+    /**
+     * Draw a quadratic bezier curve using the specified paint. The three points represent
+     * the starting point, the first control point and the end control point respectively.
+     * <p>
+     * The Style is ignored in the paint, bezier curves are always "framed".
+     * Stroke width in the paint represents the width of the curve.
+     *
+     * @param p0    the starting point of the bezier curve
+     * @param p1    the first control point of the bezier curve
+     * @param p2    the end control point of the bezier curve
+     * @param paint the paint used to draw the bezier curve
+     */
+    public void drawBezier(@Nonnull PointF p0, @Nonnull PointF p1, @Nonnull PointF p2, @Nonnull Paint paint) {
+        drawBezier(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, paint);
+    }
 
     /**
      * Draw a quadratic bezier curve using the specified paint. The three points represent
@@ -307,6 +342,18 @@ public abstract class Canvas {
      */
     public abstract void drawBezier(float x0, float y0, float x1, float y1, float x2, float y2,
                                     @Nonnull Paint paint);
+
+    /**
+     * Draw the specified circle using the specified paint. If radius is <= 0, then nothing will be
+     * drawn. The circle will be filled or framed based on the Style in the paint.
+     *
+     * @param center The center point of the circle to be drawn
+     * @param radius The radius of the circle to be drawn
+     * @param paint  The paint used to draw the circle
+     */
+    public final void drawCircle(@Nonnull PointF center, float radius, @Nonnull Paint paint) {
+        drawCircle(center.x, center.y, radius, paint);
+    }
 
     /**
      * Draw the specified circle using the specified paint. If radius is <= 0, then nothing will be
@@ -361,9 +408,60 @@ public abstract class Canvas {
      * @param image the image to be drawn
      * @param left  the position of the left side of the image being drawn
      * @param top   the position of the top side of the image being drawn
-     * @param paint the paint used to draw the round image
+     * @param paint the paint used to draw the image
      */
     public abstract void drawImage(@Nonnull Image image, float left, float top, @Nonnull Paint paint);
+
+    /**
+     * Draw the specified image, scaling/translating automatically to fill the destination
+     * rectangle. If the source rectangle is not null, it specifies the subset of the bitmap to
+     * draw. The Style and smooth radius is ignored in the paint, images are always filled.
+     *
+     * @param image the image to be drawn
+     * @param src   the subset of the bitmap to be drawn, null meaning full image
+     * @param dst   the rectangle that the image will be scaled/translated to fit into
+     * @param paint the paint used to draw the bitmap, null meaning a reset paint
+     */
+    public final void drawImage(@Nonnull Image image, @Nullable Rect src, @Nonnull RectF dst, @Nonnull Paint paint) {
+        if (src == null) {
+            drawImage(image, 0, 0, image.getWidth(), image.getHeight(),
+                    dst.left, dst.top, dst.right, dst.bottom, paint);
+        } else {
+            drawImage(image, src.left, src.top, src.right, src.bottom,
+                    dst.left, dst.top, dst.right, dst.bottom, paint);
+        }
+    }
+
+    /**
+     * Draw the specified image, scaling/translating automatically to fill the destination
+     * rectangle. If the source rectangle is not null, it specifies the subset of the bitmap to
+     * draw. The Style and smooth radius is ignored in the paint, images are always filled.
+     *
+     * @param image the image to be drawn
+     * @param src   the subset of the bitmap to be drawn, null meaning full image
+     * @param dst   the rectangle that the image will be scaled/translated to fit into
+     * @param paint the paint used to draw the bitmap, null meaning a reset paint
+     */
+    public final void drawImage(@Nonnull Image image, @Nullable Rect src, @Nonnull Rect dst, @Nonnull Paint paint) {
+        if (src == null) {
+            drawImage(image, 0, 0, image.getWidth(), image.getHeight(),
+                    dst.left, dst.top, dst.right, dst.bottom, paint);
+        } else {
+            drawImage(image, src.left, src.top, src.right, src.bottom,
+                    dst.left, dst.top, dst.right, dst.bottom, paint);
+        }
+    }
+
+    /**
+     * Draw the specified image, scaling/translating automatically to fill the destination
+     * rectangle. If the source rectangle is not null, it specifies the subset of the bitmap to
+     * draw. The Style and smooth radius is ignored in the paint, images are always filled.
+     *
+     * @param image the image to be drawn
+     * @param paint the paint used to draw the bitmap, null meaning a reset paint
+     */
+    public abstract void drawImage(@Nonnull Image image, float srcLeft, float srcTop, float srcRight, float srcBottom,
+                                   float dstLeft, float dstTop, float dstRight, float dstBottom, @Nonnull Paint paint);
 
     /**
      * Draw a line segment with the specified start and stop x,y coordinates, using
@@ -400,8 +498,8 @@ public abstract class Canvas {
      * @param offset Number of values in the array to skip before drawing.
      * @param count  The number of values in the array to process, after skipping "offset" of them.
      *               Since each line uses 4 values, the number of "lines" that are drawn is really
-     *               (count >> 2) if continuous, or ((count - 2) >> 1).
-     * @param strip  Whether line points are discrete (not continuous)
+     *               (count >> 2) if continuous, or ((count - 2) >> 1) if discontinuous.
+     * @param strip  Whether line points are continuous
      * @param paint  The paint used to draw the lines
      */
     public void drawRoundLines(@Nonnull float[] pts, int offset, int count, boolean strip,
@@ -413,16 +511,16 @@ public abstract class Canvas {
             return;
         }
         if (strip) {
-            count >>= 2;
-            for (int i = 0; i < count; i++) {
-                drawRoundLine(pts[offset++], pts[offset++], pts[offset++], pts[offset++], paint);
-            }
-        } else {
             float x, y;
             drawRoundLine(pts[offset++], pts[offset++], x = pts[offset++], y = pts[offset++], paint);
             count = (count - 4) >> 1;
             for (int i = 0; i < count; i++) {
                 drawRoundLine(x, y, x = pts[offset++], y = pts[offset++], paint);
+            }
+        } else {
+            count >>= 2;
+            for (int i = 0; i < count; i++) {
+                drawRoundLine(pts[offset++], pts[offset++], pts[offset++], pts[offset++], paint);
             }
         }
     }
@@ -432,7 +530,7 @@ public abstract class Canvas {
      * with its offset is 0 and count is the length of the pts array.
      *
      * @param pts   The array of points of the lines to draw [x0 y0 x1 y1 x2 y2 ...]
-     * @param strip Whether line points are discrete
+     * @param strip Whether line points are continuous
      * @param paint The paint used to draw the lines
      * @see #drawRoundLines(float[], int, int, boolean, Paint)
      */
@@ -515,7 +613,7 @@ public abstract class Canvas {
                                         float radius, @Nonnull Paint paint);
 
     /**
-     * Draw a run of text.
+     * Draw a run of text. INTERNAL USE ONLY.
      *
      * @param text  the text to render
      * @param start context start of the text for shaping and rendering
@@ -529,8 +627,9 @@ public abstract class Canvas {
                                      float x, float y, boolean isRtl, @Nonnull TextPaint paint);
 
     /**
-     * Draw a run of text. The given range cannot excess a style run or break grapheme cluster.
-     * If you don't know what a text run is, do not call this method directly.
+     * Draw a run of text. The given range cannot excess a style run or break grapheme cluster,
+     * or maximum piece cache size when creating the measured text. If you don't know what a
+     * text run is, do not call this method directly.
      *
      * @param text  the text to draw, which has been measured and computed glyph layout
      * @param start context start of the text for shaping and rendering

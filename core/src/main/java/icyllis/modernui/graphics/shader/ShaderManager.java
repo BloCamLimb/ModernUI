@@ -40,7 +40,7 @@ import static icyllis.modernui.graphics.GLWrapper.*;
  */
 public class ShaderManager {
 
-    private static final ShaderManager instance = new ShaderManager();
+    private static final ShaderManager INSTANCE = new ShaderManager();
 
     private final Set<Listener> mListeners = new HashSet<>();
 
@@ -49,8 +49,11 @@ public class ShaderManager {
     private ShaderManager() {
     }
 
+    /**
+     * @return the global shader manager instance
+     */
     public static ShaderManager getInstance() {
-        return instance;
+        return INSTANCE;
     }
 
     /**
@@ -93,6 +96,7 @@ public class ShaderManager {
      * @param subPath   sub paths to the shader source, parent is 'shaders'
      * @return the shader shard handle or 0 on failure
      * @see #getShard(String, String, int)
+     * @see #addListener(Listener)
      */
     public int getShard(@Nonnull String namespace, @Nonnull String subPath) {
         return getShard(namespace, "shaders/" + subPath, 0);
@@ -190,12 +194,13 @@ public class ShaderManager {
 
     /**
      * Create a program object representing a shader program.
-     * If fails, program will be 0.
+     * If fails, program will be 0 (undefined).
      *
      * @param t      the existing program object
      * @param shards shader shards for the program
-     * @param <T>    custom shader subclasses
+     * @param <T>    custom program subclasses
      * @return program
+     * @see #addListener(Listener)
      */
     @SuppressWarnings("unchecked")
     @Nonnull
@@ -218,6 +223,7 @@ public class ShaderManager {
             glDeleteProgram(program);
             program = 0;
         } else {
+            // clear attachment states, for further re-creation
             for (int s : shards) {
                 glDetachShader(program, s);
             }
@@ -235,6 +241,12 @@ public class ShaderManager {
     @FunctionalInterface
     public interface Listener {
 
+        /**
+         * This method is invoked on reloading. You may call {@link #getShard(String, String)}
+         * to obtain shaders to create programs.
+         *
+         * @param manager the shader manager
+         */
         @RenderThread
         void onReload(@Nonnull ShaderManager manager);
     }

@@ -62,7 +62,7 @@ import static org.lwjgl.system.MemoryUtil.*;
  * free the native memory.
  */
 @SuppressWarnings("unused")
-public final class Bitmap implements AutoCloseable {
+public final class NativeImage implements AutoCloseable {
 
     public static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyyMMddHHmmss");
 
@@ -83,7 +83,7 @@ public final class Bitmap implements AutoCloseable {
      * @param init   {@code true} to initialize pixels data to 0, or just allocate memory
      * @throws IllegalArgumentException width or height out of range
      */
-    public Bitmap(@Nonnull Format format, int width, int height, boolean init) {
+    public NativeImage(@Nonnull Format format, int width, int height, boolean init) {
         if (width <= 0 || height <= 0) {
             throw new IllegalArgumentException("Bitmap size must be positive");
         }
@@ -99,7 +99,7 @@ public final class Bitmap implements AutoCloseable {
         mRef = new Ref(this, format.channels * width * height, init);
     }
 
-    private Bitmap(@Nonnull Format format, int width, int height, @Nonnull ByteBuffer data) throws IOException {
+    private NativeImage(@Nonnull Format format, int width, int height, @Nonnull ByteBuffer data) throws IOException {
         if (data.capacity() != format.channels * width * height) {
             throw new IOException("Not tightly packed"); // ensure alignment to 1
         }
@@ -146,7 +146,7 @@ public final class Bitmap implements AutoCloseable {
      * @return a bitmap or {@code null} if selects nothing
      */
     @Nullable
-    public static Bitmap openDialog(@Nullable Format format) throws IOException {
+    public static NativeImage openDialog(@Nullable Format format) throws IOException {
         String path = getOpenDialog();
         if (path != null) {
             try (SeekableByteChannel channel = Files.newByteChannel(Path.of(path),
@@ -169,18 +169,18 @@ public final class Bitmap implements AutoCloseable {
      */
     @Nonnull
     @RenderThread
-    public static Bitmap download(@Nonnull Format format, @Nonnull GLTexture texture, boolean flipY) {
+    public static NativeImage download(@Nonnull Format format, @Nonnull GLTexture texture, boolean flipY) {
         RenderCore.checkRenderThread();
         final int width = texture.getWidth();
         final int height = texture.getHeight();
-        final Bitmap bitmap = new Bitmap(format, width, height, false);
-        final long p = bitmap.getPixels();
+        final NativeImage nativeImage = new NativeImage(format, width, height, false);
+        final long p = nativeImage.getPixels();
         glPixelStorei(GL_PACK_ROW_LENGTH, 0);
         glPixelStorei(GL_PACK_SKIP_ROWS, 0);
         glPixelStorei(GL_PACK_SKIP_PIXELS, 0);
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
         glGetTextureImage(texture.get(), 0, format.glFormat, GL_UNSIGNED_BYTE,
-                bitmap.getSize(), p);
+                nativeImage.getSize(), p);
         if (flipY) {
             final int stride = width * format.channels;
             final long temp = nmemAllocChecked(stride);
@@ -193,7 +193,7 @@ public final class Bitmap implements AutoCloseable {
             }
             nmemFree(temp);
         }
-        return bitmap;
+        return nativeImage;
     }
 
     /**
@@ -207,12 +207,12 @@ public final class Bitmap implements AutoCloseable {
      */
     @Nonnull
     @RenderThread
-    public static Bitmap download(@Nonnull Format format, @Nonnull GLFramebuffer framebuffer, boolean flipY) {
+    public static NativeImage download(@Nonnull Format format, @Nonnull GLFramebuffer framebuffer, boolean flipY) {
         RenderCore.checkRenderThread();
         final int width = framebuffer.getWidth();
         final int height = framebuffer.getHeight();
-        final Bitmap bitmap = new Bitmap(format, width, height, false);
-        final long p = bitmap.getPixels();
+        final NativeImage nativeImage = new NativeImage(format, width, height, false);
+        final long p = nativeImage.getPixels();
         framebuffer.bindRead();
         glReadBuffer(0);
         glReadPixels(0, 0, width, height, format.glFormat, GL_UNSIGNED_BYTE, p);
@@ -228,7 +228,7 @@ public final class Bitmap implements AutoCloseable {
             }
             nmemFree(temp);
         }
-        return bitmap;
+        return nativeImage;
     }
 
     /**
@@ -238,7 +238,7 @@ public final class Bitmap implements AutoCloseable {
      * @param channel input channel
      */
     @Nonnull
-    public static Bitmap decode(@Nullable Format format, @Nonnull ReadableByteChannel channel) throws IOException {
+    public static NativeImage decode(@Nullable Format format, @Nonnull ReadableByteChannel channel) throws IOException {
         ByteBuffer ptr = null;
         try {
             ptr = RenderCore.readResource(channel);
@@ -256,7 +256,7 @@ public final class Bitmap implements AutoCloseable {
      * @param stream input stream
      */
     @Nonnull
-    public static Bitmap decode(@Nullable Format format, @Nonnull InputStream stream) throws IOException {
+    public static NativeImage decode(@Nullable Format format, @Nonnull InputStream stream) throws IOException {
         ByteBuffer ptr = null;
         try {
             ptr = RenderCore.readResource(stream);
@@ -269,7 +269,7 @@ public final class Bitmap implements AutoCloseable {
 
     // this method doesn't close/free the buffer
     @Nonnull
-    public static Bitmap decode(@Nullable Format format, @Nonnull ByteBuffer buffer) throws IOException {
+    public static NativeImage decode(@Nullable Format format, @Nonnull ByteBuffer buffer) throws IOException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             IntBuffer width = stack.mallocInt(1);
             IntBuffer height = stack.mallocInt(1);
@@ -279,7 +279,8 @@ public final class Bitmap implements AutoCloseable {
             if (data == null) {
                 throw new IOException("Failed to read image: " + STBImage.stbi_failure_reason());
             }
-            return new Bitmap(format == null ? Format.of(channels.get(0)) : format, width.get(0), height.get(0), data);
+            return new NativeImage(format == null ? Format.of(channels.get(0)) : format, width.get(0), height.get(0),
+                    data);
         }
     }
 
@@ -295,7 +296,7 @@ public final class Bitmap implements AutoCloseable {
     /**
      * Describes the format for OpenGL uploading.
      *
-     * @return client pixels format in OpenGL
+     * @return pixels format in OpenGL
      */
     public int getGlFormat() {
         return mFormat.glFormat;
@@ -382,19 +383,12 @@ public final class Bitmap implements AutoCloseable {
         }
     }
 
-    /**
-     * Frees native image data.
-     */
-    public void release() {
+    @Override
+    public void close() {
         if (mRef != null) {
             mRef.mCleanup.clean();
             mRef = null;
         }
-    }
-
-    @Override
-    public void close() {
-        release();
     }
 
     /**
@@ -406,9 +400,10 @@ public final class Bitmap implements AutoCloseable {
         RGB(3, GL_RGB),
         RGBA(4, GL_RGBA);
 
-        private final int channels;
+        private static final Format[] VALUES = values();
 
-        private final int glFormat;
+        public final int channels;
+        public final int glFormat;
 
         Format(int channels, int glFormat) {
             this.channels = channels;
@@ -418,9 +413,9 @@ public final class Bitmap implements AutoCloseable {
         @Nonnull
         public static Format of(int channels) {
             if (channels < 1 || channels > 4) {
-                throw new IllegalArgumentException("Specified channels ranged from 1 to 4");
+                throw new IllegalArgumentException("Specified channels should be ranged from 1 to 4 but " + channels);
             }
-            return values()[channels - 1];
+            return VALUES[channels - 1];
         }
     }
 
@@ -547,7 +542,7 @@ public final class Bitmap implements AutoCloseable {
         private final boolean mFromSTB;
         private final Cleaner.Cleanable mCleanup;
 
-        private Ref(Bitmap owner, int size, boolean init) {
+        private Ref(NativeImage owner, int size, boolean init) {
             mFromSTB = false;
             if (init) {
                 mPixels = MemoryUtil.nmemCallocChecked(1L, size);
@@ -557,7 +552,7 @@ public final class Bitmap implements AutoCloseable {
             mCleanup = ModernUI.registerCleanup(owner, this);
         }
 
-        private Ref(Bitmap owner, long pointer) {
+        private Ref(NativeImage owner, long pointer) {
             mFromSTB = true;
             mPixels = pointer;
             mCleanup = ModernUI.registerCleanup(owner, this);
