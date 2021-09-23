@@ -495,7 +495,7 @@ public final class UIManager implements ViewRootImpl.Handler {
             try {
                 //noinspection ConstantConditions
                 String ns = menu.getType().getRegistryName().getNamespace();
-                builder.append("Mod Id: ");
+                builder.append("Namespace: ");
                 builder.append(ns);
                 builder.append('\n');
             } catch (Exception ignored) {

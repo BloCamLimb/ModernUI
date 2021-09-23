@@ -44,7 +44,7 @@ public class PacketDispatcher {
     private static final Pool<PacketDispatcher> sPool = Pools.concurrent(3);
 
     private ClientboundCustomPayloadPacket mPacket;
-    private final Consumer<ServerPlayer> mChunkDispatcher = p -> p.connection.send(mPacket);
+    private final Consumer<ServerPlayer> mDispatcher = p -> p.connection.send(mPacket);
 
     private PacketDispatcher() {
     }
@@ -178,7 +178,7 @@ public class PacketDispatcher {
     public void sendToTrackingChunk(@Nonnull LevelChunk chunk) {
         check();
         ((ServerLevel) chunk.getLevel()).getChunkSource().chunkMap.getPlayers(
-                chunk.getPos(), /* borderOnly */ false).forEach(mChunkDispatcher);
+                chunk.getPos(), /* borderOnly */ false).forEach(mDispatcher);
         recycle();
     }
 }
