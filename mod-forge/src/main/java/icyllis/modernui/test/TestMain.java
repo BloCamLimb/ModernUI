@@ -32,6 +32,7 @@ import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.shader.ShaderManager;
 import icyllis.modernui.graphics.texture.GLTexture;
+import icyllis.modernui.graphics.texture.TextureManager;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.platform.NativeImage;
 import icyllis.modernui.platform.RenderCore;
@@ -50,7 +51,6 @@ import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
-import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
@@ -279,18 +279,10 @@ public class TestMain {
         //projection = Matrix4.makePerspective(MathUtil.PI_DIV_2, window.getAspectRatio(), 0.01f, 1000);
         canvas.setProjection(projection);
 
-        Image image;
-        try (ReadableByteChannel channel = FileChannel.open(Path.of("F:", "eromanga.png"), StandardOpenOption.READ)) {
-            NativeImage nativeImage = NativeImage.decode(null, channel);
-            GLTexture texture = new GLTexture(GL_TEXTURE_2D);
-            int width = nativeImage.getWidth();
-            int height = nativeImage.getHeight();
-            texture.setDimension(width, height, 1);
-            texture.allocate2D(GL_RGB8, width, height, 4);
-            texture.upload(0, 0, 0, width, height, 0,
-                    0, 0, 1, nativeImage.getGlFormat(), GL_UNSIGNED_BYTE, nativeImage.getPixels());
-            texture.setFilter(true, true);
-            texture.generateMipmap();
+        final Image image;
+        try {
+            GLTexture texture = TextureManager.getInstance().create(
+                    FileChannel.open(Path.of("F:", "eromanga.png"), StandardOpenOption.READ), true);
             image = new Image(texture);
         } catch (IOException e) {
             throw new IllegalStateException();

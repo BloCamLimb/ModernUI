@@ -20,6 +20,7 @@ package icyllis.modernui.forge;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.shader.ShaderManager;
+import icyllis.modernui.graphics.texture.TextureManager;
 import icyllis.modernui.text.Typeface;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
@@ -93,6 +94,9 @@ public final class ModernUIForge extends ModernUI {
                                 (ISelectiveResourceReloadListener) (manager, predicate) -> {
                                     if (predicate.test(VanillaResourceType.SHADERS)) {
                                         Minecraft.getInstance().submit(ShaderManager.getInstance()::reload);
+                                    }
+                                    if (predicate.test(VanillaResourceType.TEXTURES)) {
+                                        Minecraft.getInstance().submit(TextureManager.getInstance()::reload);
                                     }
                                 }
                         );

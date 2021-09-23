@@ -44,7 +44,7 @@ public class ShaderManager {
 
     private final Set<Listener> mListeners = new HashSet<>();
 
-    private final Map<String, Object2IntMap<String>> mShaders = new HashMap<>();
+    private Map<String, Object2IntMap<String>> mShaders = new HashMap<>();
 
     private ShaderManager() {
     }
@@ -87,6 +87,7 @@ public class ShaderManager {
             }
         }
         mShaders.clear();
+        mShaders = new HashMap<>();
     }
 
     /**

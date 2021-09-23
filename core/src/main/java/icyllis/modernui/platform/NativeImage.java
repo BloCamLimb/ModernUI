@@ -302,6 +302,15 @@ public final class NativeImage implements AutoCloseable {
         return mFormat.glFormat;
     }
 
+    /**
+     * Describes the internal format for OpenGL texture allocation.
+     *
+     * @return internal format in OpenGL
+     */
+    public int getInternalGlFormat() {
+        return mFormat.internalGlFormat;
+    }
+
     public int getWidth() {
         return mWidth;
     }
@@ -395,19 +404,21 @@ public final class NativeImage implements AutoCloseable {
      * Describes the number of channels/components in memory.
      */
     public enum Format {
-        RED(1, GL_RED),
-        RG(2, GL_RG),
-        RGB(3, GL_RGB),
-        RGBA(4, GL_RGBA);
+        RED(1, GL_RED, GL_R8),
+        RG(2, GL_RG, GL_RG8),
+        RGB(3, GL_RGB, GL_RGB8),
+        RGBA(4, GL_RGBA, GL_RGBA8);
 
         private static final Format[] VALUES = values();
 
         public final int channels;
         public final int glFormat;
+        public final int internalGlFormat;
 
-        Format(int channels, int glFormat) {
+        Format(int channels, int glFormat, int internalGlFormat) {
             this.channels = channels;
             this.glFormat = glFormat;
+            this.internalGlFormat = internalGlFormat;
         }
 
         @Nonnull
