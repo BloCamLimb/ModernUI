@@ -542,8 +542,8 @@ public final class GLCanvas extends Canvas {
                 case DRAW_TEXT: {
                     bindVertexArray(POS_TEX);
                     useProgram(ALPHA_TEX);
-                    mMatrixUBO.upload(64, 80, uniformDataPtr);
-                    uniformDataPtr += 80;
+                    mMatrixUBO.upload(128, 16, uniformDataPtr);
+                    uniformDataPtr += 16;
 
                     final TexturedGlyph[] glyphs = mDrawTexts.get(textIndex++).buildBuffer(this);
 
@@ -661,7 +661,7 @@ public final class GLCanvas extends Canvas {
     }
 
     private ByteBuffer checkUniformMemory() {
-        if (mUniformMemory.remaining() < 80) {
+        if (mUniformMemory.remaining() < 64) {
             int cap = mUniformMemory.capacity();
             cap = cap + (cap >> 1);
             mUniformMemory = memRealloc(mUniformMemory, cap);
@@ -973,6 +973,57 @@ public final class GLCanvas extends Canvas {
                 .put(r).put(g).put(b).put(a);
     }
 
+    private void putRectColorUV(float left, float top, float right, float bottom, @Nonnull Paint paint,
+                                float u1, float v1, float u2, float v2) {
+        if (paint.isMultiColor()) {
+            final ByteBuffer buffer = checkPosColorTexMemory();
+            final int[] colors = paint.getColors();
+
+            // CCW
+            int color = colors[3];
+            byte r = (byte) ((color >> 16) & 0xff);
+            byte g = (byte) ((color >> 8) & 0xff);
+            byte b = (byte) (color & 0xff);
+            byte a = (byte) (color >>> 24);
+            buffer.putFloat(left)
+                    .putFloat(bottom)
+                    .put(r).put(g).put(b).put(a)
+                    .putFloat(u1).putFloat(v2);
+
+            color = colors[2];
+            r = (byte) ((color >> 16) & 0xff);
+            g = (byte) ((color >> 8) & 0xff);
+            b = (byte) (color & 0xff);
+            a = (byte) (color >>> 24);
+            buffer.putFloat(right)
+                    .putFloat(bottom)
+                    .put(r).put(g).put(b).put(a)
+                    .putFloat(u2).putFloat(v2);
+
+            color = colors[0];
+            r = (byte) ((color >> 16) & 0xff);
+            g = (byte) ((color >> 8) & 0xff);
+            b = (byte) (color & 0xff);
+            a = (byte) (color >>> 24);
+            buffer.putFloat(left)
+                    .putFloat(top)
+                    .put(r).put(g).put(b).put(a)
+                    .putFloat(u1).putFloat(v1);
+
+            color = colors[1];
+            r = (byte) ((color >> 16) & 0xff);
+            g = (byte) ((color >> 8) & 0xff);
+            b = (byte) (color & 0xff);
+            a = (byte) (color >>> 24);
+            buffer.putFloat(right)
+                    .putFloat(top)
+                    .put(r).put(g).put(b).put(a)
+                    .putFloat(u2).putFloat(v1);
+        } else {
+            putRectColorUV(left, top, right, bottom, paint.getColor(), u1, v1, u2, v2);
+        }
+    }
+
     private void putRectColorUV(float left, float top, float right, float bottom, int color,
                                 float u1, float v1, float u2, float v2) {
         ByteBuffer buffer = checkPosColorTexMemory();
@@ -1161,6 +1212,63 @@ public final class GLCanvas extends Canvas {
     }
 
     @Override
+    public void drawRect(float left, float top, float right, float bottom, @Nonnull Paint paint) {
+        if (quickReject(left, top, right, bottom)) {
+            return;
+        }
+        drawMatrix();
+        putRectColor(left, top, right, bottom, paint);
+        mDrawOps.add(DRAW_RECT);
+    }
+
+    @Override
+    public void drawImage(@Nonnull Image image, float left, float top, @Nonnull Paint paint) {
+        GLTexture texture = image.getTexture();
+        float right = left + texture.getWidth();
+        float bottom = top + texture.getHeight();
+        if (quickReject(left, top, right, bottom)) {
+            return;
+        }
+        drawMatrix();
+        putRectColorUV(left, top, right, bottom, paint, 0, 0, 1, 1);
+        mTextures.add(texture);
+        mDrawOps.add(DRAW_IMAGE);
+    }
+
+    @Override
+    public void drawImage(@Nonnull Image image, float srcLeft, float srcTop, float srcRight, float srcBottom,
+                          float dstLeft, float dstTop, float dstRight, float dstBottom, @Nonnull Paint paint) {
+        if (quickReject(dstLeft, dstTop, dstRight, dstBottom)) {
+            return;
+        }
+        GLTexture texture = image.getTexture();
+        srcLeft = Math.max(0, srcLeft);
+        srcTop = Math.max(0, srcTop);
+        int w = texture.getWidth();
+        int h = texture.getHeight();
+        srcRight = Math.min(srcRight, w);
+        srcBottom = Math.min(srcBottom, h);
+        if (srcRight <= srcLeft || srcBottom <= srcTop) {
+            return;
+        }
+        drawMatrix();
+        putRectColorUV(dstLeft, dstTop, dstRight, dstBottom, paint,
+                srcLeft / w, srcTop / h, srcRight / w, srcBottom / h);
+        mTextures.add(texture);
+        mDrawOps.add(DRAW_IMAGE);
+    }
+
+    //FIXME Going to use Framebuffer blit
+    public void drawTextureMSAA(@Nonnull GLTexture texture, float l, float t, float r, float b, int color,
+                                boolean flipY) {
+        drawMatrix();
+        putRectColorUV(l, t, r, b, color,
+                0, flipY ? 1 : 0, 1, flipY ? 0 : 1);
+        mTextures.add(texture);
+        mDrawOps.add(DRAW_IMAGE_MS);
+    }
+
+    @Override
     public void drawRoundLine(float startX, float startY, float stopX, float stopY, @Nonnull Paint paint) {
         float t = paint.getStrokeWidth() * 0.5f;
         if (t < 0.0001f) {
@@ -1198,36 +1306,6 @@ public final class GLCanvas extends Canvas {
             drawRoundRectFill(left - t, cy - t, right + t, cy + t, t, 0, paint);
             restore();
         }
-    }
-
-    @Override
-    public void drawRect(float left, float top, float right, float bottom, @Nonnull Paint paint) {
-        if (quickReject(left, top, right, bottom)) {
-            return;
-        }
-        drawMatrix();
-        putRectColor(left, top, right, bottom, paint);
-        mDrawOps.add(DRAW_RECT);
-    }
-
-    //TODO
-    @Override
-    public void drawImage(@Nonnull Image image, float left, float top, @Nonnull Paint paint) {
-        GLTexture texture = image.getTexture();
-        drawMatrix();
-        putRectColorUV(left, top, left + texture.getWidth(), top + texture.getHeight(), paint.getColor(),
-                0, 0, 1, 1);
-        mTextures.add(texture);
-        mDrawOps.add(DRAW_IMAGE);
-    }
-
-    public void drawTextureMSAA(@Nonnull GLTexture texture, float l, float t, float r, float b, int color,
-                                boolean flipY) {
-        drawMatrix();
-        putRectColorUV(l, t, r, b, color,
-                0, flipY ? 1 : 0, 1, flipY ? 0 : 1);
-        mTextures.add(texture);
-        mDrawOps.add(DRAW_IMAGE_MS);
     }
 
     @Override
@@ -1314,22 +1392,26 @@ public final class GLCanvas extends Canvas {
         mDrawOps.add(DRAW_ROUND_RECT_STROKE);
     }
 
-    //TODO
     @Override
     public void drawRoundImage(@Nonnull Image image, float left, float top, float radius, @Nonnull Paint paint) {
         if (radius < 0) {
             radius = 0;
         }
         GLTexture texture = image.getTexture();
+        float right = left + texture.getWidth();
+        float bottom = top + texture.getHeight();
+        if (quickReject(left, top, right, bottom)) {
+            return;
+        }
         drawMatrix();
         drawSmooth(Math.min(radius, paint.getSmoothRadius()));
-        putRectColorUV(left, top, left + texture.getWidth(), top + texture.getHeight(), paint.getColor(),
+        putRectColorUV(left, top, right, bottom, paint,
                 0, 0, 1, 1);
         checkUniformMemory()
                 .putFloat(left + radius)
                 .putFloat(top + radius)
-                .putFloat(left + texture.getWidth() - radius)
-                .putFloat(top + texture.getHeight() - radius)
+                .putFloat(right - radius)
+                .putFloat(bottom - radius)
                 .putFloat(radius);
         mTextures.add(texture);
         mDrawOps.add(DRAW_ROUND_IMAGE);
@@ -1366,9 +1448,9 @@ public final class GLCanvas extends Canvas {
             return;
         }
         mDrawTexts.add(new DrawText(piece, x, y));
-        ByteBuffer buffer = checkUniformMemory();
-        getMatrix().get(buffer);
-        buffer.putFloat(((color >> 16) & 0xff) / 255f)
+        drawMatrix();
+        checkUniformMemory()
+                .putFloat(((color >> 16) & 0xff) / 255f)
                 .putFloat(((color >> 8) & 0xff) / 255f)
                 .putFloat((color & 0xff) / 255f)
                 .putFloat((color >>> 24) / 255f);

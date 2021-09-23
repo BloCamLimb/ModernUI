@@ -33,7 +33,7 @@ import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.shader.ShaderManager;
 import icyllis.modernui.graphics.texture.GLTexture;
 import icyllis.modernui.math.Matrix4;
-import icyllis.modernui.platform.Bitmap;
+import icyllis.modernui.platform.NativeImage;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.platform.Window;
 import icyllis.modernui.text.*;
@@ -227,11 +227,11 @@ public class TestMain {
             RenderCore.initBackend();
             sWindow = Window.create("Modern UI Layout Editor", Window.State.WINDOWED, 1600, 900);
             try (var c1 = ModernUI.get().getResourceAsChannel(ModernUI.ID, "AppLogo16x.png");
-                 var bitmap1 = Bitmap.decode(null, c1);
+                 var bitmap1 = NativeImage.decode(null, c1);
                  var c2 = ModernUI.get().getResourceAsChannel(ModernUI.ID, "AppLogo32x.png");
-                 var bitmap2 = Bitmap.decode(null, c2);
+                 var bitmap2 = NativeImage.decode(null, c2);
                  var c3 = ModernUI.get().getResourceAsChannel(ModernUI.ID, "AppLogo48x.png");
-                 var bitmap3 = Bitmap.decode(null, c3)) {
+                 var bitmap3 = NativeImage.decode(null, c3)) {
                 sWindow.setIcon(bitmap1, bitmap2, bitmap3);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -281,14 +281,14 @@ public class TestMain {
 
         Image image;
         try (ReadableByteChannel channel = FileChannel.open(Path.of("F:", "eromanga.png"), StandardOpenOption.READ)) {
-            Bitmap bitmap = Bitmap.decode(null, channel);
+            NativeImage nativeImage = NativeImage.decode(null, channel);
             GLTexture texture = new GLTexture(GL_TEXTURE_2D);
-            int width = bitmap.getWidth();
-            int height = bitmap.getHeight();
+            int width = nativeImage.getWidth();
+            int height = nativeImage.getHeight();
             texture.setDimension(width, height, 1);
             texture.allocate2D(GL_RGB8, width, height, 4);
             texture.upload(0, 0, 0, width, height, 0,
-                    0, 0, 1, bitmap.getGlFormat(), GL_UNSIGNED_BYTE, bitmap.getPixels());
+                    0, 0, 1, nativeImage.getGlFormat(), GL_UNSIGNED_BYTE, nativeImage.getPixels());
             texture.setFilter(true, true);
             texture.generateMipmap();
             image = new Image(texture);
@@ -351,7 +351,7 @@ public class TestMain {
             if (delta > 16) {
                 lastTime += 16;
                 GLWrapper.resetFrame(window);
-                glEnable(GL_CULL_FACE);
+                GLWrapper.glEnable(GL_CULL_FACE);
                 GLWrapper.glEnable(GL_BLEND);
                 GLWrapper.glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
                 GLWrapper.glEnable(GL_STENCIL_TEST);

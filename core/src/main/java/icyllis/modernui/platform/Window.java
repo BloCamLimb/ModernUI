@@ -18,32 +18,108 @@
 
 package icyllis.modernui.platform;
 
+import icyllis.modernui.ModernUI;
 import it.unimi.dsi.fastutil.longs.Long2ObjectArrayMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import org.apache.logging.log4j.MarkerManager;
+import org.lwjgl.glfw.Callbacks;
+import org.lwjgl.glfw.GLFWImage;
+import org.lwjgl.system.MemoryStack;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.nio.IntBuffer;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
+import static org.lwjgl.system.MemoryUtil.memPutAddress;
 
 /**
  * Represents a window to operating system, which provides OpenGL context.
  */
-public abstract class Window implements AutoCloseable {
+public final class Window implements AutoCloseable {
 
     private static final Long2ObjectMap<Window> sWindows = new Long2ObjectArrayMap<>();
 
-    protected final long mHandle;
+    private final long mHandle;
 
-    protected Window(long handle) {
+    private int mXPos;
+    private int mYPos;
+    private int mScreenWidth;
+    private int mScreenHeight;
+
+    private int mFramebufferWidth;
+    private int mFramebufferHeight;
+
+    private int mWindowedX;
+    private int mWindowedY;
+
+    private float mContentScaleX;
+    private float mContentScaleY;
+
+    @Nonnull
+    private State mState;
+    // previously maximized
+    private boolean mMaximized;
+    private boolean mBorderless;
+    private boolean mFullscreen;
+
+    private boolean mRefresh;
+
+    private Window(long handle, @Nonnull State state, boolean borderless, boolean fullscreen) {
         mHandle = handle;
         sWindows.putIfAbsent(handle, this);
-    }
 
-    @Nullable
-    public static Window get(long handle) {
-        return sWindows.get(handle);
+        // set callbacks
+        glfwSetWindowPosCallback(handle, this::callbackPos);
+        glfwSetWindowSizeCallback(handle, this::callbackSize);
+        glfwSetWindowRefreshCallback(handle, this::callbackRefresh);
+        glfwSetWindowFocusCallback(handle, this::callbackFocus);
+        glfwSetWindowIconifyCallback(handle, this::callbackIconify);
+        glfwSetWindowMaximizeCallback(handle, this::callbackMaximize);
+        glfwSetFramebufferSizeCallback(handle, this::callbackFramebufferSize);
+        glfwSetWindowContentScaleCallback(handle, this::callbackContentScale);
+
+        glfwSetKeyCallback(handle, (window, keycode, scancode, action, mods) -> {
+            if (keycode == GLFW_KEY_ESCAPE) {
+                glfwSetWindowShouldClose(mHandle, true);
+            }
+            if (action == GLFW_PRESS && (mods & GLFW_MOD_CONTROL) != 0 && keycode == GLFW_KEY_V) {
+                ModernUI.LOGGER.info("Paste: {}", Clipboard.getText());
+            }
+        });
+        glfwSetCharCallback(handle, (window, ch) -> {
+            ModernUI.LOGGER.info(MarkerManager.getMarker("Input"), "InputChar: {}", ch);
+        });
+
+        // initialize values
+        Monitor monitor = Monitor.getPrimary();
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            IntBuffer w = stack.mallocInt(1);
+            IntBuffer h = stack.mallocInt(1);
+            glfwGetWindowSize(handle, w, h);
+            mScreenWidth = w.get(0);
+            mScreenHeight = h.get(0);
+
+            w.position(0);
+            h.position(0);
+            glfwGetFramebufferSize(handle, w, h);
+            mFramebufferWidth = w.get(0);
+            mFramebufferHeight = h.get(0);
+
+            // center window
+            if (!mFullscreen && monitor != null) {
+                VideoMode m = monitor.getCurrentMode();
+                glfwSetWindowPos(handle, (m.getWidth() - mScreenWidth) / 2 + monitor.getXPos(),
+                        (m.getHeight() - mScreenHeight) / 2 + monitor.getYPos());
+            }
+        }
+
+        mState = state;
+        mBorderless = borderless;
+        mFullscreen = fullscreen;
+
+        mRefresh = true;
     }
 
     @Nonnull
@@ -93,7 +169,12 @@ public abstract class Window implements AutoCloseable {
         if (handle == NULL) {
             throw new IllegalStateException("Failed to create window");
         }
-        return new WindowImpl(handle, state, borderless, fullscreen);
+        return new Window(handle, state, borderless, fullscreen);
+    }
+
+    @Nullable
+    public static Window get(long handle) {
+        return sWindows.get(handle);
     }
 
     /**
@@ -105,11 +186,66 @@ public abstract class Window implements AutoCloseable {
         return mHandle;
     }
 
+    private void callbackPos(long window, int xPos, int yPos) {
+        mXPos = xPos;
+        mYPos = yPos;
+    }
+
+    private void callbackSize(long window, int width, int height) {
+        mScreenWidth = width;
+        mScreenHeight = height;
+    }
+
+    private void callbackRefresh(long window) {
+        if (!mRefresh) {
+            mRefresh = true;
+            RenderCore.interrupt();
+        }
+    }
+
+    private void callbackFocus(long window, boolean focused) {
+
+    }
+
+    private void callbackIconify(long window, boolean iconified) {
+        if (iconified) {
+            mState = State.MINIMIZED;
+        } else if (mMaximized) {
+            mState = State.MAXIMIZED;
+        } else {
+            mState = State.WINDOWED;
+        }
+    }
+
+    private void callbackMaximize(long window, boolean maximized) {
+        if (maximized) {
+            mState = State.MAXIMIZED;
+        } else {
+            mState = State.WINDOWED;
+        }
+        mMaximized = maximized;
+    }
+
+    private void callbackFramebufferSize(long window, int width, int height) {
+        mFramebufferWidth = width;
+        mFramebufferHeight = height;
+    }
+
+    private void callbackContentScale(long window, float scaleX, float scaleY) {
+
+    }
+
+    private void applyMode() {
+        glfwSetWindowMonitor(mHandle, glfwGetPrimaryMonitor(), 0, 0, 1920, 1080, 144);
+    }
+
     /**
      * Makes the OpenGL context of this window on the current calling thread.
      * It can only be on one thread at the same time.
      */
-    public abstract void makeCurrent();
+    public void makeCurrent() {
+        glfwMakeContextCurrent(mHandle);
+    }
 
     /**
      * Gets whether this window should be closed. For example, by clicking
@@ -117,15 +253,22 @@ public abstract class Window implements AutoCloseable {
      *
      * @return {@code true} if this window should be closed
      */
-    public abstract boolean shouldClose();
+    public boolean shouldClose() {
+        return glfwWindowShouldClose(mHandle);
+    }
 
-    public abstract boolean isContentDirty();
+    public boolean isRefresh() {
+        return mRefresh;
+    }
 
     /**
      * Swaps the default framebuffer in the current OpenGL context to the
      * operating system.
      */
-    public abstract void swapBuffers();
+    public void swapBuffers() {
+        glfwSwapBuffers(mHandle);
+        mRefresh = false;
+    }
 
     /**
      * Returns the x-coordinate of the top-left corner of this window
@@ -133,7 +276,9 @@ public abstract class Window implements AutoCloseable {
      *
      * @return the x-coordinate of this window
      */
-    public abstract int getXPos();
+    public int getXPos() {
+        return mXPos;
+    }
 
     /**
      * Returns the y-coordinate of the top-left corner of this window
@@ -141,57 +286,90 @@ public abstract class Window implements AutoCloseable {
      *
      * @return the y-coordinate of this window
      */
-    public abstract int getYPos();
+    public int getYPos() {
+        return mYPos;
+    }
 
     /**
      * Returns the framebuffer width for this window in pixels.
      *
      * @return framebuffer width
      */
-    public abstract int getWidth();
+    public int getWidth() {
+        return mFramebufferWidth;
+    }
 
     /**
      * Returns the framebuffer height for this window in pixels.
      *
      * @return framebuffer height
      */
-    public abstract int getHeight();
+    public int getHeight() {
+        return mFramebufferHeight;
+    }
 
     /**
      * Returns the window width in virtual screen coordinates.
      *
      * @return window width
      */
-    public abstract int getScreenWidth();
+    public int getScreenWidth() {
+        return mScreenWidth;
+    }
 
     /**
      * Returns the window height in virtual screen coordinates.
      *
      * @return window height
      */
-    public abstract int getScreenHeight();
-
-    public final float getAspectRatio() {
-        return (float) getWidth() / getHeight();
+    public int getScreenHeight() {
+        return mScreenHeight;
     }
 
-    public abstract void maximize();
+    public final float getAspectRatio() {
+        return (float) mFramebufferWidth / mFramebufferHeight;
+    }
+
+    public void maximize() {
+        glfwMaximizeWindow(mHandle);
+    }
 
     /**
      * Sets window icon.
      *
-     * @param low  16*16
-     * @param mid  32*32
-     * @param high 48*48
+     * @param lp 16*16
+     * @param mp 32*32
+     * @param hp 48*48
      */
-    public abstract void setIcon(@Nonnull Bitmap low, @Nonnull Bitmap mid, @Nonnull Bitmap high);
+    public void setIcon(@Nonnull NativeImage lp, @Nonnull NativeImage mp, @Nonnull NativeImage hp) {
+        GLFWImage.Buffer images = GLFWImage.mallocStack(3);
+        images.position(0);
+        images.width(lp.getWidth());
+        images.height(lp.getHeight());
+        memPutAddress(images.address() + GLFWImage.PIXELS, lp.getPixels());
+
+        images.position(1);
+        images.width(mp.getWidth());
+        images.height(mp.getHeight());
+        memPutAddress(images.address() + GLFWImage.PIXELS, mp.getPixels());
+
+        images.position(2);
+        images.width(hp.getWidth());
+        images.height(hp.getHeight());
+        memPutAddress(images.address() + GLFWImage.PIXELS, hp.getPixels());
+
+        images.position(0);
+        glfwSetWindowIcon(mHandle, images);
+    }
 
     /**
-     * Closes the window and remove all callbacks.
+     * Destroys the window and remove all callbacks.
      */
     @Override
     public void close() {
         sWindows.remove(mHandle);
+        Callbacks.glfwFreeCallbacks(mHandle);
+        glfwDestroyWindow(mHandle);
     }
 
     /**

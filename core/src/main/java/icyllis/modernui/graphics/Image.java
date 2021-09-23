@@ -46,4 +46,22 @@ public class Image {
     public final GLTexture getTexture() {
         return mTexture;
     }
+
+    /**
+     * Returns the full width of this image (as its texture).
+     *
+     * @return image width in pixels
+     */
+    public final int getWidth() {
+        return mTexture.getWidth();
+    }
+
+    /**
+     * Returns the full height of this image (as its texture).
+     *
+     * @return image height in pixels
+     */
+    public final int getHeight() {
+        return mTexture.getHeight();
+    }
 }
