@@ -19,22 +19,36 @@
 package icyllis.modernui.graphics;
 
 import icyllis.modernui.graphics.texture.GLTexture;
+import icyllis.modernui.graphics.texture.TextureManager;
 
 import javax.annotation.Nonnull;
 
 /**
  * This class represents OpenGL 2D textures at high-level, which is used for drawing
  * and processing in the application layer.
- * <p>
- * Memory Management ...
  */
-//TODO
 public class Image {
 
     private final GLTexture mTexture;
 
+    public Image() {
+        mTexture = new GLTexture(GLWrapper.GL_TEXTURE_2D);
+    }
+
     public Image(@Nonnull GLTexture texture) {
         mTexture = texture;
+    }
+
+    /**
+     * Creates a new image object representing the target resource image.
+     *
+     * @param namespace the application namespace
+     * @param subPath   the sub path to the resource
+     * @return image
+     */
+    @Nonnull
+    public static Image create(@Nonnull String namespace, @Nonnull String subPath) {
+        return new Image(TextureManager.getInstance().getOrCreate(namespace, subPath));
     }
 
     /**
