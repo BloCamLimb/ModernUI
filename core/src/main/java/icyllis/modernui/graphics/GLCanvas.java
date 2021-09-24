@@ -37,6 +37,7 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
@@ -671,14 +672,16 @@ public final class GLCanvas extends Canvas {
     }
 
     /**
-     * Draw matrix. Update the model view matrix on render thread.
+     * "Draw" matrix. Update the model view matrix on render thread.
      */
     private void drawMatrix() {
         drawMatrix(getMatrix());
     }
 
     /**
-     * Draw matrix. Update the model view matrix on render thread.
+     * "Draw" matrix. Update the model view matrix on render thread.
+     *
+     * @param matrix specified matrix
      */
     private void drawMatrix(@Nonnull Matrix4 matrix) {
         if (!matrix.equivalent(mLastMatrix)) {
@@ -973,9 +976,11 @@ public final class GLCanvas extends Canvas {
                 .put(r).put(g).put(b).put(a);
     }
 
-    private void putRectColorUV(float left, float top, float right, float bottom, @Nonnull Paint paint,
+    private void putRectColorUV(float left, float top, float right, float bottom, @Nullable Paint paint,
                                 float u1, float v1, float u2, float v2) {
-        if (paint.isMultiColor()) {
+        if (paint == null) {
+            putRectColorUV(left, top, right, bottom, ~0, u1, v1, u2, v2);
+        } else if (paint.isMultiColor()) {
             final ByteBuffer buffer = checkPosColorTexMemory();
             final int[] colors = paint.getColors();
 
@@ -1070,6 +1075,11 @@ public final class GLCanvas extends Canvas {
                 .putFloat(glyph.u2).putFloat(glyph.v1);
     }
 
+    /**
+     * Record an operation to update smooth radius later for geometries that use smooth radius.
+     *
+     * @param smooth current smooth
+     */
     private void drawSmooth(float smooth) {
         if (smooth != mLastSmoothRadius) {
             mLastSmoothRadius = smooth;
@@ -1222,7 +1232,7 @@ public final class GLCanvas extends Canvas {
     }
 
     @Override
-    public void drawImage(@Nonnull Image image, float left, float top, @Nonnull Paint paint) {
+    public void drawImage(@Nonnull Image image, float left, float top, @Nullable Paint paint) {
         GLTexture texture = image.getTexture();
         float right = left + texture.getWidth();
         float bottom = top + texture.getHeight();
@@ -1237,7 +1247,7 @@ public final class GLCanvas extends Canvas {
 
     @Override
     public void drawImage(@Nonnull Image image, float srcLeft, float srcTop, float srcRight, float srcBottom,
-                          float dstLeft, float dstTop, float dstRight, float dstBottom, @Nonnull Paint paint) {
+                          float dstLeft, float dstTop, float dstRight, float dstBottom, @Nullable Paint paint) {
         if (quickReject(dstLeft, dstTop, dstRight, dstBottom)) {
             return;
         }

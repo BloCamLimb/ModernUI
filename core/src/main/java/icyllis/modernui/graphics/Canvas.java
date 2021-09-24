@@ -408,9 +408,9 @@ public abstract class Canvas {
      * @param image the image to be drawn
      * @param left  the position of the left side of the image being drawn
      * @param top   the position of the top side of the image being drawn
-     * @param paint the paint used to draw the image
+     * @param paint the paint used to draw the image, null meaning a reset paint
      */
-    public abstract void drawImage(@Nonnull Image image, float left, float top, @Nonnull Paint paint);
+    public abstract void drawImage(@Nonnull Image image, float left, float top, @Nullable Paint paint);
 
     /**
      * Draw the specified image, scaling/translating automatically to fill the destination
@@ -422,7 +422,7 @@ public abstract class Canvas {
      * @param dst   the rectangle that the image will be scaled/translated to fit into
      * @param paint the paint used to draw the bitmap, null meaning a reset paint
      */
-    public final void drawImage(@Nonnull Image image, @Nullable Rect src, @Nonnull RectF dst, @Nonnull Paint paint) {
+    public final void drawImage(@Nonnull Image image, @Nullable Rect src, @Nonnull RectF dst, @Nullable Paint paint) {
         if (src == null) {
             drawImage(image, 0, 0, image.getWidth(), image.getHeight(),
                     dst.left, dst.top, dst.right, dst.bottom, paint);
@@ -442,7 +442,7 @@ public abstract class Canvas {
      * @param dst   the rectangle that the image will be scaled/translated to fit into
      * @param paint the paint used to draw the bitmap, null meaning a reset paint
      */
-    public final void drawImage(@Nonnull Image image, @Nullable Rect src, @Nonnull Rect dst, @Nonnull Paint paint) {
+    public final void drawImage(@Nonnull Image image, @Nullable Rect src, @Nonnull Rect dst, @Nullable Paint paint) {
         if (src == null) {
             drawImage(image, 0, 0, image.getWidth(), image.getHeight(),
                     dst.left, dst.top, dst.right, dst.bottom, paint);
@@ -461,7 +461,7 @@ public abstract class Canvas {
      * @param paint the paint used to draw the bitmap, null meaning a reset paint
      */
     public abstract void drawImage(@Nonnull Image image, float srcLeft, float srcTop, float srcRight, float srcBottom,
-                                   float dstLeft, float dstTop, float dstRight, float dstBottom, @Nonnull Paint paint);
+                                   float dstLeft, float dstTop, float dstRight, float dstBottom, @Nullable Paint paint);
 
     /**
      * Draw a line segment with the specified start and stop x,y coordinates, using

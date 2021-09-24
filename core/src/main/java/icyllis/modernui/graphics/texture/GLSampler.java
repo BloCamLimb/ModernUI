@@ -18,5 +18,15 @@
 
 package icyllis.modernui.graphics.texture;
 
-public final class GLSampler {
+import icyllis.modernui.graphics.GLObject;
+
+public final class GLSampler extends GLObject {
+
+    public GLSampler() {
+    }
+
+    @Override
+    public int get() {
+        return 0;
+    }
 }
