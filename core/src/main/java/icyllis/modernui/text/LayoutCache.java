@@ -52,22 +52,24 @@ public class LayoutCache {
      * increase the reuse rate of pieced text. The given text must be in the same
      * paragraph and should not break the grapheme cluster.
      *
-     * @param text  text source that provides chars, cannot be null or empty
-     * @param start start char offset
-     * @param end   end char index
-     * @param dir   whether to layout in right-to-left
-     * @param paint the font paint affecting measurement
+     * @param text    text source that provides chars, cannot be null or empty, only referred in stack
+     * @param start   start char offset
+     * @param end     end char index
+     * @param isRtl   whether to layout in right-to-left
+     * @param paint   the font paint affecting measurement
+     * @param measure whether to calculate individual char advance
+     * @param layout  whether to compute full layout for rendering
      * @return the layout piece
      */
     @Nonnull
-    public static LayoutPiece getOrCreate(@Nonnull CharSequence text, int start, int end,
-                                          boolean dir, @Nonnull FontPaint paint) {
+    public static LayoutPiece getOrCreate(@Nonnull CharSequence text, int start, int end, boolean isRtl,
+                                          @Nonnull FontPaint paint, boolean measure, boolean layout) {
         char[] buf = sCharBuffers.acquire();
         if (buf == null) {
             buf = new char[MAX_PIECE_LENGTH];
         }
         TextUtils.getChars(text, start, end, buf, 0);
-        LayoutPiece piece = getOrCreate(buf, start, end, dir, paint);
+        LayoutPiece piece = getOrCreate(buf, start, end, isRtl, paint, measure, layout);
         sCharBuffers.release(buf);
         return piece;
     }
@@ -79,16 +81,18 @@ public class LayoutCache {
      * increase the reuse rate of pieced text. The given text must be in the same
      * paragraph and should not break the grapheme cluster.
      *
-     * @param buf   text buffer, cannot be null or empty
-     * @param start start char offset
-     * @param end   end char index
-     * @param dir   whether to layout in right-to-left
-     * @param paint the font paint affecting measurement
+     * @param buf     text buffer, cannot be null or empty, only referred in stack
+     * @param start   start char offset
+     * @param end     end char index
+     * @param isRtl   whether to layout in right-to-left
+     * @param paint   the font paint affecting measurement
+     * @param measure whether to calculate individual char advance
+     * @param layout  whether to compute full layout for rendering
      * @return the layout piece
      */
     @Nonnull
-    public static LayoutPiece getOrCreate(@Nonnull char[] buf, int start, int end,
-                                          boolean dir, @Nonnull FontPaint paint) {
+    public static LayoutPiece getOrCreate(@Nonnull char[] buf, int start, int end, boolean isRtl,
+                                          @Nonnull FontPaint paint, boolean measure, boolean layout) {
         if (start < 0 || start >= end || end - start > MAX_PIECE_LENGTH
                 || buf.length == 0 || end > buf.length) {
             throw new IllegalArgumentException();
@@ -107,12 +111,14 @@ public class LayoutCache {
             key = new LookupKey();
         }
         LayoutPiece piece = sCache.getIfPresent(
-                key.update(buf, start, end, paint, dir));
-        if (piece == null) {
+                key.update(buf, start, end, paint, isRtl));
+        // create new or re-compute for more params
+        if (piece == null || (measure && (piece.mAscent & 0x80000000) == 0)
+                || (layout && (piece.mDescent & 0x80000000) == 0)) {
             final Key k = key.copy();
             // recycle the lookup key earlier, since creating layout is heavy
             sLookupKeys.release(key);
-            piece = new LayoutPiece(buf, start, end, dir, paint);
+            piece = new LayoutPiece(buf, start, end, isRtl, paint, measure, layout, piece);
             sCache.put(k, piece);
         } else {
             sLookupKeys.release(key);
@@ -174,7 +180,7 @@ public class LayoutCache {
             if (this == o) return true;
             // we never compare with a LookupKey
             if (o.getClass() != Key.class) {
-                throw new IllegalStateException();
+                return false;
             }
             Key key = (Key) o;
 
@@ -189,7 +195,10 @@ public class LayoutCache {
 
         @Override
         public int hashCode() {
-            int result = Arrays.hashCode(mChars);
+            int result = 1;
+            for (char c : mChars) {
+                result = 31 * result + c;
+            }
             result = 31 * result + mTypeface.hashCode();
             result = 31 * result + mFontStyle;
             result = 31 * result + mFontSize;

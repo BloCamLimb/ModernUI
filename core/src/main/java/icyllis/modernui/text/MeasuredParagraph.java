@@ -385,19 +385,19 @@ public class MeasuredParagraph {
      * @param text    the character sequence to be measured
      * @param start   the inclusive start offset of the target region in the text
      * @param end     the exclusive end offset of the target region in the text
-     * @param dir     the text direction algorithm
+     * @param textDir the text direction algorithm
      * @param recycle pass existing MeasuredParagraph if you want to recycle it.
      * @return measured text
      */
     @Nonnull
     public static MeasuredParagraph buildForBidi(@Nonnull CharSequence text, int start, int end,
-                                                 @Nonnull TextDirectionHeuristic dir,
+                                                 @Nonnull TextDirectionHeuristic textDir,
                                                  @Nullable MeasuredParagraph recycle) {
         if ((start | end | end - start | text.length() - end) < 0) {
             throw new IllegalArgumentException();
         }
         final MeasuredParagraph c = recycle == null ? obtain() : recycle;
-        c.resetAndAnalyzeBidi(text, start, end, dir);
+        c.resetAndAnalyzeBidi(text, start, end, textDir);
         return c;
     }
 
@@ -407,25 +407,27 @@ public class MeasuredParagraph {
      * If recycle is null, this returns new instance. If recycle is not null, this fills computed
      * result to recycle and returns recycle.
      *
-     * @param paint   the base paint to be used for drawing the text
-     * @param text    the character sequence to be measured
-     * @param start   the inclusive start offset of the target region in the text
-     * @param end     the exclusive end offset of the target region in the text
-     * @param dir     the text direction algorithm
-     * @param recycle pass existing MeasuredParagraph if you want to recycle it
+     * @param paint      the base paint to be used for drawing the text
+     * @param text       the character sequence to be measured
+     * @param start      the inclusive start offset of the target region in the text
+     * @param end        the exclusive end offset of the target region in the text
+     * @param textDir    the text direction algorithm
+     * @param fullLayout true to compute full layout, for rendering the text soon
+     * @param recycle    pass existing MeasuredParagraph if you want to recycle it
      * @return measured text
      */
     @Nonnull
-    public static MeasuredParagraph buildForStaticLayout(@Nonnull FontPaint paint, @Nonnull CharSequence text,
-                                                         int start, int end, @Nonnull TextDirectionHeuristic dir,
-                                                         @Nullable MeasuredParagraph recycle) {
+    public static MeasuredParagraph buildForStaticLayout(
+            @Nonnull FontPaint paint, @Nonnull CharSequence text, int start, int end,
+            @Nonnull TextDirectionHeuristic textDir, boolean fullLayout, @Nullable MeasuredParagraph recycle) {
         if ((start | end | end - start | text.length() - end) < 0) {
             throw new IllegalArgumentException();
         }
         final MeasuredParagraph c = recycle == null ? obtain() : recycle;
-        c.resetAndAnalyzeBidi(text, start, end, dir);
+        c.resetAndAnalyzeBidi(text, start, end, textDir);
         if (end > start) {
-            final MeasuredText.Builder builder = new MeasuredText.Builder(c.mCopiedBuffer);
+            final MeasuredText.Builder builder = new MeasuredText.Builder(c.mCopiedBuffer)
+                    .setComputeLayout(fullLayout);
             if (c.mSpanned == null) {
                 // No style change by MetricsAffectingSpan. Just measure all text.
                 c.applyMetricsAffectingSpan(paint, null /* spans */, start, end, builder);

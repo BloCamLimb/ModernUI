@@ -24,40 +24,34 @@ import java.util.List;
 
 public class PrecomputedText {
 
-    @Nonnull
     private final SpannableString mText;
-
-    @Nonnull
     private final FontPaint mPaint;
-
-    @Nonnull
-    private final TextDirectionHeuristic mDir;
-
-    @Nonnull
+    private final TextDirectionHeuristic mTextDir;
     private final MeasuredParagraph[] mParagraphs;
 
     private PrecomputedText(@Nonnull SpannableString text, @Nonnull FontPaint paint,
-                            @Nonnull TextDirectionHeuristic dir, @Nonnull MeasuredParagraph[] paragraphs) {
+                            @Nonnull TextDirectionHeuristic textDir, @Nonnull MeasuredParagraph[] paragraphs) {
         mText = text;
         mPaint = paint;
-        mDir = dir;
+        mTextDir = textDir;
         mParagraphs = paragraphs;
     }
 
     @Nonnull
-    public static PrecomputedText create(@Nonnull FontPaint paint, @Nonnull CharSequence text,
-                                         @Nonnull TextDirectionHeuristic dir) {
-        return new PrecomputedText(new SpannableString(text, true), paint, dir,
-                createMeasuredParagraphs(paint, text, 0, text.length(), dir));
+    public static PrecomputedText create(@Nonnull CharSequence text, @Nonnull FontPaint paint,
+                                         @Nonnull TextDirectionHeuristic textDir) {
+        // always create new spannable, in case of original text changed but we don't have watchers
+        return new PrecomputedText(new SpannableString(text, true), paint, textDir,
+                createMeasuredParagraphs(text, 0, text.length(), paint, textDir));
     }
 
-    // create new paras
     @Nonnull
     public static MeasuredParagraph[] createMeasuredParagraphs(
-            @Nonnull FontPaint paint, @Nonnull CharSequence text, int start, int end,
-            @Nonnull TextDirectionHeuristic dir) {
+            @Nonnull CharSequence text, int start, int end, @Nonnull FontPaint paint,
+            @Nonnull TextDirectionHeuristic textDir) {
         List<MeasuredParagraph> list = new ArrayList<>();
-        for (int paraStart = start, paraEnd; paraStart < end; paraStart = paraEnd) {
+        int paraEnd;
+        for (int paraStart = start; paraStart < end; paraStart = paraEnd) {
             paraEnd = TextUtils.indexOf(text, '\n', paraStart, end);
             if (paraEnd < 0) {
                 // No LINE_FEED(U+000A) character found. Use end of the text as the paragraph
@@ -67,7 +61,7 @@ public class PrecomputedText {
                 paraEnd++;  // Includes LINE_FEED(U+000A) to the prev paragraph.
             }
             list.add(MeasuredParagraph.buildForStaticLayout(
-                    paint, text, paraStart, paraEnd, dir, null));
+                    paint, text, paraStart, paraEnd, textDir, false, null));
         }
         return list.toArray(new MeasuredParagraph[0]);
     }

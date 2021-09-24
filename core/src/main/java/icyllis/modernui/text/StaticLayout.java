@@ -59,7 +59,6 @@ public class StaticLayout extends Layout {
         b.mEllipsizedWidth = width;
         b.mEllipsize = null;
         b.mMaxLines = Integer.MAX_VALUE;
-        b.mAddLastLineLineSpacing = false; // checked to add?
         return b;
     }
 
@@ -280,7 +279,8 @@ public class StaticLayout extends Layout {
 
         /**
          * Sets whether the line spacing should be applied for the last line. Default value is
-         * {@code false}.
+         * {@code false}. Internally used by DynamicLayout, this value will be always false
+         * for builders obtained by {@link #builder(CharSequence, int, int, TextPaint, int)}.
          */
         @Nonnull
         Builder setAddLastLineLineSpacing(boolean value) {
@@ -392,10 +392,13 @@ public class StaticLayout extends Layout {
         final CharSequence source = b.mText;
         final int bufStart = b.mStart;
         final int bufEnd = b.mEnd;
-        final TextPaint paint = b.mPaint;
-        final int outerWidth = b.mWidth;
-        final TextDirectionHeuristic textDir = b.mTextDir;
+        TextPaint paint = b.mPaint;
+        int outerWidth = b.mWidth;
+        TextDirectionHeuristic textDir = b.mTextDir;
         final boolean fallbackLineSpacing = b.mFallbackLineSpacing;
+        float ellipsizedWidth = b.mEllipsizedWidth;
+        TextUtils.TruncateAt ellipsize = b.mEllipsize;
+        final boolean addLastLineSpacing = b.mAddLastLineLineSpacing;
 
         int lineBreakCapacity = 0;
         int[] breaks = null;
@@ -405,19 +408,37 @@ public class StaticLayout extends Layout {
         boolean[] hasTabs = null;
 
         mLineCount = 0;
+        mEllipsized = false;
+        mMaxLineHeight = mMaximumVisibleLineCount < 1 ? 0 : DEFAULT_MAX_LINE_HEIGHT;
 
-        // current height in pixels
+        // current height
         int v = 0;
 
         FontMetricsInt fm = b.mFontMetricsInt;
 
+        final int[] indents;
+        if (mLeftIndents != null || mRightIndents != null) {
+            final int leftLen = mLeftIndents == null ? 0 : mLeftIndents.length;
+            final int rightLen = mRightIndents == null ? 0 : mRightIndents.length;
+            final int indentsLen = Math.max(leftLen, rightLen);
+            indents = new int[indentsLen];
+            if (leftLen > 0) {
+                System.arraycopy(mLeftIndents, 0, indents, 0, leftLen);
+            }
+            for (int i = 0; i < rightLen; i++) {
+                indents[i] += mRightIndents[i];
+            }
+        } else {
+            indents = null;
+        }
+
         LineBreaker.ParagraphConstraints constraints =
                 new LineBreaker.ParagraphConstraints();
 
-        MeasuredParagraph[] paragraphs;
+        MeasuredParagraph[] paragraphs = null;
         final Spanned spanned = (source instanceof Spanned) ? (Spanned) source : null;
 
-        paragraphs = PrecomputedText.createMeasuredParagraphs(paint, source, bufStart, bufEnd, textDir);
+        paragraphs = PrecomputedText.createMeasuredParagraphs(source, bufStart, bufEnd, paint, textDir);
 
         for (int paraIndex = 0, paraStart = 0, paraEnd = 0;
              paraIndex < paragraphs.length;
