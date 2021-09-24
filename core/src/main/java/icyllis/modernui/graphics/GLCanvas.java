@@ -70,6 +70,7 @@ public final class GLCanvas extends Canvas {
     // we have only one instance called on UI thread only
     private static final Pool<Matrix4> sMatrixPool = Pools.simple(20);
     private static final Pool<Clip> sClipPool = Pools.simple(20);
+    private static final Pool<DrawText> sDrawTextPool = Pools.simple(60);
 
     // a client side identity matrix
     private static final Matrix4 IDENTITY_MAT = Matrix4.identity();
@@ -546,7 +547,9 @@ public final class GLCanvas extends Canvas {
                     mMatrixUBO.upload(128, 16, uniformDataPtr);
                     uniformDataPtr += 16;
 
-                    final TexturedGlyph[] glyphs = mDrawTexts.get(textIndex++).buildBuffer(this);
+                    final DrawText drawText = mDrawTexts.get(textIndex++);
+                    final TexturedGlyph[] glyphs = drawText.buildBuffer(this);
+                    sDrawTextPool.release(drawText);
 
                     if (mPosTexResized) {
                         mPosTexVBO.allocateM(mPosTexMemory.capacity(), NULL, GL_DYNAMIC_DRAW);
@@ -1458,7 +1461,11 @@ public final class GLCanvas extends Canvas {
                 x + piece.getAdvance(), y + piece.getDescent())) {
             return;
         }
-        mDrawTexts.add(new DrawText(piece, x, y));
+        DrawText drawText = sDrawTextPool.acquire();
+        if (drawText == null) {
+            drawText = new DrawText();
+        }
+        mDrawTexts.add(drawText.set(piece, x, y));
         drawMatrix();
         checkUniformMemory()
                 .putFloat(((color >> 16) & 0xff) / 255f)
@@ -1470,15 +1477,19 @@ public final class GLCanvas extends Canvas {
 
     private static class DrawText {
 
-        @Nonnull
-        private final LayoutPiece piece;
-        private final float x;
-        private final float y;
+        private LayoutPiece piece;
+        private float x;
+        private float y;
 
-        private DrawText(@Nonnull LayoutPiece piece, float x, float y) {
+        private DrawText() {
+        }
+
+        @Nonnull
+        private DrawText set(@Nonnull LayoutPiece piece, float x, float y) {
             this.piece = piece;
             this.x = x;
             this.y = y;
+            return this;
         }
 
         @Nonnull
@@ -1488,6 +1499,7 @@ public final class GLCanvas extends Canvas {
             for (int i = 0, e = glyphs.length; i < e; i++) {
                 canvas.putGlyph(glyphs[i], x + positions[i * 2], y + positions[i * 2 + 1]);
             }
+            piece = null;
             return glyphs;
         }
     }

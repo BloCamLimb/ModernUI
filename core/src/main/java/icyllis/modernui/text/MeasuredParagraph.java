@@ -440,7 +440,7 @@ public class MeasuredParagraph {
                     spanEnd = c.mSpanned.nextSpanTransition(spanStart, end,
                             MetricAffectingSpan.class);
                     MetricAffectingSpan[] spans = c.mSpanned.getSpans(spanStart, spanEnd,
-                            MetricAffectingSpan.class);
+                            MetricAffectingSpan.class, null);
                     if (spans != null) {
                         spans = TextUtils.removeEmptySpans(spans, c.mSpanned,
                                 MetricAffectingSpan.class);
@@ -468,7 +468,7 @@ public class MeasuredParagraph {
 
         // Replace characters associated with ReplacementSpan to U+FFFC.
         if (mSpanned != null) {
-            final ReplacementSpan[] spans = mSpanned.getSpans(start, end, ReplacementSpan.class);
+            final ReplacementSpan[] spans = mSpanned.getSpans(start, end, ReplacementSpan.class, null);
             if (spans != null) {
                 for (ReplacementSpan span : spans) {
                     int startInPara = mSpanned.getSpanStart(span) - start;

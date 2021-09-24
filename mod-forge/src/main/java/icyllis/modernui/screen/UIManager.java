@@ -290,23 +290,28 @@ public final class UIManager implements ViewRootImpl.Handler {
 
             // holds the lock
             synchronized (mRenderLock) {
-                // 1. do tasks
-                if (!mTasks.isEmpty()) {
-                    // batched processing
-                    mTasks.removeIf(task -> task.doExecuteTask(mFrameTimeMillis));
+                try {
+                    // 1. do tasks
+                    if (!mTasks.isEmpty()) {
+                        // batched processing
+                        mTasks.removeIf(task -> task.doExecuteTask(mFrameTimeMillis));
+                    }
+                    if (mScreen == null) {
+                        return;
+                    }
+
+                    // 2. do input events
+                    mRoot.doProcessInputEvents();
+
+                    // 3. do animations
+                    mAnimationCallback.accept(mFrameTimeMillis);
+
+                    // 4. do traversal
+                    mRoot.doTraversal();
+                } catch (Throwable t) {
+                    ModernUI.LOGGER.error(MARKER, "An error occurred on UI thread", t);
+                    throw t;
                 }
-                if (mScreen == null) {
-                    return;
-                }
-
-                // 2. do input events
-                mRoot.doProcessInputEvents();
-
-                // 3. do animations
-                mAnimationCallback.accept(mFrameTimeMillis);
-
-                // 4. do traversal
-                mRoot.doTraversal();
 
                 // test stuff
                 /*Paint paint = Paint.take();

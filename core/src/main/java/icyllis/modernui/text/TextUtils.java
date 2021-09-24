@@ -84,7 +84,7 @@ public final class TextUtils {
      * However, these empty spans should not be taken into account when layouting or rendering the
      * string and this method provides a way to filter getSpans' results accordingly.
      *
-     * @param spans   A list of spans retrieved using {@link Spanned#getSpans(int, int, Class)} from
+     * @param spans   A list of spans retrieved using {@link Spanned#getSpans(int, int, Class, java.util.List)} from
      *                the <code>spanned</code>
      * @param spanned The Spanned from which spans were extracted
      * @return A subset of spans where empty spans ({@link Spanned#getSpanStart(Object)}  ==

@@ -124,7 +124,7 @@ public class TextLine {
             plain = true;
         } else {
             ss.init(mSpanned, mStart + start, mStart + limit);
-            plain = ss.mSize == 0;
+            plain = ss.mSpans.isEmpty();
         }
         if (plain) {
             // reset to base paint
@@ -141,12 +141,12 @@ public class TextLine {
                 // reset to base paint
                 wp.set(mPaint);
 
-                for (int k = 0; k < ss.mSize; k++) {
+                for (int k = 0; k < ss.mSpans.size(); k++) {
                     // Intentionally using >= and <= as explained above
                     if ((ss.mSpanStarts[k] >= runEnd) ||
                             (ss.mSpanEnds[k] <= runStart)) continue;
 
-                    final CharacterStyle span = ss.mSpans[k];
+                    final CharacterStyle span = ss.mSpans.get(k);
                     span.updateDrawState(wp);
                 }
 

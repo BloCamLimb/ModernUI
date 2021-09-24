@@ -122,7 +122,7 @@ public class AudioManager implements AutoCloseable {
 
     // audio thread
     private void tick() {
-        int timer = (mTimer + 1) & 0x3f;
+        int timer = (mTimer + 1) & 0x7f;
         try {
             if (timer == 0) {
                 List<String> devices = ALUtil.getStringList(NULL, ALC_ALL_DEVICES_SPECIFIER);
@@ -136,7 +136,9 @@ public class AudioManager implements AutoCloseable {
                     ModernUI.LOGGER.info(MARKER, "Device list changed");
                 }
             }
-            mTracks.forEach(Track::tick);
+            for (Track track : mTracks) {
+                track.tick();
+            }
         } catch (Throwable t) {
             ModernUI.LOGGER.error(MARKER, "Caught an exception on audio thread", t);
         }

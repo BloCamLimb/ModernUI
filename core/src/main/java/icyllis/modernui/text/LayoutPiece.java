@@ -85,7 +85,10 @@ public class LayoutPiece {
 
         boolean receivingLayout = false;
         if (hint != null) {
-            mAdvances = hint.mAdvances;
+            if ((hint.mAscent & 0x80000000) != 0) {
+                mAdvances = hint.mAdvances;
+                assert mAdvances != null;
+            }
             if ((hint.mDescent & 0x80000000) != 0) {
                 if (RenderCore.isOnRenderThread()) {
                     mGlyphs = hint.mGlyphs;

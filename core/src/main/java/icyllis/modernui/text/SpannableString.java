@@ -59,7 +59,7 @@ public class SpannableString extends SpannableStringInternal implements Spannabl
 
     @Override
     protected void sendSpanAdded(Object span, int start, int end) {
-        final SpanWatcher[] watchers = getSpans(start, end, SpanWatcher.class);
+        final SpanWatcher[] watchers = getSpans(start, end, SpanWatcher.class, null);
         if (watchers != null) {
             for (SpanWatcher watcher : watchers) {
                 watcher.onSpanAdded(this, span, start, end);
@@ -69,7 +69,7 @@ public class SpannableString extends SpannableStringInternal implements Spannabl
 
     @Override
     protected void sendSpanRemoved(Object span, int start, int end) {
-        final SpanWatcher[] watchers = getSpans(start, end, SpanWatcher.class);
+        final SpanWatcher[] watchers = getSpans(start, end, SpanWatcher.class, null);
         if (watchers != null) {
             for (SpanWatcher watcher : watchers) {
                 watcher.onSpanRemoved(this, span, start, end);
@@ -80,7 +80,7 @@ public class SpannableString extends SpannableStringInternal implements Spannabl
     @Override
     protected void sendSpanChanged(Object span, int s, int e, int st, int en) {
         final SpanWatcher[] watchers = getSpans(Math.min(s, st), Math.max(e, en),
-                SpanWatcher.class);
+                SpanWatcher.class, null);
         if (watchers != null) {
             for (SpanWatcher watcher : watchers) {
                 watcher.onSpanChanged(this, span, s, e, st, en);
