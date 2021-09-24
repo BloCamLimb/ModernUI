@@ -29,7 +29,7 @@ import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 import java.util.Locale;
 
-import static com.ibm.icu.lang.UCharacter.*;
+import static com.ibm.icu.lang.UCharacter.GraphemeClusterBreak;
 
 /**
  * This class handles grapheme cluster break.
@@ -44,6 +44,8 @@ import static com.ibm.icu.lang.UCharacter.*;
  * character, yet is actually represented by two Unicode code points.
  * These user-perceived characters are approximated by what is called
  * a grapheme cluster, which can be determined programmatically.
+ * <p>
+ * Note: this class is not completed, use ICU instead.
  */
 public final class GraphemeBreak {
 
@@ -259,7 +261,8 @@ public final class GraphemeBreak {
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    public static boolean isGraphemeBreak(@Nullable float[] advances, @Nonnull char[] buf, int start, int count, final int offset) {
+    public static boolean isGraphemeBreak(@Nullable float[] advances, @Nonnull char[] buf, int start, int count,
+                                          final int offset) {
         // This implementation closely follows Unicode Standard Annex #29 on
         // Unicode Text Segmentation (http://www.unicode.org/reports/tr29/),
         // implementing a tailored version of extended grapheme clusters.

@@ -28,10 +28,10 @@ If you have any questions, feel free to join our [Discord](https://discord.gg/km
   - [caffeine](https://github.com/ben-manes/caffeine) by Ben Manes
   - [flexmark-java](https://github.com/vsch/flexmark-java) by Atlassian Pty Ltd, Vladimir Schneider
   - [fastutil](https://github.com/vigna/fastutil) by Vigna
-  - Apache log4j, IBM icu4j
+  - Apache Log4j, IBM ICU4j, LWJGL
 ### Adding Modern UI to your project
 #### Environment requirements
-- Windows, Linux or Classic macOS
+- Windows, Linux or macOS
 - JDK 11.0.8 or above
 - OpenGL 4.5 or above
 - (Optional) Forge 1.16.5-36.1.0
@@ -47,13 +47,13 @@ dependencies {
     implementation "icyllis.modernui:ModernUI-Core:${modernui_core_version}"
 }
 ```
-##### Forge Loom 0.7
+##### Forge Loom 0.10
 ```
 dependencies {
     modCompile "icyllis.modernui:ModernUI-Forge:${modernui_version}"
 }
 ```
-##### ForgeGradle 4
+##### ForgeGradle 4 (To be updated)
 Mixin 0.8.2 can't automatically remap the refmap
 in forge dev environment, you may manually add mixin system properties and
 re-run `genIntellijRuns`, see https://github.com/SpongePowered/Mixin/issues/462  
@@ -75,8 +75,9 @@ dependencies {
 }
 ```
 ### Debugging Modern UI
-Note that for debugging in Minecraft environment, you need to pack shaders in the core module to a resource pack in the run directory.
+Note that for debugging in Minecraft environment, you need to pack shaders in the core (sub)project to a resource pack in the run directory.
 ### Screenshots
+![new2](https://i.loli.net/2021/09/24/TJjyzd6oOf5pPcq.png)
 ![new](https://i.loli.net/2021/03/24/nMZhJaiz7qDp2xF.png)
 #### out-of-date
 ![a](https://i.loli.net/2020/05/15/fYAow29d4JtqaGu.png)

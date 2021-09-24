@@ -34,6 +34,7 @@ import net.minecraft.network.chat.TextComponent;
 import net.minecraft.server.packs.resources.ReloadableResourceManager;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraftforge.resource.ISelectiveResourceReloadListener;
+import net.minecraftforge.resource.VanillaResourceType;
 import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.Nonnull;
@@ -134,9 +135,15 @@ public class TextLayoutEngine {
 
         /* Pre-cache the ASCII digits to allow for fast glyph substitution */
         //cacheDigitGlyphs();
+
+        // init class
         GlyphManager.getInstance();
         ((ReloadableResourceManager) Minecraft.getInstance().getResourceManager()).registerReloadListener(
-                (ISelectiveResourceReloadListener) (manager, predicate) -> clearLayoutCache()
+                (ISelectiveResourceReloadListener) (manager, predicate) -> {
+                    if (predicate.test(VanillaResourceType.LANGUAGES)) {
+                        clearLayoutCache();
+                    }
+                }
         );
     }
 
