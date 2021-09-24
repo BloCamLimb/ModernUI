@@ -18,25 +18,78 @@
 
 package icyllis.modernui.text;
 
+import icyllis.modernui.text.style.ParagraphStyle;
 import it.unimi.dsi.fastutil.objects.ObjectArrays;
 
 import javax.annotation.Nonnull;
 import java.lang.reflect.Array;
 
 /**
- * A base class that manages text layout in visual elements on the screen.
- * <p>
- * This layout is based on Unicode specification to meet a good internationalization
- * requirement, and also supports a wide variety of styles. Handle multiple paragraphs,
- * line breaking etc. It's usually for a page or an area,
- * not just a single line of text or words. Naturally, the layout process is heavy.
+ * A base class that manages text layout in visual elements on the screen,
+ * which is designed for text pages at a high-level.
+ *
+ * @see StaticLayout
+ * @see DynamicLayout
+ * @since 3.0
  */
-public abstract class TextLayout {
+public abstract class Layout {
+
+    private static final ParagraphStyle[] NO_PARA_SPANS = {};
 
     private CharSequence mText;
+    private TextPaint mPaint;
+    private int mWidth;
+    private Alignment mAlignment;
+    private boolean mSpannedText;
+    private TextDirectionHeuristic mTextDir;
 
-    protected TextLayout(CharSequence text) {
+    /**
+     * Subclasses of Layout use this constructor to set the display text,
+     * width, and other standard properties.
+     *
+     * @param text  the text to render
+     * @param paint the default paint for the layout.  Styles can override
+     *              various attributes of the paint.
+     * @param width the wrapping width for the text.
+     * @param align whether to left, right, or center the text.  Styles can
+     *              override the alignment.
+     */
+    protected Layout(CharSequence text, TextPaint paint,
+                     int width, Alignment align) {
+        this(text, paint, width, align, TextDirectionHeuristics.FIRSTSTRONG_LTR);
+    }
+
+    /**
+     * Subclasses of Layout use this constructor to set the display text,
+     * width, and other standard properties.
+     *
+     * @param text  the text to render
+     * @param paint the default paint for the layout.  Styles can override
+     *              various attributes of the paint.
+     * @param width the wrapping width for the text.
+     * @param align whether to left, right, or center the text.  Styles can
+     *              override the alignment.
+     */
+    protected Layout(CharSequence text, TextPaint paint,
+                     int width, Alignment align, TextDirectionHeuristic textDir) {
+        if (width < 0) {
+            throw new IllegalArgumentException("Layout: " + width + " < 0");
+        }
+
+        // Ensure paint doesn't have baselineShift set.
+        // While normally we don't modify the paint the user passed in,
+        // we were already doing this in Styled.drawUniformRun with both
+        // baselineShift and bgColor.  We probably should reevaluate bgColor.
+        if (paint != null) {
+            paint.bgColor = 0;
+        }
+
         mText = text;
+        mPaint = paint;
+        mWidth = width;
+        mAlignment = align;
+        mSpannedText = text instanceof Spanned;
+        mTextDir = textDir;
     }
 
     /**
@@ -81,8 +134,6 @@ public abstract class TextLayout {
     public enum Alignment {
         ALIGN_NORMAL,
         ALIGN_OPPOSITE,
-        ALIGN_CENTER,
-        ALIGN_LEFT,
-        ALIGN_RIGHT,
+        ALIGN_CENTER
     }
 }

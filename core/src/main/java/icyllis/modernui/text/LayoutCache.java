@@ -42,7 +42,35 @@ public class LayoutCache {
     public static final int MAX_PIECE_LENGTH = 128;
 
     private static final Pool<LookupKey> sLookupKeys = Pools.concurrent(2);
+    private static final Pool<char[]> sCharBuffers = Pools.concurrent(1);
     private static volatile Cache<Key, LayoutPiece> sCache;
+
+    /**
+     * Get or create the layout piece from the global cache with given requirements.
+     * <p>
+     * In particular, the given range cannot exceed {@link #MAX_PIECE_LENGTH} to
+     * increase the reuse rate of pieced text. The given text must be in the same
+     * paragraph and should not break the grapheme cluster.
+     *
+     * @param text  text source that provides chars, cannot be null or empty
+     * @param start start char offset
+     * @param end   end char index
+     * @param dir   whether to layout in right-to-left
+     * @param paint the font paint affecting measurement
+     * @return the layout piece
+     */
+    @Nonnull
+    public static LayoutPiece getOrCreate(@Nonnull CharSequence text, int start, int end,
+                                          boolean dir, @Nonnull FontPaint paint) {
+        char[] buf = sCharBuffers.acquire();
+        if (buf == null) {
+            buf = new char[MAX_PIECE_LENGTH];
+        }
+        TextUtils.getChars(text, start, end, buf, 0);
+        LayoutPiece piece = getOrCreate(buf, start, end, dir, paint);
+        sCharBuffers.release(buf);
+        return piece;
+    }
 
     /**
      * Get or create the layout piece from the global cache with given requirements.
@@ -61,7 +89,7 @@ public class LayoutCache {
     @Nonnull
     public static LayoutPiece getOrCreate(@Nonnull char[] buf, int start, int end,
                                           boolean dir, @Nonnull FontPaint paint) {
-        if (start < 0 || start > end || end - start > MAX_PIECE_LENGTH
+        if (start < 0 || start >= end || end - start > MAX_PIECE_LENGTH
                 || buf.length == 0 || end > buf.length) {
             throw new IllegalArgumentException();
         }
@@ -110,6 +138,9 @@ public class LayoutCache {
         return size;
     }
 
+    /**
+     * The cache key.
+     */
     private static class Key {
 
         // for Lookup case, this is only a pointer to the requester
@@ -142,7 +173,9 @@ public class LayoutCache {
         public boolean equals(Object o) {
             if (this == o) return true;
             // we never compare with a LookupKey
-            if (o.getClass() != Key.class) return false;
+            if (o.getClass() != Key.class) {
+                throw new IllegalStateException();
+            }
             Key key = (Key) o;
 
             if (mFontStyle != key.mFontStyle) return false;
@@ -170,6 +203,9 @@ public class LayoutCache {
         }
     }
 
+    /**
+     * A static key used for looking-up, compared against the base Key class.
+     */
     private static class LookupKey extends Key {
 
         private int mStart;
@@ -184,7 +220,7 @@ public class LayoutCache {
             mStart = start;
             mEnd = end;
             mTypeface = paint.mTypeface;
-            mFontStyle = paint.mFlags;
+            mFontStyle = paint.getFontStyle();
             mFontSize = paint.mFontSize;
             mLocale = paint.mLocale;
             mIsRtl = dir;
@@ -195,16 +231,18 @@ public class LayoutCache {
         public boolean equals(Object o) {
             if (this == o) return true;
             // we never compare with a LookupKey
-            if (o.getClass() != Key.class) return false;
-
+            if (o.getClass() != Key.class) {
+                throw new IllegalStateException("Well, lookup key is not comparing against an storing key");
+            }
             Key key = (Key) o;
 
             if (mFontStyle != key.mFontStyle) return false;
             if (mFontSize != key.mFontSize) return false;
             if (mIsRtl != key.mIsRtl) return false;
             if (!Arrays.equals(mChars, mStart, mEnd,
-                    key.mChars, 0, key.mChars.length))
+                    key.mChars, 0, key.mChars.length)) {
                 return false;
+            }
             if (!mTypeface.equals(key.mTypeface)) return false;
             return mLocale.equals(key.mLocale);
         }
@@ -212,8 +250,9 @@ public class LayoutCache {
         @Override
         public int hashCode() {
             int result = 1;
-            for (int i = mStart; i < mEnd; i++)
+            for (int i = mStart; i < mEnd; i++) {
                 result = 31 * result + mChars[i];
+            }
             result = 31 * result + mTypeface.hashCode();
             result = 31 * result + mFontStyle;
             result = 31 * result + mFontSize;
