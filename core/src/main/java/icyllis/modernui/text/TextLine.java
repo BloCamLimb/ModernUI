@@ -64,34 +64,36 @@ public class TextLine {
     }
 
     /**
-     * Draw the text line. If paragraph direction is RTL, then x should be on the opposite side.
+     * Draw the text line, based on visual order. If paragraph (base) direction is RTL,
+     * then x should be on the opposite side (i.e. leading) corresponding to normal one.
      *
      * @param canvas canvas to draw on
      * @param x      the leading margin position
-     * @param y      the baseline
+     * @param y      the baseline, invariant in this text line
      */
     public void draw(@Nonnull Canvas canvas, float x, float y) {
         final TextPaint wp = TextPaint.obtain();
-        final SpanSet spanSet = SpanSet.obtain();
+        final SpanSet ss = SpanSet.obtain();
         final int runCount = mDirections.getRunCount();
         for (int runIndex = 0; runIndex < runCount; runIndex++) {
             final int runStart = mDirections.getRunStart(runIndex);
-            if (runStart > mLen) {
+            if (runStart >= mLen) {
                 break;
             }
             final int runLimit = Math.min(runStart + mDirections.getRunLength(runIndex), mLen);
             final boolean runIsRtl = mDirections.isRunRtl(runIndex);
 
             final float advance = mMeasuredParagraph.getAdvance(runStart, runLimit);
-            if (mDir == Bidi.DIRECTION_LEFT_TO_RIGHT == runIsRtl) {
+            final boolean diffDir = (mDir == Bidi.DIRECTION_LEFT_TO_RIGHT) == runIsRtl;
+            if (diffDir) {
                 if (runIsRtl) {
                     x += advance;
                 } else {
                     x -= advance;
                 }
-                drawBidiRun(canvas, x, y, runStart, runLimit, runIsRtl, wp, spanSet);
+                drawBidiRun(canvas, x, y, runStart, runLimit, runIsRtl, wp, ss);
             } else {
-                drawBidiRun(canvas, x, y, runStart, runLimit, runIsRtl, wp, spanSet);
+                drawBidiRun(canvas, x, y, runStart, runLimit, runIsRtl, wp, ss);
                 if (runIsRtl) {
                     x -= advance;
                 } else {
@@ -100,19 +102,31 @@ public class TextLine {
             }
         }
         wp.recycle();
-        spanSet.recycle();
+        ss.recycle();
     }
 
+    /**
+     * Draws a unidirectional (but possibly multi-styled) run of text.
+     *
+     * @param canvas   the canvas to draw on
+     * @param x        the position of the run that is closest to the leading margin
+     * @param y        the baseline
+     * @param start    the line-relative start
+     * @param limit    the line-relative limit
+     * @param runIsRtl true if the run is right-to-left
+     * @param wp       working paint
+     * @param ss       recyclable span set
+     */
     private void drawBidiRun(@Nonnull Canvas canvas, float x, float y, int start, int limit,
-                             boolean runIsRtl, @Nonnull TextPaint wp, @Nonnull SpanSet spanSet) {
-        final boolean singleRun;
+                             boolean runIsRtl, @Nonnull TextPaint wp, @Nonnull SpanSet ss) {
+        final boolean plain;
         if (mSpanned == null) {
-            singleRun = true;
+            plain = true;
         } else {
-            spanSet.init(mSpanned, mStart + start, mStart + limit);
-            singleRun = spanSet.mSize == 0;
+            ss.init(mSpanned, mStart + start, mStart + limit);
+            plain = ss.mSize == 0;
         }
-        if (singleRun) {
+        if (plain) {
             // reset to base paint
             wp.set(mPaint);
             drawStyleRun(wp, start, limit, runIsRtl, canvas, x, y);
@@ -127,12 +141,12 @@ public class TextLine {
                 // reset to base paint
                 wp.set(mPaint);
 
-                for (int k = 0; k < spanSet.mSize; k++) {
+                for (int k = 0; k < ss.mSize; k++) {
                     // Intentionally using >= and <= as explained above
-                    if ((spanSet.mSpanStarts[k] >= runEnd) ||
-                            (spanSet.mSpanEnds[k] <= runStart)) continue;
+                    if ((ss.mSpanStarts[k] >= runEnd) ||
+                            (ss.mSpanEnds[k] <= runStart)) continue;
 
-                    final CharacterStyle span = spanSet.mSpans[k];
+                    final CharacterStyle span = ss.mSpans[k];
                     span.updateDrawState(wp);
                 }
 

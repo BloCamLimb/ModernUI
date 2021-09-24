@@ -177,7 +177,7 @@ public class FontPaint {
 
         FontPaint that = (FontPaint) o;
 
-        if (mFlags != that.mFlags) return false;
+        if ((mFlags & FONT_STYLE_MASK) != (that.mFlags & FONT_STYLE_MASK)) return false;
         if (mFontSize != that.mFontSize) return false;
         if (!Objects.equals(mTypeface, that.mTypeface))
             return false;
@@ -188,7 +188,7 @@ public class FontPaint {
     public int hashCode() {
         int result = mTypeface != null ? mTypeface.hashCode() : 0;
         result = 31 * result + (mLocale != null ? mLocale.hashCode() : 0);
-        result = 31 * result + mFlags;
+        result = 31 * result + (mFlags & FONT_STYLE_MASK);
         result = 31 * result + mFontSize;
         return result;
     }
@@ -198,7 +198,7 @@ public class FontPaint {
         return "FontPaint{" +
                 "mTypeface=" + mTypeface +
                 ", mLocale=" + mLocale +
-                ", mFontStyle=" + mFlags +
+                ", mFlags=0x" + Integer.toHexString(mFlags) +
                 ", mFontSize=" + mFontSize +
                 '}';
     }

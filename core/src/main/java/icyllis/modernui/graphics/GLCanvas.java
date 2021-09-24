@@ -1433,9 +1433,7 @@ public final class GLCanvas extends Canvas {
         if ((start | end | end - start | text.length() - end) < 0) {
             throw new IndexOutOfBoundsException();
         }
-        char[] chars = new char[end - start];
-        TextUtils.getChars(text, start, end, chars, 0);
-        LayoutPiece piece = LayoutCache.getOrCreate(chars, 0, chars.length, isRtl, paint);
+        LayoutPiece piece = LayoutCache.getOrCreate(text, start, end, isRtl, paint);
         drawTextRun(piece, x, y, paint.getColor());
     }
 

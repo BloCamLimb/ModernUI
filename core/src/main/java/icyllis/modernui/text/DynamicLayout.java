@@ -18,9 +18,6 @@
 
 package icyllis.modernui.text;
 
-public class DynamicLayout extends TextLayout {
+public class DynamicLayout {
 
-    protected DynamicLayout(CharSequence text) {
-        super(text);
-    }
 }

@@ -68,9 +68,9 @@ public class SpanSet {
             mSpanFlags = new int[length];
         }
 
-        int oldSize = mSize;
+        final int oldSize = mSize;
         mSize = 0;
-        if (allSpans != null) {
+        if (length > 0) {
             for (final CharacterStyle span : allSpans) {
                 final int spanStart = spanned.getSpanStart(span);
                 final int spanEnd = spanned.getSpanEnd(span);

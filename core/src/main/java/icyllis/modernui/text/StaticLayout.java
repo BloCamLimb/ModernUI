@@ -26,9 +26,7 @@ import it.unimi.dsi.fastutil.objects.ObjectArrays;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class StaticLayout extends TextLayout {
-
-    private static final int DEFAULT_MAX_LINE_HEIGHT = -1;
+public class StaticLayout extends Layout {
 
     private static final Pool<Builder> sPool = Pools.concurrent(1);
 
@@ -36,10 +34,10 @@ public class StaticLayout extends TextLayout {
      * Obtain a builder for constructing StaticLayout objects.
      *
      * @param source The text to be laid out, optionally with spans
-     * @param start  The index of the start of the text
-     * @param end    The index + 1 of the end of the text
-     * @param paint  The base paint used for layout
-     * @param width  The width in pixels
+     * @param start  The start index (inclusive) of the text
+     * @param end    The end index (exclusive) of the text
+     * @param paint  The base (default) paint used for layout
+     * @param width  The width in pixels for each line
      * @return a builder object used for constructing the StaticLayout
      */
     @Nonnull
@@ -49,7 +47,6 @@ public class StaticLayout extends TextLayout {
         if (b == null) {
             b = new Builder();
         }
-
         b.mText = source;
         b.mStart = start;
         b.mEnd = end;
@@ -58,6 +55,11 @@ public class StaticLayout extends TextLayout {
         b.mAlignment = Alignment.ALIGN_NORMAL;
         b.mTextDir = TextDirectionHeuristics.FIRSTSTRONG_LTR;
         b.mFallbackLineSpacing = true; // default true
+        b.mIncludePad = true;
+        b.mEllipsizedWidth = width;
+        b.mEllipsize = null;
+        b.mMaxLines = Integer.MAX_VALUE;
+        b.mAddLastLineLineSpacing = false; // checked to add?
         return b;
     }
 
@@ -81,7 +83,17 @@ public class StaticLayout extends TextLayout {
         private int mWidth;
         private Alignment mAlignment;
         private TextDirectionHeuristic mTextDir;
+        private boolean mIncludePad;
         private boolean mFallbackLineSpacing;
+        private int mEllipsizedWidth;
+        @Nullable
+        private TextUtils.TruncateAt mEllipsize;
+        private int mMaxLines;
+        @Nullable
+        private int[] mLeftIndents;
+        @Nullable
+        private int[] mRightIndents;
+        private boolean mAddLastLineLineSpacing;
 
         private Builder() {
         }
@@ -99,6 +111,8 @@ public class StaticLayout extends TextLayout {
         void release() {
             mText = null;
             mPaint = null;
+            mLeftIndents = null;
+            mRightIndents = null;
         }
 
         /**
@@ -140,14 +154,14 @@ public class StaticLayout extends TextLayout {
         @Nonnull
         Builder setWidth(int width) {
             mWidth = width;
-            /*if (mEllipsize == null) {
+            if (mEllipsize == null) {
                 mEllipsizedWidth = width;
-            }*/
+            }
             return this;
         }
 
         /**
-         * Set the alignment. The default is {@link TextLayout.Alignment#ALIGN_NORMAL}.
+         * Set the alignment. The default is {@link Layout.Alignment#ALIGN_NORMAL}.
          *
          * @param alignment Alignment for the resulting {@link StaticLayout}
          * @return this builder, useful for chaining
@@ -173,6 +187,20 @@ public class StaticLayout extends TextLayout {
         }
 
         /**
+         * Set whether to include extra space beyond font ascent and descent (which is
+         * needed to avoid clipping in some languages, such as Arabic and Kannada). The
+         * default is {@code true}.
+         *
+         * @param includePad whether to include padding
+         * @return this builder, useful for chaining
+         */
+        @Nonnull
+        public Builder setIncludePad(boolean includePad) {
+            mIncludePad = includePad;
+            return this;
+        }
+
+        /**
          * Set whether to respect the ascent and descent of the fallback fonts that are used in
          * displaying the text (which is needed to avoid text from consecutive lines running into
          * each other). If set, fallback fonts that end up getting used can increase the ascent
@@ -182,12 +210,81 @@ public class StaticLayout extends TextLayout {
          * languages like Burmese or Tibetan where text is typically much taller or deeper than
          * Latin text.
          *
-         * @param useLineSpacingFromFallbacks whether to expand line spacing based on fallback fonts
+         * @param fallbackLineSpacing whether to expand line spacing based on fallback fonts
          * @return this builder, useful for chaining
          */
         @Nonnull
-        public Builder setUseLineSpacingFromFallbacks(boolean useLineSpacingFromFallbacks) {
-            mFallbackLineSpacing = useLineSpacingFromFallbacks;
+        public Builder setFallbackLineSpacing(boolean fallbackLineSpacing) {
+            mFallbackLineSpacing = fallbackLineSpacing;
+            return this;
+        }
+
+        /**
+         * Set the width as used for ellipsizing purposes, if it differs from the
+         * normal layout width. The default is the {@code width}
+         * passed to {@link #build()}.
+         *
+         * @param ellipsizedWidth width used for ellipsizing, in pixels
+         * @return this builder, useful for chaining
+         */
+        @Nonnull
+        public Builder setEllipsizedWidth(int ellipsizedWidth) {
+            mEllipsizedWidth = ellipsizedWidth;
+            return this;
+        }
+
+        /**
+         * Set ellipsizing on the layout. Causes words that are longer than the view
+         * is wide, or exceeding the number of lines (see #setMaxLines) in the case
+         * of {@link TextUtils.TruncateAt#END} or
+         * {@link TextUtils.TruncateAt#MARQUEE}, to be ellipsized instead
+         * of broken. The default is {@code null}, indicating no ellipsis is to be applied.
+         *
+         * @param ellipsize type of ellipsis behavior
+         * @return this builder, useful for chaining
+         */
+        @Nonnull
+        public Builder setEllipsize(@Nullable TextUtils.TruncateAt ellipsize) {
+            mEllipsize = ellipsize;
+            return this;
+        }
+
+        /**
+         * Set maximum number of lines. This is particularly useful in the case of
+         * ellipsizing, where it changes the layout of the last line. The default is
+         * unlimited.
+         *
+         * @param maxLines maximum number of lines in the layout
+         * @return this builder, useful for chaining
+         */
+        @Nonnull
+        public Builder setMaxLines(int maxLines) {
+            mMaxLines = maxLines;
+            return this;
+        }
+
+        /**
+         * Set indents. Arguments are arrays holding an indent amount, one per line, measured in
+         * pixels. For lines past the last element in the array, the last element repeats.
+         *
+         * @param leftIndents  array of indent values for left margin, in pixels
+         * @param rightIndents array of indent values for right margin, in pixels
+         * @return this builder, useful for chaining
+         */
+        @Nonnull
+        public Builder setIndents(@Nullable int[] leftIndents, @Nullable int[] rightIndents) {
+            mLeftIndents = leftIndents;
+            mRightIndents = rightIndents;
+            return this;
+        }
+
+        /**
+         * Sets whether the line spacing should be applied for the last line. Default value is
+         * {@code false}.
+         */
+        @Nonnull
+        Builder setAddLastLineLineSpacing(boolean value) {
+            mAddLastLineLineSpacing = value;
             return this;
         }
 
@@ -221,13 +318,13 @@ public class StaticLayout extends TextLayout {
     private static final int ELLIPSIS_START = 5;
     private static final int ELLIPSIS_COUNT = 6;
 
-    // 29 bits
-    private static final int START_MASK = 0x1FFFFFFF;
-    // 31 bit
+    private static final int START_MASK = 0x1FFFFFFF; // 29 bits
     private static final int DIR_SHIFT = 30;
-    // 30 bit
     private static final int TAB_MASK = 0x20000000;
 
+    private static final int DEFAULT_MAX_LINE_HEIGHT = -1;
+
+    //// Member Variables \\\\
 
     private int mLineCount;
     private int mTopPadding, mBottomPadding;
@@ -259,19 +356,39 @@ public class StaticLayout extends TextLayout {
     @Nullable
     private int[] mRightIndents;
 
-    // Used by DynamicLayout
+    /**
+     * Used by DynamicLayout.
+     */
     StaticLayout(@Nullable CharSequence text) {
-        super(text);
+        super(text, null, 0, null);
         mColumns = COLUMNS_ELLIPSIZE;
+        mLineDirections = new Directions[2];
+        mLines = new int[2 * mColumns];
     }
 
     private StaticLayout(@Nonnull Builder b) {
-        super(b.mText);
-        mColumns = COLUMNS_NORMAL;
-        generate(b);
+        super(b.mText, b.mPaint, b.mWidth, b.mAlignment, b.mTextDir);
+        if (b.mEllipsize != null) {
+            //FIXME add
+            mEllipsizedWidth = b.mEllipsizedWidth;
+
+            mColumns = COLUMNS_ELLIPSIZE;
+        } else {
+            mColumns = COLUMNS_NORMAL;
+            mEllipsizedWidth = b.mWidth;
+        }
+
+        mLineDirections = new Directions[2];
+        mLines = new int[2 * mColumns];
+        mMaximumVisibleLineCount = b.mMaxLines;
+
+        mLeftIndents = b.mLeftIndents;
+        mRightIndents = b.mRightIndents;
+
+        generate(b, b.mIncludePad, b.mIncludePad);
     }
 
-    void generate(@Nonnull Builder b) {
+    void generate(@Nonnull Builder b, boolean includePad, boolean trackPad) {
         final CharSequence source = b.mText;
         final int bufStart = b.mStart;
         final int bufEnd = b.mEnd;

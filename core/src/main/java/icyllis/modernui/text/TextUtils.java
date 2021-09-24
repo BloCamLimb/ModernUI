@@ -131,8 +131,9 @@ public final class TextUtils {
     }
 
     public static int indexOf(CharSequence s, char ch, int start) {
-        if (s instanceof String)
+        if (s instanceof String) {
             return ((String) s).indexOf(ch, start);
+        }
         return indexOf(s, ch, start, s.length());
     }
 
@@ -151,11 +152,12 @@ public final class TextUtils {
                 getChars(s, start, segend, temp, 0);
 
                 int count = segend - start;
-                for (int i = 0; i < count; i++)
+                for (int i = 0; i < count; i++) {
                     if (temp[i] == ch) {
                         recycle(temp);
                         return i + start;
                     }
+                }
 
                 start = segend;
             }
@@ -171,10 +173,20 @@ public final class TextUtils {
         return -1;
     }
 
+    /**
+     * Where to truncate.
+     */
+    public enum TruncateAt {
+        START,
+        MIDDLE,
+        END,
+        MARQUEE
+    }
+
     private static final String[] sBinaryCompacts = new String[]{" bytes", " KB", " MB", " GB"};
 
     @Nonnull
-    public static String compactBinary(int num) {
+    public static String binaryCompact(int num) {
         if (num == 0)
             return "0 bytes";
         int i = (Integer.SIZE - 1 - Integer.numberOfLeadingZeros(num)) / 10;
