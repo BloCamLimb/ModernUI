@@ -19,12 +19,12 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.platform.RenderCore;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.floats.FloatList;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.geom.Point2D;
@@ -54,31 +54,62 @@ public class LayoutPiece {
     // the size and order are relative to the text buf (char array)
     // only grapheme cluster bounds have advances, others are zeros
     // eg: [13.57, 0, 14.26, 0, 0]
-    private final float[] mAdvances;
+    private float[] mAdvances;
 
     // maximum font metrics
-    private final int mAscent;
-    private final int mDescent;
+    // besides, we use their sign bit for constructor flags
+    int mAscent;
+    int mDescent;
 
     // total advance
     private float mAdvance;
 
     /**
-     * Creates the glyph layout of a piece.
+     * Creates the glyph layout of a piece. No reference to the buffer will be held.
      *
-     * @param buf   text buffer, cannot be null or empty
-     * @param start start char offset
-     * @param end   end char index
-     * @param isRtl whether to layout in right-to-left
-     * @param paint the font paint affecting measurement
+     * @param buf     text buffer, cannot be null or empty
+     * @param start   start char offset
+     * @param end     end char index
+     * @param isRtl   whether to layout in right-to-left
+     * @param paint   the font paint affecting measurement
+     * @param measure whether to calculate individual char advance
+     * @param layout  whether to compute full layout for rendering
+     * @param hint    pass if you have already a layout piece
      */
-    public LayoutPiece(@Nonnull char[] buf, int start, int end, boolean isRtl, @Nonnull FontPaint paint) {
-        if (start < 0 || start > end || buf.length == 0 || end > buf.length) {
+    public LayoutPiece(@Nonnull char[] buf, int start, int end, boolean isRtl, @Nonnull FontPaint paint,
+                       boolean measure, boolean layout, @Nullable LayoutPiece hint) {
+        if (start < 0 || start >= end || buf.length == 0 || end > buf.length) {
             throw new IllegalArgumentException();
         }
         GlyphManager engine = GlyphManager.getInstance();
-        mAdvances = new float[end - start];
-        FontMetricsInt extent = new FontMetricsInt();
+
+        boolean receivingLayout = false;
+        if (hint != null) {
+            mAdvances = hint.mAdvances;
+            if ((hint.mDescent & 0x80000000) != 0) {
+                if (RenderCore.isOnRenderThread()) {
+                    mGlyphs = hint.mGlyphs;
+                    mPositions = hint.mPositions;
+                    assert mGlyphs != null;
+                } else {
+                    RenderCore.recordRenderCall(() -> {
+                        mGlyphs = hint.mGlyphs;
+                        mPositions = hint.mPositions;
+                        assert mGlyphs != null;
+                    });
+                    receivingLayout = true;
+                }
+            }
+        }
+
+        // check again if needed currently
+        measure = measure && mAdvances == null;
+        layout = layout && (mGlyphs == null || !receivingLayout); // checked hint
+
+        if (measure) {
+            mAdvances = new float[end - start];
+        }
+        final FontMetricsInt extent = new FontMetricsInt();
 
         // async on render thread
         final List<TexturedGlyph> glyphs = new ArrayList<>();
@@ -93,11 +124,19 @@ public class LayoutPiece {
             Font derived = engine.getFontMetrics(run.mFont, paint, extent);
             GlyphVector vector = engine.layoutGlyphVector(derived, buf, run.mStart, run.mEnd, isRtl);
 
-            ClusterWork clusterWork = new ClusterWork(derived, buf, isRtl, mAdvances, start);
-            GraphemeBreak.forTextRun(buf, paint.mLocale, run.mStart, run.mEnd, clusterWork);
+            if (measure) {
+                ClusterWork clusterWork = new ClusterWork(derived, buf, isRtl, mAdvances, start);
+                GraphemeBreak.forTextRun(buf, paint.mLocale, run.mStart, run.mEnd, clusterWork);
+            }
 
-            TextureWork textureWork = new TextureWork(vector, glyphs, positions, mAdvance);
-            RenderCore.recordRenderCall(textureWork);
+            if (layout) {
+                TextureWork textureWork = new TextureWork(vector, glyphs, positions, mAdvance);
+                if (RenderCore.isOnRenderThread()) {
+                    textureWork.run();
+                } else {
+                    RenderCore.recordRenderCall(textureWork);
+                }
+            }
 
             mAdvance += vector.getGlyphPosition(vector.getNumGlyphs()).getX();
 
@@ -107,15 +146,26 @@ public class LayoutPiece {
                 runIndex++;
             }
         }
-        // flatten
-        RenderCore.recordRenderCall(() -> {
-            mGlyphs = glyphs.toArray(new TexturedGlyph[0]);
-            mPositions = positions.toFloatArray();
-            //mCharIndices = charIndices.toIntArray();
-        });
+        if (layout) {
+            if (RenderCore.isOnRenderThread()) {
+                mGlyphs = glyphs.toArray(new TexturedGlyph[0]);
+                mPositions = positions.toFloatArray();
+            } else {
+                RenderCore.recordRenderCall(() -> {
+                    mGlyphs = glyphs.toArray(new TexturedGlyph[0]);
+                    mPositions = positions.toFloatArray();
+                });
+            }
+        }
 
         mAscent = extent.mAscent;
+        if (measure || mAdvances != null) {
+            mAscent |= 0x80000000;
+        }
         mDescent = extent.mDescent;
+        if (layout || mGlyphs != null || receivingLayout) {
+            mDescent |= 0x80000000;
+        }
     }
 
     private static class ClusterWork implements GraphemeBreak.RunConsumer {
@@ -173,6 +223,8 @@ public class LayoutPiece {
 
     /**
      * The array is about all visible glyphs for rendering in order from left to right.
+     * <p>
+     * May null if not compute full layout or not from render thread.
      *
      * @return glyphs
      */
@@ -184,6 +236,8 @@ public class LayoutPiece {
     /**
      * This array holds the repeat of x offset, y offset of glyph positions.
      * The length is twice as long as the glyph array.
+     * <p>
+     * May null if not compute full layout or not from render thread.
      *
      * @return glyph positions
      */
@@ -203,13 +257,15 @@ public class LayoutPiece {
      */
     @Deprecated
     public int[] getCharIndices() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     /**
      * The array of all chars advance, the length and order are relative to the text buffer.
      * Only grapheme cluster bounds have advances, others are zeros. For example: [13.57, 0, 14.26, 0, 0].
      * The length is constructor <code>end - start</code>.
+     * <p>
+     * May null if not compute measurement.
      *
      * @return advances
      */
@@ -223,7 +279,7 @@ public class LayoutPiece {
      * @param extent to expand from
      */
     public void getExtent(@Nonnull FontMetricsInt extent) {
-        extent.extendBy(mAscent, mDescent);
+        extent.extendBy(getAscent(), getDescent());
     }
 
     /**
@@ -232,7 +288,7 @@ public class LayoutPiece {
      * @return ascent to baseline, always positive
      */
     public int getAscent() {
-        return mAscent;
+        return mAscent & 0x7FFFFFFF;
     }
 
     /**
@@ -241,7 +297,7 @@ public class LayoutPiece {
      * @return descent to baseline, always positive
      */
     public int getDescent() {
-        return mDescent;
+        return mDescent & 0x7FFFFFFF;
     }
 
     /**
@@ -254,8 +310,13 @@ public class LayoutPiece {
     }
 
     public int getMemoryUsage() {
-        return MathUtil.roundUp(12 + 16 + 8 + 16 + 8 + 16 + 8 + 16 + 8 + 4 + 4 + 4 +
-                (mGlyphs == null ? 0 : mGlyphs.length * (8 + 4 + 4 + 4)) +
-                (mAdvances.length << 2), 8);
+        int m = 48;
+        if (mGlyphs != null) {
+            m += 16 + 16 + (mGlyphs.length << 4);
+        }
+        if (mAdvances != null) {
+            m += 16 + (mAdvances.length << 2);
+        }
+        return m;
     }
 }

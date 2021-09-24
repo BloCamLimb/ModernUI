@@ -54,7 +54,7 @@ public class TextLine {
         mText = text;
         mLen = text.length();
         mMeasuredParagraph = MeasuredParagraph.buildForStaticLayout(mPaint, text, 0, mLen,
-                TextDirectionHeuristics.FIRSTSTRONG_LTR, null);
+                TextDirectionHeuristics.FIRSTSTRONG_LTR, false, null);
         mDir = mMeasuredParagraph.getParagraphDir();
         mDirections = mMeasuredParagraph.getDirections(0, mLen);
         mMeasuredText = mMeasuredParagraph.getMeasuredText();

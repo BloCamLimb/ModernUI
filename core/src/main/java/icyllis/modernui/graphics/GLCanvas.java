@@ -1433,7 +1433,10 @@ public final class GLCanvas extends Canvas {
         if ((start | end | end - start | text.length() - end) < 0) {
             throw new IndexOutOfBoundsException();
         }
-        LayoutPiece piece = LayoutCache.getOrCreate(text, start, end, isRtl, paint);
+        if (start == end) {
+            return;
+        }
+        LayoutPiece piece = LayoutCache.getOrCreate(text, start, end, isRtl, paint, false, true);
         drawTextRun(piece, x, y, paint.getColor());
     }
 
@@ -1450,9 +1453,9 @@ public final class GLCanvas extends Canvas {
     }
 
     private void drawTextRun(@Nonnull LayoutPiece piece, float x, float y, int color) {
-        if (piece.getAdvances().length == 0 ||
-                quickReject(x, y - piece.getAscent(),
-                        x + piece.getAdvance(), y + piece.getDescent())) {
+        if (piece.getAdvance() == 0 || (piece.getGlyphs() != null && piece.getGlyphs().length == 0)
+                || quickReject(x, y - piece.getAscent(),
+                x + piece.getAdvance(), y + piece.getDescent())) {
             return;
         }
         mDrawTexts.add(new DrawText(piece, x, y));
