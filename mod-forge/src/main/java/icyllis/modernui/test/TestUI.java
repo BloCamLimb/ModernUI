@@ -24,6 +24,13 @@ import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.screen.ScreenCallback;
+import icyllis.modernui.text.FontPaint;
+import icyllis.modernui.text.Spannable;
+import icyllis.modernui.text.SpannableString;
+import icyllis.modernui.text.TextLine;
+import icyllis.modernui.text.style.AbsoluteSizeSpan;
+import icyllis.modernui.text.style.ForegroundColorSpan;
+import icyllis.modernui.text.style.StyleSpan;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
 import icyllis.modernui.widget.FrameLayout;
@@ -32,6 +39,8 @@ import icyllis.modernui.widget.ScrollView;
 import javax.annotation.Nonnull;
 
 public class TestUI extends ScreenCallback {
+
+    private TextLine mTextLine;
 
     @Override
     public void onCreate() {
@@ -44,6 +53,15 @@ public class TestUI extends ScreenCallback {
         ll.setLayoutParams(cl);
         contentView.addView(ll);
 
+        String text = "My name is Van, I'm 30 years old, and I'm from Japan. I'm an artist, I'm a performance artist." +
+                " " +
+                "I'm hired for people to fulfill their fantasies, their deep dark fantasies.";
+        Spannable spannable = SpannableString.valueOf(text);
+        spannable.setSpan(new ForegroundColorSpan(0xfff699b4), 54, text.length(), 0);
+        spannable.setSpan(new AbsoluteSizeSpan(18), 16, text.length() - 20, 0);
+        spannable.setSpan(new StyleSpan(FontPaint.BOLD), text.length() - 20, text.length(), 0);
+        mTextLine = new TextLine(spannable);
+
         contentView.setBackground(new Drawable() {
             long lastTime = AnimationHandler.currentTimeMillis();
 
@@ -53,6 +71,8 @@ public class TestUI extends ScreenCallback {
                 Rect b = getBounds();
                 paint.setRGBA(8, 8, 8, 80);
                 canvas.drawRoundRect(b.left, b.top, b.right, b.bottom, 8, paint);
+
+                mTextLine.draw(canvas, 0, 60);
 
                 SpectrumGraph graph = TestMain.sGraph;
                 long time = AnimationHandler.currentTimeMillis();

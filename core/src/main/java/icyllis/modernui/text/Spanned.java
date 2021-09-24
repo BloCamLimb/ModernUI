@@ -36,6 +36,7 @@ package icyllis.modernui.text;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
 
 /**
  * This is the interface for text that has markup objects attached to
@@ -91,15 +92,21 @@ public interface Spanned extends CharSequence {
      * slice of this {@link CharSequence} and whose type is the specified type
      * or a subclass of it.  Specify {@code Object.class} for the type
      * if you want all the objects regardless of type.
+     * <p>
+     * If <code>out</code> list is not null, then it will be filled with the
+     * method result and returns null. If <code>out</code> list is <code>null</code>, then
+     * method will return an array of the method result. If result is empty,
+     * returns <code>null</code>. This method will never return an empty array.
      *
+     * @param <T>   markup type
      * @param start start char index of the slice
      * @param end   end char index of the slice
-     * @param type  markup type
-     * @param <T>   markup type
-     * @return an array of the markup objects, or null if nothing found
+     * @param type  markup class
+     * @param out   the list to receive the result
+     * @return an array of the markup objects, or null
      */
     @Nullable
-    <T> T[] getSpans(int start, int end, Class<T> type);
+    <T> T[] getSpans(int start, int end, Class<T> type, @Nullable List<T> out);
 
     /**
      * Return the beginning of the range of text to which the specified

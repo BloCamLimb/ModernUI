@@ -19,7 +19,6 @@
 package icyllis.modernui.text.style;
 
 import icyllis.modernui.text.FontPaint;
-import icyllis.modernui.view.ViewConfig;
 
 import javax.annotation.Nonnull;
 
@@ -31,7 +30,7 @@ public class AbsoluteSizeSpan extends MetricAffectingSpan {
     private final int mSize;
 
     /**
-     * Set the text size to <code>size</code> scaling-independent pixels.
+     * Set the text size to <code>size</code> pixels.
      */
     public AbsoluteSizeSpan(int size) {
         mSize = size;
@@ -40,7 +39,7 @@ public class AbsoluteSizeSpan extends MetricAffectingSpan {
     /**
      * Get the text size.
      *
-     * @return the text size, in scaling-independent pixels.
+     * @return the text size, in pixels.
      * @see AbsoluteSizeSpan#AbsoluteSizeSpan(int)
      */
     public int getSize() {
@@ -49,6 +48,6 @@ public class AbsoluteSizeSpan extends MetricAffectingSpan {
 
     @Override
     public void updateMeasureState(@Nonnull FontPaint paint) {
-        paint.setFontSize(ViewConfig.get().getTextSize(mSize));
+        paint.setFontSize(mSize);
     }
 }

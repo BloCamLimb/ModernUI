@@ -40,6 +40,7 @@ import it.unimi.dsi.fastutil.objects.ObjectArrays;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.reflect.Array;
+import java.util.List;
 
 // modified version of https://android.googlesource.com/
 abstract class SpannableStringInternal implements Spanned, GetChars {
@@ -82,7 +83,7 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
      * @param ignoreNoCopySpan whether to copy NoCopySpans in the {@code source}
      */
     private void copySpansFromSpanned(@Nonnull Spanned src, int start, int end, boolean ignoreNoCopySpan) {
-        Object[] spans = src.getSpans(start, end, Object.class);
+        Object[] spans = src.getSpans(start, end, Object.class, null);
 
         if (spans != null) {
             for (Object span : spans) {
@@ -280,8 +281,17 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
 
     @Nullable
     @Override
+    public final <T> T[] getSpans(int start, int end, @Nullable Class<T> type, @Nullable List<T> out) {
+        if (out == null) {
+            return getSpansArray(start, end, type);
+        }
+        getSpansList(start, end, type, out);
+        return null;
+    }
+
+    @Nullable
     @SuppressWarnings("unchecked")
-    public <T> T[] getSpans(int start, int end, @Nullable Class<T> type) {
+    private <T> T[] getSpansArray(int start, int end, @Nullable Class<T> type) {
         final int count = mSpanCount;
         final Object[] spans = mSpans;
         final int[] data = mSpanData;
@@ -374,6 +384,51 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
         return (T[]) r;
     }
 
+    @SuppressWarnings("unchecked")
+    private <T> void getSpansList(int start, int end, @Nullable Class<T> type, @Nonnull List<T> out) {
+        final int count = mSpanCount;
+        final Object[] spans = mSpans;
+        final int[] data = mSpanData;
+
+        final boolean any = type == null || type == Object.class;
+
+        int found = 0;
+        out.clear();
+
+        for (int i = 0; i < count; i++) {
+            int spanStart = data[i * COLUMNS + START];
+            int spanEnd = data[i * COLUMNS + END];
+
+            if (spanStart > end || spanEnd < start) {
+                continue;
+            }
+
+            if (spanStart != spanEnd && start != end) {
+                if (spanStart == end || spanEnd == start) {
+                    continue;
+                }
+            }
+
+            if (!any && !type.isInstance(spans[i])) {
+                continue;
+            }
+
+            final int priority = data[i * COLUMNS + FLAGS] & Spanned.SPAN_PRIORITY;
+            if (priority != 0) {
+                int j = 0;
+                for (; j < found; j++) {
+                    if (priority > (getSpanFlags(out.get(j)) & Spanned.SPAN_PRIORITY)) {
+                        break;
+                    }
+                }
+                out.add(j, (T) spans[i]);
+            } else {
+                out.add((T) spans[i]);
+            }
+            found++;
+        }
+    }
+
     @Override
     public int getSpanStart(@Nonnull Object span) {
         final Object[] spans = mSpans;
@@ -464,8 +519,8 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
                 toString().equals(o.toString())) {
             final Spanned other = (Spanned) o;
             // Check span data
-            final Object[] otherSpans = other.getSpans(0, other.length(), Object.class);
-            final Object[] spans = getSpans(0, length(), Object.class);
+            final Object[] otherSpans = other.getSpans(0, other.length(), Object.class, null);
+            final Object[] spans = getSpans(0, length(), Object.class, null);
             if (otherSpans == null && spans == null) {
                 return true;
             } else if (otherSpans != null && spans != null &&

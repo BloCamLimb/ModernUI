@@ -127,7 +127,7 @@ public abstract class Layout {
         /*if (text instanceof SpannableStringBuilder) {
             return ((SpannableStringBuilder) text).getSpans(start, end, type, false);
         } else {*/
-        return text.getSpans(start, end, type);
+        return text.getSpans(start, end, type, null);
         //}
     }
 
