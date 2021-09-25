@@ -18,6 +18,9 @@
 
 package icyllis.modernui.text;
 
+import icyllis.modernui.text.style.CharacterStyle;
+import icyllis.modernui.text.style.ParagraphStyle;
+
 import javax.annotation.Nonnull;
 
 /**
@@ -34,12 +37,17 @@ public interface Spannable extends Spanned {
     /**
      * Attach the specified markup object to the range <code>start&hellip;end</code>
      * of the text, or move the object to that range if it was already
-     * attached elsewhere.
+     * attached elsewhere.  See {@link Spanned} for an explanation of
+     * what the flags mean.  The object can be one that has meaning only
+     * within your application, or it can be one that the text system will
+     * use to affect text display or behavior.  Some noteworthy ones are
+     * the subclasses of {@link CharacterStyle} and {@link ParagraphStyle},
+     * and {@link TextWatcher} and {@link SpanWatcher}.
      *
-     * @param span  markup object
-     * @param start start char index of the span
-     * @param end   end char index of the span
-     * @param flags flags
+     * @param span  the markup object
+     * @param start the start char index of the span
+     * @param end   the end char index of the span
+     * @param flags the flags of the span
      */
     void setSpan(@Nonnull Object span, int start, int end, int flags);
 
@@ -56,6 +64,8 @@ public interface Spannable extends Spanned {
      * Remove the specified object from the range of text to which it
      * was attached, if any.  It is OK to remove an object that was never
      * attached in the first place.
+     * <p>
+     * See {@link Spanned} for an explanation of what the flags mean.
      *
      * @param span  markup object to remove
      * @param flags flags
@@ -67,6 +77,8 @@ public interface Spannable extends Spanned {
     /**
      * Factory used by TextView to create new {@link Spannable Spannables}. You can subclass
      * it to provide something other than {@link SpannableString}.
+     *
+     * @see #DEFAULT_FACTORY
      */
     @FunctionalInterface
     interface Factory {

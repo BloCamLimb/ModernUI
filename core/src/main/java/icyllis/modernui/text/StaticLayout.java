@@ -18,17 +18,28 @@
 
 package icyllis.modernui.text;
 
+import icyllis.modernui.ModernUI;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
-import it.unimi.dsi.fastutil.ints.IntArrays;
-import it.unimi.dsi.fastutil.objects.ObjectArrays;
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.MarkerManager;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Arrays;
 
+/**
+ * StaticLayout is a Layout for text that will not be edited after it
+ * is laid out.  Use {@link DynamicLayout} for text that may change.
+ * <p>This is used by widgets to control text layout. You should not need
+ * to use this class directly unless you are implementing your own widget
+ * or custom display object.
+ */
 public class StaticLayout extends Layout {
 
-    private static final Pool<Builder> sPool = Pools.concurrent(1);
+    public static final Marker MARKER = MarkerManager.getMarker("StaticLayout");
+
+    private static final Pool<Builder> sPool = Pools.concurrent(2);
 
     /**
      * Obtain a builder for constructing StaticLayout objects.
@@ -70,6 +81,7 @@ public class StaticLayout extends Layout {
      * {@link #build} to build the StaticLayout object. Parameters not explicitly set will get
      * default values.
      */
+    @SuppressWarnings("unused")
     public final static class Builder {
 
         // cached instance
@@ -92,7 +104,6 @@ public class StaticLayout extends Layout {
         private int[] mLeftIndents;
         @Nullable
         private int[] mRightIndents;
-        private boolean mAddLastLineLineSpacing;
 
         private Builder() {
         }
@@ -278,17 +289,6 @@ public class StaticLayout extends Layout {
         }
 
         /**
-         * Sets whether the line spacing should be applied for the last line. Default value is
-         * {@code false}. Internally used by DynamicLayout, this value will be always false
-         * for builders obtained by {@link #builder(CharSequence, int, int, TextPaint, int)}.
-         */
-        @Nonnull
-        Builder setAddLastLineLineSpacing(boolean value) {
-            mAddLastLineLineSpacing = value;
-            return this;
-        }
-
-        /**
          * Build the {@link StaticLayout} after options have been set.
          * <p>
          * Note: the builder object must not be reused in any way after calling this
@@ -305,18 +305,16 @@ public class StaticLayout extends Layout {
         }
     }
 
-    private static final int COLUMNS_NORMAL = 5;
-    private static final int COLUMNS_ELLIPSIZE = 7;
+    private static final int COLUMNS_NORMAL = 3;
+    private static final int COLUMNS_ELLIPSIZE = 5;
 
     private static final int START = 0;
     private static final int DIR = START;
     private static final int TAB = START;
     private static final int TOP = 1;
     private static final int DESCENT = 2;
-    private static final int EXTRA = 3;
-    private static final int HYPHEN = 4;
-    private static final int ELLIPSIS_START = 5;
-    private static final int ELLIPSIS_COUNT = 6;
+    private static final int ELLIPSIS_START = 3;
+    private static final int ELLIPSIS_COUNT = 4;
 
     private static final int START_MASK = 0x1FFFFFFF; // 29 bits
     private static final int DIR_SHIFT = 30;
@@ -361,6 +359,7 @@ public class StaticLayout extends Layout {
      */
     StaticLayout(@Nullable CharSequence text) {
         super(text, null, 0, null);
+
         mColumns = COLUMNS_ELLIPSIZE;
         mLineDirections = new Directions[2];
         mLines = new int[2 * mColumns];
@@ -398,7 +397,6 @@ public class StaticLayout extends Layout {
         final boolean fallbackLineSpacing = b.mFallbackLineSpacing;
         float ellipsizedWidth = b.mEllipsizedWidth;
         TextUtils.TruncateAt ellipsize = b.mEllipsize;
-        final boolean addLastLineSpacing = b.mAddLastLineLineSpacing;
 
         int lineBreakCapacity = 0;
         int[] breaks = null;
@@ -415,6 +413,7 @@ public class StaticLayout extends Layout {
         int v = 0;
 
         FontMetricsInt fm = b.mFontMetricsInt;
+        int[] chooseHtv = null;
 
         final int[] indents;
         if (mLeftIndents != null || mRightIndents != null) {
@@ -438,7 +437,11 @@ public class StaticLayout extends Layout {
         MeasuredParagraph[] paragraphs = null;
         final Spanned spanned = (source instanceof Spanned) ? (Spanned) source : null;
 
-        paragraphs = PrecomputedText.createMeasuredParagraphs(source, bufStart, bufEnd, paint, textDir);
+        //FIXME precomputed text
+        if (paragraphs == null) {
+            paragraphs = PrecomputedText.createMeasuredParagraphs(source, bufStart, bufEnd,
+                    paint, textDir, /* computeLayout */ false);
+        }
 
         for (int paraIndex = 0, paraStart = 0, paraEnd = 0;
              paraIndex < paragraphs.length;
@@ -452,19 +455,22 @@ public class StaticLayout extends Layout {
 
             }
 
+            // tab stop locations
+            float[] variableTabStops = null;
+            if (spanned != null) {
+
+            }
+
             final MeasuredParagraph measuredPara = paragraphs[paraIndex];
             final int[] spanEndCache = measuredPara.getSpanEndCache().elements();
             final int[] fmCache = measuredPara.getFontMetrics().elements();
 
             constraints.setWidth(restWidth);
             constraints.setIndent(firstWidth);
-            constraints.setTabStops(null, 20);
+            constraints.setTabStops(variableTabStops, 20);
 
             LineBreaker.Result res = LineBreaker.computeLineBreaks(
-                    measuredPara.getMeasuredText(), constraints, null, 0);
-
-            final int remainingLineCount = mMaximumVisibleLineCount - mLineCount;
-
+                    measuredPara.getMeasuredText(), constraints, indents, mLineCount);
             int breakCount = res.getLineCount();
             if (breakCount > lineBreakCapacity) {
                 lineBreakCapacity = breakCount;
@@ -483,10 +489,12 @@ public class StaticLayout extends Layout {
                 hasTabs[i] = res.hasLineTab(i);
             }
 
-            //TODO
-            boolean ellipsisMayBeApplied = false;
+            final int remainingLineCount = mMaximumVisibleLineCount - mLineCount;
+            final boolean ellipsisMayBeApplied = ellipsize != null
+                    && (ellipsize == TextUtils.TruncateAt.END
+                    || (mMaximumVisibleLineCount == 1
+                    && ellipsize != TextUtils.TruncateAt.MARQUEE));
 
-            //noinspection ConstantConditions
             if (0 < remainingLineCount && remainingLineCount < breakCount
                     && ellipsisMayBeApplied) {
                 // Calculate width
@@ -497,7 +505,7 @@ public class StaticLayout extends Layout {
                         width += lineWidths[i];
                     } else {
                         for (int j = (i == 0 ? 0 : breaks[i - 1]); j < breaks[i]; j++) {
-                            width += measuredPara.getMeasuredText().getAdvance(j);
+                            width += measuredPara.getAdvance(j);
                         }
                     }
                     hasTab |= hasTabs[i];
@@ -515,18 +523,22 @@ public class StaticLayout extends Layout {
             int here = paraStart;
 
             int fmAscent = 0, fmDescent = 0;
+            int cacheIndex = 0;
             int breakIndex = 0;
-            for (int spanStart = paraStart, spanEnd, spanIndex = 0;
-                 spanStart < paraEnd;
-                 spanStart = spanEnd, spanIndex++) {
+            for (int spanStart = paraStart, spanEnd; spanStart < paraEnd; spanStart = spanEnd) {
+                // retrieve end of span
+                spanEnd = spanEndCache[cacheIndex];
 
-                spanEnd = spanEndCache[spanIndex];
+                fm.mAscent = fmCache[cacheIndex * 2];
+                fm.mDescent = fmCache[cacheIndex * 2 + 1];
+                cacheIndex++;
 
-                fm.mAscent = fmCache[spanIndex * 2];
-                fm.mDescent = fmCache[spanIndex * 2 + 1];
-
-                fmAscent = Math.max(fmAscent, fm.mAscent);
-                fmDescent = Math.max(fmDescent, fm.mDescent);
+                if (fm.mAscent < fmAscent) {
+                    fmAscent = fm.mAscent;
+                }
+                if (fm.mDescent > fmDescent) {
+                    fmDescent = fm.mDescent;
+                }
 
                 // skip breaks ending before current span range
                 while (breakIndex < breakCount && paraStart + breaks[breakIndex] < spanStart) {
@@ -545,7 +557,14 @@ public class StaticLayout extends Layout {
                             ? Math.max(fmDescent, Math.round(descents[breakIndex]))
                             : fmDescent;
 
-                    v = out(v);
+                    //FIXME top, bottom, chooseHt
+                    v = out(source, here, endPos,
+                            ascent, descent, ascent, descent,
+                            v, /*chooseHt, */chooseHtv, fm,
+                            hasTabs[breakIndex],
+                            measuredPara, bufEnd, includePad, trackPad,
+                            paraStart, ellipsize, ellipsizedWidth, lineWidths[breakIndex],
+                            paint, moreChars);
 
                     if (endPos < spanEnd) {
                         // preserve metrics for current span
@@ -564,29 +583,379 @@ public class StaticLayout extends Layout {
                 }
             }
 
-            if (paraEnd == bufEnd) {
+            if (paraEnd >= bufEnd) {
+                assert paraEnd == bufEnd;
                 break;
             }
         }
 
-
+        if ((bufEnd == bufStart || source.charAt(bufEnd - 1) == '\n')
+                && mLineCount < mMaximumVisibleLineCount) {
+            final MeasuredParagraph measuredPara =
+                    MeasuredParagraph.buildForBidi(source, bufEnd, bufEnd, textDir, null);
+            GlyphManager.getInstance().getFontMetrics(paint, fm);
+            out(source, bufEnd, bufEnd,
+                    fm.mAscent, fm.mDescent, fm.mAscent, fm.mDescent,
+                    v, /*null, */null, fm, false,
+                    measuredPara, bufEnd,
+                    includePad, trackPad,
+                    bufStart, ellipsize,
+                    ellipsizedWidth, 0, paint, false);
+        }
     }
 
-    private int out(int v) {
+    private int out(final CharSequence text, final int start, final int end, int above, int below,
+                    int top, int bottom, int v, /*final LineHeightSpan[] chooseHt, */final int[] chooseHtv,
+                    final FontMetricsInt fm, final boolean hasTab,
+                    @Nonnull final MeasuredParagraph measured,
+                    final int bufEnd, final boolean includePad, final boolean trackPad,
+                    final int widthStart, final TextUtils.TruncateAt ellipsize, final float ellipsisWidth,
+                    final float textWidth, final TextPaint paint, final boolean moreChars) {
         final int j = mLineCount;
         final int off = j * mColumns;
         final int want = off + mColumns + TOP;
+        final int dir = measured.getParagraphDir();
 
         if (want >= mLines.length) {
-            mLines = IntArrays.forceCapacity(mLines, want, mLines.length);
+            mLines = Arrays.copyOf(mLines, want + (want >> 1));
         }
 
         if (j >= mLineDirections.length) {
-            mLineDirections = ObjectArrays.forceCapacity(mLineDirections, j, mLineDirections.length);
+            mLineDirections = Arrays.copyOf(mLineDirections, j + (j >> 1));
+        }
+
+        boolean firstLine = (j == 0);
+        boolean currentLineIsTheLastVisibleOne = (j + 1 == mMaximumVisibleLineCount);
+
+        if (ellipsize != null) {
+            // If there is only one line, then do any type of ellipsis except when it is MARQUEE
+            // if there are multiple lines, just allow END ellipsis on the last line
+            boolean forceEllipsis = moreChars && (mLineCount + 1 == mMaximumVisibleLineCount);
+
+            boolean doEllipsis =
+                    (((mMaximumVisibleLineCount == 1 && moreChars) || (firstLine && !moreChars)) &&
+                            ellipsize != TextUtils.TruncateAt.MARQUEE) ||
+                            (!firstLine && (currentLineIsTheLastVisibleOne || !moreChars) &&
+                                    ellipsize == TextUtils.TruncateAt.END);
+            if (doEllipsis) {
+                calculateEllipsis(start, end, measured, widthStart,
+                        ellipsisWidth, ellipsize, j,
+                        textWidth, paint, forceEllipsis);
+            }
+        }
+
+        final boolean lastLine;
+        if (mEllipsized) {
+            lastLine = true;
+        } else {
+            final boolean lastCharIsNewLine = widthStart != bufEnd && bufEnd > 0
+                    && text.charAt(bufEnd - 1) == '\n';
+            if (end == bufEnd && !lastCharIsNewLine) {
+                lastLine = true;
+            } else {
+                lastLine = start == bufEnd && lastCharIsNewLine;
+            }
+        }
+
+        if (firstLine) {
+            if (trackPad) {
+                mTopPadding = top - above;
+            }
+
+            if (includePad) {
+                above = top;
+            }
+        }
+
+        if (lastLine) {
+            if (trackPad) {
+                mBottomPadding = bottom - below;
+            }
+
+            if (includePad) {
+                below = bottom;
+            }
         }
 
         int[] lines = mLines;
 
+        lines[off + START] = start;
+        lines[off + TOP] = v;
+        lines[off + DESCENT] = below;
+
+        // special case for non-ellipsized last visible line when maxLines is set
+        // store the height as if it was ellipsized
+        if (!mEllipsized && currentLineIsTheLastVisibleOne) {
+            // below calculation as if it was the last line
+            int maxLineBelow = includePad ? bottom : below;
+            // similar to the calculation of v below, without the extra.
+            mMaxLineHeight = v + (maxLineBelow + above);
+        }
+
+        v += (below + above);
+        lines[off + mColumns + START] = end;
+        lines[off + mColumns + TOP] = v;
+
+        lines[off + TAB] |= hasTab ? TAB_MASK : 0;
+        lines[off + DIR] |= dir << DIR_SHIFT;
+        mLineDirections[j] = measured.getDirections(start - widthStart, end - widthStart);
+
+        mLineCount++;
         return v;
+    }
+
+    private void calculateEllipsis(int lineStart, int lineEnd,
+                                   MeasuredParagraph measured, int widthStart,
+                                   float avail, TextUtils.TruncateAt where,
+                                   int line, float textWidth, TextPaint paint,
+                                   boolean forceEllipsis) {
+        avail -= getTotalInsets(line);
+        if (textWidth <= avail && !forceEllipsis) {
+            // Everything fits!
+            mLines[mColumns * line + ELLIPSIS_START] = 0;
+            mLines[mColumns * line + ELLIPSIS_COUNT] = 0;
+            return;
+        }
+
+        String ellipsisStr = TextUtils.getEllipsisString(where);
+        float ellipsisWidth = LayoutCache.getOrCreate(ellipsisStr, 0, ellipsisStr.length(), false,
+                paint, false, false).getAdvance();
+        int ellipsisStart = 0;
+        int ellipsisCount = 0;
+        int len = lineEnd - lineStart;
+
+        // We only support start ellipsis on a single line
+        if (where == TextUtils.TruncateAt.START) {
+            if (mMaximumVisibleLineCount == 1) {
+                float sum = 0;
+                int i;
+
+                for (i = len; i > 0; i--) {
+                    float w = measured.getAdvance(i - 1 + lineStart - widthStart);
+                    if (w + sum + ellipsisWidth > avail) {
+                        while (i < len
+                                && measured.getAdvance(i + lineStart - widthStart) == 0.0f) {
+                            i++;
+                        }
+                        break;
+                    }
+
+                    sum += w;
+                }
+
+                ellipsisStart = 0;
+                ellipsisCount = i;
+            } else {
+                ModernUI.LOGGER.warn(MARKER, "Start Ellipsis only supported with one line");
+            }
+        } else if (where == TextUtils.TruncateAt.END || where == TextUtils.TruncateAt.MARQUEE) {
+            float sum = 0;
+            int i;
+
+            for (i = 0; i < len; i++) {
+                float w = measured.getAdvance(i + lineStart - widthStart);
+
+                if (w + sum + ellipsisWidth > avail) {
+                    break;
+                }
+
+                sum += w;
+            }
+
+            ellipsisStart = i;
+            ellipsisCount = len - i;
+            if (forceEllipsis && ellipsisCount == 0 && len > 0) {
+                ellipsisStart = len - 1;
+                ellipsisCount = 1;
+            }
+        } else {
+            // where = TextUtils.TruncateAt.MIDDLE We only support middle ellipsis on a single line
+            if (mMaximumVisibleLineCount == 1) {
+                float lsum = 0, rsum = 0;
+                int left, right;
+
+                float ravail = (avail - ellipsisWidth) / 2;
+                for (right = len; right > 0; right--) {
+                    float w = measured.getAdvance(right - 1 + lineStart - widthStart);
+
+                    if (w + rsum > ravail) {
+                        while (right < len
+                                && measured.getAdvance(right + lineStart - widthStart)
+                                == 0.0f) {
+                            right++;
+                        }
+                        break;
+                    }
+                    rsum += w;
+                }
+
+                float lavail = avail - ellipsisWidth - rsum;
+                for (left = 0; left < right; left++) {
+                    float w = measured.getAdvance(left + lineStart - widthStart);
+
+                    if (w + lsum > lavail) {
+                        break;
+                    }
+
+                    lsum += w;
+                }
+
+                ellipsisStart = left;
+                ellipsisCount = right - left;
+            } else {
+                ModernUI.LOGGER.warn(MARKER, "Middle Ellipsis only supported with one line");
+            }
+        }
+        mEllipsized = true;
+        mLines[mColumns * line + ELLIPSIS_START] = ellipsisStart;
+        mLines[mColumns * line + ELLIPSIS_COUNT] = ellipsisCount;
+    }
+
+    private float getTotalInsets(int line) {
+        int totalIndent = 0;
+        if (mLeftIndents != null) {
+            totalIndent = mLeftIndents[Math.min(line, mLeftIndents.length - 1)];
+        }
+        if (mRightIndents != null) {
+            totalIndent += mRightIndents[Math.min(line, mRightIndents.length - 1)];
+        }
+        return totalIndent;
+    }
+
+    // Override the base class so we can directly access our members,
+    // rather than relying on member functions.
+    // The logic mirrors that of Layout.getLineForVertical
+    // FIXME: It may be faster to do a linear search for layouts without many lines.
+    @Override
+    public int getLineForVertical(int vertical) {
+        int high = mLineCount;
+        int low = -1;
+        int guess;
+        int[] lines = mLines;
+        while (high - low > 1) {
+            guess = (high + low) >> 1;
+            if (lines[mColumns * guess + TOP] > vertical) {
+                high = guess;
+            } else {
+                low = guess;
+            }
+        }
+        return Math.max(low, 0);
+    }
+
+    @Override
+    public int getLineCount() {
+        return mLineCount;
+    }
+
+    @Override
+    public int getLineTop(int line) {
+        return mLines[mColumns * line + TOP];
+    }
+
+    @Override
+    public int getLineDescent(int line) {
+        return mLines[mColumns * line + DESCENT];
+    }
+
+    @Override
+    public int getLineStart(int line) {
+        return mLines[mColumns * line + START] & START_MASK;
+    }
+
+    @Override
+    public int getParagraphDirection(int line) {
+        return mLines[mColumns * line + DIR] >> DIR_SHIFT;
+    }
+
+    @Override
+    public boolean getLineContainsTab(int line) {
+        return (mLines[mColumns * line + TAB] & TAB_MASK) != 0;
+    }
+
+    @Override
+    public final Directions getLineDirections(int line) {
+        if (line > getLineCount()) {
+            throw new ArrayIndexOutOfBoundsException();
+        }
+        return mLineDirections[line];
+    }
+
+    @Override
+    public int getTopPadding() {
+        return mTopPadding;
+    }
+
+    @Override
+    public int getBottomPadding() {
+        return mBottomPadding;
+    }
+
+    @Override
+    public int getIndentAdjust(int line, Alignment align) {
+        if (align == Alignment.ALIGN_LEFT) {
+            if (mLeftIndents == null) {
+                return 0;
+            } else {
+                return mLeftIndents[Math.min(line, mLeftIndents.length - 1)];
+            }
+        } else if (align == Alignment.ALIGN_RIGHT) {
+            if (mRightIndents == null) {
+                return 0;
+            } else {
+                return -mRightIndents[Math.min(line, mRightIndents.length - 1)];
+            }
+        } else if (align == Alignment.ALIGN_CENTER) {
+            int left = 0;
+            if (mLeftIndents != null) {
+                left = mLeftIndents[Math.min(line, mLeftIndents.length - 1)];
+            }
+            int right = 0;
+            if (mRightIndents != null) {
+                right = mRightIndents[Math.min(line, mRightIndents.length - 1)];
+            }
+            return (left - right) >> 1;
+        } else {
+            throw new AssertionError("unhandled alignment " + align);
+        }
+    }
+
+    @Override
+    public int getEllipsisCount(int line) {
+        if (mColumns < COLUMNS_ELLIPSIZE) {
+            return 0;
+        }
+
+        return mLines[mColumns * line + ELLIPSIS_COUNT];
+    }
+
+    @Override
+    public int getEllipsisStart(int line) {
+        if (mColumns < COLUMNS_ELLIPSIZE) {
+            return 0;
+        }
+
+        return mLines[mColumns * line + ELLIPSIS_START];
+    }
+
+    @Override
+    public int getEllipsizedWidth() {
+        return mEllipsizedWidth;
+    }
+
+    /**
+     * Return the total height of this layout.
+     *
+     * @param cap if true and max lines is set, returns the height of the layout at the max lines.
+     */
+    @Override
+    public int getHeight(boolean cap) {
+        if (cap && mLineCount > mMaximumVisibleLineCount && mMaxLineHeight == -1) {
+            ModernUI.LOGGER.warn(MARKER, "maxLineHeight should not be -1. "
+                    + " maxLines: {} lineCount: {}", mMaximumVisibleLineCount, mLineCount);
+        }
+
+        return cap && mLineCount > mMaximumVisibleLineCount && mMaxLineHeight != -1
+                ? mMaxLineHeight : super.getHeight();
     }
 }
