@@ -45,6 +45,50 @@ import java.util.List;
 public interface Spanned extends CharSequence {
 
     /**
+     * Bitmask of bits that are relevant for controlling point/mark behavior
+     * of spans.
+     * <p>
+     * MARK and POINT are conceptually located <i>between</i> two adjacent characters.
+     * A MARK is "attached" to the character before, while a POINT will stick to the character
+     * after. The insertion cursor is conceptually located between the MARK and the POINT.
+     * <p>
+     * As a result, inserting a new character between a MARK and a POINT will leave the MARK
+     * unchanged, while the POINT will be shifted, now located after the inserted character and
+     * still glued to the same character after it.
+     * <p>
+     * Depending on whether the insertion happens at the beginning or the end of a span, the span
+     * will hence be expanded to <i>include</i> the new character (when the span is using a MARK at
+     * its beginning or a POINT at its end) or it will be <i>excluded</i>.
+     * <p>
+     * Note that <i>before</i> and <i>after</i> here refer to offsets in the String, which are
+     * independent from the visual representation of the text (left-to-right or right-to-left).
+     */
+    int SPAN_POINT_MARK_MASK = 0x33;
+
+    /**
+     * 0-length spans with type SPAN_MARK_MARK behave like text marks:
+     * they remain at their original offset when text is inserted
+     * at that offset. Conceptually, the text is added after the mark.
+     */
+    int SPAN_MARK_MARK = 0x11;
+    /**
+     * SPAN_MARK_POINT is a synonym for {@link #SPAN_INCLUSIVE_INCLUSIVE}.
+     */
+    int SPAN_MARK_POINT = 0x12;
+    /**
+     * SPAN_POINT_MARK is a synonym for {@link #SPAN_EXCLUSIVE_EXCLUSIVE}.
+     */
+    int SPAN_POINT_MARK = 0x21;
+
+    /**
+     * 0-length spans with type SPAN_POINT_POINT behave like cursors:
+     * they are pushed forward by the length of the insertion when text
+     * is inserted at their offset.
+     * The text is conceptually inserted before the point.
+     */
+    int SPAN_POINT_POINT = 0x22;
+
+    /**
      * SPAN_PARAGRAPH behaves like SPAN_INCLUSIVE_EXCLUSIVE
      * (SPAN_MARK_MARK), except that if either end of the span is
      * at the end of the buffer, that end behaves like _POINT
@@ -63,12 +107,61 @@ public interface Spanned extends CharSequence {
     int SPAN_PARAGRAPH = 0x33;
 
     /**
+     * Non-0-length spans of type SPAN_INCLUSIVE_EXCLUSIVE expand
+     * to include text inserted at their starting point but not at their
+     * ending point.  When 0-length, they behave like marks.
+     */
+    int SPAN_INCLUSIVE_EXCLUSIVE = SPAN_MARK_MARK;
+
+    /**
+     * Spans of type SPAN_INCLUSIVE_INCLUSIVE expand
+     * to include text inserted at either their starting or ending point.
+     */
+    int SPAN_INCLUSIVE_INCLUSIVE = SPAN_MARK_POINT;
+
+    /**
+     * Spans of type SPAN_EXCLUSIVE_EXCLUSIVE do not expand
+     * to include text inserted at either their starting or ending point.
+     * They can never have a length of 0 and are automatically removed
+     * from the buffer if all the text they cover is removed.
+     */
+    int SPAN_EXCLUSIVE_EXCLUSIVE = SPAN_POINT_MARK;
+
+    /**
+     * Non-0-length spans of type SPAN_EXCLUSIVE_INCLUSIVE expand
+     * to include text inserted at their ending point but not at their
+     * starting point.  When 0-length, they behave like points.
+     */
+    int SPAN_EXCLUSIVE_INCLUSIVE = SPAN_POINT_POINT;
+
+    /**
+     * This flag is set on spans that are being used to apply temporary
+     * styling information on the composing text of an input method, so that
+     * they can be found and removed when the composing text is being
+     * replaced.
+     */
+    int SPAN_COMPOSING = 0x100;
+
+    /**
      * This flag will be set for intermediate span changes, meaning there
      * is guaranteed to be another change following it.  Typically it is
      * used for {@link Selection} which automatically uses this with the first
      * offset it sets when updating the selection.
      */
     int SPAN_INTERMEDIATE = 0x200;
+
+    /**
+     * The bits numbered SPAN_USER_SHIFT and above are available
+     * for callers to use to store scalar data associated with their
+     * span object.
+     */
+    int SPAN_USER_SHIFT = 24;
+    /**
+     * The bits specified by the SPAN_USER bitfield are available
+     * for callers to use to store scalar data associated with their
+     * span object.
+     */
+    int SPAN_USER = 0xFFFFFFFF << SPAN_USER_SHIFT;
 
     /**
      * The bits numbered just above SPAN_PRIORITY_SHIFT determine the order
@@ -88,7 +181,7 @@ public interface Spanned extends CharSequence {
     int SPAN_PRIORITY = 0xFF << SPAN_PRIORITY_SHIFT;
 
     /**
-     * Return an array of the markup objects attached to the specified
+     * Query a set of the markup objects attached to the specified
      * slice of this {@link CharSequence} and whose type is the specified type
      * or a subclass of it.  Specify {@code Object.class} for the type
      * if you want all the objects regardless of type.

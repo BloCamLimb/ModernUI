@@ -178,7 +178,7 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
         return false;
     }
 
-    public void setSpan(@Nonnull Object span, int start, int end, int flags) {
+    public final void setSpan(@Nonnull Object span, int start, int end, int flags) {
         setSpan(span, start, end, flags, true);
     }
 
@@ -246,14 +246,16 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
         mSpanData[mSpanCount * COLUMNS + FLAGS] = flags;
         mSpanCount++;
 
-        sendSpanAdded(span, start, end);
+        if (this instanceof Spannable) {
+            sendSpanAdded(span, start, end);
+        }
     }
 
-    public void removeSpan(@Nonnull Object span) {
+    public final void removeSpan(@Nonnull Object span) {
         removeSpan(span, 0);
     }
 
-    public void removeSpan(@Nonnull Object span, int flags) {
+    public final void removeSpan(@Nonnull Object span, int flags) {
         final int count = mSpanCount;
         final Object[] spans = mSpans;
         final int[] data = mSpanData;
@@ -482,13 +484,32 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
         return limit;
     }
 
-    protected void sendSpanAdded(Object span, int start, int end) {
+    private void sendSpanAdded(Object span, int start, int end) {
+        final SpanWatcher[] watchers = getSpans(start, end, SpanWatcher.class, null);
+        if (watchers != null) {
+            for (SpanWatcher watcher : watchers) {
+                watcher.onSpanAdded((Spannable) this, span, start, end);
+            }
+        }
     }
 
-    protected void sendSpanRemoved(Object span, int start, int end) {
+    private void sendSpanRemoved(Object span, int start, int end) {
+        final SpanWatcher[] watchers = getSpans(start, end, SpanWatcher.class, null);
+        if (watchers != null) {
+            for (SpanWatcher watcher : watchers) {
+                watcher.onSpanRemoved((Spannable) this, span, start, end);
+            }
+        }
     }
 
-    protected void sendSpanChanged(Object span, int s, int e, int st, int en) {
+    private void sendSpanChanged(Object span, int s, int e, int st, int en) {
+        final SpanWatcher[] watchers = getSpans(Math.min(s, st), Math.max(e, en),
+                SpanWatcher.class, null);
+        if (watchers != null) {
+            for (SpanWatcher watcher : watchers) {
+                watcher.onSpanChanged((Spannable) this, span, s, e, st, en);
+            }
+        }
     }
 
     @Nonnull

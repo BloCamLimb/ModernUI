@@ -42,13 +42,13 @@ public class PrecomputedText {
                                          @Nonnull TextDirectionHeuristic textDir) {
         // always create new spannable, in case of original text changed but we don't have watchers
         return new PrecomputedText(new SpannableString(text, true), paint, textDir,
-                createMeasuredParagraphs(text, 0, text.length(), paint, textDir));
+                createMeasuredParagraphs(text, 0, text.length(), paint, textDir, true));
     }
 
     @Nonnull
     public static MeasuredParagraph[] createMeasuredParagraphs(
             @Nonnull CharSequence text, int start, int end, @Nonnull FontPaint paint,
-            @Nonnull TextDirectionHeuristic textDir) {
+            @Nonnull TextDirectionHeuristic textDir, boolean computeLayout) {
         List<MeasuredParagraph> list = new ArrayList<>();
         int paraEnd;
         for (int paraStart = start; paraStart < end; paraStart = paraEnd) {
@@ -61,7 +61,7 @@ public class PrecomputedText {
                 paraEnd++;  // Includes LINE_FEED(U+000A) to the prev paragraph.
             }
             list.add(MeasuredParagraph.buildForStaticLayout(
-                    paint, text, paraStart, paraEnd, textDir, false, null));
+                    paint, text, paraStart, paraEnd, textDir, computeLayout, null));
         }
         return list.toArray(new MeasuredParagraph[0]);
     }

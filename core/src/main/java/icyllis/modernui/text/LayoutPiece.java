@@ -75,9 +75,10 @@ public class LayoutPiece {
      * @param measure whether to calculate individual char advance
      * @param layout  whether to compute full layout for rendering
      * @param hint    pass if you have already a layout piece
+     * @see LayoutCache#getOrCreate(char[], int, int, boolean, FontPaint, boolean, boolean)
      */
-    public LayoutPiece(@Nonnull char[] buf, int start, int end, boolean isRtl, @Nonnull FontPaint paint,
-                       boolean measure, boolean layout, @Nullable LayoutPiece hint) {
+    LayoutPiece(@Nonnull char[] buf, int start, int end, boolean isRtl, @Nonnull FontPaint paint,
+                boolean measure, boolean layout, @Nullable LayoutPiece hint) {
         if (start < 0 || start >= end || buf.length == 0 || end > buf.length) {
             throw new IllegalArgumentException();
         }

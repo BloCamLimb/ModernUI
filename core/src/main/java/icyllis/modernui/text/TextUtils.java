@@ -26,6 +26,16 @@ public final class TextUtils {
     private static final Object sLock = new Object();
     private static char[] sTemp = null;
 
+    //TODO: Based on CLDR data, these need to be localized for Dzongkha (dz) and perhaps
+    // Hong Kong Traditional Chinese (zh-Hant-HK), but that may need to depend on the actual word
+    // being ellipsized and not the locale.
+    private static final String ELLIPSIS_NORMAL = "\u2026"; // HORIZONTAL ELLIPSIS (…)
+
+    @Nonnull
+    public static String getEllipsisString(@Nonnull TextUtils.TruncateAt method) {
+        return ELLIPSIS_NORMAL;
+    }
+
     /**
      * Obtain a temporary char buffer.
      *
