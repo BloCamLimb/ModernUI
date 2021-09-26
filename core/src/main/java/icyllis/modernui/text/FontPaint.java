@@ -24,7 +24,6 @@ import icyllis.modernui.math.MathUtil;
 import javax.annotation.Nonnull;
 import java.awt.*;
 import java.util.Locale;
-import java.util.Objects;
 
 /**
  * The base paint used with text layout engine at lower levels.
@@ -160,6 +159,22 @@ public class FontPaint {
     }
 
     /**
+     * Returns true of the passed {@link FontPaint} will have the different effect on text measurement
+     *
+     * @param paint the paint to compare with
+     * @return true if given {@link FontPaint} has the different effect on text measurement.
+     */
+    public boolean isMetricAffecting(@Nonnull FontPaint paint) {
+        if (mFontSize != paint.mFontSize)
+            return true;
+        if ((mFlags & FONT_STYLE_MASK) != (paint.mFlags & FONT_STYLE_MASK))
+            return true;
+        if (!mTypeface.equals(paint.mTypeface))
+            return true;
+        return !mLocale.equals(paint.mLocale);
+    }
+
+    /**
      * Create a copy of this paint as the base class paint for internal
      * layout engine. Subclasses must ensure that be immutable.
      *
@@ -177,29 +192,28 @@ public class FontPaint {
 
         FontPaint that = (FontPaint) o;
 
-        if ((mFlags & FONT_STYLE_MASK) != (that.mFlags & FONT_STYLE_MASK)) return false;
         if (mFontSize != that.mFontSize) return false;
-        if (!Objects.equals(mTypeface, that.mTypeface))
-            return false;
-        return Objects.equals(mLocale, that.mLocale);
+        if ((mFlags & FONT_STYLE_MASK) != (that.mFlags & FONT_STYLE_MASK)) return false;
+        if (!mTypeface.equals(that.mTypeface)) return false;
+        return mLocale.equals(that.mLocale);
     }
 
     @Override
     public int hashCode() {
-        int result = mTypeface != null ? mTypeface.hashCode() : 0;
-        result = 31 * result + (mLocale != null ? mLocale.hashCode() : 0);
-        result = 31 * result + (mFlags & FONT_STYLE_MASK);
-        result = 31 * result + mFontSize;
-        return result;
+        int h = mTypeface.hashCode();
+        h = 31 * h + mLocale.hashCode();
+        h = 31 * h + (mFlags & FONT_STYLE_MASK);
+        h = 31 * h + mFontSize;
+        return h;
     }
 
     @Override
     public String toString() {
         return "FontPaint{" +
-                "mTypeface=" + mTypeface +
-                ", mLocale=" + mLocale +
-                ", mFlags=0x" + Integer.toHexString(mFlags) +
-                ", mFontSize=" + mFontSize +
+                "typeface=" + mTypeface +
+                ", locale=" + mLocale +
+                ", flags=0x" + Integer.toHexString(mFlags) +
+                ", fontSize=" + mFontSize +
                 '}';
     }
 }

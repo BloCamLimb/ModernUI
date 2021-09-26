@@ -76,4 +76,12 @@ public class PrecomputedText {
         }
         return -1;
     }
+
+    public FontPaint getPaint() {
+        return mPaint;
+    }
+
+    public float getWidth(int i, int i1) {
+        return 0;
+    }
 }

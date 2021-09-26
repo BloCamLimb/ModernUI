@@ -1431,16 +1431,28 @@ public final class GLCanvas extends Canvas {
     }
 
     @Override
-    public void drawTextRun(@Nonnull CharSequence text, int start, int end, float x, float y,
-                            boolean isRtl, @Nonnull TextPaint paint) {
+    public void drawText(@Nonnull CharSequence text, int start, int end, float x, float y,
+                         @Nonnull TextPaint paint) {
         if ((start | end | end - start | text.length() - end) < 0) {
             throw new IndexOutOfBoundsException();
         }
         if (start == end) {
             return;
         }
-        LayoutPiece piece = LayoutCache.getOrCreate(text, start, end, isRtl, paint, false, true);
-        drawTextRun(piece, x, y, paint.getColor());
+        final int color = paint.getColor();
+        if (end - start <= LayoutCache.MAX_PIECE_LENGTH) {
+            LayoutPiece piece = LayoutCache.getOrCreate(text, start, end, false, paint, false, true);
+            drawTextRun(piece, x, y, color);
+        } else {
+            int s = start, e = s;
+            do {
+                e = Math.min(e + LayoutCache.MAX_PIECE_LENGTH, end);
+                LayoutPiece piece = LayoutCache.getOrCreate(text, s, e, false, paint, false, true);
+                drawTextRun(piece, x, y, color);
+                x += piece.getAdvance();
+                s = e;
+            } while (s < end);
+        }
     }
 
     @Override
@@ -1453,6 +1465,11 @@ public final class GLCanvas extends Canvas {
         if (piece != null) {
             drawTextRun(piece, x, y, paint.getColor());
         }
+    }
+
+    @Override
+    public void drawTextRun(@Nonnull LayoutPiece piece, float x, float y, @Nonnull TextPaint paint) {
+        drawTextRun(piece, x, y, paint.getColor());
     }
 
     private void drawTextRun(@Nonnull LayoutPiece piece, float x, float y, int color) {

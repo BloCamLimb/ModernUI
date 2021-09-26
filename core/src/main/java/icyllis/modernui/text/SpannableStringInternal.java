@@ -283,7 +283,7 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
 
     @Nullable
     @Override
-    public final <T> T[] getSpans(int start, int end, @Nullable Class<T> type, @Nullable List<T> out) {
+    public final <T> T[] getSpans(int start, int end, @Nullable Class<? extends T> type, @Nullable List<T> out) {
         if (out == null) {
             return getSpansArray(start, end, type);
         }
@@ -387,7 +387,7 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
     }
 
     @SuppressWarnings("unchecked")
-    private <T> void getSpansList(int start, int end, @Nullable Class<T> type, @Nonnull List<T> out) {
+    private <T> void getSpansList(int start, int end, @Nullable Class<? extends T> type, @Nonnull List<T> out) {
         final int count = mSpanCount;
         final Object[] spans = mSpans;
         final int[] data = mSpanData;

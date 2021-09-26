@@ -199,7 +199,7 @@ public interface Spanned extends CharSequence {
      * @return an array of the markup objects, or null
      */
     @Nullable
-    <T> T[] getSpans(int start, int end, Class<T> type, @Nullable List<T> out);
+    <T> T[] getSpans(int start, int end, Class<? extends T> type, @Nullable List<T> out);
 
     /**
      * Return the beginning of the range of text to which the specified

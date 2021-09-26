@@ -19,6 +19,7 @@
 package icyllis.modernui.graphics;
 
 import icyllis.modernui.math.*;
+import icyllis.modernui.text.LayoutPiece;
 import icyllis.modernui.text.MeasuredText;
 import icyllis.modernui.text.TextPaint;
 import org.apache.logging.log4j.Marker;
@@ -613,31 +614,48 @@ public abstract class Canvas {
                                         float radius, @Nonnull Paint paint);
 
     /**
-     * Draw a run of text. INTERNAL USE ONLY.
+     * Draw a text, which does not contain any characters that affect high-level layout.
+     * This includes but not limited to LINE_FEED, CHARACTER_TABULATION, any BiDi character,
+     * and any control characters. All characters will be laid-out left-to-right.
+     * <p>
+     * <strong>Do not call this method directly in any application with internationalization support,
+     * especially with BiDi text.</strong>
      *
-     * @param text  the text to render
+     * @param text  the text to draw
      * @param start context start of the text for shaping and rendering
      * @param end   context end of the text for shaping and rendering
-     * @param x     the horizontal position at which to draw the text between runs inside a line
+     * @param x     the horizontal position at which to draw the text
      * @param y     the vertical baseline of the line of text
-     * @param isRtl whether the run is in right-to-left direction
-     * @param paint the paint used to draw the text
+     * @param paint the paint used to measure and draw the text
      */
-    public abstract void drawTextRun(@Nonnull CharSequence text, int start, int end,
-                                     float x, float y, boolean isRtl, @Nonnull TextPaint paint);
+    public abstract void drawText(@Nonnull CharSequence text, int start, int end,
+                                  float x, float y, @Nonnull TextPaint paint);
 
     /**
      * Draw a run of text. The given range cannot excess a style run or break grapheme cluster,
-     * or maximum piece cache size when creating the measured text. If you don't know what a
-     * text run is, do not call this method directly.
+     * or maximum piece cache size when creating the measured text.
+     * <p>
+     * Do not call this method directly unless you develop your own layout engine for text pages.
      *
-     * @param text  the text to draw, which has been measured and computed glyph layout
+     * @param text  the text to draw, which has been measured (and computed glyph layout)
      * @param start context start of the text for shaping and rendering
      * @param end   context end of the text for shaping and rendering
-     * @param x     the horizontal position at which to draw the text between runs inside a line
+     * @param x     the horizontal position at which to draw the text between runs
      * @param y     the vertical baseline of the line of text
-     * @param paint the paint used to draw the text
+     * @param paint the paint used to draw the text, only color will be taken
      */
     public abstract void drawTextRun(@Nonnull MeasuredText text, int start, int end,
                                      float x, float y, @Nonnull TextPaint paint);
+
+    /**
+     * Draw a layout piece, the base unit to draw a text.
+     * <p>
+     * Do not call this method directly unless you develop your own layout engine for text pages.
+     *
+     * @param piece the layout piece to draw
+     * @param x     the horizontal position at which to draw the text between runs
+     * @param y     the vertical baseline of the line of text
+     * @param paint the paint used to draw the text, only color will be taken
+     */
+    public abstract void drawTextRun(@Nonnull LayoutPiece piece, float x, float y, @Nonnull TextPaint paint);
 }
