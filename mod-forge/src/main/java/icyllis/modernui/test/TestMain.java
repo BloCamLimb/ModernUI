@@ -148,7 +148,6 @@ public class TestMain {
         GRAPHICS.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
         GRAPHICS.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-
         /*float[] av = new float[]{1, 3, 2, 4.1f, 6, 0, 6, 0.5f, 5, 7, 11.3f, 9, 9.1f, 15, 8, 10};
         float[] bv = new float[]{9.1f, 2, 7, 5, 3.3f, 6.1f, 5.5f, 4, 0, 8, 3, 1, 2.7f, 3, 9, 2};
         int[] intervals = new int[]{0, 4, 9, 15, 17};*/
@@ -331,7 +330,7 @@ public class TestMain {
         spannable.setSpan(new ForegroundColorSpan(0xfff699b4), 54, text.length(), 0);
         spannable.setSpan(new AbsoluteSizeSpan(18), 29, text.length() - 20, 0);
         spannable.setSpan(new StyleSpan(FontPaint.BOLD), text.length() - 20, text.length(), 0);
-        TextLine textLine = new TextLine(spannable);
+        //TextLine textLine = new TextLine(spannable);
 
         long lastTime = RenderCore.timeMillis();
 
@@ -389,7 +388,7 @@ public class TestMain {
                 canvas.drawTextRun(tcc, 0, tcc.length(), 730, 170, false, paint1);
                 tcc = "আমি আজ সকালের নাস্তা খাব না";
                 canvas.drawTextRun(tcc, 0, tcc.length(), 660, 240, false, paint1);*/
-                textLine.draw(canvas, 32, 400);
+                //textLine.draw(canvas, 32, 400);
 
                 float playTime = sTrack.getTime();
 
@@ -397,7 +396,7 @@ public class TestMain {
                 sGraph.draw(canvas, 800, 450);
 
                 String tcc = String.format("%d / %d", (int) playTime, (int) sTrack.getLength());
-                canvas.drawTextRun(tcc, 0, tcc.length(), 760, 456, false, paint1);
+                canvas.drawText(tcc, 0, tcc.length(), 760, 456, paint1);
                 //canvas.rotate(-30);
 
                 //paint.setStyle(Paint.Style.FILL);
@@ -453,14 +452,14 @@ public class TestMain {
         TextPaint textPaint = new TextPaint();
         textPaint.setColor(0xff000000);
         textPaint.setFontSize(45);
-        canvas.drawTextRun(s, 0, s.length(), 408, 75, false, textPaint);
+        canvas.drawText(s, 0, s.length(), 408, 75, textPaint);
         textPaint.setColor(~0);
         textPaint.setFontSize(44);
-        canvas.drawTextRun(s, 0, s.length(), 414, 78, false, textPaint);
+        canvas.drawText(s, 0, s.length(), 414, 78, textPaint);
 
         s = "Info";
         textPaint.setFontSize(24);
-        canvas.drawTextRun(s, 0, s.length(), 1310, 56, false, textPaint);
+        canvas.drawText(s, 0, s.length(), 1310, 56, textPaint);
     }
 
     private static int search(int[] a, int pos) {

@@ -70,8 +70,8 @@ public class MeasuredParagraph {
     private char[] mCopiedBuffer;
 
     /**
-     * The base paragraph direction. Either {@link Bidi#DIRECTION_LEFT_TO_RIGHT}
-     * or {@link Bidi#DIRECTION_RIGHT_TO_LEFT}
+     * The base paragraph direction. Either {@link Layout#DIR_LEFT_TO_RIGHT}
+     * or {@link Layout#DIR_RIGHT_TO_LEFT)
      */
     private int mParaDir;
 
@@ -154,7 +154,7 @@ public class MeasuredParagraph {
     /**
      * Returns the base paragraph direction.
      *
-     * @return either {@link Bidi#DIRECTION_LEFT_TO_RIGHT} or {@link Bidi#DIRECTION_RIGHT_TO_LEFT)
+     * @return either {@link Layout#DIR_LEFT_TO_RIGHT} or {@link Layout#DIR_RIGHT_TO_LEFT)
      */
     public int getParagraphDir() {
         return mParaDir;
@@ -176,7 +176,7 @@ public class MeasuredParagraph {
             return Directions.ALL_LEFT_TO_RIGHT;
         }
 
-        int baseLevel = mParaDir == Bidi.DIRECTION_LEFT_TO_RIGHT ? 0 : 1;
+        int baseLevel = mParaDir == Layout.DIR_LEFT_TO_RIGHT ? 0 : 1;
         byte[] levels = mLevels;
 
         int curLevel = levels[start];
@@ -488,7 +488,7 @@ public class MeasuredParagraph {
                 || dir == TextDirectionHeuristics.ANYRTL_LTR)
                 && !Bidi.requiresBidi(mCopiedBuffer, 0, length)) {
             mLevels = null;
-            mParaDir = Bidi.DIRECTION_LEFT_TO_RIGHT;
+            mParaDir = Layout.DIR_LEFT_TO_RIGHT;
         } else {
             final byte paraLevel;
             if (dir == TextDirectionHeuristics.LTR) {
@@ -506,7 +506,7 @@ public class MeasuredParagraph {
             Bidi bidi = new Bidi(length, 0);
             bidi.setPara(mCopiedBuffer, paraLevel, null);
             mLevels = bidi.getLevels();
-            mParaDir = (bidi.getParaLevel() & 0x1) == 0 ? Bidi.DIRECTION_LEFT_TO_RIGHT : Bidi.DIRECTION_RIGHT_TO_LEFT;
+            mParaDir = (bidi.getParaLevel() & 0x1) == 0 ? Layout.DIR_LEFT_TO_RIGHT : Layout.DIR_RIGHT_TO_LEFT;
         }
     }
 

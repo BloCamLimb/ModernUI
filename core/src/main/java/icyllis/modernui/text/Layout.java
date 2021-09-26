@@ -38,6 +38,9 @@ import javax.annotation.Nullable;
  */
 public abstract class Layout {
 
+    public static final int DIR_LEFT_TO_RIGHT = 1;
+    public static final int DIR_RIGHT_TO_LEFT = -1;
+
     private static final ParagraphStyle[] NO_PARA_SPANS = {};
 
     private CharSequence mText;
@@ -97,44 +100,176 @@ public abstract class Layout {
     /**
      * Draw this Layout on the specified Canvas.
      * <p>
-     * Significantly, this method just calls {@link #drawBackground(Canvas)},
+     * Note that this method just calls {@link #drawBackground(Canvas, int, int)}
      * and then {@link #drawText(Canvas, int, int)}. If you need to draw something between the two,
      * such as blinking cursor and selection highlight, you may manually call them separately.
      *
      * @param canvas the canvas to draw on
+     * @see #drawBackground(Canvas, int, int)
+     * @see #drawText(Canvas, int, int)
      */
     public final void draw(@Nonnull Canvas canvas) {
-        final long range = drawBackground(canvas);
-        drawText(canvas, (int) (range >>> 32), (int) (range & 0xFFFFFFFFL));
+        final long range = getLineRangeForDraw(canvas);
+        if (range < 0) return;
+        int firstLine = (int) (range >>> 32);
+        int lastLine = (int) (range & 0xFFFFFFFFL);
+        drawBackground(canvas, firstLine, lastLine);
+        drawText(canvas, firstLine, lastLine);
     }
 
     /**
      * Draw the visible area of this Layout background layer on the specified canvas.
      * <p>
-     * The visible area is calculated when this method is called, and returns with the method.
-     * It will be used for {@link #drawText(Canvas, int, int)}. The higher 32 bits represent
-     * the starting line number, while the lower 32 bits represent the ending line number.
+     * Significantly, visible area given by <code>firstLine</code> and
+     * <code>lastLine</code> is computed by {@link #getLineRangeForDraw(Canvas)}.
+     * You may never just call this method without that method.
      *
-     * @param canvas the canvas to draw on
-     * @return packed line range
+     * @param canvas    the canvas to draw on
+     * @param firstLine first line index (inclusive)
+     * @param lastLine  last line index (inclusive)
+     * @see #drawText(Canvas, int, int)
      */
-    public long drawBackground(@Nonnull Canvas canvas) {
-        return 0;
+    public final void drawBackground(@Nonnull Canvas canvas, int firstLine, int lastLine) {
+        if (!mSpannedText) return;
+        assert firstLine >= 0 && lastLine >= firstLine;
+        Spanned buffer = (Spanned) mText;
     }
 
     /**
      * Draw all visible text lines of this Layout on the specified canvas.
      * <p>
      * Significantly, visible area given by <code>firstLine</code> and
-     * <code>lastLine</code> is returned from {@link #drawBackground(Canvas)}.
+     * <code>lastLine</code> is computed by {@link #getLineRangeForDraw(Canvas)}.
      * You may never just call this method without that method.
      *
      * @param canvas    the canvas to draw on
-     * @param firstLine first line number
-     * @param lastLine  last line number
+     * @param firstLine first line index (inclusive)
+     * @param lastLine  last line index (inclusive)
+     * @see #drawBackground(Canvas, int, int)
      */
     public void drawText(@Nonnull Canvas canvas, int firstLine, int lastLine) {
+        assert firstLine >= 0 && lastLine >= firstLine && lastLine < getLineCount();
+        int previousLineBottom = getLineTop(firstLine);
+        int previousLineEnd = getLineStart(firstLine);
+        ParagraphStyle[] spans = NO_PARA_SPANS;
+        int spanEnd = 0;
+        final TextPaint paint = TextPaint.obtain();
+        paint.set(mPaint);
+        CharSequence buf = mText;
 
+        Alignment paraAlign = mAlignment;
+        TabStops tabStops = null;
+        boolean tabStopsIsInitialized = false;
+
+        // Draw the lines, one at a time.
+        // The baseline is the top of the following line minus the current line's descent.
+        for (int lineNum = firstLine; lineNum <= lastLine; lineNum++) {
+            int start = previousLineEnd;
+            previousLineEnd = getLineStart(lineNum + 1);
+            int end = getLineVisibleEnd(lineNum, start, previousLineEnd);
+
+            int ltop = previousLineBottom;
+            int lbottom = getLineTop(lineNum + 1);
+            previousLineBottom = lbottom;
+            int lbaseline = lbottom - getLineDescent(lineNum);
+
+            int dir = getParagraphDirection(lineNum);
+            int left = 0;
+            int right = mWidth;
+
+            if (mSpannedText) {
+                Spanned sp = (Spanned) buf;
+                spans = getParagraphSpans(sp, start, spanEnd, ParagraphStyle.class);
+            }
+
+            boolean hasTab = getLineContainsTab(lineNum);
+            // Can't tell if we have tabs for sure, currently
+            if (hasTab && !tabStopsIsInitialized) {
+                if (tabStops == null) {
+                    tabStops = new TabStops(20, spans);
+                } else {
+                    tabStops.reset(20, spans);
+                }
+                tabStopsIsInitialized = true;
+            }
+
+            // Determine whether the line aligns to normal, opposite, or center.
+            Alignment align = paraAlign;
+            if (align == Alignment.ALIGN_LEFT) {
+                align = (dir == DIR_LEFT_TO_RIGHT) ?
+                        Alignment.ALIGN_NORMAL : Alignment.ALIGN_OPPOSITE;
+            } else if (align == Alignment.ALIGN_RIGHT) {
+                align = (dir == DIR_LEFT_TO_RIGHT) ?
+                        Alignment.ALIGN_OPPOSITE : Alignment.ALIGN_NORMAL;
+            }
+
+            int x;
+            final int indentWidth;
+            if (align == Alignment.ALIGN_NORMAL) {
+                if (dir == DIR_LEFT_TO_RIGHT) {
+                    indentWidth = getIndentAdjust(lineNum, Alignment.ALIGN_LEFT);
+                    x = left + indentWidth;
+                } else {
+                    indentWidth = -getIndentAdjust(lineNum, Alignment.ALIGN_RIGHT);
+                    x = right - indentWidth;
+                }
+            } else {
+                int max = (int) getLineExtent(lineNum, tabStops, false);
+                if (align == Alignment.ALIGN_OPPOSITE) {
+                    if (dir == DIR_LEFT_TO_RIGHT) {
+                        indentWidth = -getIndentAdjust(lineNum, Alignment.ALIGN_RIGHT);
+                        x = right - max - indentWidth;
+                    } else {
+                        indentWidth = getIndentAdjust(lineNum, Alignment.ALIGN_LEFT);
+                        x = left - max + indentWidth;
+                    }
+                } else { // Alignment.ALIGN_CENTER
+                    indentWidth = getIndentAdjust(lineNum, Alignment.ALIGN_CENTER);
+                    max = max & ~1;
+                    x = ((right + left - max) >> 1) + indentWidth;
+                }
+            }
+        }
+    }
+
+    /**
+     * Computes the range of visible lines that will be drawn on the specified canvas.
+     * It will be used for {@link #drawText(Canvas, int, int)}. The higher 32 bits represent
+     * the first line number, while the lower 32 bits represent the last line number.
+     * Note that if the range is empty, then the method returns <code>~0L</code>.
+     *
+     * @param canvas the canvas used to draw this Layout
+     * @return the range of lines that need to be drawn, possibly empty.
+     */
+    public final long getLineRangeForDraw(@Nonnull Canvas canvas) {
+        final int lineCount = getLineCount();
+        if (lineCount <= 0) {
+            return ~0L;
+        }
+        final int bottom = getLineTop(lineCount);
+        if (canvas.quickReject(0, 0, mWidth, bottom)) {
+            return ~0L;
+        }
+        int lineNum = 0, lineTop = 0, lineBottom;
+        int firstLine = -1, lastLine = -1;
+        do {
+            lineBottom = getLineTop(lineNum + 1);
+            if (firstLine == -1 && !canvas.quickReject(0, lineTop, mWidth, lineBottom)) {
+                firstLine = lineNum;
+            } else if (canvas.quickReject(0, lineTop, mWidth, lineBottom)) {
+                lastLine = lineNum - 1;
+                break;
+            }
+            lineTop = lineBottom;
+        } while (++lineNum < lineCount);
+
+        assert firstLine != -1;
+        if (lastLine == -1) {
+            assert lineNum == lineCount;
+            lastLine = lineCount - 1;
+        }
+
+        return (long) firstLine << 32 | lastLine;
     }
 
     /**
@@ -259,9 +394,8 @@ public abstract class Layout {
 
     /**
      * Returns the primary directionality of the paragraph containing the
-     * specified line, either 1 for left-to-right lines, or -1 for right-to-left
-     * lines (see {@link com.ibm.icu.text.Bidi#DIRECTION_LEFT_TO_RIGHT},
-     * {@link com.ibm.icu.text.Bidi#DIRECTION_RIGHT_TO_LEFT}).
+     * specified line, either 0 for left-to-right lines, or 1 for right-to-left
+     * lines (see {@link #DIR_LEFT_TO_RIGHT}, {@link #DIR_RIGHT_TO_LEFT}).
      */
     public abstract int getParagraphDirection(int line);
 
@@ -311,6 +445,44 @@ public abstract class Layout {
      * no ellipsis is to take place.
      */
     public abstract int getEllipsisCount(int line);
+
+    /**
+     * Return the text offset after the last character on the specified line.
+     */
+    public final int getLineEnd(int line) {
+        return getLineStart(line + 1);
+    }
+
+    /**
+     * Return the text offset after the last visible character (so whitespace
+     * is not counted) on the specified line.
+     */
+    public int getLineVisibleEnd(int line) {
+        return getLineVisibleEnd(line, getLineStart(line), getLineStart(line + 1));
+    }
+
+    private int getLineVisibleEnd(int line, int start, int end) {
+        CharSequence text = mText;
+        char ch;
+        if (line == getLineCount() - 1) {
+            return end;
+        }
+
+        for (; end > start; end--) {
+            ch = text.charAt(end - 1);
+
+            if (ch == '\n') {
+                return end - 1;
+            }
+
+            if (!LineBreaker.isLineEndSpace(ch)) {
+                break;
+            }
+
+        }
+
+        return end;
+    }
 
     /**
      * Returns the same as <code>text.getSpans()</code>, except where
