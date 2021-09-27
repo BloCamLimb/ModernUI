@@ -27,10 +27,12 @@ import icyllis.modernui.text.TexturedGlyph;
 import icyllis.modernui.text.Typeface;
 import it.unimi.dsi.fastutil.chars.CharArrayList;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Style;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.FormattedCharSink;
+import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
@@ -39,7 +41,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * This is where the text layout is actually performed.
@@ -501,16 +502,25 @@ public class TextLayoutProcessor {
      * @param carrier the style to layout the text
      * @param font    the derived font with fontStyle and fontSize
      */
-    @SuppressWarnings("MagicConstant")
     private void performTextLayout(@Nonnull char[] text, int start, int limit, boolean isRtl, boolean fastDigit,
                                    @Nonnull CharacterStyleCarrier carrier, @Nonnull Font font) {
         final TextLayoutEngine layoutEngine = TextLayoutEngine.getInstance();
         final int decoration = carrier.getEffect();
+        final int fontStyle = carrier.getFontStyle();
         // Note max font size is 96, see FontPaint, font size will be (8 * res) in Minecraft
         final float res = layoutEngine.getResolutionLevel();
-        font = font.deriveFont(carrier.getFontStyle(), 8 * res);
+        // Convert to float form for calculation, but actually an integer
+        final float scale = (int) Minecraft.getInstance().getWindow().getGuiScale();
+        int style = Font.PLAIN;
+        if ((fontStyle & CharacterStyleCarrier.BOLD) != 0) {
+            style |= Font.BOLD;
+        }
+        if ((fontStyle & CharacterStyleCarrier.ITALIC) != 0) {
+            style |= Font.ITALIC;
+        }
+        font = font.deriveFont(style, 8 * res);
         if (carrier.isObfuscated()) {
-            final var digits = layoutEngine.lookupDigits(font);
+            final Pair<TexturedGlyph[], float[]> digits = layoutEngine.lookupDigits(font);
             final float advance = digits.getRight()[0];
 
             float offset;
@@ -522,7 +532,8 @@ public class TextLayoutProcessor {
 
             /* Process code point */
             for (int i = start; i < limit; i++) {
-                mTextList.add(new RandomGlyphRender(start + i, advance, offset, decoration, digits));
+                float renderOffset = GlyphManager.sBitmapLike ? Math.round(offset * scale) / scale : offset;
+                mTextList.add(new RandomGlyphRender(start + i, advance, renderOffset, decoration, digits));
 
                 offset += advance;
 
@@ -577,9 +588,12 @@ public class TextLayoutProcessor {
                     offset += mAdvance;
                 }
 
+                // Align with a full pixel
+                float renderOffset = GlyphManager.sBitmapLike ? Math.round(offset * scale) / scale : offset;
+
                 // Digits are not on SMP
                 if (fastDigit && text[stripIndex] == '0') {
-                    mTextList.add(new DigitGlyphRender(stripIndex, offset, advance, decoration, digits));
+                    mTextList.add(new DigitGlyphRender(stripIndex, renderOffset, advance, decoration, digits));
                     mHasEffect |= decoration != 0;
                     continue;
                 }
@@ -587,7 +601,7 @@ public class TextLayoutProcessor {
                 int glyphCode = vector.getGlyphCode(i);
                 TexturedGlyph glyph = glyphManager.lookupGlyph(font, glyphCode);
 
-                mTextList.add(new StandardGlyphRender(stripIndex, offset, advance, decoration, glyph));
+                mTextList.add(new StandardGlyphRender(stripIndex, renderOffset, advance, decoration, glyph));
                 if (glyph != null) {
                     mHasEffect |= decoration != 0;
                 }

@@ -67,6 +67,7 @@ public class TextLayoutEngine {
 
     private static final ChatFormatting[] FORMATTINGS = ChatFormatting.values();
 
+    public static boolean sFixedResolution = false;
 
     /*
      * Draw and cache all glyphs of all fonts needed
@@ -104,20 +105,19 @@ public class TextLayoutEngine {
      */
     private final VanillaTextKey mVanillaLookupKey = new VanillaTextKey();
 
-    private Map<VanillaTextKey, TextRenderNode> mStringCache = new HashMap<>();
+    private Map<VanillaTextKey, TextRenderNode> mStringCache;
 
-    private Map<BaseComponent, TextRenderNode> mComponentCache = new HashMap<>();
+    private Map<BaseComponent, TextRenderNode> mComponentCache;
 
     private final MultilayerTextKey.Lookup mMultilayerLookupKey = new MultilayerTextKey.Lookup();
 
-    private Map<MultilayerTextKey, TextRenderNode> mMultilayerCache = new HashMap<>();
+    private Map<MultilayerTextKey, TextRenderNode> mMultilayerCache;
 
     private final TextLayoutProcessor mProcessor = new TextLayoutProcessor();
 
-    private Map<Font, Pair<TexturedGlyph[], float[]>> mDigitMap = new HashMap<>();
+    private Map<Font, Pair<TexturedGlyph[], float[]>> mDigitMap;
 
-    // round(1 * 2 * 1.334)
-    private float mResolutionLevel = 3;
+    private float mResolutionLevel;
 
     /*
      * Remove all formatting code even though it's invalid {@link #getFormattingByCode(char)} == null
@@ -141,10 +141,11 @@ public class TextLayoutEngine {
         ((ReloadableResourceManager) Minecraft.getInstance().getResourceManager()).registerReloadListener(
                 (ISelectiveResourceReloadListener) (manager, predicate) -> {
                     if (predicate.test(VanillaResourceType.LANGUAGES)) {
-                        clearLayoutCache();
+                        reload();
                     }
                 }
         );
+        reload();
     }
 
     /**
@@ -158,7 +159,6 @@ public class TextLayoutEngine {
             synchronized (TextLayoutEngine.class) {
                 if (instance == null) {
                     instance = new TextLayoutEngine();
-                    ModernUI.LOGGER.info(ModernUI.MARKER, "Text layout engine initialized");
                 }
             }
         }
@@ -166,17 +166,27 @@ public class TextLayoutEngine {
     }
 
     /**
-     * Called when resolution level changed.
+     * Called when resolution level or language changed.
      */
-    public void clearLayoutCache() {
+    public void reload() {
         mStringCache = new HashMap<>();
         mComponentCache = new HashMap<>();
         mMultilayerCache = new HashMap<>();
         mDigitMap = new HashMap<>();
         TextRenderType.clear();
-        // Note max font size is 96, see FontPaint, font size will be (8 * res) in Minecraft
-        mResolutionLevel = Math.min(
-                Math.round((((int) Minecraft.getInstance().getWindow().getGuiScale()) << 2) / 3f), 12f);
+        if (sFixedResolution) {
+            // make font size to 16
+            mResolutionLevel = 2;
+        } else {
+            int guiScale = (int) Minecraft.getInstance().getWindow().getGuiScale();
+            // Note max font size is 96, see FontPaint, font size will be (8 * res) in Minecraft
+            if (GlyphManager.sBitmapLike) {
+                mResolutionLevel = Math.min(guiScale, 9f);
+            } else {
+                mResolutionLevel = Math.min(Math.round(guiScale * 4 / 3f), 12f);
+            }
+        }
+        ModernUI.LOGGER.info(ModernUI.MARKER, "Reloaded text layout engine, resolution level: {}", mResolutionLevel);
     }
 
     /**
@@ -339,7 +349,7 @@ public class TextLayoutEngine {
     /**
      * Returns current resolution level for texts.
      *
-     * @return res, an integer
+     * @return res, an integer in float form
      */
     public float getResolutionLevel() {
         return mResolutionLevel;

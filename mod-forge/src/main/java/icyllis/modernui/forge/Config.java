@@ -23,7 +23,11 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.screen.BlurHandler;
 import icyllis.modernui.screen.UIManager;
 import icyllis.modernui.test.TestHUD;
+import icyllis.modernui.text.FontAtlas;
+import icyllis.modernui.text.GlyphManager;
 import icyllis.modernui.textmc.ModernFontRenderer;
+import icyllis.modernui.textmc.TextLayoutEngine;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -101,13 +105,13 @@ public final class Config {
             }
             CLIENT_SPEC.save();*/
             CLIENT.reload();
-            ModernUI.LOGGER.debug(ModernUI.MARKER, "Client config reloaded");
+            ModernUI.LOGGER.debug(ModernUI.MARKER, "Client config reloaded with {}", event.getClass().getName());
         } else if (spec == COMMON_SPEC) {
             COMMON.reload();
-            ModernUI.LOGGER.debug(ModernUI.MARKER, "Common config reloaded");
+            ModernUI.LOGGER.debug(ModernUI.MARKER, "Common config reloaded with {}", event.getClass().getName());
         } else if (spec == SERVER_SPEC) {
             SERVER.reload();
-            ModernUI.LOGGER.debug(ModernUI.MARKER, "Server config reloaded");
+            ModernUI.LOGGER.debug(ModernUI.MARKER, "Server config reloaded with {}", event.getClass().getName());
         }
     }
 
@@ -165,16 +169,18 @@ public final class Config {
 
         private final ForgeConfigSpec.ConfigValue<List<? extends String>> blurBlacklist;
 
-        final ForgeConfigSpec.ConfigValue<List<? extends String>> fontFamily;
-
         //final ForgeConfigSpec.BooleanValue globalRenderer;
         private final ForgeConfigSpec.BooleanValue allowShadow;
+        private final ForgeConfigSpec.BooleanValue bitmapLike;
+        private final ForgeConfigSpec.BooleanValue fixedResolution;
+        private final ForgeConfigSpec.BooleanValue linearSampling;
         //private final ForgeConfigSpec.BooleanValue antiAliasing;
         //private final ForgeConfigSpec.BooleanValue highPrecision;
         //private final ForgeConfigSpec.BooleanValue enableMipmap;
         //private final ForgeConfigSpec.IntValue mipmapLevel;
         //private final ForgeConfigSpec.IntValue resolutionLevel;
         //private final ForgeConfigSpec.IntValue defaultFontSize;
+        final ForgeConfigSpec.ConfigValue<List<? extends String>> fontFamily;
 
         private Client(@Nonnull ForgeConfigSpec.Builder builder) {
             builder.comment("Screen Config")
@@ -237,23 +243,38 @@ public final class Config {
 
             builder.pop();
 
-            builder.comment("Text Engine Config")
+            builder.comment("Font Config")
                     .push("font");
 
             /*globalRenderer = builder.comment(
                     "Apply Modern UI font renderer (including text layouts) to the entire game rather than only " +
                             "Modern UI itself.")
                     .define("globalRenderer", true);*/
+            allowShadow = builder.comment(
+                    "Allow font renderer to draw text with shadow, setting to false can improve performance a bit.")
+                    .define("allowShadow", true);
+            bitmapLike = builder.comment(
+                    "Bitmap-like mode, anti-aliasing and high precision for glyph layouts are OFF.",
+                    "A game restart is required to reload the setting properly.")
+                    .define("bitmapLike", false);
+            fixedResolution = builder.comment(
+                    "Fixed resolution level. When the GUI scale increases, the resolution level will not increase.",
+                    "In this case, gui scale should be even numbers (2, 4, 6...), based on Minecraft GUI system.",
+                    "If your fonts are not really bitmap fonts, then you should keep this setting false.")
+                    .define("fixedResolution", false);
+            linearSampling = builder.comment(
+                    "Bilinear sampling font textures with mipmaps, magnification sampling will be always NEAREST.",
+                    "If your fonts are not really bitmap fonts, then you should keep this setting true.",
+                    "A game restart is required to reload the setting properly.")
+                    .define("linearSampling", true);
             fontFamily = builder.comment(
-                    "A list of font families with precedence relationships to determine the typeface to use in the " +
-                            "game.",
-                    "Only TrueType and OpenTrue are supported. Each list element can be one of the following three " +
-                            "cases.",
+                    "A set of font families with precedence relationships to determine the typeface to use.",
+                    "TrueType and OpenTrue are supported. Each list element can be one of the following three cases.",
                     "1) Font family name for those installed on your PC, for instance: Segoe UI",
                     "2) File path for external fonts on your PC, for instance: /usr/shared/fonts/x.otf",
                     "3) Resource location for those loaded with resource packs, for instance: modernui:font/biliw.otf",
-                    "This list is only read once when the game is loaded. A game restart is required to reload the " +
-                            "setting.")
+                    "Using pixelated (bitmap) fonts should consider other settings, and glyph size should be 16x.",
+                    "This list is only read once when the game is loaded. A game restart is required to reload")
                     .defineList("fontFamily", () -> {
                         List<String> list = new ArrayList<>();
                         list.add("modernui:font/biliw.otf");
@@ -261,9 +282,6 @@ public final class Config {
                         list.add("SansSerif");
                         return list;
                     }, s -> true);
-            allowShadow = builder.comment(
-                    "Allow font renderer to draw text with shadow, setting to false can improve performance.")
-                    .define("allowShadow", true);
             /*antiAliasing = builder.comment(
                     "Enable font anti-aliasing.")
                     .define("antiAliasing", true);
@@ -324,6 +342,13 @@ public final class Config {
             //TestHUD.sBars = hudBars.get();
 
             ModernFontRenderer.sAllowShadow = allowShadow.get();
+            GlyphManager.sBitmapLike = bitmapLike.get();
+            boolean fixed = fixedResolution.get();
+            if (fixed != TextLayoutEngine.sFixedResolution) {
+                TextLayoutEngine.sFixedResolution = fixed;
+                Minecraft.getInstance().submit(TextLayoutEngine.getInstance()::reload);
+            }
+            FontAtlas.sLinearSampling = linearSampling.get();
             /*GlyphManagerForge.sPreferredFont = preferredFont.get();
             GlyphManagerForge.sAntiAliasing = antiAliasing.get();
             GlyphManagerForge.sHighPrecision = highPrecision.get();

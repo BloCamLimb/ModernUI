@@ -27,12 +27,16 @@ import icyllis.modernui.textmc.TextLayoutEngine;
 import icyllis.modernui.view.ViewConfig;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Window.class)
 public class MixinWindow {
+
+    @Shadow
+    private double guiScale;
 
     /**
      * @author BloCamLimb
@@ -44,17 +48,17 @@ public class MixinWindow {
         return guiScaleIn > 0 ? MathUtil.clamp(guiScaleIn, r >> 8 & 0xf, r & 0xf) : r >> 4 & 0xf;
     }
 
-    @Inject(method = "setGuiScale", at = @At("TAIL"))
+    @Inject(method = "setGuiScale", at = @At("HEAD"))
     private void onSetGuiScale(double scaleFactor, CallbackInfo ci) {
-        int newLevel = (int) scaleFactor;
-        if (newLevel != scaleFactor) {
+        int oldScale = (int) guiScale;
+        int newScale = (int) scaleFactor;
+        if (newScale != scaleFactor) {
             ModernUI.LOGGER.warn(ModernUI.MARKER, "Gui scale should be an integer: {}", scaleFactor);
         }
-        int oldLevel = Math.round(ViewConfig.get().getViewScale() * 2.0f);
-        if (RenderCore.isInitialized() && oldLevel != newLevel) {
-            TextLayoutEngine.getInstance().clearLayoutCache();
+        if (RenderCore.isInitialized() && oldScale != newScale) {
+            TextLayoutEngine.getInstance().reload();
         }
         // See standards
-        ViewConfig.get().setViewScale(newLevel * 0.5f);
+        ViewConfig.get().setViewScale(newScale * 0.5f);
     }
 }
