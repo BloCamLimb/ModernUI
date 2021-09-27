@@ -214,7 +214,7 @@ public abstract class Layout {
                     x = right - indentWidth;
                 }
             } else {
-                int max = (int) getLineExtent(lineNum, tabStops, false);
+                int max = 0;/*(int) getLineExtent(lineNum, tabStops, false);*/
                 if (align == Alignment.ALIGN_OPPOSITE) {
                     if (dir == DIR_LEFT_TO_RIGHT) {
                         indentWidth = -getIndentAdjust(lineNum, Alignment.ALIGN_RIGHT);

@@ -56,6 +56,12 @@ public class FontAtlas {
     private static final int INITIAL_SIZE = 256;
     private static final int MIPMAP_LEVEL = 4;
 
+    /**
+     * Linear sampling with mipmaps;
+     */
+    public static boolean sLinearSampling = true;
+
+    // cached factory
     private static final IntFunction<TexturedGlyph> sFactory = i -> new TexturedGlyph();
 
     // texture object is immutable, but texture ID (the int) can change by resizing
@@ -142,7 +148,7 @@ public class FontAtlas {
         // never initialized
         if (mWidth == 0) {
             mWidth = mHeight = INITIAL_SIZE;
-            mTexture.allocate2DM(GL_ALPHA, INITIAL_SIZE, INITIAL_SIZE, MIPMAP_LEVEL);
+            mTexture.allocate2DM(GL_ALPHA, INITIAL_SIZE, INITIAL_SIZE, sLinearSampling ? MIPMAP_LEVEL : 0);
             // we have border that not upload data, so generate mipmap may leave undefined data
             mTexture.clear(0);
         } else {
@@ -183,6 +189,6 @@ public class FontAtlas {
 
             // we later generate mipmap
         }
-        mTexture.setFilter(GL_LINEAR_MIPMAP_LINEAR, GL_NEAREST);
+        mTexture.setFilter(sLinearSampling ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST, GL_NEAREST);
     }
 }

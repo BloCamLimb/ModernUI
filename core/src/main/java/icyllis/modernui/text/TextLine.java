@@ -454,8 +454,8 @@ public class TextLine {
             }
 
             int delta = mStart;
-            c.drawTextRun(mText, delta + start, delta + end,
-                    x, y, runIsRtl, wp);
+            /*c.drawTextRun(mText, delta + start, delta + end,
+                    x, y, runIsRtl, wp);*/
         }
         return runIsRtl ? -totalWidth : totalWidth;
     }
@@ -587,7 +587,7 @@ public class TextLine {
             wp.set(mPaint);
             drawStyleRun(wp, start, limit, runIsRtl, canvas, x, y);
         } else {
-            int runIndex = mMeasuredText.search(mStart + start);
+            /*int runIndex = mMeasuredText.search(mStart + start);
             assert runIndex >= 0;
             final MeasuredText.Run[] runs = mMeasuredText.getRuns();
             while (runIndex < runs.length) {
@@ -611,14 +611,14 @@ public class TextLine {
                 } else {
                     x += drawStyleRun(wp, runStart, runEnd, false, canvas, x, y);
                 }
-            }
+            }*/
         }
     }
 
     private float drawStyleRun(@Nonnull TextPaint paint, int start, int end, boolean runIsRtl,
                                @Nonnull Canvas canvas, float x, float y) {
         assert start != end;
-        float advance = mMeasuredText.getAdvance(start, end);
+        float advance = 0;//mMeasuredText.getAdvance(start, end);
 
         final float left, right;
         if (runIsRtl) {
@@ -629,7 +629,7 @@ public class TextLine {
             right = x + advance;
         }
 
-        canvas.drawTextRun(mMeasuredText, start, end, left, y, paint);
+        //canvas.drawTextRun(mMeasuredText, start, end, left, y, paint);
 
         return advance;
     }
