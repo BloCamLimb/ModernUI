@@ -55,10 +55,10 @@ public class MixinWindow {
         if (newScale != scaleFactor) {
             ModernUI.LOGGER.warn(ModernUI.MARKER, "Gui scale should be an integer: {}", scaleFactor);
         }
+        // See standards
+        ViewConfig.get().setViewScale(newScale * 0.5f);
         if (RenderCore.isInitialized() && oldScale != newScale) {
             TextLayoutEngine.getInstance().reload();
         }
-        // See standards
-        ViewConfig.get().setViewScale(newScale * 0.5f);
     }
 }
