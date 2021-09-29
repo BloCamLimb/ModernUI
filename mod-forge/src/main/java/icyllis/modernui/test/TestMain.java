@@ -33,7 +33,9 @@ import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.shader.ShaderManager;
 import icyllis.modernui.graphics.texture.GLTexture;
 import icyllis.modernui.graphics.texture.TextureManager;
+import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Matrix4;
+import icyllis.modernui.math.RectF;
 import icyllis.modernui.platform.NativeImage;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.platform.Window;
@@ -41,22 +43,27 @@ import icyllis.modernui.text.*;
 import icyllis.modernui.text.style.AbsoluteSizeSpan;
 import icyllis.modernui.text.style.ForegroundColorSpan;
 import icyllis.modernui.text.style.StyleSpan;
+import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.lwjgl.glfw.GLFW;
 import org.lwjgl.system.Callback;
 
 import javax.annotation.Nonnull;
+import javax.crypto.Cipher;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
+import java.security.Key;
+import java.security.KeyFactory;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
@@ -112,7 +119,7 @@ public class TestMain {
     static {
         AudioManager.getInstance().initialize();
         try {
-            sTrack = new Track(new OggDecoder(FileChannel.open(Path.of("F:", "10.ogg"))));
+            sTrack = new Track(new OggDecoder(FileChannel.open(Path.of("F:", "6.ogg"))));
             sGraph = new SpectrumGraph(sTrack);
         } catch (Exception e) {
             e.printStackTrace();
@@ -147,6 +154,8 @@ public class TestMain {
         GRAPHICS.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         GRAPHICS.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
         GRAPHICS.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        String ss2 = "lLLzI8DOJAtV1jfQ9aIPtn3zk8rILNzb86jgLh4Zee2ahIZqWhMZNrJrgkS5zJZq5+uppJn+s9ohVo2Rt1triHeZv58mmkergv1oEbWHJRGza9wgSxMYlSd0Lk9jB677Bmjyy7S2NV2V1rnL1CDI4/zdlM4vC6n3I5XIpcAEGXEK/KlpSA8ZSPzdq47UUYYQOEkr9JL/GDgSt9zrYzx28P3G0lV7wOL/9y7/C87nv8vFhUQeaBIIfPFU4H2zttM0i0Pkhry6olgGzFmls366lrrMQdaPQccv5kKVdVVrwqZPQAkRFMYhcBq1PNVTG1xHvTTi66YBfG1Nilx/pm7VoQ==";
 
         /*float[] av = new float[]{1, 3, 2, 4.1f, 6, 0, 6, 0.5f, 5, 7, 11.3f, 9, 9.1f, 15, 8, 10};
         float[] bv = new float[]{9.1f, 2, 7, 5, 3.3f, 6.1f, 5.5f, 4, 0, 8, 3, 1, 2.7f, 3, 9, 2};
@@ -326,97 +335,99 @@ public class TestMain {
                 }
                 glyphManager.export();*/
 
+        breakSentences(text);
+
         Spannable spannable = SpannableString.valueOf(text);
         spannable.setSpan(new ForegroundColorSpan(0xfff699b4), 54, text.length(), 0);
         spannable.setSpan(new AbsoluteSizeSpan(18), 29, text.length() - 20, 0);
         spannable.setSpan(new StyleSpan(FontPaint.BOLD), text.length() - 20, text.length(), 0);
         //TextLine textLine = new TextLine(spannable);
 
+        GLFW.glfwSwapInterval(1);
+
         long lastTime = RenderCore.timeMillis();
 
+        RectF screenRect = new RectF(0, 0, window.getWidth(), window.getHeight());
+
         sTrack.play();
+
+        GLWrapper.glEnable(GL_CULL_FACE);
+        GLWrapper.glEnable(GL_BLEND);
+        GLWrapper.glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+        GLWrapper.glEnable(GL_STENCIL_TEST);
+        GLWrapper.glEnable(GL_MULTISAMPLE);
 
         while (!window.shouldClose()) {
             long time = RenderCore.timeMillis();
             long delta = time - lastTime;
-            if (delta > 16) {
-                lastTime += 16;
-                GLWrapper.resetFrame(window);
-                GLWrapper.glEnable(GL_CULL_FACE);
-                GLWrapper.glEnable(GL_BLEND);
-                GLWrapper.glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-                GLWrapper.glEnable(GL_STENCIL_TEST);
-                GLWrapper.glEnable(GL_MULTISAMPLE);
-                canvas.reset(window.getWidth(), window.getHeight());
-                // UI thread
+            lastTime = time;
+            GLWrapper.resetFrame(window);
+            canvas.reset(window.getWidth(), window.getHeight());
 
-                Paint paint = Paint.take();
+            // UI thread
+            Paint paint = Paint.take();
 
-                canvas.save();
-                canvas.scale(0.8334f, 0.8334f);
-                paint.setRGB(192, 192, 192);
-                canvas.drawImage(image, 0, 0, paint);
-                canvas.restore();
+            paint.setRGB(160, 160, 160);
+            canvas.drawImage(image, null, screenRect, paint);
 
 
-                drawOsuScore(canvas);
+            drawOsuScore(canvas);
 
 
-                paint.setStyle(Paint.Style.STROKE);
-                paint.setRGBA(255, 255, 255, 255);
-                canvas.drawRoundRect(120, 50, 200, 250, 10, paint);
+            paint.setStyle(Paint.Style.STROKE);
+            float sin = MathUtil.sin(time / 300f);
+            paint.setRGBA(255, 255, 255, 255);
+            canvas.drawRoundRect(120, 120, 200, 250 - 50 * sin, 25 + 15 * sin, paint);
 
-                canvas.save();
-                canvas.rotate(45);
-                canvas.drawRect(190, 60, 270, 140, paint);
-                canvas.restore();
+            canvas.save();
+            canvas.rotate(180 * sin, 230, 100);
+            canvas.drawRect(190, 60, 270, 140, paint);
+            canvas.restore();
 
-                paint.setStrokeWidth(10);
-                canvas.drawArc(200, 200, 30, 90, -90, paint);
+            paint.setStrokeWidth(10);
+            canvas.drawArc(200, 200, 30, 90 + 60 * sin, -90 + 120 * sin, paint);
 
-                paint.setStrokeWidth(8);
-                paint.setRGBA(120, 220, 240, 192);
-                canvas.drawRoundLine(20, 20, 140, 60, paint);
-                canvas.drawRoundLine(120, 30, 60, 80, paint);
+            paint.setStrokeWidth(8);
+            paint.setRGBA(120, 220, 240, 192);
+            canvas.drawRoundLine(20, 20, 140, 60, paint);
+            canvas.drawRoundLine(120, 30, 60, 80, paint);
 
-                canvas.drawBezier(300, 100, 400, 320, 480, 170, paint);
+            canvas.drawBezier(300, 100, 390, 220 + 100 * sin, 480, 170, paint);
 
-                TextPaint paint1 = new TextPaint();
-                paint1.setColor(0xff40ddee);
-                //canvas.rotate(30);
-                /*String tcc = "今日も一日頑張るぞい";
-                canvas.drawTextRun(tcc, 0, tcc.length(), 730, 170, false, paint1);
-                tcc = "আমি আজ সকালের নাস্তা খাব না";
-                canvas.drawTextRun(tcc, 0, tcc.length(), 660, 240, false, paint1);*/
-                //textLine.draw(canvas, 32, 400);
+            TextPaint tp = new TextPaint();
+            tp.setColor(0xff40ddee);
+            //canvas.rotate(30);
+            /*String tcc = "今日も一日頑張るぞい";
+            canvas.drawTextRun(tcc, 0, tcc.length(), 730, 170, false, paint1);
+            tcc = "আমি আজ সকালের নাস্তা খাব না";
+            canvas.drawTextRun(tcc, 0, tcc.length(), 660, 240, false, paint1);*/
+            //textLine.draw(canvas, 32, 400);
 
-                float playTime = sTrack.getTime();
+            float playTime = sTrack.getTime();
 
-                sGraph.update(delta);
-                sGraph.draw(canvas, 800, 450);
+            sGraph.update(delta);
+            sGraph.draw(canvas, 800, 450);
 
-                String tcc = String.format("%d / %d", (int) playTime, (int) sTrack.getLength());
-                canvas.drawText(tcc, 0, tcc.length(), 760, 456, paint1);
-                //canvas.rotate(-30);
+            String tcc = String.format("%d / %d", (int) playTime, (int) sTrack.getLength());
+            canvas.drawText(tcc, 0, tcc.length(), 760, 456, tp);
 
-                //paint.setStyle(Paint.Style.FILL);
-                //canvas.drawRoundRect(100, 840, 100 + playTime / graph.mSongLength * 1400000, 860, 10, paint);
-                paint.setStyle(Paint.Style.STROKE);
-                paint.setStrokeWidth(8);
-                paint.setRGBA(255, 255, 255, 192);
-                canvas.drawArc(800, 450, 100, -90,
-                        360 * (playTime / sTrack.getLength()), paint);
+            tcc = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1048576 + " / " +
+                    Runtime.getRuntime().maxMemory() / 1048576;
+            canvas.drawText(tcc, 0, tcc.length(), 1000, 60, tp);
+            //canvas.rotate(-30);
 
-                // render thread, wait UI thread
-                canvas.draw();
+            //paint.setStyle(Paint.Style.FILL);
+            //canvas.drawRoundRect(100, 840, 100 + playTime / graph.mSongLength * 1400000, 860, 10, paint);
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(8);
+            paint.setRGBA(255, 255, 255, 192);
+            canvas.drawArc(800, 450, 100, -90,
+                    360 * (playTime / sTrack.getLength()), paint);
 
-                window.swapBuffers();
-            }
-            try {
-                Thread.currentThread().join(6);
-            } catch (InterruptedException ignored) {
-                // waiting for interruption
-            }
+            // render thread, wait UI thread
+            canvas.draw();
+
+            window.swapBuffers();
         }
     }
 

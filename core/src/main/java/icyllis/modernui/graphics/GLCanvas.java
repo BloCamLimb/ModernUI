@@ -547,9 +547,7 @@ public final class GLCanvas extends Canvas {
                     mMatrixUBO.upload(128, 16, uniformDataPtr);
                     uniformDataPtr += 16;
 
-                    final DrawText drawText = mDrawTexts.get(textIndex++);
-                    final TexturedGlyph[] glyphs = drawText.buildBuffer(this);
-                    sDrawTextPool.release(drawText);
+                    final TexturedGlyph[] glyphs = mDrawTexts.get(textIndex++).build(this);
 
                     if (mPosTexResized) {
                         mPosTexVBO.allocateM(mPosTexMemory.capacity(), NULL, GL_DYNAMIC_DRAW);
@@ -576,7 +574,7 @@ public final class GLCanvas extends Canvas {
                     break;
 
                 default:
-                    throw new IllegalStateException("Unexpected draw state " + op);
+                    throw new IllegalStateException("Unexpected draw op " + op);
             }
         }
 
@@ -1456,18 +1454,6 @@ public final class GLCanvas extends Canvas {
     }
 
     @Override
-    public void drawTextRun(@Nonnull MeasuredText text, int start, int end, float x, float y,
-                            @Nonnull TextPaint paint) {
-        if ((start | end | end - start) < 0) {
-            throw new IndexOutOfBoundsException();
-        }
-        LayoutPiece piece = text.getLayoutPiece(start, end);
-        if (piece != null) {
-            drawTextRun(piece, x, y, paint.getColor());
-        }
-    }
-
-    @Override
     public void drawTextRun(@Nonnull LayoutPiece piece, float x, float y, @Nonnull TextPaint paint) {
         drawTextRun(piece, x, y, paint.getColor());
     }
@@ -1510,13 +1496,14 @@ public final class GLCanvas extends Canvas {
         }
 
         @Nonnull
-        private TexturedGlyph[] buildBuffer(@Nonnull GLCanvas canvas) {
+        private TexturedGlyph[] build(@Nonnull GLCanvas canvas) {
             final TexturedGlyph[] glyphs = piece.getGlyphs();
             final float[] positions = piece.getPositions();
+            piece = null;
             for (int i = 0, e = glyphs.length; i < e; i++) {
                 canvas.putGlyph(glyphs[i], x + positions[i * 2], y + positions[i * 2 + 1]);
             }
-            piece = null;
+            sDrawTextPool.release(this);
             return glyphs;
         }
     }

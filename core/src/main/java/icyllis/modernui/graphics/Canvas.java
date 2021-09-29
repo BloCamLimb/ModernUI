@@ -644,8 +644,16 @@ public abstract class Canvas {
      * @param y     the vertical baseline of the line of text
      * @param paint the paint used to draw the text, only color will be taken
      */
-    public abstract void drawTextRun(@Nonnull MeasuredText text, int start, int end,
-                                     float x, float y, @Nonnull TextPaint paint);
+    public final void drawTextRun(@Nonnull MeasuredText text, int start, int end,
+                                  float x, float y, @Nonnull TextPaint paint) {
+        if ((start | end | end - start) < 0) {
+            throw new IndexOutOfBoundsException();
+        }
+        LayoutPiece piece = text.getLayoutPiece(start, end);
+        if (piece != null) {
+            drawTextRun(piece, x, y, paint);
+        }
+    }
 
     /**
      * Draw a layout piece, the base unit to draw a text.
