@@ -67,6 +67,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.LongConsumer;
+import java.util.function.Predicate;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
 import static org.lwjgl.glfw.GLFW.*;
@@ -134,6 +135,8 @@ public final class UIManager implements ViewRootImpl.Handler {
 
     private boolean mFirstScreenOpened = false;
     private boolean mProjectionChanged = false;
+
+    private final Predicate<? super TimedTask> mUiHandler = task -> task.doExecuteTask(mFrameTimeMillis);
 
     private UIManager() {
         mAnimationCallback = AnimationHandler.init();
@@ -266,6 +269,7 @@ public final class UIManager implements ViewRootImpl.Handler {
      * @param action runnable task
      * @param delay  delayed time to run the task in milliseconds
      */
+    //TODO pooled
     @Override
     public void postTask(@Nonnull Runnable action, long delay) {
         mTasks.add(new TimedTask(action, mFrameTimeMillis + delay));
@@ -294,7 +298,7 @@ public final class UIManager implements ViewRootImpl.Handler {
                     // 1. do tasks
                     if (!mTasks.isEmpty()) {
                         // batched processing
-                        mTasks.removeIf(task -> task.doExecuteTask(mFrameTimeMillis));
+                        mTasks.removeIf(mUiHandler);
                     }
                     if (mScreen == null) {
                         return;

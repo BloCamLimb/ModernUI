@@ -1,8 +1,140 @@
 Changelogs
 ===
-###
-* Fix smooth scrolling
-* Introduce new animation API
+### 1.16.5-2.6.4.92 (2021-09-29)
+#### Forge Extension 1.16.5-36.2.0
+* Optimize packet dispatcher
+* Add gradient color on screen background blurring
+* Add new tooltip rendering based on the new engine
+* Adjust the lifecycle of render system and text engine
+* Fix smooth scrolling for vanilla/forge panels
+* Modify network protocol algorithm
+* Add efficient network channel
+* Fix compatibility to several mods
+* Add namespaced events to mod buses
+#### Modern Text 1.16 (Embedded)
+* Support rendering and sampling with bitmap-like fonts
+* Fix rendering with bold and italic styles
+* Fix rendering with enchantment characters
+* Improve typeface setting and font run algorithm
+* Improve BiDi and style algorithms on text layouts
+* Add new cache key on deep processed char sequences
+* Add new layout cache system and tracker
+* Add automatic resolution level switching
+* Support continuous text layout from deep processors
+* Support taking over text layout and caching from the source
+* Optimize text and effect rendering pipeline
+* Optimize formatting code resolver algorithm
+* Optimize layout caching on text components and sequences
+* Optimize rendering on multilayer styled text
+* Introduce character style carrier for state injection
+* Expand the scope of application of text engine
+* Fix bidirectional text rendering with multiple styles
+* Fix rendering with texts computed from fast digit algorithm
+* Fix dirty font texture data on sprite borders
+* Change the behavior on built-in font loading
+* Improve experience bar text rendering
+* Fix rendering with Thai and Bengali
+#### Core Framework 3.0 (Preview)
+* Finish StaticLayout for text pages
+* Add recyclable span set and draw text command
+* Add deferred calculation grapheme advance and full layout
+* Fix various bugs for layout cache
+* Add texture manager and image creation
+* Add scaling image drawing and dimension
+* Remove context selector
+* Cleanup GLTexture usages in subclasses
+* Add quadratic Bezier curve drawing
+* Optimize OpenGL rendering pipeline for canvas
+* Cleanup deprecated classes and code
+* Optimize spannable string implementation
+* Fix sample array allocating
+* Add streaming ogg vorbis decoder and wave decoder
+* Add audio tracks for 2D sound playback
+* Add more text styles and effects
+* Optimize layout cache, measured text and rendering
+* Add new switch button widget
+* Add visual audio spectrum
+* Optimize view refresh mechanism
+* Add touch event for mouse operations, add click listener
+* Remove multiple pointers on event delivery, capture mouse
+* Add fast fourier transform for spectrum analysis
+* Optimize input event dispatching
+* Introduce AudioManager based on OpenAL
+* Apply 4x MSAA to UI framebuffer
+* Add the base part for text lines
+* Add memory calculation on measured text
+* Add efficient layout cache for layout pieces
+* Optimize glyph layout and rendering for text runs
+* Optimize text rendering pipeline
+* Add layout piece for the layout of a text run
+* Add PMX model parser
+* Add directions information for bidirectional text
+* Optimize GlyphManager for glyph layouts and rendering
+* Add new dynamic generation algorithm for font atlases
+* Add new scrolling algorithm to the view system
+* Support gradient color for geometries rendering
+* Add new scroller for controlling 2D scrolling
+* Add decomposable transformation
+* Apply clipping to the view system
+* Add quick reject against local clipping region
+* Introduce new clipping system and stencil test
+* Add drawables and host callbacks
+* Cleanup forge canvas API and lifecycles
+* Add automatic resizing for framebuffers
+* Add local state switching on drawing commands
+* Coordinate UI thread animation and drawing
+* Optimize rendering for view hierarchy
+* Drop support for Java 10 or below
+* Add round lines and more drawing methods
+* Add image drawing and recycle bitmaps
+* Switch to multi-threaded rendering
+* Add automatic vertex array object generation
+* Add vertex attributes and vertex buffer binding points
+* Introduce GLCanvas and update shaders
+* Introduce a new method to create shader programs
+* Update to OpenGL 4.5 and Direct State Access
+* Update core package structure
+* Add MSAA framebuffer and renderbuffer objects
+* Use cleaner to release native resources
+* Support tab stops and base paragraph-level style
+* Merge new animation API with the old one
+* Add evaluator for custom interpolation algorithm
+* Add more time interpolator(s)
+* Add custom keyframe types and keyframe set
+* Introduce new animation framework and state machine
+* Add supported image formats and open dialog
+* Add bitmap for decoding images into memory and exporting
+* Add texture objects on client side
+* Suppress unsupported clipboard contents
+* Fix resource reading using native memory
+* Optimize rotation about arbitrary axis
+* Add efficient quaternion math for rotations
+* Add efficient matrix/vector math for rendering
+* Add Rect, Point, and their float forms
+* Add the concept of UI thread that differs from render thread
+* Abstract the API on the rendering pipeline
+* Add platform components to operating system
+* Add fragment shader to draw circular arcs
+* Add paint for rendering geometries
+* Update shaders to GLSL 430 core
+* Add font metric calculation
+* Separate text paint at different levels
+* Add support for emoji code points
+* Add application-level typeface and text locale
+* Add itemization algorithm for font runs
+* Add Unicode-based line breaker for text pages
+* Add base measured text for text shaping
+* Add object pools for recycling
+* Enhance style run transitions for paragraph layout
+* Add new BiDi analyzer for measuring paragraphs
+* Add various text direction heuristic algorithm
+* Add metric affecting styles
+* Add character-level appearance styles
+* Add support for Unicode grapheme cluster break
+* Add texts with markup objects
+* Add text package for high-level layouts
+* Change coordinates to match window framebuffer
+* Add lifecycle handler for screens
 
 ### 1.16.5-2.5.1.86 (2021-05-13)
 * Fix rendering on some graphics cards
