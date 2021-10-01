@@ -77,8 +77,7 @@ public class Typeface {
         try (InputStream stream = new FileInputStream("F:/Torus Regular.otf")) {
             Font font = Font.createFont(Font.TRUETYPE_FONT, stream);
             p.add(font);
-        } catch (FontFormatException | IOException e) {
-            e.printStackTrace();
+        } catch (FontFormatException | IOException ignored) {
         }
 
         String[] families = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames(Locale.ROOT);

@@ -32,7 +32,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.PlayerContainerEvent;
-import net.minecraftforge.fml.network.IContainerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -78,7 +77,7 @@ public final class MForgeCompat {
      *                 the menu supplier (IContainerFactory) that registered on client
      * @throws ClassCastException this method is not called on logic server
      * @see #openMenu(Player, MenuConstructor, Consumer)
-     * @see net.minecraftforge.common.extensions.IForgeContainerType#create(IContainerFactory)
+     * @see net.minecraftforge.common.extensions.IForgeContainerType#create(net.minecraftforge.fmllegacy.network.IContainerFactory)
      */
     public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor provider, @Nonnull BlockPos pos) {
         openMenu((ServerPlayer) player, provider, buf -> buf.writeBlockPos(pos));
@@ -93,7 +92,7 @@ public final class MForgeCompat {
      * @param writer   a data writer to send additional data to client, this will be passed
      *                 to the menu supplier (IContainerFactory) that registered on client
      * @throws ClassCastException this method is not called on logic server
-     * @see net.minecraftforge.common.extensions.IForgeContainerType#create(IContainerFactory)
+     * @see net.minecraftforge.common.extensions.IForgeContainerType#create(net.minecraftforge.fmllegacy.network.IContainerFactory)
      */
     public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor provider,
                                 @Nullable Consumer<FriendlyByteBuf> writer) {
@@ -108,7 +107,7 @@ public final class MForgeCompat {
      * @param provider a provider to create a menu on server side
      * @param writer   a data writer to send additional data to client, this will be passed
      *                 to the menu supplier (IContainerFactory) that registered on client
-     * @see net.minecraftforge.common.extensions.IForgeContainerType#create(IContainerFactory)
+     * @see net.minecraftforge.common.extensions.IForgeContainerType#create(net.minecraftforge.fmllegacy.network.IContainerFactory)
      */
     public static void openMenu(@Nonnull ServerPlayer player, @Nonnull MenuConstructor provider,
                                 @Nullable Consumer<FriendlyByteBuf> writer) {
@@ -117,14 +116,13 @@ public final class MForgeCompat {
             player.closeContainer();
         }
         player.nextContainerCounter();
-        int containerId = player.containerCounter;
-        AbstractContainerMenu menu = provider.createMenu(containerId, player.inventory, player);
+        AbstractContainerMenu menu = provider.createMenu(player.containerCounter, player.getInventory(), player);
         if (menu == null) {
             return;
         }
-        NetworkMessages.openMenu(containerId, Registry.MENU.getId(menu.getType()), writer)
+        NetworkMessages.openMenu(menu.containerId, Registry.MENU.getId(menu.getType()), writer)
                 .sendToPlayer(player);
-        menu.addSlotListener(player);
+        player.initMenu(menu);
         player.containerMenu = menu;
         MinecraftForge.EVENT_BUS.post(new PlayerContainerEvent.Open(player, menu));
     }

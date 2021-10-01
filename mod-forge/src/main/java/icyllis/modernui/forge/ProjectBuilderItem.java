@@ -16,25 +16,28 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.mixin;
+package icyllis.modernui.forge;
 
-import net.minecraft.client.CycleOption;
-import net.minecraft.client.Option;
-import net.minecraft.network.chat.Component;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Mutable;
-import org.spongepowered.asm.mixin.gen.Accessor;
-import org.spongepowered.asm.mixin.gen.Invoker;
+import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
+import net.minecraft.world.item.Item;
+import net.minecraftforge.client.IItemRenderProperties;
 
-@Mixin(Option.class)
-public interface AccessOption {
+import javax.annotation.Nonnull;
+import java.util.function.Consumer;
 
-    @Mutable
-    @Accessor("GUI_SCALE")
-    static void setGuiScale(CycleOption<Integer> option) {
-        throw new IllegalStateException();
+public class ProjectBuilderItem extends Item {
+
+    public ProjectBuilderItem(@Nonnull Properties props) {
+        super(props);
     }
 
-    @Invoker
-    Component callGenericValueLabel(Component component);
+    @Override
+    public void initializeClient(@Nonnull Consumer<IItemRenderProperties> consumer) {
+        consumer.accept(new IItemRenderProperties() {
+            @Override
+            public BlockEntityWithoutLevelRenderer getItemStackRenderer() {
+                return new ProjectBuilderRenderer();
+            }
+        });
+    }
 }

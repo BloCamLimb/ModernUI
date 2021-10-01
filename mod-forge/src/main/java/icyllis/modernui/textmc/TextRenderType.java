@@ -21,11 +21,11 @@ package icyllis.modernui.textmc;
 import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
-import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
@@ -46,36 +46,30 @@ public class TextRenderType extends RenderType {
 
     static {
         GENERAL_STATES = ImmutableList.of(
-                RenderStateShard.TRANSLUCENT_TRANSPARENCY,
-                RenderStateShard.NO_DIFFUSE_LIGHTING,
-                RenderStateShard.FLAT_SHADE,
-                RenderStateShard.DEFAULT_ALPHA,
-                RenderStateShard.LEQUAL_DEPTH_TEST,
-                RenderStateShard.CULL,
-                RenderStateShard.LIGHTMAP,
-                RenderStateShard.NO_OVERLAY,
-                RenderStateShard.FOG,
-                RenderStateShard.NO_LAYERING,
-                RenderStateShard.MAIN_TARGET,
-                RenderStateShard.DEFAULT_TEXTURING,
-                RenderStateShard.COLOR_DEPTH_WRITE,
-                RenderStateShard.DEFAULT_LINE
+                RENDERTYPE_TEXT_INTENSITY_SHADER,
+                TRANSLUCENT_TRANSPARENCY,
+                LEQUAL_DEPTH_TEST,
+                CULL,
+                LIGHTMAP,
+                NO_OVERLAY,
+                NO_LAYERING,
+                MAIN_TARGET,
+                DEFAULT_TEXTURING,
+                COLOR_DEPTH_WRITE,
+                DEFAULT_LINE
         );
         SEE_THROUGH_STATES = ImmutableList.of(
-                RenderStateShard.TRANSLUCENT_TRANSPARENCY,
-                RenderStateShard.NO_DIFFUSE_LIGHTING,
-                RenderStateShard.FLAT_SHADE,
-                RenderStateShard.DEFAULT_ALPHA,
-                RenderStateShard.NO_DEPTH_TEST,
-                RenderStateShard.CULL,
-                RenderStateShard.LIGHTMAP,
-                RenderStateShard.NO_OVERLAY,
-                RenderStateShard.FOG,
-                RenderStateShard.NO_LAYERING,
-                RenderStateShard.MAIN_TARGET,
-                RenderStateShard.DEFAULT_TEXTURING,
-                RenderStateShard.COLOR_WRITE,
-                RenderStateShard.DEFAULT_LINE
+                RENDERTYPE_TEXT_SEE_THROUGH_SHADER,
+                TRANSLUCENT_TRANSPARENCY,
+                NO_DEPTH_TEST,
+                CULL,
+                LIGHTMAP,
+                NO_OVERLAY,
+                NO_LAYERING,
+                MAIN_TARGET,
+                DEFAULT_TEXTURING,
+                COLOR_WRITE,
+                DEFAULT_LINE
         );
     }
 
@@ -84,11 +78,11 @@ public class TextRenderType extends RenderType {
     private TextRenderType(int texture) {
         super("modern_text",
                 DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP,
-                GL11.GL_QUADS, 256, false, true,
+                VertexFormat.Mode.QUADS, 256, false, true,
                 () -> {
                     GENERAL_STATES.forEach(RenderStateShard::setupRenderState);
                     RenderSystem.enableTexture();
-                    RenderSystem.bindTexture(texture);
+                    RenderSystem.setShaderTexture(0, texture);
                 },
                 () -> GENERAL_STATES.forEach(RenderStateShard::clearRenderState));
         this.hashCode = Objects.hash(super.hashCode(), GENERAL_STATES, texture);
@@ -97,11 +91,11 @@ public class TextRenderType extends RenderType {
     private TextRenderType(int texture, String t) {
         super(t,
                 DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP,
-                GL11.GL_QUADS, 256, false, true,
+                VertexFormat.Mode.QUADS, 256, false, true,
                 () -> {
                     SEE_THROUGH_STATES.forEach(RenderStateShard::setupRenderState);
                     RenderSystem.enableTexture();
-                    RenderSystem.bindTexture(texture);
+                    RenderSystem.setShaderTexture(0, texture);
                 },
                 () -> SEE_THROUGH_STATES.forEach(RenderStateShard::clearRenderState));
         this.hashCode = Objects.hash(super.hashCode(), SEE_THROUGH_STATES, texture);
@@ -111,7 +105,7 @@ public class TextRenderType extends RenderType {
     public static TextRenderType getOrCreate(int texture, boolean seeThrough) {
         TextRenderType type;
         if (seeThrough) {
-            // do not use lambdas
+            // do not use lambdas for deferred construction
             type = SEE_THROUGH_TYPES.get(texture);
             if (type == null) {
                 type = new TextRenderType(texture, "modern_text_see_through");

@@ -26,7 +26,6 @@ import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.screen.UIManager;
 import icyllis.modernui.test.TestMenu;
 import icyllis.modernui.textmc.TextLayoutEngine;
-import net.minecraft.client.CycleOption;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Option;
 import net.minecraft.client.ProgressOption;
@@ -50,7 +49,7 @@ import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.network.IContainerFactory;
+import net.minecraftforge.fmllegacy.network.IContainerFactory;
 import net.minecraftforge.registries.IForgeRegistry;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
@@ -91,9 +90,9 @@ final class Registration {
     @SubscribeEvent
     static void registerItems(@Nonnull RegistryEvent.Register<Item> event) {
         if (ModernUIForge.sDevelopment) {
-            Item.Properties properties = new Item.Properties().stacksTo(1).setISTER(() -> ProjectBuilderRenderer::new);
-            event.getRegistry().register(MuiRegistries.PROJECT_BUILDER_ITEM = new Item(properties).setRegistryName(
-                    "project_builder"));
+            Item.Properties properties = new Item.Properties().stacksTo(1);
+            event.getRegistry().register(MuiRegistries.PROJECT_BUILDER_ITEM = new ProjectBuilderItem(properties)
+                    .setRegistryName("project_builder"));
         }
     }
 
@@ -109,14 +108,14 @@ final class Registration {
     @SubscribeEvent
     static void setupCommon(@Nonnull FMLCommonSetupEvent event) {
         byte[] protocol = null;
-        try (InputStream stream = ModernUI.class.getClassLoader().getResourceAsStream(
+        try (InputStream stream = ModernUIForge.class.getClassLoader().getResourceAsStream(
                 NetworkMessages.class.getName().replace('.', '/') + ".class")) {
             Objects.requireNonNull(stream, "Mod file is broken");
             protocol = IOUtils.toByteArray(stream);
         } catch (IOException e) {
             e.printStackTrace();
         }
-        try (InputStream stream = ModernUI.class.getClassLoader().getResourceAsStream(
+        try (InputStream stream = ModernUIForge.class.getClassLoader().getResourceAsStream(
                 NetworkMessages.class.getName().replace('.', '/') + "$C.class")) {
             Objects.requireNonNull(stream, "Mod file is broken");
             protocol = ArrayUtils.addAll(protocol, IOUtils.toByteArray(stream));
@@ -127,8 +126,8 @@ final class Registration {
                 ~-0x78, 0xd2 >> 0x1}, StandardCharsets.UTF_8).toLowerCase(Locale.ROOT)).isPresent()) {
             event.enqueueWork(() -> VertexConsumer.LOGGER.fatal("Van Darkholme"));
         }
-        protocol = ArrayUtils.addAll(protocol, ModList.get().getModFileById(ModernUI.ID).getTrustData()
-                .map(s -> s.getBytes(StandardCharsets.UTF_8)).orElse(null));
+        protocol = ArrayUtils.addAll(protocol, ModList.get().getModFileById(ModernUI.ID).getLicense()
+                .getBytes(StandardCharsets.UTF_8));
 
         NetworkMessages.sNetwork = new NetworkHandler(ModernUI.ID, "main_network", () -> NetworkMessages::handle,
                 NetworkMessages::handle, protocol == null ? null : DigestUtils.md5Hex(protocol), true);
@@ -143,15 +142,17 @@ final class Registration {
         //UIManager.getInstance().registerMenuScreen(Registration.TEST_MENU, menu -> new TestUI());
         Minecraft.getInstance().execute(() -> TextLayoutEngine.getInstance().lookupVanillaNode(ModernUI.NAME_CPT));
 
-        AccessOption.setGuiScale(new CycleOption("options.guiScale",
+        // Always replace static variable as an insurance policy
+        /*AccessOption.setGuiScale(new CycleOption("options.guiScale",
                 (options, integer) -> options.guiScale = Integer.remainderUnsigned(
                         options.guiScale + integer, (MForgeCompat.calcGuiScales() & 0xf) + 1),
                 (options, cycleOption) -> options.guiScale == 0 ?
                         ((AccessOption) cycleOption).callGenericValueLabel(new TranslatableComponent("options" +
                                 ".guiScale.auto")
                                 .append(new TextComponent(" (" + (MForgeCompat.calcGuiScales() >> 4 & 0xf) + ")"))) :
-                        ((AccessOption) cycleOption).callGenericValueLabel(new TextComponent(Integer.toString(options.guiScale))))
-        );
+                        ((AccessOption) cycleOption).callGenericValueLabel(new TextComponent(Integer.toString(options
+                        .guiScale))))
+        );*/
 
         Option[] settings = null;
         if (ModernUIForge.isOptiFineLoaded()) {

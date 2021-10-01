@@ -35,7 +35,9 @@ import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.config.ConfigFileTypeHandler;
+import net.minecraftforge.fml.config.IConfigSpec;
 import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLPaths;
@@ -94,8 +96,8 @@ public final class Config {
         FMLJavaModLoadingContext.get().getModEventBus().addListener(Config::reload);
     }
 
-    static void reload(@Nonnull Cfg.ModConfigEvent event) {
-        final ForgeConfigSpec spec = event.getConfig().getSpec();
+    static void reload(@Nonnull ModConfigEvent event) {
+        final IConfigSpec<?> spec = event.getConfig().getSpec();
         if (spec == CLIENT_SPEC) {
             /*try {
                 ((com.electronwill.nightconfig.core.Config) ObfuscationReflectionHelper.findField(ForgeConfigSpec

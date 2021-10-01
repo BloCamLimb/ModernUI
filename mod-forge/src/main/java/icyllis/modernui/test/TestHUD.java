@@ -32,7 +32,6 @@ import icyllis.modernui.screen.CanvasForge;
 import icyllis.modernui.textmc.ModernFontRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Style;
@@ -79,10 +78,10 @@ public class TestHUD {
     }
 
     @Deprecated
-    public void drawBars(@Nonnull CanvasForge canvas) {
+    private void drawBars(@Nonnull CanvasForge canvas) {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        RenderSystem.disableAlphaTest();
+        //RenderSystem.disableAlphaTest();
         RenderSystem.disableDepthTest();
 
         GL11.glMatrixMode(GL11.GL_PROJECTION);
@@ -182,10 +181,10 @@ public class TestHUD {
         GL11.glMatrixMode(GL11.GL_MODELVIEW);
 
         RenderSystem.enableTexture();
-        RenderSystem.enableAlphaTest();
+        //RenderSystem.enableAlphaTest();
         RenderSystem.disableBlend();
 
-        minecraft.getTextureManager().bind(GuiComponent.GUI_ICONS_LOCATION);
+        //minecraft.getTextureManager().bind(GuiComponent.GUI_ICONS_LOCATION);
     }
 
     private final List<FormattedText> mTempTexts = new ArrayList<>();
@@ -208,7 +207,7 @@ public class TestHUD {
 
     // test only, this can't handle complex paragraph layout
     public void drawTooltip(GLCanvas canvas, @Nonnull List<? extends FormattedText> texts, Font font, ItemStack stack,
-                            PoseStack matrix, int mouseX, int mouseY, float pMouseX, float pMouseY,
+                            PoseStack ps, int mouseX, int mouseY, float pMouseX, float pMouseY,
                             float width, float height, int fbWidth, int fbHeight) {
         // matrix transformation for x and y params, compatibility to MineColonies
         float tooltipX = mouseX + TOOLTIP_SPACE + (pMouseX - (int) pMouseX);
@@ -269,9 +268,9 @@ public class TestHUD {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
 
-        matrix.pushPose();
-        matrix.translate(0, 0, 400); // because of the order of draw calls, we actually don't need z-shifting
-        final Matrix4f mat = matrix.last().pose();
+        ps.pushPose();
+        ps.translate(0, 0, 400); // because of the order of draw calls, we actually don't need z-shifting
+        final Matrix4f mat = ps.last().pose();
 
         // smoothing scaled pixels, keep the same partial value as mouse position since tooltipWidth and height are int
         final int tooltipLeft = (int) tooltipX;
@@ -284,14 +283,14 @@ public class TestHUD {
 
         canvas.reset(fbWidth, fbHeight);
 
-        GL11.glGetFloatv(GL11.GL_PROJECTION_MATRIX, mMatBuf.rewind());
+        RenderSystem.getProjectionMatrix().store(mMatBuf.rewind());
         mMyMat.set(mMatBuf);
         canvas.setProjection(mMyMat);
 
         canvas.save();
-        GL11.glGetFloatv(GL11.GL_MODELVIEW_MATRIX, mMatBuf.rewind());
+        /*mat.store(mMatBuf.rewind());
         mMyMat.set(mMatBuf);
-        canvas.multiply(mMyMat);
+        canvas.multiply(mMyMat);*/
 
         mat.store(mMatBuf.rewind()); // Sodium check the remaining
         mMyMat.set(mMatBuf.rewind());
@@ -333,15 +332,13 @@ public class TestHUD {
             tooltipY += LINE_HEIGHT;
         }
         source.endBatch();
-        matrix.popPose();
 
-        GL11.glPushMatrix();
         // because of the order of draw calls, we actually don't need z-shifting
-        GL11.glTranslatef(partialX, partialY, 0);
+        ps.translate(partialX, partialY, 0);
         // compatibility with Forge mods, like Quark
-        MinecraftForge.EVENT_BUS.post(new RenderTooltipEvent.PostText(stack, texts, matrix, tooltipLeft, tooltipTop,
+        MinecraftForge.EVENT_BUS.post(new RenderTooltipEvent.PostText(stack, texts, ps, tooltipLeft, tooltipTop,
                 font, tooltipWidth, tooltipHeight));
-        GL11.glPopMatrix();
+        ps.popPose();
 
         RenderSystem.enableDepthTest();
         mTempTexts.clear();

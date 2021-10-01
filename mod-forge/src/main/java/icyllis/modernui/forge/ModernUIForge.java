@@ -22,21 +22,25 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.shader.ShaderManager;
 import icyllis.modernui.graphics.texture.TextureManager;
 import icyllis.modernui.text.Typeface;
+import icyllis.modernui.textmc.TextLayoutEngine;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ReloadableResourceManager;
 import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.*;
+import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fml.ModLoader;
+import net.minecraftforge.fml.ModLoadingStage;
+import net.minecraftforge.fml.ModLoadingWarning;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.IModBusEvent;
+import net.minecraftforge.fml.event.IModBusEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.javafmlmod.FMLModContainer;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLPaths;
-import net.minecraftforge.resource.ISelectiveResourceReloadListener;
-import net.minecraftforge.resource.VanillaResourceType;
+import net.minecraftforge.fmllegacy.DatagenModLoader;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
@@ -80,6 +84,7 @@ public final class ModernUIForge extends ModernUI {
     private volatile Typeface mTypeface;
 
     // mod-loading thread
+    @SuppressWarnings("deprecation")
     public ModernUIForge() {
         final boolean isDataGen = DatagenModLoader.isRunningDataGen();
 
@@ -91,13 +96,10 @@ public final class ModernUIForge extends ModernUI {
             if (!isDataGen) {
                 ((ReloadableResourceManager) Minecraft.getInstance().getResourceManager())
                         .registerReloadListener(
-                                (ISelectiveResourceReloadListener) (manager, predicate) -> {
-                                    if (predicate.test(VanillaResourceType.SHADERS)) {
-                                        Minecraft.getInstance().submit(ShaderManager.getInstance()::reload);
-                                    }
-                                    if (predicate.test(VanillaResourceType.TEXTURES)) {
-                                        Minecraft.getInstance().submit(TextureManager.getInstance()::reload);
-                                    }
+                                (ResourceManagerReloadListener) (manager) -> {
+                                    ShaderManager.getInstance().reload();
+                                    TextureManager.getInstance().reload();
+                                    TextLayoutEngine.getInstance().reload();
                                 }
                         );
             }

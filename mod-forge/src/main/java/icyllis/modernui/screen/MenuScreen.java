@@ -56,14 +56,19 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
         host = window;
     }
 
-    @Override
+    /*@Override
     public void init(@Nonnull Minecraft minecraft, int width, int height) {
         this.minecraft = minecraft;
         this.width = width;
         this.height = height;
         init();
-        host.start(this);
         MinecraftForge.EVENT_BUS.post(new GuiScreenEvent.InitGuiEvent.Post(this, buttons, this::widget, this::widget));
+    }*/
+
+    @Override
+    protected void init() {
+        super.init();
+        host.start(this);
     }
 
     @Override
@@ -72,7 +77,7 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
         this.height = height;
         init();
         host.resize();
-        MinecraftForge.EVENT_BUS.post(new GuiScreenEvent.InitGuiEvent.Post(this, buttons, this::widget, this::widget));
+        //MinecraftForge.EVENT_BUS.post(new GuiScreenEvent.InitGuiEvent.Post(this, buttons, this::widget, this::widget));
 
         /*ModernUI.LOGGER.debug("Scaled: {}x{} Framebuffer: {}x{} Window: {}x{}", width, height, minecraft.getMainWindow().getFramebufferWidth(),
                 minecraft.getMainWindow().getFramebufferHeight(), minecraft.getMainWindow().getWidth(), minecraft.getMainWindow().getHeight());*/

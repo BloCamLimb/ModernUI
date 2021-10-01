@@ -33,6 +33,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 @Mixin(AbstractSelectionList.class)
@@ -86,25 +87,25 @@ public abstract class MixinSelectionList implements ScrollController.IListener {
     }
 
     @Inject(method = "render", at = @At(value = "INVOKE", shift = At.Shift.BEFORE, target = "Lnet/minecraft/client/gui/components/AbstractSelectionList;renderHeader(Lcom/mojang/blaze3d/vertex/PoseStack;IILcom/mojang/blaze3d/vertex/Tesselator;)V"))
-    private void preRenderHeader(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks, CallbackInfo ci) {
-        RenderSystem.pushMatrix();
-        RenderSystem.translated(0, ((int) (((int) getScrollAmount() - getScrollAmount()) * minecraft.getWindow().getGuiScale())) / minecraft.getWindow().getGuiScale(), 0);
+    private void preRenderHeader(@Nonnull PoseStack ps, int mouseX, int mouseY, float partialTicks, CallbackInfo ci) {
+        ps.pushPose();
+        ps.translate(0, ((int) (((int) getScrollAmount() - getScrollAmount()) * minecraft.getWindow().getGuiScale())) / minecraft.getWindow().getGuiScale(), 0);
     }
 
     @Inject(method = "render", at = @At(value = "INVOKE", shift = At.Shift.AFTER, target = "Lnet/minecraft/client/gui/components/AbstractSelectionList;renderHeader(Lcom/mojang/blaze3d/vertex/PoseStack;IILcom/mojang/blaze3d/vertex/Tesselator;)V"))
-    private void postRenderHeader(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks, CallbackInfo ci) {
-        RenderSystem.popMatrix();
+    private void postRenderHeader(@Nonnull PoseStack ps, int mouseX, int mouseY, float partialTicks, CallbackInfo ci) {
+        ps.popPose();
     }
 
     @Inject(method = "render", at = @At(value = "INVOKE", shift = At.Shift.BEFORE, target = "Lnet/minecraft/client/gui/components/AbstractSelectionList;renderList(Lcom/mojang/blaze3d/vertex/PoseStack;IIIIF)V"))
-    private void preRenderList(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks, CallbackInfo ci) {
-        RenderSystem.pushMatrix();
-        RenderSystem.translated(0, ((int) (((int) getScrollAmount() - getScrollAmount()) * minecraft.getWindow().getGuiScale())) / minecraft.getWindow().getGuiScale(), 0);
+    private void preRenderList(@Nonnull PoseStack ps, int mouseX, int mouseY, float partialTicks, CallbackInfo ci) {
+        ps.pushPose();
+        ps.translate(0, ((int) (((int) getScrollAmount() - getScrollAmount()) * minecraft.getWindow().getGuiScale())) / minecraft.getWindow().getGuiScale(), 0);
     }
 
     @Inject(method = "render", at = @At(value = "INVOKE", shift = At.Shift.AFTER, target = "Lnet/minecraft/client/gui/components/AbstractSelectionList;renderList(Lcom/mojang/blaze3d/vertex/PoseStack;IIIIF)V"))
-    private void postRenderList(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks, CallbackInfo ci) {
-        RenderSystem.popMatrix();
+    private void postRenderList(@Nonnull PoseStack ps, int mouseX, int mouseY, float partialTicks, CallbackInfo ci) {
+        ps.popPose();
     }
 
     /**

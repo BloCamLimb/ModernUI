@@ -9,7 +9,7 @@ buildscript {
 
 plugins {
     id 'maven-publish'
-    id 'dev.architectury.loom' version '0.8.0-SNAPSHOT' apply false
+    id 'dev.architectury.loom' version '0.10.0-SNAPSHOT' apply false
     id 'com.matthewprenger.cursegradle' version '1.4.0' apply false
     id 'com.github.johnrengelman.shadow' version '7.0.0' apply false
 }
@@ -20,7 +20,7 @@ allprojects {
     group = 'icyllis.modernui'
     archivesBaseName = 'ModernUI'
 
-    java.toolchain.languageVersion = JavaLanguageVersion.of(11)
+    java.toolchain.languageVersion = JavaLanguageVersion.of(16)
 
     repositories {
         mavenCentral()
@@ -36,10 +36,6 @@ allprojects {
 
     tasks.withType(JavaCompile).configureEach {
         it.options.encoding = "UTF-8"
-
-        def targetVersion = 11
-        if (JavaVersion.current().isJava12Compatible()) {
-            it.options.release.set(targetVersion)
-        }
+        it.options.release.set(16)
     }
 }

@@ -43,11 +43,15 @@ final class SimpleScreen extends Screen implements MuiScreen {
         host = window;
     }
 
-    @Override
+    /*@Override
     public void init(@Nonnull Minecraft minecraft, int width, int height) {
         this.minecraft = minecraft;
         this.width = width;
         this.height = height;
+    }*/
+
+    @Override
+    protected void init() {
         host.start(this);
         //TODO configurable
         BlurHandler.INSTANCE.forceBlur();

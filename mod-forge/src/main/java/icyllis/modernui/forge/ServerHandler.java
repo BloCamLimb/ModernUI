@@ -25,9 +25,9 @@ import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.event.server.FMLServerStartedEvent;
-import net.minecraftforge.fml.event.server.FMLServerStoppingEvent;
-import net.minecraftforge.fml.server.ServerLifecycleHooks;
+import net.minecraftforge.fmllegacy.server.ServerLifecycleHooks;
+import net.minecraftforge.fmlserverevents.FMLServerStartedEvent;
+import net.minecraftforge.fmlserverevents.FMLServerStoppingEvent;
 
 import javax.annotation.Nonnull;
 import java.text.SimpleDateFormat;
@@ -65,7 +65,8 @@ final class ServerHandler {
         }
         if (Config.COMMON.autoShutdown.get()) {
             Calendar calendar = Calendar.getInstance();
-            int current = calendar.get(Calendar.HOUR_OF_DAY) * 3600 + calendar.get(Calendar.MINUTE) * 60 + calendar.get(Calendar.SECOND);
+            int current =
+                    calendar.get(Calendar.HOUR_OF_DAY) * 3600 + calendar.get(Calendar.MINUTE) * 60 + calendar.get(Calendar.SECOND);
             int target = Integer.MAX_VALUE;
             for (String s : Config.COMMON.shutdownTimes.get()) {
                 try {
@@ -79,10 +80,12 @@ final class ServerHandler {
                         }
                         target = Math.min(t, target);
                     } else {
-                        ModernUI.LOGGER.warn(ModernUI.MARKER, "Wrong time format while setting auto-shutdown time, input: {}", s);
+                        ModernUI.LOGGER.warn(ModernUI.MARKER, "Wrong time format while setting auto-shutdown time, " +
+                                "input: {}", s);
                     }
                 } catch (NumberFormatException | IndexOutOfBoundsException e) {
-                    ModernUI.LOGGER.error(ModernUI.MARKER, "Wrong time format while setting auto-shutdown time, input: {}", s, e);
+                    ModernUI.LOGGER.error(ModernUI.MARKER, "Wrong time format while setting auto-shutdown time, " +
+                            "input: {}", s, e);
                 }
             }
             if (target < Integer.MAX_VALUE && target > current) {

@@ -45,18 +45,18 @@ public class PluginList {
         final Type target = Type.getType(DefinePlugin.class);
         for (ModFileScanData scanData : ModList.get().getAllScanData()) {
             for (ModFileScanData.AnnotationData data : scanData.getAnnotations()) {
-                if (data.getAnnotationType().equals(target)) {
+                if (data.annotationType().equals(target)) {
                     try {
-                        String pid = (String) data.getAnnotationData().get("value");
+                        String pid = (String) data.annotationData().get("value");
                         Plugin v = plugins.putIfAbsent(pid,
-                                Class.forName(data.getMemberName()).asSubclass(Plugin.class)
+                                Class.forName(data.memberName()).asSubclass(Plugin.class)
                                         .getDeclaredConstructor().newInstance());
                         if (v != null) {
                             ModernUI.LOGGER.error(ModernUI.MARKER, "{} is annotated with the same plugin id {} as {}"
-                                    , data.getMemberName(), pid, v);
+                                    , data.memberName(), pid, v);
                         }
                     } catch (Throwable throwable) {
-                        ModernUI.LOGGER.error(ModernUI.MARKER, "Failed to load plugin: {}", data.getMemberName(),
+                        ModernUI.LOGGER.error(ModernUI.MARKER, "Failed to load plugin: {}", data.memberName(),
                                 throwable);
                     }
                 }

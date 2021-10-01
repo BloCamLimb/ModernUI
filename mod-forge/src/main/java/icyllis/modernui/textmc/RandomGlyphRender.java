@@ -19,15 +19,11 @@
 package icyllis.modernui.textmc;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.text.TexturedGlyph;
 import net.minecraft.client.renderer.MultiBufferSource;
 import org.apache.commons.lang3.tuple.Pair;
-import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -54,7 +50,7 @@ public class RandomGlyphRender extends BaseGlyphRender {
                           int b, int a, float res) {
         int idx = RANDOM.nextInt(10);
         TexturedGlyph glyph = mGlyphs.getLeft()[idx];
-        builder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
+        builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
         RenderSystem.bindTexture(glyph.texture);
         x += mOffsetX;
         if (idx != 0) {

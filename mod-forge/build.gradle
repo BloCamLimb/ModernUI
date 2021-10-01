@@ -16,8 +16,10 @@ configurations {
 
 loom {
     silentMojangMappingsLicense()
-    dataGen {
-        mod 'modernui'
+    forge {
+        dataGen {
+            mod 'modernui'
+        }
     }
     addTaskBeforeRun(":${project.name}:classes")
 }
@@ -30,28 +32,29 @@ repositories {
             includeGroup 'mezz.jei'
         }
     }
+    maven {
+        url 'https://maven.parchmentmc.org/'
+        content {
+            includeGroup 'org.parchmentmc.data'
+        }
+    }
     flatDir {
         dir "${rootProject.projectDir}/libs"
     }
 }
 
-sourceSets {
-    /*main {
-        resources {
-            srcDirs += [project(':ModernUI-Core').sourceSets.main.resources]
-        }
-    }*/
-}
-
 dependencies {
     minecraft "com.mojang:minecraft:${minecraft_version}"
-    mappings minecraft.officialMojangMappings()
+    mappings loom.layered() {
+        officialMojangMappings()
+        parchment("org.parchmentmc.data:parchment-${minecraft_version}:2021.09.05@zip" as String)
+    }
     forge "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
     modCompileOnly "mezz.jei:jei-${minecraft_version}:${jei_version}:api"
     modRuntime "mezz.jei:jei-${minecraft_version}:${jei_version}"
 
-    implementation project(':ModernUI-Core')
+    implementation(forgeDependencies(project(':ModernUI-Core')))
     shadow(project(':ModernUI-Core')) {
         transitive = false
     }
@@ -59,8 +62,8 @@ dependencies {
     /*compile "org.openjdk.jmh:jmh-core:1.29"
     annotationProcessor "org.openjdk.jmh:jmh-generator-annprocess:1.29"*/
 
-    implementation "com.github.ben-manes.caffeine:caffeine:${caffeine_version}"
-    implementation "com.vladsch.flexmark:flexmark:${flexmark_version}"
+    implementation(forgeDependencies("com.github.ben-manes.caffeine:caffeine:${caffeine_version}"))
+    implementation(forgeDependencies("com.vladsch.flexmark:flexmark:${flexmark_version}"))
 
     shadow "com.github.ben-manes.caffeine:caffeine:${caffeine_version}"
     shadow "com.vladsch.flexmark:flexmark:${flexmark_version}"

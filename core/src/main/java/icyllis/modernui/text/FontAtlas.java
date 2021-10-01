@@ -132,7 +132,7 @@ public class FontAtlas {
         }
 
         mTexture.upload(0, mPosX, mPosY, glyph.width, glyph.height, glyph.width,
-                0, 0, 1, GL_ALPHA, GL_UNSIGNED_BYTE, data);
+                0, 0, 1, GL_RED, GL_UNSIGNED_BYTE, data);
         mTexture.generateMipmap();
 
         glyph.u1 = (float) mPosX / mWidth;
@@ -148,7 +148,7 @@ public class FontAtlas {
         // never initialized
         if (mWidth == 0) {
             mWidth = mHeight = INITIAL_SIZE;
-            mTexture.allocate2DM(GL_ALPHA, INITIAL_SIZE, INITIAL_SIZE, sLinearSampling ? MIPMAP_LEVEL : 0);
+            mTexture.allocate2DM(GL_R8, INITIAL_SIZE, INITIAL_SIZE, sLinearSampling ? MIPMAP_LEVEL : 0);
             // we have border that not upload data, so generate mipmap may leave undefined data
             mTexture.clear(0);
         } else {
@@ -190,5 +190,6 @@ public class FontAtlas {
             // we later generate mipmap
         }
         mTexture.setFilter(sLinearSampling ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST, GL_NEAREST);
+        mTexture.swizzleRGBA(GL_RED, GL_RED, GL_RED, GL_RED);
     }
 }
